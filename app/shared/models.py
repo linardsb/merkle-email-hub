@@ -15,6 +15,19 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+class SoftDeleteMixin:
+    """Mixin for soft delete support via deleted_at timestamp.
+
+    Models with this mixin are never physically deleted — instead,
+    deleted_at is set to the current UTC time. Queries must filter
+    on deleted_at IS NULL to exclude soft-deleted records.
+    """
+
+    @declared_attr.directive
+    def deleted_at(cls) -> Mapped[datetime | None]:
+        return mapped_column(DateTime(timezone=True), nullable=True, default=None, index=True)
+
+
 class TimestampMixin:
     """Mixin for created_at and updated_at timestamps.
 

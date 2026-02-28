@@ -21,6 +21,9 @@ class DarkModeCheck:
         passed = len(issues) == 0
         score = max(0.0, 1.0 - len(issues) * 0.33)
         return QACheckResult(
-            check_name=self.name, passed=passed, score=round(score, 2),
-            details="; ".join(issues) if issues else None, severity="warning",
+            check_name=self.name,
+            passed=passed,
+            score=round(score, 2),
+            details="; ".join(issues) if issues else None,
+            severity="warning",
         )

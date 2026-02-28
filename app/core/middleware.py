@@ -29,11 +29,7 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
     """
 
     # Paths that allow larger uploads (50MB)
-    UPLOAD_PATHS: tuple[str, ...] = (
-
-        "/api/v1/knowledge",
-
-    )
+    UPLOAD_PATHS: tuple[str, ...] = ("/api/v1/knowledge",)
 
     def __init__(self, app: ASGIApp, max_body_size: int = 102_400) -> None:
         super().__init__(app)

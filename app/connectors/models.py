@@ -13,7 +13,9 @@ class ExportRecord(Base, TimestampMixin):
     __tablename__ = "export_records"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    build_id: Mapped[int] = mapped_column(Integer, ForeignKey("email_builds.id"), nullable=False, index=True)
+    build_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("email_builds.id"), nullable=False, index=True
+    )
     connector_type: Mapped[str] = mapped_column(String(50), nullable=False, default="braze")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -103,7 +103,7 @@ class UserDetailResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-_VALID_ROLES = { "admin", "developer", "viewer" }
+_VALID_ROLES = {"admin", "developer", "viewer"}
 
 
 class CreateUserRequest(BaseModel):

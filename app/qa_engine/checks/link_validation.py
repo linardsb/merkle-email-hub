@@ -27,6 +27,9 @@ class LinkValidationCheck:
         passed = len(issues) == 0
         score = 1.0 if passed else max(0.0, 1.0 - len(issues) * 0.1)
         return QACheckResult(
-            check_name=self.name, passed=passed, score=round(score, 2),
-            details="; ".join(issues[:5]) if issues else None, severity="warning",
+            check_name=self.name,
+            passed=passed,
+            score=round(score, 2),
+            details="; ".join(issues[:5]) if issues else None,
+            severity="warning",
         )

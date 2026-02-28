@@ -45,8 +45,6 @@ class RateLimitConfig(BaseModel):
     chat: str = "10/minute"
 
 
-
-
 class AIConfig(BaseModel):
     """AI provider settings."""
 
@@ -55,8 +53,6 @@ class AIConfig(BaseModel):
     api_key: str | None = None
     base_url: str | None = None  # Custom endpoint (Ollama, vLLM, LiteLLM)
     daily_quota: int = 50  # Per-IP daily request limit
-
-
 
 
 class EmbeddingConfig(BaseModel):
@@ -91,17 +87,12 @@ class KnowledgeConfig(BaseModel):
     auto_tag_api_key: str = ""
 
 
-
-
 class WebSocketConfig(BaseModel):
     """WebSocket streaming settings."""
 
     enabled: bool = True
     heartbeat_interval_seconds: int = 30
     max_connections: int = 100
-
-
-
 
 
 class Settings(BaseSettings):
@@ -137,15 +128,11 @@ class Settings(BaseSettings):
 
     ai: AIConfig = AIConfig()
 
-
     embedding: EmbeddingConfig = EmbeddingConfig()
     reranker: RerankerConfig = RerankerConfig()
     knowledge: KnowledgeConfig = KnowledgeConfig()
 
-
     ws: WebSocketConfig = WebSocketConfig()
-
-
 
 
 @lru_cache

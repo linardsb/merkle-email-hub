@@ -28,7 +28,9 @@ class QAEngineService:
             check_results.append(result)
 
         passed_count = sum(1 for c in check_results if c.passed)
-        overall_score = sum(c.score for c in check_results) / len(check_results) if check_results else 0.0
+        overall_score = (
+            sum(c.score for c in check_results) / len(check_results) if check_results else 0.0
+        )
         all_passed = passed_count == len(check_results)
 
         # Persist results

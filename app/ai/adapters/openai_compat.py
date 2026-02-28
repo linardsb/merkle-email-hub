@@ -58,7 +58,8 @@ class OpenAICompatProvider:
 
         # Local endpoints (Ollama, vLLM) don't need API keys
         is_local = any(
-            host in self._base_url for host in ("localhost", "127.0.0.1", "0.0.0.0")  # noqa: S104
+            host in self._base_url
+            for host in ("localhost", "127.0.0.1", "0.0.0.0")  # noqa: S104
         )
         if not self._api_key and not is_local:
             msg = (
@@ -103,7 +104,14 @@ class OpenAICompatProvider:
         }
 
         # Pass through supported kwargs
-        for key in ("temperature", "max_tokens", "top_p", "stop", "presence_penalty", "frequency_penalty"):
+        for key in (
+            "temperature",
+            "max_tokens",
+            "top_p",
+            "stop",
+            "presence_penalty",
+            "frequency_penalty",
+        ):
             if key in kwargs:
                 payload[key] = kwargs[key]
 
@@ -225,7 +233,9 @@ class OpenAICompatProvider:
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
             msg = f"LLM streaming API returned {status_code}"
-            logger.error("ai.provider.stream_http_error", model=self._model, status_code=status_code)
+            logger.error(
+                "ai.provider.stream_http_error", model=self._model, status_code=status_code
+            )
             raise AIExecutionError(msg) from e
         except httpx.HTTPError as e:
             msg = f"LLM streaming request failed: {e}"

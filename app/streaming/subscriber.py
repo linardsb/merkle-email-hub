@@ -110,14 +110,14 @@ async def start_ws_subscriber(
     Returns:
         The created asyncio Task.
     """
-    global _subscriber_task  # noqa: PLW0603
+    global _subscriber_task
     _subscriber_task = asyncio.create_task(_subscribe_loop(manager, channel_pattern))
     return _subscriber_task
 
 
 async def stop_ws_subscriber() -> None:
     """Cancel the subscriber task and wait for cleanup."""
-    global _subscriber_task  # noqa: PLW0603
+    global _subscriber_task
     if _subscriber_task is not None:
         _subscriber_task.cancel()
         try:

@@ -70,8 +70,6 @@ def _detect_source_type(content_type: str | None) -> str:
     return "unknown"
 
 
-
-
 @router.post("/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
 async def upload_document(

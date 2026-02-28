@@ -20,7 +20,9 @@ class Component(Base, TimestampMixin):
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     versions: Mapped[list["ComponentVersion"]] = relationship(
-        back_populates="component", cascade="all, delete-orphan", order_by="ComponentVersion.version_number.desc()"
+        back_populates="component",
+        cascade="all, delete-orphan",
+        order_by="ComponentVersion.version_number.desc()",
     )
 
 
@@ -28,10 +30,14 @@ class ComponentVersion(Base, TimestampMixin):
     """Versioned snapshot of a component's source code."""
 
     __tablename__ = "component_versions"
-    __table_args__ = (UniqueConstraint("component_id", "version_number", name="uq_component_version"),)
+    __table_args__ = (
+        UniqueConstraint("component_id", "version_number", name="uq_component_version"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    component_id: Mapped[int] = mapped_column(Integer, ForeignKey("components.id"), nullable=False, index=True)
+    component_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("components.id"), nullable=False, index=True
+    )
     version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     html_source: Mapped[str] = mapped_column(Text, nullable=False)
     css_source: Mapped[str | None] = mapped_column(Text, nullable=True)

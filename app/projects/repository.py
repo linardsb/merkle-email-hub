@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.projects.models import ClientOrg, Project, ProjectMember
 from app.projects.schemas import ClientOrgCreate, ProjectCreate, ProjectUpdate
+from app.shared.models import utcnow
 from app.shared.utils import escape_like
 
 
@@ -24,7 +25,9 @@ class ClientOrgRepository:
         result = await self.db.execute(select(ClientOrg).where(ClientOrg.slug == slug))
         return result.scalar_one_or_none()
 
-    async def list(self, *, offset: int = 0, limit: int = 100, active_only: bool = True) -> list[ClientOrg]:
+    async def list(
+        self, *, offset: int = 0, limit: int = 100, active_only: bool = True
+    ) -> list[ClientOrg]:
         query = select(ClientOrg)
         if active_only:
             query = query.where(ClientOrg.is_active.is_(True))
@@ -66,7 +69,7 @@ class ProjectRepository:
         active_only: bool = True,
         search: str | None = None,
     ) -> list[Project]:
-        query = select(Project)
+        query = select(Project).where(Project.deleted_at.is_(None))
         if active_only:
             query = query.where(Project.is_active.is_(True))
         if client_org_id is not None:
@@ -85,7 +88,7 @@ class ProjectRepository:
         active_only: bool = True,
         search: str | None = None,
     ) -> int:
-        query = select(func.count()).select_from(Project)
+        query = select(func.count()).select_from(Project).where(Project.deleted_at.is_(None))
         if active_only:
             query = query.where(Project.is_active.is_(True))
         if client_org_id is not None:
@@ -111,10 +114,13 @@ class ProjectRepository:
         return project
 
     async def delete(self, project: Project) -> None:
-        await self.db.delete(project)
+        project.deleted_at = utcnow()
         await self.db.commit()
+        await self.db.refresh(project)
 
-    async def add_member(self, project_id: int, user_id: int, role: str = "developer") -> ProjectMember:
+    async def add_member(
+        self, project_id: int, user_id: int, role: str = "developer"
+    ) -> ProjectMember:
         member = ProjectMember(project_id=project_id, user_id=user_id, role=role)
         self.db.add(member)
         await self.db.commit()

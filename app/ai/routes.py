@@ -113,8 +113,8 @@ def _get_quota_tracker() -> _QuotaTracker:
 async def chat_completions(
     request: Request,
     body: ChatCompletionRequest,
-    service: ChatService = Depends(get_chat_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ChatService = Depends(get_chat_service),
+    _current_user: User = Depends(get_current_user),
 ) -> ChatCompletionResponse:
     """Create a chat completion.
 
@@ -148,7 +148,7 @@ async def chat_completions(
 @limiter.limit("60/minute")
 async def list_models(
     request: Request,
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    _current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """List available models.
 

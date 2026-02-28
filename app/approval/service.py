@@ -38,7 +38,9 @@ class ApprovalService:
             raise ApprovalNotFoundError(f"Approval {approval_id} not found")
         return ApprovalResponse.model_validate(approval)
 
-    async def decide(self, approval_id: int, decision: ApprovalDecision, reviewer_id: int) -> ApprovalResponse:
+    async def decide(
+        self, approval_id: int, decision: ApprovalDecision, reviewer_id: int
+    ) -> ApprovalResponse:
         approval = await self.repository.get(approval_id)
         if not approval:
             raise ApprovalNotFoundError(f"Approval {approval_id} not found")
@@ -51,16 +53,26 @@ class ApprovalService:
         logger.info("approval.decided", approval_id=approval_id, status=decision.status)
         return ApprovalResponse.model_validate(approval)
 
-    async def add_feedback(self, approval_id: int, data: FeedbackCreate, user_id: int) -> FeedbackResponse:
+    async def add_feedback(
+        self, approval_id: int, data: FeedbackCreate, user_id: int
+    ) -> FeedbackResponse:
         approval = await self.repository.get(approval_id)
         if not approval:
             raise ApprovalNotFoundError(f"Approval {approval_id} not found")
-        fb = await self.repository.add_feedback(approval_id, user_id, data.content, data.feedback_type)
+        fb = await self.repository.add_feedback(
+            approval_id, user_id, data.content, data.feedback_type
+        )
         await self.repository.add_audit(approval_id, "feedback_added", user_id)
         return FeedbackResponse.model_validate(fb)
 
     async def get_feedback(self, approval_id: int) -> list[FeedbackResponse]:
-        return [FeedbackResponse.model_validate(f) for f in await self.repository.get_feedback(approval_id)]
+        return [
+            FeedbackResponse.model_validate(f)
+            for f in await self.repository.get_feedback(approval_id)
+        ]
 
     async def get_audit_trail(self, approval_id: int) -> list[AuditResponse]:
-        return [AuditResponse.model_validate(a) for a in await self.repository.get_audit_trail(approval_id)]
+        return [
+            AuditResponse.model_validate(a)
+            for a in await self.repository.get_audit_trail(approval_id)
+        ]

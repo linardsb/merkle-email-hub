@@ -11,7 +11,9 @@ class DocumentUpload(BaseModel):
     """Schema for document upload metadata (sent alongside file)."""
 
     domain: str = Field(..., min_length=1, max_length=50, description="Knowledge domain")
-    language: str = Field(default="en", pattern="^[a-z]{2}$", description="Document language (ISO 639-1)")
+    language: str = Field(
+        default="en", pattern="^[a-z]{2}$", description="Document language (ISO 639-1)"
+    )
     metadata_json: str | None = Field(None, description="Optional JSON metadata string")
     title: str | None = Field(None, max_length=200, description="Human-readable document title")
     description: str | None = Field(None, description="Optional document description")

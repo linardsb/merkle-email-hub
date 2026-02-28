@@ -28,7 +28,7 @@ _ws_manager: ConnectionManager | None = None
 
 def get_ws_manager() -> ConnectionManager:
     """Get or create the WebSocket ConnectionManager singleton."""
-    global _ws_manager  # noqa: PLW0603
+    global _ws_manager
     if _ws_manager is None:
         settings = get_settings()
         _ws_manager = ConnectionManager(max_connections=settings.ws.max_connections)
@@ -37,7 +37,7 @@ def get_ws_manager() -> ConnectionManager:
 
 def close_ws_manager() -> None:
     """Reset the ConnectionManager singleton on shutdown."""
-    global _ws_manager  # noqa: PLW0603
+    global _ws_manager
     _ws_manager = None
 
 

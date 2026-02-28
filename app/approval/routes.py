@@ -1,7 +1,7 @@
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 """REST API routes for client approval portal."""
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,7 +66,9 @@ async def decide_approval(
     return await service.decide(approval_id, decision, reviewer_id=current_user.id)
 
 
-@router.post("/{approval_id}/feedback", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{approval_id}/feedback", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED
+)
 @limiter.limit("20/minute")
 async def add_feedback(
     request: Request,

@@ -100,9 +100,13 @@ class ProjectService:
     async def list_orgs(
         self, pagination: PaginationParams, *, active_only: bool = True
     ) -> PaginatedResponse[ClientOrgResponse]:
-        items = await self.orgs.list(offset=pagination.offset, limit=pagination.page_size, active_only=active_only)
+        items = await self.orgs.list(
+            offset=pagination.offset, limit=pagination.page_size, active_only=active_only
+        )
         total = await self.orgs.count(active_only=active_only)
         return PaginatedResponse[ClientOrgResponse](
             items=[ClientOrgResponse.model_validate(o) for o in items],
-            total=total, page=pagination.page, page_size=pagination.page_size,
+            total=total,
+            page=pagination.page,
+            page_size=pagination.page_size,
         )

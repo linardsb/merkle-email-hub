@@ -52,9 +52,7 @@ class ChatService:
         model_id = f"{provider_name}:{settings.ai.model}"
 
         # Convert schema messages to protocol messages
-        messages = [
-            Message(role=msg.role, content=msg.content) for msg in request.messages
-        ]
+        messages = [Message(role=msg.role, content=msg.content) for msg in request.messages]
 
         logger.info(
             "ai.chat_started",

@@ -85,7 +85,9 @@ class CircuitBreaker:
 
         return self
 
-    async def __aexit__(self, exc_type: type | None, exc_val: Exception | None, exc_tb: object) -> None:
+    async def __aexit__(
+        self, exc_type: type | None, exc_val: Exception | None, exc_tb: object
+    ) -> None:
         async with self._lock:
             if exc_type is None:
                 # Success

@@ -94,7 +94,9 @@ class ComponentRepository:
         )
         return result.scalar_one() or 0
 
-    async def create_version(self, component_id: int, data: VersionCreate, user_id: int) -> ComponentVersion:
+    async def create_version(
+        self, component_id: int, data: VersionCreate, user_id: int
+    ) -> ComponentVersion:
         next_version = await self.get_latest_version_number(component_id) + 1
         version = ComponentVersion(
             component_id=component_id,

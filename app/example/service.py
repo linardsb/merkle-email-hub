@@ -123,9 +123,7 @@ class ItemService:
                 name=data.name,
                 reason="duplicate",
             )
-            raise ItemAlreadyExistsError(
-                f"Item with name '{data.name}' already exists"
-            )
+            raise ItemAlreadyExistsError(f"Item with name '{data.name}' already exists")
 
         item = await self.repository.create(data)
         logger.info(
@@ -169,9 +167,7 @@ class ItemService:
                     name=new_name,
                     reason="duplicate",
                 )
-                raise ItemAlreadyExistsError(
-                    f"Item with name '{new_name}' already exists"
-                )
+                raise ItemAlreadyExistsError(f"Item with name '{new_name}' already exists")
 
         item = await self.repository.update(item, data)
         logger.info("items.update_completed", item_id=item.id)

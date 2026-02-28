@@ -45,7 +45,9 @@ def create_access_token(user_id: int, role: str) -> str:
         "type": "access",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm)
+    token: str = jwt.encode(
+        payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm
+    )
     return token
 
 
@@ -69,7 +71,9 @@ def create_refresh_token(user_id: int) -> str:
         "type": "refresh",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm)
+    token: str = jwt.encode(
+        payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm
+    )
     return token
 
 

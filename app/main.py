@@ -18,11 +18,12 @@ from fastapi import FastAPI
 from slowapi import _rate_limit_exceeded_handler  # pyright: ignore[reportMissingTypeStubs]
 from slowapi.errors import RateLimitExceeded  # pyright: ignore[reportMissingTypeStubs]
 
-from app.auth.routes import router as auth_router
-
 from app.ai.exceptions import setup_ai_exception_handlers
 from app.ai.routes import router as ai_router
-
+from app.approval.routes import router as approval_router
+from app.auth.routes import router as auth_router
+from app.components.routes import router as components_router
+from app.connectors.routes import router as connectors_router
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
@@ -31,26 +32,18 @@ from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
 from app.core.rate_limit import limiter
 from app.core.redis import close_redis
+from app.email_engine.routes import router as email_engine_router
 from app.example.routes import router as example_router
-
 from app.knowledge.routes import router as knowledge_router
+from app.personas.routes import router as personas_router
 
 # Email Hub modules
 from app.projects.routes import router as projects_router
-from app.email_engine.routes import router as email_engine_router
-from app.components.routes import router as components_router
 from app.qa_engine.routes import router as qa_router
-from app.connectors.routes import router as connectors_router
-from app.approval.routes import router as approval_router
-from app.personas.routes import router as personas_router
-
-
 from app.streaming.routes import close_ws_manager, get_ws_manager, ws_router
 from app.streaming.subscriber import start_ws_subscriber, stop_ws_subscriber
 
-
 settings = get_settings()
-
 
 
 @asynccontextmanager
@@ -63,8 +56,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # SECURITY: Fail hard if JWT secret is weak in non-development environments
     _insecure_defaults = {"CHANGE-ME-IN-PRODUCTION", "", "secret", "changeme"}
     if settings.environment != "development" and (
-        settings.auth.jwt_secret_key in _insecure_defaults
-        or len(settings.auth.jwt_secret_key) < 32
+        settings.auth.jwt_secret_key in _insecure_defaults or len(settings.auth.jwt_secret_key) < 32
     ):
         msg = "AUTH__JWT_SECRET_KEY must be a strong secret (min 32 chars) in non-development environments"
         raise RuntimeError(msg)
@@ -77,13 +69,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
     logger.info("database.connection_initialized")
 
-
     # Start WebSocket subscriber
     if settings.ws.enabled:
         ws_manager = get_ws_manager()
         await start_ws_subscriber(ws_manager)
         logger.info("streaming.ws.subscriber_started")
-
 
     yield
 

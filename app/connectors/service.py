@@ -27,7 +27,9 @@ class ConnectorService:
         if data.connector_type not in SUPPORTED_CONNECTORS:
             raise UnsupportedConnectorError(f"Connector '{data.connector_type}' is not supported")
 
-        logger.info("connectors.export_started", connector=data.connector_type, build_id=data.build_id)
+        logger.info(
+            "connectors.export_started", connector=data.connector_type, build_id=data.build_id
+        )
 
         record = ExportRecord(
             build_id=data.build_id,

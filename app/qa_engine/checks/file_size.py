@@ -15,7 +15,9 @@ class FileSizeCheck:
         passed = size_kb <= MAX_SIZE_KB
         score = min(1.0, MAX_SIZE_KB / max(size_kb, 0.1))
         return QACheckResult(
-            check_name=self.name, passed=passed, score=round(score, 2),
+            check_name=self.name,
+            passed=passed,
+            score=round(score, 2),
             details=f"Size: {size_kb:.1f}KB (limit: {MAX_SIZE_KB}KB)",
             severity="error" if not passed else "info",
         )

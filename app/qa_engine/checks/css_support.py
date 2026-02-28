@@ -21,6 +21,9 @@ class CssSupportCheck:
         passed = len(issues) == 0
         score = 1.0 if passed else max(0.0, 1.0 - len(issues) * 0.25)
         return QACheckResult(
-            check_name=self.name, passed=passed, score=score,
-            details="; ".join(issues) if issues else None, severity="warning",
+            check_name=self.name,
+            passed=passed,
+            score=score,
+            details="; ".join(issues) if issues else None,
+            severity="warning",
         )

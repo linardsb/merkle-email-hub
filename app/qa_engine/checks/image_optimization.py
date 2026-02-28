@@ -12,10 +12,10 @@ class ImageOptimizationCheck:
 
     async def run(self, html: str) -> QACheckResult:
         issues: list[str] = []
-        images = re.findall(r'<img[^>]*>', html, re.IGNORECASE)
+        images = re.findall(r"<img[^>]*>", html, re.IGNORECASE)
 
         for img in images:
-            if 'width=' not in img.lower() or 'height=' not in img.lower():
+            if "width=" not in img.lower() or "height=" not in img.lower():
                 issues.append("Image missing explicit width/height dimensions")
                 break
             src_match = re.search(r'src=["\']([^"\']+)["\']', img)
@@ -26,6 +26,9 @@ class ImageOptimizationCheck:
         passed = len(issues) == 0
         score = max(0.0, 1.0 - len(issues) / total)
         return QACheckResult(
-            check_name=self.name, passed=passed, score=round(score, 2),
-            details="; ".join(issues) if issues else None, severity="warning",
+            check_name=self.name,
+            passed=passed,
+            score=round(score, 2),
+            details="; ".join(issues) if issues else None,
+            severity="warning",
         )

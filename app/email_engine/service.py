@@ -31,7 +31,9 @@ class EmailEngineService:
 
     async def build(self, data: BuildRequest, user_id: int) -> BuildResponse:
         """Execute a full email build and persist the result."""
-        logger.info("email_engine.build_started", template=data.template_name, project_id=data.project_id)
+        logger.info(
+            "email_engine.build_started", template=data.template_name, project_id=data.project_id
+        )
 
         build = EmailBuild(
             project_id=data.project_id,
@@ -47,7 +49,9 @@ class EmailEngineService:
         await self.db.refresh(build)
 
         try:
-            compiled = await self._call_builder(data.source_html, data.config_overrides, data.is_production)
+            compiled = await self._call_builder(
+                data.source_html, data.config_overrides, data.is_production
+            )
             build.compiled_html = compiled
             build.status = "success"
         except BuildServiceUnavailableError:
@@ -69,7 +73,9 @@ class EmailEngineService:
         """Execute a preview build without persisting."""
         logger.info("email_engine.preview_started")
         start = time.monotonic()
-        compiled = await self._call_builder(data.source_html, data.config_overrides, is_production=False)
+        compiled = await self._call_builder(
+            data.source_html, data.config_overrides, is_production=False
+        )
         elapsed = (time.monotonic() - start) * 1000
         logger.info("email_engine.preview_completed", build_time_ms=elapsed)
         return PreviewResponse(compiled_html=compiled, build_time_ms=round(elapsed, 2))

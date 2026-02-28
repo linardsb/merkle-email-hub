@@ -107,7 +107,9 @@ async def list_versions(
     return await service.list_versions(component_id)
 
 
-@router.post("/{component_id}/versions", response_model=VersionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{component_id}/versions", response_model=VersionResponse, status_code=status.HTTP_201_CREATED
+)
 @limiter.limit("10/minute")
 async def create_version(
     request: Request,

@@ -49,7 +49,9 @@ class ComponentService:
         total = await self.repository.count(category=category, search=search)
         return PaginatedResponse[ComponentResponse](
             items=[ComponentResponse.model_validate(c) for c in items],
-            total=total, page=pagination.page, page_size=pagination.page_size,
+            total=total,
+            page=pagination.page,
+            page_size=pagination.page_size,
         )
 
     async def create_component(self, data: ComponentCreate, user_id: int) -> ComponentResponse:
@@ -75,7 +77,9 @@ class ComponentService:
             raise ComponentNotFoundError(f"Component {component_id} not found")
         await self.repository.delete(component)
 
-    async def create_version(self, component_id: int, data: VersionCreate, user_id: int) -> VersionResponse:
+    async def create_version(
+        self, component_id: int, data: VersionCreate, user_id: int
+    ) -> VersionResponse:
         component = await self.repository.get(component_id)
         if not component:
             raise ComponentNotFoundError(f"Component {component_id} not found")

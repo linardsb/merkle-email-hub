@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.shared.models import TimestampMixin
+from app.shared.models import SoftDeleteMixin, TimestampMixin
 
 
 class ClientOrg(Base, TimestampMixin):
@@ -17,10 +17,12 @@ class ClientOrg(Base, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    projects: Mapped[list["Project"]] = relationship(back_populates="client_org", cascade="all, delete-orphan")
+    projects: Mapped[list["Project"]] = relationship(
+        back_populates="client_org", cascade="all, delete-orphan"
+    )
 
 
-class Project(Base, TimestampMixin):
+class Project(Base, TimestampMixin, SoftDeleteMixin):
     """Email project workspace scoped to a client organization."""
 
     __tablename__ = "projects"
@@ -29,7 +31,9 @@ class Project(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
-    client_org_id: Mapped[int] = mapped_column(Integer, ForeignKey("client_orgs.id"), nullable=False, index=True)
+    client_org_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("client_orgs.id"), nullable=False, index=True
+    )
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -42,6 +46,10 @@ class ProjectMember(Base, TimestampMixin):
     __tablename__ = "project_members"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    project_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("projects.id"), nullable=False, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="developer")
