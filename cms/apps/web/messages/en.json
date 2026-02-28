@@ -50,5 +50,13 @@
     "title": "Access Denied",
     "description": "You do not have permission to view this page.",
     "backToDashboard": "Back to Dashboard"
+  },
+  "errors": {
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "forbidden": "You don't have permission to perform this action.",
+    "notFound": "The requested resource was not found.",
+    "rateLimited": "Too many requests. Please try again in a moment.",
+    "timeout": "The request timed out. Please try again.",
+    "generic": "Something went wrong. Please try again."
   }
 }

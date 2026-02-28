@@ -4,15 +4,18 @@ import type { Session } from "next-auth";
 let cachedToken: string | null = null;
 let cacheExpiry = 0;
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+export const LONG_TIMEOUT_MS = 120_000;
+
 /**
- * Fetch with automatic JWT authentication.
+ * Fetch with automatic JWT authentication and request timeout.
  * Works in both server components and client components.
  * - Server: dynamically imports auth() from Auth.js
  * - Client: dynamically imports getSession() from next-auth/react
  */
 export async function authFetch(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: RequestInit & { timeoutMs?: number }
 ): Promise<Response> {
   const token = await getAccessToken();
 
@@ -21,7 +24,19 @@ export async function authFetch(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  return fetch(input, { ...init, headers });
+  const timeoutMs = init?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      headers,
+      signal: init?.signal ?? controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function getAccessToken(): Promise<string | null> {
