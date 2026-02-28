@@ -32,3 +32,4 @@
 |---------|---------|
 | `/commit` | Create conventional commit with safety checks |
 | `/review` | Code review against 8 quality standards |
+| `/update-docs` | Sync TODO.md, CLAUDE.md, and PRD.md with current implementation state |

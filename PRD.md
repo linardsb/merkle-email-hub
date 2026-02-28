@@ -3,9 +3,42 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 1.0
+**Version:** 1.1
 **Date:** February 2026
-**Status:** MVP Development
+**Status:** MVP Development — Sprint 1 In Progress
+
+---
+
+## 0. Implementation Status
+
+> Last updated: 2026-02-28
+
+### Completed
+
+| Task | Description | Key Deliverables |
+|------|-------------|-----------------|
+| 0.1 | Database migrations | All email-hub models migrated; PostgreSQL RLS policies on `client_org_id` |
+| 0.2 | shadcn/ui component library | 16 foundational components installed; Merkle design tokens wired |
+| 0.3 | OpenAPI TypeScript SDK | `cms/packages/sdk/` generates typed client for 61 endpoints; offline generation via `make sdk` |
+| 0.4 | Authenticated API client layer | `authFetch` with timeout (30s/120s), 401 redirect interceptor, 429 retry with backoff, 8 domain-specific SWR hooks (`use-projects`, `use-orgs`, `use-components`, `use-email`, `use-qa`, `use-personas`, `use-approvals`, `use-connectors`), `ApiError` class, mutation fetchers |
+| 1.1 | Project dashboard page | Dashboard at `/[locale]/(dashboard)/` with stats cards, project grid, org data; SWR data fetching from live API |
+
+### In Progress
+
+| Phase | Task | Description |
+|-------|------|-------------|
+| Sprint 1 | 1.2 | Project workspace layout (3-pane: editor, preview, AI chat) |
+| Sprint 1 | 1.3 | Monaco editor integration |
+| Sprint 1 | 1.4 | Maizzle live preview |
+| Sprint 1 | 1.5 | Test persona engine UI |
+| Sprint 1 | 1.6 | Template CRUD + persistence |
+
+### Infrastructure Built
+
+- **Backend:** Full VSA implementation across 7 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
+- **Frontend:** Next.js 16 monorepo with i18n, auth middleware, RBAC route guards, semantic Tailwind tokens
+- **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
+- **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration
 
 ---
 
@@ -205,7 +238,89 @@ Every piece of email development work becomes a reusable, testable, deployable a
 - "dark mode Outlook" returns 10+ relevant docs
 - New team entries indexed and searchable within 1 hour
 
-### 4.9 Client Approval Portal
+### 4.9 Smart Agent Memory System
+
+**Infrastructure:** `app/memory/` with pgvector + Redis
+
+The Hub's AI agents are not stateless tools — they learn, remember, and compound knowledge across sessions, projects, and clients. The Smart Agent Memory System gives every agent persistent, searchable, project-scoped memory that improves with every interaction.
+
+#### 4.9.1 Conversation Persistence
+
+- Thread-based conversation storage with full message history
+- `Conversation`, `ConversationMessage`, `ConversationSummary` models in PostgreSQL
+- Multi-turn context: agents remember prior instructions within a session
+- Conversation search: find past interactions by content, agent type, or project
+- Token-counted messages for context budget management
+
+**Acceptance Criteria:**
+- Developer resumes a conversation from yesterday — agent has full prior context
+- Conversations are project-scoped: Client A threads invisible to Client B users
+- Search "dark mode fix" returns relevant past agent conversations
+
+#### 4.9.2 RAG-Augmented Chat
+
+- Every chat completion query searches the knowledge base before responding
+- Relevant document chunks injected as system context into agent prompts
+- Citations returned alongside agent responses (source document + chunk reference)
+- Hybrid retrieval: vector similarity + full-text search + RRF fusion (existing `app/knowledge/` pipeline)
+
+**Acceptance Criteria:**
+- Agent asked about Outlook rendering automatically retrieves Can I Email data
+- Agent responses include source citations from the knowledge base
+- No knowledge base query adds more than 200ms latency to chat responses
+
+#### 4.9.3 Agent Memory Entries
+
+- Per-agent-type learned facts stored as embedded entries in pgvector
+- Memory types: `procedural` (learned patterns), `episodic` (session logs), `semantic` (durable facts)
+- Agents write memories after significant interactions (rendering fix discovered, client preference noted, build pattern established)
+- Memory retrieval integrated into agent context loading — relevant memories injected before each response
+- `memory_entries` table: `id | agent_type | memory_type | content | embedding(1024) | project_id | metadata(jsonb) | decay_weight | created_at`
+
+**Acceptance Criteria:**
+- Dark Mode Agent discovers a Samsung Mail rendering fix → stores as procedural memory
+- Next time any agent encounters Samsung Mail, the fix is retrieved automatically
+- Agent memories are filterable by type, agent, project, and recency
+
+#### 4.9.4 Context Windowing & Summarisation
+
+- Token budget management: configurable context window per agent (default 8K tokens)
+- Automatic summarisation of older messages when context approaches limit
+- Summary chain: full messages → compressed summary → archived (searchable but not in active context)
+- Priority retention: system prompts and recent messages always preserved; middle messages summarised first
+
+**Acceptance Criteria:**
+- 50-message conversation maintains coherent context without exceeding token budget
+- Summarised messages remain searchable via conversation search
+- Agent performance does not degrade on long conversations
+
+#### 4.9.5 Temporal Decay & Memory Compaction
+
+- Configurable decay half-life per memory type (default: 30 days for episodic, never for procedural)
+- Stale memories down-ranked in retrieval results, not deleted
+- Periodic compaction job merges redundant memories (e.g., 10 similar Outlook fixes → 1 consolidated entry)
+- Evergreen memories (client preferences, architectural decisions) exempt from decay
+- Background task via existing `DataPoller` infrastructure
+
+**Acceptance Criteria:**
+- A rendering fix from 6 months ago ranks lower than one from last week (unless marked evergreen)
+- Compaction reduces memory count by 30%+ without losing unique information
+- Memory storage grows sub-linearly relative to conversation volume
+
+#### 4.9.6 Cross-Agent Memory Sharing
+
+- Shared memory pool scoped by project: all agents within a project read from the same memory store
+- Agent-specific memories tagged by source agent but readable by all
+- Compound knowledge effect: Scaffolder learns a layout pattern → QA Agent knows to test for it → Dark Mode Agent knows how to adapt it
+- Memory propagation events: when a high-confidence memory is created, relevant agents are notified in their next invocation
+- Cross-project memories available at organisation level for universal patterns (e.g., "Outlook always clips at 102KB")
+
+**Acceptance Criteria:**
+- Knowledge Agent stores a rendering fix → Dark Mode Agent retrieves it in the next session
+- Cross-project memory: a fix discovered on Client A is available when working on Client B
+- Memory sharing respects project isolation — client-specific preferences don't leak
+
+### 4.10 Client Approval Portal
 
 **API:** `/api/v1/approvals`
 
@@ -221,7 +336,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 - Developers notified of feedback immediately
 - Full approval history with audit trail
 
-### 4.10 Test Persona Engine
+### 4.11 Test Persona Engine
 
 **API:** `/api/v1/personas`
 
@@ -234,7 +349,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 - Select "iPhone Dark Mode" → preview shows email as rendered on iPhone in dark mode
 - Template looks correct across all default personas
 
-### 4.11 Rendering Intelligence Dashboard
+### 4.12 Rendering Intelligence Dashboard
 
 - Client support matrices (which clients support which innovations)
 - Template quality scores (accessibility, file size, rendering consistency)
