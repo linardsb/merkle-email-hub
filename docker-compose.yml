@@ -158,6 +158,30 @@ services:
           cpus: "0.5"
           memory: 512M
 
+  maizzle-builder:
+    build:
+      context: ./services/maizzle-builder
+      dockerfile: Dockerfile
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - ./email-templates:/app/email-templates
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
   nginx:
     build:
       context: ./nginx

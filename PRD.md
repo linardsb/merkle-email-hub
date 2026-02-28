@@ -1,0 +1,470 @@
+# Product Requirements Document (PRD)
+
+## Merkle Email Innovation Hub
+
+**Classification:** Internal / Confidential
+**Version:** 1.0
+**Date:** February 2026
+**Status:** MVP Development
+
+---
+
+## 1. Product Vision
+
+### Problem
+
+Merkle serves clients across diverse email platforms (Braze, SFMC, Adobe Campaign, Taxi for Email) yet email development remains **fragmented, manual, and siloed between engagements**. Knowledge, components, and rendering fixes developed for one client are invisible to teams working with others. There is no platform designed for the multi-client, multi-platform agency model.
+
+### Vision
+
+A self-hosted, CMS-agnostic platform that centralises email innovation, prototyping, AI-assisted development, design tool integration, and cross-client QA into a single unified workflow. The Hub operationalises the **compound innovation effect**: every innovation, component, and pattern built for one client becomes available to all.
+
+### Core Value Proposition
+
+**"Build it once, use it everywhere, improve it continuously."**
+
+Every piece of email development work becomes a reusable, testable, deployable asset — owned entirely by Merkle with zero vendor lock-in.
+
+---
+
+## 2. Strategic Objectives
+
+| # | Objective | Metric |
+|---|-----------|--------|
+| 1 | **100% Merkle-Owned IP** | Zero SaaS dependencies; entire stack open-source |
+| 2 | **Centralise Innovation** | Single platform for R&D + production across all clients |
+| 3 | **CMS-Agnostic Pipeline** | Modular connectors: Braze (MVP), SFMC, Adobe, Taxi (Phase 2) |
+| 4 | **AI-Powered Development** | 9 specialised sub-agents; 70% local LLM / 30% cloud hybrid |
+| 5 | **Cost-Optimised Operations** | Cloud AI spend capped at £60–150/month |
+| 6 | **Design-to-Code Bridge** | Figma integration for frictionless handoff (Phase 2) |
+| 7 | **GDPR-First Security** | Zero PII in Hub; all data flows anonymised |
+| 8 | **Fallback-First QA** | Every innovation ships with verified HTML fallback |
+
+---
+
+## 3. Target Users
+
+### Primary Personas
+
+| Persona | Role | Key Goals | Pain Points |
+|---------|------|-----------|-------------|
+| **Email Developer** | Builds and optimises email HTML | Ship quality campaigns faster; reuse components; automate tedious tasks | Manual QA 2–3hrs/template; Outlook issues found post-send; no shared library |
+| **Email Designer** | Creates Figma layouts; approves visual direction | Handoff without fidelity loss; see responsive/dark variants early | Static image handoffs; code never matches design; no live preview |
+| **Project/Campaign Lead** | Manages client delivery timeline | Faster turnaround; consistent quality; rendering intelligence | Builds take 3–5 days; no cross-client compatibility visibility |
+| **Client Stakeholder** | Approves templates before send | See actual email (not screenshots); structured feedback; audit trail | Approval via email chains; ambiguous feedback; no formal workflow |
+| **QA/Testing Lead** | Validates rendering across clients | Automated testing; structured defect reporting | Manual testing across 20+ clients is 3–4 hours per template |
+
+### Secondary Personas
+
+| Persona | Role |
+|---------|------|
+| **Client IT/Compliance** | GDPR, accessibility, authentication compliance verification |
+| **Team New Hires** | Onboards via searchable knowledge base + documented components |
+| **Email Team Leadership** | Measures velocity gains, innovation feasibility, resource allocation |
+
+---
+
+## 4. MVP Feature Requirements
+
+### 4.1 Authentication & Workspace Management
+
+**API:** `/api/v1/projects`, `/api/v1/orgs`
+
+- JWT authentication with RS256 signing
+- RBAC roles: `admin`, `developer`, `viewer`
+- Client-level data isolation (developers see only assigned clients)
+- Project workspace scoping with team assignments
+- Brute-force protection with exponential backoff
+
+**Acceptance Criteria:**
+- Users authenticate and receive scoped JWT
+- Developers assigned to Client A cannot access Client B data
+- All API calls enforce RBAC validation
+
+### 4.2 Monaco Code Editor + Live Preview
+
+- VS Code-quality embedded editor (Monaco)
+- Split-pane layout: code (left) + live preview (right)
+- Email-specific syntax highlighting (HTML, CSS, Liquid, AMPscript)
+- Can I Email CSS property autocomplete warnings
+- Real-time rebuild on change (≤500ms preview update)
+- Dark mode preview toggle
+- Device preview (desktop, mobile, persona-based)
+
+**Acceptance Criteria:**
+- Unsupported CSS property triggers autocomplete warning
+- Code change → preview updates without page refresh within 500ms
+- Dark mode toggle shows email in both contexts
+
+### 4.3 Maizzle Email Build Pipeline
+
+**API:** `/api/v1/email`
+
+- Compile-on-save via Maizzle sidecar service
+- Tailwind CSS inlining + unused class purging
+- Responsive transforms (mobile stacking, media queries)
+- Plaintext generation
+- Production vs development configs
+- Build output: production-ready HTML
+
+**Acceptance Criteria:**
+- Template with Tailwind compiles to inline CSS within 1 second
+- Build output passes W3C email HTML validation
+- Plaintext auto-generated for all emails
+
+### 4.4 Component Library v1
+
+**API:** `/api/v1/components`
+
+- 5–10 pre-tested components (header, CTA, product card, footer, hero block)
+- Semantic versioning (v1.0.0, v1.1.0)
+- Dark mode variants per component
+- Outlook-compatible fallback variants
+- Component browser with search, code snippets, compatibility matrix
+- Cascading inheritance: Global → Client → Project
+
+**Acceptance Criteria:**
+- Component renders correctly in light AND dark mode across major clients
+- Version update notifies projects using older version
+- Browser shows which versions are used where
+
+### 4.5 AI Orchestrator & Agents (MVP: 3 agents)
+
+**Infrastructure:** `app/ai/` protocol layer + provider registry
+
+#### Scaffolder Agent
+- **Input:** Campaign brief (natural language)
+- **Output:** Complete Maizzle template with Tailwind, MSO conditionals, responsive stacking
+- **Model:** Claude Opus 4 (complex), Sonnet 4 (iterative)
+- **Gate:** Developer review before merge
+
+#### Dark Mode Agent
+- **Input:** Email HTML
+- **Output:** Enhanced HTML with dark mode media queries, colour token remapping, forced dark mode fixes
+- **Patterns:** `@media (prefers-color-scheme: dark)`, `[data-ogsc]`/`[data-ogsb]`
+- **Model:** Sonnet 4 (standard), Opus 4 (edge cases)
+
+#### Content Agent
+- **Input:** Existing content or brief
+- **Output:** Refined copy preserving per-client brand voice
+- **Tasks:** Subject lines, preheaders, CTA text, body copy
+- **Model:** Local LLMs (70%), Cloud (30% for creative tasks)
+
+**Acceptance Criteria:**
+- Scaffolder generates valid HTML from brief within 2 minutes
+- Generated HTML passes QA gate checks
+- Content agent generates 3 subject line options on demand
+
+### 4.6 Export Pipeline & Braze Connector
+
+**API:** `/api/v1/connectors`
+
+- Raw HTML export (production-ready, inlined CSS)
+- Braze Content Block export with Liquid template wrapper
+- Connected Content placeholder support
+- Deployment history (timestamp, version, format, status)
+
+**Acceptance Criteria:**
+- One-click Braze export creates Content Block within 2 minutes
+- Liquid personalisation tokens preserved in export
+- Export history searchable by date, template, version
+
+### 4.7 10-Point QA Gate System
+
+**API:** `/api/v1/qa`
+
+| # | Check | Pass Criteria |
+|---|-------|--------------|
+| 1 | HTML Validation | No critical errors |
+| 2 | CSS Support Matrix | All properties supported or fallback provided |
+| 3 | File Size | HTML < 102KB (Gmail clipping) |
+| 4 | Dark Mode Audit | Readable in light + dark; forced dark handled |
+| 5 | Accessibility | Contrast ≥ 4.5:1 (AA); alt text present; semantic structure |
+| 6 | Fallback Verification | Email readable without progressive enhancements |
+| 7 | Link Validation | No dead links; HTTPS enforced; unsubscribe present |
+| 8 | Spam Score | Score < 3.0; image-to-text ratio acceptable |
+| 9 | Image Optimization | Explicit dimensions; optimised formats |
+| 10 | Brand Compliance | Colour, typography, logo placement match guidelines |
+
+**Gate Behaviour:**
+- Template cannot export unless all mandatory checks pass
+- Optional checks overridable by senior team with documented reason
+- All overrides logged with user, timestamp, reason
+
+### 4.8 RAG Knowledge Base
+
+**Infrastructure:** `app/knowledge/` with pgvector
+
+- Data sources: Can I Email database, email dev best practices, team documentation
+- Natural language search
+- Knowledge Agent: LLM-synthesised answers from indexed content
+- Team can add entries via slash command
+- Weekly refresh of public sources
+
+**Acceptance Criteria:**
+- "dark mode Outlook" returns 10+ relevant docs
+- New team entries indexed and searchable within 1 hour
+
+### 4.9 Client Approval Portal
+
+**API:** `/api/v1/approvals`
+
+- Viewer-scoped JWT for client stakeholders
+- Live email preview (not screenshots)
+- Section-level feedback and comments
+- Formal approve / request changes workflow
+- Version comparison (side-by-side diff)
+- Time-stamped audit trail
+
+**Acceptance Criteria:**
+- Client sees live preview, adds comments, approves with timestamp
+- Developers notified of feedback immediately
+- Full approval history with audit trail
+
+### 4.10 Test Persona Engine
+
+**API:** `/api/v1/personas`
+
+- Pre-configured profiles: device, email client, dark mode, viewport
+- 8 default personas (Gmail desktop, Outlook 365, iPhone, Samsung dark, etc.)
+- One-click persona preview
+- Custom persona creation
+
+**Acceptance Criteria:**
+- Select "iPhone Dark Mode" → preview shows email as rendered on iPhone in dark mode
+- Template looks correct across all default personas
+
+### 4.11 Rendering Intelligence Dashboard
+
+- Client support matrices (which clients support which innovations)
+- Template quality scores (accessibility, file size, rendering consistency)
+- Innovation feasibility reports ("AMP works in X% of audience")
+- Exportable reports for client presentations
+
+---
+
+## 5. Non-Functional Requirements
+
+### 5.1 Performance
+
+| Metric | Target |
+|--------|--------|
+| Maizzle compile time | ≤ 1 second |
+| Preview update | ≤ 500ms after code change |
+| API latency (p95) | ≤ 200ms |
+| AI Scaffolder first draft | ≤ 2 minutes |
+| QA gate full run | ≤ 5 minutes per template |
+| Page load | ≤ 2 seconds |
+| Production HTML size | ≤ 102KB |
+
+### 5.2 Scalability
+
+- 50+ concurrent users without degradation
+- 10,000+ templates across all clients
+- 1,000+ knowledge base entries with sub-second search
+- 500+ components queryable without delay
+
+### 5.3 Security & Compliance
+
+- JWT RS256 authentication; no plaintext passwords
+- AES-256 encryption for API credentials at rest
+- Rate limiting per user and endpoint
+- GDPR: Zero PII; anonymised AI logs (90-day retention)
+- PostgreSQL row-level security for client isolation
+- WCAG AA accessibility for Hub UI
+- All API calls audit-logged (no credentials in logs)
+
+### 5.4 Availability
+
+- 99.5% uptime SLA
+- Graceful degradation (cloud AI → local LLMs; Litmus → Playwright)
+- Full recovery ≤ 10 minutes (container redeploy)
+- Automated PostgreSQL backups
+
+### 5.5 Maintainability
+
+- Vertical slice architecture (self-contained feature modules)
+- Docker Compose deployment with versioned images
+- Structured logging (`domain.component.action_state`)
+- Environment-based config (dev, staging, production)
+
+---
+
+## 6. Technology Stack
+
+| Layer | Technology | Rationale |
+|-------|-----------|-----------|
+| Backend | FastAPI + async SQLAlchemy + PostgreSQL + Redis | Open-source, high-performance async API |
+| Frontend | Next.js 16 + React 19 + Tailwind CSS + shadcn/ui | Modern stack; no library lock-in |
+| Auth | JWT RS256 + RBAC | In-house; no Auth0 dependency |
+| AI | Local LLMs (Ollama/vLLM) + Claude/GPT-4o APIs | Hybrid: 70% local (free) / 30% cloud |
+| Email Build | Maizzle (primary) | Full HTML control; Tailwind-native |
+| Vector Search | pgvector (PostgreSQL) | Open-source; no Pinecone fees |
+| Infrastructure | Docker Compose + nginx + Alembic | Self-hosted on Merkle servers |
+| Testing | Playwright (core) + Litmus/EoA (optional) | Built-in speed + optional comprehensive coverage |
+
+---
+
+## 7. Architecture
+
+### Repository Structure
+
+```
+merkle-email-hub/
+├── app/                    # Backend (FastAPI, VSA)
+│   ├── core/               # Infrastructure (config, db, logging, middleware)
+│   ├── shared/             # Cross-feature (pagination, timestamps, errors)
+│   ├── auth/               # JWT + RBAC
+│   ├── projects/           # Client orgs, workspaces, team assignments
+│   ├── email_engine/       # Maizzle build orchestration
+│   ├── components/         # Versioned email component library
+│   ├── qa_engine/          # 10-point QA gate (10 check modules)
+│   ├── connectors/         # ESP connectors (Braze MVP)
+│   ├── approval/           # Client approval portal
+│   ├── personas/           # Test persona engine
+│   ├── ai/                 # AI protocol layer + provider registry
+│   ├── knowledge/          # RAG pipeline (pgvector)
+│   └── streaming/          # WebSocket pub/sub
+├── cms/                    # Frontend (Next.js 16 + React 19)
+├── email-templates/        # Maizzle project (layouts, templates, components)
+├── services/
+│   └── maizzle-builder/    # Node.js sidecar (Express, port 3001)
+├── alembic/                # Database migrations
+├── docker-compose.yml      # Full stack orchestration
+└── nginx/                  # Reverse proxy
+```
+
+### Key Architectural Patterns
+
+- **Vertical Slice Architecture:** Each feature owns models → schemas → repository → service → routes → tests
+- **Multi-tenancy:** Client-level data isolation via `client_org_id` foreign keys + RBAC
+- **CMS-Agnostic Connectors:** Decoupled email creation from delivery platform
+- **Protocol-based AI:** Model-agnostic provider registry; swap providers without code changes
+- **Sidecar Pattern:** Maizzle builds delegated to Node.js service via HTTP
+- **Fallback-First:** Every innovation requires verified HTML fallback before export
+
+---
+
+## 8. Implementation Roadmap
+
+### Sprint 1 — Foundation (Weeks 1–2)
+- Auth, workspace management, project RBAC
+- Monaco editor integration + Maizzle live preview
+- Test persona engine
+- **Exit Criteria:** Developer writes email in browser, sees live preview, switches personas
+
+### Sprint 2 — Intelligence (Weeks 3–5)
+- AI orchestrator + 3 MVP agents (Scaffolder, Dark Mode, Content)
+- Component library v1 (5 components)
+- Braze connector
+- QA gate system (10 checks)
+- RAG knowledge base v1
+- **Exit Criteria:** Generate email from brief → refine → QA check → export to Braze
+
+### Sprint 3 — Client Experience (Weeks 6–7)
+- Client approval portal
+- Rendering intelligence dashboard
+- UI polish + performance optimisation
+- Team onboarding
+- **Exit Criteria:** Clients approve via live preview; dashboard shows innovation feasibility
+
+### Post-MVP Phases
+- **Phase 2:** Figma integration, SFMC/Adobe/Taxi connectors, advanced AI agents
+- **Phase 3:** Localisation, collaborative editing, visual conditional logic, AI image generation
+
+---
+
+## 9. Success Metrics
+
+### Team Productivity
+
+| Metric | Baseline | 3-Month Target | 6-Month Target |
+|--------|----------|----------------|----------------|
+| Campaign build time | 3–5 days | 1–2 days | < 1 day |
+| Component reuse rate | 0% | 30–40% | 60%+ |
+| Manual QA hours | 2–3 hrs/template | < 15 min | < 10 min |
+| Rendering defects reaching client | 10–15% | < 5% | < 1% |
+| Knowledge base entries | 0 | 200+ | 500+ |
+| Cloud AI monthly spend | N/A | < £150 | < £150 |
+| New developer onboarding | 2–3 weeks | < 1 week | < 1 day |
+
+### Client Outcomes
+
+| Metric | Baseline | Target |
+|--------|----------|--------|
+| Approval cycle | 3–5 days | < 24 hours |
+| Time to launch variants | 1 day/variant | < 1 hour |
+| Campaign velocity | 1 per 5 days | 2–3 per 5 days |
+
+### Business Impact
+
+| Metric | Target |
+|--------|--------|
+| Cost per campaign | Reduced 40–60% via automation + reuse |
+| Competitive positioning | Innovation partner, not production vendor |
+| IP value | Growing asset (components + knowledge + AI skills) |
+
+---
+
+## 10. Cost Projections
+
+### Build Investment
+- 2–3 experienced developers, 5–7 weeks
+- AI-assisted development accelerates delivery
+
+### Monthly Operational Costs
+
+| Category | Estimate |
+|----------|----------|
+| Server infrastructure | £100–300 |
+| GPU for local LLMs | £150–400 |
+| Cloud AI APIs (30%) | £60–150 |
+| Litmus/EoA (optional) | £0–400 |
+| Software licences | **£0** |
+| **Total** | **£310–1,250/month** |
+
+vs. SaaS alternatives: £50K–150K+/year
+
+---
+
+## 11. Risks & Mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|-----------|
+| Outlook rendering edge cases | High | Medium | Dedicated Outlook Fixer agent; MSO conditional library; Litmus testing |
+| Cloud AI cost overrun | Medium | Low | 70/30 local/cloud routing; budget caps; prompt caching |
+| Team adoption resistance | Medium | High | Gradual onboarding; parallel workflow; visible productivity wins early |
+| Email client CSS fragmentation | High | Medium | Can I Email integration; QA gate catches issues pre-export |
+| Knowledge base cold start | Medium | Low | Seed with Can I Email + existing team documentation |
+| Braze API rate limits | Low | Medium | Queue + batch export requests; retry with backoff |
+
+---
+
+## 12. Competitive Differentiation
+
+| Aspect | SaaS Competitors | Merkle Hub |
+|--------|-----------------|-----------|
+| Target user | Single brand, single CMS | Multi-client agency, any CMS |
+| AI capability | Generic content generation | 9 specialised email dev agents |
+| Developer experience | Visual builders | Full code control (Monaco + Maizzle) |
+| Knowledge leverage | Within single brand | Across all clients (RAG) |
+| Component reuse | Within one brand | Global → Client → Project cascading |
+| Rendering intelligence | "Does it render?" | "What % of audience supports this?" |
+| Cost model | Per-seat SaaS (£2K–10K+/yr/user) | Self-hosted (£0 licence cost) |
+| Vendor lock-in | CMS + tool + templates | None; everything exportable |
+
+---
+
+## Appendix: Definition of Done
+
+Every feature must satisfy before shipping:
+
+- [ ] Code review: 2 developers approve
+- [ ] Unit tests: ≥80% coverage; critical paths tested
+- [ ] Integration tests: no breaking changes to other modules
+- [ ] Manual QA: acceptance criteria signed off
+- [ ] Accessibility: WCAG AA; keyboard navigation
+- [ ] Performance: meets latency targets
+- [ ] Security: auth/RBAC enforced; no credential leaks
+- [ ] Documentation: API docs, inline comments for complex logic
+- [ ] Deployment: backwards-compatible migrations; rollback plan

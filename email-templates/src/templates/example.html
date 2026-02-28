@@ -1,0 +1,27 @@
+---
+title: "Example Email Template"
+preheader: "This is an example email built with the Merkle Email Hub"
+---
+
+<extends src="src/layouts/main.html">
+  <block name="content">
+    <component src="components/header.html" logo="https://via.placeholder.com/150x50" />
+
+    <component src="components/hero-block.html"
+      title="Welcome to the Email Hub"
+      subtitle="Build better emails, faster."
+      image="https://via.placeholder.com/600x300" />
+
+    <component src="components/cta-button.html"
+      text="Get Started"
+      href="https://example.com"
+      color="#e84e0f" />
+
+    <component src="components/product-card.html"
+      name="AI-Powered QA"
+      description="Automated quality checks across 10 critical dimensions"
+      image="https://via.placeholder.com/280x180" />
+
+    <component src="components/footer.html" />
+  </block>
+</extends>

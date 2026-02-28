@@ -35,6 +35,15 @@ from app.example.routes import router as example_router
 
 from app.knowledge.routes import router as knowledge_router
 
+# Email Hub modules
+from app.projects.routes import router as projects_router
+from app.email_engine.routes import router as email_engine_router
+from app.components.routes import router as components_router
+from app.qa_engine.routes import router as qa_router
+from app.connectors.routes import router as connectors_router
+from app.approval.routes import router as approval_router
+from app.personas.routes import router as personas_router
+
 
 from app.streaming.routes import close_ws_manager, get_ws_manager, ws_router
 from app.streaming.subscriber import start_ws_subscriber, stop_ws_subscriber
@@ -128,6 +137,14 @@ app.include_router(knowledge_router)
 
 app.include_router(ws_router)
 
+# Email Hub routers
+app.include_router(projects_router)
+app.include_router(email_engine_router)
+app.include_router(components_router)
+app.include_router(qa_router)
+app.include_router(connectors_router)
+app.include_router(approval_router)
+app.include_router(personas_router)
 
 
 @app.get("/")

@@ -47,17 +47,23 @@ merkle-email-hub/
 │   ├── shared/         # Cross-feature utilities (pagination, timestamps, error schemas)
 │   ├── auth/           # JWT auth + RBAC + user management
 │   ├── example/        # Reference VSA feature ("Items" CRUD)
-
 │   ├── ai/             # AI layer (protocol interfaces, provider registry, chat API)
-
-
 │   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search)
-
-
 │   ├── streaming/      # WebSocket streaming (Pub/Sub, connection manager)
-
+│   │
+│   │   ── Email Hub Modules ──
+│   ├── projects/       # Client-scoped workspaces (ClientOrg, Project, ProjectMember)
+│   ├── email_engine/   # Maizzle build orchestration (calls maizzle-builder sidecar)
+│   ├── components/     # Versioned email component library (Component, ComponentVersion)
+│   ├── qa_engine/      # 10-point QA gate (10 check implementations in checks/)
+│   ├── connectors/     # ESP connectors (Braze Content Block export with Liquid)
+│   ├── approval/       # Client approval portal (ApprovalRequest, Feedback, AuditEntry)
+│   ├── personas/       # Test persona engine (subscriber profile presets)
 │   └── tests/          # Integration tests
 ├── cms/               # Frontend monorepo (Next.js 16 + React 19)
+├── email-templates/   # Maizzle project (layouts, templates, components)
+├── services/
+│   └── maizzle-builder/  # Node.js sidecar for Maizzle builds (Express, port 3001)
 ├── alembic/           # Database migrations
 ├── .claude/           # AI-assisted development commands + rules
 ├── nginx/             # Reverse proxy
@@ -99,6 +105,47 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 - **Exceptions** → Inherit from `AppError` for automatic HTTP status mapping
 
 **Roles:** admin,developer,viewer
+
+## Email Hub Architecture
+
+### Modules and Their Purpose
+
+| Module | API Prefix | Purpose |
+|--------|-----------|---------|
+| `projects` | `/api/v1/projects`, `/api/v1/orgs` | Multi-tenant client org isolation, project workspaces |
+| `email_engine` | `/api/v1/email` | Maizzle build pipeline, calls sidecar at `http://maizzle-builder:3001` |
+| `components` | `/api/v1/components` | Versioned reusable email components (header, CTA, hero, etc.) |
+| `qa_engine` | `/api/v1/qa` | 10-point quality gate system with individual check modules |
+| `connectors` | `/api/v1/connectors` | ESP export (Braze Content Blocks with Liquid packaging) |
+| `approval` | `/api/v1/approvals` | Client approval workflow with feedback and audit trail |
+| `personas` | `/api/v1/personas` | Test subscriber profiles (device, email client, dark mode) |
+
+### QA Gate System (10 checks)
+
+Located in `app/qa_engine/checks/`. Each check implements `async run(html: str) -> QACheckResult`:
+
+1. `html_validation` — DOCTYPE, structural HTML tags
+2. `css_support` — Flags CSS properties with poor email client support
+3. `file_size` — Gmail 102KB clipping threshold
+4. `link_validation` — HTTPS enforcement, valid protocols
+5. `spam_score` — Common spam trigger word detection
+6. `dark_mode` — color-scheme meta, prefers-color-scheme, Outlook overrides
+7. `accessibility` — lang attribute, image alt text, table roles
+8. `fallback` — MSO conditional comments, VML namespaces
+9. `image_optimization` — Explicit dimensions, format validation
+10. `brand_compliance` — Placeholder for client brand rules
+
+### Maizzle Builder Sidecar
+
+`services/maizzle-builder/` is a thin Node.js/Express server:
+- `POST /build` — Full build with optional production config
+- `POST /preview` — Development preview build
+- `GET /health` — Health check
+- Receives template source + config via HTTP, returns compiled HTML
+
+### AI Agent Mapping
+
+The template's AI protocol layer (`app/ai/`) provides the infrastructure for the Hub's 9 specialized agents. Agents use the provider registry for LLM calls and the knowledge module for RAG-based email development guidance.
 
 ## Compact instructions
 
