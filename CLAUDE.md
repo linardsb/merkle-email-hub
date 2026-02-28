@@ -12,6 +12,10 @@ Centralised email development platform with AI-powered agents. Built with **vert
 
 **Structured Logging** — `domain.component.action_state` pattern via structlog. Logger: `from app.core.logging import get_logger`.
 
+**Security-First** — Zero Trust API (every endpoint authenticated + authorized). Input validation via Pydantic on ALL request bodies. Output sanitisation (strip sensitive data, never leak stack traces). CORS whitelisted origins only. Rate limiting per-user + per-endpoint via Redis. Audit trail on every state-changing API call.
+
+**Protocol-Based Interfaces** — All external integrations use Python Protocols. Swap implementations without code changes. Provider registry for AI/embedding/reranker at runtime.
+
 ## Essential Commands
 
 ```bash
@@ -143,9 +147,100 @@ Located in `app/qa_engine/checks/`. Each check implements `async run(html: str) 
 - `GET /health` — Health check
 - Receives template source + config via HTTP, returns compiled HTML
 
-### AI Agent Mapping
+### AI Agents (9 total)
 
-The template's AI protocol layer (`app/ai/`) provides the infrastructure for the Hub's 9 specialized agents. Agents use the provider registry for LLM calls and the knowledge module for RAG-based email development guidance.
+The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agents using the provider registry for LLM calls and knowledge module for RAG.
+
+| Agent | Purpose | Phase |
+|-------|---------|-------|
+| Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 |
+| Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 |
+| Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 |
+| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | Post-MVP |
+| Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | Post-MVP |
+| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | Post-MVP |
+| Code Reviewer | Static analysis, redundant code, file size optimisation | Post-MVP |
+| Knowledge | RAG-powered Q&A from knowledge base | Post-MVP |
+| Innovation | Prototype new techniques, feasibility assessment | Post-MVP |
+
+### API Security Patterns
+
+- **JWT RS256**: 15-min access + 7-day refresh tokens. Redis-backed blocklist for revocation.
+- **Brute-force protection**: exponential backoff, lock after 5 failed attempts (15 min), Redis-tracked.
+- **Row-Level Security**: PostgreSQL RLS on `client_org_id`. Database enforces isolation independently of app layer.
+- **Credential storage**: AES-256 for stored API keys (Braze, Figma). Never returned in responses, never logged.
+- **AI rate limits**: 20 req/min per user for chat, 5 req/min for generation. Separate from general rate limits.
+
+## Implementation Roadmap
+
+See `TODO.md` for full task details with security requirements and verification criteria.
+
+### Phase 0 — Foundation Blockers
+- [ ] 0.1 Database migration for all email-hub models + RLS policies
+- [ ] 0.2 Initialize shadcn/ui component library in `cms/apps/web/`
+- [ ] 0.3 Generate OpenAPI TypeScript SDK from backend
+- [ ] 0.4 Authenticated API client layer (token refresh, error handling, React hooks)
+
+### Phase 1 — Sprint 1: Editor + Build Pipeline
+- [ ] 1.1 Project dashboard page (`/[locale]/(dashboard)/page.tsx`)
+- [ ] 1.2 Project workspace layout (3-pane: editor, preview, AI chat)
+- [ ] 1.3 Monaco editor (HTML/CSS/Liquid, Can I Email autocomplete)
+- [ ] 1.4 Maizzle live preview (compile-on-save, viewport toggles, dark mode)
+- [ ] 1.5 Test persona engine UI (persona selector, device/client context)
+- [ ] 1.6 Template CRUD + persistence (versioning, restore)
+
+### Phase 2 — Sprint 2: Intelligence + Export
+- [ ] 2.1 Wire AI provider (Claude/OpenAI, model routing, streaming)
+- [ ] 2.2 Scaffolder agent (brief → Maizzle HTML)
+- [ ] 2.3 Dark Mode agent (inject dark mode CSS + Outlook overrides)
+- [ ] 2.4 Content agent (copy generation, editor context menu)
+- [ ] 2.5 AI chat sidebar UI (agent selection, streaming, accept/reject)
+- [ ] 2.6 Component library v1 — backend (seed 5-10 components)
+- [ ] 2.7 Component library browser UI (`/components`)
+- [ ] 2.8 10-point QA gate system UI (run, results, override flow)
+- [ ] 2.9 Raw HTML export + Braze connector UI
+- [ ] 2.10 RAG knowledge base seeding (Can I Email, best practices)
+
+### Phase 3 — Sprint 3: Client Handoff + Polish
+- [ ] 3.1 Client approval portal (viewer role, feedback, audit trail)
+- [ ] 3.2 Rendering intelligence dashboard (QA trends, support matrices)
+- [ ] 3.3 Dashboard homepage enhancement (real data, activity feed)
+- [ ] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
+- [ ] 3.5 CMS + Nginx Docker stack (7 services healthy)
+
+### Phase 4 — Post-MVP
+- [ ] 4.1 Remaining 6 AI agents (Outlook Fixer, Accessibility, Personalisation, Code Reviewer, Knowledge, Innovation)
+- [ ] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
+- [ ] 4.3 Figma design sync (REST API, token extraction, webhooks)
+- [ ] 4.4 Litmus / Email on Acid API integration
+- [ ] 4.5 Advanced features (collaborative editing, localisation, visual Liquid builder)
+
+## Feature Scope by Stack
+
+### Backend Features (for `be-prime`)
+- Auth: JWT RS256, RBAC (admin/developer/viewer), token revocation, brute-force protection
+- Projects: ClientOrg, Project, ProjectMember models + RLS
+- Email Engine: Maizzle build orchestration via sidecar
+- Components: versioned component library with dark mode variants
+- QA Engine: 10-point check system in `app/qa_engine/checks/`
+- Connectors: Braze Content Block export with Liquid + AES-256 credential storage
+- Approval: ApprovalRequest, Feedback, AuditEntry models + workflow
+- Personas: test subscriber profile presets
+- AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
+- Knowledge: RAG pipeline with pgvector, hybrid search, document processing
+
+### Frontend Features (for `fe-prime`)
+- Dashboard: project overview grid, activity feed, QA summary, quick-start
+- Workspace: 3-pane layout (Monaco editor + preview + AI chat)
+- Monaco Editor: HTML/CSS/Liquid syntax, Can I Email warnings, code folding
+- Live Preview: sandboxed iframe, viewport toggles, dark mode, zoom
+- Persona Selector: device/client context switching
+- Component Browser: grid view, search, detail view with preview + versions
+- QA Gate UI: trigger, results checklist, override flow with justification
+- Export Console: platform selector (Raw HTML, Braze), export preview
+- AI Chat Sidebar: agent toggles, streaming display, accept/reject/merge
+- Approval Portal: viewer login, read-only preview, section feedback, approve/reject
+- Intelligence Dashboard: QA trends, support matrices, quality scores
 
 ## Compact instructions
 
