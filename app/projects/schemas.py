@@ -49,3 +49,13 @@ class ProjectResponse(ProjectBase):
     updated_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectMemberResponse(BaseModel):
+    id: int
+    project_id: int
+    user_id: int
+    role: str
+    created_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True)

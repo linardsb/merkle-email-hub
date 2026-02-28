@@ -13,6 +13,7 @@ from app.projects.schemas import (
     ClientOrgCreate,
     ClientOrgResponse,
     ProjectCreate,
+    ProjectMemberResponse,
     ProjectResponse,
     ProjectUpdate,
 )
@@ -79,11 +80,25 @@ async def get_project(
     request: Request,
     project_id: int,
     service: ProjectService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> ProjectResponse:
-    """Get a project by ID."""
+    """Get a project by ID. Validates user has access."""
     _ = request
-    return await service.get_project(project_id)
+    return await service.verify_project_access(project_id, current_user)
+
+
+@router.get("/projects/{project_id}/members", response_model=list[ProjectMemberResponse])
+@limiter.limit("30/minute")
+async def list_project_members(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> list[ProjectMemberResponse]:
+    """List members of a project. Requires project access."""
+    _ = request
+    await service.verify_project_access(project_id, current_user)
+    return await service.list_project_members(project_id)
 
 
 @router.post("/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)

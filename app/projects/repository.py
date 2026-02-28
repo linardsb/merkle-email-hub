@@ -127,6 +127,15 @@ class ProjectRepository:
         await self.db.refresh(member)
         return member
 
+    async def get_member(self, project_id: int, user_id: int) -> ProjectMember | None:
+        result = await self.db.execute(
+            select(ProjectMember).where(
+                ProjectMember.project_id == project_id,
+                ProjectMember.user_id == user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_members(self, project_id: int) -> list[ProjectMember]:
         result = await self.db.execute(
             select(ProjectMember).where(ProjectMember.project_id == project_id)

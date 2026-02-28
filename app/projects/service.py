@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.models import User
 from app.core.logging import get_logger
 from app.projects.exceptions import (
     ClientOrgAlreadyExistsError,
     ClientOrgNotFoundError,
+    ProjectAccessDeniedError,
     ProjectNotFoundError,
 )
 from app.projects.repository import ClientOrgRepository, ProjectRepository
@@ -15,6 +17,7 @@ from app.projects.schemas import (
     ClientOrgCreate,
     ClientOrgResponse,
     ProjectCreate,
+    ProjectMemberResponse,
     ProjectResponse,
     ProjectUpdate,
 )
@@ -37,6 +40,36 @@ class ProjectService:
         if not project:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         return ProjectResponse.model_validate(project)
+
+    async def verify_project_access(self, project_id: int, user: User) -> ProjectResponse:
+        """Verify user has access to project. Returns project if allowed.
+
+        Admin users can access any project. Other users must be a project member.
+        """
+        logger.info("projects.access_check_started", project_id=project_id, user_id=user.id)
+        project = await self.projects.get(project_id)
+        if not project or project.deleted_at is not None:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+
+        if user.role != "admin":
+            member = await self.projects.get_member(project_id, user.id)
+            if not member:
+                logger.warning(
+                    "projects.access_denied",
+                    project_id=project_id,
+                    user_id=user.id,
+                )
+                raise ProjectAccessDeniedError(f"User does not have access to project {project_id}")
+
+        return ProjectResponse.model_validate(project)
+
+    async def list_project_members(self, project_id: int) -> list[ProjectMemberResponse]:
+        logger.info("projects.members_list_started", project_id=project_id)
+        project = await self.projects.get(project_id)
+        if not project or project.deleted_at is not None:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+        members = await self.projects.get_members(project_id)
+        return [ProjectMemberResponse.model_validate(m) for m in members]
 
     async def list_projects(
         self,

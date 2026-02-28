@@ -31,6 +31,12 @@ class DomainValidationError(AppError):
     pass
 
 
+class ForbiddenError(AppError):
+    """Access denied (403)."""
+
+    pass
+
+
 class ConflictError(AppError):
     """Resource conflict, e.g. duplicate entry (409)."""
 
@@ -64,6 +70,8 @@ async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse
         status_code = status.HTTP_404_NOT_FOUND
     elif isinstance(exc, DomainValidationError):
         status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    elif isinstance(exc, ForbiddenError):
+        status_code = status.HTTP_403_FORBIDDEN
     elif isinstance(exc, ConflictError):
         status_code = status.HTTP_409_CONFLICT
     elif isinstance(exc, ServiceUnavailableError):
@@ -116,6 +124,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     app.add_exception_handler(AppError, handler)
     app.add_exception_handler(NotFoundError, handler)
+    app.add_exception_handler(ForbiddenError, handler)
     app.add_exception_handler(DomainValidationError, handler)
     app.add_exception_handler(ConflictError, handler)
     app.add_exception_handler(ServiceUnavailableError, handler)

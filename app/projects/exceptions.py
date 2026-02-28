@@ -1,10 +1,14 @@
 """Feature-specific exceptions for project management."""
 
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
 
 
 class ProjectNotFoundError(NotFoundError):
     """Raised when a project is not found."""
+
+
+class ProjectAccessDeniedError(ForbiddenError):
+    """Raised when user is not a member of the project."""
 
 
 class ClientOrgNotFoundError(NotFoundError):
