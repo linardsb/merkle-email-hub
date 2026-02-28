@@ -4,6 +4,8 @@ import { getMessages } from "next-intl/server";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { SWRConfig } from "swr";
+import { ThemeProvider } from "@merkle-email-hub/ui/components/theme-provider";
+import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import "@merkle-email-hub/ui/globals.css";
 import Link from "next/link";
 import {
@@ -57,6 +59,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="bg-surface text-foreground antialiased">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <SessionProvider>
           <NextIntlClientProvider messages={messages}>
             <SWRConfig
@@ -83,13 +86,16 @@ export default async function LocaleLayout({
                     ))}
                   </nav>
                   <div className="border-t border-sidebar-border p-2">
-                    <Link
-                      href={`/${locale}/login`}
-                      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-text transition-colors hover:bg-sidebar-hover hover:text-sidebar-text-active"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      {(messages as any)?.nav?.logout || "Logout"}
-                    </Link>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <Link
+                        href={`/${locale}/login`}
+                        className="flex items-center gap-3 text-sm text-sidebar-text transition-colors hover:text-sidebar-text-active"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        {(messages as any)?.nav?.logout || "Logout"}
+                      </Link>
+                      <ThemeToggle />
+                    </div>
                   </div>
                 </aside>
 
@@ -103,6 +109,7 @@ export default async function LocaleLayout({
             </SWRConfig>
           </NextIntlClientProvider>
         </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

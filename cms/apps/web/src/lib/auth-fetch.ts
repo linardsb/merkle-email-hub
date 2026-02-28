@@ -28,7 +28,7 @@ async function getAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") {
     // Server context
     try {
-      const { auth } = await import("@/auth");
+      const { auth } = await import("../../auth");
       const session = await auth();
       return (session as any)?.accessToken ?? null;
     } catch {

@@ -2,6 +2,13 @@
 
 NEVER use primitive Tailwind colors. ALWAYS use semantic tokens.
 
+## Dual Naming System
+Both naming systems work simultaneously. Prefer shadcn names for new code:
+- shadcn: `bg-background`, `bg-card`, `bg-muted`, `text-foreground`
+- ours: `bg-surface`, `bg-card-bg`, `bg-surface-muted`, `text-foreground`
+
+The shadcn names are CSS variable aliases defined in `packages/ui/src/tokens.css`.
+
 ## Background
 - `bg-background` not `bg-white`
 - `bg-card` not `bg-gray-50`
