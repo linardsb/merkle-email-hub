@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test lint types check db e2e e2e-all install-hooks security-check
+.PHONY: dev dev-be dev-fe docker docker-down test lint types check db e2e e2e-all install-hooks security-check sdk
 
 # === Local Development ===
 
@@ -48,6 +48,14 @@ e2e-all: ## Run ALL e2e tests
 
 e2e-ui: ## Open Playwright UI mode
 	cd cms && pnpm --filter web e2e:ui
+
+# === SDK ===
+
+sdk: ## Generate TypeScript SDK from backend OpenAPI spec (backend must be running)
+	cd cms && pnpm --filter @merkle-email-hub/sdk generate-sdk:fetch
+
+sdk-local: ## Generate TypeScript SDK from local openapi.json snapshot
+	cd cms && pnpm --filter @merkle-email-hub/sdk generate-sdk
 
 # === Database ===
 

@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "generate-sdk": "openapi-ts",
+    "generate-sdk:fetch": "curl -sf http://localhost:8891/openapi.json | python3 -m json.tool > openapi.json && openapi-ts",
     "build": "tsc"
   },
   "exports": {
-    ".": "./src/client/index.ts",
+    ".": "./src/index.ts",
     "./types": "./src/client/types.gen.ts"
   },
   "dependencies": {

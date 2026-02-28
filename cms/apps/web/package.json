@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@auth/core": "^0.34.3",
     "@merkle-email-hub/sdk": "workspace:*",
     "@merkle-email-hub/ui": "workspace:*",
     "class-variance-authority": "^0.7.1",
