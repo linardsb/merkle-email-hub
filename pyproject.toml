@@ -23,6 +23,8 @@ dependencies = [
     "structlog>=25.5.0",
     "uvicorn[standard]>=0.38.0",
 
+    "openai>=1.0.0",
+    "python-multipart>=0.0.18",
     "pgvector>=0.4.2",
     "pillow>=12.1.1",
     "pymupdf>=1.27.1",

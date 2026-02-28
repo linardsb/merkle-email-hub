@@ -7,8 +7,8 @@
  * Called by the FastAPI backend (app/email_engine/) via HTTP POST.
  */
 
-const express = require("express");
-const Maizzle = require("@maizzle/framework");
+import express from "express";
+import { render } from "@maizzle/framework";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -51,7 +51,7 @@ app.post("/build", async (req, res) => {
       };
     }
 
-    const { html } = await Maizzle.render(source, {
+    const { html } = await render(source, {
       maizzle: maizzleConfig,
     });
 
@@ -84,7 +84,7 @@ app.post("/preview", async (req, res) => {
   }
 
   try {
-    const { html } = await Maizzle.render(source, {
+    const { html } = await render(source, {
       maizzle: {
         ...config,
         inlineCSS: { enabled: true },
