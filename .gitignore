@@ -1,0 +1,54 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+*.log
+backups/
+
+# TLS certificates
+nginx/certs/*
+!nginx/certs/.gitkeep
+
+# Node.js / Frontend
+node_modules/
+.next/
+out/
+dist/
+.turbo/
+.vercel/
+*.tsbuildinfo
+
+# pnpm
+.pnpm-store/
+
+# Frontend environment
+cms/.env
+cms/.env.local
+cms/.env.*.local
+
+# Build artifacts
+cms/apps/web/.next/
+cms/packages/sdk/src/client/
+
+# MCP config (contains API tokens)
+.mcp.json

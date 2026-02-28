@@ -1,0 +1,88 @@
+# Forge Application Template
+# https://copier.readthedocs.io/
+
+_min_copier_version: "9.0.0"
+_subdirectory: ""
+_templates_suffix: .jinja
+_skip_if_exists:
+  - "alembic/versions/*.py"
+  - ".env"
+
+_exclude:
+  - "*.pyc"
+  - "__pycache__"
+  - ".git"
+  # Conditional module exclusions
+  - "{% if not include_ai %}{{ project_name }}/app/ai{% endif %}"
+  - "{% if not include_knowledge %}{{ project_name }}/app/knowledge{% endif %}"
+  - "{% if not include_streaming %}{{ project_name }}/app/streaming{% endif %}"
+
+# ── Template Questions ──
+
+project_name:
+  type: str
+  help: "Project name (lowercase, hyphens ok). Used for directories, packages, Docker."
+  validator: "{% if not project_name | regex_search('^[a-z][a-z0-9-]*$') %}Must be lowercase alphanumeric with hyphens{% endif %}"
+
+project_description:
+  type: str
+  help: "One-line project description for docs and package metadata."
+  default: "A full-stack application built with FastAPI and Next.js"
+
+python_package:
+  type: str
+  help: "Python package name (auto-derived from project_name)"
+  default: "{{ project_name | replace('-', '_') }}"
+  when: false
+
+auth_roles:
+  type: str
+  help: "Comma-separated RBAC roles (first role is superadmin)."
+  default: "admin,editor,viewer"
+
+primary_locale:
+  type: str
+  help: "Primary locale for i18n (e.g., en, lv, de)."
+  default: "en"
+
+secondary_locale:
+  type: str
+  help: "Secondary/fallback locale."
+  default: "en"
+  when: "{{ primary_locale != 'en' }}"
+
+include_ai:
+  type: bool
+  help: "Include AI layer (protocol interfaces, provider registry, chat API)?"
+  default: true
+
+include_knowledge:
+  type: bool
+  help: "Include RAG pipeline (pgvector, document processing, hybrid search)?"
+  default: true
+  when: "{{ include_ai }}"
+
+include_streaming:
+  type: bool
+  help: "Include WebSocket streaming (Pub/Sub, connection manager, live updates)?"
+  default: true
+
+include_sentry:
+  type: bool
+  help: "Include Sentry/GlitchTip error tracking?"
+  default: false
+
+backend_port:
+  type: int
+  help: "Backend API port."
+  default: 8123
+
+frontend_port:
+  type: int
+  help: "Frontend dev server port."
+  default: 3000
+
+database_name:
+  type: str
+  help: "PostgreSQL database name."
+  default: "{{ project_name | replace('-', '_') }}"

@@ -1,0 +1,47 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "example": "Items",
+    "users": "Users",
+    "logout": "Logout"
+  },
+  "login": {
+    "title": "Sign In",
+    "username": "Username",
+    "password": "Password",
+    "usernamePlaceholder": "Enter your username",
+    "passwordPlaceholder": "Enter your password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "error": "Invalid username or password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalItems": "Total Items",
+    "activeUsers": "Active Users",
+    "systemStatus": "System Status",
+    "healthy": "Healthy",
+    "gettingStarted": "Getting Started",
+    "gettingStartedDescription": "Welcome to your new project. Start by exploring the Example Items page to see the CRUD pattern in action, then build your own features following the same structure."
+  },
+  "example": {
+    "title": "Items",
+    "create": "Create Item",
+    "searchPlaceholder": "Search items...",
+    "name": "Name",
+    "description": "Description",
+    "status": "Status",
+    "createdAt": "Created At",
+    "loading": "Loading...",
+    "error": "Failed to load items",
+    "noItems": "No items found",
+    "showing": "Showing {from}-{to} of {total}",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "unauthorized": {
+    "title": "Access Denied",
+    "description": "You do not have permission to view this page.",
+    "backToDashboard": "Back to Dashboard"
+  }
+}
