@@ -16,7 +16,8 @@ import app.example.models
 import app.knowledge.models
 import app.personas.models
 import app.projects.models
-import app.qa_engine.models  # noqa: F401
+import app.qa_engine.models
+import app.templates.models  # noqa: F401
 from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base
