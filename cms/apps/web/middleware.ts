@@ -14,6 +14,7 @@ const intlMiddleware = createMiddleware({
 // Route permission map — configure which roles can access each route
 const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/dashboard": ["admin", "developer", "viewer"],
+  "/projects": ["admin", "developer", "viewer"],
   "/example": ["admin", "developer", "viewer"],
   "/users": ["admin"],
 };

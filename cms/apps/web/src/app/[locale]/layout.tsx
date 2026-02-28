@@ -10,6 +10,7 @@ import "@merkle-email-hub/ui/globals.css";
 import Link from "next/link";
 import {
   LayoutDashboard,
+  FolderOpen,
   List,
   Users,
   LogOut,
@@ -43,6 +44,11 @@ export default async function LocaleLayout({
       href: `/${locale}/dashboard`,
       label: (messages as any)?.nav?.dashboard || "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      href: `/${locale}/projects`,
+      label: (messages as any)?.nav?.projects || "Projects",
+      icon: <FolderOpen className="h-5 w-5" />,
     },
     {
       href: `/${locale}/example`,

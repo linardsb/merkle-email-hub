@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "projects": "Projects",
     "example": "Items",
     "users": "Users",
     "logout": "Logout"
@@ -17,12 +18,18 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "totalItems": "Total Items",
-    "activeUsers": "Active Users",
+    "totalProjects": "Total Projects",
+    "activeOrgs": "Client Organizations",
     "systemStatus": "System Status",
     "healthy": "Healthy",
+    "projects": "Projects",
+    "noProjects": "No projects yet",
+    "noProjectsDescription": "Create your first project to get started with email development.",
+    "createProject": "New Project",
+    "loading": "Loading...",
+    "error": "Failed to load dashboard data",
     "gettingStarted": "Getting Started",
-    "gettingStartedDescription": "Welcome to your new project. Start by exploring the Example Items page to see the CRUD pattern in action, then build your own features following the same structure."
+    "gettingStartedDescription": "Create a project, add email templates, and use AI agents to accelerate your email development workflow."
   },
   "example": {
     "title": "Items",
