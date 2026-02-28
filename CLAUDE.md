@@ -176,13 +176,13 @@ The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agen
 See `TODO.md` for full task details with security requirements and verification criteria.
 
 ### Phase 0 — Foundation Blockers
-- [ ] 0.1 Database migration for all email-hub models + RLS policies
-- [ ] 0.2 Initialize shadcn/ui component library in `cms/apps/web/`
-- [ ] 0.3 Generate OpenAPI TypeScript SDK from backend
-- [ ] 0.4 Authenticated API client layer (token refresh, error handling, React hooks)
+- [x] 0.1 Database migration for all email-hub models + RLS policies
+- [x] 0.2 Initialize shadcn/ui component library in `cms/apps/web/`
+- [x] 0.3 Generate OpenAPI TypeScript SDK from backend
+- [x] 0.4 Authenticated API client layer (token refresh, error handling, React hooks)
 
 ### Phase 1 — Sprint 1: Editor + Build Pipeline
-- [ ] 1.1 Project dashboard page (`/[locale]/(dashboard)/page.tsx`)
+- [x] 1.1 Project dashboard page (`/[locale]/(dashboard)/page.tsx`)
 - [ ] 1.2 Project workspace layout (3-pane: editor, preview, AI chat)
 - [ ] 1.3 Monaco editor (HTML/CSS/Liquid, Can I Email autocomplete)
 - [ ] 1.4 Maizzle live preview (compile-on-save, viewport toggles, dark mode)
