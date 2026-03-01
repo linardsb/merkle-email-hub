@@ -55,8 +55,8 @@ export function ComponentPreview({
     >
       <iframe
         srcDoc={srcdoc}
-        sandbox="allow-same-origin"
-        title="Component preview"
+        sandbox=""
+        title={t("previewTab")}
         className="h-full w-full border-0 bg-white"
         style={{ pointerEvents: interactive ? "auto" : "none" }}
       />

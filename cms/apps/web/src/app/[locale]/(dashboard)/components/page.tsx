@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Blocks, Search } from "lucide-react";
 import { useComponents } from "@/hooks/use-components";
+import { ErrorState } from "@/components/ui/error-state";
+import { SkeletonComponentCard } from "@/components/ui/skeletons";
 import { ComponentCard } from "@/components/components/component-card";
 import { ComponentDetailDialog } from "@/components/components/component-detail-dialog";
 
@@ -30,7 +32,7 @@ export default function ComponentsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { data, isLoading, error } = useComponents({
+  const { data, isLoading, error, mutate } = useComponents({
     page,
     pageSize: PAGE_SIZE,
     category,
@@ -119,16 +121,11 @@ export default function ComponentsPage() {
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-72 animate-pulse rounded-lg border border-card-border bg-card-bg"
-            />
+            <SkeletonComponentCard key={i} />
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
-          <p className="text-sm text-status-danger">{t("error")}</p>
-        </div>
+        <ErrorState message={t("error")} onRetry={() => mutate()} retryLabel={t("retry")} />
       ) : data?.items.length === 0 ? (
         <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
           <Blocks className="mx-auto h-10 w-10 text-foreground-muted" />

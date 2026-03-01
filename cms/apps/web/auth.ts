@@ -63,6 +63,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
+        // Demo mode: accept any credentials
+        if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+          return {
+            id: "1",
+            name: String(credentials.username) || "demo",
+            role: "admin" as AppRole,
+            accessToken: "demo-access-token",
+            refreshToken: "demo-refresh-token",
+          };
+        }
+
         try {
           const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
             method: "POST",

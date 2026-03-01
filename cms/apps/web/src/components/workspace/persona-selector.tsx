@@ -47,7 +47,7 @@ export function PersonaSelector({
         <UserCheck className="h-3.5 w-3.5" />
         <span className="max-w-[8rem] truncate">{label}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[14rem]">
+      <DropdownMenuContent align="start" className="w-[14rem] bg-popover border border-border shadow-lg">
         <DropdownMenuItem onSelect={() => onSelect(null)}>
           <span className="text-muted-foreground">{t("personaNone")}</span>
         </DropdownMenuItem>

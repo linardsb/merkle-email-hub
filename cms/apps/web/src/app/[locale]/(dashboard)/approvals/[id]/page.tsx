@@ -3,8 +3,9 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
 import { useApproval, useBuild } from "@/hooks/use-approvals";
 import { ApprovalStatusBadge } from "@/components/approvals/approval-status-badge";
 import { ApprovalPreview } from "@/components/approvals/approval-preview";
@@ -36,8 +37,12 @@ export default function ApprovalDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-foreground-muted" />
+      <div className="space-y-4 p-6">
+        <Skeleton className="h-8 w-48 rounded" />
+        <div className="grid gap-6 lg:grid-cols-5">
+          <Skeleton className="h-96 rounded-lg border border-card-border lg:col-span-3" />
+          <Skeleton className="h-96 rounded-lg border border-card-border lg:col-span-2" />
+        </div>
       </div>
     );
   }
@@ -46,6 +51,13 @@ export default function ApprovalDetailPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <p className="text-sm text-status-danger">{t("error")}</p>
+        <button
+          type="button"
+          onClick={() => mutate()}
+          className="mt-3 text-sm text-interactive hover:underline"
+        >
+          {t("retry")}
+        </button>
         <Link
           href={`/${locale}/approvals`}
           className="mt-2 text-sm text-interactive hover:underline"
@@ -100,11 +112,13 @@ export default function ApprovalDetailPage() {
         {/* Right: Side panel */}
         <div className="flex flex-[2] flex-col">
           {/* Tabs */}
-          <div className="flex border-b border-border">
+          <div className="flex border-b border-border" role="tablist">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
+                role="tab"
+                aria-selected={activeTab === tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
                   activeTab === tab.key

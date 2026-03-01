@@ -8,6 +8,7 @@ import {
   Clock,
   MonitorSmartphone,
 } from "lucide-react";
+import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
 import { useQADashboard } from "@/hooks/use-qa-dashboard";
 import { ScoreOverviewCards } from "@/components/intelligence/score-overview-cards";
 import { CheckPerformanceChart } from "@/components/intelligence/check-performance-chart";
@@ -16,7 +17,7 @@ import { RecentResultsTable } from "@/components/intelligence/recent-results-tab
 
 export default function IntelligencePage() {
   const t = useTranslations("intelligence");
-  const { metrics, isLoading, error } = useQADashboard();
+  const { metrics, isLoading, error, mutate } = useQADashboard();
 
   if (isLoading) {
     return (
@@ -32,17 +33,17 @@ export default function IntelligencePage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
+            <Skeleton
               key={i}
-              className="h-24 animate-pulse rounded-lg border border-card-border bg-surface-muted"
+              className="h-24 rounded-lg border border-card-border"
             />
           ))}
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div
+            <Skeleton
               key={i}
-              className="h-64 animate-pulse rounded-lg border border-card-border bg-surface-muted"
+              className="h-64 rounded-lg border border-card-border"
             />
           ))}
         </div>
@@ -59,8 +60,15 @@ export default function IntelligencePage() {
             {t("title")}
           </h1>
         </div>
-        <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
-          <p className="text-sm text-status-danger">{t("loading")}</p>
+        <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
+          <p className="text-sm text-status-danger">{t("error")}</p>
+          <button
+            type="button"
+            onClick={() => mutate()}
+            className="mt-3 text-sm text-interactive hover:underline"
+          >
+            {t("retry")}
+          </button>
         </div>
       </div>
     );

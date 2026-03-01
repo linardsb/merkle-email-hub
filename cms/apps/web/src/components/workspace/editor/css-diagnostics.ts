@@ -1,14 +1,13 @@
-import type * as Monaco from "monaco-editor";
+import { linter, type Diagnostic } from "@codemirror/lint";
+import type { Extension } from "@codemirror/state";
 import { cssPropertyRules } from "./caniemail-data";
 
-const OWNER = "caniemail";
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-export function runCssDiagnostics(
-  monaco: typeof Monaco,
-  model: Monaco.editor.ITextModel
-): void {
-  const markers: Monaco.editor.IMarkerData[] = [];
-  const content = model.getValue();
+function computeDiagnostics(content: string): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
 
   for (const rule of cssPropertyRules) {
     const pattern = rule.value
@@ -20,35 +19,29 @@ export function runCssDiagnostics(
 
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(content)) !== null) {
-      const pos = model.getPositionAt(match.index);
-      const endPos = model.getPositionAt(match.index + match[0].length);
-
-      markers.push({
-        severity:
-          rule.severity === "error"
-            ? monaco.MarkerSeverity.Error
-            : monaco.MarkerSeverity.Warning,
+      diagnostics.push({
+        from: match.index,
+        to: match.index + match[0].length,
+        severity: rule.severity === "error" ? "error" : "warning",
         message: `${rule.reason}\nUnsupported in: ${rule.unsupportedClients.join(", ")}`,
-        startLineNumber: pos.lineNumber,
-        startColumn: pos.column,
-        endLineNumber: endPos.lineNumber,
-        endColumn: endPos.column,
         source: "Can I Email",
       });
     }
   }
 
-  monaco.editor.setModelMarkers(model, OWNER, markers);
+  return diagnostics;
 }
 
-export function getDiagnosticCount(
-  monaco: typeof Monaco,
-  model: Monaco.editor.ITextModel
-): number {
-  return monaco.editor.getModelMarkers({ owner: OWNER, resource: model.uri })
-    .length;
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export function canIEmailLinter(
+  onDiagnosticsChange?: (count: number) => void
+): Extension {
+  return linter(
+    (view) => {
+      const content = view.state.doc.toString();
+      const diagnostics = computeDiagnostics(content);
+      onDiagnosticsChange?.(diagnostics.length);
+      return diagnostics;
+    },
+    { delay: 300 }
+  );
 }

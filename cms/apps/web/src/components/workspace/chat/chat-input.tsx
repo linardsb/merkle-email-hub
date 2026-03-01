@@ -68,9 +68,9 @@ export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProp
         </Button>
       ) : (
         <Button
-          variant="default"
+          variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={handleSend}
           aria-label={t("chatSend")}
         >

@@ -63,11 +63,13 @@ export function ComponentDetailDialog({
         </DialogHeader>
 
         {/* Tab bar */}
-        <div className="flex gap-1 border-b border-border">
+        <div className="flex gap-1 border-b border-border" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.key

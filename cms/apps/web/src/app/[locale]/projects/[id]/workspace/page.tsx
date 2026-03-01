@@ -29,6 +29,8 @@ import { EditorPanel } from "@/components/workspace/editor-panel";
 import { PreviewPanel } from "@/components/workspace/preview-panel";
 import { ChatPanel } from "@/components/workspace/chat-panel";
 import { QAResultsPanel } from "@/components/workspace/qa-results-panel";
+import { ExportDialog } from "@/components/connectors/export-dialog";
+import { useExportHistory } from "@/hooks/use-export-history";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
@@ -109,6 +111,10 @@ export default function WorkspacePage() {
   );
   const [qaPanelOpen, setQaPanelOpen] = useState(false);
 
+  // ── Export State ──
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const { addRecord } = useExportHistory();
+
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(
@@ -123,13 +129,33 @@ export default function WorkspacePage() {
   );
 
   // Sync editor content when version data loads
+  const demoCompiledRef = useRef(false);
   useEffect(() => {
     if (latestVersion?.html_source) {
       setEditorContent(latestVersion.html_source);
       setSavedContent(latestVersion.html_source);
       setSaveStatus("idle");
+
+      // Auto-compile in demo mode so preview is always populated
+      if (
+        process.env.NEXT_PUBLIC_DEMO_MODE === "true" &&
+        !demoCompiledRef.current
+      ) {
+        demoCompiledRef.current = true;
+        const sanitized = sanitizeHtml(latestVersion.html_source);
+        triggerPreview({ source_html: sanitized })
+          .then((r) => {
+            if (r) {
+              setCompiledHtml(r.compiled_html);
+              setBuildTimeMs(r.build_time_ms);
+            }
+          })
+          .catch(() => {
+            /* demo compile failed silently */
+          });
+      }
     }
-  }, [latestVersion?.html_source]);
+  }, [latestVersion?.html_source, triggerPreview]);
 
   // Track dirty state
   const isDirty = editorContent !== savedContent;
@@ -226,6 +252,7 @@ export default function WorkspacePage() {
       setBuildTimeMs(null);
       setQaResultData(null);
       setQaPanelOpen(false);
+      demoCompiledRef.current = false;
       const url = new URL(window.location.href);
       url.searchParams.set("template", String(template.id));
       router.replace(url.pathname + url.search, { scroll: false });
@@ -301,6 +328,15 @@ export default function WorkspacePage() {
     }
   }, [qaResultData?.id]);
 
+  // ── Export Handler ──
+  const handleExport = useCallback(() => {
+    if (!compiledHtml?.trim()) {
+      toast.error(t("exportNoCompiledHtml"));
+      return;
+    }
+    setExportDialogOpen(true);
+  }, [compiledHtml, t]);
+
   // ── Panel State ──
   const chatPanelRef = usePanelRef();
   const [chatCollapsed, setChatCollapsed] = useState(false);
@@ -343,6 +379,7 @@ export default function WorkspacePage() {
         isRunningQA={isRunningQA}
         qaResult={qaResultData}
         onToggleQAPanel={() => setQaPanelOpen((v) => !v)}
+        onExport={handleExport}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -406,6 +443,16 @@ export default function WorkspacePage() {
           />
         )}
       </div>
+
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        compiledHtml={compiledHtml}
+        projectId={projectId}
+        templateName={activeTemplate?.name ?? "email"}
+        sourceHtml={editorContent}
+        onExportComplete={addRecord}
+      />
 
       {chatCollapsed && (
         <button

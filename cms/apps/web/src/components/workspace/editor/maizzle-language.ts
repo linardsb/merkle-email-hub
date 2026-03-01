@@ -1,307 +1,390 @@
-import type * as Monaco from "monaco-editor";
+import {
+  StreamLanguage,
+  type StringStream,
+  type StreamParser,
+  LanguageSupport,
+} from "@codemirror/language";
+import {
+  autocompletion,
+  snippetCompletion,
+  type CompletionContext,
+  type CompletionResult,
+} from "@codemirror/autocomplete";
 
-let registered = false;
+// --- State types ---
 
-export function registerMaizzleLanguage(monaco: typeof Monaco): void {
-  if (registered) return;
-  registered = true;
+type TokenState = {
+  mode:
+    | "root"
+    | "yamlFrontMatter"
+    | "maizzleExpression"
+    | "liquidOutput"
+    | "liquidTag"
+    | "tag"
+    | "comment";
+  /** Track position for front matter detection (line start) */
+  sol: boolean;
+};
 
-  monaco.languages.register({ id: "maizzle" });
+const MAIZZLE_TAGS = new Set([
+  "extends",
+  "block",
+  "component",
+  "slot",
+  "fill",
+  "stack",
+  "push",
+  "each",
+  "if",
+  "elseif",
+  "else",
+  "switch",
+  "case",
+  "default",
+  "raw",
+  "markdown",
+  "outlook",
+  "not-outlook",
+]);
 
-  monaco.languages.setMonarchTokensProvider("maizzle", {
-    defaultToken: "",
-    ignoreCase: true,
+const LIQUID_KEYWORDS = new Set([
+  "if",
+  "elsif",
+  "else",
+  "endif",
+  "unless",
+  "endunless",
+  "for",
+  "endfor",
+  "case",
+  "when",
+  "endcase",
+  "assign",
+  "capture",
+  "endcapture",
+  "comment",
+  "endcomment",
+  "include",
+  "render",
+  "raw",
+  "endraw",
+  "tablerow",
+  "endtablerow",
+  "break",
+  "continue",
+  "cycle",
+  "increment",
+  "decrement",
+]);
 
-    maizzleTags: [
-      "extends",
-      "block",
-      "component",
-      "slot",
-      "fill",
-      "stack",
-      "push",
-      "each",
-      "if",
-      "elseif",
-      "else",
-      "switch",
-      "case",
-      "default",
-      "raw",
-      "markdown",
-      "outlook",
-      "not-outlook",
-    ],
+const LIQUID_CONSTANTS = new Set([
+  "true",
+  "false",
+  "nil",
+  "null",
+  "blank",
+  "empty",
+]);
 
-    liquidKeywords: [
-      "if",
-      "elsif",
-      "else",
-      "endif",
-      "unless",
-      "endunless",
-      "for",
-      "endfor",
-      "case",
-      "when",
-      "endcase",
-      "assign",
-      "capture",
-      "endcapture",
-      "comment",
-      "endcomment",
-      "include",
-      "render",
-      "raw",
-      "endraw",
-      "tablerow",
-      "endtablerow",
-      "break",
-      "continue",
-      "cycle",
-      "increment",
-      "decrement",
-    ],
+const LIQUID_OPERATORS = new Set(["and", "or", "not", "contains", "in"]);
 
-    tokenizer: {
-      root: [
-        // YAML front matter
-        [/^---\s*$/, { token: "comment.yaml", next: "@yamlFrontMatter" }],
+// --- Stream Parser ---
 
-        // Maizzle expression {{{ }}}
-        [/\{\{\{/, { token: "delimiter.liquid", next: "@maizzleExpression" }],
+const maizzleParser: StreamParser<TokenState> = {
+  startState(): TokenState {
+    return { mode: "root", sol: true };
+  },
 
-        // Liquid output {{ }}
-        [/\{\{-?/, { token: "delimiter.liquid", next: "@liquidOutput" }],
+  token(stream: StringStream, state: TokenState): string | null {
+    switch (state.mode) {
+      case "root":
+        return tokenRoot(stream, state);
+      case "yamlFrontMatter":
+        return tokenYamlFrontMatter(stream, state);
+      case "maizzleExpression":
+        return tokenMaizzleExpression(stream, state);
+      case "liquidOutput":
+        return tokenLiquidOutput(stream, state);
+      case "liquidTag":
+        return tokenLiquidTag(stream, state);
+      case "tag":
+        return tokenTag(stream, state);
+      case "comment":
+        return tokenComment(stream, state);
+      default:
+        stream.next();
+        return null;
+    }
+  },
+};
 
-        // Liquid tag {% %}
-        [/\{%-?/, { token: "delimiter.liquid", next: "@liquidTag" }],
+function tokenRoot(stream: StringStream, state: TokenState): string | null {
+  // YAML front matter at start of line
+  if (stream.sol() && stream.match(/^---\s*$/)) {
+    state.mode = "yamlFrontMatter";
+    return "meta";
+  }
 
-        // MSO conditional comments
-        [
-          /<!--\[if\s+(?:mso|gte\s+mso|lte\s+mso|gt\s+mso|lt\s+mso).*?\]>/,
-          "comment.mso",
-        ],
-        [/<!\[endif\]-->/, "comment.mso"],
+  // Maizzle expression {{{ }}}
+  if (stream.match("{{{")) {
+    state.mode = "maizzleExpression";
+    return "processingInstruction";
+  }
 
-        // HTML comments
-        [/<!--/, "comment.html", "@comment"],
+  // Liquid output {{ }}
+  if (stream.match(/^\{\{-?/)) {
+    state.mode = "liquidOutput";
+    return "processingInstruction";
+  }
 
-        // Maizzle tags
-        [
-          /(<)(extends|block|component|slot|fill|stack|push|each|outlook|not-outlook)\b/,
-          [
-            { token: "delimiter.html" },
-            { token: "tag.maizzle", next: "@tag" },
-          ],
-        ],
-        [
-          /(<\/)(extends|block|component|slot|fill|stack|push|each|outlook|not-outlook)\b/,
-          [
-            { token: "delimiter.html" },
-            { token: "tag.maizzle", next: "@tag" },
-          ],
-        ],
+  // Liquid tag {% %}
+  if (stream.match(/^\{%-?/)) {
+    state.mode = "liquidTag";
+    return "processingInstruction";
+  }
 
-        // HTML tags
-        [/<\/?/, { token: "delimiter.html", next: "@tag" }],
+  // MSO conditional comments
+  if (
+    stream.match(
+      /^<!--\[if\s+(?:mso|gte\s+mso|lte\s+mso|gt\s+mso|lt\s+mso).*?\]>/
+    )
+  ) {
+    return "comment";
+  }
+  if (stream.match("<![endif]-->")) {
+    return "comment";
+  }
 
-        // Entities
-        [/&\w+;/, "string.html.entity"],
-      ],
+  // HTML comments
+  if (stream.match("<!--")) {
+    state.mode = "comment";
+    return "comment";
+  }
 
-      yamlFrontMatter: [
-        [/^---\s*$/, { token: "comment.yaml", next: "@pop" }],
-        [/[^-]+/, "comment.yaml"],
-        [/-/, "comment.yaml"],
-      ],
+  // Opening/closing tags — check for Maizzle tags
+  if (stream.match(/^<\/?/)) {
+    const tagMatch = stream.match(/^[\w-]+/, false);
+    if (tagMatch && typeof tagMatch !== "boolean" && MAIZZLE_TAGS.has(tagMatch[0])) {
+      stream.match(/^[\w-]+/);
+      state.mode = "tag";
+      return "special(tagName)";
+    }
+    state.mode = "tag";
+    return "angleBracket";
+  }
 
-      maizzleExpression: [
-        [/\}\}\}/, { token: "delimiter.liquid", next: "@pop" }],
-        [/"[^"]*"/, "string.liquid"],
-        [/'[^']*'/, "string.liquid"],
-        [/\|/, "delimiter.liquid"],
-        [/[a-zA-Z_]\w*/, "variable.liquid"],
-        [/./, "variable.liquid"],
-      ],
+  // HTML entities
+  if (stream.match(/^&\w+;/)) {
+    return "character";
+  }
 
-      liquidOutput: [
-        [/-?\}\}/, { token: "delimiter.liquid", next: "@pop" }],
-        [/"[^"]*"/, "string.liquid"],
-        [/'[^']*'/, "string.liquid"],
-        [/\|/, "delimiter.liquid"],
-        [
-          /[a-zA-Z_][\w.]*/,
-          {
-            cases: {
-              "true|false|nil|null|blank|empty": "keyword.liquid",
-              "@default": "variable.liquid",
-            },
-          },
-        ],
-        [/\d+(\.\d+)?/, "number.liquid"],
-        [/./, "variable.liquid"],
-      ],
+  // Consume text content
+  if (stream.match(/^[^<{&]+/)) {
+    return null;
+  }
 
-      liquidTag: [
-        [/-?%\}/, { token: "delimiter.liquid", next: "@pop" }],
-        [/"[^"]*"/, "string.liquid"],
-        [/'[^']*'/, "string.liquid"],
-        [
-          /[a-zA-Z_]\w*/,
-          {
-            cases: {
-              "@liquidKeywords": "keyword.liquid",
-              "true|false|nil|null|blank|empty": "keyword.liquid",
-              "and|or|not|contains|in": "keyword.liquid",
-              "@default": "variable.liquid",
-            },
-          },
-        ],
-        [/[=!<>]=?|!=/, "operator.liquid"],
-        [/\d+(\.\d+)?/, "number.liquid"],
-        [/./, "variable.liquid"],
-      ],
+  stream.next();
+  return null;
+}
 
-      tag: [
-        [/\/?>/, { token: "delimiter.html", next: "@pop" }],
-        // Liquid inside attributes
-        [/\{\{-?/, { token: "delimiter.liquid", next: "@liquidOutput" }],
-        [/\{%-?/, { token: "delimiter.liquid", next: "@liquidTag" }],
-        // Attributes
-        [/[a-zA-Z_][\w-]*/, "attribute.name.html"],
-        [/=/, "delimiter.html"],
-        [/"[^"]*"/, "attribute.value.html"],
-        [/'[^']*'/, "attribute.value.html"],
-        [/\s+/, ""],
-      ],
+function tokenYamlFrontMatter(
+  stream: StringStream,
+  state: TokenState
+): string | null {
+  if (stream.sol() && stream.match(/^---\s*$/)) {
+    state.mode = "root";
+    return "meta";
+  }
+  stream.skipToEnd();
+  return "meta";
+}
 
-      comment: [
-        [/-->/, "comment.html", "@pop"],
-        [/./, "comment.html"],
-      ],
-    },
-  });
+function tokenMaizzleExpression(
+  stream: StringStream,
+  state: TokenState
+): string | null {
+  if (stream.match("}}}")) {
+    state.mode = "root";
+    return "processingInstruction";
+  }
+  if (stream.match(/"[^"]*"/) || stream.match(/'[^']*'/)) {
+    return "special(string)";
+  }
+  if (stream.match("|")) {
+    return "processingInstruction";
+  }
+  if (stream.match(/^[a-zA-Z_]\w*/)) {
+    return "special(variableName)";
+  }
+  stream.next();
+  return "special(variableName)";
+}
 
-  monaco.languages.setLanguageConfiguration("maizzle", {
-    comments: {
-      blockComment: ["<!--", "-->"],
-    },
-    brackets: [
-      ["<!--", "-->"],
-      ["<", ">"],
-      ["{", "}"],
-      ["{{", "}}"],
-      ["{%", "%}"],
-      ["{{{", "}}}"],
-    ],
-    autoClosingPairs: [
-      { open: "{", close: "}" },
-      { open: "[", close: "]" },
-      { open: "(", close: ")" },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-      { open: "<!--", close: "-->" },
-      { open: "{{", close: "}}" },
-      { open: "{%", close: "%}" },
-      { open: "{{{", close: "}}}" },
-    ],
-    surroundingPairs: [
-      { open: "<", close: ">" },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-    ],
-    folding: {
-      markers: {
-        start: /^\s*<!--\s*#region\b/,
-        end: /^\s*<!--\s*#endregion\b/,
-      },
-    },
-    indentationRules: {
-      increaseIndentPattern:
-        /<(?!area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)(\w[\w-]*)[^/]*[^/]>\s*$/,
-      decreaseIndentPattern: /^\s*<\/\w/,
-    },
-  });
+function tokenLiquidOutput(
+  stream: StringStream,
+  state: TokenState
+): string | null {
+  if (stream.match(/^-?\}\}/)) {
+    state.mode = "root";
+    return "processingInstruction";
+  }
+  if (stream.match(/"[^"]*"/) || stream.match(/'[^']*'/)) {
+    return "special(string)";
+  }
+  if (stream.match("|")) {
+    return "processingInstruction";
+  }
+  if (stream.match(/^\d+(\.\d+)?/)) {
+    return "special(number)";
+  }
+  if (stream.match(/^[a-zA-Z_][\w.]*/)) {
+    const matched = stream.current();
+    if (LIQUID_CONSTANTS.has(matched)) return "special(keyword)";
+    return "special(variableName)";
+  }
+  stream.next();
+  return "special(variableName)";
+}
 
-  monaco.languages.registerCompletionItemProvider("maizzle", {
-    provideCompletionItems(model, position) {
-      const word = model.getWordUntilPosition(position);
-      const range = {
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-        startColumn: word.startColumn,
-        endColumn: word.endColumn,
-      };
+function tokenLiquidTag(
+  stream: StringStream,
+  state: TokenState
+): string | null {
+  if (stream.match(/^-?%\}/)) {
+    state.mode = "root";
+    return "processingInstruction";
+  }
+  if (stream.match(/"[^"]*"/) || stream.match(/'[^']*'/)) {
+    return "special(string)";
+  }
+  if (stream.match(/^[=!<>]=?|^!=/)) {
+    return "operator";
+  }
+  if (stream.match(/^\d+(\.\d+)?/)) {
+    return "special(number)";
+  }
+  if (stream.match(/^[a-zA-Z_]\w*/)) {
+    const matched = stream.current();
+    if (LIQUID_KEYWORDS.has(matched)) return "special(keyword)";
+    if (LIQUID_CONSTANTS.has(matched)) return "special(keyword)";
+    if (LIQUID_OPERATORS.has(matched)) return "special(keyword)";
+    return "special(variableName)";
+  }
+  stream.next();
+  return "special(variableName)";
+}
 
-      return {
-        suggestions: [
-          {
-            label: "<extends>",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<extends src="${1:src/layouts/main.html}">\n\t$0\n</extends>',
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "Maizzle layout extends",
-            range,
-          },
-          {
-            label: "<block>",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<block name="${1:content}">\n\t$0\n</block>',
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "Maizzle content block",
-            range,
-          },
-          {
-            label: "<component>",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '<component src="${1:src/components/}">\n\t$0\n</component>',
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "Maizzle component include",
-            range,
-          },
-          {
-            label: "{{ }}",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: "{{ ${1:variable} }}",
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "Liquid output tag",
-            range,
-          },
-          {
-            label: "{% if %}",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: "{% if ${1:condition} %}\n\t$0\n{% endif %}",
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "Liquid if block",
-            range,
-          },
-          {
-            label: "{% for %}",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText:
-              "{% for ${1:item} in ${2:collection} %}\n\t$0\n{% endfor %}",
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "Liquid for loop",
-            range,
-          },
-          {
-            label: "<!--[if mso]>",
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: "<!--[if mso]>\n$0\n<![endif]-->",
-            insertTextRules:
-              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: "MSO conditional comment for Outlook",
-            range,
-          },
-        ],
-      };
-    },
-  });
+function tokenTag(stream: StringStream, state: TokenState): string | null {
+  if (stream.match(/^\/?>/) ) {
+    state.mode = "root";
+    return "angleBracket";
+  }
+  // Liquid inside attributes
+  if (stream.match(/^\{\{-?/)) {
+    state.mode = "liquidOutput";
+    return "processingInstruction";
+  }
+  if (stream.match(/^\{%-?/)) {
+    state.mode = "liquidTag";
+    return "processingInstruction";
+  }
+  // Tag name (first word after <)
+  if (stream.match(/^[a-zA-Z][\w-]*/)) {
+    return "tagName";
+  }
+  if (stream.match("=")) {
+    return "angleBracket";
+  }
+  if (stream.match(/"[^"]*"/) || stream.match(/'[^']*'/)) {
+    return "attributeValue";
+  }
+  if (stream.match(/^[a-zA-Z_][\w-]*/)) {
+    return "attributeName";
+  }
+  if (stream.eatSpace()) {
+    return null;
+  }
+  stream.next();
+  return null;
+}
+
+function tokenComment(
+  stream: StringStream,
+  state: TokenState
+): string | null {
+  if (stream.match("-->")) {
+    state.mode = "root";
+    return "comment";
+  }
+  stream.match(/^(?:(?!-->).)+/) || stream.next();
+  return "comment";
+}
+
+// --- Completions ---
+
+const maizzleCompletions = [
+  snippetCompletion(
+    '<extends src="${src/layouts/main.html}">\n\t${}\n</extends>',
+    {
+      label: "<extends>",
+      detail: "Maizzle layout extends",
+      type: "keyword",
+    }
+  ),
+  snippetCompletion('<block name="${content}">\n\t${}\n</block>', {
+    label: "<block>",
+    detail: "Maizzle content block",
+    type: "keyword",
+  }),
+  snippetCompletion(
+    '<component src="${src/components/}">\n\t${}\n</component>',
+    {
+      label: "<component>",
+      detail: "Maizzle component include",
+      type: "keyword",
+    }
+  ),
+  snippetCompletion("{{ ${variable} }}", {
+    label: "{{ }}",
+    detail: "Liquid output tag",
+    type: "keyword",
+  }),
+  snippetCompletion("{% if ${condition} %}\n\t${}\n{% endif %}", {
+    label: "{% if %}",
+    detail: "Liquid if block",
+    type: "keyword",
+  }),
+  snippetCompletion(
+    "{% for ${item} in ${collection} %}\n\t${}\n{% endfor %}",
+    {
+      label: "{% for %}",
+      detail: "Liquid for loop",
+      type: "keyword",
+    }
+  ),
+  snippetCompletion("<!--[if mso]>\n${}\n<![endif]-->", {
+    label: "<!--[if mso]>",
+    detail: "MSO conditional comment for Outlook",
+    type: "keyword",
+  }),
+];
+
+function maizzleCompletionSource(
+  context: CompletionContext
+): CompletionResult | null {
+  const word = context.matchBefore(/[\w<{!-]*/);
+  if (!word || (word.from === word.to && !context.explicit)) return null;
+  return {
+    from: word.from,
+    options: maizzleCompletions,
+  };
+}
+
+// --- Export ---
+
+export function maizzleLanguage(): LanguageSupport {
+  const lang = StreamLanguage.define(maizzleParser);
+  return new LanguageSupport(lang, [
+    autocompletion({ override: [maizzleCompletionSource] }),
+  ]);
 }

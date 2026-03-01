@@ -19,23 +19,25 @@
   --color-neutral-900: oklch(0.18 0.012 260);
   --color-neutral-950: oklch(0.12 0.010 260);
 
-  --color-primary-50: oklch(0.97 0.015 250);
-  --color-primary-100: oklch(0.93 0.030 250);
-  --color-primary-200: oklch(0.87 0.060 250);
-  --color-primary-300: oklch(0.78 0.090 250);
-  --color-primary-400: oklch(0.67 0.130 250);
-  --color-primary-500: oklch(0.55 0.160 250);
-  --color-primary-600: oklch(0.48 0.160 250);
-  --color-primary-700: oklch(0.40 0.140 250);
-  --color-primary-800: oklch(0.33 0.110 250);
-  --color-primary-900: oklch(0.27 0.080 250);
+  /* Merkle brand red (#E4002B) — hue ~27 in OKLCH */
+  --color-primary-50: oklch(0.97 0.015 25);
+  --color-primary-100: oklch(0.93 0.040 25);
+  --color-primary-200: oklch(0.87 0.080 25);
+  --color-primary-300: oklch(0.75 0.140 25);
+  --color-primary-400: oklch(0.65 0.190 25);
+  --color-primary-500: oklch(0.55 0.220 27);
+  --color-primary-600: oklch(0.50 0.220 27);
+  --color-primary-700: oklch(0.43 0.190 27);
+  --color-primary-800: oklch(0.36 0.150 27);
+  --color-primary-900: oklch(0.29 0.100 27);
 
   --color-success-500: oklch(0.65 0.160 145);
   --color-success-600: oklch(0.55 0.160 145);
   --color-warning-500: oklch(0.75 0.150 75);
   --color-warning-600: oklch(0.65 0.150 75);
-  --color-danger-500: oklch(0.63 0.200 25);
-  --color-danger-600: oklch(0.55 0.200 25);
+  /* Danger shifted to orange-red (hue 40) to distinguish from brand red */
+  --color-danger-500: oklch(0.63 0.180 40);
+  --color-danger-600: oklch(0.55 0.180 40);
 
   /* ── Tier 2: Semantic Tokens ── */
 
@@ -99,7 +101,7 @@
   --color-badge-success-text: var(--color-success-600);
   --color-badge-warning-bg: oklch(0.93 0.060 75);
   --color-badge-warning-text: var(--color-warning-600);
-  --color-badge-danger-bg: oklch(0.93 0.060 25);
+  --color-badge-danger-bg: oklch(0.93 0.060 40);
   --color-badge-danger-text: var(--color-danger-600);
 
   /* ── Spacing Scale ── */
@@ -161,7 +163,7 @@
   --color-surface: var(--color-neutral-950);
   --color-surface-elevated: var(--color-neutral-900);
   --color-surface-muted: var(--color-neutral-800);
-  --color-surface-accent: oklch(0.25 0.040 250);
+  --color-surface-accent: oklch(0.25 0.040 25);
   --color-surface-hover: var(--color-neutral-800);
 
   /* Text */
@@ -180,7 +182,7 @@
   --color-interactive: var(--color-primary-400);
   --color-interactive-hover: var(--color-primary-300);
   --color-interactive-active: var(--color-primary-200);
-  --color-interactive-muted: oklch(0.25 0.040 250);
+  --color-interactive-muted: oklch(0.25 0.040 25);
 
   /* Status */
   --color-status-success: var(--color-success-500);
@@ -209,12 +211,12 @@
   /* Component: Badge */
   --color-badge-default-bg: var(--color-neutral-800);
   --color-badge-default-text: var(--color-neutral-200);
-  --color-badge-primary-bg: oklch(0.30 0.060 250);
+  --color-badge-primary-bg: oklch(0.30 0.060 25);
   --color-badge-primary-text: var(--color-primary-200);
   --color-badge-success-bg: oklch(0.25 0.060 145);
   --color-badge-success-text: var(--color-success-500);
   --color-badge-warning-bg: oklch(0.30 0.060 75);
   --color-badge-warning-text: var(--color-warning-500);
-  --color-badge-danger-bg: oklch(0.28 0.060 25);
+  --color-badge-danger-bg: oklch(0.28 0.060 40);
   --color-badge-danger-text: var(--color-danger-500);
 }

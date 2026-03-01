@@ -1,17 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { AlertTriangle, Columns3, WrapText } from "lucide-react";
+import { AlertTriangle, WrapText } from "lucide-react";
 import { SaveIndicator, type SaveStatus } from "../save-indicator";
 
 interface EditorToolbarProps {
   line: number;
   col: number;
   warningCount: number;
-  minimapEnabled: boolean;
   wordWrapEnabled: boolean;
   saveStatus: SaveStatus;
-  onToggleMinimap: () => void;
   onToggleWordWrap: () => void;
 }
 
@@ -19,10 +17,8 @@ export function EditorToolbar({
   line,
   col,
   warningCount,
-  minimapEnabled,
   wordWrapEnabled,
   saveStatus,
-  onToggleMinimap,
   onToggleWordWrap,
 }: EditorToolbarProps) {
   const t = useTranslations("workspace");
@@ -42,15 +38,6 @@ export function EditorToolbar({
 
       <div className="flex items-center gap-2">
         <span>{t("editorLineCol", { line, col })}</span>
-
-        <button
-          type="button"
-          onClick={onToggleMinimap}
-          className={`rounded p-1 transition-colors hover:bg-accent ${minimapEnabled ? "text-foreground" : ""}`}
-          title={t("editorMinimap")}
-        >
-          <Columns3 className="h-3.5 w-3.5" />
-        </button>
 
         <button
           type="button"

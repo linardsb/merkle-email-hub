@@ -82,7 +82,7 @@ function computeMetrics(items: QAResultResponse[]): QADashboardMetrics {
 }
 
 export function useQADashboard() {
-  const { data, isLoading, error } = useQAResults({ page: 1, pageSize: 50 });
+  const { data, isLoading, error, mutate } = useQAResults({ page: 1, pageSize: 50 });
 
   const metrics = useMemo(
     () => computeMetrics(data?.items ?? []),
@@ -94,5 +94,6 @@ export function useQADashboard() {
     total: data?.total ?? 0,
     isLoading,
     error,
+    mutate,
   };
 }

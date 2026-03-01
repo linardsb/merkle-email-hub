@@ -1,26 +1,41 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   FolderOpen,
-  Building2,
-  Plus,
+  Blocks,
+  CheckCircle2,
+  ClipboardCheck,
+  Target,
   Activity,
+  Plus,
 } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
+import { ErrorState } from "@/components/ui/error-state";
+import { SkeletonCard } from "@/components/ui/skeletons";
 import { useOrgs } from "@/hooks/use-orgs";
+import { useComponents } from "@/hooks/use-components";
+import { useQADashboard } from "@/hooks/use-qa-dashboard";
+import { useQAResults } from "@/hooks/use-qa";
+import { useApprovals } from "@/hooks/use-approvals";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const locale = useLocale();
-  const {
-    data: projectsData,
-    isLoading: projectsLoading,
-    error: projectsError,
-  } = useProjects();
-  const { data: orgsData, isLoading: orgsLoading } = useOrgs();
+
+  // Data sources
+  const { data: projects, isLoading: projectsLoading, error: projectsError, mutate: mutateProjects } = useProjects();
+  const { data: orgs, isLoading: orgsLoading } = useOrgs();
+  const { data: components } = useComponents({ pageSize: 1 });
+  const { metrics: qaMetrics } = useQADashboard();
+  const { data: recentQA } = useQAResults({ page: 1, pageSize: 5 });
+
+  // Approvals for first project
+  const firstProjectId = projects?.items?.[0]?.id ?? null;
+  const { data: approvals } = useApprovals(firstProjectId);
+  const pendingCount = approvals?.filter((a) => a.status === "pending").length ?? 0;
 
   const isLoading = projectsLoading || orgsLoading;
 
@@ -43,8 +58,8 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Stats row — 4 cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-card-border bg-card-bg p-6">
           <div className="flex items-center gap-2">
             <FolderOpen className="h-4 w-4 text-foreground-muted" />
@@ -53,66 +68,217 @@ export default function DashboardPage() {
             </p>
           </div>
           <p className="mt-2 text-3xl font-semibold text-foreground">
-            {isLoading ? "\u2014" : (projectsData?.total ?? 0)}
+            {isLoading ? "\u2014" : (projects?.total ?? 0)}
           </p>
         </div>
 
         <div className="rounded-lg border border-card-border bg-card-bg p-6">
           <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-foreground-muted" />
+            <Blocks className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
-              {t("activeOrgs")}
+              {t("components")}
             </p>
           </div>
           <p className="mt-2 text-3xl font-semibold text-foreground">
-            {isLoading ? "\u2014" : (orgsData?.total ?? 0)}
+            {components?.total ?? "\u2014"}
           </p>
         </div>
 
         <div className="rounded-lg border border-card-border bg-card-bg p-6">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-foreground-muted" />
+            <CheckCircle2 className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
-              {t("systemStatus")}
+              {t("qaPassRate")}
             </p>
           </div>
-          <p className="mt-2 text-3xl font-semibold text-status-success">
-            {t("healthy")}
+          <p
+            className={`mt-2 text-3xl font-semibold ${
+              qaMetrics.totalRuns === 0
+                ? "text-foreground"
+                : qaMetrics.passRate >= 0.8
+                  ? "text-status-success"
+                  : "text-status-danger"
+            }`}
+          >
+            {qaMetrics.totalRuns === 0
+              ? "\u2014"
+              : `${Math.round(qaMetrics.passRate * 100)}%`}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4 text-foreground-muted" />
+            <p className="text-sm font-medium text-foreground-muted">
+              {t("pendingApprovals")}
+            </p>
+          </div>
+          <p
+            className={`mt-2 text-3xl font-semibold ${
+              pendingCount > 0 ? "text-status-warning" : "text-foreground"
+            }`}
+          >
+            {pendingCount}
           </p>
         </div>
       </div>
 
-      {/* Project list / empty state */}
-      {projectsError ? (
-        <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
-          <p className="text-sm text-status-danger">{t("error")}</p>
+      {/* Quality Overview + Recent Activity */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Quality Overview — 2/3 width */}
+        <div className="rounded-lg border border-card-border bg-card-bg p-6 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-foreground-muted" />
+              <h2 className="text-lg font-semibold text-foreground">
+                {t("qualityOverview")}
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/intelligence`}
+              className="text-sm text-interactive hover:underline"
+            >
+              {t("viewIntelligence")}
+            </Link>
+          </div>
+          <p className="mt-1 text-sm text-foreground-muted">
+            {t("qualityOverviewDescription")}
+          </p>
+
+          {qaMetrics.totalRuns === 0 ? (
+            <p className="mt-4 text-sm text-foreground-muted">
+              {t("noActivity")}
+            </p>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {/* Inline stats */}
+              <div className="flex gap-6">
+                <div>
+                  <p className="text-xs font-medium text-foreground-muted">
+                    {t("avgScore")}
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {Math.round(qaMetrics.avgScore * 100)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-foreground-muted">
+                    {t("totalRuns")}
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {qaMetrics.totalRuns}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-foreground-muted">
+                    {t("overrides")}
+                  </p>
+                  <p className="text-xl font-semibold text-foreground">
+                    {qaMetrics.overrideCount}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mini trend dots */}
+              <div className="flex items-center gap-1.5">
+                {qaMetrics.scoreTrend.slice(-10).map((point, i) => (
+                  <div
+                    key={i}
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      point.passed ? "bg-status-success" : "bg-status-danger"
+                    }`}
+                    title={`${Math.round(point.score * 100)}%`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Recent Activity — 1/3 width */}
+        <div className="rounded-lg border border-card-border bg-card-bg p-6">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-foreground-muted" />
+            <h2 className="text-lg font-semibold text-foreground">
+              {t("recentActivity")}
+            </h2>
+          </div>
+          <p className="mt-1 text-sm text-foreground-muted">
+            {t("recentActivityDescription")}
+          </p>
+
+          <div className="mt-4">
+            {!recentQA || recentQA.items.length === 0 ? (
+              <p className="py-4 text-center text-sm text-foreground-muted">
+                {t("noActivityDescription")}
+              </p>
+            ) : (
+              <div className="divide-y divide-border">
+                {recentQA.items.map((result) => (
+                  <div
+                    key={result.id}
+                    className="flex items-center justify-between py-2.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          result.passed
+                            ? "bg-status-success"
+                            : "bg-status-danger"
+                        }`}
+                      />
+                      <span className="text-sm text-foreground">
+                        {t("qaRun")}
+                      </span>
+                      <span className="text-xs text-foreground-muted">
+                        {t("scoreLabel", {
+                          score: Math.round(result.overall_score * 100),
+                        })}
+                      </span>
+                    </div>
+                    <span className="text-xs text-foreground-muted">
+                      {new Date(result.created_at).toLocaleDateString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Projects section */}
+      {projectsError ? (
+        <ErrorState message={t("error")} onRetry={() => mutateProjects()} retryLabel={t("retry")} />
       ) : isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-32 animate-pulse rounded-lg border border-card-border bg-surface-muted"
-            />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonCard key={i} />
           ))}
         </div>
-      ) : projectsData?.items.length === 0 ? (
-        <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
-          <FolderOpen className="mx-auto h-12 w-12 text-foreground-muted" />
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            {t("noProjects")}
-          </h3>
-          <p className="mt-2 text-sm text-foreground-muted">
-            {t("noProjectsDescription")}
-          </p>
-        </div>
-      ) : (
+      ) : projects?.items && projects.items.length > 0 ? (
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">
-            {t("projects")}
-          </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">
+              {t("projects")}
+            </h2>
+            {(projects.total ?? 0) > 3 && (
+              <Link
+                href={`/${locale}/projects`}
+                className="text-sm text-interactive hover:underline"
+              >
+                {t("viewAll")}
+              </Link>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projectsData?.items.map((project) => (
+            {projects.items.slice(0, 3).map((project) => (
               <Link
                 key={project.id}
                 href={`/${locale}/projects/${project.id}/workspace`}
@@ -134,16 +300,42 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+      ) : (
+        <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
+          <FolderOpen className="mx-auto h-12 w-12 text-foreground-muted" />
+          <h3 className="mt-4 text-lg font-semibold text-foreground">
+            {t("noProjects")}
+          </h3>
+          <p className="mt-2 text-sm text-foreground-muted">
+            {t("noProjectsDescription")}
+          </p>
+        </div>
       )}
 
-      {/* Getting started */}
+      {/* Quick Start */}
       <div className="rounded-lg border border-card-border bg-card-bg p-6">
         <h2 className="text-lg font-semibold text-foreground">
-          {t("gettingStarted")}
+          {t("quickStart")}
         </h2>
         <p className="mt-2 text-sm text-foreground-muted">
-          {t("gettingStartedDescription")}
+          {t("quickStartDescription")}
         </p>
+        <div className="mt-4 flex gap-3">
+          {firstProjectId && (
+            <Link
+              href={`/${locale}/projects/${firstProjectId}/workspace`}
+              className="rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+            >
+              {t("openWorkspace")}
+            </Link>
+          )}
+          <Link
+            href={`/${locale}/components`}
+            className="rounded-md border border-card-border bg-card-bg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+          >
+            {t("browseComponents")}
+          </Link>
+        </div>
       </div>
     </div>
   );

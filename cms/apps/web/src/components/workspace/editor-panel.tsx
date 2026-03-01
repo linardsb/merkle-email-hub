@@ -5,10 +5,10 @@ import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import type { SaveStatus } from "./save-indicator";
 
-const MonacoEditor = dynamic(
+const CodeEditor = dynamic(
   () =>
-    import("@/components/workspace/editor/monaco-editor").then(
-      (mod) => mod.MonacoEditor
+    import("@/components/workspace/editor/code-editor").then(
+      (mod) => mod.CodeEditor
     ),
   {
     ssr: false,
@@ -39,7 +39,7 @@ interface EditorPanelProps {
 export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly }: EditorPanelProps) {
   return (
     <div className="h-full overflow-hidden bg-background">
-      <MonacoEditor
+      <CodeEditor
         value={value}
         onChange={onChange}
         onSave={onSave}

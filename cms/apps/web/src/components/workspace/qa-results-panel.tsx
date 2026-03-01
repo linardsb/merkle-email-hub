@@ -67,6 +67,7 @@ export function QAResultsPanel({
         <button
           type="button"
           onClick={onClose}
+          aria-label={t("close")}
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <X className="h-4 w-4" />

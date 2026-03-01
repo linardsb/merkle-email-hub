@@ -99,7 +99,7 @@ export function PreviewIframe({
         >
           <iframe
             srcDoc={srcdoc}
-            sandbox="allow-same-origin"
+            sandbox=""
             title="Email preview"
             className="h-[800px] w-full border-0 bg-white"
           />

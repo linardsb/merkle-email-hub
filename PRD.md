@@ -3,9 +3,9 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 1.8
+**Version:** 2.0
 **Date:** 2026-03-01
-**Status:** MVP Development — Sprint 2 near-complete (2.10 remaining), Sprint 3 In Progress (3.2 done)
+**Status:** MVP Development — Sprints 1-3 nearly complete (3.1-3.3 done, 3.4-3.5 remaining); Post-MVP 4.8 done
 
 ---
 
@@ -39,21 +39,25 @@
 | 3.1 | Client approval portal | Backend: `GET /api/v1/approvals/?project_id=X` list endpoint, `GET /api/v1/email/builds/{build_id}` for preview HTML (7 endpoints total). Frontend: `/approvals` list page with status filter tabs (All/Pending/Approved/Rejected/Revision); `/approvals/[id]` detail page with 2-column layout (60% sandboxed preview with viewport/dark mode toggles, 40% side panel with Feedback/Audit Trail tabs); 6 components (`ApprovalStatusBadge`, `ApprovalCard`, `ApprovalPreview`, `ApprovalFeedbackPanel`, `ApprovalAuditTimeline`, `ApprovalDecisionBar`); 8 SWR hooks; decision bar (approve/reject/request-revision) with admin/developer RBAC via `useSession()`; "Submit for Approval" button in workspace toolbar; sidebar nav with ClipboardCheck icon; middleware RBAC (all roles); ~40 i18n keys; all semantic Tailwind tokens |
 | 2.9 | Raw HTML export + Braze connector UI | `ExportDialog` (32rem) with two tabs — Raw HTML (client-side Blob download via `URL.createObjectURL`) and Braze (two-phase: production build → `POST /api/v1/connectors/export` with `content_block_name`); state machine (idle→building→exporting→success\|error) with retry; `ExportStatusBadge` + `ExportCard` components; `useExportHistory()` hook via `useSyncExternalStore` + `sessionStorage` (max 100 records, cross-component sync); `/connectors` dashboard page with platform filter tabs (All/Braze/Raw HTML) and export history grid; Export button in workspace toolbar; Plug sidebar nav icon; middleware RBAC (all roles); ~25 i18n keys across `connectors` + `export` namespaces; `types/connectors.ts` local types; all semantic Tailwind tokens |
 | 3.2 | Rendering intelligence dashboard | `/intelligence` page with 4 sections: `ScoreOverviewCards` (4-col grid: total runs, avg score, pass rate, overrides); `CheckPerformanceChart` (CSS horizontal bars per QA check, sorted worst-first, threshold-colored); `ScoreTrendBars` (CSS vertical bars of last 20 scores with pass/fail coloring); `RecentResultsTable` (paginated with status badges); "Email Client Rendering" placeholder (Coming Soon — deferred to 4.4). `useQADashboard` hook aggregates 50 results client-side via `useMemo`. `QADashboardMetrics` type. BarChart3 sidebar nav. Middleware RBAC (all roles). ~30 i18n keys. All semantic Tailwind tokens |
+| 3.3 | Dashboard homepage enhancement | Dashboard rewritten with 4 stat cards (Total Projects, Components, QA Pass Rate with threshold coloring, Pending Approvals); Quality Overview card with avg score, total runs, overrides, mini trend dots (last 10 pass/fail); Recent Activity feed (latest 5 QA runs); Project grid (top 3 with "View All"); Quick Start with "Open Workspace" + "Browse Components" links. 6 existing SWR hooks, no new backend endpoints. ~20 new i18n keys. All semantic Tailwind tokens |
+| 2.10 | RAG knowledge base seeding | 20 curated markdown documents across 3 domains: `css_support` (8 files), `best_practices` (6 files), `client_quirks` (6 files). Async seed command (`app/knowledge/seed.py`) with idempotency. Manifest-driven (`app/knowledge/data/seed_manifest.py`) with per-document metadata, tags, domain classification. 109 unit tests |
+| 4.8 | Knowledge base search UI | `/knowledge` page with search-first UX: debounced search bar triggering `POST /api/v1/knowledge/search`, domain filter pills (All/CSS Support/Best Practices/Client Quirks), tag filter pills, dual mode (search results with relevance scores vs document browse grid), pagination, document detail dialog (Content/Metadata tabs). 3 components (`KnowledgeSearchResultCard`, `KnowledgeDocumentCard`, `KnowledgeDocumentDialog`); 6 SWR hooks in `use-knowledge.ts`; `types/knowledge.ts` local types; demo data (20 docs, 3 domains, 15 tags, chunk content); BookOpen sidebar nav; middleware RBAC; ~30 i18n keys; all semantic Tailwind tokens |
 
 ### In Progress
 
 | Phase | Task | Description |
 |-------|------|-------------|
-| Sprint 2 | 2.10 | RAG knowledge base seeding (Can I Email, best practices) |
-| Sprint 3 | 3.3 | Dashboard homepage enhancement (real data, activity feed) |
+| Sprint 3 | 3.4 | Error handling, loading states, UI polish (skeletons, toasts, error pages) |
+| Sprint 3 | 3.5 | CMS + Nginx Docker stack (7 services healthy) |
 
 ### Infrastructure Built
 
 - **Backend:** Full VSA implementation across 7 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
 - **Frontend:** Next.js 16 monorepo with i18n, auth middleware, RBAC route guards, semantic Tailwind tokens
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
-- **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration
+- **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 14 domain-specific hooks
 - **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming
+- **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend functional for Raw HTML + Braze
 - **Testing:** Backend pytest (152+ tests); Frontend Vitest + React Testing Library (`make test-fe`)
 
 ---

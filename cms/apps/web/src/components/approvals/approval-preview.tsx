@@ -61,6 +61,7 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
                 key={vp}
                 type="button"
                 onClick={() => setViewport(vp)}
+                aria-label={vp}
                 className={`rounded p-1.5 transition-colors ${
                   viewport === vp
                     ? "bg-interactive text-foreground-inverse"
@@ -77,6 +78,7 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
           onClick={() => setDarkMode(!darkMode)}
           className="rounded p-1.5 text-foreground-muted transition-colors hover:text-foreground"
           title={t("previewDarkMode")}
+          aria-label={t("previewDarkMode")}
         >
           {darkMode ? (
             <Sun className="h-4 w-4" />
@@ -94,8 +96,8 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
         >
           <iframe
             srcDoc={htmlWithDarkMode}
-            sandbox="allow-same-origin"
-            title="Email preview"
+            sandbox=""
+            title={t("previewTab")}
             className="h-[800px] w-full border-0"
           />
         </div>

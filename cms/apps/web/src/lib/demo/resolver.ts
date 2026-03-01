@@ -1,0 +1,209 @@
+/**
+ * Demo mode URL resolver.
+ * Maps GET API paths to mock data responses.
+ * Returns null if the path doesn't match any known pattern.
+ */
+
+import { DEMO_ORGS } from "./data/orgs";
+import { DEMO_PROJECTS } from "./data/projects";
+import { DEMO_TEMPLATES, DEMO_VERSIONS } from "./data/templates";
+import { DEMO_COMPONENTS, DEMO_COMPONENT_VERSIONS } from "./data/components";
+import { DEMO_PERSONAS } from "./data/personas";
+import { DEMO_APPROVALS, DEMO_FEEDBACK, DEMO_AUDIT } from "./data/approvals";
+import { DEMO_QA_RESULTS } from "./data/qa-results";
+import { DEMO_BUILDS } from "./data/builds";
+import {
+  DEMO_KNOWLEDGE_DOCUMENTS,
+  DEMO_KNOWLEDGE_TAGS,
+  DEMO_KNOWLEDGE_DOMAINS,
+  DEMO_KNOWLEDGE_CONTENT,
+} from "./data/knowledge";
+
+function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
+  const page = parseInt(url.searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(url.searchParams.get("page_size") || "20", 10);
+  const start = (page - 1) * pageSize;
+  return {
+    items: items.slice(start, start + pageSize),
+    total: items.length,
+    page,
+    page_size: pageSize,
+  };
+}
+
+function filterBySearch<T extends { name: string }>(items: T[], search: string | null): T[] {
+  if (!search) return items;
+  const q = search.toLowerCase();
+  return items.filter((item) => item.name.toLowerCase().includes(q));
+}
+
+/** Parse a regex capture group as integer (safe from undefined). */
+function matchId(m: RegExpMatchArray, group: number): number {
+  return parseInt(m[group] ?? "0", 10);
+}
+
+export function resolveDemo(urlStr: string): unknown | null {
+  // Normalise: strip base URL if present, parse as URL
+  const path = urlStr.replace(/^https?:\/\/[^/]+/, "");
+  const url = new URL(path, "http://localhost");
+  const p = url.pathname;
+
+  // ── Orgs ──
+  if (p === "/api/v1/orgs") {
+    return paginate(DEMO_ORGS, url);
+  }
+
+  // ── Projects ──
+  if (p === "/api/v1/projects") {
+    const search = url.searchParams.get("search");
+    return paginate(filterBySearch(DEMO_PROJECTS, search), url);
+  }
+  let m: RegExpMatchArray | null;
+
+  m = p.match(/^\/api\/v1\/projects\/(\d+)$/);
+  if (m) {
+    return DEMO_PROJECTS.find((proj) => proj.id === matchId(m!, 1)) ?? null;
+  }
+
+  // ── Templates ──
+  m = p.match(/^\/api\/v1\/projects\/(\d+)\/templates$/);
+  if (m) {
+    const projectId = matchId(m, 1);
+    const search = url.searchParams.get("search");
+    const status = url.searchParams.get("status");
+    let templates = DEMO_TEMPLATES.filter((t) => t.project_id === projectId);
+    if (search) templates = filterBySearch(templates, search);
+    if (status) templates = templates.filter((t) => t.status === status);
+    return paginate(templates, url);
+  }
+  m = p.match(/^\/api\/v1\/templates\/(\d+)$/);
+  if (m) {
+    return DEMO_TEMPLATES.find((t) => t.id === matchId(m!, 1)) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/templates\/(\d+)\/versions$/);
+  if (m) {
+    const templateId = matchId(m, 1);
+    return DEMO_VERSIONS.filter((v) => v.template_id === templateId);
+  }
+  m = p.match(/^\/api\/v1\/templates\/(\d+)\/versions\/(\d+)$/);
+  if (m) {
+    const templateId = matchId(m, 1);
+    const versionNum = matchId(m, 2);
+    return DEMO_VERSIONS.find(
+      (v) => v.template_id === templateId && v.version_number === versionNum,
+    ) ?? null;
+  }
+
+  // ── Components ──
+  if (p === "/api/v1/components/" || p === "/api/v1/components") {
+    const search = url.searchParams.get("search");
+    const category = url.searchParams.get("category");
+    let comps = [...DEMO_COMPONENTS];
+    if (search) comps = filterBySearch(comps, search);
+    if (category) comps = comps.filter((c) => c.category === category);
+    return paginate(comps, url);
+  }
+  m = p.match(/^\/api\/v1\/components\/(\d+)$/);
+  if (m) {
+    return DEMO_COMPONENTS.find((c) => c.id === matchId(m!, 1)) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/components\/(\d+)\/versions$/);
+  if (m) {
+    return DEMO_COMPONENT_VERSIONS.filter((v) => v.component_id === matchId(m!, 1));
+  }
+
+  // ── Personas ──
+  if (p === "/api/v1/personas") {
+    return DEMO_PERSONAS;
+  }
+  m = p.match(/^\/api\/v1\/personas\/(\d+)$/);
+  if (m) {
+    return DEMO_PERSONAS.find((persona) => persona.id === matchId(m!, 1)) ?? null;
+  }
+
+  // ── Approvals ──
+  if (p === "/api/v1/approvals/" || p === "/api/v1/approvals") {
+    const projectId = url.searchParams.get("project_id");
+    if (projectId) {
+      return DEMO_APPROVALS.filter((a) => a.project_id === parseInt(projectId, 10));
+    }
+    return DEMO_APPROVALS;
+  }
+  m = p.match(/^\/api\/v1\/approvals\/(\d+)$/);
+  if (m) {
+    return DEMO_APPROVALS.find((a) => a.id === matchId(m!, 1)) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/approvals\/(\d+)\/feedback$/);
+  if (m) {
+    return DEMO_FEEDBACK[matchId(m, 1)] ?? [];
+  }
+  m = p.match(/^\/api\/v1\/approvals\/(\d+)\/audit$/);
+  if (m) {
+    return DEMO_AUDIT[matchId(m, 1)] ?? [];
+  }
+
+  // ── QA Results ──
+  if (p === "/api/v1/qa/results") {
+    const templateVersionId = url.searchParams.get("template_version_id");
+    const passedParam = url.searchParams.get("passed");
+    let results = [...DEMO_QA_RESULTS];
+    if (templateVersionId) {
+      const tvId = parseInt(templateVersionId, 10);
+      results = results.filter((r) => r.template_version_id === tvId);
+    }
+    if (passedParam !== null) {
+      const passed = passedParam === "true";
+      results = results.filter((r) => r.passed === passed);
+    }
+    return paginate(results, url);
+  }
+  if (p === "/api/v1/qa/results/latest") {
+    const tvId = url.searchParams.get("template_version_id");
+    if (tvId) {
+      const id = parseInt(tvId, 10);
+      const matching = DEMO_QA_RESULTS.filter((r) => r.template_version_id === id);
+      return matching[0] ?? null;
+    }
+    return DEMO_QA_RESULTS[0] ?? null;
+  }
+  m = p.match(/^\/api\/v1\/qa\/results\/(\d+)$/);
+  if (m) {
+    return DEMO_QA_RESULTS.find((r) => r.id === matchId(m!, 1)) ?? null;
+  }
+
+  // ── Builds ──
+  m = p.match(/^\/api\/v1\/email\/builds\/(\d+)$/);
+  if (m) {
+    return DEMO_BUILDS.find((b) => b.id === matchId(m!, 1)) ?? null;
+  }
+
+  // ── Knowledge ──
+  if (p === "/api/v1/knowledge/documents") {
+    const domain = url.searchParams.get("domain");
+    const tag = url.searchParams.get("tag");
+    let docs = [...DEMO_KNOWLEDGE_DOCUMENTS];
+    if (domain) docs = docs.filter((d) => d.domain === domain);
+    if (tag) docs = docs.filter((d) => d.tags.some((dt) => dt.name === tag));
+    return paginate(docs, url);
+  }
+
+  m = p.match(/^\/api\/v1\/knowledge\/documents\/(\d+)$/);
+  if (m) {
+    return DEMO_KNOWLEDGE_DOCUMENTS.find((d) => d.id === matchId(m!, 1)) ?? null;
+  }
+
+  m = p.match(/^\/api\/v1\/knowledge\/documents\/(\d+)\/content$/);
+  if (m) {
+    return DEMO_KNOWLEDGE_CONTENT[matchId(m, 1)] ?? null;
+  }
+
+  if (p === "/api/v1/knowledge/domains") {
+    return { domains: DEMO_KNOWLEDGE_DOMAINS, total: DEMO_KNOWLEDGE_DOMAINS.length };
+  }
+
+  if (p === "/api/v1/knowledge/tags") {
+    return { tags: DEMO_KNOWLEDGE_TAGS, total: DEMO_KNOWLEDGE_TAGS.length };
+  }
+
+  return null;
+}

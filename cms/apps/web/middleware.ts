@@ -21,6 +21,7 @@ const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/approvals": ["admin", "developer", "viewer"],
   "/connectors": ["admin", "developer", "viewer"],
   "/intelligence": ["admin", "developer", "viewer"],
+  "/knowledge": ["admin", "developer", "viewer"],
 };
 
 const PUBLIC_ROUTES = ["/login"];
@@ -61,6 +62,11 @@ export default async function middleware(request: NextRequest) {
 
   // Public routes don't need auth
   if (isPublicRoute(pathname)) {
+    return intlResponse;
+  }
+
+  // Demo mode: skip auth checks entirely
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
     return intlResponse;
   }
 

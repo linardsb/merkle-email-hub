@@ -3,8 +3,10 @@
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
-import { ClipboardCheck, Loader2 } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
+import { ErrorState } from "@/components/ui/error-state";
+import { SkeletonListItem } from "@/components/ui/skeletons";
 import { useApprovals } from "@/hooks/use-approvals";
 import { ApprovalCard } from "@/components/approvals/approval-card";
 import type { ApprovalResponse } from "@merkle-email-hub/sdk";
@@ -42,6 +44,7 @@ export default function ApprovalsPage() {
     data: approvals,
     isLoading: loadingApprovals,
     error,
+    mutate,
   } = useApprovals(firstProjectId);
 
   const filtered = useMemo(() => {
@@ -84,14 +87,13 @@ export default function ApprovalsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-foreground-muted" />
-          <span className="ml-2 text-sm text-foreground-muted">
-            {t("loading")}
-          </span>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <SkeletonListItem key={i} />
+          ))}
         </div>
       ) : error ? (
-        <p className="text-sm text-status-danger">{t("error")}</p>
+        <ErrorState message={t("error")} onRetry={() => mutate()} retryLabel={t("retry")} />
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <ClipboardCheck className="h-12 w-12 text-foreground-muted" />

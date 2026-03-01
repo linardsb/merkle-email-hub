@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, ClipboardCheck, Save, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Download, Save, ShieldCheck, Users } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
@@ -26,6 +26,8 @@ interface WorkspaceToolbarProps {
     checks_total: number;
   } | null;
   onToggleQAPanel?: () => void;
+  onExport?: () => void;
+  isExporting?: boolean;
   onSubmitForApproval?: () => void;
   isSubmittingApproval?: boolean;
 }
@@ -44,6 +46,8 @@ export function WorkspaceToolbar({
   isRunningQA,
   qaResult,
   onToggleQAPanel,
+  onExport,
+  isExporting,
   onSubmitForApproval,
   isSubmittingApproval,
 }: WorkspaceToolbarProps) {
@@ -116,6 +120,21 @@ export function WorkspaceToolbar({
           >
             {qaResult.checks_passed}/{qaResult.checks_total}
           </button>
+        )}
+        {onExport && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onExport}
+              disabled={isExporting || saveStatus === "saving"}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              title={t("export")}
+            >
+              <Download className={`h-3.5 w-3.5 ${isExporting ? "animate-pulse" : ""}`} />
+              {isExporting ? t("exporting") : t("export")}
+            </button>
+          </>
         )}
         {onSubmitForApproval && (
           <>

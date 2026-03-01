@@ -69,7 +69,7 @@ export function ApprovalFeedbackPanel({
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground">
-                  User #{fb.author_id}
+                  {t("requestedBy", { userId: fb.author_id })}
                 </span>
                 <span className="text-xs text-foreground-muted">
                   {new Date(fb.created_at as string).toLocaleString()}
@@ -101,10 +101,11 @@ export function ApprovalFeedbackPanel({
               className="self-end rounded-md bg-interactive px-3 py-2 text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
             >
               {isMutating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
-                <Send className="h-4 w-4" />
+                <Send className="h-4 w-4" aria-hidden />
               )}
+              <span className="sr-only">{t("feedbackSending")}</span>
             </button>
           </div>
           <p className="mt-1 text-xs text-foreground-muted">

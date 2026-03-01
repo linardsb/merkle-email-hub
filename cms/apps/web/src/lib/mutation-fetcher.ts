@@ -1,6 +1,19 @@
 import { authFetch, LONG_TIMEOUT_MS } from "./auth-fetch";
 import { ApiError } from "./api-error";
 
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+async function tryDemoMutation<T>(url: string, arg: unknown): Promise<T | null> {
+  if (!IS_DEMO) return null;
+  const { resolveDemoMutation } = await import("./demo/mutation-resolver");
+  const data = resolveDemoMutation(url, arg);
+  if (data !== null) {
+    await new Promise((r) => setTimeout(r, 300 + Math.random() * 400));
+    return data as T;
+  }
+  return null;
+}
+
 /**
  * Generic POST mutation fetcher for useSWRMutation.
  * Usage: useSWRMutation("/api/v1/foo", mutationFetcher)
@@ -9,6 +22,9 @@ export async function mutationFetcher<T>(
   url: string,
   { arg }: { arg: unknown }
 ): Promise<T> {
+  const demo = await tryDemoMutation<T>(url, arg);
+  if (demo !== null) return demo;
+
   const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -39,6 +55,9 @@ export async function longMutationFetcher<T>(
   url: string,
   { arg }: { arg: unknown }
 ): Promise<T> {
+  const demo = await tryDemoMutation<T>(url, arg);
+  if (demo !== null) return demo;
+
   const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

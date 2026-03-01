@@ -3,15 +3,16 @@ import { getMessages } from "next-intl/server";
 import {
   LayoutDashboard,
   FolderOpen,
-  List,
+
   Blocks,
   ClipboardCheck,
   Plug,
   BarChart3,
-  Users,
+  BookOpen,
   LogOut,
 } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
+import { OfflineBanner } from "@/components/ui/offline-banner";
 
 interface NavItem {
   href: string;
@@ -31,7 +32,7 @@ export default async function DashboardLayout({
 
   const navItems: NavItem[] = [
     {
-      href: `/${locale}/dashboard`,
+      href: `/${locale}`,
       label: (messages as any)?.nav?.dashboard || "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
     },
@@ -40,11 +41,7 @@ export default async function DashboardLayout({
       label: (messages as any)?.nav?.projects || "Projects",
       icon: <FolderOpen className="h-5 w-5" />,
     },
-    {
-      href: `/${locale}/example`,
-      label: (messages as any)?.nav?.example || "Items",
-      icon: <List className="h-5 w-5" />,
-    },
+
     {
       href: `/${locale}/components`,
       label: (messages as any)?.nav?.components || "Components",
@@ -66,20 +63,35 @@ export default async function DashboardLayout({
       icon: <BarChart3 className="h-5 w-5" />,
     },
     {
-      href: `/${locale}/users`,
-      label: (messages as any)?.nav?.users || "Users",
-      icon: <Users className="h-5 w-5" />,
+      href: `/${locale}/knowledge`,
+      label: (messages as any)?.nav?.knowledge || "Knowledge",
+      icon: <BookOpen className="h-5 w-5" />,
     },
   ];
 
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col">
+      {/* Demo mode banner */}
+      {isDemoMode && (
+        <div className="flex items-center justify-center bg-interactive px-4 py-1.5 text-xs font-medium text-foreground-inverse">
+          Demo Mode — Showing example data
+        </div>
+      )}
+      <OfflineBanner />
+
+      <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside className="hidden w-60 flex-col bg-sidebar-bg text-sidebar-text md:flex">
         <div className="flex h-14 items-center border-b border-sidebar-border px-4">
-          <span className="text-lg font-semibold text-sidebar-text-active">
-            merkle-email-hub
-          </span>
+          {/* Merkle logo */}
+          <svg viewBox="0 0 160 32" className="h-7 w-auto" aria-label="Merkle Email Hub">
+            {/* Red chevron mark */}
+            <polygon points="0,2 12,16 0,30" fill="#E4002B" />
+            {/* MERKLE text */}
+            <text x="18" y="22" fontFamily="Inter, Arial, sans-serif" fontSize="18" fontWeight="700" fill="currentColor" className="text-sidebar-text-active">MERKLE</text>
+          </svg>
         </div>
         <nav className="flex-1 space-y-1 px-2 py-4">
           {navItems.map((item) => (
@@ -111,6 +123,7 @@ export default async function DashboardLayout({
       <main className="flex-1 overflow-y-auto bg-surface p-6">
         {children}
       </main>
+      </div>
     </div>
   );
 }

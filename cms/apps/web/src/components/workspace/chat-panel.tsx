@@ -8,6 +8,12 @@ import {
   Moon,
   PenTool,
   Trash2,
+  Wrench,
+  Eye,
+  Users,
+  FileSearch,
+  BookOpen,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@merkle-email-hub/ui/components/ui/button";
 import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
@@ -26,8 +32,14 @@ interface AgentOption {
 const AGENTS: AgentOption[] = [
   { id: "chat", labelKey: "chatAgentChat", icon: MessageSquare, enabled: true },
   { id: "scaffolder", labelKey: "chatAgentScaffolder", icon: Wand2, enabled: true },
-  { id: "dark_mode", labelKey: "chatAgentDarkMode", icon: Moon, enabled: false },
-  { id: "content", labelKey: "chatAgentContent", icon: PenTool, enabled: false },
+  { id: "dark_mode", labelKey: "chatAgentDarkMode", icon: Moon, enabled: true },
+  { id: "content", labelKey: "chatAgentContent", icon: PenTool, enabled: true },
+  { id: "outlook_fixer", labelKey: "chatAgentOutlookFixer", icon: Wrench, enabled: true },
+  { id: "accessibility", labelKey: "chatAgentAccessibility", icon: Eye, enabled: true },
+  { id: "personalisation", labelKey: "chatAgentPersonalisation", icon: Users, enabled: true },
+  { id: "code_reviewer", labelKey: "chatAgentCodeReviewer", icon: FileSearch, enabled: true },
+  { id: "knowledge", labelKey: "chatAgentKnowledge", icon: BookOpen, enabled: true },
+  { id: "innovation", labelKey: "chatAgentInnovation", icon: Lightbulb, enabled: true },
 ];
 
 interface ChatPanelProps {
@@ -54,19 +66,17 @@ export function ChatPanel({ onApplyToEditor }: ChatPanelProps) {
     [onApplyToEditor]
   );
 
-  const placeholder =
-    agent === "scaffolder"
-      ? t("chatScaffolderPlaceholder")
-      : t("chatInputPlaceholder");
-
-  const emptyText =
-    agent === "scaffolder" ? t("chatScaffolderEmpty") : t("chatEmpty");
+  const emptyKey = `chatEmpty_${agent}` as const;
+  const placeholderKey = `chatPlaceholder_${agent}` as const;
+  // Each agent has its own empty-state description and input placeholder
+  const emptyText = t.has(emptyKey) ? t(emptyKey) : t("chatEmpty");
+  const placeholder = t.has(placeholderKey) ? t(placeholderKey) : t("chatInputPlaceholder");
 
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header: Agent selector + Clear */}
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <div className="flex flex-1 items-center gap-1">
+        <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
           {AGENTS.map((opt) => {
             const Icon = opt.icon;
             const isActive = agent === opt.id;
@@ -77,19 +87,11 @@ export function ChatPanel({ onApplyToEditor }: ChatPanelProps) {
                 variant="ghost"
                 size="sm"
                 disabled={!opt.enabled}
-                className={`h-7 gap-1.5 px-2.5 text-xs ${isActive ? "bg-accent text-accent-foreground" : ""}`}
+                className={`h-7 shrink-0 gap-1.5 px-2 text-xs ${isActive ? "bg-accent text-accent-foreground" : ""}`}
                 onClick={() => setAgent(opt.id)}
               >
                 <Icon className="h-3.5 w-3.5" />
                 {t(opt.labelKey)}
-                {!opt.enabled && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-0.5 px-1 py-0 text-[10px]"
-                  >
-                    {t("chatComingSoon")}
-                  </Badge>
-                )}
               </Button>
             );
           })}
@@ -99,7 +101,7 @@ export function ChatPanel({ onApplyToEditor }: ChatPanelProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+            className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
             onClick={clearMessages}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -110,11 +112,11 @@ export function ChatPanel({ onApplyToEditor }: ChatPanelProps) {
 
       {/* Message area */}
       {messages.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
-          <MessageSquare className="h-8 w-8 text-muted-foreground" />
-          <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-            {emptyText}
-          </p>
+        <div className="flex flex-1 items-center justify-center px-6 py-4">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <MessageSquare className="h-5 w-5 shrink-0" />
+            <p className="text-sm">{emptyText}</p>
+          </div>
         </div>
       ) : (
         <MessageList messages={messages} onApplyHtml={handleApplyHtml} />

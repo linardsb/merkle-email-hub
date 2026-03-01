@@ -41,6 +41,9 @@ make test-fe         # Frontend unit tests only (vitest)
 make db-migrate      # Run migrations
 make db-revision m="description"  # Create new migration
 
+# Knowledge base
+make seed-knowledge  # Seed RAG knowledge base (requires DB + embedding provider)
+
 # Docker
 make docker          # Full stack (port :80)
 make docker-down     # Stop all services
@@ -131,6 +134,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `approval` | `/api/v1/approvals` | Client approval workflow with feedback and audit trail |
 | `templates` | `/api/v1/templates`, `/api/v1/projects/{id}/templates` | Versioned email templates with soft delete and restore |
 | `personas` | `/api/v1/personas` | Test subscriber profiles (device, email client, dark mode) |
+| `knowledge` | `/api/v1/knowledge` | RAG pipeline: document ingestion, hybrid search, tagging (`make seed-knowledge`) |
 
 ### QA Gate System (10 checks)
 
@@ -207,16 +211,17 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 2.7 Component library browser UI (`/components`)
 - [x] 2.8 10-point QA gate system (backend + UI complete)
 - [x] 2.9 Raw HTML export + Braze connector UI
-- [ ] 2.10 RAG knowledge base seeding (Can I Email, best practices)
+- [x] 2.10 RAG knowledge base seeding (Can I Email, best practices)
 
 ### Phase 3 — Sprint 3: Client Handoff + Polish
 - [x] 3.1 Client approval portal (viewer role, feedback, audit trail)
 - [x] 3.2 Rendering intelligence dashboard (QA trends, support matrices)
-- [ ] 3.3 Dashboard homepage enhancement (real data, activity feed)
+- [x] 3.3 Dashboard homepage enhancement (real data, activity feed)
 - [ ] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
 - [ ] 3.5 CMS + Nginx Docker stack (7 services healthy)
 
 ### Phase 4 — Post-MVP
+- [x] 4.8 Knowledge base search UI (`/knowledge` page, document browser, hybrid search)
 - [ ] 4.1 Remaining 6 AI agents (Outlook Fixer, Accessibility, Personalisation, Code Reviewer, Knowledge, Innovation)
 - [ ] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
 - [ ] 4.3 Figma design sync (REST API, token extraction, webhooks)
@@ -249,6 +254,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - AI Chat Sidebar: agent toggles, streaming display, accept/reject/merge
 - Approval Portal: viewer login, read-only preview, section feedback, approve/reject
 - Intelligence Dashboard: QA trends, support matrices, quality scores
+- Knowledge Base Search: document browser, natural language search, domain/tag filters
 
 ## Compact instructions
 

@@ -43,6 +43,8 @@ function buildBody(
   return JSON.stringify({ messages: recent, stream: true });
 }
 
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>("idle");
@@ -90,6 +92,39 @@ export function useChat(): UseChatReturn {
 
       const url = buildUrl(agent);
       const body = buildBody(content, agent, messages);
+
+      // Demo mode: simulate streaming from canned responses
+      if (IS_DEMO) {
+        (async () => {
+          const { DEMO_CHAT_RESPONSES } = await import(
+            "@/lib/demo/chat-responses"
+          );
+          const fullText = DEMO_CHAT_RESPONSES[agent] || DEMO_CHAT_RESPONSES.chat;
+          const words = fullText.split(/(\s+)/);
+          let accumulated = "";
+
+          for (let i = 0; i < words.length; i++) {
+            accumulated += words[i];
+            const snapshot = accumulated;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: snapshot } : m,
+              ),
+            );
+            // ~30ms per token for realistic typing feel
+            await new Promise((r) => setTimeout(r, 15 + Math.random() * 30));
+          }
+
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, isStreaming: false } : m,
+            ),
+          );
+          setStatus("idle");
+          abortRef.current = null;
+        })();
+        return;
+      }
 
       (async () => {
         try {
