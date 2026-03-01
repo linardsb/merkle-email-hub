@@ -23,6 +23,7 @@ dependencies = [
     "structlog>=25.5.0",
     "uvicorn[standard]>=0.38.0",
 
+    "anthropic>=0.43.0",
     "openai>=1.0.0",
     "python-multipart>=0.0.18",
     "pgvector>=0.4.2",
@@ -154,6 +155,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "fitz.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "anthropic.*"
 ignore_missing_imports = true
 
 

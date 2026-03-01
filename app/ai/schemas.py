@@ -37,6 +37,8 @@ class ChatCompletionRequest(BaseModel):
 
     messages: list[ChatMessage] = Field(min_length=1, max_length=20)
     model: str | None = None
+    stream: bool = False
+    task_tier: Literal["complex", "standard", "lightweight"] | None = None
 
     @field_validator("messages")
     @classmethod

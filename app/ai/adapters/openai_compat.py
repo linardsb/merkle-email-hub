@@ -99,7 +99,7 @@ class OpenAICompatProvider:
             AIExecutionError: If the API call fails or returns an error.
         """
         payload: dict[str, Any] = {
-            "model": self._model,
+            "model": kwargs.get("model_override", self._model),
             "messages": [{"role": m.role, "content": m.content} for m in messages],
         }
 
@@ -191,7 +191,7 @@ class OpenAICompatProvider:
             AIExecutionError: If the API call fails.
         """
         payload: dict[str, Any] = {
-            "model": self._model,
+            "model": kwargs.get("model_override", self._model),
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "stream": True,
         }

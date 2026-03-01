@@ -1,16 +1,21 @@
+# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
 """Chat orchestration service using the LLMProvider protocol.
 
 Provider-agnostic: resolves the configured provider from the registry
-and delegates completion to it. Handles message extraction, provider
-resolution, and OpenAI-compatible response formatting.
+and delegates completion to it. Includes model routing, PII sanitization,
+and output validation.
 """
 
+import json
 import time
 import uuid
+from collections.abc import AsyncIterator
 
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
+from app.ai.routing import resolve_model
+from app.ai.sanitize import sanitize_prompt, validate_output
 from app.ai.schemas import (
     ChatCompletionChoice,
     ChatCompletionRequest,
@@ -27,16 +32,16 @@ logger = get_logger(__name__)
 class ChatService:
     """Orchestrates chat interactions using a protocol-based LLM provider.
 
-    Resolves the LLM provider from the registry based on configuration,
-    converts between OpenAI-compatible schemas and protocol Message objects,
-    and formats responses.
+    Features:
+    - Provider resolution from registry
+    - Model tier routing (complex/standard/lightweight)
+    - PII sanitization before external API calls
+    - Output validation on responses
+    - Streaming support via async iterator
     """
 
     async def chat(self, request: ChatCompletionRequest) -> ChatCompletionResponse:
-        """Process a chat completion request.
-
-        Extracts messages, resolves the configured LLM provider,
-        sends the completion request, and returns an OpenAI-compatible response.
+        """Process a non-streaming chat completion request.
 
         Args:
             request: The chat completion request with messages.
@@ -49,15 +54,21 @@ class ChatService:
         """
         settings = get_settings()
         provider_name = settings.ai.provider
-        model_id = f"{provider_name}:{settings.ai.model}"
 
-        # Convert schema messages to protocol messages
-        messages = [Message(role=msg.role, content=msg.content) for msg in request.messages]
+        # Resolve model via tier routing
+        model = resolve_model(request.task_tier)
+        model_id = f"{provider_name}:{model}"
+
+        # Sanitize messages (strip PII before sending to external API)
+        messages = [
+            Message(role=msg.role, content=sanitize_prompt(msg.content)) for msg in request.messages
+        ]
 
         logger.info(
             "ai.chat_started",
             provider=provider_name,
-            model=settings.ai.model,
+            model=model,
+            tier=request.task_tier,
             message_count=len(messages),
         )
 
@@ -66,7 +77,7 @@ class ChatService:
         provider = registry.get_llm(provider_name)
 
         try:
-            result = await provider.complete(messages)
+            result = await provider.complete(messages, model_override=model)
         except Exception as e:
             logger.error(
                 "ai.chat_failed",
@@ -79,9 +90,11 @@ class ChatService:
                 raise
             raise AIExecutionError(f"Chat completion failed: {e}") from e
 
+        # Validate output
+        content = validate_output(result.content)
+
         response_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
 
-        # Build usage info from provider response
         usage = UsageInfo()
         if result.usage:
             usage = UsageInfo(
@@ -97,7 +110,7 @@ class ChatService:
             choices=[
                 ChatCompletionChoice(
                     index=0,
-                    message=ChatMessage(role="assistant", content=result.content),
+                    message=ChatMessage(role="assistant", content=content),
                     finish_reason="stop",
                 )
             ],
@@ -107,11 +120,85 @@ class ChatService:
         logger.info(
             "ai.chat_completed",
             response_id=response_id,
-            output_length=len(result.content),
+            output_length=len(content),
             provider=provider_name,
+            usage=result.usage,
         )
 
         return response
+
+    async def stream_chat(self, request: ChatCompletionRequest) -> AsyncIterator[str]:
+        """Stream chat completion tokens as SSE-formatted strings.
+
+        Yields SSE-formatted chunks compatible with OpenAI streaming format.
+
+        Args:
+            request: The chat completion request.
+
+        Yields:
+            SSE-formatted data strings (e.g., 'data: {"choices":[...]}\n\n').
+
+        Raises:
+            AIExecutionError: If the provider fails.
+        """
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(request.task_tier)
+        model_id = f"{provider_name}:{model}"
+        response_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
+
+        messages = [
+            Message(role=msg.role, content=sanitize_prompt(msg.content)) for msg in request.messages
+        ]
+
+        logger.info(
+            "ai.stream_started",
+            provider=provider_name,
+            model=model,
+            tier=request.task_tier,
+            message_count=len(messages),
+        )
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+
+        try:
+            async for chunk in provider.stream(messages, model_override=model):  # type: ignore[attr-defined]
+                sse_data = {
+                    "id": response_id,
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": model_id,
+                    "choices": [
+                        {
+                            "index": 0,
+                            "delta": {"content": chunk},
+                            "finish_reason": None,
+                        }
+                    ],
+                }
+                yield f"data: {json.dumps(sse_data)}\n\n"
+
+        except Exception as e:
+            logger.error(
+                "ai.stream_failed",
+                exc_info=True,
+                error=str(e),
+                error_type=type(e).__name__,
+                provider=provider_name,
+            )
+            if isinstance(e, AIExecutionError):
+                raise
+            raise AIExecutionError(f"Chat streaming failed: {e}") from e
+
+        # Send final [DONE] sentinel
+        yield "data: [DONE]\n\n"
+
+        logger.info(
+            "ai.stream_completed",
+            response_id=response_id,
+            provider=provider_name,
+        )
 
 
 # ── Module-level singleton ──

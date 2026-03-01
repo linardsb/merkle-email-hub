@@ -54,6 +54,15 @@ class AIConfig(BaseModel):
     base_url: str | None = None  # Custom endpoint (Ollama, vLLM, LiteLLM)
     daily_quota: int = 50  # Per-IP daily request limit
 
+    # Model routing — maps task tiers to model identifiers
+    model_complex: str = ""  # Empty = use default model
+    model_standard: str = ""  # Empty = use default model
+    model_lightweight: str = ""  # Empty = use default model
+
+    # AI-specific rate limits
+    rate_limit_chat: str = "20/minute"
+    rate_limit_generation: str = "5/minute"
+
 
 class EmbeddingConfig(BaseModel):
     """Embedding provider settings."""

@@ -2,7 +2,7 @@
 """AI chat API routes following OpenAI-compatible format.
 
 Endpoints:
-- POST /v1/chat/completions - Send messages and receive AI responses
+- POST /v1/chat/completions - Send messages / stream AI responses
 - GET /v1/models - List available models
 """
 
@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 
 from app.ai.schemas import ChatCompletionRequest, ChatCompletionResponse
 from app.ai.service import ChatService, get_chat_service
@@ -108,18 +109,18 @@ def _get_quota_tracker() -> _QuotaTracker:
 # ── Routes ──
 
 
-@router.post("/chat/completions", response_model=ChatCompletionResponse)
-@limiter.limit("10/minute")
+@router.post("/chat/completions", response_model=None)
+@limiter.limit("20/minute")
 async def chat_completions(
     request: Request,
     body: ChatCompletionRequest,
     service: ChatService = Depends(get_chat_service),
     _current_user: User = Depends(get_current_user),
-) -> ChatCompletionResponse:
-    """Create a chat completion.
+) -> ChatCompletionResponse | StreamingResponse:
+    """Create a chat completion (streaming or non-streaming).
 
-    Accepts a list of messages and returns the AI provider's response
-    in OpenAI-compatible format.
+    When body.stream is True, returns SSE StreamingResponse.
+    When body.stream is False, returns ChatCompletionResponse.
 
     Args:
         request: The incoming HTTP request (used for rate limiting).
@@ -128,7 +129,7 @@ async def chat_completions(
         _current_user: Authenticated user (injected, enforces auth).
 
     Returns:
-        Chat completion response with the provider's message.
+        Chat completion response or SSE streaming response.
     """
     # Check daily quota before expensive LLM call
     client_ip = _get_client_ip(request)
@@ -141,6 +142,19 @@ async def chat_completions(
             detail=f"Daily query quota exceeded. Remaining: {remaining}. Resets in 24 hours.",
         )
 
+    # Streaming response
+    if body.stream:
+        return StreamingResponse(
+            service.stream_chat(body),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # Disable nginx buffering
+            },
+        )
+
+    # Non-streaming response
     return await service.chat(body)
 
 
@@ -150,22 +164,26 @@ async def list_models(
     request: Request,
     _current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    """List available models.
+    """List available models including tier-routed models.
 
-    Returns the currently configured AI provider and model information.
+    Returns the currently configured AI provider and model information
+    in OpenAI-compatible format.
 
     Returns:
         Dictionary with model list in OpenAI-compatible format.
     """
     settings = get_settings()
-    model_id = f"{settings.ai.provider}:{settings.ai.model}"
 
-    return {
-        "object": "list",
-        "data": [
-            {
-                "id": model_id,
-                "object": "model",
-            }
-        ],
-    }
+    models: list[dict[str, str]] = [
+        {"id": f"{settings.ai.provider}:{settings.ai.model}", "object": "model"},
+    ]
+
+    # Include tier models if configured
+    for tier_attr in ("model_complex", "model_standard", "model_lightweight"):
+        tier_model: str = getattr(settings.ai, tier_attr, "")
+        if tier_model:
+            model_id = f"{settings.ai.provider}:{tier_model}"
+            if not any(m["id"] == model_id for m in models):
+                models.append({"id": model_id, "object": "model"})
+
+    return {"object": "list", "data": models}
