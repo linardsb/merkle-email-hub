@@ -430,7 +430,7 @@ export default function WorkspacePage() {
             collapsedSize={0}
             onResize={handleChatResize}
           >
-            <ChatPanel onApplyToEditor={handleApplyToEditor} />
+            <ChatPanel projectId={params.id} onApplyToEditor={handleApplyToEditor} />
           </Panel>
         </Group>
 

@@ -1,6 +1,16 @@
 export type ChatRole = "user" | "assistant";
 
-export type AgentMode = "chat" | "scaffolder" | "dark_mode" | "content";
+export type AgentMode =
+  | "chat"
+  | "scaffolder"
+  | "dark_mode"
+  | "content"
+  | "outlook_fixer"
+  | "accessibility"
+  | "personalisation"
+  | "code_reviewer"
+  | "knowledge"
+  | "innovation";
 
 export type ChatStatus = "idle" | "streaming" | "error";
 
@@ -41,4 +51,19 @@ export interface UseChatReturn {
   sendMessage: (content: string, agent: AgentMode) => void;
   stopStreaming: () => void;
   clearMessages: () => void;
+  replaceMessages: (messages: ChatMessage[]) => void;
 }
+
+/** Maps AgentMode → i18n key in workspace namespace */
+export const AGENT_LABEL_KEYS: Record<AgentMode, string> = {
+  chat: "chatAgentChat",
+  scaffolder: "chatAgentScaffolder",
+  dark_mode: "chatAgentDarkMode",
+  content: "chatAgentContent",
+  outlook_fixer: "chatAgentOutlookFixer",
+  accessibility: "chatAgentAccessibility",
+  personalisation: "chatAgentPersonalisation",
+  code_reviewer: "chatAgentCodeReviewer",
+  knowledge: "chatAgentKnowledge",
+  innovation: "chatAgentInnovation",
+};

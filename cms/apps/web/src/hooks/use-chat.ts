@@ -216,5 +216,11 @@ export function useChat(): UseChatReturn {
     setStatus("idle");
   }, [stopStreaming]);
 
-  return { messages, status, error, sendMessage, stopStreaming, clearMessages };
+  const replaceMessages = useCallback((newMessages: ChatMessage[]) => {
+    setMessages(newMessages);
+    setStatus("idle");
+    setError(null);
+  }, []);
+
+  return { messages, status, error, sendMessage, stopStreaming, clearMessages, replaceMessages };
 }

@@ -1,4 +1,5 @@
 import type { AgentMode } from "@/types/chat";
+import type { ChatSession } from "@/types/chat-history";
 
 /**
  * Canned AI responses for demo mode, one per agent mode.
@@ -308,3 +309,95 @@ Checkbox hack for accordion/tab interfaces without JavaScript — works in Apple
 
 **Feasibility Assessment:** AMP is production-ready for Gmail audiences. CSS animations are safe as progressive enhancement. Kinetic email is experimental but impressive for demos.`,
 };
+
+/**
+ * Demo conversation history seeded into localStorage for the History tab.
+ */
+export const DEMO_CHAT_HISTORY: ChatSession[] = [
+  {
+    id: "session-demo-1",
+    projectId: "1",
+    agent: "scaffolder",
+    messages: [
+      {
+        id: "msg-demo-1a",
+        role: "user",
+        content:
+          "Build a promotional email for our Q1 Spring Sale with a hero banner, 3 product cards, and a CTA button",
+        timestamp: Date.now() - 3600000 * 2,
+        agent: "scaffolder",
+        isStreaming: false,
+      },
+      {
+        id: "msg-demo-1b",
+        role: "assistant",
+        content:
+          "Here's a Maizzle template for your Spring Sale campaign:\n\n```html\n<extends src=\"src/layouts/main.html\">\n  <block name=\"template\">\n    <table class=\"w-full\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\">\n      <tr>\n        <td class=\"p-48 bg-slate-800 text-center text-white\">\n          <h1 class=\"text-3xl font-bold m-0 mb-16\">Spring Sale — Up to 40% Off</h1>\n          <p class=\"text-lg m-0 mb-24 text-slate-300\">Fresh styles at unbeatable prices.</p>\n          <a href=\"#\" class=\"inline-block px-36 py-14 bg-red-600 text-white font-bold no-underline rounded\">Shop Now</a>\n        </td>\n      </tr>\n    </table>\n  </block>\n</extends>\n```\n\nThis includes responsive product cards and Outlook-compatible layout.",
+        timestamp: Date.now() - 3600000 * 2 + 5000,
+        agent: "scaffolder",
+        isStreaming: false,
+      },
+    ],
+    createdAt: Date.now() - 3600000 * 2,
+    updatedAt: Date.now() - 3600000 * 2 + 5000,
+    messageCount: 2,
+    preview:
+      "Build a promotional email for our Q1 Spring Sale with a hero banner, 3 product cards, and a CTA",
+  },
+  {
+    id: "session-demo-2",
+    projectId: "1",
+    agent: "dark_mode",
+    messages: [
+      {
+        id: "msg-demo-2a",
+        role: "user",
+        content: "Add dark mode support to the current template",
+        timestamp: Date.now() - 3600000,
+        agent: "dark_mode",
+        isStreaming: false,
+      },
+      {
+        id: "msg-demo-2b",
+        role: "assistant",
+        content:
+          "I've added comprehensive dark mode support:\n\n1. Added `<meta name=\"color-scheme\" content=\"light dark\">` to `<head>`\n2. Injected `@media (prefers-color-scheme: dark)` rules\n3. Added Outlook-specific `[data-ogsc]` selectors\n4. Remapped brand colors for dark backgrounds\n\nAll changes are ready to apply.",
+        timestamp: Date.now() - 3600000 + 3000,
+        agent: "dark_mode",
+        isStreaming: false,
+      },
+    ],
+    createdAt: Date.now() - 3600000,
+    updatedAt: Date.now() - 3600000 + 3000,
+    messageCount: 2,
+    preview: "Add dark mode support to the current template",
+  },
+  {
+    id: "session-demo-3",
+    projectId: "1",
+    agent: "knowledge",
+    messages: [
+      {
+        id: "msg-demo-3a",
+        role: "user",
+        content: "What CSS properties are safe to use across all email clients?",
+        timestamp: Date.now() - 1800000,
+        agent: "knowledge",
+        isStreaming: false,
+      },
+      {
+        id: "msg-demo-3b",
+        role: "assistant",
+        content:
+          "Based on the knowledge base, these CSS properties are safe across Gmail, Outlook, Apple Mail, and Yahoo:\n\n- `background-color` — universal support\n- `color` — universal support\n- `font-family`, `font-size`, `font-weight` — universal\n- `padding` — universal (use on `<td>` elements)\n- `text-align`, `text-decoration` — universal\n- `width`, `height` — universal on images and tables\n\nAvoid: `flexbox`, `grid`, `gap`, `position`, `@media` (Outlook ignores media queries).",
+        timestamp: Date.now() - 1800000 + 4000,
+        agent: "knowledge",
+        isStreaming: false,
+      },
+    ],
+    createdAt: Date.now() - 1800000,
+    updatedAt: Date.now() - 1800000 + 4000,
+    messageCount: 2,
+    preview: "What CSS properties are safe to use across all email clients?",
+  },
+];

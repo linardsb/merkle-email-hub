@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   MessageSquare,
@@ -14,13 +14,17 @@ import {
   FileSearch,
   BookOpen,
   Lightbulb,
+  History,
 } from "lucide-react";
 import { Button } from "@merkle-email-hub/ui/components/ui/button";
 import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
 import { useChat } from "@/hooks/use-chat";
+import { useChatHistory } from "@/hooks/use-chat-history";
 import { MessageList } from "./chat/message-list";
 import { ChatInput } from "./chat/chat-input";
+import { HistoryPanel } from "./chat/history-panel";
 import type { AgentMode } from "@/types/chat";
+import type { ChatPanelTab, ChatSession } from "@/types/chat-history";
 
 interface AgentOption {
   id: AgentMode;
@@ -43,14 +47,21 @@ const AGENTS: AgentOption[] = [
 ];
 
 interface ChatPanelProps {
+  projectId?: string;
   onApplyToEditor?: (html: string) => void;
 }
 
-export function ChatPanel({ onApplyToEditor }: ChatPanelProps) {
+export function ChatPanel({ projectId = "default", onApplyToEditor }: ChatPanelProps) {
   const t = useTranslations("workspace");
   const [agent, setAgent] = useState<AgentMode>("chat");
-  const { messages, status, error, sendMessage, stopStreaming, clearMessages } =
-    useChat();
+  const [activeTab, setActiveTab] = useState<ChatPanelTab>("chat");
+  const {
+    messages, status, error,
+    sendMessage, stopStreaming, clearMessages, replaceMessages,
+  } = useChat();
+  const {
+    sessions, saveSession, deleteSession, clearAllSessions,
+  } = useChatHistory(projectId);
 
   const handleSend = useCallback(
     (content: string) => {
@@ -66,76 +77,161 @@ export function ChatPanel({ onApplyToEditor }: ChatPanelProps) {
     [onApplyToEditor]
   );
 
+  // Save current conversation before clearing
+  const handleClear = useCallback(() => {
+    if (messages.length > 0) {
+      saveSession(messages, agent);
+    }
+    clearMessages();
+  }, [messages, agent, saveSession, clearMessages]);
+
+  // Restore a past session
+  const handleRestore = useCallback(
+    (session: ChatSession) => {
+      if (messages.length > 0) {
+        saveSession(messages, agent);
+      }
+      replaceMessages(session.messages);
+      setAgent(session.agent);
+      setActiveTab("chat");
+    },
+    [messages, agent, saveSession, replaceMessages]
+  );
+
+  // Auto-save on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (messages.length > 0) {
+        saveSession(messages, agent);
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [messages, agent, saveSession]);
+
   const emptyKey = `chatEmpty_${agent}` as const;
   const placeholderKey = `chatPlaceholder_${agent}` as const;
-  // Each agent has its own empty-state description and input placeholder
   const emptyText = t.has(emptyKey) ? t(emptyKey) : t("chatEmpty");
   const placeholder = t.has(placeholderKey) ? t(placeholderKey) : t("chatInputPlaceholder");
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Header: Agent selector + Clear */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
-          {AGENTS.map((opt) => {
-            const Icon = opt.icon;
-            const isActive = agent === opt.id;
-
-            return (
-              <Button
-                key={opt.id}
-                variant="ghost"
-                size="sm"
-                disabled={!opt.enabled}
-                className={`h-7 shrink-0 gap-1.5 px-2 text-xs ${isActive ? "bg-accent text-accent-foreground" : ""}`}
-                onClick={() => setAgent(opt.id)}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {t(opt.labelKey)}
-              </Button>
-            );
-          })}
-        </div>
-
-        {messages.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
-            onClick={clearMessages}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("chatClear")}
-          </Button>
-        )}
+      {/* Top-level tabs: Chat | History */}
+      <div className="flex border-b border-border" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "chat"}
+          onClick={() => setActiveTab("chat")}
+          className={`flex flex-1 items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors ${
+            activeTab === "chat"
+              ? "border-b-2 border-interactive text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          {t("chatTab")}
+          {messages.length > 0 && (
+            <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+              {messages.length}
+            </Badge>
+          )}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "history"}
+          onClick={() => setActiveTab("history")}
+          className={`flex flex-1 items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors ${
+            activeTab === "history"
+              ? "border-b-2 border-interactive text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <History className="h-3.5 w-3.5" />
+          {t("historyTab")}
+          {sessions.length > 0 && (
+            <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+              {sessions.length}
+            </Badge>
+          )}
+        </button>
       </div>
 
-      {/* Message area */}
-      {messages.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center px-6 py-4">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <MessageSquare className="h-5 w-5 shrink-0" />
-            <p className="text-sm">{emptyText}</p>
+      {/* Tab content */}
+      {activeTab === "chat" ? (
+        <>
+          {/* Agent selector + Clear */}
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
+              {AGENTS.map((opt) => {
+                const Icon = opt.icon;
+                const isActive = agent === opt.id;
+
+                return (
+                  <Button
+                    key={opt.id}
+                    variant="ghost"
+                    size="sm"
+                    disabled={!opt.enabled}
+                    className={`h-7 shrink-0 gap-1.5 px-2 text-xs ${isActive ? "bg-accent text-accent-foreground" : ""}`}
+                    onClick={() => setAgent(opt.id)}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {t(opt.labelKey)}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
+                onClick={handleClear}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("chatClear")}
+              </Button>
+            )}
           </div>
-        </div>
+
+          {/* Message area */}
+          {messages.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center px-6 py-4">
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <MessageSquare className="h-5 w-5 shrink-0" />
+                <p className="text-sm">{emptyText}</p>
+              </div>
+            </div>
+          ) : (
+            <MessageList messages={messages} onApplyHtml={handleApplyHtml} />
+          )}
+
+          {/* Error banner */}
+          {status === "error" && error && (
+            <div className="border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {t("chatError")}
+            </div>
+          )}
+
+          {/* Input */}
+          <ChatInput
+            onSend={handleSend}
+            onStop={stopStreaming}
+            status={status}
+            placeholder={placeholder}
+          />
+        </>
       ) : (
-        <MessageList messages={messages} onApplyHtml={handleApplyHtml} />
+        <HistoryPanel
+          sessions={sessions}
+          onRestore={handleRestore}
+          onDelete={deleteSession}
+          onClearAll={clearAllSessions}
+        />
       )}
-
-      {/* Error banner */}
-      {status === "error" && error && (
-        <div className="border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          {t("chatError")}
-        </div>
-      )}
-
-      {/* Input */}
-      <ChatInput
-        onSend={handleSend}
-        onStop={stopStreaming}
-        status={status}
-        placeholder={placeholder}
-      />
     </div>
   );
 }
