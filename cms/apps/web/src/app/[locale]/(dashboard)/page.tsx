@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -13,6 +14,7 @@ import { useOrgs } from "@/hooks/use-orgs";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
+  const locale = useLocale();
   const {
     data: projectsData,
     isLoading: projectsLoading,
@@ -111,9 +113,10 @@ export default function DashboardPage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projectsData?.items.map((project) => (
-              <div
+              <Link
                 key={project.id}
-                className="cursor-pointer rounded-lg border border-card-border bg-card-bg p-6 transition-colors hover:bg-surface-hover"
+                href={`/${locale}/projects/${project.id}/workspace`}
+                className="block rounded-lg border border-card-border bg-card-bg p-6 transition-colors hover:bg-surface-hover"
               >
                 <h3 className="font-medium text-foreground">{project.name}</h3>
                 <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">
@@ -127,7 +130,7 @@ export default function DashboardPage() {
                     {new Date(project.updated_at).toLocaleDateString()}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
