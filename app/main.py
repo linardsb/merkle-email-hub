@@ -18,6 +18,10 @@ from fastapi import FastAPI
 from slowapi import _rate_limit_exceeded_handler  # pyright: ignore[reportMissingTypeStubs]
 from slowapi.errors import RateLimitExceeded  # pyright: ignore[reportMissingTypeStubs]
 
+# AI agents
+from app.ai.agents.content.routes import router as content_router
+from app.ai.agents.dark_mode.routes import router as dark_mode_router
+from app.ai.agents.scaffolder.routes import router as scaffolder_router
 from app.ai.exceptions import setup_ai_exception_handlers
 from app.ai.routes import router as ai_router
 from app.approval.routes import router as approval_router
@@ -137,6 +141,11 @@ app.include_router(connectors_router)
 app.include_router(approval_router)
 app.include_router(personas_router)
 app.include_router(templates_router)
+
+# AI agents
+app.include_router(scaffolder_router)
+app.include_router(dark_mode_router)
+app.include_router(content_router)
 
 
 @app.get("/")

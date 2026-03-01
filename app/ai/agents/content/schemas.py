@@ -1,0 +1,66 @@
+"""Request/response schemas for the Content agent."""
+
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+
+class ContentRequest(BaseModel):
+    """Request body for the content generate endpoint.
+
+    Attributes:
+        operation: The copywriting operation to perform.
+        text: Source text or campaign brief.
+        tone: Target tone for tone_adjust, optional hint for others.
+        brand_voice: Brand guidelines loaded from project settings.
+        num_alternatives: Number of alternatives to generate.
+        stream: Whether to return SSE streaming response.
+    """
+
+    operation: Literal[
+        "subject_line",
+        "preheader",
+        "cta",
+        "body_copy",
+        "rewrite",
+        "shorten",
+        "expand",
+        "tone_adjust",
+    ]
+    text: str = Field(min_length=1, max_length=10_000, description="Source text or brief")
+    tone: str | None = Field(default=None, max_length=100, description="Target tone")
+    brand_voice: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Brand voice guidelines from project settings",
+    )
+    num_alternatives: int = Field(default=1, ge=1, le=10, description="Number of alternatives")
+    stream: bool = False
+
+
+class SpamWarning(BaseModel):
+    """A spam trigger detected in generated content.
+
+    Attributes:
+        trigger: The spam trigger word/phrase found.
+        context: Surrounding text snippet for context.
+    """
+
+    trigger: str
+    context: str
+
+
+class ContentResponse(BaseModel):
+    """Response from the content generate endpoint.
+
+    Attributes:
+        content: Generated text alternatives (always a list).
+        operation: The operation that was performed.
+        spam_warnings: Detected spam triggers with context.
+        model: The model identifier that generated the content.
+    """
+
+    content: list[str]
+    operation: str
+    spam_warnings: list[SpamWarning] = []
+    model: str
