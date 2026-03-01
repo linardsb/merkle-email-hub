@@ -52,3 +52,13 @@ export interface PaginatedQAResults {
   page_size: number;
 }
 
+/** Aggregated metrics for the intelligence dashboard. */
+export interface QADashboardMetrics {
+  totalRuns: number;
+  avgScore: number;
+  passRate: number;
+  overrideCount: number;
+  checkAverages: { checkName: string; avgScore: number; passRate: number }[];
+  scoreTrend: { score: number; passed: boolean; date: string }[];
+}
+

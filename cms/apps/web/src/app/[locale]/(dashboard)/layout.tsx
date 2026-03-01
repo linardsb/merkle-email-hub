@@ -6,6 +6,8 @@ import {
   List,
   Blocks,
   ClipboardCheck,
+  Plug,
+  BarChart3,
   Users,
   LogOut,
 } from "lucide-react";
@@ -52,6 +54,16 @@ export default async function DashboardLayout({
       href: `/${locale}/approvals`,
       label: (messages as any)?.nav?.approvals || "Approvals",
       icon: <ClipboardCheck className="h-5 w-5" />,
+    },
+    {
+      href: `/${locale}/connectors`,
+      label: (messages as any)?.nav?.connectors || "Connectors",
+      icon: <Plug className="h-5 w-5" />,
+    },
+    {
+      href: `/${locale}/intelligence`,
+      label: (messages as any)?.nav?.intelligence || "Intelligence",
+      icon: <BarChart3 className="h-5 w-5" />,
     },
     {
       href: `/${locale}/users`,

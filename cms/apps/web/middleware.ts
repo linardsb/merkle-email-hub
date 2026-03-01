@@ -19,6 +19,8 @@ const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/components": ["admin", "developer", "viewer"],
   "/users": ["admin"],
   "/approvals": ["admin", "developer", "viewer"],
+  "/connectors": ["admin", "developer", "viewer"],
+  "/intelligence": ["admin", "developer", "viewer"],
 };
 
 const PUBLIC_ROUTES = ["/login"];

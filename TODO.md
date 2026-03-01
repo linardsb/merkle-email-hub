@@ -107,7 +107,7 @@
 **Plan ref:** Section 6.3 (Build Pipeline), 9.2 (Live Preview), MVP #3
 **What:** Compile-on-save via `POST /api/v1/email/preview`. Render compiled HTML in sandboxed iframe. Desktop/tablet/mobile viewport toggles. Dark mode preview toggle. Zoom controls.
 **Security:**
-- Preview iframe uses `sandbox="allow-same-origin"` — NO `allow-scripts`
+- Preview iframe uses `sandbox=""` — fully sandboxed (no scripts, no same-origin access)
 - Preview iframe loaded via blob URL or srcdoc, never from external URL
 - PostMessage communication between editor and preview must validate origin
 - No user-generated content executes JavaScript in preview context
@@ -211,9 +211,10 @@
 - Override audit entry includes who, when, why, which checks bypassed
 **Verify:** Click "Run QA" → 10 checks execute → results display inline. Failing checks show detail. Override flow works with audit logging.
 
-### 2.9 Raw HTML Export + Braze Connector UI
+### ~~2.9 Raw HTML Export + Braze Connector UI~~ DONE
 **Plan ref:** Section 3.1 (Connector Architecture), MVP #6
 **What:** Export console at `/export` or inline in workspace. Platform selector: Raw HTML download, Braze Content Blocks push. Export preview shows what will be sent. Braze connector: configure API key (encrypted), push as Content Block with Liquid packaging.
+**Frontend:** `ExportDialog` (32rem) with two tabs — Raw HTML (client-side Blob download via `URL.createObjectURL`) and Braze (two-phase: production build → `POST /api/v1/connectors/export` with `content_block_name`); state machine (idle→building→exporting→success|error) with retry; `ExportStatusBadge` + `ExportCard` for history grid; `useExportHistory()` hook via `useSyncExternalStore` + `sessionStorage` (max 100 records, cross-component sync without context provider); `/connectors` dashboard page with platform filter tabs (All/Braze/Raw HTML); Export button in workspace toolbar; Plug sidebar nav icon; middleware RBAC (all roles); ~25 i18n keys across `connectors` + `export` namespaces; all semantic Tailwind tokens.
 **Security:**
 - Braze API key encrypted with AES-256 before storage. Never returned in API responses. Never logged.
 - Credential scope validation: verify API key has minimum required permissions before storing
@@ -250,9 +251,10 @@
 - Session timeout: 30 minutes inactivity for viewer role
 **Verify:** Client logs in with viewer credentials → sees only their project's emails → leaves section feedback → approves → audit trail shows complete history.
 
-### 3.2 Rendering Intelligence Dashboard
+### ~~3.2 Rendering Intelligence Dashboard~~ DONE
 **Plan ref:** Section MVP #11, 12.6 (Compound Innovation Effect)
-**What:** Dashboard at `/qa` or `/dashboard/intelligence`. Client support matrices (which innovations work in which email clients). Template quality scores (file size, code complexity, accessibility rating). QA results visualization (pass/fail trends over time). Visual regression tracking (before/after per change).
+**What:** Dashboard at `/intelligence` with QA quality trends, per-check analytics, and recent results. Client-side aggregation from `GET /api/v1/qa/results` (no backend aggregation endpoint needed).
+**Frontend:** `/intelligence` page with 4 sections: `ScoreOverviewCards` (4-column grid: total runs, avg score, pass rate, overrides); `CheckPerformanceChart` (CSS horizontal bars showing avg score per QA check, sorted worst-first, colored by threshold — green >=80%, yellow >=50%, red <50%); `ScoreTrendBars` (CSS vertical bars of last 20 results' overall scores with pass/fail coloring); `RecentResultsTable` (paginated table with status badges, score, checks passed, date); "Email Client Rendering" placeholder card with "Coming Soon" badge (deferred to task 4.4 Litmus integration). `useQADashboard` hook fetches 50 results and computes all metrics via `useMemo`. `QADashboardMetrics` type in `types/qa.ts`. BarChart3 sidebar nav icon. Middleware RBAC (all roles). ~30 i18n keys in `intelligence` namespace. All semantic Tailwind tokens.
 **Security:**
 - Dashboard data aggregated — no individual subscriber data ever displayed
 - Export dashboard as PDF requires developer+ role

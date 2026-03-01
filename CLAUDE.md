@@ -206,12 +206,12 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 2.6 Component library v1 — backend (seed 5-10 components)
 - [x] 2.7 Component library browser UI (`/components`)
 - [x] 2.8 10-point QA gate system (backend + UI complete)
-- [ ] 2.9 Raw HTML export + Braze connector UI
+- [x] 2.9 Raw HTML export + Braze connector UI
 - [ ] 2.10 RAG knowledge base seeding (Can I Email, best practices)
 
 ### Phase 3 — Sprint 3: Client Handoff + Polish
 - [x] 3.1 Client approval portal (viewer role, feedback, audit trail)
-- [ ] 3.2 Rendering intelligence dashboard (QA trends, support matrices)
+- [x] 3.2 Rendering intelligence dashboard (QA trends, support matrices)
 - [ ] 3.3 Dashboard homepage enhancement (real data, activity feed)
 - [ ] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
 - [ ] 3.5 CMS + Nginx Docker stack (7 services healthy)
