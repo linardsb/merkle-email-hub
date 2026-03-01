@@ -170,7 +170,7 @@ class ScaffolderService:
         if request.run_qa:
             qa_results = []
             for check in ALL_CHECKS:
-                check_result = await check.run(html)  # type: ignore[attr-defined]
+                check_result = await check.run(html)
                 qa_results.append(check_result)
             qa_passed = all(r.passed for r in qa_results)
 

@@ -43,7 +43,7 @@ class Publisher:
         try:
             redis = await get_redis()
             message = json.dumps(data)
-            count: int = await redis.publish(channel, message)  # type: ignore[misc]
+            count: int = await redis.publish(channel, message)  # pyright: ignore[reportUnknownMemberType]
             return count
         except Exception as e:
             logger.error(

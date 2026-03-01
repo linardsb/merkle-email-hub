@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,7 +31,7 @@ class TemplateRepository:
         limit: int = 100,
         search: str | None = None,
         status: str | None = None,
-    ) -> list[Template]:
+    ) -> Sequence[Template]:
         query = select(Template).where(
             Template.project_id == project_id,
             Template.deleted_at.is_(None),
@@ -130,7 +132,7 @@ class TemplateRepository:
         await self.db.refresh(version)
         return version
 
-    async def get_versions(self, template_id: int) -> list[TemplateVersion]:
+    async def get_versions(self, template_id: int) -> Sequence[TemplateVersion]:
         result = await self.db.execute(
             select(TemplateVersion)
             .where(TemplateVersion.template_id == template_id)

@@ -26,7 +26,7 @@ class _ClientSubscription:
     """
 
     websocket: WebSocket
-    filters: dict[str, str | None] = field(default_factory=dict)
+    filters: dict[str, str | None] = field(default_factory=dict)  # pyright: ignore[reportUnknownVariableType]
 
 
 class ConnectionManager:

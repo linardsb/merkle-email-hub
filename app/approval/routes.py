@@ -26,6 +26,21 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ApprovalService:  # noqa:
     return ApprovalService(db)
 
 
+@router.get("/", response_model=list[ApprovalResponse])
+@limiter.limit("30/minute")
+async def list_approvals(
+    request: Request,
+    project_id: int | None = None,
+    service: ApprovalService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> list[ApprovalResponse]:
+    """List approval requests, optionally filtered by project."""
+    _ = request
+    if project_id is not None:
+        return await service.list_by_project(project_id)
+    return []
+
+
 @router.post("/", response_model=ApprovalResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
 async def create_approval(

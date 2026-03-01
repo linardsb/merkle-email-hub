@@ -164,7 +164,7 @@
 - Output diff shown to developer before applying (human-in-the-loop)
 **Verify:** Provide email HTML without dark mode → agent returns enhanced version with dark mode CSS. Preview confirms dark mode toggle works.
 
-### 2.4 Content Agent
+### ~~2.4 Content Agent~~ DONE
 **Plan ref:** Section 5.1 (Content Agent), 15.4 (Competitive Feature — new capability #1)
 **What:** Generates and refines email marketing copy: subject lines, preheaders, CTA text, body copy. Supports rewrite, shorten, expand, and tone adjustment. Brand voice constraints applied per client. Integrates into Monaco editor as context menu: select text → right-click → "Refine with AI."
 **Security:**
@@ -183,7 +183,7 @@
 - Merge operation creates a new template version (audit trail)
 **Verify:** Open chat → select Scaffolder → provide brief → streamed response appears → click "Apply" → code merged into editor.
 
-### 2.6 Component Library v1 — Backend
+### ~~2.6 Component Library v1 — Backend~~ DONE
 **Plan ref:** Section MVP #4, 2.3 (Component Library module)
 **What:** Seed 5-10 pre-tested Maizzle email components: header, footer, CTA button, hero block, product card, spacer, social icons, image block, text block, divider. Each with dark mode variant, Outlook fallback, version metadata, and compatibility matrix stub.
 **Security:**
@@ -192,7 +192,7 @@
 - Component ownership tracked (author, last modifier)
 **Verify:** `GET /api/v1/components` returns 5-10 components. Each has at least one version. Dark mode variant accessible.
 
-### 2.7 Component Library Browser UI
+### ~~2.7 Component Library Browser UI~~ DONE
 **Plan ref:** Section 9.2 (Component Library), MVP #4
 **What:** Page at `/components`. Grid view with component preview thumbnails. Search by name, type, client scope. Component detail view: rendered preview (light + dark mode), HTML source, version history, compatibility matrix table, usage documentation.
 **Security:**
@@ -200,9 +200,11 @@
 - Components scoped: Global visible to all, Client-scoped visible to project members only
 **Verify:** Browse components. Search filters work. Click component → see detail view with preview + source + versions.
 
-### 2.8 10-Point QA Gate System UI
+### ~~2.8 10-Point QA Gate System~~ DONE
 **Plan ref:** Section 7.2 (QA Pipeline), MVP #7
 **What:** QA trigger button in workspace toolbar. Runs `POST /api/v1/qa/run` with current template HTML. Results displayed as pass/fail checklist with details per check. Gate enforcement: warn/block on export if checks fail. Senior override with documented justification.
+**Backend:** Repository layer (`QARepository`), `QAOverride` model with audit trail, 4 new API endpoints (`GET /results`, `GET /results/latest`, `GET /results/{id}`, `POST /results/{id}/override`), Alembic migration `d8a3f2b91c47`, 55 unit tests (37 checks + 16 service + conftest fixtures).
+**Frontend:** "Run QA" button in workspace toolbar with loading state; `QAResultsPanel` right sidebar (320px) with overall score, status badge, failed/passed checks (collapsible), override info; `QACheckItem` rows with pass/fail icons, score bars, i18n labels with fallback; `QAOverrideDialog` (28rem) with check selection, justification textarea (min 10 chars), developer+ RBAC; 5 SWR hooks (`useQARun`, `useQAResult`, `useQALatest`, `useQAResults`, `useQAOverride`); local TypeScript types in `types/qa.ts`; 38 i18n keys; code-reviewed (5 fixes: stale dialog state, unhandled promise, memoization, i18n crash guard).
 **Security:**
 - QA results stored with template version (audit: which version was tested)
 - Override requires admin/developer role + written justification (logged)
@@ -234,9 +236,11 @@
 
 > **Sprint 3 Deliverable (Plan Section 16.4):** "Complete MVP that clients can log into for approvals, QA data is visible, and the team has a tool they want to use daily."
 
-### 3.1 Client Approval Portal
+### ~~3.1 Client Approval Portal~~ DONE
 **Plan ref:** Section MVP #9, 9.2 (QA Dashboard approval workflow)
 **What:** Approval routes at `/approvals`. Viewer role login (scoped to assigned projects only). Live email preview (read-only, sandboxed iframe). Section-level feedback annotations (click to highlight, leave comment). Global feedback textarea. Approve/request changes buttons. Version comparison (diff between current and last-reviewed version). Email/Slack notification when review is ready. Time-stamped audit trail of all approvals, changes, feedback.
+**Backend:** Added `GET /api/v1/approvals/?project_id=X` list endpoint and `GET /api/v1/email/builds/{build_id}` for preview HTML. 7 API endpoints total (list, create, get, decide, add feedback, list feedback, audit trail).
+**Frontend:** `/approvals` list page with status filter tabs (All/Pending/Approved/Rejected/Revision); `/approvals/[id]` detail page with 2-column layout (60% sandboxed preview with viewport/dark mode toggles, 40% side panel with Feedback/Audit tabs); 6 components (`ApprovalStatusBadge`, `ApprovalCard`, `ApprovalPreview`, `ApprovalFeedbackPanel`, `ApprovalAuditTimeline`, `ApprovalDecisionBar`); 8 SWR hooks (`useApprovals`, `useApproval`, `useCreateApproval`, `useApprovalDecide`, `useApprovalFeedback`, `useAddFeedback`, `useApprovalAudit`, `useBuild`); decision bar with approve/reject/request-revision buttons (admin/developer RBAC via `useSession()`); "Submit for Approval" button in workspace toolbar; ClipboardCheck sidebar nav icon; middleware RBAC for all roles; ~40 i18n keys; all semantic Tailwind tokens.
 **Security:**
 - Viewer role: READ ONLY. Cannot edit templates, run builds, export, or access other modules
 - Approval URLs use signed tokens (not guessable IDs) — expire after 30 days

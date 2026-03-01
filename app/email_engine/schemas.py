@@ -11,7 +11,7 @@ class BuildRequest(BaseModel):
     project_id: int = Field(..., description="Project ID")
     template_name: str = Field(..., min_length=1, max_length=200)
     source_html: str = Field(..., min_length=1, description="Maizzle template source")
-    config_overrides: dict | None = Field(None, description="Maizzle config overrides")
+    config_overrides: dict[str, object] | None = Field(None, description="Maizzle config overrides")
     is_production: bool = Field(default=False, description="Use production config")
 
 
@@ -19,7 +19,7 @@ class PreviewRequest(BaseModel):
     """Request for a live preview build."""
 
     source_html: str = Field(..., min_length=1)
-    config_overrides: dict | None = None
+    config_overrides: dict[str, object] | None = None
 
 
 class BuildResponse(BaseModel):

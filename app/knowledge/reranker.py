@@ -64,7 +64,7 @@ class LocalRerankerProvider:
     def _get_model(self) -> Any:  # noqa: ANN401 — untyped lib (sentence-transformers)
         """Lazy-load the CrossEncoder model."""
         if self._model is None:
-            from sentence_transformers import CrossEncoder
+            from sentence_transformers import CrossEncoder  # type: ignore[import-not-found]
 
             self._model = CrossEncoder(self._model_name)
         return self._model

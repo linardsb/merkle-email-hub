@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   FolderOpen,
   List,
+  Blocks,
+  ClipboardCheck,
   Users,
   LogOut,
 } from "lucide-react";
@@ -40,6 +42,16 @@ export default async function DashboardLayout({
       href: `/${locale}/example`,
       label: (messages as any)?.nav?.example || "Items",
       icon: <List className="h-5 w-5" />,
+    },
+    {
+      href: `/${locale}/components`,
+      label: (messages as any)?.nav?.components || "Components",
+      icon: <Blocks className="h-5 w-5" />,
+    },
+    {
+      href: `/${locale}/approvals`,
+      label: (messages as any)?.nav?.approvals || "Approvals",
+      icon: <ClipboardCheck className="h-5 w-5" />,
     },
     {
       href: `/${locale}/users`,

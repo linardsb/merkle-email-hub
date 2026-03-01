@@ -9,6 +9,7 @@ from __future__ import annotations
 import time
 
 import httpx
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -69,6 +70,16 @@ class EmailEngineService:
         logger.info("email_engine.build_completed", build_id=build.id, status=build.status)
         return BuildResponse.model_validate(build)
 
+    async def get_build(self, build_id: int) -> BuildResponse:
+        """Get a build by ID."""
+        result = await self.db.execute(
+            select(EmailBuild).where(EmailBuild.id == build_id)
+        )
+        build = result.scalar_one_or_none()
+        if not build:
+            raise BuildFailedError(f"Build {build_id} not found")
+        return BuildResponse.model_validate(build)
+
     async def preview(self, data: PreviewRequest) -> PreviewResponse:
         """Execute a preview build without persisting."""
         logger.info("email_engine.preview_started")
@@ -81,7 +92,7 @@ class EmailEngineService:
         return PreviewResponse(compiled_html=compiled, build_time_ms=round(elapsed, 2))
 
     async def _call_builder(
-        self, source_html: str, config_overrides: dict | None, is_production: bool
+        self, source_html: str, config_overrides: dict[str, object] | None, is_production: bool
     ) -> str:
         """Call the Maizzle builder sidecar service."""
         payload = {
@@ -94,7 +105,7 @@ class EmailEngineService:
                 response = await client.post(f"{MAIZZLE_BUILDER_URL}/build", json=payload)
                 response.raise_for_status()
                 result = response.json()
-                return result["html"]
+                return str(result["html"])
         except httpx.ConnectError as exc:
             raise BuildServiceUnavailableError("Cannot connect to maizzle-builder service") from exc
         except httpx.HTTPStatusError as exc:

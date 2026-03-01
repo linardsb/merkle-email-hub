@@ -3,9 +3,9 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 1.5
+**Version:** 1.7
 **Date:** 2026-03-01
-**Status:** MVP Development — Sprint 2 In Progress
+**Status:** MVP Development — Sprint 2/3 In Progress
 
 ---
 
@@ -31,12 +31,20 @@
 | 2.3 | Dark Mode agent | Second AI agent in `app/ai/agents/dark_mode/`; system prompt for dark mode CSS injection, Outlook `[data-ogsc]`/`[data-ogsb]` overrides, colour remapping; accepts existing HTML + optional colour overrides/preserve lists; `"standard"` task tier; duplicated XSS sanitization pipeline; QA integration with DarkModeCheck prioritised first; `POST /api/v1/agents/dark-mode/process` with SSE streaming; 5 req/min rate limit; admin/developer RBAC; 23 unit tests |
 | 2.5 | AI chat sidebar UI | Full chat interface replacing placeholder in workspace bottom panel; agent toggle bar (Chat, Scaffolder enabled; Dark Mode, Content disabled with "Soon" badge); `useChat` hook with SSE streaming via `fetch` + `ReadableStream` (not EventSource — POST + auth headers required); endpoint routing (chat → `/v1/chat/completions`, scaffolder → `/api/v1/agents/scaffolder/generate`); message bubbles with fenced code block parsing via regex; "Copy" + "Apply to Editor" buttons on HTML code blocks; streaming indicator (pulsing cursor + "Thinking..."); uncontrolled textarea with auto-resize, Enter-to-send, Shift+Enter newlines; Stop button aborts stream; Clear button resets conversation; session-only state (no persistence); 17 i18n keys; all semantic Tailwind tokens |
 | 1.5 | Test persona engine UI | Alembic data migration seeding 8 persona presets (Gmail Desktop, Outlook 365, Apple Mail Dark, iPhone Mail, Samsung Mail Dark, Outlook Classic, Gmail Mobile, Yahoo Mail); `PersonaSelector` dropdown component with shadcn `DropdownMenu` showing device icon, viewport width, dark mode indicator per persona; `PreviewIframe` accepts `viewportWidthOverride` for persona-driven custom widths; `PreviewPanel` manages persona state — selecting persona sets viewport + dark mode, manual toggle deselects persona; `usePersonas()` SWR hook wired into workspace page; 5 i18n keys; all semantic Tailwind tokens |
+| 2.4 | Content agent | Third AI agent in `app/ai/agents/content/`; 8 operations via single endpoint with `operation` discriminator (subject_line, preheader, cta, body_copy, rewrite, shorten, expand, tone_adjust); plain text output with `---` delimiter for multiple alternatives; subject_line auto-generates 5 alternatives; operation-to-tier routing (shorten/expand → lightweight, all others → standard); automatic spam trigger detection reusing QA engine's `SPAM_TRIGGERS` with context snippets; brand voice override support; `POST /api/v1/agents/content/generate` with SSE streaming; 5 req/min rate limit; admin/developer RBAC; 20 unit tests |
+| 2.7 | Component library browser UI | `/[locale]/(dashboard)/components/page.tsx` with responsive 3-column grid, debounced search (300ms), category filter pills, pagination (12/page); `ComponentCard` with sandboxed preview thumbnail (200px iframe), name, category badge, version; `ComponentDetailDialog` (max-w-3xl) with Preview/Source/Versions tabs — preview has dark mode toggle, source has copy-to-clipboard, versions show changelog; `ComponentPreview` reuses sandboxed iframe pattern (`sandbox="allow-same-origin"`, no `allow-scripts`); loading skeletons, empty/error states; `/components` added to ROLE_PERMISSIONS (all roles); sidebar nav with Blocks icon; 28 i18n keys; all semantic Tailwind tokens |
+| 2.6 | Component library v1 — backend | 10 production-ready email components seeded across 4 categories (structure, content, action, commerce, social); `app/components/data/seeds.py` with table-based layouts, inline CSS, `@media (prefers-color-scheme: dark)`, `[data-ogsc]`/`[data-ogsb]` Outlook overrides, MSO conditionals, `role="presentation"`; `app/components/sanitize.py` XSS sanitization (strips script/event handlers/javascript: protocols while preserving MSO comments and dark mode rules); `compatibility` JSON column on `ComponentVersion` for email client support metadata; Alembic migration `c7d2e5f19a83` with schema + data seeding; service layer sanitization on create + version; 25 unit tests (9 sanitization + 16 service) |
+| 2.8 (backend) | QA gate system — backend | `QARepository` extracted from service (VSA compliance); `QAOverride` model with unique constraint, audit trail (`overridden_by_id`, `justification`, `checks_overridden` JSON); `QAOverrideNotAllowedError` exception; 4 new API endpoints (`GET /results`, `GET /results/latest`, `GET /results/{id}`, `POST /results/{id}/override` with developer+ RBAC); `build_id` now nullable, `template_version_id` FK added for audit linkage; Alembic migration `d8a3f2b91c47`; 55 unit tests (37 check implementations + 16 service orchestration + conftest fixtures) |
+| 2.8 (UI) | QA gate system — frontend | "Run QA" button in workspace toolbar with loading/spinner state; `QAResultsPanel` right sidebar (320px) showing overall score percentage, pass/fail status badge, failed checks (expanded) + passed checks (collapsible), override info banner; `QACheckItem` component with pass/fail/overridden icons, i18n labels with `t.has()` fallback for unknown checks, score progress bars, failure detail text; `QAOverrideDialog` (28rem) with checkbox selection of failing checks, justification textarea (min 10 chars), developer+ RBAC gating via `useSession()`; 5 SWR hooks (`useQARun`, `useQAResult`, `useQALatest`, `useQAResults`, `useQAOverride`); local TypeScript types in `types/qa.ts`; 38 i18n keys in `messages/en.json`; code-reviewed with 5 fixes (stale dialog state via `prevOpen` pattern, unhandled promise `.catch()`, `useMemo` for derived arrays, i18n crash guard) |
+| 3.1 | Client approval portal | Backend: `GET /api/v1/approvals/?project_id=X` list endpoint, `GET /api/v1/email/builds/{build_id}` for preview HTML (7 endpoints total). Frontend: `/approvals` list page with status filter tabs (All/Pending/Approved/Rejected/Revision); `/approvals/[id]` detail page with 2-column layout (60% sandboxed preview with viewport/dark mode toggles, 40% side panel with Feedback/Audit Trail tabs); 6 components (`ApprovalStatusBadge`, `ApprovalCard`, `ApprovalPreview`, `ApprovalFeedbackPanel`, `ApprovalAuditTimeline`, `ApprovalDecisionBar`); 8 SWR hooks; decision bar (approve/reject/request-revision) with admin/developer RBAC via `useSession()`; "Submit for Approval" button in workspace toolbar; sidebar nav with ClipboardCheck icon; middleware RBAC (all roles); ~40 i18n keys; all semantic Tailwind tokens |
 
 ### In Progress
 
 | Phase | Task | Description |
 |-------|------|-------------|
-| Sprint 2 | 2.4 | Content agent |
+| Sprint 2 | 2.9 | Raw HTML export + Braze connector UI |
+| Sprint 2 | 2.10 | RAG knowledge base seeding (Can I Email, best practices) |
+| Sprint 3 | 3.2 | Rendering intelligence dashboard (QA trends, support matrices) |
 
 ### Infrastructure Built
 
@@ -45,6 +53,7 @@
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration
 - **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming
+- **Testing:** Backend pytest (152+ tests); Frontend Vitest + React Testing Library (`make test-fe`)
 
 ---
 

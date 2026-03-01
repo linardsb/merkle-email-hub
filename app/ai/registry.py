@@ -186,11 +186,11 @@ def _register_builtin_providers(registry: ProviderRegistry) -> None:
     """
     from app.ai.adapters.openai_compat import OpenAICompatProvider
 
-    registry.register_llm("openai", OpenAICompatProvider)
+    registry.register_llm("openai", OpenAICompatProvider)  # type: ignore[arg-type]
     # "ollama", "vllm", "litellm" all use the same OpenAI-compatible API
-    registry.register_llm("ollama", OpenAICompatProvider)
-    registry.register_llm("vllm", OpenAICompatProvider)
-    registry.register_llm("litellm", OpenAICompatProvider)
+    registry.register_llm("ollama", OpenAICompatProvider)  # type: ignore[arg-type]
+    registry.register_llm("vllm", OpenAICompatProvider)  # type: ignore[arg-type]
+    registry.register_llm("litellm", OpenAICompatProvider)  # type: ignore[arg-type]
 
     # Native Anthropic SDK adapter (Claude models)
     from app.ai.adapters.anthropic import AnthropicProvider

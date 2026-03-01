@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test lint types check db e2e e2e-all install-hooks security-check sdk
+.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk
 
 # === Local Development ===
 
@@ -27,8 +27,11 @@ docker-logs: ## Tail logs from all services
 
 # === Quality Checks ===
 
-test: ## Run unit tests
+test: ## Run backend unit tests
 	uv run pytest -v -m "not integration"
+
+test-fe: ## Run frontend unit tests
+	cd cms && pnpm --filter web test
 
 lint: ## Format + lint
 	uv run ruff format .
@@ -38,7 +41,11 @@ types: ## Run mypy + pyright
 	uv run mypy app/
 	uv run pyright app/
 
-check: lint types test ## Run all checks (lint, types, tests)
+check-fe: ## Run frontend checks (type-check + tests)
+	cd cms && pnpm --filter web type-check
+	cd cms && pnpm --filter web test
+
+check: lint types test check-fe ## Run all checks (backend + frontend)
 
 e2e: ## Run all e2e tests
 	cd cms && pnpm --filter web e2e

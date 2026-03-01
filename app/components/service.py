@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.exceptions import ComponentAlreadyExistsError, ComponentNotFoundError
 from app.components.repository import ComponentRepository
+from app.components.sanitize import sanitize_component_html
 from app.components.schemas import (
     ComponentCreate,
     ComponentResponse,
@@ -59,6 +60,9 @@ class ComponentService:
         existing = await self.repository.get_by_slug(data.slug)
         if existing:
             raise ComponentAlreadyExistsError(f"Component with slug '{data.slug}' already exists")
+        data.html_source = sanitize_component_html(data.html_source)
+        if data.css_source:
+            data.css_source = sanitize_component_html(data.css_source)
         component = await self.repository.create(data, user_id)
         resp = ComponentResponse.model_validate(component)
         resp.latest_version = 1
@@ -83,6 +87,9 @@ class ComponentService:
         component = await self.repository.get(component_id)
         if not component:
             raise ComponentNotFoundError(f"Component {component_id} not found")
+        data.html_source = sanitize_component_html(data.html_source)
+        if data.css_source:
+            data.css_source = sanitize_component_html(data.css_source)
         version = await self.repository.create_version(component_id, data, user_id)
         return VersionResponse.model_validate(version)
 

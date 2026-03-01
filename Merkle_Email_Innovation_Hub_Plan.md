@@ -2,7 +2,7 @@
 
 ## Strategic Architecture & Implementation Plan
 
-**Version 1.0 | February 2026**
+**Version 1.1 | March 2026**
 **Classification: Internal / Confidential**
 Built on a production-ready full-stack architecture (FastAPI + Next.js)
 
@@ -20,7 +20,7 @@ The Innovation Hub addresses a challenge specific to how Merkle operates: we ser
 - **Centralise Innovation:** Single platform for HTML email R&D, prototyping, and production across all Merkle clients.
 - **CMS-Agnostic Pipeline:** Modular connector architecture supporting Braze, Salesforce MC, Adobe Campaign, Taxi for Email, and future platforms.
 - **AI-Powered Development:** Integrated AI coding assistant with sub-agents for scaffolding, QA, accessibility, dark mode, and cross-client compatibility. Local-first model strategy minimises API costs.
-- **Cost-Optimised Operations:** Local LLMs handle ~70% of AI tasks at zero API cost. Entire stack runs on open-source software with zero licence fees. Self-hosted infrastructure eliminates per-seat SaaS pricing.
+- **Cost-Optimised Operations:** Local LLMs handle 70–90% of AI tasks at zero API cost. Entire stack runs on open-source software with zero licence fees. Self-hosted infrastructure eliminates per-seat SaaS pricing.
 - **Design-to-Code Bridge:** Native Figma integration via API and plugin ecosystem (Emailify, Email Love) for frictionless design handoff.
 - **GDPR-First Security:** Zero PII in the Hub. All data flows anonymised. API design follows privacy-by-design principles.
 - **Fallback-First QA:** Every innovation ships with a bulletproof HTML fallback. Automated rendering checks before any code leaves the system.
@@ -32,7 +32,7 @@ The Hub is built entirely on open-source technologies — zero licence fees, zer
 - **Backend:** FastAPI + async SQLAlchemy + PostgreSQL + Redis — all open-source, production-grade, high-performance async API layer
 - **Frontend:** Next.js 16 + React 19 + Tailwind CSS + shadcn/ui — open-source component architecture (shadcn/ui is copy-paste, not a library dependency)
 - **Auth:** JWT with RBAC, brute-force protection, token revocation — built in-house, no Auth0/Okta dependency
-- **AI Layer:** Local-first with Ollama/vLLM (zero API cost for ~70% of tasks) + Protocol-based cloud LLM integration for frontier reasoning. RAG pipeline with pgvector (open-source vector search, no Pinecone/Weaviate fees)
+- **AI Layer:** Local-first with Ollama/vLLM (zero API cost for 70–90% of tasks) + Protocol-based cloud LLM integration for frontier reasoning. RAG pipeline with pgvector (open-source vector search, no Pinecone/Weaviate fees)
 - **Infrastructure:** Docker Compose, nginx reverse proxy, Alembic migrations — self-hosted on Merkle servers, no AWS/Azure managed service fees
 - **Email Frameworks:** Maizzle (open-source, Tailwind-native email framework) as primary build engine, with MJML (open-source) support for legacy compatibility
 - **Total software licence cost: £0.** The only recurring costs are infrastructure (servers, GPU for local LLMs) and optional cloud AI API usage for frontier tasks.
@@ -176,7 +176,7 @@ The AI assistant is not a chatbot — it is an orchestration layer with speciali
 
 | Agent | Capability | Triggered By |
 |-------|-----------|-------------|
-| **AI Orchestrator** *(optional)* | When enabled, routes tasks to the right sub-agent based on complexity. Chains agents for multi-step workflows (e.g. Scaffolder → Dark Mode → Accessibility → Code Review). Manages model routing between local LLMs (~70%) and cloud APIs (~30%). Developers can bypass the Orchestrator and invoke any agent directly. | Enabled by the developer per task — or bypassed for direct agent access |
+| **AI Orchestrator** *(optional)* | When enabled, routes tasks to the right sub-agent based on complexity. Chains agents for multi-step workflows (e.g. Scaffolder → Dark Mode → Accessibility → Code Review). Manages model routing between local LLMs (70–90%) and cloud APIs (10–30%). Developers can bypass the Orchestrator and invoke any agent directly. | Enabled by the developer per task — or bypassed for direct agent access |
 | **Scaffolder** | Generates email HTML structure from design specs or text prompts. Outputs Maizzle templates with Tailwind classes, MSO conditionals, responsive stacking. | New project, design import, user prompt |
 | **Outlook Fixer** | Analyses HTML and inserts Outlook-specific conditional comments, VML backgrounds, table-based fallbacks for the Word rendering engine. | Build pipeline, manual trigger, QA failure |
 | **Dark Mode Agent** | Injects `@media (prefers-color-scheme: dark)` rules, `[data-ogsc]`/`[data-ogsb]` selectors, transparent PNG suggestions, colour token remapping. | Build pipeline, design token change |
@@ -253,9 +253,9 @@ The Hub's AI agents are powered by frontier coding models, selected based on tas
 
 | Tier | Model | Use Case | Latency | Strengths |
 |------|-------|----------|---------|-----------|
-| **Primary (Complex)** | Claude Opus 4 | Scaffolding from briefs, complex code review, architecture decisions, multi-step Outlook/dark mode fixes | Higher | Strongest reasoning, best at email HTML edge cases, longest context window |
-| **Primary (Fast)** | Claude Sonnet 4 | Dark mode injection, accessibility audits, personalisation code generation, real-time coding assistance | Low | Near-Opus quality at 5× speed, ideal for interactive workflows |
-| **Lightweight** | Claude Haiku 4 | Validation checks, simple fixes, knowledge lookups, template classification | Very low | Cost-efficient for high-volume automated tasks |
+| **Primary (Complex)** | Claude Opus 4.6 | Scaffolding from briefs, complex code review, architecture decisions, multi-step Outlook/dark mode fixes | Higher | Strongest reasoning, best at email HTML edge cases, longest context window |
+| **Primary (Fast)** | Claude Sonnet 4.6 | Dark mode injection, accessibility audits, personalisation code generation, real-time coding assistance | Low | Near-Opus quality at 5× speed, ideal for interactive workflows |
+| **Lightweight** | Claude Haiku 4.5 | Validation checks, simple fixes, knowledge lookups, template classification | Very low | Cost-efficient for high-volume automated tasks |
 | **Alternative** | GPT-4o (OpenAI) | Fallback option, comparative benchmarking | Low | Strong general coding, different failure modes for ensemble validation |
 | **Alternative** | Gemini 2.0 (Google) | Secondary fallback, long-context document analysis | Low | 1M+ token context for large template batch analysis |
 | **Local (Dev)** | Qwen 2.5 Coder 32B / DeepSeek Coder V3 | Day-to-day development tasks, rapid iteration, boilerplate generation | Very low | Zero API cost, full data privacy, runs on Merkle infrastructure via Ollama/vLLM |
@@ -269,19 +269,19 @@ For day-to-day development work where latency and API costs matter most, the Hub
 - **Zero API cost:** Local models handle the high-volume, lower-complexity tasks — boilerplate generation, code completion, template modification, quick Q&A — that would otherwise burn significant API budget
 - **Data sovereignty:** All code and templates stay on Merkle infrastructure, never leaving the network. Ideal for client-confidential work
 - **Fallback to cloud:** When a task exceeds local model capability (complex multi-step reasoning, novel architecture decisions), the orchestrator automatically escalates to Claude Opus/Sonnet via API
-- **Hybrid routing:** The system monitors task complexity and routes accordingly — local models for ~70% of routine tasks, cloud APIs for the remaining ~30% that require frontier reasoning
+- **Hybrid routing:** The system monitors task complexity and routes accordingly — local models for 70–90% of routine tasks, cloud APIs for the remaining 10–30% that require frontier reasoning
 - **Open recommendation:** The local model tier is deliberately kept flexible. As the self-hosted LLM landscape evolves rapidly, the Hub's model-agnostic architecture allows swapping in newer or more capable local models without code changes. The models listed above are current best-in-class for HTML/CSS code generation but should be re-evaluated quarterly.
 
 ### Model Routing Strategy
 
 The AI Orchestrator routes tasks to models dynamically based on complexity:
 
-- **Scaffolder Agent:** Opus 4 for brief-to-email generation (requires deep reasoning about layout, responsiveness, and client constraints). Sonnet 4 for iterative refinements.
-- **Outlook Fixer / Dark Mode:** Sonnet 4 for standard patterns. Escalates to Opus 4 for novel edge cases (e.g., Outlook 2016 + VML + dark mode interaction).
-- **Code Reviewer / Accessibility:** Sonnet 4 for automated pipeline checks. Opus 4 for detailed architecture reviews.
-- **Content Agent:** Local LLMs for basic rewrites, grammar fixes, and tone adjustments (~70% of requests). Sonnet 4 for creative generation (subject lines, CTAs). Opus 4 for brand voice calibration on new clients.
-- **Knowledge Agent:** Haiku 4 for RAG retrieval and simple lookups. Sonnet 4 for synthesising complex answers from multiple sources.
-- **Personalisation Agent:** Sonnet 4 for Liquid/AMPscript generation. Opus 4 for complex conditional logic with nested Connected Content.
+- **Scaffolder Agent:** Opus 4.6 for brief-to-email generation (requires deep reasoning about layout, responsiveness, and client constraints). Sonnet 4.6 for iterative refinements.
+- **Outlook Fixer / Dark Mode:** Sonnet 4.6 for standard patterns. Escalates to Opus 4.6 for novel edge cases (e.g., Outlook 2016 + VML + dark mode interaction).
+- **Code Reviewer / Accessibility:** Sonnet 4.6 for automated pipeline checks. Opus 4.6 for detailed architecture reviews.
+- **Content Agent:** Local LLMs for basic rewrites, grammar fixes, and tone adjustments (70–90% of requests). Sonnet 4.6 for creative generation (subject lines, CTAs). Opus 4.6 for brand voice calibration on new clients.
+- **Knowledge Agent:** Haiku 4.5 for RAG retrieval and simple lookups. Sonnet 4.6 for synthesising complex answers from multiple sources.
+- **Personalisation Agent:** Sonnet 4.6 for Liquid/AMPscript generation. Opus 4.6 for complex conditional logic with nested Connected Content.
 
 ### Why Claude as Primary
 
@@ -289,7 +289,7 @@ Claude models are the recommended primary for the Hub because:
 
 - **Instruction following:** Email HTML requires precise adherence to constraints (table-based layout, inline CSS, MSO conditionals). Claude models lead in instruction-following benchmarks.
 - **Code quality:** Produces production-ready HTML with correct nesting, valid attributes, and email-safe CSS — reducing the review burden on developers.
-- **Extended thinking:** Opus 4's extended thinking capability is critical for multi-step problems like "generate a responsive 3-column layout that degrades gracefully in Outlook 2016 Word rendering engine with dark mode support for Apple Mail and Gmail."
+- **Extended thinking:** Opus 4.6's extended thinking capability is critical for multi-step problems like "generate a responsive 3-column layout that degrades gracefully in Outlook 2016 Word rendering engine with dark mode support for Apple Mail and Gmail."
 - **Tool use:** Native tool use enables agents to call the Hub's build pipeline, QA engine, and Can I Email API mid-conversation.
 
 The architecture ensures no vendor lock-in — the Protocol-based LLM integration means swapping to a different provider requires only a configuration change, not a code rewrite.
@@ -397,7 +397,7 @@ The memory system complements — not replaces — the existing RAG knowledge ba
 
 ### Why This Matters
 
-Without persistent memory, the Hub's 9 agents are sophisticated but amnesiac — every session starts from scratch. With the Smart Agent Memory System:
+Without persistent memory, the Hub's 9 agents are sophisticated but amnesiac — every session starts without context. With the Smart Agent Memory System:
 
 - **Individual agent sessions** become continuous conversations (Tier 1)
 - **Agent responses** are grounded in the Hub's accumulated knowledge (Tier 2)
@@ -1131,7 +1131,7 @@ The Hub's component library and knowledge base are seeded with existing assets, 
 | **AI model quality / hallucination risk** | Medium | Medium | Mitigated by architecture: RAG knowledge base grounds AI responses in verified email development data, agent skill definitions constrain output format and scope, and agent command chaining ensures multi-step validation. Developers review all AI output before it enters the build pipeline — AI suggests, humans approve. |
 | **Developer adoption resistance** | Low | Medium | The Hub enhances existing developer workflows rather than replacing them — it automates the repetitive work (CSS inlining, cross-client testing, Outlook fixes) that developers find tedious. Training is integrated into the MVP build process, and early adopters become internal champions. The broader industry trajectory is clear: AI-assisted development is the standard workflow for modern engineering teams, and the Hub positions Merkle's email developers at the forefront of that shift. |
 | **Client data isolation failure** | Very Low | High | The Hub processes email templates and components — never subscriber data, never PII. Client isolation is enforced at the database layer (PostgreSQL row-level security by `client_id`) and at the application layer (RBAC). Even a complete application-layer bug cannot leak data across clients because the database enforces isolation independently. |
-| **Cloud AI API cost overrun** | Low | Low | Local LLMs handle ~70% of requests at zero API cost. Cloud usage is monitored and capped. The AI Orchestrator routes by task complexity — only tasks requiring frontier reasoning reach the cloud API. Monthly spend is visible in the rendering intelligence dashboard. See Section 15.5 for detailed cost projections. |
+| **Cloud AI API cost overrun** | Low | Low | Local LLMs handle 70–90% of requests at zero API cost. Cloud usage is monitored and capped. The AI Orchestrator routes by task complexity — only tasks requiring frontier reasoning reach the cloud API. Monthly spend is visible in the rendering intelligence dashboard. See Section 15.5 for detailed cost projections. |
 | **Infrastructure availability** | Very Low | Medium | Merkle operates enterprise-grade infrastructure as part of the dentsu network. The Hub runs on Docker Compose with versioned deployments and automated database backups. Recovery from a full system failure is a container restart — measured in minutes, not hours. |
 
 ## 14.2 Success Metrics
@@ -1179,9 +1179,9 @@ The Hub will include production-grade monitoring aligned with Merkle's existing 
 | **Month 2+** | Full adoption | Team migrates primary workflow to Hub. Existing tools remain as fallback — no data is deleted, no processes are removed. Transition timeline depends on team comfort and workflow complexity. |
 | **Rollback plan** | Zero-risk transition | The Hub is additive. If it doesn't work for a particular use case, the team reverts to their existing workflow immediately. No migration is irreversible. |
 
-## 14.6 Decisions for the Board
+## 14.6 Decisions for Senior Leadership
 
-The following questions benefit from board-level input before or during implementation:
+The following questions benefit from senior director-level input before or during implementation:
 
 1. **Hosting environment:** Which Merkle server environment will host the Hub — on-prem or Merkle-managed cloud?
 2. **AI provider approval:** Which LLM providers are approved for use? Is there a data processing agreement for sending non-PII email HTML to external AI APIs?
@@ -1204,7 +1204,7 @@ The Innovation Hub converts every piece of email development work into a reusabl
 
 | Without Hub | With Hub |
 |------------|----------|
-| Each template built from scratch or near-scratch | Templates assembled from pre-tested, versioned components |
+| Templates assembled manually from modular blocks per campaign | Templates assembled from pre-tested, versioned components with automated pipeline |
 | Dark mode fixes applied per template, per client | Dark mode solved at the design system level — near-zero marginal cost |
 | Cross-client QA is manual: 2-3 hours per template | Automated rendering across 20+ clients in minutes |
 | AI tools used ad hoc with no quality control | AI agents embedded in workflow with enforced review gates |
@@ -1220,7 +1220,7 @@ The Hub doesn't just make Merkle faster — it makes Merkle's clients more succe
 
 | # | Client Benefit | Without the Hub | With the Hub | Measurable Outcome |
 |---|---------------|----------------|-------------|-------------------|
-| 1 | **Faster Campaign Turnaround** | Templates built from scratch or near-scratch. Manual CSS inlining. Manual QA across devices. Copy-paste into CMS. Typical timeline: 3–5 days per campaign. | AI scaffolds first draft in minutes. Components pre-tested. Automated QA in minutes. One-click CMS export. | **Campaign delivery reduced from 3–5 days to 1–2 days.** Clients can react to market moments, run more A/B variants, and launch seasonal campaigns faster than competitors. |
+| 1 | **Faster Campaign Turnaround** | Templates assembled manually from modular blocks per campaign. Manual CSS inlining. Manual QA across devices. Copy-paste into CMS. Typical timeline: 3–5 days per campaign. | AI scaffolds first draft in minutes. Components pre-tested. Automated QA in minutes. One-click CMS export. | **Campaign delivery reduced from 3–5 days to 1–2 days.** Clients can react to market moments, run more A/B variants, and launch seasonal campaigns faster than competitors. |
 | 2 | **Pixel-Perfect Rendering Across Every Client** | Developer checks 3–4 email clients manually. Outlook issues found after client sees them. Dark mode tested inconsistently. | 10-point QA gate catches every rendering issue before export. CSS support matrix checked against target audience's email clients. Dark mode automated. | **Near-zero rendering defects reaching client inboxes.** Clients stop seeing broken emails in Outlook or dark mode. Fewer revision rounds. Approval cycles shortened. |
 | 3 | **Innovation That's Proven, Not Promised** | Innovation pitched via slides. Client asks "will this actually work in our audience's email clients?" and the answer is "probably." | Hub produces rendering intelligence reports: tested compatibility data showing exactly which innovations work in which email clients for the client's specific audience. | **Clients see evidence before committing.** "AMP carousels work in 68% of your audience's email clients, with a static fallback for the rest" — backed by tested data, not opinions. This sells innovation. |
 | 4 | **Interactive & Advanced Email Capabilities** | AMP, kinetic CSS, gamification are theoretical. No safe way to prototype, test, or deploy them. | Hub provides AMP prototyping with automatic fallbacks, kinetic CSS with client support matrices, gamification elements — all gate-tested before deployment. | **2–5× engagement uplift from interactive elements** (industry benchmarks). Dark mode optimisation alone prevents the ~35% of email opens that currently render with broken colours. |
@@ -1306,11 +1306,11 @@ The email creation tool market includes several established platforms, most of w
 
 | Competitor | What They Do | What They Do Well | What They Don't Do |
 |-----------|-------------|-------------------|-------------------|
-| **Stensul** | Enterprise email creation platform. Drag-and-drop editor, brand governance, approval workflows. AI email generator (brief-to-email), content refinement tools, subject line/CTA generators. Figma plugin (2025). Integrates with SFMC, Pardot, Eloqua, Adobe Campaign, Braze, Iterable. | Strong governance, enterprise SSO, broad CMS integrations, AI content generation, Figma plugin for brand compliance | No code editor or developer workflow — purely visual builder. AI generates content (copy, subject lines) but doesn't have specialised email development agents (dark mode fixes, Outlook rendering, accessibility auditing). No Maizzle/code-first pipeline. No RAG knowledge system. No rendering intelligence reporting. No self-hosted/open-source option — per-seat SaaS pricing. |
-| **Dyspatch** | Email production platform. Modular builder, AMP for Email support, 300+ locale localisation. Scribe AI converts Figma files, HTML, or images into reusable modular components and generates campaigns from briefs. Integrates with SendGrid, Mailgun, Mailjet. | AMP support, strong module system, AI-powered component extraction from existing assets, 300+ locale translations | No code-first developer workflow. AI focuses on design-to-component conversion, not specialised email development assistance. Limited CMS/ESP connector range (3 integrations vs. Stensul's 7+). No RAG knowledge system. No rendering intelligence. No self-hosted option. |
-| **Knak** | No-code email builder for enterprise marketers. SFMC and Marketo native integration. AI-powered translations and brand voice features. | Marketer-focused simplicity, strong SFMC/Marketo integration, fast production for non-technical users | No code editor — explicitly no-code only. No developer workflow. AI limited to translations and brand voice. No rendering intelligence. No component inheritance/cascading. No innovation R&D capability. |
-| **Stripo** | Email template builder with drag-and-drop and HTML editor. Extensive AI: AI Hub for full email generation, text refinement, image generation (DALL-E, Gemini, GPT-Image-1), AI alt text. Cross-client testing across 98 clients via Email on Acid integration. Freemium model. | Broad AI content and image generation, large template library, 98-client rendering tests, HTML editing alongside drag-and-drop, email design system features | AI is generic content generation — no specialised email development agents. Cross-client testing is screenshot-based (Email on Acid pass-through), not rendering intelligence with support matrices. No Maizzle/code-first build pipeline. No RAG knowledge system. No CMS connector pipeline (export only). Components are not cascading/versioned with inheritance. |
-| **Parcel** | Browser-based email code editor (acquired by Customer.io). Live preview, collaboration, component system. AI for email generation and localisation (160+ languages). Code tools: CSS inlining, code shrinking, unused code removal. Tests in 80+ real inbox previews. Integrates with many ESPs (bidirectional import/export). | Excellent code editor, strong collaboration, good testing coverage, component system, AI email generation | No specialised AI agents for email development tasks. Code tools are post-processing (inlining, minifying) — no Maizzle-level build pipeline with Tailwind compilation. No RAG knowledge system. No rendering intelligence with client support matrices. Components exist but lack cascading inheritance across clients/projects. No self-hosted option. |
+| **Stensul** | Enterprise email creation platform. Drag-and-drop editor, brand governance, approval workflows. AI email generator (brief-to-email), content refinement tools, subject line/CTA generators. Figma plugin (2025). Integrates with SFMC, Pardot, Eloqua, Adobe Campaign, Braze, Iterable. | Strong governance, enterprise SSO, broad CMS integrations (7+), AI content generation, Figma plugin for brand compliance | Primarily visual builder — no code-first developer workflow or Maizzle-level build pipeline. AI focuses on content generation (copy, subject lines) rather than specialised email development tasks (dark mode fixes, Outlook rendering). Per-seat SaaS pricing model. |
+| **Dyspatch** | Email production platform. Modular builder, AMP for Email support, 300+ locale localisation. Scribe AI converts Figma files, HTML, or images into reusable modular components and generates campaigns from briefs. Integrates with SendGrid, Mailgun, Mailjet. | AMP support, strong module system, AI-powered component extraction from existing assets, 300+ locale translations | AI focuses on design-to-component conversion rather than specialised email development assistance. Smaller CMS/ESP connector range (3 integrations vs. Stensul's 7+). SaaS-hosted model. |
+| **Knak** | No-code email builder for enterprise marketers. SFMC and Marketo native integration. AI-powered translations and brand voice features. | Marketer-focused simplicity, strong SFMC/Marketo integration, fast production for non-technical users | Explicitly no-code — designed for marketers, not developers. AI focused on translations and brand voice rather than email development tasks. |
+| **Stripo** | Email template builder with drag-and-drop and HTML editor. Extensive AI: AI Hub for full email generation, text refinement, image generation (DALL-E, Gemini, GPT-Image-1), AI alt text. Cross-client testing across 98 clients via Email on Acid integration. Freemium model. | Broad AI content and image generation, large template library, 98-client rendering tests, HTML editing alongside drag-and-drop, email design system features | AI is broad content generation rather than specialised email development agents. Cross-client testing is screenshot-based (Email on Acid pass-through) — useful but different from structured rendering intelligence with support matrices. Components not cascading/versioned with cross-project inheritance. |
+| **Parcel** | Browser-based email code editor (acquired by Customer.io). Live preview, collaboration, component system. AI for email generation and localisation (160+ languages). Code tools: CSS inlining, code shrinking, unused code removal. Tests in 80+ real inbox previews. Integrates with many ESPs (bidirectional import/export). | Excellent code editor, strong collaboration, good testing coverage, component system, AI email generation, broad ESP integrations | Code tools are post-processing (inlining, minifying) rather than a compile-time build pipeline with Tailwind. Components exist but lack cascading inheritance across clients/projects. SaaS-hosted model. |
 
 ### Where the Hub Is Genuinely Different
 
@@ -1321,7 +1321,7 @@ Every competitor listed above now offers some form of AI content generation — 
 - **Compound knowledge system (RAG)** — Every rendering fix, client quirk, and development pattern is captured in a RAG-indexed knowledge base that feeds into AI agents. The knowledge compounds over time — six months of fixes to the same component make the AI smarter about that component. This compounding effect is a structural advantage of the Hub's architecture.
 - **Rendering intelligence as a deliverable** — Not just "test your email in 80 clients" (Stripo and Parcel offer that) but structured client support matrices showing which email innovations (AMP, interactive CSS, dark mode techniques, kinetic elements) work in which email clients, presented as capability reports for client stakeholders. The data answers "what can we do?" not just "does this email render?"
 - **100% self-hosted, open-source stack** — No per-seat SaaS pricing. No vendor lock-in. The entire platform runs on Merkle infrastructure with zero software licence costs. The knowledge base, component library, and AI skills are Merkle IP that appreciates over time.
-- **Local-first AI with hybrid routing** — 70% of AI tasks handled by local LLMs at zero API cost, with frontier cloud models reserved for complex reasoning. Local-first processing keeps costs predictable and data on Merkle infrastructure.
+- **Local-first AI with hybrid routing** — 70–90% of AI tasks handled by local LLMs at zero API cost, with frontier cloud models reserved for complex reasoning. Local-first processing keeps costs predictable and data on Merkle infrastructure.
 - **Innovation R&D platform** — The Hub is not just a production tool. It is the engine for prototyping, benchmarking, and proving email innovations (AMP, interactive CSS, kinetic techniques) before pitching them to clients — with rendering intelligence data to back up every capability claim.
 
 The distinction is straightforward: existing tools help in-house teams produce emails faster on their chosen platform. The Hub is built for an agency that works across platforms — it allows Merkle to develop, test, and prove email innovations once and deploy them to any client's CMS from a single codebase that Merkle owns entirely. That cross-client compound effect is something a single-brand tool simply isn't designed to provide.
@@ -1351,7 +1351,7 @@ The following three capabilities are offered by competitors but not yet explicit
 
 | # | New Capability | Competitor Reference | How the Hub Builds It | Effort | When |
 |---|---|---|---|---|---|
-| 1 | **Content Agent** — AI-generated subject lines, preheaders, CTA copy, body copy refinement (rewrite, shorten, expand, change tone) | Stensul (content refinement, subject line/CTA generators), Stripo (AI text refinement), Dyspatch (campaign copy from brief) | Add as 8th AI agent using same LLM infrastructure. System prompt specialised for email marketing copy with brand voice constraints. Integrates into the editor as inline suggestions — select text, right-click, "Refine with AI." Local LLMs handle 70% of requests (basic rewrites, grammar fixes). Cloud models for creative generation. | Low — 2–3 days. System prompt + UI integration into Monaco editor context menu. | MVP Sprint 2 (alongside Scaffolder) |
+| 1 | **Content Agent** — AI-generated subject lines, preheaders, CTA copy, body copy refinement (rewrite, shorten, expand, change tone) | Stensul (content refinement, subject line/CTA generators), Stripo (AI text refinement), Dyspatch (campaign copy from brief) | Add as 8th AI agent using same LLM infrastructure. System prompt specialised for email marketing copy with brand voice constraints. Integrates into the editor as inline suggestions — select text, right-click, "Refine with AI." Local LLMs handle 70–90% of requests (basic rewrites, grammar fixes). Cloud models for creative generation. | Low — 2–3 days. System prompt + UI integration into Monaco editor context menu. | MVP Sprint 2 (alongside Scaffolder) |
 | 2 | **AI Image Generation** — generate placeholder heroes, product imagery, background graphics directly in the editor | Stripo (DALL-E, Gemini, GPT-Image-1 built into editor) | Self-hosted Stable Diffusion XL via ComfyUI on existing GPU infrastructure — zero API cost, fits local-first strategy. "Generate image" button in the editor's asset panel. Useful for prototyping and mockups during client pitches. Cloud APIs (DALL-E, Midjourney) available as optional upgrade for production-quality assets. | Medium — 3–5 days. ComfyUI deployment + API wrapper + editor integration. | Post-MVP Phase 1 |
 | 3 | **AI Alt Text Generation** — automatically generate descriptive alt text for all images in a template | Stensul, Stripo (AI-generated alt text) | Extend the Accessibility Agent to analyse images via vision model (local or cloud) and generate contextual alt text. Runs as part of the Accessibility Audit in the QA pipeline. Developers review and approve suggestions. | Low — 1–2 days. Vision model API call + UI for review/approval. | MVP Sprint 2 (extend Accessibility Agent) |
 
@@ -1388,13 +1388,17 @@ Where an external API is not difficult to replicate for the Hub's specific needs
 
 ### AI Cost Reduction — Real API Pricing
 
-The local-first AI model strategy is the single biggest cost lever. Based on current Claude API pricing (February 2026):
+The local-first AI model strategy is the single biggest cost lever. Based on current Claude API pricing (March 2026):
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) | Hub Role |
 |-------|----------------------|----------------------|----------|
-| Claude Sonnet 4.5 | $3 | $15 | Primary workhorse — dark mode, accessibility, code review, content generation |
+| Claude Sonnet 4.6 | $3 | $15 | Primary workhorse — dark mode, accessibility, code review, content generation |
 | Claude Haiku 4.5 | $1 | $5 | Knowledge lookups, validation checks, template classification |
-| Claude Opus 4 | $15 | $75 | Complex scaffolding, architecture decisions (used sparingly) |
+| Claude Opus 4.6 | $15 | $75 | Complex scaffolding, architecture decisions (used sparingly) |
+
+**Subscription alternative:** Anthropic offers monthly subscription tiers — $20 (Pro), $100 (Max 5×), and $200 (Max 20×) — which may be more cost-effective for individual developer seats than API pricing depending on usage patterns.
+
+**Note:** All cost estimates are based on publicly available pricing as of March 2026. If pricing differs from published rates, figures should be amended accordingly.
 
 **Typical Hub usage pattern (per day, cloud-routed tasks only — 30% of total):**
 - ~100 Sonnet requests (avg 2K input + 1K output tokens each): ~$0.90 + $1.50 = ~$2.40/day
@@ -1405,7 +1409,7 @@ The local-first AI model strategy is the single biggest cost lever. Based on cur
 With prompt caching (90% discount on cached prompts) and batch API (50% discount for non-urgent tasks), realistic monthly spend is **£60–150/month** for cloud AI.
 
 - **Without local models:** If all AI tasks used cloud APIs (~500+ requests/day), estimated monthly cost: £400–1,000/mo.
-- **With local models (70% routing):** Local handles routine tasks at zero marginal cost. Cloud usage drops to ~150 requests/day. Estimated monthly cost: **£60–150/mo.**
+- **With local models (70–90% routing):** Local handles routine tasks at zero marginal cost. Cloud usage drops to ~50–150 requests/day. Estimated monthly cost: **£60–150/mo.**
 - **Estimated annual AI savings:** £4,000–10,000/yr by running local models for the majority of tasks.
 
 ### Total Cost of Ownership
@@ -1442,7 +1446,7 @@ The MVP includes only what's needed to be useful and demonstrable. Each feature 
 | 1 | **Auth + Project Workspace** | JWT-based auth with RBAC. Client-scoped project workspaces with team assignments. | **Client data isolation from day one.** Developers only see the clients they're assigned to. No accidental cross-client exposure. Demonstrates enterprise governance to stakeholders. |
 | 2 | **Monaco Editor + Live Preview** | VS Code-quality code editor with split-pane live preview, Can I Email autocomplete, and inline CSS support warnings. | **Developers stay in the Hub instead of switching between tools.** Real-time feedback on which CSS properties break in which clients — catches Outlook issues while typing, not after a 3-hour QA cycle. |
 | 3 | **Maizzle Build Pipeline** | Compile-on-save, Tailwind CSS inlining, responsive transforms, unused class purging, plaintext generation. | **Production-ready email HTML in seconds, not hours.** Eliminates the manual CSS inlining, minification, and responsive testing that currently eats 30–60 minutes per template. Every email leaves the Hub optimised. |
-| 4 | **Component Library v1** | 5–10 pre-tested, versioned email components (headers, CTAs, product cards, footers, hero blocks) with dark mode variants. | **Build once, reuse everywhere.** A CTA button tested in 20+ clients is never rebuilt from scratch again. Fixes propagate — update a component once and every email using it inherits the fix. This is where compound value starts. |
+| 4 | **Component Library v1** | 5–10 pre-tested, versioned email components (headers, CTAs, product cards, footers, hero blocks) with dark mode variants. | **Build once, reuse everywhere.** A CTA button tested in 20+ clients is never manually reassembled again. Fixes propagate — update a component once and every email using it inherits the fix. This is where compound value starts. |
 | 5 | **3 AI Agents (Scaffolder + Dark Mode + Content)** | Scaffolder generates email HTML from campaign briefs. Dark Mode Agent injects tested CSS patterns. Content Agent refines subject lines, CTAs, and body copy with brand voice constraints per client. | **Turns a multi-hour build into a 30-minute refinement.** The Scaffolder produces a working first draft, Dark Mode becomes automatic, and the Content Agent handles copywriting — matching every AI content capability competitors offer, but specialised for email. |
 | 6 | **Raw HTML Export + Braze Connector** | One-click export as production-ready HTML or direct push to Braze as Content Blocks with Liquid template packaging. | **Eliminates the copy-paste-reformat cycle.** Currently, getting HTML from development into Braze involves manual formatting, Content Block creation, and Liquid tag insertion. The connector automates this entirely. |
 | 7 | **10-Point QA Gate System** | HTML validation, CSS support matrix check, file size (Gmail clipping), link validation, spam score, dark mode audit, accessibility basics, fallback verification, image optimisation check, brand compliance. | **No email leaves the Hub without passing every check.** This is the safety net that makes innovation possible — the team can experiment with AMP, interactive CSS, and kinetic elements knowing the gate system will catch any rendering failure before it reaches a client inbox. |

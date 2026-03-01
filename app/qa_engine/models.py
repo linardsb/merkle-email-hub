@@ -1,7 +1,8 @@
 """Database models for QA engine."""
 
 from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.shared.models import TimestampMixin
@@ -13,13 +14,26 @@ class QAResult(Base, TimestampMixin):
     __tablename__ = "qa_results"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    build_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("email_builds.id"), nullable=False, index=True
+    build_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("email_builds.id"), nullable=True, index=True
+    )
+    template_version_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("template_versions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     overall_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     checks_passed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     checks_total: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+
+    checks: Mapped[list["QACheck"]] = relationship(
+        back_populates="qa_result", cascade="all, delete-orphan", lazy="selectin"
+    )
+    override: Mapped["QAOverride | None"] = relationship(
+        back_populates="qa_result", uselist=False, lazy="selectin"
+    )
 
 
 class QACheck(Base, TimestampMixin):
@@ -29,10 +43,34 @@ class QACheck(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     qa_result_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("qa_results.id"), nullable=False, index=True
+        Integer, ForeignKey("qa_results.id", ondelete="CASCADE"), nullable=False, index=True
     )
     check_name: Mapped[str] = mapped_column(String(50), nullable=False)
     passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     details: Mapped[str | None] = mapped_column(Text, nullable=True)
     severity: Mapped[str] = mapped_column(String(20), nullable=False, default="warning")
+
+    qa_result: Mapped["QAResult"] = relationship(back_populates="checks")
+
+
+class QAOverride(Base, TimestampMixin):
+    """Records admin/developer override of failing QA checks."""
+
+    __tablename__ = "qa_overrides"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    qa_result_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("qa_results.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    overridden_by_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    justification: Mapped[str] = mapped_column(Text, nullable=False)
+    checks_overridden: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+
+    qa_result: Mapped["QAResult"] = relationship(back_populates="override")

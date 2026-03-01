@@ -121,7 +121,7 @@ class LocalEmbeddingProvider:
     def _get_model(self) -> Any:  # noqa: ANN401 — untyped lib (sentence-transformers)
         """Lazy-load the SentenceTransformer model."""
         if self._model is None:
-            from sentence_transformers import SentenceTransformer
+            from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
 
             self._model = SentenceTransformer(self._model_name)
         return self._model

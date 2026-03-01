@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,7 +33,7 @@ class ComponentRepository:
         limit: int = 100,
         category: str | None = None,
         search: str | None = None,
-    ) -> list[Component]:
+    ) -> Sequence[Component]:
         query = select(Component)
         if category:
             query = query.where(Component.category == category)
@@ -104,6 +106,7 @@ class ComponentRepository:
             html_source=data.html_source,
             css_source=data.css_source,
             changelog=data.changelog,
+            compatibility=data.compatibility,
             created_by_id=user_id,
         )
         self.db.add(version)
@@ -111,7 +114,7 @@ class ComponentRepository:
         await self.db.refresh(version)
         return version
 
-    async def get_versions(self, component_id: int) -> list[ComponentVersion]:
+    async def get_versions(self, component_id: int) -> Sequence[ComponentVersion]:
         result = await self.db.execute(
             select(ComponentVersion)
             .where(ComponentVersion.component_id == component_id)

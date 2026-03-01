@@ -48,7 +48,7 @@ class ProjectService:
         """
         logger.info("projects.access_check_started", project_id=project_id, user_id=user.id)
         project = await self.projects.get(project_id)
-        if not project or project.deleted_at is not None:
+        if not project or project.deleted_at is not None:  # pyright: ignore[reportUnnecessaryComparison]
             raise ProjectNotFoundError(f"Project {project_id} not found")
 
         if user.role != "admin":
@@ -66,7 +66,7 @@ class ProjectService:
     async def list_project_members(self, project_id: int) -> list[ProjectMemberResponse]:
         logger.info("projects.members_list_started", project_id=project_id)
         project = await self.projects.get(project_id)
-        if not project or project.deleted_at is not None:
+        if not project or project.deleted_at is not None:  # pyright: ignore[reportUnnecessaryComparison]
             raise ProjectNotFoundError(f"Project {project_id} not found")
         members = await self.projects.get_members(project_id)
         return [ProjectMemberResponse.model_validate(m) for m in members]

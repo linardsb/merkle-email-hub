@@ -21,14 +21,18 @@ import {
 } from "@/hooks/use-templates";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { useEmailPreview } from "@/hooks/use-email";
+import { useQARun } from "@/hooks/use-qa";
 import { usePersonas } from "@/hooks/use-personas";
+import { fetcher } from "@/lib/swr-fetcher";
 import { WorkspaceToolbar } from "@/components/workspace/workspace-toolbar";
 import { EditorPanel } from "@/components/workspace/editor-panel";
 import { PreviewPanel } from "@/components/workspace/preview-panel";
 import { ChatPanel } from "@/components/workspace/chat-panel";
+import { QAResultsPanel } from "@/components/workspace/qa-results-panel";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
+import type { QAResultResponse } from "@/types/qa";
 
 const DEFAULT_TEMPLATE = `---
 title: "New Email Template"
@@ -97,6 +101,13 @@ export default function WorkspacePage() {
   const [buildTimeMs, setBuildTimeMs] = useState<number | null>(null);
   const { trigger: triggerPreview, isMutating: isCompiling } =
     useEmailPreview();
+
+  // ── QA State ──
+  const { trigger: triggerQA, isMutating: isRunningQA } = useQARun();
+  const [qaResultData, setQaResultData] = useState<QAResultResponse | null>(
+    null
+  );
+  const [qaPanelOpen, setQaPanelOpen] = useState(false);
 
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
@@ -213,6 +224,8 @@ export default function WorkspacePage() {
       setSaveStatus("idle");
       setCompiledHtml(null);
       setBuildTimeMs(null);
+      setQaResultData(null);
+      setQaPanelOpen(false);
       const url = new URL(window.location.href);
       url.searchParams.set("template", String(template.id));
       router.replace(url.pathname + url.search, { scroll: false });
@@ -247,6 +260,46 @@ export default function WorkspacePage() {
     },
     [t]
   );
+
+  // ── QA Handlers ──
+  const tQA = useTranslations("qa");
+
+  const handleRunQA = useCallback(async () => {
+    if (!compiledHtml?.trim()) {
+      toast.error(tQA("qaNoCompiledHtml"));
+      return;
+    }
+    try {
+      const result = await triggerQA({ html: compiledHtml });
+      if (result) {
+        setQaResultData(result);
+        setQaPanelOpen(true);
+        if (result.passed) {
+          toast.success(tQA("qaPassed"));
+        } else {
+          toast.warning(
+            tQA("qaFailed", {
+              failed: result.checks_total - result.checks_passed,
+            })
+          );
+        }
+      }
+    } catch {
+      toast.error(tQA("qaError"));
+    }
+  }, [compiledHtml, triggerQA, tQA]);
+
+  const handleQAOverrideSuccess = useCallback(() => {
+    if (qaResultData?.id) {
+      fetcher<QAResultResponse>(
+        `/api/v1/qa/results/${qaResultData.id}`
+      )
+        .then((updated) => setQaResultData(updated))
+        .catch(() => {
+          /* override succeeded; panel will show stale data until next QA run */
+        });
+    }
+  }, [qaResultData?.id]);
 
   // ── Panel State ──
   const chatPanelRef = usePanelRef();
@@ -286,58 +339,73 @@ export default function WorkspacePage() {
         onSave={handleSave}
         saveStatus={effectiveSaveStatus}
         isLoadingTemplates={templatesLoading}
+        onRunQA={handleRunQA}
+        isRunningQA={isRunningQA}
+        qaResult={qaResultData}
+        onToggleQAPanel={() => setQaPanelOpen((v) => !v)}
       />
 
-      <Group orientation="vertical" className="flex-1">
-        {/* Top: Editor + Preview (horizontal split) */}
-        <Panel defaultSize={75} minSize={40}>
-          <Group orientation="horizontal">
-            <Panel defaultSize={50} minSize={25}>
-              <EditorPanel
-                value={editorContent}
-                onChange={handleEditorChange}
-                onSave={handleSave}
-                saveStatus={effectiveSaveStatus}
-              />
-            </Panel>
+      <div className="flex flex-1 overflow-hidden">
+        <Group orientation="vertical" className="flex-1">
+          {/* Top: Editor + Preview (horizontal split) */}
+          <Panel defaultSize={75} minSize={40}>
+            <Group orientation="horizontal">
+              <Panel defaultSize={50} minSize={25}>
+                <EditorPanel
+                  value={editorContent}
+                  onChange={handleEditorChange}
+                  onSave={handleSave}
+                  saveStatus={effectiveSaveStatus}
+                />
+              </Panel>
 
-            <Separator className="flex w-1.5 items-center justify-center bg-border transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50">
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </Separator>
+              <Separator className="flex w-1.5 items-center justify-center bg-border transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50">
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </Separator>
 
-            <Panel defaultSize={50} minSize={25}>
-              <PreviewPanel
-                compiledHtml={compiledHtml}
-                isCompiling={isCompiling}
-                buildTimeMs={buildTimeMs}
-                onCompile={handleCompile}
-                hasContent={editorContent.trim().length > 0}
-                personas={personas ?? []}
-                selectedPersonaId={selectedPersonaId}
-                onPersonaSelect={handlePersonaSelect}
-                isLoadingPersonas={personasLoading}
-              />
-            </Panel>
-          </Group>
-        </Panel>
+              <Panel defaultSize={50} minSize={25}>
+                <PreviewPanel
+                  compiledHtml={compiledHtml}
+                  isCompiling={isCompiling}
+                  buildTimeMs={buildTimeMs}
+                  onCompile={handleCompile}
+                  hasContent={editorContent.trim().length > 0}
+                  personas={personas ?? []}
+                  selectedPersonaId={selectedPersonaId}
+                  onPersonaSelect={handlePersonaSelect}
+                  isLoadingPersonas={personasLoading}
+                />
+              </Panel>
+            </Group>
+          </Panel>
 
-        {/* Horizontal resize handle */}
-        <Separator className="flex h-1.5 items-center justify-center bg-border transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50">
-          <GripHorizontal className="h-4 w-4 text-muted-foreground" />
-        </Separator>
+          {/* Horizontal resize handle */}
+          <Separator className="flex h-1.5 items-center justify-center bg-border transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary/50">
+            <GripHorizontal className="h-4 w-4 text-muted-foreground" />
+          </Separator>
 
-        {/* Bottom: AI Chat (collapsible) */}
-        <Panel
-          panelRef={chatPanelRef}
-          defaultSize={25}
-          minSize={0}
-          collapsible
-          collapsedSize={0}
-          onResize={handleChatResize}
-        >
-          <ChatPanel onApplyToEditor={handleApplyToEditor} />
-        </Panel>
-      </Group>
+          {/* Bottom: AI Chat (collapsible) */}
+          <Panel
+            panelRef={chatPanelRef}
+            defaultSize={25}
+            minSize={0}
+            collapsible
+            collapsedSize={0}
+            onResize={handleChatResize}
+          >
+            <ChatPanel onApplyToEditor={handleApplyToEditor} />
+          </Panel>
+        </Group>
+
+        {/* QA Results Panel (right sidebar) */}
+        {qaPanelOpen && qaResultData && (
+          <QAResultsPanel
+            result={qaResultData}
+            onClose={() => setQaPanelOpen(false)}
+            onOverrideSuccess={handleQAOverrideSuccess}
+          />
+        )}
+      </div>
 
       {chatCollapsed && (
         <button

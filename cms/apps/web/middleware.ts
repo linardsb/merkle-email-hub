@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { AppRole } from "@/auth";
 
 const intlMiddleware = createMiddleware({
-  locales: ["en", "en"],
+  locales: ["en"],
   defaultLocale: "en",
 });
 
@@ -16,7 +16,9 @@ const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/dashboard": ["admin", "developer", "viewer"],
   "/projects": ["admin", "developer", "viewer"],
   "/example": ["admin", "developer", "viewer"],
+  "/components": ["admin", "developer", "viewer"],
   "/users": ["admin"],
+  "/approvals": ["admin", "developer", "viewer"],
 };
 
 const PUBLIC_ROUTES = ["/login"];
@@ -60,25 +62,32 @@ export default async function middleware(request: NextRequest) {
     return intlResponse;
   }
 
-  // Check authentication
-  const session = await auth();
+  // Check authentication — wrapped in try/catch because next-auth beta
+  // can throw if session resolution fails, which kills the entire middleware
+  try {
+    const session = await auth();
 
-  if (!session?.user) {
-    const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
-    const loginUrl = new URL(`/${locale}/login`, request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Check RBAC
-  const routeKey = getRouteKey(pathname);
-  if (routeKey) {
-    const allowedRoles = ROLE_PERMISSIONS[routeKey];
-    const userRole: string = session.user.role || "viewer";
-    if (allowedRoles && !allowedRoles.includes(userRole as AppRole)) {
+    if (!session?.user) {
       const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
-      return NextResponse.redirect(new URL(`/${locale}/unauthorized`, request.url));
+      const loginUrl = new URL(`/${locale}/login`, request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
     }
+
+    // Check RBAC
+    const routeKey = getRouteKey(pathname);
+    if (routeKey) {
+      const allowedRoles = ROLE_PERMISSIONS[routeKey];
+      const userRole: string = session.user.role || "viewer";
+      if (allowedRoles && !allowedRoles.includes(userRole as AppRole)) {
+        const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
+        return NextResponse.redirect(
+          new URL(`/${locale}/unauthorized`, request.url)
+        );
+      }
+    }
+  } catch {
+    // Auth failed — let the page render (login page handles its own redirect)
   }
 
   return intlResponse;

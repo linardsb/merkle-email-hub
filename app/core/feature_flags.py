@@ -46,10 +46,10 @@ class FeatureFlags:
         """
         try:
             redis = await get_redis()
-            value = await redis.get(self._key(flag))  # type: ignore[misc]
+            value = await redis.get(self._key(flag))
             if value is None:
                 return default
-            return value == "1"
+            return bool(value == "1")
         except Exception:
             logger.warning("feature_flags.check_failed", flag=flag, default=default)
             return default
@@ -58,7 +58,7 @@ class FeatureFlags:
         """Enable a feature flag."""
         try:
             redis = await get_redis()
-            await redis.set(self._key(flag), "1")  # type: ignore[misc]
+            await redis.set(self._key(flag), "1")
             logger.info("feature_flags.enabled", flag=flag)
         except Exception:
             logger.error("feature_flags.enable_failed", flag=flag)
@@ -67,7 +67,7 @@ class FeatureFlags:
         """Disable a feature flag."""
         try:
             redis = await get_redis()
-            await redis.set(self._key(flag), "0")  # type: ignore[misc]
+            await redis.set(self._key(flag), "0")
             logger.info("feature_flags.disabled", flag=flag)
         except Exception:
             logger.error("feature_flags.disable_failed", flag=flag)
@@ -76,7 +76,7 @@ class FeatureFlags:
         """Remove a feature flag entirely."""
         try:
             redis = await get_redis()
-            await redis.delete(self._key(flag))  # type: ignore[misc]
+            await redis.delete(self._key(flag))
         except Exception:
             logger.error("feature_flags.delete_failed", flag=flag)
 
@@ -84,15 +84,15 @@ class FeatureFlags:
         """List all feature flags and their states."""
         try:
             redis = await get_redis()
-            keys = []
-            async for key in redis.scan_iter(f"{self.prefix}:*"):  # type: ignore[misc]
-                keys.append(key)
+            keys: list[str] = []
+            async for key in redis.scan_iter(f"{self.prefix}:*"):  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                keys.append(str(key))  # pyright: ignore[reportUnknownArgumentType]
             if not keys:
                 return {}
-            values = await redis.mget(*keys)  # type: ignore[misc]
+            values = await redis.mget(*keys)  # pyright: ignore[reportUnknownArgumentType]
             return {
                 str(k).removeprefix(f"{self.prefix}:"): v == "1"
-                for k, v in zip(keys, values)
+                for k, v in zip(keys, values, strict=False)  # pyright: ignore[reportUnknownArgumentType]
                 if v is not None
             }
         except Exception:

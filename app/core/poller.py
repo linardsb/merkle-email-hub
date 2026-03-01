@@ -24,7 +24,6 @@ Usage:
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any
 
 from app.core.logging import get_logger
 from app.core.redis import get_redis
@@ -52,7 +51,7 @@ class DataPoller(ABC):
         self._running = False
 
     @abstractmethod
-    async def fetch(self) -> Any:
+    async def fetch(self) -> object:
         """Fetch raw data from the external source.
 
         Returns:
@@ -60,7 +59,7 @@ class DataPoller(ABC):
         """
         ...
 
-    async def enrich(self, raw: Any) -> Any:
+    async def enrich(self, raw: object) -> object:
         """Optionally enrich or transform raw data before storage.
 
         Override this to add computed fields, normalize data, etc.
@@ -75,7 +74,7 @@ class DataPoller(ABC):
         return raw
 
     @abstractmethod
-    async def store(self, data: Any) -> None:
+    async def store(self, data: object) -> None:
         """Store enriched data (e.g., in Redis cache).
 
         Args:
@@ -100,7 +99,7 @@ class DataPoller(ABC):
         try:
             redis = await get_redis()
             lock_key = f"poller:{self.name}:leader"
-            acquired = await redis.set(  # type: ignore[misc]
+            acquired = await redis.set(
                 lock_key,
                 "1",
                 nx=True,
@@ -116,9 +115,9 @@ class DataPoller(ABC):
         try:
             redis = await get_redis()
             lock_key = f"poller:{self.name}:leader"
-            await redis.expire(lock_key, self.leader_lock_ttl)  # type: ignore[misc]
+            await redis.expire(lock_key, self.leader_lock_ttl)
         except Exception:
-            pass
+            logger.debug("poller.renew_lock_failed", poller=self.name)
 
     async def _poll_loop(self) -> None:
         """Main polling loop with leader election."""

@@ -8,12 +8,10 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #18087 | 9:26 AM | 🔵 | Shared Pattern Architecture - Literal Enums, Integer PKs, No Soft Deletes | ~829 |
-| #18039 | 8:30 AM | ⚖️ | Frontend Implementation Strategy: Planned Incremental Feature Development | ~391 |
 
 ### Mar 1, 2026
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #18280 | 7:41 AM | 🔵 | Current RAG Architecture Uses Protocol-Based Provider Abstraction | ~572 |
 | #18245 | 6:50 AM | ✅ | Project roadmap updated with two completed tasks | ~321 |
 </claude-mem-context>

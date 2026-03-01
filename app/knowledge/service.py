@@ -654,7 +654,7 @@ class KnowledgeService:
 
             # Normalize and create/link tags
             created_count = 0
-            for name in parsed[:3]:  # Cap at 3 tags
+            for name in parsed[:3]:  # pyright: ignore[reportUnknownVariableType]  # Cap at 3 tags
                 if not isinstance(name, str) or not name.strip():
                     continue
                 normalized = name.strip().lower()

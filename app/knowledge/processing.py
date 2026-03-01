@@ -234,7 +234,7 @@ def _extract_excel_sync(file_path: str) -> str:
     Returns:
         Tab-separated text from all sheets.
     """
-    import openpyxl
+    import openpyxl  # type: ignore[import-untyped]
 
     wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
     sheets: list[str] = []

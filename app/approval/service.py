@@ -65,6 +65,11 @@ class ApprovalService:
         await self.repository.add_audit(approval_id, "feedback_added", user_id)
         return FeedbackResponse.model_validate(fb)
 
+    async def list_by_project(self, project_id: int) -> list[ApprovalResponse]:
+        """List approval requests for a project."""
+        approvals = await self.repository.list_by_project(project_id)
+        return [ApprovalResponse.model_validate(a) for a in approvals]
+
     async def get_feedback(self, approval_id: int) -> list[FeedbackResponse]:
         return [
             FeedbackResponse.model_validate(f)

@@ -1,5 +1,7 @@
 """QA check implementations for the 10-point quality gate."""
 
+from typing import Protocol
+
 from app.qa_engine.checks.accessibility import AccessibilityCheck
 from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
 from app.qa_engine.checks.css_support import CssSupportCheck
@@ -10,8 +12,18 @@ from app.qa_engine.checks.html_validation import HtmlValidationCheck
 from app.qa_engine.checks.image_optimization import ImageOptimizationCheck
 from app.qa_engine.checks.link_validation import LinkValidationCheck
 from app.qa_engine.checks.spam_score import SpamScoreCheck
+from app.qa_engine.schemas import QACheckResult
 
-ALL_CHECKS = [
+
+class QACheckProtocol(Protocol):
+    """Protocol that all QA checks must satisfy."""
+
+    name: str
+
+    async def run(self, html: str) -> QACheckResult: ...
+
+
+ALL_CHECKS: list[QACheckProtocol] = [
     HtmlValidationCheck(),
     CssSupportCheck(),
     FileSizeCheck(),

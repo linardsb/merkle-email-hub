@@ -89,7 +89,7 @@ class ToolDefinition:
 
     name: str
     description: str
-    parameters: dict[str, object] = field(default_factory=dict)
+    parameters: dict[str, object] = field(default_factory=dict)  # pyright: ignore[reportUnknownVariableType]
 
 
 @runtime_checkable

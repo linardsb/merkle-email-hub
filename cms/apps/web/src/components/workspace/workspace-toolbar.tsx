@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowLeft, Save, Users } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Save, ShieldCheck, Users } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
@@ -18,6 +18,16 @@ interface WorkspaceToolbarProps {
   onSave: () => void;
   saveStatus: SaveStatus;
   isLoadingTemplates?: boolean;
+  onRunQA?: () => void;
+  isRunningQA?: boolean;
+  qaResult?: {
+    passed: boolean;
+    checks_passed: number;
+    checks_total: number;
+  } | null;
+  onToggleQAPanel?: () => void;
+  onSubmitForApproval?: () => void;
+  isSubmittingApproval?: boolean;
 }
 
 export function WorkspaceToolbar({
@@ -30,6 +40,12 @@ export function WorkspaceToolbar({
   onSave,
   saveStatus,
   isLoadingTemplates,
+  onRunQA,
+  isRunningQA,
+  qaResult,
+  onToggleQAPanel,
+  onSubmitForApproval,
+  isSubmittingApproval,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
   const locale = useLocale();
@@ -69,6 +85,57 @@ export function WorkspaceToolbar({
           <Save className="h-3.5 w-3.5" />
           {t("saveTemplate")}
         </button>
+        {/* QA Gate */}
+        {onRunQA && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onRunQA}
+              disabled={isRunningQA || saveStatus === "saving"}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              title={t("runQA")}
+            >
+              <ShieldCheck
+                className={`h-3.5 w-3.5 ${isRunningQA ? "animate-pulse" : ""}`}
+              />
+              {isRunningQA ? t("runningQA") : t("runQA")}
+            </button>
+          </>
+        )}
+        {qaResult && !isRunningQA && onToggleQAPanel && (
+          <button
+            type="button"
+            onClick={onToggleQAPanel}
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
+              qaResult.passed
+                ? "bg-badge-success-bg text-badge-success-text hover:opacity-80"
+                : "bg-badge-danger-bg text-badge-danger-text hover:opacity-80"
+            }`}
+            title={t("viewQAResults")}
+          >
+            {qaResult.checks_passed}/{qaResult.checks_total}
+          </button>
+        )}
+        {onSubmitForApproval && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onSubmitForApproval}
+              disabled={isSubmittingApproval || saveStatus === "saving"}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              title={t("submitForApproval")}
+            >
+              <ClipboardCheck
+                className={`h-3.5 w-3.5 ${isSubmittingApproval ? "animate-pulse" : ""}`}
+              />
+              {isSubmittingApproval
+                ? t("submittingApproval")
+                : t("submitForApproval")}
+            </button>
+          </>
+        )}
         {memberCount !== undefined && (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users className="h-3.5 w-3.5" />

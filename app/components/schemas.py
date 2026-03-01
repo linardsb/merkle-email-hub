@@ -37,6 +37,7 @@ class VersionCreate(BaseModel):
     html_source: str = Field(..., min_length=1)
     css_source: str | None = None
     changelog: str | None = None
+    compatibility: dict[str, str] | None = None
 
 
 class VersionResponse(BaseModel):
@@ -46,6 +47,7 @@ class VersionResponse(BaseModel):
     html_source: str
     css_source: str | None
     changelog: str | None
+    compatibility: dict[str, str] | None = None
     created_by_id: int
     created_at: datetime.datetime
 

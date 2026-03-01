@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +29,7 @@ class ClientOrgRepository:
 
     async def list(
         self, *, offset: int = 0, limit: int = 100, active_only: bool = True
-    ) -> list[ClientOrg]:
+    ) -> Sequence[ClientOrg]:
         query = select(ClientOrg)
         if active_only:
             query = query.where(ClientOrg.is_active.is_(True))
@@ -68,7 +70,7 @@ class ProjectRepository:
         limit: int = 100,
         active_only: bool = True,
         search: str | None = None,
-    ) -> list[Project]:
+    ) -> Sequence[Project]:
         query = select(Project).where(Project.deleted_at.is_(None))
         if active_only:
             query = query.where(Project.is_active.is_(True))
@@ -136,7 +138,7 @@ class ProjectRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_members(self, project_id: int) -> list[ProjectMember]:
+    async def get_members(self, project_id: int) -> Sequence[ProjectMember]:
         result = await self.db.execute(
             select(ProjectMember).where(ProjectMember.project_id == project_id)
         )

@@ -25,11 +25,17 @@ make dev             # Start backend (:8891) + frontend (:3000)
 make dev-be          # Backend only
 make dev-fe          # Frontend only
 
-# Quality checks
-make check           # All checks (lint + types + tests)
-make test            # Unit tests
+# Quality checks — all in one
+make check           # All checks: backend (lint + types + tests) + frontend (types + tests)
+
+# Backend checks
+make test            # Backend unit tests (pytest)
 make lint            # Format + lint (ruff)
 make types           # mypy + pyright
+
+# Frontend checks
+make check-fe        # Frontend type-check + unit tests
+make test-fe         # Frontend unit tests only (vitest)
 
 # Database
 make db-migrate      # Run migrations
@@ -195,16 +201,16 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 2.1 Wire AI provider (Claude/OpenAI, model routing, streaming)
 - [x] 2.2 Scaffolder agent (brief → Maizzle HTML)
 - [x] 2.3 Dark Mode agent (inject dark mode CSS + Outlook overrides)
-- [ ] 2.4 Content agent (copy generation, editor context menu)
+- [x] 2.4 Content agent (copy generation, editor context menu)
 - [x] 2.5 AI chat sidebar UI (agent selection, streaming, accept/reject)
-- [ ] 2.6 Component library v1 — backend (seed 5-10 components)
-- [ ] 2.7 Component library browser UI (`/components`)
-- [ ] 2.8 10-point QA gate system UI (run, results, override flow)
+- [x] 2.6 Component library v1 — backend (seed 5-10 components)
+- [x] 2.7 Component library browser UI (`/components`)
+- [x] 2.8 10-point QA gate system (backend + UI complete)
 - [ ] 2.9 Raw HTML export + Braze connector UI
 - [ ] 2.10 RAG knowledge base seeding (Can I Email, best practices)
 
 ### Phase 3 — Sprint 3: Client Handoff + Polish
-- [ ] 3.1 Client approval portal (viewer role, feedback, audit trail)
+- [x] 3.1 Client approval portal (viewer role, feedback, audit trail)
 - [ ] 3.2 Rendering intelligence dashboard (QA trends, support matrices)
 - [ ] 3.3 Dashboard homepage enhancement (real data, activity feed)
 - [ ] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)

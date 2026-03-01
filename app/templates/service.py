@@ -9,7 +9,7 @@ from app.core.logging import get_logger
 from app.projects.service import ProjectService
 from app.shared.schemas import PaginatedResponse, PaginationParams
 from app.templates.exceptions import TemplateNotFoundError, TemplateVersionNotFoundError
-from app.templates.models import Template, TemplateVersion
+from app.templates.models import Template
 from app.templates.repository import TemplateRepository
 from app.templates.schemas import (
     TemplateCreate,
@@ -41,7 +41,7 @@ class TemplateService:
     async def _get_template_or_404(self, template_id: int) -> Template:
         """Fetch template and verify it exists and isn't soft-deleted."""
         template = await self.templates.get(template_id)
-        if not template or template.deleted_at is not None:
+        if not template or template.deleted_at is not None:  # pyright: ignore[reportUnnecessaryComparison]
             raise TemplateNotFoundError(f"Template {template_id} not found")
         return template
 
@@ -134,7 +134,7 @@ class TemplateService:
     async def list_versions(self, template_id: int, user: User) -> list[VersionResponse]:
         logger.info("templates.versions_list_started", template_id=template_id)
         await self._verify_template_access(template_id, user)
-        versions: list[TemplateVersion] = await self.templates.get_versions(template_id)
+        versions = await self.templates.get_versions(template_id)
         return [VersionResponse.model_validate(v) for v in versions]
 
     async def get_version(
