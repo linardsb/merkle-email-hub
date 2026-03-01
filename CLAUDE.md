@@ -52,6 +52,7 @@ merkle-email-hub/
 │   ├── auth/           # JWT auth + RBAC + user management
 │   ├── example/        # Reference VSA feature ("Items" CRUD)
 │   ├── ai/             # AI layer (protocol interfaces, provider registry, chat API)
+│   │   └── agents/     # AI agents (scaffolder, dark_mode, content — per-agent subdirs)
 │   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search)
 │   ├── streaming/      # WebSocket streaming (Pub/Sub, connection manager)
 │   │
@@ -88,7 +89,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 - `REDIS__URL`
 - `AUTH__JWT_SECRET_KEY`, `AUTH__ACCESS_TOKEN_EXPIRE_MINUTES`
 
-- `AI__PROVIDER`, `AI__MODEL`, `AI__API_KEY`
+- `AI__PROVIDER`, `AI__MODEL`, `AI__API_KEY`, `AI__MODEL_COMPLEX`, `AI__MODEL_STANDARD`, `AI__MODEL_LIGHTWEIGHT`
 
 
 ### Shared Utilities
@@ -122,6 +123,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `qa_engine` | `/api/v1/qa` | 10-point quality gate system with individual check modules |
 | `connectors` | `/api/v1/connectors` | ESP export (Braze Content Blocks with Liquid packaging) |
 | `approval` | `/api/v1/approvals` | Client approval workflow with feedback and audit trail |
+| `templates` | `/api/v1/templates`, `/api/v1/projects/{id}/templates` | Versioned email templates with soft delete and restore |
 | `personas` | `/api/v1/personas` | Test subscriber profiles (device, email client, dark mode) |
 
 ### QA Gate System (10 checks)
@@ -183,18 +185,18 @@ See `TODO.md` for full task details with security requirements and verification 
 
 ### Phase 1 — Sprint 1: Editor + Build Pipeline
 - [x] 1.1 Project dashboard page (`/[locale]/(dashboard)/page.tsx`)
-- [ ] 1.2 Project workspace layout (3-pane: editor, preview, AI chat)
-- [ ] 1.3 Monaco editor (HTML/CSS/Liquid, Can I Email autocomplete)
-- [ ] 1.4 Maizzle live preview (compile-on-save, viewport toggles, dark mode)
-- [ ] 1.5 Test persona engine UI (persona selector, device/client context)
-- [ ] 1.6 Template CRUD + persistence (versioning, restore)
+- [x] 1.2 Project workspace layout (3-pane: editor, preview, AI chat)
+- [x] 1.3 Monaco editor (HTML/CSS/Liquid, Can I Email autocomplete)
+- [x] 1.4 Maizzle live preview (compile-on-save, viewport toggles, dark mode)
+- [x] 1.5 Test persona engine UI (persona selector, device/client context)
+- [x] 1.6 Template CRUD + persistence (versioning, restore)
 
 ### Phase 2 — Sprint 2: Intelligence + Export
-- [ ] 2.1 Wire AI provider (Claude/OpenAI, model routing, streaming)
-- [ ] 2.2 Scaffolder agent (brief → Maizzle HTML)
-- [ ] 2.3 Dark Mode agent (inject dark mode CSS + Outlook overrides)
+- [x] 2.1 Wire AI provider (Claude/OpenAI, model routing, streaming)
+- [x] 2.2 Scaffolder agent (brief → Maizzle HTML)
+- [x] 2.3 Dark Mode agent (inject dark mode CSS + Outlook overrides)
 - [ ] 2.4 Content agent (copy generation, editor context menu)
-- [ ] 2.5 AI chat sidebar UI (agent selection, streaming, accept/reject)
+- [x] 2.5 AI chat sidebar UI (agent selection, streaming, accept/reject)
 - [ ] 2.6 Component library v1 — backend (seed 5-10 components)
 - [ ] 2.7 Component library browser UI (`/components`)
 - [ ] 2.8 10-point QA gate system UI (run, results, override flow)

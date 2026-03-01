@@ -86,7 +86,7 @@
 - No client org data leakage across user sessions
 **Verify:** Dashboard loads. Shows only user's assigned projects. Empty state for new users.
 
-### 1.2 Project Workspace Layout
+### ~~1.2 Project Workspace Layout~~ DONE
 **Plan ref:** Section 9.2 (Project Workspace), MVP #2
 **What:** Split-pane workspace at `/projects/[id]/workspace`. Three resizable panels: editor (left), preview (center/right), AI chat (bottom, collapsible). Use a resizable pane library compatible with React 19.
 **Security:**
@@ -94,7 +94,7 @@
 - Project ID validated server-side (no client-side trust)
 **Verify:** Three-pane layout renders. Panels resize. Collapses gracefully on mobile.
 
-### 1.3 Monaco Editor Integration
+### ~~1.3 Monaco Editor Integration~~ DONE
 **Plan ref:** Section 9.2 (Monaco Editor), MVP #2
 **What:** Embed Monaco Editor with HTML/CSS/Liquid syntax highlighting. Add Can I Email CSS autocomplete (flag unsupported properties inline). Bracket matching, code folding, minimap, search/replace. Editor state persists per template.
 **Security:**
@@ -103,7 +103,7 @@
 - Editor runs in sandboxed context (no access to parent window APIs)
 **Verify:** Editor loads with syntax highlighting. Can I Email warnings appear for unsupported CSS. Content persists on save.
 
-### 1.4 Maizzle Live Preview
+### ~~1.4 Maizzle Live Preview~~ DONE
 **Plan ref:** Section 6.3 (Build Pipeline), 9.2 (Live Preview), MVP #3
 **What:** Compile-on-save via `POST /api/v1/email/preview`. Render compiled HTML in sandboxed iframe. Desktop/tablet/mobile viewport toggles. Dark mode preview toggle. Zoom controls.
 **Security:**
@@ -113,7 +113,7 @@
 - No user-generated content executes JavaScript in preview context
 **Verify:** Type HTML in editor → compiled preview updates within 2 seconds. Viewport toggles resize iframe. Dark mode toggle works.
 
-### 1.5 Test Persona Engine UI
+### ~~1.5 Test Persona Engine UI~~ DONE
 **Plan ref:** Section MVP #10, 16.4
 **What:** Persona selector dropdown in preview panel. Load personas from `GET /api/v1/personas`. One-click preview as: "Gmail Desktop", "iPhone Dark Mode", "Outlook 2016", etc. Visual context switching (device frame, email client chrome).
 **Security:**
@@ -121,7 +121,7 @@
 - Persona data is non-PII (device config, not subscriber data)
 **Verify:** Persona selector loads presets. Preview updates to show selected device/client context.
 
-### 1.6 Template CRUD + Persistence
+### ~~1.6 Template CRUD + Persistence~~ DONE
 **Plan ref:** Section 2.3 (Projects module), MVP #1
 **What:** Save/load templates within projects. Template versioning (each save creates a version). Version history sidebar. Restore previous version capability.
 **Security:**
@@ -136,7 +136,7 @@
 
 > **Sprint 2 Deliverable (Plan Section 16.4):** "Functional AI-assisted email development with automated QA and CMS export."
 
-### 2.1 Wire AI Provider to LLM
+### ~~2.1 Wire AI Provider to LLM~~ DONE
 **Plan ref:** Section 5.5 (AI Model Selection), 5.1 (Agent Architecture)
 **What:** Register Claude (via Anthropic SDK) or OpenAI-compatible provider in `app/ai/registry.py`. Add `AI__PROVIDER`, `AI__MODEL`, `AI__API_KEY` to config. Implement model routing logic: Opus for complex, Sonnet for standard, Haiku for lightweight tasks. Verify streaming works via WebSocket.
 **Security:**
@@ -147,7 +147,7 @@
 - AI responses go through output validation before returning to client
 **Verify:** `POST /v1/chat/completions` returns streamed response. Model routing selects correct tier. API key is not exposed in logs or errors.
 
-### 2.2 Scaffolder Agent
+### ~~2.2 Scaffolder Agent~~ DONE
 **Plan ref:** Section 5.1 (Scaffolder), MVP #5
 **What:** First AI agent — generates Maizzle email HTML from natural language campaign briefs. System prompt defines email constraints (table layouts, inline CSS, MSO conditionals, responsive stacking). Outputs complete Maizzle template source.
 **Security:**
@@ -156,7 +156,7 @@
 - Generated HTML sanitised for XSS before rendering in preview
 **Verify:** Provide brief "Create a 2-column product showcase email with dark mode support" → get valid Maizzle HTML. Preview renders correctly.
 
-### 2.3 Dark Mode Agent
+### ~~2.3 Dark Mode Agent~~ DONE
 **Plan ref:** Section 5.1 (Dark Mode Agent), MVP #5
 **What:** Analyses existing HTML and injects `@media (prefers-color-scheme: dark)` rules, `[data-ogsc]`/`[data-ogsb]` selectors for Outlook, transparent PNG suggestions, colour token remapping. Uses Knowledge Base for client-specific dark mode quirks.
 **Security:**
@@ -173,7 +173,7 @@
 - Generated copy flagged if it matches spam trigger patterns
 **Verify:** Select text in editor → right-click → "Refine with AI" → get alternatives. Subject line generation produces 5 options.
 
-### 2.5 AI Chat Sidebar UI
+### ~~2.5 AI Chat Sidebar UI~~ DONE
 **Plan ref:** Section 9.2 (AI Orchestrator panel), MVP #5
 **What:** Collapsible bottom panel in workspace. Agent selection toggles (Scaffolder, Dark Mode, Content). Natural language input with streaming response display. Code block rendering in responses. Accept/reject/merge controls to apply AI output to editor. Conversation history per session.
 **Security:**

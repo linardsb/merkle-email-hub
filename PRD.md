@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 1.1
-**Date:** February 2026
-**Status:** MVP Development — Sprint 1 In Progress
+**Version:** 1.5
+**Date:** 2026-03-01
+**Status:** MVP Development — Sprint 2 In Progress
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-02-28
+> Last updated: 2026-03-01
 
 ### Completed
 
@@ -22,16 +22,21 @@
 | 0.3 | OpenAPI TypeScript SDK | `cms/packages/sdk/` generates typed client for 61 endpoints; offline generation via `make sdk` |
 | 0.4 | Authenticated API client layer | `authFetch` with timeout (30s/120s), 401 redirect interceptor, 429 retry with backoff, 8 domain-specific SWR hooks (`use-projects`, `use-orgs`, `use-components`, `use-email`, `use-qa`, `use-personas`, `use-approvals`, `use-connectors`), `ApiError` class, mutation fetchers |
 | 1.1 | Project dashboard page | Dashboard at `/[locale]/(dashboard)/` with stats cards, project grid, org data; SWR data fetching from live API |
+| 1.2 | Project workspace layout | 3-pane resizable workspace at `/projects/[id]/workspace` using `react-resizable-panels` v4; collapsible AI chat panel; full-screen layout (sidebar extracted to dashboard route group); project access verified via backend API |
+| 1.3 | Monaco editor integration | Monaco with Maizzle/HTML/CSS/Liquid syntax highlighting; CSS diagnostics for Can I Email warnings; bracket matching, code folding, minimap, search/replace; Ctrl+S save keybinding; editor toolbar with line/col, warning count, minimap/wordwrap toggles; custom dark/light themes |
+| 1.6 | Template CRUD + persistence | `app/templates/` VSA module with 9 REST endpoints; `Template` + `TemplateVersion` models with soft delete and immutable versioning; auto-increment version numbers; restore creates new version; project access control via `ProjectService.verify_project_access()`; Alembic migration for both tables; frontend template hooks (`use-templates.ts`) with SWR, save indicator, template selector |
+| 2.1 | Wire AI provider to LLM | Anthropic SDK adapter + OpenAI-compatible adapter (5 providers: openai, ollama, vllm, litellm, anthropic); model tier routing (complex/standard/lightweight → concrete models); PII sanitization (email, phone, SSN, credit card patterns); output validation; ChatService with SSE streaming; `POST /v1/chat/completions` with auth + rate limiting |
+| 1.4 | Maizzle live preview | Compile-on-save via `POST /api/v1/email/preview` + manual Compile button; sandboxed iframe (`srcdoc`, `sandbox="allow-same-origin"`, no `allow-scripts`); viewport toggles (desktop 100%/tablet 768px/mobile 375px); dark mode preview (injected `color-scheme` style); zoom controls (50–200% discrete steps); content sanitized before API call; preview auto-resets on template switch |
+| 2.2 | Scaffolder agent | First AI agent in `app/ai/agents/scaffolder/`; system prompt encoding Maizzle/table-layout/MSO/dark-mode/accessibility constraints; HTML extraction from LLM markdown code blocks; server-side XSS sanitization (script, event handlers, javascript:, iframe, data: URIs) preserving MSO conditionals; optional in-memory 10-point QA validation; `POST /api/v1/agents/scaffolder/generate` with SSE streaming support; 5 req/min rate limit; admin/developer RBAC; 19 unit tests |
+| 2.3 | Dark Mode agent | Second AI agent in `app/ai/agents/dark_mode/`; system prompt for dark mode CSS injection, Outlook `[data-ogsc]`/`[data-ogsb]` overrides, colour remapping; accepts existing HTML + optional colour overrides/preserve lists; `"standard"` task tier; duplicated XSS sanitization pipeline; QA integration with DarkModeCheck prioritised first; `POST /api/v1/agents/dark-mode/process` with SSE streaming; 5 req/min rate limit; admin/developer RBAC; 23 unit tests |
+| 2.5 | AI chat sidebar UI | Full chat interface replacing placeholder in workspace bottom panel; agent toggle bar (Chat, Scaffolder enabled; Dark Mode, Content disabled with "Soon" badge); `useChat` hook with SSE streaming via `fetch` + `ReadableStream` (not EventSource — POST + auth headers required); endpoint routing (chat → `/v1/chat/completions`, scaffolder → `/api/v1/agents/scaffolder/generate`); message bubbles with fenced code block parsing via regex; "Copy" + "Apply to Editor" buttons on HTML code blocks; streaming indicator (pulsing cursor + "Thinking..."); uncontrolled textarea with auto-resize, Enter-to-send, Shift+Enter newlines; Stop button aborts stream; Clear button resets conversation; session-only state (no persistence); 17 i18n keys; all semantic Tailwind tokens |
+| 1.5 | Test persona engine UI | Alembic data migration seeding 8 persona presets (Gmail Desktop, Outlook 365, Apple Mail Dark, iPhone Mail, Samsung Mail Dark, Outlook Classic, Gmail Mobile, Yahoo Mail); `PersonaSelector` dropdown component with shadcn `DropdownMenu` showing device icon, viewport width, dark mode indicator per persona; `PreviewIframe` accepts `viewportWidthOverride` for persona-driven custom widths; `PreviewPanel` manages persona state — selecting persona sets viewport + dark mode, manual toggle deselects persona; `usePersonas()` SWR hook wired into workspace page; 5 i18n keys; all semantic Tailwind tokens |
 
 ### In Progress
 
 | Phase | Task | Description |
 |-------|------|-------------|
-| Sprint 1 | 1.2 | Project workspace layout (3-pane: editor, preview, AI chat) |
-| Sprint 1 | 1.3 | Monaco editor integration |
-| Sprint 1 | 1.4 | Maizzle live preview |
-| Sprint 1 | 1.5 | Test persona engine UI |
-| Sprint 1 | 1.6 | Template CRUD + persistence |
+| Sprint 2 | 2.4 | Content agent |
 
 ### Infrastructure Built
 
@@ -39,6 +44,7 @@
 - **Frontend:** Next.js 16 monorepo with i18n, auth middleware, RBAC route guards, semantic Tailwind tokens
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration
+- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming
 
 ---
 
