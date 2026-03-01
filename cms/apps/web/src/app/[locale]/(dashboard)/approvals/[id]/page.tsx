@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
 import { useApproval, useBuild } from "@/hooks/use-approvals";
@@ -12,6 +12,7 @@ import { ApprovalPreview } from "@/components/approvals/approval-preview";
 import { ApprovalFeedbackPanel } from "@/components/approvals/approval-feedback-panel";
 import { ApprovalAuditTimeline } from "@/components/approvals/approval-audit-timeline";
 import { ApprovalDecisionBar } from "@/components/approvals/approval-decision-bar";
+import { VersionCompareDialog } from "@/components/approvals/version-compare-dialog";
 
 type Tab = "feedback" | "audit";
 
@@ -30,6 +31,7 @@ export default function ApprovalDetailPage() {
   const { data: build } = useBuild(approval?.build_id ?? null);
 
   const [activeTab, setActiveTab] = useState<Tab>("feedback");
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const handleDecisionMade = useCallback(() => {
     mutate();
@@ -90,6 +92,16 @@ export default function ApprovalDetailPage() {
             Build #{approval.build_id}
           </h1>
           <ApprovalStatusBadge status={approval.status} />
+          {build && (
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+            >
+              <GitCompareArrows className="h-3.5 w-3.5" />
+              {t("compareVersions")}
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground-muted">
           <span>
@@ -149,6 +161,14 @@ export default function ApprovalDetailPage() {
           />
         </div>
       </div>
+
+      {build && (
+        <VersionCompareDialog
+          open={compareOpen}
+          onOpenChange={setCompareOpen}
+          build={build}
+        />
+      )}
     </div>
   );
 }
