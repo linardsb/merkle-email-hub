@@ -8,6 +8,7 @@
     "type-check": "turbo type-check"
   },
   "devDependencies": {
+    "next": "^16.1.0",
     "turbo": "^2.5.0"
   },
   "packageManager": "pnpm@10.28.2"
