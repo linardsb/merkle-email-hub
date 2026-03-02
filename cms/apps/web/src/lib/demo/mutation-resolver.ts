@@ -6,6 +6,7 @@
 import type { QACheckResult, QAResultResponse } from "@/types/qa";
 import { SPRING_SALE_HERO_HTML } from "./data/html-sources";
 import { DEMO_KNOWLEDGE_DOCUMENTS } from "./data/knowledge";
+import { demoStore } from "./demo-store";
 
 const CHECK_NAMES = [
   "html_validation",
@@ -87,10 +88,12 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
 
   // Create template
   if (p.match(/^\/api\/v1\/projects\/\d+\/templates$/)) {
-    return {
+    const projectId = parseInt(p.match(/\/projects\/(\d+)\//)![1]!, 10);
+    const body = _body as Record<string, unknown> | null;
+    const template = {
       id: Math.floor(Math.random() * 10000) + 100,
-      project_id: 1,
-      name: "New Template",
+      project_id: projectId,
+      name: (body?.name as string) ?? "New Template",
       description: null,
       subject_line: null,
       preheader_text: null,
@@ -100,20 +103,28 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+    demoStore.addTemplate(template as any);
+    return template;
   }
 
   // Save version
   if (p.match(/^\/api\/v1\/templates\/\d+\/versions$/)) {
-    return {
+    const templateId = parseInt(p.match(/\/templates\/(\d+)\//)![1]!, 10);
+    const body = _body as Record<string, unknown> | null;
+    const existingVersions = demoStore.versionsForTemplate(templateId);
+    const nextVersion = existingVersions.length + 1;
+    const version = {
       id: Math.floor(Math.random() * 10000) + 100,
-      template_id: 1,
-      version_number: 1,
-      html_source: "",
+      template_id: templateId,
+      version_number: nextVersion,
+      html_source: (body?.html_source as string) ?? "",
       css_source: null,
-      changelog: "Demo save",
+      changelog: `v${nextVersion} save`,
       created_by_id: 1,
       created_at: new Date().toISOString(),
     };
+    demoStore.addVersion(version as any);
+    return version;
   }
 
   // Create approval
@@ -216,6 +227,84 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
       external_id: null,
       error_message: null,
       created_at: new Date().toISOString(),
+    };
+  }
+
+  // Create project
+  if (p === "/api/v1/projects") {
+    const body = _body as Record<string, unknown> | null;
+    const project = {
+      id: Math.floor(Math.random() * 10000) + 100,
+      name: (body?.name as string) ?? "New Project",
+      description: (body?.description as string) ?? null,
+      client_org_id: (body?.client_org_id as number) ?? 1,
+      status: "draft",
+      created_by_id: 1,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    demoStore.addProject(project as any);
+    return project;
+  }
+
+  // Figma connection create
+  if (p === "/api/v1/figma/connections") {
+    const body = _body as Record<string, unknown> | null;
+    return {
+      id: Math.floor(Math.random() * 10000) + 100,
+      name: body?.name ?? "New Connection",
+      file_key: "demoFileKey" + Math.floor(Math.random() * 1000),
+      file_url: body?.file_url ?? "",
+      access_token_last4: (body?.access_token as string)?.slice(-4) ?? "demo",
+      status: "connected",
+      last_synced_at: new Date().toISOString(),
+      project_id: body?.project_id ?? null,
+      project_name: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  // Figma connection delete
+  if (p === "/api/v1/figma/connections/delete") {
+    return { success: true };
+  }
+
+  // Figma connection sync
+  if (p === "/api/v1/figma/connections/sync") {
+    const body = _body as Record<string, unknown> | null;
+    return {
+      id: body?.id ?? 1,
+      name: "Synced Connection",
+      file_key: "syncedKey",
+      file_url: "",
+      access_token_last4: "sync",
+      status: "connected",
+      last_synced_at: new Date().toISOString(),
+      project_id: null,
+      project_name: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  // Create persona
+  if (p === "/api/v1/personas") {
+    const body = _body as Record<string, unknown> | null;
+    return {
+      id: Math.floor(Math.random() * 10000) + 100,
+      name: body?.name ?? "Custom Persona",
+      slug: body?.slug ?? "custom-persona",
+      description: body?.description ?? null,
+      email_client: body?.email_client ?? "gmail",
+      device_type: body?.device_type ?? "desktop",
+      dark_mode: body?.dark_mode ?? false,
+      viewport_width: body?.viewport_width ?? 600,
+      os_name: body?.os_name ?? "macOS",
+      is_preset: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
   }
 

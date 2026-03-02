@@ -26,7 +26,6 @@ export function EditorToolbar({
   return (
     <div className="flex h-8 items-center justify-between border-b border-border bg-card px-3 text-xs text-muted-foreground">
       <div className="flex items-center gap-3">
-        <span>{t("editorLanguage")}</span>
         {warningCount > 0 && (
           <span className="flex items-center gap-1 text-destructive">
             <AlertTriangle className="h-3 w-3" />

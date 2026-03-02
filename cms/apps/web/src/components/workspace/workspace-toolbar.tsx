@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, ClipboardCheck, Download, Save, ShieldCheck, Users } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
@@ -52,13 +52,12 @@ export function WorkspaceToolbar({
   isSubmittingApproval,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
-  const locale = useLocale();
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
       <div className="flex items-center gap-3">
         <Link
-          href={`/${locale}/dashboard`}
+          href="/"
           className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />

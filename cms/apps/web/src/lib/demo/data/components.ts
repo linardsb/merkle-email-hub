@@ -16,6 +16,22 @@ const COMPAT_PARTIAL_SAMSUNG: Record<string, string> = {
   samsung_mail: "partial",
 };
 
+// --- Inline SVG placeholder images (render in sandboxed iframes without external requests) ---
+function _img(w: number, h: number, bg: string, label: string, fg = "#fff"): string {
+  const fs = Math.max(11, Math.min(28, Math.floor(Math.min(w, h) / 4)));
+  return `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect fill="${bg}" width="${w}" height="${h}" rx="4"/><text x="${w / 2}" y="${h / 2 + Math.floor(fs / 3)}" fill="${fg}" font-family="Arial,sans-serif" font-size="${fs}" font-weight="bold" text-anchor="middle">${label}</text></svg>`
+  )}`;
+}
+
+const IMG_LOGO = _img(150, 40, "#555", "Logo");
+const IMG_HERO = _img(600, 300, "#4a5568", "Hero Image");
+const IMG_LARGE = _img(600, 400, "#4a5568", "Image");
+const IMG_FB = _img(32, 32, "#1877F2", "f");
+const IMG_X = _img(32, 32, "#000", "X");
+const IMG_LI = _img(32, 32, "#0A66C2", "in");
+const IMG_IG = _img(32, 32, "#E4405F", "ig");
+
 interface ComponentSeed {
   component: ComponentResponse;
   version: VersionResponse;
@@ -44,7 +60,7 @@ const seeds: ComponentSeed[] = [
   <tr><td style="padding: 20px 24px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
-        <td style="width: 150px;"><img src="https://placehold.co/150x40" alt="Company Logo" width="150" height="40" style="display: block; border: 0;" /></td>
+        <td style="width: 150px;"><img src="${IMG_LOGO}" alt="Company Logo" width="150" height="40" style="display: block; border: 0;" /></td>
         <td style="text-align: right; vertical-align: middle;">
           <a href="https://example.com" class="header-link" style="color: #333; text-decoration: none; font-family: Arial, sans-serif; font-size: 14px; padding: 0 8px;">Home</a>
           <a href="https://example.com/products" class="header-link" style="color: #333; text-decoration: none; font-family: Arial, sans-serif; font-size: 14px; padding: 0 8px;">Products</a>
@@ -143,10 +159,10 @@ const seeds: ComponentSeed[] = [
 </style>
 <!--[if mso]>
 <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:300px;">
-  <v:fill type="frame" src="https://placehold.co/600x300" />
+  <v:fill type="frame" src="${IMG_HERO}" />
   <v:textbox inset="0,0,0,0">
 <![endif]-->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-image:url('https://placehold.co/600x300');background-size:cover;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-image:url('${IMG_HERO}');background-size:cover;">
   <tr><td class="hero-overlay" style="padding:48px 24px;text-align:center;background-color:rgba(0,0,0,0.4);">
     <h1 class="hero-title" style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:32px;font-weight:bold;color:#fff;">Discover What's New</h1>
     <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:16px;color:#e0e0e0;">Explore our latest collection.</p>
@@ -176,7 +192,7 @@ const seeds: ComponentSeed[] = [
   }
 </style>
 <table role="presentation" class="product-card" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
-  <tr><td><img src="https://placehold.co/600x300" alt="Product Image" width="600" style="display:block;width:100%;height:auto;border:0;" /></td></tr>
+  <tr><td><img src="${IMG_HERO}" alt="Product Image" width="600" style="display:block;width:100%;height:auto;border:0;" /></td></tr>
   <tr><td style="padding:20px 24px;">
     <h2 class="product-title" style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:20px;font-weight:bold;color:#333;">Product Name</h2>
     <p class="product-price" style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:18px;font-weight:bold;color:#0066cc;">&pound;49.99</p>
@@ -223,10 +239,10 @@ const seeds: ComponentSeed[] = [
     <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:14px;color:#666;">Follow us</p>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
       <tr>
-        <td style="padding:0 8px;"><a href="#"><img src="https://placehold.co/32/333/fff?text=f" alt="Facebook" width="32" height="32" style="display:block;border:0;" /></a></td>
-        <td style="padding:0 8px;"><a href="#"><img src="https://placehold.co/32/333/fff?text=X" alt="X" width="32" height="32" style="display:block;border:0;" /></a></td>
-        <td style="padding:0 8px;"><a href="#"><img src="https://placehold.co/32/333/fff?text=in" alt="LinkedIn" width="32" height="32" style="display:block;border:0;" /></a></td>
-        <td style="padding:0 8px;"><a href="#"><img src="https://placehold.co/32/333/fff?text=ig" alt="Instagram" width="32" height="32" style="display:block;border:0;" /></a></td>
+        <td style="padding:0 8px;"><a href="#"><img src="${IMG_FB}" alt="Facebook" width="32" height="32" style="display:block;border:0;" /></a></td>
+        <td style="padding:0 8px;"><a href="#"><img src="${IMG_X}" alt="X" width="32" height="32" style="display:block;border:0;" /></a></td>
+        <td style="padding:0 8px;"><a href="#"><img src="${IMG_LI}" alt="LinkedIn" width="32" height="32" style="display:block;border:0;" /></a></td>
+        <td style="padding:0 8px;"><a href="#"><img src="${IMG_IG}" alt="Instagram" width="32" height="32" style="display:block;border:0;" /></a></td>
       </tr>
     </table>
   </td></tr>
@@ -246,7 +262,7 @@ const seeds: ComponentSeed[] = [
     version: {
       id: 108, component_id: 8, version_number: 1,
       html_source: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td style="text-align:center;"><img src="https://placehold.co/600x400" alt="Descriptive alt text" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></td></tr>
+  <tr><td style="text-align:center;"><img src="${IMG_LARGE}" alt="Descriptive alt text" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></td></tr>
   <tr><td style="padding:8px 24px;"><p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#999;text-align:center;font-style:italic;">Image caption</p></td></tr>
 </table>`,
       css_source: null, changelog: "Initial version", created_by_id: 1,

@@ -20,7 +20,7 @@ Save the plan to `.agents/plans/{feature-name}.md` with this structure:
 {Why this change is needed}
 
 ## Files to Create/Modify
-- `cms/apps/web/src/app/[locale]/(dashboard)/{route}/page.tsx` — {what changes}
+- `cms/apps/web/src/app/(dashboard)/{route}/page.tsx` — {what changes}
 - `cms/apps/web/src/hooks/use-{domain}.ts` — {what changes}
 - `cms/apps/web/messages/en.json` — {what i18n keys to add}
 - ...

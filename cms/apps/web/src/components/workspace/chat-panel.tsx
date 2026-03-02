@@ -49,11 +49,12 @@ const AGENTS: AgentOption[] = [
 interface ChatPanelProps {
   projectId?: string;
   onApplyToEditor?: (html: string) => void;
+  initialAgent?: AgentMode;
 }
 
-export function ChatPanel({ projectId = "default", onApplyToEditor }: ChatPanelProps) {
+export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent }: ChatPanelProps) {
   const t = useTranslations("workspace");
-  const [agent, setAgent] = useState<AgentMode>("chat");
+  const [agent, setAgent] = useState<AgentMode>(initialAgent ?? "chat");
   const [activeTab, setActiveTab] = useState<ChatPanelTab>("chat");
   const {
     messages, status, error,
@@ -117,22 +118,22 @@ export function ChatPanel({ projectId = "default", onApplyToEditor }: ChatPanelP
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Top-level tabs: Chat | History */}
-      <div className="flex border-b border-border" role="tablist">
+      <div className="flex gap-1 border-b border-border bg-muted/50 px-2 pt-2" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "chat"}
           onClick={() => setActiveTab("chat")}
-          className={`flex flex-1 items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors ${
+          className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-t-md px-4 py-2 text-sm font-medium transition-all ${
             activeTab === "chat"
-              ? "border-b-2 border-interactive text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              ? "border border-b-0 border-border bg-background text-foreground"
+              : "border border-transparent text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground"
           }`}
         >
-          <MessageSquare className="h-3.5 w-3.5" />
+          <MessageSquare className="h-4 w-4" />
           {t("chatTab")}
           {messages.length > 0 && (
-            <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+            <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-[10px]">
               {messages.length}
             </Badge>
           )}
@@ -142,16 +143,16 @@ export function ChatPanel({ projectId = "default", onApplyToEditor }: ChatPanelP
           role="tab"
           aria-selected={activeTab === "history"}
           onClick={() => setActiveTab("history")}
-          className={`flex flex-1 items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors ${
+          className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-t-md px-4 py-2 text-sm font-medium transition-all ${
             activeTab === "history"
-              ? "border-b-2 border-interactive text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              ? "border border-b-0 border-border bg-background text-foreground"
+              : "border border-transparent text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground"
           }`}
         >
-          <History className="h-3.5 w-3.5" />
+          <History className="h-4 w-4" />
           {t("historyTab")}
           {sessions.length > 0 && (
-            <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+            <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-[10px]">
               {sessions.length}
             </Badge>
           )}

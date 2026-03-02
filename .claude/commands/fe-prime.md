@@ -2,7 +2,7 @@
 
 Load the complete frontend context for this project. Read the following files:
 
-1. Read `/cms/apps/web/src/app/[locale]/layout.tsx` for provider hierarchy
+1. Read `/cms/apps/web/src/app/layout.tsx` for provider hierarchy
 2. Read `/cms/apps/web/auth.ts` for authentication setup
 3. Read `/cms/apps/web/middleware.ts` for RBAC route protection
 4. Read `/cms/apps/web/src/lib/auth-fetch.ts` for API fetching patterns
@@ -18,7 +18,7 @@ Then read `/TODO.md` and extract only the **frontend-relevant tasks** below. Rep
 - 0.4 Authenticated API client layer (token refresh, error handling, React hooks)
 
 **Phase 1 — Sprint 1: Editor + Build Pipeline:**
-- 1.1 Project dashboard page (`/[locale]/(dashboard)/page.tsx`)
+- 1.1 Project dashboard page (`/(dashboard)/page.tsx`)
 - 1.2 Project workspace layout (3-pane: editor, preview, AI chat)
 - 1.3 Monaco editor (HTML/CSS/Liquid, Can I Email autocomplete)
 - 1.4 Maizzle live preview (compile-on-save, viewport toggles, dark mode)

@@ -12,8 +12,8 @@ Read the following files to understand what's been built:
 
 Also scan the codebase for implementation evidence:
 - `cms/apps/web/src/hooks/*.ts` — frontend hooks (indicates feature coverage)
-- `cms/apps/web/src/app/[locale]/(dashboard)/**/*.tsx` — dashboard pages
-- `cms/apps/web/src/app/[locale]/(dashboard)/**/page.tsx` — route pages
+- `cms/apps/web/src/app/(dashboard)/**/*.tsx` — dashboard pages
+- `cms/apps/web/src/app/(dashboard)/**/page.tsx` — route pages
 - `app/*/routes.py` — backend API routes (indicates backend feature coverage)
 - `alembic/versions/*.py` — migration files (indicates DB schema state)
 

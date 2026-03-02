@@ -7,6 +7,7 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #18701 | 8:28 PM | 🟣 | Sprint 3 polish and Knowledge Base Search UI shipped | ~593 |
 | #18691 | 8:14 PM | 🔵 | Demo Approvals Data Examination | ~1168 |
 | #18690 | 8:13 PM | 🔵 | Demo Personas Data Examination | ~1163 |
 | #18686 | 8:12 PM | 🔵 | Demo Components Data with Production Email HTML | ~303 |

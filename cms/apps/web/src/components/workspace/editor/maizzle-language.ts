@@ -91,6 +91,7 @@ const LIQUID_OPERATORS = new Set(["and", "or", "not", "contains", "in"]);
 // --- Stream Parser ---
 
 const maizzleParser: StreamParser<TokenState> = {
+  name: "Email HTML",
   startState(): TokenState {
     return { mode: "root", sol: true };
   },

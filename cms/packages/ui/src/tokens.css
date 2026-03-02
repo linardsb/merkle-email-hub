@@ -75,12 +75,13 @@
   /* ── Tier 3: Component Tokens ── */
 
   /* Sidebar */
-  --color-sidebar-bg: var(--color-neutral-900);
+  /* Merkle dark blue sidebar */
+  --color-sidebar-bg: oklch(0.22 0.045 260);
   --color-sidebar-text: var(--color-neutral-200);
   --color-sidebar-text-active: white;
-  --color-sidebar-hover: var(--color-neutral-800);
+  --color-sidebar-hover: oklch(0.26 0.050 260);
   --color-sidebar-active: var(--color-primary-700);
-  --color-sidebar-border: var(--color-neutral-700);
+  --color-sidebar-border: oklch(0.28 0.040 260);
 
   /* Card */
   --color-card-bg: var(--color-surface-elevated);
@@ -121,6 +122,9 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-full: 9999px;
+
+  /* ── Animation ── */
+  --animate-fade-in: fade-in 0.2s ease-out;
 
   /* ── shadcn/ui Aliases ── */
   /* Maps shadcn-expected variable names to our semantic tokens.
@@ -191,12 +195,13 @@
   --color-status-info: var(--color-primary-400);
 
   /* Component: Sidebar */
-  --color-sidebar-bg: oklch(0.10 0.008 260);
+  /* Merkle dark blue sidebar */
+  --color-sidebar-bg: oklch(0.17 0.040 260);
   --color-sidebar-text: var(--color-neutral-300);
   --color-sidebar-text-active: white;
-  --color-sidebar-hover: var(--color-neutral-800);
+  --color-sidebar-hover: oklch(0.22 0.045 260);
   --color-sidebar-active: var(--color-primary-500);
-  --color-sidebar-border: var(--color-neutral-800);
+  --color-sidebar-border: oklch(0.24 0.035 260);
 
   /* Component: Card */
   --color-card-bg: var(--color-neutral-900);
@@ -219,4 +224,59 @@
   --color-badge-warning-text: var(--color-warning-500);
   --color-badge-danger-bg: oklch(0.28 0.060 40);
   --color-badge-danger-text: var(--color-danger-500);
+}
+
+/* ── Animations ── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Print styles for Intelligence report export ── */
+@media print {
+  /* Hide sidebar, nav, and interactive controls */
+  [data-sidebar],
+  nav,
+  button:not([data-print-keep]),
+  .no-print {
+    display: none !important;
+  }
+
+  /* Full-width main content */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Force light backgrounds for print */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Cards print cleanly */
+  .rounded-lg {
+    break-inside: avoid;
+    border-color: #e5e7eb !important;
+  }
+
+  /* Override dark-mode text for print readability */
+  [class*="text-foreground"] {
+    color: #111 !important;
+  }
+  [class*="text-foreground-muted"] {
+    color: #666 !important;
+  }
+  [class*="bg-card-bg"],
+  [class*="bg-card"] {
+    background: white !important;
+  }
 }

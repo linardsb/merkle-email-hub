@@ -1,19 +1,11 @@
 
-
-
 import { auth } from "@/auth";
-import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import type { AppRole } from "@/auth";
 
-const intlMiddleware = createMiddleware({
-  locales: ["en"],
-  defaultLocale: "en",
-});
-
 // Route permission map — configure which roles can access each route
 const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
-  "/dashboard": ["admin", "developer", "viewer"],
+  "/": ["admin", "developer", "viewer"],
   "/projects": ["admin", "developer", "viewer"],
   "/example": ["admin", "developer", "viewer"],
   "/components": ["admin", "developer", "viewer"],
@@ -22,16 +14,14 @@ const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/connectors": ["admin", "developer", "viewer"],
   "/intelligence": ["admin", "developer", "viewer"],
   "/knowledge": ["admin", "developer", "viewer"],
+  "/figma": ["admin", "developer", "viewer"],
 };
 
 const PUBLIC_ROUTES = ["/login"];
 
 function getRouteKey(pathname: string): string | null {
-  // Strip locale prefix: /en/dashboard → /dashboard
-  const withoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
-
   for (const route of Object.keys(ROLE_PERMISSIONS)) {
-    if (withoutLocale === route || withoutLocale.startsWith(route + "/")) {
+    if (pathname === route || pathname.startsWith(route + "/")) {
       return route;
     }
   }
@@ -39,9 +29,8 @@ function getRouteKey(pathname: string): string | null {
 }
 
 function isPublicRoute(pathname: string): boolean {
-  const withoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
   return PUBLIC_ROUTES.some(
-    (r) => withoutLocale === r || withoutLocale.startsWith(r + "/")
+    (r) => pathname === r || pathname.startsWith(r + "/")
   );
 }
 
@@ -57,17 +46,14 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Apply i18n middleware
-  const intlResponse = intlMiddleware(request);
-
   // Public routes don't need auth
   if (isPublicRoute(pathname)) {
-    return intlResponse;
+    return NextResponse.next();
   }
 
   // Demo mode: skip auth checks entirely
   if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    return intlResponse;
+    return NextResponse.next();
   }
 
   // Check authentication — wrapped in try/catch because next-auth beta
@@ -76,8 +62,7 @@ export default async function middleware(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user) {
-      const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
-      const loginUrl = new URL(`/${locale}/login`, request.url);
+      const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -88,9 +73,8 @@ export default async function middleware(request: NextRequest) {
       const allowedRoles = ROLE_PERMISSIONS[routeKey];
       const userRole: string = session.user.role || "viewer";
       if (allowedRoles && !allowedRoles.includes(userRole as AppRole)) {
-        const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
         return NextResponse.redirect(
-          new URL(`/${locale}/unauthorized`, request.url)
+          new URL("/unauthorized", request.url)
         );
       }
     }
@@ -98,7 +82,7 @@ export default async function middleware(request: NextRequest) {
     // Auth failed — let the page render (login page handles its own redirect)
   }
 
-  return intlResponse;
+  return NextResponse.next();
 }
 
 export const config = {

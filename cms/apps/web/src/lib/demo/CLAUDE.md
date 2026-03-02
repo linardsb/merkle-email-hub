@@ -7,5 +7,6 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #18701 | 8:28 PM | 🟣 | Sprint 3 polish and Knowledge Base Search UI shipped | ~593 |
 | #18640 | 8:00 PM | 🔵 | Demo Mode Infrastructure Discovery | ~690 |
 </claude-mem-context>

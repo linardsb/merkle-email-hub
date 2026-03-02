@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk
+.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge
 
 # === Local Development ===
 
@@ -75,6 +75,11 @@ db-migrate: ## Run database migrations
 
 db-revision: ## Create a new migration (usage: make db-revision m="description")
 	uv run alembic revision --autogenerate -m "$(m)"
+
+# === Knowledge Base ===
+
+seed-knowledge: ## Seed knowledge base with email dev content (requires DB + embedding provider)
+	uv run python -m app.knowledge.seed
 
 # === Security ===
 

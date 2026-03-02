@@ -187,6 +187,28 @@ The AI assistant is not a chatbot — it is an orchestration layer with speciali
 | **Knowledge Agent** | RAG-powered answers from email dev knowledge base: client quirks, CSS support tables, community best practices, rendering engine updates. | User question, diagnostic context |
 | **Innovation Agent** | Explores and prototypes new email techniques — AMP carousels, interactive CSS, kinetic elements, CSS animations. Cross-references rendering intelligence data to assess feasibility for a client's specific audience. Generates automatic fallback strategies and produces capability reports showing what works where. | Innovation R&D sessions, client pitch preparation, new technique evaluation |
 
+### Four Disciplines Applied to Each Agent
+
+Each agent operates within a cumulative four-discipline framework. Higher-layer capabilities build on the foundations below:
+
+1. **Prompt Craft** — "What should I say?" — Table stakes: output formats, guardrails, anti-patterns, counter-examples.
+2. **Context Engineering** — "What does it need to know?" — Memory systems, RAG pipelines, project conventions, Can I Email data loaded at runtime.
+3. **Intent Engineering** — "What should the AI want?" — Trade-off hierarchies, decision boundaries, brand priorities, risk thresholds per client.
+4. **Specification Engineering** — "What does done look like?" — Self-contained problem statements, acceptance criteria, constraint architecture, decomposition into <2hr subtasks, evaluation design.
+
+| Agent | Prompt Craft | Context Engineering | Intent Engineering | Specification Engineering |
+|-------|-------------|--------------------|--------------------|--------------------------|
+| **Orchestrator** | — | — | — | Decomposes briefs into <2hr executable subtasks |
+| **Scaffolder** | Standardised SKILL.md with output format | Project conventions + brand CSS loaded at runtime | Layout vs performance trade-offs per client | Self-contained specs: agent never fetches extra context mid-run |
+| **Outlook Fixer** | Counter-examples ("don't use div where table required") | Can I Email data + learned client quirks auto-loaded | — | Must-Nots: never modify master reset styles |
+| **Dark Mode Agent** | Best-performing prompt variants tracked | Brand colour tokens + client dark mode preferences | Never modify brand-reserved hex codes | Acceptance criteria: what constitutes correct dark mode CSS |
+| **Accessibility Auditor** | Explicit check output formats | WCAG AA reference tables + past audit results | Risk threshold: block vs warn per severity | 3–5 test cases with known-good outputs per check |
+| **Content Agent** | Brand voice examples + anti-patterns | Client tone guides + previous campaign copy | Priority: brand voice > character count | — |
+| **Personalisation Agent** | Liquid/AMPscript syntax templates | ESP platform docs + Connected Content patterns | — | Escalation triggers for complex nested logic |
+| **Code Reviewer** | Code quality scoring rubric | Client CSS support matrix + Gmail 102KB threshold | — | Pre-defined quality gates with measurable pass/fail |
+| **Knowledge Agent** | — | Auto-hydrates with project files + client conventions | — | — |
+| **Innovation Agent** | — | Rendering intelligence data + feasibility databases | Fallback reliability > visual complexity | Capability reports with quantified audience coverage |
+
 ## 5.2 Agent Hierarchy
 
 The Orchestrator is an optional coordination layer — when enabled, it analyses the request, selects the appropriate sub-agent(s), and chains them for multi-step workflows. Developers can also invoke any agent directly, bypassing the Orchestrator entirely. The developer oversees all AI output and can manually intervene at any stage.
@@ -246,6 +268,34 @@ Each agent has a SKILL.md file defining its expertise, constraints, and output f
 - Skills are stored in the Hub's knowledge base and loaded into the AI context at runtime
 - New skills can be authored by senior developers and deployed without code changes
 - Skill performance is benchmarked using eval suites specific to email HTML quality
+
+### SKILL.md Structure — Four Discipline Sections
+
+Each SKILL.md is organised around the four disciplines, ensuring agents have complete operating context:
+
+**1. Prompt Craft** — The agent's instruction layer:
+- Best-performing system prompts (curated with success metrics)
+- Failure examples and counter-examples ("don't do X because Y")
+- Output format specifications (HTML structure, markdown, JSON schema)
+- Anti-patterns specific to this agent's domain
+
+**2. Context Engineering** — Required context checklist:
+- Data sources that must be loaded before invocation (Can I Email, client brand guides, component library)
+- Project conventions auto-injected at runtime
+- RAG knowledge base queries that improve output quality
+- Memory entries from previous sessions relevant to this task type
+
+**3. Intent Engineering** — Decision framework:
+- Trade-off hierarchies per client (e.g., accessibility > file size)
+- Decision boundaries for autonomous action vs escalation
+- Brand priority rules that override default optimisation
+- Risk threshold definitions (block vs warn vs ignore)
+
+**4. Specification Engineering** — Definition of "done":
+- Output schema and validation rules
+- Acceptance criteria (concrete pass/fail conditions)
+- Constraint architecture: Musts, Must-Nots, preferences, escalation triggers
+- Eval suite: 3–5 test cases with known-good outputs per task type
 
 ## 5.5 AI Model Selection
 
@@ -407,6 +457,17 @@ Without persistent memory, the Hub's 9 agents are sophisticated but amnesiac —
 - **All agents benefit** from any agent's discoveries (Tier 6)
 
 This transforms the Hub from a collection of AI tools into an AI system that genuinely gets smarter the more it's used — the infrastructure-level implementation of the compound innovation effect.
+
+### Four Disciplines Applied to Agent Memory
+
+The memory system maps directly to the four-discipline framework, creating a self-improving loop where each discipline's memories compound over time:
+
+| Discipline | Memory Type | What Gets Stored | Compound Effect |
+|-----------|------------|-----------------|-----------------|
+| **Prompt Craft** | Procedural | High-performing system prompts ranked by output quality metrics | Best prompts automatically promoted to SKILL.md; failure patterns flagged for avoidance |
+| **Context Engineering** | Semantic | Effective context patterns tracked per agent (e.g., "Scaffolder + Can I Email data → 40% higher code quality") | Agents learn which context sources improve their own output and prioritise retrieval accordingly |
+| **Intent Engineering** | Episodic | Decomposition patterns and trade-off resolutions from past sessions | Agents reuse proven decomposition strategies: "Add dark mode" → [Identify colours → Extract selectors → Generate queries → Test fallbacks] |
+| **Specification Engineering** | Procedural + Semantic | Output schemas that produce highest client approval rates; validated acceptance criteria per task type | Prevents specification drift after model updates by comparing new outputs against proven-good baselines |
 
 ---
 
@@ -1450,7 +1511,7 @@ The MVP includes only what's needed to be useful and demonstrable. Each feature 
 | 5 | **3 AI Agents (Scaffolder + Dark Mode + Content)** | Scaffolder generates email HTML from campaign briefs. Dark Mode Agent injects tested CSS patterns. Content Agent refines subject lines, CTAs, and body copy with brand voice constraints per client. | **Turns a multi-hour build into a 30-minute refinement.** The Scaffolder produces a working first draft, Dark Mode becomes automatic, and the Content Agent handles copywriting — matching every AI content capability competitors offer, but specialised for email. |
 | 6 | **Raw HTML Export + Braze Connector** | One-click export as production-ready HTML or direct push to Braze as Content Blocks with Liquid template packaging. | **Eliminates the copy-paste-reformat cycle.** Currently, getting HTML from development into Braze involves manual formatting, Content Block creation, and Liquid tag insertion. The connector automates this entirely. |
 | 7 | **10-Point QA Gate System** | HTML validation, CSS support matrix check, file size (Gmail clipping), link validation, spam score, dark mode audit, accessibility basics, fallback verification, image optimisation check, brand compliance. | **No email leaves the Hub without passing every check.** This is the safety net that makes innovation possible — the team can experiment with AMP, interactive CSS, and kinetic elements knowing the gate system will catch any rendering failure before it reaches a client inbox. |
-| 8 | **RAG Knowledge Base v1** | Searchable knowledge base seeded with Can I Email support data, email development best practices, and team-ingested client rendering quirks. Powers the Knowledge Agent. | **Tribal knowledge becomes permanent.** The Outlook 2016 fix that one developer discovered 6 months ago is now searchable, indexed, and available to every AI agent. New team members access the entire team's accumulated expertise from day one. |
+| 8 | **RAG Knowledge Base v1** ✅ | Searchable knowledge base seeded with Can I Email support data (8 CSS compatibility docs), email development best practices (6 guides), and email client rendering quirks (6 client-specific docs). 20 curated markdown documents processed through full RAG pipeline (extract → chunk → embed → store) via `make seed-knowledge`. Manifest-driven with per-document tags and domain classification. 109 unit tests. | **Tribal knowledge becomes permanent.** The Outlook 2016 fix that one developer discovered 6 months ago is now searchable, indexed, and available to every AI agent. New team members access the entire team's accumulated expertise from day one. |
 | 9 | **Client Approval Portal** | Client stakeholders log in with a viewer role (scoped to their projects only), see the live email render exactly as production, leave section-level feedback, and formally approve or request changes. Includes version comparison (what changed since last review), email/Slack notifications when a review is ready, and a time-stamped audit trail of all approvals. | **Replaces the screenshot-email approval cycle.** Clients currently receive static images, respond with ambiguous feedback, and iterate over days. The portal shows the live render, captures specific feedback, provides formal approve/reject workflow, and creates a documented audit trail — approval cycles drop from days to hours. |
 | 10 | **Test Persona Engine** | Pre-configured subscriber profiles (device, email client, dark mode, locale, loyalty tier) for one-click preview of how specific audience segments experience the email. | **"Show me this email as a Gold-tier member on iPhone dark mode"** — one click. Currently this requires manually toggling preview settings, remembering which clients the audience uses, and guessing at rendering. The persona engine makes QA targeted and fast. |
 | 11 | **Rendering Intelligence Dashboard** | QA results displayed as client support matrices, template quality scores, and visual regression tracking. | **Proves the Hub's value with data.** When a stakeholder asks "what can we actually do with email?", the dashboard shows exactly which innovations work in which clients — not opinions, but tested compatibility data. This is the output Merkle presents to clients to sell innovation. |
@@ -1481,7 +1542,7 @@ The MVP includes only what's needed to be useful and demonstrable. Each feature 
 | **Component Library** | 5–10 Maizzle components + browser UI + versioning | 3–4 days | Building the components themselves is the slow part — each needs manual cross-client testing |
 | **Braze Connector** | API integration, Content Block export, Liquid template packaging | 2–3 days | Requires a Braze sandbox to test against |
 | **QA Gate System** | Full 10-point check: HTML validation, CSS support, file size, links, spam score, dark mode, accessibility basics, fallback, images, brand | 2–3 days | Extends basic QA incrementally; SpamAssassin + Can I Email data are open-source |
-| **RAG Knowledge Base** | pgvector setup, Can I Email ingestion, email dev best practices, team quirks import | 2–3 days | pgvector is already in the stack; initial data seeding is the main work |
+| **RAG Knowledge Base** ✅ | pgvector setup, Can I Email ingestion, email dev best practices, team quirks import | 2–3 days | pgvector is already in the stack; initial data seeding is the main work. **Done:** 20 documents seeded across 3 domains. |
 | **Client Approval Portal** | Client viewer login, live preview, section-level feedback, approve/request changes workflow, version comparison, notifications, audit trail | 3–4 days | Extends auth system with viewer role + approval workflow UI + notification hooks |
 | **Test Persona Engine** | Pre-configured subscriber profiles for preview (device, client, dark mode, locale) | 1–2 days | Mock data profiles + preview toggle integration |
 | **Rendering Dashboard** | QA results displayed as client support matrices, template quality scores | 2–3 days | Frontend dashboard over data already collected by QA pipeline |

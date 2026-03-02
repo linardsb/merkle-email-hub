@@ -1,9 +1,12 @@
 "use client";
 
 import useSWR from "swr";
+import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
+import { mutationFetcher } from "@/lib/mutation-fetcher";
 import type {
   PaginatedResponseProjectResponse,
+  ProjectCreate,
   ProjectResponse,
 } from "@merkle-email-hub/sdk";
 
@@ -32,4 +35,11 @@ export function useProjects(options: UseProjectsOptions = {}) {
 export function useProject(projectId: number | null) {
   const key = projectId ? `/api/v1/projects/${projectId}` : null;
   return useSWR<ProjectResponse>(key, fetcher);
+}
+
+export function useCreateProject() {
+  return useSWRMutation<ProjectResponse, Error, string, ProjectCreate>(
+    "/api/v1/projects",
+    mutationFetcher
+  );
 }

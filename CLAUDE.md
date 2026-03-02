@@ -194,7 +194,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 0.4 Authenticated API client layer (token refresh, error handling, React hooks)
 
 ### Phase 1 — Sprint 1: Editor + Build Pipeline
-- [x] 1.1 Project dashboard page (`/[locale]/(dashboard)/page.tsx`)
+- [x] 1.1 Project dashboard page (`/(dashboard)/page.tsx`)
 - [x] 1.2 Project workspace layout (3-pane: editor, preview, AI chat)
 - [x] 1.3 Monaco editor (HTML/CSS/Liquid, Can I Email autocomplete)
 - [x] 1.4 Maizzle live preview (compile-on-save, viewport toggles, dark mode)

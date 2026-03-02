@@ -18,6 +18,8 @@ import {
   DEMO_KNOWLEDGE_DOMAINS,
   DEMO_KNOWLEDGE_CONTENT,
 } from "./data/knowledge";
+import { DEMO_FIGMA_CONNECTIONS, DEMO_FIGMA_TOKENS } from "./data/figma";
+import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
   const page = parseInt(url.searchParams.get("page") || "1", 10);
@@ -56,13 +58,15 @@ export function resolveDemo(urlStr: string): unknown | null {
   // ── Projects ──
   if (p === "/api/v1/projects") {
     const search = url.searchParams.get("search");
-    return paginate(filterBySearch(DEMO_PROJECTS, search), url);
+    const allProjects = [...DEMO_PROJECTS, ...demoStore.allProjects()];
+    return paginate(filterBySearch(allProjects, search), url);
   }
   let m: RegExpMatchArray | null;
 
   m = p.match(/^\/api\/v1\/projects\/(\d+)$/);
   if (m) {
-    return DEMO_PROJECTS.find((proj) => proj.id === matchId(m!, 1)) ?? null;
+    const id = matchId(m, 1);
+    return DEMO_PROJECTS.find((proj) => proj.id === id) ?? demoStore.findProject(id) ?? null;
   }
 
   // ── Templates ──
@@ -71,27 +75,37 @@ export function resolveDemo(urlStr: string): unknown | null {
     const projectId = matchId(m, 1);
     const search = url.searchParams.get("search");
     const status = url.searchParams.get("status");
-    let templates = DEMO_TEMPLATES.filter((t) => t.project_id === projectId);
+    let templates = [
+      ...DEMO_TEMPLATES.filter((t) => t.project_id === projectId),
+      ...demoStore.templatesForProject(projectId),
+    ];
     if (search) templates = filterBySearch(templates, search);
     if (status) templates = templates.filter((t) => t.status === status);
     return paginate(templates, url);
   }
   m = p.match(/^\/api\/v1\/templates\/(\d+)$/);
   if (m) {
-    return DEMO_TEMPLATES.find((t) => t.id === matchId(m!, 1)) ?? null;
+    const id = matchId(m!, 1);
+    return DEMO_TEMPLATES.find((t) => t.id === id) ?? demoStore.findTemplate(id) ?? null;
   }
   m = p.match(/^\/api\/v1\/templates\/(\d+)\/versions$/);
   if (m) {
     const templateId = matchId(m, 1);
-    return DEMO_VERSIONS.filter((v) => v.template_id === templateId);
+    const staticVersions = DEMO_VERSIONS.filter((v) => v.template_id === templateId);
+    const runtimeVersions = demoStore.versionsForTemplate(templateId);
+    return [...staticVersions, ...runtimeVersions];
   }
   m = p.match(/^\/api\/v1\/templates\/(\d+)\/versions\/(\d+)$/);
   if (m) {
     const templateId = matchId(m, 1);
     const versionNum = matchId(m, 2);
-    return DEMO_VERSIONS.find(
-      (v) => v.template_id === templateId && v.version_number === versionNum,
-    ) ?? null;
+    return (
+      DEMO_VERSIONS.find(
+        (v) => v.template_id === templateId && v.version_number === versionNum,
+      ) ??
+      demoStore.findVersion(templateId, versionNum) ??
+      null
+    );
   }
 
   // ── Components ──
@@ -203,6 +217,19 @@ export function resolveDemo(urlStr: string): unknown | null {
 
   if (p === "/api/v1/knowledge/tags") {
     return { tags: DEMO_KNOWLEDGE_TAGS, total: DEMO_KNOWLEDGE_TAGS.length };
+  }
+
+  // ── Figma Connections ──
+  if (p === "/api/v1/figma/connections") {
+    return DEMO_FIGMA_CONNECTIONS;
+  }
+  m = p.match(/^\/api\/v1\/figma\/connections\/(\d+)$/);
+  if (m) {
+    return DEMO_FIGMA_CONNECTIONS.find((c) => c.id === matchId(m!, 1)) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/figma\/connections\/(\d+)\/tokens$/);
+  if (m) {
+    return DEMO_FIGMA_TOKENS[matchId(m, 1)] ?? null;
   }
 
   return null;

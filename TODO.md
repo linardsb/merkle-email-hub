@@ -80,7 +80,7 @@
 
 ### ~~1.1 Project Dashboard Page~~ DONE
 **Plan ref:** Section 9.2 (Dashboard), MVP #1
-**What:** Dashboard page at `/[locale]/(dashboard)/page.tsx`. Project overview grid, recent activity feed, QA status summary, quick-start template selection. Data from `GET /api/v1/projects` and `GET /api/v1/orgs`.
+**What:** Dashboard page at `/(dashboard)/page.tsx`. Project overview grid, recent activity feed, QA status summary, quick-start template selection. Data from `GET /api/v1/projects` and `GET /api/v1/orgs`.
 **Security:**
 - Only show projects the authenticated user has access to (RBAC-filtered on backend)
 - No client org data leakage across user sessions
