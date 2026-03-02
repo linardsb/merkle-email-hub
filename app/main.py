@@ -35,7 +35,7 @@ from app.core.health import router as health_router
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
 from app.core.rate_limit import limiter
-from app.core.redis import close_redis
+from app.core.redis import close_redis, redis_available
 from app.email_engine.routes import router as email_engine_router
 from app.example.routes import router as example_router
 from app.knowledge.routes import router as knowledge_router
@@ -74,11 +74,13 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
     logger.info("database.connection_initialized")
 
-    # Start WebSocket subscriber
-    if settings.ws.enabled:
+    # Start WebSocket subscriber (only if Redis is reachable)
+    if settings.ws.enabled and await redis_available():
         ws_manager = get_ws_manager()
         await start_ws_subscriber(ws_manager)
         logger.info("streaming.ws.subscriber_started")
+    elif settings.ws.enabled:
+        logger.warning("streaming.ws.subscriber_skipped", detail="Redis unavailable, WebSocket streaming disabled")
 
     yield
 

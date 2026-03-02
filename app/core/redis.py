@@ -37,6 +37,17 @@ async def get_redis() -> Redis:
     return _redis_client
 
 
+async def redis_available() -> bool:
+    """Check if Redis is reachable. Returns False on connection failure."""
+    try:
+        client = await get_redis()
+        await client.ping()
+        return True
+    except Exception:
+        logger.warning("redis.unavailable", detail="Redis is not reachable, features requiring Redis will be disabled")
+        return False
+
+
 async def close_redis() -> None:
     """Close the Redis client. Called on app shutdown."""
     global _redis_client
