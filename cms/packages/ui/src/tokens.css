@@ -7,17 +7,18 @@
 
 @theme {
   /* ── Tier 1: Primitive Palette (oklch) ── */
-  --color-neutral-50: oklch(0.98 0.005 260);
-  --color-neutral-100: oklch(0.96 0.008 260);
-  --color-neutral-200: oklch(0.91 0.012 260);
-  --color-neutral-300: oklch(0.85 0.015 260);
-  --color-neutral-400: oklch(0.70 0.020 260);
-  --color-neutral-500: oklch(0.55 0.025 260);
-  --color-neutral-600: oklch(0.45 0.025 260);
-  --color-neutral-700: oklch(0.35 0.020 260);
-  --color-neutral-800: oklch(0.25 0.015 260);
-  --color-neutral-900: oklch(0.18 0.012 260);
-  --color-neutral-950: oklch(0.12 0.010 260);
+  /* Neutrals: hue 270 (purple-gray, per Merkle Frontify #8888A1) */
+  --color-neutral-50: oklch(0.98 0.005 270);
+  --color-neutral-100: oklch(0.96 0.008 270);
+  --color-neutral-200: oklch(0.91 0.012 270);
+  --color-neutral-300: oklch(0.85 0.015 270);
+  --color-neutral-400: oklch(0.70 0.020 270);
+  --color-neutral-500: oklch(0.55 0.025 270);
+  --color-neutral-600: oklch(0.45 0.025 270);
+  --color-neutral-700: oklch(0.35 0.020 270);
+  --color-neutral-800: oklch(0.25 0.015 270);
+  --color-neutral-900: oklch(0.18 0.012 270);
+  --color-neutral-950: oklch(0.12 0.010 270);
 
   /* Merkle brand red (#E4002B) — hue ~27 in OKLCH */
   --color-primary-50: oklch(0.97 0.015 25);
@@ -31,8 +32,9 @@
   --color-primary-800: oklch(0.36 0.150 27);
   --color-primary-900: oklch(0.29 0.100 27);
 
-  --color-success-500: oklch(0.65 0.160 145);
-  --color-success-600: oklch(0.55 0.160 145);
+  /* Success: Merkle teal #06757E */
+  --color-success-500: oklch(0.52 0.09 195);
+  --color-success-600: oklch(0.45 0.09 195);
   --color-warning-500: oklch(0.75 0.150 75);
   --color-warning-600: oklch(0.65 0.150 75);
   /* Danger shifted to orange-red (hue 40) to distinguish from brand red */
@@ -74,14 +76,13 @@
 
   /* ── Tier 3: Component Tokens ── */
 
-  /* Sidebar */
-  /* Merkle dark blue sidebar */
-  --color-sidebar-bg: oklch(0.22 0.045 260);
+  /* Sidebar — Merkle navy #12295D */
+  --color-sidebar-bg: oklch(0.25 0.09 265);
   --color-sidebar-text: var(--color-neutral-200);
   --color-sidebar-text-active: white;
-  --color-sidebar-hover: oklch(0.26 0.050 260);
+  --color-sidebar-hover: oklch(0.29 0.08 265);
   --color-sidebar-active: var(--color-primary-700);
-  --color-sidebar-border: oklch(0.28 0.040 260);
+  --color-sidebar-border: oklch(0.30 0.07 265);
 
   /* Card */
   --color-card-bg: var(--color-surface-elevated);
@@ -98,7 +99,7 @@
   --color-badge-default-text: var(--color-neutral-700);
   --color-badge-primary-bg: var(--color-primary-100);
   --color-badge-primary-text: var(--color-primary-700);
-  --color-badge-success-bg: oklch(0.92 0.060 145);
+  --color-badge-success-bg: oklch(0.92 0.040 195);
   --color-badge-success-text: var(--color-success-600);
   --color-badge-warning-bg: oklch(0.93 0.060 75);
   --color-badge-warning-text: var(--color-warning-600);
@@ -113,15 +114,19 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* ── Typography ── */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* ── Typography (Merkle: Proxima Nova primary, Space Grotesk secondary) ── */
+  --font-sans: "Proxima Nova", "proxima-nova", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* ── Radius ── */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-full: 9999px;
+  /* ── Radius (Merkle brand: sharp corners, no rounding) ── */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-full: 0;
 
   /* ── Animation ── */
   --animate-fade-in: fade-in 0.2s ease-out;
@@ -153,7 +158,15 @@
   --color-sidebar-accent: var(--color-sidebar-hover);
   --color-sidebar-accent-foreground: var(--color-sidebar-text-active);
   --color-sidebar-ring: var(--color-border-focus);
-  --radius: var(--radius-md);
+  --radius: 0;
+
+  /* ── Chart / Data Visualization (Merkle brand palette) ── */
+  --color-chart-1: oklch(0.25 0.09 265);   /* Navy #12295D */
+  --color-chart-2: oklch(0.45 0.09 195);   /* Teal #06757E */
+  --color-chart-3: oklch(0.55 0.220 27);   /* Brand red #E4002B */
+  --color-chart-4: oklch(0.62 0.15 245);   /* Blue #0391F2 */
+  --color-chart-5: oklch(0.55 0.025 270);  /* Purple-gray #8888A1 */
+  --color-chart-6: oklch(0.65 0.150 75);   /* Warning amber */
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -194,14 +207,13 @@
   --color-status-danger: var(--color-danger-500);
   --color-status-info: var(--color-primary-400);
 
-  /* Component: Sidebar */
-  /* Merkle dark blue sidebar */
-  --color-sidebar-bg: oklch(0.17 0.040 260);
+  /* Component: Sidebar — Merkle navy (darker for dark mode) */
+  --color-sidebar-bg: oklch(0.17 0.09 268);
   --color-sidebar-text: var(--color-neutral-300);
   --color-sidebar-text-active: white;
-  --color-sidebar-hover: oklch(0.22 0.045 260);
+  --color-sidebar-hover: oklch(0.22 0.08 268);
   --color-sidebar-active: var(--color-primary-500);
-  --color-sidebar-border: oklch(0.24 0.035 260);
+  --color-sidebar-border: oklch(0.24 0.06 268);
 
   /* Component: Card */
   --color-card-bg: var(--color-neutral-900);
@@ -218,12 +230,20 @@
   --color-badge-default-text: var(--color-neutral-200);
   --color-badge-primary-bg: oklch(0.30 0.060 25);
   --color-badge-primary-text: var(--color-primary-200);
-  --color-badge-success-bg: oklch(0.25 0.060 145);
+  --color-badge-success-bg: oklch(0.25 0.040 195);
   --color-badge-success-text: var(--color-success-500);
   --color-badge-warning-bg: oklch(0.30 0.060 75);
   --color-badge-warning-text: var(--color-warning-500);
   --color-badge-danger-bg: oklch(0.28 0.060 40);
   --color-badge-danger-text: var(--color-danger-500);
+
+  /* Chart / Data Visualization (lighter for dark backgrounds) */
+  --color-chart-1: oklch(0.65 0.08 265);   /* Lighter navy */
+  --color-chart-2: oklch(0.60 0.09 195);   /* Lighter teal */
+  --color-chart-3: oklch(0.65 0.190 27);   /* Lighter red */
+  --color-chart-4: oklch(0.70 0.13 245);   /* Lighter blue */
+  --color-chart-5: oklch(0.70 0.025 270);  /* Lighter gray */
+  --color-chart-6: oklch(0.75 0.150 75);   /* Lighter amber */
 }
 
 /* ── Animations ── */

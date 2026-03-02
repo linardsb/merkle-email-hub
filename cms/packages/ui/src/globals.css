@@ -1,3 +1,7 @@
+/* Merkle brand fonts — Proxima Nova requires Adobe Fonts license.
+   Space Grotesk (Merkle secondary) loaded as visible fallback. */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @import "tailwindcss";
 @import "./tokens.css";
 
@@ -6,6 +10,7 @@
   *::before,
   *::after {
     @apply border-border;
+    border-radius: 0 !important;
   }
 
   body {
