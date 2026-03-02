@@ -35,10 +35,17 @@ export function FigmaConnectionCard({
     : null;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className={`w-full rounded-lg border-2 bg-card-bg p-4 text-left transition-colors ${
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`w-full cursor-pointer rounded-lg border-2 bg-card-bg p-4 text-left transition-colors ${
         selected
           ? "border-interactive ring-1 ring-interactive"
           : "border-card-border hover:bg-surface-hover"
@@ -103,6 +110,6 @@ export function FigmaConnectionCard({
           {t("remove")}
         </button>
       </div>
-    </button>
+    </div>
   );
 }
