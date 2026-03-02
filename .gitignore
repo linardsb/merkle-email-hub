@@ -48,7 +48,7 @@ cms/.env.*.local
 
 # Build artifacts
 cms/apps/web/.next/
-cms/packages/sdk/src/client/
+# cms/packages/sdk/src/client/  # Tracked — needed for Vercel deployment
 
 # MCP config (contains API tokens)
 .mcp.json
