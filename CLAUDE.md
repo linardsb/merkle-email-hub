@@ -217,14 +217,18 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 3.1 Client approval portal (viewer role, feedback, audit trail)
 - [x] 3.2 Rendering intelligence dashboard (QA trends, support matrices)
 - [x] 3.3 Dashboard homepage enhancement (real data, activity feed)
-- [ ] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
-- [ ] 3.5 CMS + Nginx Docker stack (7 services healthy)
+- [x] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
+- [x] 3.5 CMS + Nginx Docker stack (7 services healthy)
 
 ### Phase 4 — Post-MVP
 - [x] 4.8 Knowledge base search UI (`/knowledge` page, document browser, hybrid search)
+- [x] 4.9 Smart agent memory (conversation history tab in workspace chat)
+- [x] 4.10 Version comparison (side-by-side template diff in approval portal)
+- [x] 4.11 Custom persona creation (dialog form for new test profiles)
+- [x] 4.12 Exportable reports (intelligence dashboard Print/PDF + CSV export)
 - [ ] 4.1 Remaining 6 AI agents (Outlook Fixer, Accessibility, Personalisation, Code Reviewer, Knowledge, Innovation)
 - [ ] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
-- [ ] 4.3 Figma design sync (REST API, token extraction, webhooks)
+- [x] 4.3 Figma design sync (frontend demo: `/figma` page, connection management, token extraction UI)
 - [ ] 4.4 Litmus / Email on Acid API integration
 - [ ] 4.5 Advanced features (collaborative editing, localisation, visual Liquid builder)
 
@@ -255,6 +259,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - Approval Portal: viewer login, read-only preview, section feedback, approve/reject
 - Intelligence Dashboard: QA trends, support matrices, quality scores
 - Knowledge Base Search: document browser, natural language search, domain/tag filters
+- Figma Sync: connection management, design token extraction (colors, typography, spacing)
 
 ## Compact instructions
 

@@ -7,6 +7,7 @@ Create Date: 2026-03-01 08:00:00.000000
 """
 
 from collections.abc import Sequence
+from datetime import datetime
 
 import sqlalchemy as sa
 
@@ -20,6 +21,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    now = datetime.utcnow()  # noqa: DTZ003 — DB column is TIMESTAMP WITHOUT TIME ZONE
+
     personas = sa.table(
         "personas",
         sa.column("name", sa.String),
@@ -31,6 +34,8 @@ def upgrade() -> None:
         sa.column("viewport_width", sa.Integer),
         sa.column("os_name", sa.String),
         sa.column("is_preset", sa.Boolean),
+        sa.column("created_at", sa.DateTime),
+        sa.column("updated_at", sa.DateTime),
     )
 
     op.bulk_insert(
@@ -46,6 +51,8 @@ def upgrade() -> None:
                 "viewport_width": 600,
                 "os_name": "macOS",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "Outlook 365",
@@ -57,6 +64,8 @@ def upgrade() -> None:
                 "viewport_width": 600,
                 "os_name": "Windows",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "Apple Mail Dark",
@@ -68,6 +77,8 @@ def upgrade() -> None:
                 "viewport_width": 600,
                 "os_name": "macOS",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "iPhone Mail",
@@ -79,6 +90,8 @@ def upgrade() -> None:
                 "viewport_width": 375,
                 "os_name": "iOS",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "Samsung Mail Dark",
@@ -90,6 +103,8 @@ def upgrade() -> None:
                 "viewport_width": 360,
                 "os_name": "Android",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "Outlook Classic",
@@ -101,6 +116,8 @@ def upgrade() -> None:
                 "viewport_width": 600,
                 "os_name": "Windows",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "Gmail Mobile",
@@ -112,6 +129,8 @@ def upgrade() -> None:
                 "viewport_width": 360,
                 "os_name": "Android",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
             {
                 "name": "Yahoo Mail",
@@ -123,6 +142,8 @@ def upgrade() -> None:
                 "viewport_width": 600,
                 "os_name": "Windows",
                 "is_preset": True,
+                "created_at": now,
+                "updated_at": now,
             },
         ],
     )

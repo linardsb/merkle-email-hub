@@ -21,7 +21,7 @@ from app.email_engine.schemas import BuildRequest, BuildResponse, PreviewRequest
 logger = get_logger(__name__)
 settings = get_settings()
 
-MAIZZLE_BUILDER_URL = "http://maizzle-builder:3001"
+MAIZZLE_BUILDER_URL = settings.maizzle_builder_url
 
 
 class EmailEngineService:
@@ -72,9 +72,7 @@ class EmailEngineService:
 
     async def get_build(self, build_id: int) -> BuildResponse:
         """Get a build by ID."""
-        result = await self.db.execute(
-            select(EmailBuild).where(EmailBuild.id == build_id)
-        )
+        result = await self.db.execute(select(EmailBuild).where(EmailBuild.id == build_id))
         build = result.scalar_one_or_none()
         if not build:
             raise BuildFailedError(f"Build {build_id} not found")

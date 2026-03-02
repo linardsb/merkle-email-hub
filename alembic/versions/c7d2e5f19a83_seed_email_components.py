@@ -46,6 +46,17 @@ def upgrade() -> None:
     now = datetime.now(UTC)
     conn = op.get_bind()
 
+    # Ensure system user exists for foreign key references
+    existing = conn.execute(sa.text("SELECT id FROM users WHERE id = 1")).scalar_one_or_none()
+    if existing is None:
+        conn.execute(
+            sa.text(
+                "INSERT INTO users (id, email, hashed_password, name, role, is_active, failed_attempts, created_at, updated_at) "
+                "VALUES (1, 'system@merkle-hub.local', '$2b$12$placeholder_not_for_login', 'System', 'admin', true, 0, :now, :now)"
+            ),
+            {"now": now},
+        )
+
     for seed in COMPONENT_SEEDS:
         # Insert component
         conn.execute(

@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 2.0
-**Date:** 2026-03-01
-**Status:** MVP Development — Sprints 1-3 nearly complete (3.1-3.3 done, 3.4-3.5 remaining); Post-MVP 4.8 done
+**Version:** 2.1
+**Date:** 2026-03-02
+**Status:** MVP Complete — Sprint 3 done (3.1-3.5); Post-MVP 4.3, 4.8-4.12 done
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-01
+> Last updated: 2026-03-02
 
 ### Completed
 
@@ -42,23 +42,28 @@
 | 3.3 | Dashboard homepage enhancement | Dashboard rewritten with 4 stat cards (Total Projects, Components, QA Pass Rate with threshold coloring, Pending Approvals); Quality Overview card with avg score, total runs, overrides, mini trend dots (last 10 pass/fail); Recent Activity feed (latest 5 QA runs); Project grid (top 3 with "View All"); Quick Start with "Open Workspace" + "Browse Components" links. 6 existing SWR hooks, no new backend endpoints. ~20 new i18n keys. All semantic Tailwind tokens |
 | 2.10 | RAG knowledge base seeding | 20 curated markdown documents across 3 domains: `css_support` (8 files), `best_practices` (6 files), `client_quirks` (6 files). Async seed command (`app/knowledge/seed.py`) with idempotency. Manifest-driven (`app/knowledge/data/seed_manifest.py`) with per-document metadata, tags, domain classification. 109 unit tests |
 | 4.8 | Knowledge base search UI | `/knowledge` page with search-first UX: debounced search bar triggering `POST /api/v1/knowledge/search`, domain filter pills (All/CSS Support/Best Practices/Client Quirks), tag filter pills, dual mode (search results with relevance scores vs document browse grid), pagination, document detail dialog (Content/Metadata tabs). 3 components (`KnowledgeSearchResultCard`, `KnowledgeDocumentCard`, `KnowledgeDocumentDialog`); 6 SWR hooks in `use-knowledge.ts`; `types/knowledge.ts` local types; demo data (20 docs, 3 domains, 15 tags, chunk content); BookOpen sidebar nav; middleware RBAC; ~30 i18n keys; all semantic Tailwind tokens |
+| 4.9 | Smart agent memory | Conversation history tab in workspace chat panel. `ChatSession` and `ChatMessage` types; `useChatHistory` hook with `sessionStorage` persistence; `SessionCard` component with timestamp, message count, preview; session list with search/filter; restore previous conversations; 3 components; ~15 i18n keys |
+| 4.10 | Version comparison dialog | Side-by-side template version diff in approval portal. `VersionCompareDialog` (max-w-7xl) with dual iframe previews; version selector dropdowns; auto-selects latest two versions; changelog and date metadata; loading/empty states; `useTemplateVersions` hook; ~12 i18n keys in `approvals` namespace |
+| 4.11 | Custom persona creation | `CreatePersonaDialog` (max-w-[28rem]) with 7 form fields matching `PersonaCreate` schema; two-column grid layout; slug auto-generation; viewport width validation (200-2000px); email client dropdown (8 options); demo mode mock via mutation-resolver; auto-selects new persona in `PersonaSelector`; ~16 i18n keys |
+| 4.12 | Exportable intelligence reports | `ExportReportMenu` dropdown on intelligence dashboard header with Print/PDF (`window.print()`) and CSV export (client-side Blob download). `@media print` styles in tokens.css for clean report output. CSV includes overview metrics, check performance, and quality trend data; ~6 i18n keys |
+| 3.4 | Error handling, loading states, UI polish | Shared `EmptyState` component replacing 6 inline empty states; `ErrorState` integration on intelligence + approval detail; route-level `loading.tsx` for intelligence + connectors; `Loader2` spinners on login, persona create, QA override buttons; non-semantic token fixes in 2 dialogs; `fade-in` CSS animation on 5 pages; improved approval detail skeleton |
+| 3.5 | CMS + Nginx Docker stack | 7 services healthy (db, redis, migrate, app, cms, maizzle-builder, nginx); 3 `.dockerignore` files (392MB→66MB context); nginx security hardening (blocked paths → 403, header hardening, SSL readiness); configurable `maizzle_builder_url`; `NEXT_PUBLIC_DEMO_MODE` baked into CMS build; `.env.example`; Alembic seed migration fixes |
+| 4.3 | Figma design sync (frontend demo) | `/figma` page with connection card grid (status badges, sync/delete actions), design token preview (10 colors, 7 typography styles, 7 spacing values), `ConnectFigmaDialog` form (name, URL, token, project select); 4 components (`FigmaConnectionCard`, `FigmaStatusBadge`, `FigmaDesignTokensView`, `ConnectFigmaDialog`); 6 SWR hooks; optional Figma URL field in `CreateProjectDialog` with auto-connection on submit; demo data (3 connections, 1 token set); Figma sidebar nav icon; ~45 i18n keys |
 
 ### In Progress
 
-| Phase | Task | Description |
-|-------|------|-------------|
-| Sprint 3 | 3.4 | Error handling, loading states, UI polish (skeletons, toasts, error pages) |
-| Sprint 3 | 3.5 | CMS + Nginx Docker stack (7 services healthy) |
+No tasks currently in progress. MVP (Sprints 1-3) is complete. Post-MVP tasks 4.1, 4.2, 4.4, 4.5 remain.
 
 ### Infrastructure Built
 
 - **Backend:** Full VSA implementation across 7 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
-- **Frontend:** Next.js 16 monorepo with i18n, auth middleware, RBAC route guards, semantic Tailwind tokens
+- **Frontend:** Next.js 16 monorepo with i18n, auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
-- **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 14 domain-specific hooks
+- **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 20 domain-specific hooks
 - **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend functional for Raw HTML + Braze
-- **Testing:** Backend pytest (152+ tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
+- **Testing:** Backend pytest (261 tests); Frontend Vitest + React Testing Library (`make test-fe`)
 
 ---
 

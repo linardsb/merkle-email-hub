@@ -271,9 +271,10 @@
 - No sensitive data in activity summaries (e.g., "Template exported to Braze" not "Template exported to Braze API key ending in ...xyz")
 **Verify:** Dashboard shows real project data. Activity feed updates in near-realtime. Quick-start creates new template from component.
 
-### 3.4 Error Handling, Loading States, UI Polish
+### ~~3.4 Error Handling, Loading States, UI Polish~~ DONE
 **Plan ref:** Section 16.2 (Polish + Glue)
 **What:** Skeleton loaders on all data-fetching pages. Toast notifications for async operations (build started, export completed, QA passed). Proper 404/403/500 error pages. Form validation with inline errors. Optimistic updates where safe. Offline detection.
+**Frontend:** Shared `EmptyState` component (`components/ui/empty-state.tsx`) replacing 6 ad-hoc inline empty states across approvals, connectors, intelligence, components, knowledge pages; `ErrorState` integration on intelligence page and approval detail page; route-level `loading.tsx` skeletons for intelligence and connectors; improved approval detail skeleton matching 2-pane layout; `Loader2` spinner on login, persona create, and QA override submit buttons; non-semantic shadcn alias tokens fixed in `create-persona-dialog.tsx` and `qa-override-dialog.tsx` (`border-input`→`border-input-border`, `bg-background`→`bg-input-bg`, `placeholder:text-muted-foreground`→`placeholder:text-input-placeholder`, `focus:border-ring/ring-ring`→`focus:border-input-focus/ring-input-focus`, `accent-primary`→`accent-interactive`, `hover:bg-accent`→`hover:bg-surface-hover`, `bg-primary text-primary-foreground`→`bg-interactive text-foreground-inverse`); `fade-in` CSS animation (`@keyframes` + `--animate-fade-in` token) added to `tokens.css` and applied to content wrappers on 5 major pages; 403 unauthorized page already existed at `(dashboard)/unauthorized/page.tsx`.
 **Security:**
 - Error pages never expose stack traces, internal paths, or configuration
 - 403 page: "You don't have access to this resource" — no detail about what the resource is
@@ -281,9 +282,10 @@
 - Client-side error boundary catches React crashes gracefully
 **Verify:** Navigate to invalid URL → 404 page. Access forbidden resource → 403 page. Kill backend → graceful offline state. All forms validate before submit.
 
-### 3.5 CMS + Nginx Docker Stack
+### ~~3.5 CMS + Nginx Docker Stack~~ DONE
 **Plan ref:** Section 16.2 (Deployment), 10 (Infrastructure)
 **What:** Get `cms` container building and healthy (pnpm install + next build + standalone output). Wire nginx reverse proxy: `/` → cms (port 3000), `/api/` → app (port 8891), `/ws` → app WebSocket. SSL termination ready (cert volume mount). Full `docker compose up` with all 7 services healthy.
+**Implementation:** 3 `.dockerignore` files (root, cms/, maizzle-builder/) reducing build context from 392MB to 66MB; configurable `maizzle_builder_url` in `app/core/config.py`; `INTERNAL_API_URL` and `MAIZZLE_BUILDER_URL` env vars in docker-compose; nginx security hardening (blocked `.env`/`.git`/`alembic`/`__pycache__` paths returning 403, `include mime.types`); commented SSL server block + cert volume mount; CSP `connect-src 'self'` for nginx-proxied deployment; `NEXT_PUBLIC_DEMO_MODE=true` baked into CMS Docker build; Dockerfile shebang fix for UV_LINK_MODE=copy; `.env.example` documenting all deployment vars; Alembic seed migration fixes (timestamps, system user FK). All 7 services healthy: db, redis, migrate (exited 0), app, cms, maizzle-builder, nginx.
 **Security:**
 - Nginx: rate limiting (100 req/s per IP), request body size limit (10MB), header hardening (X-Frame-Options DENY, X-Content-Type-Options nosniff, Strict-Transport-Security, Referrer-Policy strict-origin-when-cross-origin)
 - Nginx: block access to `.env`, `.git`, `alembic/`, `__pycache__/` paths
@@ -307,6 +309,30 @@
 - Domain/tag filters validated against known values in demo mode
 **Verify:** `/knowledge` page loads with 20 document cards. Search "dark mode" returns relevant results with scores. Domain/tag filters narrow results. Document dialog shows chunks and metadata. `pnpm build` passes.
 
+### ~~4.9 Smart Agent Memory~~ DONE
+**Plan ref:** `.agents/plans/4.9-smart-agent-memory.md`
+**What:** Conversation history tab in workspace chat panel with session persistence, search, and restore.
+**Frontend:** `ChatSession` and `ChatMessage` types in `types/chat-history.ts`; `useChatHistory` hook with `sessionStorage` persistence; `SessionCard` component with timestamp, message count, preview; session list with search/filter; restore previous conversations; 3 components in `components/workspace/chat/`; ~15 i18n keys in `workspace` namespace.
+**Verify:** Chat history tab shows previous sessions. Search filters sessions. Restoring a session loads messages. `pnpm build` passes.
+
+### ~~4.10 Version Comparison Dialog~~ DONE
+**Plan ref:** `.agents/plans/4.10-version-comparison.md`
+**What:** Side-by-side template version diff in approval portal for visual comparison.
+**Frontend:** `VersionCompareDialog` (max-w-7xl) with dual sandboxed iframe previews; version selector dropdowns; auto-selects latest two versions; changelog and date metadata; loading/empty states; `useTemplateVersions` hook; ~12 i18n keys in `approvals` namespace.
+**Verify:** "Compare Versions" button appears on approval detail page. Dialog opens with two versions side by side. Dropdown changes versions. `pnpm build` passes.
+
+### ~~4.11 Custom Persona Creation~~ DONE
+**Plan ref:** `.agents/plans/4.11-custom-persona-creation.md`
+**What:** Dialog form enabling users to create custom email client test profiles.
+**Frontend:** `CreatePersonaDialog` (max-w-[28rem]) with 7 form fields matching `PersonaCreate` schema; two-column grid layout; slug auto-generation; viewport width validation (200-2000px); email client dropdown (8 options); demo mode mock via mutation-resolver; auto-selects new persona in `PersonaSelector`; ~16 i18n keys in `workspace` namespace.
+**Verify:** "Create Persona" menu item in persona dropdown. Dialog submits and new persona appears. `pnpm build` passes.
+
+### ~~4.12 Exportable Intelligence Reports~~ DONE
+**Plan ref:** `.agents/plans/4.12-exportable-reports.md`
+**What:** Export button on intelligence dashboard for client presentation reports.
+**Frontend:** `ExportReportMenu` dropdown with Print/PDF (`window.print()`) and CSV export (client-side Blob download with overview metrics, check performance, quality trend); `@media print` styles in `tokens.css`; ~6 i18n keys in `intelligence` namespace.
+**Verify:** Export dropdown renders on intelligence page. Print opens browser dialog. CSV downloads with correct data. `pnpm build` passes.
+
 ### 4.1 Remaining 6 AI Agents
 **Plan ref:** Section 5.1 (Agent Architecture)
 - **Outlook Fixer**: MSO conditionals, VML backgrounds, table-based fallbacks
@@ -322,13 +348,12 @@
 - Adobe Campaign connector (Deliveries + Content fragments, Adobe IMS OAuth)
 - Taxi for Email connector (Taxi Syntax wrapping, Design System export)
 
-### 4.3 Figma Design Sync
-**Plan ref:** Section 4 (Design Tool Integration)
-- Figma REST API integration
-- Design token extraction (colours, typography, spacing)
-- Component structure mapping
-- Change webhook handling
-- Plugin ecosystem (Emailify, Email Love, MigmaAI)
+### ~~4.3 Figma Design Sync (Frontend Demo)~~ DONE
+**Plan ref:** Section 4 (Design Tool Integration), `.agents/plans/figma-design-sync.md`
+**What:** Dedicated `/figma` page for managing Figma file connections and extracting design tokens. Connection card grid with status badges (connected/syncing/error/disconnected), sync and delete actions, design token preview (colors grid, typography list, spacing bars). Connect Figma dialog with name, file URL, access token, and project selector. Optional Figma URL field added to Create Project dialog with auto-connection on submit. Full demo mode data layer (3 connections, 1 token set with 10 colors, 7 typography styles, 7 spacing values).
+**Frontend:** `/figma` page with `FigmaConnectionCard`, `FigmaStatusBadge`, `FigmaDesignTokensView`, `ConnectFigmaDialog` components; 6 SWR hooks in `use-figma.ts`; `types/figma.ts` local types; demo data in `lib/demo/data/figma.ts`; demo resolver + mutation-resolver routes; Figma sidebar nav icon; middleware RBAC (all roles); ~45 i18n keys in `figma` namespace; optional Figma URL field in `CreateProjectDialog`; loading skeleton; all semantic Tailwind tokens.
+**Remaining:** Real Figma REST API integration, change webhook handling, plugin ecosystem (Emailify, Email Love, MigmaAI) — deferred to backend implementation phase.
+**Verify:** `/figma` page loads with 3 demo connections. Connect dialog creates new connection. Clicking connected card shows design tokens. Sync/delete actions work. Create Project dialog has optional Figma URL field. `pnpm build` passes.
 
 ### 4.4 Litmus / Email on Acid API Integration
 **Plan ref:** Section 7.2 (Cross-Client Render)

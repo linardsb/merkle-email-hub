@@ -143,6 +143,9 @@ class Settings(BaseSettings):
 
     ws: WebSocketConfig = WebSocketConfig()
 
+    # Service URLs
+    maizzle_builder_url: str = "http://localhost:3001"
+
 
 @lru_cache
 def get_settings() -> Settings:

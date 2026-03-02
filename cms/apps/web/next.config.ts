@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob:",
               "font-src 'self' data:",
               "worker-src 'self' blob:",
-              "connect-src 'self' http://localhost:8891 ws://localhost:8891 https://cdn.jsdelivr.net",
+              "connect-src 'self' https://cdn.jsdelivr.net",
               "frame-ancestors 'none'",
             ].join("; "),
           },

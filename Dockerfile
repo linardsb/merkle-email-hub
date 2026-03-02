@@ -18,6 +18,9 @@ COPY . .
 
 RUN uv sync --locked --no-editable --no-dev
 
+# Fix shebangs to use container python (UV_LINK_MODE=copy preserves host paths)
+RUN find /app/.venv/bin -type f -exec sed -i '1s|^#!.*python.*$|#!/app/.venv/bin/python|' {} + 2>/dev/null || true
+
 # Stage 2: Runtime - Minimal production image
 FROM python:3.12-slim-bookworm
 

@@ -63,7 +63,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["python", "-m", "alembic", "upgrade", "head"]
+    command: ["alembic", "upgrade", "head"]
     env_file:
       - path: .env
         required: false
@@ -104,6 +104,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-merkle_email_hub}
       - REDIS__URL=redis://:${REDIS_PASSWORD:-devpassword}@redis:6379/0
+      - MAIZZLE_BUILDER_URL=http://maizzle-builder:3001
     depends_on:
       db:
         condition: service_healthy
@@ -136,6 +137,7 @@ services:
       - "3000"
     environment:
       - NEXT_PUBLIC_AGENT_URL=http://app:8891
+      - INTERNAL_API_URL=http://app:8891
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set}
       - AUTH_TRUST_HOST=true
     healthcheck:
@@ -188,8 +190,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "80:80"
+      # - "443:443"
+    # volumes:
+    #   - ./certs:/etc/nginx/certs:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -204,7 +209,11 @@ services:
     cap_drop:
       - ALL
     cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
       - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
     deploy:
       resources:
         limits:
