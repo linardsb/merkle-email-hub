@@ -125,11 +125,6 @@ export default function LoginPage() {
             )}
           </button>
 
-          {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
-            <p className="mt-2 text-center text-xs text-foreground-muted">
-              Demo mode — enter any username and password
-            </p>
-          )}
         </form>
       </div>
     </div>
