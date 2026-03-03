@@ -51,11 +51,6 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Demo mode: skip auth checks entirely
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    return NextResponse.next();
-  }
-
   // Check authentication — wrapped in try/catch because next-auth beta
   // can throw if session resolution fails, which kills the entire middleware
   try {
