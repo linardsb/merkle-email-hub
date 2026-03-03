@@ -63,10 +63,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        // Demo mode: accept credentials if DEMO_PASSWORD matches (or any if no password set)
+        // Demo mode: validate against DEMO_USERNAME + DEMO_PASSWORD env vars
         if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
           const demoPassword = process.env.DEMO_PASSWORD;
+          const demoUsername = process.env.DEMO_USERNAME;
           if (demoPassword && String(credentials.password) !== demoPassword) {
+            return null;
+          }
+          if (demoUsername && String(credentials.username) !== demoUsername) {
             return null;
           }
           return {
