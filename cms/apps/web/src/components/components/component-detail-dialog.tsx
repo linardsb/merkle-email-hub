@@ -141,13 +141,13 @@ export function ComponentDetailDialog({
                     </button>
                   )}
                 </div>
-                <ScrollArea className="mt-2 max-h-80 overflow-hidden rounded-md">
-                  <pre className="min-w-0 overflow-x-auto bg-surface-muted p-4 text-xs text-foreground">
+                <div className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted">
+                  <pre className="p-4 text-xs text-foreground">
                     <code>
                       {latestVersion?.html_source ?? t("noSource")}
                     </code>
                   </pre>
-                </ScrollArea>
+                </div>
               </div>
 
               {latestVersion?.css_source && (
@@ -155,11 +155,11 @@ export function ComponentDetailDialog({
                   <h4 className="text-sm font-medium text-foreground">
                     {t("cssSource")}
                   </h4>
-                  <ScrollArea className="mt-2 max-h-60 overflow-hidden rounded-md">
-                    <pre className="min-w-0 overflow-x-auto bg-surface-muted p-4 text-xs text-foreground">
+                  <div className="mt-2 max-h-60 overflow-auto rounded-md bg-surface-muted">
+                    <pre className="p-4 text-xs text-foreground">
                       <code>{latestVersion.css_source}</code>
                     </pre>
-                  </ScrollArea>
+                  </div>
                 </div>
               )}
             </div>
