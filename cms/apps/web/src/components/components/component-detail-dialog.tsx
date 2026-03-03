@@ -50,7 +50,7 @@ export function ComponentDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>
             {component?.name ?? t("detailTitle")}
@@ -141,8 +141,8 @@ export function ComponentDetailDialog({
                     </button>
                   )}
                 </div>
-                <ScrollArea className="mt-2 max-h-80">
-                  <pre className="overflow-x-auto rounded-md bg-surface-muted p-4 text-xs text-foreground">
+                <ScrollArea className="mt-2 max-h-80 overflow-hidden rounded-md">
+                  <pre className="min-w-0 overflow-x-auto bg-surface-muted p-4 text-xs text-foreground">
                     <code>
                       {latestVersion?.html_source ?? t("noSource")}
                     </code>
@@ -155,8 +155,8 @@ export function ComponentDetailDialog({
                   <h4 className="text-sm font-medium text-foreground">
                     {t("cssSource")}
                   </h4>
-                  <ScrollArea className="mt-2 max-h-60">
-                    <pre className="overflow-x-auto rounded-md bg-surface-muted p-4 text-xs text-foreground">
+                  <ScrollArea className="mt-2 max-h-60 overflow-hidden rounded-md">
+                    <pre className="min-w-0 overflow-x-auto bg-surface-muted p-4 text-xs text-foreground">
                       <code>{latestVersion.css_source}</code>
                     </pre>
                   </ScrollArea>
