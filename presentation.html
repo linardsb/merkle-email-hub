@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merkle Email Innovation Hub — Executive Presentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#040e4b;--navy-deep:#030a38;--navy-light:#12295d;
+  --orange:#0391f2;--orange-light:#3aabf5;--orange-glow:rgba(3,145,242,0.12);
+  --white:#ffffff;--surface:#f8f9fb;--surface-alt:#f0f2f5;
+  --text:#000000;--text-secondary:#555555;--text-muted:#60607d;
+  --border:#e6e6e6;--border-dark:#cecece;
+  --blue:#0391f2;--green:#06757e;--purple:#7c3aed;--amber:#d97706;--red:#dd3039;
+  --font:'proxima-nova','Space Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+html{font-size:16px}
+body{font-family:var(--font);color:var(--text);background:var(--surface);overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ═══ SLIDES ═══ */
+.deck{width:100vw;height:100vh;display:flex;flex-direction:column}
+.slide-area{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:3rem 6rem 2rem}
+.slide.active{display:flex;animation:fade-in .4s ease both}
+@keyframes fade-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ TOP BAR ═══ */
+.topbar{height:56px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;flex-shrink:0}
+.topbar-brand{display:flex;align-items:center;gap:10px;color:white;font-weight:700;font-size:15px;letter-spacing:-.3px}
+.topbar-brand img{height:32px}
+.topbar-meta{display:flex;align-items:center;gap:14px;color:rgba(255,255,255,.6);font-size:12px}
+.topbar-badge{background:rgba(232,78,15,.15);color:var(--orange-light);padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+
+/* ═══ BOTTOM NAV ═══ */
+.bottombar{height:64px;background:var(--white);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;flex-shrink:0}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:10px 24px;font-family:var(--font);font-size:14px;font-weight:700;border:2px solid var(--navy);color:var(--navy);background:var(--white);cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn:hover{background:var(--navy);color:var(--white)}
+.nav-btn:disabled{opacity:.25;cursor:default;background:var(--white);color:var(--navy)}
+.nav-btn svg{width:18px;height:18px;fill:currentColor}
+.nav-center{display:flex;align-items:center;gap:1.5rem}
+.nav-title{font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.nav-dots{display:flex;gap:6px}
+.nav-dot{width:10px;height:10px;border:2px solid var(--border-dark);background:var(--white);cursor:pointer;transition:all .2s;padding:0}
+.nav-dot:hover{border-color:var(--orange)}
+.nav-dot.active{background:var(--orange);border-color:var(--orange)}
+.nav-counter{font-size:13px;font-weight:700;color:var(--navy)}
+.progress{position:absolute;top:56px;left:0;height:3px;background:var(--orange);transition:width .4s ease;z-index:10}
+
+/* ═══ TYPOGRAPHY ═══ */
+.display{font-size:3rem;font-weight:700;line-height:1.0;letter-spacing:-.03em;color:var(--navy)}
+.headline{font-size:2.25rem;font-weight:700;line-height:1.15;letter-spacing:-.02em;color:var(--navy)}
+.title{font-size:1.5rem;font-weight:700;line-height:1.25;letter-spacing:-.02em;color:var(--navy)}
+.subtitle{font-size:1.1rem;font-weight:400;color:var(--text-secondary);line-height:1.4}
+.label{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange)}
+.body{font-size:.9375rem;color:var(--text-secondary);line-height:1.4}
+
+/* ═══ LAYOUT ═══ */
+.content{width:100%;max-width:1200px;margin:0 auto;text-align:left}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:3.5rem;align-items:start}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.four-col{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem}
+.divider{width:48px;height:3px;background:var(--orange);margin:1.25rem 0}
+
+/* ═══ CARDS ═══ */
+.card{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--border);padding:1.5rem;transition:all .2s}
+.card:hover{border-left-color:var(--orange);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.card-navy{background:var(--navy);border-color:var(--navy-light);color:white}
+.card-navy .body,.card-navy p{color:rgba(255,255,255,.7)}
+
+.tag{display:inline-block;padding:3px 10px;font-size:.68rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.tag-orange{background:var(--orange-glow);color:var(--orange)}
+.tag-green{background:rgba(5,150,105,.1);color:var(--green)}
+.tag-blue{background:rgba(3,40,209,.08);color:var(--blue)}
+.tag-amber{background:rgba(217,119,6,.1);color:var(--amber)}
+.tag-purple{background:rgba(124,58,237,.08);color:var(--purple)}
+
+.icon-box{width:40px;height:40px;background:var(--orange-glow);display:flex;align-items:center;justify-content:center;margin-bottom:.75rem;flex-shrink:0}
+.icon-box img{width:24px;height:24px}
+.icon-box.navy{background:rgba(12,35,64,.08)}
+.icon-box.blue{background:rgba(3,40,209,.06)}
+.icon-box.green{background:rgba(5,150,105,.06)}
+
+.stat{font-size:3.5rem;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--navy)}
+.stat-label{font-size:.8rem;color:var(--text-muted);margin-top:.4rem;font-weight:500}
+.stat-orange{color:var(--orange)}
+
+/* ═══ FEATURE CARDS ═══ */
+.feat{background:var(--white);border:1px solid var(--border);padding:1.5rem;border-left:3px solid transparent;transition:all .2s}
+.feat:hover{border-left-color:var(--orange);box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.feat h4{font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:.25rem}
+.feat p{font-size:.8rem;color:var(--text-muted);line-height:1.5}
+
+/* ═══ TIMELINE ═══ */
+.tl{position:relative;padding-left:1.75rem;padding-bottom:1.25rem}
+.tl::before{content:'';position:absolute;left:0;top:7px;width:10px;height:10px;background:var(--green);border:2px solid var(--white);box-shadow:0 0 0 2px var(--green)}
+.tl::after{content:'';position:absolute;left:4px;top:20px;width:2px;height:calc(100% - 14px);background:var(--border)}
+.tl:last-child::after{display:none}
+.tl.pending::before{background:var(--orange);box-shadow:0 0 0 2px var(--orange)}
+
+/* ═══ CHECK LIST ═══ */
+.chk{display:flex;align-items:flex-start;gap:.65rem;padding:.4rem 0}
+.chk-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.65rem;flex-shrink:0;margin-top:2px;font-weight:700}
+.chk-done{background:rgba(5,150,105,.1);color:var(--green)}
+.chk-wait{background:rgba(217,119,6,.1);color:var(--amber)}
+
+/* ═══ ARCH BOXES ═══ */
+.arch{background:var(--white);border:1px solid var(--border);padding:.75rem 1.25rem;text-align:center;font-weight:600;font-size:.85rem;color:var(--navy);transition:border-color .2s}
+.arch:hover{border-color:var(--orange)}
+
+/* ═══ WORKSPACE MOCK ═══ */
+.mock{background:var(--navy-deep);padding:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.mock-panel{background:var(--navy);padding:.75rem}
+.mock-label{font-size:.6rem;color:rgba(255,255,255,.4);margin-bottom:.4rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.mock-code{font-family:monospace;font-size:.55rem;color:rgba(255,255,255,.5);line-height:1.7}
+.mock-code .kw{color:var(--orange-light)}
+.mock-code .str{color:#7dd3fc}
+.mock-code .var{color:#86efac}
+.mock-preview{background:var(--white);display:flex;align-items:center;justify-content:center;min-height:180px}
+.mock-chat{grid-column:1/-1;background:var(--navy);padding:.6rem .75rem;display:flex;align-items:center;gap:.5rem}
+.mock-chat-tag{background:var(--orange);color:white;padding:1px 6px;font-size:.5rem;font-weight:700}
+.mock-chat-text{font-size:.6rem;color:rgba(255,255,255,.5)}
+
+/* QA Ring */
+.qa-ring{width:110px;height:110px;border-radius:50%;background:conic-gradient(var(--green) 0deg 324deg,var(--border) 324deg);display:flex;align-items:center;justify-content:center}
+.qa-inner{width:82px;height:82px;border-radius:50%;background:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* ═══ HERO BG ═══ */
+.bg-navy{background:var(--navy);color:white}
+.bg-navy .headline,.bg-navy .title,.bg-navy .display{color:white}
+.bg-navy .subtitle{color:rgba(255,255,255,.65)}
+.bg-navy .label{color:var(--orange-light)}
+.bg-navy .divider{background:var(--orange-light)}
+.bg-navy .body{color:rgba(255,255,255,.6)}
+.bg-navy .stat{color:white}
+
+@media(max-width:1200px){.slide{padding:2rem 3rem 1.5rem}.display{font-size:2.75rem}.headline{font-size:2rem}.four-col{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- Top bar -->
+<div class="topbar">
+</div>
+
+<!-- Progress -->
+<div class="progress" id="progress"></div>
+
+<!-- Slide area -->
+<div class="slide-area">
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide bg-navy active" data-title="Introduction">
+  <div class="content" style="display:flex;flex-direction:column;justify-content:center;height:100%">
+    <span class="label" style="margin-bottom:1rem">Merkle &middot; Email Engineering</span>
+    <h1 class="display" style="max-width:700px">Email Innovation Hub</h1>
+    <div class="divider"></div>
+    <p class="subtitle" style="max-width:580px;margin-top:.5rem">A centralised platform for building, testing, and QAing email campaigns at scale &mdash; powered by AI agents and enterprise-grade security.</p>
+    <div style="display:flex;gap:.75rem;margin-top:2rem;flex-wrap:wrap">
+      <span class="tag tag-orange">AI-Powered</span>
+      <span class="tag tag-blue" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)">Enterprise Security</span>
+      <span class="tag tag-green" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)">Production Ready</span>
+      <span class="tag tag-purple" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)">Full-Stack Platform</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: PROBLEM -->
+<div class="slide" data-title="The Problem">
+  <div class="content">
+    <span class="label">Why We Built This</span>
+    <h2 class="headline" style="margin-top:.5rem">Email development is <span style="color:var(--orange)">broken</span>.</h2>
+    <div class="divider"></div>
+    <div class="three-col" style="margin-top:1.5rem">
+      <div class="card"><div class="icon-box"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjMDMyOGQxOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cG9seWdvbiBjbGFzcz0iY2xzLTEiIHBvaW50cz0iNy44IDE0LjcxIDExLjY4IDEwLjgzIDE1Ljc3IDE0Ljk5IDIzLjcxIDcuMDUgNS42NyA3LjA1IDUuNjcgMjYuMzQgMjUuOTIgMjYuMzQgMjUuOTIgMTIuNTkgMTUuNzcgMjIuNzQgNy44IDE0LjcxIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIyNS45MiAxMi41OSAyNS45MiAyNi4zNCA1LjY3IDI2LjM0IDUuNjcgNy4wNSAyMy43MSA3LjA1IDI0LjcxIDYuMDUgNC42NyA2LjA1IDQuNjcgMjcuMzQgMjYuOTIgMjcuMzQgMjYuOTIgMTEuNTkgMjUuOTIgMTIuNTkiLz4KICA8cG9seWdvbiBjbGFzcz0iY2xzLTIiIHBvaW50cz0iMTUuNzcgMTQuOTkgMTEuNjggMTAuODMgNy44IDE0LjcxIDE1Ljc3IDIyLjc0IDI1LjkyIDEyLjU5IDI2LjkyIDExLjU5IDMwLjk5IDcuNTMgMjcuMTEgMy42NSAyNC43MSA2LjA1IDIzLjcxIDcuMDUgMTUuNzcgMTQuOTkiLz4KPC9zdmc+" alt=""></div><h3 style="font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.4rem">Fragmented Tools</h3><p class="body" style="font-size:.85rem">Teams juggle 5-8 tools per campaign &mdash; code editors, preview services, QA checkers, ESP dashboards, approval threads.</p></div>
+      <div class="card"><div class="icon-box"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZD0iTTE2IDRhMTIgMTIgMCAxIDAgMTIgMTJBMTIgMTIgMCAwIDAgMTYgNHptMCAyMmExMCAxMCAwIDEgMSAxMC0xMCAxMCAxMCAwIDAgMS0xMCAxMHoiLz48cGF0aCBmaWxsPSIjMDMyOGQxIiBkPSJNMjAuNTkgMTkuMTdMMTcgMTYuNTlWMTBoLTJ2Ny40MWw0LjI5IDMuMTJ6Ii8+PC9zdmc+" alt=""></div><h3 style="font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.4rem">Slow Iteration</h3><p class="body" style="font-size:.85rem">Average email takes 2-4 weeks from brief to deployment. Manual QA and approval cycles add days of delay.</p></div>
+      <div class="card"><div class="icon-box"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZD0iTTE2IDJMMSAyOWgzMHpNNC43IDI3TDE2IDUuNDcgMjcuMyAyN3oiLz48cGF0aCBmaWxsPSIjMDMyOGQxIiBkPSJNMTUgMTNoMnY3aC0yem0wIDloMnYyaC0yeiIvPjwvc3ZnPg==" alt=""></div><h3 style="font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:.4rem">Rendering Chaos</h3><p class="body" style="font-size:.85rem">90+ email clients, each with different CSS support. Outlook still uses the Word rendering engine from 2007.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: SOLUTION -->
+<div class="slide" data-title="Our Solution">
+  <div class="content">
+    <span class="label">Our Solution</span>
+    <h2 class="headline" style="margin-top:.5rem">One platform. Every stage.</h2>
+    <p class="subtitle" style="max-width:600px">From brief to inbox &mdash; write, preview, test, approve, and export without leaving the platform.</p>
+    <div class="divider"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;align-items:center">
+      <div class="arch" style="min-width:120px;border-left:3px solid var(--orange)"><div style="font-weight:700">Write</div></div>
+      <div style="color:var(--text-muted);font-size:1.2rem">&rarr;</div>
+      <div class="arch" style="min-width:120px"><div style="font-weight:700">Preview</div></div>
+      <div style="color:var(--text-muted);font-size:1.2rem">&rarr;</div>
+      <div class="arch" style="min-width:120px"><div style="font-weight:700">QA Gate</div></div>
+      <div style="color:var(--text-muted);font-size:1.2rem">&rarr;</div>
+      <div class="arch" style="min-width:120px"><div style="font-weight:700">Approve</div></div>
+      <div style="color:var(--text-muted);font-size:1.2rem">&rarr;</div>
+      <div class="arch" style="min-width:120px;background:var(--navy);color:white;border-color:var(--navy)"><div style="font-weight:700">Export</div></div>
+    </div>
+    <div style="display:flex;gap:3rem;margin-top:2.5rem">
+      <div><div class="stat stat-orange">43</div><div class="stat-label">API Endpoints</div></div>
+      <div><div class="stat" style="color:var(--blue)">9</div><div class="stat-label">AI Agents</div></div>
+      <div><div class="stat" style="color:var(--green)">10</div><div class="stat-label">QA Checks</div></div>
+      <div><div class="stat" style="color:var(--purple)">7</div><div class="stat-label">Docker Services</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: PLATFORM OVERVIEW -->
+<div class="slide" data-title="Platform Overview">
+  <div class="content">
+    <span class="label">Platform at a Glance</span>
+    <h2 class="headline" style="margin-top:.5rem">Built for scale and speed</h2>
+    <div class="divider"></div>
+    <div class="four-col" style="margin-top:1.5rem">
+      <div class="feat"><h4>Monaco Editor</h4><p>HTML/CSS/Liquid syntax, Can I Email warnings, code folding, minimap</p></div>
+      <div class="feat"><h4>Live Preview</h4><p>Sandboxed iframe, viewport toggles, dark mode preview, compile-on-save</p></div>
+      <div class="feat"><h4>AI Agents</h4><p>Scaffolder, Dark Mode, Content agents with streaming chat sidebar</p></div>
+      <div class="feat"><h4>10-Point QA</h4><p>HTML validation, spam scoring, accessibility, dark mode, file size</p></div>
+      <div class="feat"><h4>Component Library</h4><p>Versioned reusable email components &mdash; headers, CTAs, heroes, footers</p></div>
+      <div class="feat"><h4>ESP Connectors</h4><p>Braze Content Block export with Liquid packaging, extensible to SFMC</p></div>
+      <div class="feat"><h4>Approval Portal</h4><p>Client-facing approval workflow with section feedback and audit trail</p></div>
+      <div class="feat"><h4>Knowledge Base</h4><p>RAG pipeline with pgvector, hybrid search, Can I Email data seeded</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: WORKSPACE -->
+<div class="slide" data-title="Workspace">
+  <div class="content">
+    <span class="label">Core Experience</span>
+    <h2 class="headline" style="margin-top:.5rem">The 3-Pane Workspace</h2>
+    <div class="divider"></div>
+    <div class="two-col" style="margin-top:1.25rem">
+      <div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Monaco Editor</strong><p style="font-size:.8rem;color:var(--text-muted)">Full VS Code editing &mdash; HTML, CSS, Liquid</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Live Maizzle Preview</strong><p style="font-size:.8rem;color:var(--text-muted)">Compile-on-save, mobile/desktop/dark mode</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">AI Chat Sidebar</strong><p style="font-size:.8rem;color:var(--text-muted)">Select agents, stream, accept/reject code</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Persona Testing</strong><p style="font-size:.8rem;color:var(--text-muted)">Device type, email client, dark mode, locale</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Template Versioning</strong><p style="font-size:.8rem;color:var(--text-muted)">Full history with restore and diff comparison</p></div></div>
+      </div>
+      <div class="mock">
+        <div class="mock-panel"><div class="mock-label">Editor</div><div class="mock-code"><span class="kw">&lt;extends</span> <span class="str">src="layout"</span><span class="kw">&gt;</span><br><span class="kw">&lt;block</span> <span class="str">name="content"</span><span class="kw">&gt;</span><br>&nbsp;&nbsp;<span class="kw">&lt;table&gt;</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">&lt;tr&gt;&lt;td&gt;</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="var">{{ hero }}</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">&lt;/td&gt;&lt;/tr&gt;</span><br>&nbsp;&nbsp;<span class="kw">&lt;/table&gt;</span></div></div>
+        <div class="mock-panel"><div class="mock-label">Preview</div><div class="mock-preview"><div style="text-align:center"><div style="width:60px;height:5px;background:var(--orange);margin:0 auto 6px"></div><div style="width:90px;height:3px;background:#ddd;margin:3px auto"></div><div style="width:70px;height:3px;background:#ddd;margin:3px auto"></div><div style="width:50px;height:16px;background:var(--orange);margin:8px auto 0;display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:.4rem;font-weight:700">CTA</span></div></div></div></div>
+        <div class="mock-chat"><div class="mock-chat-tag">Scaffolder</div><div class="mock-chat-text">Generate a promotional hero section with dynamic content...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: AI AGENTS -->
+<div class="slide" data-title="AI Intelligence">
+  <div class="content">
+    <span class="label">Intelligence Layer</span>
+    <h2 class="headline" style="margin-top:.5rem">9 Specialised AI Agents</h2>
+    <p class="subtitle" style="max-width:600px">Purpose-built for email development &mdash; powered by Claude, with streaming responses and <strong style="color:var(--navy)">orchestrated self-correction</strong>.</p>
+    <div class="divider"></div>
+    <div class="three-col" style="margin-top:1.25rem">
+      <div class="card" style="padding:1.25rem"><h4 style="font-size:.9rem;font-weight:700;color:var(--navy)">Scaffolder</h4><span class="tag tag-green" style="font-size:.55rem;margin:.25rem 0 .4rem;display:inline-block">Live</span><p style="font-size:.8rem;color:var(--text-muted)">Generates Maizzle HTML from briefs</p></div>
+      <div class="card" style="padding:1.25rem"><h4 style="font-size:.9rem;font-weight:700;color:var(--navy)">Dark Mode</h4><span class="tag tag-green" style="font-size:.55rem;margin:.25rem 0 .4rem;display:inline-block">Live</span><p style="font-size:.8rem;color:var(--text-muted)">Dark mode CSS, Outlook overrides</p></div>
+      <div class="card" style="padding:1.25rem"><h4 style="font-size:.9rem;font-weight:700;color:var(--navy)">Content</h4><span class="tag tag-green" style="font-size:.55rem;margin:.25rem 0 .4rem;display:inline-block">Live</span><p style="font-size:.8rem;color:var(--text-muted)">Subject lines, preheaders, CTA text</p></div>
+      <div class="card" style="padding:1.25rem"><h4 style="font-size:.9rem;font-weight:700;color:var(--navy)">Outlook Fixer</h4><span class="tag tag-amber" style="font-size:.55rem;margin:.25rem 0 .4rem;display:inline-block">V2</span><p style="font-size:.8rem;color:var(--text-muted)">MSO conditionals, VML, table fallbacks</p></div>
+      <div class="card" style="padding:1.25rem"><h4 style="font-size:.9rem;font-weight:700;color:var(--navy)">Accessibility</h4><span class="tag tag-amber" style="font-size:.55rem;margin:.25rem 0 .4rem;display:inline-block">V2</span><p style="font-size:.8rem;color:var(--text-muted)">WCAG AA, contrast, AI alt text</p></div>
+      <div class="card" style="padding:1.25rem"><h4 style="font-size:.9rem;font-weight:700;color:var(--navy)">Knowledge</h4><span class="tag tag-amber" style="font-size:.55rem;margin:.25rem 0 .4rem;display:inline-block">V2</span><p style="font-size:.8rem;color:var(--text-muted)">RAG-powered Q&amp;A from best practices</p></div>
+    </div>
+    <p style="margin-top:1rem;font-size:.8rem;color:var(--text-muted)">+ Personalisation, Code Reviewer, and Innovation agents planned for V2. All agents orchestrated via the <strong style="color:var(--navy)">Blueprint Engine</strong> &rarr;</p>
+  </div>
+</div>
+
+<!-- SLIDE 7: BLUEPRINT ENGINE -->
+<div class="slide" data-title="Blueprint Engine">
+  <div class="content">
+    <span class="label">Agent Orchestration</span>
+    <h2 class="headline" style="margin-top:.5rem">Self-Correcting AI Pipeline</h2>
+    <p class="subtitle" style="max-width:640px">Agents don't just generate &mdash; they validate, diagnose, and fix automatically. The Blueprint Engine orchestrates deterministic QA gates with AI agents in a state machine loop.</p>
+    <div class="divider"></div>
+    <div class="two-col" style="margin-top:1.25rem">
+      <div>
+        <!-- State machine flow -->
+        <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:.75rem">Blueprint State Machine</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="arch" style="min-width:140px;border-left:3px solid var(--purple);padding:.6rem .75rem;font-size:.78rem"><span style="font-size:.5rem;color:var(--purple);font-weight:700;display:block;margin-bottom:2px">AGENTIC</span>Scaffolder</div>
+            <div style="color:var(--text-muted);font-size:1rem">&rarr;</div>
+            <div class="arch" style="min-width:140px;border-left:3px solid var(--green);padding:.6rem .75rem;font-size:.78rem"><span style="font-size:.5rem;color:var(--green);font-weight:700;display:block;margin-bottom:2px">DETERMINISTIC</span>QA Gate (10 checks)</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;padding-left:2rem">
+            <div style="font-size:.65rem;color:var(--green);font-weight:700">PASS &darr;</div>
+            <div style="width:60px;border-top:1.5px dashed var(--border)"></div>
+            <div style="font-size:.65rem;color:var(--red);font-weight:700">FAIL &darr;</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="arch" style="min-width:140px;border-left:3px solid var(--green);padding:.6rem .75rem;font-size:.78rem"><span style="font-size:.5rem;color:var(--green);font-weight:700;display:block;margin-bottom:2px">DETERMINISTIC</span>Maizzle Build</div>
+            <div style="color:var(--text-muted);font-size:.7rem;width:20px;text-align:center"></div>
+            <div class="arch" style="min-width:140px;border-left:3px solid var(--orange);padding:.6rem .75rem;font-size:.78rem"><span style="font-size:.5rem;color:var(--orange);font-weight:700;display:block;margin-bottom:2px">ROUTER</span>Recovery Router</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="arch" style="min-width:140px;border-left:3px solid var(--green);padding:.6rem .75rem;font-size:.78rem"><span style="font-size:.5rem;color:var(--green);font-weight:700;display:block;margin-bottom:2px">DETERMINISTIC</span>Export to ESP</div>
+            <div style="color:var(--text-muted);font-size:.7rem;width:20px;text-align:center">&larr;</div>
+            <div class="arch" style="min-width:140px;border-left:3px solid var(--purple);padding:.6rem .75rem;font-size:.78rem"><span style="font-size:.5rem;color:var(--purple);font-weight:700;display:block;margin-bottom:2px">AGENTIC</span>Dark Mode Fixer</div>
+          </div>
+        </div>
+        <div style="margin-top:.6rem;display:flex;gap:.75rem;font-size:.65rem">
+          <span><span style="display:inline-block;width:8px;height:8px;background:var(--purple);margin-right:4px;vertical-align:middle"></span>AI-powered</span>
+          <span><span style="display:inline-block;width:8px;height:8px;background:var(--green);margin-right:4px;vertical-align:middle"></span>Deterministic</span>
+          <span><span style="display:inline-block;width:8px;height:8px;background:var(--orange);margin-right:4px;vertical-align:middle"></span>Router</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:.75rem">Client Benefits</div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.85rem">Higher First-Pass Quality</strong><p style="font-size:.78rem;color:var(--text-muted)">AI self-corrects against 10 QA checks before output reaches the client &mdash; no more incomplete dark mode or broken Outlook rendering.</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.85rem">Fewer Revision Rounds</strong><p style="font-size:.78rem;color:var(--text-muted)">Automated recovery loop catches and fixes issues that previously needed 2-3 human review cycles, cutting approval time by days.</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.85rem">Consistent Quality at Scale</strong><p style="font-size:.78rem;color:var(--text-muted)">Every campaign goes through the same deterministic QA pipeline &mdash; quality doesn't degrade under tight deadlines or high volume.</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.85rem">26x Token Efficiency</strong><p style="font-size:.78rem;color:var(--text-muted)">Progressive context hydration scopes each AI node to only the data it needs &mdash; dramatically reducing cost per campaign.</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: QA -->
+<div class="slide" data-title="Quality Assurance">
+  <div class="content">
+    <span class="label">Quality Gate</span>
+    <h2 class="headline" style="margin-top:.5rem">10-Point Automated QA</h2>
+    <div class="divider"></div>
+    <div class="two-col" style="margin-top:1.25rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">01</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">HTML Validation</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">02</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">CSS Support</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">03</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">File Size</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">04</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Link Validation</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">05</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Spam Score</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">06</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Dark Mode</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">07</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Accessibility</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">08</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Outlook Fallback</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">09</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Image QA</div></div>
+        <div class="card" style="padding:.8rem"><div style="font-size:.6rem;color:var(--text-muted)">10</div><div style="font-weight:700;font-size:.8rem;color:var(--navy)">Brand Compliance</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding-top:1rem">
+        <div class="qa-ring"><div class="qa-inner"><div style="font-size:2rem;font-weight:700;color:var(--green)">90</div><div style="font-size:.6rem;color:var(--text-muted)">QA Score</div></div></div>
+        <p style="font-size:.85rem;color:var(--text-secondary);max-width:280px;text-align:center">Automated scoring with override capability. Developers can bypass checks with justification (logged to audit).</p>
+        <div style="display:flex;gap:1.5rem">
+          <div style="text-align:center"><div style="font-weight:700;color:var(--green)">&ge; 80</div><div style="font-size:.65rem;color:var(--text-muted)">Pass</div></div>
+          <div style="text-align:center"><div style="font-weight:700;color:var(--amber)">60&ndash;79</div><div style="font-size:.65rem;color:var(--text-muted)">Warn</div></div>
+          <div style="text-align:center"><div style="font-weight:700;color:var(--red)">&lt; 60</div><div style="font-size:.65rem;color:var(--text-muted)">Fail</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: ARCHITECTURE -->
+<div class="slide" data-title="Architecture">
+  <div class="content">
+    <span class="label">Technical Architecture</span>
+    <h2 class="headline" style="margin-top:.5rem">Vertical Slice Architecture</h2>
+    <div class="divider"></div>
+    <div class="three-col" style="margin-top:1.25rem">
+      <div><div style="text-align:center;margin-bottom:.75rem"><span class="tag tag-blue">Frontend</span></div><div class="arch" style="margin-bottom:.5rem">Next.js 16 + React 19</div><div class="arch" style="margin-bottom:.5rem">shadcn/ui + Tailwind v4</div><div class="arch" style="margin-bottom:.5rem">TypeScript SDK (OpenAPI)</div><div class="arch">Monaco Editor</div></div>
+      <div><div style="text-align:center;margin-bottom:.75rem"><span class="tag tag-orange">Backend</span></div><div class="arch" style="margin-bottom:.5rem">FastAPI + Python 3.12</div><div class="arch" style="margin-bottom:.5rem">Async SQLAlchemy + Alembic</div><div class="arch" style="margin-bottom:.5rem">JWT RS256 + RBAC</div><div class="arch">AI Provider Registry</div></div>
+      <div><div style="text-align:center;margin-bottom:.75rem"><span class="tag tag-green">Infrastructure</span></div><div class="arch" style="margin-bottom:.5rem">PostgreSQL + pgvector</div><div class="arch" style="margin-bottom:.5rem">Redis (cache + pub/sub)</div><div class="arch" style="margin-bottom:.5rem">Nginx Reverse Proxy</div><div class="arch">Docker Compose (7 svc)</div></div>
+    </div>
+    <div style="display:flex;gap:1rem;margin-top:1.5rem;justify-content:center">
+      <div class="arch" style="border-left:3px solid var(--orange)">Maizzle Builder Sidecar<div style="font-size:.6rem;color:var(--text-muted)">Node.js &middot; Port 3001</div></div>
+      <div class="arch" style="border-left:3px solid var(--purple)">WebSocket Streaming<div style="font-size:.6rem;color:var(--text-muted)">Redis Pub/Sub</div></div>
+      <div class="arch" style="border-left:3px solid var(--amber)">RAG Pipeline<div style="font-size:.6rem;color:var(--text-muted)">pgvector + Hybrid Search</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: SECURITY -->
+<div class="slide bg-navy" data-title="Security">
+  <div class="content">
+    <span class="label">Enterprise Security</span>
+    <h2 class="headline" style="margin-top:.5rem">Security-First Architecture</h2>
+    <p class="subtitle">Zero Trust design. Every API call authenticated, authorized, and audited.</p>
+    <div class="divider"></div>
+    <div class="three-col" style="margin-top:1.25rem">
+      <div class="card-navy" style="padding:1.5rem;border:1px solid var(--navy-light)"><h4 style="font-weight:700;margin-bottom:.6rem">Authentication</h4><p class="body" style="font-size:.8rem">JWT RS256 asymmetric signing<br>15-min access + 7-day refresh<br>Redis-backed token revocation<br>Brute-force protection</p></div>
+      <div class="card-navy" style="padding:1.5rem;border:1px solid var(--navy-light)"><h4 style="font-weight:700;margin-bottom:.6rem">Authorisation</h4><p class="body" style="font-size:.8rem">RBAC (admin/developer/viewer)<br>PostgreSQL Row-Level Security<br>Multi-tenant org isolation<br>Per-endpoint rate limiting</p></div>
+      <div class="card-navy" style="padding:1.5rem;border:1px solid var(--navy-light)"><h4 style="font-weight:700;margin-bottom:.6rem">Data Protection</h4><p class="body" style="font-size:.8rem">AES-256 credential encryption<br>Input validation on all endpoints<br>Structured audit logging<br>CORS whitelisted origins only</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: DEPLOYMENT -->
+<div class="slide" data-title="Deployment">
+  <div class="content">
+    <span class="label">Deployment</span>
+    <h2 class="headline" style="margin-top:.5rem">Production-Ready Stack</h2>
+    <div class="divider"></div>
+    <div class="two-col" style="margin-top:1.25rem">
+      <div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Vercel</strong><p style="font-size:.8rem;color:var(--text-muted)">Next.js CMS frontend &mdash; merkle-email-hub.vercel.app</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Render.com</strong><p style="font-size:.8rem;color:var(--text-muted)">FastAPI backend + managed PostgreSQL + Redis</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">Docker Compose</strong><p style="font-size:.8rem;color:var(--text-muted)">Full 7-service stack for local &amp; self-hosted</p></div></div>
+        <div class="chk"><div class="chk-icon chk-done">&#10003;</div><div><strong style="font-size:.9rem">GitHub Pages</strong><p style="font-size:.8rem;color:var(--text-muted)">Project documentation &amp; architecture reference</p></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div style="font-weight:700;font-size:.9rem;color:var(--navy);margin-bottom:.25rem">7 Docker Services</div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">nginx <span class="tag tag-green" style="font-size:.55rem">Reverse Proxy</span></div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">web <span class="tag tag-blue" style="font-size:.55rem">Next.js CMS</span></div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">api <span class="tag tag-orange" style="font-size:.55rem">FastAPI</span></div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">maizzle-builder <span class="tag tag-amber" style="font-size:.55rem">Sidecar</span></div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">postgres <span class="tag tag-purple" style="font-size:.55rem">Database</span></div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">redis <span class="tag tag-purple" style="font-size:.55rem">Cache</span></div>
+        <div class="arch" style="text-align:left;display:flex;justify-content:space-between;align-items:center">pgvector <span class="tag tag-purple" style="font-size:.55rem">Vector Search</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: PROGRESS -->
+<div class="slide" data-title="Progress">
+  <div class="content">
+    <span class="label">Implementation Progress</span>
+    <h2 class="headline" style="margin-top:.5rem">Sprint Delivery Timeline</h2>
+    <div class="divider"></div>
+    <div class="two-col" style="margin-top:1.25rem">
+      <div>
+        <div class="tl"><div style="font-weight:700;font-size:.9rem">Phase 0 &mdash; Foundation</div><p style="font-size:.75rem;color:var(--text-muted);margin-top:.15rem">DB migrations, shadcn/ui, SDK, auth</p><span class="tag tag-green" style="font-size:.55rem;margin-top:.3rem;display:inline-block">4/4 Complete</span></div>
+        <div class="tl"><div style="font-weight:700;font-size:.9rem">Phase 1 &mdash; Editor &amp; Build</div><p style="font-size:.75rem;color:var(--text-muted);margin-top:.15rem">Dashboard, workspace, Monaco, preview, personas</p><span class="tag tag-green" style="font-size:.55rem;margin-top:.3rem;display:inline-block">6/6 Complete</span></div>
+        <div class="tl"><div style="font-weight:700;font-size:.9rem">Phase 2 &mdash; Intelligence &amp; Export</div><p style="font-size:.75rem;color:var(--text-muted);margin-top:.15rem">AI agents, components, QA, Braze, RAG</p><span class="tag tag-green" style="font-size:.55rem;margin-top:.3rem;display:inline-block">10/10 Complete</span></div>
+        <div class="tl"><div style="font-weight:700;font-size:.9rem">Phase 3 &mdash; Client Handoff</div><p style="font-size:.75rem;color:var(--text-muted);margin-top:.15rem">Approval portal, dashboard, error handling, Docker</p><span class="tag tag-green" style="font-size:.55rem;margin-top:.3rem;display:inline-block">5/5 Complete</span></div>
+        <div class="tl pending"><div style="font-weight:700;font-size:.9rem">Phase 4 &mdash; V2</div><p style="font-size:.75rem;color:var(--text-muted);margin-top:.15rem">Blueprint engine, additional agents, connectors, Figma, Litmus</p><span class="tag tag-amber" style="font-size:.55rem;margin-top:.3rem;display:inline-block">9/13 Complete</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding-top:1rem">
+        <div style="text-align:center"><div class="stat" style="font-size:4.5rem;color:var(--green)">34</div><div style="font-size:.9rem;color:var(--text-muted);margin-top:.25rem">of 38 tasks shipped</div></div>
+        <div style="width:100%;max-width:280px">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:.4rem"><span style="font-weight:600">Overall Progress</span><span style="color:var(--green);font-weight:700">89%</span></div>
+          <div style="width:100%;height:10px;background:var(--surface-alt)"><div style="width:89%;height:100%;background:var(--green)"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;width:100%;max-width:280px">
+          <div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.5rem;font-weight:700;color:var(--green)">25</div><div style="font-size:.65rem;color:var(--text-muted)">V1 Tasks</div></div>
+          <div class="card" style="padding:.75rem;text-align:center"><div style="font-size:1.5rem;font-weight:700;color:var(--blue)">9</div><div style="font-size:.65rem;color:var(--text-muted)">V2 Done</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: ROADMAP -->
+<div class="slide" data-title="Roadmap">
+  <div class="content">
+    <span class="label">What's Next</span>
+    <h2 class="headline" style="margin-top:.5rem">V2 Roadmap</h2>
+    <div class="divider"></div>
+    <div class="three-col" style="margin-top:1.25rem">
+      <div class="card" style="border-top:3px solid var(--orange);border-left:1px solid var(--border)"><div style="font-size:.65rem;color:var(--orange);font-weight:700;margin-bottom:.5rem;letter-spacing:.04em">NEAR-TERM</div><h4 style="font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:.75rem">AI Agents &amp; Orchestration</h4><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-done" style="width:16px;height:16px;font-size:.5rem">&#10003;</div><span style="font-size:.8rem">Blueprint Engine (self-correction)</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Outlook Fixer</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Accessibility Auditor</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Personalisation</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Code Reviewer</span></div></div>
+      <div class="card" style="border-top:3px solid var(--blue);border-left:1px solid var(--border)"><div style="font-size:.65rem;color:var(--blue);font-weight:700;margin-bottom:.5rem;letter-spacing:.04em">MID-TERM</div><h4 style="font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:.75rem">Platform Integrations</h4><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">SFMC Connector</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Adobe Campaign</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Taxi for Email</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Litmus / Email on Acid</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-done" style="width:16px;height:16px;font-size:.5rem">&#10003;</div><span style="font-size:.8rem">Figma Design Sync</span></div></div>
+      <div class="card" style="border-top:3px solid var(--purple);border-left:1px solid var(--border)"><div style="font-size:.65rem;color:var(--purple);font-weight:700;margin-bottom:.5rem;letter-spacing:.04em">LONG-TERM VISION</div><h4 style="font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:.75rem">Advanced Capabilities</h4><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Collaborative Editing</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Localisation Pipeline</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Visual Liquid Builder</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Cross-Client Analytics</span></div><div class="chk" style="padding:.2rem 0"><div class="chk-icon chk-wait" style="width:16px;height:16px;font-size:.5rem">&#9679;</div><span style="font-size:.8rem">Template Marketplace</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13: IMPACT -->
+<div class="slide" data-title="Impact">
+  <div class="content">
+    <span class="label">Business Impact</span>
+    <h2 class="headline" style="margin-top:.5rem">Projected Efficiency Gains</h2>
+    <div class="divider"></div>
+    <div class="four-col" style="margin-top:1.5rem">
+      <div class="card" style="text-align:center;padding:1.75rem 1.25rem"><div class="stat stat-orange" style="font-size:3rem">70%</div><div class="stat-label" style="margin-top:.5rem">Faster Build Time</div><p style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem">AI scaffolding + live preview eliminates boilerplate</p></div>
+      <div class="card" style="text-align:center;padding:1.75rem 1.25rem"><div class="stat" style="font-size:3rem;color:var(--green)">90%</div><div class="stat-label" style="margin-top:.5rem">QA Automation</div><p style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem">10-point gate replaces manual checklists</p></div>
+      <div class="card" style="text-align:center;padding:1.75rem 1.25rem"><div class="stat" style="font-size:3rem;color:var(--blue)">1</div><div class="stat-label" style="margin-top:.5rem">Platform, Not 8</div><p style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem">Consolidates entire email workflow into one tool</p></div>
+      <div class="card" style="text-align:center;padding:1.75rem 1.25rem"><div class="stat" style="font-size:3rem;color:var(--purple)">24h</div><div class="stat-label" style="margin-top:.5rem">Approval Turnaround</div><p style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem">Built-in client portal with instant feedback</p></div>
+    </div>
+    <div style="margin-top:2rem;background:var(--surface-alt);border-left:3px solid var(--orange);padding:1.25rem 1.5rem">
+      <p style="font-size:.9rem;font-weight:600;color:var(--navy)">"The goal isn't to replace email developers &mdash; it's to give them superpowers."</p>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">AI handles the repetitive work. Humans focus on strategy and creativity.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: THANK YOU -->
+<div class="slide bg-navy" data-title="Thank You">
+  <div class="content" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">
+    <span class="label">Merkle Email Innovation Hub</span>
+    <h2 class="display" style="margin-top:1rem">Thank You</h2>
+    <div class="divider" style="margin:1.5rem auto"></div>
+    <p class="subtitle" style="margin-bottom:2rem">Ready for questions and next steps.</p>
+    <div style="display:flex;gap:1.5rem">
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:1rem 2rem;text-align:center"><div style="font-size:.6rem;color:rgba(255,255,255,.4);margin-bottom:.25rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase">Live MVP</div><div style="font-size:.9rem;font-weight:600;color:var(--orange-light)">merkle-email-hub.vercel.app</div></div>
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:1rem 2rem;text-align:center"><div style="font-size:.6rem;color:rgba(255,255,255,.4);margin-bottom:.25rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase">Documentation</div><div style="font-size:.9rem;font-weight:600;color:var(--orange-light)">linardsb.github.io</div></div>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:2rem;flex-wrap:wrap;justify-content:center">
+      <span class="tag tag-orange">FastAPI</span><span class="tag tag-orange">Next.js 16</span><span class="tag tag-orange">PostgreSQL</span><span class="tag tag-orange">AI Agents</span><span class="tag tag-orange">Docker</span>
+    </div>
+    <p style="margin-top:2rem;font-size:.75rem;color:rgba(255,255,255,.35)">Q1 2026 &middot; Version 1.0 &middot; Internal &amp; Confidential</p>
+  </div>
+</div>
+
+</div><!-- /slide-area -->
+
+<!-- Bottom navigation -->
+<div class="bottombar">
+  <button class="nav-btn" id="prevBtn" disabled>
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    PREV
+  </button>
+  <div class="nav-center">
+    <div class="nav-dots" id="navDots"></div>
+    <span class="nav-counter" id="counter">1 / 14</span>
+  </div>
+  <button class="nav-btn" id="nextBtn">
+    NEXT
+    <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+  </button>
+</div>
+
+</div><!-- /deck -->
+
+<script>
+(function(){
+  const slides=document.querySelectorAll('.slide'),
+        progress=document.getElementById('progress'),
+        counter=document.getElementById('counter'),
+        dots=document.getElementById('navDots'),
+        prevBtn=document.getElementById('prevBtn'),
+        nextBtn=document.getElementById('nextBtn');
+  let cur=0;
+
+  slides.forEach((_,i)=>{
+    const d=document.createElement('button');
+    d.className='nav-dot'+(i===0?' active':'');
+    d.addEventListener('click',()=>goTo(i));
+    dots.appendChild(d);
+  });
+
+  function update(){
+    progress.style.width=((cur+1)/slides.length*100)+'%';
+    counter.textContent=(cur+1)+' / '+slides.length;
+    document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+    prevBtn.disabled=cur===0;
+    nextBtn.disabled=cur===slides.length-1;
+  }
+
+  function goTo(i){
+    if(i===cur||i<0||i>=slides.length)return;
+    slides[cur].classList.remove('active');
+    void slides[i].offsetWidth;
+    slides[i].classList.add('active');
+    cur=i;
+    update();
+  }
+
+  prevBtn.addEventListener('click',()=>goTo(cur-1));
+  nextBtn.addEventListener('click',()=>goTo(cur+1));
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' ')goTo(cur+1);
+    if(e.key==='ArrowLeft')goTo(cur-1);
+  });
+  let tx=0;
+  document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+  document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?goTo(cur+1):goTo(cur-1)}});
+  update();
+})();
+</script>
+</body>
+</html>

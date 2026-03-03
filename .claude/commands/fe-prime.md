@@ -37,7 +37,7 @@ Then read `/TODO.md` and extract only the **frontend-relevant tasks** below. Rep
 - 3.3 Dashboard homepage enhancement (real data, activity feed)
 - 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
 
-**Phase 4 — Post-MVP:**
+**Phase 4 — V2:**
 - 4.3 Figma design sync (REST API, token extraction, webhooks)
 - 4.5 Advanced features (collaborative editing, visual Liquid builder)
 

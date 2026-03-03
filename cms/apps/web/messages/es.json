@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "projects": "Proyectos",
+    "components": "Componentes",
+    "approvals": "Aprobaciones",
+    "connectors": "Conectores",
+    "intelligence": "Inteligencia",
+    "knowledge": "Conocimiento",
+    "figma": "Figma Sync",
+    "briefs": "Briefings",
+    "settings": "Configuraci\u00f3n",
+    "settings": "Configuraci\u00f3n",
+    "logout": "Cerrar sesi\u00f3n"
+  },
+  "login": {
+    "title": "Iniciar sesi\u00f3n",
+    "username": "Usuario",
+    "password": "Contrase\u00f1a",
+    "usernamePlaceholder": "Ingrese su usuario",
+    "passwordPlaceholder": "Ingrese su contrase\u00f1a",
+    "signIn": "Iniciar sesi\u00f3n",
+    "signingIn": "Iniciando sesi\u00f3n...",
+    "error": "Usuario o contrase\u00f1a inv\u00e1lidos",
+    "usernameRequired": "El usuario es obligatorio",
+    "passwordRequired": "La contrase\u00f1a es obligatoria"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "totalProjects": "Total de proyectos",
+    "activeOrgs": "Organizaciones de clientes",
+    "systemStatus": "Estado del sistema",
+    "healthy": "Saludable"
+  },
+  "errors": {
+    "generic": "Algo sali\u00f3 mal. Por favor, int\u00e9ntelo de nuevo."
+  }
+}

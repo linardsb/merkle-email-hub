@@ -32,6 +32,9 @@ import type { AgentMode } from "@/types/chat";
 import { QAResultsPanel } from "@/components/workspace/qa-results-panel";
 import { ExportDialog } from "@/components/connectors/export-dialog";
 import { useExportHistory } from "@/hooks/use-export-history";
+import { useBrandConfig } from "@/hooks/use-brand";
+import { useCollaboration } from "@/hooks/use-collaboration";
+import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialog";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
@@ -125,7 +128,16 @@ export default function WorkspacePage() {
 
   // ── Export State ──
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [imageGenOpen, setImageGenOpen] = useState(false);
   const { addRecord } = useExportHistory();
+
+  // ── Brand Config ──
+  const orgId = project?.client_org_id ?? null;
+  const { data: brandConfig } = useBrandConfig(orgId);
+  const [brandViolations, setBrandViolations] = useState(0);
+
+  // ── Collaboration ──
+  const { status: collabStatus, collaborators } = useCollaboration(projectId, activeTemplateId);
 
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
@@ -349,6 +361,17 @@ export default function WorkspacePage() {
     setExportDialogOpen(true);
   }, [compiledHtml, t]);
 
+  // ── Image Gen Handler ──
+  const handleInsertImage = useCallback(
+    (url: string, width: number, height: number, alt: string) => {
+      const imgTag = `<img src="${url}" alt="${alt}" width="${width}" height="${height}" style="max-width: 100%; height: auto;" />`;
+      setEditorContent((prev) => prev + "\n" + imgTag);
+      setSaveStatus("idle");
+      toast.success(t("chatApplied"));
+    },
+    [t],
+  );
+
   // ── Panel State ──
   const chatPanelRef = usePanelRef();
   const [chatCollapsed, setChatCollapsed] = useState(false);
@@ -392,6 +415,10 @@ export default function WorkspacePage() {
         qaResult={qaResultData}
         onToggleQAPanel={() => setQaPanelOpen((v) => !v)}
         onExport={handleExport}
+        brandViolations={brandViolations}
+        onGenerateImage={() => setImageGenOpen(true)}
+        collaborators={collaborators}
+        collaborationStatus={collabStatus}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -405,6 +432,8 @@ export default function WorkspacePage() {
                   onChange={handleEditorChange}
                   onSave={handleSave}
                   saveStatus={effectiveSaveStatus}
+                  brandConfig={brandConfig}
+                  onBrandViolationsChange={setBrandViolations}
                 />
               </Panel>
 
@@ -464,6 +493,13 @@ export default function WorkspacePage() {
         templateName={activeTemplate?.name ?? "email"}
         sourceHtml={editorContent}
         onExportComplete={addRecord}
+      />
+
+      <ImageGenDialog
+        open={imageGenOpen}
+        onOpenChange={setImageGenOpen}
+        projectId={projectId}
+        onInsertImage={handleInsertImage}
       />
 
       {chatCollapsed && (

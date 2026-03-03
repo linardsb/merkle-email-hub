@@ -5,13 +5,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.ai.agents.dark_mode.schemas import DarkModeRequest
-from app.ai.agents.dark_mode.service import (
-    DarkModeService,
-    extract_html,
-    sanitize_html_xss,
-)
+from app.ai.agents.dark_mode.service import DarkModeService
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import CompletionResponse
+from app.ai.shared import extract_html, sanitize_html_xss
 
 # ── Sample HTML fixtures ──
 

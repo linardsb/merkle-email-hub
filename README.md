@@ -37,12 +37,12 @@ Built on open-source technologies with zero licence fees: FastAPI + Next.js 16 +
 | Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 |
 | Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 |
 | Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 |
-| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | Post-MVP |
-| Accessibility Auditor | WCAG AA checks, contrast, alt text, AI alt generation | Post-MVP |
-| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | Post-MVP |
-| Code Reviewer | Static analysis, redundant code, file size optimisation | Post-MVP |
-| Knowledge | RAG-powered Q&A from knowledge base | Post-MVP |
-| Innovation | Prototype new techniques, feasibility assessment | Post-MVP |
+| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | V2 |
+| Accessibility Auditor | WCAG AA checks, contrast, alt text, AI alt generation | V2 |
+| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | V2 |
+| Code Reviewer | Static analysis, redundant code, file size optimisation | V2 |
+| Knowledge | RAG-powered Q&A from knowledge base | V2 |
+| Innovation | Prototype new techniques, feasibility assessment | V2 |
 
 ### QA Gate System (10 checks)
 
@@ -175,7 +175,7 @@ merkle-email-hub/
 - Error handling, loading states, UI polish
 - CMS + Nginx Docker stack (7 services)
 
-### Phase 4 — Post-MVP
+### Phase 4 — V2
 - Remaining 6 AI agents
 - SFMC, Adobe Campaign, Taxi for Email connectors
 - Figma design sync

@@ -19,6 +19,10 @@ import {
   DEMO_KNOWLEDGE_CONTENT,
 } from "./data/knowledge";
 import { DEMO_FIGMA_CONNECTIONS, DEMO_FIGMA_TOKENS } from "./data/figma";
+import { DEMO_BRIEF_CONNECTIONS, DEMO_BRIEF_ITEMS, DEMO_BRIEF_DETAILS } from "./data/briefs";
+import { DEMO_BRAND_CONFIG } from "./data/brand";
+import { DEMO_GENERATED_IMAGES } from "./data/image-gen";
+import { DEMO_TRANSLATIONS, DEMO_LOCALES } from "./data/locales";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -230,6 +234,45 @@ export function resolveDemo(urlStr: string): unknown | null {
   m = p.match(/^\/api\/v1\/figma\/connections\/(\d+)\/tokens$/);
   if (m) {
     return DEMO_FIGMA_TOKENS[matchId(m, 1)] ?? null;
+  }
+
+  // ── Project Images ──
+  m = p.match(/^\/api\/v1\/projects\/(\d+)\/images$/);
+  if (m) {
+    return DEMO_GENERATED_IMAGES[matchId(m, 1)] ?? [];
+  }
+
+  // ── Brand Config ──
+  m = p.match(/^\/api\/v1\/orgs\/(\d+)\/brand$/);
+  if (m) {
+    return DEMO_BRAND_CONFIG[matchId(m, 1)] ?? null;
+  }
+
+  // ── Brief Connections ──
+  if (p === "/api/v1/briefs/connections") {
+    return DEMO_BRIEF_CONNECTIONS;
+  }
+  m = p.match(/^\/api\/v1\/briefs\/connections\/(\d+)$/);
+  if (m) {
+    return DEMO_BRIEF_CONNECTIONS.find((c) => c.id === matchId(m!, 1)) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/briefs\/connections\/(\d+)\/items$/);
+  if (m) {
+    return DEMO_BRIEF_ITEMS[matchId(m, 1)] ?? [];
+  }
+  m = p.match(/^\/api\/v1\/briefs\/items\/(\d+)$/);
+  if (m) {
+    return DEMO_BRIEF_DETAILS[matchId(m, 1)] ?? null;
+  }
+
+  // ── Translations ──
+  if (p === "/api/v1/translations") {
+    return DEMO_TRANSLATIONS;
+  }
+
+  // ── Locales ──
+  if (p === "/api/v1/locales") {
+    return DEMO_LOCALES;
   }
 
   return null;

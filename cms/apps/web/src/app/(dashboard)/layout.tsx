@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
+import { LocaleSelector } from "@/components/ui/locale-selector";
 
 interface NavItem {
   href: string;
@@ -60,6 +61,16 @@ export default async function DashboardLayout({
       label: (messages as any)?.nav?.figma || "Figma Sync",
       icon: <Image src="/icons/merkle/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
+    {
+      href: "/briefs",
+      label: (messages as any)?.nav?.briefs || "Briefs",
+      icon: <Image src="/icons/merkle/briefs.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+    },
+    {
+      href: "/settings",
+      label: (messages as any)?.nav?.settings || "Settings",
+      icon: <Image src="/icons/merkle/settings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+    },
   ];
 
   return (
@@ -89,7 +100,10 @@ export default async function DashboardLayout({
               <LogOut className="h-5 w-5" />
               {(messages as any)?.nav?.logout || "Logout"}
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <LocaleSelector />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </aside>

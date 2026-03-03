@@ -41,10 +41,15 @@ async def redis_available() -> bool:
     """Check if Redis is reachable. Returns False on connection failure."""
     try:
         client = await get_redis()
-        await client.ping()
+        ping_result = client.ping()
+        if not isinstance(ping_result, bool):
+            await ping_result
         return True
     except Exception:
-        logger.warning("redis.unavailable", detail="Redis is not reachable, features requiring Redis will be disabled")
+        logger.warning(
+            "redis.unavailable",
+            detail="Redis is not reachable, features requiring Redis will be disabled",
+        )
         return False
 
 

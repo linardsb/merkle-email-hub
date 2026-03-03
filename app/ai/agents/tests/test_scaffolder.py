@@ -5,13 +5,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.ai.agents.scaffolder.schemas import ScaffolderRequest
-from app.ai.agents.scaffolder.service import (
-    ScaffolderService,
-    extract_html,
-    sanitize_html_xss,
-)
+from app.ai.agents.scaffolder.service import ScaffolderService
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import CompletionResponse
+from app.ai.shared import extract_html, sanitize_html_xss
 
 # ── extract_html ──
 

@@ -15,6 +15,8 @@ const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/intelligence": ["admin", "developer", "viewer"],
   "/knowledge": ["admin", "developer", "viewer"],
   "/figma": ["admin", "developer", "viewer"],
+  "/briefs": ["admin", "developer", "viewer"],
+  "/settings": ["admin", "developer"],
 };
 
 const PUBLIC_ROUTES = ["/login"];

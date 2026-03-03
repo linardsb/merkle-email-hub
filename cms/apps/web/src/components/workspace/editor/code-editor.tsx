@@ -9,8 +9,10 @@ import { useTranslations } from "next-intl";
 import { maizzleLanguage } from "./maizzle-language";
 import { getEditorTheme } from "./editor-themes";
 import { canIEmailLinter } from "./css-diagnostics";
+import { brandLinter } from "./brand-linter";
 import { EditorToolbar } from "./editor-toolbar";
 import type { SaveStatus } from "../save-indicator";
+import type { BrandConfig } from "@/types/brand";
 
 interface CodeEditorProps {
   value: string;
@@ -18,6 +20,8 @@ interface CodeEditorProps {
   onSave?: () => void;
   saveStatus?: SaveStatus;
   readOnly?: boolean;
+  brandConfig?: BrandConfig | null;
+  onBrandViolationsChange?: (count: number) => void;
 }
 
 const wrapCompartment = new Compartment();
@@ -28,6 +32,8 @@ export function CodeEditor({
   onSave,
   saveStatus,
   readOnly,
+  brandConfig,
+  onBrandViolationsChange,
 }: CodeEditorProps) {
   const { resolvedTheme } = useTheme();
   const t = useTranslations("workspace");
@@ -44,10 +50,15 @@ export function CodeEditor({
     setWarningCount(count);
   }, []);
 
+  const handleBrandDiagnosticsChange = useCallback((count: number) => {
+    onBrandViolationsChange?.(count);
+  }, [onBrandViolationsChange]);
+
   const extensions = useMemo(
     () => [
       maizzleLanguage(),
       canIEmailLinter(handleDiagnosticsChange),
+      ...(brandConfig ? [brandLinter(brandConfig, handleBrandDiagnosticsChange)] : []),
       keymap.of([
         {
           key: "Mod-s",
@@ -82,7 +93,7 @@ export function CodeEditor({
         },
       }),
     ],
-    [handleDiagnosticsChange, wordWrapEnabled]
+    [handleDiagnosticsChange, handleBrandDiagnosticsChange, wordWrapEnabled, brandConfig]
   );
 
   const handleToggleWordWrap = useCallback(() => {

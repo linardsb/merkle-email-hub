@@ -79,7 +79,7 @@
 > **Sprint 1 Deliverable (Plan Section 16.4):** "Write email HTML in a browser, see it compile live, and preview as different subscriber profiles."
 
 ### ~~1.1 Project Dashboard Page~~ DONE
-**Plan ref:** Section 9.2 (Dashboard), MVP #1
+**Plan ref:** Section 9.2 (Dashboard), V1 #1
 **What:** Dashboard page at `/(dashboard)/page.tsx`. Project overview grid, recent activity feed, QA status summary, quick-start template selection. Data from `GET /api/v1/projects` and `GET /api/v1/orgs`.
 **Security:**
 - Only show projects the authenticated user has access to (RBAC-filtered on backend)
@@ -87,7 +87,7 @@
 **Verify:** Dashboard loads. Shows only user's assigned projects. Empty state for new users.
 
 ### ~~1.2 Project Workspace Layout~~ DONE
-**Plan ref:** Section 9.2 (Project Workspace), MVP #2
+**Plan ref:** Section 9.2 (Project Workspace), V1 #2
 **What:** Split-pane workspace at `/projects/[id]/workspace`. Three resizable panels: editor (left), preview (center/right), AI chat (bottom, collapsible). Use a resizable pane library compatible with React 19.
 **Security:**
 - Route guard: verify user has access to project before rendering
@@ -95,7 +95,7 @@
 **Verify:** Three-pane layout renders. Panels resize. Collapses gracefully on mobile.
 
 ### ~~1.3 Monaco Editor Integration~~ DONE
-**Plan ref:** Section 9.2 (Monaco Editor), MVP #2
+**Plan ref:** Section 9.2 (Monaco Editor), V1 #2
 **What:** Embed Monaco Editor with HTML/CSS/Liquid syntax highlighting. Add Can I Email CSS autocomplete (flag unsupported properties inline). Bracket matching, code folding, minimap, search/replace. Editor state persists per template.
 **Security:**
 - Editor content sanitised before sending to backend (strip script injections)
@@ -104,7 +104,7 @@
 **Verify:** Editor loads with syntax highlighting. Can I Email warnings appear for unsupported CSS. Content persists on save.
 
 ### ~~1.4 Maizzle Live Preview~~ DONE
-**Plan ref:** Section 6.3 (Build Pipeline), 9.2 (Live Preview), MVP #3
+**Plan ref:** Section 6.3 (Build Pipeline), 9.2 (Live Preview), V1 #3
 **What:** Compile-on-save via `POST /api/v1/email/preview`. Render compiled HTML in sandboxed iframe. Desktop/tablet/mobile viewport toggles. Dark mode preview toggle. Zoom controls.
 **Security:**
 - Preview iframe uses `sandbox=""` — fully sandboxed (no scripts, no same-origin access)
@@ -114,7 +114,7 @@
 **Verify:** Type HTML in editor → compiled preview updates within 2 seconds. Viewport toggles resize iframe. Dark mode toggle works.
 
 ### ~~1.5 Test Persona Engine UI~~ DONE
-**Plan ref:** Section MVP #10, 16.4
+**Plan ref:** Section V1 #10, 16.4
 **What:** Persona selector dropdown in preview panel. Load personas from `GET /api/v1/personas`. One-click preview as: "Gmail Desktop", "iPhone Dark Mode", "Outlook 2016", etc. Visual context switching (device frame, email client chrome).
 **Security:**
 - Personas scoped to project (no cross-project persona leakage)
@@ -122,7 +122,7 @@
 **Verify:** Persona selector loads presets. Preview updates to show selected device/client context.
 
 ### ~~1.6 Template CRUD + Persistence~~ DONE
-**Plan ref:** Section 2.3 (Projects module), MVP #1
+**Plan ref:** Section 2.3 (Projects module), V1 #1
 **What:** Save/load templates within projects. Template versioning (each save creates a version). Version history sidebar. Restore previous version capability.
 **Security:**
 - Template content stored encrypted at rest (PostgreSQL column encryption or transparent data encryption)
@@ -148,7 +148,7 @@
 **Verify:** `POST /v1/chat/completions` returns streamed response. Model routing selects correct tier. API key is not exposed in logs or errors.
 
 ### ~~2.2 Scaffolder Agent~~ DONE
-**Plan ref:** Section 5.1 (Scaffolder), MVP #5
+**Plan ref:** Section 5.1 (Scaffolder), V1 #5
 **What:** First AI agent — generates Maizzle email HTML from natural language campaign briefs. System prompt defines email constraints (table layouts, inline CSS, MSO conditionals, responsive stacking). Outputs complete Maizzle template source.
 **Security:**
 - Agent output goes through QA validation before being offered to user
@@ -157,7 +157,7 @@
 **Verify:** Provide brief "Create a 2-column product showcase email with dark mode support" → get valid Maizzle HTML. Preview renders correctly.
 
 ### ~~2.3 Dark Mode Agent~~ DONE
-**Plan ref:** Section 5.1 (Dark Mode Agent), MVP #5
+**Plan ref:** Section 5.1 (Dark Mode Agent), V1 #5
 **What:** Analyses existing HTML and injects `@media (prefers-color-scheme: dark)` rules, `[data-ogsc]`/`[data-ogsb]` selectors for Outlook, transparent PNG suggestions, colour token remapping. Uses Knowledge Base for client-specific dark mode quirks.
 **Security:**
 - Agent only modifies CSS/style blocks, never injects script content
@@ -174,7 +174,7 @@
 **Verify:** Select text in editor → right-click → "Refine with AI" → get alternatives. Subject line generation produces 5 options.
 
 ### ~~2.5 AI Chat Sidebar UI~~ DONE
-**Plan ref:** Section 9.2 (AI Orchestrator panel), MVP #5
+**Plan ref:** Section 9.2 (AI Orchestrator panel), V1 #5
 **What:** Collapsible bottom panel in workspace. Agent selection toggles (Scaffolder, Dark Mode, Content). Natural language input with streaming response display. Code block rendering in responses. Accept/reject/merge controls to apply AI output to editor. Conversation history per session.
 **Security:**
 - WebSocket connection authenticated via JWT (validated on connect)
@@ -184,7 +184,7 @@
 **Verify:** Open chat → select Scaffolder → provide brief → streamed response appears → click "Apply" → code merged into editor.
 
 ### ~~2.6 Component Library v1 — Backend~~ DONE
-**Plan ref:** Section MVP #4, 2.3 (Component Library module)
+**Plan ref:** Section V1 #4, 2.3 (Component Library module)
 **What:** Seed 5-10 pre-tested Maizzle email components: header, footer, CTA button, hero block, product card, spacer, social icons, image block, text block, divider. Each with dark mode variant, Outlook fallback, version metadata, and compatibility matrix stub.
 **Security:**
 - Component content validated on upload (no script injection in HTML components)
@@ -193,7 +193,7 @@
 **Verify:** `GET /api/v1/components` returns 5-10 components. Each has at least one version. Dark mode variant accessible.
 
 ### ~~2.7 Component Library Browser UI~~ DONE
-**Plan ref:** Section 9.2 (Component Library), MVP #4
+**Plan ref:** Section 9.2 (Component Library), V1 #4
 **What:** Page at `/components`. Grid view with component preview thumbnails. Search by name, type, client scope. Component detail view: rendered preview (light + dark mode), HTML source, version history, compatibility matrix table, usage documentation.
 **Security:**
 - Component previews rendered in sandboxed iframes (same as live preview)
@@ -201,7 +201,7 @@
 **Verify:** Browse components. Search filters work. Click component → see detail view with preview + source + versions.
 
 ### ~~2.8 10-Point QA Gate System~~ DONE
-**Plan ref:** Section 7.2 (QA Pipeline), MVP #7
+**Plan ref:** Section 7.2 (QA Pipeline), V1 #7
 **What:** QA trigger button in workspace toolbar. Runs `POST /api/v1/qa/run` with current template HTML. Results displayed as pass/fail checklist with details per check. Gate enforcement: warn/block on export if checks fail. Senior override with documented justification.
 **Backend:** Repository layer (`QARepository`), `QAOverride` model with audit trail, 4 new API endpoints (`GET /results`, `GET /results/latest`, `GET /results/{id}`, `POST /results/{id}/override`), Alembic migration `d8a3f2b91c47`, 55 unit tests (37 checks + 16 service + conftest fixtures).
 **Frontend:** "Run QA" button in workspace toolbar with loading state; `QAResultsPanel` right sidebar (320px) with overall score, status badge, failed/passed checks (collapsible), override info; `QACheckItem` rows with pass/fail icons, score bars, i18n labels with fallback; `QAOverrideDialog` (28rem) with check selection, justification textarea (min 10 chars), developer+ RBAC; 5 SWR hooks (`useQARun`, `useQAResult`, `useQALatest`, `useQAResults`, `useQAOverride`); local TypeScript types in `types/qa.ts`; 38 i18n keys; code-reviewed (5 fixes: stale dialog state, unhandled promise, memoization, i18n crash guard).
@@ -212,7 +212,7 @@
 **Verify:** Click "Run QA" → 10 checks execute → results display inline. Failing checks show detail. Override flow works with audit logging.
 
 ### ~~2.9 Raw HTML Export + Braze Connector UI~~ DONE
-**Plan ref:** Section 3.1 (Connector Architecture), MVP #6
+**Plan ref:** Section 3.1 (Connector Architecture), V1 #6
 **What:** Export console at `/export` or inline in workspace. Platform selector: Raw HTML download, Braze Content Blocks push. Export preview shows what will be sent. Braze connector: configure API key (encrypted), push as Content Block with Liquid packaging.
 **Frontend:** `ExportDialog` (32rem) with two tabs — Raw HTML (client-side Blob download via `URL.createObjectURL`) and Braze (two-phase: production build → `POST /api/v1/connectors/export` with `content_block_name`); state machine (idle→building→exporting→success|error) with retry; `ExportStatusBadge` + `ExportCard` for history grid; `useExportHistory()` hook via `useSyncExternalStore` + `sessionStorage` (max 100 records, cross-component sync without context provider); `/connectors` dashboard page with platform filter tabs (All/Braze/Raw HTML); Export button in workspace toolbar; Plug sidebar nav icon; middleware RBAC (all roles); ~25 i18n keys across `connectors` + `export` namespaces; all semantic Tailwind tokens.
 **Security:**
@@ -223,7 +223,7 @@
 **Verify:** Configure Braze credentials → export template → Content Block appears in Braze sandbox. Raw HTML download produces valid file.
 
 ### ~~2.10 RAG Knowledge Base Seeding~~ DONE
-**Plan ref:** Section MVP #8, 13.3 (Data Bootstrapping)
+**Plan ref:** Section V1 #8, 13.3 (Data Bootstrapping)
 **What:** Seed knowledge base with: Can I Email CSS support data (automated crawl), email dev best practices (curated entries), email client rendering quirks (team knowledge capture). Verify hybrid search (vector + fulltext) returns relevant results for email development queries.
 **Implementation:** 20 curated markdown documents across 3 domains: `css_support` (8 files — layout, box model, typography, colors, borders, media queries, selectors, dark mode), `best_practices` (6 files — table layout, responsive, images, CTA buttons, accessibility, file size), `client_quirks` (6 files — Outlook Windows, Gmail, Apple Mail/iOS, Yahoo, Samsung, Outlook.com). Async seed command (`app/knowledge/seed.py`) processes documents through full RAG pipeline (extract → chunk → embed → store) with idempotency (skips existing by filename). Manifest-driven (`app/knowledge/data/seed_manifest.py`) with per-document metadata, tags, and domain classification. 109 unit tests validate manifest structure, file integrity, and content format.
 **Security:**
@@ -236,10 +236,10 @@
 
 ## Phase 3 — Sprint 3: Client Handoff + Polish (Plan: 1-2 weeks)
 
-> **Sprint 3 Deliverable (Plan Section 16.4):** "Complete MVP that clients can log into for approvals, QA data is visible, and the team has a tool they want to use daily."
+> **Sprint 3 Deliverable (Plan Section 16.4):** "Complete V1 that clients can log into for approvals, QA data is visible, and the team has a tool they want to use daily."
 
 ### ~~3.1 Client Approval Portal~~ DONE
-**Plan ref:** Section MVP #9, 9.2 (QA Dashboard approval workflow)
+**Plan ref:** Section V1 #9, 9.2 (QA Dashboard approval workflow)
 **What:** Approval routes at `/approvals`. Viewer role login (scoped to assigned projects only). Live email preview (read-only, sandboxed iframe). Section-level feedback annotations (click to highlight, leave comment). Global feedback textarea. Approve/request changes buttons. Version comparison (diff between current and last-reviewed version). Email/Slack notification when review is ready. Time-stamped audit trail of all approvals, changes, feedback.
 **Backend:** Added `GET /api/v1/approvals/?project_id=X` list endpoint and `GET /api/v1/email/builds/{build_id}` for preview HTML. 7 API endpoints total (list, create, get, decide, add feedback, list feedback, audit trail).
 **Frontend:** `/approvals` list page with status filter tabs (All/Pending/Approved/Rejected/Revision); `/approvals/[id]` detail page with 2-column layout (60% sandboxed preview with viewport/dark mode toggles, 40% side panel with Feedback/Audit tabs); 6 components (`ApprovalStatusBadge`, `ApprovalCard`, `ApprovalPreview`, `ApprovalFeedbackPanel`, `ApprovalAuditTimeline`, `ApprovalDecisionBar`); 8 SWR hooks (`useApprovals`, `useApproval`, `useCreateApproval`, `useApprovalDecide`, `useApprovalFeedback`, `useAddFeedback`, `useApprovalAudit`, `useBuild`); decision bar with approve/reject/request-revision buttons (admin/developer RBAC via `useSession()`); "Submit for Approval" button in workspace toolbar; ClipboardCheck sidebar nav icon; middleware RBAC for all roles; ~40 i18n keys; all semantic Tailwind tokens.
@@ -253,7 +253,7 @@
 **Verify:** Client logs in with viewer credentials → sees only their project's emails → leaves section feedback → approves → audit trail shows complete history.
 
 ### ~~3.2 Rendering Intelligence Dashboard~~ DONE
-**Plan ref:** Section MVP #11, 12.6 (Compound Innovation Effect)
+**Plan ref:** Section V1 #11, 12.6 (Compound Innovation Effect)
 **What:** Dashboard at `/intelligence` with QA quality trends, per-check analytics, and recent results. Client-side aggregation from `GET /api/v1/qa/results` (no backend aggregation endpoint needed).
 **Frontend:** `/intelligence` page with 4 sections: `ScoreOverviewCards` (4-column grid: total runs, avg score, pass rate, overrides); `CheckPerformanceChart` (CSS horizontal bars showing avg score per QA check, sorted worst-first, colored by threshold — green >=80%, yellow >=50%, red <50%); `ScoreTrendBars` (CSS vertical bars of last 20 results' overall scores with pass/fail coloring); `RecentResultsTable` (paginated table with status badges, score, checks passed, date); "Email Client Rendering" placeholder card with "Coming Soon" badge (deferred to task 4.4 Litmus integration). `useQADashboard` hook fetches 50 results and computes all metrics via `useMemo`. `QADashboardMetrics` type in `types/qa.ts`. BarChart3 sidebar nav icon. Middleware RBAC (all roles). ~30 i18n keys in `intelligence` namespace. All semantic Tailwind tokens.
 **Security:**
@@ -297,7 +297,7 @@
 
 ---
 
-## Phase 4 — Post-MVP (Plan Section 16.1: Post-MVP Iterations)
+## Phase 4 — V2 Roadmap (Plan Section 16.1: V2 Iterations)
 
 ### ~~4.8 Knowledge Base Search UI~~ DONE
 **Plan ref:** Section 4.8 (RAG Knowledge Base — "Natural language search"), `.agents/plans/4.8-knowledge-base-search.md`
@@ -333,6 +333,47 @@
 **Frontend:** `ExportReportMenu` dropdown with Print/PDF (`window.print()`) and CSV export (client-side Blob download with overview metrics, check performance, quality trend); `@media print` styles in `tokens.css`; ~6 i18n keys in `intelligence` namespace.
 **Verify:** Export dropdown renders on intelligence page. Print opens browser dialog. CSV downloads with correct data. `pnpm build` passes.
 
+### 4.13 Agent Harness Engineering (Phase 1: Blueprint Engine ✅)
+**Plan ref:** Section 5.1 (Agent Architecture), harnessing_agents.txt (Industry Research)
+**What:** Implement the agent harness layer — the execution loop, progressive disclosure, and self-verification scaffolding that surrounds each AI agent. The harness is model-agnostic infrastructure that transforms agents from single-pass generators into iterative, self-correcting production workers. Based on patterns from Claude Code, Cursor, Manus, SWE-Agent, and the Four Disciplines Framework.
+**Phase 1 Implementation (Blueprint State Machine):** `app/ai/blueprints/` — State machine engine interleaving deterministic nodes (QA gate, Maizzle build, Braze export) with agentic nodes (scaffolder, dark mode), implementing bounded self-correction (max 2 rounds), progressive context hydration, and recovery routing. Shared utilities extracted to `app/ai/shared.py`. `POST /api/v1/blueprints/run` endpoint (3/min rate limit, admin/developer RBAC). Campaign blueprint graph: scaffolder → qa_gate → (pass) maizzle_build → export / (fail) recovery_router → fixer → qa_gate loop. 22 files, 27 tests, all passing lint + types.
+
+**Harness Components:**
+
+1. **TAOR Execution Loop (Think-Act-Observe-Repeat)** — Replace single-pass agent execution with an iterative loop: agent thinks about the task, acts (generates output), observes results (runs validation), and repeats if validation fails. Each agent gets a configurable max iteration count (default: 3) and exit conditions.
+
+2. **PreCompletionChecklist Middleware** — Intercepts agent "done" signals and forces a final verification pass against the original task specification. Prevents the "Ralph Wiggum Loop" where agents declare victory without testing. For example: Scaffolder generates HTML → harness runs QA checks automatically → if accessibility fails, error logs fed back to agent for self-correction.
+
+3. **Progressive Disclosure (Context Economy)** — Lazy-load agent skills and knowledge instead of pre-loading everything into context. Agent receives only tool names as static context; full definitions fetched on-demand when the agent selects a tool. Knowledge base queries scoped to the current check/task, not the entire corpus. Target: 26x token efficiency improvement (based on industry benchmarks). Prevents "Context Rot" where agents lose track of goals in long sessions.
+
+4. **Linter-Gated Guardrails** — Deterministic safety nets that don't rely on LLM reasoning:
+   - HTML structure validation runs automatically on every agent file save (rejected if invalid)
+   - Risk classification via lightweight model (Haiku) auditing commands before execution
+   - Brand compliance rules enforced as hard constraints ("Must-Nots" like "never modify brand-reserved colours")
+   - QA gate results fed back as harness-level rejections, not just suggestions
+
+5. **Progress Log & Task Decomposition** — `agent-progress.json` per session where agents record features tested, bugs fixed, and decisions made. Long tasks decomposed into 2-hour independently verifiable sub-tasks. Prevents "lost in the middle" attention degradation on long trajectories.
+
+6. **Model-Agnostic Escalation** — Harness-level routing: local LLM (Ollama/vLLM) handles 70-90% of routine tasks → harness monitors output confidence → auto-escalates to frontier model (Claude Opus) when confidence drops below threshold or when multi-step rendering conflicts detected. Swap models without code changes via the existing provider registry.
+
+**Harness Benefits Table:**
+
+| Harness Pattern | QA Agent Impact | Strategic Value |
+|-----------------|----------------|-----------------|
+| TAOR Loop | Agents iterate on bug fixes autonomously | Reduces manual developer rework |
+| Progressive Disclosure | Agents only see tokens needed for current test | 26x token efficiency improvement |
+| Constraint Architecture | Defines "Must-Nots" (e.g., brand-reserved colours) | 100% brand compliance |
+| Task Decomposition | Full-campaign audits split into verifiable sub-tasks | Increases reliability and speed |
+| Linter Gates | Invalid HTML rejected before QA stage | Catches errors deterministically |
+| Model Escalation | Routine tasks local, complex tasks cloud | Reduces API cost by 70-90% |
+
+**Security:**
+- Harness-level audit trail for every agent iteration (who triggered, what changed, why it looped)
+- Escalation decisions logged (which model, why escalated, confidence scores)
+- Brand constraint violations blocked deterministically — never delegated to LLM judgement
+- Progress logs scoped to project (no cross-project leakage)
+**Verify:** Agent executes with TAOR loop (visible iteration count in UI). PreCompletionChecklist catches intentionally broken HTML. Progressive disclosure reduces token usage measurably. Local → cloud escalation triggers on complex tasks. Progress log persists across sessions.
+
 ### 4.1 Remaining 6 AI Agents
 **Plan ref:** Section 5.1 (Agent Architecture)
 - **Outlook Fixer**: MSO conditionals, VML backgrounds, table-based fallbacks
@@ -342,11 +383,15 @@
 - **Knowledge Agent**: RAG-powered Q&A from knowledge base
 - **Innovation Agent**: Prototype new techniques, assess feasibility, generate fallback strategies
 
-### 4.2 Additional CMS Connectors
-**Plan ref:** Section 3.1 (~2-3 days each)
-- SFMC connector (Content Builder + AMPscript, OAuth 2.0)
-- Adobe Campaign connector (Deliveries + Content fragments, Adobe IMS OAuth)
-- Taxi for Email connector (Taxi Syntax wrapping, Design System export)
+### ~~4.2 Additional CMS Connectors~~ DONE
+**Plan ref:** Section 3.1 (~2-3 days each), `.agents/plans/4.2-additional-cms-connectors.md`
+**What:** Add SFMC, Adobe Campaign, and Taxi for Email backend connectors following the Braze pattern. All three are placeholder implementations (mock API calls) matching the Braze style.
+**Backend:** `ConnectorProvider` Protocol in `app/connectors/protocol.py` for type-safe dispatch; `SUPPORTED_CONNECTORS` registry mapping connector type strings to provider classes with lazy instantiation and caching; 3 new connector packages: `app/connectors/sfmc/` (SFMCConnectorService — Content Builder Content Area with AMPscript packaging), `app/connectors/adobe/` (AdobeConnectorService — delivery content fragments with Adobe IMS packaging), `app/connectors/taxi/` (TaxiConnectorService — Taxi Syntax-wrapped templates); each with schemas + service following Braze pattern; 16 unit tests (4 protocol conformance + 12 provider tests); demo mutation resolver updated for per-connector mock IDs.
+**Security:**
+- All connector services satisfy `ConnectorProvider` Protocol (runtime-checkable)
+- No credential storage yet (placeholder implementations) — AES-256 encryption deferred to real API integration
+- Export audit trail via existing `ExportRecord` model (unchanged)
+**Verify:** `make test` passes (304 tests). All 4 connectors dispatch correctly via `POST /api/v1/connectors/export`. Frontend export dialog works with sfmc/adobe_campaign/taxi in demo mode. `connector_type` validation returns 422 for unsupported types.
 
 ### ~~4.3 Figma Design Sync (Frontend Demo)~~ DONE
 **Plan ref:** Section 4 (Design Tool Integration), `.agents/plans/figma-design-sync.md`
@@ -361,13 +406,13 @@
 - Visual regression detection
 - Rendering report generation
 
-### 4.5 Advanced Features
-- Real-time collaborative editing (CRDT/OT)
-- Localisation engine (100+ locales)
-- Per-client brand guardrails
-- AI image generation (self-hosted Stable Diffusion XL)
-- Visual Liquid builder UI
-- Client brief system integration (Jira, Asana, Monday.com)
+### ~~4.5 Advanced Features~~ DONE
+- ~~Real-time collaborative editing (CRDT/OT — Yjs + y-codemirror.next, demo mode with simulated collaborator)~~ DONE
+- ~~Localisation engine (6 locale stubs, cookie-based switching, RTL support, translation management table)~~ DONE
+- ~~Per-client brand guardrails (brand settings page, CodeMirror linter extension, toolbar violations badge)~~ DONE
+- ~~AI image generation (workspace dialog, style presets, gallery, insert-into-template)~~ DONE
+- ~~Visual Liquid builder UI (@dnd-kit drag-and-drop, regex parser/serializer, Code/Visual tab switching)~~ DONE
+- ~~Client brief system integration (Jira/Asana/Monday.com connection cards, brief items, import-to-project)~~ DONE
 
 ---
 

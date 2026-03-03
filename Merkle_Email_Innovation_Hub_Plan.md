@@ -469,6 +469,130 @@ The memory system maps directly to the four-discipline framework, creating a sel
 | **Intent Engineering** | Episodic | Decomposition patterns and trade-off resolutions from past sessions | Agents reuse proven decomposition strategies: "Add dark mode" → [Identify colours → Extract selectors → Generate queries → Test fallbacks] |
 | **Specification Engineering** | Procedural + Semantic | Output schemas that produce highest client approval rates; validated acceptance criteria per task type | Prevents specification drift after model updates by comparing new outputs against proven-good baselines |
 
+## 5.7 Agent Harness Architecture
+
+> "The model is the engine. The harness is the car. Nobody buys an engine."
+
+Industry research across production AI agent systems — Claude Code, Cursor, Manus, SWE-Agent, Devin — converges on a consistent finding: **the same model scores 42% with one scaffold and 78% with another** (CORE-Bench). The engineering that separates working agents from impressive demos isn't in the model — it's in the harness: the execution loop, tool definitions, error recovery, state management, and information flow that surround it.
+
+The Hub's harness layer applies these proven patterns specifically to email QA agents, turning single-pass generators into iterative, self-correcting production workers.
+
+### The TAOR Execution Loop
+
+Every production agent converges on the same core loop. The Hub implements **Think-Act-Observe-Repeat** — agents don't declare victory after a single pass. They iterate until their output passes verification or reaches a configurable iteration limit.
+
+```
+while (not verified and iterations < max_iterations):
+    THINK  → Agent analyses task, decomposes into subtasks, plans approach against specification
+    ACT    → Agent generates output (HTML, CSS, dark mode tokens, accessibility fixes, content)
+    OBSERVE → Harness runs deterministic validation: linter, QA checks, brand compliance, spec match
+    REPEAT → If validation fails, error logs injected into context. Agent hill-climbs toward correctness.
+```
+
+This is the "model controls the loop" pattern used by Claude Code — no DAG orchestration, no competing agent personas. The agent receives messages and tools, returns text (loop ends) or tool calls (loop continues). The harness decides what the agent can see, what tools it can use, and what happens when it fails.
+
+### Five Harness Engineering Patterns
+
+#### 1. PreCompletion Checklist Middleware
+
+Middleware intercepts the agent's "done" signal and forces a final verification pass against the original task specification. This prevents the most common failure mode — agents that produce plausible-looking output without actually testing it.
+
+**How it works:** Agent signals completion → harness runs the 10-point QA gate, linter, and brand compliance checks against the spec → if any check fails, the harness rejects the "done" signal, packages error logs as structured feedback, and returns the agent to the TAOR loop → agent receives "You reported completion but 2 checks failed: [accessibility: missing alt on hero image], [dark mode: no prefers-color-scheme fallback]" → agent fixes and re-submits.
+
+**Client impact — Holiday Campaign Rush:** A retail client submits 12 campaign variants for Black Friday with a 48-hour turnaround. Without the harness, each email goes through one AI pass, then a developer manually reviews QA failures, feeds corrections back, and re-runs — 30–45 minutes per variant. With the harness, the TAOR loop catches 3 accessibility failures and 1 dark mode issue per variant automatically. **12 variants completed in hours, not days.** The developer's role shifts from fixing mechanical issues to reviewing strategic creative choices.
+
+#### 2. Progressive Disclosure (Context Economy)
+
+Agents discover context incrementally instead of drowning in everything upfront. This is the single most impactful harness pattern for token efficiency and output quality.
+
+**Implementation:**
+- Agent receives only tool names as static context; full tool definitions fetched on-demand when the agent selects a tool (Cursor's approach: 46.9% token reduction)
+- Knowledge base queries scoped to the current check/task, not the entire 20-document corpus
+- Agent "skills" stored as `.claude/skills/` files — NOT preloaded into every conversation. Skills load only when the agent detects relevance
+- Observation compression: all observations except the last 5 collapsed to one-line summaries (SWE-Agent pattern)
+
+**Evidence:**
+- Static loading: ~25,000 tokens at 0.8% relevance. Progressive disclosure: ~955 tokens at 100% relevance. **26x improvement.**
+- Cursor's lazy MCP tool loading: 46.9% token reduction (statistically significant A/B test)
+- Vercel case study: removing 80% of tools dropped tokens from 145,463 to 67,483, steps from 100 to 19, latency from 724 to 141 seconds — and the agent went from failing to succeeding
+- Liu et al. (TACL 2024): LLM performance follows a U-shaped curve — highest at beginning/end of input, degraded in the middle. Progressive disclosure keeps inputs small (less curve distortion) and places freshly-retrieved information at the end (the high-attention zone)
+
+**Client impact — Complex Outlook + Dark Mode Rendering:** A B2B client's audience is 60% Outlook desktop. A promotional email with layered backgrounds, gradient CTAs, and responsive stacking needs VML fallbacks, MSO conditionals, and dark mode colour remapping. Progressive Disclosure loads only the Outlook-specific knowledge module when the agent detects VML requirements — not the entire knowledge base. Each sub-task gets precisely the context it needs: structure → VML fallbacks → dark mode tokens → final QA.
+
+#### 3. Linter-Gated Guardrails (Deterministic Safety Nets)
+
+Safety nets that don't rely on LLM reasoning. These are deterministic — the harness enforces them regardless of what the model wants to do.
+
+**Implementation:**
+- HTML linter runs automatically on every agent file save. If the structure is invalid, the edit is rejected and the agent must retry (SWE-Agent pattern: 3% performance improvement from this single guardrail)
+- Brand compliance rules loaded as "Must-Nots" — hard constraints that no LLM reasoning can override (e.g., "never modify brand-reserved hex codes")
+- Risk classification: lightweight model (Claude Haiku) audits commands before execution, flagging high-risk actions for human approval
+- QA gate results fed back as harness-level rejections, not suggestions
+
+**Client impact — Regulated Financial Services:** A banking client requires WCAG AA accessibility, mandatory disclaimers, and restricted terminology enforcement. Previously, compliance review added 1–2 days per campaign. With linter-gated guardrails, compliance is enforced as hard constraints — not suggestions the agent might ignore. The PreCompletion Checklist verifies every disclaimer is present, every image has alt text, and no restricted terms appear. **Compliance review drops from days to minutes** because the harness guarantees adherence deterministically.
+
+**Client impact — Multi-Brand Agency Portfolio:** An agency manages 8 client brands. The Constraint Architecture loads each client's brand rules as "Must-Nots." The Dark Mode Agent can never substitute Brand B's reserved navy for a similar dark blue. The Content Agent can never adopt Brand A's casual tone for Brand B's luxury positioning. **100% brand isolation across the portfolio**, enforced by infrastructure rather than relying on the model to "remember" which brand it's working on.
+
+#### 4. Task Decomposition & Progress Anchoring
+
+Long tasks decomposed into independently verifiable sub-tasks. A progress log serves as an attention anchor that prevents "lost in the middle" degradation.
+
+**Implementation:**
+- `agent-progress.json` per session records features tested, bugs fixed, decisions made, and current sub-task
+- Long tasks (>30 minutes) automatically decomposed into 2-hour sub-tasks with independent acceptance criteria
+- Progress log pushed into the model's recent attention span after each tool execution (counteracts "lost in the middle" effect — the TodoWrite pattern from Claude Code)
+- Each sub-task validates independently before the next begins
+
+**Evidence:** LangChain's analysis explicitly identifies Claude Code's TodoWrite tool as a "no-op tool that forces the agent to articulate and track its plan, keeping it on course over long trajectories." It does nothing functionally — it's purely a harness-level trick.
+
+#### 5. Model-Agnostic Escalation
+
+The harness routes tasks to the right model tier, making the system's AI economics dramatically more efficient.
+
+**Implementation:**
+- Local LLMs (Ollama/vLLM) handle 70–90% of routine QA at zero API cost
+- Harness monitors output confidence and auto-escalates to frontier models (Claude Opus) when:
+  - Confidence drops below configurable threshold
+  - Multi-step rendering conflicts detected (e.g., VML + dark mode + responsive)
+  - Local model produces output that fails QA gate on first iteration
+- Provider registry enables model swapping without code changes
+- Different models can receive different tool names and prompt instructions (Cursor's approach: model-specific harness tuning)
+
+**Client impact — Institutional Knowledge Retention:** A senior developer who has spent 18 months learning a client's rendering quirks moves teams. With the harness, every agent iteration is logged. When the Outlook Fixer discovers that Samsung Mail 14+ clips `max-width` on `<div>` inside `<td>`, the harness stores this as a Semantic Memory entry — permanent, available to all agents, all projects. New team members inherit the full accumulated expertise from day one. **Institutional knowledge compounds in the system, not in individuals.**
+
+### The Compound Effect: Harness + Four Disciplines
+
+The harness layer amplifies everything the Four Disciplines Framework delivers. Each discipline becomes more effective when backed by deterministic infrastructure:
+
+| Discipline | Without Harness | With Harness |
+|-----------|----------------|--------------|
+| **Prompt Craft** | Defines output formats, but agents may not follow them consistently across long sessions | + Linter Gates: format compliance verified deterministically, not trusted |
+| **Context Engineering** | Curates knowledge, but agents receive everything at once — relevant and irrelevant | + Progressive Disclosure: knowledge loaded precisely when needed, 26x more efficiently |
+| **Intent Engineering** | Encodes priorities, but agents may drift from intent mid-task | + Constraint Architecture: priorities enforced as hard "Must-Nots," not soft guidance |
+| **Specification Engineering** | Defines acceptance criteria, but agents self-report completion without independent verification | + TAOR Loop: criteria tested automatically on every iteration; agent can't exit until they pass |
+
+### Harness Impact Summary
+
+| Harness Pattern | QA Agent Impact | Strategic Value |
+|-----------------|----------------|-----------------|
+| **TAOR Loop** | Agents iterate on bug fixes autonomously until validation passes | Reduces manual developer rework by 60–80% |
+| **Progressive Disclosure** | Agents only see tokens needed for current test | 26x improvement in token efficiency |
+| **Constraint Architecture** | Brand rules, accessibility requirements enforced deterministically | 100% brand and compliance adherence |
+| **Task Decomposition** | Full-campaign audits broken into verifiable sub-tasks | Increases reliability and execution speed |
+| **Model Escalation** | Routine checks local; complex conflicts escalate to cloud | 70–90% reduction in API costs |
+
+### Industry Sources
+
+- Anthropic — "Effective Harnesses for Long-Running Agents"; Claude Code architecture (reverse-engineered by Vrungta, PromptLayer)
+- LangChain — "Improving Deep Agents with Harness Engineering"; "Deep Agents" (TerminalBench: 52.8% → 66.5% from harness changes only)
+- Cursor — "Dynamic Context Discovery"; "Improving Agent with Semantic Search"; "Improving Cursor's Agent for OpenAI Codex Models"
+- Manus — "Context Engineering for AI Agents: Lessons from Building Manus" (5 rewrites, each removing complexity)
+- Princeton/NeurIPS 2024 — Yang et al., "SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering"
+- Cognition — "Devin's 2025 Performance Review" (67% PR merge rate, up from 34%)
+- Liu et al. — "Lost in the Middle: How Language Models Use Long Contexts" (TACL 2024)
+- Phil Schmid — "Context Engineering for AI Agents: Part 2" (Vercel case study)
+- Dex Horthy — "12 Factor Agents" (40% input capacity threshold for the "dumb zone")
+
 ---
 
 # 6. Email Build Framework
@@ -1154,7 +1278,7 @@ This is the core value proposition: the Hub ensures that no innovation is ever a
 | **5: Connectors** | Weeks 13-15 | Braze connector, SFMC connector, Taxi connector, raw HTML export, deployment history | Platform API credentials, Phase 1 |
 | **6: Polish & Launch** | Weeks 16-18 | Full UI polish, documentation, team onboarding, performance optimisation, security audit | All phases, pen test |
 
-Total estimated timeline: 18 weeks (4.5 months) to MVP with core functionality. Additional connectors and advanced AI agents can be added incrementally post-launch.
+Total estimated timeline: 18 weeks (4.5 months) to V1 with core functionality. **V1 has been delivered.** Additional connectors and advanced AI agents are being added incrementally post-launch.
 
 ## 13.2 Adoption & Change Management
 
@@ -1162,7 +1286,7 @@ The Hub only delivers value if the team uses it. Adoption is planned alongside d
 
 | Phase | Activity | Who |
 |-------|----------|-----|
-| **During MVP Build** | Build team uses the Hub daily, documenting patterns and workflows as they emerge. Documentation is generated live — every AI agent conversation can produce docs via a `/document` slash command in the agent chat. | Build team (2–3 developers) |
+| **During V1 Build** ✅ | Build team used the Hub daily, documenting patterns and workflows as they emerged. Documentation generated live — every AI agent conversation can produce docs via a `/document` slash command in the agent chat. | Build team (2–3 developers) |
 | **Early Adopters** | Build team + 2–3 volunteer colleagues begin using the Hub on real client work during Sprint 2. These champions provide daily feedback and become trainers for the wider team. | Core team (4–6 people) |
 | **Team Workshop** | Hands-on workshop to migrate current workflows into the Hub. Developers bring a real template they built recently and rebuild it using the Hub's tools, side by side. Concrete, not theoretical. | Full email dev team |
 | **Ongoing Feedback** | Continuous feedback loop from the team: weekly 15-min retros during first month, Slack channel for issues, feature request board in the Hub itself. | All users |
@@ -1187,17 +1311,17 @@ The Hub's component library and knowledge base are seeded with existing assets, 
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| **Key person dependency during MVP build** | Medium | High | MVP can be developed collaboratively with additional Merkle colleagues to distribute knowledge from day one. All code hosted on private GitHub with full documentation. AI-assisted coding tools reduce individual dependency — the architectural blueprint in this document means any competent developer can pick up any module. |
-| **Timeline overrun (build takes longer than 5–7 weeks)** | Medium | Low | The 5–7 week estimate assumes a dedicated collaborative team. If the build extends to 8–10 weeks, the impact is limited — each sprint delivers a usable increment, so there is no "all or nothing" risk. Sprint 1 alone produces a working editor and build pipeline. |
+| **Key person dependency during V1 build** | Medium | High | **Mitigated.** V1 was developed collaboratively with knowledge distributed from day one. All code hosted on private GitHub with full documentation. AI-assisted coding tools reduce individual dependency — the architectural blueprint in this document means any competent developer can pick up any module. |
+| **Timeline overrun (build takes longer than 5–7 weeks)** | Medium | Low | **Resolved.** V1 delivered on schedule. Each sprint delivered a usable increment — Sprint 1 produced a working editor and build pipeline, Sprint 2 added AI intelligence and export, Sprint 3 completed client handoff and polish. |
 | **AI model quality / hallucination risk** | Medium | Medium | Mitigated by architecture: RAG knowledge base grounds AI responses in verified email development data, agent skill definitions constrain output format and scope, and agent command chaining ensures multi-step validation. Developers review all AI output before it enters the build pipeline — AI suggests, humans approve. |
-| **Developer adoption resistance** | Low | Medium | The Hub enhances existing developer workflows rather than replacing them — it automates the repetitive work (CSS inlining, cross-client testing, Outlook fixes) that developers find tedious. Training is integrated into the MVP build process, and early adopters become internal champions. The broader industry trajectory is clear: AI-assisted development is the standard workflow for modern engineering teams, and the Hub positions Merkle's email developers at the forefront of that shift. |
+| **Developer adoption resistance** | Low | Medium | The Hub enhances existing developer workflows rather than replacing them — it automates the repetitive work (CSS inlining, cross-client testing, Outlook fixes) that developers find tedious. Training was integrated into the V1 build process, and early adopters became internal champions. The broader industry trajectory is clear: AI-assisted development is the standard workflow for modern engineering teams, and the Hub positions Merkle's email developers at the forefront of that shift. |
 | **Client data isolation failure** | Very Low | High | The Hub processes email templates and components — never subscriber data, never PII. Client isolation is enforced at the database layer (PostgreSQL row-level security by `client_id`) and at the application layer (RBAC). Even a complete application-layer bug cannot leak data across clients because the database enforces isolation independently. |
 | **Cloud AI API cost overrun** | Low | Low | Local LLMs handle 70–90% of requests at zero API cost. Cloud usage is monitored and capped. The AI Orchestrator routes by task complexity — only tasks requiring frontier reasoning reach the cloud API. Monthly spend is visible in the rendering intelligence dashboard. See Section 15.5 for detailed cost projections. |
 | **Infrastructure availability** | Very Low | Medium | Merkle operates enterprise-grade infrastructure as part of the dentsu network. The Hub runs on Docker Compose with versioned deployments and automated database backups. Recovery from a full system failure is a container restart — measured in minutes, not hours. |
 
 ## 14.2 Success Metrics
 
-The following metrics will be tracked from launch to measure the Hub's impact and guide post-MVP investment decisions.
+The following metrics will be tracked from launch to measure the Hub's impact and guide post-V1 investment decisions.
 
 | Metric | Baseline (Current) | Target (3 Months Post-Launch) | Target (6 Months) | How Measured |
 |--------|-------------------|-------------------------------|-------------------|--------------|
@@ -1214,8 +1338,8 @@ The following metrics will be tracked from launch to measure the Hub's impact an
 |------|---------------|-------|
 | **Product ownership** | Merkle email development leadership | Feature prioritisation, roadmap decisions, budget approval |
 | **Technical ownership** | Development team | Code quality, architecture decisions, security, deployments |
-| **Post-MVP maintenance** | Merkle development team | Bug fixes, infrastructure, iterative improvements — part of ongoing operations |
-| **Post-MVP feature development** | Merkle development team | New connectors, additional agents, and post-MVP features built incrementally |
+| **Post-V1 maintenance** | Merkle development team | Bug fixes, infrastructure, iterative improvements — part of ongoing operations |
+| **Post-V1 feature development** | Merkle development team | New connectors, additional agents, and V2 features built incrementally |
 | **Infrastructure & budget** | Merkle | Server provisioning, GPU allocation, cloud AI API budget |
 | **Support model** | Versioned deployments with automated rollback | System deployed via Docker Compose with tagged versions. If an issue occurs, rollback to the previous stable version is a single command. Database backups run on schedule. |
 
@@ -1234,8 +1358,8 @@ The Hub will include production-grade monitoring aligned with Merkle's existing 
 
 | Phase | Activity | Detail |
 |-------|---------|--------|
-| **During MVP build** | Training built alongside product | Documentation auto-generated as features are developed. Build team members become the first trainers. |
-| **MVP complete** | Controlled pilot | Build team + 2–3 volunteers use Hub on real client work. Parallel workflow — existing tools remain available. Nothing is removed or replaced. |
+| **During V1 build** ✅ | Training built alongside product | Documentation auto-generated as features were developed. Build team members became the first trainers. |
+| **V1 complete** ✅ | Controlled pilot | Build team + 2–3 volunteers use Hub on real client work. Parallel workflow — existing tools remain available. Nothing is removed or replaced. |
 | **Weeks 2–4 post-launch** | Team onboarding | Structured training sessions (estimated 2–3 hours per developer). Hub used alongside existing workflow during transition. |
 | **Month 2+** | Full adoption | Team migrates primary workflow to Hub. Existing tools remain as fallback — no data is deleted, no processes are removed. Transition timeline depends on team comfort and workflow complexity. |
 | **Rollback plan** | Zero-risk transition | The Hub is additive. If it doesn't work for a particular use case, the team reverts to their existing workflow immediately. No migration is irreversible. |
@@ -1395,16 +1519,16 @@ Every valuable capability competitors offer either already exists in the Hub pla
 
 | Competitor Feature | Who Has It | Hub Equivalent | Where in Plan | When |
 |---|---|---|---|---|
-| AI brief-to-email generation | Stensul, Dyspatch | **Scaffolder Agent** — generates complete Maizzle templates from natural language campaign briefs | Section 5.1 (AI Agents) | MVP Sprint 2 |
-| Drag-and-drop email builder | Stensul, Knak, Stripo | **Monaco Editor + Component Library** — code-first approach with pre-built, tested components that developers drag into templates | Sections 9.2, MVP #2 + #4 | MVP Sprint 1–2 |
-| Cross-client rendering tests | Stripo (98 clients), Parcel (80+) | **QA Pipeline** — Playwright-based screenshot testing for core clients (Apple Mail, Gmail, Outlook), Litmus/EoA API for full sweeps | Section 7.2, MVP #7 | MVP (core), Post-MVP (expanded) |
-| Component/module system | Dyspatch, Parcel | **Component Library v1** — 5–10 cascading components with Global → Client → Project inheritance, versioning, dark mode variants | Section 5.1, MVP #4 | MVP Sprint 2 |
-| CMS/ESP integrations | Stensul (7+), Parcel (many), Dyspatch (3) | **CMS Connector Pipeline** — Braze (MVP), then SFMC, Adobe Campaign, Taxi for Email. Architecture supports ~2–3 days per connector. | Section 3, MVP #6 | MVP (Braze), Post-MVP (others) |
-| Figma integration | Stensul (plugin), Dyspatch (Scribe AI) | **Design Sync** — Figma API integration with design token sync, component mapping | Section 4 | Post-MVP Phase 1 |
-| Brand governance / compliance | Stensul (Governed Creation) | **QA Gate point 10: Brand Compliance** — colour, font, spacing, logo rules enforced before export. Per-client brand profiles in post-MVP. | Section 7.2, MVP #7 | MVP (basic), Post-MVP (per-client) |
-| Localisation / translation | Dyspatch (300+ locales), Parcel (160+) | **Localisation Engine** — AI-powered translation using local LLMs (zero API cost), preserving brand voice across locales | Section 12, Post-MVP | Post-MVP Phase 2 |
-| Real-time collaboration | Parcel | **Collaborative Editing** — CRDT/OT-based multi-user editing | Section 12, Post-MVP | Post-MVP Phase 2 |
-| Template import & extraction | Dyspatch (Scribe AI) | **Data Bootstrapping: Template Import** — drag-and-drop import of existing HTML, AI agents analyse and extract reusable patterns into component library | Section 13.3 | MVP Sprint 3 |
+| AI brief-to-email generation | Stensul, Dyspatch | **Scaffolder Agent** — generates complete Maizzle templates from natural language campaign briefs | Section 5.1 (AI Agents) | V1 Sprint 2 |
+| Drag-and-drop email builder | Stensul, Knak, Stripo | **Monaco Editor + Component Library** — code-first approach with pre-built, tested components that developers drag into templates | Sections 9.2, V1 #2 + #4 | V1 Sprint 1–2 |
+| Cross-client rendering tests | Stripo (98 clients), Parcel (80+) | **QA Pipeline** — Playwright-based screenshot testing for core clients (Apple Mail, Gmail, Outlook), Litmus/EoA API for full sweeps | Section 7.2, V1 #7 | V1 (core) ✅, V2 (expanded) |
+| Component/module system | Dyspatch, Parcel | **Component Library v1** — 5–10 cascading components with Global → Client → Project inheritance, versioning, dark mode variants | Section 5.1, V1 #4 | V1 Sprint 2 |
+| CMS/ESP integrations | Stensul (7+), Parcel (many), Dyspatch (3) | **CMS Connector Pipeline** — Braze (V1), then SFMC, Adobe Campaign, Taxi for Email. Architecture supports ~2–3 days per connector. | Section 3, V1 #6 | V1 (Braze) ✅, V2 (others) |
+| Figma integration | Stensul (plugin), Dyspatch (Scribe AI) | **Design Sync** — Figma API integration with design token sync, component mapping | Section 4 | V2 Phase 1 |
+| Brand governance / compliance | Stensul (Governed Creation) | **QA Gate point 10: Brand Compliance** — colour, font, spacing, logo rules enforced before export. Per-client brand profiles in V2. | Section 7.2, V1 #7 | V1 (basic) ✅, V2 (per-client) |
+| Localisation / translation | Dyspatch (300+ locales), Parcel (160+) | **Localisation Engine** — AI-powered translation using local LLMs (zero API cost), preserving brand voice across locales | Section 12, V2 | V2 Phase 2 |
+| Real-time collaboration | Parcel | **Collaborative Editing** — CRDT/OT-based multi-user editing | Section 12, V2 | V2 Phase 2 |
+| Template import & extraction | Dyspatch (Scribe AI) | **Data Bootstrapping: Template Import** — drag-and-drop import of existing HTML, AI agents analyse and extract reusable patterns into component library | Section 13.3 | V1 Sprint 3 |
 
 #### New Capabilities to Add
 
@@ -1412,9 +1536,9 @@ The following three capabilities are offered by competitors but not yet explicit
 
 | # | New Capability | Competitor Reference | How the Hub Builds It | Effort | When |
 |---|---|---|---|---|---|
-| 1 | **Content Agent** — AI-generated subject lines, preheaders, CTA copy, body copy refinement (rewrite, shorten, expand, change tone) | Stensul (content refinement, subject line/CTA generators), Stripo (AI text refinement), Dyspatch (campaign copy from brief) | Add as 8th AI agent using same LLM infrastructure. System prompt specialised for email marketing copy with brand voice constraints. Integrates into the editor as inline suggestions — select text, right-click, "Refine with AI." Local LLMs handle 70–90% of requests (basic rewrites, grammar fixes). Cloud models for creative generation. | Low — 2–3 days. System prompt + UI integration into Monaco editor context menu. | MVP Sprint 2 (alongside Scaffolder) |
-| 2 | **AI Image Generation** — generate placeholder heroes, product imagery, background graphics directly in the editor | Stripo (DALL-E, Gemini, GPT-Image-1 built into editor) | Self-hosted Stable Diffusion XL via ComfyUI on existing GPU infrastructure — zero API cost, fits local-first strategy. "Generate image" button in the editor's asset panel. Useful for prototyping and mockups during client pitches. Cloud APIs (DALL-E, Midjourney) available as optional upgrade for production-quality assets. | Medium — 3–5 days. ComfyUI deployment + API wrapper + editor integration. | Post-MVP Phase 1 |
-| 3 | **AI Alt Text Generation** — automatically generate descriptive alt text for all images in a template | Stensul, Stripo (AI-generated alt text) | Extend the Accessibility Agent to analyse images via vision model (local or cloud) and generate contextual alt text. Runs as part of the Accessibility Audit in the QA pipeline. Developers review and approve suggestions. | Low — 1–2 days. Vision model API call + UI for review/approval. | MVP Sprint 2 (extend Accessibility Agent) |
+| 1 | **Content Agent** — AI-generated subject lines, preheaders, CTA copy, body copy refinement (rewrite, shorten, expand, change tone) | Stensul (content refinement, subject line/CTA generators), Stripo (AI text refinement), Dyspatch (campaign copy from brief) | Add as 8th AI agent using same LLM infrastructure. System prompt specialised for email marketing copy with brand voice constraints. Integrates into the editor as inline suggestions — select text, right-click, "Refine with AI." Local LLMs handle 70–90% of requests (basic rewrites, grammar fixes). Cloud models for creative generation. | Low — 2–3 days. System prompt + UI integration into Monaco editor context menu. | V1 Sprint 2 (alongside Scaffolder) |
+| 2 | **AI Image Generation** — generate placeholder heroes, product imagery, background graphics directly in the editor | Stripo (DALL-E, Gemini, GPT-Image-1 built into editor) | Self-hosted Stable Diffusion XL via ComfyUI on existing GPU infrastructure — zero API cost, fits local-first strategy. "Generate image" button in the editor's asset panel. Useful for prototyping and mockups during client pitches. Cloud APIs (DALL-E, Midjourney) available as optional upgrade for production-quality assets. | Medium — 3–5 days. ComfyUI deployment + API wrapper + editor integration. | V2 Phase 1 |
+| 3 | **AI Alt Text Generation** — automatically generate descriptive alt text for all images in a template | Stensul, Stripo (AI-generated alt text) | Extend the Accessibility Agent to analyse images via vision model (local or cloud) and generate contextual alt text. Runs as part of the Accessibility Audit in the QA pipeline. Developers review and approve suggestions. | Low — 1–2 days. Vision model API call + UI for review/approval. | V1 Sprint 2 (extend Accessibility Agent) |
 
 #### What This Means
 
@@ -1488,19 +1612,19 @@ The table below covers **ongoing operational costs only** — the recurring expe
 
 **Note on people costs:** Developer time is not included in this comparison because it is constant in both scenarios. Merkle's email developers build email campaigns regardless of whether the Hub exists — the Hub redirects their effort into a more efficient workflow, it does not add headcount. SaaS platforms also require developer time to configure, manage, and produce work within them. The fair comparison is infrastructure and licence costs, where the Hub's open-source stack eliminates per-seat pricing entirely.
 
-**Initial build investment:** The MVP build requires 5–7 weeks with a collaborative team of 2–3 developers (see Section 16). This is a one-time investment that produces a permanent, Merkle-owned platform — after which the ongoing costs above apply.
+**Initial build investment:** The V1 build was completed in 5–7 weeks with a collaborative team of 2–3 developers (see Section 16). This was a one-time investment that produced a permanent, Merkle-owned platform — after which the ongoing costs above apply.
 
 ---
 
-# 16. MVP Build — Realistic Timeline
+# 16. V1 Build — Timeline & Delivery
 
-A working MVP — enough to demonstrate value and get the team using it — can be built by a small collaborative team of 2–3 Merkle developers working from a private GitHub repository. AI-assisted coding tools accelerate development significantly, and a collaborative approach distributes knowledge from the start, reducing key-person risk while building shared ownership of the platform.
+V1 — a fully functional platform demonstrating value with the team using it daily — was built by a small collaborative team of 2–3 Merkle developers working from a private GitHub repository. AI-assisted coding tools accelerated development significantly, and the collaborative approach distributed knowledge from the start, reducing key-person risk while building shared ownership of the platform.
 
-## 16.1 MVP Scope Definition
+## 16.1 V1 Scope Definition
 
-The MVP includes only what's needed to be useful and demonstrable. Each feature is selected because it directly solves a problem Merkle faces today.
+V1 includes everything needed to be useful and demonstrable. Each feature was selected because it directly solves a problem Merkle faces today. **All V1 features have been delivered.**
 
-### Included in MVP — What It Is and Why It Matters
+### Included in V1 — What It Is and Why It Matters
 
 | # | Feature | What It Does | How It Benefits Merkle |
 |---|---------|-------------|----------------------|
@@ -1516,19 +1640,19 @@ The MVP includes only what's needed to be useful and demonstrable. Each feature 
 | 10 | **Test Persona Engine** | Pre-configured subscriber profiles (device, email client, dark mode, locale, loyalty tier) for one-click preview of how specific audience segments experience the email. | **"Show me this email as a Gold-tier member on iPhone dark mode"** — one click. Currently this requires manually toggling preview settings, remembering which clients the audience uses, and guessing at rendering. The persona engine makes QA targeted and fast. |
 | 11 | **Rendering Intelligence Dashboard** | QA results displayed as client support matrices, template quality scores, and visual regression tracking. | **Proves the Hub's value with data.** When a stakeholder asks "what can we actually do with email?", the dashboard shows exactly which innovations work in which clients — not opinions, but tested compatibility data. This is the output Merkle presents to clients to sell innovation. |
 
-### Post-MVP Iterations
+### V2 Iterations
 
-| Feature | Why It Can Wait |
-|---------|----------------|
-| Figma integration with brand guardrails | High value but complex. Requires Figma API token provisioning and design system mapping. Component library v1 provides the foundation this builds on. |
-| Litmus / Email on Acid API | Built-in Playwright-based screenshot testing covers core clients (Apple Mail, Gmail, Outlook). Full 20+ client sweeps via Litmus API added when needed. |
+| Feature | Status |
+|---------|--------|
+| Figma integration with brand guardrails | **Frontend demo delivered** (V1 Phase 4.3). Real API integration deferred to V2. |
+| Litmus / Email on Acid API | Built-in Playwright-based screenshot testing covers core clients (Apple Mail, Gmail, Outlook). Full 20+ client sweeps via Litmus API planned for V2. |
 | SFMC, Adobe, Taxi connectors | Braze connector establishes the pattern. Additional connectors follow the same architecture — each is ~2–3 days of incremental work. |
-| Advanced agents (remaining 5 + AMP) | Scaffolder, Dark Mode, and Content Agent prove the AI model in MVP. Remaining agents (Accessibility, Personalisation, Code Reviewer, Knowledge, Outlook Fixer) are added as skills, not code rewrites. |
-| Real-time collaborative editing | Valuable but architecturally complex (CRDT/OT). Sequential workflow is sufficient for MVP — teams rarely co-edit the same template simultaneously. |
+| Advanced agents (remaining 5 + AMP) | Scaffolder, Dark Mode, and Content Agent proved the AI model in V1. Remaining agents (Accessibility, Personalisation, Code Reviewer, Knowledge, Outlook Fixer) are added as skills, not code rewrites. |
+| Real-time collaborative editing | Valuable but architecturally complex (CRDT/OT). Sequential workflow is sufficient for V1 — teams rarely co-edit the same template simultaneously. |
 | Localisation engine (100+ locales) | High value for multi-market clients but not required to demonstrate the Hub's core proposition. |
-| Per-client brand guardrails | Requires brand asset collection and profile configuration per client. MVP uses project-level settings. |
-| Visual conditional logic builder | Nice-to-have for non-technical personalisation rules. Developers write Liquid/AMPscript directly in MVP. |
-| Client brief system integration | Connect the Hub's approval portal to the client's project management tools (Jira, Asana, Monday.com, Wrike) via API/webhooks. Briefs created in the client's system automatically create Hub projects; approvals in the Hub sync back as status updates. High value but requires per-client API configuration. MVP approval portal provides the foundation. |
+| Per-client brand guardrails | Requires brand asset collection and profile configuration per client. V1 uses project-level settings. |
+| Visual conditional logic builder | Nice-to-have for non-technical personalisation rules. Developers write Liquid/AMPscript directly in V1. |
+| Client brief system integration | Connect the Hub's approval portal to the client's project management tools (Jira, Asana, Monday.com, Wrike) via API/webhooks. Briefs created in the client's system automatically create Hub projects; approvals in the Hub sync back as status updates. High value but requires per-client API configuration. V1 approval portal provides the foundation. |
 
 ## 16.2 Build Timeline
 
@@ -1548,7 +1672,7 @@ The MVP includes only what's needed to be useful and demonstrable. Each feature 
 | **Rendering Dashboard** | QA results displayed as client support matrices, template quality scores | 2–3 days | Frontend dashboard over data already collected by QA pipeline |
 | **Polish + Glue** | Routing, error handling, loading states, deployment | 2–3 days | The unglamorous 20% that takes 80% of patience |
 
-**Total: 5–7 weeks with a collaborative team of 2–3 developers.** Workstreams can be parallelised — one developer on the email engine and editor while another focuses on AI agents and the knowledge base, for example. A private GitHub repository with branch-based workflow ensures code review and quality from the start.
+**Total: 5–7 weeks with a collaborative team of 2–3 developers.** Workstreams were parallelised — one developer on the email engine and editor while another focused on AI agents and the knowledge base. Private GitHub repository with branch-based workflow ensured code review and quality from the start. **V1 delivered on schedule.**
 
 ## 16.3 Where AI-Assisted Coding Helps (And Where It Doesn't)
 
@@ -1564,13 +1688,13 @@ The bottlenecks AI won't shortcut:
 
 ## 16.4 Recommended Sprint Structure
 
-**Sprint 1 (2 weeks):** FastAPI + Next.js shell, auth, Monaco editor, Maizzle build pipeline, live preview, test persona engine. At the end of week 2 you can write email HTML in a browser, see it compile live, and preview as different subscriber profiles. First demo-able milestone.
+**Sprint 1 (2 weeks):** ✅ FastAPI + Next.js shell, auth, Monaco editor, Maizzle build pipeline, live preview, test persona engine. Write email HTML in a browser, see it compile live, and preview as different subscriber profiles.
 
-**Sprint 2 (2–3 weeks):** AI agents (Scaffolder + Dark Mode + Content), component library, Braze connector, full 10-point QA gate system, RAG knowledge base v1, AI alt text generation. At the end you have something the team can use on real work with embedded intelligence and content generation that matches every competitor's AI capability.
+**Sprint 2 (2–3 weeks):** ✅ AI agents (Scaffolder + Dark Mode + Content), component library, Braze connector, full 10-point QA gate system, RAG knowledge base v1, AI alt text generation. Full embedded intelligence and content generation matching every competitor's AI capability.
 
-**Sprint 3 (1–2 weeks):** Client approval portal (viewer login, approve/reject workflow, version comparison, notifications, audit trail), rendering intelligence dashboard, polish and deployment. At the end you have a complete MVP that clients can log into for approvals, QA data is visible, and the team has a tool they want to use daily.
+**Sprint 3 (1–2 weeks):** ✅ Client approval portal (viewer login, approve/reject workflow, version comparison, notifications, audit trail), rendering intelligence dashboard, polish and deployment. Complete V1 — clients can log in for approvals, QA data is visible, and the team has a tool they want to use daily.
 
-After that, every subsequent feature — Figma sync, additional connectors, AI image generation (self-hosted Stable Diffusion XL, 3–5 days), Litmus integration — is an incremental addition, not a rewrite. The foundation is the most demanding phase, and once it's in place the platform grows organically with each new feature.
+With V1 delivered, every subsequent feature — Figma sync, additional connectors, AI image generation (self-hosted Stable Diffusion XL, 3–5 days), Litmus integration — is an incremental addition, not a rewrite. The foundation is in place and the platform grows organically with each new feature added to the V2 roadmap.
 
 ---
 

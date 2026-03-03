@@ -5,6 +5,8 @@ import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { SWRConfig } from "swr";
 import { ThemeProvider } from "@merkle-email-hub/ui/components/theme-provider";
+import { cookies } from "next/headers";
+import { getLocaleConfig } from "@/lib/locales";
 import "@merkle-email-hub/ui/globals.css";
 
 export const metadata: Metadata = {
@@ -18,11 +20,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const messages = await getMessages();
+  const cookieStore = await cookies();
+  const localeCode = cookieStore.get("NEXT_LOCALE")?.value ?? "en";
+  const localeConfig = getLocaleConfig(localeCode);
 
   const swrConfig = { revalidateOnFocus: false, dedupingInterval: 5000 };
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={localeConfig.code} dir={localeConfig.dir} suppressHydrationWarning>
       <body className="bg-surface text-foreground antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SessionProvider>

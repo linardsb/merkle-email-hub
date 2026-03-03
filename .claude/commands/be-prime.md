@@ -34,7 +34,7 @@ Then read `/TODO.md` and extract only the **backend-relevant tasks** below. Repo
 - 3.1 Client approval portal (viewer role, feedback, audit trail)
 - 3.5 CMS + Nginx Docker stack (7 services healthy)
 
-**Phase 4 — Post-MVP:**
+**Phase 4 — V2:**
 - 4.1 Remaining 6 AI agents
 - 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi)
 

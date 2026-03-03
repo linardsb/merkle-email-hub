@@ -219,12 +219,16 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
 
   // Connector export
   if (p === "/api/v1/connectors/export") {
+    const body = _body as Record<string, unknown> | null;
+    const connectorType = (body?.connector_type as string) ?? "braze";
+    const name = (body?.content_block_name as string) ?? "export";
+    const prefix = { braze: "braze_cb", sfmc: "sfmc_ca", adobe_campaign: "adobe_dl", taxi: "taxi_tpl" }[connectorType] ?? connectorType;
     return {
       id: Math.floor(Math.random() * 10000) + 100,
-      build_id: 1,
-      connector_type: "raw_html",
-      status: "completed",
-      external_id: null,
+      build_id: body?.build_id ?? 1,
+      connector_type: connectorType,
+      status: "success",
+      external_id: `${prefix}_${name.toLowerCase().replace(/\s+/g, "_")}`,
       error_message: null,
       created_at: new Date().toISOString(),
     };
@@ -305,6 +309,87 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
       is_preset: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+    };
+  }
+
+  // Image generation
+  if (p === "/api/v1/images/generate") {
+    const body = _body as Record<string, unknown> | null;
+    const seed = Math.floor(Math.random() * 10000);
+    return {
+      image: {
+        id: Math.floor(Math.random() * 10000) + 100,
+        url: `https://picsum.photos/seed/${seed}/600/400`,
+        prompt: body?.prompt ?? "Generated image",
+        style: body?.style ?? "product",
+        aspect_ratio: body?.aspect_ratio ?? "4:3",
+        width: 600,
+        height: 400,
+        created_at: new Date().toISOString(),
+      },
+    };
+  }
+
+  // Brand config update
+  if (p === "/api/v1/orgs/brand") {
+    const body = _body as Record<string, unknown> | null;
+    return {
+      org_id: body?.org_id ?? 1,
+      colors: body?.colors ?? [],
+      typography: body?.typography ?? [],
+      logoRules: body?.logoRules ?? null,
+      forbiddenPatterns: body?.forbiddenPatterns ?? [],
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  // Brief connection create
+  if (p === "/api/v1/briefs/connections") {
+    const body = _body as Record<string, unknown> | null;
+    return {
+      id: Math.floor(Math.random() * 10000) + 100,
+      name: body?.name ?? "New Connection",
+      platform: body?.platform ?? "jira",
+      status: "connected",
+      project_url: body?.project_url ?? "",
+      credential_last4: "demo",
+      project_id: body?.project_id ?? null,
+      project_name: null,
+      last_synced_at: new Date().toISOString(),
+      items_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  // Brief connection delete
+  if (p === "/api/v1/briefs/connections/delete") {
+    return { success: true };
+  }
+
+  // Brief connection sync
+  if (p === "/api/v1/briefs/connections/sync") {
+    const body = _body as Record<string, unknown> | null;
+    return {
+      id: body?.id ?? 1,
+      name: "Synced Connection",
+      platform: "jira",
+      status: "connected",
+      project_url: "",
+      credential_last4: "sync",
+      project_id: null,
+      project_name: null,
+      last_synced_at: new Date().toISOString(),
+      items_count: 4,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  // Brief import
+  if (p === "/api/v1/briefs/import") {
+    return {
+      project_id: Math.floor(Math.random() * 10000) + 100,
     };
   }
 

@@ -2,7 +2,6 @@
 """Scaffolder agent service — orchestrates LLM → extract → sanitize → QA."""
 
 import json
-import re
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -14,86 +13,13 @@ from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
+from app.ai.shared import extract_html, sanitize_html_xss
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.schemas import QACheckResult
 
 logger = get_logger(__name__)
-
-# ── Regex patterns for HTML extraction and XSS sanitization ──
-
-_CODE_BLOCK_RE = re.compile(
-    r"```(?:html|HTML)?\s*\n(.*?)```",
-    re.DOTALL,
-)
-
-_SCRIPT_TAG_RE = re.compile(r"<script\b[^>]*>.*?</script>", re.DOTALL | re.IGNORECASE)
-_EVENT_HANDLER_RE = re.compile(r"""\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)""", re.IGNORECASE)
-_JS_PROTOCOL_RE = re.compile(r"""(href|src)\s*=\s*["']?\s*javascript:""", re.IGNORECASE)
-_DANGEROUS_TAG_RE = re.compile(
-    r"<(iframe|embed|object|form)\b[^>]*>.*?</\1>",
-    re.DOTALL | re.IGNORECASE,
-)
-_DANGEROUS_SELF_CLOSING_RE = re.compile(
-    r"<(iframe|embed|object)\b[^>]*/?>",
-    re.IGNORECASE,
-)
-_DATA_URI_RE = re.compile(r"""(href|src)\s*=\s*["']?\s*data:""", re.IGNORECASE)
-
-
-def extract_html(content: str) -> str:
-    """Extract HTML from markdown code blocks.
-
-    Looks for ```html ... ``` blocks. Falls back to raw content
-    if no code block is found.
-
-    Args:
-        content: Raw LLM response text.
-
-    Returns:
-        Extracted HTML string.
-    """
-    match = _CODE_BLOCK_RE.search(content)
-    if match:
-        return match.group(1).strip()
-    return content.strip()
-
-
-def sanitize_html_xss(html: str) -> str:
-    """Strip XSS vectors from generated HTML.
-
-    Removes script tags, event handlers, javascript: protocol,
-    dangerous tags (iframe, embed, object, form), and data: URIs.
-    Preserves MSO conditional comments needed for Outlook rendering.
-
-    Args:
-        html: HTML string to sanitize.
-
-    Returns:
-        Sanitized HTML string.
-    """
-    result = html
-
-    # Remove <script> tags and their content
-    result = _SCRIPT_TAG_RE.sub("", result)
-
-    # Remove event handlers (onclick, onload, etc.)
-    result = _EVENT_HANDLER_RE.sub("", result)
-
-    # Remove javascript: protocol
-    result = _JS_PROTOCOL_RE.sub(r'\1=""', result)
-
-    # Remove dangerous tags with content
-    result = _DANGEROUS_TAG_RE.sub("", result)
-
-    # Remove self-closing dangerous tags
-    result = _DANGEROUS_SELF_CLOSING_RE.sub("", result)
-
-    # Remove data: URIs
-    result = _DATA_URI_RE.sub(r'\1=""', result)
-
-    return result
 
 
 class ScaffolderService:

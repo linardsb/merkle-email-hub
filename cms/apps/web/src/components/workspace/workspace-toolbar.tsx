@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ClipboardCheck, Download, Save, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Download, ImagePlus, Palette, Save, ShieldCheck, Users } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
+import { CollaboratorAvatars } from "./collaboration/collaborator-avatars";
+import { ConnectionStatus } from "./collaboration/connection-status";
 import type { TemplateResponse } from "@/types/templates";
+import type { Collaborator, CollaborationStatus } from "@/types/collaboration";
 
 interface WorkspaceToolbarProps {
   projectName: string;
@@ -30,6 +33,10 @@ interface WorkspaceToolbarProps {
   isExporting?: boolean;
   onSubmitForApproval?: () => void;
   isSubmittingApproval?: boolean;
+  brandViolations?: number;
+  onGenerateImage?: () => void;
+  collaborators?: Collaborator[];
+  collaborationStatus?: CollaborationStatus;
 }
 
 export function WorkspaceToolbar({
@@ -50,6 +57,10 @@ export function WorkspaceToolbar({
   isExporting,
   onSubmitForApproval,
   isSubmittingApproval,
+  brandViolations,
+  onGenerateImage,
+  collaborators,
+  collaborationStatus,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
@@ -153,6 +164,41 @@ export function WorkspaceToolbar({
                 : t("submitForApproval")}
             </button>
           </>
+        )}
+        {onGenerateImage && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onGenerateImage}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={t("generateImage")}
+            >
+              <ImagePlus className="h-3.5 w-3.5" />
+              {t("generateImage")}
+            </button>
+          </>
+        )}
+        {brandViolations !== undefined && brandViolations > 0 && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <span
+              className="flex items-center gap-1 rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text"
+              title={t("brandViolations", { count: brandViolations })}
+            >
+              <Palette className="h-3 w-3" />
+              {brandViolations}
+            </span>
+          </>
+        )}
+        {collaborators && collaborators.length > 0 && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <CollaboratorAvatars collaborators={collaborators} />
+          </>
+        )}
+        {collaborationStatus && (
+          <ConnectionStatus status={collaborationStatus} />
         )}
         {memberCount !== undefined && (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">

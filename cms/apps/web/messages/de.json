@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projekte",
+    "components": "Komponenten",
+    "approvals": "Genehmigungen",
+    "connectors": "Konnektoren",
+    "intelligence": "Intelligenz",
+    "knowledge": "Wissensbasis",
+    "figma": "Figma Sync",
+    "briefs": "Briefings",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "login": {
+    "title": "Anmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "usernamePlaceholder": "Benutzernamen eingeben",
+    "passwordPlaceholder": "Passwort eingeben",
+    "signIn": "Anmelden",
+    "signingIn": "Anmeldung l\u00e4uft...",
+    "error": "Ung\u00fcltiger Benutzername oder Passwort",
+    "usernameRequired": "Benutzername ist erforderlich",
+    "passwordRequired": "Passwort ist erforderlich"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalProjects": "Projekte gesamt",
+    "activeOrgs": "Kundenorganisationen",
+    "systemStatus": "Systemstatus",
+    "healthy": "Gesund"
+  },
+  "errors": {
+    "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  }
+}

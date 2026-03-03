@@ -61,7 +61,8 @@ merkle-email-hub/
 │   ├── auth/           # JWT auth + RBAC + user management
 │   ├── example/        # Reference VSA feature ("Items" CRUD)
 │   ├── ai/             # AI layer (protocol interfaces, provider registry, chat API)
-│   │   └── agents/     # AI agents (scaffolder, dark_mode, content — per-agent subdirs)
+│   │   ├── agents/     # AI agents (scaffolder, dark_mode, content — per-agent subdirs)
+│   │   └── blueprints/ # Blueprint state machine (engine, nodes, definitions, schemas)
 │   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search)
 │   ├── streaming/      # WebSocket streaming (Pub/Sub, connection manager)
 │   │
@@ -130,11 +131,12 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `email_engine` | `/api/v1/email` | Maizzle build pipeline, calls sidecar at `http://maizzle-builder:3001` |
 | `components` | `/api/v1/components` | Versioned reusable email components (header, CTA, hero, etc.) |
 | `qa_engine` | `/api/v1/qa` | 10-point quality gate system with individual check modules |
-| `connectors` | `/api/v1/connectors` | ESP export (Braze Content Blocks with Liquid packaging) |
+| `connectors` | `/api/v1/connectors` | ESP export (Braze, SFMC, Adobe Campaign, Taxi for Email) via ConnectorProvider Protocol |
 | `approval` | `/api/v1/approvals` | Client approval workflow with feedback and audit trail |
 | `templates` | `/api/v1/templates`, `/api/v1/projects/{id}/templates` | Versioned email templates with soft delete and restore |
 | `personas` | `/api/v1/personas` | Test subscriber profiles (device, email client, dark mode) |
 | `knowledge` | `/api/v1/knowledge` | RAG pipeline: document ingestion, hybrid search, tagging (`make seed-knowledge`) |
+| `blueprints` | `/api/v1/blueprints` | Blueprint state machine engine: orchestrated agent pipelines with self-correction |
 
 ### QA Gate System (10 checks)
 
@@ -159,21 +161,21 @@ Located in `app/qa_engine/checks/`. Each check implements `async run(html: str) 
 - `GET /health` — Health check
 - Receives template source + config via HTTP, returns compiled HTML
 
-### AI Agents (9 total)
+### AI Agents (9 total) + Blueprint Engine
 
-The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agents using the provider registry for LLM calls and knowledge module for RAG.
+The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agents using the provider registry for LLM calls and knowledge module for RAG. The **Blueprint engine** (`app/ai/blueprints/`) orchestrates agents as state machine nodes with deterministic gates (QA, build, export) and bounded self-correction.
 
 | Agent | Purpose | Phase |
 |-------|---------|-------|
 | Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 |
 | Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 |
 | Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 |
-| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | Post-MVP |
-| Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | Post-MVP |
-| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | Post-MVP |
-| Code Reviewer | Static analysis, redundant code, file size optimisation | Post-MVP |
-| Knowledge | RAG-powered Q&A from knowledge base | Post-MVP |
-| Innovation | Prototype new techniques, feasibility assessment | Post-MVP |
+| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | V2 |
+| Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | V2 |
+| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | V2 |
+| Code Reviewer | Static analysis, redundant code, file size optimisation | V2 |
+| Knowledge | RAG-powered Q&A from knowledge base | V2 |
+| Innovation | Prototype new techniques, feasibility assessment | V2 |
 
 ### API Security Patterns
 
@@ -220,17 +222,18 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 3.4 Error handling, loading states, UI polish (skeletons, toasts, error pages)
 - [x] 3.5 CMS + Nginx Docker stack (7 services healthy)
 
-### Phase 4 — Post-MVP
+### Phase 4 — V2
 - [x] 4.8 Knowledge base search UI (`/knowledge` page, document browser, hybrid search)
 - [x] 4.9 Smart agent memory (conversation history tab in workspace chat)
 - [x] 4.10 Version comparison (side-by-side template diff in approval portal)
 - [x] 4.11 Custom persona creation (dialog form for new test profiles)
 - [x] 4.12 Exportable reports (intelligence dashboard Print/PDF + CSV export)
+- [x] 4.13 Blueprint state machine engine (agent orchestration with self-correction, QA gating, recovery routing)
 - [ ] 4.1 Remaining 6 AI agents (Outlook Fixer, Accessibility, Personalisation, Code Reviewer, Knowledge, Innovation)
-- [ ] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
+- [x] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
 - [x] 4.3 Figma design sync (frontend demo: `/figma` page, connection management, token extraction UI)
 - [ ] 4.4 Litmus / Email on Acid API integration
-- [ ] 4.5 Advanced features (collaborative editing, localisation, visual Liquid builder)
+- [x] 4.5 Advanced features (collaborative editing, localisation, brand guardrails, AI image gen, visual Liquid builder, client briefs)
 
 ## Feature Scope by Stack
 
@@ -240,10 +243,11 @@ See `TODO.md` for full task details with security requirements and verification 
 - Email Engine: Maizzle build orchestration via sidecar
 - Components: versioned component library with dark mode variants
 - QA Engine: 10-point check system in `app/qa_engine/checks/`
-- Connectors: Braze Content Block export with Liquid + AES-256 credential storage
+- Connectors: 4 ESP connectors (Braze, SFMC, Adobe Campaign, Taxi) via ConnectorProvider Protocol + AES-256 credential storage
 - Approval: ApprovalRequest, Feedback, AuditEntry models + workflow
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
+- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing
 
 ### Frontend Features (for `fe-prime`)
@@ -260,6 +264,12 @@ See `TODO.md` for full task details with security requirements and verification 
 - Intelligence Dashboard: QA trends, support matrices, quality scores
 - Knowledge Base Search: document browser, natural language search, domain/tag filters
 - Figma Sync: connection management, design token extraction (colors, typography, spacing)
+- Client Briefs: Jira/Asana/Monday.com connection cards, brief items, import-to-project
+- Brand Guardrails: per-client color/typography/logo rules, CodeMirror linter, toolbar violations badge
+- AI Image Generation: workspace dialog with style presets, gallery, insert-into-template
+- Localisation: 6 locale stubs (en/ar/de/es/fr/ja), cookie-based switching, RTL, translation management
+- Visual Liquid Builder: @dnd-kit drag-and-drop blocks, regex parser/serializer, Code/Visual tabs
+- Collaborative Editing: Yjs CRDT, y-codemirror.next, collaborator avatars, connection status
 
 ## Compact instructions
 

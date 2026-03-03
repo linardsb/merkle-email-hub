@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "projects": "Projets",
+    "components": "Composants",
+    "approvals": "Approbations",
+    "connectors": "Connecteurs",
+    "intelligence": "Intelligence",
+    "knowledge": "Connaissances",
+    "figma": "Figma Sync",
+    "briefs": "Briefings",
+    "settings": "Param\u00e8tres",
+    "settings": "Param\u00e8tres",
+    "logout": "D\u00e9connexion"
+  },
+  "login": {
+    "title": "Connexion",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "usernamePlaceholder": "Entrez votre nom d'utilisateur",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "signIn": "Se connecter",
+    "signingIn": "Connexion en cours...",
+    "error": "Nom d'utilisateur ou mot de passe invalide",
+    "usernameRequired": "Le nom d'utilisateur est requis",
+    "passwordRequired": "Le mot de passe est requis"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "totalProjects": "Total des projets",
+    "activeOrgs": "Organisations clientes",
+    "systemStatus": "\u00c9tat du syst\u00e8me",
+    "healthy": "Op\u00e9rationnel"
+  },
+  "errors": {
+    "generic": "Une erreur s'est produite. Veuillez r\u00e9essayer."
+  }
+}

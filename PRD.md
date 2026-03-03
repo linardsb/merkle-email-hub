@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 2.1
-**Date:** 2026-03-02
-**Status:** MVP Complete — Sprint 3 done (3.1-3.5); Post-MVP 4.3, 4.8-4.12 done
+**Version:** 2.2
+**Date:** 2026-03-03
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2, 4.3, 4.5, 4.8-4.13 (Phase 1) done
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-02
+> Last updated: 2026-03-03
 
 ### Completed
 
@@ -49,21 +49,24 @@
 | 3.4 | Error handling, loading states, UI polish | Shared `EmptyState` component replacing 6 inline empty states; `ErrorState` integration on intelligence + approval detail; route-level `loading.tsx` for intelligence + connectors; `Loader2` spinners on login, persona create, QA override buttons; non-semantic token fixes in 2 dialogs; `fade-in` CSS animation on 5 pages; improved approval detail skeleton |
 | 3.5 | CMS + Nginx Docker stack | 7 services healthy (db, redis, migrate, app, cms, maizzle-builder, nginx); 3 `.dockerignore` files (392MB→66MB context); nginx security hardening (blocked paths → 403, header hardening, SSL readiness); configurable `maizzle_builder_url`; `NEXT_PUBLIC_DEMO_MODE` baked into CMS build; `.env.example`; Alembic seed migration fixes |
 | 4.3 | Figma design sync (frontend demo) | `/figma` page with connection card grid (status badges, sync/delete actions), design token preview (10 colors, 7 typography styles, 7 spacing values), `ConnectFigmaDialog` form (name, URL, token, project select); 4 components (`FigmaConnectionCard`, `FigmaStatusBadge`, `FigmaDesignTokensView`, `ConnectFigmaDialog`); 6 SWR hooks; optional Figma URL field in `CreateProjectDialog` with auto-connection on submit; demo data (3 connections, 1 token set); Figma sidebar nav icon; ~45 i18n keys |
+| 4.13 (Phase 1) | Blueprint State Machine engine | `app/ai/blueprints/` module: `BlueprintEngine` state machine interleaving deterministic and agentic nodes; `BlueprintNode` protocol with progressive context hydration; bounded self-correction (max 2 rounds) with `BlueprintEscalatedError`; 6 node implementations (ScaffolderNode, DarkModeNode, QAGateNode, MaizzleBuildNode, ExportNode, RecoveryRouterNode); campaign blueprint definition with conditional edge routing; `POST /api/v1/blueprints/run` with auth + rate limiting; `BlueprintService` with blueprint registry; 27 unit tests |
+| 4.2 | Additional CMS connectors | `ConnectorProvider` Protocol in `app/connectors/protocol.py` for type-safe dispatch; `SUPPORTED_CONNECTORS` registry with lazy instantiation; 3 new packages: `app/connectors/sfmc/` (SFMC Content Areas), `app/connectors/adobe/` (Adobe Campaign delivery fragments), `app/connectors/taxi/` (Taxi Syntax-wrapped templates); each with schemas + service; demo mutation resolver updated for per-connector mock IDs; 16 unit tests (304 total) |
+| 4.5 | Advanced features (6 features) | **F1 Collaborative Editing:** Yjs CRDT + y-codemirror.next, `useCollaboration` hook, demo mode simulated collaborator, `CollaboratorAvatars` + `ConnectionStatus` components. **F2 Localisation:** 6 locale stubs (en/ar/de/es/fr/ja), cookie-based `NEXT_LOCALE` switching, RTL `dir` attribute, `/settings` page with `LocaleSelector`, `/settings/translations` management table. **F3 Brand Guardrails:** `/projects/[id]/brand` settings page, `BrandColorEditor`/`BrandTypographyEditor`/`BrandLogoRules`/`BrandForbiddenPatterns` components, CodeMirror `brandLinter` extension, toolbar violations badge. **F4 AI Image Generation:** `ImageGenDialog` (40rem) with style presets grid (6 presets), image gallery, insert `<img>` at cursor; demo picsum.photos placeholders. **F5 Visual Liquid Builder:** @dnd-kit drag-and-drop, regex Liquid parser/serializer, 5 block types (if/for/assign/output/raw), Code/Visual tab switching in `editor-panel.tsx`, live preview with sample data. **F6 Client Briefs:** `/briefs` page mirroring Figma architecture, Jira/Asana/Monday.com connection cards, brief items panel, import-to-project flow. |
 
 ### In Progress
 
-No tasks currently in progress. MVP (Sprints 1-3) is complete. Post-MVP tasks 4.1, 4.2, 4.4, 4.5 remain.
+No tasks currently in progress. V1 (Sprints 1-3) is complete. V2 tasks 4.1 and 4.4 remain. Blueprint engine Phase 1 (core infrastructure) is complete; Phase 2 (SSE streaming, multi-blueprint definitions) is planned.
 
 ### Infrastructure Built
 
 - **Backend:** Full VSA implementation across 7 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
-- **Frontend:** Next.js 16 monorepo with next-intl (strings only, no locale routing), auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations
+- **Frontend:** Next.js 16 monorepo with next-intl (6 locales with cookie-based switching, RTL support), auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations, Yjs CRDT collaborative editing, @dnd-kit visual Liquid builder
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 20 domain-specific hooks
-- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming
-- **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend functional for Raw HTML + Braze
+- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; Blueprint state machine engine for multi-node orchestration with self-correction
+- **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (261 tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (304 tests); Frontend Vitest + React Testing Library (`make test-fe`)
 
 ---
 
@@ -91,7 +94,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 |---|-----------|--------|
 | 1 | **100% Merkle-Owned IP** | Zero SaaS dependencies; entire stack open-source |
 | 2 | **Centralise Innovation** | Single platform for R&D + production across all clients |
-| 3 | **CMS-Agnostic Pipeline** | Modular connectors: Braze (MVP), SFMC, Adobe, Taxi (Phase 2) |
+| 3 | **CMS-Agnostic Pipeline** | Modular connectors: Braze (V1), SFMC, Adobe, Taxi (V2) |
 | 4 | **AI-Powered Development** | 9 specialised sub-agents; 70% local LLM / 30% cloud hybrid |
 | 5 | **Cost-Optimised Operations** | Cloud AI spend capped at £60–150/month |
 | 6 | **Design-to-Code Bridge** | Figma integration for frictionless handoff (Phase 2) |
@@ -122,7 +125,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 
 ---
 
-## 4. MVP Feature Requirements
+## 4. V1 Feature Requirements
 
 ### 4.1 Authentication & Workspace Management
 
@@ -186,7 +189,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 - Version update notifies projects using older version
 - Browser shows which versions are used where
 
-### 4.5 AI Orchestrator & Agents (MVP: 3 agents)
+### 4.5 AI Orchestrator & Agents (V1: 3 agents)
 
 **Infrastructure:** `app/ai/` protocol layer + provider registry
 
@@ -459,7 +462,7 @@ merkle-email-hub/
 │   ├── email_engine/       # Maizzle build orchestration
 │   ├── components/         # Versioned email component library
 │   ├── qa_engine/          # 10-point QA gate (10 check modules)
-│   ├── connectors/         # ESP connectors (Braze MVP)
+│   ├── connectors/         # ESP connectors (Braze V1)
 │   ├── approval/           # Client approval portal
 │   ├── personas/           # Test persona engine
 │   ├── ai/                 # AI protocol layer + provider registry
@@ -494,7 +497,7 @@ merkle-email-hub/
 - **Exit Criteria:** Developer writes email in browser, sees live preview, switches personas
 
 ### Sprint 2 — Intelligence (Weeks 3–5)
-- AI orchestrator + 3 MVP agents (Scaffolder, Dark Mode, Content)
+- AI orchestrator + 3 V1 agents (Scaffolder, Dark Mode, Content)
 - Component library v1 (5 components)
 - Braze connector
 - QA gate system (10 checks)
@@ -508,9 +511,9 @@ merkle-email-hub/
 - Team onboarding
 - **Exit Criteria:** Clients approve via live preview; dashboard shows innovation feasibility
 
-### Post-MVP Phases
-- **Phase 2:** Figma integration, SFMC/Adobe/Taxi connectors, advanced AI agents
-- **Phase 3:** Localisation, collaborative editing, visual conditional logic, AI image generation
+### V2 Phases
+- **V2 Phase 1:** Figma integration, SFMC/Adobe/Taxi connectors, advanced AI agents
+- **V2 Phase 2:** Localisation, collaborative editing, visual conditional logic, AI image generation
 
 ---
 
