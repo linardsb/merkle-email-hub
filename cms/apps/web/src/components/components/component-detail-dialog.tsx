@@ -83,7 +83,7 @@ export function ComponentDetailDialog({
         </div>
 
         {/* Tab content */}
-        <div className="mt-2">
+        <div className="mt-2 min-w-0 overflow-hidden">
           {activeTab === "preview" && (
             <div className="space-y-3">
               <div className="flex justify-end">
