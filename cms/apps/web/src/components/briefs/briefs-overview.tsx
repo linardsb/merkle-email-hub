@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
+import { Search, Building2 } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -28,6 +28,7 @@ export function BriefsOverview() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<BriefPlatform | undefined>();
   const [statusFilter, setStatusFilter] = useState<BriefItemStatus | undefined>();
+  const [clientFilter, setClientFilter] = useState<string | undefined>();
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -46,6 +47,23 @@ export function BriefsOverview() {
   const connectedPlatforms = connections
     ? [...new Set(connections.map((c) => c.platform))]
     : [];
+
+  // Gather unique client names from loaded items
+  const clientNames = useMemo(() => {
+    if (!items) return [];
+    const names = new Set<string>();
+    for (const item of items) {
+      if (item.client_name) names.add(item.client_name);
+    }
+    return [...names].sort();
+  }, [items]);
+
+  // Apply client filter locally (on top of server-side platform/status/search)
+  const filteredItems = useMemo(() => {
+    if (!items) return [];
+    if (!clientFilter) return items;
+    return items.filter((item) => item.client_name === clientFilter);
+  }, [items, clientFilter]);
 
   const pillBase = "rounded-full px-3 py-1 text-xs font-medium transition-colors";
   const pillActive = "bg-interactive text-foreground-inverse";
@@ -66,7 +84,31 @@ export function BriefsOverview() {
         />
       </div>
 
-      {/* Filter pills */}
+      {/* Client filter pills */}
+      {clientNames.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Building2 className="h-3.5 w-3.5 text-foreground-muted" />
+          <button
+            type="button"
+            onClick={() => setClientFilter(undefined)}
+            className={`${pillBase} ${!clientFilter ? pillActive : pillInactive}`}
+          >
+            {t("filterAll")}
+          </button>
+          {clientNames.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setClientFilter(clientFilter === name ? undefined : name)}
+              className={`${pillBase} ${clientFilter === name ? pillActive : pillInactive}`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Platform + status filter pills */}
       <div className="flex flex-wrap gap-2">
         {/* Platform filters */}
         <button
@@ -118,7 +160,7 @@ export function BriefsOverview() {
           onRetry={() => mutate()}
           retryLabel={t("retry")}
         />
-      ) : !items || items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
           title={t("allBriefsEmpty")}
@@ -127,10 +169,10 @@ export function BriefsOverview() {
       ) : (
         <>
           <p className="text-sm text-foreground-muted">
-            {t("briefCount", { count: items.length })}
+            {t("briefCount", { count: filteredItems.length })}
           </p>
           <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <BriefCampaignCard
                 key={item.id}
                 item={item}

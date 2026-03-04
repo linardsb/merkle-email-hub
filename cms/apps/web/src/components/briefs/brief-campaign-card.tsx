@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Calendar, Users, ImageOff } from "lucide-react";
+import { Calendar, Users, ImageOff, Building2 } from "lucide-react";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
 import type { BriefItem, BriefPlatform } from "@/types/briefs";
@@ -20,17 +20,28 @@ const STATUS_KEYS: Record<string, string> = {
   cancelled: "itemStatusCancelled",
 };
 
-// Solid background colors per platform for the connection tag
-const CONNECTION_TAG_COLORS: Record<BriefPlatform, string> = {
-  jira: "#2684FF",
-  asana: "#F06A6A",
-  monday: "#6C3CE1",
-  clickup: "#7B68EE",
-  trello: "#0079BF",
-  notion: "#787774",
-  wrike: "#08CF65",
-  basecamp: "#F5A623",
-};
+// Deterministic color assignment for client names
+const CLIENT_COLORS = [
+  "#2563EB", // blue
+  "#DC2626", // red
+  "#059669", // emerald
+  "#D97706", // amber
+  "#7C3AED", // violet
+  "#DB2777", // pink
+  "#0891B2", // cyan
+  "#4F46E5", // indigo
+  "#CA8A04", // yellow
+  "#0D9488", // teal
+];
+
+function getClientColor(clientName: string): string {
+  let hash = 0;
+  for (let i = 0; i < clientName.length; i++) {
+    hash = clientName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const idx = Math.abs(hash) % CLIENT_COLORS.length;
+  return CLIENT_COLORS[idx] as string;
+}
 
 interface BriefCampaignCardProps {
   item: BriefItem;
@@ -47,7 +58,7 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
       })
     : null;
 
-  const tagColor = item.platform ? CONNECTION_TAG_COLORS[item.platform] : undefined;
+  const clientColor = item.client_name ? getClientColor(item.client_name) : undefined;
 
   return (
     <button
@@ -73,22 +84,33 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
             <BriefPlatformBadge platform={item.platform} />
           </div>
         )}
-        {/* Connection name tag — solid color, bottom-left overlay */}
-        {item.connection_name && tagColor && (
+        {/* Client tag — solid color, bottom-left overlay on thumbnail */}
+        {item.client_name && clientColor && (
           <div
-            className="absolute bottom-2 left-2 rounded px-2 py-0.5 text-xs font-semibold text-white shadow-sm"
-            style={{ backgroundColor: tagColor }}
+            className="absolute bottom-2 left-2 rounded px-2.5 py-1 text-xs font-bold text-white shadow-sm"
+            style={{ backgroundColor: clientColor }}
           >
-            {item.connection_name}
+            {item.client_name}
           </div>
         )}
       </div>
 
       {/* Content */}
       <div className="space-y-2 p-3">
-        {/* ID + Status */}
+        {/* Client pill + Status row */}
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-xs text-foreground-muted">{item.external_id}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            {item.client_name && clientColor ? (
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                style={{ backgroundColor: clientColor }}
+              >
+                <Building2 className="h-3 w-3" />
+                {item.client_name}
+              </span>
+            ) : null}
+            <span className="font-mono text-xs text-foreground-muted truncate">{item.external_id}</span>
+          </div>
           <span
             className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status] ?? ""}`}
           >
@@ -98,6 +120,11 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
 
         {/* Title */}
         <p className="text-sm font-medium text-foreground line-clamp-2">{item.title}</p>
+
+        {/* Connection name */}
+        {item.connection_name && (
+          <p className="text-xs text-foreground-muted">{item.connection_name}</p>
+        )}
 
         {/* Meta row */}
         <div className="flex items-center gap-3 text-xs text-foreground-muted">

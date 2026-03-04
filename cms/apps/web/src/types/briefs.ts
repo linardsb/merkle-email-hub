@@ -49,6 +49,7 @@ export interface BriefItem {
   resources: BriefResource[];
   platform?: BriefPlatform;
   connection_name?: string;
+  client_name?: string;
   created_at: string;
   updated_at: string;
 }

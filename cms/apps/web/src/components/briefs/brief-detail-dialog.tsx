@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@merkle-email-hub/ui/components/ui/dialog";
-import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff } from "lucide-react";
+import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2 } from "lucide-react";
 import { useBriefDetail } from "@/hooks/use-briefs";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
@@ -55,8 +55,14 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
               </div>
             ) : null}
 
-            {/* Meta */}
+            {/* Client + Meta */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-foreground-muted">
+              {detail.client_name && (
+                <span className="flex items-center gap-1 rounded-full bg-interactive/15 px-2 py-0.5 font-semibold text-interactive">
+                  <Building2 className="h-3 w-3" />
+                  {detail.client_name}
+                </span>
+              )}
               {detail.priority && (
                 <span className="flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
