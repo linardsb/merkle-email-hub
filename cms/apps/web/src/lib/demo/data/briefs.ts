@@ -1,5 +1,24 @@
 import type { BriefConnection, BriefItem, BriefDetail } from "@/types/briefs";
 
+// Inline SVG data URI thumbnails — colorful campaign design mockups
+const THUMB_SPRING_SALE = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FF6B6B"/><stop offset="100%" stop-color="#FFA07A"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><rect x="40" y="30" width="560" height="60" rx="8" fill="#fff" opacity=".9"/><text x="320" y="70" text-anchor="middle" font-family="system-ui" font-size="28" font-weight="700" fill="#333">SPRING SALE — 50% OFF</text><rect x="120" y="130" width="400" height="120" rx="12" fill="#fff" opacity=".85"/><text x="320" y="185" text-anchor="middle" font-family="system-ui" font-size="18" fill="#555">Hero Banner Email</text><text x="320" y="215" text-anchor="middle" font-family="system-ui" font-size="14" fill="#888">Responsive • Dark Mode • CTA</text><rect x="220" y="280" width="200" height="48" rx="24" fill="#fff"/><text x="320" y="310" text-anchor="middle" font-family="system-ui" font-size="16" font-weight="600" fill="#FF6B6B">Shop Now →</text></svg>`)}`;
+
+const THUMB_COLLECTION = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#667EEA"/><stop offset="100%" stop-color="#764BA2"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="50" text-anchor="middle" font-family="system-ui" font-size="22" font-weight="700" fill="#fff">Spring Collection Preview</text><rect x="40" y="70" width="170" height="130" rx="8" fill="#fff" opacity=".2"/><rect x="235" y="70" width="170" height="130" rx="8" fill="#fff" opacity=".2"/><rect x="430" y="70" width="170" height="130" rx="8" fill="#fff" opacity=".2"/><rect x="40" y="220" width="170" height="130" rx="8" fill="#fff" opacity=".2"/><rect x="235" y="220" width="170" height="130" rx="8" fill="#fff" opacity=".2"/><rect x="430" y="220" width="170" height="130" rx="8" fill="#fff" opacity=".2"/><text x="125" y="145" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Product 1</text><text x="320" y="145" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Product 2</text><text x="515" y="145" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Product 3</text><text x="125" y="295" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Product 4</text><text x="320" y="295" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Product 5</text><text x="515" y="295" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Product 6</text></svg>`)}`;
+
+const THUMB_EASTER = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F093FB"/><stop offset="100%" stop-color="#F5576C"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="80" text-anchor="middle" font-family="system-ui" font-size="36" font-weight="800" fill="#fff">⚡ FLASH SALE</text><text x="320" y="130" text-anchor="middle" font-family="system-ui" font-size="20" fill="rgba(255,255,255,.9)">Easter Weekend Only</text><rect x="170" y="160" width="300" height="80" rx="12" fill="#fff" opacity=".15"/><text x="320" y="195" text-anchor="middle" font-family="system-ui" font-size="42" font-weight="800" fill="#fff">30% OFF</text><text x="320" y="215" text-anchor="middle" font-family="system-ui" font-size="12" fill="rgba(255,255,255,.7)">FREE SHIPPING OVER $50</text><rect x="220" y="270" width="200" height="48" rx="24" fill="#fff"/><text x="320" y="300" text-anchor="middle" font-family="system-ui" font-size="16" font-weight="600" fill="#F5576C">Shop the Sale →</text></svg>`)}`;
+
+const THUMB_VIP = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="60" text-anchor="middle" font-family="system-ui" font-size="14" letter-spacing="6" fill="#C9A84C">★ EXCLUSIVE ACCESS ★</text><text x="320" y="120" text-anchor="middle" font-family="system-ui" font-size="36" font-weight="700" fill="#C9A84C">VIP Early Access</text><text x="320" y="160" text-anchor="middle" font-family="system-ui" font-size="16" fill="rgba(201,168,76,.7)">Spring Collection 2026</text><rect x="120" y="190" width="400" height="1" fill="#C9A84C" opacity=".3"/><text x="320" y="230" text-anchor="middle" font-family="system-ui" font-size="14" fill="rgba(255,255,255,.6)">24-hour exclusive preview for VIP members</text><rect x="220" y="270" width="200" height="48" rx="4" fill="none" stroke="#C9A84C" stroke-width="2"/><text x="320" y="300" text-anchor="middle" font-family="system-ui" font-size="15" font-weight="600" fill="#C9A84C">Shop Now</text></svg>`)}`;
+
+const THUMB_NEWSLETTER_APR = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#11998E"/><stop offset="100%" stop-color="#38EF7D"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><rect x="40" y="20" width="560" height="320" rx="12" fill="#fff" opacity=".15"/><text x="320" y="60" text-anchor="middle" font-family="system-ui" font-size="12" letter-spacing="3" fill="#fff">APRIL 2026</text><text x="320" y="100" text-anchor="middle" font-family="system-ui" font-size="28" font-weight="700" fill="#fff">Product Spotlight</text><rect x="80" y="130" width="200" height="120" rx="8" fill="#fff" opacity=".2"/><rect x="360" y="130" width="200" height="120" rx="8" fill="#fff" opacity=".2"/><text x="180" y="200" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Featured Product</text><text x="460" y="200" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Blog Highlights</text><rect x="80" y="280" width="480" height="40" rx="6" fill="#fff" opacity=".1"/><text x="320" y="305" text-anchor="middle" font-family="system-ui" font-size="12" fill="rgba(255,255,255,.7)">📧 Monthly Newsletter • Product Spotlight</text></svg>`)}`;
+
+const THUMB_NEWSLETTER_JUN = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FA8BFF"/><stop offset="50%" stop-color="#2BD2FF"/><stop offset="100%" stop-color="#2BFF88"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="70" text-anchor="middle" font-family="system-ui" font-size="14" letter-spacing="3" fill="#fff">JUNE 2026</text><text x="320" y="120" text-anchor="middle" font-family="system-ui" font-size="32" font-weight="700" fill="#fff">☀ Summer Preview</text><text x="320" y="160" text-anchor="middle" font-family="system-ui" font-size="16" fill="rgba(255,255,255,.85)">New collection dropping soon</text><rect x="170" y="190" width="300" height="80" rx="12" fill="#fff" opacity=".2"/><text x="320" y="235" text-anchor="middle" font-family="system-ui" font-size="14" fill="#fff">Early Bird Discount Inside</text><rect x="220" y="290" width="200" height="44" rx="22" fill="#fff" opacity=".9"/><text x="320" y="318" text-anchor="middle" font-family="system-ui" font-size="15" font-weight="600" fill="#333">Preview Collection →</text></svg>`)}`;
+
+const THUMB_LAUNCH = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4158D0"/><stop offset="46%" stop-color="#C850C0"/><stop offset="100%" stop-color="#FFCC70"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="60" text-anchor="middle" font-family="system-ui" font-size="14" letter-spacing="4" fill="rgba(255,255,255,.7)">INTRODUCING</text><text x="320" y="110" text-anchor="middle" font-family="system-ui" font-size="34" font-weight="800" fill="#fff">Product Launch</text><text x="320" y="145" text-anchor="middle" font-family="system-ui" font-size="16" fill="rgba(255,255,255,.8)">The future is here</text><rect x="120" y="170" width="130" height="90" rx="8" fill="#fff" opacity=".15"/><rect x="260" y="170" width="130" height="90" rx="8" fill="#fff" opacity=".15"/><rect x="400" y="170" width="130" height="90" rx="8" fill="#fff" opacity=".15"/><text x="185" y="225" text-anchor="middle" font-family="system-ui" font-size="11" fill="#fff">Feature 1</text><text x="325" y="225" text-anchor="middle" font-family="system-ui" font-size="11" fill="#fff">Feature 2</text><text x="465" y="225" text-anchor="middle" font-family="system-ui" font-size="11" fill="#fff">Feature 3</text><rect x="200" y="290" width="240" height="44" rx="22" fill="#fff"/><text x="320" y="318" text-anchor="middle" font-family="system-ui" font-size="15" font-weight="600" fill="#4158D0">Get Early Access →</text></svg>`)}`;
+
+const THUMB_WELCOME = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6C3CE1"/><stop offset="100%" stop-color="#A855F7"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="60" text-anchor="middle" font-family="system-ui" font-size="40" fill="#fff">👋</text><text x="320" y="110" text-anchor="middle" font-family="system-ui" font-size="30" font-weight="700" fill="#fff">Welcome Aboard!</text><text x="320" y="145" text-anchor="middle" font-family="system-ui" font-size="15" fill="rgba(255,255,255,.8)">Your onboarding journey starts here</text><rect x="120" y="175" width="400" height="50" rx="8" fill="#fff" opacity=".15"/><text x="320" y="205" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Step 1 — Set up your profile</text><rect x="120" y="235" width="400" height="50" rx="8" fill="#fff" opacity=".15"/><text x="320" y="265" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">Step 2 — Explore features</text><rect x="220" y="300" width="200" height="40" rx="20" fill="#fff" opacity=".9"/><text x="320" y="325" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#6C3CE1">Get Started</text></svg>`)}`;
+
+const THUMB_ONBOARDING = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#D946EF"/></linearGradient></defs><rect width="640" height="360" fill="url(#g)"/><text x="320" y="60" text-anchor="middle" font-family="system-ui" font-size="14" letter-spacing="3" fill="rgba(255,255,255,.7)">DRIP SERIES — EMAIL 2</text><text x="320" y="110" text-anchor="middle" font-family="system-ui" font-size="28" font-weight="700" fill="#fff">Tips &amp; Tricks</text><text x="320" y="145" text-anchor="middle" font-family="system-ui" font-size="15" fill="rgba(255,255,255,.8)">Get the most out of your account</text><rect x="80" y="175" width="160" height="100" rx="8" fill="#fff" opacity=".15"/><rect x="260" y="175" width="160" height="100" rx="8" fill="#fff" opacity=".15"/><rect x="440" y="175" width="160" height="100" rx="8" fill="#fff" opacity=".15"/><text x="160" y="235" text-anchor="middle" font-family="system-ui" font-size="12" fill="#fff">Tip #1</text><text x="340" y="235" text-anchor="middle" font-family="system-ui" font-size="12" fill="#fff">Tip #2</text><text x="520" y="235" text-anchor="middle" font-family="system-ui" font-size="12" fill="#fff">Tip #3</text><rect x="220" y="300" width="200" height="40" rx="20" fill="#fff" opacity=".9"/><text x="320" y="325" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#8B5CF6">Learn More</text></svg>`)}`;
+
 export const DEMO_BRIEF_CONNECTIONS: BriefConnection[] = [
   {
     id: 1,
@@ -33,15 +52,15 @@ export const DEMO_BRIEF_CONNECTIONS: BriefConnection[] = [
     id: 3,
     name: "Welcome Series Backlog",
     platform: "monday",
-    status: "error",
+    status: "connected",
     project_url: "https://merkle.monday.com/boards/9876543210",
     credential_last4: "zL5m",
     project_id: 3,
     project_name: "Welcome Series — Onboarding",
-    last_synced_at: "2026-02-25T09:15:00Z",
-    items_count: 0,
+    last_synced_at: "2026-03-03T11:00:00Z",
+    items_count: 3,
     created_at: "2026-02-10T08:00:00Z",
-    updated_at: "2026-02-25T09:15:00Z",
+    updated_at: "2026-03-03T11:00:00Z",
   },
   {
     id: 4,
@@ -70,7 +89,7 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: ["Alex Chen", "Sarah Kim"],
       due_date: "2026-03-15T00:00:00Z",
       labels: ["hero", "promotional", "high-priority"],
-      thumbnail_url: "https://images.unsplash.com/photo-1557821552-17105176677c?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_SPRING_SALE,
       resources: [
         { id: 1, type: "excel", filename: "spring-products.xlsx", url: "#", size_bytes: 32768 },
         { id: 2, type: "design", filename: "hero-mockup.fig", url: "#", size_bytes: 2097152 },
@@ -90,7 +109,7 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: ["Maria Lopez"],
       due_date: "2026-03-20T00:00:00Z",
       labels: ["preview", "promotional"],
-      thumbnail_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_COLLECTION,
       resources: [
         { id: 4, type: "excel", filename: "collection-products.xlsx", url: "#", size_bytes: 32768 },
         { id: 5, type: "translation", filename: "translations-en-de.json", url: "#", size_bytes: 4096 },
@@ -109,7 +128,7 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: ["Alex Chen"],
       due_date: "2026-04-01T00:00:00Z",
       labels: ["flash-sale", "seasonal"],
-      thumbnail_url: "https://images.unsplash.com/photo-1457301547464-18ce4bee4d5c?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_EASTER,
       resources: [
         { id: 6, type: "document", filename: "brief-easter.pdf", url: "#", size_bytes: 524288 },
       ],
@@ -127,7 +146,7 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: ["Sarah Kim", "Tom Wright"],
       due_date: "2026-03-01T00:00:00Z",
       labels: ["vip", "early-access"],
-      thumbnail_url: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_VIP,
       resources: [
         { id: 7, type: "design", filename: "vip-final.fig", url: "#", size_bytes: 3145728 },
         { id: 8, type: "excel", filename: "vip-segment.csv", url: "#", size_bytes: 8192 },
@@ -150,7 +169,7 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: ["Emily Park"],
       due_date: "2026-04-05T00:00:00Z",
       labels: ["newsletter", "monthly"],
-      thumbnail_url: "https://images.unsplash.com/photo-1586339949216-35c2747cc36d?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_NEWSLETTER_APR,
       resources: [
         { id: 11, type: "document", filename: "april-content-plan.pdf", url: "#", size_bytes: 262144 },
         { id: 12, type: "excel", filename: "product-list-april.xlsx", url: "#", size_bytes: 45056 },
@@ -187,12 +206,71 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: [],
       due_date: "2026-06-01T00:00:00Z",
       labels: ["newsletter", "monthly", "seasonal"],
-      thumbnail_url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_NEWSLETTER_JUN,
       resources: [],
       platform: "asana",
       connection_name: "Q2 Newsletter Planning",
       created_at: "2026-02-21T10:00:00Z",
       updated_at: "2026-02-21T10:00:00Z",
+    },
+  ],
+  3: [
+    {
+      id: 301,
+      connection_id: 3,
+      external_id: "MON-101",
+      title: "Welcome Email — New Subscriber",
+      status: "in_progress",
+      assignees: ["Lisa Brown", "Mark Taylor"],
+      due_date: "2026-03-10T00:00:00Z",
+      labels: ["welcome", "onboarding", "high-priority"],
+      thumbnail_url: THUMB_WELCOME,
+      resources: [
+        { id: 18, type: "design", filename: "welcome-wireframe.fig", url: "#", size_bytes: 1835008 },
+        { id: 19, type: "excel", filename: "welcome-segments.xlsx", url: "#", size_bytes: 24576 },
+        { id: 20, type: "translation", filename: "welcome-i18n.json", url: "#", size_bytes: 6144 },
+      ],
+      platform: "monday",
+      connection_name: "Welcome Series Backlog",
+      created_at: "2026-02-11T09:00:00Z",
+      updated_at: "2026-03-03T11:00:00Z",
+    },
+    {
+      id: 302,
+      connection_id: 3,
+      external_id: "MON-102",
+      title: "Onboarding Drip — Tips & Tricks (Day 3)",
+      status: "open",
+      assignees: ["Lisa Brown"],
+      due_date: "2026-03-18T00:00:00Z",
+      labels: ["drip", "onboarding"],
+      thumbnail_url: THUMB_ONBOARDING,
+      resources: [
+        { id: 21, type: "document", filename: "onboarding-content.pdf", url: "#", size_bytes: 196608 },
+      ],
+      platform: "monday",
+      connection_name: "Welcome Series Backlog",
+      created_at: "2026-02-12T10:00:00Z",
+      updated_at: "2026-03-01T15:00:00Z",
+    },
+    {
+      id: 303,
+      connection_id: 3,
+      external_id: "MON-103",
+      title: "Re-engagement Email — Inactive Users",
+      status: "open",
+      assignees: ["Mark Taylor"],
+      due_date: "2026-04-01T00:00:00Z",
+      labels: ["re-engagement", "retention"],
+      thumbnail_url: null,
+      resources: [
+        { id: 22, type: "excel", filename: "inactive-cohorts.xlsx", url: "#", size_bytes: 40960 },
+        { id: 23, type: "document", filename: "re-engage-brief.pdf", url: "#", size_bytes: 131072 },
+      ],
+      platform: "monday",
+      connection_name: "Welcome Series Backlog",
+      created_at: "2026-02-14T11:00:00Z",
+      updated_at: "2026-02-28T09:00:00Z",
     },
   ],
   4: [
@@ -205,7 +283,7 @@ export const DEMO_BRIEF_ITEMS: Record<number, BriefItem[]> = {
       assignees: ["David Lee", "Anna Kowalski"],
       due_date: "2026-03-25T00:00:00Z",
       labels: ["launch", "announcement"],
-      thumbnail_url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop",
+      thumbnail_url: THUMB_LAUNCH,
       resources: [
         { id: 14, type: "design", filename: "launch-wireframe.fig", url: "#", size_bytes: 1572864 },
         { id: 15, type: "excel", filename: "feature-matrix.xlsx", url: "#", size_bytes: 28672 },
@@ -247,7 +325,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: ["Alex Chen", "Sarah Kim"],
     due_date: "2026-03-15T00:00:00Z",
     labels: ["hero", "promotional", "high-priority"],
-    thumbnail_url: "https://images.unsplash.com/photo-1557821552-17105176677c?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_SPRING_SALE,
     resources: [
       { id: 1, type: "excel", filename: "spring-products.xlsx", url: "#", size_bytes: 32768 },
       { id: 2, type: "design", filename: "hero-mockup.fig", url: "#", size_bytes: 2097152 },
@@ -274,7 +352,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: ["Maria Lopez"],
     due_date: "2026-03-20T00:00:00Z",
     labels: ["preview", "promotional"],
-    thumbnail_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_COLLECTION,
     resources: [
       { id: 4, type: "excel", filename: "collection-products.xlsx", url: "#", size_bytes: 32768 },
       { id: 5, type: "translation", filename: "translations-en-de.json", url: "#", size_bytes: 4096 },
@@ -299,7 +377,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: ["Alex Chen"],
     due_date: "2026-04-01T00:00:00Z",
     labels: ["flash-sale", "seasonal"],
-    thumbnail_url: "https://images.unsplash.com/photo-1457301547464-18ce4bee4d5c?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_EASTER,
     resources: [
       { id: 6, type: "document", filename: "brief-easter.pdf", url: "#", size_bytes: 524288 },
     ],
@@ -321,7 +399,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: ["Sarah Kim", "Tom Wright"],
     due_date: "2026-03-01T00:00:00Z",
     labels: ["vip", "early-access"],
-    thumbnail_url: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_VIP,
     resources: [
       { id: 7, type: "design", filename: "vip-final.fig", url: "#", size_bytes: 3145728 },
       { id: 8, type: "excel", filename: "vip-segment.csv", url: "#", size_bytes: 8192 },
@@ -348,7 +426,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: ["Emily Park"],
     due_date: "2026-04-05T00:00:00Z",
     labels: ["newsletter", "monthly"],
-    thumbnail_url: "https://images.unsplash.com/photo-1586339949216-35c2747cc36d?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_NEWSLETTER_APR,
     resources: [
       { id: 11, type: "document", filename: "april-content-plan.pdf", url: "#", size_bytes: 262144 },
       { id: 12, type: "excel", filename: "product-list-april.xlsx", url: "#", size_bytes: 45056 },
@@ -393,7 +471,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: [],
     due_date: "2026-06-01T00:00:00Z",
     labels: ["newsletter", "monthly", "seasonal"],
-    thumbnail_url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_NEWSLETTER_JUN,
     resources: [],
     platform: "asana",
     connection_name: "Q2 Newsletter Planning",
@@ -404,6 +482,77 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     created_at: "2026-02-21T10:00:00Z",
     updated_at: "2026-02-21T10:00:00Z",
   },
+  301: {
+    id: 301,
+    connection_id: 3,
+    external_id: "MON-101",
+    title: "Welcome Email — New Subscriber",
+    status: "in_progress",
+    assignees: ["Lisa Brown", "Mark Taylor"],
+    due_date: "2026-03-10T00:00:00Z",
+    labels: ["welcome", "onboarding", "high-priority"],
+    thumbnail_url: THUMB_WELCOME,
+    resources: [
+      { id: 18, type: "design", filename: "welcome-wireframe.fig", url: "#", size_bytes: 1835008 },
+      { id: 19, type: "excel", filename: "welcome-segments.xlsx", url: "#", size_bytes: 24576 },
+      { id: 20, type: "translation", filename: "welcome-i18n.json", url: "#", size_bytes: 6144 },
+    ],
+    platform: "monday",
+    connection_name: "Welcome Series Backlog",
+    description:
+      "Welcome email sent immediately after new subscriber sign-up.\n\n## Requirements\n- Warm, friendly tone\n- Brand introduction with logo and hero\n- 3 key benefits/features highlighted\n- CTA to complete profile setup\n- Social media links\n- Unsubscribe link\n\n## Personalisation\n- First name in subject line and greeting\n- Localised content (EN, DE, FR)\n- Dynamic product recommendations based on sign-up source",
+    attachments: [
+      { id: 7, filename: "welcome-brand-assets.zip", url: "#", size_bytes: 5242880 },
+    ],
+    priority: "high",
+    created_at: "2026-02-11T09:00:00Z",
+    updated_at: "2026-03-03T11:00:00Z",
+  },
+  302: {
+    id: 302,
+    connection_id: 3,
+    external_id: "MON-102",
+    title: "Onboarding Drip — Tips & Tricks (Day 3)",
+    status: "open",
+    assignees: ["Lisa Brown"],
+    due_date: "2026-03-18T00:00:00Z",
+    labels: ["drip", "onboarding"],
+    thumbnail_url: THUMB_ONBOARDING,
+    resources: [
+      { id: 21, type: "document", filename: "onboarding-content.pdf", url: "#", size_bytes: 196608 },
+    ],
+    platform: "monday",
+    connection_name: "Welcome Series Backlog",
+    description:
+      "Day 3 drip email with tips and tricks for new users.\n\n## Content\n- 3 quick tips with icons\n- Short tutorial video embed (GIF fallback)\n- Link to knowledge base\n- CTA to explore advanced features",
+    attachments: [],
+    priority: "medium",
+    created_at: "2026-02-12T10:00:00Z",
+    updated_at: "2026-03-01T15:00:00Z",
+  },
+  303: {
+    id: 303,
+    connection_id: 3,
+    external_id: "MON-103",
+    title: "Re-engagement Email — Inactive Users",
+    status: "open",
+    assignees: ["Mark Taylor"],
+    due_date: "2026-04-01T00:00:00Z",
+    labels: ["re-engagement", "retention"],
+    thumbnail_url: null,
+    resources: [
+      { id: 22, type: "excel", filename: "inactive-cohorts.xlsx", url: "#", size_bytes: 40960 },
+      { id: 23, type: "document", filename: "re-engage-brief.pdf", url: "#", size_bytes: 131072 },
+    ],
+    platform: "monday",
+    connection_name: "Welcome Series Backlog",
+    description:
+      "Re-engagement email targeting users inactive for 30+ days.\n\n## Strategy\n- \"We miss you\" subject line variations (A/B test)\n- Highlight what they've missed (new features, content)\n- Special comeback offer (15% discount)\n- One-click re-subscribe CTA\n- Clear unsubscribe option",
+    attachments: [],
+    priority: "medium",
+    created_at: "2026-02-14T11:00:00Z",
+    updated_at: "2026-02-28T09:00:00Z",
+  },
   401: {
     id: 401,
     connection_id: 4,
@@ -413,7 +562,7 @@ export const DEMO_BRIEF_DETAILS: Record<number, BriefDetail> = {
     assignees: ["David Lee", "Anna Kowalski"],
     due_date: "2026-03-25T00:00:00Z",
     labels: ["launch", "announcement"],
-    thumbnail_url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop",
+    thumbnail_url: THUMB_LAUNCH,
     resources: [
       { id: 14, type: "design", filename: "launch-wireframe.fig", url: "#", size_bytes: 1572864 },
       { id: 15, type: "excel", filename: "feature-matrix.xlsx", url: "#", size_bytes: 28672 },

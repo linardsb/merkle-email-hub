@@ -42,9 +42,9 @@ export function BriefsOverview() {
     search: debouncedSearch || undefined,
   });
 
-  // Gather unique connected platforms for filter pills
+  // Gather unique platforms from all connections for filter pills
   const connectedPlatforms = connections
-    ? [...new Set(connections.filter((c) => c.status === "connected").map((c) => c.platform))]
+    ? [...new Set(connections.map((c) => c.platform))]
     : [];
 
   const pillBase = "rounded-full px-3 py-1 text-xs font-medium transition-colors";

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Calendar, Users, ImageOff } from "lucide-react";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
-import type { BriefItem } from "@/types/briefs";
+import type { BriefItem, BriefPlatform } from "@/types/briefs";
 
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-badge-info-bg text-badge-info-text",
@@ -18,6 +18,18 @@ const STATUS_KEYS: Record<string, string> = {
   in_progress: "itemStatusInProgress",
   done: "itemStatusDone",
   cancelled: "itemStatusCancelled",
+};
+
+// Solid background colors per platform for the connection tag
+const CONNECTION_TAG_COLORS: Record<BriefPlatform, string> = {
+  jira: "#2684FF",
+  asana: "#F06A6A",
+  monday: "#6C3CE1",
+  clickup: "#7B68EE",
+  trello: "#0079BF",
+  notion: "#787774",
+  wrike: "#08CF65",
+  basecamp: "#F5A623",
 };
 
 interface BriefCampaignCardProps {
@@ -34,6 +46,8 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
         day: "numeric",
       })
     : null;
+
+  const tagColor = item.platform ? CONNECTION_TAG_COLORS[item.platform] : undefined;
 
   return (
     <button
@@ -59,6 +73,15 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
             <BriefPlatformBadge platform={item.platform} />
           </div>
         )}
+        {/* Connection name tag — solid color, bottom-left overlay */}
+        {item.connection_name && tagColor && (
+          <div
+            className="absolute bottom-2 left-2 rounded px-2 py-0.5 text-xs font-semibold text-white shadow-sm"
+            style={{ backgroundColor: tagColor }}
+          >
+            {item.connection_name}
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -75,11 +98,6 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
 
         {/* Title */}
         <p className="text-sm font-medium text-foreground line-clamp-2">{item.title}</p>
-
-        {/* Connection name */}
-        {item.connection_name && (
-          <p className="text-xs text-foreground-muted">{item.connection_name}</p>
-        )}
 
         {/* Meta row */}
         <div className="flex items-center gap-3 text-xs text-foreground-muted">
