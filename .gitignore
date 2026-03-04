@@ -53,5 +53,7 @@ cms/apps/web/.next/
 # MCP config (contains API tokens)
 .mcp.json
 
-# Proprietary pitch content (loaded locally, never deployed)
+# Proprietary content (never committed)
+index.html
+pitch.html
 sections-private.js
