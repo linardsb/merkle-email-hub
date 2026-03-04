@@ -6,7 +6,6 @@ import {
   ListChecks,
   TrendingUp,
   Clock,
-  MonitorSmartphone,
 } from "lucide-react";
 import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -17,6 +16,7 @@ import { CheckPerformanceChart } from "@/components/intelligence/check-performan
 import { ScoreTrendBars } from "@/components/intelligence/score-trend-bars";
 import { RecentResultsTable } from "@/components/intelligence/recent-results-table";
 import { ExportReportMenu } from "@/components/intelligence/export-report-menu";
+import { RenderingSummaryCard } from "@/components/intelligence/rendering-summary-card";
 
 export default function IntelligencePage() {
   const t = useTranslations("intelligence");
@@ -163,23 +163,8 @@ export default function IntelligencePage() {
         </div>
       </div>
 
-      {/* Email Client Rendering — Coming Soon */}
-      <div className="rounded-lg border border-card-border bg-card-bg p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MonitorSmartphone className="h-5 w-5 text-foreground-muted" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {t("clientRendering")}
-            </h2>
-          </div>
-          <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-foreground-muted">
-            {t("comingSoon")}
-          </span>
-        </div>
-        <p className="mt-2 text-sm text-foreground-muted">
-          {t("clientRenderingDescription")}
-        </p>
-      </div>
+      {/* Email Client Rendering */}
+      <RenderingSummaryCard />
     </div>
   );
 }

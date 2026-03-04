@@ -57,6 +57,11 @@ export default async function DashboardLayout({
       icon: <Image src="/icons/merkle/knowledge.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
+      href: "/renderings",
+      label: (messages as any)?.nav?.renderings || "Renderings",
+      icon: <Image src="/icons/merkle/renderings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+    },
+    {
       href: "/figma",
       label: (messages as any)?.nav?.figma || "Figma Sync",
       icon: <Image src="/icons/merkle/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,

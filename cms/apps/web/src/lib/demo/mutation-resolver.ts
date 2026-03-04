@@ -386,6 +386,43 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
     };
   }
 
+  // Rendering test
+  if (p === "/api/v1/renderings/tests") {
+    const body = _body as Record<string, unknown> | null;
+    const provider = (body?.provider as string) ?? "litmus";
+    const clientIds = (body?.client_ids as string[]) ?? [];
+    const results = clientIds.map((cid) => {
+      const h = Math.random();
+      const status = h < 0.15 ? "fail" : h < 0.35 ? "warning" : "pass";
+      return {
+        client_id: cid,
+        status,
+        screenshot_url: `https://picsum.photos/seed/${cid}-new/600/400`,
+        load_time_ms: 800 + Math.floor(Math.random() * 2200),
+        issues: status === "fail"
+          ? [{ type: "missing_background", severity: "critical", description: "VML background not rendering", affected_area: "Hero section" }]
+          : status === "warning"
+            ? [{ type: "font_fallback", severity: "minor", description: "Custom font replaced with system font", affected_area: "Body text" }]
+            : [],
+      };
+    });
+    const passCount = results.filter((r) => r.status === "pass").length;
+    const warnCount = results.filter((r) => r.status === "warning").length;
+    const score = results.length > 0 ? Math.round(((passCount + warnCount * 0.5) / results.length) * 100) : 0;
+    return {
+      id: Math.floor(Math.random() * 10000) + 100,
+      build_id: null,
+      template_name: "New Test",
+      provider,
+      status: "completed",
+      clients_requested: clientIds,
+      results,
+      compatibility_score: score,
+      created_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+    };
+  }
+
   // Brief import
   if (p === "/api/v1/briefs/import") {
     return {

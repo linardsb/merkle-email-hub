@@ -23,6 +23,11 @@ import { DEMO_BRIEF_CONNECTIONS, DEMO_BRIEF_ITEMS, DEMO_BRIEF_DETAILS } from "./
 import { DEMO_BRAND_CONFIG } from "./data/brand";
 import { DEMO_GENERATED_IMAGES } from "./data/image-gen";
 import { DEMO_TRANSLATIONS, DEMO_LOCALES } from "./data/locales";
+import {
+  DEMO_RENDERING_CLIENTS,
+  DEMO_RENDERING_TESTS,
+  DEMO_RENDERING_COMPARISONS,
+} from "./data/renderings";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -263,6 +268,68 @@ export function resolveDemo(urlStr: string): unknown | null {
   m = p.match(/^\/api\/v1\/briefs\/items\/(\d+)$/);
   if (m) {
     return DEMO_BRIEF_DETAILS[matchId(m, 1)] ?? null;
+  }
+
+  // ── Renderings ──
+  if (p === "/api/v1/renderings/clients") {
+    return DEMO_RENDERING_CLIENTS;
+  }
+  if (p === "/api/v1/renderings/tests") {
+    const provider = url.searchParams.get("provider");
+    let tests = [...DEMO_RENDERING_TESTS];
+    if (provider) tests = tests.filter((t) => t.provider === provider);
+    return paginate(tests, url);
+  }
+  if (p === "/api/v1/renderings/tests/latest") {
+    const buildId = url.searchParams.get("build_id");
+    if (buildId) {
+      const bid = parseInt(buildId, 10);
+      return DEMO_RENDERING_TESTS.find((t) => t.build_id === bid) ?? DEMO_RENDERING_TESTS[0] ?? null;
+    }
+    return DEMO_RENDERING_TESTS[0] ?? null;
+  }
+  m = p.match(/^\/api\/v1\/renderings\/tests\/(\d+)$/);
+  if (m) {
+    return DEMO_RENDERING_TESTS.find((t) => t.id === matchId(m!, 1)) ?? null;
+  }
+  if (p === "/api/v1/renderings/compare") {
+    const id1 = url.searchParams.get("test_id_1");
+    const id2 = url.searchParams.get("test_id_2");
+    if (id1 && id2) {
+      const t1 = parseInt(id1, 10);
+      const t2 = parseInt(id2, 10);
+      return DEMO_RENDERING_COMPARISONS.filter(
+        (c) => (c.test_id_baseline === t1 && c.test_id_current === t2) ||
+               (c.test_id_baseline === t2 && c.test_id_current === t1),
+      );
+    }
+    return [];
+  }
+  if (p === "/api/v1/renderings/summary") {
+    if (DEMO_RENDERING_TESTS.length === 0) {
+      return { latest_score: 0, total_tests: 0, problematic_clients: [], last_test_date: "" };
+    }
+    const latest = DEMO_RENDERING_TESTS[0]!;
+    const clientFails: Record<string, { fails: number; total: number; name: string }> = {};
+    for (const test of DEMO_RENDERING_TESTS) {
+      for (const r of test.results) {
+        if (!clientFails[r.client_id]) clientFails[r.client_id] = { fails: 0, total: 0, name: r.client_id };
+        const entry = clientFails[r.client_id]!;
+        entry.total++;
+        if (r.status === "fail") entry.fails++;
+      }
+    }
+    const problematic = Object.entries(clientFails)
+      .map(([id, v]) => ({ client_id: id, client_name: v.name, fail_rate: Math.round((v.fails / v.total) * 100) }))
+      .filter((c) => c.fail_rate > 0)
+      .sort((a, b) => b.fail_rate - a.fail_rate)
+      .slice(0, 5);
+    return {
+      latest_score: latest.compatibility_score,
+      total_tests: DEMO_RENDERING_TESTS.length,
+      problematic_clients: problematic,
+      last_test_date: latest.created_at,
+    };
   }
 
   // ── Translations ──
