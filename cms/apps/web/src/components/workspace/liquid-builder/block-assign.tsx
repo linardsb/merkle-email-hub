@@ -20,7 +20,7 @@ export function BlockAssign({ block, onUpdate }: BlockAssignProps) {
         className="w-28 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
         placeholder="variable"
       />
-      <span className="text-xs text-muted">=</span>
+      <span className="text-xs text-muted-foreground">=</span>
       <input
         type="text"
         value={block.expression}

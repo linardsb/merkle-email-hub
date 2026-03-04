@@ -20,7 +20,7 @@ export function ConnectionStatus({ status }: ConnectionStatusProps) {
   return (
     <div className="flex items-center gap-1.5" title={t(config.labelKey)}>
       <span className={`inline-block h-2 w-2 rounded-full ${config.dotClass}`} />
-      <span className="text-[10px] text-muted">{t(config.labelKey)}</span>
+      <span className="text-[10px] text-muted-foreground">{t(config.labelKey)}</span>
     </div>
   );
 }

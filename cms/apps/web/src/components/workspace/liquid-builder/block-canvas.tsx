@@ -39,7 +39,7 @@ export function BlockCanvas({ blocks, onMove, onUpdate, onRemove }: BlockCanvasP
   if (blocks.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
-        <p className="text-sm text-muted">{t("canvasEmpty")}</p>
+        <p className="text-sm text-muted-foreground">{t("canvasEmpty")}</p>
       </div>
     );
   }

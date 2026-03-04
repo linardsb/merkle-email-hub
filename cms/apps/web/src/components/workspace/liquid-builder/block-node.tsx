@@ -63,20 +63,20 @@ export function BlockNode({ block, onUpdate, onRemove }: BlockNodeProps) {
       <div className="flex items-center gap-2 border-b border-default px-2 py-1.5">
         <button
           type="button"
-          className="cursor-grab text-muted hover:text-foreground active:cursor-grabbing"
+          className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         {BLOCK_ICONS[block.type]}
-        <span className="flex-1 text-xs font-medium uppercase tracking-wider text-muted">
+        <span className="flex-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t(`blockType_${block.type}`)}
         </span>
         <button
           type="button"
           onClick={() => onRemove(block.id)}
-          className="rounded p-0.5 text-muted transition-colors hover:bg-destructive/10 hover:text-destructive"
+          className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <X className="h-3.5 w-3.5" />
         </button>

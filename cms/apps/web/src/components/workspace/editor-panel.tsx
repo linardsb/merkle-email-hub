@@ -67,7 +67,7 @@ export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, bra
           className={`px-4 py-1.5 text-xs font-medium transition-colors ${
             activeTab === "code"
               ? "border-b-2 border-interactive text-foreground"
-              : "text-muted hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {t("editorTabCode")}
@@ -78,7 +78,7 @@ export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, bra
           className={`px-4 py-1.5 text-xs font-medium transition-colors ${
             activeTab === "visual"
               ? "border-b-2 border-interactive text-foreground"
-              : "text-muted hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           {t("editorTabVisual")}

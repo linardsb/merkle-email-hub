@@ -58,13 +58,13 @@ export function TranslationTable() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="h-9 rounded-md border border-default bg-input pl-9 pr-3 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-interactive"
+            className="h-9 rounded-md border border-default bg-input pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-interactive"
           />
         </div>
         <select
@@ -79,7 +79,7 @@ export function TranslationTable() {
             </option>
           ))}
         </select>
-        <span className="text-xs text-muted">
+        <span className="text-xs text-muted-foreground">
           {t("showingCount", { count: filtered.length, total: entries.length })}
         </span>
       </div>
@@ -89,10 +89,10 @@ export function TranslationTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-default bg-surface-raised">
-              <th className="px-3 py-2 text-left font-medium text-muted">{t("namespace")}</th>
-              <th className="px-3 py-2 text-left font-medium text-muted">{t("key")}</th>
+              <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t("namespace")}</th>
+              <th className="px-3 py-2 text-left font-medium text-muted-foreground">{t("key")}</th>
               {SUPPORTED_LOCALES.map((loc) => (
-                <th key={loc.code} className="px-3 py-2 text-left font-medium text-muted">
+                <th key={loc.code} className="px-3 py-2 text-left font-medium text-muted-foreground">
                   {loc.code.toUpperCase()}
                 </th>
               ))}
@@ -103,7 +103,7 @@ export function TranslationTable() {
               <tr>
                 <td
                   colSpan={2 + SUPPORTED_LOCALES.length}
-                  className="px-3 py-8 text-center text-muted"
+                  className="px-3 py-8 text-center text-muted-foreground"
                 >
                   {t("noResults")}
                 </td>
@@ -114,7 +114,7 @@ export function TranslationTable() {
                   key={`${entry.namespace}.${entry.key}`}
                   className="border-b border-default last:border-0 hover:bg-surface-raised/50"
                 >
-                  <td className="px-3 py-2 font-mono text-xs text-muted">
+                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                     {entry.namespace}
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-foreground">

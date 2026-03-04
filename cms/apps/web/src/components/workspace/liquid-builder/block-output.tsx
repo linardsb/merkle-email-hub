@@ -13,7 +13,7 @@ export function BlockOutput({ block, onUpdate }: BlockOutputProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="font-mono text-xs text-muted">{"{{"}</span>
+      <span className="font-mono text-xs text-muted-foreground">{"{{"}</span>
       <input
         type="text"
         value={block.expression}
@@ -21,7 +21,7 @@ export function BlockOutput({ block, onUpdate }: BlockOutputProps) {
         className="flex-1 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
         placeholder={t("outputPlaceholder")}
       />
-      <span className="font-mono text-xs text-muted">{"}}"}</span>
+      <span className="font-mono text-xs text-muted-foreground">{"}}"}</span>
     </div>
   );
 }

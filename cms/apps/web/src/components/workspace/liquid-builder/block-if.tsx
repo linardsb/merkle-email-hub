@@ -14,7 +14,7 @@ export function BlockIf({ block, onUpdate }: BlockIfProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted">{t("ifCondition")}</span>
+        <span className="text-xs font-medium text-muted-foreground">{t("ifCondition")}</span>
         <input
           type="text"
           value={block.condition}
@@ -26,13 +26,13 @@ export function BlockIf({ block, onUpdate }: BlockIfProps) {
       {block.children.length > 0 && (
         <div className="border-l-2 border-success/30 pl-3">
           <span className="text-[10px] uppercase tracking-wider text-success">{t("thenBranch")}</span>
-          <p className="mt-1 text-xs text-muted">{t("childBlockCount", { count: block.children.length })}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("childBlockCount", { count: block.children.length })}</p>
         </div>
       )}
       {block.elseChildren.length > 0 && (
         <div className="border-l-2 border-warning/30 pl-3">
           <span className="text-[10px] uppercase tracking-wider text-warning">{t("elseBranch")}</span>
-          <p className="mt-1 text-xs text-muted">{t("childBlockCount", { count: block.elseChildren.length })}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("childBlockCount", { count: block.elseChildren.length })}</p>
         </div>
       )}
     </div>

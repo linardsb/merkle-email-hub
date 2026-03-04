@@ -16,7 +16,7 @@ export function BlockRaw({ block, onUpdate }: BlockRawProps) {
       value={block.content}
       onChange={(e) => onUpdate({ content: e.target.value })}
       rows={3}
-      className="w-full resize-y rounded border border-default bg-input px-2 py-1.5 font-mono text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-interactive"
+      className="w-full resize-y rounded border border-default bg-input px-2 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
       placeholder={t("rawPlaceholder")}
     />
   );

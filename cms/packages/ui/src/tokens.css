@@ -185,7 +185,7 @@
 
   /* Text */
   --color-foreground: var(--color-neutral-50);
-  --color-foreground-muted: var(--color-neutral-400);
+  --color-foreground-muted: var(--color-neutral-300);
   --color-foreground-accent: var(--color-primary-300);
   --color-foreground-inverse: var(--color-neutral-950);
 
