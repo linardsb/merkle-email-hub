@@ -70,6 +70,71 @@ const MOBILE_ISSUES: RenderingIssue[] = [
   { type: "spacing_mismatch", severity: "minor", description: "Touch target too small for mobile CTA button", affected_area: "CTA button" },
 ];
 
+// ── Inline SVG email mockup generator ──
+function hslColor(h: number, s: number, l: number): string {
+  return `hsl(${Math.round(h)},${Math.round(s)}%,${Math.round(l)}%)`;
+}
+
+function generateEmailMockupSvg(clientId: string, testId: number, status: RenderingResultStatus): string {
+  const seed = clientId.length * 17 + testId * 31;
+  const hue = (seededHash(seed) * 360) % 360;
+  const isDark = clientId === "ios_dark_mode";
+  const isOutlookDesktop = clientId.startsWith("outlook_2") || clientId === "outlook_365" || clientId === "windows_mail";
+  const isGmail = clientId.startsWith("gmail") || clientId === "gmail_workspace";
+  const isMobile = clientId.startsWith("iphone") || clientId === "ipad_mail" || clientId.includes("android") || clientId === "yahoo_mobile" || clientId === "samsung_mail";
+
+  // Colors
+  const pageBg = isDark ? "#121218" : "#f0f0f0";
+  const cardBg = isDark ? "#1e1e2a" : "#ffffff";
+  const headerBg = hslColor(hue, 65, isDark ? 35 : 45);
+  const heroBg = hslColor(hue, 50, isDark ? 25 : 85);
+  const textColor = isDark ? "#888899" : "#cccccc";
+  const ctaBg = hslColor(hue, 70, isDark ? 45 : 50);
+  const footerColor = isDark ? "#555566" : "#dddddd";
+
+  // Layout dimensions
+  const cardW = isMobile ? 480 : 520;
+  const cardX = (600 - cardW) / 2;
+  const heroShift = isOutlookDesktop ? 8 : 0;   // simulate Word engine misalignment
+  const heroGap = isOutlookDesktop ? 12 : 0;     // extra gap from layout shift
+  const clipLine = isGmail;                       // show clip indicator
+
+  // Status indicator color
+  const statusDot = status === "pass" ? "#22c55e" : status === "warning" ? "#eab308" : "#ef4444";
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="${pageBg}"/>
+  <rect x="${cardX}" y="16" width="${cardW}" height="368" rx="4" fill="${cardBg}" stroke="${isDark ? "#2a2a3a" : "#e5e5e5"}" stroke-width="1"/>
+  <!-- Header -->
+  <rect x="${cardX}" y="16" width="${cardW}" height="44" rx="4" fill="${headerBg}"/>
+  <rect x="${cardX + 16}" y="30" width="80" height="16" rx="2" fill="${isDark ? "#ffffff33" : "#ffffff88"}"/>
+  <rect x="${cardX + cardW - 96}" y="33" width="60" height="10" rx="2" fill="${isDark ? "#ffffff22" : "#ffffff55"}"/>
+  <!-- Hero image area -->
+  <rect x="${cardX + 20 + heroShift}" y="${68 + heroGap}" width="${cardW - 40}" height="120" rx="3" fill="${heroBg}"/>
+  <rect x="${cardX + (cardW / 2) - 60}" y="${108 + heroGap}" width="120" height="14" rx="2" fill="${isDark ? "#ffffff18" : "#00000012"}"/>
+  <rect x="${cardX + (cardW / 2) - 40}" y="${128 + heroGap}" width="80" height="10" rx="2" fill="${isDark ? "#ffffff10" : "#00000008"}"/>
+  <!-- Body text lines -->
+  <rect x="${cardX + 24}" y="${200 + heroGap}" width="${cardW - 48}" height="8" rx="2" fill="${textColor}"/>
+  <rect x="${cardX + 24}" y="${216 + heroGap}" width="${cardW - 80}" height="8" rx="2" fill="${textColor}"/>
+  <rect x="${cardX + 24}" y="${232 + heroGap}" width="${cardW - 60}" height="8" rx="2" fill="${textColor}"/>
+  <rect x="${cardX + 24}" y="${248 + heroGap}" width="${cardW - 100}" height="8" rx="2" fill="${textColor}"/>
+  <!-- CTA button -->
+  <rect x="${cardX + (cardW / 2) - 60}" y="${270 + heroGap}" width="120" height="32" rx="4" fill="${ctaBg}"/>
+  <rect x="${cardX + (cardW / 2) - 30}" y="${282 + heroGap}" width="60" height="8" rx="2" fill="#ffffffcc"/>
+  <!-- Footer -->
+  <rect x="${cardX + 24}" y="${318 + heroGap}" width="${cardW - 48}" height="1" fill="${footerColor}"/>
+  <rect x="${cardX + (cardW / 2) - 70}" y="${328 + heroGap}" width="140" height="6" rx="1" fill="${footerColor}"/>
+  <rect x="${cardX + (cardW / 2) - 50}" y="${340 + heroGap}" width="100" height="6" rx="1" fill="${footerColor}"/>
+  ${clipLine ? `<!-- Gmail clip line -->
+  <line x1="${cardX + 10}" y1="350" x2="${cardX + cardW - 10}" y2="350" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>
+  <text x="${cardX + cardW - 16}" y="348" font-size="8" fill="#ef4444" text-anchor="end" opacity="0.6" font-family="sans-serif">clipped</text>` : ""}
+  <!-- Status dot -->
+  <circle cx="${cardX + cardW - 12}" cy="400 - 12" r="5" fill="${statusDot}"/>
+</svg>`;
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 // ── Result generation ──
 function getIssuesForClient(clientId: string, seed: number): RenderingIssue[] {
   const issues: RenderingIssue[] = [];
@@ -111,7 +176,7 @@ function generateResult(clientId: string, testId: number, seedBase: number): Ren
   return {
     client_id: clientId,
     status: resultStatusFromIssues(issues),
-    screenshot_url: `https://picsum.photos/seed/${clientId}-${testId}/600/400`,
+    screenshot_url: generateEmailMockupSvg(clientId, testId, resultStatusFromIssues(issues)),
     load_time_ms: loadTime,
     issues,
   };
@@ -183,8 +248,8 @@ export const DEMO_RENDERING_COMPARISONS: RenderingComparison[] = SHARED_COMPARIS
     test_id_baseline: 3,
     test_id_current: 1,
     client_id: cid,
-    baseline_url: `https://picsum.photos/seed/${cid}-3/600/400`,
-    current_url: `https://picsum.photos/seed/${cid}-1/600/400`,
+    baseline_url: generateEmailMockupSvg(cid, 3, "pass"),
+    current_url: generateEmailMockupSvg(cid, 1, "pass"),
     diff_percentage: diff,
     status: diff < 1 ? "identical" : diff < 5 ? "minor_diff" : "major_diff",
   };

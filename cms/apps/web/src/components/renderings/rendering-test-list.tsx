@@ -43,6 +43,8 @@ function formatDate(iso: string): string {
   });
 }
 
+const GRID_COLS = "grid-cols-[2rem_6rem_1fr_7rem_5.5rem_3rem_9rem]";
+
 export function RenderingTestList({ tests, onScreenshotClick }: Props) {
   const t = useTranslations("renderings");
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -52,79 +54,74 @@ export function RenderingTestList({ tests, onScreenshotClick }: Props) {
       <h2 className="text-lg font-semibold text-foreground">{t("recentTests")}</h2>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-card-border">
-              <th className="w-8 pb-2" />
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{t("status")}</th>
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{t("template")}</th>
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{t("provider")}</th>
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{t("compatibility")}</th>
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{t("clients")}</th>
-              <th className="pb-2 text-left font-medium text-foreground-muted">{t("date")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tests.map((test) => {
-              const isExpanded = expandedId === test.id;
-              return (
-                <tr key={test.id} className="group">
-                  <td colSpan={7} className="p-0">
-                    <button
-                      className="flex w-full items-center border-b border-card-border/50 py-3 text-left hover:bg-surface-muted/30"
-                      onClick={() => setExpandedId(isExpanded ? null : test.id)}
-                    >
-                      <span className="w-8 flex-shrink-0 px-2">
-                        {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-foreground-muted" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-foreground-muted" />
-                        )}
-                      </span>
-                      <span className="w-24 flex-shrink-0 pr-4">{statusBadge(test.status, t)}</span>
-                      <span className="min-w-0 flex-1 pr-4 font-medium text-foreground">{test.template_name}</span>
-                      <span className="w-28 flex-shrink-0 pr-4 capitalize text-foreground-muted">
-                        {test.provider === "email_on_acid" ? t("emailOnAcid") : t("litmus")}
-                      </span>
-                      <span className="w-20 flex-shrink-0 pr-4 font-medium text-foreground">{test.compatibility_score}%</span>
-                      <span className="w-16 flex-shrink-0 pr-4 text-foreground-muted">{test.results.length}</span>
-                      <span className="w-32 flex-shrink-0 text-foreground-muted">{formatDate(test.created_at)}</span>
-                    </button>
+        {/* Header */}
+        <div className={`grid ${GRID_COLS} items-center gap-x-2 border-b border-card-border pb-2 text-sm`}>
+          <div />
+          <div className="font-medium text-foreground-muted">{t("status")}</div>
+          <div className="font-medium text-foreground-muted">{t("template")}</div>
+          <div className="font-medium text-foreground-muted">{t("provider")}</div>
+          <div className="font-medium text-foreground-muted">{t("compatibility")}</div>
+          <div className="font-medium text-foreground-muted">{t("clients")}</div>
+          <div className="font-medium text-foreground-muted">{t("date")}</div>
+        </div>
 
-                    {isExpanded && (
-                      <div className="border-b border-card-border bg-surface-muted/20 p-4">
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                          {test.results.map((result) => (
-                            <button
-                              key={result.client_id}
-                              className="group/thumb relative overflow-hidden rounded-md border border-card-border bg-card-bg transition-shadow hover:shadow-md"
-                              onClick={() =>
-                                onScreenshotClick(result, result.client_id.replace(/_/g, " "))
-                              }
-                            >
-                              <img
-                                src={result.screenshot_url}
-                                alt={result.client_id}
-                                className="aspect-[3/2] w-full object-cover"
-                                loading="lazy"
-                              />
-                              <div className="flex items-center justify-between p-2">
-                                <span className="truncate text-xs capitalize text-foreground">
-                                  {result.client_id.replace(/_/g, " ")}
-                                </span>
-                                <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${resultStatusBadge(result.status)}`} />
-                              </div>
-                            </button>
-                          ))}
+        {/* Rows */}
+        {tests.map((test) => {
+          const isExpanded = expandedId === test.id;
+          return (
+            <div key={test.id}>
+              <button
+                className={`grid w-full ${GRID_COLS} items-center gap-x-2 border-b border-card-border/50 py-3 text-left text-sm hover:bg-surface-muted/30`}
+                onClick={() => setExpandedId(isExpanded ? null : test.id)}
+              >
+                <span className="flex justify-center">
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-foreground-muted" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-foreground-muted" />
+                  )}
+                </span>
+                <span>{statusBadge(test.status, t)}</span>
+                <span className="truncate font-medium text-foreground">{test.template_name}</span>
+                <span className="capitalize text-foreground-muted">
+                  {test.provider === "email_on_acid" ? t("emailOnAcid") : t("litmus")}
+                </span>
+                <span className="font-medium text-foreground">{test.compatibility_score}%</span>
+                <span className="text-foreground-muted">{test.results.length}</span>
+                <span className="text-foreground-muted">{formatDate(test.created_at)}</span>
+              </button>
+
+              {isExpanded && (
+                <div className="border-b border-card-border bg-surface-muted/20 p-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {test.results.map((result) => (
+                      <button
+                        key={result.client_id}
+                        className="group/thumb relative overflow-hidden rounded-md border border-card-border bg-card-bg transition-shadow hover:shadow-md"
+                        onClick={() =>
+                          onScreenshotClick(result, result.client_id.replace(/_/g, " "))
+                        }
+                      >
+                        <img
+                          src={result.screenshot_url}
+                          alt={result.client_id}
+                          className="aspect-[3/2] w-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="flex items-center justify-between p-2">
+                          <span className="truncate text-xs capitalize text-foreground">
+                            {result.client_id.replace(/_/g, " ")}
+                          </span>
+                          <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${resultStatusBadge(result.status)}`} />
                         </div>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
