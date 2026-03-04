@@ -25,7 +25,49 @@ const PLATFORMS: { value: BriefPlatform; label: string }[] = [
   { value: "jira", label: "Jira" },
   { value: "asana", label: "Asana" },
   { value: "monday", label: "Monday.com" },
+  { value: "clickup", label: "ClickUp" },
+  { value: "trello", label: "Trello" },
+  { value: "notion", label: "Notion" },
+  { value: "wrike", label: "Wrike" },
+  { value: "basecamp", label: "Basecamp" },
 ];
+
+const URL_PLACEHOLDERS: Record<BriefPlatform, string> = {
+  jira: "https://your-domain.atlassian.net/...",
+  asana: "https://app.asana.com/...",
+  monday: "https://your-org.monday.com/...",
+  clickup: "https://app.clickup.com/...",
+  trello: "https://trello.com/b/...",
+  notion: "https://www.notion.so/...",
+  wrike: "https://www.wrike.com/...",
+  basecamp: "https://3.basecamp.com/...",
+};
+
+function getCredentialLabel(platform: BriefPlatform, t: ReturnType<typeof useTranslations<"briefs">>) {
+  switch (platform) {
+    case "jira": return t("connectJiraToken");
+    case "asana": return t("connectAsanaPat");
+    case "monday": return t("connectMondayKey");
+    case "clickup": return t("connectClickupToken");
+    case "trello": return t("connectTrelloKey");
+    case "notion": return t("connectNotionToken");
+    case "wrike": return t("connectWrikeToken");
+    case "basecamp": return t("connectBasecampToken");
+  }
+}
+
+function buildCredentials(platform: BriefPlatform, credential: string, jiraEmail: string, trelloToken: string): Record<string, string> {
+  switch (platform) {
+    case "jira": return { email: jiraEmail.trim(), api_token: credential.trim() };
+    case "asana": return { personal_access_token: credential.trim() };
+    case "monday": return { api_key: credential.trim() };
+    case "clickup": return { api_token: credential.trim() };
+    case "trello": return { api_key: credential.trim(), api_token: trelloToken.trim() };
+    case "notion": return { integration_token: credential.trim() };
+    case "wrike": return { access_token: credential.trim() };
+    case "basecamp": return { access_token: credential.trim() };
+  }
+}
 
 export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogProps) {
   const t = useTranslations("briefs");
@@ -38,6 +80,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
   const [projectUrl, setProjectUrl] = useState("");
   const [credential, setCredential] = useState("");
   const [jiraEmail, setJiraEmail] = useState("");
+  const [trelloToken, setTrelloToken] = useState("");
   const [projectId, setProjectId] = useState<number | null>(null);
 
   // Reset form when dialog opens
@@ -48,26 +91,26 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
     setProjectUrl("");
     setCredential("");
     setJiraEmail("");
+    setTrelloToken("");
     setProjectId(null);
   }
   if (open !== prevOpen) {
     setPrevOpen(open);
   }
 
+  const needsJiraEmail = platform === "jira";
+  const needsTrelloToken = platform === "trello";
+
   const isValid =
     name.trim().length >= 1 &&
     projectUrl.trim().length >= 1 &&
     credential.trim().length >= 1 &&
-    (platform !== "jira" || jiraEmail.trim().length >= 1);
+    (!needsJiraEmail || jiraEmail.trim().length >= 1) &&
+    (!needsTrelloToken || trelloToken.trim().length >= 1);
 
   const handleSubmit = async () => {
     if (!isValid) return;
-    const credentials: Record<string, string> =
-      platform === "jira"
-        ? { email: jiraEmail.trim(), api_token: credential.trim() }
-        : platform === "asana"
-          ? { personal_access_token: credential.trim() }
-          : { api_key: credential.trim() };
+    const credentials = buildCredentials(platform, credential, jiraEmail, trelloToken);
 
     try {
       await trigger({
@@ -124,7 +167,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {/* Platform */}
           <div>
             <label htmlFor="brief-platform" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectPlatform")}
+              {t("connectPlatformLabel")}
             </label>
             <select
               id="brief-platform"
@@ -151,20 +194,14 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
               type="url"
               value={projectUrl}
               onChange={(e) => setProjectUrl(e.target.value)}
-              placeholder={
-                platform === "jira"
-                  ? "https://your-domain.atlassian.net/..."
-                  : platform === "asana"
-                    ? "https://app.asana.com/..."
-                    : "https://your-org.monday.com/..."
-              }
+              placeholder={URL_PLACEHOLDERS[platform]}
               disabled={isMutating}
               className={inputClass}
             />
           </div>
 
           {/* Jira email (only for Jira) */}
-          {platform === "jira" && (
+          {needsJiraEmail && (
             <div>
               <label htmlFor="brief-jira-email" className="mb-1.5 block text-sm font-medium text-foreground">
                 {t("connectJiraEmail")}
@@ -181,14 +218,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
             </div>
           )}
 
-          {/* API Token / PAT / API Key */}
+          {/* Primary credential */}
           <div>
             <label htmlFor="brief-credential" className="mb-1.5 block text-sm font-medium text-foreground">
-              {platform === "jira"
-                ? t("connectJiraToken")
-                : platform === "asana"
-                  ? t("connectAsanaPat")
-                  : t("connectMondayKey")}
+              {getCredentialLabel(platform, t)}
             </label>
             <input
               id="brief-credential"
@@ -196,17 +229,33 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
               value={credential}
               onChange={(e) => setCredential(e.target.value)}
               placeholder={
-                platform === "jira"
-                  ? "ATATT3x..."
-                  : platform === "asana"
-                    ? "1/12345..."
-                    : "eyJhb..."
+                platform === "jira" ? "ATATT3x..."
+                  : platform === "asana" ? "1/12345..."
+                  : "eyJhb..."
               }
               disabled={isMutating}
               className={inputClass}
             />
             <p className="mt-1 text-xs text-foreground-muted">{t("connectCredentialHint")}</p>
           </div>
+
+          {/* Trello extra token (only for Trello) */}
+          {needsTrelloToken && (
+            <div>
+              <label htmlFor="brief-trello-token" className="mb-1.5 block text-sm font-medium text-foreground">
+                {t("connectTrelloToken")}
+              </label>
+              <input
+                id="brief-trello-token"
+                type="text"
+                value={trelloToken}
+                onChange={(e) => setTrelloToken(e.target.value)}
+                placeholder="ATTAb..."
+                disabled={isMutating}
+                className={inputClass}
+              />
+            </div>
+          )}
 
           {/* Link to Project */}
           <div>

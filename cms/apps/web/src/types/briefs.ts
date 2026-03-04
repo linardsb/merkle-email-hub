@@ -1,8 +1,10 @@
-export type BriefPlatform = "jira" | "asana" | "monday";
+export type BriefPlatform = "jira" | "asana" | "monday" | "clickup" | "trello" | "notion" | "wrike" | "basecamp";
 
 export type BriefConnectionStatus = "connected" | "syncing" | "error" | "disconnected";
 
 export type BriefItemStatus = "open" | "in_progress" | "done" | "cancelled";
+
+export type BriefResourceType = "excel" | "translation" | "design" | "document" | "image" | "other";
 
 export interface BriefConnection {
   id: number;
@@ -17,6 +19,14 @@ export interface BriefConnection {
   items_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface BriefResource {
+  id: number;
+  type: BriefResourceType;
+  filename: string;
+  url: string;
+  size_bytes: number | null;
 }
 
 export interface BriefAttachment {
@@ -35,6 +45,10 @@ export interface BriefItem {
   assignees: string[];
   due_date: string | null;
   labels: string[];
+  thumbnail_url: string | null;
+  resources: BriefResource[];
+  platform?: BriefPlatform;
+  connection_name?: string;
   created_at: string;
   updated_at: string;
 }

@@ -10,6 +10,8 @@ import type {
   BriefDetail,
   BriefConnectionCreate,
   BriefImportRequest,
+  BriefPlatform,
+  BriefItemStatus,
 } from "@/types/briefs";
 
 export function useBriefConnections() {
@@ -56,4 +58,17 @@ export function useImportBrief() {
     "/api/v1/briefs/import",
     mutationFetcher,
   );
+}
+
+export function useAllBriefItems(options?: {
+  platform?: BriefPlatform;
+  status?: BriefItemStatus;
+  search?: string;
+}) {
+  const params = new URLSearchParams();
+  if (options?.platform) params.set("platform", options.platform);
+  if (options?.status) params.set("status", options.status);
+  if (options?.search) params.set("search", options.search);
+  const qs = params.toString();
+  return useSWR<BriefItem[]>(`/api/v1/briefs/items${qs ? `?${qs}` : ""}`, fetcher);
 }

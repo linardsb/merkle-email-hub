@@ -257,6 +257,24 @@ export function resolveDemo(urlStr: string): unknown | null {
   if (p === "/api/v1/briefs/connections") {
     return DEMO_BRIEF_CONNECTIONS;
   }
+  // All brief items (unified view across connections)
+  if (p === "/api/v1/briefs/items") {
+    let allItems = Object.values(DEMO_BRIEF_ITEMS).flat();
+    const platformFilter = url.searchParams.get("platform");
+    if (platformFilter) {
+      allItems = allItems.filter((item) => item.platform === platformFilter);
+    }
+    const statusFilter = url.searchParams.get("status");
+    if (statusFilter) {
+      allItems = allItems.filter((item) => item.status === statusFilter);
+    }
+    const searchQuery = url.searchParams.get("search");
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      allItems = allItems.filter((item) => item.title.toLowerCase().includes(q));
+    }
+    return allItems;
+  }
   m = p.match(/^\/api\/v1\/briefs\/connections\/(\d+)$/);
   if (m) {
     return DEMO_BRIEF_CONNECTIONS.find((c) => c.id === matchId(m!, 1)) ?? null;

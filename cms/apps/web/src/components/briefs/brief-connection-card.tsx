@@ -9,6 +9,11 @@ const PLATFORM_LABELS: Record<string, string> = {
   jira: "Jira",
   asana: "Asana",
   monday: "Monday.com",
+  clickup: "ClickUp",
+  trello: "Trello",
+  notion: "Notion",
+  wrike: "Wrike",
+  basecamp: "Basecamp",
 };
 
 interface BriefConnectionCardProps {

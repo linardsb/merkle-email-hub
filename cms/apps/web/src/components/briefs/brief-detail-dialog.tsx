@@ -7,8 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@merkle-email-hub/ui/components/ui/dialog";
-import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff } from "lucide-react";
 import { useBriefDetail } from "@/hooks/use-briefs";
+import { BriefPlatformBadge } from "./brief-platform-badge";
+import { BriefResourceLinks } from "./brief-resource-links";
 
 interface BriefDetailDialogProps {
   itemId: number | null;
@@ -22,12 +24,17 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[28rem]">
+      <DialogContent className="max-w-[32rem]">
         <DialogHeader>
-          <DialogTitle className="text-base">
-            {detail?.external_id ? `${detail.external_id} — ` : ""}
-            {detail?.title ?? t("detailTitle")}
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle className="text-base">
+              {detail?.external_id ? `${detail.external_id} — ` : ""}
+              {detail?.title ?? t("detailTitle")}
+            </DialogTitle>
+            {detail?.platform && (
+              <BriefPlatformBadge platform={detail.platform} />
+            )}
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -36,6 +43,18 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
           </div>
         ) : detail ? (
           <div className="space-y-4">
+            {/* Thumbnail */}
+            {detail.thumbnail_url ? (
+              <div className="overflow-hidden rounded-md">
+                <img
+                  src={detail.thumbnail_url}
+                  alt={detail.title}
+                  className="w-full object-cover"
+                  style={{ maxHeight: "12rem" }}
+                />
+              </div>
+            ) : null}
+
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-foreground-muted">
               {detail.priority && (
@@ -60,6 +79,12 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
                   })}
                 </span>
               )}
+              {detail.connection_name && (
+                <span className="flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  {detail.connection_name}
+                </span>
+              )}
             </div>
 
             {/* Labels */}
@@ -81,6 +106,14 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
             <div className="prose-sm max-h-60 overflow-y-auto rounded border border-card-border bg-surface-muted p-3 text-sm text-foreground whitespace-pre-wrap">
               {detail.description || t("noDescription")}
             </div>
+
+            {/* Resources */}
+            {detail.resources && detail.resources.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-foreground">{t("resources")}</p>
+                <BriefResourceLinks resources={detail.resources} maxVisible={10} />
+              </div>
+            )}
 
             {/* Attachments */}
             {detail.attachments.length > 0 && (
