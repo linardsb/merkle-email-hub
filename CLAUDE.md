@@ -62,6 +62,7 @@ merkle-email-hub/
 │   ├── example/        # Reference VSA feature ("Items" CRUD)
 │   ├── ai/             # AI layer (protocol interfaces, provider registry, chat API)
 │   │   ├── agents/     # AI agents (scaffolder, dark_mode, content — per-agent subdirs)
+│   │   │   └── evals/  # Agent evaluation framework (synthetic data, runner, judges)
 │   │   └── blueprints/ # Blueprint state machine (engine, nodes, definitions, schemas)
 │   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search)
 │   ├── streaming/      # WebSocket streaming (Pub/Sub, connection manager)
@@ -161,21 +162,38 @@ Located in `app/qa_engine/checks/`. Each check implements `async run(html: str) 
 - `GET /health` — Health check
 - Receives template source + config via HTTP, returns compiled HTML
 
-### AI Agents (9 total) + Blueprint Engine
+### AI Agents (9 total) + Blueprint Engine + Eval System
 
-The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agents using the provider registry for LLM calls and knowledge module for RAG. The **Blueprint engine** (`app/ai/blueprints/`) orchestrates agents as state machine nodes with deterministic gates (QA, build, export) and bounded self-correction.
+The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agents using the provider registry for LLM calls and knowledge module for RAG. The **Blueprint engine** (`app/ai/blueprints/`) orchestrates agents as state machine nodes with deterministic gates (QA, build, export) and bounded self-correction. The **Eval system** (`app/ai/agents/evals/`) validates agent quality via dimension-based synthetic test data, binary LLM judges, and TPR/TNR calibration.
 
-| Agent | Purpose | Phase |
-|-------|---------|-------|
-| Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 |
-| Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 |
-| Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 |
-| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | V2 |
-| Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | V2 |
-| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | V2 |
-| Code Reviewer | Static analysis, redundant code, file size optimisation | V2 |
-| Knowledge | RAG-powered Q&A from knowledge base | V2 |
-| Innovation | Prototype new techniques, feasibility assessment | V2 |
+| Agent | Purpose | Phase | Eval Status |
+|-------|---------|-------|-------------|
+| Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 | Synthetic data ready (12 cases) |
+| Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 | Synthetic data ready (10 cases) |
+| Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 | Synthetic data ready (14 cases) |
+| Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | V2 | Pending |
+| Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | V2 | Pending |
+| Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | V2 | Pending |
+| Code Reviewer | Static analysis, redundant code, file size optimisation | V2 | Pending |
+| Knowledge | RAG-powered Q&A from knowledge base | V2 | Pending |
+| Innovation | Prototype new techniques, feasibility assessment | V2 | Pending |
+
+### Agent Evaluation Framework
+
+Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https://github.com/hamelsmu/evals-skills) — binary pass/fail LLM judges calibrated against human labels.
+
+**Per-agent eval requirements (all 9 agents):**
+1. Dimension-based synthetic test data (failure-prone axes of variation)
+2. Binary pass/fail judge prompts (one per quality dimension)
+3. Eval runner traces (JSONL with input, output, timing, errors)
+4. Error analysis (failure clustering, root cause identification)
+5. Judge calibration (TPR/TNR against human labels, not raw accuracy)
+
+**Eval files:**
+- `dimensions.py` — Failure-prone axes per agent (layout complexity, client quirks, etc.)
+- `synthetic_data_{agent}.py` — Test cases with real-world data (MSO code, VML, spam triggers)
+- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent scaffolder --output traces/`
+- Judge prompts and calibration data added per Phase 5 steps (see TODO.md)
 
 ### API Security Patterns
 
@@ -235,6 +253,17 @@ See `TODO.md` for full task details with security requirements and verification 
 - [ ] 4.4 Litmus / Email on Acid API integration
 - [x] 4.5 Advanced features (collaborative editing, localisation, brand guardrails, AI image gen, visual Liquid builder, client briefs)
 
+### Phase 5 — Agent Evaluation System
+Applies to ALL 9 agents. No agent goes to production without completing steps 5.1–5.5. See `TODO.md` for full details.
+- [x] 5.1 Synthetic test data generation (Scaffolder: 12, Dark Mode: 10, Content: 14 cases done)
+- [x] 5.2 Eval runner infrastructure (JSONL trace capture)
+- [ ] 5.3 Write binary judge prompts per agent per quality dimension
+- [ ] 5.4 Run evals + error analysis (failure clustering)
+- [ ] 5.5 Judge calibration (TPR/TNR against human labels)
+- [ ] 5.6 QA gate calibration (align 10-point checks with eval findings)
+- [ ] 5.7 Blueprint pipeline evals (end-to-end multi-agent traces)
+- [ ] 5.8 Regression suite + CI integration
+
 ## Feature Scope by Stack
 
 ### Backend Features (for `be-prime`)
@@ -249,6 +278,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing
+- Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration (Phase 5)
 
 ### Frontend Features (for `fe-prime`)
 - Dashboard: project overview grid, activity feed, QA summary, quick-start

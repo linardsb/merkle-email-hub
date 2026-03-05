@@ -1,5 +1,8 @@
 # Backend Validate — Run All Quality Checks
 
+## Token Efficiency Note
+If the project is indexed via jcodemunch, use `search_symbols` and `get_file_outline` to locate convention violations (missing auth deps, rate limiting) in Level 5 instead of reading entire route files.
+
 Run the 5-level validation pyramid:
 
 ## Level 1: Format + Lint

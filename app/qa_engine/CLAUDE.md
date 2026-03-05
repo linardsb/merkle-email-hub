@@ -10,3 +10,27 @@
 | #18086 | 9:25 AM | 🔵 | Complete Email-Hub Database Schema Inventory via Explore Agent | ~734 |
 | #18085 | 9:24 AM | 🔵 | Comprehensive Database Migration Status Analysis | ~623 |
 </claude-mem-context>
+
+# QA Engine (`app/qa_engine/`)
+
+10-point quality gate system. Each check in `checks/` implements `async run(html: str) -> QACheckResult`.
+
+## Checks
+1. `html_validation` — DOCTYPE, structural tags
+2. `css_support` — Flags poorly-supported CSS properties
+3. `file_size` — Gmail 102KB clipping threshold
+4. `link_validation` — HTTPS enforcement
+5. `spam_score` — Spam trigger word detection
+6. `dark_mode` — color-scheme meta, prefers-color-scheme, Outlook overrides
+7. `accessibility` — lang attr, alt text, table roles
+8. `fallback` — MSO conditionals, VML namespaces
+9. `image_optimization` — Explicit dimensions, format validation
+10. `brand_compliance` — Client brand rules (placeholder)
+
+## Eval Calibration (Phase 5, Step 5.6)
+QA gate thresholds must align with eval judge findings. After running agent evals (Step 5.4) and error analysis:
+- Compare QA gate pass/fail decisions against judge verdicts
+- Identify where QA checks are too lenient or too strict
+- Tune thresholds and scoring weights based on real agent output patterns
+- Ensure the QA gate catches the same failures that judges catch
+- This prevents the blueprint self-correction loop from being miscalibrated

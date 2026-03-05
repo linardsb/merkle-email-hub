@@ -1,6 +1,13 @@
 # Frontend Prime — Load Full Frontend Context
 
-Load the complete frontend context for this project. Read the following files:
+## Step 0: Index & Discover (jCodeMunch)
+1. Run `index_folder({ "path": "<project_root>" })` if not already indexed
+2. Run `get_repo_outline` to understand overall project structure
+3. Run `get_file_tree` to map the `cms/` directory layout
+4. Run `get_file_outline` on key files below to understand their exports before reading full content
+
+## Step 1: Load Core Files
+Read the following files for full context (these need complete content, not just outlines):
 
 1. Read `/cms/apps/web/src/app/layout.tsx` for provider hierarchy
 2. Read `/cms/apps/web/auth.ts` for authentication setup
@@ -10,7 +17,8 @@ Load the complete frontend context for this project. Read the following files:
 
 After reading, summarize what you've loaded.
 
-Then read `/TODO.md` and extract only the **frontend-relevant tasks** below. Report their status (done/not started) based on what exists in the codebase:
+## Step 2: Assess Task Status
+Read `/TODO.md` and extract only the **frontend-relevant tasks** below. Use `search_symbols` to check if implementations exist in the codebase rather than reading every file. Report their status (done/not started):
 
 **Phase 0 — Foundation Blockers:**
 - 0.2 Initialize shadcn/ui component library in `cms/apps/web/`

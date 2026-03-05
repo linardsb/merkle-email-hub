@@ -1,4 +1,4 @@
-# MERKLE — HTML Email Innovation Hub
+# EmailForge — HTML Email Innovation Hub
 
 ## Strategic Architecture & Implementation Plan
 
@@ -10,14 +10,14 @@ Built on a production-ready full-stack architecture (FastAPI + Next.js)
 
 # 1. Executive Summary
 
-This document defines the complete architecture and implementation plan for the Merkle HTML Email Innovation Hub — a self-hosted, CMS-agnostic platform that centralises email innovation, prototyping, AI-assisted development, design tool integration, and cross-client QA into a single unified workflow. The Hub is designed to operate independently on Merkle infrastructure while connecting seamlessly to any client tech stack including Braze, Salesforce Marketing Cloud, Adobe Campaign, and Taxi for Email.
+This document defines the complete architecture and implementation plan for the HTML Email Innovation Hub — a self-hosted, CMS-agnostic platform that centralises email innovation, prototyping, AI-assisted development, design tool integration, and cross-client QA into a single unified workflow. The Hub is designed to operate independently on internal infrastructure while connecting seamlessly to any client tech stack including Braze, Salesforce Marketing Cloud, Adobe Campaign, and Taxi for Email.
 
-The Innovation Hub addresses a challenge specific to how Merkle operates: we serve clients across diverse martech ecosystems — Braze, Salesforce, Adobe, Taxi — yet the email development process remains fragmented, manual, and siloed between engagements. No off-the-shelf tool is designed for this multi-client, multi-platform agency model. By building a centralised innovation engine with an agnostic connector architecture, we create compound value — every innovation, component, and pattern built for one client becomes available to all.
+The Innovation Hub addresses a challenge specific to how the agency operates: we serve clients across diverse martech ecosystems — Braze, Salesforce, Adobe, Taxi — yet the email development process remains fragmented, manual, and siloed between engagements. No off-the-shelf tool is designed for this multi-client, multi-platform agency model. By building a centralised innovation engine with an agnostic connector architecture, we create compound value — every innovation, component, and pattern built for one client becomes available to all.
 
 ## 1.1 Strategic Objectives
 
-- **100% Merkle-Owned IP:** The Hub is built entirely on open-source technologies with no SaaS platform dependencies. Every line of code, every component, every AI skill definition is Merkle intellectual property — a growing strategic asset, not a rented service.
-- **Centralise Innovation:** Single platform for HTML email R&D, prototyping, and production across all Merkle clients.
+- **100% Organisation-Owned IP:** The Hub is built entirely on open-source technologies with no SaaS platform dependencies. Every line of code, every component, every AI skill definition is fully owned intellectual property — a growing strategic asset, not a rented service.
+- **Centralise Innovation:** Single platform for HTML email R&D, prototyping, and production across all clients.
 - **CMS-Agnostic Pipeline:** Modular connector architecture supporting Braze, Salesforce MC, Adobe Campaign, Taxi for Email, and future platforms.
 - **AI-Powered Development:** Integrated AI coding assistant with sub-agents for scaffolding, QA, accessibility, dark mode, and cross-client compatibility. Local-first model strategy minimises API costs.
 - **Cost-Optimised Operations:** Local LLMs handle 70–90% of AI tasks at zero API cost. Entire stack runs on open-source software with zero licence fees. Self-hosted infrastructure eliminates per-seat SaaS pricing.
@@ -27,13 +27,13 @@ The Innovation Hub addresses a challenge specific to how Merkle operates: we ser
 
 ## 1.2 Technology Foundation
 
-The Hub is built entirely on open-source technologies — zero licence fees, zero per-seat pricing, zero vendor lock-in. Merkle owns every component of the stack:
+The Hub is built entirely on open-source technologies — zero licence fees, zero per-seat pricing, zero vendor lock-in. The organisation owns every component of the stack:
 
 - **Backend:** FastAPI + async SQLAlchemy + PostgreSQL + Redis — all open-source, production-grade, high-performance async API layer
 - **Frontend:** Next.js 16 + React 19 + Tailwind CSS + shadcn/ui — open-source component architecture (shadcn/ui is copy-paste, not a library dependency)
 - **Auth:** JWT with RBAC, brute-force protection, token revocation — built in-house, no Auth0/Okta dependency
 - **AI Layer:** Local-first with Ollama/vLLM (zero API cost for 70–90% of tasks) + Protocol-based cloud LLM integration for frontier reasoning. RAG pipeline with pgvector (open-source vector search, no Pinecone/Weaviate fees)
-- **Infrastructure:** Docker Compose, nginx reverse proxy, Alembic migrations — self-hosted on Merkle servers, no AWS/Azure managed service fees
+- **Infrastructure:** Docker Compose, nginx reverse proxy, Alembic migrations — self-hosted on company servers, no AWS/Azure managed service fees
 - **Email Frameworks:** Maizzle (open-source, Tailwind-native email framework) as primary build engine, with MJML (open-source) support for legacy compatibility
 - **Total software licence cost: £0.** The only recurring costs are infrastructure (servers, GPU for local LLMs) and optional cloud AI API usage for frontier tasks.
 
@@ -87,7 +87,7 @@ The Hub enforces strict client-level data isolation from day one — a requireme
 | Principle | Implementation |
 |-----------|---------------|
 | **Client A cannot see Client B's work** | Every project is scoped to a client. RBAC enforces visibility — developers are assigned to client workspaces during briefing/discovery. No cross-client data leakage. |
-| **Shared component library, private customisations** | The global component library (Merkle-owned patterns, tested modules) is available to all projects. Client-specific customisations (branded variants, custom templates) are private to that client's workspace. |
+| **Shared component library, private customisations** | The global component library (organisation-owned patterns, tested modules) is available to all projects. Client-specific customisations (branded variants, custom templates) are private to that client's workspace. |
 | **Project scoping during briefing** | Client workspace permissions are configured during the briefing and discovery phase. Project leads assign team members, set brand guardrails, and configure which connectors are active. |
 | **Database-level isolation** | Client data is partitioned by `client_id` foreign key across all tables. Row-level security in PostgreSQL enforces isolation at the database layer — even a bug in the application layer cannot leak data across clients. |
 | **Component inheritance model** | Global library → Client library → Project templates. Components cascade downward. A global update propagates to all clients. A client-specific override stays private. |
@@ -112,7 +112,7 @@ Each connector implements a common interface (Python Protocol) with platform-spe
 
 ## 3.2 Existing OTT Streaming Client as Reference Architecture
 
-A recent Merkle engagement for a major European OTT streaming platform provides a proven reference for how the connector pipeline should work. Key patterns to adopt:
+A recent agency engagement for a major European OTT streaming platform provides a proven reference for how the connector pipeline should work. Key patterns to adopt:
 
 - **mParticle → Braze data flow:** The SDH Events feed pattern (server-to-server event forwarding with attribute filtering) demonstrates how to selectively push data downstream without exposing full user profiles.
 - **Connected Content pattern:** The client's content catalogue API integration in Braze (with 15-minute caching and territory-based cache keys) is an exemplary pattern for real-time content personalisation that the Hub should support as a template.
@@ -121,7 +121,7 @@ A recent Merkle engagement for a major European OTT streaming platform provides 
 
 ## 3.3 Taxi for Email Integration
 
-Taxi for Email is a key tool in the Merkle ecosystem. The Hub integrates with Taxi at two levels:
+Taxi for Email is a key tool in the agency's tool ecosystem. The Hub integrates with Taxi at two levels:
 
 - **Taxi Syntax injection:** The Hub can wrap its compiled HTML in Taxi Syntax tags to make components editable within the Taxi CMS. This allows the Hub to produce Email Design Systems that non-developers can assemble in Taxi.
 - **Bidirectional sync:** Templates built in the Hub can be pushed to Taxi, and Taxi templates can be imported into the Hub for innovation and enhancement before being pushed back.
@@ -308,16 +308,16 @@ The Hub's AI agents are powered by frontier coding models, selected based on tas
 | **Lightweight** | Claude Haiku 4.5 | Validation checks, simple fixes, knowledge lookups, template classification | Very low | Cost-efficient for high-volume automated tasks |
 | **Alternative** | GPT-4o (OpenAI) | Fallback option, comparative benchmarking | Low | Strong general coding, different failure modes for ensemble validation |
 | **Alternative** | Gemini 2.0 (Google) | Secondary fallback, long-context document analysis | Low | 1M+ token context for large template batch analysis |
-| **Local (Dev)** | Qwen 2.5 Coder 32B / DeepSeek Coder V3 | Day-to-day development tasks, rapid iteration, boilerplate generation | Very low | Zero API cost, full data privacy, runs on Merkle infrastructure via Ollama/vLLM |
+| **Local (Dev)** | Qwen 2.5 Coder 32B / DeepSeek Coder V3 | Day-to-day development tasks, rapid iteration, boilerplate generation | Very low | Zero API cost, full data privacy, runs on internal infrastructure via Ollama/vLLM |
 | **Local (Fast)** | Llama 3.3 70B / Codestral | Autocomplete, inline suggestions, quick fixes during active coding sessions | Instant | Sub-200ms responses for real-time editor integration, no network dependency |
 
 ### Local Model Strategy
 
 For day-to-day development work where latency and API costs matter most, the Hub supports local LLM deployment:
 
-- **Ollama / vLLM deployment:** Self-hosted models running on Merkle GPU infrastructure (single A100 or equivalent handles 32B–70B parameter models comfortably)
+- **Ollama / vLLM deployment:** Self-hosted models running on company GPU infrastructure (single A100 or equivalent handles 32B–70B parameter models comfortably)
 - **Zero API cost:** Local models handle the high-volume, lower-complexity tasks — boilerplate generation, code completion, template modification, quick Q&A — that would otherwise burn significant API budget
-- **Data sovereignty:** All code and templates stay on Merkle infrastructure, never leaving the network. Ideal for client-confidential work
+- **Data sovereignty:** All code and templates stay on internal infrastructure, never leaving the network. Ideal for client-confidential work
 - **Fallback to cloud:** When a task exceeds local model capability (complex multi-step reasoning, novel architecture decisions), the orchestrator automatically escalates to Claude Opus/Sonnet via API
 - **Hybrid routing:** The system monitors task complexity and routes accordingly — local models for 70–90% of routine tasks, cloud APIs for the remaining 10–30% that require frontier reasoning
 - **Open recommendation:** The local model tier is deliberately kept flexible. As the self-hosted LLM landscape evolves rapidly, the Hub's model-agnostic architecture allows swapping in newer or more capable local models without code changes. The models listed above are current best-in-class for HTML/CSS code generation but should be re-evaluated quarterly.
@@ -394,7 +394,7 @@ Per-agent-type learned facts stored as embedded entries in pgvector. This is how
 **Memory Types:**
 - **Procedural** — learned patterns: "Samsung Mail 14+ clips `max-width` on `<div>` inside `<td>`. Use `width` attribute instead."
 - **Episodic** — session summaries: "Developer X spent 2 hours debugging VML fallback for rounded corners in Outlook 2019."
-- **Semantic** — durable facts: "Client Y requires all CTAs in #E84E0F (Merkle Orange). Brand guidelines v3.2."
+- **Semantic** — durable facts: "Client Y requires all CTAs in #E84E0F (Brand Orange). Brand guidelines v3.2."
 
 **Storage:** `memory_entries` table leveraging existing pgvector infrastructure:
 ```
@@ -674,7 +674,7 @@ The Hub processes email templates, components, and design assets — never subsc
 - **API key management:** External platform credentials (Braze API keys, SFMC OAuth tokens, Figma tokens) encrypted at rest using AES-256. Keys are never logged, never included in error responses, and scoped to minimum required permissions.
 - **Rate limiting:** Per-user and per-endpoint rate limits via Redis. AI endpoints have separate, higher limits for streaming responses.
 - **Audit logging:** Every API call logged with timestamp, user, endpoint, and action (but never request/response bodies containing credentials).
-- **Network isolation:** Hub hosted on isolated Merkle infrastructure. No inbound connections from client systems — all integrations are outbound (Hub pushes to CMS, Hub pulls from Figma).
+- **Network isolation:** Hub hosted on isolated internal infrastructure. No inbound connections from client systems — all integrations are outbound (Hub pushes to CMS, Hub pulls from Figma).
 
 ## 8.3 Data Classification
 
@@ -749,7 +749,7 @@ The Hub's knowledge base is continuously updated with insights from the email de
 Based on a production-ready full-stack architecture, adapted for the Innovation Hub:
 
 ```
-merkle-email-innovation-hub/
+email-innovation-hub/
 ├── backend/                          # FastAPI application
 │   ├── app/
 │   │   ├── email_engine/             # Maizzle/MJML build pipeline
@@ -869,7 +869,7 @@ flowchart TB
 
 ## 12.3 User Journey: Developer Workflow
 
-This is the step-by-step flow a Merkle email developer follows when working on any innovation within the Hub.
+This is the step-by-step flow an email developer follows when working on any innovation within the Hub.
 
 ```mermaid
 flowchart LR
@@ -1270,7 +1270,7 @@ This is the core value proposition: the Hub ensures that no innovation is ever a
 
 | Phase | Timeline | Deliverables | Dependencies |
 |-------|----------|-------------|-------------|
-| **0: Foundation** | Weeks 1-2 | Set up Merkle infrastructure, Docker deployment, CI/CD pipeline, RBAC auth, base application scaffolding | Server provisioning, domain, SSL |
+| **0: Foundation** | Weeks 1-2 | Set up internal infrastructure, Docker deployment, CI/CD pipeline, RBAC auth, base application scaffolding | Server provisioning, domain, SSL |
 | **1: Email Engine** | Weeks 3-5 | Maizzle integration, build pipeline, live preview, component library v1 (15 core components), HTML validation | Phase 0 complete |
 | **2: AI Layer** | Weeks 6-8 | AI orchestrator, Scaffolder + Outlook Fixer + Dark Mode agents, skills system, RAG knowledge base | Claude API access, Phase 1 |
 | **3: Design Bridge** | Weeks 9-10 | Figma API integration, design token sync, plugin import pipeline (Emailify/Email Love output) | Figma API token, Phase 1 |
@@ -1299,7 +1299,7 @@ The Hub's component library and knowledge base are seeded with existing assets, 
 | Asset | Source | Import Method | Timeline |
 |-------|--------|--------------|----------|
 | **Core components (15–30)** | Existing manually-tested component library already maintained by the team | Import into Hub component library, add compatibility metadata, run through QA pipeline to generate automated test baselines | Phase 1 (Weeks 3–5) |
-| **Knowledge base (email dev)** | Can I Email database, Email Geeks community patterns, Merkle internal documentation, client quirks accumulated by the team | Automated crawling of public sources (Can I Email, Good Email Code) + manual ingestion of Merkle-proprietary knowledge | Phase 2 (Weeks 6–8) |
+| **Knowledge base (email dev)** | Can I Email database, Email Geeks community patterns, internal documentation, client quirks accumulated by the team | Automated crawling of public sources (Can I Email, Good Email Code) + manual ingestion of proprietary internal knowledge | Phase 2 (Weeks 6–8) |
 | **Existing templates** | Current "best of" template backlog from recent client engagements | Drag-and-drop import to Hub editor or file upload. AI agents analyse imported HTML and extract reusable patterns into the component library. | Ongoing from Phase 1 |
 | **Client quirks database** | Tribal knowledge from senior developers — rendering fixes, Outlook workarounds, client-specific CSS hacks | Structured capture sessions during team workshop. AI Knowledge Agent indexes and makes searchable. | Phase 2 + Workshop |
 
@@ -1314,10 +1314,10 @@ The Hub's component library and knowledge base are seeded with existing assets, 
 | **Key person dependency during V1 build** | Medium | High | **Mitigated.** V1 was developed collaboratively with knowledge distributed from day one. All code hosted on private GitHub with full documentation. AI-assisted coding tools reduce individual dependency — the architectural blueprint in this document means any competent developer can pick up any module. |
 | **Timeline overrun (build takes longer than 5–7 weeks)** | Medium | Low | **Resolved.** V1 delivered on schedule. Each sprint delivered a usable increment — Sprint 1 produced a working editor and build pipeline, Sprint 2 added AI intelligence and export, Sprint 3 completed client handoff and polish. |
 | **AI model quality / hallucination risk** | Medium | Medium | Mitigated by architecture: RAG knowledge base grounds AI responses in verified email development data, agent skill definitions constrain output format and scope, and agent command chaining ensures multi-step validation. Developers review all AI output before it enters the build pipeline — AI suggests, humans approve. |
-| **Developer adoption resistance** | Low | Medium | The Hub enhances existing developer workflows rather than replacing them — it automates the repetitive work (CSS inlining, cross-client testing, Outlook fixes) that developers find tedious. Training was integrated into the V1 build process, and early adopters became internal champions. The broader industry trajectory is clear: AI-assisted development is the standard workflow for modern engineering teams, and the Hub positions Merkle's email developers at the forefront of that shift. |
+| **Developer adoption resistance** | Low | Medium | The Hub enhances existing developer workflows rather than replacing them — it automates the repetitive work (CSS inlining, cross-client testing, Outlook fixes) that developers find tedious. Training was integrated into the V1 build process, and early adopters became internal champions. The broader industry trajectory is clear: AI-assisted development is the standard workflow for modern engineering teams, and the Hub positions the team's email developers at the forefront of that shift. |
 | **Client data isolation failure** | Very Low | High | The Hub processes email templates and components — never subscriber data, never PII. Client isolation is enforced at the database layer (PostgreSQL row-level security by `client_id`) and at the application layer (RBAC). Even a complete application-layer bug cannot leak data across clients because the database enforces isolation independently. |
 | **Cloud AI API cost overrun** | Low | Low | Local LLMs handle 70–90% of requests at zero API cost. Cloud usage is monitored and capped. The AI Orchestrator routes by task complexity — only tasks requiring frontier reasoning reach the cloud API. Monthly spend is visible in the rendering intelligence dashboard. See Section 15.5 for detailed cost projections. |
-| **Infrastructure availability** | Very Low | Medium | Merkle operates enterprise-grade infrastructure as part of the dentsu network. The Hub runs on Docker Compose with versioned deployments and automated database backups. Recovery from a full system failure is a container restart — measured in minutes, not hours. |
+| **Infrastructure availability** | Very Low | Medium | The organisation operates enterprise-grade infrastructure. The Hub runs on Docker Compose with versioned deployments and automated database backups. Recovery from a full system failure is a container restart — measured in minutes, not hours. |
 
 ## 14.2 Success Metrics
 
@@ -1336,18 +1336,18 @@ The following metrics will be tracked from launch to measure the Hub's impact an
 
 | Area | Responsibility | Notes |
 |------|---------------|-------|
-| **Product ownership** | Merkle email development leadership | Feature prioritisation, roadmap decisions, budget approval |
+| **Product ownership** | Email development leadership | Feature prioritisation, roadmap decisions, budget approval |
 | **Technical ownership** | Development team | Code quality, architecture decisions, security, deployments |
-| **Post-V1 maintenance** | Merkle development team | Bug fixes, infrastructure, iterative improvements — part of ongoing operations |
-| **Post-V1 feature development** | Merkle development team | New connectors, additional agents, and V2 features built incrementally |
-| **Infrastructure & budget** | Merkle | Server provisioning, GPU allocation, cloud AI API budget |
+| **Post-V1 maintenance** | The development team | Bug fixes, infrastructure, iterative improvements — part of ongoing operations |
+| **Post-V1 feature development** | The development team | New connectors, additional agents, and V2 features built incrementally |
+| **Infrastructure & budget** | The organisation | Server provisioning, GPU allocation, cloud AI API budget |
 | **Support model** | Versioned deployments with automated rollback | System deployed via Docker Compose with tagged versions. If an issue occurs, rollback to the previous stable version is a single command. Database backups run on schedule. |
 
 ## 14.4 Monitoring & Operational Resilience
 
-The Hub will include production-grade monitoring aligned with Merkle's existing operational standards:
+The Hub will include production-grade monitoring aligned with existing operational standards:
 
-- **Error tracking:** Integrated error tracking (Sentry or equivalent from existing Merkle tooling) for real-time visibility into application failures
+- **Error tracking:** Integrated error tracking (Sentry or equivalent from existing company tooling) for real-time visibility into application failures
 - **Performance monitoring:** Build times, API latency, and AI agent response times tracked and surfaced in the rendering intelligence dashboard
 - **Alerting:** SLO-based alerting on user-facing symptoms — build failures, API errors, connector timeouts. Alert on leading indicators (resource saturation, dependency health) to catch issues before they affect users
 - **Graceful degradation:** Circuit breakers on external dependencies (Braze API, Litmus, cloud AI). If a cloud AI model is unavailable, the Orchestrator routes to local LLMs. If Litmus is down, built-in Playwright testing continues
@@ -1368,7 +1368,7 @@ The Hub will include production-grade monitoring aligned with Merkle's existing 
 
 The following questions benefit from senior director-level input before or during implementation:
 
-1. **Hosting environment:** Which Merkle server environment will host the Hub — on-prem or Merkle-managed cloud?
+1. **Hosting environment:** Which server environment will host the Hub — on-prem or company-managed cloud?
 2. **AI provider approval:** Which LLM providers are approved for use? Is there a data processing agreement for sending non-PII email HTML to external AI APIs?
 3. **Initial client targets:** Which clients should be the first to benefit from Hub-built campaigns? This determines which CMS connectors to prioritise after Braze.
 4. **Build team allocation:** The recommended approach is a collaborative team of 2–3 developers. Which team members should be allocated, and can they be dedicated full-time for the build period?
@@ -1381,7 +1381,7 @@ The following questions benefit from senior director-level input before or durin
 
 An Outlook rendering fix discovered on Client A's campaign is invisible to the team working on Client B. A dark mode solution built in January is rebuilt from memory in June. We have no system for compounding the work we've already done.
 
-This is not an innovation problem. It is an operational pattern inherent to how agencies work — knowledge fragments across client engagements, and the more clients Merkle serves, the more duplication occurs. The tools available on the market are built for individual brands managing their own email programmes, not for agencies that need to compound expertise across dozens of client ecosystems simultaneously.
+This is not an innovation problem. It is an operational pattern inherent to how agencies work — knowledge fragments across client engagements, and the more clients the agency serves, the more duplication occurs. The tools available on the market are built for individual brands managing their own email programmes, not for agencies that need to compound expertise across dozens of client ecosystems simultaneously.
 
 ## 15.2 What the Hub Changes
 
@@ -1399,7 +1399,7 @@ The Innovation Hub converts every piece of email development work into a reusabl
 
 ## 15.3 Client Value Proposition
 
-The Hub doesn't just make Merkle faster — it makes Merkle's clients more successful. Every capability in the Hub translates directly into measurable client outcomes.
+The Hub doesn't just make the agency faster — it makes clients more successful. Every capability in the Hub translates directly into measurable client outcomes.
 
 ### What Clients Actually Get
 
@@ -1457,7 +1457,7 @@ A SaaS client wants to differentiate through innovative email experiences — in
 - QA gate enforces fallback-first: every interactive element has a verified static alternative
 - Client sees a live demo in the review portal, not a slide deck
 
-**Result:** Client approves interactive campaign with confidence. Engagement rates increase. Client presents the rendering intelligence report to their own leadership as evidence of innovation. Merkle positioned as strategic innovation partner, not just an email vendor.
+**Result:** Client approves interactive campaign with confidence. Engagement rates increase. Client presents the rendering intelligence report to their own leadership as evidence of innovation. The agency positioned as strategic innovation partner, not just an email vendor.
 
 #### Scenario 4: Multi-Market FMCG Client — Global Consistency at Scale
 
@@ -1474,14 +1474,14 @@ A consumer goods client runs email campaigns across 25 markets with local market
 
 ### How the Hub Changes the Client Relationship
 
-The Hub shifts Merkle's positioning from **email production vendor** to **email innovation partner**.
+The Hub shifts the agency's positioning from **email production vendor** to **email innovation partner**.
 
 | Before the Hub | After the Hub |
 |---------------|--------------|
 | Client asks "can you build this email?" | Client asks "what should we build next?" |
-| Merkle delivers templates | Merkle delivers capability reports, rendering intelligence, and innovation roadmaps |
+| The agency delivers templates | The agency delivers capability reports, rendering intelligence, and innovation roadmaps |
 | Relationship measured by volume (emails produced) | Relationship measured by outcomes (engagement uplift, innovation adoption, campaign velocity) |
-| Client could replace Merkle with any capable agency | Client benefits from Merkle's compound knowledge, component library, and AI skills — accumulated across hundreds of engagements, not just their own |
+| Client could replace the agency with any capable competitor | Client benefits from the agency's compound knowledge, component library, and AI skills — accumulated across hundreds of engagements, not just their own |
 | Innovation is a risk ("will it work?") | Innovation is data-backed ("here's exactly where it works and where the fallback covers") |
 | Budget conversation: "how many emails can we get?" | Value conversation: "how much more engagement can we drive?" |
 
@@ -1505,11 +1505,11 @@ Every competitor listed above now offers some form of AI content generation — 
 - **Code-first with Maizzle** — Full HTML control with a compile-on-save build pipeline, Tailwind CSS inlining, responsive transforms, and unused class purging. Developers can solve rendering edge cases that visual builders fundamentally cannot handle. Maizzle delivers a developer-grade build system purpose-built for email.
 - **Compound knowledge system (RAG)** — Every rendering fix, client quirk, and development pattern is captured in a RAG-indexed knowledge base that feeds into AI agents. The knowledge compounds over time — six months of fixes to the same component make the AI smarter about that component. This compounding effect is a structural advantage of the Hub's architecture.
 - **Rendering intelligence as a deliverable** — Not just "test your email in 80 clients" (Stripo and Parcel offer that) but structured client support matrices showing which email innovations (AMP, interactive CSS, dark mode techniques, kinetic elements) work in which email clients, presented as capability reports for client stakeholders. The data answers "what can we do?" not just "does this email render?"
-- **100% self-hosted, open-source stack** — No per-seat SaaS pricing. No vendor lock-in. The entire platform runs on Merkle infrastructure with zero software licence costs. The knowledge base, component library, and AI skills are Merkle IP that appreciates over time.
-- **Local-first AI with hybrid routing** — 70–90% of AI tasks handled by local LLMs at zero API cost, with frontier cloud models reserved for complex reasoning. Local-first processing keeps costs predictable and data on Merkle infrastructure.
+- **100% self-hosted, open-source stack** — No per-seat SaaS pricing. No vendor lock-in. The entire platform runs on self-hosted infrastructure with zero software licence costs. The knowledge base, component library, and AI skills are fully owned IP that appreciates over time.
+- **Local-first AI with hybrid routing** — 70–90% of AI tasks handled by local LLMs at zero API cost, with frontier cloud models reserved for complex reasoning. Local-first processing keeps costs predictable and data on internal infrastructure.
 - **Innovation R&D platform** — The Hub is not just a production tool. It is the engine for prototyping, benchmarking, and proving email innovations (AMP, interactive CSS, kinetic techniques) before pitching them to clients — with rendering intelligence data to back up every capability claim.
 
-The distinction is straightforward: existing tools help in-house teams produce emails faster on their chosen platform. The Hub is built for an agency that works across platforms — it allows Merkle to develop, test, and prove email innovations once and deploy them to any client's CMS from a single codebase that Merkle owns entirely. That cross-client compound effect is something a single-brand tool simply isn't designed to provide.
+The distinction is straightforward: existing tools help in-house teams produce emails faster on their chosen platform. The Hub is built for an agency that works across platforms — it allows the agency to develop, test, and prove email innovations once and deploy them to any client's CMS from a single codebase that the organisation owns entirely. That cross-client compound effect is something a single-brand tool simply isn't designed to provide.
 
 ### Competitive Feature Adoption Plan
 
@@ -1542,7 +1542,7 @@ The following three capabilities are offered by competitors but not yet explicit
 
 #### What This Means
 
-After implementing the three new capabilities above, every feature that competitors offer individually is available in the Hub — plus the differentiators that come from building for the agency model rather than for a single brand: cross-client knowledge compounding, multi-CMS deployment, cascading component inheritance, and a self-hosted stack where Merkle owns the IP. These aren't bolt-on features — they're structural advantages of a platform designed around how agencies actually work.
+After implementing the three new capabilities above, every feature that competitors offer individually is available in the Hub — plus the differentiators that come from building for the agency model rather than for a single brand: cross-client knowledge compounding, multi-CMS deployment, cascading component inheritance, and a self-hosted stack where the organisation owns the IP. These aren't bolt-on features — they're structural advantages of a platform designed around how agencies actually work.
 
 ## 15.5 Cost Optimisation Strategy
 
@@ -1566,7 +1566,7 @@ Where an external API is not difficult to replicate for the Hub's specific needs
 | External Service | Annual Cost | Build-Internally Alternative | Effort |
 |-----------------|-------------|------------------------------|--------|
 | **Litmus / Email on Acid** | £5K–15K/yr | Built-in HTML validator + CSS support checker (Can I Email database is open-source). Playwright-based screenshot testing against local email client renderers for core clients (Apple Mail, Gmail web, Outlook). Use Litmus API only for edge cases or full 20+ client sweeps. | Medium — 2–3 weeks |
-| **SpamAssassin API** | £1K–3K/yr | SpamAssassin is open-source — deploy locally as part of the Docker stack. Run spam scoring directly on Merkle infrastructure. | Low — 2–3 days |
+| **SpamAssassin API** | £1K–3K/yr | SpamAssassin is open-source — deploy locally as part of the Docker stack. Run spam scoring directly on internal infrastructure. | Low — 2–3 days |
 | **Link checker** | SaaS link checkers $50+/mo | Built-in HTTP HEAD request validator with async batch checking. | Low — 1 day |
 | **Image optimisation** | Cloudinary / imgix ($99+/mo) | Sharp (Node.js, open-source) for image compression, WebP conversion, and CDN-ready asset pipeline. | Low — 1–2 days |
 | **File size analyser** | N/A | Built-in — trivial to implement. Gmail clipping threshold (102KB) check is a few lines of code. | Trivial |
@@ -1604,29 +1604,29 @@ The table below covers **ongoing operational costs only** — the recurring expe
 | Cost Category | Monthly | Annual | Notes |
 |--------------|---------|--------|-------|
 | **Server infrastructure** | £100–300 | £1,200–3,600 | Single server or small VM cluster for backend + frontend + DB |
-| **GPU for local LLMs** | £150–400 | £1,800–4,800 | Single GPU instance (A100/A10G) for Ollama/vLLM, or existing Merkle GPU if available |
+| **GPU for local LLMs** | £150–400 | £1,800–4,800 | Single GPU instance (A100/A10G) for Ollama/vLLM, or existing company GPU if available |
 | **Cloud AI API (30% of tasks)** | £60–150 | £720–1,800 | Claude Sonnet/Haiku for complex tasks only; prompt caching + batch API reduce costs further |
 | **Litmus/EoA (optional)** | £0–400 | £0–5,000 | Only if full 20+ client rendering needed; built-in tools cover core clients |
 | **Software licences** | £0 | **£0** | Entire stack is open-source |
 | **Total estimated range** | **£310–1,250** | **£3,720–15,200** | Vs. £50K–150K+/yr for comparable SaaS platform |
 
-**Note on people costs:** Developer time is not included in this comparison because it is constant in both scenarios. Merkle's email developers build email campaigns regardless of whether the Hub exists — the Hub redirects their effort into a more efficient workflow, it does not add headcount. SaaS platforms also require developer time to configure, manage, and produce work within them. The fair comparison is infrastructure and licence costs, where the Hub's open-source stack eliminates per-seat pricing entirely.
+**Note on people costs:** Developer time is not included in this comparison because it is constant in both scenarios. The email developers build email campaigns regardless of whether the Hub exists — the Hub redirects their effort into a more efficient workflow, it does not add headcount. SaaS platforms also require developer time to configure, manage, and produce work within them. The fair comparison is infrastructure and licence costs, where the Hub's open-source stack eliminates per-seat pricing entirely.
 
-**Initial build investment:** The V1 build was completed in 5–7 weeks with a collaborative team of 2–3 developers (see Section 16). This was a one-time investment that produced a permanent, Merkle-owned platform — after which the ongoing costs above apply.
+**Initial build investment:** The V1 build was completed in 5–7 weeks with a collaborative team of 2–3 developers (see Section 16). This was a one-time investment that produced a permanent, fully-owned platform — after which the ongoing costs above apply.
 
 ---
 
 # 16. V1 Build — Timeline & Delivery
 
-V1 — a fully functional platform demonstrating value with the team using it daily — was built by a small collaborative team of 2–3 Merkle developers working from a private GitHub repository. AI-assisted coding tools accelerated development significantly, and the collaborative approach distributed knowledge from the start, reducing key-person risk while building shared ownership of the platform.
+V1 — a fully functional platform demonstrating value with the team using it daily — was built by a small collaborative team of 2–3 developers working from a private GitHub repository. AI-assisted coding tools accelerated development significantly, and the collaborative approach distributed knowledge from the start, reducing key-person risk while building shared ownership of the platform.
 
 ## 16.1 V1 Scope Definition
 
-V1 includes everything needed to be useful and demonstrable. Each feature was selected because it directly solves a problem Merkle faces today. **All V1 features have been delivered.**
+V1 includes everything needed to be useful and demonstrable. Each feature was selected because it directly solves a problem the team faces today. **All V1 features have been delivered.**
 
 ### Included in V1 — What It Is and Why It Matters
 
-| # | Feature | What It Does | How It Benefits Merkle |
+| # | Feature | What It Does | How It Benefits the Team |
 |---|---------|-------------|----------------------|
 | 1 | **Auth + Project Workspace** | JWT-based auth with RBAC. Client-scoped project workspaces with team assignments. | **Client data isolation from day one.** Developers only see the clients they're assigned to. No accidental cross-client exposure. Demonstrates enterprise governance to stakeholders. |
 | 2 | **Monaco Editor + Live Preview** | VS Code-quality code editor with split-pane live preview, Can I Email autocomplete, and inline CSS support warnings. | **Developers stay in the Hub instead of switching between tools.** Real-time feedback on which CSS properties break in which clients — catches Outlook issues while typing, not after a 3-hour QA cycle. |
@@ -1638,7 +1638,7 @@ V1 includes everything needed to be useful and demonstrable. Each feature was se
 | 8 | **RAG Knowledge Base v1** ✅ | Searchable knowledge base seeded with Can I Email support data (8 CSS compatibility docs), email development best practices (6 guides), and email client rendering quirks (6 client-specific docs). 20 curated markdown documents processed through full RAG pipeline (extract → chunk → embed → store) via `make seed-knowledge`. Manifest-driven with per-document tags and domain classification. 109 unit tests. | **Tribal knowledge becomes permanent.** The Outlook 2016 fix that one developer discovered 6 months ago is now searchable, indexed, and available to every AI agent. New team members access the entire team's accumulated expertise from day one. |
 | 9 | **Client Approval Portal** | Client stakeholders log in with a viewer role (scoped to their projects only), see the live email render exactly as production, leave section-level feedback, and formally approve or request changes. Includes version comparison (what changed since last review), email/Slack notifications when a review is ready, and a time-stamped audit trail of all approvals. | **Replaces the screenshot-email approval cycle.** Clients currently receive static images, respond with ambiguous feedback, and iterate over days. The portal shows the live render, captures specific feedback, provides formal approve/reject workflow, and creates a documented audit trail — approval cycles drop from days to hours. |
 | 10 | **Test Persona Engine** | Pre-configured subscriber profiles (device, email client, dark mode, locale, loyalty tier) for one-click preview of how specific audience segments experience the email. | **"Show me this email as a Gold-tier member on iPhone dark mode"** — one click. Currently this requires manually toggling preview settings, remembering which clients the audience uses, and guessing at rendering. The persona engine makes QA targeted and fast. |
-| 11 | **Rendering Intelligence Dashboard** | QA results displayed as client support matrices, template quality scores, and visual regression tracking. | **Proves the Hub's value with data.** When a stakeholder asks "what can we actually do with email?", the dashboard shows exactly which innovations work in which clients — not opinions, but tested compatibility data. This is the output Merkle presents to clients to sell innovation. |
+| 11 | **Rendering Intelligence Dashboard** | QA results displayed as client support matrices, template quality scores, and visual regression tracking. | **Proves the Hub's value with data.** When a stakeholder asks "what can we actually do with email?", the dashboard shows exactly which innovations work in which clients — not opinions, but tested compatibility data. This is the output the team presents to clients to sell innovation. |
 
 ### V2 Iterations
 
@@ -1698,4 +1698,4 @@ With V1 delivered, every subsequent feature — Figma sync, additional connector
 
 ---
 
-*This plan is designed to turn innovation bench time into a production-grade platform that compounds Merkle's email development capability across every client engagement. The result is a tool shaped specifically by how Merkle works — multi-client, multi-platform, knowledge compounding — that grows more valuable with every project delivered through it.*
+*This plan is designed to turn innovation bench time into a production-grade platform that compounds the agency's email development capability across every client engagement. The result is a tool shaped specifically by how the agency works — multi-client, multi-platform, knowledge compounding — that grows more valuable with every project delivered through it.*

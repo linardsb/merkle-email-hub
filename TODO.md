@@ -416,6 +416,157 @@
 
 ---
 
+## Phase 5 — Agent Evaluation System (Specification Engineering Layer)
+
+> **Objective:** Build the "Evaluation Design" primitive from the Four Disciplines framework (Section 06 of pitch). **This eval framework applies to ALL 9 agents** — the 3 currently implemented and the 6 planned. Every agent that enters the Hub must pass through the same eval pipeline before it touches production work. No agent ships without: synthetic test data, an LLM judge, human-calibrated baselines, and a regression gate. This is not optional infrastructure — it is the mechanism that makes Specification Engineering real.
+
+> **Applies to ALL agents:**
+> | # | Agent | Status | Eval Status |
+> |---|-------|--------|-------------|
+> | 1 | **Scaffolder** | Implemented | Synthetic data created (12 cases) |
+> | 2 | **Dark Mode** | Implemented | Synthetic data created (10 cases) |
+> | 3 | **Content** | Implemented | Synthetic data created (14 cases) |
+> | 4 | **Outlook Fixer** | Planned (4.1) | Eval data needed on build |
+> | 5 | **Accessibility Auditor** | Planned (4.1) | Eval data needed on build |
+> | 6 | **Personalisation Agent** | Planned (4.1) | Eval data needed on build |
+> | 7 | **Code Reviewer** | Planned (4.1) | Eval data needed on build |
+> | 8 | **Knowledge Agent** | Planned (4.1) | Eval data needed on build |
+> | 9 | **Innovation Agent** | Planned (4.1) | Eval data needed on build |
+>
+> **Rule: No agent goes to production without completing steps 5.1-5.5 for that agent.** Steps 5.6-5.8 apply system-wide.
+
+> **Progress:**
+> - [x] Eval framework scaffolded (`app/ai/agents/evals/`)
+> - [x] Dimensions defined for Scaffolder, Dark Mode, Content
+> - [x] Synthetic data created for 3 implemented agents (36 test cases total)
+> - [x] Real-world email patterns sourced (Litmus, MailChimp, Parcel.io, email-darkmode repo, Mailmeteor)
+> - [x] Eval runner CLI created (`runner.py`)
+> - [ ] 5.1 — Review & harden test data (security audit)
+> - [ ] 5.2 — Write LLM judge prompts (3 of 9 agents)
+> - [ ] 5.3 — Run first eval batch & collect traces
+> - [ ] 5.4 — Error analysis on traces
+> - [ ] 5.5 — Calibrate judges against human labels
+> - [ ] 5.6 — Calibrate 10-point QA gate
+> - [ ] 5.7 — Blueprint pipeline eval runner
+> - [ ] 5.8 — Automated regression suite in CI/CD
+> - [ ] Eval data for Outlook Fixer (on agent build)
+> - [ ] Eval data for Accessibility Auditor (on agent build)
+> - [ ] Eval data for Personalisation Agent (on agent build)
+> - [ ] Eval data for Code Reviewer (on agent build)
+> - [ ] Eval data for Knowledge Agent (on agent build)
+> - [ ] Eval data for Innovation Agent (on agent build)
+
+### Per-Agent Eval Requirements (Mandatory for ALL 9 Agents)
+
+Every agent — whether built now or in task 4.1 — must have:
+1. **Synthetic test data** (`synthetic_data_<agent>.py`) — 10-12 dimension-based test cases with real-world inputs
+2. **LLM judge prompt** (`judge_<agent>.py`) — binary pass/fail on 3-5 subjective criteria the QA gate can't catch
+3. **Human calibration** — 20 expert-labeled outputs, TPR > 0.85, TNR > 0.80
+4. **Adversarial test cases** — 1-2 prompt injection / edge case inputs per agent
+5. **Regression baseline** — known-good scores stored in version control
+
+### Current State (3 of 9 Agents)
+- Synthetic test data created for 3 implemented agents: `app/ai/agents/evals/`
+  - `synthetic_data_scaffolder.py` — 12 test cases (MSO ghost tables, VML, Gmail clipping, vague/contradictory briefs)
+  - `synthetic_data_dark_mode.py` — 10 test cases with 5 real-world HTML templates (Outlook data-ogsc/ogsb, VML preservation, already-dark, brand-heavy)
+  - `synthetic_data_content.py` — 14 test cases across all 8 operations (spam triggers from real blocklists, PII detection, healthcare/finance compliance)
+  - `dimensions.py` — failure-prone dimension definitions per agent
+  - `runner.py` — CLI runner that outputs JSONL traces
+- Real-world email patterns sourced from: Litmus, MailChimp Design Reference, Parcel.io, email-darkmode repo, StackOverflow Design, Mailmeteor spam lists
+- **6 agents still need eval data** — to be created as each agent is built (task 4.1)
+
+### 5.1 Review & Harden Synthetic Test Data (Scaffolder, Dark Mode, Content)
+**What:** Review the 36 synthetic test cases for completeness, realism, and security. Verify no real client data or credentials leaked into test fixtures. Add 2-3 missing edge cases per agent identified during review. Ensure all HTML fixtures are self-contained (no external resource dependencies).
+**Applies to:** Scaffolder, Dark Mode, Content (current 3). **Repeat this step for each new agent built in task 4.1.**
+**Security:**
+- Audit all test HTML for embedded URLs (must be placehold.co or example.com only)
+- Verify no real brand names, client data, or API keys in any fixture
+- Test inputs must not contain prompt injection attempts (add 1-2 adversarial test cases per agent)
+**Verify:** All 36+ test cases load without errors. `python -m app.ai.agents.evals.runner --agent all --output traces/` executes (even if agents return errors due to no LLM configured). No real client data in any fixture.
+
+### 5.2 Write LLM Judge Prompts — Binary Pass/Fail (ALL Agents)
+**What:** Following the evals-skills `write-judge-prompt` methodology, create binary pass/fail LLM judges for subjective quality criteria that the 10-point QA gate cannot catch. **One judge per agent (9 total when complete)**, each evaluating 3-5 subjective criteria.
+**Judges for currently implemented agents:**
+- **Scaffolder Judge:** Does the HTML faithfully implement the brief? Is the layout email-client appropriate (not web-only patterns)? Are MSO conditionals correctly structured?
+- **Dark Mode Judge:** Are dark mode colors visually coherent (not just technically present)? Is the original HTML preserved without structural changes? Are Outlook selectors complete?
+- **Content Judge:** Is the copy compelling and on-brand? Does the tone match the request? Are spam triggers absent while maintaining persuasiveness?
+**Judges for planned agents (create when each agent is built):**
+- **Outlook Fixer Judge:** Are MSO conditionals correctly targeted? Is VML well-formed? Are existing styles preserved?
+- **Accessibility Judge:** Is generated alt text meaningful (not just "image")? Are WCAG AA violations correctly identified and prioritised?
+- **Personalisation Judge:** Is Liquid/AMPscript syntactically correct? Does the logic match the natural language intent? Are edge cases (null data, empty arrays) handled?
+- **Code Reviewer Judge:** Are flagged issues genuine (not false positives)? Are suggestions actionable? Is severity appropriate?
+- **Knowledge Agent Judge:** Is the answer grounded in retrieved context (faithful)? Is it relevant to the query? Are source citations accurate?
+- **Innovation Agent Judge:** Is the feasibility assessment accurate? Is the fallback strategy robust? Does audience coverage estimate match reality?
+**Security:**
+- Judge prompts must NOT include the agent's system prompt (information leakage)
+- Judge prompts must NOT make external API calls
+- Judge outputs must be structured JSON (pass/fail + reasoning), never freeform
+**Verify:** Each judge prompt produces consistent binary pass/fail on 5 hand-labeled examples. Inter-run agreement > 90% on the same inputs.
+
+### 5.3 Run First Eval Batch & Collect Traces (Scaffolder, Dark Mode, Content)
+**What:** Configure a working LLM provider (can be local Ollama or cloud API). Run all 36 test cases through the 3 implemented agents. Collect full JSONL traces: input, output, timing, model, QA results. Store in `traces/` directory (gitignored). **Repeat for each new agent as it's built.**
+**Security:**
+- `traces/` directory added to `.gitignore` (may contain LLM outputs)
+- Trace files must not be committed to version control
+- LLM API keys used for eval only — separate from production keys if possible
+- Rate limit eval runs (not all 36 at once — batch of 5 with delays)
+**Verify:** 36 JSONL trace files generated. Each trace has: id, agent, input, output, timing, error status. No API key or credential in trace data.
+
+### 5.4 Error Analysis on Collected Traces (ALL Agents)
+**What:** Following the evals-skills `error-analysis` methodology, manually read through all traces. Categorise failures into a taxonomy per agent (e.g., "layout wrong", "MSO missing", "color contrast failed", "brief misinterpreted"). Compute failure rates per category. Prioritise the top 3 failure modes for each agent. **This step runs for every agent — it is how we discover what each agent gets wrong.**
+**Security:**
+- Error analysis results stored as structured data (not freeform text that could leak into prompts)
+- Failure taxonomy scoped to technical categories (no client-identifying information)
+**Verify:** Failure taxonomy document with categories, counts, and examples. Top 3 failure modes per agent identified with severity rating.
+
+### 5.5 Calibrate Judges Against Human Labels (ALL Agents)
+**What:** Following the evals-skills `validate-evaluator` methodology, have a domain expert (email developer) manually label 20 agent outputs per agent as pass/fail. Run the LLM judges on the same outputs. Compute TPR (true positive rate) and TNR (true negative rate). Target: TPR > 0.85, TNR > 0.80. **Every agent needs this — no agent's judge is trusted without human calibration.**
+**Security:**
+- Human labels stored separately from traces (no contamination)
+- Labeling interface does not expose system prompts or agent internals
+- Label data is project-scoped and access-controlled
+**Verify:** Confusion matrix per judge. TPR and TNR meet targets. If not, iterate on judge prompts and re-calibrate.
+
+### 5.6 Calibrate the 10-Point QA Gate (System-Wide)
+**What:** Using the human-labeled outputs from 5.5, measure the QA gate's agreement with human judgment across all agents. Identify which of the 10 checks have low precision or recall. Adjust thresholds or add new checks where the gate misses failures that humans catch.
+**QA checks to calibrate:** html_validation, brand_compliance, css_support, image_optimization, accessibility, dark_mode, spam_score, fallback, file_size, link_validation
+**Security:**
+- QA gate threshold changes tracked in version control with justification
+- No QA check bypassed without the existing override + audit trail mechanism
+**Verify:** Per-check precision and recall against human labels. At least 8/10 checks have precision > 0.80. Any underperforming checks documented with improvement plan.
+
+### 5.7 Blueprint Pipeline Eval Runner (System-Wide)
+**What:** Extend the eval runner to test the full Blueprint Engine end-to-end. Feed briefs through `BlueprintEngine.run()` and capture the entire graph execution: which nodes ran, iteration counts, QA retries, recovery routing decisions, final convergence. Test the self-correction loop: inject briefs that will fail QA on first pass and verify the pipeline recovers within 2 rounds. **As new agents join the blueprint graph, their nodes are covered by this runner.**
+**Security:**
+- Blueprint traces include token usage (cost tracking)
+- Escalation events logged (when pipeline gives up and escalates to human)
+- No infinite loop possible (MAX_TOTAL_STEPS=20 already enforced)
+**Verify:** 5 end-to-end blueprint traces collected. At least 2 show successful self-correction (QA fail → recovery → pass). Escalation triggers correctly on intentionally unfixable inputs.
+
+### 5.8 Automated Regression Suite (ALL Agents, System-Wide)
+**What:** Wire eval runner into CI/CD. On model update or prompt change: run 10 representative test cases per agent, evaluate with judges, compare scores to baseline. Block deployment if pass rate drops > 10% from baseline. **This gate covers every agent in the system — when a new agent is added, its test cases and judge are added to the regression suite.** This is the "Evaluation Design" primitive in action.
+**Security:**
+- CI/CD eval runs use dedicated API keys with eval-only permissions
+- Baseline scores stored in version control (not in database)
+- Regression alerts go to team channel, not to clients
+- Eval results never exposed in production API responses
+**Verify:** Change a prompt → CI runs eval suite → regression detected → deployment blocked with report. Restore prompt → eval passes → deployment proceeds.
+
+### Per-Agent Eval Specifications (Reference for Task 4.1)
+
+**When building each of the remaining 6 agents, complete steps 5.1-5.5 for that agent before merging to main.**
+
+| Agent | Eval Type | Key Dimensions | Judge Criteria |
+|-------|-----------|----------------|----------------|
+| **Outlook Fixer** | Code-based (MSO structure) + judge | Input complexity, Outlook version targeting, VML usage | MSO targeting correct? VML well-formed? Existing styles preserved? |
+| **Accessibility Auditor** | Code-based (WCAG rules) + judge (alt text) | Violation severity, image context, heading structure | Alt text meaningful? Violations correctly identified? Severity appropriate? |
+| **Personalisation Agent** | Code-based (syntax) + judge (logic) | ESP platform, conditional complexity, data source types | Syntax valid? Logic matches intent? Edge cases handled? |
+| **Code Reviewer** | Mostly code-based (linting) | Code smell types, file size, CSS support matrix | Issues genuine? Suggestions actionable? Severity appropriate? |
+| **Knowledge Agent** | RAG evals (Recall@k, faithfulness) | Query type, knowledge domain, answer specificity | Answer grounded in context? Relevant? Citations accurate? |
+| **Innovation Agent** | Judge-based (feasibility, fallbacks) | Technique novelty, client coverage, fallback robustness | Feasibility accurate? Fallback robust? Coverage estimate real? |
+
+---
+
 ## Security Checklist (Run Before Each Sprint Demo)
 
 - [ ] All new endpoints have auth dependency injection

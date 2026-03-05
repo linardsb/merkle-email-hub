@@ -5,3 +5,46 @@
 
 *No recent activity*
 </claude-mem-context>
+
+# AI Agents
+
+9 specialized agents under `app/ai/agents/`. Each agent has its own subdirectory with `prompt.py`, `schemas.py`, `service.py`.
+
+## Implemented Agents (Sprint 2)
+- **Scaffolder** (`scaffolder/`) — Brief to Maizzle HTML. Table-based layouts, MSO conditionals, VML, dark mode meta tags, accessibility.
+- **Dark Mode** (`dark_mode/`) — Injects dark mode CSS, Outlook `[data-ogsc]`/`[data-ogsb]` selectors, `prefers-color-scheme` media queries, color remapping, image swap patterns.
+- **Content** (`content/`) — 8 operations: subject_line, preheader, cta, body_copy, rewrite, shorten, tone_adjust, expand. Anti-spam rules, brand voice enforcement, PII detection.
+
+## Planned Agents (V2 — task 4.1)
+Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation.
+
+## Evaluation Framework (`evals/`)
+
+All 9 agents must pass evaluation before production. Based on [evals-skills methodology](https://github.com/hamelsmu/evals-skills).
+
+### Files
+- `dimensions.py` — Failure-prone axes per agent (e.g., layout_complexity, client_quirk for scaffolder; input_html_complexity, outlook_challenge for dark_mode; operation, industry, tone_target for content)
+- `synthetic_data_scaffolder.py` — 12 test cases with real MSO/VML code, vague/contradictory briefs
+- `synthetic_data_dark_mode.py` — 10 test cases with 5 real-world HTML templates (MSO ghost tables, VML, already-dark emails)
+- `synthetic_data_content.py` — 14 test cases across all 8 operations, real spam trigger blocklists, PII edge cases
+- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|all} --output traces/`
+
+### Per-Agent Eval Requirements (mandatory for all 9)
+1. Dimension-based synthetic test data (minimum 10 cases per agent)
+2. Binary pass/fail judge prompts (one per quality dimension)
+3. Eval runner traces (JSONL: input, output, timing, errors)
+4. Error analysis (failure clustering, root cause identification)
+5. Judge calibration (TPR/TNR against human labels)
+
+### Current Status
+| Agent | Synthetic Data | Judge Prompts | Traces | Error Analysis | Calibration |
+|-------|---------------|---------------|--------|----------------|-------------|
+| Scaffolder | 12 cases | Pending | Pending | Pending | Pending |
+| Dark Mode | 10 cases | Pending | Pending | Pending | Pending |
+| Content | 14 cases | Pending | Pending | Pending | Pending |
+| Outlook Fixer | Not started | — | — | — | — |
+| Accessibility | Not started | — | — | — | — |
+| Personalisation | Not started | — | — | — | — |
+| Code Reviewer | Not started | — | — | — | — |
+| Knowledge | Not started | — | — | — | — |
+| Innovation | Not started | — | — | — | — |

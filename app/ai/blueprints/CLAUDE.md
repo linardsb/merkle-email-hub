@@ -5,3 +5,29 @@
 
 *No recent activity*
 </claude-mem-context>
+
+# Blueprint Engine (`app/ai/blueprints/`)
+
+State machine that orchestrates agents as pipeline nodes with deterministic gates.
+
+## Flow
+`Scaffolder → QA Gate → (pass) Maizzle Build → Export / (fail) Recovery Router → Fixer → QA Gate loop`
+
+## Constraints
+- `MAX_SELF_CORRECTION_ROUNDS = 2` — Fixer gets max 2 attempts per QA failure
+- `MAX_TOTAL_STEPS = 20` — Hard limit prevents runaway pipelines
+- Progressive context hydration — each node gets only relevant data
+
+## Key Files
+- `engine.py` — `BlueprintEngine.run()`, `_resolve_next_node()`, `_build_node_context()`
+- `nodes.py` — Node definitions (agent nodes, QA gate, build, export)
+- `definitions.py` — Blueprint templates (which nodes in which order)
+- `schemas.py` — Blueprint state, node result, execution trace schemas
+
+## Eval Integration (Phase 5, Step 5.7)
+Blueprint pipeline evals test end-to-end multi-agent traces through the full state machine. These validate:
+- Correct node sequencing and gate routing
+- Self-correction loop behaviour (does the fixer actually fix?)
+- Context hydration accuracy per node
+- Total step count stays within bounds
+- QA gate alignment with eval judge findings (Step 5.6)

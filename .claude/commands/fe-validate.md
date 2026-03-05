@@ -1,5 +1,8 @@
 # Frontend Validate — Run All Frontend Quality Checks
 
+## Token Efficiency Note
+If the project is indexed via jcodemunch, use `search_symbols` and `get_file_outline` to locate design system and i18n violations in Levels 3-4 instead of grepping entire file trees.
+
 Run the frontend validation pyramid:
 
 ## Level 1: TypeScript
