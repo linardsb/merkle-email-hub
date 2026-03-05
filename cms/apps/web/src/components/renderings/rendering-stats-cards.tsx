@@ -21,36 +21,44 @@ export function RenderingStatsCards({ tests }: Props) {
 
   const totalTests = tests.length;
 
-  const avgCompat =
+  // Avg completion rate
+  const avgCompletion =
     tests.length > 0
-      ? Math.round(tests.reduce((s, t) => s + t.compatibility_score, 0) / tests.length)
+      ? Math.round(
+          tests.reduce((s, test) => {
+            const rate = test.clients_requested > 0
+              ? (test.clients_completed / test.clients_requested) * 100
+              : 0;
+            return s + rate;
+          }, 0) / tests.length,
+        )
       : 0;
 
   // Find worst client (highest fail rate across all tests)
   const clientFailCounts: Record<string, { fails: number; total: number; name: string }> = {};
   for (const test of tests) {
-    for (const r of test.results) {
-      if (!clientFailCounts[r.client_id]) {
-        clientFailCounts[r.client_id] = { fails: 0, total: 0, name: r.client_id };
+    for (const s of test.screenshots) {
+      if (!clientFailCounts[s.client_name]) {
+        clientFailCounts[s.client_name] = { fails: 0, total: 0, name: s.client_name };
       }
-      const entry = clientFailCounts[r.client_id]!;
+      const entry = clientFailCounts[s.client_name]!;
       entry.total++;
-      if (r.status === "fail") entry.fails++;
+      if (s.status === "failed") entry.fails++;
     }
   }
   const worstClient = Object.values(clientFailCounts).sort(
     (a, b) => b.fails / b.total - a.fails / a.total,
   )[0];
-  const worstName = worstClient?.name.replace(/_/g, " ") ?? "—";
+  const worstName = worstClient?.name ?? "—";
   const worstRate = worstClient ? Math.round((worstClient.fails / worstClient.total) * 100) : 0;
 
   const lastTest = tests[0];
   const lastDate = lastTest ? formatRelativeDate(lastTest.created_at) : "—";
 
-  const compatColor =
-    avgCompat >= 80
+  const completionColor =
+    avgCompletion >= 80
       ? "text-status-success"
-      : avgCompat >= 60
+      : avgCompletion >= 60
         ? "text-status-warning"
         : "text-status-danger";
 
@@ -67,9 +75,9 @@ export function RenderingStatsCards({ tests }: Props) {
       <div className="rounded-lg border border-card-border bg-card-bg p-4">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{t("avgCompatibility")}</span>
+          <span className="text-sm text-foreground-muted">{t("completionRate")}</span>
         </div>
-        <p className={`mt-2 text-2xl font-semibold ${compatColor}`}>{avgCompat}%</p>
+        <p className={`mt-2 text-2xl font-semibold ${completionColor}`}>{avgCompletion}%</p>
       </div>
 
       <div className="rounded-lg border border-card-border bg-card-bg p-4">
@@ -77,7 +85,7 @@ export function RenderingStatsCards({ tests }: Props) {
           <AlertTriangle className="h-4 w-4 text-foreground-muted" />
           <span className="text-sm text-foreground-muted">{t("mostProblematic")}</span>
         </div>
-        <p className="mt-2 text-lg font-semibold capitalize text-foreground">{worstName}</p>
+        <p className="mt-2 text-lg font-semibold text-foreground">{worstName}</p>
         {worstRate > 0 && (
           <p className="text-xs text-status-danger">{worstRate}% {t("failRate")}</p>
         )}

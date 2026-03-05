@@ -406,6 +406,7 @@
 - ~~API integration for 20+ client rendering screenshots~~ DONE
 - ~~Visual regression detection~~ DONE
 - ~~Rendering report generation~~ DONE
+- ~~Frontend UI alignment with backend schemas~~ DONE — Types, hooks, demo data aligned to backend `RenderingTestResponse`/`ScreenshotResult`; 6 components updated + 1 new (`VisualRegressionDialog`); API paths fixed (`/rendering/` not `/renderings/`); async polling, pagination, HTML input, visual regression comparison UI
 
 ### ~~4.5 Advanced Features~~ DONE
 - ~~Real-time collaborative editing (CRDT/OT — Yjs + y-codemirror.next, demo mode with simulated collaborator)~~ DONE
@@ -443,7 +444,7 @@
 > - [x] Real-world email patterns sourced (Litmus, MailChimp, Parcel.io, email-darkmode repo, Mailmeteor)
 > - [x] Eval runner CLI created (`runner.py`)
 > - [ ] 5.1 — Review & harden test data (security audit)
-> - [ ] 5.2 — Write LLM judge prompts (3 of 9 agents)
+> - [x] 5.2 — Write LLM judge prompts (3 of 9 agents)
 > - [ ] 5.3 — Run first eval batch & collect traces
 > - [ ] 5.4 — Error analysis on traces
 > - [ ] 5.5 — Calibrate judges against human labels
@@ -474,6 +475,7 @@ Every agent — whether built now or in task 4.1 — must have:
   - `dimensions.py` — failure-prone dimension definitions per agent
   - `runner.py` — CLI runner that outputs JSONL traces
 - Real-world email patterns sourced from: Litmus, MailChimp Design Reference, Parcel.io, email-darkmode repo, StackOverflow Design, Mailmeteor spam lists
+- Binary LLM judges implemented for 3 agents: `app/ai/agents/evals/judges/` package with `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria); shared `Judge` Protocol, `parse_judge_response()` with markdown fence handling; `JUDGE_REGISTRY` for dispatch; `judge_runner.py` CLI with batched execution and rate limiting; 14 unit tests (330 total)
 - **6 agents still need eval data** — to be created as each agent is built (task 4.1)
 
 ### 5.1 Review & Harden Synthetic Test Data (Scaffolder, Dark Mode, Content)

@@ -6,6 +6,7 @@
 import type { QACheckResult, QAResultResponse } from "@/types/qa";
 import { SPRING_SALE_HERO_HTML } from "./data/html-sources";
 import { DEMO_KNOWLEDGE_DOCUMENTS } from "./data/knowledge";
+import { DEMO_RENDERING_COMPARISON } from "./data/renderings";
 import { demoStore } from "./demo-store";
 
 const CHECK_NAMES = [
@@ -386,41 +387,45 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
     };
   }
 
-  // Rendering test
-  if (p === "/api/v1/renderings/tests") {
+  // Rendering test (aligned with backend schema)
+  if (p === "/api/v1/rendering/tests") {
     const body = _body as Record<string, unknown> | null;
-    const provider = (body?.provider as string) ?? "litmus";
-    const clientIds = (body?.client_ids as string[]) ?? [];
-    const results = clientIds.map((cid) => {
+    const clientNames = [
+      "Gmail", "Outlook 365", "Apple Mail macOS", "iPhone 16 Mail",
+      "Yahoo Mail", "Thunderbird", "Samsung Mail", "Gmail Android",
+      "Outlook.com", "iOS Dark Mode", "Gmail iOS", "Outlook Mac",
+      "Gmail Workspace", "ProtonMail", "iPad Mail", "Outlook iOS",
+      "Outlook Android", "iPhone 15 Mail", "Yahoo Mobile", "Fastmail",
+    ];
+    const requestedCount = (body?.clients as string[] | undefined)?.length ?? 20;
+    const screenshots = clientNames.slice(0, requestedCount).map((name) => {
       const h = Math.random();
-      const status = h < 0.15 ? "fail" : h < 0.35 ? "warning" : "pass";
       return {
-        client_id: cid,
-        status,
-        screenshot_url: `https://picsum.photos/seed/${cid}-new/600/400`,
-        load_time_ms: 800 + Math.floor(Math.random() * 2200),
-        issues: status === "fail"
-          ? [{ type: "missing_background", severity: "critical", description: "VML background not rendering", affected_area: "Hero section" }]
-          : status === "warning"
-            ? [{ type: "font_fallback", severity: "minor", description: "Custom font replaced with system font", affected_area: "Body text" }]
-            : [],
+        client_name: name,
+        screenshot_url: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="#f0f0f0"/><text x="300" y="200" text-anchor="middle" fill="#999" font-family="sans-serif">${name}</text></svg>`)}`,
+        os: name.includes("iPhone") || name.includes("iPad") || name.includes("iOS") ? "ios" : name.includes("Android") || name.includes("Samsung") ? "android" : name.includes("Outlook 2") || name.includes("365") || name.includes("Windows") ? "windows" : "web",
+        category: name.includes("iPhone") || name.includes("iPad") || name.includes("Android") || name.includes("Samsung") ? "mobile" : name.includes("Gmail") || name.includes("Yahoo") || name.includes("Proton") || name.includes("Fast") || name.includes(".com") || name.includes("Zoho") ? "web" : name.includes("Dark") ? "dark_mode" : "desktop",
+        status: (h < 0.1 ? "failed" : "complete") as "pending" | "complete" | "failed",
       };
     });
-    const passCount = results.filter((r) => r.status === "pass").length;
-    const warnCount = results.filter((r) => r.status === "warning").length;
-    const score = results.length > 0 ? Math.round(((passCount + warnCount * 0.5) / results.length) * 100) : 0;
+    const completedCount = screenshots.filter((s) => s.status === "complete").length;
     return {
       id: Math.floor(Math.random() * 10000) + 100,
-      build_id: null,
-      template_name: "New Test",
-      provider,
-      status: "completed",
-      clients_requested: clientIds,
-      results,
-      compatibility_score: score,
+      external_test_id: `demo_${Date.now().toString(36)}`,
+      provider: "litmus",
+      status: "complete",
+      build_id: (body?.build_id as number) ?? null,
+      template_version_id: (body?.template_version_id as number) ?? null,
+      clients_requested: requestedCount,
+      clients_completed: completedCount,
+      screenshots,
       created_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
     };
+  }
+
+  // Rendering comparison (POST-based)
+  if (p === "/api/v1/rendering/compare") {
+    return DEMO_RENDERING_COMPARISON;
   }
 
   // Brief import

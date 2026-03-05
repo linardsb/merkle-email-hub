@@ -170,9 +170,9 @@ The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agen
 
 | Agent | Purpose | Phase | Eval Status |
 |-------|---------|-------|-------------|
-| Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 | Synthetic data ready (12 cases) |
-| Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 | Synthetic data ready (10 cases) |
-| Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 | Synthetic data ready (14 cases) |
+| Scaffolder | Generate Maizzle HTML from campaign briefs | Sprint 2 | Judge ready (5 criteria) |
+| Dark Mode | Inject dark mode CSS, Outlook overrides, colour remapping | Sprint 2 | Judge ready (5 criteria) |
+| Content | Subject lines, preheaders, CTA text, tone adjustment | Sprint 2 | Judge ready (5 criteria) |
 | Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | V2 | Pending |
 | Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | V2 | Pending |
 | Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | V2 | Pending |
@@ -195,7 +195,8 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - `dimensions.py` — Failure-prone axes per agent (layout complexity, client quirks, etc.)
 - `synthetic_data_{agent}.py` — Test cases with real-world data (MSO code, VML, spam triggers)
 - `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent scaffolder --output traces/`
-- Judge prompts and calibration data added per Phase 5 steps (see TODO.md)
+- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`, shared prompt template
+- `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent scaffolder --traces X --output Y`
 
 ### API Security Patterns
 
@@ -259,7 +260,7 @@ See `TODO.md` for full task details with security requirements and verification 
 Applies to ALL 9 agents. No agent goes to production without completing steps 5.1–5.5. See `TODO.md` for full details.
 - [x] 5.1 Synthetic test data generation (Scaffolder: 12, Dark Mode: 10, Content: 14 cases done)
 - [x] 5.2 Eval runner infrastructure (JSONL trace capture)
-- [ ] 5.3 Write binary judge prompts per agent per quality dimension
+- [x] 5.3 Write binary judge prompts per agent per quality dimension
 - [ ] 5.4 Run evals + error analysis (failure clustering)
 - [ ] 5.5 Judge calibration (TPR/TNR against human labels)
 - [ ] 5.6 QA gate calibration (align 10-point checks with eval findings)
@@ -302,6 +303,7 @@ Applies to ALL 9 agents. No agent goes to production without completing steps 5.
 - AI Image Generation: workspace dialog with style presets, gallery, insert-into-template
 - Localisation: 6 locale stubs (en/ar/de/es/fr/ja), cookie-based switching, RTL, translation management
 - Visual Liquid Builder: @dnd-kit drag-and-drop blocks, regex parser/serializer, Code/Visual tabs
+- Rendering Tests: `/renderings` page with test list, stats cards, compatibility matrix, screenshot dialog, visual regression comparison, async polling
 - Collaborative Editing: Yjs CRDT, y-codemirror.next, collaborator avatars, connection status
 
 ## Compact instructions

@@ -2,37 +2,25 @@
 
 import { useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { X, AlertCircle, AlertTriangle, Info } from "lucide-react";
-import type { RenderingResult } from "@/types/rendering";
+import { X, ImageOff } from "lucide-react";
+import type { ScreenshotResult } from "@/types/rendering";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  result: RenderingResult | null;
-  clientName: string;
-}
-
-function severityIcon(severity: string) {
-  switch (severity) {
-    case "critical":
-      return <AlertCircle className="h-4 w-4 text-status-danger" />;
-    case "major":
-      return <AlertTriangle className="h-4 w-4 text-status-warning" />;
-    default:
-      return <Info className="h-4 w-4 text-foreground-muted" />;
-  }
+  result: ScreenshotResult | null;
 }
 
 function statusLabel(status: string) {
   const styles: Record<string, string> = {
-    pass: "bg-badge-success-bg text-badge-success-text",
-    warning: "bg-badge-warning-bg text-badge-warning-text",
-    fail: "bg-badge-danger-bg text-badge-danger-text",
+    complete: "bg-badge-success-bg text-badge-success-text",
+    failed: "bg-badge-danger-bg text-badge-danger-text",
+    pending: "bg-badge-neutral-bg text-badge-neutral-text",
   };
   return styles[status] ?? "bg-badge-neutral-bg text-badge-neutral-text";
 }
 
-export function RenderingScreenshotDialog({ open, onOpenChange, result, clientName }: Props) {
+export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props) {
   const t = useTranslations("renderings");
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -53,7 +41,7 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result, clientNa
     >
       <div className="flex items-center justify-between border-b border-card-border p-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold capitalize text-foreground">{clientName}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{result.client_name}</h2>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusLabel(result.status)}`}>
             {t(result.status)}
           </span>
@@ -67,36 +55,25 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result, clientNa
       </div>
 
       <div className="p-4">
-        <img
-          src={result.screenshot_url}
-          alt={`${clientName} rendering`}
-          className="w-full rounded-md border border-card-border object-contain"
-        />
+        {result.screenshot_url ? (
+          <img
+            src={result.screenshot_url}
+            alt={`${result.client_name} rendering`}
+            className="w-full rounded-md border border-card-border object-contain"
+          />
+        ) : (
+          <div className="flex aspect-[3/2] w-full items-center justify-center rounded-md border border-card-border bg-surface-muted">
+            <div className="flex flex-col items-center gap-2">
+              <ImageOff className="h-8 w-8 text-foreground-muted/40" />
+              <p className="text-sm text-foreground-muted">{t("screenshotPending")}</p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-3 flex items-center gap-4 text-sm text-foreground-muted">
-          <span>{t("loadTime")}: {result.load_time_ms}ms</span>
+          {result.os && <span className="capitalize">{result.os}</span>}
+          {result.category && <span className="capitalize">{result.category}</span>}
         </div>
-
-        {result.issues.length > 0 ? (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-foreground">
-              {t("issues")} ({result.issues.length})
-            </h3>
-            <ul className="mt-2 space-y-2">
-              {result.issues.map((issue, i) => (
-                <li key={i} className="flex items-start gap-2 rounded-md border border-card-border/50 p-2">
-                  {severityIcon(issue.severity)}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{issue.description}</p>
-                    <p className="text-xs text-foreground-muted">{issue.affected_area}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-foreground-muted">{t("noIssues")}</p>
-        )}
 
         <p className="mt-4 text-xs text-foreground-muted/60">{t("demoNote")}</p>
       </div>
