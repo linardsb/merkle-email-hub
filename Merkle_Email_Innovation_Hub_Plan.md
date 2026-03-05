@@ -1644,15 +1644,15 @@ V1 includes everything needed to be useful and demonstrable. Each feature was se
 
 | Feature | Status |
 |---------|--------|
-| Figma integration with brand guardrails | **Frontend demo delivered** (V1 Phase 4.3). Real API integration deferred to V2. |
-| Litmus / Email on Acid API | Built-in Playwright-based screenshot testing covers core clients (Apple Mail, Gmail, Outlook). Full 20+ client sweeps via Litmus API planned for V2. |
-| SFMC, Adobe, Taxi connectors | Braze connector establishes the pattern. Additional connectors follow the same architecture — each is ~2–3 days of incremental work. |
-| Advanced agents (remaining 5 + AMP) | Scaffolder, Dark Mode, and Content Agent proved the AI model in V1. Remaining agents (Accessibility, Personalisation, Code Reviewer, Knowledge, Outlook Fixer) are added as skills, not code rewrites. |
-| Real-time collaborative editing | Valuable but architecturally complex (CRDT/OT). Sequential workflow is sufficient for V1 — teams rarely co-edit the same template simultaneously. |
-| Localisation engine (100+ locales) | High value for multi-market clients but not required to demonstrate the Hub's core proposition. |
-| Per-client brand guardrails | Requires brand asset collection and profile configuration per client. V1 uses project-level settings. |
-| Visual conditional logic builder | Nice-to-have for non-technical personalisation rules. Developers write Liquid/AMPscript directly in V1. |
-| Client brief system integration | Connect the Hub's approval portal to the client's project management tools (Jira, Asana, Monday.com, Wrike) via API/webhooks. Briefs created in the client's system automatically create Hub projects; approvals in the Hub sync back as status updates. High value but requires per-client API configuration. V1 approval portal provides the foundation. |
+| Figma integration with brand guardrails | **Frontend demo delivered** (V2 Phase 4.3). Connection management, design token extraction UI. Real Figma API integration deferred. |
+| Litmus / Email on Acid API | **Backend delivered** (V2 Phase 4.4). `app/rendering/` VSA module with `RenderingProvider` Protocol, Litmus + EoA providers (placeholder APIs), visual regression comparison, circuit breaker resilience. 4 REST endpoints, 12 unit tests. Frontend rendering UI deferred. |
+| SFMC, Adobe, Taxi connectors | **Delivered** (V2 Phase 4.2). `ConnectorProvider` Protocol with 4 ESP implementations (Braze, SFMC, Adobe Campaign, Taxi). Placeholder APIs ready for production credentials. |
+| Advanced agents (remaining 6) | Scaffolder, Dark Mode, and Content Agent proved the AI model in V1. Remaining agents (Accessibility, Personalisation, Code Reviewer, Knowledge, Outlook Fixer, Innovation) are added as skills, not code rewrites. |
+| Real-time collaborative editing | **Delivered** (V2 Phase 4.5). Yjs CRDT + y-codemirror.next with demo mode simulated collaborator. |
+| Localisation engine (100+ locales) | **Delivered** (V2 Phase 4.5). 6 locale stubs (en/ar/de/es/fr/ja), cookie-based switching, RTL support, translation management. |
+| Per-client brand guardrails | **Delivered** (V2 Phase 4.5). Brand settings page, CodeMirror linter extension, toolbar violations badge. |
+| Visual conditional logic builder | **Delivered** (V2 Phase 4.5). @dnd-kit drag-and-drop Visual Liquid Builder with regex parser/serializer. |
+| Client brief system integration | **Delivered** (V2 Phase 4.5). Jira/Asana/Monday.com connection cards, brief items, import-to-project flow. |
 
 ## 16.2 Build Timeline
 
@@ -1694,7 +1694,7 @@ The bottlenecks AI won't shortcut:
 
 **Sprint 3 (1–2 weeks):** ✅ Client approval portal (viewer login, approve/reject workflow, version comparison, notifications, audit trail), rendering intelligence dashboard, polish and deployment. Complete V1 — clients can log in for approvals, QA data is visible, and the team has a tool they want to use daily.
 
-With V1 delivered, every subsequent feature — Figma sync, additional connectors, AI image generation (self-hosted Stable Diffusion XL, 3–5 days), Litmus integration — is an incremental addition, not a rewrite. The foundation is in place and the platform grows organically with each new feature added to the V2 roadmap.
+With V1 delivered and the majority of V2 features complete — Figma sync, additional ESP connectors, AI image generation, Litmus/EoA rendering integration, collaborative editing, localisation, brand guardrails, visual Liquid builder, and client brief integration — the remaining work is the 6 additional AI agents (task 4.1) and the agent evaluation pipeline (Phase 5). The foundation is in place and the platform grows organically with each new capability.
 
 ---
 

@@ -96,6 +96,18 @@ class KnowledgeConfig(BaseModel):
     auto_tag_api_key: str = ""
 
 
+class RenderingConfig(BaseModel):
+    """Cross-client rendering test settings."""
+
+    provider: str = "litmus"  # litmus, eoa, mock
+    litmus_api_key: str = ""
+    eoa_api_key: str = ""
+    poll_interval_seconds: int = 10
+    poll_timeout_seconds: int = 300
+    max_concurrent_tests: int = 5
+    screenshot_storage_path: str = "data/screenshots"
+
+
 class WebSocketConfig(BaseModel):
     """WebSocket streaming settings."""
 
@@ -142,6 +154,7 @@ class Settings(BaseSettings):
     knowledge: KnowledgeConfig = KnowledgeConfig()
 
     ws: WebSocketConfig = WebSocketConfig()
+    rendering: RenderingConfig = RenderingConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

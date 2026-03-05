@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 2.2
-**Date:** 2026-03-03
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2, 4.3, 4.5, 4.8-4.13 (Phase 1) done
+**Version:** 2.3
+**Date:** 2026-03-05
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; remaining: 4.1 (6 agents), Phase 5 (eval pipeline)
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-03
+> Last updated: 2026-03-05
 
 ### Completed
 
@@ -51,22 +51,24 @@
 | 4.3 | Figma design sync (frontend demo) | `/figma` page with connection card grid (status badges, sync/delete actions), design token preview (10 colors, 7 typography styles, 7 spacing values), `ConnectFigmaDialog` form (name, URL, token, project select); 4 components (`FigmaConnectionCard`, `FigmaStatusBadge`, `FigmaDesignTokensView`, `ConnectFigmaDialog`); 6 SWR hooks; optional Figma URL field in `CreateProjectDialog` with auto-connection on submit; demo data (3 connections, 1 token set); Figma sidebar nav icon; ~45 i18n keys |
 | 4.13 (Phase 1) | Blueprint State Machine engine | `app/ai/blueprints/` module: `BlueprintEngine` state machine interleaving deterministic and agentic nodes; `BlueprintNode` protocol with progressive context hydration; bounded self-correction (max 2 rounds) with `BlueprintEscalatedError`; 6 node implementations (ScaffolderNode, DarkModeNode, QAGateNode, MaizzleBuildNode, ExportNode, RecoveryRouterNode); campaign blueprint definition with conditional edge routing; `POST /api/v1/blueprints/run` with auth + rate limiting; `BlueprintService` with blueprint registry; 27 unit tests |
 | 4.2 | Additional CMS connectors | `ConnectorProvider` Protocol in `app/connectors/protocol.py` for type-safe dispatch; `SUPPORTED_CONNECTORS` registry with lazy instantiation; 3 new packages: `app/connectors/sfmc/` (SFMC Content Areas), `app/connectors/adobe/` (Adobe Campaign delivery fragments), `app/connectors/taxi/` (Taxi Syntax-wrapped templates); each with schemas + service; demo mutation resolver updated for per-connector mock IDs; 16 unit tests (304 total) |
+| 4.4 | Litmus / Email on Acid API integration | `app/rendering/` VSA module with `RenderingProvider` Protocol; Litmus + EoA provider implementations (placeholder APIs); `RenderingTest` + `RenderingScreenshot` models; visual regression comparison with per-client diff percentages (2% threshold); `CircuitBreaker` for external API resilience; `RenderingConfig` with provider/API key/polling settings; 4 REST endpoints (`/api/v1/rendering/`): submit, list, get, compare; auth + rate limiting; 12 unit tests (316 total) |
 | 4.5 | Advanced features (6 features) | **F1 Collaborative Editing:** Yjs CRDT + y-codemirror.next, `useCollaboration` hook, demo mode simulated collaborator, `CollaboratorAvatars` + `ConnectionStatus` components. **F2 Localisation:** 6 locale stubs (en/ar/de/es/fr/ja), cookie-based `NEXT_LOCALE` switching, RTL `dir` attribute, `/settings` page with `LocaleSelector`, `/settings/translations` management table. **F3 Brand Guardrails:** `/projects/[id]/brand` settings page, `BrandColorEditor`/`BrandTypographyEditor`/`BrandLogoRules`/`BrandForbiddenPatterns` components, CodeMirror `brandLinter` extension, toolbar violations badge. **F4 AI Image Generation:** `ImageGenDialog` (40rem) with style presets grid (6 presets), image gallery, insert `<img>` at cursor; demo picsum.photos placeholders. **F5 Visual Liquid Builder:** @dnd-kit drag-and-drop, regex Liquid parser/serializer, 5 block types (if/for/assign/output/raw), Code/Visual tab switching in `editor-panel.tsx`, live preview with sample data. **F6 Client Briefs:** `/briefs` page mirroring Figma architecture, Jira/Asana/Monday.com connection cards, brief items panel, import-to-project flow. |
 
 ### In Progress
 
-No tasks currently in progress. V1 (Sprints 1-3) is complete. V2 tasks 4.1 and 4.4 remain. Blueprint engine Phase 1 (core infrastructure) is complete; Phase 2 (SSE streaming, multi-blueprint definitions) is planned.
+No tasks currently in progress. V1 (Sprints 1-3) is complete. V2 task 4.1 (6 remaining AI agents) remains. Phase 5 (agent evaluation pipeline, steps 5.3-5.8) is pending. Blueprint engine Phase 2 (SSE streaming, multi-blueprint definitions) is planned.
 
 ### Infrastructure Built
 
-- **Backend:** Full VSA implementation across 7 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
+- **Backend:** Full VSA implementation across 8 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
 - **Frontend:** Next.js 16 monorepo with next-intl (6 locales with cookie-based switching, RTL support), auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations, Yjs CRDT collaborative editing, @dnd-kit visual Liquid builder
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 20 domain-specific hooks
 - **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; Blueprint state machine engine for multi-node orchestration with self-correction
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
+- **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (304 tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (316 tests); Frontend Vitest + React Testing Library (`make test-fe`)
 
 ---
 

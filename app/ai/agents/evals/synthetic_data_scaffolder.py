@@ -49,10 +49,10 @@ SCAFFOLDER_TEST_CASES = [
             "Right column (40%): sidebar with upcoming events list (date + title, 4 items) "
             "and a 'Subscribe to Calendar' CTA. "
             "Must work perfectly in Outlook 2016/2019 — use MSO ghost tables:\n"
-            "<!--[if mso]><table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" "
-            "border=\"0\" width=\"100%\"><tr><td width=\"340\"><![endif]-->\n"
+            '<!--[if mso]><table role="presentation" cellspacing="0" cellpadding="0" '
+            'border="0" width="100%"><tr><td width="340"><![endif]-->\n'
             "...left column...\n"
-            "<!--[if mso]></td><td width=\"260\"><![endif]-->\n"
+            '<!--[if mso]></td><td width="260"><![endif]-->\n'
             "...right column...\n"
             "<!--[if mso]></td></tr></table><![endif]-->\n"
             "Header: company logo centered, navigation links. "
@@ -84,10 +84,10 @@ SCAFFOLDER_TEST_CASES = [
             "CRITICAL: keep total HTML under 102KB to avoid Gmail clipping. "
             "Use compact code — minimize whitespace and comments. "
             "Each column should be ~33% width in a nested table structure:\n"
-            "<table width=\"600\"><tr>\n"
-            "  <td width=\"33%\" valign=\"top\">...</td>\n"
-            "  <td width=\"33%\" valign=\"top\">...</td>\n"
-            "  <td width=\"34%\" valign=\"top\">...</td>\n"
+            '<table width="600"><tr>\n'
+            '  <td width="33%" valign="top">...</td>\n'
+            '  <td width="33%" valign="top">...</td>\n'
+            '  <td width="34%" valign="top">...</td>\n'
             "</tr></table>\n"
             "Include dark mode meta tags and basic dark mode CSS."
         ),
@@ -114,20 +114,20 @@ SCAFFOLDER_TEST_CASES = [
             "Hero: full-width background image (600x400) with event title, date, location overlaid. "
             "Use VML for bulletproof background image in Outlook:\n"
             "<!--[if gte mso 9]>\n"
-            "<v:rect xmlns:v=\"urn:schemas-microsoft-com:vml\" fill=\"true\" stroke=\"false\" "
-            "style=\"width:600px;height:400px;\">\n"
-            "<v:fill type=\"frame\" src=\"hero-bg.jpg\" />\n"
-            "<v:textbox inset=\"0,0,0,0\">\n"
+            '<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" '
+            'style="width:600px;height:400px;">\n'
+            '<v:fill type="frame" src="hero-bg.jpg" />\n'
+            '<v:textbox inset="0,0,0,0">\n'
             "<![endif]-->\n"
             "Below hero: 2x2 grid of speaker cards with headshot, name, title, topic. "
             "Primary CTA: 'Register Now' — must be a VML roundrect button for Outlook:\n"
             "<!--[if mso]>\n"
-            "<v:roundrect xmlns:v=\"urn:schemas-microsoft-com:vml\" "
-            "href=\"https://example.com/register\" "
-            "style=\"height:44px;v-text-anchor:middle;width:200px;\" "
-            "arcsize=\"10%\" strokecolor=\"#FF6B35\" fillcolor=\"#FF6B35\">\n"
+            '<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" '
+            'href="https://example.com/register" '
+            'style="height:44px;v-text-anchor:middle;width:200px;" '
+            'arcsize="10%" strokecolor="#FF6B35" fillcolor="#FF6B35">\n'
             "<w:anchorlock/>\n"
-            "<center style=\"color:#ffffff;font-family:Arial;font-size:16px;\">"
+            '<center style="color:#ffffff;font-family:Arial;font-size:16px;">'
             "Register Now</center>\n"
             "</v:roundrect>\n"
             "<![endif]-->\n"

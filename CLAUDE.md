@@ -75,6 +75,7 @@ merkle-email-hub/
 │   ├── connectors/     # ESP connectors (Braze Content Block export with Liquid)
 │   ├── approval/       # Client approval portal (ApprovalRequest, Feedback, AuditEntry)
 │   ├── personas/       # Test persona engine (subscriber profile presets)
+│   ├── rendering/      # Cross-client rendering tests (Litmus, Email on Acid)
 │   └── tests/          # Integration tests
 ├── cms/               # Frontend monorepo (Next.js 16 + React 19)
 ├── email-templates/   # Maizzle project (layouts, templates, components)
@@ -136,6 +137,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `approval` | `/api/v1/approvals` | Client approval workflow with feedback and audit trail |
 | `templates` | `/api/v1/templates`, `/api/v1/projects/{id}/templates` | Versioned email templates with soft delete and restore |
 | `personas` | `/api/v1/personas` | Test subscriber profiles (device, email client, dark mode) |
+| `rendering` | `/api/v1/rendering` | Cross-client rendering tests (Litmus, EoA) with visual regression |
 | `knowledge` | `/api/v1/knowledge` | RAG pipeline: document ingestion, hybrid search, tagging (`make seed-knowledge`) |
 | `blueprints` | `/api/v1/blueprints` | Blueprint state machine engine: orchestrated agent pipelines with self-correction |
 
@@ -250,7 +252,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - [ ] 4.1 Remaining 6 AI agents (Outlook Fixer, Accessibility, Personalisation, Code Reviewer, Knowledge, Innovation)
 - [x] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
 - [x] 4.3 Figma design sync (frontend demo: `/figma` page, connection management, token extraction UI)
-- [ ] 4.4 Litmus / Email on Acid API integration
+- [x] 4.4 Litmus / Email on Acid API integration (backend: `app/rendering/` VSA module, Litmus + EoA providers, visual regression)
 - [x] 4.5 Advanced features (collaborative editing, localisation, brand guardrails, AI image gen, visual Liquid builder, client briefs)
 
 ### Phase 5 — Agent Evaluation System
@@ -278,6 +280,7 @@ Applies to ALL 9 agents. No agent goes to production without completing steps 5.
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing
+- Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration (Phase 5)
 
 ### Frontend Features (for `fe-prime`)

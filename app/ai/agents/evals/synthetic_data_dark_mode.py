@@ -6,6 +6,8 @@ with dark mode support. HTML patterns sourced from production email templates
 and email development best practices.
 """
 
+from typing import Any
+
 # ---------------------------------------------------------------------------
 # Real-world HTML fragments used across test cases
 # ---------------------------------------------------------------------------
@@ -436,7 +438,7 @@ BRAND_HEAVY_EMAIL = """\
 # Test Cases
 # ---------------------------------------------------------------------------
 
-DARK_MODE_TEST_CASES = [
+DARK_MODE_TEST_CASES: list[dict[str, Any]] = [
     # -------------------------------------------------------------------------
     # 1. Simple light email — baseline dark mode conversion
     # -------------------------------------------------------------------------
@@ -651,9 +653,11 @@ DARK_MODE_TEST_CASES = [
             "image_scenario": "no_images",
         },
         "html_input": SIMPLE_LIGHT_EMAIL.replace(
-            "#333333", "#999999"  # deliberately low contrast text
+            "#333333",
+            "#999999",  # deliberately low contrast text
         ).replace(
-            "#1a1a1a", "#aaaaaa"  # heading also low contrast
+            "#1a1a1a",
+            "#aaaaaa",  # heading also low contrast
         ),
         "color_overrides": None,
         "preserve_colors": None,

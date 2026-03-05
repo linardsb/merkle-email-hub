@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownMemberType=false
 """
 Eval runner — executes synthetic test cases against agents and collects traces.
 
@@ -15,15 +16,16 @@ import argparse
 import asyncio
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from app.ai.agents.evals.synthetic_data_content import CONTENT_TEST_CASES
 from app.ai.agents.evals.synthetic_data_dark_mode import DARK_MODE_TEST_CASES
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 
 
-async def run_scaffolder_case(case: dict) -> dict:
+async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
     """Run a single scaffolder test case and return the trace."""
     from app.ai.agents.scaffolder.schemas import ScaffolderRequest
     from app.ai.agents.scaffolder.service import ScaffolderService
@@ -49,7 +51,7 @@ async def run_scaffolder_case(case: dict) -> dict:
             "expected_challenges": case["expected_challenges"],
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     except Exception as e:
         elapsed = time.monotonic() - start
@@ -62,11 +64,11 @@ async def run_scaffolder_case(case: dict) -> dict:
             "expected_challenges": case["expected_challenges"],
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
-async def run_dark_mode_case(case: dict) -> dict:
+async def run_dark_mode_case(case: dict[str, Any]) -> dict[str, Any]:
     """Run a single dark mode test case and return the trace."""
     from app.ai.agents.dark_mode.schemas import DarkModeRequest
     from app.ai.agents.dark_mode.service import DarkModeService
@@ -82,7 +84,7 @@ async def run_dark_mode_case(case: dict) -> dict:
 
     start = time.monotonic()
     try:
-        response = await service.generate(request)
+        response = await service.process(request)
         elapsed = time.monotonic() - start
         return {
             "id": case["id"],
@@ -102,7 +104,7 @@ async def run_dark_mode_case(case: dict) -> dict:
             "expected_challenges": case["expected_challenges"],
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     except Exception as e:
         elapsed = time.monotonic() - start
@@ -119,11 +121,11 @@ async def run_dark_mode_case(case: dict) -> dict:
             "expected_challenges": case["expected_challenges"],
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
-async def run_content_case(case: dict) -> dict:
+async def run_content_case(case: dict[str, Any]) -> dict[str, Any]:
     """Run a single content test case and return the trace."""
     from app.ai.agents.content.schemas import ContentRequest
     from app.ai.agents.content.service import ContentService
@@ -157,7 +159,7 @@ async def run_content_case(case: dict) -> dict:
             "expected_challenges": case["expected_challenges"],
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     except Exception as e:
         elapsed = time.monotonic() - start
@@ -170,7 +172,7 @@ async def run_content_case(case: dict) -> dict:
             "expected_challenges": case["expected_challenges"],
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
@@ -178,6 +180,8 @@ async def run_agent(agent: str, output_dir: Path) -> None:
     """Run all test cases for an agent and write traces to JSONL."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    cases: list[dict[str, Any]]
+    runner: Any
     if agent == "scaffolder":
         cases = SCAFFOLDER_TEST_CASES
         runner = run_scaffolder_case
@@ -201,7 +205,7 @@ async def run_agent(agent: str, output_dir: Path) -> None:
         status = "OK" if trace["error"] is None else f"ERROR: {trace['error']}"
         print(f"{status} ({trace['elapsed_seconds']}s)")
 
-    with open(output_file, "w") as f:
+    with Path.open(output_file, "w") as f:
         for trace in traces:
             f.write(json.dumps(trace) + "\n")
 
@@ -209,7 +213,7 @@ async def run_agent(agent: str, output_dir: Path) -> None:
     print(f"\nDone: {passed}/{len(traces)} succeeded. Traces: {output_file}")
 
 
-async def main():
+async def main() -> None:
     parser = argparse.ArgumentParser(description="Run agent evals")
     parser.add_argument(
         "--agent",
@@ -219,9 +223,7 @@ async def main():
     parser.add_argument("--output", type=Path, default=Path("traces"))
     args = parser.parse_args()
 
-    agents = (
-        ["scaffolder", "dark_mode", "content"] if args.agent == "all" else [args.agent]
-    )
+    agents = ["scaffolder", "dark_mode", "content"] if args.agent == "all" else [args.agent]
 
     for agent in agents:
         await run_agent(agent, args.output)

@@ -400,11 +400,12 @@
 **Remaining:** Real Figma REST API integration, change webhook handling, plugin ecosystem (Emailify, Email Love, MigmaAI) — deferred to backend implementation phase.
 **Verify:** `/figma` page loads with 3 demo connections. Connect dialog creates new connection. Clicking connected card shows design tokens. Sync/delete actions work. Create Project dialog has optional Figma URL field. `pnpm build` passes.
 
-### 4.4 Litmus / Email on Acid API Integration
-**Plan ref:** Section 7.2 (Cross-Client Render)
-- API integration for 20+ client rendering screenshots
-- Visual regression detection
-- Rendering report generation
+### ~~4.4 Litmus / Email on Acid API Integration~~ DONE
+**Plan ref:** Section 7.2 (Cross-Client Render), `.agents/plans/4.4-litmus-eoa-integration.md`
+**What:** New `app/rendering/` VSA module for cross-client rendering tests via Litmus and Email on Acid APIs. `RenderingProvider` Protocol (same pattern as `ConnectorProvider`) with `submit_test`, `poll_status`, `get_results` methods. Two provider implementations: `litmus/` and `eoa/` (placeholder APIs). `RenderingTest` + `RenderingScreenshot` DB models. Repository with eager-loaded screenshots, filtered list/count, pending poller query. `RenderingService` with circuit breaker (`CircuitBreaker` from `app/core/resilience`), visual regression comparison (per-client diff percentage with 2% threshold). `RenderingConfig` in `app/core/config.py` (`RENDERING__PROVIDER`, `RENDERING__LITMUS_API_KEY`, `RENDERING__EOA_API_KEY`, polling settings). 4 REST endpoints under `/api/v1/rendering/` (submit, list, get, compare) with auth + rate limiting. 12 unit tests (316 total).
+- ~~API integration for 20+ client rendering screenshots~~ DONE
+- ~~Visual regression detection~~ DONE
+- ~~Rendering report generation~~ DONE
 
 ### ~~4.5 Advanced Features~~ DONE
 - ~~Real-time collaborative editing (CRDT/OT — Yjs + y-codemirror.next, demo mode with simulated collaborator)~~ DONE

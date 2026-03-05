@@ -45,6 +45,7 @@ from app.personas.routes import router as personas_router
 # Email Hub modules
 from app.projects.routes import router as projects_router
 from app.qa_engine.routes import router as qa_router
+from app.rendering.routes import router as rendering_router
 from app.streaming.routes import close_ws_manager, get_ws_manager, ws_router
 from app.streaming.subscriber import start_ws_subscriber, stop_ws_subscriber
 from app.templates.routes import router as templates_router
@@ -147,6 +148,7 @@ app.include_router(connectors_router)
 app.include_router(approval_router)
 app.include_router(personas_router)
 app.include_router(templates_router)
+app.include_router(rendering_router)
 
 # AI agents
 app.include_router(scaffolder_router)
