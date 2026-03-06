@@ -1,8 +1,20 @@
 """Pydantic schemas for client approval portal."""
 
 import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+ApprovalStatus = Literal["pending", "approved", "rejected", "revision_requested"]
+
+# Valid transitions: current_status -> set of allowed target statuses
+VALID_TRANSITIONS: dict[str, set[str]] = {
+    "pending": {"approved", "rejected", "revision_requested"},
+    "revision_requested": {"approved", "rejected", "pending"},
+    # Terminal states — no outgoing transitions
+    "approved": set(),
+    "rejected": set(),
+}
 
 
 class ApprovalCreate(BaseModel):
@@ -11,7 +23,7 @@ class ApprovalCreate(BaseModel):
 
 
 class ApprovalDecision(BaseModel):
-    status: str = Field(..., pattern="^(approved|rejected|revision_requested)$")
+    status: ApprovalStatus
     review_note: str | None = None
 
 

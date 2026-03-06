@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.approval.exceptions import ApprovalNotFoundError
+from app.approval.exceptions import ApprovalNotFoundError, InvalidStateTransitionError
 from app.approval.models import ApprovalRequest
 from app.approval.repository import ApprovalRepository
 from app.approval.schemas import (
+    VALID_TRANSITIONS,
     ApprovalCreate,
     ApprovalDecision,
     ApprovalResponse,
@@ -54,6 +55,11 @@ class ApprovalService:
         self, approval_id: int, decision: ApprovalDecision, user: User
     ) -> ApprovalResponse:
         approval = await self._verify_approval_access(approval_id, user)
+        allowed = VALID_TRANSITIONS.get(approval.status, set())
+        if decision.status not in allowed:
+            raise InvalidStateTransitionError(
+                f"Cannot transition from '{approval.status}' to '{decision.status}'"
+            )
         approval = await self.repository.update_status(
             approval, decision.status, user.id, decision.review_note
         )

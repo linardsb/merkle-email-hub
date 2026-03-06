@@ -29,7 +29,6 @@ class AuthConfig(BaseModel):
     """Authentication and JWT settings."""
 
     jwt_secret_key: str = "CHANGE-ME-IN-PRODUCTION"  # noqa: S105
-    jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     demo_user_password: str = "admin"  # noqa: S105

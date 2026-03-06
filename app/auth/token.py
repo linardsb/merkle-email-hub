@@ -13,6 +13,10 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Pinned algorithm — never read from config to prevent algorithm confusion attacks.
+# HS256 (HMAC-SHA256) with a strong secret is sufficient for single-service JWT.
+_JWT_ALGORITHM: str = "HS256"
+
 
 class TokenPayload(BaseModel):
     """Decoded JWT token payload."""
@@ -45,9 +49,7 @@ def create_access_token(user_id: int, role: str) -> str:
         "type": "access",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(
-        payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm
-    )
+    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)
     return token
 
 
@@ -71,9 +73,7 @@ def create_refresh_token(user_id: int) -> str:
         "type": "refresh",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(
-        payload, settings.auth.jwt_secret_key, algorithm=settings.auth.jwt_algorithm
-    )
+    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)
     return token
 
 
@@ -138,7 +138,7 @@ def decode_token(token: str) -> TokenPayload | None:
         payload: dict[str, Any] = jwt.decode(
             token,
             settings.auth.jwt_secret_key,
-            algorithms=[settings.auth.jwt_algorithm],
+            algorithms=[_JWT_ALGORITHM],
         )
         return TokenPayload(
             sub=int(payload["sub"]),
