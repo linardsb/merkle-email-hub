@@ -1,0 +1,8 @@
+# Migrations — admin-only, no user input reaches sa.text()
+alembic/
+
+# Maizzle email templates — dynamic vars ({{ href }}) are intended functionality
+email-templates/
+
+# Maizzle builder sidecar — internal service, source from backend API only
+services/maizzle-builder/

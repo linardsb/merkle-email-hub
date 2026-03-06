@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import DOMPurify from "dompurify";
 import { SAMPLE_DATA } from "@/lib/liquid/sample-data";
 
 interface LiquidPreviewProps {
@@ -31,7 +32,7 @@ export function LiquidPreview({ code }: LiquidPreviewProps) {
       </h3>
       <div
         className="prose prose-sm max-w-none text-foreground"
-        dangerouslySetInnerHTML={{ __html: rendered }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rendered) }}
       />
     </div>
   );
