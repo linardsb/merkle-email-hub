@@ -627,12 +627,11 @@ Run evals first to establish a baseline, build Phase 7 infrastructure before the
 **Step 0 — Eval Baseline (Phase 5.4-5.8 execution) — RUN FIRST**
 Execute pending evals on the existing 3 agents to establish baseline metrics. This data is needed to: (a) measure Phase 7/8 improvement, (b) unblock 7.2 (eval-informed prompts), (c) calibrate confidence scoring thresholds (7.3). Without a baseline, you can't prove any of the subsequent work actually helps.
 
-**Step 1 — Blueprint Infrastructure (7.1 + 7.3 + 7.4)**
-Build `AgentHandoff` schema, confidence scoring, and component context loader into the blueprint engine. This is shared infrastructure that all agents benefit from.
-Touches: `app/ai/blueprints/schemas.py`, `engine.py`, `app/ai/shared.py`
+~~**Step 1 — Blueprint Infrastructure (7.1 + 7.3 + 7.4)**~~ DONE
+Built `AgentHandoff` frozen dataclass, `ComponentMeta`, `ComponentResolver` Protocol in `protocols.py`. Engine stores/propagates handoff, checks confidence < 0.5 → `needs_review` status. Async `_build_node_context` with component context injection. `extract_confidence()`/`strip_confidence_comment()` in `shared.py`. `DbComponentResolver` in `resolvers.py`. `HandoffSummary` in API response schema. 21 new tests.
 
-**Step 2 — Retrofit Existing 3 Agents (Scaffolder, Dark Mode, Content)**
-Update the 3 built agents to emit `AgentHandoff` + confidence scores. This is a focused output format change per agent — the generation logic doesn't change. Update the 15 existing judge criteria to accept `AgentHandoff.artifact` instead of raw output.
+~~**Step 2 — Retrofit Existing Agents (Scaffolder, Dark Mode)**~~ DONE
+Updated ScaffolderNode + DarkModeNode to emit `AgentHandoff` with confidence scores and component refs. DarkModeNode reads upstream handoff warnings. RecoveryRouterNode reads handoff warnings for dark mode routing hints. System prompts updated with confidence assessment instructions. Content agent retrofit deferred (no blueprint node yet).
 
 **Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)**
 Install Cognee, define the full email ontology, seed the knowledge graph. This runs in parallel with Step 2 (independent work streams).
@@ -646,7 +645,7 @@ Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure
 **Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
 Requires real runs and real failure data. Feed blueprint outcomes into graph. Generate prompt fragments from failure clusters. Close the learning loop.
 
-### 7.1 Structured Inter-Agent Handoff Schemas
+### ~~7.1 Structured Inter-Agent Handoff Schemas~~ DONE
 **What:** Define typed handoff contracts between agents in blueprint pipelines. Currently agents chain via raw HTML output. Instead, each agent should emit a structured handoff object containing: the output artifact, metadata about decisions made (e.g., "used 2-column layout", "applied VML fallback for hero"), warnings/caveats, and context the next agent needs.
 **Why:** Dark Mode agent receiving raw HTML from Scaffolder doesn't know which design patterns were used, which components were pulled in, or what trade-offs were made. Structured handoffs eliminate "undoing each other's work."
 **Implementation:** `AgentHandoff` schema in `app/ai/blueprints/schemas.py` with `artifact`, `decisions`, `warnings`, `component_refs` fields. Blueprint engine passes handoff objects between nodes instead of raw strings.
@@ -662,7 +661,7 @@ Requires real runs and real failure data. Feed blueprint outcomes into graph. Ge
 **Security:** Failure patterns contain no user data (only aggregated error categories). Prompt fragments reviewed before deployment.
 **Verify:** After running `make eval-analysis`, agent prompt includes failure-specific warnings. Re-running evals shows improved pass rate on previously-failing dimensions.
 
-### 7.3 Agent Confidence Scoring
+### ~~7.3 Agent Confidence Scoring~~ DONE
 **What:** Agents emit a confidence score (0-1) alongside their output, based on self-assessment of task complexity, knowledge gaps, and output quality. Blueprint engine uses confidence to decide: high confidence → proceed to QA, low confidence → route to human review instead of burning retry loops.
 **Why:** Prevents wasting 2-3 self-correction rounds on tasks the agent knows it can't solve. Surfaces genuinely hard problems to developers faster.
 **Implementation:** `confidence` field on agent response schema. Configurable threshold per agent (default: 0.6). Blueprint engine checks confidence before routing to QA vs human review node. Confidence calibrated against eval pass rates over time.
@@ -670,13 +669,51 @@ Requires real runs and real failure data. Feed blueprint outcomes into graph. Ge
 **Security:** Confidence scores logged in audit trail. Never exposed to end-users (internal routing metric only).
 **Verify:** Agent returns confidence score. Blueprint routes low-confidence outputs to human review node. Confidence correlates with actual QA pass rate (validated via eval data).
 
-### 7.4 Template-Aware Component Context
+### ~~7.4 Template-Aware Component Context~~ DONE
 **What:** When an agent works on a template that uses components from the component library, automatically load that component's metadata (version, dark mode variant, known quirks, compatibility notes) into the agent's context.
 **Why:** Scaffolder pulls in a `hero` component but doesn't know it has a known Outlook 2016 rendering issue. Dark Mode agent doesn't know the component already has a dark mode variant. This context prevents redundant work and avoids breaking working components.
 **Implementation:** Template parser identifies component references → queries `app/components/` for metadata → injects as structured context in agent prompt. Leverages existing component versioning and the progressive disclosure pattern (only loads components actually used).
 **Retrofit:** Existing agents automatically benefit once the component context loader is wired into the blueprint engine — no per-agent changes needed.
 **Security:** Component metadata is project-scoped (existing RLS). No additional access surface.
 **Verify:** Agent working on template with `hero` component receives component metadata in context. Agent output references component-specific constraints. Token usage stays within progressive disclosure budget.
+
+### ~~7.5 Hub Agent Memory System (PRD 4.9.3-4.9.6)~~ DONE
+**Plan ref:** PRD Section 4.9.3-4.9.6 (Agent Memory Entries, Temporal Decay, Cross-Agent Sharing), `.agents/plans/dcg-agent-memory.md`
+**What:** Full `app/memory/` VSA module with pgvector-backed semantic memory for AI agents. Persistent, project-scoped memory entries with vector embeddings for similarity search, temporal decay, and a DCG note promotion bridge (4.9.7).
+**Implementation:** `MemoryEntry` model with `Vector(1024)` embedding, HNSW index, 3 memory types (procedural/episodic/semantic), temporal decay via `POWER(2, -age/half_life)`, 5 REST endpoints (`POST /memory`, `POST /memory/search`, `GET /memory/{id}`, `DELETE /memory/{id}`, `POST /memory/promote`), `MemoryCompactionPoller` background task, `MemoryConfig` in settings. Alembic migration `f1a2b3c4d5e6`. 19 unit tests (repository: 6, service: 6, routes: 7).
+**Verify:** Store, recall, promote all tested. Auth on all endpoints (admin/developer). Viewer role blocked (403). 404 on missing entries. Lint, mypy, pyright all clean.
+
+### 7.6 DCG-Based Lightweight Cross-Agent Memory (Research — 2026-03-06)
+**Plan ref:** PRD Section 4.9.7 (DCG Agent Memory), `destructive_command_guard/docs/prd-agent-memory-sharing.md`
+**What:** Add 2 MCP tools (`store_note`, `recall_notes`) to the existing dcg MCP server, enabling agents to share project-scoped observations via append-only JSONL files. Zero new dependencies, ~150 lines of Rust.
+**Why:** dcg already sits in the critical path of every agent's command execution and auto-detects which agent is calling. The history DB already stores per-agent evaluation data. Exposing a lightweight key/value note layer via MCP gives agents cross-agent memory with no infrastructure cost — complementing the Hub's full pgvector memory system (7.5) at the shell/tool layer.
+**Dependencies:** None. Uses existing dcg MCP server, agent detection, and JSONL I/O.
+**Implementation:**
+
+#### Phase 1 — Core (MVP, ~2-3 hours)
+- [ ] Add `AgentNote` struct to `destructive_command_guard/src/mcp.rs` (timestamp, agent, key, value, project)
+- [ ] Implement `store_note()` — append to `.dcg/agent_notes.jsonl` with auto-detected agent identity
+- [ ] Implement `recall_notes()` — read + filter from JSONL (by key, agent, project; limit 50)
+- [ ] Register both tools in `handle_list_tools_request` and `handle_call_tool_request`
+- [ ] Enforce size limits (1024 char value, 500 notes max per project, 128 char key)
+- [ ] Key namespace convention: `project.*`, `safety.*`, `workflow.*`, `config.*`
+- [ ] Unit tests for store/recall round-trip
+- [ ] MCP integration test (store from "agent A", recall from "agent B")
+
+#### Phase 2 — CLI
+- [ ] Add `dcg memory list` subcommand (pretty + JSON output)
+- [ ] Add `dcg memory clear` subcommand (with `--older-than`, `--agent`, `--key` filters)
+- [ ] Document in dcg `docs/agents.md`
+
+#### Phase 3 — Cross-Agent Intelligence (Future)
+- [ ] Expose existing history DB via `query_history` MCP tool (agents query each other's past evaluations)
+- [ ] Recommendation engine: "Agent X blocked N times on pattern Y" -> proactive warnings to other agents
+- [ ] Bridge to Hub memory: dcg notes that exceed confidence/frequency thresholds auto-promoted to Hub's pgvector memory (4.9.3)
+
+**Security:** Notes are project-local (no cross-project leakage). Agent identity auto-detected (not self-reported). `.dcg/` gitignored. `dcg memory clear` provides developer control.
+**Verify:** Agent A stores a note. Agent B recalls it via MCP. `dcg memory list` shows the note. Store/recall latency < 5ms.
+
+---
 
 ## Phase 8 — Knowledge Graph Integration (Cognee)
 

@@ -40,6 +40,7 @@ from app.core.redis import close_redis, redis_available
 from app.email_engine.routes import router as email_engine_router
 from app.example.routes import router as example_router
 from app.knowledge.routes import router as knowledge_router
+from app.memory.routes import router as memory_router
 from app.personas.routes import router as personas_router
 
 # Email Hub modules
@@ -66,6 +67,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         settings.auth.jwt_secret_key in _insecure_defaults or len(settings.auth.jwt_secret_key) < 32
     ):
         msg = "AUTH__JWT_SECRET_KEY must be a strong secret (min 32 chars) in non-development environments"
+        raise RuntimeError(msg)
+
+    # SECURITY: Block default database credentials in non-development environments
+    if settings.environment != "development" and "postgres:postgres@" in settings.database.url:
+        msg = "DATABASE__URL must not use default credentials (postgres:postgres) in non-development environments"
         raise RuntimeError(msg)
 
     logger.info(
@@ -149,6 +155,7 @@ app.include_router(approval_router)
 app.include_router(personas_router)
 app.include_router(templates_router)
 app.include_router(rendering_router)
+app.include_router(memory_router)
 
 # AI agents
 app.include_router(scaffolder_router)

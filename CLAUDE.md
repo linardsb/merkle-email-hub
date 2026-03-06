@@ -89,6 +89,7 @@ merkle-email-hub/
 │   ├── connectors/     # ESP connectors (Braze Content Block export with Liquid)
 │   ├── approval/       # Client approval portal (ApprovalRequest, Feedback, AuditEntry)
 │   ├── personas/       # Test persona engine (subscriber profile presets)
+│   ├── memory/         # Agent memory (pgvector embeddings, temporal decay, DCG bridge)
 │   ├── rendering/      # Cross-client rendering tests (Litmus, Email on Acid)
 │   └── tests/          # Integration tests
 ├── cms/               # Frontend monorepo (Next.js 16 + React 19)
@@ -153,6 +154,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `personas` | `/api/v1/personas` | Test subscriber profiles (device, email client, dark mode) |
 | `rendering` | `/api/v1/rendering` | Cross-client rendering tests (Litmus, EoA) with visual regression |
 | `knowledge` | `/api/v1/knowledge` | RAG pipeline: document ingestion, hybrid search, tagging (`make seed-knowledge`) |
+| `memory` | `/memory` | Agent memory: pgvector semantic search, temporal decay, DCG promotion bridge |
 | `blueprints` | `/api/v1/blueprints` | Blueprint state machine engine: orchestrated agent pipelines with self-correction |
 
 ### QA Gate System (10 checks)
@@ -300,10 +302,11 @@ Audit conducted 2026-03-06. All 4 sub-phases done. Fix pattern: `verify_project_
 
 ### Phase 7 — Agent Capability Improvements
 Build infrastructure before remaining 6 agents so every new agent inherits patterns from day one.
-- [ ] 7.1 Structured inter-agent handoff schemas (`AgentHandoff` in blueprint engine)
+- [x] 7.1 Structured inter-agent handoff schemas (`AgentHandoff` frozen dataclass, propagated via `BlueprintRun._last_handoff`, exposed in API as `HandoffSummary`)
 - [ ] 7.2 Eval-informed agent prompts (blocked on Phase 5.4-5.8 execution)
-- [ ] 7.3 Agent confidence scoring (0-1, routes low-confidence to human review)
-- [ ] 7.4 Template-aware component context (auto-load component metadata into agent context)
+- [x] 7.3 Agent confidence scoring (0-1 via `<!-- CONFIDENCE: X.XX -->` HTML comment, threshold 0.5 → `needs_review` status)
+- [x] 7.4 Template-aware component context (`ComponentResolver` Protocol, `DbComponentResolver`, auto-detect `<component>` refs, inject metadata into agentic node context)
+- [x] 7.5 Hub Agent Memory System (`app/memory/` VSA module, pgvector Vector(1024), HNSW index, temporal decay, DCG promotion bridge, 5 REST endpoints, 19 tests)
 
 ### Phase 8 — Knowledge Graph Integration (Cognee)
 Replace flat RAG with graph-structured knowledge using Cognee. Agents get structured entity relationships instead of similar text chunks. Depends on Phase 7 infrastructure.
@@ -337,10 +340,12 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Approval: ApprovalRequest, Feedback, AuditEntry models + workflow
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
-- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction
+- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff`), confidence-based routing, component context injection
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
+- Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`
+- Phase 7: `AgentHandoff` structured handoffs between agentic nodes, confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection
 
 ### Frontend Features (for `fe-prime`)
 - Dashboard: project overview grid, activity feed, QA summary, quick-start

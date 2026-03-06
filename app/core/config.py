@@ -108,6 +108,19 @@ class RenderingConfig(BaseModel):
     screenshot_storage_path: str = "data/screenshots"
 
 
+class MemoryConfig(BaseModel):
+    """Agent memory system settings."""
+
+    enabled: bool = True
+    embedding_dimension: int = 1024
+    default_decay_half_life_days: int = 30
+    compaction_interval_hours: int = 24
+    compaction_similarity_threshold: float = 0.92
+    max_memories_per_project: int = 5000
+    context_injection_limit: int = 10
+    dcg_promotion_min_frequency: int = 3
+
+
 class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
@@ -160,6 +173,7 @@ class Settings(BaseSettings):
     reranker: RerankerConfig = RerankerConfig()
     knowledge: KnowledgeConfig = KnowledgeConfig()
 
+    memory: MemoryConfig = MemoryConfig()
     blueprint: BlueprintConfig = BlueprintConfig()
     ws: WebSocketConfig = WebSocketConfig()
     rendering: RenderingConfig = RenderingConfig()
