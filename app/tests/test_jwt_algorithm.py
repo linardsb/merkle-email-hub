@@ -6,7 +6,7 @@ and rejects tokens signed with other algorithms.
 
 from unittest.mock import patch
 
-from jose import jwt  # pyright: ignore[reportMissingTypeStubs]
+import jwt as pyjwt
 
 from app.auth.token import _JWT_ALGORITHM, create_access_token, decode_token
 
@@ -23,7 +23,7 @@ def test_create_access_token_uses_hs256() -> None:
         mock_settings.return_value.auth.access_token_expire_minutes = 30
 
         token = create_access_token(user_id=1, role="admin")
-        header = jwt.get_unverified_header(token)
+        header = pyjwt.get_unverified_header(token)
         assert header["alg"] == "HS256"
 
 
@@ -33,7 +33,7 @@ def test_decode_rejects_wrong_algorithm() -> None:
         mock_settings.return_value.auth.jwt_secret_key = "test-secret"
 
         # Sign with HS384 instead of HS256
-        token: str = jwt.encode(
+        token: str = pyjwt.encode(
             {"sub": "1", "role": "admin", "type": "access", "jti": "abc", "exp": 9999999999},
             "test-secret",
             algorithm="HS384",
@@ -47,16 +47,12 @@ def test_decode_rejects_none_algorithm() -> None:
     with patch("app.auth.token.get_settings") as mock_settings:
         mock_settings.return_value.auth.jwt_secret_key = "test-secret"
 
-        # Craft a token with alg: "none" — python-jose should reject this
-        token: str = jwt.encode(
+        # Sign with empty key — PyJWT will reject on decode due to key mismatch
+        token: str = pyjwt.encode(
             {"sub": "1", "role": "admin", "type": "access", "jti": "abc", "exp": 9999999999},
             "",
             algorithm="HS256",
         )
-        # Tamper the header to use "none" — decode should reject
-        # Since python-jose validates algorithms= list, even a valid HS256 token
-        # won't decode if we tell it to only accept a non-matching algorithm
-        # This test verifies the algorithms= parameter is enforced
         result = decode_token(token)
         # Token was signed with empty string key, our decode uses "test-secret"
         # so signature mismatch → rejected

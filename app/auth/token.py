@@ -1,11 +1,11 @@
-# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
 """JWT token creation and validation utilities."""
 
 import datetime
 import uuid
 from typing import Any
 
-from jose import JWTError, jwt  # pyright: ignore[reportMissingTypeStubs]
+import jwt
+from jwt import InvalidTokenError
 from pydantic import BaseModel
 
 from app.core.config import get_settings
@@ -49,7 +49,7 @@ def create_access_token(user_id: int, role: str) -> str:
         "type": "access",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)
+    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)  # type: ignore[assignment]
     return token
 
 
@@ -73,7 +73,7 @@ def create_refresh_token(user_id: int) -> str:
         "type": "refresh",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)
+    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)  # type: ignore[assignment]
     return token
 
 
@@ -139,7 +139,7 @@ def decode_token(token: str) -> TokenPayload | None:
             token,
             settings.auth.jwt_secret_key,
             algorithms=[_JWT_ALGORITHM],
-        )
+        )  # type: ignore[assignment]
         return TokenPayload(
             sub=int(payload["sub"]),
             role=str(payload.get("role", "")),
@@ -147,6 +147,6 @@ def decode_token(token: str) -> TokenPayload | None:
             type=str(payload.get("type", "access")),
             jti=str(payload.get("jti", "")),
         )
-    except (JWTError, KeyError, ValueError) as e:
+    except (InvalidTokenError, KeyError, ValueError) as e:
         logger.warning("auth.token.decode_failed", error=str(e))
         return None
