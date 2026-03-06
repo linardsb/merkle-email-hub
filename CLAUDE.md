@@ -45,8 +45,8 @@ make db-revision m="description"  # Create new migration
 make seed-knowledge  # Seed RAG knowledge base (requires DB + embedding provider)
 
 # Agent evals
-make eval-run        # Run agent evals (generate traces)
-make eval-judge      # Run judges on traces (generate verdicts)
+make eval-verify     # Pre-flight check: verify LLM provider works
+make eval-run        # Run agent evals (generate traces, auto-verifies provider)
 make eval-labels     # Scaffold human label templates
 make eval-analysis   # Analyze verdicts (failure taxonomy)
 make eval-blueprint  # Run blueprint pipeline evals

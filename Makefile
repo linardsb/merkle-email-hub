@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline
+.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline
 
 # === Local Development ===
 
@@ -83,11 +83,14 @@ seed-knowledge: ## Seed knowledge base with email dev content (requires DB + emb
 
 # === Eval Pipeline ===
 
-eval-run: ## Run agent evals (generate traces)
-	uv run python -m app.ai.agents.evals.runner --agent all --output traces/
+eval-verify: ## Verify LLM provider is configured and responding
+	uv run python -m app.ai.agents.evals.verify_provider
+
+eval-run: eval-verify ## Run agent evals (generate traces)
+	uv run python -m app.ai.agents.evals.runner --agent all --output traces/ --skip-existing
 
 eval-judge: ## Run judges on traces (generate verdicts)
-	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces --skip-existing
 
 eval-labels: ## Scaffold human label templates from traces+verdicts
 	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/scaffolder_verdicts.jsonl --traces traces/scaffolder_traces.jsonl --output traces/scaffolder_human_labels.jsonl

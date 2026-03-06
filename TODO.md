@@ -453,6 +453,7 @@
 > - [x] 5.7 — Blueprint pipeline eval runner built (`blueprint_eval.py` with 5 test briefs; 8 unit tests)
 > - [x] 5.8 — Regression detection built (`regression.py` baseline comparison + `make eval-check` CI gate; 10 unit tests)
 > - [x] 5.4-5.8 — **Dry-run pipeline**: `--dry-run` flag on runner/judge/blueprint CLIs; `mock_traces.py` deterministic generators; `make eval-dry-run` exercises full pipeline without LLM; `make eval-full`/`eval-calibrate`/`eval-qa-calibrate` targets; 9 integration tests (58 eval tests total)
+> - [x] 5.4-5.8 — **Live execution hardening**: `verify_provider.py` pre-flight check (`make eval-verify`); incremental JSONL writing (crash-safe); `--skip-existing` resume flag on runner + judge_runner; `eval-run` auto-verifies provider before running
 > - [ ] 5.4-5.8 — **Live execution**: run with real LLM provider, collect human labels, calibrate judges (requires AI__PROVIDER + labeling effort)
 > - [ ] Eval data for Outlook Fixer (on agent build)
 > - [ ] Eval data for Accessibility Auditor (on agent build)

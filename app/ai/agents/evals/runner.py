@@ -183,6 +183,7 @@ async def run_agent(
     dry_run: bool = False,
     batch_size: int = 5,
     delay: float = 3.0,
+    skip_existing: bool = False,
 ) -> None:
     """Run all test cases for an agent and write traces to JSONL."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -203,33 +204,58 @@ async def run_agent(
 
     output_file = output_dir / f"{agent}_traces.jsonl"
     mode_label = " (dry-run)" if dry_run else ""
+
+    # Load existing trace IDs for resume capability
+    existing_ids: set[str] = set()
+    if skip_existing and output_file.exists():
+        with Path.open(output_file) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    existing_ids.add(json.loads(line)["id"])
+        if existing_ids:
+            print(f"Resuming: {len(existing_ids)} existing traces found in {output_file}")
+
+    file_mode = "a" if existing_ids else "w"
     print(f"Running {len(cases)} test cases for {agent}{mode_label}...")
 
-    traces = []
-    if dry_run:
-        from app.ai.agents.evals.mock_traces import generate_mock_trace
+    trace_count = 0
+    error_count = 0
 
-        for i, case in enumerate(cases, 1):
-            print(f"  [{i}/{len(cases)}] {case['id']}... (dry-run)")
-            trace = generate_mock_trace(case, agent)
-            traces.append(trace)
-    else:
-        for i, case in enumerate(cases, 1):
-            print(f"  [{i}/{len(cases)}] {case['id']}...", end=" ", flush=True)
-            trace = await runner(case)
-            traces.append(trace)
-            status = "OK" if trace["error"] is None else f"ERROR: {trace['error']}"
-            print(f"{status} ({trace['elapsed_seconds']}s)")
-            if (i % batch_size == 0) and i < len(cases):
-                print(f"  Rate limit pause ({delay}s)...", flush=True)
-                await asyncio.sleep(delay)
+    with Path.open(output_file, file_mode) as f:
+        if dry_run:
+            from app.ai.agents.evals.mock_traces import generate_mock_trace
 
-    with Path.open(output_file, "w") as f:
-        for trace in traces:
-            f.write(json.dumps(trace) + "\n")
+            for i, case in enumerate(cases, 1):
+                if case["id"] in existing_ids:
+                    print(f"  [{i}/{len(cases)}] {case['id']}... SKIPPED (exists)")
+                    continue
+                print(f"  [{i}/{len(cases)}] {case['id']}... (dry-run)")
+                trace = generate_mock_trace(case, agent)
+                f.write(json.dumps(trace) + "\n")
+                f.flush()
+                trace_count += 1
+        else:
+            for i, case in enumerate(cases, 1):
+                if case["id"] in existing_ids:
+                    print(f"  [{i}/{len(cases)}] {case['id']}... SKIPPED (exists)")
+                    continue
+                print(f"  [{i}/{len(cases)}] {case['id']}...", end=" ", flush=True)
+                trace = await runner(case)
+                f.write(json.dumps(trace) + "\n")
+                f.flush()
+                trace_count += 1
+                if trace["error"] is not None:
+                    error_count += 1
+                status = "OK" if trace["error"] is None else f"ERROR: {trace['error']}"
+                print(f"{status} ({trace['elapsed_seconds']}s)")
+                if (i % batch_size == 0) and i < len(cases):
+                    print(f"  Rate limit pause ({delay}s)...", flush=True)
+                    await asyncio.sleep(delay)
 
-    passed = sum(1 for t in traces if t["error"] is None)
-    print(f"\nDone: {passed}/{len(traces)} succeeded. Traces: {output_file}")
+    total = trace_count + len(existing_ids)
+    passed = total - error_count
+    print(f"\nDone: {passed}/{total} succeeded. Traces: {output_file}")
 
 
 async def main() -> None:
@@ -247,6 +273,11 @@ async def main() -> None:
     parser.add_argument(
         "--delay", type=float, default=3.0, help="Seconds between batches (default: 3.0)"
     )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip test cases already in output file (resume after crash)",
+    )
     args = parser.parse_args()
 
     agents = ["scaffolder", "dark_mode", "content"] if args.agent == "all" else [args.agent]
@@ -258,6 +289,7 @@ async def main() -> None:
             dry_run=args.dry_run,
             batch_size=args.batch_size,
             delay=args.delay,
+            skip_existing=args.skip_existing,
         )
 
 

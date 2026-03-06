@@ -118,6 +118,7 @@ async def run_judge(
     delay: float,
     *,
     dry_run: bool = False,
+    skip_existing: bool = False,
 ) -> None:
     """Run judge on all traces for an agent."""
     judge_cls = JUDGE_REGISTRY.get(agent)
@@ -130,66 +131,92 @@ async def run_judge(
         print(f"No valid traces found in {traces_path}")
         return
 
+    # Load existing verdicts for resume capability
     verdicts: list[JudgeVerdict] = []
+    existing_ids: set[str] = set()
+    if skip_existing and output_path.exists():
+        with Path.open(output_path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    data = json.loads(line)
+                    existing_ids.add(data["trace_id"])
+                    verdicts.append(JudgeVerdict(**data))
+        if existing_ids:
+            print(f"Resuming: {len(existing_ids)} existing verdicts found in {output_path}")
 
-    if dry_run:
-        from app.ai.agents.evals.mock_traces import AGENT_CRITERIA, generate_mock_verdict
-
-        criteria = AGENT_CRITERIA.get(agent, [])
-        print(f"Judging {len(traces)} traces for {agent} (dry-run)...")
-        for i, trace in enumerate(traces, 1):
-            trace_id = trace["id"]
-            print(f"  [{i}/{len(traces)}] {trace_id}... (dry-run)")
-            verdict_dict = generate_mock_verdict(trace, criteria)
-            verdict = JudgeVerdict(
-                trace_id=verdict_dict["trace_id"],
-                agent=verdict_dict["agent"],
-                overall_pass=verdict_dict["overall_pass"],
-                criteria_results=[CriterionResult(**cr) for cr in verdict_dict["criteria_results"]],
-                error=verdict_dict["error"],
-            )
-            verdicts.append(verdict)
-    else:
-        judge = judge_cls()
-
-        # Resolve provider
-        settings = get_settings()
-        resolved_provider = provider_name or settings.ai.provider
-        registry = get_registry()
-        provider = registry.get_llm(resolved_provider)
-        model = model_override or settings.ai.model
-
-        print(
-            f"Judging {len(traces)} traces for {agent} "
-            f"(provider={resolved_provider}, model={model})..."
-        )
-
-        for batch_start in range(0, len(traces), batch_size):
-            batch = traces[batch_start : batch_start + batch_size]
-            batch_num = batch_start // batch_size + 1
-
-            for trace in batch:
-                trace_id = trace["id"]
-                print(f"  [{len(verdicts) + 1}/{len(traces)}] {trace_id}...", end=" ", flush=True)
-
-                start = time.monotonic()
-                verdict = await judge_trace(judge, trace, provider, model)
-                elapsed = time.monotonic() - start
-
-                verdicts.append(verdict)
-                status = "PASS" if verdict.overall_pass else ("ERROR" if verdict.error else "FAIL")
-                print(f"{status} ({elapsed:.1f}s)")
-
-            # Delay between batches (not after last batch)
-            if batch_start + batch_size < len(traces):
-                print(f"  [batch {batch_num} complete, waiting {delay}s...]")
-                await asyncio.sleep(delay)
-
-    # Write verdicts
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with Path.open(output_path, "w") as f:
-        for verdict in verdicts:
-            f.write(json.dumps(verdict.model_dump()) + "\n")
+    file_mode = "a" if existing_ids else "w"
+
+    with Path.open(output_path, file_mode) as f:
+        if dry_run:
+            from app.ai.agents.evals.mock_traces import AGENT_CRITERIA, generate_mock_verdict
+
+            criteria = AGENT_CRITERIA.get(agent, [])
+            print(f"Judging {len(traces)} traces for {agent} (dry-run)...")
+            for i, trace in enumerate(traces, 1):
+                trace_id = trace["id"]
+                if trace_id in existing_ids:
+                    print(f"  [{i}/{len(traces)}] {trace_id}... SKIPPED (exists)")
+                    continue
+                print(f"  [{i}/{len(traces)}] {trace_id}... (dry-run)")
+                verdict_dict = generate_mock_verdict(trace, criteria)
+                verdict = JudgeVerdict(
+                    trace_id=verdict_dict["trace_id"],
+                    agent=verdict_dict["agent"],
+                    overall_pass=verdict_dict["overall_pass"],
+                    criteria_results=[
+                        CriterionResult(**cr) for cr in verdict_dict["criteria_results"]
+                    ],
+                    error=verdict_dict["error"],
+                )
+                verdicts.append(verdict)
+                f.write(json.dumps(verdict.model_dump()) + "\n")
+                f.flush()
+        else:
+            judge = judge_cls()
+
+            # Resolve provider
+            settings = get_settings()
+            resolved_provider = provider_name or settings.ai.provider
+            registry = get_registry()
+            provider = registry.get_llm(resolved_provider)
+            model = model_override or settings.ai.model
+
+            pending_traces = [t for t in traces if t["id"] not in existing_ids]
+            print(
+                f"Judging {len(pending_traces)} traces for {agent} "
+                f"(provider={resolved_provider}, model={model})..."
+            )
+
+            for batch_start in range(0, len(pending_traces), batch_size):
+                batch = pending_traces[batch_start : batch_start + batch_size]
+                batch_num = batch_start // batch_size + 1
+
+                for trace in batch:
+                    trace_id = trace["id"]
+                    print(
+                        f"  [{len(verdicts) + 1}/{len(traces)}] {trace_id}...",
+                        end=" ",
+                        flush=True,
+                    )
+
+                    start = time.monotonic()
+                    verdict = await judge_trace(judge, trace, provider, model)
+                    elapsed = time.monotonic() - start
+
+                    verdicts.append(verdict)
+                    f.write(json.dumps(verdict.model_dump()) + "\n")
+                    f.flush()
+                    status = (
+                        "PASS" if verdict.overall_pass else ("ERROR" if verdict.error else "FAIL")
+                    )
+                    print(f"{status} ({elapsed:.1f}s)")
+
+                # Delay between batches (not after last batch)
+                if batch_start + batch_size < len(pending_traces):
+                    print(f"  [batch {batch_num} complete, waiting {delay}s...]")
+                    await asyncio.sleep(delay)
 
     print_summary(agent, verdicts, output_path)
 
@@ -216,6 +243,11 @@ async def main() -> None:
         "--delay", type=float, default=2.0, help="Seconds between batches (default: 2.0)"
     )
     parser.add_argument("--dry-run", action="store_true", help="Generate mock verdicts without LLM")
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip traces already judged in output file (resume after crash)",
+    )
     args = parser.parse_args()
 
     agents = ["scaffolder", "dark_mode", "content"] if args.agent == "all" else [args.agent]
@@ -242,6 +274,7 @@ async def main() -> None:
             batch_size=args.batch_size,
             delay=args.delay,
             dry_run=args.dry_run,
+            skip_existing=args.skip_existing,
         )
 
 

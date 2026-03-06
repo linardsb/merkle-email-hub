@@ -57,7 +57,7 @@
 
 ### In Progress
 
-**Phase 5.4-5.8 — Eval Loop Tooling** built with dry-run pipeline. CLI tools for error analysis, judge calibration, QA gate calibration, blueprint pipeline eval, and regression detection. All CLIs support `--dry-run` flag with deterministic mock generators (`mock_traces.py`). `make eval-dry-run` exercises the full pipeline without LLM. 58 unit tests across 6 test files. Live execution requires LLM provider config + human labeling effort.
+**Phase 5.4-5.8 — Eval Loop Tooling** built with dry-run pipeline and live execution hardening. CLI tools for error analysis, judge calibration, QA gate calibration, blueprint pipeline eval, and regression detection. All CLIs support `--dry-run` flag with deterministic mock generators (`mock_traces.py`). `make eval-dry-run` exercises the full pipeline without LLM. Live execution hardened: `make eval-verify` pre-flight provider check, incremental JSONL writing (crash-safe), `--skip-existing` resume on runner + judge_runner. 58 unit tests across 6 test files. Live execution requires LLM provider config + human labeling effort.
 
 **Remaining:** V2 task 4.1 (6 remaining AI agents). Phase 5.4-5.8 live execution (run with real LLM, collect human labels, calibrate).
 

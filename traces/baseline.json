@@ -1,0 +1,270 @@
+{
+  "summary": {
+    "total_traces": 36,
+    "passed": 0,
+    "failed": 36,
+    "errors": 0,
+    "overall_pass_rate": 0.0
+  },
+  "pass_rates": {
+    "content": {
+      "copy_quality": 0.7857142857142857,
+      "grammar": 0.9285714285714286,
+      "length_appropriate": 0.42857142857142855,
+      "spam_avoidance": 0.9285714285714286,
+      "tone_match": 0.9285714285714286
+    },
+    "dark_mode": {
+      "color_coherence": 0.7,
+      "html_preservation": 0.9,
+      "media_query": 0.8,
+      "meta_tags": 0.9,
+      "outlook_selectors": 0.7
+    },
+    "scaffolder": {
+      "brief_fidelity": 0.75,
+      "code_quality": 0.5833333333333334,
+      "email_layout": 0.8333333333333334,
+      "mso_conditionals": 0.8333333333333334,
+      "table_structure": 1.0
+    }
+  },
+  "failure_clusters": [
+    {
+      "cluster_id": "content:length_appropriate",
+      "agent": "content",
+      "criterion": "length_appropriate",
+      "pattern": "Fail: mock evaluation of length_appropriate for content-001",
+      "count": 8,
+      "trace_ids": [
+        "content-001",
+        "content-004",
+        "content-007",
+        "content-009",
+        "content-010",
+        "content-011",
+        "content-013",
+        "content-014"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of length_appropriate for content-001",
+        "Fail: mock evaluation of length_appropriate for content-004",
+        "Fail: mock evaluation of length_appropriate for content-007"
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:code_quality",
+      "agent": "scaffolder",
+      "criterion": "code_quality",
+      "pattern": "Fail: mock evaluation of code_quality for scaff-004",
+      "count": 5,
+      "trace_ids": [
+        "scaff-004",
+        "scaff-008",
+        "scaff-010",
+        "scaff-011",
+        "scaff-012"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of code_quality for scaff-004",
+        "Fail: mock evaluation of code_quality for scaff-008",
+        "Fail: mock evaluation of code_quality for scaff-010"
+      ]
+    },
+    {
+      "cluster_id": "content:copy_quality",
+      "agent": "content",
+      "criterion": "copy_quality",
+      "pattern": "Fail: mock evaluation of copy_quality for content-002",
+      "count": 3,
+      "trace_ids": [
+        "content-002",
+        "content-008",
+        "content-012"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of copy_quality for content-002",
+        "Fail: mock evaluation of copy_quality for content-008",
+        "Fail: mock evaluation of copy_quality for content-012"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:color_coherence",
+      "agent": "dark_mode",
+      "criterion": "color_coherence",
+      "pattern": "Fail: mock evaluation of color_coherence for dark-001",
+      "count": 3,
+      "trace_ids": [
+        "dark-001",
+        "dark-007",
+        "dark-010"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of color_coherence for dark-001",
+        "Fail: mock evaluation of color_coherence for dark-007",
+        "Fail: mock evaluation of color_coherence for dark-010"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:outlook_selectors",
+      "agent": "dark_mode",
+      "criterion": "outlook_selectors",
+      "pattern": "Fail: mock evaluation of outlook_selectors for dark-002",
+      "count": 3,
+      "trace_ids": [
+        "dark-002",
+        "dark-006",
+        "dark-008"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of outlook_selectors for dark-002",
+        "Fail: mock evaluation of outlook_selectors for dark-006",
+        "Fail: mock evaluation of outlook_selectors for dark-008"
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:brief_fidelity",
+      "agent": "scaffolder",
+      "criterion": "brief_fidelity",
+      "pattern": "Fail: mock evaluation of brief_fidelity for scaff-001",
+      "count": 3,
+      "trace_ids": [
+        "scaff-001",
+        "scaff-005",
+        "scaff-006"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of brief_fidelity for scaff-001",
+        "Fail: mock evaluation of brief_fidelity for scaff-005",
+        "Fail: mock evaluation of brief_fidelity for scaff-006"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:media_query",
+      "agent": "dark_mode",
+      "criterion": "media_query",
+      "pattern": "Fail: mock evaluation of media_query for dark-004",
+      "count": 2,
+      "trace_ids": [
+        "dark-004",
+        "dark-009"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of media_query for dark-004",
+        "Fail: mock evaluation of media_query for dark-009"
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:email_layout",
+      "agent": "scaffolder",
+      "criterion": "email_layout",
+      "pattern": "Fail: mock evaluation of email_layout for scaff-002",
+      "count": 2,
+      "trace_ids": [
+        "scaff-002",
+        "scaff-003"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of email_layout for scaff-002",
+        "Fail: mock evaluation of email_layout for scaff-003"
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:mso_conditionals",
+      "agent": "scaffolder",
+      "criterion": "mso_conditionals",
+      "pattern": "Fail: mock evaluation of mso_conditionals for scaff-007",
+      "count": 2,
+      "trace_ids": [
+        "scaff-007",
+        "scaff-009"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of mso_conditionals for scaff-007",
+        "Fail: mock evaluation of mso_conditionals for scaff-009"
+      ]
+    },
+    {
+      "cluster_id": "content:grammar",
+      "agent": "content",
+      "criterion": "grammar",
+      "pattern": "Fail: mock evaluation of grammar for content-006",
+      "count": 1,
+      "trace_ids": [
+        "content-006"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of grammar for content-006"
+      ]
+    },
+    {
+      "cluster_id": "content:spam_avoidance",
+      "agent": "content",
+      "criterion": "spam_avoidance",
+      "pattern": "Fail: mock evaluation of spam_avoidance for content-005",
+      "count": 1,
+      "trace_ids": [
+        "content-005"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of spam_avoidance for content-005"
+      ]
+    },
+    {
+      "cluster_id": "content:tone_match",
+      "agent": "content",
+      "criterion": "tone_match",
+      "pattern": "Fail: mock evaluation of tone_match for content-003",
+      "count": 1,
+      "trace_ids": [
+        "content-003"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of tone_match for content-003"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:html_preservation",
+      "agent": "dark_mode",
+      "criterion": "html_preservation",
+      "pattern": "Fail: mock evaluation of html_preservation for dark-005",
+      "count": 1,
+      "trace_ids": [
+        "dark-005"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of html_preservation for dark-005"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:meta_tags",
+      "agent": "dark_mode",
+      "criterion": "meta_tags",
+      "pattern": "Fail: mock evaluation of meta_tags for dark-003",
+      "count": 1,
+      "trace_ids": [
+        "dark-003"
+      ],
+      "sample_reasonings": [
+        "Fail: mock evaluation of meta_tags for dark-003"
+      ]
+    }
+  ],
+  "top_failures": [
+    {
+      "cluster_id": "content:length_appropriate",
+      "count": 8,
+      "pattern": "Fail: mock evaluation of length_appropriate for content-001"
+    },
+    {
+      "cluster_id": "scaffolder:code_quality",
+      "count": 5,
+      "pattern": "Fail: mock evaluation of code_quality for scaff-004"
+    },
+    {
+      "cluster_id": "content:copy_quality",
+      "count": 3,
+      "pattern": "Fail: mock evaluation of copy_quality for content-002"
+    }
+  ]
+}
