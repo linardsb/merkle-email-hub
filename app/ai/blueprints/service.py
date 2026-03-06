@@ -20,7 +20,9 @@ BLUEPRINT_REGISTRY: dict[str, Callable[[], BlueprintDefinition]] = {
 class BlueprintService:
     """Resolves blueprint by name and runs the engine."""
 
-    async def run(self, request: BlueprintRunRequest) -> BlueprintRunResponse:
+    async def run(
+        self, request: BlueprintRunRequest, user_id: int | None = None
+    ) -> BlueprintRunResponse:
         """Execute a named blueprint and return structured response."""
         factory = BLUEPRINT_REGISTRY.get(request.blueprint_name)
         if factory is None:
@@ -40,6 +42,7 @@ class BlueprintService:
         bp_run = await engine.run(
             brief=request.brief,
             initial_html=request.initial_html,
+            user_id=user_id,
         )
 
         return BlueprintRunResponse(

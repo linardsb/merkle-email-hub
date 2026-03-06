@@ -6,6 +6,7 @@ and delegates completion to it. Includes model routing, PII sanitization,
 and output validation.
 """
 
+import asyncio
 import json
 import time
 import uuid
@@ -161,23 +162,41 @@ class ChatService:
 
         registry = get_registry()
         provider = registry.get_llm(provider_name)
+        timeout_seconds = settings.ai.stream_timeout_seconds
 
         try:
-            async for chunk in provider.stream(messages, model_override=model):  # type: ignore[attr-defined]
-                sse_data = {
-                    "id": response_id,
-                    "object": "chat.completion.chunk",
-                    "created": int(time.time()),
-                    "model": model_id,
-                    "choices": [
-                        {
-                            "index": 0,
-                            "delta": {"content": chunk},
-                            "finish_reason": None,
-                        }
-                    ],
-                }
-                yield f"data: {json.dumps(sse_data)}\n\n"
+            async with asyncio.timeout(timeout_seconds):
+                async for chunk in provider.stream(messages, model_override=model):  # type: ignore[attr-defined]
+                    sse_data = {
+                        "id": response_id,
+                        "object": "chat.completion.chunk",
+                        "created": int(time.time()),
+                        "model": model_id,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": chunk},
+                                "finish_reason": None,
+                            }
+                        ],
+                    }
+                    yield f"data: {json.dumps(sse_data)}\n\n"
+
+        except TimeoutError:
+            logger.error(
+                "ai.stream_timeout",
+                response_id=response_id,
+                provider=provider_name,
+                timeout_seconds=timeout_seconds,
+            )
+            error_data = {
+                "id": response_id,
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": model_id,
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "timeout"}],
+            }
+            yield f"data: {json.dumps(error_data)}\n\n"
 
         except Exception as e:
             logger.error(
@@ -191,7 +210,7 @@ class ChatService:
                 raise
             raise AIExecutionError("Chat streaming failed") from e
 
-        # Send final [DONE] sentinel
+        # Send final [DONE] sentinel (always, including after timeout)
         yield "data: [DONE]\n\n"
 
         logger.info(

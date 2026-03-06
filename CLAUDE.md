@@ -220,7 +220,8 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - **Brute-force protection**: exponential backoff, lock after 5 failed attempts (15 min), Redis-tracked.
 - **Row-Level Security**: PostgreSQL RLS on `client_org_id`. Database enforces isolation independently of app layer.
 - **Credential storage**: AES-256 for stored API keys (Braze, Figma). Never returned in responses, never logged.
-- **AI rate limits**: 20 req/min per user for chat, 5 req/min for generation. Separate from general rate limits.
+- **AI rate limits**: 20 req/min per user for chat, 5 req/min for generation. Per-user daily quota via Redis (`app/core/quota.py`). Stream timeout 120s. Blueprint daily token cap 500k.
+- **WebSocket limits**: Global 100 connections + per-user 5 connections (`app/streaming/manager.py`).
 
 ## Implementation Roadmap
 
@@ -288,7 +289,7 @@ Audit conducted 2026-03-06. Root cause: `current_user` authenticated at route le
 - [x] 6.1.1–6.1.4 BOLA fixes — CRITICAL (projects, approvals, connectors, QA override)
 - [x] 6.1.5–6.1.9 BOLA fixes — HIGH (approvals, rendering, knowledge, WebSocket, AI agents)
 - [x] 6.2.1–6.2.3 Response & error hardening (error sanitizer, LLM circuit breaker, generic error types)
-- [ ] 6.3.1–6.3.4 Rate limiting & resource controls (per-user quota, WS limits, cost caps)
+- [x] 6.3.1–6.3.4 Rate limiting & resource controls (per-user Redis quota, per-user WS limit, stream timeout, blueprint cost cap)
 - [ ] 6.4.1–6.4.3 Business logic (approval state machine, JWT algorithm, LLM output sanitizer)
 
 ## Feature Scope by Stack

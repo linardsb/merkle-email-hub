@@ -599,11 +599,11 @@ Audit conducted 2026-03-06 using CodeQL + Semgrep + manual route review. Root ca
 - [x] 6.2.2 LLM provider calls — ~~no circuit breaker~~ DONE — `_ResilientLLMProvider` wraps all LLM `complete()` calls with `CircuitBreaker` (5 failures → 60s open); all adapter/agent/service error messages genericized (no provider names, status codes, or raw exceptions) (HIGH)
 - [x] 6.2.3 Error handler leaks exception class names to client — DONE — `get_safe_error_type()` returns generic categories (`not_found`, `forbidden`, `ai_error`, etc.); `get_safe_error_message()` with MRO-walking safe message lookup; passthrough for validation errors only; 21 unit tests (MEDIUM)
 
-### 6.3 Rate Limiting & Resource Controls
-- [ ] 6.3.1 AI quota per-IP (in-memory) → per-user (Redis) (MEDIUM)
-- [ ] 6.3.2 Per-user WebSocket connection limit (MEDIUM)
-- [ ] 6.3.3 Timeout on LLM streaming responses (MEDIUM)
-- [ ] 6.3.4 Blueprint daily cost cap (MEDIUM)
+### ~~6.3 Rate Limiting & Resource Controls~~ DONE
+- [x] 6.3.1 AI quota per-IP (in-memory) → per-user (Redis) — DONE — `UserQuotaTracker` in `app/core/quota.py` (Redis-backed with in-memory fallback); `app/ai/routes.py` keyed by `current_user.id`; 7 unit tests (MEDIUM)
+- [x] 6.3.2 Per-user WebSocket connection limit — DONE — `ConnectionManager` tracks `_user_connections` dict; `max_connections_per_user=5` config; broadcast cleanup syncs user tracking; 7 unit tests (MEDIUM)
+- [x] 6.3.3 Timeout on LLM streaming responses — DONE — `asyncio.timeout(stream_timeout_seconds)` in `ChatService.stream_chat()`; sends `finish_reason: "timeout"` chunk; `stream_timeout_seconds=120` config; 2 unit tests (MEDIUM)
+- [x] 6.3.4 Blueprint daily cost cap — DONE — `BlueprintCostTracker` in `app/core/quota.py` (Redis-backed); checks budget after each node, breaks with `cost_cap_exceeded`; `daily_token_cap=500k` config; `user_id` threaded route→service→engine; 4 unit tests (MEDIUM)
 
 ### 6.4 Business Logic Hardening
 - [ ] 6.4.1 Approval state machine — prevent invalid transitions (MEDIUM)

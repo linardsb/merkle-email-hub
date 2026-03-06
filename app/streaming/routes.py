@@ -33,7 +33,10 @@ def get_ws_manager() -> ConnectionManager:
     global _ws_manager
     if _ws_manager is None:
         settings = get_settings()
-        _ws_manager = ConnectionManager(max_connections=settings.ws.max_connections)
+        _ws_manager = ConnectionManager(
+            max_connections=settings.ws.max_connections,
+            max_per_user=settings.ws.max_connections_per_user,
+        )
     return _ws_manager
 
 
@@ -104,12 +107,12 @@ async def ws_stream(
     # --- Connection setup (accept before registering to avoid broadcast to un-accepted socket) ---
     await websocket.accept()
 
+    user_id = payload.sub
+    user_id_str = str(user_id)
     manager = get_ws_manager()
-    if not await manager.connect(websocket):
+    if not await manager.connect(websocket, user_id=user_id_str):
         await websocket.close(code=1013, reason="Try again later")
         return
-
-    user_id = payload.sub
 
     # Resolve User object for BOLA authorization checks
     async with AsyncSessionLocal() as auth_db:
@@ -118,7 +121,7 @@ async def ws_stream(
     if not ws_user:
         await websocket.close(code=4001, reason="Authentication failed")
         logger.warning("streaming.ws.auth_failed", reason="user_not_found", user_id=user_id)
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, user_id=user_id_str)
         return
 
     logger.info(
@@ -243,7 +246,7 @@ async def ws_stream(
         )
     finally:
         heartbeat_task.cancel()
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, user_id=user_id_str)
         logger.info(
             "streaming.ws.disconnected",
             user_id=user_id,

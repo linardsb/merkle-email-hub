@@ -42,25 +42,30 @@ class ConnectionManager:
 
     Args:
         max_connections: Hard cap on concurrent WebSocket connections.
+        max_per_user: Max concurrent connections per authenticated user.
     """
 
-    def __init__(self, max_connections: int) -> None:
+    def __init__(self, max_connections: int, max_per_user: int = 5) -> None:
         self._max_connections = max_connections
+        self._max_per_user = max_per_user
         self._clients: dict[int, _ClientSubscription] = {}
+        self._user_connections: dict[str, set[int]] = {}
 
     async def connect(
         self,
         websocket: WebSocket,
         filters: dict[str, str | None] | None = None,
+        user_id: str | None = None,
     ) -> bool:
         """Register a new WebSocket connection.
 
         Args:
             websocket: The WebSocket connection to register.
             filters: Optional initial subscription filters.
+            user_id: Authenticated user ID for per-user limit enforcement.
 
         Returns:
-            True if the connection was registered, False if the limit was reached.
+            True if the connection was registered, False if a limit was reached.
         """
         if len(self._clients) >= self._max_connections:
             logger.warning(
@@ -70,17 +75,35 @@ class ConnectionManager:
             )
             return False
 
-        self._clients[id(websocket)] = _ClientSubscription(
+        if user_id is not None:
+            user_conns = self._user_connections.get(user_id, set())
+            if len(user_conns) >= self._max_per_user:
+                logger.warning(
+                    "streaming.ws.per_user_limit_reached",
+                    user_id=user_id,
+                    max_per_user=self._max_per_user,
+                    active_count=len(user_conns),
+                )
+                return False
+
+        ws_id = id(websocket)
+        self._clients[ws_id] = _ClientSubscription(
             websocket=websocket,
             filters=filters or {},
         )
+        if user_id is not None:
+            self._user_connections.setdefault(user_id, set()).add(ws_id)
         return True
 
-    def disconnect(self, websocket: WebSocket) -> None:
+    def disconnect(self, websocket: WebSocket, user_id: str | None = None) -> None:
         """Remove a WebSocket connection from tracking."""
         ws_id = id(websocket)
         if ws_id in self._clients:
             del self._clients[ws_id]
+        if user_id is not None and user_id in self._user_connections:
+            self._user_connections[user_id].discard(ws_id)
+            if not self._user_connections[user_id]:
+                del self._user_connections[user_id]
 
     def update_filters(
         self,
@@ -158,6 +181,7 @@ class ConnectionManager:
         for ws_id in disconnected:
             if ws_id in self._clients:
                 del self._clients[ws_id]
+            self._cleanup_user_tracking(ws_id)
 
         if self._clients:
             logger.debug(
@@ -166,6 +190,13 @@ class ConnectionManager:
                 client_count=len(self._clients),
                 item_count=len(items),
             )
+
+    def _cleanup_user_tracking(self, ws_id: int) -> None:
+        """Remove a ws_id from user connection tracking after broadcast disconnect."""
+        for uid, conns in list(self._user_connections.items()):
+            conns.discard(ws_id)
+            if not conns:
+                del self._user_connections[uid]
 
     @staticmethod
     def _filters_match(

@@ -52,7 +52,8 @@ class AIConfig(BaseModel):
     model: str = "gpt-4o-mini"
     api_key: str | None = None
     base_url: str | None = None  # Custom endpoint (Ollama, vLLM, LiteLLM)
-    daily_quota: int = 50  # Per-IP daily request limit
+    daily_quota: int = 50  # Per-user daily request limit (Redis-backed)
+    stream_timeout_seconds: int = 120  # Max duration for a streaming response
 
     # Model routing — maps task tiers to model identifiers
     model_complex: str = ""  # Empty = use default model
@@ -108,12 +109,19 @@ class RenderingConfig(BaseModel):
     screenshot_storage_path: str = "data/screenshots"
 
 
+class BlueprintConfig(BaseModel):
+    """Blueprint execution settings."""
+
+    daily_token_cap: int = 500_000  # Max tokens per user per day across all blueprint runs
+
+
 class WebSocketConfig(BaseModel):
     """WebSocket streaming settings."""
 
     enabled: bool = True
     heartbeat_interval_seconds: int = 30
     max_connections: int = 100
+    max_connections_per_user: int = 5
 
 
 class Settings(BaseSettings):
@@ -153,6 +161,7 @@ class Settings(BaseSettings):
     reranker: RerankerConfig = RerankerConfig()
     knowledge: KnowledgeConfig = KnowledgeConfig()
 
+    blueprint: BlueprintConfig = BlueprintConfig()
     ws: WebSocketConfig = WebSocketConfig()
     rendering: RenderingConfig = RenderingConfig()
 

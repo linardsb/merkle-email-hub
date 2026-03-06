@@ -66,11 +66,23 @@ class BlueprintEngine:
     def __init__(self, definition: BlueprintDefinition) -> None:
         self._definition = definition
 
-    async def run(self, brief: str, initial_html: str = "") -> BlueprintRun:
+    async def run(
+        self, brief: str, initial_html: str = "", user_id: int | None = None
+    ) -> BlueprintRun:
         """Execute the blueprint graph from entry to terminal node."""
+        from app.core.quota import BlueprintCostTracker
+
         run = BlueprintRun(html=initial_html)
         current_node_name: str | None = self._definition.entry_node
         steps = 0
+
+        # Set up cost tracking if user_id provided
+        cost_tracker: BlueprintCostTracker | None = None
+        if user_id is not None:
+            from app.core.config import get_settings as _get_settings
+
+            _settings = _get_settings()
+            cost_tracker = BlueprintCostTracker(daily_cap=_settings.blueprint.daily_token_cap)
 
         logger.info(
             "blueprint.run_started",
@@ -121,6 +133,22 @@ class BlueprintEngine:
                 for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
                     run.model_usage[key] += result.usage.get(key, 0)
 
+            # Check token cost cap per node completion
+            if cost_tracker is not None and user_id is not None and result.usage:
+                node_tokens = result.usage.get("total_tokens", 0)
+                if node_tokens > 0:
+                    remaining = await cost_tracker.check_budget(user_id)
+                    if remaining <= 0:
+                        run.status = "cost_cap_exceeded"
+                        logger.warning(
+                            "blueprint.cost_cap_reached",
+                            run_id=run.run_id,
+                            user_id=user_id,
+                            total_tokens=run.model_usage["total_tokens"],
+                        )
+                        break
+                    await cost_tracker.record_usage(user_id, node_tokens)
+
             # Track QA results
             if current_node_name == "qa_gate":
                 if result.status == "success":
@@ -149,7 +177,8 @@ class BlueprintEngine:
 
             current_node_name = self._resolve_next_node(current_node_name, result)
 
-        run.status = "completed" if run.qa_passed is not False else "completed_with_warnings"
+        if run.status == "running":
+            run.status = "completed" if run.qa_passed is not False else "completed_with_warnings"
         logger.info(
             "blueprint.run_completed",
             run_id=run.run_id,
