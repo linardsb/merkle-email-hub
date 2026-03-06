@@ -17,6 +17,12 @@ describe("sanitizeHtml", () => {
     expect(sanitizeHtml(input)).toBe('<img src="img.png">');
   });
 
+  it("strips nested on* handlers that form after first pass", () => {
+    const input = '<img src="x" ononerror="alert(1)"error="alert(2)">';
+    const result = sanitizeHtml(input);
+    expect(result).not.toMatch(/on[a-z]+\s*=/i);
+  });
+
   it("preserves MSO conditional comments", () => {
     const input = "<!--[if mso]><v:rect><![endif]-->";
     expect(sanitizeHtml(input)).toBe(input);

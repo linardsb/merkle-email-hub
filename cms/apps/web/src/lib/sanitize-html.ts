@@ -19,10 +19,15 @@ export function sanitizeHtml(html: string): string {
   );
 
   // Strip on* event handlers (onclick, onload, onerror, etc.)
-  result = result.replace(
-    /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,
-    ""
-  );
+  // Loop until stable to prevent incomplete sanitization (CodeQL js/incomplete-multi-character-sanitization)
+  let prev;
+  do {
+    prev = result;
+    result = result.replace(
+      /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,
+      ""
+    );
+  } while (result !== prev);
 
   return result;
 }
