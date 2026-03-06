@@ -6,18 +6,18 @@ Strips XSS vectors while preserving email-specific constructs
 
 import re
 
-_SCRIPT_TAG_RE = re.compile(r"<script\b[^>]*>.*?</script>", re.DOTALL | re.IGNORECASE)
-_EVENT_HANDLER_RE = re.compile(r"""\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)""", re.IGNORECASE)
-_JS_PROTOCOL_RE = re.compile(r"""(href|src)\s*=\s*["']?\s*javascript:""", re.IGNORECASE)
+_SCRIPT_TAG_RE = re.compile(r"<script\b[^>]*>.*?</script\s*>", re.DOTALL | re.IGNORECASE)
+_EVENT_HANDLER_RE = re.compile(r"""\s+on\w+=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)""", re.IGNORECASE)
+_JS_PROTOCOL_RE = re.compile(r"""(href|src)\s{0,5}=\s{0,5}["']?\s{0,5}javascript:""", re.IGNORECASE)
 _DANGEROUS_TAG_RE = re.compile(
-    r"<(iframe|embed|object|form)\b[^>]*>.*?</\1>",
+    r"<(iframe|embed|object|form)\b[^>]{0,1000}>.*?</\1\s*>",
     re.DOTALL | re.IGNORECASE,
 )
 _DANGEROUS_SELF_CLOSING_RE = re.compile(
-    r"<(iframe|embed|object)\b[^>]*/?>",
+    r"<(iframe|embed|object)\b[^>]{0,1000}/?>",
     re.IGNORECASE,
 )
-_DATA_URI_RE = re.compile(r"""(href|src)\s*=\s*["']?\s*data:""", re.IGNORECASE)
+_DATA_URI_RE = re.compile(r"""(href|src)\s{0,5}=\s{0,5}["']?\s{0,5}data:""", re.IGNORECASE)
 
 
 def sanitize_component_html(html: str) -> str:

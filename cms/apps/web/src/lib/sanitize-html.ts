@@ -7,10 +7,15 @@ export function sanitizeHtml(html: string): string {
   let result = html;
 
   // Strip <script> tags and their content (preserve MSO conditionals)
-  result = result.replace(
-    /<script\b[^>]*>[\s\S]*?<\/script>/gi,
-    ""
-  );
+  // Handles </script > with optional whitespace before > (CodeQL js/bad-tag-filter)
+  let prevScript;
+  do {
+    prevScript = result;
+    result = result.replace(
+      /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,
+      ""
+    );
+  } while (result !== prevScript);
 
   // Strip javascript: protocol in href/src/action attributes
   result = result.replace(

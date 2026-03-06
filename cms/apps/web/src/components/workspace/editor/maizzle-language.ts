@@ -313,11 +313,11 @@ function tokenComment(
   stream: StringStream,
   state: TokenState
 ): string | null {
-  if (stream.match("-->")) {
+  if (stream.match(/^--!?>/)) {
     state.mode = "root";
     return "comment";
   }
-  stream.match(/^(?:(?!-->).)+/) || stream.next();
+  stream.match(/^(?:(?!--!?>).)+/) || stream.next();
   return "comment";
 }
 
