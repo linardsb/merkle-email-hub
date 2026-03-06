@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 2.5
-**Date:** 2026-03-05
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Rendering UI aligned with backend API; remaining: 4.1 (6 agents), Phase 5.4-5.8 (eval pipeline)
+**Version:** 2.7
+**Date:** 2026-03-06
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 6 BOLA fixes done (6.1.1–6.1.9, 16 security tests); remaining: 4.1 (6 agents), Phase 5.4-5.8 (eval pipeline), Phase 6.2-6.4 (response hardening, rate limiting, business logic)
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-05
+> Last updated: 2026-03-06
 
 ### Completed
 
@@ -56,7 +56,9 @@
 
 ### In Progress
 
-No tasks currently in progress. V1 (Sprints 1-3) is complete. V2 task 4.1 (6 remaining AI agents) remains. Phase 5 task 5.3 (binary judge prompts for 3 agents) is complete — `judges/` package with `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `Judge` Protocol, `judge_runner.py` CLI, 14 unit tests. Phase 5 steps 5.4-5.8 (error analysis, calibration, QA gate calibration, blueprint evals, CI regression) are pending.
+**Phase 6 — OWASP API Security Hardening** (audit 2026-03-06). BOLA fixes complete (6.1.1–6.1.9): `verify_project_access()` added to projects, approvals (all 7 endpoints), connectors, QA engine, rendering, WebSocket streaming, and AI agents. Knowledge module already role-gated. 16 BOLA security tests added across 5 modules. Frontend `project_id` threading done (`use-chat.ts`, `chat-panel.tsx`). Remaining: response hardening (6.2), rate limiting (6.3), business logic (6.4).
+
+**Remaining:** V2 task 4.1 (6 remaining AI agents). Phase 5 steps 5.4-5.8 (error analysis, calibration, QA gate calibration, blueprint evals, CI regression).
 
 ### Infrastructure Built
 
@@ -68,7 +70,8 @@ No tasks currently in progress. V1 (Sprints 1-3) is complete. V2 task 4.1 (6 rem
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (330 tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (346 tests, incl. 16 BOLA security tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6
 
 ---
 

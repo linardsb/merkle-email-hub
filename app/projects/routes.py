@@ -121,11 +121,11 @@ async def update_project(
     project_id: int,
     data: ProjectUpdate,
     service: ProjectService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
 ) -> ProjectResponse:
     """Update a project."""
     _ = request
-    return await service.update_project(project_id, data)
+    return await service.update_project(project_id, data, current_user)
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -134,8 +134,8 @@ async def delete_project(
     request: Request,
     project_id: int,
     service: ProjectService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    current_user: User = Depends(require_role("admin")),  # noqa: B008
 ) -> None:
     """Delete a project."""
     _ = request
-    await service.delete_project(project_id)
+    await service.delete_project(project_id, current_user)

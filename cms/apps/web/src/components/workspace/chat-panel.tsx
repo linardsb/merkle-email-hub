@@ -59,7 +59,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
   const {
     messages, status, error,
     sendMessage, stopStreaming, clearMessages, replaceMessages,
-  } = useChat();
+  } = useChat(projectId);
   const {
     sessions, saveSession, deleteSession, clearAllSessions,
   } = useChatHistory(projectId);

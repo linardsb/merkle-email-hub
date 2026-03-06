@@ -12,8 +12,10 @@ import json
 from fastapi import APIRouter, Query, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
+from app.auth.repository import UserRepository
 from app.auth.token import decode_token, is_token_revoked
 from app.core.config import get_settings
+from app.core.database import AsyncSessionLocal
 from app.core.logging import get_logger
 from app.streaming.manager import ConnectionManager
 from app.streaming.schemas import WsAck, WsError, WsSubscribeMessage
@@ -108,6 +110,17 @@ async def ws_stream(
         return
 
     user_id = payload.sub
+
+    # Resolve User object for BOLA authorization checks
+    async with AsyncSessionLocal() as auth_db:
+        user_repo = UserRepository(auth_db)
+        ws_user = await user_repo.find_by_id(int(user_id))
+    if not ws_user:
+        await websocket.close(code=4001, reason="Authentication failed")
+        logger.warning("streaming.ws.auth_failed", reason="user_not_found", user_id=user_id)
+        manager.disconnect(websocket)
+        return
+
     logger.info(
         "streaming.ws.connected",
         user_id=user_id,
@@ -146,6 +159,31 @@ async def ws_stream(
                     if msg.filters:
                         for key, value in msg.filters.items():
                             new_filters[key] = value
+
+                    # BOLA: validate project_id filter against user membership
+                    filter_project_id = new_filters.get("project_id")
+                    if filter_project_id is not None:
+                        from app.projects.service import ProjectService
+
+                        try:
+                            async with AsyncSessionLocal() as project_db:
+                                project_service = ProjectService(project_db)
+                                await project_service.verify_project_access(
+                                    int(filter_project_id), ws_user
+                                )
+                        except Exception:
+                            denied_msg = WsError(
+                                code="access_denied",
+                                message="Access denied to project",
+                            )
+                            await websocket.send_json(denied_msg.model_dump())
+                            logger.warning(
+                                "streaming.ws.project_access_denied",
+                                user_id=user_id,
+                                project_id=filter_project_id,
+                            )
+                            continue
+
                     manager.update_filters(websocket, new_filters)
                     sub_ack = WsAck(
                         action="subscribe",

@@ -29,4 +29,4 @@ async def export_email(
 ) -> ExportResponse:
     """Export a built email template to an ESP."""
     _ = request
-    return await service.export(data, user_id=current_user.id)
+    return await service.export(data, user=current_user)

@@ -78,8 +78,8 @@ async def compare_rendering_tests(
     request: Request,
     data: RenderingComparisonRequest,
     service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> RenderingComparisonResponse:
     """Compare two rendering tests for visual regression detection."""
     _ = request
-    return await service.compare_tests(data)
+    return await service.compare_tests(data, current_user)

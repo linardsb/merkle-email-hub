@@ -32,12 +32,12 @@ async def list_approvals(
     request: Request,
     project_id: int | None = None,
     service: ApprovalService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> list[ApprovalResponse]:
     """List approval requests, optionally filtered by project."""
     _ = request
     if project_id is not None:
-        return await service.list_by_project(project_id)
+        return await service.list_by_project(project_id, current_user)
     return []
 
 
@@ -51,7 +51,7 @@ async def create_approval(
 ) -> ApprovalResponse:
     """Submit an email build for client approval."""
     _ = request
-    return await service.create_approval(data, user_id=current_user.id)
+    return await service.create_approval(data, user=current_user)
 
 
 @router.get("/{approval_id}", response_model=ApprovalResponse)
@@ -60,11 +60,11 @@ async def get_approval(
     request: Request,
     approval_id: int,
     service: ApprovalService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> ApprovalResponse:
     """Get an approval request by ID."""
     _ = request
-    return await service.get_approval(approval_id)
+    return await service.get_approval(approval_id, current_user)
 
 
 @router.post("/{approval_id}/decide", response_model=ApprovalResponse)
@@ -78,7 +78,7 @@ async def decide_approval(
 ) -> ApprovalResponse:
     """Approve, reject, or request revision on an approval."""
     _ = request
-    return await service.decide(approval_id, decision, reviewer_id=current_user.id)
+    return await service.decide(approval_id, decision, user=current_user)
 
 
 @router.post(
@@ -94,7 +94,7 @@ async def add_feedback(
 ) -> FeedbackResponse:
     """Add feedback to an approval request."""
     _ = request
-    return await service.add_feedback(approval_id, data, user_id=current_user.id)
+    return await service.add_feedback(approval_id, data, user=current_user)
 
 
 @router.get("/{approval_id}/feedback", response_model=list[FeedbackResponse])
@@ -103,11 +103,11 @@ async def list_feedback(
     request: Request,
     approval_id: int,
     service: ApprovalService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> list[FeedbackResponse]:
     """List feedback for an approval request."""
     _ = request
-    return await service.get_feedback(approval_id)
+    return await service.get_feedback(approval_id, current_user)
 
 
 @router.get("/{approval_id}/audit", response_model=list[AuditResponse])
@@ -116,8 +116,8 @@ async def get_audit_trail(
     request: Request,
     approval_id: int,
     service: ApprovalService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> list[AuditResponse]:
     """Get the audit trail for an approval request."""
     _ = request
-    return await service.get_audit_trail(approval_id)
+    return await service.get_audit_trail(approval_id, current_user)

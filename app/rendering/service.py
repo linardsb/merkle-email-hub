@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.models import User
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.resilience import CircuitBreaker
+from app.email_engine.models import EmailBuild
+from app.projects.service import ProjectService
 from app.rendering.eoa.service import EoARenderingService
 from app.rendering.exceptions import (
     RenderingProviderError,
@@ -125,7 +129,20 @@ class RenderingService:
             page_size=pagination.page_size,
         )
 
-    async def compare_tests(self, data: RenderingComparisonRequest) -> RenderingComparisonResponse:
+    async def _resolve_test_project_id(self, test: RenderingTest) -> int | None:
+        """Resolve project_id from a rendering test via build link."""
+        if test.build_id:
+            result = await self.db.execute(
+                select(EmailBuild.project_id).where(EmailBuild.id == test.build_id)
+            )
+            project_id = result.scalar_one_or_none()
+            if project_id:
+                return int(project_id)
+        return None
+
+    async def compare_tests(
+        self, data: RenderingComparisonRequest, user: User
+    ) -> RenderingComparisonResponse:
         """Compare screenshots between two rendering tests for visual regression."""
         baseline = await self.repository.get_test(data.baseline_test_id)
         current = await self.repository.get_test(data.current_test_id)
@@ -134,6 +151,13 @@ class RenderingService:
             raise RenderingTestNotFoundError(f"Baseline test {data.baseline_test_id} not found")
         if not current:
             raise RenderingTestNotFoundError(f"Current test {data.current_test_id} not found")
+
+        # BOLA: verify user has access to both tests' projects
+        project_service = ProjectService(self.db)
+        for render_test in [baseline, current]:
+            project_id = await self._resolve_test_project_id(render_test)
+            if project_id:
+                await project_service.verify_project_access(project_id, user)
 
         baseline_map = {s.client_name: s for s in baseline.screenshots}
         current_map = {s.client_name: s for s in current.screenshots}

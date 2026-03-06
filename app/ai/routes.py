@@ -12,12 +12,14 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.schemas import ChatCompletionRequest, ChatCompletionResponse
 from app.ai.service import ChatService, get_chat_service
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
 from app.core.config import get_settings
+from app.core.database import get_db
 from app.core.logging import get_logger
 from app.core.rate_limit import _get_client_ip, limiter
 
@@ -114,8 +116,9 @@ def _get_quota_tracker() -> _QuotaTracker:
 async def chat_completions(
     request: Request,
     body: ChatCompletionRequest,
+    db: AsyncSession = Depends(get_db),
     service: ChatService = Depends(get_chat_service),
-    _current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> ChatCompletionResponse | StreamingResponse:
     """Create a chat completion (streaming or non-streaming).
 
@@ -141,6 +144,13 @@ async def chat_completions(
             status_code=429,
             detail=f"Daily query quota exceeded. Remaining: {remaining}. Resets in 24 hours.",
         )
+
+    # BOLA: verify project access when project_id is provided
+    if body.project_id is not None:
+        from app.projects.service import ProjectService
+
+        project_service = ProjectService(db)
+        await project_service.verify_project_access(body.project_id, current_user)
 
     # Streaming response
     if body.stream:

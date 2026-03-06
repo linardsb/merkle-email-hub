@@ -267,6 +267,14 @@ Applies to ALL 9 agents. No agent goes to production without completing steps 5.
 - [ ] 5.7 Blueprint pipeline evals (end-to-end multi-agent traces)
 - [ ] 5.8 Regression suite + CI integration
 
+### Phase 6 — OWASP API Security Hardening
+Audit conducted 2026-03-06. Root cause: `current_user` authenticated at route level but not passed to service layer. Fix pattern: `verify_project_access()` from `app/projects/service.py`.
+- [x] 6.1.1–6.1.4 BOLA fixes — CRITICAL (projects, approvals, connectors, QA override)
+- [x] 6.1.5–6.1.9 BOLA fixes — HIGH (approvals, rendering, knowledge, WebSocket, AI agents)
+- [ ] 6.2.1–6.2.3 Response & error hardening (exception leaks, LLM circuit breaker)
+- [ ] 6.3.1–6.3.4 Rate limiting & resource controls (per-user quota, WS limits, cost caps)
+- [ ] 6.4.1–6.4.3 Business logic (approval state machine, JWT algorithm, LLM output sanitizer)
+
 ## Feature Scope by Stack
 
 ### Backend Features (for `be-prime`)

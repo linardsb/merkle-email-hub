@@ -59,4 +59,10 @@ Read `/TODO.md` and extract only the **backend-relevant tasks** below. Use `sear
 - 5.7 Blueprint pipeline end-to-end eval runner
 - 5.8 Automated regression suite in CI/CD
 
+**Phase 6 — OWASP API Security Hardening:**
+- 6.1.1–6.1.9 BOLA fixes — add `verify_project_access()` to approval, connectors, qa_engine, rendering, knowledge, projects (4 CRITICAL, 5 HIGH)
+- 6.2.1–6.2.3 Response & error hardening — sanitize error messages, add LLM circuit breaker (2 HIGH, 1 MEDIUM)
+- 6.3.1–6.3.4 Rate limiting & resource controls — per-user quota, WS limits, streaming timeout, blueprint cost cap (4 MEDIUM)
+- 6.4.1–6.4.3 Business logic — approval state machine, JWT algorithm, LLM output sanitizer (3 MEDIUM)
+
 Confirm you're ready for backend work.

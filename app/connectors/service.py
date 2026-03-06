@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.models import User
 from app.connectors.adobe.service import AdobeConnectorService
 from app.connectors.braze.service import BrazeConnectorService
 from app.connectors.exceptions import ExportFailedError, UnsupportedConnectorError
@@ -12,7 +14,10 @@ from app.connectors.protocol import ConnectorProvider
 from app.connectors.schemas import ExportRequest, ExportResponse
 from app.connectors.sfmc.service import SFMCConnectorService
 from app.connectors.taxi.service import TaxiConnectorService
+from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
+from app.email_engine.models import EmailBuild
+from app.projects.service import ProjectService
 
 logger = get_logger(__name__)
 
@@ -43,8 +48,17 @@ class ConnectorService:
             self._providers[connector_type] = provider_cls()
         return self._providers[connector_type]
 
-    async def export(self, data: ExportRequest, user_id: int) -> ExportResponse:
+    async def export(self, data: ExportRequest, user: User) -> ExportResponse:
         """Export an email build to the specified ESP."""
+        # BOLA: verify user has access to the build's project
+        result = await self.db.execute(select(EmailBuild).where(EmailBuild.id == data.build_id))
+        build = result.scalar_one_or_none()
+        if not build:
+            raise NotFoundError(f"Build {data.build_id} not found")
+
+        project_service = ProjectService(self.db)
+        await project_service.verify_project_access(build.project_id, user)
+
         provider = self._get_provider(data.connector_type)
 
         logger.info(
@@ -56,7 +70,7 @@ class ConnectorService:
         record = ExportRecord(
             build_id=data.build_id,
             connector_type=data.connector_type,
-            exported_by_id=user_id,
+            exported_by_id=user.id,
             status="exporting",
         )
         self.db.add(record)

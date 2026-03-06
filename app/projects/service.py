@@ -107,16 +107,20 @@ class ProjectService:
         logger.info("projects.create_completed", project_id=project.id)
         return ProjectResponse.model_validate(project)
 
-    async def update_project(self, project_id: int, data: ProjectUpdate) -> ProjectResponse:
-        logger.info("projects.update_started", project_id=project_id)
+    async def update_project(
+        self, project_id: int, data: ProjectUpdate, user: User
+    ) -> ProjectResponse:
+        logger.info("projects.update_started", project_id=project_id, user_id=user.id)
+        await self.verify_project_access(project_id, user)
         project = await self.projects.get(project_id)
         if not project:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         project = await self.projects.update(project, data)
         return ProjectResponse.model_validate(project)
 
-    async def delete_project(self, project_id: int) -> None:
-        logger.info("projects.delete_started", project_id=project_id)
+    async def delete_project(self, project_id: int, user: User) -> None:
+        logger.info("projects.delete_started", project_id=project_id, user_id=user.id)
+        await self.verify_project_access(project_id, user)
         project = await self.projects.get(project_id)
         if not project:
             raise ProjectNotFoundError(f"Project {project_id} not found")

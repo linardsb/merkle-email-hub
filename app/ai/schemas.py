@@ -39,6 +39,7 @@ class ChatCompletionRequest(BaseModel):
     model: str | None = None
     stream: bool = False
     task_tier: Literal["complex", "standard", "lightweight"] | None = None
+    project_id: int | None = None
 
     @field_validator("messages")
     @classmethod

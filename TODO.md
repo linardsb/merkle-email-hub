@@ -570,6 +570,42 @@ Every agent — whether built now or in task 4.1 — must have:
 
 ---
 
+## Phase 6 — OWASP API Top 10 Security Hardening
+
+Audit conducted 2026-03-06 using CodeQL + Semgrep + manual route review. Root cause: `current_user` is authenticated at route level but NOT passed to service layer for authorization. The `templates` module does this correctly with `verify_project_access()` — replicate across all affected modules.
+
+### 6.1 BOLA Fixes — Add `verify_project_access()` to All Resource Endpoints
+**Affects:** `approval/`, `connectors/`, `qa_engine/`, `rendering/`, `knowledge/`, `projects/`
+**Pattern:** Pass `current_user` to service → call `verify_project_access(resource.project_id, user)` before read/write
+
+- [x] 6.1.1 `PATCH /projects/{id}` — ~~any developer can update ANY project~~ DONE — `verify_project_access()` added (CRITICAL)
+- [x] 6.1.2 `POST /approvals/{id}/decide` — ~~any user can approve/reject ANY approval~~ DONE — all 7 approval endpoints protected (CRITICAL)
+- [x] 6.1.3 `POST /connectors/export` — ~~any developer can export ANY build by ID~~ DONE — build→project FK chain verified (CRITICAL)
+- [x] 6.1.4 `POST /qa/results/{id}/override` — ~~any developer can override ANY QA result~~ DONE — QA→build→project FK chain verified (CRITICAL)
+- [x] 6.1.5 `GET/POST /approvals/{id}/*` — ~~all approval endpoints lack project access checks~~ DONE — `_verify_approval_access()` helper (HIGH)
+- [x] 6.1.6 `POST /rendering/compare` — ~~can compare any two test IDs without ownership~~ DONE — both test project IDs verified (HIGH)
+- [x] 6.1.7 `GET /knowledge/documents/{id}/download` — already role-gated (admin/developer), no project-scoped changes needed (HIGH)
+- [x] 6.1.8 WebSocket `/ws/stream` — ~~no multi-tenant isolation~~ DONE — project_id filter validated against membership (HIGH)
+- [x] 6.1.9 AI agent endpoints — ~~agents accept briefs without project scoping~~ DONE — optional project_id with access check (HIGH)
+
+### 6.2 Response & Error Hardening
+- [ ] 6.2.1 `POST /email/build` — raw exception messages leaked to client (HIGH)
+- [ ] 6.2.2 LLM provider calls — no circuit breaker, timeout, or cost cap (HIGH)
+- [ ] 6.2.3 Error handler leaks exception class names to client (MEDIUM)
+
+### 6.3 Rate Limiting & Resource Controls
+- [ ] 6.3.1 AI quota per-IP (in-memory) → per-user (Redis) (MEDIUM)
+- [ ] 6.3.2 Per-user WebSocket connection limit (MEDIUM)
+- [ ] 6.3.3 Timeout on LLM streaming responses (MEDIUM)
+- [ ] 6.3.4 Blueprint daily cost cap (MEDIUM)
+
+### 6.4 Business Logic Hardening
+- [ ] 6.4.1 Approval state machine — prevent invalid transitions (MEDIUM)
+- [ ] 6.4.2 JWT algorithm — code uses HS256, docs say RS256 (MEDIUM)
+- [ ] 6.4.3 LLM output sanitization — replace regex with proper HTML sanitizer (MEDIUM)
+
+---
+
 ## Security Checklist (Run Before Each Sprint Demo)
 
 - [ ] All new endpoints have auth dependency injection

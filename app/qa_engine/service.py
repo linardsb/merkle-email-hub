@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.core.logging import get_logger
+from app.projects.service import ProjectService
 from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.exceptions import QAOverrideNotAllowedError, QAResultNotFoundError
 from app.qa_engine.models import QAOverride, QAResult
@@ -139,6 +141,30 @@ class QAEngineService:
             raise QAResultNotFoundError("No QA results found for the given filters")
         return self._to_response(result)
 
+    async def _resolve_project_id(self, result: QAResult) -> int | None:
+        """Resolve the project_id from a QA result via build or template chain."""
+        if result.build_id:
+            from app.email_engine.models import EmailBuild
+
+            db_result = await self.db.execute(
+                select(EmailBuild.project_id).where(EmailBuild.id == result.build_id)
+            )
+            project_id = db_result.scalar_one_or_none()
+            if project_id:
+                return int(project_id)
+        if result.template_version_id:
+            from app.templates.models import Template, TemplateVersion
+
+            db_result = await self.db.execute(
+                select(Template.project_id)
+                .join(TemplateVersion, TemplateVersion.template_id == Template.id)
+                .where(TemplateVersion.id == result.template_version_id)
+            )
+            project_id = db_result.scalar_one_or_none()
+            if project_id:
+                return int(project_id)
+        return None
+
     async def override_result(
         self,
         result_id: int,
@@ -149,6 +175,13 @@ class QAEngineService:
         result = await self.repository.get_result_with_checks(result_id)
         if not result:
             raise QAResultNotFoundError(f"QA result {result_id} not found")
+
+        # BOLA: verify user has access to the result's project
+        project_id = await self._resolve_project_id(result)
+        if project_id:
+            project_service = ProjectService(self.db)
+            await project_service.verify_project_access(project_id, user)
+
         if result.passed:
             raise QAOverrideNotAllowedError("Cannot override a passing QA result")
 

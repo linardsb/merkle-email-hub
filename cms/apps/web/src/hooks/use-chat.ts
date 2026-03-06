@@ -26,10 +26,13 @@ function buildUrl(agent: AgentMode): string {
 function buildBody(
   content: string,
   agent: AgentMode,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  projectId?: string,
 ): string {
+  const pid = projectId ? Number(projectId) : undefined;
+
   if (agent === "scaffolder") {
-    return JSON.stringify({ brief: content, stream: true });
+    return JSON.stringify({ brief: content, stream: true, ...(pid && { project_id: pid }) });
   }
 
   // Build message history for chat completions (last 20 messages)
@@ -40,12 +43,12 @@ function buildBody(
 
   recent.push({ role: "user" as const, content });
 
-  return JSON.stringify({ messages: recent, stream: true });
+  return JSON.stringify({ messages: recent, stream: true, ...(pid && { project_id: pid }) });
 }
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
-export function useChat(): UseChatReturn {
+export function useChat(projectId?: string): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +94,7 @@ export function useChat(): UseChatReturn {
       abortRef.current = controller;
 
       const url = buildUrl(agent);
-      const body = buildBody(content, agent, messages);
+      const body = buildBody(content, agent, messages, projectId);
 
       // Demo mode: simulate streaming from canned responses
       if (IS_DEMO) {
@@ -206,7 +209,7 @@ export function useChat(): UseChatReturn {
         }
       })();
     },
-    [status, messages]
+    [status, messages, projectId]
   );
 
   const clearMessages = useCallback(() => {
