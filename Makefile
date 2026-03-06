@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge
+.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check
 
 # === Local Development ===
 
@@ -80,6 +80,30 @@ db-revision: ## Create a new migration (usage: make db-revision m="description")
 
 seed-knowledge: ## Seed knowledge base with email dev content (requires DB + embedding provider)
 	uv run python -m app.knowledge.seed
+
+# === Eval Pipeline ===
+
+eval-run: ## Run agent evals (generate traces)
+	uv run python -m app.ai.agents.evals.runner --agent all --output traces/
+
+eval-judge: ## Run judges on traces (generate verdicts)
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces
+
+eval-labels: ## Scaffold human label templates from traces+verdicts
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/scaffolder_verdicts.jsonl --traces traces/scaffolder_traces.jsonl --output traces/scaffolder_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/dark_mode_verdicts.jsonl --traces traces/dark_mode_traces.jsonl --output traces/dark_mode_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/content_verdicts.jsonl --traces traces/content_traces.jsonl --output traces/content_human_labels.jsonl
+
+eval-analysis: ## Analyze judge verdicts (failure taxonomy)
+	uv run python -m app.ai.agents.evals.error_analysis --verdicts traces --output traces/analysis.json
+
+eval-blueprint: ## Run blueprint pipeline evals
+	uv run python -m app.ai.agents.evals.blueprint_eval --output traces/blueprint_traces.jsonl
+
+eval-regression: ## Check for eval regressions vs baseline
+	uv run python -m app.ai.agents.evals.regression --current traces/analysis.json --baseline traces/baseline.json
+
+eval-check: eval-analysis eval-regression ## Full eval CI gate (analysis + regression check)
 
 # === Security ===
 

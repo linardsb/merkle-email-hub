@@ -77,11 +77,13 @@ async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse
     elif isinstance(exc, ServiceUnavailableError):
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
+    from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
+
     return JSONResponse(
         status_code=status_code,
         content={
-            "error": str(exc),
-            "type": type(exc).__name__,
+            "error": get_safe_error_message(exc),
+            "type": get_safe_error_type(exc),
         },
     )
 

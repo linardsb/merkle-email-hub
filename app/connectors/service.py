@@ -85,8 +85,16 @@ class ConnectorService:
             record.external_id = external_id
         except Exception as exc:
             record.status = "failed"
-            record.error_message = str(exc)
-            raise ExportFailedError(str(exc)) from exc
+            record.error_message = "Export failed"
+            logger.error(
+                "connectors.export_error",
+                record_id=record.id,
+                connector=data.connector_type,
+                error=str(exc),
+                error_type=type(exc).__name__,
+                exc_info=True,
+            )
+            raise ExportFailedError("Export operation failed") from exc
         finally:
             await self.db.commit()
             await self.db.refresh(record)

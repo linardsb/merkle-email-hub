@@ -131,7 +131,7 @@ class OpenAICompatProvider:
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
             detail = e.response.text[:500]
-            msg = f"LLM API returned {status_code}: {detail}"
+            msg = "LLM API request failed"
             logger.error(
                 "ai.provider.completion_http_error",
                 model=self._model,
@@ -140,7 +140,7 @@ class OpenAICompatProvider:
             )
             raise AIExecutionError(msg) from e
         except httpx.HTTPError as e:
-            msg = f"LLM API request failed: {e}"
+            msg = "LLM API request failed"
             logger.error("ai.provider.completion_failed", model=self._model, error=str(e))
             raise AIExecutionError(msg) from e
 
@@ -238,7 +238,7 @@ class OpenAICompatProvider:
             )
             raise AIExecutionError(msg) from e
         except httpx.HTTPError as e:
-            msg = f"LLM streaming request failed: {e}"
+            msg = "LLM streaming request failed"
             logger.error("ai.provider.stream_failed", model=self._model, error=str(e))
             raise AIExecutionError(msg) from e
 

@@ -61,8 +61,15 @@ class EmailEngineService:
             raise
         except Exception as exc:
             build.status = "failed"
-            build.error_message = str(exc)
-            raise BuildFailedError(str(exc)) from exc
+            build.error_message = "Build failed"
+            logger.error(
+                "email_engine.build_error",
+                build_id=build.id,
+                error=str(exc),
+                error_type=type(exc).__name__,
+                exc_info=True,
+            )
+            raise BuildFailedError("Email build failed") from exc
         finally:
             await self.db.commit()
             await self.db.refresh(build)
@@ -107,4 +114,8 @@ class EmailEngineService:
         except httpx.ConnectError as exc:
             raise BuildServiceUnavailableError("Cannot connect to maizzle-builder service") from exc
         except httpx.HTTPStatusError as exc:
-            raise BuildFailedError(f"Builder returned {exc.response.status_code}") from exc
+            logger.error(
+                "email_engine.builder_http_error",
+                status_code=exc.response.status_code,
+            )
+            raise BuildFailedError("Email build failed") from exc

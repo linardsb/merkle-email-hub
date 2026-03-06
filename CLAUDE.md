@@ -44,6 +44,15 @@ make db-revision m="description"  # Create new migration
 # Knowledge base
 make seed-knowledge  # Seed RAG knowledge base (requires DB + embedding provider)
 
+# Agent evals
+make eval-run        # Run agent evals (generate traces)
+make eval-judge      # Run judges on traces (generate verdicts)
+make eval-labels     # Scaffold human label templates
+make eval-analysis   # Analyze verdicts (failure taxonomy)
+make eval-blueprint  # Run blueprint pipeline evals
+make eval-regression # Check for regressions vs baseline
+make eval-check      # Full eval gate (analysis + regression)
+
 # Docker
 make docker          # Full stack (port :80)
 make docker-down     # Stop all services
@@ -196,7 +205,14 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - `synthetic_data_{agent}.py` — Test cases with real-world data (MSO code, VML, spam triggers)
 - `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent scaffolder --output traces/`
 - `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`, shared prompt template
-- `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent scaffolder --traces X --output Y`
+- `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
+- `schemas.py` — Shared dataclasses: `FailureCluster`, `HumanLabel`, `CalibrationResult`, `QACalibrationResult`, `RegressionReport`, `BlueprintEvalTrace`
+- `error_analysis.py` — Failure clustering + pass rate computation from verdict JSONL (`make eval-analysis`)
+- `scaffold_labels.py` — Generates prefilled human label templates from traces+verdicts (`make eval-labels`)
+- `calibration.py` — TPR/TNR computation against human labels per criterion
+- `qa_calibration.py` — QA gate check-vs-human agreement rates, flags checks <75%
+- `blueprint_eval.py` — End-to-end blueprint pipeline runner with 5 test briefs (`make eval-blueprint`)
+- `regression.py` — Baseline comparison with configurable tolerance, CI gate exit code (`make eval-regression`)
 
 ### API Security Patterns
 
@@ -261,17 +277,17 @@ Applies to ALL 9 agents. No agent goes to production without completing steps 5.
 - [x] 5.1 Synthetic test data generation (Scaffolder: 12, Dark Mode: 10, Content: 14 cases done)
 - [x] 5.2 Eval runner infrastructure (JSONL trace capture)
 - [x] 5.3 Write binary judge prompts per agent per quality dimension
-- [ ] 5.4 Run evals + error analysis (failure clustering)
-- [ ] 5.5 Judge calibration (TPR/TNR against human labels)
-- [ ] 5.6 QA gate calibration (align 10-point checks with eval findings)
-- [ ] 5.7 Blueprint pipeline evals (end-to-end multi-agent traces)
-- [ ] 5.8 Regression suite + CI integration
+- [ ] 5.4 Run evals + error analysis — tooling built (`error_analysis.py`), execution pending
+- [ ] 5.5 Judge calibration — tooling built (`calibration.py`, `scaffold_labels.py`), execution pending
+- [ ] 5.6 QA gate calibration — tooling built (`qa_calibration.py`), execution pending
+- [ ] 5.7 Blueprint pipeline evals — tooling built (`blueprint_eval.py`, 5 test briefs), execution pending
+- [ ] 5.8 Regression suite — tooling built (`regression.py`, `make eval-check`), CI integration deferred
 
 ### Phase 6 — OWASP API Security Hardening
 Audit conducted 2026-03-06. Root cause: `current_user` authenticated at route level but not passed to service layer. Fix pattern: `verify_project_access()` from `app/projects/service.py`.
 - [x] 6.1.1–6.1.4 BOLA fixes — CRITICAL (projects, approvals, connectors, QA override)
 - [x] 6.1.5–6.1.9 BOLA fixes — HIGH (approvals, rendering, knowledge, WebSocket, AI agents)
-- [ ] 6.2.1–6.2.3 Response & error hardening (exception leaks, LLM circuit breaker)
+- [x] 6.2.1–6.2.3 Response & error hardening (error sanitizer, LLM circuit breaker, generic error types)
 - [ ] 6.3.1–6.3.4 Rate limiting & resource controls (per-user quota, WS limits, cost caps)
 - [ ] 6.4.1–6.4.3 Business logic (approval state machine, JWT algorithm, LLM output sanitizer)
 
@@ -290,7 +306,7 @@ Audit conducted 2026-03-06. Root cause: `current_user` authenticated at route le
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
-- Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration (Phase 5)
+- Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
 
 ### Frontend Features (for `fe-prime`)
 - Dashboard: project overview grid, activity feed, QA summary, quick-start

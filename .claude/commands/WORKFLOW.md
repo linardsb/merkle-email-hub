@@ -22,6 +22,12 @@ Skip prime/planning — go straight to diagnosis and fix. Use `/be-prime` first 
 ```
 Review finds issues, fix resolves them, validate confirms, commit ships.
 
+## E2E Testing (Exploratory + Security)
+```
+/fe-execute → /fe-validate → /e2e-test → /commit
+```
+Optional: Run after feature implementation for pre-commit browser validation.
+
 ## Available Commands
 
 ### Backend

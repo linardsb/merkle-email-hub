@@ -7,40 +7,10 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #18162 | 11:32 AM | 🔵 | Comprehensive VSA pattern research for Template CRUD implementation | ~630 |
-| #18135 | 10:53 AM | 🔵 | Backend VSA pattern research for project dashboard implementation | ~561 |
-| #18115 | 10:12 AM | ⚖️ | Task 0.4 API Client Completion Plan | ~581 |
-
-### Mar 1, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #18543 | 1:13 PM | 🔵 | Shared database model mixins | ~285 |
-| #18542 | " | 🔵 | Shared Pydantic schemas for API patterns | ~254 |
-| #18424 | 9:13 AM | ⚖️ | QA Gate System Backend Completion Plan Created | ~829 |
-| #18275 | 7:29 AM | ⚖️ | Dark Mode Agent Implementation Plan Created | ~1014 |
-| #18186 | 6:38 AM | 🔵 | Database Mixins for Timestamps and Soft Deletes | ~511 |
-| #18185 | " | 🔵 | Shared Pagination and Error Response Schemas | ~464 |
-
-### Mar 2, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #18757 | 4:58 AM | 🔵 | Shared Database Model Mixins for Timestamps and Soft Deletes | ~382 |
-| #18756 | " | 🔵 | Shared Pydantic Schemas for Common Patterns | ~307 |
-
-### Mar 3, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #19331 | 9:11 PM | 🔵 | Shared Database Model Mixins for Timestamps and Soft Deletes | ~345 |
-| #19330 | " | 🔵 | Shared Pydantic Schemas for API Consistency | ~314 |
-
-### Mar 5, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #19574 | 5:30 PM | 🔵 | Backend Infrastructure Architecture Review | ~787 |
-| #19526 | 3:54 PM | 🔵 | Shared API schemas for pagination and error responses | ~508 |
-| #19524 | 3:53 PM | 🔵 | Shared database model mixins for timestamps and soft deletes | ~509 |
+| #18091 | 9:28 AM | ⚖️ | Database Migration Plan for Email-Hub Models with Soft Delete and RLS Policies | ~725 |
+| #18090 | " | ⚖️ | Task 0.1 Implementation Plan - Two-Migration Strategy with Option A RLS | ~930 |
+| #18087 | 9:26 AM | 🔵 | Shared Pattern Architecture - Literal Enums, Integer PKs, No Soft Deletes | ~829 |
+| #18085 | 9:24 AM | 🔵 | Comprehensive Database Migration Status Analysis | ~623 |
+| #18083 | 9:20 AM | 🔵 | TimestampMixin for Consistent UTC Timestamp Tracking | ~354 |
+| #18081 | " | 🔵 | Shared Pagination and Error Response Schemas | ~350 |
 </claude-mem-context>

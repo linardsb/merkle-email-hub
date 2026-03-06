@@ -106,7 +106,7 @@ class DarkModeService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Dark mode processing failed: {e}") from e
+            raise AIExecutionError("Dark mode processing failed") from e
 
         # Process output: validate → extract → XSS sanitize
         raw_content = validate_output(result.content)
@@ -217,7 +217,7 @@ class DarkModeService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Dark mode streaming failed: {e}") from e
+            raise AIExecutionError("Dark mode streaming failed") from e
 
         yield "data: [DONE]\n\n"
 

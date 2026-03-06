@@ -392,5 +392,5 @@ class TestNodeError:
         )
 
         engine = BlueprintEngine(definition)
-        with pytest.raises(BlueprintNodeError, match=r"crasher.*Something went wrong"):
+        with pytest.raises(BlueprintNodeError, match=r"crasher.*execution failed"):
             await engine.run(brief="test")

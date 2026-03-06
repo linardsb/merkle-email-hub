@@ -154,7 +154,7 @@ class ContentService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Content generation failed: {e}") from e
+            raise AIExecutionError("Content generation failed") from e
 
         raw_content = validate_output(result.content)
         alternatives = extract_content(raw_content)
@@ -228,7 +228,7 @@ class ContentService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Content streaming failed: {e}") from e
+            raise AIExecutionError("Content streaming failed") from e
 
         yield "data: [DONE]\n\n"
 

@@ -3,9 +3,9 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 2.7
+**Version:** 2.9
 **Date:** 2026-03-06
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 6 BOLA fixes done (6.1.1–6.1.9, 16 security tests); remaining: 4.1 (6 agents), Phase 5.4-5.8 (eval pipeline), Phase 6.2-6.4 (response hardening, rate limiting, business logic)
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 5.4-5.8 eval tooling built (error analysis, calibration, QA calibration, blueprint eval, regression detection — 49 unit tests); Phase 6 BOLA + response hardening done (6.1.1–6.1.9, 6.2.1–6.2.3, 37 security tests); remaining: 4.1 (6 agents), Phase 5.4-5.8 execution (requires LLM + human labels), Phase 6.3-6.4 (rate limiting, business logic)
 
 ---
 
@@ -56,9 +56,11 @@
 
 ### In Progress
 
-**Phase 6 — OWASP API Security Hardening** (audit 2026-03-06). BOLA fixes complete (6.1.1–6.1.9): `verify_project_access()` added to projects, approvals (all 7 endpoints), connectors, QA engine, rendering, WebSocket streaming, and AI agents. Knowledge module already role-gated. 16 BOLA security tests added across 5 modules. Frontend `project_id` threading done (`use-chat.ts`, `chat-panel.tsx`). Remaining: response hardening (6.2), rate limiting (6.3), business logic (6.4).
+**Phase 6 — OWASP API Security Hardening** (audit 2026-03-06). BOLA fixes complete (6.1.1–6.1.9): `verify_project_access()` added to projects, approvals (all 7 endpoints), connectors, QA engine, rendering, WebSocket streaming, and AI agents. Knowledge module already role-gated. 16 BOLA security tests added across 5 modules. Frontend `project_id` threading done (`use-chat.ts`, `chat-panel.tsx`). Response hardening complete (6.2.1–6.2.3): centralized error sanitizer (`app/core/error_sanitizer.py`), LLM circuit breaker (`_ResilientLLMProvider`), all exception handlers return generic messages/types, 21 sanitizer unit tests. Remaining: rate limiting (6.3), business logic (6.4).
 
-**Remaining:** V2 task 4.1 (6 remaining AI agents). Phase 5 steps 5.4-5.8 (error analysis, calibration, QA gate calibration, blueprint evals, CI regression).
+**Phase 5.4-5.8 — Eval Loop Tooling** built but not yet executed. CLI tools for error analysis (`error_analysis.py`), judge calibration (`calibration.py` + `scaffold_labels.py`), QA gate calibration (`qa_calibration.py`), blueprint pipeline eval (`blueprint_eval.py` with 5 test briefs), and regression detection (`regression.py` + `make eval-check`). 49 unit tests across 5 test files. Execution requires LLM provider config + human labeling effort.
+
+**Remaining:** V2 task 4.1 (6 remaining AI agents). Phase 5.4-5.8 execution (run traces, collect labels, calibrate). Phase 6.3-6.4 (rate limiting, business logic).
 
 ### Infrastructure Built
 
@@ -66,11 +68,11 @@
 - **Frontend:** Next.js 16 monorepo with next-intl (6 locales with cookie-based switching, RTL support), auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations, Yjs CRDT collaborative editing, @dnd-kit visual Liquid builder
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 20 domain-specific hooks
-- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; Blueprint state machine engine for multi-node orchestration with self-correction
+- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; Blueprint state machine engine for multi-node orchestration with self-correction; Eval loop tooling (error analysis, judge/QA calibration, blueprint eval, regression detection)
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (346 tests, incl. 16 BOLA security tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (416 tests, incl. 16 BOLA security tests + 21 error sanitizer tests + 49 eval tooling tests); Frontend Vitest + React Testing Library (`make test-fe`)
 - **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6
 
 ---

@@ -59,11 +59,13 @@ async def ai_exception_handler(request: Request, exc: AIError) -> JSONResponse:
     if isinstance(exc, AIExecutionError):
         status_code = status.HTTP_502_BAD_GATEWAY
 
+    from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
+
     return JSONResponse(
         status_code=status_code,
         content={
-            "error": str(exc),
-            "type": type(exc).__name__,
+            "error": get_safe_error_message(exc),
+            "type": get_safe_error_type(exc),
         },
     )
 

@@ -93,7 +93,13 @@ class BlueprintEngine:
             try:
                 result = await node.execute(context)
             except Exception as exc:
-                raise BlueprintNodeError(current_node_name, str(exc)) from exc
+                logger.error(
+                    "blueprints.node_failed",
+                    node=current_node_name,
+                    error=str(exc),
+                    error_type=type(exc).__name__,
+                )
+                raise BlueprintNodeError(current_node_name, "execution failed") from exc
             duration_ms = (time.monotonic() - start) * 1000
 
             # Record progress

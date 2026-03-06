@@ -75,7 +75,7 @@ class ScaffolderService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Scaffolder generation failed: {e}") from e
+            raise AIExecutionError("Scaffolder generation failed") from e
 
         # Process output: validate → extract → XSS sanitize
         raw_content = validate_output(result.content)
@@ -175,7 +175,7 @@ class ScaffolderService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Scaffolder streaming failed: {e}") from e
+            raise AIExecutionError("Scaffolder streaming failed") from e
 
         yield "data: [DONE]\n\n"
 

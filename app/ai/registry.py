@@ -9,14 +9,47 @@ Example usage:
     provider = registry.get_llm("openai")
 """
 
+from collections.abc import AsyncIterator
 from typing import TypeVar
 
-from app.ai.protocols import EmbeddingProvider, LLMProvider, RerankerProvider
+from app.ai.protocols import (
+    CompletionResponse,
+    EmbeddingProvider,
+    LLMProvider,
+    Message,
+    RerankerProvider,
+)
 from app.core.logging import get_logger
+from app.core.resilience import CircuitBreaker
 
 logger = get_logger(__name__)
 
 T = TypeVar("T")
+
+_llm_breaker = CircuitBreaker(name="llm-provider", failure_threshold=5, reset_timeout=60.0)
+
+
+class _ResilientLLMProvider:
+    """Wraps an LLM provider with circuit breaker protection on complete()."""
+
+    def __init__(self, provider: LLMProvider, breaker: CircuitBreaker) -> None:
+        self._provider = provider
+        self._breaker = breaker
+
+    async def complete(self, messages: list[Message], **kwargs: object) -> CompletionResponse:
+        """Call complete() with circuit breaker protection."""
+        async with self._breaker:
+            return await self._provider.complete(messages, **kwargs)
+
+    async def stream(self, messages: list[Message], **kwargs: object) -> AsyncIterator[str]:
+        """Stream without circuit breaker — streaming has its own error handling."""
+        async for chunk in self._provider.stream(messages, **kwargs):  # type: ignore[attr-defined]
+            yield chunk
+
+    async def close(self) -> None:
+        """Delegate close to the underlying provider if available."""
+        if hasattr(self._provider, "close"):
+            await self._provider.close()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
 
 class ProviderNotFoundError(KeyError):
@@ -68,7 +101,8 @@ class ProviderRegistry:
             available = ", ".join(sorted(self._llm_providers.keys())) or "(none)"
             msg = f"LLM provider '{name}' not found. Available: {available}"
             raise ProviderNotFoundError(msg)
-        return provider_class()
+        provider = provider_class()
+        return _ResilientLLMProvider(provider, _llm_breaker)  # type: ignore[return-value]
 
     def list_llm_providers(self) -> list[str]:
         """List all registered LLM provider names.

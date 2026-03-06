@@ -28,6 +28,8 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 - `synthetic_data_dark_mode.py` — 10 test cases with 5 real-world HTML templates (MSO ghost tables, VML, already-dark emails)
 - `synthetic_data_content.py` — 14 test cases across all 8 operations, real spam trigger blocklists, PII edge cases
 - `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|all} --output traces/`
+- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
+- `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
 
 ### Per-Agent Eval Requirements (mandatory for all 9)
 1. Dimension-based synthetic test data (minimum 10 cases per agent)
@@ -39,9 +41,9 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 ### Current Status
 | Agent | Synthetic Data | Judge Prompts | Traces | Error Analysis | Calibration |
 |-------|---------------|---------------|--------|----------------|-------------|
-| Scaffolder | 12 cases | Pending | Pending | Pending | Pending |
-| Dark Mode | 10 cases | Pending | Pending | Pending | Pending |
-| Content | 14 cases | Pending | Pending | Pending | Pending |
+| Scaffolder | 12 cases | 5 criteria | Pending | Pending | Pending |
+| Dark Mode | 10 cases | 5 criteria | Pending | Pending | Pending |
+| Content | 14 cases | 5 criteria | Pending | Pending | Pending |
 | Outlook Fixer | Not started | — | — | — | — |
 | Accessibility | Not started | — | — | — | — |
 | Personalisation | Not started | — | — | — | — |

@@ -88,7 +88,7 @@ class ChatService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Chat completion failed: {e}") from e
+            raise AIExecutionError("Chat completion failed") from e
 
         # Validate output
         content = validate_output(result.content)
@@ -189,7 +189,7 @@ class ChatService:
             )
             if isinstance(e, AIExecutionError):
                 raise
-            raise AIExecutionError(f"Chat streaming failed: {e}") from e
+            raise AIExecutionError("Chat streaming failed") from e
 
         # Send final [DONE] sentinel
         yield "data: [DONE]\n\n"

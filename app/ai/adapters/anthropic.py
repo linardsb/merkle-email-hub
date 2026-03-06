@@ -118,15 +118,16 @@ class AnthropicProvider:
             logger.error("ai.provider.completion_rate_limited", model=model)
             raise AIExecutionError(msg) from e
         except anthropic.AuthenticationError as e:
-            msg = "Anthropic API authentication failed — check AI__API_KEY"
+            msg = "AI provider authentication failed"
             logger.error("ai.provider.completion_auth_failed")
             raise AIConfigurationError(msg) from e
         except anthropic.APIError as e:
-            msg = f"Anthropic API error: {e.message}"
+            msg = "AI provider request failed"
             logger.error(
                 "ai.provider.completion_failed",
                 model=model,
                 status_code=getattr(e, "status_code", None),
+                detail=str(e.message),
             )
             raise AIExecutionError(msg) from e
 
@@ -207,7 +208,7 @@ class AnthropicProvider:
             logger.error("ai.provider.stream_timeout", model=model)
             raise AIExecutionError(msg) from e
         except anthropic.APIError as e:
-            msg = f"Anthropic streaming error: {e.message}"
+            msg = "AI provider streaming failed"
             logger.error("ai.provider.stream_failed", model=model)
             raise AIExecutionError(msg) from e
 
