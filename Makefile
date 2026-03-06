@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check
+.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline
 
 # === Local Development ===
 
@@ -104,6 +104,44 @@ eval-regression: ## Check for eval regressions vs baseline
 	uv run python -m app.ai.agents.evals.regression --current traces/analysis.json --baseline traces/baseline.json
 
 eval-check: eval-analysis eval-regression ## Full eval CI gate (analysis + regression check)
+
+eval-calibrate: ## Calibrate judges against human labels (all 3 agents)
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/scaffolder_verdicts.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/scaffolder_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/dark_mode_verdicts.jsonl --labels traces/dark_mode_human_labels.jsonl --output traces/dark_mode_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/content_verdicts.jsonl --labels traces/content_human_labels.jsonl --output traces/content_calibration.json
+
+eval-qa-calibrate: ## Calibrate QA gate against human labels (all 3 agents)
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/scaffolder_traces.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/qa_calibration_scaffolder.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/dark_mode_traces.jsonl --labels traces/dark_mode_human_labels.jsonl --output traces/qa_calibration_dark_mode.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/content_traces.jsonl --labels traces/content_human_labels.jsonl --output traces/qa_calibration_content.json
+
+eval-dry-run: ## Full eval pipeline dry-run (no LLM needed)
+	uv run python -m app.ai.agents.evals.runner --agent all --output traces/ --dry-run
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces --dry-run
+	$(MAKE) eval-labels
+	uv run python -m app.ai.agents.evals.error_analysis --verdicts traces --output traces/analysis.json
+	uv run python -m app.ai.agents.evals.blueprint_eval --output traces/blueprint_traces.jsonl --dry-run
+	uv run python -m app.ai.agents.evals.regression --current traces/analysis.json --baseline traces/baseline.json
+	@echo "\n=== Dry-run pipeline complete ==="
+
+eval-full: ## Full eval pipeline (requires LLM provider)
+	$(MAKE) eval-run
+	$(MAKE) eval-judge
+	$(MAKE) eval-labels
+	$(MAKE) eval-analysis
+	$(MAKE) eval-blueprint
+	$(MAKE) eval-regression
+	@echo "\n=== Full eval pipeline complete ==="
+
+eval-baseline: ## Run full eval pipeline and establish baseline (first time)
+	$(MAKE) eval-run
+	$(MAKE) eval-judge
+	$(MAKE) eval-labels
+	$(MAKE) eval-analysis
+	$(MAKE) eval-blueprint
+	cp traces/analysis.json traces/baseline.json
+	@echo "\n=== Baseline established at traces/baseline.json ==="
+	@echo "Commit traces/baseline.json to version control."
 
 # === Security ===
 

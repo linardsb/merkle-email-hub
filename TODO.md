@@ -18,7 +18,7 @@
 - **Secrets management**: AES-256 for stored credentials. Environment variables for config. Never hardcode.
 
 ### API Security Patterns
-- **JWT RS256**: Asymmetric signing (public key verifies, private key signs). 15-min access + 7-day refresh.
+- **JWT HS256**: HMAC-SHA256 signing with pinned algorithm constant. 15-min access + 7-day refresh.
 - **Token revocation**: Redis-backed blocklist for immediate invalidation on logout.
 - **Brute-force protection**: Exponential backoff. Lock after 5 failed attempts (15 min). Redis-tracked.
 - **RBAC enforcement**: admin/developer/viewer roles checked at route level via dependency injection.
@@ -376,6 +376,7 @@
 
 ### 4.1 Remaining 6 AI Agents
 **Plan ref:** Section 5.1 (Agent Architecture)
+**Prerequisite:** Complete Phase 7 Step 1 (blueprint infrastructure: 7.1 + 7.3 + 7.4) and Step 2 (retrofit existing agents) BEFORE building new agents. This ensures every new agent inherits `AgentHandoff` schemas, confidence scoring, and component context from day one — no retrofitting needed.
 - **Outlook Fixer**: MSO conditionals, VML backgrounds, table-based fallbacks
 - **Accessibility Auditor**: WCAG AA checks, contrast ratios, alt text, touch targets, AI alt text generation
 - **Personalisation Agent**: Liquid (Braze), AMPscript (SFMC), dynamic content logic
@@ -451,7 +452,8 @@
 > - [x] 5.6 — QA gate calibration tooling built (`qa_calibration.py` check-vs-human agreement; 9 unit tests)
 > - [x] 5.7 — Blueprint pipeline eval runner built (`blueprint_eval.py` with 5 test briefs; 8 unit tests)
 > - [x] 5.8 — Regression detection built (`regression.py` baseline comparison + `make eval-check` CI gate; 10 unit tests)
-> - [ ] 5.4-5.8 — **Execute**: run traces, collect labels, calibrate (requires LLM provider + human labeling)
+> - [x] 5.4-5.8 — **Dry-run pipeline**: `--dry-run` flag on runner/judge/blueprint CLIs; `mock_traces.py` deterministic generators; `make eval-dry-run` exercises full pipeline without LLM; `make eval-full`/`eval-calibrate`/`eval-qa-calibrate` targets; 9 integration tests (58 eval tests total)
+> - [ ] 5.4-5.8 — **Live execution**: run with real LLM provider, collect human labels, calibrate judges (requires AI__PROVIDER + labeling effort)
 > - [ ] Eval data for Outlook Fixer (on agent build)
 > - [ ] Eval data for Accessibility Auditor (on agent build)
 > - [ ] Eval data for Personalisation Agent (on agent build)
@@ -605,10 +607,302 @@ Audit conducted 2026-03-06 using CodeQL + Semgrep + manual route review. Root ca
 - [x] 6.3.3 Timeout on LLM streaming responses — DONE — `asyncio.timeout(stream_timeout_seconds)` in `ChatService.stream_chat()`; sends `finish_reason: "timeout"` chunk; `stream_timeout_seconds=120` config; 2 unit tests (MEDIUM)
 - [x] 6.3.4 Blueprint daily cost cap — DONE — `BlueprintCostTracker` in `app/core/quota.py` (Redis-backed); checks budget after each node, breaks with `cost_cap_exceeded`; `daily_token_cap=500k` config; `user_id` threaded route→service→engine; 4 unit tests (MEDIUM)
 
-### 6.4 Business Logic Hardening
-- [ ] 6.4.1 Approval state machine — prevent invalid transitions (MEDIUM)
-- [ ] 6.4.2 JWT algorithm — code uses HS256, docs say RS256 (MEDIUM)
-- [ ] 6.4.3 LLM output sanitization — replace regex with proper HTML sanitizer (MEDIUM)
+### ~~6.4 Business Logic Hardening~~ DONE
+- [x] 6.4.1 Approval state machine — prevent invalid transitions (MEDIUM)
+- [x] 6.4.2 JWT algorithm — pin HS256 constant, remove config override, align docs (MEDIUM)
+- [x] 6.4.3 LLM output sanitization — replace regex with nh3 allowlist sanitizer (MEDIUM)
+
+---
+
+## Phase 7 — Agent Capability Improvements
+
+**Plan ref:** Section 5.1 (Agent Architecture), Section 5.6 (Smart Agent Memory), Section 5.7 (Agent Harness Architecture)
+**What:** Enhancements to agent quality, coordination, and self-improvement that go beyond what the current plan covers. These build on the existing blueprint engine, eval system, and RAG pipeline — wiring things together rather than building new systems.
+
+### Execution Strategy
+
+Run evals first to establish a baseline, build Phase 7 infrastructure before the remaining 6 agents, then integrate Cognee so every new agent inherits all patterns from day one.
+
+**Step 0 — Eval Baseline (Phase 5.4-5.8 execution) — RUN FIRST**
+Execute pending evals on the existing 3 agents to establish baseline metrics. This data is needed to: (a) measure Phase 7/8 improvement, (b) unblock 7.2 (eval-informed prompts), (c) calibrate confidence scoring thresholds (7.3). Without a baseline, you can't prove any of the subsequent work actually helps.
+
+**Step 1 — Blueprint Infrastructure (7.1 + 7.3 + 7.4)**
+Build `AgentHandoff` schema, confidence scoring, and component context loader into the blueprint engine. This is shared infrastructure that all agents benefit from.
+Touches: `app/ai/blueprints/schemas.py`, `engine.py`, `app/ai/shared.py`
+
+**Step 2 — Retrofit Existing 3 Agents (Scaffolder, Dark Mode, Content)**
+Update the 3 built agents to emit `AgentHandoff` + confidence scores. This is a focused output format change per agent — the generation logic doesn't change. Update the 15 existing judge criteria to accept `AgentHandoff.artifact` instead of raw output.
+
+**Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)**
+Install Cognee, define the full email ontology, seed the knowledge graph. This runs in parallel with Step 2 (independent work streams).
+
+**Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
+Wire graph search into blueprint nodes. Author initial SKILL.md files for the 3 existing agents. Re-run evals to measure improvement vs Step 0 baseline.
+
+**Step 5 — Build Remaining 6 Agents WITH Phase 7+8 Patterns (Task 4.1)**
+Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
+
+**Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
+Requires real runs and real failure data. Feed blueprint outcomes into graph. Generate prompt fragments from failure clusters. Close the learning loop.
+
+### 7.1 Structured Inter-Agent Handoff Schemas
+**What:** Define typed handoff contracts between agents in blueprint pipelines. Currently agents chain via raw HTML output. Instead, each agent should emit a structured handoff object containing: the output artifact, metadata about decisions made (e.g., "used 2-column layout", "applied VML fallback for hero"), warnings/caveats, and context the next agent needs.
+**Why:** Dark Mode agent receiving raw HTML from Scaffolder doesn't know which design patterns were used, which components were pulled in, or what trade-offs were made. Structured handoffs eliminate "undoing each other's work."
+**Implementation:** `AgentHandoff` schema in `app/ai/blueprints/schemas.py` with `artifact`, `decisions`, `warnings`, `component_refs` fields. Blueprint engine passes handoff objects between nodes instead of raw strings.
+**Retrofit:** Update Scaffolder, Dark Mode, Content agents to return `AgentHandoff` instead of raw strings. Wrap existing output in handoff schema — generation logic unchanged. Update judges to validate `AgentHandoff.artifact`.
+**Security:** Handoff objects scoped to blueprint session. No cross-project leakage. Decisions logged to audit trail.
+**Verify:** Blueprint pipeline passes structured handoff between scaffolder → dark_mode nodes. Downstream agent references upstream decisions in its output. Unit tests for schema validation.
+
+### 7.2 Eval-Informed Agent Prompts ⏳ (blocked on Phase 5.4-5.8 execution)
+**What:** Feed common failure patterns from eval error analysis (`make eval-analysis`) back into agent system prompts automatically. When eval clusters show recurring failures (e.g., "Scaffolder consistently misses MSO conditionals for 3-column layouts"), inject those as explicit warnings in the agent's prompt.
+**Why:** Eval system already captures failure clusters in `error_analysis.py`. Currently this data sits in JSONL files — it should actively improve agent performance in a feedback loop.
+**Prerequisite:** Requires real eval traces from Phase 5.4-5.8 live execution. Cannot run on dry-run/mock data — needs actual LLM failure patterns.
+**Implementation:** `failure_warnings.py` in `app/ai/agents/evals/` that reads latest error analysis, extracts top-N failure patterns per agent, and generates prompt fragments. Agent system prompts load these at runtime via the existing skill/context loading pattern.
+**Security:** Failure patterns contain no user data (only aggregated error categories). Prompt fragments reviewed before deployment.
+**Verify:** After running `make eval-analysis`, agent prompt includes failure-specific warnings. Re-running evals shows improved pass rate on previously-failing dimensions.
+
+### 7.3 Agent Confidence Scoring
+**What:** Agents emit a confidence score (0-1) alongside their output, based on self-assessment of task complexity, knowledge gaps, and output quality. Blueprint engine uses confidence to decide: high confidence → proceed to QA, low confidence → route to human review instead of burning retry loops.
+**Why:** Prevents wasting 2-3 self-correction rounds on tasks the agent knows it can't solve. Surfaces genuinely hard problems to developers faster.
+**Implementation:** `confidence` field on agent response schema. Configurable threshold per agent (default: 0.6). Blueprint engine checks confidence before routing to QA vs human review node. Confidence calibrated against eval pass rates over time.
+**Retrofit:** Add confidence self-assessment step to Scaffolder, Dark Mode, Content agents. Initial thresholds set conservatively (0.5) and tuned after eval data available.
+**Security:** Confidence scores logged in audit trail. Never exposed to end-users (internal routing metric only).
+**Verify:** Agent returns confidence score. Blueprint routes low-confidence outputs to human review node. Confidence correlates with actual QA pass rate (validated via eval data).
+
+### 7.4 Template-Aware Component Context
+**What:** When an agent works on a template that uses components from the component library, automatically load that component's metadata (version, dark mode variant, known quirks, compatibility notes) into the agent's context.
+**Why:** Scaffolder pulls in a `hero` component but doesn't know it has a known Outlook 2016 rendering issue. Dark Mode agent doesn't know the component already has a dark mode variant. This context prevents redundant work and avoids breaking working components.
+**Implementation:** Template parser identifies component references → queries `app/components/` for metadata → injects as structured context in agent prompt. Leverages existing component versioning and the progressive disclosure pattern (only loads components actually used).
+**Retrofit:** Existing agents automatically benefit once the component context loader is wired into the blueprint engine — no per-agent changes needed.
+**Security:** Component metadata is project-scoped (existing RLS). No additional access surface.
+**Verify:** Agent working on template with `hero` component receives component metadata in context. Agent output references component-specific constraints. Token usage stays within progressive disclosure budget.
+
+## Phase 8 — Knowledge Graph Integration (Cognee)
+
+**Plan ref:** Section 5.6 (Smart Agent Memory), new Section 5.8 (Knowledge Graph Integration)
+**What:** Replace flat RAG chunk retrieval with graph-structured knowledge using [Cognee](https://github.com/topoteretes/cognee) — an open-source AI memory platform that builds persistent knowledge graphs from raw data. This transforms the Hub's agent memory from "similar text chunks" to "structured entity relationships," making agents more precise and less error-prone.
+**Why:** The current RAG pipeline (`app/knowledge/`) retrieves similar text, not related concepts. Agents asked about "Outlook dark mode" get 5 similar paragraphs — but not the structured chain: *Outlook 2019 -> does_not_support -> CSS variables -> fallback -> MSO conditional VML*. Knowledge graphs capture these relationships explicitly.
+**Dependencies:** Phase 7 infrastructure (handoff schemas, confidence scoring, component context) should be in place first. Phase 5.4-5.8 eval execution provides baseline metrics to measure improvement.
+
+### Execution Order
+
+**Step 1 — Cognee Integration Layer (8.1)**
+Add Cognee as a dependency. Create `app/knowledge/graph/` adapter that wraps Cognee's `add()` + `cognify()` + `search()` behind the existing knowledge service interface. This runs alongside existing RAG — additive, not replacement.
+
+**Step 2 — Seed Knowledge Graph (8.2)**
+Feed existing knowledge base documents (Can I Email data, email dev guides, client quirks) through Cognee's ECL pipeline. Extracts entities (email clients, CSS properties, rendering engines, components) and relationships automatically.
+
+**Step 3 — Graph Context Provider for Agents (8.3)**
+Add a graph search context provider that blueprint nodes query before generation. Agents receive structured relationships alongside existing RAG chunks. Highest impact for Scaffolder and Dark Mode agents where compatibility chains matter most.
+
+**Step 4 — Outcome Logging (8.4)**
+Feed completed blueprint run outcomes (QA verdicts, recovery paths, what worked/failed) back into Cognee. Over time, builds institutional memory of which patterns succeed.
+
+**Step 5 — Agent SKILL.md Domain Files (8.5)**
+Create per-agent SKILL.md files with domain-specific knowledge, grounded by the knowledge graph. Each agent gets a skill file covering its Four Discipline sections (Prompt Craft, Context Engineering, Intent Engineering, Specification Engineering) with domain-specific rules pulled from graph entities.
+
+**Step 6 — Ontology Definition (8.6)**
+Define an email development OWL ontology (email clients, CSS properties, rendering engines, component types, ESP platforms). Cognee uses this to ground entity extraction against known domain concepts rather than relying on LLM training data.
+
+### 8.1 Cognee Integration Layer
+**What:** Add `cognee` as a Python dependency. Create `app/knowledge/graph/` module with `GraphKnowledgeProvider` that wraps Cognee's async API (`add`, `cognify`, `search`) behind a Protocol interface consistent with existing knowledge architecture.
+**Why:** Keeps Cognee isolated behind an interface — can swap graph backends later without touching agent code. Runs alongside existing vector+fulltext search, not replacing it.
+**Deployment model (DECIDED):** Background worker pattern — graph search queries run in-process (Kuzu is sub-millisecond for traversals), heavy operations (`cognify()`, outcome logging from 8.4) run via existing `DataPoller` background task system with Redis queue. This matches the existing pattern for memory compaction (Section 5.6 Layer 5). Migration path to sidecar container available if needed later.
+**Graph DB (DECIDED):** Kuzu (file-based). Zero extra infrastructure. Sub-millisecond traversals for read-heavy agent queries. Stored in `DATA_ROOT_DIRECTORY` alongside other file-based data. Migration path to PostgreSQL available via Cognee's adapter layer if cross-database joins are needed later.
+**Implementation:**
+- `app/knowledge/graph/__init__.py`
+- `app/knowledge/graph/provider.py` — `GraphKnowledgeProvider` Protocol + Cognee implementation
+- `app/knowledge/graph/config.py` — Cognee config (graph DB: Kuzu file-based, data in `DATA_ROOT_DIRECTORY`)
+- `app/knowledge/graph/tasks.py` — Background task wrappers for `cognify()` and outcome ingestion via `DataPoller`
+- Wire into `KnowledgeService` as an optional search mode alongside existing hybrid search
+**Security:** Cognee databases stored in project-scoped directories. No cross-tenant access. Graph queries logged to audit trail. Background tasks inherit existing Redis leader election for single-writer safety.
+**Verify:** `KnowledgeService.search()` can return graph-structured results alongside existing chunk results. Background `cognify()` completes without blocking API server. Unit tests for provider interface.
+
+### 8.2 Knowledge Graph Seeding
+**What:** Run existing knowledge base documents through Cognee's ECL pipeline (`add()` -> `cognify()`) to extract entities and relationships into a knowledge graph.
+**Why:** Transforms static document chunks into interconnected knowledge. "Gmail clips at 102KB" becomes a queryable entity linked to "file_size_check" and "Gmail" with relationship "clips_above_threshold."
+**Implementation:**
+- Extend `make seed-knowledge` to also run Cognee pipeline after existing chunking/embedding
+- Seed manifest (`app/knowledge/data/seed_manifest.py`) unchanged — same source documents, additional processing path
+- Initial entity types: EmailClient, CSSProperty, RenderingEngine, Component, Workaround, Limitation
+**Security:** Same documents, additional index. No new data surface.
+**Verify:** After seeding, graph contains extracted entities from Can I Email data. Query "What does Outlook 2019 not support?" returns structured graph traversal results.
+
+### 8.3 Graph Context Provider for Blueprint Nodes
+**What:** Add graph-aware context retrieval to the blueprint engine's `_build_node_context()`. Before an agent generates output, query Cognee for structured relationships relevant to the task.
+**Why:** This is the highest-impact integration. Instead of "here are 5 similar chunks about dark mode," agents get: *"Apple Mail supports prefers-color-scheme -> use media query. Outlook ignores it -> use MSO conditional fallback. Gmail Android partially supports -> test with persona."*
+**Implementation:**
+- New context source in `app/ai/blueprints/engine.py::_build_node_context()`
+- Uses Cognee's `GRAPH_COMPLETION` or `TRIPLET_COMPLETION` search types
+- Progressive disclosure: only fetch graph context when the task involves email client compatibility, CSS support, or component interactions
+- Results formatted as structured triplets injected into agent system prompt
+**Security:** Graph queries scoped to project. Query content logged. No PII in graph (email dev knowledge only).
+**Verify:** Scaffolder agent generating a 3-column layout receives structured compatibility data for target email clients. Dark Mode agent receives known workarounds for components in the template.
+
+### 8.4 Blueprint Outcome Logging
+**What:** After a blueprint run completes, feed the outcome (which agents ran, what they produced, QA results, recovery actions taken) back into Cognee via `cognee.add()`.
+**Why:** Builds institutional memory. After 50 blueprint runs, agents can query: "What fixes have worked when QA fails for VML backgrounds in Outlook?" — answered from real outcomes, not LLM guessing.
+**Implementation:**
+- Post-run hook in `BlueprintEngine` that serialises `BlueprintRun` outcome to text
+- Feeds through Cognee pipeline to extract patterns (successful fixes, common failure modes, recovery paths)
+- Tagged with project scope and agent types involved
+**Security:** Outcomes contain generated HTML patterns, not client content. Project-scoped. Temporal decay applies (Section 5.6 Layer 5).
+**Verify:** After 10+ blueprint runs, querying "common Scaffolder failures" returns aggregated patterns from actual runs.
+
+### 8.5 Per-Agent Domain SKILL.md Files
+**What:** Create a SKILL.md file for each of the 9 agents following the Four Discipline structure (Section 5.4). Each skill file contains domain-specific rules, examples, anti-patterns, and context requirements grounded by the knowledge graph. Skills start as manually authored baselines and grow over time as agents accumulate knowledge.
+**Why:** Currently agent prompts are static strings in `prompt.py` constants. SKILL.md files make agent expertise versionable, updatable without code changes, and benchmarkable via the eval system. Combined with the knowledge graph, skills reference verified entities rather than relying on LLM memory.
+**Implementation:**
+- `app/ai/agents/{agent_name}/SKILL.md` for each agent
+- **Prompt Craft**: Best system prompts with success metrics, failure examples, output format specs
+- **Context Engineering**: Required data sources, graph queries that improve output, progressive disclosure rules
+- **Intent Engineering**: Trade-off hierarchies, escalation boundaries, decision frameworks
+- **Specification Engineering**: Output schemas, acceptance criteria, eval test cases
+- Skill loader reads SKILL.md at runtime and injects into agent context (existing pattern from Section 5.4)
+- Graph-grounded: skill files reference entity types from the ontology (8.6) for precise constraints
+
+**Skill Growth Lifecycle:**
+1. **Manual baseline** — Devs author initial SKILL.md with proven patterns, known anti-patterns, output specs
+2. **Passive accumulation** — Knowledge graph captures agent run outcomes (8.4). After 50+ runs, patterns emerge
+3. **Growth proposals** — Periodic `DataPoller` job analyses graph for patterns not yet in SKILL.md. Generates diff suggestions (new procedural knowledge, updated success metrics, new anti-patterns). Proposed as review items — never auto-applied
+4. **Dev review + merge** — Dev reviews proposed skill additions, approves or rejects. Versioned in git like any code change
+5. **Size management** — SKILL.md files have a token budget (progressive disclosure). When skill grows beyond budget, entries ranked by impact (graph outcome data), low-impact entries archived to knowledge graph (still retrievable via graph search, just not in default agent context)
+
+**Security:** SKILL.md files contain no client data. Versioned in git. Growth proposals logged with source data references. Changes auditable.
+**Verify:** Agent loaded with SKILL.md produces measurably better output on eval suite vs static prompt. Skill updates don't require code deployment. Growth proposals reference specific graph entities and outcome data.
+
+### 8.6 Email Development Ontology (Full Granularity)
+**What:** Define a comprehensive OWL ontology for the email development domain. Full coverage of every email client version, every CSS property from Can I Email, all rendering engines, HTML elements relevant to email, ESP platforms, and template patterns.
+**Why:** Without an ontology, Cognee's LLM-based entity extraction invents entity types inconsistently ("Outlook" vs "Microsoft Outlook" vs "Outlook 2019"). The ontology grounds extraction against canonical domain concepts, ensuring the knowledge graph is consistent and queryable. Full granularity means agents can reason at the version level ("Outlook 2016 on Windows" vs "Outlook 365 on Mac" have different rendering engines).
+**Implementation:**
+- `app/knowledge/graph/ontology/email_development.owl`
+- Configure Cognee's `ONTOLOGY_RESOLVER=rdflib` + `MATCHING_STRATEGY=fuzzy` (80% similarity threshold)
+- **Entity types and scope:**
+  - `EmailClient` — Every client+version from Can I Email database (Apple Mail 10-18, Gmail Web/Android/iOS, Outlook 2007-365/Windows/Mac, Yahoo, AOL, Samsung Mail, Thunderbird, etc.) with version ranges
+  - `CSSProperty` — Full Can I Email CSS property database (300+ properties with support status per client)
+  - `RenderingEngine` — WebKit, Blink, Gecko, Word (MSO), Presto, with client→engine mappings
+  - `HTMLElement` — Email-relevant elements with support status (semantic elements, `<picture>`, `<video>`, AMP elements)
+  - `Component` — Maps to `app/components/` taxonomy (header, CTA, hero, product card, footer, etc.) with dark mode variant relationships
+  - `Workaround` — Named patterns (MSO conditional comments, VML backgrounds, `mso-` properties, `<!--[if mso]>` blocks)
+  - `Limitation` — Named constraints (Gmail 102KB clip, Outlook DPI scaling, Yahoo `!important` stripping)
+  - `ESPPlatform` — Braze, SFMC, Adobe Campaign, Taxi, with template language relationships (Liquid, AMPscript, Handlebars)
+  - `TemplatePattern` — Layout archetypes (single column, 2-col, 3-col, hybrid, fluid) with client compatibility profiles
+  - `InteractiveFeature` — AMP components, CSS animations, kinetic techniques, with feasibility per client
+- **Relationships:** `supports`, `does_not_support`, `partially_supports`, `fallback_for`, `renders_with`, `requires`, `conflicts_with`, `variant_of`, `degrades_to`
+- **Data source:** Primary data scraped/imported from Can I Email API + database. Supplemented by Good Email Code patterns and team's tribal knowledge
+- Updated as new email clients or CSS properties emerge. Can I Email data refresh on `make seed-knowledge`
+**Security:** Ontology is public domain knowledge (email client names, CSS specs, Can I Email data). No sensitive data.
+**Verify:** After seeding with ontology, entity extraction produces canonical names. "Outlook 2019" and "Microsoft Outlook 2019" resolve to the same entity. Graph contains 300+ CSS property nodes with per-client support status. Query "what does Gmail Android not support?" returns comprehensive, version-specific results.
+
+## Phase 9 — Graph-Driven Intelligence Layer
+
+**Plan ref:** Section 5.8 (Knowledge Graph Integration), Section 5.6 (Smart Agent Memory), Section 12.6 (Compound Innovation Effect)
+**What:** Extensions that leverage the knowledge graph (Phase 8) across the entire Hub — connecting personas, components, blueprints, competitive intelligence, and skill evolution into a self-improving system.
+**Dependencies:** Phase 8 core (8.1-8.6) must be operational. Phase 5 evals providing baseline data.
+
+### 9.1 Graph-Powered Client Audience Profiles
+**What:** Connect the Test Persona Engine (`app/personas/`) to the knowledge graph. When a persona specifies "iPhone 15 + Apple Mail 18 + Dark Mode," the graph surfaces: which CSS properties are safe, which components have tested dark mode variants, which workarounds are needed — all pre-filtered for that specific audience profile.
+**Why:** Currently agents generate first, then discover breakage during QA. With graph-powered personas, agents receive pre-filtered compatibility context before generation. Eliminates the "generate → QA fail → retry" loop for known compatibility issues.
+**Implementation:**
+- Extend `app/personas/service.py` to query graph when a persona is selected
+- Persona selection triggers graph traversal: persona.email_client → `supports`/`does_not_support` → CSS properties + components + workarounds
+- Results cached per persona (compatibility data changes infrequently)
+- Blueprint engine injects persona graph context into `NodeContext` alongside existing persona data
+- Progressive disclosure: only load graph context for the persona's email client chain, not the entire graph
+**Security:** Persona data is project-scoped (existing RLS). Graph queries read-only. Cached results invalidated on graph update.
+**Verify:** Selecting "Outlook 2019 + Windows + Dark Mode" persona injects structured compatibility constraints into agent context. Agent output avoids known unsupported CSS properties without needing QA to catch them. Measurable reduction in QA retry loops vs Phase 8 baseline.
+
+### 9.2 Can I Email Live Sync
+**What:** Periodic sync job that pulls fresh data from the Can I Email API/database, diffs against existing graph entities, and updates the knowledge graph and ontology automatically.
+**Why:** Knowledge base is currently seeded once via `make seed-knowledge`. Can I Email updates regularly (new client versions, updated support data). Stale compatibility data means agents give wrong advice. Live sync ensures agents always work with current data.
+**Implementation:**
+- `app/knowledge/graph/sync/caniemail.py` — sync job that fetches Can I Email data
+- Diff engine compares fetched data against existing graph entities
+- New/changed entities fed through Cognee's `add()` + `cognify()` pipeline (background worker, 8.1 pattern)
+- Ontology auto-extended when new email clients or CSS properties appear (new entity nodes, not OWL schema changes)
+- Configurable sync interval (weekly default, daily optional)
+- Runs via existing `DataPoller` background task system
+- Sync report logged: N new entities, N updated relationships, N deprecated
+**Security:** Can I Email is public data. Sync job runs with read-only external access. Graph writes scoped to knowledge domain (no user data).
+**Verify:** After sync, new email client version appears in graph. Agents querying that client get updated compatibility data. Sync report shows meaningful diffs.
+
+### 9.3 Component-to-Graph Bidirectional Linking
+**What:** When a component is created, updated, or tested in `app/components/`, automatically create/update its entity in the knowledge graph with: supported email clients (from QA test results), known quirks (from QA failures), dark mode variant status, and rendering engine compatibility. Reverse direction: graph insights surface as component metadata in the component browser UI.
+**Why:** Component metadata is currently static (version, description). The graph can enrich this with real test data — "this CTA component passed QA in 18/20 clients, fails in Outlook 2016 VML and Samsung Mail 14." Agents using components get real compatibility data, not just static descriptions.
+**Implementation:**
+- Post-save hook on `ComponentVersion` model → creates/updates graph entity via Cognee
+- QA results from `app/qa_engine/` feed into component's graph node as test relationships
+- Component browser UI (`/components`) shows graph-derived compatibility badge (green/amber/red per client)
+- Graph query from component entity returns: tested clients, pass/fail status, known workarounds, dark mode variant availability
+- Bidirectional: component detail page pulls live graph data; graph entity links back to component version
+**Security:** Component data is project-scoped. Graph entities inherit project scope. QA results are non-sensitive.
+**Verify:** Creating a component and running QA creates a graph entity with test results. Component browser shows compatibility badge. Agent using the component receives graph-derived quirk warnings.
+
+### 9.4 Failure Pattern Propagation Across Agents
+**What:** When any agent discovers a failure pattern (e.g., Dark Mode agent finds "Samsung Mail strips `color-scheme` meta tag"), this is stored as a graph relationship — not just an agent memory entry. Every agent that subsequently touches Samsung Mail compatibility automatically gets this knowledge through graph context.
+**Why:** Section 5.6 Layer 6 describes cross-agent memory sharing via project-scoped memory pools. Graph relationships are more powerful — they're structured, queryable, and don't require explicit sharing logic. The graph's structure means propagation is inherent in the data model.
+**Implementation:**
+- Extend outcome logging (8.4) to extract failure patterns as typed graph relationships
+- Pattern format: `Entity → failure_type → Description` (e.g., `Samsung_Mail_14 → strips → color-scheme_meta`)
+- Failure patterns tagged with: discovery date, agent type that discovered it, number of times observed, confidence level
+- All agents' graph context queries automatically include relevant failure patterns (no per-agent wiring needed)
+- High-frequency patterns automatically promoted to SKILL.md growth proposals (8.5 lifecycle)
+**Security:** Failure patterns contain technical details only (CSS properties, email clients). No user/client data. Project-scoped when client-specific, org-scoped when universal.
+**Verify:** Dark Mode agent discovers Samsung Mail failure. Scaffolder agent working on a Samsung Mail-targeting template receives the failure pattern in context without explicit configuration. Pattern appears in SKILL.md growth proposals after threshold observations.
+
+### 9.5 Client-Specific Subgraphs for Project Onboarding
+**What:** When a new project is created for a client, auto-generate a project-specific subgraph: the client's target email clients (from persona data) → their supported CSS properties → known workarounds → recommended components → historical failure patterns. This becomes the project's "compatibility brief."
+**Why:** New developers on a project currently have no structured context about which email clients matter for that client, what works, and what doesn't. The subgraph gives instant onboarding context. Agents working on the project start with pre-loaded domain knowledge instead of discovering constraints through trial and error.
+**Implementation:**
+- Post-create hook on `Project` model → generates subgraph from persona selections
+- Subgraph query: project personas → email clients → CSS support matrix → compatible components → known workarounds → historical outcomes from similar projects
+- Subgraph materialised as a cached view (regenerated when personas change or graph updates)
+- Accessible via: API endpoint (`GET /api/v1/projects/{id}/compatibility-brief`), agent context (injected into all blueprint runs for the project), UI page (project settings → compatibility overview)
+- Knowledge Agent can answer questions scoped to the project subgraph: "What CSS properties should I avoid for this project?"
+**Security:** Subgraph inherits project scope (RLS). Contains only email dev knowledge filtered for the project's target audience. No cross-project data.
+**Verify:** Creating a project with Outlook 2019 + Apple Mail personas generates a subgraph with compatibility constraints for those clients. Agent working on the project receives subgraph context. New developer querying the Knowledge Agent gets project-specific answers.
+
+### 9.6 Graph-Informed Blueprint Route Selection
+**What:** Blueprint engine dynamically adjusts node sequence based on graph data about the target audience and template content. Skip unnecessary nodes, add required ones, reorder for efficiency.
+**Why:** Currently blueprints follow a fixed sequence (scaffolder → dark_mode → QA → export). But if the target audience is 100% Apple Mail (internal corporate comms), the Outlook Fixer node is wasted work. If the template uses AMP components, an AMP validation node should be added. Graph-informed routing makes blueprints adaptive.
+**Implementation:**
+- `app/ai/blueprints/route_advisor.py` — analyses template content + project subgraph (9.5) to recommend node sequence
+- Rules engine based on graph traversal:
+  - Skip Outlook Fixer if no Microsoft clients in project personas
+  - Skip Dark Mode node if no dark-mode-capable clients in audience
+  - Add AMP validation node if template contains AMP components
+  - Prioritise nodes based on audience coverage (most common client issues first)
+- Route advisor runs before blueprint execution, proposes modified sequence
+- Blueprint engine accepts or overrides (developer can force full pipeline)
+- Routing decisions logged in audit trail with reasoning
+**Security:** Route decisions based on project-scoped graph data. No new access surface. Audit trail captures routing rationale.
+**Verify:** Blueprint for Apple Mail-only project skips Outlook nodes. Blueprint for template with AMP adds AMP validation. Routing decisions visible in blueprint run log with graph-backed reasoning.
+
+### 9.7 Competitive Intelligence Graph
+**What:** Extend the ontology to include competitor capabilities (Stripo, Parcel, Chamaileon, Dyspatch, Knak — from Plan Section 15.4). When the Innovation Agent evaluates new techniques, it checks the graph for feasibility and competitive landscape.
+**Why:** Section 15.4 maps competitor features. This data in the graph lets the Innovation Agent answer: "Is this technique feasible for the client's audience AND do competitors support it?" Powers the capability reports mentioned in Section 12.2 with structured data instead of manual research.
+**Implementation:**
+- Extend ontology (8.6) with `Competitor` entity type and relationships: `supports_feature`, `pricing_tier`, `target_market`
+- Competitor data seeded from Plan Section 15.4 table + periodic manual updates
+- Relationships to email capabilities: `Stripo → supports → AMP_email`, `Parcel → supports → dark_mode_preview`
+- Innovation Agent queries: "techniques the Hub supports that competitors don't" and "techniques competitors support that the Hub should add"
+- Capability report generation: structured graph query → formatted report showing Hub vs competitor feature matrix with audience feasibility data
+**Security:** Competitor data is public knowledge (pricing pages, feature lists). No proprietary intelligence. Clearly marked as external data in graph.
+**Verify:** Innovation Agent asked "what techniques can we offer that Stripo can't?" returns graph-backed answer with audience feasibility. Capability report includes competitive positioning data.
+
+### 9.8 SKILL.md A/B Testing via Eval System
+**What:** When the skill growth system (8.5) proposes a SKILL.md update, automatically A/B test it against the current version using the eval suite. Only merge if the updated skill performs equal or better.
+**Why:** Skill growth proposals are currently review-only (dev reads the diff and decides). A/B testing adds empirical evidence: run the eval suite with current SKILL.md, then with proposed update, compare pass rates. This closes the loop: knowledge graph → skill proposal → eval validation → merge.
+**Implementation:**
+- `app/ai/agents/evals/skill_ab.py` — A/B test runner
+- Takes: current SKILL.md, proposed SKILL.md, agent name, eval suite
+- Runs eval suite twice (current vs proposed) on same synthetic test data
+- Computes per-criterion pass rate delta, overall improvement, and statistical significance (minimum 10 cases per dimension)
+- Output: comparison report with recommendation (merge / reject / needs more data)
+- Integrates with `make eval-skill-test` CLI command
+- Proposed updates that degrade any criterion by >5% auto-rejected with explanation
+**Security:** A/B tests run on synthetic test data (no client data). Results logged for audit. Rejected proposals archived with reasoning.
+**Verify:** Proposed SKILL.md update runs through A/B test. Report shows per-criterion comparison. Update that improves 3 criteria and degrades none is recommended for merge. Update that degrades 1 criterion by >5% is auto-rejected.
 
 ---
 

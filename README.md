@@ -62,7 +62,7 @@ Located in `app/qa_engine/checks/`:
 ## Security
 
 - **Zero Trust API**: every endpoint authenticated + authorized
-- **JWT RS256**: 15-min access tokens + 7-day refresh, Redis-backed revocation
+- **JWT HS256**: 15-min access tokens + 7-day refresh, Redis-backed revocation
 - **RBAC**: admin/developer/viewer roles enforced at route level
 - **Row-Level Security**: PostgreSQL RLS on `client_org_id` — database-enforced isolation
 - **Brute-force protection**: exponential backoff, 5-attempt lockout (15 min)

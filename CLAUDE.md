@@ -52,6 +52,11 @@ make eval-analysis   # Analyze verdicts (failure taxonomy)
 make eval-blueprint  # Run blueprint pipeline evals
 make eval-regression # Check for regressions vs baseline
 make eval-check      # Full eval gate (analysis + regression)
+make eval-dry-run    # Full pipeline dry-run (no LLM needed)
+make eval-full       # Full pipeline (requires LLM provider)
+make eval-baseline   # Run full pipeline + establish baseline (first time)
+make eval-calibrate  # Calibrate judges against human labels
+make eval-qa-calibrate # Calibrate QA gate against human labels
 
 # Docker
 make docker          # Full stack (port :80)
@@ -216,12 +221,13 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 
 ### API Security Patterns
 
-- **JWT RS256**: 15-min access + 7-day refresh tokens. Redis-backed blocklist for revocation.
+- **JWT HS256**: Pinned algorithm constant in `app/auth/token.py` (not configurable). 15-min access + 7-day refresh tokens. Redis-backed blocklist for revocation.
 - **Brute-force protection**: exponential backoff, lock after 5 failed attempts (15 min), Redis-tracked.
 - **Row-Level Security**: PostgreSQL RLS on `client_org_id`. Database enforces isolation independently of app layer.
 - **Credential storage**: AES-256 for stored API keys (Braze, Figma). Never returned in responses, never logged.
 - **AI rate limits**: 20 req/min per user for chat, 5 req/min for generation. Per-user daily quota via Redis (`app/core/quota.py`). Stream timeout 120s. Blueprint daily token cap 500k.
 - **WebSocket limits**: Global 100 connections + per-user 5 connections (`app/streaming/manager.py`).
+- **LLM output sanitization**: `nh3` (Rust-based) allowlist HTML sanitizer in `app/ai/shared.py`. Preserves email HTML (tables, styles, MSO comments). Approval state machine prevents invalid transitions.
 
 ## Implementation Roadmap
 
@@ -284,18 +290,45 @@ Applies to ALL 9 agents. No agent goes to production without completing steps 5.
 - [ ] 5.7 Blueprint pipeline evals — tooling built (`blueprint_eval.py`, 5 test briefs), execution pending
 - [ ] 5.8 Regression suite — tooling built (`regression.py`, `make eval-check`), CI integration deferred
 
-### Phase 6 — OWASP API Security Hardening
-Audit conducted 2026-03-06. Root cause: `current_user` authenticated at route level but not passed to service layer. Fix pattern: `verify_project_access()` from `app/projects/service.py`.
+### Phase 6 — OWASP API Security Hardening (COMPLETE)
+Audit conducted 2026-03-06. All 4 sub-phases done. Fix pattern: `verify_project_access()` from `app/projects/service.py`.
 - [x] 6.1.1–6.1.4 BOLA fixes — CRITICAL (projects, approvals, connectors, QA override)
 - [x] 6.1.5–6.1.9 BOLA fixes — HIGH (approvals, rendering, knowledge, WebSocket, AI agents)
 - [x] 6.2.1–6.2.3 Response & error hardening (error sanitizer, LLM circuit breaker, generic error types)
 - [x] 6.3.1–6.3.4 Rate limiting & resource controls (per-user Redis quota, per-user WS limit, stream timeout, blueprint cost cap)
-- [ ] 6.4.1–6.4.3 Business logic (approval state machine, JWT algorithm, LLM output sanitizer)
+- [x] 6.4.1–6.4.3 Business logic (approval state machine, JWT algorithm pinning, nh3 HTML sanitizer)
+
+### Phase 7 — Agent Capability Improvements
+Build infrastructure before remaining 6 agents so every new agent inherits patterns from day one.
+- [ ] 7.1 Structured inter-agent handoff schemas (`AgentHandoff` in blueprint engine)
+- [ ] 7.2 Eval-informed agent prompts (blocked on Phase 5.4-5.8 execution)
+- [ ] 7.3 Agent confidence scoring (0-1, routes low-confidence to human review)
+- [ ] 7.4 Template-aware component context (auto-load component metadata into agent context)
+
+### Phase 8 — Knowledge Graph Integration (Cognee)
+Replace flat RAG with graph-structured knowledge using Cognee. Agents get structured entity relationships instead of similar text chunks. Depends on Phase 7 infrastructure.
+- [ ] 8.1 Cognee integration layer (`app/knowledge/graph/`, Protocol-based, alongside existing RAG)
+- [ ] 8.2 Knowledge graph seeding (existing docs through Cognee ECL pipeline)
+- [ ] 8.3 Graph context provider for blueprint nodes (structured relationships in agent context)
+- [ ] 8.4 Blueprint outcome logging (feed run outcomes back into graph for institutional memory)
+- [ ] 8.5 Per-agent domain SKILL.md files (Four Discipline structure, graph-grounded, self-growing)
+- [ ] 8.6 Email development ontology (full granularity OWL — 300+ CSS properties, all client versions)
+
+### Phase 9 — Graph-Driven Intelligence Layer
+Leverages Phase 8 knowledge graph across the entire Hub — personas, components, blueprints, competitive intel, skill evolution. Depends on Phase 8 core operational.
+- [ ] 9.1 Graph-powered client audience profiles (persona → graph compatibility context)
+- [ ] 9.2 Can I Email live sync (periodic graph updates from Can I Email API)
+- [ ] 9.3 Component-to-graph bidirectional linking (QA results → graph entity → component browser badge)
+- [ ] 9.4 Failure pattern propagation across agents (graph-structured cross-agent knowledge sharing)
+- [ ] 9.5 Client-specific subgraphs for project onboarding (auto-generated compatibility briefs)
+- [ ] 9.6 Graph-informed blueprint route selection (dynamic node skipping/addition based on audience)
+- [ ] 9.7 Competitive intelligence graph (competitor capabilities in ontology for Innovation Agent)
+- [ ] 9.8 SKILL.md A/B testing via eval system (empirical skill evolution with eval validation)
 
 ## Feature Scope by Stack
 
 ### Backend Features (for `be-prime`)
-- Auth: JWT RS256, RBAC (admin/developer/viewer), token revocation, brute-force protection
+- Auth: JWT HS256, RBAC (admin/developer/viewer), token revocation, brute-force protection
 - Projects: ClientOrg, Project, ProjectMember models + RLS
 - Email Engine: Maizzle build orchestration via sidecar
 - Components: versioned component library with dark mode variants

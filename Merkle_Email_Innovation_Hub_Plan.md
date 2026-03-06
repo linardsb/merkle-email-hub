@@ -469,6 +469,138 @@ The memory system maps directly to the four-discipline framework, creating a sel
 | **Intent Engineering** | Episodic | Decomposition patterns and trade-off resolutions from past sessions | Agents reuse proven decomposition strategies: "Add dark mode" → [Identify colours → Extract selectors → Generate queries → Test fallbacks] |
 | **Specification Engineering** | Procedural + Semantic | Output schemas that produce highest client approval rates; validated acceptance criteria per task type | Prevents specification drift after model updates by comparing new outputs against proven-good baselines |
 
+## 5.8 Knowledge Graph Integration (Cognee)
+
+The Smart Agent Memory System (Section 5.6) gives agents persistent memory. The RAG pipeline (`app/knowledge/`) gives agents grounded retrieval. But both operate on flat text — chunks of documents ranked by similarity. Knowledge graphs add a third dimension: **structured relationships between domain entities**.
+
+[Cognee](https://github.com/topoteretes/cognee) is an open-source AI memory platform that transforms raw data into persistent knowledge graphs using an ECL (Extract, Cognify, Load) pipeline. It combines vector search, graph databases, and LLM-powered entity extraction to build queryable knowledge structures.
+
+### Why Knowledge Graphs for Email Development
+
+Email development is inherently relational. "Outlook 2019 does not support CSS Grid" is not just a fact — it implies a fallback chain (use MSO conditional tables), affects component selection (avoid grid-based layouts for Outlook targets), and connects to dark mode behaviour (VML fallbacks don't inherit `prefers-color-scheme`). Flat RAG retrieves similar text. A knowledge graph traverses these connections.
+
+| Retrieval Type | What Agents Get | Example |
+|---------------|----------------|---------|
+| **Current (RAG chunks)** | 5 similar paragraphs about Outlook dark mode | "Outlook 2019 has limited dark mode support... CSS variables are not supported..." |
+| **With Knowledge Graph** | Structured entity chain with relationships | `Outlook 2019 → does_not_support → CSS_variables → fallback → MSO_conditional_VML → requires → VML_namespace_declaration` |
+
+### Integration Architecture
+
+Cognee runs alongside the existing RAG pipeline — additive, not replacement. Both search modes are available to agents.
+
+```
+Agent Query
+    ├── Existing: Hybrid Search (vector + fulltext + RRF + reranker)
+    │   └── Returns: ranked text chunks with citations
+    └── New: Graph Search (Cognee GRAPH_COMPLETION / TRIPLET_COMPLETION)
+        └── Returns: structured entity relationships (subject → predicate → object)
+```
+
+**Technology choices (decided):**
+- **Graph DB:** Kuzu (file-based — zero extra infrastructure, sub-millisecond traversals, stored in `DATA_ROOT_DIRECTORY`)
+- **Deployment:** Background worker pattern — graph search in-process, heavy `cognify()` operations via `DataPoller` background tasks with Redis queue
+- **Ontology:** Custom OWL file — full granularity (300+ CSS properties from Can I Email, all client versions, all rendering engines)
+
+### Implementation Layers
+
+#### 1. Graph Knowledge Provider
+Protocol-based adapter in `app/knowledge/graph/` wrapping Cognee's async API. Consistent with Hub's interface patterns. Configurable per environment.
+
+#### 2. Knowledge Graph Seeding
+Existing knowledge base documents (Can I Email data, email dev guides, client quirks from `make seed-knowledge`) processed through Cognee's ECL pipeline. Extracts entities and relationships automatically, grounded by the email development ontology.
+
+#### 3. Graph Context in Blueprint Nodes
+The blueprint engine's `_build_node_context()` queries the knowledge graph for structured relationships relevant to the current task. Agents receive entity chains alongside RAG chunks. Progressive disclosure ensures only relevant graph context is loaded (e.g., only query client compatibility when the task involves rendering).
+
+#### 4. Outcome Logging / Institutional Memory
+Completed blueprint run outcomes (QA verdicts, recovery paths, which patterns succeeded) feed back into Cognee. Over time, agents can query real outcome data: "What fixes have worked when QA fails for VML backgrounds?" — answered from institutional memory, not LLM guessing.
+
+#### 5. Per-Agent Domain SKILL.md Files
+Each agent gets a SKILL.md file following the Four Discipline structure (Section 5.4), with domain-specific rules grounded by the knowledge graph. Skills reference canonical entity types from the ontology for precise, consistent constraints. Versionable, updatable without code changes, benchmarkable via eval system.
+
+#### 6. Email Development Ontology
+OWL ontology defining canonical entity types for the email domain. Ensures Cognee's entity extraction produces consistent names ("Outlook 2019" and "Microsoft Outlook 2019" resolve to the same entity). Covers 20+ email clients, 50+ CSS properties, 5 rendering engines, and the component taxonomy from `app/components/`.
+
+### Impact on Agent Precision
+
+| Agent | Current Context | With Knowledge Graph |
+|-------|----------------|---------------------|
+| **Scaffolder** | RAG chunks about layout patterns | Structured compatibility chain for target clients + component metadata + proven patterns from past runs |
+| **Dark Mode** | RAG chunks about dark mode CSS | Entity graph: which clients support `prefers-color-scheme`, which need MSO overrides, which components already have dark variants |
+| **QA Gate** | Static check rules | Graph-informed checks: "this CSS property is unsupported in 3 of the 5 target clients" with specific fallback recommendations |
+| **Recovery Router** | Generic LLM-based recovery | Evidence-based: "this failure pattern was resolved by X in 8 of 10 previous runs" |
+
+### Four Disciplines Applied to Knowledge Graphs
+
+| Discipline | How Knowledge Graphs Help |
+|-----------|--------------------------|
+| **Prompt Craft** | Agent prompts reference verified entity relationships, not LLM training data. "Outlook 2019 does not support X" comes from the graph, not hallucination. |
+| **Context Engineering** | Graph traversal provides precisely the context chain needed — not "top 5 similar chunks" but "the specific compatibility path from this CSS property to this email client's fallback." |
+| **Intent Engineering** | Graph structure encodes trade-off relationships explicitly. Agents can traverse "if accessibility > file size, then prefer semantic HTML over image-based fallback" as graph paths. |
+| **Specification Engineering** | Ontology-defined entity types become the vocabulary for output specifications. Agent acceptance criteria reference canonical entities, not ambiguous free text. |
+
+### Graph-Driven Intelligence Layer (Phase 9)
+
+Once the core knowledge graph is operational (Phase 8), it becomes the foundation for a self-improving intelligence layer that connects every part of the Hub.
+
+#### Graph-Powered Client Audience Profiles
+
+The Test Persona Engine (Section 9.1) currently provides device/client context for previews. With the knowledge graph, persona selection triggers a graph traversal: `iPhone 15 + Apple Mail 18 + Dark Mode` → which CSS properties are safe → which components have tested dark mode variants → which workarounds are needed. Agents receive pre-filtered compatibility context *before generation*, eliminating the "generate → QA fail → retry" loop for known compatibility issues.
+
+#### Can I Email Live Sync
+
+The knowledge base is currently seeded once via `make seed-knowledge`. Can I Email updates their database regularly — new client versions, updated CSS support data. A periodic sync job pulls fresh data, diffs against existing graph entities, and updates automatically. Agents always work with current compatibility data without manual re-seeding. Configurable sync interval (weekly default).
+
+#### Component-to-Graph Bidirectional Linking
+
+When a component is created, updated, or QA-tested in `app/components/`, its graph entity updates automatically with: supported email clients (from QA test results), known quirks (from QA failures), dark mode variant status. The component browser UI shows graph-derived compatibility badges (green/amber/red per client). Agents using components get real test data, not just static descriptions.
+
+#### Failure Pattern Propagation Across Agents
+
+When any agent discovers a failure pattern (e.g., "Samsung Mail strips `color-scheme` meta tag"), it becomes a typed graph relationship: `Samsung_Mail_14 → strips → color-scheme_meta`. Every agent that subsequently touches Samsung Mail compatibility gets this knowledge automatically through graph context — no explicit cross-agent sharing logic needed. The graph's structure makes propagation inherent in the data model, implementing Section 5.6 Layer 6 (Cross-Agent Memory Sharing) more elegantly than memory entry replication.
+
+#### Client-Specific Subgraphs for Project Onboarding
+
+When a new project is created, the system auto-generates a project-specific subgraph from persona selections: target email clients → CSS support matrix → compatible components → known workarounds → historical outcomes from similar projects. This "compatibility brief" gives new developers instant context and provides agents with pre-loaded domain knowledge specific to the project's requirements.
+
+#### Graph-Informed Blueprint Route Selection
+
+The blueprint engine currently follows a fixed node sequence. With graph data about the target audience and template content, the engine dynamically adjusts: skip the Outlook Fixer node if no Microsoft clients in project personas, add an AMP validation node if the template contains AMP components, prioritise nodes based on audience coverage. Blueprints become adaptive to actual requirements rather than running every check for every template.
+
+#### Competitive Intelligence Graph
+
+Extending the ontology to include competitor capabilities (Stripo, Parcel, Chamaileon — Section 15.4) lets the Innovation Agent answer: "Is this technique feasible for the client's audience AND do competitors support it?" This powers the capability reports described in Section 12.2 with structured, graph-backed data instead of manual research.
+
+#### SKILL.md A/B Testing
+
+When the skill growth system (Phase 8, Layer 5) proposes a SKILL.md update, it runs through the eval suite twice — current version vs proposed update — comparing per-criterion pass rates. Only updates that perform equal or better get recommended for merge. This closes the full loop: knowledge graph → skill proposal → eval validation → merge. Fully evidence-based skill evolution with zero risk of regression.
+
+### The Compound Effect: Graph + Memory + Harness
+
+The knowledge graph (Phase 8), agent memory (Section 5.6), and agent harness (Section 5.7) compound multiplicatively:
+
+| Layer | Individual Value | Compound Value with Graph |
+|-------|-----------------|--------------------------|
+| **RAG Knowledge Base** | Similar text chunks | + Structured entity relationships + compatibility chains |
+| **Agent Memory** | Learned facts per agent | + Graph-propagated knowledge across all agents automatically |
+| **Agent Harness** | Bounded self-correction | + Graph-informed routing (skip/add nodes) + evidence-based recovery |
+| **Eval System** | Pass/fail metrics | + Skill evolution proposals + A/B tested prompt improvements |
+| **Component Library** | Versioned components | + Live compatibility badges from QA graph data |
+| **Test Personas** | Device/client preview | + Pre-filtered compatibility context eliminates known failures before generation |
+| **Blueprint Engine** | Fixed node sequence | + Adaptive routing based on audience + structured inter-agent context |
+
+This is the infrastructure-level implementation of the compound innovation effect described in Section 12.6 — every interaction makes every subsequent interaction more informed, more precise, and less error-prone.
+
+### Relationship to Phase 7
+
+Phase 7 (Agent Capability Improvements) builds the infrastructure that Phase 8 leverages:
+- **7.1 Structured Handoffs** — Graph context flows through handoff schemas between agents
+- **7.3 Confidence Scoring** — Graph-backed agents score higher confidence (grounded in verified knowledge)
+- **7.4 Component Context** — Component metadata enriched by graph relationships (known quirks, compatibility chains)
+- **7.2 Eval-Informed Prompts** — Failure patterns from evals feed into the graph, closing the learning loop
+
+Phase 8 should be implemented after Phase 7's infrastructure is in place, so every integration point is available from day one. Phase 9 extends the graph across the entire Hub once Phase 8 is operational.
+
 ## 5.7 Agent Harness Architecture
 
 > "The model is the engine. The harness is the car. Nobody buys an engine."
@@ -1277,6 +1409,9 @@ This is the core value proposition: the Hub ensures that no innovation is ever a
 | **4: QA System** | Weeks 11-12 | Litmus/EoA API integration, cross-client test automation, fallback verification engine, gate system | Litmus/EoA license, Phase 1 |
 | **5: Connectors** | Weeks 13-15 | Braze connector, SFMC connector, Taxi connector, raw HTML export, deployment history | Platform API credentials, Phase 1 |
 | **6: Polish & Launch** | Weeks 16-18 | Full UI polish, documentation, team onboarding, performance optimisation, security audit | All phases, pen test |
+| **7: Agent Capability** | Post-V1 | Structured handoff schemas, confidence scoring, component context, eval-informed prompts | Phase 5 evals (partial), Phase 6 |
+| **8: Knowledge Graph (Cognee)** | Post-Phase 7 | Cognee integration, knowledge graph seeding, graph context for agents, outcome logging, per-agent SKILL.md files, email ontology | Phase 7 infrastructure |
+| **9: Graph Intelligence** | Post-Phase 8 | Persona-graph profiles, Can I Email live sync, component-graph linking, failure propagation, project subgraphs, adaptive blueprints, competitive intelligence, SKILL.md A/B testing | Phase 8 operational |
 
 Total estimated timeline: 18 weeks (4.5 months) to V1 with core functionality. **V1 has been delivered.** Additional connectors and advanced AI agents are being added incrementally post-launch.
 
@@ -1694,7 +1829,7 @@ The bottlenecks AI won't shortcut:
 
 **Sprint 3 (1–2 weeks):** ✅ Client approval portal (viewer login, approve/reject workflow, version comparison, notifications, audit trail), rendering intelligence dashboard, polish and deployment. Complete V1 — clients can log in for approvals, QA data is visible, and the team has a tool they want to use daily.
 
-With V1 delivered and the majority of V2 features complete — Figma sync, additional ESP connectors, AI image generation, Litmus/EoA rendering integration, collaborative editing, localisation, brand guardrails, visual Liquid builder, and client brief integration — the remaining work is the 6 additional AI agents (task 4.1) and the agent evaluation pipeline (Phase 5). The foundation is in place and the platform grows organically with each new capability.
+With V1 delivered and the majority of V2 features complete — Figma sync, additional ESP connectors, AI image generation, Litmus/EoA rendering integration, collaborative editing, localisation, brand guardrails, visual Liquid builder, and client brief integration — the remaining work is the 6 additional AI agents (task 4.1), the agent evaluation pipeline (Phase 5), agent capability improvements (Phase 7: handoff schemas, confidence scoring, component context), the knowledge graph integration (Phase 8: Cognee-powered structured knowledge, per-agent SKILL.md files, email development ontology), and the graph-driven intelligence layer (Phase 9: persona-graph profiles, Can I Email live sync, component-graph linking, adaptive blueprints, competitive intelligence, SKILL.md A/B testing). The foundation is in place and the platform grows organically with each new capability.
 
 ---
 

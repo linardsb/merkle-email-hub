@@ -58,3 +58,8 @@ index.html
 pitch.html
 sections-private.js
 pricing.md
+
+# Eval traces (may contain LLM outputs)
+traces/*.jsonl
+traces/*.json
+!traces/baseline.json

@@ -5,7 +5,7 @@ Invoke the global E2ETesting skill's SecurityAudit workflow.
 ## Project Context
 
 - **API base**: `http://localhost:8891/api/v1`
-- **Auth**: JWT RS256, 15-min access + 7-day refresh tokens, Redis blocklist
+- **Auth**: JWT HS256, 15-min access + 7-day refresh tokens, Redis blocklist
 - **Rate limits**: 20 req/min AI chat, 5 req/min generation, general per-endpoint limits
 - **Demo credentials**: admin / demo123
 

@@ -15,7 +15,6 @@ import asyncio
 import json
 import time
 from pathlib import Path
-from typing import Any
 
 from app.ai.agents.evals.schemas import BlueprintEvalTrace
 
@@ -132,6 +131,8 @@ async def run_blueprint_eval(
 async def run_all_blueprints(
     briefs: list[dict[str, str]],
     output_path: Path,
+    *,
+    dry_run: bool = False,
 ) -> list[BlueprintEvalTrace]:
     """Run all blueprint test briefs sequentially and write JSONL traces."""
     traces: list[BlueprintEvalTrace] = []
@@ -141,25 +142,33 @@ async def run_all_blueprints(
     with output_path.open("w") as f:
         for brief_def in briefs:
             print(f"  Running {brief_def['id']}: {brief_def['name']}...", flush=True)
-            trace = await run_blueprint_eval(
-                brief=brief_def["brief"],
-                brief_id=brief_def["id"],
-            )
+
+            if dry_run:
+                from app.ai.agents.evals.mock_traces import generate_mock_blueprint_trace
+
+                trace_dict = generate_mock_blueprint_trace(brief_def)
+                trace = BlueprintEvalTrace(**trace_dict)
+            else:
+                trace = await run_blueprint_eval(
+                    brief=brief_def["brief"],
+                    brief_id=brief_def["id"],
+                )
+                trace_dict = {
+                    "run_id": trace.run_id,
+                    "blueprint_name": trace.blueprint_name,
+                    "brief": trace.brief,
+                    "total_steps": trace.total_steps,
+                    "total_retries": trace.total_retries,
+                    "qa_passed": trace.qa_passed,
+                    "final_html_length": trace.final_html_length,
+                    "total_tokens": trace.total_tokens,
+                    "elapsed_seconds": trace.elapsed_seconds,
+                    "node_trace": trace.node_trace,
+                    "error": trace.error,
+                }
+
             traces.append(trace)
 
-            trace_dict: dict[str, Any] = {
-                "run_id": trace.run_id,
-                "blueprint_name": trace.blueprint_name,
-                "brief": trace.brief,
-                "total_steps": trace.total_steps,
-                "total_retries": trace.total_retries,
-                "qa_passed": trace.qa_passed,
-                "final_html_length": trace.final_html_length,
-                "total_tokens": trace.total_tokens,
-                "elapsed_seconds": trace.elapsed_seconds,
-                "node_trace": trace.node_trace,
-                "error": trace.error,
-            }
             f.write(json.dumps(trace_dict) + "\n")
             f.flush()
 
@@ -204,7 +213,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run blueprint pipeline evals")
     parser.add_argument("--output", required=True, help="Path to write JSONL traces")
     parser.add_argument("--brief", help="Single brief to run (instead of all test briefs)")
+    parser.add_argument("--dry-run", action="store_true", help="Generate mock traces without LLM")
+    parser.add_argument("--provider", type=str, default=None, help="Override AI provider")
+    parser.add_argument("--model", type=str, default=None, help="Override model")
     args = parser.parse_args()
+
+    if args.provider or args.model:
+        import os
+
+        from app.core.config import get_settings
+
+        if args.provider:
+            os.environ["AI__PROVIDER"] = args.provider
+        if args.model:
+            os.environ["AI__MODEL"] = args.model
+        get_settings.cache_clear()
 
     output_path = Path(args.output)
 
@@ -213,8 +236,9 @@ def main() -> None:
     else:
         briefs = BLUEPRINT_TEST_BRIEFS
 
-    print(f"Running {len(briefs)} blueprint eval(s)...")
-    traces = asyncio.run(run_all_blueprints(briefs, output_path))
+    mode_label = " (dry-run)" if args.dry_run else ""
+    print(f"Running {len(briefs)} blueprint eval(s){mode_label}...")
+    traces = asyncio.run(run_all_blueprints(briefs, output_path, dry_run=args.dry_run))
     print_summary(traces)
     print(f"\nTraces: {output_path}")
 

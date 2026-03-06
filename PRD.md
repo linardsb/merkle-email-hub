@@ -3,9 +3,9 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 3.0
+**Version:** 3.2
 **Date:** 2026-03-06
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 5.4-5.8 eval tooling built (49 unit tests); Phase 6 BOLA + response hardening + rate limiting done (6.1.1–6.1.9, 6.2.1–6.2.3, 6.3.1–6.3.4, 57 security/resource tests); remaining: 4.1 (6 agents), Phase 5.4-5.8 execution (requires LLM + human labels), Phase 6.4 (business logic)
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 5.4-5.8 eval tooling + dry-run pipeline (58 unit tests); Phase 6 OWASP security hardening complete (6.1–6.4, 99 security/resource tests); remaining: 4.1 (6 agents), Phase 5.4-5.8 live execution (requires LLM + human labels)
 
 ---
 
@@ -52,15 +52,14 @@
 | 4.13 (Phase 1) | Blueprint State Machine engine | `app/ai/blueprints/` module: `BlueprintEngine` state machine interleaving deterministic and agentic nodes; `BlueprintNode` protocol with progressive context hydration; bounded self-correction (max 2 rounds) with `BlueprintEscalatedError`; 6 node implementations (ScaffolderNode, DarkModeNode, QAGateNode, MaizzleBuildNode, ExportNode, RecoveryRouterNode); campaign blueprint definition with conditional edge routing; `POST /api/v1/blueprints/run` with auth + rate limiting; `BlueprintService` with blueprint registry; 27 unit tests |
 | 4.2 | Additional CMS connectors | `ConnectorProvider` Protocol in `app/connectors/protocol.py` for type-safe dispatch; `SUPPORTED_CONNECTORS` registry with lazy instantiation; 3 new packages: `app/connectors/sfmc/` (SFMC Content Areas), `app/connectors/adobe/` (Adobe Campaign delivery fragments), `app/connectors/taxi/` (Taxi Syntax-wrapped templates); each with schemas + service; demo mutation resolver updated for per-connector mock IDs; 16 unit tests (304 total) |
 | 4.4 | Litmus / Email on Acid API integration | **Backend:** `app/rendering/` VSA module with `RenderingProvider` Protocol; Litmus + EoA provider implementations (placeholder APIs); `RenderingTest` + `RenderingScreenshot` models; visual regression comparison with per-client diff percentages (2% threshold); `CircuitBreaker` for external API resilience; `RenderingConfig` with provider/API key/polling settings; 4 REST endpoints (`/api/v1/rendering/`): submit, list, get, compare; auth + rate limiting; 12 unit tests (316 total). **Frontend:** `/renderings` page with 6 components aligned to backend schemas; `RenderingTestDialog` with HTML input + async polling progress bar; `RenderingTestList` with expand/collapse screenshot grid; `ClientCompatibilityMatrix` derived from test data; `RenderingScreenshotDialog` with os/category metadata; `VisualRegressionDialog` for side-by-side comparison via `POST /compare`; `RenderingStatsCards` with completion rate + problematic clients; `RenderingSummaryCard` on intelligence dashboard; pagination controls; 5 SWR hooks; demo data aligned |
+| 6.1–6.4 | OWASP API Security Hardening (complete) | BOLA fixes across 8 modules (6.1); error sanitizer + LLM circuit breaker (6.2); per-user Redis quota, WS limits, stream timeout, blueprint cost cap (6.3); approval state machine, JWT HS256 pinning, nh3 HTML sanitizer (6.4); 99 security tests |
 | 4.5 | Advanced features (6 features) | **F1 Collaborative Editing:** Yjs CRDT + y-codemirror.next, `useCollaboration` hook, demo mode simulated collaborator, `CollaboratorAvatars` + `ConnectionStatus` components. **F2 Localisation:** 6 locale stubs (en/ar/de/es/fr/ja), cookie-based `NEXT_LOCALE` switching, RTL `dir` attribute, `/settings` page with `LocaleSelector`, `/settings/translations` management table. **F3 Brand Guardrails:** `/projects/[id]/brand` settings page, `BrandColorEditor`/`BrandTypographyEditor`/`BrandLogoRules`/`BrandForbiddenPatterns` components, CodeMirror `brandLinter` extension, toolbar violations badge. **F4 AI Image Generation:** `ImageGenDialog` (40rem) with style presets grid (6 presets), image gallery, insert `<img>` at cursor; demo picsum.photos placeholders. **F5 Visual Liquid Builder:** @dnd-kit drag-and-drop, regex Liquid parser/serializer, 5 block types (if/for/assign/output/raw), Code/Visual tab switching in `editor-panel.tsx`, live preview with sample data. **F6 Client Briefs:** `/briefs` page mirroring Figma architecture, Jira/Asana/Monday.com connection cards, brief items panel, import-to-project flow. |
 
 ### In Progress
 
-**Phase 6 — OWASP API Security Hardening** (audit 2026-03-06). BOLA fixes complete (6.1.1–6.1.9): `verify_project_access()` added to projects, approvals (all 7 endpoints), connectors, QA engine, rendering, WebSocket streaming, and AI agents. Knowledge module already role-gated. 16 BOLA security tests added across 5 modules. Frontend `project_id` threading done (`use-chat.ts`, `chat-panel.tsx`). Response hardening complete (6.2.1–6.2.3): centralized error sanitizer (`app/core/error_sanitizer.py`), LLM circuit breaker (`_ResilientLLMProvider`), all exception handlers return generic messages/types, 21 sanitizer unit tests. Rate limiting & resource controls complete (6.3.1–6.3.4): per-user Redis-backed AI quota (`app/core/quota.py`), per-user WebSocket connection limit (max 5), LLM streaming timeout (120s with `finish_reason: "timeout"`), blueprint daily token cost cap (500k tokens/user/day), 20 unit tests. Remaining: business logic hardening (6.4).
+**Phase 5.4-5.8 — Eval Loop Tooling** built with dry-run pipeline. CLI tools for error analysis, judge calibration, QA gate calibration, blueprint pipeline eval, and regression detection. All CLIs support `--dry-run` flag with deterministic mock generators (`mock_traces.py`). `make eval-dry-run` exercises the full pipeline without LLM. 58 unit tests across 6 test files. Live execution requires LLM provider config + human labeling effort.
 
-**Phase 5.4-5.8 — Eval Loop Tooling** built but not yet executed. CLI tools for error analysis (`error_analysis.py`), judge calibration (`calibration.py` + `scaffold_labels.py`), QA gate calibration (`qa_calibration.py`), blueprint pipeline eval (`blueprint_eval.py` with 5 test briefs), and regression detection (`regression.py` + `make eval-check`). 49 unit tests across 5 test files. Execution requires LLM provider config + human labeling effort.
-
-**Remaining:** V2 task 4.1 (6 remaining AI agents). Phase 5.4-5.8 execution (run traces, collect labels, calibrate). Phase 6.4 (business logic hardening: approval state machine, JWT algorithm, LLM output sanitizer).
+**Remaining:** V2 task 4.1 (6 remaining AI agents). Phase 5.4-5.8 live execution (run with real LLM, collect human labels, calibrate).
 
 ### Infrastructure Built
 
@@ -68,11 +67,11 @@
 - **Frontend:** Next.js 16 monorepo with next-intl (6 locales with cookie-based switching, RTL support), auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations, Yjs CRDT collaborative editing, @dnd-kit visual Liquid builder
 - **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 20 domain-specific hooks
-- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; Blueprint state machine engine for multi-node orchestration with self-correction; Eval loop tooling (error analysis, judge/QA calibration, blueprint eval, regression detection)
+- **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; Blueprint state machine engine for multi-node orchestration with self-correction; Eval loop tooling with dry-run pipeline (error analysis, judge/QA calibration, blueprint eval, regression detection; `make eval-dry-run`); baseline establishment workflow (`make eval-baseline`); human labeling guide (`docs/eval-labeling-guide.md`)
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (440 tests, incl. 16 BOLA security tests + 21 error sanitizer tests + 49 eval tooling tests + 20 rate limiting/resource control tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (490 tests, incl. 16 BOLA security tests + 21 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests); Frontend Vitest + React Testing Library (`make test-fe`)
 - **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6
 
 ---
@@ -138,7 +137,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 
 **API:** `/api/v1/projects`, `/api/v1/orgs`
 
-- JWT authentication with RS256 signing
+- JWT authentication with HS256 signing
 - RBAC roles: `admin`, `developer`, `viewer`
 - Client-level data isolation (developers see only assigned clients)
 - Project workspace scoping with team assignments
@@ -416,7 +415,7 @@ The Hub's AI agents are not stateless tools — they learn, remember, and compou
 
 ### 5.3 Security & Compliance
 
-- JWT RS256 authentication; no plaintext passwords
+- JWT HS256 authentication; no plaintext passwords
 - AES-256 encryption for API credentials at rest
 - Rate limiting per user and endpoint
 - GDPR: Zero PII; anonymised AI logs (90-day retention)
@@ -446,7 +445,7 @@ The Hub's AI agents are not stateless tools — they learn, remember, and compou
 |-------|-----------|-----------|
 | Backend | FastAPI + async SQLAlchemy + PostgreSQL + Redis | Open-source, high-performance async API |
 | Frontend | Next.js 16 + React 19 + Tailwind CSS + shadcn/ui | Modern stack; no library lock-in |
-| Auth | JWT RS256 + RBAC | In-house; no Auth0 dependency |
+| Auth | JWT HS256 + RBAC | In-house; no Auth0 dependency |
 | AI | Local LLMs (Ollama/vLLM) + Claude/GPT-4o APIs | Hybrid: 70% local (free) / 30% cloud |
 | Email Build | Maizzle (primary) | Full HTML control; Tailwind-native |
 | Vector Search | pgvector (PostgreSQL) | Open-source; no Pinecone fees |

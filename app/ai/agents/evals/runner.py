@@ -176,7 +176,14 @@ async def run_content_case(case: dict[str, Any]) -> dict[str, Any]:
         }
 
 
-async def run_agent(agent: str, output_dir: Path) -> None:
+async def run_agent(
+    agent: str,
+    output_dir: Path,
+    *,
+    dry_run: bool = False,
+    batch_size: int = 5,
+    delay: float = 3.0,
+) -> None:
     """Run all test cases for an agent and write traces to JSONL."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -195,15 +202,27 @@ async def run_agent(agent: str, output_dir: Path) -> None:
         raise ValueError(f"Unknown agent: {agent}")
 
     output_file = output_dir / f"{agent}_traces.jsonl"
-    print(f"Running {len(cases)} test cases for {agent}...")
+    mode_label = " (dry-run)" if dry_run else ""
+    print(f"Running {len(cases)} test cases for {agent}{mode_label}...")
 
     traces = []
-    for i, case in enumerate(cases, 1):
-        print(f"  [{i}/{len(cases)}] {case['id']}...", end=" ", flush=True)
-        trace = await runner(case)
-        traces.append(trace)
-        status = "OK" if trace["error"] is None else f"ERROR: {trace['error']}"
-        print(f"{status} ({trace['elapsed_seconds']}s)")
+    if dry_run:
+        from app.ai.agents.evals.mock_traces import generate_mock_trace
+
+        for i, case in enumerate(cases, 1):
+            print(f"  [{i}/{len(cases)}] {case['id']}... (dry-run)")
+            trace = generate_mock_trace(case, agent)
+            traces.append(trace)
+    else:
+        for i, case in enumerate(cases, 1):
+            print(f"  [{i}/{len(cases)}] {case['id']}...", end=" ", flush=True)
+            trace = await runner(case)
+            traces.append(trace)
+            status = "OK" if trace["error"] is None else f"ERROR: {trace['error']}"
+            print(f"{status} ({trace['elapsed_seconds']}s)")
+            if (i % batch_size == 0) and i < len(cases):
+                print(f"  Rate limit pause ({delay}s)...", flush=True)
+                await asyncio.sleep(delay)
 
     with Path.open(output_file, "w") as f:
         for trace in traces:
@@ -221,12 +240,25 @@ async def main() -> None:
         required=True,
     )
     parser.add_argument("--output", type=Path, default=Path("traces"))
+    parser.add_argument("--dry-run", action="store_true", help="Generate mock traces without LLM")
+    parser.add_argument(
+        "--batch-size", type=int, default=5, help="Traces per batch before delay (default: 5)"
+    )
+    parser.add_argument(
+        "--delay", type=float, default=3.0, help="Seconds between batches (default: 3.0)"
+    )
     args = parser.parse_args()
 
     agents = ["scaffolder", "dark_mode", "content"] if args.agent == "all" else [args.agent]
 
     for agent in agents:
-        await run_agent(agent, args.output)
+        await run_agent(
+            agent,
+            args.output,
+            dry_run=args.dry_run,
+            batch_size=args.batch_size,
+            delay=args.delay,
+        )
 
 
 if __name__ == "__main__":
