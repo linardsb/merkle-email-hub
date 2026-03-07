@@ -94,11 +94,13 @@ async def invalid_credentials_handler(request: Request, exc: AppError) -> JSONRe
         "auth.invalid_credentials",
         extra={"path": request.url.path, "method": request.method},
     )
+    from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
+
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={
-            "error": str(exc) or "Invalid email or password",
-            "type": "InvalidCredentialsError",
+            "error": get_safe_error_message(exc),
+            "type": get_safe_error_type(exc),
         },
     )
 
@@ -109,11 +111,13 @@ async def account_locked_handler(request: Request, exc: AppError) -> JSONRespons
         "auth.account_locked",
         extra={"path": request.url.path, "method": request.method},
     )
+    from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
+
     return JSONResponse(
         status_code=status.HTTP_423_LOCKED,
         content={
-            "error": str(exc) or "Account is temporarily locked",
-            "type": "AccountLockedError",
+            "error": get_safe_error_message(exc),
+            "type": get_safe_error_type(exc),
         },
     )
 

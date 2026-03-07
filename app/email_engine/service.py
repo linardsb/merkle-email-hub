@@ -12,6 +12,7 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.models import User
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.email_engine.exceptions import BuildFailedError, BuildServiceUnavailableError
@@ -77,12 +78,18 @@ class EmailEngineService:
         logger.info("email_engine.build_completed", build_id=build.id, status=build.status)
         return BuildResponse.model_validate(build)
 
-    async def get_build(self, build_id: int) -> BuildResponse:
-        """Get a build by ID."""
+    async def get_build(self, build_id: int, user: User) -> BuildResponse:
+        """Get a build by ID. Verifies user has access to the build's project."""
         result = await self.db.execute(select(EmailBuild).where(EmailBuild.id == build_id))
         build = result.scalar_one_or_none()
         if not build:
             raise BuildFailedError(f"Build {build_id} not found")
+
+        from app.projects.service import ProjectService
+
+        project_service = ProjectService(self.db)
+        await project_service.verify_project_access(build.project_id, user)
+
         return BuildResponse.model_validate(build)
 
     async def preview(self, data: PreviewRequest) -> PreviewResponse:

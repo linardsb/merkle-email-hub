@@ -117,6 +117,13 @@ def get_safe_error_type(exc: Exception) -> str:
     if isinstance(exc, ServiceUnavailableError):
         return "service_unavailable"
 
+    # Auth errors — check by class name to avoid circular imports
+    exc_name = type(exc).__name__
+    if exc_name == "InvalidCredentialsError":
+        return "authentication_error"
+    if exc_name == "AccountLockedError":
+        return "account_locked"
+
     # AI errors — check by module to avoid circular imports
     exc_module = type(exc).__module__ or ""
     if "ai" in exc_module or "blueprint" in exc_module:

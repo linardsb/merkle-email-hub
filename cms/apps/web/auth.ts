@@ -20,6 +20,17 @@ interface TokenPair {
   username: string;
 }
 
+function getExpFromToken(token: string): number {
+  try {
+    const parts = token.split(".");
+    if (!parts[1]) return Date.now() + 15 * 60 * 1000;
+    const payload = JSON.parse(atob(parts[1]));
+    return (payload.exp as number) * 1000;
+  } catch {
+    return Date.now() + 15 * 60 * 1000; // conservative fallback
+  }
+}
+
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
@@ -37,7 +48,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       ...token,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
-      accessTokenExpires: Date.now() + 14 * 60 * 1000,
+      accessTokenExpires: getExpFromToken(data.access_token),
       role: VALID_ROLES.includes(data.role as AppRole) ? data.role : "viewer",
     };
   } catch {
@@ -115,11 +126,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         return {
           ...token,
-          accessToken: (user as any).accessToken,
-          refreshToken: (user as any).refreshToken,
-          role: (user as any).role,
-          userId: (user as any).id,
-          accessTokenExpires: Date.now() + 14 * 60 * 1000,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+          role: user.role,
+          userId: user.id,
+          accessTokenExpires: getExpFromToken(user.accessToken),
         };
       }
 

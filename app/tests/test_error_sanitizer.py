@@ -114,3 +114,13 @@ class TestGetSafeErrorType:
         from app.projects.exceptions import ProjectAccessDeniedError
 
         assert get_safe_error_type(ProjectAccessDeniedError("x")) == "forbidden"
+
+    def test_invalid_credentials_returns_authentication_error(self) -> None:
+        from app.auth.exceptions import InvalidCredentialsError
+
+        assert get_safe_error_type(InvalidCredentialsError("x")) == "authentication_error"
+
+    def test_account_locked_returns_account_locked(self) -> None:
+        from app.auth.exceptions import AccountLockedError
+
+        assert get_safe_error_type(AccountLockedError("x")) == "account_locked"

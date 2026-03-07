@@ -1,12 +1,14 @@
 """REST API routes for agent memory."""
 
 from fastapi import APIRouter, Depends
+from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
 from app.auth.models import User
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.rate_limit import limiter
 from app.knowledge.embedding import get_embedding_provider
 from app.memory.schemas import (
     MemoryCreate,
@@ -27,7 +29,9 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> MemoryService:  # noqa: 
 
 
 @router.post("/", response_model=MemoryResponse, status_code=201)
+@limiter.limit("10/minute")
 async def store_memory(
+    request: Request,  # noqa: ARG001
     data: MemoryCreate,
     _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
     service: MemoryService = Depends(_get_service),  # noqa: B008
@@ -38,7 +42,9 @@ async def store_memory(
 
 
 @router.post("/search", response_model=list[MemoryResponse])
+@limiter.limit("30/minute")
 async def search_memories(
+    request: Request,  # noqa: ARG001
     data: MemorySearch,
     _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
     service: MemoryService = Depends(_get_service),  # noqa: B008
@@ -60,7 +66,9 @@ async def search_memories(
 
 
 @router.get("/{memory_id}", response_model=MemoryResponse)
+@limiter.limit("30/minute")
 async def get_memory(
+    request: Request,  # noqa: ARG001
     memory_id: int,
     _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
     service: MemoryService = Depends(_get_service),  # noqa: B008
@@ -71,7 +79,9 @@ async def get_memory(
 
 
 @router.delete("/{memory_id}", status_code=204)
+@limiter.limit("10/minute")
 async def delete_memory(
+    request: Request,  # noqa: ARG001
     memory_id: int,
     _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
     service: MemoryService = Depends(_get_service),  # noqa: B008
@@ -81,7 +91,9 @@ async def delete_memory(
 
 
 @router.post("/promote", response_model=MemoryResponse, status_code=201)
+@limiter.limit("10/minute")
 async def promote_dcg_note(
+    request: Request,  # noqa: ARG001
     data: MemoryPromote,
     _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
     service: MemoryService = Depends(_get_service),  # noqa: B008

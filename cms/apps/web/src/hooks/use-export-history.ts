@@ -25,12 +25,33 @@ function subscribe(callback: () => void) {
   };
 }
 
+function isValidRecord(item: unknown): item is ExportHistoryRecord {
+  if (typeof item !== "object" || item === null) return false;
+  const r = item as Record<string, unknown>;
+  return (
+    typeof r.local_id === "string" &&
+    typeof r.platform === "string" &&
+    typeof r.name === "string" &&
+    typeof r.status === "string" &&
+    typeof r.created_at === "string"
+  );
+}
+
 function getSnapshot(): ExportHistoryRecord[] {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw === cachedRaw) return cachedParsed;
     cachedRaw = raw;
-    cachedParsed = raw ? (JSON.parse(raw) as ExportHistoryRecord[]) : EMPTY;
+    if (!raw) {
+      cachedParsed = EMPTY;
+      return cachedParsed;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      cachedParsed = EMPTY;
+      return cachedParsed;
+    }
+    cachedParsed = parsed.filter(isValidRecord);
     return cachedParsed;
   } catch {
     return EMPTY;

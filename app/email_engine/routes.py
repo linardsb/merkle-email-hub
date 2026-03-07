@@ -38,11 +38,11 @@ async def get_build(
     request: Request,
     build_id: int,
     service: EmailEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> BuildResponse:
     """Get a build by ID."""
     _ = request
-    return await service.get_build(build_id)
+    return await service.get_build(build_id, current_user)
 
 
 @router.post("/preview", response_model=PreviewResponse)
