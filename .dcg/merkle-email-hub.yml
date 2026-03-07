@@ -1,0 +1,136 @@
+schema_version: 1
+id: merkle.email_hub
+name: Merkle Email Hub Database Protection
+version: 1.0.0
+description: >
+  Prevents accidental database destruction in the merkle-email-hub project.
+  Catches Alembic downgrades, raw SQL deletions, and production-targeting commands.
+
+keywords:
+  - alembic
+  - downgrade
+  - DROP
+  - TRUNCATE
+  - DELETE
+  - dropdb
+  - pg_dump
+  - merkle_email_hub
+  - psql
+  - shutil.rmtree
+
+destructive_patterns:
+  - name: alembic-downgrade
+    pattern: alembic\s+downgrade
+    severity: critical
+    description: Alembic downgrade can drop tables and destroy data
+    explanation: |
+      Running 'alembic downgrade' reverses migrations which may DROP TABLE,
+      remove columns, or delete seed data. This is irreversible without a backup.
+
+      Use the safe wrapper script instead:
+        ./scripts/safe_alembic.sh downgrade <revision> --i-know-what-i-am-doing
+    suggestions:
+      - command: ./scripts/safe_alembic.sh downgrade <revision> --i-know-what-i-am-doing
+        description: Safe wrapper that creates a backup before downgrading
+        platform: all
+
+  - name: alembic-stamp-base
+    pattern: alembic\s+stamp\s+base
+    severity: critical
+    description: Stamping to base marks all migrations as unapplied without actually running downgrades
+    explanation: |
+      'alembic stamp base' resets the migration tracking without reverting changes.
+      This causes the DB schema and migration state to diverge, which can lead to
+      data loss on the next upgrade attempt.
+
+  - name: drop-merkle-db
+    pattern: (?i)(DROP\s+DATABASE|dropdb)\s+.*merkle
+    severity: critical
+    description: Dropping the merkle_email_hub database destroys all data
+    explanation: |
+      This will permanently delete the entire merkle_email_hub database
+      including all users, documents, templates, components, and knowledge base data.
+
+  - name: truncate-app-tables
+    pattern: (?i)TRUNCATE\s+(?:TABLE\s+)?(?:users|items|documents|tags|components|templates|projects|client_orgs|document_chunks|approval_requests|email_builds|personas|qa_results)
+    severity: critical
+    description: TRUNCATE on application tables destroys all rows instantly
+    explanation: |
+      TRUNCATE removes all rows from a table without logging individual row
+      deletions. It cannot be rolled back and bypasses foreign key checks
+      in some configurations.
+    suggestions:
+      - command: "DELETE FROM <table> WHERE <condition>"
+        description: Use DELETE with a WHERE clause to remove specific rows
+        platform: all
+
+  - name: delete-without-where-app-tables
+    pattern: (?i)DELETE\s+FROM\s+(?:users|items|documents|tags|components|templates|projects|client_orgs|document_chunks)\s*(?:;|$)
+    severity: high
+    description: DELETE without WHERE clause removes all rows from the table
+    explanation: |
+      A DELETE statement without a WHERE clause will remove every row in the table.
+      This is almost never intentional. Add a WHERE clause to target specific records.
+    suggestions:
+      - command: "DELETE FROM <table> WHERE id = <specific_id>"
+        description: Delete specific records with a WHERE clause
+        platform: all
+
+  - name: psql-production
+    pattern: psql\s+.*(?:prod|production|merkle-email-hub-prod)
+    severity: high
+    description: Direct psql connection to production database
+    explanation: |
+      Connecting directly to the production database via psql bypasses
+      application-level protections (soft deletes, RLS, audit logging).
+      Use the application API or a read-only replica for queries.
+    suggestions:
+      - command: "psql -h <host> -U readonly_user -d merkle_email_hub_prod"
+        description: Connect with a read-only user instead
+        platform: all
+
+  - name: pg-dump-clean-merkle
+    pattern: pg_dump\s+.*(?:--clean|-c\b).*merkle
+    severity: high
+    description: pg_dump --clean adds DROP statements that destroy data on restore
+    explanation: |
+      The --clean flag adds DROP TABLE/DROP SCHEMA commands to the dump file.
+      Restoring this dump will destroy existing data before recreating tables.
+      Use pg_dump without --clean for safe backups.
+    suggestions:
+      - command: ./scripts/backup_db.sh
+        description: Use the project backup script (no --clean flag)
+        platform: all
+
+  - name: shutil-rmtree-data
+    pattern: shutil\.rmtree\s*\(\s*['"](data|backups|documents)
+    severity: high
+    description: Removing data directories destroys stored files
+    explanation: |
+      shutil.rmtree on data directories (data/, backups/, documents/) will
+      permanently delete stored document files, backups, and knowledge base assets.
+
+safe_patterns:
+  - name: alembic-upgrade
+    pattern: alembic\s+upgrade
+    description: Alembic upgrades are safe (additive migrations)
+
+  - name: alembic-info-commands
+    pattern: alembic\s+(?:current|history|heads|branches|show)
+    description: Alembic informational commands are safe
+
+  - name: safe-alembic-wrapper
+    pattern: safe_alembic\.sh
+    description: The safe wrapper handles downgrades with backup
+
+  - name: backup-script
+    pattern: backup_db\.sh
+    description: Running the backup script is always safe
+
+  - name: pg-dump-safe
+    pattern: pg_dump\s+(?!.*(?:--clean|-c\b))
+    description: pg_dump without --clean is a safe backup operation
+
+  - name: delete-with-where
+    pattern: (?i)DELETE\s+FROM\s+\w+\s+WHERE\s+
+    description: DELETE with WHERE clause targets specific records
