@@ -26,7 +26,7 @@ make dev-be          # Backend only
 make dev-fe          # Frontend only
 
 # Quality checks — all in one
-make check           # All checks: backend (lint + types + tests) + frontend (types + tests)
+make check           # All checks: backend (lint + types + tests + security) + frontend (types + tests)
 
 # Backend checks
 make test            # Backend unit tests (pytest)
@@ -230,6 +230,8 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - **AI rate limits**: 20 req/min per user for chat, 5 req/min for generation. Per-user daily quota via Redis (`app/core/quota.py`). Stream timeout 120s. Blueprint daily token cap 500k.
 - **WebSocket limits**: Global 100 connections + per-user 5 connections (`app/streaming/manager.py`).
 - **LLM output sanitization**: `nh3` (Rust-based) allowlist HTML sanitizer in `app/ai/shared.py`. Preserves email HTML (tables, styles, MSO comments). Approval state machine prevents invalid transitions.
+- **Error sanitization**: `get_safe_error_message()` / `get_safe_error_type()` in `app/core/error_sanitizer.py`. All exception handlers (including auth) use sanitized messages — never leak class names or internal details.
+- **CI quality gate**: `.github/workflows/ci.yml` runs lint + types + security-check + tests on every push/PR. PR template enforces security checklist.
 
 ## Implementation Roadmap
 
@@ -293,12 +295,13 @@ Applies to ALL 9 agents. No agent goes to production without completing steps 5.
 - [ ] 5.8 Regression suite — tooling built (`regression.py`, `make eval-check`), CI integration deferred
 
 ### Phase 6 — OWASP API Security Hardening (COMPLETE)
-Audit conducted 2026-03-06. All 4 sub-phases done. Fix pattern: `verify_project_access()` from `app/projects/service.py`.
+Audit conducted 2026-03-06. Follow-up audit 2026-03-07. Fix pattern: `verify_project_access()` from `app/projects/service.py`.
 - [x] 6.1.1–6.1.4 BOLA fixes — CRITICAL (projects, approvals, connectors, QA override)
-- [x] 6.1.5–6.1.9 BOLA fixes — HIGH (approvals, rendering, knowledge, WebSocket, AI agents)
-- [x] 6.2.1–6.2.3 Response & error hardening (error sanitizer, LLM circuit breaker, generic error types)
+- [x] 6.1.5–6.1.10 BOLA fixes — HIGH/CRITICAL (approvals, rendering, knowledge, WebSocket, AI agents, email builds)
+- [x] 6.2.1–6.2.4 Response & error hardening (error sanitizer, LLM circuit breaker, generic error types, auth handler type leakage)
 - [x] 6.3.1–6.3.4 Rate limiting & resource controls (per-user Redis quota, per-user WS limit, stream timeout, blueprint cost cap)
 - [x] 6.4.1–6.4.3 Business logic (approval state machine, JWT algorithm pinning, nh3 HTML sanitizer)
+- [x] 6.5.1–6.5.6 SDC improvements (security-check in `make check`, CI workflow, PR template, memory rate limits, frontend token/type fixes)
 
 ### Phase 7 — Agent Capability Improvements
 Build infrastructure before remaining 6 agents so every new agent inherits patterns from day one.

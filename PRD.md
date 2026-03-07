@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 3.4
-**Date:** 2026-03-06
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 5.4-5.8 eval tooling + dry-run pipeline (58 unit tests); Phase 6 OWASP security hardening complete (6.1–6.4, 99 security/resource tests); Phase 7.1/7.3/7.4/7.5 agent improvements done (structured handoffs, confidence scoring, component context, agent memory system); remaining: 4.1 (6 agents), 7.2 (blocked on evals), Phase 5.4-5.8 live execution (requires LLM + human labels)
+**Version:** 3.5
+**Date:** 2026-03-07
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 5.4-5.8 eval tooling + dry-run pipeline (58 unit tests); Phase 6 OWASP security hardening complete (6.1–6.5, 99+ security/resource tests, SDC improvements); Phase 7.1/7.3/7.4/7.5 agent improvements done (structured handoffs, confidence scoring, component context, agent memory system); remaining: 4.1 (6 agents), 7.2 (blocked on evals), Phase 5.4-5.8 live execution (requires LLM + human labels)
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-06
+> Last updated: 2026-03-07
 
 ### Completed
 
@@ -53,6 +53,7 @@
 | 4.2 | Additional CMS connectors | `ConnectorProvider` Protocol in `app/connectors/protocol.py` for type-safe dispatch; `SUPPORTED_CONNECTORS` registry with lazy instantiation; 3 new packages: `app/connectors/sfmc/` (SFMC Content Areas), `app/connectors/adobe/` (Adobe Campaign delivery fragments), `app/connectors/taxi/` (Taxi Syntax-wrapped templates); each with schemas + service; demo mutation resolver updated for per-connector mock IDs; 16 unit tests (304 total) |
 | 4.4 | Litmus / Email on Acid API integration | **Backend:** `app/rendering/` VSA module with `RenderingProvider` Protocol; Litmus + EoA provider implementations (placeholder APIs); `RenderingTest` + `RenderingScreenshot` models; visual regression comparison with per-client diff percentages (2% threshold); `CircuitBreaker` for external API resilience; `RenderingConfig` with provider/API key/polling settings; 4 REST endpoints (`/api/v1/rendering/`): submit, list, get, compare; auth + rate limiting; 12 unit tests (316 total). **Frontend:** `/renderings` page with 6 components aligned to backend schemas; `RenderingTestDialog` with HTML input + async polling progress bar; `RenderingTestList` with expand/collapse screenshot grid; `ClientCompatibilityMatrix` derived from test data; `RenderingScreenshotDialog` with os/category metadata; `VisualRegressionDialog` for side-by-side comparison via `POST /compare`; `RenderingStatsCards` with completion rate + problematic clients; `RenderingSummaryCard` on intelligence dashboard; pagination controls; 5 SWR hooks; demo data aligned |
 | 6.1–6.4 | OWASP API Security Hardening (complete) | BOLA fixes across 8 modules (6.1); error sanitizer + LLM circuit breaker (6.2); per-user Redis quota, WS limits, stream timeout, blueprint cost cap (6.3); approval state machine, JWT HS256 pinning, nh3 HTML sanitizer (6.4); 99 security tests |
+| 6.1.10+6.2.4+6.5 | Security audit follow-up (2026-03-07) | Email build BOLA fix (`GET /builds/{id}` now authorized); auth error type leakage fixed (sanitized via `get_safe_error_message/type`); SDC: `make check` includes security-check, CI workflow (`.github/workflows/ci.yml`), PR security checklist template, memory rate limits, frontend token expiry fix, export history validation; 535 tests |
 | 7.1+7.3+7.4 | Agent capability improvements | `AgentHandoff` frozen dataclass with decisions/warnings/component_refs/confidence; `ComponentMeta` + `ComponentResolver` Protocol; confidence scoring (threshold 0.5 → `needs_review`); `DbComponentResolver` for DB-backed component context; ScaffolderNode + DarkModeNode retrofitted; RecoveryRouterNode reads upstream warnings; `HandoffSummary` in API response; 21 new tests (511 total) |
 | 7.5 | Hub Agent Memory System (PRD 4.9.3-4.9.6) | `app/memory/` VSA module: `MemoryEntry` model with pgvector `Vector(1024)` + HNSW index; 3 memory types (procedural/episodic/semantic); temporal decay via `POWER(2, -age/half_life)`; `MemoryRepository` with cosine similarity search; `MemoryService` with store/recall/promote/compaction; DCG promotion bridge (`POST /memory/promote`); `MemoryCompactionPoller` background task; `MemoryConfig` settings; Alembic migration `f1a2b3c4d5e6`; 5 REST endpoints with admin/developer RBAC; 19 unit tests (530 total) |
 | 4.5 | Advanced features (6 features) | **F1 Collaborative Editing:** Yjs CRDT + y-codemirror.next, `useCollaboration` hook, demo mode simulated collaborator, `CollaboratorAvatars` + `ConnectionStatus` components. **F2 Localisation:** 6 locale stubs (en/ar/de/es/fr/ja), cookie-based `NEXT_LOCALE` switching, RTL `dir` attribute, `/settings` page with `LocaleSelector`, `/settings/translations` management table. **F3 Brand Guardrails:** `/projects/[id]/brand` settings page, `BrandColorEditor`/`BrandTypographyEditor`/`BrandLogoRules`/`BrandForbiddenPatterns` components, CodeMirror `brandLinter` extension, toolbar violations badge. **F4 AI Image Generation:** `ImageGenDialog` (40rem) with style presets grid (6 presets), image gallery, insert `<img>` at cursor; demo picsum.photos placeholders. **F5 Visual Liquid Builder:** @dnd-kit drag-and-drop, regex Liquid parser/serializer, 5 block types (if/for/assign/output/raw), Code/Visual tab switching in `editor-panel.tsx`, live preview with sample data. **F6 Client Briefs:** `/briefs` page mirroring Figma architecture, Jira/Asana/Monday.com connection cards, brief items panel, import-to-project flow. |
@@ -73,8 +74,8 @@
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (530 tests, incl. 16 BOLA security tests + 21 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests); Frontend Vitest + React Testing Library (`make test-fe`)
-- **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6
+- **Testing:** Backend pytest (535 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); CI quality gate (`.github/workflows/ci.yml` — lint + types + security-check + tests); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6; PR security checklist template (`.github/PULL_REQUEST_TEMPLATE.md`)
 
 ---
 

@@ -596,11 +596,13 @@ Audit conducted 2026-03-06 using CodeQL + Semgrep + manual route review. Root ca
 - [x] 6.1.7 `GET /knowledge/documents/{id}/download` — already role-gated (admin/developer), no project-scoped changes needed (HIGH)
 - [x] 6.1.8 WebSocket `/ws/stream` — ~~no multi-tenant isolation~~ DONE — project_id filter validated against membership (HIGH)
 - [x] 6.1.9 AI agent endpoints — ~~agents accept briefs without project scoping~~ DONE — optional project_id with access check (HIGH)
+- [x] 6.1.10 `GET /email/builds/{build_id}` — ~~any authenticated user can fetch any build by ID~~ DONE — `verify_project_access(build.project_id, user)` added to `EmailEngineService.get_build()` (CRITICAL)
 
 ### ~~6.2 Response & Error Hardening~~ DONE
 - [x] 6.2.1 `POST /email/build` — ~~raw exception messages leaked to client~~ DONE — `error_sanitizer.py` central safe message registry; `email_engine` + `connectors` store generic messages in DB, log real errors server-side (HIGH)
 - [x] 6.2.2 LLM provider calls — ~~no circuit breaker~~ DONE — `_ResilientLLMProvider` wraps all LLM `complete()` calls with `CircuitBreaker` (5 failures → 60s open); all adapter/agent/service error messages genericized (no provider names, status codes, or raw exceptions) (HIGH)
 - [x] 6.2.3 Error handler leaks exception class names to client — DONE — `get_safe_error_type()` returns generic categories (`not_found`, `forbidden`, `ai_error`, etc.); `get_safe_error_message()` with MRO-walking safe message lookup; passthrough for validation errors only; 21 unit tests (MEDIUM)
+- [x] 6.2.4 Auth exception handlers (`invalid_credentials_handler`, `account_locked_handler`) leaked `"InvalidCredentialsError"` / `"AccountLockedError"` type strings — DONE — now use `get_safe_error_message/type()`, returning `"authentication_error"` / `"account_locked"` generic types; 2 new tests (HIGH)
 
 ### ~~6.3 Rate Limiting & Resource Controls~~ DONE
 - [x] 6.3.1 AI quota per-IP (in-memory) → per-user (Redis) — DONE — `UserQuotaTracker` in `app/core/quota.py` (Redis-backed with in-memory fallback); `app/ai/routes.py` keyed by `current_user.id`; 7 unit tests (MEDIUM)
@@ -612,6 +614,14 @@ Audit conducted 2026-03-06 using CodeQL + Semgrep + manual route review. Root ca
 - [x] 6.4.1 Approval state machine — prevent invalid transitions (MEDIUM)
 - [x] 6.4.2 JWT algorithm — pin HS256 constant, remove config override, align docs (MEDIUM)
 - [x] 6.4.3 LLM output sanitization — replace regex with nh3 allowlist sanitizer (MEDIUM)
+
+### ~~6.5 Security Development Cycle (SDC) Improvements~~ DONE
+- [x] 6.5.1 `make check` now includes `security-check` — developers cannot skip Bandit security lint (SDC)
+- [x] 6.5.2 CI workflow (`.github/workflows/ci.yml`) — backend (lint + types + security + test) and frontend (types + test) on push/PR to main (SDC)
+- [x] 6.5.3 PR template (`.github/PULL_REQUEST_TEMPLATE.md`) — security checklist (auth, authz, input validation, error sanitization, rate limiting) (SDC)
+- [x] 6.5.4 Memory routes missing rate limiting — DONE — all 5 `/memory/` endpoints now have `@limiter.limit()` (10/min writes, 30/min reads) (MEDIUM)
+- [x] 6.5.5 Frontend token expiry mismatch — DONE — `auth.ts` now reads JWT `exp` claim via `getExpFromToken()` instead of hardcoded 14-min offset; removed `(user as any)` type casts (MEDIUM)
+- [x] 6.5.6 Export history sessionStorage validation — DONE — `isValidRecord()` type guard validates parsed JSON shape before use (MEDIUM)
 
 ---
 
