@@ -49,7 +49,7 @@ def create_access_token(user_id: int, role: str) -> str:
         "type": "access",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)  # type: ignore[assignment]
+    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)
     return token
 
 
@@ -73,7 +73,7 @@ def create_refresh_token(user_id: int) -> str:
         "type": "refresh",
         "jti": uuid.uuid4().hex,
     }
-    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)  # type: ignore[assignment]
+    token: str = jwt.encode(payload, settings.auth.jwt_secret_key, algorithm=_JWT_ALGORITHM)
     return token
 
 
@@ -139,7 +139,7 @@ def decode_token(token: str) -> TokenPayload | None:
             token,
             settings.auth.jwt_secret_key,
             algorithms=[_JWT_ALGORITHM],
-        )  # type: ignore[assignment]
+        )
         return TokenPayload(
             sub=int(payload["sub"]),
             role=str(payload.get("role", "")),

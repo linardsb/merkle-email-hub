@@ -10,6 +10,33 @@ import nh3
 
 # ── HTML extraction from LLM responses ──
 
+# ── Confidence extraction from LLM output ──
+
+_CONFIDENCE_RE = re.compile(r"<!--\s*CONFIDENCE:\s*([\d.]+)\s*-->")
+
+
+def extract_confidence(html: str) -> float | None:
+    """Extract self-assessed confidence from an LLM HTML comment.
+
+    Looks for ``<!-- CONFIDENCE: 0.XX -->`` and clamps to [0.0, 1.0].
+    Returns None if the comment is absent or malformed.
+    """
+    match = _CONFIDENCE_RE.search(html)
+    if not match:
+        return None
+    try:
+        return max(0.0, min(1.0, float(match.group(1))))
+    except ValueError:
+        return None
+
+
+def strip_confidence_comment(html: str) -> str:
+    """Remove the confidence HTML comment from output."""
+    return _CONFIDENCE_RE.sub("", html)
+
+
+# ── HTML extraction from LLM responses ──
+
 _CODE_BLOCK_RE = re.compile(
     r"```(?:html|HTML)?\s*\n(.*?)```",
     re.DOTALL,

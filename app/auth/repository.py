@@ -4,6 +4,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
+from app.shared.models import utcnow
 from app.shared.utils import escape_like
 
 
@@ -15,12 +16,16 @@ class UserRepository:
 
     async def find_by_email(self, email: str) -> User | None:
         """Find a user by email address."""
-        result = await self.db.execute(select(User).where(User.email == email))
+        result = await self.db.execute(
+            select(User).where(User.email == email, User.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def find_by_id(self, user_id: int) -> User | None:
         """Find a user by database ID."""
-        result = await self.db.execute(select(User).where(User.id == user_id))
+        result = await self.db.execute(
+            select(User).where(User.id == user_id, User.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def create(self, user: User) -> User:
@@ -37,8 +42,9 @@ class UserRepository:
         return user
 
     async def delete(self, user: User) -> None:
-        """Delete a user entity from the database."""
-        await self.db.delete(user)
+        """Soft delete a user by setting deleted_at timestamp."""
+        user.deleted_at = utcnow()
+        user.is_active = False
         await self.db.flush()
 
     async def list(
@@ -51,7 +57,7 @@ class UserRepository:
         is_active: bool | None = None,
     ) -> list[User]:
         """List users with pagination and filtering."""
-        query = select(User)
+        query = select(User).where(User.deleted_at.is_(None))
         if search:
             pattern = f"%{escape_like(search)}%"
             query = query.where(
@@ -76,7 +82,7 @@ class UserRepository:
         is_active: bool | None = None,
     ) -> int:
         """Count users matching the given filters."""
-        query = select(func.count()).select_from(User)
+        query = select(func.count()).select_from(User).where(User.deleted_at.is_(None))
         if search:
             pattern = f"%{escape_like(search)}%"
             query = query.where(
@@ -94,5 +100,7 @@ class UserRepository:
 
     async def count(self) -> int:
         """Count total users."""
-        result = await self.db.execute(select(func.count()).select_from(User))
+        result = await self.db.execute(
+            select(func.count()).select_from(User).where(User.deleted_at.is_(None))
+        )
         return result.scalar_one()

@@ -1,12 +1,18 @@
 """Dark Mode agentic node — enhances HTML with dark mode CSS and Outlook overrides."""
 
 from app.ai.agents.dark_mode.prompt import DARK_MODE_SYSTEM_PROMPT
-from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType
+from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
-from app.ai.shared import extract_html, sanitize_html_xss
+from app.ai.shared import (
+    extract_confidence,
+    extract_html,
+    sanitize_html_xss,
+    strip_confidence_comment,
+)
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
@@ -53,14 +59,26 @@ class DarkModeNode:
 
         validated = validate_output(response.content)
         html = extract_html(validated)
+        confidence = extract_confidence(html)
+        html = strip_confidence_comment(html)
         html = sanitize_html_xss(html)
 
         usage = dict(response.usage) if response.usage else None
+
+        handoff = AgentHandoff(
+            agent_name="dark_mode",
+            artifact=html,
+            decisions=(f"Dark mode enhanced {len(html)} chars",),
+            warnings=(),
+            component_refs=tuple(detect_component_refs(html)),
+            confidence=confidence,
+        )
 
         logger.info(
             "blueprint.dark_mode_node.completed",
             iteration=context.iteration,
             html_length=len(html),
+            confidence=confidence,
         )
 
         return NodeResult(
@@ -68,6 +86,7 @@ class DarkModeNode:
             html=html,
             details=f"Dark mode enhanced {len(html)} chars (iteration {context.iteration})",
             usage=usage,
+            handoff=handoff,
         )
 
     def _build_user_message(self, context: NodeContext) -> str:
@@ -87,5 +106,16 @@ class DarkModeNode:
         progress = context.metadata.get("progress_anchor", "")
         if progress:
             parts.append(f"\n\n{progress}")
+
+        # Read upstream handoff warnings
+        upstream = context.metadata.get("upstream_handoff")
+        if isinstance(upstream, AgentHandoff) and upstream.warnings:
+            parts.append(
+                "\n\n--- UPSTREAM WARNINGS ---\n" + "\n".join(f"- {w}" for w in upstream.warnings)
+            )
+
+        component_ctx = context.metadata.get("component_context", "")
+        if component_ctx:
+            parts.append(f"\n\n{component_ctx}")
 
         return "\n".join(parts)

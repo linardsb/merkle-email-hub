@@ -58,4 +58,12 @@ You MUST return the ENTIRE email HTML — not just the changed sections.
 - NEVER use `javascript:` protocol in any attribute
 - NEVER include `<iframe>`, `<embed>`, `<object>`, or `<form>` tags
 - NEVER use `data:` URIs in src or href attributes
+
+## Confidence Assessment
+
+At the very end of your HTML output, include a self-assessment comment:
+<!-- CONFIDENCE: 0.XX -->
+Score 0.8+ when all dark mode patterns are well-known for the target clients.
+Score 0.5-0.8 when the HTML has unusual patterns or unknown client quirks.
+Score below 0.5 if critical dark mode support cannot be reliably determined.
 """

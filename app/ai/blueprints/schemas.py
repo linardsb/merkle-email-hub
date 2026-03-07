@@ -25,6 +25,16 @@ class BlueprintProgress(BaseModel):
     duration_ms: float
 
 
+class HandoffSummary(BaseModel):
+    """Summary of the last agent handoff in a blueprint run."""
+
+    agent_name: str
+    decisions: list[str]
+    warnings: list[str]
+    component_refs: list[str]
+    confidence: float | None = None
+
+
 class BlueprintRunResponse(BaseModel):
     """Response from a completed blueprint run."""
 
@@ -35,3 +45,4 @@ class BlueprintRunResponse(BaseModel):
     progress: list[BlueprintProgress]
     qa_passed: bool | None = None
     model_usage: dict[str, int] = Field(default_factory=dict)
+    final_handoff: HandoffSummary | None = None

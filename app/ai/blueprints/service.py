@@ -4,10 +4,18 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.ai.blueprints.definitions.campaign import build_campaign_blueprint
 from app.ai.blueprints.engine import BlueprintDefinition, BlueprintEngine
 from app.ai.blueprints.exceptions import BlueprintError
-from app.ai.blueprints.schemas import BlueprintProgress, BlueprintRunRequest, BlueprintRunResponse
+from app.ai.blueprints.protocols import ComponentResolver
+from app.ai.blueprints.schemas import (
+    BlueprintProgress,
+    BlueprintRunRequest,
+    BlueprintRunResponse,
+    HandoffSummary,
+)
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -21,7 +29,10 @@ class BlueprintService:
     """Resolves blueprint by name and runs the engine."""
 
     async def run(
-        self, request: BlueprintRunRequest, user_id: int | None = None
+        self,
+        request: BlueprintRunRequest,
+        user_id: int | None = None,
+        db: AsyncSession | None = None,
     ) -> BlueprintRunResponse:
         """Execute a named blueprint and return structured response."""
         factory = BLUEPRINT_REGISTRY.get(request.blueprint_name)
@@ -32,7 +43,14 @@ class BlueprintService:
             )
 
         definition = factory()
-        engine = BlueprintEngine(definition)
+
+        component_resolver: ComponentResolver | None = None
+        if db is not None:
+            from app.ai.blueprints.resolvers import DbComponentResolver
+
+            component_resolver = DbComponentResolver(db)
+
+        engine = BlueprintEngine(definition, component_resolver=component_resolver)
 
         logger.info(
             "blueprint.service.run_started",
@@ -44,6 +62,17 @@ class BlueprintService:
             initial_html=request.initial_html,
             user_id=user_id,
         )
+
+        final_handoff: HandoffSummary | None = None
+        if bp_run._last_handoff is not None:
+            h = bp_run._last_handoff
+            final_handoff = HandoffSummary(
+                agent_name=h.agent_name,
+                decisions=list(h.decisions),
+                warnings=list(h.warnings),
+                component_refs=list(h.component_refs),
+                confidence=h.confidence,
+            )
 
         return BlueprintRunResponse(
             run_id=bp_run.run_id,
@@ -63,6 +92,7 @@ class BlueprintService:
             ],
             qa_passed=bp_run.qa_passed,
             model_usage=bp_run.model_usage,
+            final_handoff=final_handoff,
         )
 
 

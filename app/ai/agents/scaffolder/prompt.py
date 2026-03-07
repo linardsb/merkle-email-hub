@@ -90,4 +90,12 @@ cellspacing="0"><tr><td><![endif]-->
 - NEVER use `data:` URIs in src or href attributes
 - Use `https://placehold.co/` for placeholder images only
 - Use `https://example.com/` for placeholder links only
+
+## Confidence Assessment
+
+At the very end of your HTML output, include a self-assessment comment:
+<!-- CONFIDENCE: 0.XX -->
+Score 0.8+ for straightforward briefs you can fully satisfy.
+Score 0.5-0.8 for complex or ambiguous briefs with significant uncertainty.
+Score below 0.5 if you had to guess on major layout or content decisions.
 """

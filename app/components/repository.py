@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.models import Component, ComponentVersion
 from app.components.schemas import ComponentCreate, ComponentUpdate, VersionCreate
+from app.shared.models import utcnow
 from app.shared.utils import escape_like
 
 
@@ -19,11 +20,15 @@ class ComponentRepository:
         self.db = db
 
     async def get(self, component_id: int) -> Component | None:
-        result = await self.db.execute(select(Component).where(Component.id == component_id))
+        result = await self.db.execute(
+            select(Component).where(Component.id == component_id, Component.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def get_by_slug(self, slug: str) -> Component | None:
-        result = await self.db.execute(select(Component).where(Component.slug == slug))
+        result = await self.db.execute(
+            select(Component).where(Component.slug == slug, Component.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def list(
@@ -34,7 +39,7 @@ class ComponentRepository:
         category: str | None = None,
         search: str | None = None,
     ) -> Sequence[Component]:
-        query = select(Component)
+        query = select(Component).where(Component.deleted_at.is_(None))
         if category:
             query = query.where(Component.category == category)
         if search:
@@ -45,7 +50,7 @@ class ComponentRepository:
         return list(result.scalars().all())
 
     async def count(self, *, category: str | None = None, search: str | None = None) -> int:
-        query = select(func.count()).select_from(Component)
+        query = select(func.count()).select_from(Component).where(Component.deleted_at.is_(None))
         if category:
             query = query.where(Component.category == category)
         if search:
@@ -85,7 +90,8 @@ class ComponentRepository:
         return component
 
     async def delete(self, component: Component) -> None:
-        await self.db.delete(component)
+        """Soft delete a component by setting deleted_at timestamp."""
+        component.deleted_at = utcnow()
         await self.db.commit()
 
     async def get_latest_version_number(self, component_id: int) -> int:

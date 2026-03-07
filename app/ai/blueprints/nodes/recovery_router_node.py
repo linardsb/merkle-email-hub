@@ -1,6 +1,6 @@
 """Recovery Router deterministic node — routes QA failures to appropriate fixer nodes."""
 
-from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType
+from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -48,6 +48,14 @@ class RecoveryRouterNode:
 
         # Determine if any failures are dark-mode-specific
         has_dark_mode_failure = any(f.startswith("dark_mode:") for f in context.qa_failures)
+
+        # Also check upstream handoff warnings for dark mode hints
+        if not has_dark_mode_failure:
+            upstream = context.metadata.get("upstream_handoff")
+            if isinstance(upstream, AgentHandoff) and upstream.warnings:
+                has_dark_mode_failure = any(
+                    "dark mode" in w.lower() or "dark_mode" in w.lower() for w in upstream.warnings
+                )
 
         if has_dark_mode_failure:
             target = "dark_mode"

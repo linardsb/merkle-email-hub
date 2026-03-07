@@ -6,10 +6,10 @@ from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.shared.models import TimestampMixin
+from app.shared.models import SoftDeleteMixin, TimestampMixin
 
 
-class User(Base, TimestampMixin):
+class User(Base, TimestampMixin, SoftDeleteMixin):
     """User model for DB-backed authentication.
 
     Supports configurable RBAC roles.

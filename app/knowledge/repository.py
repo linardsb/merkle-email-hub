@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.knowledge.models import Document, DocumentChunk, Tag, document_tags
+from app.shared.models import utcnow
 
 
 class KnowledgeRepository:
@@ -76,7 +77,9 @@ class KnowledgeRepository:
         Returns:
             Document instance or None if not found.
         """
-        result = await self.db.execute(select(Document).where(Document.id == document_id))
+        result = await self.db.execute(
+            select(Document).where(Document.id == document_id, Document.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def list_documents(
@@ -102,7 +105,7 @@ class KnowledgeRepository:
         Returns:
             List of Document instances.
         """
-        query = select(Document)
+        query = select(Document).where(Document.deleted_at.is_(None))
         if domain:
             query = query.where(Document.domain == domain)
         if status:
@@ -134,7 +137,7 @@ class KnowledgeRepository:
         Returns:
             Total number of matching documents.
         """
-        query = select(func.count()).select_from(Document)
+        query = select(func.count()).select_from(Document).where(Document.deleted_at.is_(None))
         if domain:
             query = query.where(Document.domain == domain)
         if status:
@@ -170,15 +173,17 @@ class KnowledgeRepository:
             await self.db.commit()
 
     async def delete_document(self, document_id: int) -> None:
-        """Delete a document and its chunks (CASCADE).
+        """Soft delete a document by setting deleted_at timestamp.
 
         Args:
             document_id: The document's database ID.
         """
-        result = await self.db.execute(select(Document).where(Document.id == document_id))
+        result = await self.db.execute(
+            select(Document).where(Document.id == document_id, Document.deleted_at.is_(None))
+        )
         doc = result.scalar_one_or_none()
         if doc:
-            await self.db.delete(doc)
+            doc.deleted_at = utcnow()
             await self.db.commit()
 
     async def update_document(
@@ -276,6 +281,7 @@ class KnowledgeRepository:
             select(DocumentChunk, Document, distance)
             .join(Document, DocumentChunk.document_id == Document.id)
             .where(DocumentChunk.embedding.is_not(None))
+            .where(Document.deleted_at.is_(None))
             .order_by(distance)
             .limit(limit)
         )
@@ -319,6 +325,7 @@ class KnowledgeRepository:
             select(DocumentChunk, Document, rank)
             .join(Document, DocumentChunk.document_id == Document.id)
             .where(ts_vector.bool_op("@@")(ts_query))
+            .where(Document.deleted_at.is_(None))
             .order_by(rank.desc())
             .limit(limit)
         )
@@ -360,7 +367,9 @@ class KnowledgeRepository:
         Returns:
             List of Tag instances ordered by name.
         """
-        result = await self.db.execute(select(Tag).order_by(Tag.name))
+        result = await self.db.execute(
+            select(Tag).where(Tag.deleted_at.is_(None)).order_by(Tag.name)
+        )
         return list(result.scalars().all())
 
     async def get_tag_by_name(self, name: str) -> Tag | None:
@@ -372,7 +381,9 @@ class KnowledgeRepository:
         Returns:
             Tag instance or None if not found.
         """
-        result = await self.db.execute(select(Tag).where(Tag.name == name))
+        result = await self.db.execute(
+            select(Tag).where(Tag.name == name, Tag.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def create_tag(self, name: str) -> Tag:
@@ -391,7 +402,7 @@ class KnowledgeRepository:
         return tag
 
     async def delete_tag(self, tag_id: int) -> bool:
-        """Delete a tag by ID.
+        """Soft delete a tag by setting deleted_at timestamp.
 
         Args:
             tag_id: The tag's database ID.
@@ -399,11 +410,13 @@ class KnowledgeRepository:
         Returns:
             True if the tag was found and deleted, False otherwise.
         """
-        result = await self.db.execute(select(Tag).where(Tag.id == tag_id))
+        result = await self.db.execute(
+            select(Tag).where(Tag.id == tag_id, Tag.deleted_at.is_(None))
+        )
         tag = result.scalar_one_or_none()
         if not tag:
             return False
-        await self.db.delete(tag)
+        tag.deleted_at = utcnow()
         await self.db.commit()
         return True
 

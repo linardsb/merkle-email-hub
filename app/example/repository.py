@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.example.models import Item
 from app.example.schemas import ItemCreate, ItemUpdate
+from app.shared.models import utcnow
 from app.shared.utils import escape_like
 
 
@@ -30,7 +31,9 @@ class ItemRepository:
         Returns:
             Item instance or None if not found.
         """
-        result = await self.db.execute(select(Item).where(Item.id == item_id))
+        result = await self.db.execute(
+            select(Item).where(Item.id == item_id, Item.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str) -> Item | None:
@@ -42,7 +45,9 @@ class ItemRepository:
         Returns:
             Item instance or None if not found.
         """
-        result = await self.db.execute(select(Item).where(Item.name == name))
+        result = await self.db.execute(
+            select(Item).where(Item.name == name, Item.deleted_at.is_(None))
+        )
         return result.scalar_one_or_none()
 
     async def list(
@@ -66,7 +71,7 @@ class ItemRepository:
         Returns:
             List of Item instances.
         """
-        query = select(Item)
+        query = select(Item).where(Item.deleted_at.is_(None))
         if active_only:
             query = query.where(Item.is_active.is_(True))
         if search:
@@ -95,7 +100,7 @@ class ItemRepository:
         Returns:
             Total number of matching items.
         """
-        query = select(func.count()).select_from(Item)
+        query = select(func.count()).select_from(Item).where(Item.deleted_at.is_(None))
         if active_only:
             query = query.where(Item.is_active.is_(True))
         if search:
@@ -138,10 +143,10 @@ class ItemRepository:
         return item
 
     async def delete(self, item: Item) -> None:
-        """Delete an item record.
+        """Soft delete an item by setting deleted_at timestamp.
 
         Args:
             item: The item instance to delete.
         """
-        await self.db.delete(item)
+        item.deleted_at = utcnow()
         await self.db.commit()

@@ -4,10 +4,10 @@ from sqlalchemy import JSON, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.shared.models import TimestampMixin
+from app.shared.models import SoftDeleteMixin, TimestampMixin
 
 
-class Component(Base, TimestampMixin):
+class Component(Base, TimestampMixin, SoftDeleteMixin):
     """Reusable email component (e.g., header, CTA button, hero block)."""
 
     __tablename__ = "components"

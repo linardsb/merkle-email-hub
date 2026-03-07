@@ -7,6 +7,17 @@ the context and result data structures that flow through the graph.
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, runtime_checkable
 
+__all__ = [
+    "AgentHandoff",
+    "BlueprintNode",
+    "ComponentMeta",
+    "ComponentResolver",
+    "NodeContext",
+    "NodeResult",
+    "NodeStatus",
+    "NodeType",
+]
+
 NodeType = Literal["deterministic", "agentic"]
 NodeStatus = Literal["success", "failed", "skipped"]
 
@@ -52,6 +63,41 @@ class NodeResult:
     details: str = ""
     error: str = ""
     usage: dict[str, int] | None = None
+    handoff: "AgentHandoff | None" = None
+
+
+@dataclass(frozen=True)
+class AgentHandoff:
+    """Structured output from an agentic blueprint node.
+
+    Carries metadata about agent decisions, warnings, component references,
+    and self-assessed confidence to downstream nodes.
+    """
+
+    agent_name: str
+    artifact: str
+    decisions: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+    component_refs: tuple[str, ...] = ()
+    confidence: float | None = None
+
+
+@dataclass(frozen=True)
+class ComponentMeta:
+    """Lightweight component metadata for agent context injection."""
+
+    slug: str
+    name: str
+    category: str
+    description: str
+    compatibility: dict[str, str]
+    html_snippet: str
+
+
+class ComponentResolver(Protocol):
+    """Protocol for resolving component slugs to metadata."""
+
+    async def resolve(self, slugs: list[str]) -> list[ComponentMeta]: ...
 
 
 @runtime_checkable

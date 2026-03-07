@@ -6,7 +6,13 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
-from app.ai.blueprints.protocols import BlueprintNode, NodeContext, NodeResult
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    BlueprintNode,
+    ComponentResolver,
+    NodeContext,
+    NodeResult,
+)
 from app.ai.blueprints.schemas import BlueprintProgress
 from app.core.logging import get_logger
 
@@ -14,6 +20,7 @@ logger = get_logger(__name__)
 
 MAX_SELF_CORRECTION_ROUNDS = 2
 MAX_TOTAL_STEPS = 20  # safety brake
+CONFIDENCE_REVIEW_THRESHOLD = 0.5
 
 EdgeCondition = Literal["success", "qa_fail", "always", "route_to"]
 
@@ -53,6 +60,7 @@ class BlueprintRun:
         default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     )
     _last_result: NodeResult | None = field(default=None, repr=False)
+    _last_handoff: AgentHandoff | None = field(default=None, repr=False)
 
 
 class BlueprintEngine:
@@ -63,8 +71,13 @@ class BlueprintEngine:
     self-correction via recovery routing.
     """
 
-    def __init__(self, definition: BlueprintDefinition) -> None:
+    def __init__(
+        self,
+        definition: BlueprintDefinition,
+        component_resolver: ComponentResolver | None = None,
+    ) -> None:
         self._definition = definition
+        self._component_resolver = component_resolver
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -99,7 +112,7 @@ class BlueprintEngine:
             if node.node_type == "agentic" and iteration >= MAX_SELF_CORRECTION_ROUNDS:
                 raise BlueprintEscalatedError(current_node_name, iteration)
 
-            context = self._build_node_context(node, run, brief, iteration)
+            context = await self._build_node_context(node, run, brief, iteration)
 
             start = time.monotonic()
             try:
@@ -166,6 +179,26 @@ class BlueprintEngine:
 
             run._last_result = result
 
+            # Store handoff from agentic nodes
+            if result.handoff is not None:
+                run._last_handoff = result.handoff
+
+            # Low confidence → route to human review instead of retrying
+            if (
+                node.node_type == "agentic"
+                and result.handoff is not None
+                and result.handoff.confidence is not None
+                and result.handoff.confidence < CONFIDENCE_REVIEW_THRESHOLD
+            ):
+                run.status = "needs_review"
+                logger.warning(
+                    "blueprint.low_confidence",
+                    node=current_node_name,
+                    confidence=result.handoff.confidence,
+                    run_id=run.run_id,
+                )
+                break
+
             logger.info(
                 "blueprint.node_completed",
                 node=current_node_name,
@@ -210,7 +243,7 @@ class BlueprintEngine:
 
         return None  # terminal node
 
-    def _build_node_context(
+    async def _build_node_context(
         self,
         node: BlueprintNode,
         run: BlueprintRun,
@@ -225,9 +258,26 @@ class BlueprintEngine:
             qa_failures=list(run.qa_failures),
         )
 
+        # Inject upstream handoff for agentic nodes
+        if run._last_handoff is not None:
+            context.metadata["upstream_handoff"] = run._last_handoff
+
         # Inject progress anchor on retries for agentic nodes
         if node.node_type == "agentic" and iteration > 0:
             context.metadata["progress_anchor"] = self._build_progress_anchor(run)
+
+        # Inject component context for agentic nodes (lazy — only if HTML has refs)
+        if node.node_type == "agentic" and run.html and self._component_resolver is not None:
+            from app.ai.blueprints.component_context import (
+                detect_component_refs,
+                format_component_context,
+            )
+
+            slugs = detect_component_refs(run.html)
+            if slugs:
+                components = await self._component_resolver.resolve(slugs)
+                if components:
+                    context.metadata["component_context"] = format_component_context(components)
 
         return context
 

@@ -4,10 +4,10 @@ from sqlalchemy import Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.shared.models import TimestampMixin
+from app.shared.models import SoftDeleteMixin, TimestampMixin
 
 
-class Item(Base, TimestampMixin):
+class Item(Base, TimestampMixin, SoftDeleteMixin):
     """Example item model demonstrating VSA patterns."""
 
     __tablename__ = "items"

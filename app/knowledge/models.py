@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.shared.models import TimestampMixin
+from app.shared.models import SoftDeleteMixin, TimestampMixin
 
 # Many-to-many association table for document <-> tag relationships
 document_tags = Table(
@@ -27,7 +27,7 @@ document_tags = Table(
 )
 
 
-class Document(Base, TimestampMixin):
+class Document(Base, TimestampMixin, SoftDeleteMixin):
     """Knowledge base document metadata.
 
     Tracks uploaded files with processing status. Each document
@@ -52,7 +52,7 @@ class Document(Base, TimestampMixin):
     ocr_applied: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class Tag(Base, TimestampMixin):
+class Tag(Base, TimestampMixin, SoftDeleteMixin):
     """Knowledge base document tag.
 
     Simple string labels for categorizing and filtering documents.
