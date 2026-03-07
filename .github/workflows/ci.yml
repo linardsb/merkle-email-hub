@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (lint + types + security + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint
+        run: |
+          uv run ruff format --check .
+          uv run ruff check .
+
+      - name: Type check
+        run: |
+          uv run mypy app/
+          uv run pyright app/
+
+      - name: Security check (Bandit)
+        run: uv run ruff check app/ --select=S --no-fix
+
+      - name: Test
+        run: uv run pytest -v -m "not integration"
+
+  frontend:
+    name: Frontend (types + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: cd cms && pnpm install --frozen-lockfile
+
+      - name: Type check + test
+        run: |
+          cd cms && pnpm --filter web type-check
+          cd cms && pnpm --filter web test

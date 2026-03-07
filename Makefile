@@ -45,7 +45,7 @@ check-fe: ## Run frontend checks (type-check + tests)
 	cd cms && pnpm --filter web type-check
 	cd cms && pnpm --filter web test
 
-check: lint types test check-fe ## Run all checks (backend + frontend)
+check: lint types test check-fe security-check ## Run all checks (backend + frontend + security)
 
 e2e: ## Run all e2e tests
 	cd cms && pnpm --filter web e2e

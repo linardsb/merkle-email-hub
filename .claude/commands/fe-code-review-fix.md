@@ -45,6 +45,14 @@ Apply the fix following project conventions:
 - Dialog for detail views (not Sheet). Widths: detail=28rem, forms=32rem
 - Don't over-engineer — fix the issue, nothing more
 
+**Security checks (scoped to files being fixed):**
+- No `(x as any)` casts — fix type declarations instead
+- No `dangerouslySetInnerHTML` without DOMPurify
+- API calls use `authFetch` (not raw `fetch` for authenticated endpoints)
+- Storage data (sessionStorage/localStorage) validated with runtime type guards
+- Token expiry from JWT `exp` claim, not hardcoded values
+- Only check the files you're fixing — full sweep is `/fe-validate`
+
 ### 5. Verify
 
 Run the validation pyramid on affected code:

@@ -29,12 +29,23 @@ Save the plan to `.agents/plans/{feature-name}.md` with this structure:
 1. {Step with exact code or clear instructions}
 2. ...
 
+## Security Checklist (scoped to this feature's files)
+For files in this plan only:
+- [ ] No `(x as any)` type casts — use proper type augmentation
+- [ ] API calls use `authFetch` (never raw `fetch` for authenticated endpoints)
+- [ ] No `dangerouslySetInnerHTML` without DOMPurify sanitization
+- [ ] Token handling uses JWT `exp` claim (not hardcoded expiry)
+- [ ] SessionStorage/localStorage data validated with runtime type guards before use
+- [ ] Preview iframes use `sandbox` attribute
+Full codebase security sweep is `/fe-validate`.
+
 ## Verification
-- [ ] `pnpm build` passes (from `cms/`)
+- [ ] `make check-fe` passes (TypeScript + tests)
 - [ ] No TypeScript errors
 - [ ] All user-visible text uses `useTranslations()`
 - [ ] Semantic Tailwind tokens only (no primitive colors)
 - [ ] Auth/RBAC works correctly
+- [ ] No `as any` casts in changed files
 ```
 
 ## Rules

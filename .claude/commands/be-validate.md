@@ -30,4 +30,10 @@ uv run ruff check app/ --select=S --no-fix
 ## Level 5: Convention Tests
 Check that all routes have auth dependencies and rate limiting.
 
+## Level 6: Security Conventions
+- Verify all route files have `@limiter.limit()` on every endpoint
+- Verify all resource-scoped endpoints call `verify_project_access()` or equivalent authorization
+- Verify error handlers use `get_safe_error_type()`/`get_safe_error_message()` (not hardcoded class names)
+- Verify no `as any` equivalent patterns bypass type safety
+
 Report results for each level. Fix any issues found automatically.

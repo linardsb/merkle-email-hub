@@ -38,6 +38,13 @@ Apply the fix following project conventions:
 - Follow VSA layer separation (routes → service → repository)
 - Don't over-engineer — fix the issue, nothing more
 
+**Security checks (scoped to files being fixed):**
+- If touching routes: verify `Depends(get_current_user)` and `@limiter.limit()` are present
+- If touching error handling: use `AppError` hierarchy (auto-sanitized), never hardcode class names
+- If touching resource access: verify `verify_project_access()` authorization
+- If adding user input handling: validate via Pydantic schema, use `escape_like()` for SQL patterns
+- Only check the files/module being fixed — full sweep is `/be-validate`
+
 @_shared/python-anti-patterns.md
 
 ### 5. Verify

@@ -25,6 +25,13 @@ Should use semantic tokens (`text-foreground`, `bg-card`, `border-border`, etc.)
 Grep for hardcoded English strings in component JSX in `cms/apps/web/src/**/*.tsx`.
 All user-visible text must use `useTranslations()` / `t("key")`.
 
+## Level 5: Security
+- Grep for `as any` in `cms/apps/web/src/**/*.{ts,tsx}`. Flag all instances — should use proper types.
+- Grep for `dangerouslySetInnerHTML` — must have DOMPurify sanitization.
+- Grep for raw `fetch(` calls that should use `authFetch` for authenticated endpoints.
+- Verify token handling uses JWT `exp` claim (not hardcoded millisecond values).
+- Verify data from `sessionStorage`/`localStorage` has runtime type validation before use.
+
 ## Notes
 - No ESLint config exists yet — skip lint level until configured
 - Fix any issues found automatically before reporting results
