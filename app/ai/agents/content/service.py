@@ -1,27 +1,23 @@
 # pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
+# ruff: noqa: ANN401, ARG002
 """Content agent service — orchestrates LLM → extract → spam check."""
 
-import json
 import re
-import time
-import uuid
 from collections.abc import AsyncIterator
+from typing import Any
 
+from app.ai.agents.base import BaseAgentService
 from app.ai.agents.content.prompt import (
-    build_system_prompt,
-    detect_relevant_skills,
+    build_system_prompt as _build_system_prompt,
+)
+from app.ai.agents.content.prompt import (
+    detect_relevant_skills as _detect_relevant_skills,
 )
 from app.ai.agents.content.schemas import ContentRequest, ContentResponse, SpamWarning
-from app.ai.exceptions import AIExecutionError
-from app.ai.protocols import Message
-from app.ai.registry import get_registry
-from app.ai.routing import resolve_model
-from app.ai.sanitize import sanitize_prompt, validate_output
-from app.core.config import get_settings
-from app.core.logging import get_logger
+from app.ai.routing import TaskTier
+from app.ai.sanitize import validate_output
 from app.qa_engine.checks.spam_score import SPAM_TRIGGERS
-
-logger = get_logger(__name__)
+from app.qa_engine.schemas import QACheckResult
 
 # ── Regex patterns for content extraction ──
 
@@ -34,7 +30,7 @@ _ALT_DELIMITER = "---"
 
 # ── Operation-to-tier mapping ──
 
-_OPERATION_TIERS: dict[str, str] = {
+_OPERATION_TIERS: dict[str, TaskTier] = {
     "subject_line": "standard",
     "preheader": "standard",
     "cta": "standard",
@@ -62,11 +58,7 @@ def extract_content(raw: str) -> list[str]:
 
 
 def check_spam_triggers(texts: list[str]) -> list[SpamWarning]:
-    """Scan generated text for known spam trigger words/phrases.
-
-    Returns a list of SpamWarning objects with the trigger and a
-    ~40-character context snippet around each match.
-    """
+    """Scan generated text for known spam trigger words/phrases."""
     warnings: list[SpamWarning] = []
     for text in texts:
         text_lower = text.lower()
@@ -74,7 +66,6 @@ def check_spam_triggers(texts: list[str]) -> list[SpamWarning]:
             pos = text_lower.find(trigger)
             if pos == -1:
                 continue
-            # Extract ~40-char context snippet around the trigger
             start = max(0, pos - 15)
             end = min(len(text), pos + len(trigger) + 15)
             context = text[start:end]
@@ -86,172 +77,92 @@ def check_spam_triggers(texts: list[str]) -> list[SpamWarning]:
     return warnings
 
 
-def _build_user_message(request: ContentRequest) -> str:
-    """Build the user message from the request fields."""
-    parts: list[str] = [
-        f"Operation: {request.operation}",
-        f"\nSource text:\n{request.text}",
-    ]
-
-    if request.tone:
-        parts.append(f"\nTarget tone: {request.tone}")
-
-    if request.brand_voice:
-        parts.append(f"\nBrand voice guidelines:\n{request.brand_voice}")
-
-    # Auto-generate 5 subject line alternatives when user doesn't specify
-    effective_alternatives = request.num_alternatives
-    if request.operation == "subject_line" and request.num_alternatives == 1:
-        effective_alternatives = 5
-
-    if effective_alternatives > 1:
-        parts.append(
-            f"\nGenerate {effective_alternatives} distinct alternatives, "
-            "separated by --- on its own line."
-        )
-
-    return "\n".join(parts)
-
-
-class ContentService:
+class ContentService(BaseAgentService):
     """Orchestrates the content agent pipeline.
 
     Pipeline: build messages → LLM call → validate output →
     extract content → spam check.
     """
 
-    async def generate(self, request: ContentRequest) -> ContentResponse:
-        """Generate content via LLM with spam detection."""
-        settings = get_settings()
-        provider_name = settings.ai.provider
-        tier = _OPERATION_TIERS.get(request.operation, "standard")
-        model = resolve_model(tier)  # type: ignore[arg-type]
-        model_id = f"{provider_name}:{model}"
+    agent_name = "content"
+    model_tier = "standard"
+    max_tokens = 2048
+    run_qa_default = False
+    stream_prefix = "content"
 
-        # Progressive disclosure — load only relevant skill files
-        relevant_skills = detect_relevant_skills(
-            request.operation, request.brand_voice, request.text
-        )
-        system_prompt = build_system_prompt(relevant_skills)
+    def build_system_prompt(self, relevant_skills: list[str]) -> str:
+        return _build_system_prompt(relevant_skills)
 
-        user_message = _build_user_message(request)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitize_prompt(user_message)),
+    def detect_relevant_skills(self, request: Any) -> list[str]:
+        req: ContentRequest = request
+        return _detect_relevant_skills(req.operation, req.brand_voice, req.text)
+
+    def _build_user_message(self, request: Any) -> str:
+        req: ContentRequest = request
+        parts: list[str] = [
+            f"Operation: {req.operation}",
+            f"\nSource text:\n{req.text}",
         ]
+        if req.tone:
+            parts.append(f"\nTarget tone: {req.tone}")
+        if req.brand_voice:
+            parts.append(f"\nBrand voice guidelines:\n{req.brand_voice}")
 
-        logger.info(
-            "agents.content.generate_started",
-            operation=request.operation,
-            provider=provider_name,
-            model=model,
-            text_length=len(request.text),
-            num_alternatives=request.num_alternatives,
-            skills_loaded=relevant_skills,
-        )
+        # Auto-generate 5 subject line alternatives when user doesn't specify
+        effective_alternatives = req.num_alternatives
+        if req.operation == "subject_line" and req.num_alternatives == 1:
+            effective_alternatives = 5
 
-        registry = get_registry()
-        provider = registry.get_llm(provider_name)
-
-        try:
-            result = await provider.complete(messages, model_override=model, max_tokens=2048)
-        except Exception as e:
-            logger.error(
-                "agents.content.generate_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                provider=provider_name,
+        if effective_alternatives > 1:
+            parts.append(
+                f"\nGenerate {effective_alternatives} distinct alternatives, "
+                "separated by --- on its own line."
             )
-            if isinstance(e, AIExecutionError):
-                raise
-            raise AIExecutionError("Content generation failed") from e
+        return "\n".join(parts)
 
-        raw_content = validate_output(result.content)
-        alternatives = extract_content(raw_content)
+    def _post_process(self, raw_content: str) -> str:
+        """Content agent returns text, not HTML. Return validated raw content."""
+        return validate_output(raw_content)
+
+    def _build_response(
+        self,
+        *,
+        request: Any,
+        html: str,
+        qa_results: list[QACheckResult] | None,
+        qa_passed: bool | None,
+        model_id: str,
+        confidence: float | None,
+        skills_loaded: list[str],
+        raw_content: str,
+    ) -> ContentResponse:
+        req: ContentRequest = request
+        # For content agent, "html" is actually raw text (via overridden _post_process)
+        alternatives = extract_content(html)
         warnings = check_spam_triggers(alternatives)
-
-        logger.info(
-            "agents.content.generate_completed",
-            model=model_id,
-            operation=request.operation,
-            alternatives_count=len(alternatives),
-            spam_warnings_count=len(warnings),
-            usage=result.usage,
-        )
-
         return ContentResponse(
             content=alternatives,
-            operation=request.operation,
+            operation=req.operation,
             spam_warnings=warnings,
             model=model_id,
+            confidence=confidence,
+            skills_loaded=skills_loaded,
         )
+
+    def _get_model_tier(self, request: Any) -> TaskTier:
+        """Return operation-specific model tier (thread-safe, no state mutation)."""
+        req: ContentRequest = request
+        return _OPERATION_TIERS.get(req.operation, "standard")
+
+    # Content uses generate/stream_generate names for backward compat with routes
+    async def generate(self, request: ContentRequest) -> ContentResponse:
+        """Generate content via LLM with spam detection."""
+        return await self.process(request)  # type: ignore[return-value]
 
     async def stream_generate(self, request: ContentRequest) -> AsyncIterator[str]:
         """Stream content generation via SSE."""
-        settings = get_settings()
-        provider_name = settings.ai.provider
-        tier = _OPERATION_TIERS.get(request.operation, "standard")
-        model = resolve_model(tier)  # type: ignore[arg-type]
-        model_id = f"{provider_name}:{model}"
-        response_id = f"content-{uuid.uuid4().hex[:12]}"
-
-        relevant_skills = detect_relevant_skills(
-            request.operation, request.brand_voice, request.text
-        )
-        system_prompt = build_system_prompt(relevant_skills)
-
-        user_message = _build_user_message(request)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitize_prompt(user_message)),
-        ]
-
-        logger.info(
-            "agents.content.stream_started",
-            operation=request.operation,
-            provider=provider_name,
-            model=model,
-            text_length=len(request.text),
-        )
-
-        registry = get_registry()
-        provider = registry.get_llm(provider_name)
-
-        try:
-            async for chunk in provider.stream(messages, model_override=model, max_tokens=2048):  # type: ignore[attr-defined]
-                sse_data = {
-                    "id": response_id,
-                    "object": "chat.completion.chunk",
-                    "created": int(time.time()),
-                    "model": model_id,
-                    "choices": [
-                        {
-                            "index": 0,
-                            "delta": {"content": chunk},
-                            "finish_reason": None,
-                        }
-                    ],
-                }
-                yield f"data: {json.dumps(sse_data)}\n\n"
-
-        except Exception as e:
-            logger.error(
-                "agents.content.stream_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                provider=provider_name,
-            )
-            if isinstance(e, AIExecutionError):
-                raise
-            raise AIExecutionError("Content streaming failed") from e
-
-        yield "data: [DONE]\n\n"
-
-        logger.info(
-            "agents.content.stream_completed",
-            response_id=response_id,
-            provider=provider_name,
-        )
+        async for chunk in self.stream_process(request):
+            yield chunk
 
 
 # ── Module-level singleton ──

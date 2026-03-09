@@ -99,6 +99,7 @@ async def run_dark_mode_case(case: dict[str, Any]) -> dict[str, Any]:
             "agent": "dark_mode",
             "dimensions": case["dimensions"],
             "input": {
+                "html_input": case["html_input"][:5000],
                 "html_length": len(case["html_input"]),
                 "color_overrides": case.get("color_overrides"),
                 "preserve_colors": case.get("preserve_colors"),
@@ -121,6 +122,7 @@ async def run_dark_mode_case(case: dict[str, Any]) -> dict[str, Any]:
             "agent": "dark_mode",
             "dimensions": case["dimensions"],
             "input": {
+                "html_input": case["html_input"][:5000],
                 "html_length": len(case["html_input"]),
                 "color_overrides": case.get("color_overrides"),
                 "preserve_colors": case.get("preserve_colors"),

@@ -41,3 +41,5 @@ class OutlookFixerResponse(BaseModel):
     qa_results: list[QACheckResult] | None = None
     qa_passed: bool | None = None
     model: str
+    confidence: float | None = None
+    skills_loaded: list[str] = Field(default_factory=list)

@@ -64,3 +64,5 @@ class ContentResponse(BaseModel):
     operation: str
     spam_warnings: list[SpamWarning] = []
     model: str
+    confidence: float | None = None
+    skills_loaded: list[str] = Field(default_factory=list)

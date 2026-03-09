@@ -153,9 +153,9 @@ class TestScaffolderService:
         request = ScaffolderRequest(brief="Create a welcome email for new subscribers")
 
         with (
-            patch("app.ai.agents.scaffolder.service.get_registry") as mock_registry,
-            patch("app.ai.agents.scaffolder.service.get_settings") as mock_settings,
-            patch("app.ai.agents.scaffolder.service.resolve_model", return_value="complex-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -177,9 +177,9 @@ class TestScaffolderService:
         )
 
         with (
-            patch("app.ai.agents.scaffolder.service.get_registry") as mock_registry,
-            patch("app.ai.agents.scaffolder.service.get_settings") as mock_settings,
-            patch("app.ai.agents.scaffolder.service.resolve_model", return_value="complex-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -207,9 +207,9 @@ class TestScaffolderService:
         request = ScaffolderRequest(brief="Create a promo email for Black Friday sale")
 
         with (
-            patch("app.ai.agents.scaffolder.service.get_registry") as mock_registry,
-            patch("app.ai.agents.scaffolder.service.get_settings") as mock_settings,
-            patch("app.ai.agents.scaffolder.service.resolve_model", return_value="complex-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = xss_provider
@@ -227,12 +227,12 @@ class TestScaffolderService:
         request = ScaffolderRequest(brief="Create a newsletter email template")
 
         with (
-            patch("app.ai.agents.scaffolder.service.get_registry") as mock_registry,
-            patch("app.ai.agents.scaffolder.service.get_settings") as mock_settings,
-            patch("app.ai.agents.scaffolder.service.resolve_model", return_value="complex-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="complex-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = failing_provider
 
-            with pytest.raises(AIExecutionError, match="Scaffolder generation failed"):
+            with pytest.raises(AIExecutionError, match="scaffolder processing failed"):
                 await service.generate(request)

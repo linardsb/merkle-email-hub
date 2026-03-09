@@ -700,6 +700,9 @@ Wire graph search into blueprint nodes. ~~Author initial SKILL.md files for the 
 ~~**Step 5 — Build Remaining 6 Agents WITH Phase 7+8 Patterns (Task 4.1)**~~ DONE (Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation — all complete)
 Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
 
+~~**Step 5.5 — Agent Architecture Improvements (`.agents/plans/agent-improvements.md`)**~~ DONE (2026-03-09)
+All 6 phases complete. `BaseAgentService` shared pipeline extracted (`app/ai/agents/base.py`) — 7 agents refactored, ~500 lines removed. Thread-safe `_get_model_tier` + `_should_run_qa` hooks replace singleton state mutation. Prompt gap fixes (scaffolder MSO/a11y/dark mode MANDATORY, content num_alternatives). Recovery router: "fallback" keyword collision fixed + cycle detection via `handoff_history`. Eval trace fix (dark mode input HTML stored, judge graceful degradation). Response schemas standardised: `confidence` + `skills_loaded` on all 9 agents; `to_handoff()` on BaseAgentService. Memory recall wired into blueprint engine `_build_node_context()`. 544 tests pass.
+
 **Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
 Requires real runs and real failure data. Feed blueprint outcomes into graph. Generate prompt fragments from failure clusters. Close the learning loop.
 

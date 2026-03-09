@@ -75,6 +75,8 @@ class RecoveryRouterNode:
         )
 
         # Determine if any failures are personalisation-specific
+        # NOTE: "fallback" was removed — it collides with MSO fallback check names
+        # (e.g. "fallback: No MSO conditional comments") causing misrouting.
         has_personalisation_failure = any(
             any(
                 kw in f.lower()
@@ -84,8 +86,7 @@ class RecoveryRouterNode:
                     "liquid",
                     "ampscript",
                     "dynamic content",
-                    "variable",
-                    "fallback",
+                    "merge tag",
                 )
             )
             for f in context.qa_failures
@@ -126,11 +127,21 @@ class RecoveryRouterNode:
                             "personalization",
                             "liquid",
                             "ampscript",
-                            "dynamic",
+                            "dynamic content",
+                            "merge tag",
                         )
                     )
                     for w in upstream.warnings
                 )
+
+        # Track which agents already ran via handoff_history to avoid cycles
+        history = context.metadata.get("handoff_history", [])
+        agents_already_run: set[str] = set()
+        all_history_warnings: list[str] = []
+        for h in history:
+            if isinstance(h, AgentHandoff):
+                agents_already_run.add(h.agent_name)
+                all_history_warnings.extend(h.warnings)
 
         if has_dark_mode_failure:
             target = "dark_mode"
@@ -145,10 +156,22 @@ class RecoveryRouterNode:
         else:
             target = "scaffolder"
 
+        # If the target agent already ran and the same failure persists,
+        # fall back to scaffolder (general fixer) to avoid infinite loops
+        if target in agents_already_run and context.iteration > 0:
+            logger.warning(
+                "blueprint.recovery_router.cycle_detected",
+                original_target=target,
+                agents_already_run=sorted(agents_already_run),
+                iteration=context.iteration,
+            )
+            target = "scaffolder"
+
         logger.info(
             "blueprint.recovery_router.routing",
             target=target,
             failure_count=len(context.qa_failures),
+            agents_already_run=sorted(agents_already_run),
         )
 
         return NodeResult(

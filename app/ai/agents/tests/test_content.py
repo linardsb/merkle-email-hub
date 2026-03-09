@@ -142,9 +142,9 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -171,9 +171,9 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -195,9 +195,9 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -220,9 +220,9 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -248,9 +248,9 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = spam_provider
@@ -273,14 +273,14 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = failing_provider
 
-            with pytest.raises(AIExecutionError, match="Content generation failed"):
+            with pytest.raises(AIExecutionError, match="content processing failed"):
                 await service.generate(request)
 
     @pytest.mark.asyncio()
@@ -293,10 +293,10 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
             patch(
-                "app.ai.agents.content.service.resolve_model", return_value="standard-model"
+                "app.ai.agents.base.resolve_model", return_value="standard-model"
             ) as mock_resolve,
         ):
             mock_settings.return_value.ai.provider = "test"
@@ -322,11 +322,9 @@ class TestContentService:
         )
 
         with (
-            patch("app.ai.agents.content.service.get_registry") as mock_registry,
-            patch("app.ai.agents.content.service.get_settings") as mock_settings,
-            patch(
-                "app.ai.agents.content.service.resolve_model", return_value="light-model"
-            ) as mock_resolve,
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="light-model") as mock_resolve,
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider

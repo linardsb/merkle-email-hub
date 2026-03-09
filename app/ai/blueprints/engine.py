@@ -301,6 +301,12 @@ class BlueprintEngine:
         if node.node_type == "agentic" and iteration > 0:
             context.metadata["progress_anchor"] = self._build_progress_anchor(run)
 
+        # Inject recalled memories for agentic nodes (lazy — only if brief is present)
+        if node.node_type == "agentic" and brief and self._project_id is not None:
+            recalled = await self._recall_memories(brief)
+            if recalled:
+                context.metadata["recalled_memories"] = recalled
+
         # Inject component context for agentic nodes (lazy — only if HTML has refs)
         if node.node_type == "agentic" and run.html and self._component_resolver is not None:
             from app.ai.blueprints.component_context import (
@@ -315,6 +321,43 @@ class BlueprintEngine:
                     context.metadata["component_context"] = format_component_context(components)
 
         return context
+
+    async def _recall_memories(self, brief: str) -> list[dict[str, str]]:
+        """Recall relevant memories from prior blueprint runs.
+
+        Returns a list of memory dicts (content, agent, type) for injection
+        into agentic node context. Failure-safe: returns empty list on errors.
+        """
+        try:
+            from app.core.config import get_settings
+            from app.core.database import get_db_context
+            from app.knowledge.embedding import get_embedding_provider
+            from app.memory.service import MemoryService
+
+            async with get_db_context() as db:
+                embedding_provider = get_embedding_provider(get_settings())
+                memory_service = MemoryService(db, embedding_provider)
+                memories = await memory_service.recall(
+                    brief,
+                    project_id=self._project_id,
+                    limit=5,
+                )
+                return [
+                    {
+                        "content": m.content,
+                        "agent": m.agent_type,
+                        "type": m.memory_type,
+                    }
+                    for m, score in memories
+                    if score > 0.3
+                ]
+        except Exception:
+            logger.debug(
+                "blueprint.memory_recall_failed",
+                project_id=self._project_id,
+                exc_info=True,
+            )
+            return []
 
     def _build_progress_anchor(self, run: BlueprintRun) -> str:
         """Build compact progress summary for agentic retry context."""

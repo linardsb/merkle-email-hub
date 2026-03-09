@@ -102,27 +102,41 @@ preheader: "Preview text for inbox"
 - Always include: `style="display:block; border:0;"`
 - Use `https://placehold.co/WxH` for placeholder URLs
 
-## Outlook / MSO Compatibility
+## Outlook / MSO Compatibility (MANDATORY)
 
-- Use MSO conditional comments for Outlook-specific rendering
-- Include VML namespaces when using VML elements
-- Use `<!--[if mso]>` and `<!--[if !mso]><!-->` patterns correctly
+Every generated email MUST include these namespace declarations in the `<html>` tag:
+```html
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="en">
+```
 
-## Dark Mode Support
+Required MSO patterns:
+- Use `<!--[if mso]>` and `<!--[if !mso]><!-->` conditional comments (always balanced)
+- Wrap main content in MSO conditional table for Outlook centering
+- Include `xmlns:v` and `xmlns:o` even if no VML elements — Outlook needs them for rendering
 
-- Include `<meta name="color-scheme" content="light dark">`
-- Include `<meta name="supported-color-schemes" content="light dark">`
-- Add `@media (prefers-color-scheme: dark)` styles
-- Use `[data-ogsc]` and `[data-ogsb]` selectors for Outlook
+## Dark Mode Foundation (MANDATORY)
 
-## Accessibility
+Every generated email MUST include ALL of the following in `<head>`:
+- `<meta name="color-scheme" content="light dark">`
+- `<meta name="supported-color-schemes" content="light dark">`
 
-- `lang` attribute on `<html>` tag
-- `role="article"` and `aria-roledescription="email"` on outermost wrapper
-- `role="presentation"` on ALL layout tables
-- Semantic heading hierarchy (h1 -> h2 -> h3)
-- Minimum 4.5:1 colour contrast
-- Meaningful `alt` text for all images
+And in `<style>`:
+- `@media (prefers-color-scheme: dark)` rules for background and text colour overrides
+- `[data-ogsc]` selectors for Outlook dark mode text colour overrides
+- `[data-ogsb]` selectors for Outlook dark mode background colour overrides
+
+Even if the brief doesn't mention dark mode, include the meta tags and at minimum a `[data-ogsb]` rule for the body background.
+
+## Accessibility (MANDATORY)
+
+Every generated email MUST include ALL of the following:
+- `<html lang="en">` (or appropriate language code from brief) — NEVER omit the lang attribute
+- `role="article"` and `aria-roledescription="email"` on the main content wrapper `<div>` or `<td>`
+- `role="presentation"` on ALL layout `<table>` elements — no exceptions
+- Heading hierarchy: exactly ONE `<h1>`, use `<h2>`/`<h3>` for subsections — never skip levels
+- `alt=""` on decorative images, descriptive `alt` text on content images (every `<img>` needs alt)
+- Minimum 4.5:1 colour contrast ratio for text
+- `dir="ltr"` on the main content wrapper (or `dir="rtl"` for RTL languages)
 
 ## Deterministic Checks (Run Before Output)
 

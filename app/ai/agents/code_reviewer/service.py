@@ -1,51 +1,34 @@
 # pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
+# ruff: noqa: ANN401, ARG002
 """Code Reviewer agent service -- orchestrates LLM -> parse issues -> optional QA."""
 
 import json
-import time
-import uuid
 from collections.abc import AsyncIterator
+from typing import Any
 
+from app.ai.agents.base import BaseAgentService
 from app.ai.agents.code_reviewer.prompt import (
-    build_system_prompt,
-    detect_relevant_skills,
+    build_system_prompt as _build_system_prompt,
+)
+from app.ai.agents.code_reviewer.prompt import (
+    detect_relevant_skills as _detect_relevant_skills,
 )
 from app.ai.agents.code_reviewer.schemas import (
     CodeReviewIssue,
     CodeReviewRequest,
     CodeReviewResponse,
 )
-from app.ai.exceptions import AIExecutionError
-from app.ai.protocols import Message
-from app.ai.registry import get_registry
-from app.ai.routing import resolve_model
-from app.ai.sanitize import sanitize_prompt, validate_output
-from app.ai.shared import extract_confidence, strip_confidence_comment
-from app.core.config import get_settings
-from app.core.logging import get_logger
+from app.ai.sanitize import validate_output
+from app.ai.shared import strip_confidence_comment
 from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.schemas import QACheckResult
-
-logger = get_logger(__name__)
-
-
-def _build_user_message(request: CodeReviewRequest) -> str:
-    """Build the user message from the request fields."""
-    focus_label = "all areas" if request.focus == "all" else request.focus
-    return (
-        f"Review the following email HTML. Focus on: {focus_label}.\n\nEmail HTML:\n{request.html}"
-    )
 
 
 def _extract_issues(raw_content: str) -> tuple[list[CodeReviewIssue], str]:
     """Extract structured issues from LLM response.
 
     Looks for a JSON block with 'issues' array and 'summary' field.
-
-    Returns:
-        Tuple of (issues list, summary string).
     """
-    # Try to find JSON in code fence
     content = raw_content
     if "```json" in content:
         start = content.index("```json") + 7
@@ -56,13 +39,11 @@ def _extract_issues(raw_content: str) -> tuple[list[CodeReviewIssue], str]:
         end = content.index("```", start)
         content = content[start:end].strip()
 
-    # Strip confidence comment if present
     content = strip_confidence_comment(content)
 
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
-        # Fallback: return raw content as summary with no structured issues
         return [], raw_content.strip()
 
     issues: list[CodeReviewIssue] = []
@@ -83,184 +64,103 @@ def _extract_issues(raw_content: str) -> tuple[list[CodeReviewIssue], str]:
     return issues, summary
 
 
-class CodeReviewService:
+class CodeReviewService(BaseAgentService):
     """Orchestrates the Code Reviewer agent pipeline.
 
     Pipeline: detect skills -> build prompt -> LLM call -> validate output ->
     parse issues -> optional QA checks.
     """
 
-    async def process(self, request: CodeReviewRequest) -> CodeReviewResponse:
-        """Review email HTML and return structured issues (non-streaming).
+    agent_name = "code_reviewer"
+    model_tier = "standard"
+    stream_prefix = "review"
 
-        Args:
-            request: The Code Review request with HTML and focus area.
+    def build_system_prompt(self, relevant_skills: list[str]) -> str:
+        return _build_system_prompt(relevant_skills)
 
-        Returns:
-            CodeReviewResponse with issues, summary, and optional QA results.
+    def detect_relevant_skills(self, request: Any) -> list[str]:
+        req: CodeReviewRequest = request
+        return _detect_relevant_skills(req.focus)
 
-        Raises:
-            AIExecutionError: If the LLM provider fails.
+    def _build_user_message(self, request: Any) -> str:
+        req: CodeReviewRequest = request
+        focus_label = "all areas" if req.focus == "all" else req.focus
+        return (
+            f"Review the following email HTML. Focus on: {focus_label}.\n\nEmail HTML:\n{req.html}"
+        )
+
+    def _post_process(self, raw_content: str) -> str:
+        """Code reviewer returns raw content for JSON extraction, not HTML."""
+        return validate_output(raw_content)
+
+    async def _run_qa(self, html: str) -> tuple[list[QACheckResult], bool]:
+        """Code reviewer runs QA on the original input HTML, not the output.
+
+        But _run_qa receives the post-processed output. We override process()
+        to handle this correctly.
         """
-        settings = get_settings()
-        provider_name = settings.ai.provider
-        model = resolve_model("standard")
-        model_id = f"{provider_name}:{model}"
+        qa_results: list[QACheckResult] = []
+        for check in ALL_CHECKS:
+            check_result = await check.run(html)
+            qa_results.append(check_result)
+        qa_passed = all(r.passed for r in qa_results)
+        return qa_results, qa_passed
 
-        # Progressive disclosure -- load only relevant skill files
-        relevant_skills = detect_relevant_skills(request.focus)
-        system_prompt = build_system_prompt(relevant_skills)
-
-        user_message = _build_user_message(request)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitize_prompt(user_message)),
-        ]
-
-        logger.info(
-            "agents.code_reviewer.process_started",
-            provider=provider_name,
-            model=model,
-            focus=request.focus,
-            html_length=len(request.html),
-            skills_loaded=relevant_skills,
-            run_qa=request.run_qa,
-        )
-
-        # Resolve provider and call LLM
-        registry = get_registry()
-        provider = registry.get_llm(provider_name)
-
-        try:
-            result = await provider.complete(messages, model_override=model, max_tokens=8192)
-        except Exception as e:
-            logger.error(
-                "agents.code_reviewer.process_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                provider=provider_name,
-            )
-            if isinstance(e, AIExecutionError):
-                raise
-            raise AIExecutionError("Code review processing failed") from e
-
-        # Process output: validate -> extract issues
-        raw_content = validate_output(result.content)
-        confidence = extract_confidence(raw_content)
-        issues, summary = _extract_issues(raw_content)
-
-        logger.info(
-            "agents.code_reviewer.process_completed",
-            model=model_id,
-            focus=request.focus,
-            issue_count=len(issues),
-            confidence=confidence,
-            usage=result.usage,
-        )
-
-        # Optional QA checks on the input HTML
-        qa_results: list[QACheckResult] | None = None
-        qa_passed: bool | None = None
-
-        if request.run_qa:
-            qa_results = []
-            for check in ALL_CHECKS:
-                check_result = await check.run(request.html)
-                qa_results.append(check_result)
-            qa_passed = all(r.passed for r in qa_results)
-
-            logger.info(
-                "agents.code_reviewer.qa_completed",
-                qa_passed=qa_passed,
-                checks_passed=sum(1 for r in qa_results if r.passed),
-                checks_total=len(qa_results),
-            )
-
+    def _build_response(
+        self,
+        *,
+        request: Any,
+        html: str,
+        qa_results: list[QACheckResult] | None,
+        qa_passed: bool | None,
+        model_id: str,
+        confidence: float | None,
+        skills_loaded: list[str],
+        raw_content: str,
+    ) -> CodeReviewResponse:
+        req: CodeReviewRequest = request
+        # For code reviewer, "html" is actually raw LLM output (via overridden _post_process)
+        issues, summary = _extract_issues(html)
         return CodeReviewResponse(
-            html=request.html,  # Return original HTML unmodified
+            html=req.html,  # Return original HTML unmodified
             issues=issues,
             summary=summary,
-            skills_loaded=relevant_skills,
+            skills_loaded=skills_loaded,
             qa_results=qa_results,
             qa_passed=qa_passed,
             model=model_id,
+            confidence=confidence,
         )
 
-    async def stream_process(self, request: CodeReviewRequest) -> AsyncIterator[str]:
-        """Stream code review as SSE-formatted chunks.
+    def _should_run_qa(self, request: Any) -> bool:
+        """Code reviewer suppresses QA in base pipeline — runs it on input HTML instead."""
+        return False
 
-        QA is skipped in streaming mode (requires complete output).
+    async def process(self, request: Any) -> CodeReviewResponse:
+        """Override to run QA on the INPUT html instead of the output."""
+        response: CodeReviewResponse = await super().process(request)
 
-        Args:
-            request: The Code Review request with HTML.
-
-        Yields:
-            SSE-formatted data strings.
-
-        Raises:
-            AIExecutionError: If the LLM provider fails.
-        """
-        settings = get_settings()
-        provider_name = settings.ai.provider
-        model = resolve_model("standard")
-        model_id = f"{provider_name}:{model}"
-        response_id = f"review-{uuid.uuid4().hex[:12]}"
-
-        relevant_skills = detect_relevant_skills(request.focus)
-        system_prompt = build_system_prompt(relevant_skills)
-
-        user_message = _build_user_message(request)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitize_prompt(user_message)),
-        ]
-
-        logger.info(
-            "agents.code_reviewer.stream_started",
-            provider=provider_name,
-            model=model,
-            focus=request.focus,
-            html_length=len(request.html),
-        )
-
-        registry = get_registry()
-        provider = registry.get_llm(provider_name)
-
-        try:
-            async for chunk in provider.stream(messages, model_override=model, max_tokens=8192):  # type: ignore[attr-defined]
-                sse_data = {
-                    "id": response_id,
-                    "object": "chat.completion.chunk",
-                    "created": int(time.time()),
-                    "model": model_id,
-                    "choices": [
-                        {
-                            "index": 0,
-                            "delta": {"content": chunk},
-                            "finish_reason": None,
-                        }
-                    ],
-                }
-                yield f"data: {json.dumps(sse_data)}\n\n"
-
-        except Exception as e:
-            logger.error(
-                "agents.code_reviewer.stream_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                provider=provider_name,
+        # Run QA on the original input HTML (not the LLM output)
+        original_run_qa = bool(getattr(request, "run_qa", self.run_qa_default))
+        if original_run_qa:
+            req: CodeReviewRequest = request
+            qa_results_list, qa_passed = await self._run_qa(req.html)
+            response = CodeReviewResponse(
+                html=response.html,
+                issues=response.issues,
+                summary=response.summary,
+                skills_loaded=response.skills_loaded,
+                qa_results=qa_results_list,
+                qa_passed=qa_passed,
+                model=response.model,
+                confidence=response.confidence,
             )
-            if isinstance(e, AIExecutionError):
-                raise
-            raise AIExecutionError("Code review streaming failed") from e
 
-        yield "data: [DONE]\n\n"
+        return response
 
-        logger.info(
-            "agents.code_reviewer.stream_completed",
-            response_id=response_id,
-            provider=provider_name,
-        )
+    async def stream_process(self, request: Any) -> AsyncIterator[str]:
+        async for chunk in super().stream_process(request):
+            yield chunk
 
 
 # -- Module-level singleton --
@@ -269,11 +169,7 @@ _code_review_service: CodeReviewService | None = None
 
 
 def get_code_review_service() -> CodeReviewService:
-    """Get or create the Code Review service singleton.
-
-    Returns:
-        Singleton CodeReviewService instance.
-    """
+    """Get or create the Code Review service singleton."""
     global _code_review_service
     if _code_review_service is None:
         _code_review_service = CodeReviewService()

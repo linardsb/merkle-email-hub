@@ -192,9 +192,9 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
-            patch("app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -219,9 +219,9 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
-            patch("app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -245,9 +245,9 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
-            patch("app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -270,9 +270,9 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
-            patch("app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = mock_provider
@@ -304,9 +304,9 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
-            patch("app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = xss_provider
@@ -326,14 +326,14 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
-            patch("app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
         ):
             mock_settings.return_value.ai.provider = "test"
             mock_registry.return_value.get_llm.return_value = failing_provider
 
-            with pytest.raises(AIExecutionError, match="Dark mode processing failed"):
+            with pytest.raises(AIExecutionError, match="dark_mode processing failed"):
                 await service.process(request)
 
     @pytest.mark.asyncio()
@@ -345,10 +345,10 @@ class TestDarkModeService:
         )
 
         with (
-            patch("app.ai.agents.dark_mode.service.get_registry") as mock_registry,
-            patch("app.ai.agents.dark_mode.service.get_settings") as mock_settings,
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
             patch(
-                "app.ai.agents.dark_mode.service.resolve_model", return_value="standard-model"
+                "app.ai.agents.base.resolve_model", return_value="standard-model"
             ) as mock_resolve,
         ):
             mock_settings.return_value.ai.provider = "test"

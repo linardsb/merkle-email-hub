@@ -87,8 +87,17 @@ class DarkModeJudge:
         if preserve_colors:
             constraints += f"\nColors to preserve: {preserve_colors}"
 
+        # If input HTML is missing (old traces), warn the judge to skip html_preservation
+        input_section = f"## ORIGINAL HTML (Input)\n```html\n{html_input}\n```"
+        if not html_input.strip():
+            input_section = (
+                "## ORIGINAL HTML (Input)\n"
+                "**Not available in trace data.** "
+                "For html_preservation, mark as PASS (cannot evaluate without input)."
+            )
+
         user_content = (
-            f"## ORIGINAL HTML (Input)\n```html\n{html_input}\n```\n"
+            f"{input_section}\n"
             f"{constraints}\n\n"
             f"## DARK MODE HTML (Output)\n```html\n{html_output}\n```"
         )

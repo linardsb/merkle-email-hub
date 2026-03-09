@@ -69,6 +69,8 @@ refine email marketing copy based on the operation.
 - ALL output inside ONE ```text code block
 - No HTML, no markdown formatting (except the code block wrapper)
 
+**CRITICAL:** When `num_alternatives=1` or the request asks for a single result, return EXACTLY ONE result. Do NOT provide alternatives, variations, or options unless explicitly asked. One request = one output unless told otherwise.
+
 ## Operations
 
 ### subject_line
