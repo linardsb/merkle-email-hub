@@ -1,270 +1,209 @@
 {
   "summary": {
     "total_traces": 36,
-    "passed": 0,
-    "failed": 36,
+    "passed": 6,
+    "failed": 30,
     "errors": 0,
-    "overall_pass_rate": 0.0
+    "overall_pass_rate": 0.16666666666666666
   },
   "pass_rates": {
     "content": {
-      "copy_quality": 0.7857142857142857,
-      "grammar": 0.9285714285714286,
-      "length_appropriate": 0.42857142857142855,
-      "spam_avoidance": 0.9285714285714286,
-      "tone_match": 0.9285714285714286
+      "copy_quality": 0.9285714285714286,
+      "operation_compliance": 0.5714285714285714,
+      "security_and_pii": 0.9285714285714286,
+      "spam_avoidance": 0.8571428571428571,
+      "tone_accuracy": 1.0
     },
     "dark_mode": {
-      "color_coherence": 0.7,
-      "html_preservation": 0.9,
-      "media_query": 0.8,
-      "meta_tags": 0.9,
-      "outlook_selectors": 0.7
+      "color_coherence": 1.0,
+      "contrast_preservation": 1.0,
+      "html_preservation": 0.1,
+      "meta_and_media_query": 1.0,
+      "outlook_selector_completeness": 1.0
     },
     "scaffolder": {
-      "brief_fidelity": 0.75,
-      "code_quality": 0.5833333333333334,
-      "email_layout": 0.8333333333333334,
-      "mso_conditionals": 0.8333333333333334,
-      "table_structure": 1.0
+      "accessibility_baseline": 0.08333333333333333,
+      "brief_fidelity": 1.0,
+      "dark_mode_readiness": 0.25,
+      "email_layout_patterns": 1.0,
+      "mso_conditional_correctness": 0.0
     }
   },
   "failure_clusters": [
     {
-      "cluster_id": "content:length_appropriate",
-      "agent": "content",
-      "criterion": "length_appropriate",
-      "pattern": "Fail: mock evaluation of length_appropriate for content-001",
-      "count": 8,
-      "trace_ids": [
-        "content-001",
-        "content-004",
-        "content-007",
-        "content-009",
-        "content-010",
-        "content-011",
-        "content-013",
-        "content-014"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of length_appropriate for content-001",
-        "Fail: mock evaluation of length_appropriate for content-004",
-        "Fail: mock evaluation of length_appropriate for content-007"
-      ]
-    },
-    {
-      "cluster_id": "scaffolder:code_quality",
+      "cluster_id": "scaffolder:mso_conditional_correctness",
       "agent": "scaffolder",
-      "criterion": "code_quality",
-      "pattern": "Fail: mock evaluation of code_quality for scaff-004",
-      "count": 5,
+      "criterion": "mso_conditional_correctness",
+      "pattern": "While MSO conditionals are present and properly closed, the VML elements are missing required xmlns:v and xmlns:o namesp",
+      "count": 12,
       "trace_ids": [
+        "scaff-001",
+        "scaff-002",
+        "scaff-003",
         "scaff-004",
+        "scaff-005",
+        "scaff-006",
+        "scaff-007",
         "scaff-008",
+        "scaff-009",
         "scaff-010",
         "scaff-011",
         "scaff-012"
       ],
       "sample_reasonings": [
-        "Fail: mock evaluation of code_quality for scaff-004",
-        "Fail: mock evaluation of code_quality for scaff-008",
-        "Fail: mock evaluation of code_quality for scaff-010"
+        "While MSO conditionals are present and properly closed, the VML elements are missing required xmlns:v and xmlns:o namespace declarations in the opening MSO conditional comments, and the namespace references in v:roundrect are incomplete.",
+        "While MSO conditionals are present for the ghost table layout and VML button, the required xmlns:v and xmlns:o namespace declarations are missing from the document. The VML button references 'urn:schemas-microsoft-com:vml' but the namespaces aren't declared in the HTML element.",
+        "While MSO conditional comments are present and properly structured, they are missing the required xmlns:v and xmlns:o namespace declarations that are essential for Outlook compatibility."
       ]
     },
     {
-      "cluster_id": "content:copy_quality",
-      "agent": "content",
-      "criterion": "copy_quality",
-      "pattern": "Fail: mock evaluation of copy_quality for content-002",
-      "count": 3,
-      "trace_ids": [
-        "content-002",
-        "content-008",
-        "content-012"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of copy_quality for content-002",
-        "Fail: mock evaluation of copy_quality for content-008",
-        "Fail: mock evaluation of copy_quality for content-012"
-      ]
-    },
-    {
-      "cluster_id": "dark_mode:color_coherence",
-      "agent": "dark_mode",
-      "criterion": "color_coherence",
-      "pattern": "Fail: mock evaluation of color_coherence for dark-001",
-      "count": 3,
-      "trace_ids": [
-        "dark-001",
-        "dark-007",
-        "dark-010"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of color_coherence for dark-001",
-        "Fail: mock evaluation of color_coherence for dark-007",
-        "Fail: mock evaluation of color_coherence for dark-010"
-      ]
-    },
-    {
-      "cluster_id": "dark_mode:outlook_selectors",
-      "agent": "dark_mode",
-      "criterion": "outlook_selectors",
-      "pattern": "Fail: mock evaluation of outlook_selectors for dark-002",
-      "count": 3,
-      "trace_ids": [
-        "dark-002",
-        "dark-006",
-        "dark-008"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of outlook_selectors for dark-002",
-        "Fail: mock evaluation of outlook_selectors for dark-006",
-        "Fail: mock evaluation of outlook_selectors for dark-008"
-      ]
-    },
-    {
-      "cluster_id": "scaffolder:brief_fidelity",
+      "cluster_id": "scaffolder:accessibility_baseline",
       "agent": "scaffolder",
-      "criterion": "brief_fidelity",
-      "pattern": "Fail: mock evaluation of brief_fidelity for scaff-001",
-      "count": 3,
+      "criterion": "accessibility_baseline",
+      "pattern": "The HTML is missing the lang attribute on the <html> tag, role='article' on the wrapper, and lacks a proper semantic hea",
+      "count": 11,
       "trace_ids": [
         "scaff-001",
-        "scaff-005",
-        "scaff-006"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of brief_fidelity for scaff-001",
-        "Fail: mock evaluation of brief_fidelity for scaff-005",
-        "Fail: mock evaluation of brief_fidelity for scaff-006"
-      ]
-    },
-    {
-      "cluster_id": "dark_mode:media_query",
-      "agent": "dark_mode",
-      "criterion": "media_query",
-      "pattern": "Fail: mock evaluation of media_query for dark-004",
-      "count": 2,
-      "trace_ids": [
-        "dark-004",
-        "dark-009"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of media_query for dark-004",
-        "Fail: mock evaluation of media_query for dark-009"
-      ]
-    },
-    {
-      "cluster_id": "scaffolder:email_layout",
-      "agent": "scaffolder",
-      "criterion": "email_layout",
-      "pattern": "Fail: mock evaluation of email_layout for scaff-002",
-      "count": 2,
-      "trace_ids": [
         "scaff-002",
-        "scaff-003"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of email_layout for scaff-002",
-        "Fail: mock evaluation of email_layout for scaff-003"
-      ]
-    },
-    {
-      "cluster_id": "scaffolder:mso_conditionals",
-      "agent": "scaffolder",
-      "criterion": "mso_conditionals",
-      "pattern": "Fail: mock evaluation of mso_conditionals for scaff-007",
-      "count": 2,
-      "trace_ids": [
+        "scaff-003",
+        "scaff-005",
+        "scaff-006",
         "scaff-007",
-        "scaff-009"
+        "scaff-008",
+        "scaff-009",
+        "scaff-010",
+        "scaff-011",
+        "scaff-012"
       ],
       "sample_reasonings": [
-        "Fail: mock evaluation of mso_conditionals for scaff-007",
-        "Fail: mock evaluation of mso_conditionals for scaff-009"
-      ]
-    },
-    {
-      "cluster_id": "content:grammar",
-      "agent": "content",
-      "criterion": "grammar",
-      "pattern": "Fail: mock evaluation of grammar for content-006",
-      "count": 1,
-      "trace_ids": [
-        "content-006"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of grammar for content-006"
-      ]
-    },
-    {
-      "cluster_id": "content:spam_avoidance",
-      "agent": "content",
-      "criterion": "spam_avoidance",
-      "pattern": "Fail: mock evaluation of spam_avoidance for content-005",
-      "count": 1,
-      "trace_ids": [
-        "content-005"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of spam_avoidance for content-005"
-      ]
-    },
-    {
-      "cluster_id": "content:tone_match",
-      "agent": "content",
-      "criterion": "tone_match",
-      "pattern": "Fail: mock evaluation of tone_match for content-003",
-      "count": 1,
-      "trace_ids": [
-        "content-003"
-      ],
-      "sample_reasonings": [
-        "Fail: mock evaluation of tone_match for content-003"
+        "The HTML is missing the lang attribute on the <html> tag, role='article' on the wrapper, and lacks a proper semantic heading hierarchy. While images have meaningful alt text and proper styling, the fundamental accessibility structure is incomplete.",
+        "Missing critical accessibility features: no lang attribute on <html> element, no role='article' on wrapper, and no semantic heading hierarchy (uses h2, h3 without h1). Images do have proper alt text, width/height, and display:block styling.",
+        "Missing lang attribute on <html> tag, role='article' on wrapper, and semantic heading hierarchy (uses h1 then h3, skipping h2). Images do have proper alt text, width/height, and display:block styling."
       ]
     },
     {
       "cluster_id": "dark_mode:html_preservation",
       "agent": "dark_mode",
       "criterion": "html_preservation",
-      "pattern": "Fail: mock evaluation of html_preservation for dark-005",
-      "count": 1,
+      "pattern": "The original HTML input is empty, but the output contains a complete HTML email structure. This violates the requirement",
+      "count": 9,
       "trace_ids": [
-        "dark-005"
+        "dark-001",
+        "dark-002",
+        "dark-003",
+        "dark-004",
+        "dark-005",
+        "dark-006",
+        "dark-007",
+        "dark-008",
+        "dark-010"
       ],
       "sample_reasonings": [
-        "Fail: mock evaluation of html_preservation for dark-005"
+        "The original HTML input is empty, but the output contains a complete HTML email structure. This violates the requirement to preserve the original HTML structure exactly.",
+        "Cannot verify HTML structure preservation because the original input HTML is empty, making it impossible to compare and confirm that all elements, attributes, and structure were maintained.",
+        "Cannot verify HTML structure preservation because the original HTML input is empty. Without the original HTML to compare against, it's impossible to determine if the structure, elements, attributes, and MSO conditionals were preserved exactly."
       ]
     },
     {
-      "cluster_id": "dark_mode:meta_tags",
-      "agent": "dark_mode",
-      "criterion": "meta_tags",
-      "pattern": "Fail: mock evaluation of meta_tags for dark-003",
-      "count": 1,
+      "cluster_id": "scaffolder:dark_mode_readiness",
+      "agent": "scaffolder",
+      "criterion": "dark_mode_readiness",
+      "pattern": "The output is missing required dark mode meta tags (color-scheme, supported-color-schemes) and lacks comprehensive dark ",
+      "count": 9,
       "trace_ids": [
-        "dark-003"
+        "scaff-001",
+        "scaff-002",
+        "scaff-003",
+        "scaff-006",
+        "scaff-007",
+        "scaff-008",
+        "scaff-009",
+        "scaff-011",
+        "scaff-012"
       ],
       "sample_reasonings": [
-        "Fail: mock evaluation of meta_tags for dark-003"
+        "The output is missing required dark mode meta tags (color-scheme, supported-color-schemes) and lacks comprehensive dark mode CSS rules with proper [data-ogsc]/[data-ogsb] selectors for all elements that need dark mode styling.",
+        "The output completely lacks dark mode support - no color-scheme meta tags, no @media (prefers-color-scheme: dark) rules, and no [data-ogsc]/[data-ogsb] Outlook dark mode selectors are present.",
+        "Missing required dark mode meta tags (color-scheme, supported-color-schemes) and [data-ogsb] Outlook dark mode selectors. Only includes basic @media query and [data-ogsc] selector."
+      ]
+    },
+    {
+      "cluster_id": "content:operation_compliance",
+      "agent": "content",
+      "criterion": "operation_compliance",
+      "pattern": "The operation requested a single subject line, but the output provides 5 different options separated by dashes. This doe",
+      "count": 6,
+      "trace_ids": [
+        "content-001",
+        "content-002",
+        "content-003",
+        "content-004",
+        "content-005",
+        "content-013"
+      ],
+      "sample_reasonings": [
+        "The operation requested a single subject line, but the output provides 5 different options separated by dashes. This does not comply with the subject_line operation specification.",
+        "The operation requested a single subject line, but the output provided three different options separated by dashes, which doesn't comply with the specific operation request.",
+        "The operation requested a single subject line, but the agent provided three options with separators, which doesn't comply with delivering one final subject line output."
+      ]
+    },
+    {
+      "cluster_id": "content:spam_avoidance",
+      "agent": "content",
+      "criterion": "spam_avoidance",
+      "pattern": "The output contains '100% online' which uses the spam trigger '100%' that should be avoided according to the criteria.",
+      "count": 2,
+      "trace_ids": [
+        "content-007",
+        "content-011"
+      ],
+      "sample_reasonings": [
+        "The output contains '100% online' which uses the spam trigger '100%' that should be avoided according to the criteria.",
+        "The output contains 'WILD' and 'HERE' in all caps, which are spam triggers that should be avoided even when used for emphasis."
+      ]
+    },
+    {
+      "cluster_id": "content:copy_quality",
+      "agent": "content",
+      "criterion": "copy_quality",
+      "pattern": "The agent provided three subject line options instead of one final subject line, and none are within the optimal 40-60 c",
+      "count": 1,
+      "trace_ids": [
+        "content-003"
+      ],
+      "sample_reasonings": [
+        "The agent provided three subject line options instead of one final subject line, and none are within the optimal 40-60 character range (first is 33, second is 32, third is 28 characters)."
+      ]
+    },
+    {
+      "cluster_id": "content:security_and_pii",
+      "agent": "content",
+      "criterion": "security_and_pii",
+      "pattern": "The output contains code block formatting (```text) which violates the plain text only requirement, even though PII was ",
+      "count": 1,
+      "trace_ids": [
+        "content-014"
+      ],
+      "sample_reasonings": [
+        "The output contains code block formatting (```text) which violates the plain text only requirement, even though PII was properly replaced with placeholders."
       ]
     }
   ],
   "top_failures": [
     {
-      "cluster_id": "content:length_appropriate",
-      "count": 8,
-      "pattern": "Fail: mock evaluation of length_appropriate for content-001"
+      "cluster_id": "scaffolder:mso_conditional_correctness",
+      "count": 12,
+      "pattern": "While MSO conditionals are present and properly closed, the VML elements are missing required xmlns:v and xmlns:o namesp"
     },
     {
-      "cluster_id": "scaffolder:code_quality",
-      "count": 5,
-      "pattern": "Fail: mock evaluation of code_quality for scaff-004"
+      "cluster_id": "scaffolder:accessibility_baseline",
+      "count": 11,
+      "pattern": "The HTML is missing the lang attribute on the <html> tag, role='article' on the wrapper, and lacks a proper semantic hea"
     },
     {
-      "cluster_id": "content:copy_quality",
-      "count": 3,
-      "pattern": "Fail: mock evaluation of copy_quality for content-002"
+      "cluster_id": "dark_mode:html_preservation",
+      "count": 9,
+      "pattern": "The original HTML input is empty, but the output contains a complete HTML email structure. This violates the requirement"
     }
   ]
 }
