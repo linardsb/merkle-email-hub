@@ -306,7 +306,7 @@ Audit conducted 2026-03-06. Follow-up audit 2026-03-07. Fix pattern: `verify_pro
 ### Phase 7 — Agent Capability Improvements
 Build infrastructure before remaining agents so every new agent inherits patterns from day one.
 - [x] 7.1 Structured inter-agent handoff schemas (`AgentHandoff` frozen dataclass, full history via `_handoff_history`, auto-persisted to episodic memory via `handoff_memory.py`, exposed in API as `HandoffSummary`)
-- [ ] 7.2 Eval-informed agent prompts (unblocked — real failure data available from Phase 5.4-5.8)
+- [x] 7.2 Eval-informed agent prompts (`app/ai/agents/evals/failure_warnings.py`, reads `traces/analysis.json`, injects per-agent warnings into all 9 `build_system_prompt()` for criteria <85% pass rate)
 - [x] 7.3 Agent confidence scoring (0-1 via `<!-- CONFIDENCE: X.XX -->` HTML comment, threshold 0.5 → `needs_review` status)
 - [x] 7.4 Template-aware component context (`ComponentResolver` Protocol, `DbComponentResolver`, auto-detect `<component>` refs, inject metadata into agentic node context)
 - [x] 7.5 Hub Agent Memory System (`app/memory/` VSA module, pgvector Vector(1024), HNSW index, temporal decay, DCG promotion bridge, 5 REST endpoints, 19 tests)
@@ -349,7 +349,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`
-- Phase 7: `AgentHandoff` structured handoffs with full history + episodic memory auto-persistence (`handoff_memory.py`), confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection, SKILL.md progressive disclosure files for all 9 agents; `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) with `_get_model_tier` + `_should_run_qa` hooks, standardised response schemas (`confidence` + `skills_loaded` on all agents), `to_handoff()` for standardised handoff emission, memory recall wired into blueprint engine, recovery router cycle detection via `handoff_history`
+- Phase 7: `AgentHandoff` structured handoffs with full history + episodic memory auto-persistence (`handoff_memory.py`), confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection, SKILL.md progressive disclosure files for all 9 agents; `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) with `_get_model_tier` + `_should_run_qa` hooks, standardised response schemas (`confidence` + `skills_loaded` on all agents), `to_handoff()` for standardised handoff emission, memory recall wired into blueprint engine, recovery router cycle detection via `handoff_history`; eval-informed prompts (`app/ai/agents/evals/failure_warnings.py`) — reads `traces/analysis.json`, injects per-agent failure warnings into all 9 `build_system_prompt()` for criteria <85% pass rate, mtime-cached
 
 ### Frontend Features (for `fe-prime`)
 - Dashboard: project overview grid, activity feed, QA summary, quick-start

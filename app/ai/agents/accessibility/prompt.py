@@ -6,6 +6,8 @@ skills/*.md via progressive disclosure based on HTML content analysis.
 
 from pathlib import Path
 
+from app.ai.agents.evals.failure_warnings import get_failure_warnings
+
 _SKILL_DIR = Path(__file__).parent
 
 # Load L1+L2 instructions from SKILL.md (always loaded)
@@ -48,6 +50,11 @@ def build_system_prompt(relevant_skills: list[str]) -> str:
         Complete system prompt with relevant L3 files appended.
     """
     parts = [ACCESSIBILITY_SYSTEM_PROMPT]
+
+    # Inject eval-informed failure warnings (task 7.2)
+    failure_warnings = get_failure_warnings("accessibility")
+    if failure_warnings:
+        parts.append(f"\n\n{failure_warnings}")
 
     for skill_key in relevant_skills:
         filename = SKILL_FILES.get(skill_key)

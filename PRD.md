@@ -5,7 +5,7 @@
 **Classification:** Internal / Confidential
 **Version:** 4.2
 **Date:** 2026-03-09
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7.1/7.3/7.4/7.5/7.6 done + handoff history with episodic memory auto-persistence + `BaseAgentService` shared pipeline + standardised response schemas; SKILL.md progressive disclosure for all 9 agents; remaining: 7.2 (unblocked), human label calibration (540 rows), Phase 8 knowledge graph
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7 complete (7.1-7.6 all done — handoff history, confidence scoring, component context, memory system, BaseAgentService, eval-informed prompts); SKILL.md progressive disclosure for all 9 agents; remaining: human label calibration (540 rows), Phase 8 knowledge graph
 
 ---
 
@@ -66,10 +66,11 @@
 | 4.1 (Knowledge) | Fifth eval-first + skills agent (RAG Q&A, advisory) | Progressive disclosure SKILL.md (L1+L2) + 4 L3 skill files (rag_strategies, email_client_engines, can_i_email_reference, citation_rules); `KnowledgeAgentService.process()` with RAG search → LLM → grounded answer with citations; `KnowledgeNode` advisory blueprint node (not in QA→recovery loop); 10 synthetic test cases across 4 dimensions (query_type, domain_coverage, answer_complexity, source_availability); `KnowledgeJudge` (5 criteria: answer_accuracy, citation_grounding, code_example_quality, source_relevance, completeness); dry-run verified; 542 tests pass |
 | 4.1 (Innovation) | Sixth eval-first + skills agent (generator, advisory) | Progressive disclosure SKILL.md (pre-existing L1+L2) + 4 L3 skill files (css_checkbox_hacks, amp_email, css_animations, feasibility_framework); `InnovationService.process()` with keyword-based skill detection → LLM → structured section parsing (prototype, feasibility, fallback); `InnovationNode` advisory blueprint node (not in QA→recovery loop); 10 synthetic test cases across 4 dimensions (technique_category, client_coverage_challenge, fallback_complexity, implementation_risk); `InnovationJudge` (5 criteria: technique_correctness, fallback_quality, client_coverage_accuracy, feasibility_assessment, innovation_value); dry-run verified; 191 AI tests pass |
 | 7.6 | Agent architecture improvements | `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) — 7 HTML transformer agents refactored (~500 lines removed); thread-safe `_get_model_tier` + `_should_run_qa` hooks; standardised response schemas (`confidence` + `skills_loaded` on all 9 agents); `to_handoff()` for standardised `AgentHandoff` emission; memory recall wired into blueprint engine `_build_node_context()`; recovery router cycle detection via `handoff_history` + "fallback" keyword collision fix; eval trace fix (dark mode input HTML storage + judge graceful degradation); prompt gap fixes (scaffolder MSO/a11y/dark mode MANDATORY sections, content num_alternatives); 544 tests pass |
+| 7.2 | Eval-informed agent prompts | `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.json`, filters per-agent criteria <85% pass rate, injects `## KNOWN FAILURE PATTERNS` into all 9 agent `build_system_prompt()` between L2 SKILL.md and L3 reference files; mtime-cached, max 5 warnings (worst-first), mock reasoning cleanup, graceful degradation; 16 new tests (560 total) |
 
 ### In Progress
 
-**Remaining:** 7.2 eval-informed prompts (unblocked). 8.5 SKILL.md for Content. Human label calibration (540 rows for TPR/TNR). Phase 8 knowledge graph (Cognee).
+**Remaining:** 8.5 SKILL.md for Content. Human label calibration (540 rows for TPR/TNR). Phase 8 knowledge graph (Cognee).
 
 ### Infrastructure Built
 
@@ -81,7 +82,7 @@
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (544 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests + 80 agent tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (560 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests + 80 agent tests); Frontend Vitest + React Testing Library (`make test-fe`)
 - **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); CI quality gate (`.github/workflows/ci.yml` — lint + types + security-check + tests); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6; PR security checklist template (`.github/PULL_REQUEST_TEMPLATE.md`)
 
 ---

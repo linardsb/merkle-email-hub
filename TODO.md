@@ -703,8 +703,11 @@ Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure
 ~~**Step 5.5 — Agent Architecture Improvements (`.agents/plans/agent-improvements.md`)**~~ DONE (2026-03-09)
 All 6 phases complete. `BaseAgentService` shared pipeline extracted (`app/ai/agents/base.py`) — 7 agents refactored, ~500 lines removed. Thread-safe `_get_model_tier` + `_should_run_qa` hooks replace singleton state mutation. Prompt gap fixes (scaffolder MSO/a11y/dark mode MANDATORY, content num_alternatives). Recovery router: "fallback" keyword collision fixed + cycle detection via `handoff_history`. Eval trace fix (dark mode input HTML stored, judge graceful degradation). Response schemas standardised: `confidence` + `skills_loaded` on all 9 agents; `to_handoff()` on BaseAgentService. Memory recall wired into blueprint engine `_build_node_context()`. 544 tests pass.
 
-**Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
-Requires real runs and real failure data. Feed blueprint outcomes into graph. Generate prompt fragments from failure clusters. Close the learning loop.
+~~**Step 6 — Eval-Informed Prompts (7.2)**~~ DONE (2026-03-09)
+Created `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.json` (from `make eval-analysis`), filters per-agent criteria below 85% pass rate, generates formatted warning fragments injected into all 9 agent `build_system_prompt()` between L2 SKILL.md and L3 reference files. Mtime-cached, max 5 warnings per agent (worst-first), mock reasoning cleanup, graceful degradation when no analysis file exists. 16 new tests, 560 total passing. Plan: `.agents/plans/eval-informed-prompts.md`.
+
+**Step 7 — Outcome Logging (8.4)**
+Feed blueprint outcomes into knowledge graph. Requires Phase 8 Cognee integration.
 
 ### ~~7.1 Structured Inter-Agent Handoff Schemas~~ DONE (extended 2026-03-09)
 **What:** Define typed handoff contracts between agents in blueprint pipelines. Currently agents chain via raw HTML output. Instead, each agent should emit a structured handoff object containing: the output artifact, metadata about decisions made (e.g., "used 2-column layout", "applied VML fallback for hero"), warnings/caveats, and context the next agent needs.
@@ -714,13 +717,13 @@ Requires real runs and real failure data. Feed blueprint outcomes into graph. Ge
 **Security:** Handoff objects scoped to blueprint session. No cross-project leakage. Decisions logged to audit trail. Memory persistence failure-safe (callback errors logged, never crash pipeline).
 **Verify:** Blueprint pipeline passes structured handoff between scaffolder → dark_mode nodes. Full history available to all downstream nodes. Handoffs auto-persisted to memory. 8 unit tests (4 original + 4 history/callback tests).
 
-### 7.2 Eval-Informed Agent Prompts ⏳ (unblocked — real failure data available)
+### ~~7.2 Eval-Informed Agent Prompts~~ DONE (2026-03-09)
 **What:** Feed common failure patterns from eval error analysis (`make eval-analysis`) back into agent system prompts automatically. When eval clusters show recurring failures (e.g., "Scaffolder consistently misses MSO conditionals for 3-column layouts"), inject those as explicit warnings in the agent's prompt.
 **Why:** Eval system already captures failure clusters in `error_analysis.py`. Currently this data sits in JSONL files — it should actively improve agent performance in a feedback loop.
 **Prerequisite:** ~~Requires real eval traces from Phase 5.4-5.8 live execution.~~ DONE — baseline established 2026-03-09 with real failure patterns available in `traces/analysis.json`.
-**Implementation:** `failure_warnings.py` in `app/ai/agents/evals/` that reads latest error analysis, extracts top-N failure patterns per agent, and generates prompt fragments. Agent system prompts load these at runtime via the existing skill/context loading pattern.
-**Security:** Failure patterns contain no user data (only aggregated error categories). Prompt fragments reviewed before deployment.
-**Verify:** After running `make eval-analysis`, agent prompt includes failure-specific warnings. Re-running evals shows improved pass rate on previously-failing dimensions.
+**Implementation:** `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.json`, filters per-agent criteria <85% pass rate, formats `## KNOWN FAILURE PATTERNS` prompt section (max 5 warnings, worst-first, mock reasoning cleanup). All 9 agent `prompt.py` files call `get_failure_warnings("agent_name")` in `build_system_prompt()`, injecting between L2 SKILL.md and L3 reference files. Mtime-based caching avoids re-reading JSON per call. Graceful degradation (returns `None` if no analysis file). Plan: `.agents/plans/eval-informed-prompts.md`.
+**Security:** Failure patterns contain no user data (only aggregated error categories). No new routes or API surface. Analysis path hardcoded, not user-controllable.
+**Verify:** 16 unit tests in `app/ai/agents/evals/tests/test_failure_warnings.py`. 560 total tests pass. With `traces/analysis.json` present, agents get failure warnings. Without it, prompts unchanged.
 
 ### ~~7.3 Agent Confidence Scoring~~ DONE
 **What:** Agents emit a confidence score (0-1) alongside their output, based on self-assessment of task complexity, knowledge gaps, and output quality. Blueprint engine uses confidence to decide: high confidence → proceed to QA, low confidence → route to human review instead of burning retry loops.
