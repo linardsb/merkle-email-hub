@@ -19,6 +19,7 @@ from typing import Any
 from app.ai.agents.evals.judges import JUDGE_REGISTRY
 from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
+from app.ai.agents.evals.judges.outlook_fixer import OutlookFixerJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
 from app.ai.agents.evals.judges.schemas import CriterionResult, JudgeInput, JudgeVerdict
 from app.ai.protocols import CompletionResponse, LLMProvider, Message
@@ -52,7 +53,7 @@ def trace_to_judge_input(trace: dict[str, Any]) -> JudgeInput:
 
 
 async def judge_trace(
-    judge: ScaffolderJudge | DarkModeJudge | ContentJudge,
+    judge: ScaffolderJudge | DarkModeJudge | ContentJudge | OutlookFixerJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,

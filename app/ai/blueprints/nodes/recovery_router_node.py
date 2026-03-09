@@ -6,11 +6,11 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 # Maps QA check names to the node that can fix them.
-# Dark mode failures → dark_mode node; everything else → scaffolder (general fix).
+# Dark mode failures → dark_mode node; fallback/MSO → outlook_fixer; rest → scaffolder.
 _FAILURE_ROUTING: dict[str, str] = {
     "dark_mode": "dark_mode",
+    "fallback": "outlook_fixer",
     "accessibility": "scaffolder",
-    "fallback": "scaffolder",
     "html_validation": "scaffolder",
     "css_support": "scaffolder",
     "file_size": "scaffolder",
@@ -49,16 +49,29 @@ class RecoveryRouterNode:
         # Determine if any failures are dark-mode-specific
         has_dark_mode_failure = any(f.startswith("dark_mode:") for f in context.qa_failures)
 
-        # Also check upstream handoff warnings for dark mode hints
-        if not has_dark_mode_failure:
-            upstream = context.metadata.get("upstream_handoff")
-            if isinstance(upstream, AgentHandoff) and upstream.warnings:
+        # Determine if any failures are Outlook/MSO/fallback-specific
+        has_outlook_failure = any(
+            f.startswith("fallback:") or "mso" in f.lower() or "outlook" in f.lower()
+            for f in context.qa_failures
+        )
+
+        # Also check upstream handoff warnings for routing hints
+        upstream = context.metadata.get("upstream_handoff")
+        if isinstance(upstream, AgentHandoff) and upstream.warnings:
+            if not has_dark_mode_failure:
                 has_dark_mode_failure = any(
                     "dark mode" in w.lower() or "dark_mode" in w.lower() for w in upstream.warnings
+                )
+            if not has_outlook_failure:
+                has_outlook_failure = any(
+                    "outlook" in w.lower() or "mso" in w.lower() or "vml" in w.lower()
+                    for w in upstream.warnings
                 )
 
         if has_dark_mode_failure:
             target = "dark_mode"
+        elif has_outlook_failure:
+            target = "outlook_fixer"
         else:
             target = "scaffolder"
 

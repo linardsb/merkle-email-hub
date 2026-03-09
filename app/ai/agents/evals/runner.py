@@ -22,6 +22,7 @@ from typing import Any
 
 from app.ai.agents.evals.synthetic_data_content import CONTENT_TEST_CASES
 from app.ai.agents.evals.synthetic_data_dark_mode import DARK_MODE_TEST_CASES
+from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_CASES
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 
 
@@ -176,6 +177,62 @@ async def run_content_case(case: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+async def run_outlook_fixer_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Run a single Outlook Fixer test case and return the trace."""
+    from app.ai.agents.outlook_fixer.schemas import OutlookFixerRequest
+    from app.ai.agents.outlook_fixer.service import OutlookFixerService
+
+    service = OutlookFixerService()
+    html_input: str = str(case["html_input"])
+    request = OutlookFixerRequest(
+        html=html_input,
+        issues=None,
+        stream=False,
+        run_qa=True,
+    )
+
+    start = time.monotonic()
+    try:
+        response = await service.process(request)
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "outlook_fixer",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+            },
+            "output": {
+                "html": response.html,
+                "fixes_applied": response.fixes_applied,
+                "qa_results": [r.model_dump() for r in (response.qa_results or [])],
+                "qa_passed": response.qa_passed,
+                "model": response.model,
+            },
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": None,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "outlook_fixer",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+            },
+            "output": None,
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": f"{type(e).__name__}: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
 async def run_agent(
     agent: str,
     output_dir: Path,
@@ -199,6 +256,9 @@ async def run_agent(
     elif agent == "content":
         cases = CONTENT_TEST_CASES
         runner = run_content_case
+    elif agent == "outlook_fixer":
+        cases = OUTLOOK_FIXER_TEST_CASES
+        runner = run_outlook_fixer_case
     else:
         raise ValueError(f"Unknown agent: {agent}")
 
@@ -262,7 +322,7 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description="Run agent evals")
     parser.add_argument(
         "--agent",
-        choices=["scaffolder", "dark_mode", "content", "all"],
+        choices=["scaffolder", "dark_mode", "content", "outlook_fixer", "all"],
         required=True,
     )
     parser.add_argument("--output", type=Path, default=Path("traces"))
@@ -280,7 +340,11 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    agents = ["scaffolder", "dark_mode", "content"] if args.agent == "all" else [args.agent]
+    agents = (
+        ["scaffolder", "dark_mode", "content", "outlook_fixer"]
+        if args.agent == "all"
+        else [args.agent]
+    )
 
     for agent in agents:
         await run_agent(

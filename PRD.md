@@ -3,15 +3,15 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 3.5
-**Date:** 2026-03-07
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Phase 5.3 judge prompts done; Phase 5.4-5.8 eval tooling + dry-run pipeline (58 unit tests); Phase 6 OWASP security hardening complete (6.1–6.5, 99+ security/resource tests, SDC improvements); Phase 7.1/7.3/7.4/7.5 agent improvements done (structured handoffs, confidence scoring, component context, agent memory system); remaining: 4.1 (6 agents), 7.2 (blocked on evals), Phase 5.4-5.8 live execution (requires LLM + human labels)
+**Version:** 3.7
+**Date:** 2026-03-09
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.2-4.5, 4.8-4.13 done; Outlook Fixer agent built (first eval-first + skills agent, 12 synthetic cases, 5-criteria judge, blueprint + recovery router integration); Phase 5.1-5.8 eval system complete (live LLM execution, 36 traces, baseline at 16.7% pass rate, 5/5 blueprint evals passed); Phase 6 OWASP security hardening complete (6.1–6.5); Phase 7.1/7.3/7.4/7.5 agent improvements done; remaining: 4.1 (5 agents), 7.2 (unblocked), human label calibration (540 rows)
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-07
+> Last updated: 2026-03-09
 
 ### Completed
 
@@ -57,12 +57,12 @@
 | 7.1+7.3+7.4 | Agent capability improvements | `AgentHandoff` frozen dataclass with decisions/warnings/component_refs/confidence; `ComponentMeta` + `ComponentResolver` Protocol; confidence scoring (threshold 0.5 → `needs_review`); `DbComponentResolver` for DB-backed component context; ScaffolderNode + DarkModeNode retrofitted; RecoveryRouterNode reads upstream warnings; `HandoffSummary` in API response; 21 new tests (511 total) |
 | 7.5 | Hub Agent Memory System (PRD 4.9.3-4.9.6) | `app/memory/` VSA module: `MemoryEntry` model with pgvector `Vector(1024)` + HNSW index; 3 memory types (procedural/episodic/semantic); temporal decay via `POWER(2, -age/half_life)`; `MemoryRepository` with cosine similarity search; `MemoryService` with store/recall/promote/compaction; DCG promotion bridge (`POST /memory/promote`); `MemoryCompactionPoller` background task; `MemoryConfig` settings; Alembic migration `f1a2b3c4d5e6`; 5 REST endpoints with admin/developer RBAC; 19 unit tests (530 total) |
 | 4.5 | Advanced features (6 features) | **F1 Collaborative Editing:** Yjs CRDT + y-codemirror.next, `useCollaboration` hook, demo mode simulated collaborator, `CollaboratorAvatars` + `ConnectionStatus` components. **F2 Localisation:** 6 locale stubs (en/ar/de/es/fr/ja), cookie-based `NEXT_LOCALE` switching, RTL `dir` attribute, `/settings` page with `LocaleSelector`, `/settings/translations` management table. **F3 Brand Guardrails:** `/projects/[id]/brand` settings page, `BrandColorEditor`/`BrandTypographyEditor`/`BrandLogoRules`/`BrandForbiddenPatterns` components, CodeMirror `brandLinter` extension, toolbar violations badge. **F4 AI Image Generation:** `ImageGenDialog` (40rem) with style presets grid (6 presets), image gallery, insert `<img>` at cursor; demo picsum.photos placeholders. **F5 Visual Liquid Builder:** @dnd-kit drag-and-drop, regex Liquid parser/serializer, 5 block types (if/for/assign/output/raw), Code/Visual tab switching in `editor-panel.tsx`, live preview with sample data. **F6 Client Briefs:** `/briefs` page mirroring Figma architecture, Jira/Asana/Monday.com connection cards, brief items panel, import-to-project flow. |
+| 5.4-5.8 | Eval live execution + baseline | 36 test cases through real Anthropic Claude Sonnet 4; 16.7% overall pass rate (Scaffolder 46.7%, Dark Mode 82%, Content 85.7%); failure clusters: MSO conditionals 0%, accessibility 8%, HTML preservation 10%; 5/5 blueprint evals passed with self-correction; baseline established in `traces/baseline.json`; 540 human label templates scaffolded |
+| 4.1 (Outlook Fixer) | First eval-first + skills agent | Progressive disclosure SKILL.md (L1+L2) + 4 L3 skill files (`mso_bug_fixes`, `vml_reference`, `mso_conditionals`, `diagnostic`); `OutlookFixerService` with `detect_relevant_skills()` for on-demand skill loading; `OutlookFixerNode` blueprint node; recovery router routes `fallback:`/Outlook failures; 12 synthetic test cases; `OutlookFixerJudge` (5 criteria: mso_conditional_correctness, vml_wellformedness, html_preservation, fix_completeness, outlook_version_targeting); dry-run verified; 535 tests pass |
 
 ### In Progress
 
-**Phase 5.4-5.8 — Eval Loop Tooling** built with dry-run pipeline and live execution hardening. CLI tools for error analysis, judge calibration, QA gate calibration, blueprint pipeline eval, and regression detection. All CLIs support `--dry-run` flag with deterministic mock generators (`mock_traces.py`). `make eval-dry-run` exercises the full pipeline without LLM. Live execution hardened: `make eval-verify` pre-flight provider check, incremental JSONL writing (crash-safe), `--skip-existing` resume on runner + judge_runner. 58 unit tests across 6 test files. Live execution requires LLM provider config + human labeling effort.
-
-**Remaining:** V2 task 4.1 (6 remaining AI agents). 7.2 eval-informed prompts (blocked on Phase 5.4-5.8). Phase 5.4-5.8 live execution (run with real LLM, collect human labels, calibrate). Phase 8 knowledge graph (Cognee).
+**Remaining:** V2 task 4.1 (5 remaining AI agents — Accessibility Auditor priority 1, then Personalisation, Code Reviewer, Knowledge, Innovation). 7.2 eval-informed prompts (unblocked). Human label calibration (540 rows for TPR/TNR). Phase 8 knowledge graph (Cognee).
 
 ### Infrastructure Built
 

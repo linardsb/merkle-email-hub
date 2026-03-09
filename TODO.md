@@ -375,14 +375,56 @@
 **Verify:** Agent executes with TAOR loop (visible iteration count in UI). PreCompletionChecklist catches intentionally broken HTML. Progressive disclosure reduces token usage measurably. Local → cloud escalation triggers on complex tasks. Progress log persists across sessions.
 
 ### 4.1 Remaining 6 AI Agents
-**Plan ref:** Section 5.1 (Agent Architecture)
+**Plan ref:** Section 5.1 (Agent Architecture), `.agents/plans/outlook-fixer-agent.md`
 **Prerequisite:** Complete Phase 7 Step 1 (blueprint infrastructure: 7.1 + 7.3 + 7.4) and Step 2 (retrofit existing agents) BEFORE building new agents. This ensures every new agent inherits `AgentHandoff` schemas, confidence scoring, and component context from day one — no retrofitting needed.
-- **Outlook Fixer**: MSO conditionals, VML backgrounds, table-based fallbacks
-- **Accessibility Auditor**: WCAG AA checks, contrast ratios, alt text, touch targets, AI alt text generation
-- **Personalisation Agent**: Liquid (Braze), AMPscript (SFMC), dynamic content logic
-- **Code Reviewer**: Static analysis, redundant code, unsupported CSS, file size optimisation
-- **Knowledge Agent**: RAG-powered Q&A from knowledge base
-- **Innovation Agent**: Prototype new techniques, assess feasibility, generate fallback strategies
+
+**Build Order (prioritised):**
+1. ~~**Outlook Fixer**~~ DONE — SKILL.md + 4 L3 skill files, service/prompt/schemas, blueprint node, recovery router integration, 12 synthetic test cases, 5-criteria judge, dry-run verified (535 tests pass)
+2. **Accessibility Auditor** ← NEXT (eval failure data from scaffolder accessibility_baseline 8%)
+3. **Personalisation Agent**: Liquid (Braze), AMPscript (SFMC), dynamic content logic
+4. **Code Reviewer**: Static analysis, redundant code, unsupported CSS, file size optimisation
+5. **Knowledge Agent**: RAG-powered Q&A from knowledge base
+6. **Innovation Agent**: Prototype new techniques, assess feasibility, generate fallback strategies
+
+#### Eval-First + Skills Build Pattern (applies to ALL agents)
+
+Based on Anthropic's [Agent Skills](https://claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills) pattern and real eval data from Phase 5.4-5.8 live execution. Each new agent follows this workflow:
+
+```
+1. SKILL.md first    → Write domain skill with progressive disclosure (L1 metadata, L2 instructions, L3+ reference files)
+2. Synthetic data    → 10-12 dimension-based test cases in evals/synthetic_data_{agent}.py
+3. Judge prompts     → 3-5 binary pass/fail criteria in evals/judges/{agent}.py
+4. Generate traces   → make eval-run --agent {agent}
+5. Error analysis    → make eval-analysis → identify skill gaps
+6. Iterate skill     → Refine SKILL.md targeting failure clusters → re-eval → measure delta
+7. Baseline          → make eval-baseline when pass rates stabilise
+```
+
+**Skill Structure (per agent):**
+```
+app/ai/agents/{agent}/
+├── service.py          # Agent code — loads SKILL.md at runtime
+├── prompt.py           # System prompt (thin — references SKILL.md)
+├── schemas.py          # Input/output schemas
+├── SKILL.md            # L1: YAML frontmatter (name, description) + core instructions
+├── skills/             # L3+: Progressive disclosure reference files
+│   ├── {topic}.md      # Loaded on-demand when agent detects relevance
+│   └── ...
+└── evals/              # Agent-specific eval data (shared runner/judges)
+```
+
+**Key principle:** Skills are testable via the eval system. Each skill file's impact is measurable: add skill → re-eval → check if target criteria improve. No guessing.
+
+**Existing skill asset:** `app/ai/agents/html-email-innovation.skill` — 668-line production skill covering Outlook bug fixes (15 patterns), VML, dark mode, Braze/Liquid, accessibility, responsive layouts. To be decomposed into per-agent SKILL.md files.
+
+**Real eval failure data informing agent priorities:**
+| Eval Failure (Phase 5.4-5.8) | Target Agent | SKILL.md Source |
+|---|---|---|
+| scaffolder:mso_conditional_correctness 0% | Outlook Fixer | html-email-innovation.skill Parts 1-2 |
+| scaffolder:accessibility_baseline 8% | Accessibility Auditor | html-email-innovation.skill Part 4 |
+| scaffolder:dark_mode_readiness 25% | (Dark Mode agent skill refinement) | html-email-innovation.skill Section 5 |
+| dark_mode:html_preservation 10% | (Dark Mode agent skill refinement) | html-email-innovation.skill Section 5 |
+| content:operation_compliance 57% | (Content agent skill refinement) | — |
 
 ### ~~4.2 Additional CMS Connectors~~ DONE
 **Plan ref:** Section 3.1 (~2-3 days each), `.agents/plans/4.2-additional-cms-connectors.md`
@@ -429,7 +471,7 @@
 > | 1 | **Scaffolder** | Implemented | Synthetic data created (12 cases) |
 > | 2 | **Dark Mode** | Implemented | Synthetic data created (10 cases) |
 > | 3 | **Content** | Implemented | Synthetic data created (14 cases) |
-> | 4 | **Outlook Fixer** | Planned (4.1) | Eval data needed on build |
+> | 4 | **Outlook Fixer** | Implemented (4.1) | 12 synthetic cases, 5-criteria judge |
 > | 5 | **Accessibility Auditor** | Planned (4.1) | Eval data needed on build |
 > | 6 | **Personalisation Agent** | Planned (4.1) | Eval data needed on build |
 > | 7 | **Code Reviewer** | Planned (4.1) | Eval data needed on build |
@@ -454,8 +496,8 @@
 > - [x] 5.8 — Regression detection built (`regression.py` baseline comparison + `make eval-check` CI gate; 10 unit tests)
 > - [x] 5.4-5.8 — **Dry-run pipeline**: `--dry-run` flag on runner/judge/blueprint CLIs; `mock_traces.py` deterministic generators; `make eval-dry-run` exercises full pipeline without LLM; `make eval-full`/`eval-calibrate`/`eval-qa-calibrate` targets; 9 integration tests (58 eval tests total)
 > - [x] 5.4-5.8 — **Live execution hardening**: `verify_provider.py` pre-flight check (`make eval-verify`); incremental JSONL writing (crash-safe); `--skip-existing` resume flag on runner + judge_runner; `eval-run` auto-verifies provider before running
-> - [ ] 5.4-5.8 — **Live execution**: run with real LLM provider, collect human labels, calibrate judges (requires AI__PROVIDER + labeling effort)
-> - [ ] Eval data for Outlook Fixer (on agent build)
+> - [x] 5.4-5.8 — **Live execution** (2026-03-09): 36 traces + 36 verdicts via `anthropic:claude-sonnet-4`. Baseline established (16.7% overall pass rate). Blueprint evals 5/5 passed (100% QA with self-correction). Human labeling pending (540 rows in `traces/*_human_labels.jsonl`)
+> - [x] Eval data for Outlook Fixer — 12 synthetic cases, 5-criteria judge (`OutlookFixerJudge`), blueprint node + recovery router integration
 > - [ ] Eval data for Accessibility Auditor (on agent build)
 > - [ ] Eval data for Personalisation Agent (on agent build)
 > - [ ] Eval data for Code Reviewer (on agent build)
@@ -479,8 +521,8 @@ Every agent — whether built now or in task 4.1 — must have:
   - `dimensions.py` — failure-prone dimension definitions per agent
   - `runner.py` — CLI runner that outputs JSONL traces
 - Real-world email patterns sourced from: Litmus, MailChimp Design Reference, Parcel.io, email-darkmode repo, StackOverflow Design, Mailmeteor spam lists
-- Binary LLM judges implemented for 3 agents: `app/ai/agents/evals/judges/` package with `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria); shared `Judge` Protocol, `parse_judge_response()` with markdown fence handling; `JUDGE_REGISTRY` for dispatch; `judge_runner.py` CLI with batched execution and rate limiting; 14 unit tests (330 total)
-- **6 agents still need eval data** — to be created as each agent is built (task 4.1)
+- Binary LLM judges implemented for 4 agents: `app/ai/agents/evals/judges/` package with `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria: mso_conditional_correctness, vml_wellformedness, html_preservation, fix_completeness, outlook_version_targeting); shared `Judge` Protocol, `parse_judge_response()` with markdown fence handling; `JUDGE_REGISTRY` for dispatch; `judge_runner.py` CLI with batched execution and rate limiting
+- **5 agents still need eval data** — to be created as each agent is built (task 4.1; Outlook Fixer complete)
 
 ### 5.1 Review & Harden Synthetic Test Data (Scaffolder, Dark Mode, Content)
 **What:** Review the 36 synthetic test cases for completeness, realism, and security. Verify no real client data or credentials leaked into test fixtures. Add 2-3 missing edge cases per agent identified during review. Ensure all HTML fixtures are self-contained (no external resource dependencies).
@@ -634,8 +676,8 @@ Audit conducted 2026-03-06 using CodeQL + Semgrep + manual route review. Root ca
 
 Run evals first to establish a baseline, build Phase 7 infrastructure before the remaining 6 agents, then integrate Cognee so every new agent inherits all patterns from day one.
 
-**Step 0 — Eval Baseline (Phase 5.4-5.8 execution) — RUN FIRST**
-Execute pending evals on the existing 3 agents to establish baseline metrics. This data is needed to: (a) measure Phase 7/8 improvement, (b) unblock 7.2 (eval-informed prompts), (c) calibrate confidence scoring thresholds (7.3). Without a baseline, you can't prove any of the subsequent work actually helps.
+~~**Step 0 — Eval Baseline (Phase 5.4-5.8 execution)**~~ DONE (2026-03-09)
+Live eval executed: 36 traces + 36 verdicts via `anthropic:claude-sonnet-4`. Baseline: 16.7% overall (scaffolder 46.7%, dark_mode 82%, content 85.7%). Blueprint evals 5/5 passed. Top failures: mso_conditionals (0%), accessibility (8%), html_preservation (10%). Data unblocks 7.2 (eval-informed prompts) and 4.1 (skill-first agent builds).
 
 ~~**Step 1 — Blueprint Infrastructure (7.1 + 7.3 + 7.4)**~~ DONE
 Built `AgentHandoff` frozen dataclass, `ComponentMeta`, `ComponentResolver` Protocol in `protocols.py`. Engine stores/propagates handoff, checks confidence < 0.5 → `needs_review` status. Async `_build_node_context` with component context injection. `extract_confidence()`/`strip_confidence_comment()` in `shared.py`. `DbComponentResolver` in `resolvers.py`. `HandoffSummary` in API response schema. 21 new tests.
@@ -649,7 +691,7 @@ Install Cognee, define the full email ontology, seed the knowledge graph. This r
 **Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
 Wire graph search into blueprint nodes. Author initial SKILL.md files for the 3 existing agents. Re-run evals to measure improvement vs Step 0 baseline.
 
-**Step 5 — Build Remaining 6 Agents WITH Phase 7+8 Patterns (Task 4.1)**
+**Step 5 — Build Remaining 5 Agents WITH Phase 7+8 Patterns (Task 4.1)** (Outlook Fixer DONE)
 Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
 
 **Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
@@ -663,10 +705,10 @@ Requires real runs and real failure data. Feed blueprint outcomes into graph. Ge
 **Security:** Handoff objects scoped to blueprint session. No cross-project leakage. Decisions logged to audit trail.
 **Verify:** Blueprint pipeline passes structured handoff between scaffolder → dark_mode nodes. Downstream agent references upstream decisions in its output. Unit tests for schema validation.
 
-### 7.2 Eval-Informed Agent Prompts ⏳ (blocked on Phase 5.4-5.8 execution)
+### 7.2 Eval-Informed Agent Prompts ⏳ (unblocked — real failure data available)
 **What:** Feed common failure patterns from eval error analysis (`make eval-analysis`) back into agent system prompts automatically. When eval clusters show recurring failures (e.g., "Scaffolder consistently misses MSO conditionals for 3-column layouts"), inject those as explicit warnings in the agent's prompt.
 **Why:** Eval system already captures failure clusters in `error_analysis.py`. Currently this data sits in JSONL files — it should actively improve agent performance in a feedback loop.
-**Prerequisite:** Requires real eval traces from Phase 5.4-5.8 live execution. Cannot run on dry-run/mock data — needs actual LLM failure patterns.
+**Prerequisite:** ~~Requires real eval traces from Phase 5.4-5.8 live execution.~~ DONE — baseline established 2026-03-09 with real failure patterns available in `traces/analysis.json`.
 **Implementation:** `failure_warnings.py` in `app/ai/agents/evals/` that reads latest error analysis, extracts top-N failure patterns per agent, and generates prompt fragments. Agent system prompts load these at runtime via the existing skill/context loading pattern.
 **Security:** Failure patterns contain no user data (only aggregated error categories). Prompt fragments reviewed before deployment.
 **Verify:** After running `make eval-analysis`, agent prompt includes failure-specific warnings. Re-running evals shows improved pass rate on previously-failing dimensions.

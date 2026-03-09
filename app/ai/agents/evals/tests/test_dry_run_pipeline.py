@@ -146,7 +146,7 @@ class TestFullDryRunPipeline:
             json.dumps(lbl)
 
     def test_pipeline_with_all_agents(self) -> None:
-        """Verify pipeline works for all 3 agents."""
+        """Verify pipeline works for all registered agents."""
         from app.ai.agents.evals.error_analysis import build_analysis_report
 
         all_verdicts: list[dict[str, Any]] = []
@@ -156,9 +156,10 @@ class TestFullDryRunPipeline:
             for t in traces:
                 all_verdicts.append(generate_mock_verdict(t, criteria))
 
+        agent_count = len(AGENT_CRITERIA)
         report = build_analysis_report(all_verdicts)
-        assert report["summary"]["total_traces"] == 9
-        assert len(report["pass_rates"]) == 3
+        assert report["summary"]["total_traces"] == agent_count * 3
+        assert len(report["pass_rates"]) == agent_count
 
 
 @pytest.mark.asyncio

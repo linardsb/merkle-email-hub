@@ -133,10 +133,22 @@ CONTENT_CRITERIA: list[dict[str, str]] = [
     {"criterion": "grammar", "description": "No grammar or spelling errors"},
 ]
 
+OUTLOOK_FIXER_CRITERIA: list[dict[str, str]] = [
+    {
+        "criterion": "mso_conditional_correctness",
+        "description": "MSO conditionals correctly structured",
+    },
+    {"criterion": "vml_wellformedness", "description": "VML elements properly structured"},
+    {"criterion": "html_preservation", "description": "Original HTML preserved"},
+    {"criterion": "fix_completeness", "description": "All identified issues addressed"},
+    {"criterion": "outlook_version_targeting", "description": "Fixes scoped to correct versions"},
+]
+
 AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "scaffolder": SCAFFOLDER_CRITERIA,
     "dark_mode": DARK_MODE_CRITERIA,
     "content": CONTENT_CRITERIA,
+    "outlook_fixer": OUTLOOK_FIXER_CRITERIA,
 }
 
 

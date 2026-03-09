@@ -163,3 +163,46 @@ CONTENT_DIMENSIONS = {
         ],
     },
 }
+
+# ---------------------------------------------------------------------------
+# Outlook Fixer Agent Dimensions
+# ---------------------------------------------------------------------------
+OUTLOOK_FIXER_DIMENSIONS = {
+    "issue_type": {
+        "description": "Category of Outlook rendering issue to fix",
+        "values": [
+            "ghost_table",
+            "vml_background",
+            "vml_button",
+            "mso_conditional",
+            "typography",
+            "image_sizing",
+            "table_gaps",
+            "dpi_scaling",
+            "max_width",
+            "vml_namespace",
+        ],
+    },
+    "element": {
+        "description": "Specific HTML/VML element affected",
+        "values": [
+            "background_image",
+            "bulletproof_button",
+            "font_stack",
+            "line_height",
+            "table_spacing",
+            "comment_matching",
+            "namespace_declaration",
+            "image_attributes",
+            "layout_constraint",
+        ],
+    },
+    "complexity": {
+        "description": "Complexity of the fix required",
+        "values": [
+            "standard",
+            "high",
+            "multi_issue",
+        ],
+    },
+}
