@@ -160,6 +160,17 @@ PERSONALISATION_CRITERIA: list[dict[str, str]] = [
     {"criterion": "logic_match", "description": "Logic matches requirements"},
 ]
 
+CODE_REVIEWER_CRITERIA: list[dict[str, str]] = [
+    {"criterion": "issue_genuineness", "description": "Flagged issues are real problems"},
+    {
+        "criterion": "suggestion_actionability",
+        "description": "Suggestions are specific and actionable",
+    },
+    {"criterion": "severity_accuracy", "description": "Severity matches impact"},
+    {"criterion": "coverage_completeness", "description": "All significant issues caught"},
+    {"criterion": "output_format", "description": "Valid JSON with required fields"},
+]
+
 AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "scaffolder": SCAFFOLDER_CRITERIA,
     "dark_mode": DARK_MODE_CRITERIA,
@@ -167,6 +178,7 @@ AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "outlook_fixer": OUTLOOK_FIXER_CRITERIA,
     "accessibility": ACCESSIBILITY_CRITERIA,
     "personalisation": PERSONALISATION_CRITERIA,
+    "code_reviewer": CODE_REVIEWER_CRITERIA,
 }
 
 

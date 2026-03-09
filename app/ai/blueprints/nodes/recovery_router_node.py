@@ -12,8 +12,8 @@ _FAILURE_ROUTING: dict[str, str] = {
     "fallback": "outlook_fixer",
     "accessibility": "accessibility",
     "html_validation": "scaffolder",
-    "css_support": "scaffolder",
-    "file_size": "scaffolder",
+    "css_support": "code_reviewer",
+    "file_size": "code_reviewer",
     "link_validation": "scaffolder",
     "spam_score": "scaffolder",
     "image_optimization": "scaffolder",
@@ -58,6 +58,22 @@ class RecoveryRouterNode:
         # Determine if any failures are accessibility-specific
         has_accessibility_failure = any(f.startswith("accessibility:") for f in context.qa_failures)
 
+        # Determine if any failures are code-review-specific
+        has_code_review_failure = any(
+            any(
+                kw in f.lower()
+                for kw in (
+                    "code_review",
+                    "redundant",
+                    "css_support",
+                    "nesting",
+                    "file_size",
+                    "unsupported css",
+                )
+            )
+            for f in context.qa_failures
+        )
+
         # Determine if any failures are personalisation-specific
         has_personalisation_failure = any(
             any(
@@ -93,6 +109,14 @@ class RecoveryRouterNode:
                     for w in upstream.warnings
                     for kw in ("accessibility", "wcag", "alt text", "contrast")
                 )
+            if not has_code_review_failure:
+                has_code_review_failure = any(
+                    any(
+                        kw in w.lower()
+                        for kw in ("code_review", "redundant", "unsupported css", "file_size")
+                    )
+                    for w in upstream.warnings
+                )
             if not has_personalisation_failure:
                 has_personalisation_failure = any(
                     any(
@@ -116,6 +140,8 @@ class RecoveryRouterNode:
             target = "accessibility"
         elif has_personalisation_failure:
             target = "personalisation"
+        elif has_code_review_failure:
+            target = "code_reviewer"
         else:
             target = "scaffolder"
 

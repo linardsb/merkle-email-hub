@@ -11,6 +11,7 @@ from app.ai.blueprints.protocols import (
     AgentHandoff,
     BlueprintNode,
     ComponentResolver,
+    HandoffStatus,
     NodeContext,
     NodeResult,
 )
@@ -246,6 +247,15 @@ class BlueprintEngine:
 
     def _resolve_next_node(self, current: str, result: NodeResult) -> str | None:
         """Determine the next node based on edges and result metadata."""
+        # If handoff reports blocked/failed, treat as failure for routing purposes
+        if result.handoff and result.handoff.status in (
+            HandoffStatus.BLOCKED,
+            HandoffStatus.FAILED,
+        ):
+            effective_status = "failed"
+        else:
+            effective_status = result.status
+
         # Check for metadata-based routing (recovery router sets route_to)
         metadata_route = None
         if hasattr(result, "details") and "route_to:" in result.details:
@@ -255,9 +265,9 @@ class BlueprintEngine:
             if edge.from_node != current:
                 continue
 
-            if edge.condition == "success" and result.status == "success":
+            if edge.condition == "success" and effective_status == "success":
                 return edge.to_node
-            if edge.condition == "qa_fail" and result.status == "failed":
+            if edge.condition == "qa_fail" and effective_status == "failed":
                 return edge.to_node
             if edge.condition == "route_to" and metadata_route == edge.route_value:
                 return edge.to_node

@@ -8,12 +8,23 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #18087 | 9:26 AM | 🔵 | Shared Pattern Architecture - Literal Enums, Integer PKs, No Soft Deletes | ~829 |
+| #18039 | 8:30 AM | ⚖️ | Frontend Implementation Strategy: Planned Incremental Feature Development | ~391 |
 
 ### Mar 1, 2026
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #18402 | 8:55 AM | 🔵 | Comprehensive AI Layer Architecture Analysis | ~987 |
+| #18392 | 8:54 AM | 🔵 | AI Provider Registry Architecture | ~427 |
+| #18280 | 7:41 AM | 🔵 | Current RAG Architecture Uses Protocol-Based Provider Abstraction | ~572 |
 | #18245 | 6:50 AM | ✅ | Project roadmap updated with two completed tasks | ~321 |
+
+### Mar 5, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #19571 | 5:28 PM | ✅ | AI Layer Architecture Documentation | ~475 |
+| #19542 | 4:40 PM | 🔵 | Framework-Agnostic Provider Protocol System | ~435 |
 </claude-mem-context>
 
 # AI Layer (`app/ai/`)

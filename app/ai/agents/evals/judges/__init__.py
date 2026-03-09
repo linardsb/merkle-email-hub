@@ -1,6 +1,7 @@
 """LLM judge modules for agent evaluation."""
 
 from app.ai.agents.evals.judges.accessibility import AccessibilityJudge
+from app.ai.agents.evals.judges.code_reviewer import CodeReviewerJudge
 from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
 from app.ai.agents.evals.judges.outlook_fixer import OutlookFixerJudge
@@ -22,6 +23,7 @@ JUDGE_REGISTRY: dict[
         | OutlookFixerJudge
         | AccessibilityJudge
         | PersonalisationJudge
+        | CodeReviewerJudge
     ],
 ] = {
     "scaffolder": ScaffolderJudge,
@@ -30,11 +32,13 @@ JUDGE_REGISTRY: dict[
     "outlook_fixer": OutlookFixerJudge,
     "accessibility": AccessibilityJudge,
     "personalisation": PersonalisationJudge,
+    "code_reviewer": CodeReviewerJudge,
 }
 
 __all__ = [
     "JUDGE_REGISTRY",
     "AccessibilityJudge",
+    "CodeReviewerJudge",
     "ContentJudge",
     "CriterionResult",
     "DarkModeJudge",

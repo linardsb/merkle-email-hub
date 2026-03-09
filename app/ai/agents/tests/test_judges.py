@@ -3,6 +3,7 @@
 import json
 
 from app.ai.agents.evals.judges import JUDGE_REGISTRY
+from app.ai.agents.evals.judges.code_reviewer import CodeReviewerJudge
 from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
@@ -209,6 +210,64 @@ class TestContentJudge:
         assert "Unveil the Season" in prompt
 
 
+# --- Code Reviewer Judge Tests ---
+
+
+def _make_code_reviewer_input() -> JudgeInput:
+    return JudgeInput(
+        trace_id="cr-001",
+        agent="code_reviewer",
+        input_data={
+            "html_input": '<td style="display:flex">Bad CSS</td>',
+            "focus": "css_support",
+        },
+        output_data={
+            "issues": [
+                {
+                    "rule": "css-unsupported-flex",
+                    "severity": "critical",
+                    "message": "display:flex is unsupported in Outlook",
+                    "suggestion": "Replace with table-based layout",
+                }
+            ],
+            "summary": "Found 1 critical issue",
+        },
+        expected_challenges=["Flag display:flex"],
+    )
+
+
+CODE_REVIEWER_CRITERIA_NAMES = [
+    "issue_genuineness",
+    "suggestion_actionability",
+    "severity_accuracy",
+    "coverage_completeness",
+    "output_format",
+]
+
+
+class TestCodeReviewerJudge:
+    def test_build_prompt_contains_criteria_and_input(self) -> None:
+        judge = CodeReviewerJudge()
+        prompt = judge.build_prompt(_make_code_reviewer_input())
+
+        assert "issue_genuineness" in prompt
+        assert "suggestion_actionability" in prompt
+        assert "severity_accuracy" in prompt
+        assert "display:flex" in prompt
+        assert "css_support" in prompt
+
+    def test_parse_valid_response(self) -> None:
+        judge = CodeReviewerJudge()
+        raw = _make_valid_response(CODE_REVIEWER_CRITERIA_NAMES)
+        verdict = judge.parse_response(raw, _make_code_reviewer_input())
+
+        assert verdict.overall_pass is True
+        assert len(verdict.criteria_results) == 5
+        assert verdict.error is None
+        assert verdict.trace_id == "cr-001"
+        assert verdict.agent == "code_reviewer"
+
+
 # --- Registry & Cross-Cutting Tests ---
 
 
@@ -220,7 +279,8 @@ class TestJudgeRegistry:
         assert "outlook_fixer" in JUDGE_REGISTRY
         assert "accessibility" in JUDGE_REGISTRY
         assert "personalisation" in JUDGE_REGISTRY
-        assert len(JUDGE_REGISTRY) == 6
+        assert "code_reviewer" in JUDGE_REGISTRY
+        assert len(JUDGE_REGISTRY) == 7
 
     def test_registry_instantiation(self) -> None:
         for name, cls in JUDGE_REGISTRY.items():

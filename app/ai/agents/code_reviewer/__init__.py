@@ -1,1 +1,1 @@
-"""Code Reviewer agent — static analysis and optimisation for email HTML."""
+"""Code Reviewer agent — static analysis of email HTML."""

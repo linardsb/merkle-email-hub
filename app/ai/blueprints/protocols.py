@@ -5,6 +5,7 @@ the context and result data structures that flow through the graph.
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Literal, Protocol, runtime_checkable
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     "BlueprintNode",
     "ComponentMeta",
     "ComponentResolver",
+    "HandoffStatus",
     "NodeContext",
     "NodeResult",
     "NodeStatus",
@@ -20,6 +22,15 @@ __all__ = [
 
 NodeType = Literal["deterministic", "agentic"]
 NodeStatus = Literal["success", "failed", "skipped"]
+
+
+class HandoffStatus(str, Enum):
+    """Status of an agentic node's execution for orchestrator routing."""
+
+    OK = "ok"
+    WARNING = "warning"  # completed but with concerns
+    BLOCKED = "blocked"  # cannot proceed (missing dependency)
+    FAILED = "failed"  # execution error
 
 
 @dataclass
@@ -74,8 +85,9 @@ class AgentHandoff:
     and self-assessed confidence to downstream nodes.
     """
 
-    agent_name: str
-    artifact: str
+    status: HandoffStatus = HandoffStatus.OK
+    agent_name: str = ""
+    artifact: str = ""
     decisions: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
     component_refs: tuple[str, ...] = ()

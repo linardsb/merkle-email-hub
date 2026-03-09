@@ -304,3 +304,54 @@ PERSONALISATION_DIMENSIONS = {
         ],
     },
 }
+
+# ---------------------------------------------------------------------------
+# Code Reviewer Agent Dimensions
+# ---------------------------------------------------------------------------
+CODE_REVIEWER_DIMENSIONS = {
+    "issue_category": {
+        "description": "Category of code issue present in the email HTML",
+        "values": [
+            "redundant_inline_styles",
+            "unused_css_class",
+            "dead_mso_conditional",
+            "unsupported_css_property",
+            "invalid_nesting",
+            "gmail_clip_risk",
+            "base64_embedded_image",
+            "excessive_table_depth",
+            "mixed_issues",
+        ],
+    },
+    "html_complexity": {
+        "description": "Structural complexity of the email HTML being reviewed",
+        "values": [
+            "simple_single_column",
+            "multi_column_tables",
+            "heavy_mso_conditionals",
+            "vml_elements_present",
+            "mixed_layout",
+            "production_template",
+        ],
+    },
+    "expected_severity": {
+        "description": "Expected severity level of the most significant issue",
+        "values": [
+            "critical_only",
+            "warning_dominant",
+            "info_only",
+            "mixed_severity",
+            "clean_no_issues",
+        ],
+    },
+    "file_size_scenario": {
+        "description": "File size challenge in the email HTML",
+        "values": [
+            "under_60kb",
+            "near_threshold_80kb",
+            "over_102kb_clipping",
+            "bloated_base64",
+            "minimal",
+        ],
+    },
+}

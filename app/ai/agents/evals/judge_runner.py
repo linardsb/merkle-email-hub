@@ -18,6 +18,7 @@ from typing import Any
 
 from app.ai.agents.evals.judges import JUDGE_REGISTRY
 from app.ai.agents.evals.judges.accessibility import AccessibilityJudge
+from app.ai.agents.evals.judges.code_reviewer import CodeReviewerJudge
 from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
 from app.ai.agents.evals.judges.outlook_fixer import OutlookFixerJudge
@@ -55,7 +56,13 @@ def trace_to_judge_input(trace: dict[str, Any]) -> JudgeInput:
 
 
 async def judge_trace(
-    judge: ScaffolderJudge | DarkModeJudge | ContentJudge | OutlookFixerJudge | AccessibilityJudge | PersonalisationJudge,
+    judge: ScaffolderJudge
+    | DarkModeJudge
+    | ContentJudge
+    | OutlookFixerJudge
+    | AccessibilityJudge
+    | PersonalisationJudge
+    | CodeReviewerJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,
@@ -229,7 +236,16 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description="Run LLM judges on agent eval traces")
     parser.add_argument(
         "--agent",
-        choices=["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility", "all"],
+        choices=[
+            "scaffolder",
+            "dark_mode",
+            "content",
+            "outlook_fixer",
+            "accessibility",
+            "personalisation",
+            "code_reviewer",
+            "all",
+        ],
         required=True,
         help="Agent to judge (or 'all')",
     )
@@ -254,7 +270,15 @@ async def main() -> None:
     args = parser.parse_args()
 
     agents = (
-        ["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility"]
+        [
+            "scaffolder",
+            "dark_mode",
+            "content",
+            "outlook_fixer",
+            "accessibility",
+            "personalisation",
+            "code_reviewer",
+        ]
         if args.agent == "all"
         else [args.agent]
     )

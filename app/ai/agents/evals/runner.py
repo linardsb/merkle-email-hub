@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from app.ai.agents.evals.synthetic_data_accessibility import ACCESSIBILITY_TEST_CASES
+from app.ai.agents.evals.synthetic_data_code_reviewer import CODE_REVIEWER_TEST_CASES
 from app.ai.agents.evals.synthetic_data_content import CONTENT_TEST_CASES
 from app.ai.agents.evals.synthetic_data_dark_mode import DARK_MODE_TEST_CASES
 from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_CASES
@@ -356,6 +357,67 @@ async def run_personalisation_case(case: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+async def run_code_reviewer_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Run a single code reviewer test case and return the trace."""
+    from app.ai.agents.code_reviewer.schemas import CodeReviewRequest
+    from app.ai.agents.code_reviewer.service import CodeReviewService
+
+    service = CodeReviewService()
+    html_input: str = str(case["html_input"])
+    focus: str = str(case.get("focus", "all"))
+    request = CodeReviewRequest(
+        html=html_input,
+        focus=focus,  # pyright: ignore[reportArgumentType]
+        stream=False,
+        run_qa=True,
+    )
+
+    start = time.monotonic()
+    try:
+        response = await service.process(request)
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "code_reviewer",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+                "focus": focus,
+            },
+            "output": {
+                "html": response.html,
+                "issues": [i.model_dump() for i in response.issues],
+                "summary": response.summary,
+                "skills_loaded": response.skills_loaded,
+                "qa_results": [r.model_dump() for r in (response.qa_results or [])],
+                "qa_passed": response.qa_passed,
+                "model": response.model,
+            },
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": None,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "code_reviewer",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+                "focus": focus,
+            },
+            "output": None,
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": f"{type(e).__name__}: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
 async def run_agent(
     agent: str,
     output_dir: Path,
@@ -388,6 +450,9 @@ async def run_agent(
     elif agent == "personalisation":
         cases = PERSONALISATION_TEST_CASES
         runner = run_personalisation_case
+    elif agent == "code_reviewer":
+        cases = CODE_REVIEWER_TEST_CASES
+        runner = run_code_reviewer_case
     else:
         raise ValueError(f"Unknown agent: {agent}")
 
@@ -458,6 +523,7 @@ async def main() -> None:
             "outlook_fixer",
             "accessibility",
             "personalisation",
+            "code_reviewer",
             "all",
         ],
         required=True,
@@ -478,7 +544,15 @@ async def main() -> None:
     args = parser.parse_args()
 
     agents = (
-        ["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility", "personalisation"]
+        [
+            "scaffolder",
+            "dark_mode",
+            "content",
+            "outlook_fixer",
+            "accessibility",
+            "personalisation",
+            "code_reviewer",
+        ]
         if args.agent == "all"
         else [args.agent]
     )

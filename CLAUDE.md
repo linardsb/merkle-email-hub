@@ -192,7 +192,7 @@ The AI protocol layer (`app/ai/`) provides infrastructure for 9 specialized agen
 | Outlook Fixer | MSO conditionals, VML backgrounds, table fallbacks | V2 | Judge ready (5 criteria), 12 synthetic cases |
 | Accessibility Auditor | WCAG AA, contrast, alt text, AI alt generation | V2 | Judge ready (5 criteria), SKILL.md + 4 L3 files, 10 synthetic cases |
 | Personalisation | Liquid (Braze), AMPscript (SFMC), dynamic content | V2 | Judge ready (5 criteria), SKILL.md + 4 L3 files, 12 synthetic cases |
-| Code Reviewer | Static analysis, redundant code, file size optimisation | V2 | Pending |
+| Code Reviewer | Static analysis, redundant code, file size optimisation | V2 | Judge ready (5 criteria), SKILL.md + 4 L3 files, 12 synthetic cases |
 | Knowledge | RAG-powered Q&A from knowledge base | V2 | Pending |
 | Innovation | Prototype new techniques, feasibility assessment | V2 | Pending |
 
@@ -211,7 +211,7 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - `dimensions.py` — Failure-prone axes per agent (layout complexity, client quirks, etc.)
 - `synthetic_data_{agent}.py` — Test cases with real-world data (MSO code, VML, spam triggers)
 - `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent scaffolder --output traces/`
-- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`, shared prompt template
+- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria), `PersonalisationJudge` (5 criteria), `CodeReviewerJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`, shared prompt template
 - `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
 - `schemas.py` — Shared dataclasses: `FailureCluster`, `HumanLabel`, `CalibrationResult`, `QACalibrationResult`, `RegressionReport`, `BlueprintEvalTrace`
 - `error_analysis.py` — Failure clustering + pass rate computation from verdict JSONL (`make eval-analysis`)
@@ -277,7 +277,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 4.11 Custom persona creation (dialog form for new test profiles)
 - [x] 4.12 Exportable reports (intelligence dashboard Print/PDF + CSV export)
 - [x] 4.13 Blueprint state machine engine (agent orchestration with self-correction, QA gating, recovery routing)
-- [ ] 4.1 Remaining 3 AI agents — eval-first + skills workflow (Outlook Fixer DONE, Accessibility Auditor DONE, Personalisation DONE, then Code Reviewer, Knowledge, Innovation)
+- [ ] 4.1 Remaining 2 AI agents — eval-first + skills workflow (Outlook Fixer DONE, Accessibility Auditor DONE, Personalisation DONE, Code Reviewer DONE, then Knowledge, Innovation)
 - [x] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
 - [x] 4.3 Figma design sync (frontend demo: `/figma` page, connection management, token extraction UI)
 - [x] 4.4 Litmus / Email on Acid API integration (backend: `app/rendering/` VSA module, Litmus + EoA providers, visual regression)
@@ -348,7 +348,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`
-- Phase 7: `AgentHandoff` structured handoffs with full history + episodic memory auto-persistence (`handoff_memory.py`), confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection, SKILL.md progressive disclosure files for Scaffolder + Dark Mode + Outlook Fixer + Accessibility Auditor + Personalisation
+- Phase 7: `AgentHandoff` structured handoffs with full history + episodic memory auto-persistence (`handoff_memory.py`), confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection, SKILL.md progressive disclosure files for Scaffolder + Dark Mode + Outlook Fixer + Accessibility Auditor + Personalisation + Code Reviewer
 
 ### Frontend Features (for `fe-prime`)
 - Dashboard: project overview grid, activity feed, QA summary, quick-start

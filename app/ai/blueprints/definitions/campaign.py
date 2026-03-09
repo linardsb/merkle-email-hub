@@ -6,11 +6,13 @@ Graph:
                                                       → outlook_fixer → qa_gate (loop)
                                                       → accessibility → qa_gate (loop)
                                                       → personalisation → qa_gate (loop)
+                                                      → code_reviewer → qa_gate (loop)
                                                       → scaffolder (loop)
 """
 
 from app.ai.blueprints.engine import BlueprintDefinition, Edge
 from app.ai.blueprints.nodes.accessibility_node import AccessibilityNode
+from app.ai.blueprints.nodes.code_reviewer_node import CodeReviewerNode
 from app.ai.blueprints.nodes.dark_mode_node import DarkModeNode
 from app.ai.blueprints.nodes.export_node import ExportNode
 from app.ai.blueprints.nodes.maizzle_build_node import MaizzleBuildNode
@@ -33,6 +35,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
     outlook_fixer = OutlookFixerNode()
     accessibility = AccessibilityNode()
     personalisation = PersonalisationNode()
+    code_reviewer = CodeReviewerNode()
 
     nodes: dict[str, BlueprintNode] = {
         scaffolder.name: scaffolder,
@@ -44,6 +47,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         outlook_fixer.name: outlook_fixer,
         accessibility.name: accessibility,
         personalisation.name: personalisation,
+        code_reviewer.name: code_reviewer,
     }
 
     edges = [
@@ -80,6 +84,12 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         ),
         Edge(
             from_node="recovery_router",
+            to_node="code_reviewer",
+            condition="route_to",
+            route_value="code_reviewer",
+        ),
+        Edge(
+            from_node="recovery_router",
             to_node="scaffolder",
             condition="route_to",
             route_value="scaffolder",
@@ -92,6 +102,8 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         Edge(from_node="accessibility", to_node="qa_gate", condition="always"),
         # Personalisation fix loops back to QA
         Edge(from_node="personalisation", to_node="qa_gate", condition="always"),
+        # Code reviewer loops back to QA
+        Edge(from_node="code_reviewer", to_node="qa_gate", condition="always"),
         # Build → export
         Edge(from_node="maizzle_build", to_node="export", condition="always"),
     ]

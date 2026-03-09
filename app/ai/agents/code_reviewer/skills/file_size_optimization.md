@@ -1,103 +1,43 @@
-# File Size Optimisation — Gmail 102KB Clipping
+# File Size Optimisation — L3 Reference
 
-## The 102KB Rule
+## Gmail Clipping Threshold
+Gmail clips emails at **102KB** (102,400 bytes). After clipping, a "View entire message" link appears and tracking pixels may not load.
 
-Gmail clips emails where the HTML source exceeds approximately 102KB (104,857 bytes).
-Content after the clipping point is hidden behind a "View entire message" link.
+### Size Calculation
+- Measure the **rendered HTML** size in bytes (UTF-8 encoded)
+- Include inline styles, embedded CSS, MSO conditionals
+- Exclude external resources (images loaded via `src`)
 
-**What counts:** Raw HTML source size (UTF-8 encoded), including:
-- All HTML tags and attributes
-- Inline styles
-- Style blocks
-- Comments (including MSO conditionals)
-- Whitespace and line breaks
-- Script tags (stripped by Gmail but counted before clipping check)
+### Rule: `filesize-gmail-clip-risk`
+- **critical** if HTML > 102KB
+- **warning** if HTML > 80KB (approaching limit)
+- **info** if HTML > 60KB (monitor)
 
-**What doesn't count:**
-- Linked images (loaded separately)
-- External CSS (stripped anyway)
+## Common Bloat Sources
 
-## Size Reduction Techniques
+### Inline Style Repetition
+- Same `font-family: Arial, Helvetica, sans-serif` on 50+ elements
+- Same `color: #333333; font-size: 14px; line-height: 1.5` block repeated
+- Rule: `filesize-style-bloat` (severity: warning)
+- Suggestion: Use embedded CSS class where client support allows, or extract to `<style>` block with `!important`
 
-### Technique 1: CSS Consolidation (10-30% savings)
-**Before:**
-```html
-<td style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#333333;">
-<td style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#333333;">
-```
-**After:**
-```html
-<style>.body-text { font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:24px; color:#333 }</style>
-<td class="body-text">
-<td class="body-text">
-```
-Note: Only works in clients that support `<style>` blocks. Keep inline styles as fallback for Gmail.
+### Unnecessary Whitespace
+- Excessive indentation (4+ levels of nested indentation in production)
+- Multiple blank lines between elements
+- Rule: `filesize-whitespace` (severity: info)
+- Suggestion: Minify for production builds (Maizzle handles this via `purgeCSS` + `minify`)
 
-### Technique 2: Shorthand Properties (5-15% savings)
-```css
-/* Before */
-padding-top:10px; padding-right:20px; padding-bottom:10px; padding-left:20px;
-/* After */
-padding:10px 20px;
+### Oversized MSO Blocks
+- VML backgrounds/buttons can add 2-5KB each
+- Multiple VML elements for same visual effect
+- Rule: `filesize-heavy-mso` (severity: info)
 
-/* Before */
-border-top:1px solid #cccccc; border-right:1px solid #cccccc;
-border-bottom:1px solid #cccccc; border-left:1px solid #cccccc;
-/* After */
-border:1px solid #ccc;
-```
+### Embedded Images (Base64)
+- Base64-encoded images in `src="data:image/..."` dramatically increase size
+- A 50KB image becomes ~67KB when base64-encoded
+- Rule: `filesize-base64-image` (severity: critical)
+- Suggestion: Host images externally and reference via URL
 
-### Technique 3: Color Shorthand (2-5% savings)
-```css
-/* Before */ color:#ffffff; background-color:#000000;
-/* After */  color:#fff; background-color:#000;
-/* Before */ color:#aabbcc;
-/* After */  color:#abc;
-```
-
-### Technique 4: Remove Unnecessary Whitespace (5-10% savings)
-- Remove blank lines between table rows
-- Collapse multiple spaces to single space
-- Remove HTML comments (except MSO conditionals)
-- Minimize line breaks in inline styles
-
-### Technique 5: Remove Unused CSS (5-20% savings)
-- Audit `<style>` blocks for selectors not used in the HTML
-- Remove responsive styles for breakpoints not needed
-- Remove dark mode styles if not implementing dark mode
-
-### Technique 6: Attribute Optimization (2-5% savings)
-```html
-<!-- Before -->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center">
-<!-- After (if role=presentation handles it) -->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center">
-```
-Note: Don't remove email-critical attributes to save space.
-
-### Technique 7: Image URL Shortening (1-5% savings)
-- Use shorter image hosting URLs
-- Remove unnecessary query parameters from image URLs
-- Use relative paths where supported
-
-## Size Budget
-
-| Component | Target | Max |
-|-----------|--------|-----|
-| HTML structure | 20KB | 30KB |
-| Inline styles | 15KB | 25KB |
-| Style block | 5KB | 10KB |
-| MSO conditionals | 10KB | 15KB |
-| Content text | 10KB | 20KB |
-| **Total** | **60KB** | **102KB** |
-
-## Measuring Size
-
-```
-Size = UTF-8 byte length of the complete HTML source
-Risk levels:
-- Green: < 80KB (safe)
-- Yellow: 80-95KB (approaching limit)
-- Red: 95-102KB (high risk)
-- Critical: > 102KB (WILL be clipped)
-```
+## Size Reporting
+Always include current file size in the review summary:
+- `"HTML size: 45,230 bytes (44% of Gmail clip limit)"`
