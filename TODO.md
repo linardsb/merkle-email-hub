@@ -374,7 +374,7 @@
 - Progress logs scoped to project (no cross-project leakage)
 **Verify:** Agent executes with TAOR loop (visible iteration count in UI). PreCompletionChecklist catches intentionally broken HTML. Progressive disclosure reduces token usage measurably. Local → cloud escalation triggers on complex tasks. Progress log persists across sessions.
 
-### 4.1 Remaining 6 AI Agents
+### ~~4.1 Remaining 6 AI Agents~~ DONE
 **Plan ref:** Section 5.1 (Agent Architecture), `.agents/plans/outlook-fixer-agent.md`
 **Prerequisite:** Complete Phase 7 Step 1 (blueprint infrastructure: 7.1 + 7.3 + 7.4) and Step 2 (retrofit existing agents) BEFORE building new agents. This ensures every new agent inherits `AgentHandoff` schemas, confidence scoring, and component context from day one — no retrofitting needed.
 
@@ -383,8 +383,8 @@
 2. ~~**Accessibility Auditor**~~ DONE — SKILL.md + 4 L3 skill files (wcag_email_mapping, alt_text_guidelines, color_contrast, screen_reader_behavior), service/prompt/schemas, blueprint node, recovery router integration, 10 synthetic test cases, 5-criteria judge (wcag_aa_compliance, alt_text_quality, contrast_ratio_accuracy, semantic_structure, screen_reader_compatibility), dry-run verified (540 tests pass)
 3. ~~**Personalisation Agent**~~ DONE — SKILL.md + 4 L3 skill files (braze_liquid, sfmc_ampscript, adobe_campaign_js, fallback_patterns), service/prompt/schemas, blueprint node, recovery router integration, 12 synthetic test cases (4 Braze, 4 SFMC, 3 Adobe Campaign, 1 mixed), 5-criteria judge (syntax_correctness, fallback_completeness, html_preservation, platform_accuracy, logic_match), dry-run verified (540 tests pass)
 4. ~~**Code Reviewer**~~ DONE — SKILL.md + 4 L3 skill files (redundant_code, css_client_support, nesting_validation, file_size_optimization), service/prompt/schemas, blueprint node, recovery router integration (css_support + file_size routed to code_reviewer), 12 synthetic test cases, 5-criteria judge (issue_genuineness, suggestion_actionability, severity_accuracy, coverage_completeness, output_format), dry-run verified (542 tests pass)
-5. **Knowledge Agent**: RAG-powered Q&A from knowledge base
-6. **Innovation Agent**: Prototype new techniques, assess feasibility, generate fallback strategies
+5. ~~**Knowledge Agent**~~ DONE — SKILL.md (pre-existing L1+L2) + 4 L3 skill files (rag_strategies, email_client_engines, can_i_email_reference, citation_rules), service/prompt/schemas, blueprint node (advisory — not in QA→recovery loop), 10 synthetic test cases (CSS property support, best practices, client quirks, comparisons, troubleshooting, edge cases), 5-criteria judge (answer_accuracy, citation_grounding, code_example_quality, source_relevance, completeness), dry-run verified (542 tests pass)
+6. ~~**Innovation Agent**~~ DONE — SKILL.md (pre-existing L1+L2) + 4 L3 skill files (css_checkbox_hacks, amp_email, css_animations, feasibility_framework), service/prompt/schemas, blueprint node (advisory — not in QA→recovery loop), 10 synthetic test cases, 5-criteria judge (technique_correctness, fallback_quality, client_coverage_accuracy, feasibility_assessment, innovation_value), dry-run verified (191 AI tests pass)
 
 #### Eval-First + Skills Build Pattern (applies to ALL agents)
 
@@ -475,8 +475,8 @@ app/ai/agents/{agent}/
 > | 5 | **Accessibility Auditor** | Implemented (4.1) | 10 synthetic cases, 5-criteria judge |
 > | 6 | **Personalisation Agent** | Implemented (4.1) | 12 synthetic cases, 5-criteria judge |
 > | 7 | **Code Reviewer** | Implemented (4.1) | 12 synthetic cases, 5-criteria judge |
-> | 8 | **Knowledge Agent** | Planned (4.1) | Eval data needed on build |
-> | 9 | **Innovation Agent** | Planned (4.1) | Eval data needed on build |
+> | 8 | **Knowledge Agent** | Implemented (4.1) | 10 synthetic cases, 5-criteria judge |
+> | 9 | **Innovation Agent** | Implemented (4.1) | 10 synthetic cases, 5-criteria judge |
 >
 > **Rule: No agent goes to production without completing steps 5.1-5.5 for that agent.** Steps 5.6-5.8 apply system-wide.
 
@@ -501,8 +501,8 @@ app/ai/agents/{agent}/
 > - [x] Eval data for Accessibility Auditor — 10 synthetic cases, 5-criteria judge (`AccessibilityJudge`), blueprint node + recovery router integration
 > - [x] Eval data for Personalisation Agent — 12 synthetic cases, 5-criteria judge (`PersonalisationJudge`), blueprint node + recovery router integration
 > - [x] Eval data for Code Reviewer — 12 synthetic cases, 5-criteria judge (`CodeReviewerJudge`), blueprint node + recovery router integration
-> - [ ] Eval data for Knowledge Agent (on agent build)
-> - [ ] Eval data for Innovation Agent (on agent build)
+> - [x] Eval data for Knowledge Agent — 10 synthetic cases, 5-criteria judge (`KnowledgeJudge`), advisory blueprint node (no recovery router — Q&A agent)
+> - [x] Eval data for Innovation Agent — 10 synthetic cases, 5-criteria judge (`InnovationJudge`), advisory blueprint node (no recovery router — generator agent)
 
 ### Per-Agent Eval Requirements (Mandatory for ALL 9 Agents)
 
@@ -522,7 +522,7 @@ Every agent — whether built now or in task 4.1 — must have:
   - `runner.py` — CLI runner that outputs JSONL traces
 - Real-world email patterns sourced from: Litmus, MailChimp Design Reference, Parcel.io, email-darkmode repo, StackOverflow Design, Mailmeteor spam lists
 - Binary LLM judges implemented for 4 agents: `app/ai/agents/evals/judges/` package with `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria: mso_conditional_correctness, vml_wellformedness, html_preservation, fix_completeness, outlook_version_targeting); shared `Judge` Protocol, `parse_judge_response()` with markdown fence handling; `JUDGE_REGISTRY` for dispatch; `judge_runner.py` CLI with batched execution and rate limiting
-- **5 agents still need eval data** — to be created as each agent is built (task 4.1; Outlook Fixer complete)
+- **All 9 agents have eval data** — synthetic test cases + LLM judges for every agent
 
 ### 5.1 Review & Harden Synthetic Test Data (Scaffolder, Dark Mode, Content)
 **What:** Review the 36 synthetic test cases for completeness, realism, and security. Verify no real client data or credentials leaked into test fixtures. Add 2-3 missing edge cases per agent identified during review. Ensure all HTML fixtures are self-contained (no external resource dependencies).
@@ -697,7 +697,7 @@ Install Cognee, define the full email ontology, seed the knowledge graph. This r
 **Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
 Wire graph search into blueprint nodes. ~~Author initial SKILL.md files for the 3 existing agents.~~ DONE for Scaffolder + Dark Mode (Step 2.6). Content agent SKILL.md pending. Re-run evals to measure improvement vs Step 0 baseline.
 
-**Step 5 — Build Remaining 5 Agents WITH Phase 7+8 Patterns (Task 4.1)** (Outlook Fixer DONE, Accessibility Auditor DONE, Personalisation DONE)
+~~**Step 5 — Build Remaining 6 Agents WITH Phase 7+8 Patterns (Task 4.1)**~~ DONE (Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation — all complete)
 Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
 
 **Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**

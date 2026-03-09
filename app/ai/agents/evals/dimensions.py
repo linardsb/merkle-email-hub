@@ -355,3 +355,89 @@ CODE_REVIEWER_DIMENSIONS = {
         ],
     },
 }
+
+# ---------------------------------------------------------------------------
+# Knowledge Agent Dimensions
+# ---------------------------------------------------------------------------
+KNOWLEDGE_DIMENSIONS = {
+    "query_type": {
+        "description": "Type of email development question asked",
+        "values": [
+            "css_property_support",
+            "best_practice_lookup",
+            "client_quirk_diagnosis",
+            "comparison_query",
+            "how_to_with_code",
+            "troubleshooting",
+        ],
+    },
+    "domain_coverage": {
+        "description": "Which knowledge domains the answer requires",
+        "values": [
+            "single_domain_css",
+            "single_domain_practice",
+            "single_domain_quirks",
+            "cross_domain",
+        ],
+    },
+    "answer_complexity": {
+        "description": "Expected depth and format of the answer",
+        "values": [
+            "yes_no_with_caveat",
+            "explanation_with_code",
+            "multi_client_matrix",
+            "deep_troubleshooting",
+        ],
+    },
+    "source_availability": {
+        "description": "How well the knowledge base covers this question",
+        "values": [
+            "direct_match",
+            "partial_coverage",
+            "edge_case",
+        ],
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Innovation Agent Dimensions
+# ---------------------------------------------------------------------------
+INNOVATION_DIMENSIONS = {
+    "technique_category": {
+        "description": "Type of experimental email technique being prototyped",
+        "values": [
+            "css_checkbox_interactive",
+            "css_animation_transition",
+            "amp_for_email",
+            "progressive_enhancement",
+            "accessibility_innovation",
+        ],
+    },
+    "client_coverage_challenge": {
+        "description": "How widely the technique is supported across email clients",
+        "values": [
+            "broad_support",
+            "modern_only",
+            "single_engine",
+            "near_zero_support",
+        ],
+    },
+    "fallback_complexity": {
+        "description": "Difficulty of providing a graceful fallback",
+        "values": [
+            "simple_static",
+            "degraded_but_functional",
+            "requires_conditional",
+            "no_graceful_fallback",
+        ],
+    },
+    "implementation_risk": {
+        "description": "Risk level based on technique maturity and edge cases",
+        "values": [
+            "production_proven",
+            "tested_limited",
+            "experimental_untested",
+            "bleeding_edge",
+        ],
+    },
+}

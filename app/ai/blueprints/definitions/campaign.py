@@ -15,6 +15,8 @@ from app.ai.blueprints.nodes.accessibility_node import AccessibilityNode
 from app.ai.blueprints.nodes.code_reviewer_node import CodeReviewerNode
 from app.ai.blueprints.nodes.dark_mode_node import DarkModeNode
 from app.ai.blueprints.nodes.export_node import ExportNode
+from app.ai.blueprints.nodes.innovation_node import InnovationNode
+from app.ai.blueprints.nodes.knowledge_node import KnowledgeNode
 from app.ai.blueprints.nodes.maizzle_build_node import MaizzleBuildNode
 from app.ai.blueprints.nodes.outlook_fixer_node import OutlookFixerNode
 from app.ai.blueprints.nodes.personalisation_node import PersonalisationNode
@@ -36,6 +38,8 @@ def build_campaign_blueprint() -> BlueprintDefinition:
     accessibility = AccessibilityNode()
     personalisation = PersonalisationNode()
     code_reviewer = CodeReviewerNode()
+    knowledge = KnowledgeNode()
+    innovation = InnovationNode()
 
     nodes: dict[str, BlueprintNode] = {
         scaffolder.name: scaffolder,
@@ -48,6 +52,8 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         accessibility.name: accessibility,
         personalisation.name: personalisation,
         code_reviewer.name: code_reviewer,
+        knowledge.name: knowledge,
+        innovation.name: innovation,
     }
 
     edges = [

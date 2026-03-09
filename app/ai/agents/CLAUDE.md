@@ -28,8 +28,11 @@
 ## Implemented Agents (V2 — task 4.1, eval-first + skills workflow, continued)
 - **Code Reviewer** (`code_reviewer/`) — Static analysis of email HTML: redundant code, unsupported CSS per email client, invalid nesting, file size optimisation. Analysis-only agent (does NOT modify HTML — returns original with structured `CodeReviewIssue` annotations). Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files (redundant_code, css_client_support, nesting_validation, file_size_optimization). Blueprint node passes HTML through unchanged; issues go into `AgentHandoff.warnings`. Recovery router routes `css_support` and `file_size` failures.
 
-## Planned Agents (V2 — task 4.1)
-Knowledge, Innovation.
+## Implemented Agents (V2 — task 4.1, eval-first + skills workflow, continued)
+- **Knowledge** (`knowledge/`) — RAG-powered Q&A agent for email development questions. Searches Hub knowledge base (20 docs across css_support, best_practices, client_quirks), generates grounded answers with citations. **Not an HTML transformer** — receives question, returns answer with sources and confidence. Requires DB session for `KnowledgeService.search()`. Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files (rag_strategies, email_client_engines, can_i_email_reference, citation_rules). Blueprint node is advisory (not in QA→recovery loop).
+
+## Implemented Agents (V2 — task 4.1, eval-first + skills workflow, continued)
+- **Innovation** (`innovation/`) — Prototypes experimental email techniques: CSS checkbox hacks (tabs, accordions, carousels), AMP for Email, CSS animations, progressive enhancement. **Generator agent** (produces new prototype code, not an HTML transformer). Provides feasibility assessment (risk level, client coverage %, recommendation), static fallback HTML, and known limitations. Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files (css_checkbox_hacks, amp_email, css_animations, feasibility_framework). Blueprint node is advisory (not in QA→recovery loop).
 
 ## Evaluation Framework (`evals/`)
 
@@ -44,8 +47,10 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 - `synthetic_data_accessibility.py` — 10 test cases: missing alt text, table roles, lang/title, low contrast, heading hierarchy, link text, VML/ARIA, color-only info
 - `synthetic_data_personalisation.py` — 12 test cases: 4 Braze (Liquid), 4 SFMC (AMPscript), 3 Adobe Campaign (JSSP), 1 mixed edge case
 - `synthetic_data_code_reviewer.py` — 12 test cases: redundant code (3), CSS support (2), nesting (2), file size (2), mixed (1), clean/false-positive (2)
-- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|outlook_fixer|accessibility|personalisation|code_reviewer|all} --output traces/`
-- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria), `PersonalisationJudge` (5 criteria), `CodeReviewerJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
+- `synthetic_data_knowledge.py` — 10 test cases: CSS property support, best practices, client quirks, comparisons, troubleshooting, edge cases
+- `synthetic_data_innovation.py` — 10 test cases: CSS checkbox hacks (2), CSS animations (2), AMP for Email (2), progressive enhancement (2), accessibility innovation (1), edge case (1)
+- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|outlook_fixer|accessibility|personalisation|code_reviewer|knowledge|innovation|all} --output traces/`
+- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria), `PersonalisationJudge` (5 criteria), `CodeReviewerJudge` (5 criteria), `KnowledgeJudge` (5 criteria), `InnovationJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
 - `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
 
 ### Per-Agent Eval Requirements (mandatory for all 9)
@@ -65,5 +70,5 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 | Accessibility | 10 cases | 5 criteria | Pending (live run needed) | — | — |
 | Personalisation | 12 cases | 5 criteria | Pending (live run needed) | — | — |
 | Code Reviewer | 12 cases | 5 criteria | Pending (live run needed) | — | — |
-| Knowledge | Not started | — | — | — | — |
-| Innovation | Not started | — | — | — | — |
+| Knowledge | 10 cases | 5 criteria | Pending (live run needed) | — | — |
+| Innovation | 10 cases | 5 criteria | Pending (live run needed) | — | — |

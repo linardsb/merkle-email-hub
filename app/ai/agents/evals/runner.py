@@ -7,6 +7,7 @@ Usage:
     python -m app.ai.agents.evals.runner --agent dark_mode --output traces/
     python -m app.ai.agents.evals.runner --agent content --output traces/
     python -m app.ai.agents.evals.runner --agent personalisation --output traces/
+    python -m app.ai.agents.evals.runner --agent knowledge --output traces/
     python -m app.ai.agents.evals.runner --agent all --output traces/
 
 Each trace includes: input, agent output, metadata, and timing.
@@ -25,6 +26,8 @@ from app.ai.agents.evals.synthetic_data_accessibility import ACCESSIBILITY_TEST_
 from app.ai.agents.evals.synthetic_data_code_reviewer import CODE_REVIEWER_TEST_CASES
 from app.ai.agents.evals.synthetic_data_content import CONTENT_TEST_CASES
 from app.ai.agents.evals.synthetic_data_dark_mode import DARK_MODE_TEST_CASES
+from app.ai.agents.evals.synthetic_data_innovation import INNOVATION_TEST_CASES
+from app.ai.agents.evals.synthetic_data_knowledge import KNOWLEDGE_TEST_CASES
 from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_CASES
 from app.ai.agents.evals.synthetic_data_personalisation import PERSONALISATION_TEST_CASES
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
@@ -418,6 +421,118 @@ async def run_code_reviewer_case(case: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+async def run_knowledge_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Run a single knowledge test case and return the trace."""
+    from app.ai.agents.knowledge.schemas import KnowledgeRequest
+    from app.ai.agents.knowledge.service import KnowledgeAgentService
+    from app.core.database import get_db_context
+    from app.knowledge.service import KnowledgeService as RAGService
+
+    service = KnowledgeAgentService()
+    question: str = str(case["question"])
+    domain: str | None = case.get("domain")
+    request = KnowledgeRequest(question=question, domain=domain)
+
+    start = time.monotonic()
+    try:
+        async with get_db_context() as db:
+            rag_service = RAGService(db)
+            response = await service.process(request, rag_service)
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "knowledge",
+            "dimensions": case["dimensions"],
+            "input": {
+                "question": question,
+                "domain": domain,
+            },
+            "output": {
+                "answer": response.answer,
+                "sources": [s.model_dump() for s in response.sources],
+                "confidence": response.confidence,
+                "skills_loaded": response.skills_loaded,
+                "model": response.model,
+            },
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": None,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "knowledge",
+            "dimensions": case["dimensions"],
+            "input": {
+                "question": question,
+                "domain": domain,
+            },
+            "output": None,
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": f"{type(e).__name__}: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
+async def run_innovation_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Run a single innovation test case and return the trace."""
+    from app.ai.agents.innovation.schemas import InnovationRequest
+    from app.ai.agents.innovation.service import InnovationService
+
+    service = InnovationService()
+    technique: str = str(case["technique"])
+    category: str | None = case.get("category")
+    request = InnovationRequest(technique=technique, category=category)
+
+    start = time.monotonic()
+    try:
+        response = await service.process(request)
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "innovation",
+            "dimensions": case["dimensions"],
+            "input": {
+                "technique": technique,
+                "category": category,
+            },
+            "output": {
+                "prototype": response.prototype,
+                "feasibility": response.feasibility,
+                "client_coverage": response.client_coverage,
+                "risk_level": response.risk_level,
+                "recommendation": response.recommendation,
+                "fallback_html": response.fallback_html,
+                "confidence": response.confidence,
+                "skills_loaded": response.skills_loaded,
+                "model": response.model,
+            },
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": None,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "innovation",
+            "dimensions": case["dimensions"],
+            "input": {
+                "technique": technique,
+                "category": category,
+            },
+            "output": None,
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": f"{type(e).__name__}: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
 async def run_agent(
     agent: str,
     output_dir: Path,
@@ -453,6 +568,12 @@ async def run_agent(
     elif agent == "code_reviewer":
         cases = CODE_REVIEWER_TEST_CASES
         runner = run_code_reviewer_case
+    elif agent == "knowledge":
+        cases = KNOWLEDGE_TEST_CASES
+        runner = run_knowledge_case
+    elif agent == "innovation":
+        cases = INNOVATION_TEST_CASES
+        runner = run_innovation_case
     else:
         raise ValueError(f"Unknown agent: {agent}")
 
@@ -524,6 +645,8 @@ async def main() -> None:
             "accessibility",
             "personalisation",
             "code_reviewer",
+            "knowledge",
+            "innovation",
             "all",
         ],
         required=True,
@@ -552,6 +675,8 @@ async def main() -> None:
             "accessibility",
             "personalisation",
             "code_reviewer",
+            "knowledge",
+            "innovation",
         ]
         if args.agent == "all"
         else [args.agent]

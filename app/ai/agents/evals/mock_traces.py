@@ -171,6 +171,25 @@ CODE_REVIEWER_CRITERIA: list[dict[str, str]] = [
     {"criterion": "output_format", "description": "Valid JSON with required fields"},
 ]
 
+KNOWLEDGE_CRITERIA: list[dict[str, str]] = [
+    {"criterion": "answer_accuracy", "description": "Answer factually correct from context"},
+    {"criterion": "citation_grounding", "description": "Claims cite source documents"},
+    {"criterion": "code_example_quality", "description": "Code uses email-safe patterns"},
+    {"criterion": "source_relevance", "description": "Retrieved sources match question domain"},
+    {"criterion": "completeness", "description": "Answer addresses all aspects of question"},
+]
+
+INNOVATION_CRITERIA: list[dict[str, str]] = [
+    {"criterion": "technique_correctness", "description": "Prototype code technically correct"},
+    {"criterion": "fallback_quality", "description": "Production-quality fallback provided"},
+    {"criterion": "client_coverage_accuracy", "description": "Coverage percentage realistic"},
+    {
+        "criterion": "feasibility_assessment",
+        "description": "Risk, recommendation, and coverage present",
+    },
+    {"criterion": "innovation_value", "description": "Actionable email-specific guidance"},
+]
+
 AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "scaffolder": SCAFFOLDER_CRITERIA,
     "dark_mode": DARK_MODE_CRITERIA,
@@ -179,6 +198,8 @@ AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "accessibility": ACCESSIBILITY_CRITERIA,
     "personalisation": PERSONALISATION_CRITERIA,
     "code_reviewer": CODE_REVIEWER_CRITERIA,
+    "knowledge": KNOWLEDGE_CRITERIA,
+    "innovation": INNOVATION_CRITERIA,
 }
 
 

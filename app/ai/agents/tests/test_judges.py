@@ -6,6 +6,7 @@ from app.ai.agents.evals.judges import JUDGE_REGISTRY
 from app.ai.agents.evals.judges.code_reviewer import CodeReviewerJudge
 from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
+from app.ai.agents.evals.judges.innovation import InnovationJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
 from app.ai.agents.evals.judges.schemas import JudgeInput
 
@@ -268,6 +269,58 @@ class TestCodeReviewerJudge:
         assert verdict.agent == "code_reviewer"
 
 
+# --- Innovation Judge Tests ---
+
+
+def _make_innovation_input() -> JudgeInput:
+    return JudgeInput(
+        trace_id="inn-001",
+        agent="innovation",
+        input_data={
+            "technique": "Create a CSS-only tabbed content section for email",
+            "category": "interactive",
+        },
+        output_data={
+            "prototype": "<input type='checkbox' id='tab1'><label for='tab1'>Tab 1</label>",
+            "feasibility": "Client coverage: 45%. Risk level: medium. Recommendation: test_further.",
+            "fallback_html": "<table><tr><td>All content stacked</td></tr></table>",
+        },
+        expected_challenges=["checkbox pattern", "static fallback"],
+    )
+
+
+INNOVATION_CRITERIA_NAMES = [
+    "technique_correctness",
+    "fallback_quality",
+    "client_coverage_accuracy",
+    "feasibility_assessment",
+    "innovation_value",
+]
+
+
+class TestInnovationJudge:
+    def test_build_prompt_contains_criteria_and_input(self) -> None:
+        judge = InnovationJudge()
+        prompt = judge.build_prompt(_make_innovation_input())
+
+        assert "technique_correctness" in prompt
+        assert "fallback_quality" in prompt
+        assert "client_coverage_accuracy" in prompt
+        assert "CSS-only tabbed content" in prompt
+        assert "interactive" in prompt
+
+    def test_parse_valid_response(self) -> None:
+        judge = InnovationJudge()
+        raw = _make_valid_response(INNOVATION_CRITERIA_NAMES)
+        verdict = judge.parse_response(raw, _make_innovation_input())
+
+        assert verdict.overall_pass is True
+        assert len(verdict.criteria_results) == 5
+        assert verdict.error is None
+        assert verdict.trace_id == "inn-001"
+        assert verdict.agent == "innovation"
+
+
 # --- Registry & Cross-Cutting Tests ---
 
 
@@ -280,7 +333,9 @@ class TestJudgeRegistry:
         assert "accessibility" in JUDGE_REGISTRY
         assert "personalisation" in JUDGE_REGISTRY
         assert "code_reviewer" in JUDGE_REGISTRY
-        assert len(JUDGE_REGISTRY) == 7
+        assert "knowledge" in JUDGE_REGISTRY
+        assert "innovation" in JUDGE_REGISTRY
+        assert len(JUDGE_REGISTRY) == 9
 
     def test_registry_instantiation(self) -> None:
         for name, cls in JUDGE_REGISTRY.items():
