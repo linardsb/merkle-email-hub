@@ -4,10 +4,12 @@ Graph:
   scaffolder → qa_gate → (success) → maizzle_build → export
                        → (qa_fail) → recovery_router → dark_mode → qa_gate (loop)
                                                       → outlook_fixer → qa_gate (loop)
+                                                      → accessibility → qa_gate (loop)
                                                       → scaffolder (loop)
 """
 
 from app.ai.blueprints.engine import BlueprintDefinition, Edge
+from app.ai.blueprints.nodes.accessibility_node import AccessibilityNode
 from app.ai.blueprints.nodes.dark_mode_node import DarkModeNode
 from app.ai.blueprints.nodes.export_node import ExportNode
 from app.ai.blueprints.nodes.maizzle_build_node import MaizzleBuildNode
@@ -27,6 +29,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
     recovery_router = RecoveryRouterNode()
     dark_mode = DarkModeNode()
     outlook_fixer = OutlookFixerNode()
+    accessibility = AccessibilityNode()
 
     nodes: dict[str, BlueprintNode] = {
         scaffolder.name: scaffolder,
@@ -36,6 +39,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         recovery_router.name: recovery_router,
         dark_mode.name: dark_mode,
         outlook_fixer.name: outlook_fixer,
+        accessibility.name: accessibility,
     }
 
     edges = [
@@ -60,6 +64,12 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         ),
         Edge(
             from_node="recovery_router",
+            to_node="accessibility",
+            condition="route_to",
+            route_value="accessibility",
+        ),
+        Edge(
+            from_node="recovery_router",
             to_node="scaffolder",
             condition="route_to",
             route_value="scaffolder",
@@ -68,6 +78,8 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         Edge(from_node="dark_mode", to_node="qa_gate", condition="always"),
         # Outlook fixer loops back to QA
         Edge(from_node="outlook_fixer", to_node="qa_gate", condition="always"),
+        # Accessibility fix loops back to QA
+        Edge(from_node="accessibility", to_node="qa_gate", condition="always"),
         # Build → export
         Edge(from_node="maizzle_build", to_node="export", condition="always"),
     ]

@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 _FAILURE_ROUTING: dict[str, str] = {
     "dark_mode": "dark_mode",
     "fallback": "outlook_fixer",
-    "accessibility": "scaffolder",
+    "accessibility": "accessibility",
     "html_validation": "scaffolder",
     "css_support": "scaffolder",
     "file_size": "scaffolder",
@@ -55,6 +55,9 @@ class RecoveryRouterNode:
             for f in context.qa_failures
         )
 
+        # Determine if any failures are accessibility-specific
+        has_accessibility_failure = any(f.startswith("accessibility:") for f in context.qa_failures)
+
         # Also check upstream handoff warnings for routing hints
         upstream = context.metadata.get("upstream_handoff")
         if isinstance(upstream, AgentHandoff) and upstream.warnings:
@@ -67,11 +70,19 @@ class RecoveryRouterNode:
                     "outlook" in w.lower() or "mso" in w.lower() or "vml" in w.lower()
                     for w in upstream.warnings
                 )
+            if not has_accessibility_failure:
+                has_accessibility_failure = any(
+                    kw in w.lower()
+                    for w in upstream.warnings
+                    for kw in ("accessibility", "wcag", "alt text", "contrast")
+                )
 
         if has_dark_mode_failure:
             target = "dark_mode"
         elif has_outlook_failure:
             target = "outlook_fixer"
+        elif has_accessibility_failure:
+            target = "accessibility"
         else:
             target = "scaffolder"
 

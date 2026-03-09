@@ -1,100 +1,98 @@
-"""System prompt for the Content agent."""
+"""System prompt for the Content agent.
 
-CONTENT_SYSTEM_PROMPT = """\
+Thin prompt — core rules only. Detailed patterns loaded from SKILL.md
+and skills/*.md via progressive disclosure in the service layer.
+"""
+
+from pathlib import Path
+
+_SKILL_DIR = Path(__file__).parent
+
+# Load L1+L2 instructions from SKILL.md (always loaded)
+_SKILL_PATH = _SKILL_DIR / "SKILL.md"
+_SKILL_CONTENT = _SKILL_PATH.read_text(encoding="utf-8") if _SKILL_PATH.exists() else ""
+
+
+def _load_skill_file(name: str) -> str:
+    """Load an L3 skill reference file by name."""
+    path = _SKILL_DIR / "skills" / name
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    return ""
+
+
+# L3 reference files — loaded on demand by detect_relevant_skills()
+SKILL_FILES: dict[str, str] = {
+    "spam_triggers": "spam_triggers.md",
+    "subject_line_formulas": "subject_line_formulas.md",
+    "brand_voice": "brand_voice.md",
+    "operation_best_practices": "operation_best_practices.md",
+}
+
+CONTENT_SYSTEM_PROMPT = f"""\
 You are an expert email marketing copywriter specialising in high-conversion email copy.
 Your task: generate or refine email marketing text based on the requested operation.
 
-## Output Format
-
-Return ONLY the text inside a single ```text code block.
-Do NOT include any explanation, commentary, or text outside the code block.
-
-- For a single result: return the text on its own inside the code block.
-- For multiple alternatives: place each alternative on its own line(s), separated by a line
-  containing only `---` (three hyphens). All alternatives go inside ONE code block.
-
-Example (multiple):
-```text
-First alternative here
----
-Second alternative here
----
-Third alternative here
-```
-
-## Operation Instructions
-
-### subject_line
-- 40-60 characters ideal length
-- Front-load the value proposition
-- Avoid ALL CAPS words
-- Use emoji sparingly (max 1, at start or end)
-- Create curiosity or urgency without being spammy
-- Never start with "Re:" or "Fwd:" unless explicitly requested
-
-### preheader
-- 40-130 characters
-- Complement the subject line — do NOT repeat it
-- Add context or a secondary hook
-- Works as a continuation of the subject line in the inbox preview
-
-### cta
-- 2-5 words
-- Start with an action verb (Get, Start, Discover, Claim, Try, Join)
-- Focus on the benefit, not the action (e.g., "Get My Free Guide" not "Click Here")
-- Avoid generic phrases like "Learn More", "Click Here", "Submit"
-
-### body_copy
-- Write scannable, short paragraphs (2-3 sentences each)
-- Clear visual hierarchy: hook → value → proof → CTA
-- Single primary CTA per section
-- Use "you" and "your" — speak directly to the reader
-- Conversational but professional tone
-
-### rewrite
-- Preserve the original meaning and key information
-- Improve clarity, engagement, and persuasiveness
-- Fix awkward phrasing and redundancy
-- Maintain approximate length unless clearly too verbose
-
-### shorten
-- Reduce word count by approximately 30-50%
-- Keep the core message and key selling points
-- Remove filler words, redundant phrases, and weak qualifiers
-- Preserve the tone and voice of the original
-
-### expand
-- Add relevant detail, examples, or persuasive elements
-- Maintain the original tone and voice
-- Do not introduce new claims unsupported by the source text
-- Improve depth without becoming verbose or repetitive
-
-### tone_adjust
-- Transform the tone to match the requested target tone
-- Preserve all factual content and key information
-- Adjust vocabulary, sentence structure, and register
-- Common tones: professional, casual, urgent, friendly, authoritative, playful, empathetic
-
-## Brand Voice
-
-If brand voice guidelines are provided, treat them as overriding constraints.
-Adapt vocabulary, sentence style, and tone to match the brand voice even if it
-conflicts with the default recommendations above.
-
-## Anti-Spam Rules
-
-- NEVER use ALL CAPS for emphasis (e.g., "FREE", "BUY NOW", "ACT NOW")
-- Avoid excessive punctuation (!!!, ???, ...)
-- Avoid standalone "free" as a selling point — reframe as value
-- Avoid known spam trigger phrases: "buy now", "act now", "click here",
-  "limited time", "100% guaranteed", "no obligation", "winner", "congratulations"
-- Use specific numbers and proof points instead of hype language
-
-## Security Rules (ABSOLUTE — NO EXCEPTIONS)
-
-- NEVER include real personal information (names, emails, phone numbers, addresses)
-- Use placeholders: [NAME], [EMAIL], [COMPANY], [PHONE] if PII appears in context
-- NEVER include `<script>` tags, HTML tags, or JavaScript
-- NEVER include URLs unless they appear in the source text
-- Output plain text only — no HTML, no markdown formatting (except the code block wrapper)
+{_SKILL_CONTENT}
 """
+
+
+def build_system_prompt(relevant_skills: list[str]) -> str:
+    """Build system prompt with progressive disclosure of L3 reference files.
+
+    Args:
+        relevant_skills: List of skill keys to load (e.g., ['spam_triggers', 'brand_voice']).
+
+    Returns:
+        Complete system prompt with relevant L3 files appended.
+    """
+    parts = [CONTENT_SYSTEM_PROMPT]
+
+    for skill_key in relevant_skills:
+        filename = SKILL_FILES.get(skill_key)
+        if filename:
+            content = _load_skill_file(filename)
+            if content:
+                parts.append(f"\n\n--- REFERENCE: {skill_key} ---\n\n{content}")
+
+    return "\n".join(parts)
+
+
+def detect_relevant_skills(
+    operation: str,
+    brand_voice: str | None = None,
+    text: str | None = None,
+) -> list[str]:
+    """Detect which L3 skill files are relevant based on the operation and context.
+
+    Progressive disclosure — only load skill files for detected needs.
+
+    Args:
+        operation: Content operation type (subject_line, preheader, cta, etc.).
+        brand_voice: Optional brand voice guidelines.
+        text: Optional source text to analyze.
+
+    Returns:
+        List of relevant skill keys.
+    """
+    skills: list[str] = []
+
+    # Always load operation best practices
+    skills.append("operation_best_practices")
+
+    # Subject line operations need formula reference
+    if operation in ("subject_line", "preheader"):
+        skills.append("subject_line_formulas")
+
+    # Brand voice provided — load brand voice reference
+    if brand_voice:
+        skills.append("brand_voice")
+
+    # Tone adjustment needs brand voice framework
+    if operation == "tone_adjust":
+        skills.append("brand_voice")
+
+    # Always load spam triggers for any content generation
+    skills.append("spam_triggers")
+
+    return list(dict.fromkeys(skills))  # deduplicate preserving order

@@ -20,6 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from app.ai.agents.evals.synthetic_data_accessibility import ACCESSIBILITY_TEST_CASES
 from app.ai.agents.evals.synthetic_data_content import CONTENT_TEST_CASES
 from app.ai.agents.evals.synthetic_data_dark_mode import DARK_MODE_TEST_CASES
 from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_CASES
@@ -233,6 +234,62 @@ async def run_outlook_fixer_case(case: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+async def run_accessibility_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Run a single accessibility test case and return the trace."""
+    from app.ai.agents.accessibility.schemas import AccessibilityRequest
+    from app.ai.agents.accessibility.service import AccessibilityService
+
+    service = AccessibilityService()
+    html_input: str = str(case["html_input"])
+    request = AccessibilityRequest(
+        html=html_input,
+        focus_areas=None,
+        stream=False,
+        run_qa=True,
+    )
+
+    start = time.monotonic()
+    try:
+        response = await service.process(request)
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "accessibility",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+            },
+            "output": {
+                "html": response.html,
+                "skills_loaded": response.skills_loaded,
+                "qa_results": [r.model_dump() for r in (response.qa_results or [])],
+                "qa_passed": response.qa_passed,
+                "model": response.model,
+            },
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": None,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "accessibility",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+            },
+            "output": None,
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": f"{type(e).__name__}: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
 async def run_agent(
     agent: str,
     output_dir: Path,
@@ -259,6 +316,9 @@ async def run_agent(
     elif agent == "outlook_fixer":
         cases = OUTLOOK_FIXER_TEST_CASES
         runner = run_outlook_fixer_case
+    elif agent == "accessibility":
+        cases = ACCESSIBILITY_TEST_CASES
+        runner = run_accessibility_case
     else:
         raise ValueError(f"Unknown agent: {agent}")
 
@@ -322,7 +382,7 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description="Run agent evals")
     parser.add_argument(
         "--agent",
-        choices=["scaffolder", "dark_mode", "content", "outlook_fixer", "all"],
+        choices=["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility", "all"],
         required=True,
     )
     parser.add_argument("--output", type=Path, default=Path("traces"))
@@ -341,7 +401,7 @@ async def main() -> None:
     args = parser.parse_args()
 
     agents = (
-        ["scaffolder", "dark_mode", "content", "outlook_fixer"]
+        ["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility"]
         if args.agent == "all"
         else [args.agent]
     )

@@ -1,0 +1,22 @@
+{
+  "active_agent": "outlook_fixer",
+  "blueprint_state": "running",
+  "current_node": "outlook_fixer_node",
+  "qa_failures": [
+    {
+      "check": "fallback",
+      "message": "Missing MSO conditional comments for Outlook 2007-2019"
+    },
+    {
+      "check": "dark_mode",
+      "message": "VML fill colors lack dark mode alternatives"
+    }
+  ],
+  "loaded_skills": [
+    "app/ai/agents/outlook_fixer/SKILL.md",
+    "app/ai/agents/outlook_fixer/skills/mso_bug_fixes.md",
+    "app/ai/agents/outlook_fixer/skills/vml_reference.md"
+  ],
+  "last_confidence": 0.72,
+  "notes": "Working on ghost table fix for 3-column layout in Outlook 2016"
+}

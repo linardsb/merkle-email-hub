@@ -144,11 +144,20 @@ OUTLOOK_FIXER_CRITERIA: list[dict[str, str]] = [
     {"criterion": "outlook_version_targeting", "description": "Fixes scoped to correct versions"},
 ]
 
+ACCESSIBILITY_CRITERIA: list[dict[str, str]] = [
+    {"criterion": "wcag_aa_compliance", "description": "WCAG 2.1 AA structure met"},
+    {"criterion": "alt_text_quality", "description": "Image alt text appropriate"},
+    {"criterion": "contrast_ratio_accuracy", "description": "Contrast ratios sufficient"},
+    {"criterion": "semantic_structure", "description": "Heading hierarchy and link text correct"},
+    {"criterion": "screen_reader_compatibility", "description": "Screen reader compatible"},
+]
+
 AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "scaffolder": SCAFFOLDER_CRITERIA,
     "dark_mode": DARK_MODE_CRITERIA,
     "content": CONTENT_CRITERIA,
     "outlook_fixer": OUTLOOK_FIXER_CRITERIA,
+    "accessibility": ACCESSIBILITY_CRITERIA,
 }
 
 

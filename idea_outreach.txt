@@ -1,0 +1,670 @@
+yeah, it’s doable. actually more than doable — it’s just very specific, which is both the risk and the strength.
+
+from what you’ve built, this isn’t “yet another email builder.” it’s infrastructure. you’re solving a problem that only really exists once a team has enough email volume, enough clients, and enough platform fragmentation that ad‑hoc fixes stop scaling.
+
+a few honest reads on the business:
+
+first, the problem is real. multi‑client agencies absolutely feel this pain. every agency doing serious email work ends up with some cursed mix of MJML snippets, half‑documented Outlook hacks, tribal knowledge, and one senior dev who “knows the dark mode stuff.” your hub formalizes that chaos and turns it into an asset. that compounding value angle is legit and actually pretty rare.
+
+second, the tech ambition is high, but it’s coherent. nothing you describe is hand‑wavy. maizzle/mjml pipeline, figma tokens, litmus/eoa, perceptual diffs, spam rules — these are all things agencies already use separately. the bet you’re making is that centralization + reuse across clients is worth paying for. that’s a reasonable bet.
+
+where it gets tricky is the market shape.
+
+this is not a broad SMB SaaS. it’s a narrow, high‑value tool for: – email‑heavy agencies – lifecycle/CRM consultancies – maybe large in‑house email teams later
+
+that’s fine, but it means: – sales will be founder‑led at first – deals will be slower – messaging has to be painfully clear about who this is for
+
+if you try to sell this as “email innovation platform” to everyone, it’ll bounce. if you sell it as “we eliminate repeat email dev work across clients and platforms,” it’ll land with the right people.
+
+another real constraint: trust. you don’t have social proof yet, and this is core workflow infrastructure. people won’t just swipe a card. early on, this probably sells as: – pilot – paid beta – “we’ll onboard you and help set it up”
+
+that’s not a flaw, just a phase.
+
+business‑model‑wise, you’re actually in a good spot. agencies understand: – paying for internal tooling – ROI framed as time saved and risk avoided – licenses that scale with team size or clients
+
+this could be priced high without being crazy, because the alternative is senior dev time and recurring mistakes.
+
+the biggest risk isn’t feasibility — it’s focus.
+
+you’ve built (or planned) a lot. the danger is leading with the architecture instead of the outcome. buyers don’t wake up wanting: “ODiff with Zig SIMD perceptual diffs”
+
+they wake up wanting: “why are we still breaking Outlook every time we ship a campaign”
+
+if you anchor everything to: – fewer regressions – faster builds across clients – institutional memory instead of tribal knowledge
+
+then yeah, this is absolutely a real business.
+
+short version:
+doable ✅
+technically sound ✅
+clear pain ✅
+niche and trust‑heavy ⚠️
+needs ruthless positioning ✅
+
+if you want, next we can: – pressure‑test who the first 10 customers actually are
+– or rewrite the value prop in “agency partner” language instead of platform language
+– or talk about how you’d sell this before you have case studies
+
+great. lets see who would be first 10 customers. as well  great value prop would be great too. and about selling it, when all the features and planned roadmap is build how much it could go for and what kind of sell it could be? SaaS, one of sale? consultancy? I've worked myself in Merkle for 7 years in total. 2 years in MRM McCann, Ometria
+
+nice background btw — merkle + mrm + ometria is basically the exact résumé that makes this not theoretical 😄
+you’ve lived the pain, which already answers half the “is this real” question.
+
+i’ll keep this conversational and structured in my head, not on the page.
+
+first 10 customers — who, concretely
+your first customers are not “companies,” they’re teams you already recognize.
+
+think: agencies or consultancies where email is a profit center, not a side service.
+
+the clearest first 10 look like: – lifecycle / CRM agencies doing heavy braze, sfmc, adobe work
+– agencies with multiple enterprise clients and shared delivery teams
+– teams that already talk about “email frameworks,” “design systems,” or “build accelerators”
+
+very concretely, places like: – merkle‑type regional offices or pods, not global procurement day one
+– smaller but senior consultancies founded by ex‑big‑agency people
+– boutique lifecycle agencies with 10–40 people where 2–5 are email specialists
+– ometria partners doing complex email for retail brands
+– ex‑salesforce marketing cloud specialists who live in content builder hell
+
+your buyer is usually: – head of CRM / lifecycle – director of engineering for martech – sometimes a partner if it’s a small shop
+
+your champion is: – senior email dev / tech lead who is tired of being the single point of failure
+
+important: the first 10 almost certainly come from warm adjacency. ex‑colleagues, slack groups, people who know your name from merkle/mrm days. this product does not cold‑sell well at the beginning.
+
+the value prop — in language that actually sells
+your strongest value prop is not innovation. it’s compound leverage.
+
+the cleanest way to frame it:
+
+“we turn email delivery work from disposable project output into a reusable, compounding asset across all your clients and platforms.”
+
+then you ladder down into outcomes people already care about:
+
+– every fix you make once never needs to be rediscovered
+– outlook and dark‑mode bugs stop reappearing across clients
+– figma → html stops being a bespoke translation every time
+– senior email knowledge becomes systemized, not tribal
+– new clients ramp faster without lowering quality
+
+if i had to compress it even further for a slide or first conversation:
+
+“it’s an internal email platform that makes every client engagement faster and safer than the last.”
+
+you can talk about features, but only after they nod at that sentence.
+
+how to sell it at first (this matters)
+early on, this should not be sold as pure self‑serve SaaS. that’s a trap.
+
+phase 1 looks like: – paid pilot
+– light consultancy wrapped around the product
+– you help them onboard one or two real clients into it
+
+they don’t buy “software.” they buy: “we’ll help you stop rebuilding email foundations every quarter.”
+
+this also solves your lack of social proof because the proof is the engagement.
+
+pricing — realistic ranges, not fantasy
+early pricing, per agency: – €8k–20k/year for a small team (10–20 people)
+– €30k–60k/year for mid‑size agencies with multiple delivery pods
+– enterprise later can go well north of that
+
+but here’s the key:
+the first deals may be framed as: – €10k pilot + feedback
+– €15k annual with onboarding included
+
+don’t underprice just because it’s early. agencies equate cheap with risky.
+
+long‑term model — what this actually becomes
+this is not a one‑off tool, and it’s not pure consultancy either.
+
+the clean evolution is: – core SaaS platform (annual license) – optional paid onboarding / custom connectors – optional support tier for QA rules, platform exports, etc.
+
+consultancy becomes: – a wedge – a revenue stabilizer – but not the core identity
+
+if you stay consultancy‑first forever, you cap scale.
+if you go SaaS‑only too early, you lose trust.
+
+why your background matters here
+your merkle / mrm / ometria time is actually part of the pitch.
+
+you’re not saying: “we built a cool email tool”
+
+you’re saying: “we built the platform we wish we’d had when juggling 12 clients, 3 ESPs, and 5 inbox‑breaking edge cases.”
+
+that lands.
+
+if you want, next we can: – script the exact first conversation you’d have with an ex‑Merkle director
+– design the “paid pilot” offer so it doesn’t feel like consulting
+– or sanity‑check whether you should start with agencies or in‑house teams first
+
+all three 
+
+perfect. this is where it gets fun.
+
+i’ll walk through all three, but in the way you’d actually use them, not as theory.
+
+1. the exact first conversation (ex‑Merkle / ex‑agency director)
+this is not a pitch. it’s a recognition test.
+
+you reach out with something like:
+
+“quick question — do you still have one or two people on your team who are the unofficial ‘email whisperers’ because they know all the dark mode / outlook / esp quirks?”
+
+if they say yes, you’re in.
+
+then you continue:
+
+“i’m building the internal platform i always wished we’d had at merkle — one place where every email fix, component, and qa rule compounds across clients instead of dying in a project folder.”
+
+pause. let them react.
+
+only after they engage, you go:
+
+“i’m doing a couple of paid pilots with teams like yours. not selling a tool yet — more like: we wire this into one or two real clients and see if it actually removes friction.”
+
+key things you’re not saying: – no roadmap dump
+– no feature tour
+– no ‘innovative ai platform’ language
+
+this works because it sounds like an insider talking to an insider, not a vendor.
+
+2. the paid pilot offer (so it doesn’t feel like consulting)
+this is crucial.
+
+you do not sell: “we’ll help you build emails better”
+
+you sell: “we’ll stand up shared email infrastructure for your team”
+
+a clean pilot shape:
+
+– duration: 6–8 weeks
+– scope: 1–2 real clients they already have
+– outcome: reusable components + qa rules + build pipeline they keep
+
+what they get, explicitly: – the platform access
+– initial setup (esp exports, figma sync, qa rules)
+– migration of a small but meaningful slice of real work
+
+what they’re really buying: – reduced dependency on senior email devs
+– faster second client than the first
+– fewer regressions
+
+pricing sweet spot: – €8k–15k pilot
+– credited toward annual license if they continue
+
+this feels like a product engagement, not staff augmentation.
+
+important framing line:
+
+“if this doesn’t make your second client faster than your first, it’s not working.”
+
+that line builds trust fast.
+
+3. agencies vs in‑house teams — who first, honestly
+start with agencies, 100%.
+
+here’s why: – they feel compounding value immediately
+– multi‑client reuse is their daily pain
+– they already accept internal tooling costs
+– decision cycles are faster than enterprise in‑house
+
+in‑house teams will want: – heavier governance
+– procurement
+– security reviews
+– longer proof timelines
+
+you will get there, but not first.
+
+your natural early ICP: – 10–50 person agencies
+– strong email / lifecycle focus
+– working across 2+ ESPs
+– already doing “frameworks” informally
+
+once you have 3–5 agencies using this, then in‑house becomes credible: “we run the same platform that agencies use to manage dozens of clients.”
+
+tying it all together (the real strategy)
+year 1 is not about scale. it’s about legitimacy.
+
+your goals: – 5–10 agencies
+– deep usage
+– visible internal dependency on the platform
+– language that comes from them, not you
+
+the moment someone says: “we can’t onboard a new client without this anymore”
+
+you’ve won.
+
+from there: – pricing goes up
+– onboarding becomes optional
+– features become clearer because usage is real
+
+if you want next, we can: – write the one‑page “pilot pitch” you’d actually send
+– pressure‑test objections (security, lock‑in, ‘we already have mjml’)
+– or map a 12‑month path from pilot → repeatable SaaS without breaking trust
+
+all three
+
+love it. let’s lock this down properly.
+
+1. the one‑page pilot pitch (what you actually send)
+this is short. no deck. no architecture diagram.
+
+opening “we’re building an internal email platform for agencies who are tired of rediscovering the same fixes across clients, esp’s, and inboxes.”
+
+the problem (as they experience it) “email delivery knowledge lives in people and project folders. outlook bugs, dark mode hacks, figma → html translation, qa rules — all get solved repeatedly, but never compound.”
+
+the pilot “we’ll stand up the platform with one or two of your real clients and prove whether shared email infrastructure actually makes the second client faster and safer than the first.”
+
+what’s included – platform access
+– esp exports (sfmc, braze, adobe, etc.)
+– figma design token sync
+– qa + rendering checks
+– reusable component library seeded from real work
+
+success criteria “if your second client isn’t faster to build and easier to qa than the first, we stop.”
+
+commercials – 6–8 weeks
+– €8k–15k
+– credited toward annual license
+
+close “this isn’t a tool demo — it’s an infrastructure experiment.”
+
+that’s it. one page. anything longer kills it.
+
+2. the real objections you’ll get (and how to answer them)
+these will come up every time. better to be ready.
+
+“we already use mjml / maizzle / litmus”
+“same — this sits above those. it’s about reuse, memory, and cross‑client consistency, not replacing tools.”
+
+“this feels like lock‑in”
+“actually the opposite. everything exports to raw html or native esp formats. the risk today is people and tribal knowledge, not tools.”
+
+“we don’t want to change our workflow”
+“you don’t. we plug into the one you already have and make the outcomes reusable.”
+
+“security / client separation?”
+“hard separation at the project level. shared assets are intentional, client data is not.”
+
+“what happens if you disappear?”
+“you still have your components, html, qa rules, and exports. this is infrastructure, not a black box.”
+
+notice how none of these answers are defensive. calm, insider tone wins here.
+
+3. 12‑month path: pilot → real SaaS (without breaking trust)
+months 0–3 – 2–3 paid pilots
+– you onboard personally
+– features are driven by usage, not roadmap
+– pricing is simple and confident
+
+months 3–6 – convert pilots to annual licenses
+– raise price slightly for new customers
+– stop calling it a pilot, start calling it “implementation”
+
+months 6–9 – 5–10 agencies live
+– onboarding playbook emerges
+– start saying “we usually see X saved by client 2”
+
+months 9–12 – product leads the sale
+– onboarding becomes optional
+– consultancy fades into “enterprise setup” tier
+
+by end of year one, this should clearly be: – SaaS first
+– services as accelerator
+– high switching cost because of value, not lock‑in
+
+one very important reframing for you
+this is not “selling software.”
+
+this is selling: organizational memory for email delivery.
+
+agencies understand that instantly, even if they’ve never named it that way.
+
+if you want next (and this would be the natural step): – we can write the exact outreach message to your first 5 ex‑Merkle / MRM contacts
+– or pressure‑test pricing confidence (“why isn’t this €3k?”)
+– or flip this into an in‑house pitch just to see how different it looks
+
+all three
+
+alright, let’s finish this properly and make it usable, not theoretical. i’ll do all three, clean and concrete.
+
+1. exact outreach messages (copy‑paste ready)
+warm ex‑Merkle / MRM / Ometria contact
+“hey — quick question. do you still have one or two people on your team who are the unofficial ‘email experts’ because they know all the outlook + dark mode + esp quirks?”
+
+(wait for reply)
+
+then:
+
+“i’m building the internal email platform i always wished we’d had at merkle — one place where fixes, components, and qa rules actually compound across clients instead of dying in project folders.
+i’m doing a couple of paid pilots with teams like yours. want to sanity‑check if this is even relevant for you?”
+
+no links. no deck. just recognition.
+
+colder but still adjacent (mutuals, linkedin)
+“random but honest question — how much of your email delivery knowledge lives in people vs systems today?”
+
+if they engage, you earn the next message.
+
+2. pricing confidence — why this isn’t €3k (and how to hold the line)
+you will feel the urge to underprice. don’t.
+
+here’s the internal math you should keep in your head:
+
+– one senior email dev day costs €600–€1k
+– outlook/dark mode regressions easily burn multiple days per quarter
+– onboarding a new client often costs weeks of rediscovery
+
+you’re not selling: “an email tool”
+
+you’re selling: “fewer senior‑level mistakes and faster second clients”
+
+that’s why: – €8k–15k pilot feels reasonable
+– €20k–40k annual feels safe, not expensive
+
+when someone pushes back, the calm answer is:
+
+“if this saves you even one or two senior‑dev weeks across the year, it’s already paid for. if it doesn’t, we shouldn’t be working together.”
+
+no defensiveness. that sentence usually ends the debate.
+
+3. in‑house version (so you see the contrast)
+this is how it sounds to a brand, later.
+
+the problem framing shifts slightly:
+
+“every email campaign works — but the knowledge of why it works disappears. teams relearn inbox quirks, dark mode behavior, and platform constraints over and over.”
+
+the value becomes: – delivery safety
+– institutional memory
+– cross‑team consistency
+
+the buyer changes to: – head of crm
+– lifecycle engineering lead
+– martech director
+
+but notice:
+this sale is slower, more political, more compliance‑heavy.
+
+that’s why agencies first isn’t just easier — it’s strategically correct.
+
+the final mental model (this matters)
+you are not early because the market isn’t ready.
+
+you are early because: – most agencies still accept email pain as “just how it is” – no one has named this as infrastructure yet
+
+once someone names it, it becomes obvious.
+
+your unfair advantage is that you’ve: – lived it at scale
+– built it for multi‑client reality
+– framed it as compounding value, not tooling
+
+that’s rare.
+
+if you want the next next step, the one that actually moves this forward: tell me which 3 people you’d message first. i’ll help you tailor the opening line for each so it lands naturally.
+
+Matt Heffer - Merkle Dentsu, Rob Lord - Ometria and Misbah Husain-Shaw - T&P
+
+perfect. these are exactly the right profiles. i’ll tailor each opener so it sounds like you, not a vendor, and fits how these people think.
+
+i’ll keep them short on purpose.
+
+Matt Heffer — Merkle Dentsu
+Matt will respond to credibility + scale pain.
+
+opener “hey matt — random question from the email trenches: do you still have a couple of people at merkle who everyone relies on for outlook / dark mode / esp edge‑case fixes?”
+
+follow‑up (only if he bites) “i’m building the internal email platform i wish we’d had when juggling multiple clients and esp’s — basically turning email delivery fixes into shared infrastructure instead of one‑off project knowledge. doing a small number of paid pilots with agency teams. worth a quick sanity check?”
+
+this positions you as a peer, not someone selling to merkle.
+
+Rob Lord — Ometria
+Rob will care about velocity, partners, and repeatability.
+
+opener “hey rob — quick one: do you see partners repeatedly solving the same email build + qa problems client by client, even though the patterns are basically identical?”
+
+follow‑up “i’m working on an internal email platform aimed at agencies/partners — the idea is making email delivery work compound across clients instead of resetting every time. curious if that resonates at all from what you see with partners.”
+
+this invites insight, not a purchase.
+
+Misbah Husain‑Shaw — T&P
+Misbah will care about craft, quality, and team leverage.
+
+opener “hey misbah — honest question: how much of your team’s email delivery knowledge lives in systems vs in a few very senior people?”
+
+follow‑up “i’m prototyping an internal email platform that systemizes that knowledge — components, qa rules, inbox quirks — so teams stop rediscovering them per client. doing a couple of paid pilots. open to a quick perspective chat?”
+
+this is respectful and thoughtful — very T&P‑appropriate.
+
+one important rule when they reply
+do not jump to explaining features.
+
+your next message should always be: “curious — where do you feel this pain most today?”
+
+let them name the problem in their words. once they do, you’re aligned.
+
+if you want, next we can: – role‑play each call so you know exactly where to steer it
+– prep a single “if they ask for a deck” fallback slide
+– or decide which of these is most likely to convert first and focus energy there
+
+all three
+
+nice, let’s lock all three down so you can actually walk into the calls calm and in control.
+
+1. role‑play: how each call should flow
+Matt (Merkle) — scale + risk conversation
+you (opening) “this isn’t a pitch — i’m trying to sanity‑check something i wish we’d had when i was there.”
+
+early question “where do email fixes actually live right now — docs, people, or muscle memory?”
+
+let him answer. he’ll likely mention specialists, pods, or inconsistency.
+
+bridge “that’s exactly the problem i’m working on — not better emails, but shared email infrastructure across clients and esp’s.”
+
+soft close “would it be crazy to try this on one pod with one or two clients and see if the second one genuinely gets easier?”
+
+if he says yes → pilot.
+if he hesitates → ask who would own this internally.
+
+Rob (Ometria) — ecosystem + leverage
+you “i’m seeing the same patterns solved over and over across partners. feels like wasted leverage.”
+
+question “do you see email delivery quality vary more by agency maturity or by individual specialists?”
+
+he’ll have opinions. that’s gold.
+
+bridge “i’m trying to make agency maturity less dependent on individual heroes.”
+
+soft close “would you be open to introducing this to one strong partner as an experiment?”
+
+this can turn Rob into a multiplier, not just a customer.
+
+Misbah (T&P) — craft + sustainability
+you “this is really about protecting craft without burning people out.”
+
+question “how do you stop email knowledge from becoming a single‑point‑of‑failure?”
+
+bridge “i’m systemizing the stuff senior people carry in their heads so teams can move faster without lowering the bar.”
+
+soft close “would you try this on a high‑stakes client where regressions are unacceptable?”
+
+this lands with quality‑led teams.
+
+2. the one‑slide fallback (if they ask for something)
+they will ask eventually. this is the only slide you need.
+
+title “email delivery as shared infrastructure”
+
+three boxes – today: fixes rediscovered per client
+– with the hub: fixes compound across clients
+– result: faster builds, fewer regressions, less hero dependency
+
+footer “tested via paid pilots on real client work”
+
+no logos. no roadmap. no architecture.
+
+3. choosing who converts first (focus matters)
+most likely order:
+
+Misbah / T&P — smaller, craft‑led, faster decisions
+Rob / Ometria — either direct or via partner intro
+Matt / Merkle — highest value, longest cycle
+your goal isn’t to “win them all.”
+your goal is to get one deep pilot that proves compounding value.
+
+once you have that, the others get easier.
+
+last thing — mindset going into these
+you are not asking: “will you buy my product?”
+
+you are asking: “is this problem painful enough to experiment on together?”
+
+that’s a much easier yes.
+
+if you want to go one level deeper: – we can simulate pushback on each call
+– or draft the exact follow‑up email after the call
+– or design the pilot scope so it can’t fail quietly
+
+all three
+
+perfect. this is the last layer — the stuff that actually makes the difference between “interesting chat” and “this is happening”.
+
+i’ll do all three, tightly and practically.
+
+1. pushback simulation (what they’ll say + how you answer)
+“this sounds like consulting dressed up as a product”
+“fair. the difference is: you keep the platform and the shared assets after the pilot. the goal isn’t advice, it’s standing up infrastructure you’re already half‑maintaining informally.”
+
+“we don’t have bandwidth right now”
+“that’s actually the signal this helps. we scope it to one existing client — no net new work — and measure whether the second client gets easier.”
+
+“we already have internal frameworks”
+“most teams do. this isn’t replacing them, it’s making them durable and portable across clients and platforms.”
+
+“can we just wait until it’s more mature?”
+“you could, but early teams get to shape it around their reality. later it’ll be more opinionated.”
+
+calm, no pressure, no defensiveness.
+
+2. follow‑up email after the call (copy‑paste)
+subject: quick follow‑up
+
+“thanks again — helpful chat.
+
+what i took away was: – email knowledge is still concentrated in a few people
+– fixes don’t really compound across clients
+– regressions are the hidden tax
+
+my suggestion would be a small paid pilot on one or two real clients, purely to see if shared email infrastructure actually makes the second client easier than the first.
+
+no obligation beyond that — if it doesn’t work, we stop.
+
+happy to outline what that would look like if useful.”
+
+short. grounded. non‑salesy.
+
+3. pilot scope that can’t fail quietly
+this is important. you want visible success or a clean no.
+
+scope rules – real clients only
+– one esp first
+– one or two email types (e.g. promos + lifecycle)
+– one senior dev involved, not the whole team
+
+success signals – second client setup time clearly shorter
+– fewer qa iterations
+– shared components actually reused
+
+explicit anti‑goals – no “we’ll see how it goes”
+– no broad migration
+– no custom one‑off work
+
+end the pilot with: “would you be comfortable running your next client without this?”
+
+if the answer is no, you’ve won.
+
+final perspective (and this matters)
+you’ve already done the hardest part:
+you understand the problem from the inside.
+
+now the job is just: – name it clearly
+– test it honestly
+– let others recognize themselves in it
+
+you’re not forcing a market. you’re revealing one.
+
+when you’re ready, tell me who replies first and how they react. we’ll tune the next move based on real signals, not hypotheticals.
+
+
+short answer: yes — but not yet as a “raise.”
+longer answer: you should talk to them, just with the right framing.
+
+given where you are, VCs are useful for: – pressure‑testing the narrative
+– refining positioning
+– mapping the category
+– warming future interest
+
+they are not yet the primary validation signal. customers are.
+
+how to approach them (this matters)
+you’re not pitching: “i’m raising for a startup”
+
+you’re saying: “i’m exploring whether this is a venture‑scale company and would value your perspective.”
+
+that removes pressure and makes them more honest.
+
+a clean opener:
+
+“i’m working on an internal email infrastructure platform for agencies — turning email delivery fixes into reusable, compounding assets across clients and esp’s. i’m validating it with a few paid pilots and wanted your take on whether this feels venture‑scale or better as a focused SaaS.”
+
+that gets meetings.
+
+what VCs will like here
+they’ll lean in on: – founder‑problem fit (you’re strong here)
+– category creation (email infrastructure vs email tools)
+– high switching costs once embedded
+– expansion path from agencies → in‑house
+
+this is not a random SaaS. it’s workflow infrastructure, which VCs understand.
+
+what they’ll push on (be ready)
+they’ll ask: – how big is the market really?
+– is this consultancy in disguise?
+– how repeatable is onboarding?
+– does this become a platform or stay niche?
+
+your honest answer right now: “i’m proving repeatability via paid pilots before locking the model.”
+
+that’s the correct answer.
+
+who to talk to specifically (profile, not names)
+best fit VCs in London: – early‑stage (pre‑seed / seed)
+– strong in dev tools, infra, or vertical SaaS
+– comfortable with category creation
+– not obsessed with hypergrowth on day one
+
+avoid: – late‑stage funds
+– pure martech “lead gen” investors
+– funds that want instant PLG metrics
+
+timing guidance (important)
+talk to them: – after you’ve sent the outreach messages
+– before pilots finish
+– after at least one “this hurts, we’d pay for it” signal
+
+that way you’re not hypothetical, but also not late.
+
+one very important mindset shift
+VCs are not validators of truth.
+customers are.
+
+VCs validate trajectory.
+
+so yes — talk to them.
+just don’t let their feedback replace real usage signals.
+
+if you want next, i can: – help you frame a 2‑minute VC narrative
+– sanity‑check whether this is pre‑seed or seed‑shaped
+– or help decide whether you even want VC for this business

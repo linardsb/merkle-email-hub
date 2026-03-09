@@ -1,69 +1,103 @@
-"""System prompt for the Dark Mode agent."""
+"""System prompt for the Dark Mode agent.
 
-DARK_MODE_SYSTEM_PROMPT = """\
+Thin prompt — core rules only. Detailed patterns loaded from SKILL.md
+and skills/*.md via progressive disclosure in the service layer.
+"""
+
+from pathlib import Path
+
+_SKILL_DIR = Path(__file__).parent
+
+# Load L1+L2 instructions from SKILL.md (always loaded)
+_SKILL_PATH = _SKILL_DIR / "SKILL.md"
+_SKILL_CONTENT = _SKILL_PATH.read_text(encoding="utf-8") if _SKILL_PATH.exists() else ""
+
+
+def _load_skill_file(name: str) -> str:
+    """Load an L3 skill reference file by name."""
+    path = _SKILL_DIR / "skills" / name
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    return ""
+
+
+# L3 reference files — loaded on demand by detect_relevant_skills()
+SKILL_FILES: dict[str, str] = {
+    "color_remapping": "color_remapping.md",
+    "client_behavior": "client_behavior.md",
+    "outlook_dark_mode": "outlook_dark_mode.md",
+    "image_handling": "image_handling.md",
+}
+
+DARK_MODE_SYSTEM_PROMPT = f"""\
 You are an expert email developer specialising in dark mode compatibility across email clients.
 Your task: take existing email HTML and enhance it with comprehensive dark mode support.
 
-## Output Format
-
-Return ONLY the complete modified HTML inside a single ```html code block.
-Do NOT include any explanation, commentary, or text outside the code block.
-You MUST return the ENTIRE email HTML — not just the changed sections.
-
-## What to Add
-
-### Meta Tags (inside <head>)
-- `<meta name="color-scheme" content="light dark">`
-- `<meta name="supported-color-schemes" content="light dark">`
-
-### CSS (inside a <style> block in <head>)
-- `@media (prefers-color-scheme: dark)` block with `!important` overrides
-- Outlook-specific selectors: `[data-ogsc]` and `[data-ogsb]` with matching overrides
-- Dark mode utility classes (e.g., `.dark-bg`, `.dark-text`) for inline targeting
-
-### Colour Remapping Rules
-- Light backgrounds (#ffffff, #f5f5f5, #fafafa, etc.) → dark (#1a1a2e, #16213e, #121212)
-- Dark text (#000000, #333333, #1a1a1a, etc.) → light (#e0e0e0, #f5f5f5, #ffffff)
-- Maintain a minimum contrast ratio of 4.5:1 (WCAG AA)
-- Remap brand colours to darker variants that maintain recognition
-- For colour pairs (bg + text), ensure the remapped pair also has sufficient contrast
-- If specific colour overrides are provided, use those instead of auto-remapping
-
-### Image Handling
-- Suggest transparent PNG alternatives where logos use solid backgrounds
-- Add the dark mode image swap pattern where appropriate:
-  ```
-  <!--[if !mso]><!-->
-  <div class="dark-img" style="display:none; overflow:hidden; max-height:0;">
-    <img src="dark-logo.png" ... />
-  </div>
-  <!--<![endif]-->
-  ```
-- Preserve existing image attributes (alt, width, height, style)
-
-## Preservation Rules (CRITICAL)
-
-- NEVER remove or modify existing HTML elements, attributes, or inline styles
-- NEVER remove or alter MSO conditional comments (<!--[if mso]> ... <![endif]-->)
-- NEVER change the document layout, table structure, or element ordering
-- NEVER remove existing CSS rules — only ADD new dark mode rules
-- NEVER strip VML namespaces, VML elements, or Outlook-specific markup
-- Dark mode classes should be APPENDED to existing class attributes, never replace them
-- If an element has `style="..."`, keep those styles intact — dark mode overrides via CSS specificity
-
-## Security Rules (ABSOLUTE — NO EXCEPTIONS)
-
-- NEVER include `<script>` tags or inline JavaScript
-- NEVER use `on*` event handlers (onclick, onload, onerror, etc.)
-- NEVER use `javascript:` protocol in any attribute
-- NEVER include `<iframe>`, `<embed>`, `<object>`, or `<form>` tags
-- NEVER use `data:` URIs in src or href attributes
-
-## Confidence Assessment
-
-At the very end of your HTML output, include a self-assessment comment:
-<!-- CONFIDENCE: 0.XX -->
-Score 0.8+ when all dark mode patterns are well-known for the target clients.
-Score 0.5-0.8 when the HTML has unusual patterns or unknown client quirks.
-Score below 0.5 if critical dark mode support cannot be reliably determined.
+{_SKILL_CONTENT}
 """
+
+
+def build_system_prompt(relevant_skills: list[str]) -> str:
+    """Build system prompt with progressive disclosure of L3 reference files.
+
+    Args:
+        relevant_skills: List of skill keys to load (e.g., ['color_remapping', 'outlook_dark_mode']).
+
+    Returns:
+        Complete system prompt with relevant L3 files appended.
+    """
+    parts = [DARK_MODE_SYSTEM_PROMPT]
+
+    for skill_key in relevant_skills:
+        filename = SKILL_FILES.get(skill_key)
+        if filename:
+            content = _load_skill_file(filename)
+            if content:
+                parts.append(f"\n\n--- REFERENCE: {skill_key} ---\n\n{content}")
+
+    return "\n".join(parts)
+
+
+def detect_relevant_skills(html: str, color_overrides: dict[str, str] | None = None) -> list[str]:
+    """Detect which L3 skill files are relevant based on input HTML patterns.
+
+    Progressive disclosure — only load skill files for detected needs.
+
+    Args:
+        html: Input email HTML to analyze.
+        color_overrides: Optional explicit color mapping overrides.
+
+    Returns:
+        List of relevant skill keys.
+    """
+    html_lower = html.lower()
+    skills: list[str] = []
+
+    # Always load color remapping reference
+    skills.append("color_remapping")
+
+    # Outlook-specific patterns need Outlook dark mode reference
+    if any(
+        pat in html_lower
+        for pat in [
+            "<!--[if",
+            "mso",
+            "v:",
+            "vml",
+            "data-ogsc",
+            "data-ogsb",
+            "outlook",
+            "o:office",
+        ]
+    ):
+        skills.append("outlook_dark_mode")
+
+    # Images present — load image handling
+    if "<img" in html_lower or "background-image" in html_lower or "v:fill" in html_lower:
+        skills.append("image_handling")
+
+    # Complex or unknown situations — load client behavior matrix
+    if color_overrides or len(html) > 5000:
+        skills.append("client_behavior")
+
+    return list(dict.fromkeys(skills))  # deduplicate preserving order

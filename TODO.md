@@ -380,7 +380,7 @@
 
 **Build Order (prioritised):**
 1. ~~**Outlook Fixer**~~ DONE — SKILL.md + 4 L3 skill files, service/prompt/schemas, blueprint node, recovery router integration, 12 synthetic test cases, 5-criteria judge, dry-run verified (535 tests pass)
-2. **Accessibility Auditor** ← NEXT (eval failure data from scaffolder accessibility_baseline 8%)
+2. ~~**Accessibility Auditor**~~ DONE — SKILL.md + 4 L3 skill files (wcag_email_mapping, alt_text_guidelines, color_contrast, screen_reader_behavior), service/prompt/schemas, blueprint node, recovery router integration, 10 synthetic test cases, 5-criteria judge (wcag_aa_compliance, alt_text_quality, contrast_ratio_accuracy, semantic_structure, screen_reader_compatibility), dry-run verified (540 tests pass)
 3. **Personalisation Agent**: Liquid (Braze), AMPscript (SFMC), dynamic content logic
 4. **Code Reviewer**: Static analysis, redundant code, unsupported CSS, file size optimisation
 5. **Knowledge Agent**: RAG-powered Q&A from knowledge base
@@ -472,7 +472,7 @@ app/ai/agents/{agent}/
 > | 2 | **Dark Mode** | Implemented | Synthetic data created (10 cases) |
 > | 3 | **Content** | Implemented | Synthetic data created (14 cases) |
 > | 4 | **Outlook Fixer** | Implemented (4.1) | 12 synthetic cases, 5-criteria judge |
-> | 5 | **Accessibility Auditor** | Planned (4.1) | Eval data needed on build |
+> | 5 | **Accessibility Auditor** | Implemented (4.1) | 10 synthetic cases, 5-criteria judge |
 > | 6 | **Personalisation Agent** | Planned (4.1) | Eval data needed on build |
 > | 7 | **Code Reviewer** | Planned (4.1) | Eval data needed on build |
 > | 8 | **Knowledge Agent** | Planned (4.1) | Eval data needed on build |
@@ -498,7 +498,7 @@ app/ai/agents/{agent}/
 > - [x] 5.4-5.8 — **Live execution hardening**: `verify_provider.py` pre-flight check (`make eval-verify`); incremental JSONL writing (crash-safe); `--skip-existing` resume flag on runner + judge_runner; `eval-run` auto-verifies provider before running
 > - [x] 5.4-5.8 — **Live execution** (2026-03-09): 36 traces + 36 verdicts via `anthropic:claude-sonnet-4`. Baseline established (16.7% overall pass rate). Blueprint evals 5/5 passed (100% QA with self-correction). Human labeling pending (540 rows in `traces/*_human_labels.jsonl`)
 > - [x] Eval data for Outlook Fixer — 12 synthetic cases, 5-criteria judge (`OutlookFixerJudge`), blueprint node + recovery router integration
-> - [ ] Eval data for Accessibility Auditor (on agent build)
+> - [x] Eval data for Accessibility Auditor — 10 synthetic cases, 5-criteria judge (`AccessibilityJudge`), blueprint node + recovery router integration
 > - [ ] Eval data for Personalisation Agent (on agent build)
 > - [ ] Eval data for Code Reviewer (on agent build)
 > - [ ] Eval data for Knowledge Agent (on agent build)
@@ -685,11 +685,17 @@ Built `AgentHandoff` frozen dataclass, `ComponentMeta`, `ComponentResolver` Prot
 ~~**Step 2 — Retrofit Existing Agents (Scaffolder, Dark Mode)**~~ DONE
 Updated ScaffolderNode + DarkModeNode to emit `AgentHandoff` with confidence scores and component refs. DarkModeNode reads upstream handoff warnings. RecoveryRouterNode reads handoff warnings for dark mode routing hints. System prompts updated with confidence assessment instructions. Content agent retrofit deferred (no blueprint node yet).
 
+~~**Step 2.5 — Full Handoff History + Memory Persistence Bridge**~~ DONE (2026-03-09)
+Extended `BlueprintRun._handoff_history` to accumulate ALL handoffs (not just latest). Downstream nodes receive `context.metadata["handoff_history"]` with full chain. API response includes `handoff_history: list[HandoffSummary]`. Created `handoff_memory.py` bridge that auto-persists each handoff as episodic memory via `on_handoff` callback. Wired into `BlueprintService.run()`. Failure-safe (callback errors logged, never crash pipeline). 4 new tests (8 total handoff tests).
+
+~~**Step 2.6 — SKILL.md Files for Existing Agents (Scaffolder, Dark Mode)**~~ DONE (2026-03-09)
+Created progressive disclosure SKILL.md files for Scaffolder (L1+L2 + 4 L3 files: client_compatibility, maizzle_syntax, mso_vml_quick_ref, table_layouts) and Dark Mode (L1+L2 + 3 L3 files: client_behavior, color_remapping, outlook_dark_mode). Services updated with `detect_relevant_skills()` + `build_system_prompt()` for on-demand skill loading based on brief analysis.
+
 **Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)**
 Install Cognee, define the full email ontology, seed the knowledge graph. This runs in parallel with Step 2 (independent work streams).
 
 **Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
-Wire graph search into blueprint nodes. Author initial SKILL.md files for the 3 existing agents. Re-run evals to measure improvement vs Step 0 baseline.
+Wire graph search into blueprint nodes. ~~Author initial SKILL.md files for the 3 existing agents.~~ DONE for Scaffolder + Dark Mode (Step 2.6). Content agent SKILL.md pending. Re-run evals to measure improvement vs Step 0 baseline.
 
 **Step 5 — Build Remaining 5 Agents WITH Phase 7+8 Patterns (Task 4.1)** (Outlook Fixer DONE)
 Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
@@ -697,13 +703,13 @@ Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure
 **Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
 Requires real runs and real failure data. Feed blueprint outcomes into graph. Generate prompt fragments from failure clusters. Close the learning loop.
 
-### ~~7.1 Structured Inter-Agent Handoff Schemas~~ DONE
+### ~~7.1 Structured Inter-Agent Handoff Schemas~~ DONE (extended 2026-03-09)
 **What:** Define typed handoff contracts between agents in blueprint pipelines. Currently agents chain via raw HTML output. Instead, each agent should emit a structured handoff object containing: the output artifact, metadata about decisions made (e.g., "used 2-column layout", "applied VML fallback for hero"), warnings/caveats, and context the next agent needs.
 **Why:** Dark Mode agent receiving raw HTML from Scaffolder doesn't know which design patterns were used, which components were pulled in, or what trade-offs were made. Structured handoffs eliminate "undoing each other's work."
-**Implementation:** `AgentHandoff` schema in `app/ai/blueprints/schemas.py` with `artifact`, `decisions`, `warnings`, `component_refs` fields. Blueprint engine passes handoff objects between nodes instead of raw strings.
-**Retrofit:** Update Scaffolder, Dark Mode, Content agents to return `AgentHandoff` instead of raw strings. Wrap existing output in handoff schema — generation logic unchanged. Update judges to validate `AgentHandoff.artifact`.
-**Security:** Handoff objects scoped to blueprint session. No cross-project leakage. Decisions logged to audit trail.
-**Verify:** Blueprint pipeline passes structured handoff between scaffolder → dark_mode nodes. Downstream agent references upstream decisions in its output. Unit tests for schema validation.
+**Implementation:** `AgentHandoff` frozen dataclass in `app/ai/blueprints/protocols.py` with `artifact`, `decisions`, `warnings`, `component_refs`, `confidence` fields. Blueprint engine passes handoff objects between nodes. **Extended:** Full handoff history accumulates in `BlueprintRun._handoff_history` — all nodes see every prior node's decisions via `context.metadata["handoff_history"]`. Auto-persisted to episodic memory via `handoff_memory.py` bridge (`on_handoff` callback). API response includes `handoff_history: list[HandoffSummary]`.
+**Retrofit:** Updated Scaffolder, Dark Mode to emit `AgentHandoff`. RecoveryRouterNode reads upstream warnings.
+**Security:** Handoff objects scoped to blueprint session. No cross-project leakage. Decisions logged to audit trail. Memory persistence failure-safe (callback errors logged, never crash pipeline).
+**Verify:** Blueprint pipeline passes structured handoff between scaffolder → dark_mode nodes. Full history available to all downstream nodes. Handoffs auto-persisted to memory. 8 unit tests (4 original + 4 history/callback tests).
 
 ### 7.2 Eval-Informed Agent Prompts ⏳ (unblocked — real failure data available)
 **What:** Feed common failure patterns from eval error analysis (`make eval-analysis`) back into agent system prompts automatically. When eval clusters show recurring failures (e.g., "Scaffolder consistently misses MSO conditionals for 3-column layouts"), inject those as explicit warnings in the agent's prompt.
@@ -993,6 +999,37 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - Proposed updates that degrade any criterion by >5% auto-rejected with explanation
 **Security:** A/B tests run on synthetic test data (no client data). Results logged for audit. Rejected proposals archived with reasoning.
 **Verify:** Proposed SKILL.md update runs through A/B test. Report shows per-criterion comparison. Update that improves 3 criteria and degrades none is recommended for merge. Update that degrades 1 criterion by >5% is auto-rejected.
+
+---
+
+## Infrastructure Best Practices (from LMCache Research)
+
+Patterns identified from LMCache (distributed KV cache engine for LLM serving). These are infrastructure-level improvements that can be retrofitted without modifying existing agents or the blueprint engine.
+
+> Source: LMCache repo analysis (2026-03-09). Cross-referenced with merkle-email-hub architecture.
+
+### Quick Wins (Low Effort, High Impact)
+- [ ] **Recoverable vs Irrecoverable Exception Hierarchy** — Add `IrrecoverableError` to exception hierarchy alongside existing `AIError`/`BlueprintError`. Use in WebSocket broadcaster, health monitors, and background services to distinguish "log and retry" from "shut down and alert." Blueprint engine already has bounded retries; this targets the infrastructure layer beneath it.
+
+- [ ] **LRU Cache for QA Check Results** — Cache QA gate results keyed by content hash (LMCache uses pluggable LRU/LFU/MRU/FIFO policies via strategy pattern with `get_cache_policy()` factory). Same HTML re-checked during iterative editing produces identical scores. Avoids redundant 10-check QA runs when content hasn't changed. Also applicable to component metadata lookups.
+
+- [ ] **SLF Ruff Enforcement** — Add `"SLF"` to ruff `select` rules in `pyproject.toml` to prevent private member access across module boundaries. Start with `app/ai/` where agent/blueprint encapsulation matters most. LMCache enforces this in distributed/multiprocess code to prevent tight coupling.
+
+### Medium Effort
+- [ ] **Background Task Registry** — Unified registry for long-running async tasks (WebSocket heartbeats, health checks, future document processing workers) with importance levels (CRITICAL/HIGH/MEDIUM/LOW). LMCache's `PeriodicThread` + `PeriodicThreadRegistry` tracks: total runs, failed runs, success rate, interruptible sleep. Expose through `/health` endpoint.
+
+- [ ] **Event State Machine for Blueprint Tracking** — `EventManager` tracking async operations through `ONGOING → DONE` states with thread-safe futures. Blueprint executions are long-running multi-step workflows; currently tracked through state machine nodes but no unified "is build X still running? what step is it on?" query. Enables frontend polling without WebSocket.
+
+- [ ] **Generator-Based QA Streaming** — Refactor blueprint node output to support yield-based flow through QA checks. LMCache uses `store_layer()` and `retrieve_layer()` generators for memory-efficient layerwise processing. Agent responses could stream through QA validation as they're generated rather than waiting for complete output.
+
+- [ ] **CI Correctness Benchmarks** — Add golden test cases for each agent that must pass in CI. LMCache runs correctness benchmarks (MMLU) + K8s smoke tests post-deployment. A small set of email generation tasks with known-correct QA outcomes catches quality regressions on model/prompt changes. Complements the existing eval framework (Phase 5).
+
+### Lower Priority
+- [ ] **Deprecated Config Aliases** — Add `_DEPRECATED_CONFIGS` mapping to nested pydantic Settings for seamless env var migration when renaming. LMCache supports automatic migration paths (`_CONFIG_ALIASES`, `_DEPRECATED_CONFIGS`) so old env vars still work with deprecation warnings. Useful as the config surface grows (currently 40+ params across 11 config groups).
+
+- [ ] **Batched API Variants** — Add batch endpoints for high-frequency operations (batch QA checks across email variants, batch component lookups). LMCache offers `batched_contains()`, `batched_submit_put_task()`, `batched_async_contains()` alongside single-item APIs.
+
+- [ ] **Lazy Connection Pool Allocation** — Start with smaller pool sizes and expand under load. LMCache starts at 20% memory budget and expands on-demand with configurable ratios (`lazy_memory_initial_ratio: 0.2`, `expand_trigger_ratio: 0.5`, `step_ratio: 0.1`). Maizzle builder sidecar could also benefit from lazy worker scaling.
 
 ---
 

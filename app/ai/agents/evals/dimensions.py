@@ -206,3 +206,55 @@ OUTLOOK_FIXER_DIMENSIONS = {
         ],
     },
 }
+
+# ---------------------------------------------------------------------------
+# Accessibility Auditor Agent Dimensions
+# ---------------------------------------------------------------------------
+ACCESSIBILITY_DIMENSIONS = {
+    "violation_category": {
+        "description": "Category of WCAG violation present in the input HTML",
+        "values": [
+            "missing_alt_text",
+            "decorative_img_no_empty_alt",
+            "missing_lang_attribute",
+            "layout_table_no_role",
+            "low_contrast_text",
+            "skipped_heading_levels",
+            "non_descriptive_links",
+            "missing_table_role",
+            "color_only_information",
+            "missing_document_title",
+        ],
+    },
+    "html_complexity": {
+        "description": "Structural complexity of the email HTML being audited",
+        "values": [
+            "simple_single_column",
+            "multi_column_tables",
+            "nested_layout_tables",
+            "mso_conditional_heavy",
+            "vml_elements_present",
+            "mixed_layout_and_data_tables",
+        ],
+    },
+    "image_scenario": {
+        "description": "Type of image accessibility challenge",
+        "values": [
+            "informative_no_alt",
+            "decorative_missing_empty_alt",
+            "functional_link_image",
+            "complex_infographic",
+            "logo_with_text",
+            "no_images",
+        ],
+    },
+    "severity": {
+        "description": "Mix of violation severity levels in the input",
+        "values": [
+            "single_critical",
+            "multiple_moderate",
+            "mixed_severity",
+            "many_minor",
+        ],
+    },
+}

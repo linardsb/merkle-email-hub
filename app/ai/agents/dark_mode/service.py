@@ -6,7 +6,10 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 
-from app.ai.agents.dark_mode.prompt import DARK_MODE_SYSTEM_PROMPT
+from app.ai.agents.dark_mode.prompt import (
+    build_system_prompt,
+    detect_relevant_skills,
+)
 from app.ai.agents.dark_mode.schemas import DarkModeRequest, DarkModeResponse
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import Message
@@ -74,10 +77,14 @@ class DarkModeService:
         model = resolve_model("standard")
         model_id = f"{provider_name}:{model}"
 
+        # Progressive disclosure — load only relevant skill files
+        relevant_skills = detect_relevant_skills(request.html, request.color_overrides)
+        system_prompt = build_system_prompt(relevant_skills)
+
         # Build messages with system prompt and sanitized user message
         user_message = _build_user_message(request)
         messages = [
-            Message(role="system", content=DARK_MODE_SYSTEM_PROMPT),
+            Message(role="system", content=system_prompt),
             Message(role="user", content=sanitize_prompt(user_message)),
         ]
 
@@ -89,6 +96,7 @@ class DarkModeService:
             has_color_overrides=request.color_overrides is not None,
             has_preserve_colors=request.preserve_colors is not None,
             run_qa=request.run_qa,
+            skills_loaded=relevant_skills,
         )
 
         # Resolve provider and call LLM
@@ -175,9 +183,12 @@ class DarkModeService:
         model_id = f"{provider_name}:{model}"
         response_id = f"darkmode-{uuid.uuid4().hex[:12]}"
 
+        relevant_skills = detect_relevant_skills(request.html)
+        system_prompt = build_system_prompt(relevant_skills)
+
         user_message = _build_user_message(request)
         messages = [
-            Message(role="system", content=DARK_MODE_SYSTEM_PROMPT),
+            Message(role="system", content=system_prompt),
             Message(role="user", content=sanitize_prompt(user_message)),
         ]
 

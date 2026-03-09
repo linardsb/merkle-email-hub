@@ -7,7 +7,10 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 
-from app.ai.agents.content.prompt import CONTENT_SYSTEM_PROMPT
+from app.ai.agents.content.prompt import (
+    build_system_prompt,
+    detect_relevant_skills,
+)
 from app.ai.agents.content.schemas import ContentRequest, ContentResponse, SpamWarning
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import Message
@@ -125,9 +128,15 @@ class ContentService:
         model = resolve_model(tier)  # type: ignore[arg-type]
         model_id = f"{provider_name}:{model}"
 
+        # Progressive disclosure — load only relevant skill files
+        relevant_skills = detect_relevant_skills(
+            request.operation, request.brand_voice, request.text
+        )
+        system_prompt = build_system_prompt(relevant_skills)
+
         user_message = _build_user_message(request)
         messages = [
-            Message(role="system", content=CONTENT_SYSTEM_PROMPT),
+            Message(role="system", content=system_prompt),
             Message(role="user", content=sanitize_prompt(user_message)),
         ]
 
@@ -138,6 +147,7 @@ class ContentService:
             model=model,
             text_length=len(request.text),
             num_alternatives=request.num_alternatives,
+            skills_loaded=relevant_skills,
         )
 
         registry = get_registry()
@@ -185,9 +195,14 @@ class ContentService:
         model_id = f"{provider_name}:{model}"
         response_id = f"content-{uuid.uuid4().hex[:12]}"
 
+        relevant_skills = detect_relevant_skills(
+            request.operation, request.brand_voice, request.text
+        )
+        system_prompt = build_system_prompt(relevant_skills)
+
         user_message = _build_user_message(request)
         messages = [
-            Message(role="system", content=CONTENT_SYSTEM_PROMPT),
+            Message(role="system", content=system_prompt),
             Message(role="user", content=sanitize_prompt(user_message)),
         ]
 

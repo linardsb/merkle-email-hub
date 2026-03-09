@@ -21,9 +21,10 @@
 
 ## Implemented Agents (V2 — task 4.1, eval-first + skills workflow)
 - **Outlook Fixer** (`outlook_fixer/`) — MSO conditionals, VML backgrounds/buttons, ghost tables, DPI scaling, font fallbacks. Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files loaded on-demand. Blueprint node integrated with recovery router.
+- **Accessibility Auditor** (`accessibility/`) — WCAG 2.1 AA compliance for email HTML: alt text, table roles, lang attributes, heading hierarchy, color contrast, screen reader compatibility. Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files (wcag_email_mapping, alt_text_guidelines, color_contrast, screen_reader_behavior). Blueprint node integrated with recovery router.
 
 ## Planned Agents (V2 — task 4.1)
-Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation.
+Personalisation, Code Reviewer, Knowledge, Innovation.
 
 ## Evaluation Framework (`evals/`)
 
@@ -35,8 +36,9 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 - `synthetic_data_dark_mode.py` — 10 test cases with 5 real-world HTML templates (MSO ghost tables, VML, already-dark emails)
 - `synthetic_data_content.py` — 14 test cases across all 8 operations, real spam trigger blocklists, PII edge cases
 - `synthetic_data_outlook_fixer.py` — 12 test cases: ghost tables, VML backgrounds, bulletproof buttons, font fallbacks, DPI, broken MSO comments
-- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|outlook_fixer|all} --output traces/`
-- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
+- `synthetic_data_accessibility.py` — 10 test cases: missing alt text, table roles, lang/title, low contrast, heading hierarchy, link text, VML/ARIA, color-only info
+- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|outlook_fixer|accessibility|all} --output traces/`
+- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
 - `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
 
 ### Per-Agent Eval Requirements (mandatory for all 9)
@@ -53,7 +55,7 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 | Dark Mode | 10 cases | 5 criteria | 10 traces | 82% pass | Pending (human labels needed) |
 | Content | 14 cases | 5 criteria | 14 traces | 85.7% pass | Pending (human labels needed) |
 | Outlook Fixer | 12 cases | 5 criteria | Pending (live run needed) | — | — |
-| Accessibility | Not started | — | — | — | — |
+| Accessibility | 10 cases | 5 criteria | Pending (live run needed) | — | — |
 | Personalisation | Not started | — | — | — | — |
 | Code Reviewer | Not started | — | — | — | — |
 | Knowledge | Not started | — | — | — | — |

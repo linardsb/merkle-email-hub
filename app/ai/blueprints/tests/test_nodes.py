@@ -72,11 +72,23 @@ class TestRecoveryRouterNode:
         assert "route_to:dark_mode" in result.details
 
     @pytest.mark.asyncio()
+    async def test_routes_accessibility_failures_to_accessibility(self) -> None:
+        node = RecoveryRouterNode()
+        context = NodeContext(
+            html="<p>test</p>",
+            qa_failures=["accessibility: no lang", "accessibility: missing alt text"],
+        )
+        result = await node.execute(context)
+
+        assert result.status == "success"
+        assert "route_to:accessibility" in result.details
+
+    @pytest.mark.asyncio()
     async def test_routes_other_failures_to_scaffolder(self) -> None:
         node = RecoveryRouterNode()
         context = NodeContext(
             html="<p>test</p>",
-            qa_failures=["html_validation: missing DOCTYPE", "accessibility: no lang"],
+            qa_failures=["html_validation: missing DOCTYPE", "link_validation: broken links"],
         )
         result = await node.execute(context)
 

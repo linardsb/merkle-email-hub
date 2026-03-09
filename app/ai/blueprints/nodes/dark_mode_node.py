@@ -1,6 +1,6 @@
 """Dark Mode agentic node — enhances HTML with dark mode CSS and Outlook overrides."""
 
-from app.ai.agents.dark_mode.prompt import DARK_MODE_SYSTEM_PROMPT
+from app.ai.agents.dark_mode.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
 from app.ai.protocols import Message
@@ -40,11 +40,14 @@ class DarkModeNode:
         provider = get_registry().get_llm(settings.ai.provider)
         model = resolve_model("standard")
 
+        relevant_skills = detect_relevant_skills(context.html)
+        system_prompt = build_system_prompt(relevant_skills)
+
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
 
         messages = [
-            Message(role="system", content=DARK_MODE_SYSTEM_PROMPT),
+            Message(role="system", content=system_prompt),
             Message(role="user", content=sanitized),
         ]
 

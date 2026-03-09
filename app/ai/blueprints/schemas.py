@@ -46,3 +46,4 @@ class BlueprintRunResponse(BaseModel):
     qa_passed: bool | None = None
     model_usage: dict[str, int] = Field(default_factory=dict)
     final_handoff: HandoffSummary | None = None
+    handoff_history: list[HandoffSummary] = Field(default_factory=list)

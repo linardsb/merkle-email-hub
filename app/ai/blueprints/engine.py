@@ -2,8 +2,9 @@
 
 import time
 import uuid
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
 from app.ai.blueprints.protocols import (
@@ -17,6 +18,10 @@ from app.ai.blueprints.schemas import BlueprintProgress
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Callback type for persisting handoffs to memory after each agentic node.
+# Signature: (handoff, run_id, project_id) -> None
+HandoffMemoryCallback = Callable[[AgentHandoff, str, int | None], Coroutine[Any, Any, None]]
 
 MAX_SELF_CORRECTION_ROUNDS = 2
 MAX_TOTAL_STEPS = 20  # safety brake
@@ -61,6 +66,7 @@ class BlueprintRun:
     )
     _last_result: NodeResult | None = field(default=None, repr=False)
     _last_handoff: AgentHandoff | None = field(default=None, repr=False)
+    _handoff_history: list[AgentHandoff] = field(default_factory=list, repr=False)
 
 
 class BlueprintEngine:
@@ -75,9 +81,13 @@ class BlueprintEngine:
         self,
         definition: BlueprintDefinition,
         component_resolver: ComponentResolver | None = None,
+        on_handoff: HandoffMemoryCallback | None = None,
+        project_id: int | None = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
+        self._on_handoff = on_handoff
+        self._project_id = project_id
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -182,6 +192,19 @@ class BlueprintEngine:
             # Store handoff from agentic nodes
             if result.handoff is not None:
                 run._last_handoff = result.handoff
+                run._handoff_history.append(result.handoff)
+
+                # Persist handoff as episodic memory (fire-and-forget)
+                if self._on_handoff is not None:
+                    try:
+                        await self._on_handoff(result.handoff, run.run_id, self._project_id)
+                    except Exception:
+                        logger.warning(
+                            "blueprint.handoff_memory_failed",
+                            node=current_node_name,
+                            run_id=run.run_id,
+                            exc_info=True,
+                        )
 
             # Low confidence → route to human review instead of retrying
             if (
@@ -258,9 +281,11 @@ class BlueprintEngine:
             qa_failures=list(run.qa_failures),
         )
 
-        # Inject upstream handoff for agentic nodes
+        # Inject upstream handoff for agentic nodes (latest + full history)
         if run._last_handoff is not None:
             context.metadata["upstream_handoff"] = run._last_handoff
+        if run._handoff_history:
+            context.metadata["handoff_history"] = list(run._handoff_history)
 
         # Inject progress anchor on retries for agentic nodes
         if node.node_type == "agentic" and iteration > 0:
