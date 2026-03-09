@@ -152,12 +152,21 @@ ACCESSIBILITY_CRITERIA: list[dict[str, str]] = [
     {"criterion": "screen_reader_compatibility", "description": "Screen reader compatible"},
 ]
 
+PERSONALISATION_CRITERIA: list[dict[str, str]] = [
+    {"criterion": "syntax_correctness", "description": "ESP syntax valid and well-formed"},
+    {"criterion": "fallback_completeness", "description": "All variables have fallbacks"},
+    {"criterion": "html_preservation", "description": "Original HTML preserved"},
+    {"criterion": "platform_accuracy", "description": "Correct platform syntax only"},
+    {"criterion": "logic_match", "description": "Logic matches requirements"},
+]
+
 AGENT_CRITERIA: dict[str, list[dict[str, str]]] = {
     "scaffolder": SCAFFOLDER_CRITERIA,
     "dark_mode": DARK_MODE_CRITERIA,
     "content": CONTENT_CRITERIA,
     "outlook_fixer": OUTLOOK_FIXER_CRITERIA,
     "accessibility": ACCESSIBILITY_CRITERIA,
+    "personalisation": PERSONALISATION_CRITERIA,
 }
 
 

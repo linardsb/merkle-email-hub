@@ -258,3 +258,49 @@ ACCESSIBILITY_DIMENSIONS = {
         ],
     },
 }
+
+# ---------------------------------------------------------------------------
+# Personalisation Agent Dimensions
+# ---------------------------------------------------------------------------
+PERSONALISATION_DIMENSIONS = {
+    "esp_platform": {
+        "description": "Target ESP platform for personalisation syntax",
+        "values": [
+            "braze",
+            "sfmc",
+            "adobe_campaign",
+        ],
+    },
+    "variable_complexity": {
+        "description": "Complexity of variables and data references",
+        "values": [
+            "basic_field",
+            "custom_attribute",
+            "connected_content",
+            "data_extension_lookup",
+            "nested_object",
+            "content_block",
+        ],
+    },
+    "conditional_complexity": {
+        "description": "Complexity of conditional logic required",
+        "values": [
+            "simple_if_else",
+            "nested_conditional",
+            "loop_iteration",
+            "multi_condition_chain",
+            "filter_chain",
+        ],
+    },
+    "fallback_challenge": {
+        "description": "Type of fallback/edge case handling needed",
+        "values": [
+            "simple_default",
+            "section_hiding",
+            "conditional_fallback",
+            "null_handling",
+            "empty_array",
+            "type_mismatch",
+        ],
+    },
+}

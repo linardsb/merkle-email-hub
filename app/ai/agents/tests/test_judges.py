@@ -219,7 +219,8 @@ class TestJudgeRegistry:
         assert "content" in JUDGE_REGISTRY
         assert "outlook_fixer" in JUDGE_REGISTRY
         assert "accessibility" in JUDGE_REGISTRY
-        assert len(JUDGE_REGISTRY) == 5
+        assert "personalisation" in JUDGE_REGISTRY
+        assert len(JUDGE_REGISTRY) == 6
 
     def test_registry_instantiation(self) -> None:
         for name, cls in JUDGE_REGISTRY.items():

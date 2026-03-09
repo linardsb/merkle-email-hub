@@ -130,15 +130,17 @@ class TestCampaignBlueprint:
         assert "dark_mode" in definition.nodes
         assert "outlook_fixer" in definition.nodes
         assert "accessibility" in definition.nodes
+        assert "personalisation" in definition.nodes
 
-        # Verify edge count (9 original + 2 for accessibility route + loop)
-        assert len(definition.edges) == 11
+        # Verify edge count (11 + 2 for personalisation route + loop)
+        assert len(definition.edges) == 13
 
         # Verify agentic vs deterministic
         assert definition.nodes["scaffolder"].node_type == "agentic"
         assert definition.nodes["dark_mode"].node_type == "agentic"
         assert definition.nodes["outlook_fixer"].node_type == "agentic"
         assert definition.nodes["accessibility"].node_type == "agentic"
+        assert definition.nodes["personalisation"].node_type == "agentic"
         assert definition.nodes["qa_gate"].node_type == "deterministic"
         assert definition.nodes["maizzle_build"].node_type == "deterministic"
         assert definition.nodes["export"].node_type == "deterministic"

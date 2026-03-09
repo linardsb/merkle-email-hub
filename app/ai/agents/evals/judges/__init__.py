@@ -4,6 +4,7 @@ from app.ai.agents.evals.judges.accessibility import AccessibilityJudge
 from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
 from app.ai.agents.evals.judges.outlook_fixer import OutlookFixerJudge
+from app.ai.agents.evals.judges.personalisation import PersonalisationJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
 from app.ai.agents.evals.judges.schemas import (
     CriterionResult,
@@ -14,13 +15,21 @@ from app.ai.agents.evals.judges.schemas import (
 
 JUDGE_REGISTRY: dict[
     str,
-    type[ScaffolderJudge | DarkModeJudge | ContentJudge | OutlookFixerJudge | AccessibilityJudge],
+    type[
+        ScaffolderJudge
+        | DarkModeJudge
+        | ContentJudge
+        | OutlookFixerJudge
+        | AccessibilityJudge
+        | PersonalisationJudge
+    ],
 ] = {
     "scaffolder": ScaffolderJudge,
     "dark_mode": DarkModeJudge,
     "content": ContentJudge,
     "outlook_fixer": OutlookFixerJudge,
     "accessibility": AccessibilityJudge,
+    "personalisation": PersonalisationJudge,
 }
 
 __all__ = [
@@ -33,5 +42,6 @@ __all__ = [
     "JudgeInput",
     "JudgeVerdict",
     "OutlookFixerJudge",
+    "PersonalisationJudge",
     "ScaffolderJudge",
 ]

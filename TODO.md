@@ -381,7 +381,7 @@
 **Build Order (prioritised):**
 1. ~~**Outlook Fixer**~~ DONE — SKILL.md + 4 L3 skill files, service/prompt/schemas, blueprint node, recovery router integration, 12 synthetic test cases, 5-criteria judge, dry-run verified (535 tests pass)
 2. ~~**Accessibility Auditor**~~ DONE — SKILL.md + 4 L3 skill files (wcag_email_mapping, alt_text_guidelines, color_contrast, screen_reader_behavior), service/prompt/schemas, blueprint node, recovery router integration, 10 synthetic test cases, 5-criteria judge (wcag_aa_compliance, alt_text_quality, contrast_ratio_accuracy, semantic_structure, screen_reader_compatibility), dry-run verified (540 tests pass)
-3. **Personalisation Agent**: Liquid (Braze), AMPscript (SFMC), dynamic content logic
+3. ~~**Personalisation Agent**~~ DONE — SKILL.md + 4 L3 skill files (braze_liquid, sfmc_ampscript, adobe_campaign_js, fallback_patterns), service/prompt/schemas, blueprint node, recovery router integration, 12 synthetic test cases (4 Braze, 4 SFMC, 3 Adobe Campaign, 1 mixed), 5-criteria judge (syntax_correctness, fallback_completeness, html_preservation, platform_accuracy, logic_match), dry-run verified (540 tests pass)
 4. **Code Reviewer**: Static analysis, redundant code, unsupported CSS, file size optimisation
 5. **Knowledge Agent**: RAG-powered Q&A from knowledge base
 6. **Innovation Agent**: Prototype new techniques, assess feasibility, generate fallback strategies
@@ -473,7 +473,7 @@ app/ai/agents/{agent}/
 > | 3 | **Content** | Implemented | Synthetic data created (14 cases) |
 > | 4 | **Outlook Fixer** | Implemented (4.1) | 12 synthetic cases, 5-criteria judge |
 > | 5 | **Accessibility Auditor** | Implemented (4.1) | 10 synthetic cases, 5-criteria judge |
-> | 6 | **Personalisation Agent** | Planned (4.1) | Eval data needed on build |
+> | 6 | **Personalisation Agent** | Implemented (4.1) | 12 synthetic cases, 5-criteria judge |
 > | 7 | **Code Reviewer** | Planned (4.1) | Eval data needed on build |
 > | 8 | **Knowledge Agent** | Planned (4.1) | Eval data needed on build |
 > | 9 | **Innovation Agent** | Planned (4.1) | Eval data needed on build |
@@ -499,7 +499,7 @@ app/ai/agents/{agent}/
 > - [x] 5.4-5.8 — **Live execution** (2026-03-09): 36 traces + 36 verdicts via `anthropic:claude-sonnet-4`. Baseline established (16.7% overall pass rate). Blueprint evals 5/5 passed (100% QA with self-correction). Human labeling pending (540 rows in `traces/*_human_labels.jsonl`)
 > - [x] Eval data for Outlook Fixer — 12 synthetic cases, 5-criteria judge (`OutlookFixerJudge`), blueprint node + recovery router integration
 > - [x] Eval data for Accessibility Auditor — 10 synthetic cases, 5-criteria judge (`AccessibilityJudge`), blueprint node + recovery router integration
-> - [ ] Eval data for Personalisation Agent (on agent build)
+> - [x] Eval data for Personalisation Agent — 12 synthetic cases, 5-criteria judge (`PersonalisationJudge`), blueprint node + recovery router integration
 > - [ ] Eval data for Code Reviewer (on agent build)
 > - [ ] Eval data for Knowledge Agent (on agent build)
 > - [ ] Eval data for Innovation Agent (on agent build)
@@ -697,7 +697,7 @@ Install Cognee, define the full email ontology, seed the knowledge graph. This r
 **Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
 Wire graph search into blueprint nodes. ~~Author initial SKILL.md files for the 3 existing agents.~~ DONE for Scaffolder + Dark Mode (Step 2.6). Content agent SKILL.md pending. Re-run evals to measure improvement vs Step 0 baseline.
 
-**Step 5 — Build Remaining 5 Agents WITH Phase 7+8 Patterns (Task 4.1)** (Outlook Fixer DONE)
+**Step 5 — Build Remaining 5 Agents WITH Phase 7+8 Patterns (Task 4.1)** (Outlook Fixer DONE, Accessibility Auditor DONE, Personalisation DONE)
 Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
 
 **Step 6 — Outcome Logging + Eval-Informed Prompts (8.4 + 7.2)**
@@ -999,6 +999,26 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - Proposed updates that degrade any criterion by >5% auto-rejected with explanation
 **Security:** A/B tests run on synthetic test data (no client data). Results logged for audit. Rejected proposals archived with reasoning.
 **Verify:** Proposed SKILL.md update runs through A/B test. Report shows per-criterion comparison. Update that improves 3 criteria and degrades none is recommended for merge. Update that degrades 1 criterion by >5% is auto-rejected.
+
+---
+
+## Autoresearch-Inspired Patterns
+
+Techniques adapted from the autoresearch autonomous experiment framework. These patterns apply autoresearch's iterative modify→run→measure→keep/revert loop to agent and blueprint quality optimization.
+
+> Source: autoresearch repo analysis (2026-03-09). Cross-referenced with merkle-email-hub architecture.
+
+### Pattern 1: Autonomous Agent Eval Loop
+- [ ] **Automated Eval Loop for Blueprint Pass Rate** — Implement autoresearch-style modify→run→measure→keep/revert cycle for agent prompt optimization. Use existing 36 eval traces + QA gate as the scoring mechanism. After each prompt/config change: run scaffolder/dark-mode/content agents against the same briefs, score via QA gate (deterministic) + LLM judge (subjective quality), record in `eval_results.tsv`. Collapse 10 QA checks into a single "QA pass rate" aggregate for the keep/revert decision. Keep changes that improve pass rate, revert those that don't. Target: move from 16.7% baseline pass rate upward through automated overnight sweeps.
+
+### Pattern 4: Git-Based Experiment Tracking
+- [ ] **Prompt Version Control + Eval Ledger** — Extract all agent prompts from per-agent Python files into version-controlled markdown (e.g., `prompts/scaffolder.md`, `prompts/dark_mode.md`, `prompts/content.md`). Each prompt tweak = a commit on an `experiments/<tag>` branch. Eval results appended to `eval_results.tsv` (columns: experiment_id, commit_hash, timestamp, qa_pass_rate, scaffolder_score, dark_mode_score, content_score, token_usage). Automated revert on regression. Gives reproducible prompt optimization history — currently no way to know what was tried before or why a prompt looks the way it does.
+
+### Pattern 5: Per-Client Agent Steering Briefs
+- [ ] **`program.md`-Style Client Briefs** — Create a human-editable `client_brief.md` per client/project that steers all 9 agents without code changes. Account managers (not developers) define constraints like: "this client requires dark backgrounds, never use white", "always include legal footer with unsubscribe link", "tone: corporate formal", "Outlook 2016 is primary target — table-based layouts only", "brand palette: #1B365D, #F2C94C, #FFFFFF only". Brief is injected into every agent's prompt via `NodeContext.metadata`. Changes take effect without deploys.
+
+### Pattern 6: Constrained Modification Surface for Agent Retries
+- [ ] **Scoped Self-Correction Constraints** — When agents retry after QA failure, constrain what they can modify (autoresearch only allows changes to `train.py`, not `prepare.py`). Scaffolder retry: can only modify HTML structure, not inject new CSS frameworks or dependencies. Dark mode retry: can only modify CSS (`<style>` blocks and inline styles), not restructure HTML layout. Content retry: can only change text nodes and attributes (`alt`, `title`, `aria-label`), not layout or styling. Outlook fixer retry: can only add MSO conditionals and VML, not remove existing HTML. Implement via prompt constraints injected on retry + output diff validation (reject changes outside allowed scope). Prevents cascading failures where a retry introduces new problems that trigger further QA failures.
 
 ---
 

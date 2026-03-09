@@ -5,6 +5,7 @@ Graph:
                        → (qa_fail) → recovery_router → dark_mode → qa_gate (loop)
                                                       → outlook_fixer → qa_gate (loop)
                                                       → accessibility → qa_gate (loop)
+                                                      → personalisation → qa_gate (loop)
                                                       → scaffolder (loop)
 """
 
@@ -14,6 +15,7 @@ from app.ai.blueprints.nodes.dark_mode_node import DarkModeNode
 from app.ai.blueprints.nodes.export_node import ExportNode
 from app.ai.blueprints.nodes.maizzle_build_node import MaizzleBuildNode
 from app.ai.blueprints.nodes.outlook_fixer_node import OutlookFixerNode
+from app.ai.blueprints.nodes.personalisation_node import PersonalisationNode
 from app.ai.blueprints.nodes.qa_gate_node import QAGateNode
 from app.ai.blueprints.nodes.recovery_router_node import RecoveryRouterNode
 from app.ai.blueprints.nodes.scaffolder_node import ScaffolderNode
@@ -30,6 +32,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
     dark_mode = DarkModeNode()
     outlook_fixer = OutlookFixerNode()
     accessibility = AccessibilityNode()
+    personalisation = PersonalisationNode()
 
     nodes: dict[str, BlueprintNode] = {
         scaffolder.name: scaffolder,
@@ -40,6 +43,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         dark_mode.name: dark_mode,
         outlook_fixer.name: outlook_fixer,
         accessibility.name: accessibility,
+        personalisation.name: personalisation,
     }
 
     edges = [
@@ -70,6 +74,12 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         ),
         Edge(
             from_node="recovery_router",
+            to_node="personalisation",
+            condition="route_to",
+            route_value="personalisation",
+        ),
+        Edge(
+            from_node="recovery_router",
             to_node="scaffolder",
             condition="route_to",
             route_value="scaffolder",
@@ -80,6 +90,8 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         Edge(from_node="outlook_fixer", to_node="qa_gate", condition="always"),
         # Accessibility fix loops back to QA
         Edge(from_node="accessibility", to_node="qa_gate", condition="always"),
+        # Personalisation fix loops back to QA
+        Edge(from_node="personalisation", to_node="qa_gate", condition="always"),
         # Build → export
         Edge(from_node="maizzle_build", to_node="export", condition="always"),
     ]

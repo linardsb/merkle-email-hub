@@ -58,6 +58,23 @@ class RecoveryRouterNode:
         # Determine if any failures are accessibility-specific
         has_accessibility_failure = any(f.startswith("accessibility:") for f in context.qa_failures)
 
+        # Determine if any failures are personalisation-specific
+        has_personalisation_failure = any(
+            any(
+                kw in f.lower()
+                for kw in (
+                    "personalisation",
+                    "personalization",
+                    "liquid",
+                    "ampscript",
+                    "dynamic content",
+                    "variable",
+                    "fallback",
+                )
+            )
+            for f in context.qa_failures
+        )
+
         # Also check upstream handoff warnings for routing hints
         upstream = context.metadata.get("upstream_handoff")
         if isinstance(upstream, AgentHandoff) and upstream.warnings:
@@ -76,6 +93,20 @@ class RecoveryRouterNode:
                     for w in upstream.warnings
                     for kw in ("accessibility", "wcag", "alt text", "contrast")
                 )
+            if not has_personalisation_failure:
+                has_personalisation_failure = any(
+                    any(
+                        kw in w.lower()
+                        for kw in (
+                            "personalisation",
+                            "personalization",
+                            "liquid",
+                            "ampscript",
+                            "dynamic",
+                        )
+                    )
+                    for w in upstream.warnings
+                )
 
         if has_dark_mode_failure:
             target = "dark_mode"
@@ -83,6 +114,8 @@ class RecoveryRouterNode:
             target = "outlook_fixer"
         elif has_accessibility_failure:
             target = "accessibility"
+        elif has_personalisation_failure:
+            target = "personalisation"
         else:
             target = "scaffolder"
 

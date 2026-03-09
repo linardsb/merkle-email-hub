@@ -6,6 +6,7 @@ Usage:
     python -m app.ai.agents.evals.runner --agent scaffolder --output traces/
     python -m app.ai.agents.evals.runner --agent dark_mode --output traces/
     python -m app.ai.agents.evals.runner --agent content --output traces/
+    python -m app.ai.agents.evals.runner --agent personalisation --output traces/
     python -m app.ai.agents.evals.runner --agent all --output traces/
 
 Each trace includes: input, agent output, metadata, and timing.
@@ -24,6 +25,7 @@ from app.ai.agents.evals.synthetic_data_accessibility import ACCESSIBILITY_TEST_
 from app.ai.agents.evals.synthetic_data_content import CONTENT_TEST_CASES
 from app.ai.agents.evals.synthetic_data_dark_mode import DARK_MODE_TEST_CASES
 from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_CASES
+from app.ai.agents.evals.synthetic_data_personalisation import PERSONALISATION_TEST_CASES
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 
 
@@ -290,6 +292,70 @@ async def run_accessibility_case(case: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+async def run_personalisation_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Run a single personalisation test case and return the trace."""
+    from app.ai.agents.personalisation.schemas import PersonalisationRequest
+    from app.ai.agents.personalisation.service import PersonalisationService
+
+    service = PersonalisationService()
+    html_input: str = str(case["html_input"])
+    platform: str = str(case["platform"])
+    requirements: str = str(case["requirements"])
+    request = PersonalisationRequest(
+        html=html_input,
+        platform=platform,  # pyright: ignore[reportArgumentType]
+        requirements=requirements,
+        stream=False,
+        run_qa=True,
+    )
+
+    start = time.monotonic()
+    try:
+        response = await service.process(request)
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "personalisation",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+                "platform": platform,
+                "requirements": requirements,
+            },
+            "output": {
+                "html": response.html,
+                "platform": response.platform,
+                "tags_injected": response.tags_injected,
+                "qa_results": [r.model_dump() for r in (response.qa_results or [])],
+                "qa_passed": response.qa_passed,
+                "model": response.model,
+            },
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": None,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        return {
+            "id": case["id"],
+            "agent": "personalisation",
+            "dimensions": case["dimensions"],
+            "input": {
+                "html_input": html_input,
+                "html_length": len(html_input),
+                "platform": platform,
+                "requirements": requirements,
+            },
+            "output": None,
+            "expected_challenges": case["expected_challenges"],
+            "elapsed_seconds": round(elapsed, 2),
+            "error": f"{type(e).__name__}: {e}",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
 async def run_agent(
     agent: str,
     output_dir: Path,
@@ -319,6 +385,9 @@ async def run_agent(
     elif agent == "accessibility":
         cases = ACCESSIBILITY_TEST_CASES
         runner = run_accessibility_case
+    elif agent == "personalisation":
+        cases = PERSONALISATION_TEST_CASES
+        runner = run_personalisation_case
     else:
         raise ValueError(f"Unknown agent: {agent}")
 
@@ -382,7 +451,15 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description="Run agent evals")
     parser.add_argument(
         "--agent",
-        choices=["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility", "all"],
+        choices=[
+            "scaffolder",
+            "dark_mode",
+            "content",
+            "outlook_fixer",
+            "accessibility",
+            "personalisation",
+            "all",
+        ],
         required=True,
     )
     parser.add_argument("--output", type=Path, default=Path("traces"))
@@ -401,7 +478,7 @@ async def main() -> None:
     args = parser.parse_args()
 
     agents = (
-        ["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility"]
+        ["scaffolder", "dark_mode", "content", "outlook_fixer", "accessibility", "personalisation"]
         if args.agent == "all"
         else [args.agent]
     )

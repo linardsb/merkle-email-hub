@@ -23,8 +23,10 @@
 - **Outlook Fixer** (`outlook_fixer/`) — MSO conditionals, VML backgrounds/buttons, ghost tables, DPI scaling, font fallbacks. Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files loaded on-demand. Blueprint node integrated with recovery router.
 - **Accessibility Auditor** (`accessibility/`) — WCAG 2.1 AA compliance for email HTML: alt text, table roles, lang attributes, heading hierarchy, color contrast, screen reader compatibility. Progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files (wcag_email_mapping, alt_text_guidelines, color_contrast, screen_reader_behavior). Blueprint node integrated with recovery router.
 
+- **Personalisation** (`personalisation/`) — Injects ESP-specific dynamic content syntax: Braze Liquid, SFMC AMPscript, Adobe Campaign JavaScript. Platform-based progressive disclosure: SKILL.md (L1+L2) + 4 L3 skill files (braze_liquid, sfmc_ampscript, adobe_campaign_js, fallback_patterns). Blueprint node integrated with recovery router.
+
 ## Planned Agents (V2 — task 4.1)
-Personalisation, Code Reviewer, Knowledge, Innovation.
+Code Reviewer, Knowledge, Innovation.
 
 ## Evaluation Framework (`evals/`)
 
@@ -37,8 +39,9 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 - `synthetic_data_content.py` — 14 test cases across all 8 operations, real spam trigger blocklists, PII edge cases
 - `synthetic_data_outlook_fixer.py` — 12 test cases: ghost tables, VML backgrounds, bulletproof buttons, font fallbacks, DPI, broken MSO comments
 - `synthetic_data_accessibility.py` — 10 test cases: missing alt text, table roles, lang/title, low contrast, heading hierarchy, link text, VML/ARIA, color-only info
-- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|outlook_fixer|accessibility|all} --output traces/`
-- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
+- `synthetic_data_personalisation.py` — 12 test cases: 4 Braze (Liquid), 4 SFMC (AMPscript), 3 Adobe Campaign (JSSP), 1 mixed edge case
+- `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent {scaffolder|dark_mode|content|outlook_fixer|accessibility|personalisation|all} --output traces/`
+- `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria), `PersonalisationJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`
 - `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
 
 ### Per-Agent Eval Requirements (mandatory for all 9)
@@ -56,7 +59,7 @@ All 9 agents must pass evaluation before production. Based on [evals-skills meth
 | Content | 14 cases | 5 criteria | 14 traces | 85.7% pass | Pending (human labels needed) |
 | Outlook Fixer | 12 cases | 5 criteria | Pending (live run needed) | — | — |
 | Accessibility | 10 cases | 5 criteria | Pending (live run needed) | — | — |
-| Personalisation | Not started | — | — | — | — |
+| Personalisation | 12 cases | 5 criteria | Pending (live run needed) | — | — |
 | Code Reviewer | Not started | — | — | — | — |
 | Knowledge | Not started | — | — | — | — |
 | Innovation | Not started | — | — | — | — |
