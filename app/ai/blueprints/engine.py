@@ -4,13 +4,17 @@ import time
 import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from app.knowledge.graph.protocols import GraphSearchResult
 
 from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
 from app.ai.blueprints.protocols import (
     AgentHandoff,
     BlueprintNode,
     ComponentResolver,
+    GraphContextProvider,
     HandoffStatus,
     NodeContext,
     NodeResult,
@@ -84,11 +88,13 @@ class BlueprintEngine:
         component_resolver: ComponentResolver | None = None,
         on_handoff: HandoffMemoryCallback | None = None,
         project_id: int | None = None,
+        graph_provider: GraphContextProvider | None = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
         self._on_handoff = on_handoff
         self._project_id = project_id
+        self._graph_provider = graph_provider
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -320,6 +326,23 @@ class BlueprintEngine:
                 if components:
                     context.metadata["component_context"] = format_component_context(components)
 
+        # Inject graph knowledge context for agentic nodes (lazy — only if triggered)
+        if node.node_type == "agentic" and self._graph_provider is not None:
+            from app.ai.blueprints.graph_context import (
+                format_graph_context,
+                should_fetch_graph_context,
+            )
+
+            if should_fetch_graph_context(
+                brief=brief,
+                html=run.html,
+                qa_failures=run.qa_failures,
+                iteration=iteration,
+            ):
+                graph_results = await self._search_graph(brief)
+                if graph_results:
+                    context.metadata["graph_context"] = format_graph_context(graph_results)
+
         return context
 
     async def _recall_memories(self, brief: str) -> list[dict[str, str]]:
@@ -354,6 +377,31 @@ class BlueprintEngine:
         except Exception:
             logger.debug(
                 "blueprint.memory_recall_failed",
+                project_id=self._project_id,
+                exc_info=True,
+            )
+            return []
+
+    async def _search_graph(self, query: str) -> list["GraphSearchResult"]:
+        """Search knowledge graph for structured compatibility context.
+
+        Failure-safe: returns empty list on errors so the pipeline continues.
+        """
+        if self._graph_provider is None:
+            return []
+
+        try:
+            results = await self._graph_provider.search(query, top_k=5)
+
+            logger.debug(
+                "blueprint.graph_search_completed",
+                project_id=self._project_id,
+                result_count=len(results),
+            )
+            return results
+        except Exception:
+            logger.debug(
+                "blueprint.graph_search_failed",
                 project_id=self._project_id,
                 exc_info=True,
             )

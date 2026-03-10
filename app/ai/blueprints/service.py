@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.blueprints.definitions.campaign import build_campaign_blueprint
 from app.ai.blueprints.engine import BlueprintDefinition, BlueprintEngine
 from app.ai.blueprints.exceptions import BlueprintError
-from app.ai.blueprints.protocols import AgentHandoff, ComponentResolver
+from app.ai.blueprints.protocols import AgentHandoff, ComponentResolver, GraphContextProvider
 from app.ai.blueprints.schemas import (
     BlueprintProgress,
     BlueprintRunRequest,
@@ -56,11 +56,25 @@ class BlueprintService:
         raw_project_id = request.options.get("project_id") if request.options else None
         project_id: int | None = int(str(raw_project_id)) if raw_project_id is not None else None
 
+        # Wire graph knowledge provider (optional — only if Cognee enabled)
+        graph_provider: GraphContextProvider | None = None
+        try:
+            from app.core.config import get_settings
+
+            settings = get_settings()
+            if settings.cognee.enabled:
+                from app.knowledge.graph.cognee_provider import CogneeGraphProvider
+
+                graph_provider = CogneeGraphProvider(settings)
+        except Exception:
+            logger.debug("blueprint.graph_provider_init_skipped", exc_info=True)
+
         engine = BlueprintEngine(
             definition,
             component_resolver=component_resolver,
             on_handoff=persist_handoff_to_memory,
             project_id=project_id,
+            graph_provider=graph_provider,
         )
 
         logger.info(

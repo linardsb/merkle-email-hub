@@ -87,9 +87,13 @@ class KnowledgeNode:
         relevant_skills = detect_relevant_skills(str(question))
         system_prompt = build_system_prompt(relevant_skills)
 
+        graph_ctx = context.metadata.get("graph_context", "")
+        graph_section = f"\n\n{graph_ctx}" if graph_ctx else ""
+
         user_message = (
             f"## QUESTION\n{question}\n\n"
-            f"## RETRIEVED CONTEXT\n{search_context or 'No context retrieved.'}\n\n"
+            f"## RETRIEVED CONTEXT\n{search_context or 'No context retrieved.'}"
+            f"{graph_section}\n\n"
             "Answer the question with citations. End with <!-- CONFIDENCE: 0.XX -->"
         )
 

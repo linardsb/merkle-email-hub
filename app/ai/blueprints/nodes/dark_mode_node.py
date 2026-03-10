@@ -120,5 +120,8 @@ class DarkModeNode:
         component_ctx = context.metadata.get("component_context", "")
         if component_ctx:
             parts.append(f"\n\n{component_ctx}")
+        graph_ctx = context.metadata.get("graph_context", "")
+        if graph_ctx:
+            parts.append(f"\n\n{graph_ctx}")
 
         return "\n".join(parts)

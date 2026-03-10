@@ -58,8 +58,12 @@ class InnovationNode:
         relevant_skills = detect_relevant_skills(str(technique))
         system_prompt = build_system_prompt(relevant_skills)
 
+        graph_ctx = context.metadata.get("graph_context", "")
+        graph_section = f"\n\n{graph_ctx}" if graph_ctx else ""
+
         user_message = (
-            f"## TECHNIQUE REQUEST\n{technique}\n\n"
+            f"## TECHNIQUE REQUEST\n{technique}"
+            f"{graph_section}\n\n"
             "Provide a working prototype, feasibility assessment with client coverage %, "
             "risk level, and recommendation, plus a static fallback.\n"
             "End with <!-- CONFIDENCE: 0.XX -->"

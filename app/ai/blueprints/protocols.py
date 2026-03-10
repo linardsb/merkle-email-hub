@@ -4,15 +4,21 @@ Defines the contract that all blueprint nodes must satisfy, along with
 the context and result data structures that flow through the graph.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from app.knowledge.graph.protocols import GraphSearchResult
 
 __all__ = [
     "AgentHandoff",
     "BlueprintNode",
     "ComponentMeta",
     "ComponentResolver",
+    "GraphContextProvider",
     "HandoffStatus",
     "NodeContext",
     "NodeResult",
@@ -74,7 +80,7 @@ class NodeResult:
     details: str = ""
     error: str = ""
     usage: dict[str, int] | None = None
-    handoff: "AgentHandoff | None" = None
+    handoff: AgentHandoff | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +116,25 @@ class ComponentResolver(Protocol):
     """Protocol for resolving component slugs to metadata."""
 
     async def resolve(self, slugs: list[str]) -> list[ComponentMeta]: ...
+
+
+@runtime_checkable
+class GraphContextProvider(Protocol):
+    """Protocol for graph-backed context retrieval in blueprint nodes."""
+
+    async def search(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+    ) -> list[GraphSearchResult]: ...
+
+    async def search_completion(
+        self,
+        query: str,
+        *,
+        system_prompt: str = "",
+    ) -> str: ...
 
 
 @runtime_checkable
