@@ -338,14 +338,14 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - [x] 9.8 SKILL.md A/B testing via eval system (`skill_override.py` runtime registry, `skill_ab.py` A/B runner CLI, all 9 prompt.py files wired, `make eval-skill-test`, 17 tests)
 
 ### Phase 10 — Full-Stack Agent Workflow (Frontend Integration)
-Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 backend complete, Phase 0-3 frontend foundation.
-- [x] 10.1 Project target clients selector (`target-clients-selector.tsx` multi-select, `GET /api/v1/ontology/clients` endpoint, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar integration, project card badges, i18n keys, 4 backend tests)
+Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 backend complete, Phase 0-3 frontend foundation. Design principle: QA always checks ALL 25 email clients; "priority clients" affect display emphasis and agent attention, never exclusion.
+- [x] 10.1 Project priority clients selector (`target-clients-selector.tsx` multi-select, `GET /api/v1/ontology/clients` endpoint, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar integration, project card badges, i18n keys, 4 backend tests — empty = all clients equal priority)
 
 ## Feature Scope by Stack
 
 ### Backend Features (for `be-prime`)
 - Auth: JWT HS256, RBAC (admin/developer/viewer), token revocation, brute-force protection
-- Projects: ClientOrg, Project, ProjectMember models + RLS; `target_clients` JSON column; `onboarding.py` auto-generates client-specific compatibility subgraphs (Cognee dataset per project); `POST .../onboarding-brief` for manual refresh
+- Projects: ClientOrg, Project, ProjectMember models + RLS; `target_clients` JSON column (priority clients — QA always checks all 25, priority affects display emphasis + agent attention); `onboarding.py` auto-generates client-specific compatibility subgraphs (Cognee dataset per project); `POST .../onboarding-brief` for manual refresh
 - Email Engine: Maizzle build orchestration via sidecar
 - Components: versioned component library with dark mode variants; QA bridge (`qa_bridge.py`) runs QA + extracts per-client compatibility; graph export (`graph_export.py`) for Cognee; `ComponentQAResult` join model; `compatibility_badge` on responses
 - QA Engine: 10-point check system in `app/qa_engine/checks/`
@@ -381,7 +381,7 @@ Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 ba
 - Visual Liquid Builder: @dnd-kit drag-and-drop blocks, regex parser/serializer, Code/Visual tabs
 - Rendering Tests: `/renderings` page with test list, stats cards, compatibility matrix, screenshot dialog, visual regression comparison, async polling
 - Collaborative Editing: Yjs CRDT, y-codemirror.next, collaborator avatars, connection status
-- Target Clients Selector: `target-clients-selector.tsx` multi-select with engine badges, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar + project card badges
+- Priority Clients Selector: `target-clients-selector.tsx` multi-select with engine badges, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar + project card badges (empty = all clients equal priority, QA always checks all 25)
 
 ## Compact instructions
 

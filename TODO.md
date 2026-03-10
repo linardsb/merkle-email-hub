@@ -1005,25 +1005,27 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 
 ## Phase 10 — Full-Stack Agent Workflow (Frontend Integration)
 
-**What:** Wire all Phase 8-9 backend intelligence into the frontend so email developers can run the full AI-powered workflow from the UI — from project setup with target clients, through blueprint-orchestrated multi-agent pipelines, to graph-informed QA and export. Currently ~50% of backend capabilities are invisible from the frontend.
+**What:** Wire all Phase 8-9 backend intelligence into the frontend so email developers can run the full AI-powered workflow from the UI — from project setup with priority clients, through blueprint-orchestrated multi-agent pipelines, to graph-informed QA and export. Currently ~50% of backend capabilities are invisible from the frontend.
+**Design principle:** QA always checks against ALL 25 email clients. "Priority clients" mark which clients get prominent display in QA results, drive failure pattern urgency, and influence agent retry priority — but never exclude non-priority clients from validation. No campaign-level client selector needed; campaigns inherit project priorities.
 **Dependencies:** Phase 8 (knowledge graph) + Phase 9 (graph intelligence) backend complete. Phase 0-3 frontend foundation in place.
 
-### ~~10.1 Project Target Clients Selector~~ DONE
-**What:** Add a multi-select "Target Email Clients" field to project creation and project settings forms. Populated from the ontology's 25 email clients. Persists to the existing `target_clients` JSON column on `Project`. Shows client icons, engine type (WebKit/Blink/Word), and market share from ontology data.
-**Why:** `target_clients` drives audience profiles (9.1), onboarding subgraphs (9.5), failure pattern filtering (9.4), and blueprint route selection (9.6). Without this field in the UI, none of those features activate — they all depend on knowing which clients the project targets.
+### ~~10.1 Project Priority Clients Selector~~ DONE
+**What:** Add a multi-select "Priority Email Clients" field to project creation and project settings forms. Populated from the ontology's 25 email clients. Persists to the existing `target_clients` JSON column on `Project`. Shows client icons, engine type (WebKit/Blink/Word), and market share from ontology data. QA always validates against ALL 25 clients; priority clients get prominent display, higher urgency in failure patterns, and influence agent retry priority.
+**Why:** `target_clients` (priority clients) drives audience profiles (9.1), onboarding subgraphs (9.5), failure pattern urgency (9.4), and blueprint route selection (9.6). Empty = all clients treated equally. Non-priority clients are still fully checked — priority only affects display emphasis and agent attention.
 **Implementation:**
 - New component: `target-clients-selector.tsx` — searchable multi-select with client metadata (icon, engine, share %)
-- Add to `create-project-dialog.tsx` as optional step (defaults to common set: Gmail, Outlook, Apple Mail)
+- Add to `create-project-dialog.tsx` as optional step (defaults to empty = all clients equal priority)
 - Add to project settings page for editing after creation
 - New API hook: `useEmailClients()` fetching from ontology endpoint (or static list from SDK)
 - `ProjectCreateRequest` / `ProjectUpdateRequest` schemas already support `target_clients`
 - SDK regeneration to include `target_clients` in `ProjectResponse`
+- No campaign-level client selector — campaigns inherit project priorities
 **Security:** Client list is public ontology data. Project-scoped via existing RLS. Input validated against known client IDs.
-**Verify:** Create project with "Outlook 2019 + Gmail" selected. Project detail shows target clients. Editing project updates the field. Blueprint runs for this project receive audience context.
+**Verify:** Create project with "Outlook 2019 + Gmail" as priority. Project detail shows priority clients. QA results show ALL 25 clients but priority clients are visually emphasised. Empty priority = all clients shown equally. Blueprint runs receive audience context for priority clients.
 
 ### 10.2 Onboarding Compatibility Brief UI
 **What:** Add a "Compatibility Brief" tab/section to the project workspace that displays the auto-generated onboarding subgraph (9.5). Shows: executive summary, per-client CSS constraint profiles, cross-client risk matrix, and a "Regenerate" button that calls `POST /projects/{id}/onboarding-brief`.
-**Why:** The backend generates rich compatibility briefs per project but there's no way to see them. Email developers need this as a reference while building — "what CSS is safe across my target clients?"
+**Why:** The backend generates rich compatibility briefs per project but there's no way to see them. Email developers need this as a reference while building — "what CSS is safe across all clients, and where do my priority clients have constraints?"
 **Implementation:**
 - New page/tab: `project-compatibility-brief.tsx` in workspace or project settings
 - Sections: Summary card (client count, total risky properties, dark mode warning), per-client accordion (unsupported CSS list, fallbacks, engine info), risk matrix table (properties × clients heat map)
@@ -1032,13 +1034,13 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - New API hook: `useOnboardingBrief(projectId)` with SWR caching
 - SDK types: `OnboardingBriefResponse` (message, dataset_name, document_count, client_count)
 **Security:** Brief data is project-scoped. Read-only for viewer role. Regenerate requires developer+ role.
-**Verify:** Navigate to project compatibility tab. Brief displays with per-client profiles. "Regenerate" updates the content. Brief matches the project's target clients.
+**Verify:** Navigate to project compatibility tab. Brief displays with per-client profiles (all 25 clients, priority clients highlighted). "Regenerate" updates the content. Brief reflects project's priority clients with emphasis.
 
 ### 10.3 Blueprint Run Trigger & Pipeline Visualisation
 **What:** Add a "Generate with Blueprint" button in the workspace that triggers a full multi-agent blueprint run (not just a single agent call). Show real-time pipeline progress: which agent is running, QA gate status, self-correction loops, handoff chain, and final result with confidence score.
 **Why:** The chat sidebar currently calls individual agent endpoints, bypassing the blueprint engine entirely. The engine is where all the intelligence layers (audience context, failure patterns, component injection, handoff memory, self-correction) converge. Without a UI trigger, the most powerful feature in the hub is CLI-only.
 **Implementation:**
-- New component: `blueprint-run-dialog.tsx` — select blueprint template (campaign, dark-mode-fix, accessibility-audit, etc.), input brief text, optional HTML input, confirm target clients
+- New component: `blueprint-run-dialog.tsx` — select blueprint template (campaign, dark-mode-fix, accessibility-audit, etc.), input brief text, optional HTML input, shows project's priority clients
 - Pipeline visualisation: `blueprint-pipeline-view.tsx` — vertical node list showing: agent name + status (pending/running/complete/failed), QA gate results per node, self-correction attempt count, handoff decisions and warnings, confidence score per agent
 - WebSocket or SSE streaming for real-time updates (blueprint engine already emits events)
 - New API hooks: `useBlueprintRun(runId)` for status polling, `useBlueprintTemplates()` for available blueprints
@@ -1070,7 +1072,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - Component detail: compatibility section showing per-client support status (full/partial/none per client)
 - "Run QA" button on component version detail → `POST /api/v1/components/{id}/versions/{v}/qa`
 - Compatibility matrix page: `components-compatibility-matrix.tsx` — grid of components × clients with support indicators
-- Filter component browser by "compatible with [client]" using project's target clients as default filter
+- Filter component browser by "compatible with [client]" using project's priority clients as default filter (all clients still visible)
 - New API hook: `useComponentCompatibility(componentId)`
 **Security:** QA trigger rate-limited (10/min). Compatibility data is read-only for viewers. Component data project-scoped.
 **Verify:** Component card shows green badge (all clients pass). Click component → see per-client breakdown. "Run QA" updates badge. Filter by "Outlook compatible" hides incompatible components.

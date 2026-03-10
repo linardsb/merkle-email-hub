@@ -14,4 +14,10 @@
 | #18682 | 8:11 PM | 🔵 | Demo Templates Data Examination | ~1142 |
 | #18680 | " | 🔵 | Demo Projects Data Examination | ~1033 |
 | #18643 | 8:01 PM | 🔵 | Complete Demo Data Coverage Inventory | ~897 |
+
+### Mar 10, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #21785 | 3:09 PM | 🔴 | Demo mode support added for email clients selector | ~599 |
 </claude-mem-context>

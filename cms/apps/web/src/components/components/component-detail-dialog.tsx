@@ -2,14 +2,29 @@
 
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Moon, Sun, Copy, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Moon, Sun, Copy, Check, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@merkle-email-hub/ui/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@merkle-email-hub/ui/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@merkle-email-hub/ui/components/ui/command";
 import { useComponent, useComponentVersions } from "@/hooks/use-components";
+import { useProjects } from "@/hooks/use-projects";
 import { ComponentPreview } from "./component-preview";
 import { ScrollArea } from "@merkle-email-hub/ui/components/ui/scroll-area";
 
@@ -27,12 +42,16 @@ export function ComponentDetailDialog({
   onOpenChange,
 }: ComponentDetailDialogProps) {
   const t = useTranslations("components");
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("preview");
   const [darkMode, setDarkMode] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [campaignOpen, setCampaignOpen] = useState(false);
+  const [campaignSearch, setCampaignSearch] = useState("");
 
   const { data: component } = useComponent(componentId);
   const { data: versions } = useComponentVersions(componentId);
+  const { data: projects } = useProjects({ search: campaignSearch, pageSize: 20 });
 
   const latestVersion = versions?.[0] ?? null;
 
@@ -41,6 +60,15 @@ export function ComponentDetailDialog({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, []);
+
+  const handleSelectCampaign = useCallback(
+    (projectId: number) => {
+      setCampaignOpen(false);
+      setCampaignSearch("");
+      router.push(`/projects/${projectId}/workspace?componentId=${componentId}`);
+    },
+    [router, componentId]
+  );
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "preview", label: t("previewTab") },
@@ -211,6 +239,51 @@ export function ComponentDetailDialog({
               )}
             </div>
           )}
+        </div>
+
+        {/* Add to Campaign CTA */}
+        <div className="flex justify-end border-t border-border pt-4">
+          <Popover open={campaignOpen} onOpenChange={setCampaignOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
+              >
+                <Plus className="h-4 w-4" />
+                {t("addToCampaign")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0" align="end">
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder={t("searchCampaigns")}
+                  value={campaignSearch}
+                  onValueChange={setCampaignSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>{t("noCampaigns")}</CommandEmpty>
+                  <CommandGroup>
+                    {projects?.items.map((project) => (
+                      <CommandItem
+                        key={project.id}
+                        value={String(project.id)}
+                        onSelect={() => handleSelectCampaign(project.id)}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-foreground">
+                            {project.name}
+                          </span>
+                          <span className="text-xs text-foreground-muted">
+                            {project.status}
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </DialogContent>
     </Dialog>

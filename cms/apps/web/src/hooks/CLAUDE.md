@@ -9,4 +9,12 @@
 |----|------|---|-------|------|
 | #18701 | 8:28 PM | 🟣 | Sprint 3 polish and Knowledge Base Search UI shipped | ~593 |
 | #18637 | 7:59 PM | 🔵 | Data Layer Hooks Survey | ~681 |
+
+### Mar 10, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #21785 | 3:09 PM | 🔴 | Demo mode support added for email clients selector | ~599 |
+| #21783 | 3:01 PM | 🟣 | Phase 10.1 Project Target Clients Selector committed | ~635 |
+| #21782 | 3:00 PM | 🟣 | Phase 10.1 Project Target Clients Selector implemented and committed | ~856 |
 </claude-mem-context>

@@ -36,7 +36,7 @@ ClientId = Annotated[str, StringConstraints(min_length=1, max_length=100, patter
 class ProjectCreate(ProjectBase):
     target_clients: list[ClientId] | None = Field(
         None,
-        description="Target email client IDs from ontology (e.g. gmail_web, outlook_2019_win)",
+        description="Priority email client IDs from ontology (e.g. gmail_web, outlook_2019_win). QA checks all 25 clients; priority clients get prominent display and agent focus.",
         max_length=50,
     )
 

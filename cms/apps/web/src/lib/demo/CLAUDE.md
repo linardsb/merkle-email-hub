@@ -9,4 +9,10 @@
 |----|------|---|-------|------|
 | #18701 | 8:28 PM | 🟣 | Sprint 3 polish and Knowledge Base Search UI shipped | ~593 |
 | #18640 | 8:00 PM | 🔵 | Demo Mode Infrastructure Discovery | ~690 |
+
+### Mar 10, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #21785 | 3:09 PM | 🔴 | Demo mode support added for email clients selector | ~599 |
 </claude-mem-context>
