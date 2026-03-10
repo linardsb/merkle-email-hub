@@ -45,6 +45,41 @@ def authenticated_client(_auth_developer: None) -> Generator[TestClient]:
     limiter.enabled = True
 
 
+class TestListEmailClientsEndpoint:
+    """Test GET /api/v1/ontology/clients."""
+
+    def test_unauthenticated_returns_401(self, client: TestClient) -> None:
+        """No auth token → 401."""
+        resp = client.get("/api/v1/ontology/clients")
+        assert resp.status_code in (401, 403)
+
+    def test_returns_client_list(self, authenticated_client: TestClient) -> None:
+        """Authenticated request returns all ontology clients."""
+        resp = authenticated_client.get("/api/v1/ontology/clients")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) == 25  # 25 clients in ontology
+
+    def test_response_shape(self, authenticated_client: TestClient) -> None:
+        """Each client has required fields with correct types."""
+        resp = authenticated_client.get("/api/v1/ontology/clients")
+        data = resp.json()
+        first = data[0]
+        assert isinstance(first["id"], str)
+        assert isinstance(first["name"], str)
+        assert isinstance(first["family"], str)
+        assert isinstance(first["platform"], str)
+        assert isinstance(first["engine"], str)
+        assert isinstance(first["market_share"], float)
+
+    def test_known_client_present(self, authenticated_client: TestClient) -> None:
+        """Spot-check: gmail_web is in the list."""
+        resp = authenticated_client.get("/api/v1/ontology/clients")
+        ids = [c["id"] for c in resp.json()]
+        assert "gmail_web" in ids
+
+
 class TestCompetitiveReportEndpoint:
     """Test GET /api/v1/ontology/competitive-report."""
 

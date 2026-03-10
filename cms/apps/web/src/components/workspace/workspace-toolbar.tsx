@@ -37,6 +37,7 @@ interface WorkspaceToolbarProps {
   onGenerateImage?: () => void;
   collaborators?: Collaborator[];
   collaborationStatus?: CollaborationStatus;
+  targetClients?: string[] | null;
 }
 
 export function WorkspaceToolbar({
@@ -61,6 +62,7 @@ export function WorkspaceToolbar({
   onGenerateImage,
   collaborators,
   collaborationStatus,
+  targetClients,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
@@ -78,6 +80,23 @@ export function WorkspaceToolbar({
         <h1 className="text-sm font-semibold text-foreground">
           {projectName}
         </h1>
+        {targetClients && targetClients.length > 0 && (
+          <div className="flex items-center gap-1">
+            {targetClients.slice(0, 3).map((cid) => (
+              <span
+                key={cid}
+                className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground"
+              >
+                {cid.replace(/_/g, " ")}
+              </span>
+            ))}
+            {targetClients.length > 3 && (
+              <span className="text-[10px] text-muted-foreground">
+                +{targetClients.length - 3}
+              </span>
+            )}
+          </div>
+        )}
         <span className="text-muted-foreground">/</span>
         <TemplateSelector
           templates={templates}

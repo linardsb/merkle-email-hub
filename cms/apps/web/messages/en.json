@@ -71,6 +71,12 @@
     "newProjectFigmaUrl": "Figma File URL",
     "newProjectFigmaUrlPlaceholder": "https://www.figma.com/design/...",
     "newProjectFigmaUrlHint": "Optional — link a Figma design file to this project",
+    "newProjectTargetClients": "Target Email Clients",
+    "newProjectTargetClientsHint": "Select which email clients this campaign targets. Drives compatibility checks and AI agent routing.",
+    "newProjectTargetClientsSearch": "Search clients...",
+    "newProjectTargetClientsCommon": "Select Common",
+    "newProjectTargetClientsSelected": "{count} clients selected",
+    "newProjectTargetClientsNone": "No clients selected — all clients assumed",
     "newProjectCancel": "Cancel",
     "newProjectSubmit": "Create Project",
     "newProjectSubmitting": "Creating...",
@@ -757,6 +763,20 @@
     "disconnected": "Disconnected",
     "collaborators": "{count} collaborators",
     "you": "You"
+  },
+  "projects": {
+    "targetClients": "Target Clients",
+    "targetClientsEdit": "Edit",
+    "targetClientsSave": "Save",
+    "targetClientsSaving": "Saving...",
+    "targetClientsUpdated": "Target clients updated",
+    "targetClientsUpdateError": "Failed to update target clients",
+    "engineWord": "Word",
+    "engineWebkit": "WebKit",
+    "engineBlink": "Blink",
+    "engineGecko": "Gecko",
+    "engineCustom": "Custom",
+    "enginePresto": "Presto"
   },
   "renderings": {
     "title": "Rendering Preview",

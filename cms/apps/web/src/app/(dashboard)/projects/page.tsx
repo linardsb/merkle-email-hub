@@ -53,6 +53,23 @@ export default function ProjectsPage() {
               <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">
                 {project.description || "\u2014"}
               </p>
+              {project.target_clients && project.target_clients.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {project.target_clients.slice(0, 4).map((clientId) => (
+                    <span
+                      key={clientId}
+                      className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                    >
+                      {clientId.replace(/_/g, " ")}
+                    </span>
+                  ))}
+                  {project.target_clients.length > 4 && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                      +{project.target_clients.length - 4}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="mt-4 flex items-center justify-between">
                 <span className="rounded-full bg-badge-default-bg px-2 py-0.5 text-xs font-medium text-badge-default-text">
                   {project.status}

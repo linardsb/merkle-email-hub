@@ -764,18 +764,8 @@ Created `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.jso
 - [x] 13 unit tests for store/recall round-trip, isolation, limits, sanitization
 - [x] 1 MCP integration test (store from "agent A", recall from "agent B")
 
-#### Phase 2 — CLI
-- [ ] Add `dcg memory list` subcommand (pretty + JSON output)
-- [ ] Add `dcg memory clear` subcommand (with `--older-than`, `--agent`, `--key` filters)
-- [ ] Document in dcg `docs/agents.md`
-
-#### Phase 3 — Cross-Agent Intelligence (Future)
-- [ ] Expose existing history DB via `query_history` MCP tool (agents query each other's past evaluations)
-- [ ] Recommendation engine: "Agent X blocked N times on pattern Y" -> proactive warnings to other agents
-- [ ] Bridge to Hub memory: dcg notes that exceed confidence/frequency thresholds auto-promoted to Hub's pgvector memory (4.9.3)
-
-**Security:** Notes are project-local (no cross-project leakage). Agent identity auto-detected (not self-reported). `.dcg/` gitignored. `dcg memory clear` provides developer control.
-**Verify:** Agent A stores a note. Agent B recalls it via MCP. `dcg memory list` shows the note. Store/recall latency < 5ms.
+**Security:** Notes are project-local (no cross-project leakage). Agent identity auto-detected (not self-reported). `.dcg/` gitignored.
+**Verify:** Agent A stores a note. Agent B recalls it via MCP. Store/recall latency < 5ms.
 
 ---
 
@@ -1018,7 +1008,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **What:** Wire all Phase 8-9 backend intelligence into the frontend so email developers can run the full AI-powered workflow from the UI — from project setup with target clients, through blueprint-orchestrated multi-agent pipelines, to graph-informed QA and export. Currently ~50% of backend capabilities are invisible from the frontend.
 **Dependencies:** Phase 8 (knowledge graph) + Phase 9 (graph intelligence) backend complete. Phase 0-3 frontend foundation in place.
 
-### 10.1 Project Target Clients Selector
+### ~~10.1 Project Target Clients Selector~~ DONE
 **What:** Add a multi-select "Target Email Clients" field to project creation and project settings forms. Populated from the ontology's 25 email clients. Persists to the existing `target_clients` JSON column on `Project`. Shows client icons, engine type (WebKit/Blink/Word), and market share from ontology data.
 **Why:** `target_clients` drives audience profiles (9.1), onboarding subgraphs (9.5), failure pattern filtering (9.4), and blueprint route selection (9.6). Without this field in the UI, none of those features activate — they all depend on knowing which clients the project targets.
 **Implementation:**

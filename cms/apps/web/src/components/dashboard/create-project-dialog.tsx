@@ -27,6 +27,7 @@ import type { AgentMode } from "@/types/chat";
 import { AGENT_LABEL_KEYS } from "@/types/chat";
 import type { ConnectorPlatform } from "@/types/connectors";
 import type { ProjectCategory, CreationMethod } from "@/types/projects";
+import { TargetClientsSelector } from "@/components/projects/target-clients-selector";
 
 /** Agents available for project kickoff (excludes generic "chat") */
 const PROJECT_AGENTS: AgentMode[] = [
@@ -123,6 +124,7 @@ export function CreateProjectDialog({
   const [selectedComponents, setSelectedComponents] = useState<number[]>([]);
   const [cloneProjectId, setCloneProjectId] = useState<number | null>(null);
   const [figmaUrl, setFigmaUrl] = useState("");
+  const [targetClients, setTargetClients] = useState<string[]>([]);
 
   // Reset form when dialog opens (React 19 pattern — no useEffect)
   const [prevOpen, setPrevOpen] = useState(false);
@@ -138,6 +140,7 @@ export function CreateProjectDialog({
     setSelectedComponents([]);
     setCloneProjectId(null);
     setFigmaUrl("");
+    setTargetClients([]);
   }
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -165,6 +168,7 @@ export function CreateProjectDialog({
         name: name.trim(),
         description: description.trim() || undefined,
         client_org_id: clientOrgId,
+        target_clients: targetClients.length > 0 ? targetClients : undefined,
       });
       // Revalidate projects list
       await mutate(
@@ -340,6 +344,21 @@ export function CreateProjectDialog({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Target Email Clients */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              {t("newProjectTargetClients")}
+            </label>
+            <TargetClientsSelector
+              selected={targetClients}
+              onChange={setTargetClients}
+              disabled={isMutating}
+            />
+            <p className="mt-1 text-xs text-foreground-muted">
+              {t("newProjectTargetClientsHint")}
+            </p>
           </div>
 
           {/* Figma File URL (optional) */}

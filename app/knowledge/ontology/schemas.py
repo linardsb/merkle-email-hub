@@ -5,6 +5,17 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
+class EmailClientResponse(BaseModel):
+    """Public email client metadata from ontology."""
+
+    id: str
+    name: str
+    family: str
+    platform: str
+    engine: str
+    market_share: float
+
+
 class CapabilityFeasibilityResponse(BaseModel):
     """A single capability's feasibility and competitive status."""
 

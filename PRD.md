@@ -82,9 +82,11 @@
 | 9.6 | Graph-informed blueprint route selection | `route_advisor.py` — `RoutingPlan` with `build_routing_plan()` analysing audience profile + content keywords for node skip/add; engine pre-execution routing with `skip_nodes` set; `RoutingDecisionResponse` in API; 724 lines tests |
 | 9.7 | Competitive intelligence graph | `competitive_feasibility.py` — audience-aware feasibility scoring cross-referencing CSS support with competitor capabilities; `GET /api/v1/ontology/competitive-report` + `/text` endpoints (auth + rate limited); LAYER 10 enhanced with audience coverage data; `build_audience_competitive_context()` wrapper; 35 new tests |
 
+| 10.1 | Project target clients selector | `target-clients-selector.tsx` searchable multi-select with engine badges + market share; `GET /api/v1/ontology/clients` endpoint (25 clients from registry, rate limited, auth); `useEmailClients` + `useUpdateProject` SWR hooks; create-project-dialog integration; project card client badges; workspace toolbar display; i18n keys (dashboard + projects namespaces); SDK types updated; 4 backend tests |
+
 ### In Progress
 
-**Remaining:** Human label calibration (540 rows for TPR/TNR).
+**Remaining:** Phase 10 full-stack integration (10.2–10.6), human label calibration (540 rows for TPR/TNR).
 
 ### Infrastructure Built
 

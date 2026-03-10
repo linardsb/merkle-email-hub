@@ -337,6 +337,10 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - [x] 9.7 Competitive intelligence graph (`competitive_feasibility.py` — audience-aware feasibility scoring, `GET /api/v1/ontology/competitive-report` endpoint, LAYER 10 enhanced with audience coverage, 35 tests)
 - [x] 9.8 SKILL.md A/B testing via eval system (`skill_override.py` runtime registry, `skill_ab.py` A/B runner CLI, all 9 prompt.py files wired, `make eval-skill-test`, 17 tests)
 
+### Phase 10 — Full-Stack Agent Workflow (Frontend Integration)
+Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 backend complete, Phase 0-3 frontend foundation.
+- [x] 10.1 Project target clients selector (`target-clients-selector.tsx` multi-select, `GET /api/v1/ontology/clients` endpoint, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar integration, project card badges, i18n keys, 4 backend tests)
+
 ## Feature Scope by Stack
 
 ### Backend Features (for `be-prime`)
@@ -350,7 +354,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection, project subgraph context (LAYER 8), graph-informed route selection (`route_advisor.py` — audience-aware node skipping/addition), audience-aware competitive feasibility (LAYER 10)
-- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`); `app/knowledge/ontology/competitive_feasibility.py` audience-aware competitive reports (`GET /api/v1/ontology/competitive-report`)
+- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`); `app/knowledge/ontology/competitive_feasibility.py` audience-aware competitive reports (`GET /api/v1/ontology/competitive-report`); `GET /api/v1/ontology/clients` lists all 25 email clients for frontend selectors
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5); SKILL.md A/B testing (`skill_ab.py` + `skill_override.py` runtime override registry, `make eval-skill-test`)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`
@@ -377,6 +381,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Visual Liquid Builder: @dnd-kit drag-and-drop blocks, regex parser/serializer, Code/Visual tabs
 - Rendering Tests: `/renderings` page with test list, stats cards, compatibility matrix, screenshot dialog, visual regression comparison, async polling
 - Collaborative Editing: Yjs CRDT, y-codemirror.next, collaborator avatars, connection status
+- Target Clients Selector: `target-clients-selector.tsx` multi-select with engine badges, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar + project card badges
 
 ## Compact instructions
 

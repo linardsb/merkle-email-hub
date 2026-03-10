@@ -419,6 +419,7 @@ export default function WorkspacePage() {
         onGenerateImage={() => setImageGenOpen(true)}
         collaborators={collaborators}
         collaborationStatus={collabStatus}
+        targetClients={project.target_clients}
       />
 
       <div className="flex flex-1 overflow-hidden">

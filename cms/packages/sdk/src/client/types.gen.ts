@@ -536,6 +536,10 @@ export type ProjectCreate = {
      * Client organization ID
      */
     client_org_id: number;
+    /**
+     * Target email client IDs from ontology
+     */
+    target_clients?: Array<string> | null;
 };
 
 export type ProjectResponse = {
@@ -557,6 +561,10 @@ export type ProjectResponse = {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+    /**
+     * Target email client IDs from ontology
+     */
+    target_clients?: Array<string> | null;
 };
 
 export type ProjectUpdate = {
@@ -564,6 +572,22 @@ export type ProjectUpdate = {
     description?: string | null;
     status?: string | null;
     is_active?: boolean | null;
+    /**
+     * Target email client IDs from ontology
+     */
+    target_clients?: Array<string> | null;
+};
+
+/**
+ * Public email client metadata from ontology.
+ */
+export type EmailClientResponse = {
+    id: string;
+    name: string;
+    family: string;
+    platform: string;
+    engine: string;
+    market_share: number;
 };
 
 /**

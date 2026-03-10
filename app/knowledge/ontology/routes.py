@@ -13,12 +13,36 @@ from app.knowledge.ontology.schemas import (
     CapabilityFeasibilityResponse,
     CompetitiveReportResponse,
     CompetitiveReportTextResponse,
+    EmailClientResponse,
 )
 
 if TYPE_CHECKING:
     from app.knowledge.ontology.competitive_feasibility import CapabilityFeasibility
 
 router = APIRouter(prefix="/api/v1/ontology", tags=["ontology"])
+
+
+@router.get("/clients", response_model=list[EmailClientResponse])
+@limiter.limit("30/minute")
+async def list_email_clients(
+    request: Request,  # noqa: ARG001
+    current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001
+) -> list[EmailClientResponse]:
+    """List all email clients from the ontology registry."""
+    from app.knowledge.ontology.registry import load_ontology
+
+    registry = load_ontology()
+    return [
+        EmailClientResponse(
+            id=c.id,
+            name=c.name,
+            family=c.family,
+            platform=c.platform,
+            engine=c.engine.value,
+            market_share=c.market_share,
+        )
+        for c in registry.clients
+    ]
 
 
 def _to_response(f: CapabilityFeasibility) -> CapabilityFeasibilityResponse:
