@@ -258,3 +258,12 @@ def load_ontology() -> OntologyRegistry:
         fallbacks=len(fallbacks),
     )
     return registry
+
+
+def reload_ontology() -> OntologyRegistry:
+    """Clear cache and reload ontology from YAML files.
+
+    Used after sync updates YAML data on disk.
+    """
+    load_ontology.cache_clear()
+    return load_ontology()

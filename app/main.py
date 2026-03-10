@@ -105,9 +105,25 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("blueprint.outcome_poller_start_failed", exc_info=True)
 
+    # Start Can I Email ontology sync poller
+    caniemail_poller = None
+    if settings.ontology_sync.enabled:
+        try:
+            from app.knowledge.ontology.sync.poller import CanIEmailSyncPoller
+
+            caniemail_poller = CanIEmailSyncPoller()
+            await caniemail_poller.start()
+            logger.info("ontology.sync.poller_started")
+        except Exception:
+            logger.warning("ontology.sync.poller_start_failed", exc_info=True)
+
     yield
 
     # Shutdown
+
+    if caniemail_poller is not None:
+        await caniemail_poller.stop()
+        logger.info("ontology.sync.poller_stopped")
 
     if outcome_poller is not None:
         await outcome_poller.stop()

@@ -902,7 +902,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **What:** Extensions that leverage the knowledge graph (Phase 8) across the entire Hub — connecting personas, components, blueprints, competitive intelligence, and skill evolution into a self-improving system.
 **Dependencies:** Phase 8 core (8.1-8.6) must be operational. Phase 5 evals providing baseline data.
 
-### 9.1 Graph-Powered Client Audience Profiles
+### ~~9.1 Graph-Powered Client Audience Profiles~~ DONE
 **What:** Connect the Test Persona Engine (`app/personas/`) to the knowledge graph. When a persona specifies "iPhone 15 + Apple Mail 18 + Dark Mode," the graph surfaces: which CSS properties are safe, which components have tested dark mode variants, which workarounds are needed — all pre-filtered for that specific audience profile.
 **Why:** Currently agents generate first, then discover breakage during QA. With graph-powered personas, agents receive pre-filtered compatibility context before generation. Eliminates the "generate → QA fail → retry" loop for known compatibility issues.
 **Implementation:**
@@ -914,7 +914,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Persona data is project-scoped (existing RLS). Graph queries read-only. Cached results invalidated on graph update.
 **Verify:** Selecting "Outlook 2019 + Windows + Dark Mode" persona injects structured compatibility constraints into agent context. Agent output avoids known unsupported CSS properties without needing QA to catch them. Measurable reduction in QA retry loops vs Phase 8 baseline.
 
-### 9.2 Can I Email Live Sync
+### ~~9.2 Can I Email Live Sync~~ DONE
 **What:** Periodic sync job that pulls fresh data from the Can I Email API/database, diffs against existing graph entities, and updates the knowledge graph and ontology automatically.
 **Why:** Knowledge base is currently seeded once via `make seed-knowledge`. Can I Email updates regularly (new client versions, updated support data). Stale compatibility data means agents give wrong advice. Live sync ensures agents always work with current data.
 **Implementation:**

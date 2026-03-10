@@ -118,6 +118,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 
 - `AI__PROVIDER`, `AI__MODEL`, `AI__API_KEY`, `AI__MODEL_COMPLEX`, `AI__MODEL_STANDARD`, `AI__MODEL_LIGHTWEIGHT`
 - `COGNEE__ENABLED`, `COGNEE__GRAPH_DB_PROVIDER`, `COGNEE__LLM_PROVIDER` (inherits AI config if empty)
+- `ONTOLOGY_SYNC__ENABLED`, `ONTOLOGY_SYNC__INTERVAL_HOURS` (default 168/weekly), `ONTOLOGY_SYNC__GITHUB_TOKEN` (optional, for rate limits)
 
 
 ### Shared Utilities
@@ -324,8 +325,8 @@ Replace flat RAG with graph-structured knowledge using Cognee. Agents get struct
 
 ### Phase 9 — Graph-Driven Intelligence Layer
 Leverages Phase 8 knowledge graph across the entire Hub — personas, components, blueprints, competitive intel, skill evolution. Depends on Phase 8 core operational.
-- [ ] 9.1 Graph-powered client audience profiles (persona → graph compatibility context)
-- [ ] 9.2 Can I Email live sync (periodic graph updates from Can I Email API)
+- [x] 9.1 Graph-powered client audience profiles (`audience_context.py`, persona → ontology bridge, engine/service/6 nodes wired, 15 tests)
+- [x] 9.2 Can I Email live sync (`app/knowledge/ontology/sync/` — `CanIEmailSyncPoller`, GitHub API → YAML diff → graph re-export, 51 tests)
 - [ ] 9.3 Component-to-graph bidirectional linking (QA results → graph entity → component browser badge)
 - [ ] 9.4 Failure pattern propagation across agents (graph-structured cross-agent knowledge sharing)
 - [ ] 9.5 Client-specific subgraphs for project onboarding (auto-generated compatibility briefs)
@@ -346,7 +347,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection
-- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export)
+- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`)
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`

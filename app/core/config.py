@@ -140,6 +140,18 @@ class CogneeConfig(BaseModel):
     background_cognify: bool = True
 
 
+class OntologySyncConfig(BaseModel):
+    """Can I Email ontology sync settings."""
+
+    enabled: bool = False
+    interval_hours: int = 168  # Weekly default
+    github_repo: str = "hteumeuleu/caniemail"
+    github_branch: str = "main"
+    github_token: str = ""  # Optional — increases rate limit from 60/hr to 5000/hr
+    request_timeout_seconds: int = 30
+    max_features_per_sync: int = 500  # Safety cap
+
+
 class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
@@ -197,6 +209,7 @@ class Settings(BaseSettings):
     blueprint: BlueprintConfig = BlueprintConfig()
     ws: WebSocketConfig = WebSocketConfig()
     rendering: RenderingConfig = RenderingConfig()
+    ontology_sync: OntologySyncConfig = OntologySyncConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"
