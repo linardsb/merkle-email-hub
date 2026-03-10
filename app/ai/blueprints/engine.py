@@ -356,6 +356,16 @@ class BlueprintEngine:
 
             context.metadata["audience_context"] = format_audience_context(self._audience_profile)
 
+        # LAYER 8: Project-specific subgraph context (agentic + project_id set + graph available)
+        if (
+            node.node_type == "agentic"
+            and self._project_id is not None
+            and self._graph_provider is not None
+        ):
+            project_subgraph = await self._search_project_subgraph(brief)
+            if project_subgraph:
+                context.metadata["project_subgraph"] = project_subgraph
+
         return context
 
     async def _recall_memories(self, brief: str) -> list[dict[str, str]]:
@@ -419,6 +429,40 @@ class BlueprintEngine:
                 exc_info=True,
             )
             return []
+
+    async def _search_project_subgraph(self, brief: str) -> str | None:
+        """Search the project-specific onboarding subgraph for relevant constraints.
+
+        Returns formatted context string or None if no results.
+        Failure-safe: returns None on errors.
+        """
+        if self._graph_provider is None or self._project_id is None:
+            return None
+        try:
+            dataset = f"project_onboarding_{self._project_id}"
+            # dataset_name is supported by CogneeGraphProvider but not in the Protocol
+            results = await self._graph_provider.search(  # type: ignore[call-arg]
+                f"email client compatibility constraints for: {brief}",
+                dataset_name=dataset,
+                top_k=5,
+            )
+            if not results:
+                return None
+
+            from app.ai.blueprints.graph_context import format_graph_context
+
+            formatted = format_graph_context(results)
+            return formatted.replace(
+                "--- GRAPH KNOWLEDGE CONTEXT ---",
+                "--- PROJECT COMPATIBILITY CONTEXT ---",
+            )
+        except Exception:
+            logger.debug(
+                "blueprint.project_subgraph_search_failed",
+                project_id=self._project_id,
+                exc_info=True,
+            )
+            return None
 
     def _build_progress_anchor(self, run: BlueprintRun) -> str:
         """Build compact progress summary for agentic retry context."""

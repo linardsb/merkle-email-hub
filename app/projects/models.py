@@ -1,6 +1,6 @@
 """Database models for client organizations and projects."""
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -36,6 +36,9 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
     )
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    target_clients: Mapped[list[str] | None] = mapped_column(
+        JSON, nullable=True, default=None, comment="Ontology client IDs for target audience"
+    )
 
     client_org: Mapped[ClientOrg] = relationship(back_populates="projects")
 

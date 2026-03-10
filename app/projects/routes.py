@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.database import get_db
+from app.core.exceptions import DomainValidationError
 from app.core.rate_limit import limiter
 from app.projects.schemas import (
     ClientOrgCreate,
@@ -126,6 +127,32 @@ async def update_project(
     """Update a project."""
     _ = request
     return await service.update_project(project_id, data, current_user)
+
+
+@router.post("/projects/{project_id}/onboarding-brief", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("5/minute")
+async def regenerate_onboarding_brief(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> dict[str, str]:
+    """Regenerate the client-specific compatibility subgraph for this project."""
+    _ = request
+    project = await service.verify_project_access(project_id, current_user)
+
+    if not project.target_clients:
+        raise DomainValidationError("Project has no target clients configured")
+
+    from app.projects.onboarding import generate_and_store_subgraph
+
+    await generate_and_store_subgraph(
+        project_id=project_id,
+        project_name=project.name,
+        client_ids=project.target_clients,
+    )
+
+    return {"status": "accepted", "message": "Onboarding brief regeneration started"}
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

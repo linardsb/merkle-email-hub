@@ -105,6 +105,17 @@ class ProjectService:
         project = await self.projects.create(data, created_by_id=user_id)
         await self.projects.add_member(project.id, user_id, role="admin")
         logger.info("projects.create_completed", project_id=project.id)
+
+        # Fire-and-forget: generate client-specific subgraph if target clients specified
+        if data.target_clients:
+            from app.projects.onboarding import generate_and_store_subgraph
+
+            await generate_and_store_subgraph(
+                project_id=project.id,
+                project_name=data.name,
+                client_ids=data.target_clients,
+            )
+
         return ProjectResponse.model_validate(project)
 
     async def update_project(
@@ -116,6 +127,17 @@ class ProjectService:
         if not project:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         project = await self.projects.update(project, data)
+
+        # Regenerate subgraph if target_clients changed
+        if data.target_clients is not None:
+            from app.projects.onboarding import generate_and_store_subgraph
+
+            await generate_and_store_subgraph(
+                project_id=project_id,
+                project_name=project.name,
+                client_ids=data.target_clients,
+            )
+
         return ProjectResponse.model_validate(project)
 
     async def delete_project(self, project_id: int, user: User) -> None:

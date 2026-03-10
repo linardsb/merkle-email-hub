@@ -146,7 +146,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 
 | Module | API Prefix | Purpose |
 |--------|-----------|---------|
-| `projects` | `/api/v1/projects`, `/api/v1/orgs` | Multi-tenant client org isolation, project workspaces |
+| `projects` | `/api/v1/projects`, `/api/v1/orgs` | Multi-tenant client org isolation, project workspaces, onboarding subgraphs |
 | `email_engine` | `/api/v1/email` | Maizzle build pipeline, calls sidecar at `http://maizzle-builder:3001` |
 | `components` | `/api/v1/components` | Versioned reusable email components (header, CTA, hero, etc.) |
 | `qa_engine` | `/api/v1/qa` | 10-point quality gate system with individual check modules |
@@ -327,9 +327,9 @@ Replace flat RAG with graph-structured knowledge using Cognee. Agents get struct
 Leverages Phase 8 knowledge graph across the entire Hub — personas, components, blueprints, competitive intel, skill evolution. Depends on Phase 8 core operational.
 - [x] 9.1 Graph-powered client audience profiles (`audience_context.py`, persona → ontology bridge, engine/service/6 nodes wired, 15 tests)
 - [x] 9.2 Can I Email live sync (`app/knowledge/ontology/sync/` — `CanIEmailSyncPoller`, GitHub API → YAML diff → graph re-export, 51 tests)
-- [ ] 9.3 Component-to-graph bidirectional linking (QA results → graph entity → component browser badge)
+- [x] 9.3 Component-to-graph bidirectional linking (`qa_bridge.py` + `graph_export.py`, `ComponentQAResult` join model, 2 new endpoints, compatibility badge on `ComponentResponse`, 20 tests)
 - [ ] 9.4 Failure pattern propagation across agents (graph-structured cross-agent knowledge sharing)
-- [ ] 9.5 Client-specific subgraphs for project onboarding (auto-generated compatibility briefs)
+- [x] 9.5 Client-specific subgraphs for project onboarding (`onboarding.py` generates scoped docs from ontology, `target_clients` JSON column, LAYER 8 engine context, `POST .../onboarding-brief` endpoint, 14 tests)
 - [ ] 9.6 Graph-informed blueprint route selection (dynamic node skipping/addition based on audience)
 - [ ] 9.7 Competitive intelligence graph (competitor capabilities in ontology for Innovation Agent)
 - [ ] 9.8 SKILL.md A/B testing via eval system (empirical skill evolution with eval validation)
@@ -338,15 +338,15 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 
 ### Backend Features (for `be-prime`)
 - Auth: JWT HS256, RBAC (admin/developer/viewer), token revocation, brute-force protection
-- Projects: ClientOrg, Project, ProjectMember models + RLS
+- Projects: ClientOrg, Project, ProjectMember models + RLS; `target_clients` JSON column; `onboarding.py` auto-generates client-specific compatibility subgraphs (Cognee dataset per project); `POST .../onboarding-brief` for manual refresh
 - Email Engine: Maizzle build orchestration via sidecar
-- Components: versioned component library with dark mode variants
+- Components: versioned component library with dark mode variants; QA bridge (`qa_bridge.py`) runs QA + extracts per-client compatibility; graph export (`graph_export.py`) for Cognee; `ComponentQAResult` join model; `compatibility_badge` on responses
 - QA Engine: 10-point check system in `app/qa_engine/checks/`
 - Connectors: 4 ESP connectors (Braze, SFMC, Adobe Campaign, Taxi) via ConnectorProvider Protocol + AES-256 credential storage
 - Approval: ApprovalRequest, Feedback, AuditEntry models + workflow
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
-- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection
+- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection, project subgraph context (LAYER 8)
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`)
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)

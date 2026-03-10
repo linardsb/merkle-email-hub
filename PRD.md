@@ -3,9 +3,9 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 4.4
+**Version:** 4.5
 **Date:** 2026-03-10
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7 complete (7.1-7.6 all done); Phase 8 Knowledge Graph Integration COMPLETE (8.1-8.6 all done — Cognee integration, graph seeding, graph context provider, outcome logging, all 9 SKILL.md files, email development ontology with 365 CSS properties); remaining: human label calibration (540 rows), Phase 9 graph-driven intelligence
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7 complete (7.1-7.6 all done); Phase 8 Knowledge Graph Integration COMPLETE (8.1-8.6 all done); Phase 9.1-9.3 complete (audience profiles, Can I Email live sync, component-graph linking); Phase 9.5 complete (client-specific onboarding subgraphs); remaining: human label calibration (540 rows), Phase 9.4, 9.6-9.8 graph-driven intelligence
 
 ---
 
@@ -75,10 +75,12 @@
 | 8.6 | Email development ontology | `app/knowledge/ontology/` — 365 CSS properties across 14 categories, 25 email clients, 1011 support entries, 70 fallback patterns; `OntologyRegistry` singleton with indexed lookups; `unsupported_css_in_html()` powers QA `css_support` check (replaced hardcoded rules); `export_ontology_documents()` generates Cognee graph documents; `_seed_ontology_graph()` wired into seed pipeline; 51 new tests (661 total) |
 | 9.1 | Graph-powered client audience profiles | `app/ai/blueprints/audience_context.py` bridges persona system to ontology registry; resolves persona email clients → CSS constraints + fallback suggestions; `AudienceProfile` injected into blueprint engine context + all 6 agentic nodes; `BlueprintRequest.persona_ids` + `BlueprintResponse.audience_summary`; 15 tests |
 | 9.2 | Can I Email live sync | `app/knowledge/ontology/sync/` — `CanIEmailClient` (GitHub Trees API, frontmatter parser), `compute_diff()` (new/updated/unchanged detection), `apply_sync()` (YAML writer with cache invalidation), `CanIEmailSyncPoller` (DataPoller with SHA-based skip + Cognee re-export); `OntologySyncConfig` (weekly default); 51 sync tests (686 total) |
+| 9.3 | Component-to-graph bidirectional linking | `app/components/qa_bridge.py` (QA → per-client compatibility extraction via ontology), `app/components/graph_export.py` (Cognee ECL documents), `ComponentQAResult` join model with cascade FKs, `POST .../qa` + `GET .../compatibility` endpoints, `compatibility_badge` on `ComponentResponse`, sync poller re-exports components after ontology changes; 20 new tests (747 total) |
+| 9.5 | Client-specific subgraphs for project onboarding | `app/projects/onboarding.py` generates scoped compatibility documents (brief, per-client profiles, cross-client risk matrix) from ontology; `target_clients` JSON column on Project model; fire-and-forget Cognee ingestion on create/update; `POST /api/v1/projects/{id}/onboarding-brief` for manual refresh (auth + rate limited); LAYER 8 in blueprint engine injects project subgraph context for agentic nodes; `ClientId` constrained type with regex validation; Alembic migration; 14 new tests (761 total) |
 
 ### In Progress
 
-**Remaining:** Human label calibration (540 rows for TPR/TNR). Phase 9.3–9.8 graph-driven intelligence features.
+**Remaining:** Human label calibration (540 rows for TPR/TNR). Phase 9.4, 9.6–9.8 graph-driven intelligence features.
 
 ### Infrastructure Built
 
@@ -90,7 +92,7 @@
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (686 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests + 80 agent tests + 8 graph knowledge tests + 19 outcome logging tests + 51 ontology tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (761 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests + 80 agent tests + 8 graph knowledge tests + 19 outcome logging tests + 51 ontology tests + 15 audience context tests + 51 ontology sync tests + 20 component QA tests + 14 onboarding subgraph tests); Frontend Vitest + React Testing Library (`make test-fe`)
 - **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); CI quality gate (`.github/workflows/ci.yml` — lint + types + security-check + tests); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6; PR security checklist template (`.github/PULL_REQUEST_TEMPLATE.md`)
 
 ---

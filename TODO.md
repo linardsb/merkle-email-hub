@@ -928,16 +928,20 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Can I Email is public data. Sync job runs with read-only external access. Graph writes scoped to knowledge domain (no user data).
 **Verify:** After sync, new email client version appears in graph. Agents querying that client get updated compatibility data. Sync report shows meaningful diffs.
 
-### 9.3 Component-to-Graph Bidirectional Linking
+### ~~9.3 Component-to-Graph Bidirectional Linking~~ DONE
 **What:** When a component is created, updated, or tested in `app/components/`, automatically create/update its entity in the knowledge graph with: supported email clients (from QA test results), known quirks (from QA failures), dark mode variant status, and rendering engine compatibility. Reverse direction: graph insights surface as component metadata in the component browser UI.
 **Why:** Component metadata is currently static (version, description). The graph can enrich this with real test data — "this CTA component passed QA in 18/20 clients, fails in Outlook 2016 VML and Samsung Mail 14." Agents using components get real compatibility data, not just static descriptions.
 **Implementation:**
-- Post-save hook on `ComponentVersion` model → creates/updates graph entity via Cognee
-- QA results from `app/qa_engine/` feed into component's graph node as test relationships
-- Component browser UI (`/components`) shows graph-derived compatibility badge (green/amber/red per client)
-- Graph query from component entity returns: tested clients, pass/fail status, known workarounds, dark mode variant availability
-- Bidirectional: component detail page pulls live graph data; graph entity links back to component version
-**Security:** Component data is project-scoped. Graph entities inherit project scope. QA results are non-sensitive.
+- `app/components/qa_bridge.py` — `extract_compatibility()` maps HTML CSS issues to per-client levels (full/partial/none) via ontology; `run_component_qa()` runs full QA gate + stores `ComponentQAResult` join model
+- `app/components/graph_export.py` — `export_component_documents()` generates Cognee ECL-friendly docs with compatibility profiles and CSS issue details
+- `ComponentQAResult` join model links `ComponentVersion` → `QAResult` with denormalised compatibility JSON; cascade delete on both FKs
+- `POST /api/v1/components/{id}/versions/{v}/qa` (developer, 10/min) triggers QA + compatibility extraction
+- `GET /api/v1/components/{id}/compatibility` (authenticated, 30/min) returns per-client support breakdown
+- `ComponentResponse.compatibility_badge` (full/partial/issues) populated from latest QA data
+- `CanIEmailSyncPoller._refresh_graph()` re-exports component documents after ontology sync
+- Alembic migration `a1b2c3d4e5f6` for `component_qa_results` table
+- 20 new tests (qa_bridge: 5, graph_export: 5, compatibility: 10); 747 total backend tests
+**Security:** Both new endpoints have auth + rate limiting. Error responses use `AppError` hierarchy (auto-sanitized). Component data is project-scoped. Graph entities inherit project scope.
 **Verify:** Creating a component and running QA creates a graph entity with test results. Component browser shows compatibility badge. Agent using the component receives graph-derived quirk warnings.
 
 ### 9.4 Failure Pattern Propagation Across Agents
@@ -952,7 +956,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Failure patterns contain technical details only (CSS properties, email clients). No user/client data. Project-scoped when client-specific, org-scoped when universal.
 **Verify:** Dark Mode agent discovers Samsung Mail failure. Scaffolder agent working on a Samsung Mail-targeting template receives the failure pattern in context without explicit configuration. Pattern appears in SKILL.md growth proposals after threshold observations.
 
-### 9.5 Client-Specific Subgraphs for Project Onboarding
+### ~~9.5 Client-Specific Subgraphs for Project Onboarding~~ DONE
 **What:** When a new project is created for a client, auto-generate a project-specific subgraph: the client's target email clients (from persona data) → their supported CSS properties → known workarounds → recommended components → historical failure patterns. This becomes the project's "compatibility brief."
 **Why:** New developers on a project currently have no structured context about which email clients matter for that client, what works, and what doesn't. The subgraph gives instant onboarding context. Agents working on the project start with pre-loaded domain knowledge instead of discovering constraints through trial and error.
 **Implementation:**
