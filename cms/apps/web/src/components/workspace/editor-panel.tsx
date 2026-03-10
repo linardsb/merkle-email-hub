@@ -51,9 +51,10 @@ interface EditorPanelProps {
   readOnly?: boolean;
   brandConfig?: BrandConfig | null;
   onBrandViolationsChange?: (count: number) => void;
+  onCursorOffsetChange?: (offset: number) => void;
 }
 
-export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange }: EditorPanelProps) {
+export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange }: EditorPanelProps) {
   const t = useTranslations("workspace");
   const [activeTab, setActiveTab] = useState<EditorTab>("code");
 
@@ -96,6 +97,7 @@ export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, bra
             readOnly={readOnly}
             brandConfig={brandConfig}
             onBrandViolationsChange={onBrandViolationsChange}
+            onCursorOffsetChange={onCursorOffsetChange}
           />
         ) : (
           <LiquidBuilderPanel code={value} onCodeChange={onChange} />

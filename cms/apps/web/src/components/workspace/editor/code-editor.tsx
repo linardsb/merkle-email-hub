@@ -22,6 +22,7 @@ interface CodeEditorProps {
   readOnly?: boolean;
   brandConfig?: BrandConfig | null;
   onBrandViolationsChange?: (count: number) => void;
+  onCursorOffsetChange?: (offset: number) => void;
 }
 
 const wrapCompartment = new Compartment();
@@ -34,12 +35,15 @@ export function CodeEditor({
   readOnly,
   brandConfig,
   onBrandViolationsChange,
+  onCursorOffsetChange,
 }: CodeEditorProps) {
   const { resolvedTheme } = useTheme();
   const t = useTranslations("workspace");
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const onSaveRef = useRef(onSave);
   onSaveRef.current = onSave;
+  const onCursorOffsetChangeRef = useRef(onCursorOffsetChange);
+  onCursorOffsetChangeRef.current = onCursorOffsetChange;
 
   const [line, setLine] = useState(1);
   const [col, setCol] = useState(1);
@@ -77,6 +81,7 @@ export function CodeEditor({
         const lineInfo = update.state.doc.lineAt(pos);
         setLine(lineInfo.number);
         setCol(pos - lineInfo.from + 1);
+        onCursorOffsetChangeRef.current?.(pos);
       }),
       EditorView.theme({
         "&": {

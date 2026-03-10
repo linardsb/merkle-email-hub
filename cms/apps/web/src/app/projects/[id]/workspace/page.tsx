@@ -114,6 +114,7 @@ export default function WorkspacePage() {
   const [savedContent, setSavedContent] = useState(DEFAULT_TEMPLATE);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cursorOffsetRef = useRef<number>(0);
 
   // ── Preview State ──
   const [compiledHtml, setCompiledHtml] = useState<string | null>(null);
@@ -379,7 +380,10 @@ export default function WorkspacePage() {
   const handleInsertImage = useCallback(
     (url: string, width: number, height: number, alt: string) => {
       const imgTag = `<img src="${url}" alt="${alt}" width="${width}" height="${height}" style="max-width: 100%; height: auto;" />`;
-      setEditorContent((prev) => prev + "\n" + imgTag);
+      setEditorContent((prev) => {
+        const offset = Math.min(cursorOffsetRef.current, prev.length);
+        return prev.slice(0, offset) + imgTag + prev.slice(offset);
+      });
       setSaveStatus("idle");
       toast.success(t("chatApplied"));
     },
@@ -451,6 +455,7 @@ export default function WorkspacePage() {
                   saveStatus={effectiveSaveStatus}
                   brandConfig={brandConfig}
                   onBrandViolationsChange={setBrandViolations}
+                  onCursorOffsetChange={(offset) => { cursorOffsetRef.current = offset; }}
                 />
               </Panel>
 
