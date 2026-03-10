@@ -397,7 +397,20 @@ class BlueprintEngine:
             if project_subgraph:
                 context.metadata["project_subgraph"] = project_subgraph
 
-        # LAYER 9: Competitive context (innovation node + keyword triggered)
+        # LAYER 9: Cross-agent failure patterns (agentic + audience profile available)
+        if node.node_type == "agentic" and self._audience_profile is not None:
+            from app.ai.blueprints.failure_patterns import recall_failure_patterns
+
+            agent_for_node = node.name.removesuffix("_node")
+            failure_context = await recall_failure_patterns(
+                agent_name=agent_for_node,
+                client_ids=self._audience_profile.client_ids,
+                project_id=self._project_id,
+            )
+            if failure_context:
+                context.metadata["failure_patterns"] = failure_context
+
+        # LAYER 10: Competitive context (innovation node + keyword triggered)
         if node.node_type == "agentic" and node.name == "innovation":
             from app.ai.blueprints.competitor_context import (
                 build_competitive_context,

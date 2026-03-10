@@ -114,12 +114,16 @@ class BlueprintService:
         # Post-run: log outcome to graph queue + memory (fire-and-forget)
         try:
             from app.ai.blueprints.outcome_logger import (
+                extract_and_store_failure_patterns,
                 persist_outcome_to_memory,
                 queue_outcome_for_graph,
             )
 
             await queue_outcome_for_graph(bp_run, definition.name, project_id)
             await persist_outcome_to_memory(bp_run, definition.name, project_id)
+            await extract_and_store_failure_patterns(
+                bp_run, definition.name, project_id, audience_profile
+            )
         except Exception:
             logger.warning(
                 "blueprint.outcome_logging_failed",

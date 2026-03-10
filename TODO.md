@@ -944,7 +944,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Both new endpoints have auth + rate limiting. Error responses use `AppError` hierarchy (auto-sanitized). Component data is project-scoped. Graph entities inherit project scope.
 **Verify:** Creating a component and running QA creates a graph entity with test results. Component browser shows compatibility badge. Agent using the component receives graph-derived quirk warnings.
 
-### 9.4 Failure Pattern Propagation Across Agents
+### ~~9.4 Failure Pattern Propagation Across Agents~~ DONE
 **What:** When any agent discovers a failure pattern (e.g., Dark Mode agent finds "Samsung Mail strips `color-scheme` meta tag"), this is stored as a graph relationship — not just an agent memory entry. Every agent that subsequently touches Samsung Mail compatibility automatically gets this knowledge through graph context.
 **Why:** Section 5.6 Layer 6 describes cross-agent memory sharing via project-scoped memory pools. Graph relationships are more powerful — they're structured, queryable, and don't require explicit sharing logic. The graph's structure means propagation is inherent in the data model.
 **Implementation:**

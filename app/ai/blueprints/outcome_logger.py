@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from app.core.logging import get_logger
 
 if TYPE_CHECKING:
+    from app.ai.blueprints.audience_context import AudienceProfile
     from app.ai.blueprints.engine import BlueprintRun
 
 logger = get_logger(__name__)
@@ -168,6 +169,45 @@ async def persist_outcome_to_memory(
     except Exception:
         logger.warning(
             "blueprint.outcome_memory_failed",
+            run_id=run.run_id,
+            exc_info=True,
+        )
+
+
+async def extract_and_store_failure_patterns(
+    run: BlueprintRun,
+    blueprint_name: str,
+    project_id: int | None,
+    audience_profile: AudienceProfile | None = None,
+) -> None:
+    """Extract failure patterns from a completed run and store for cross-agent discovery.
+
+    Fire-and-forget: errors are logged but never propagated.
+    """
+    try:
+        from app.ai.blueprints.failure_patterns import (
+            export_failure_patterns_to_graph,
+            extract_failure_patterns,
+            persist_failure_patterns,
+        )
+
+        patterns = extract_failure_patterns(run, blueprint_name, audience_profile)
+        if not patterns:
+            return
+
+        # Dual persistence: memory (pgvector) + graph (Cognee)
+        await persist_failure_patterns(patterns, project_id)
+        await export_failure_patterns_to_graph(patterns, project_id)
+
+        logger.info(
+            "failure_patterns.extracted",
+            count=len(patterns),
+            run_id=run.run_id,
+            blueprint_name=blueprint_name,
+        )
+    except Exception:
+        logger.warning(
+            "failure_patterns.extraction_failed",
             run_id=run.run_id,
             exc_info=True,
         )

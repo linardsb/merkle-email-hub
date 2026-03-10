@@ -330,7 +330,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - [x] 9.1 Graph-powered client audience profiles (`audience_context.py`, persona → ontology bridge, engine/service/6 nodes wired, 15 tests)
 - [x] 9.2 Can I Email live sync (`app/knowledge/ontology/sync/` — `CanIEmailSyncPoller`, GitHub API → YAML diff → graph re-export, 51 tests)
 - [x] 9.3 Component-to-graph bidirectional linking (`qa_bridge.py` + `graph_export.py`, `ComponentQAResult` join model, 2 new endpoints, compatibility badge on `ComponentResponse`, 20 tests)
-- [ ] 9.4 Failure pattern propagation across agents (graph-structured cross-agent knowledge sharing)
+- [x] 9.4 Failure pattern propagation across agents (`failure_patterns.py` — extract from QA failures + handoff history, dual persist to memory + graph, recall into engine LAYER 9 by agent + client_ids, 27 tests)
 - [x] 9.5 Client-specific subgraphs for project onboarding (`onboarding.py` generates scoped docs from ontology, `target_clients` JSON column, LAYER 8 engine context, `POST .../onboarding-brief` endpoint, 14 tests)
 - [ ] 9.6 Graph-informed blueprint route selection (dynamic node skipping/addition based on audience)
 - [ ] 9.7 Competitive intelligence graph (competitor capabilities in ontology for Innovation Agent)
