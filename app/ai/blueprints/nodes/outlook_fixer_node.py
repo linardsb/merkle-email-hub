@@ -136,6 +136,9 @@ class OutlookFixerNode:
         component_ctx = context.metadata.get("component_context", "")
         if component_ctx:
             parts.append(f"\n\n{component_ctx}")
+        audience_ctx = context.metadata.get("audience_context", "")
+        if audience_ctx:
+            parts.append(f"\n\n{audience_ctx}")
         graph_ctx = context.metadata.get("graph_context", "")
         if graph_ctx:
             parts.append(f"\n\n{graph_ctx}")

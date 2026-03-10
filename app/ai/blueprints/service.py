@@ -17,6 +17,7 @@ from app.ai.blueprints.schemas import (
     HandoffSummary,
 )
 from app.core.logging import get_logger
+from app.personas.schemas import PersonaResponse
 
 logger = get_logger(__name__)
 
@@ -56,6 +57,27 @@ class BlueprintService:
         raw_project_id = request.options.get("project_id") if request.options else None
         project_id: int | None = int(str(raw_project_id)) if raw_project_id is not None else None
 
+        # Resolve target audience personas
+        from app.ai.blueprints.audience_context import (
+            AudienceProfile,
+            build_audience_profile,
+            format_audience_context,
+        )
+
+        audience_profile: AudienceProfile | None = None
+        if request.persona_ids and db is not None:
+            from app.personas.service import PersonaService
+
+            persona_svc = PersonaService(db)
+            personas: list[PersonaResponse] = []
+            for pid in request.persona_ids:
+                try:
+                    personas.append(await persona_svc.get_persona(pid))
+                except Exception:
+                    logger.warning("blueprint.persona_not_found", persona_id=pid, exc_info=True)
+            if personas:
+                audience_profile = build_audience_profile(personas)
+
         # Wire graph knowledge provider (optional — only if Cognee enabled)
         graph_provider: GraphContextProvider | None = None
         try:
@@ -75,6 +97,7 @@ class BlueprintService:
             on_handoff=persist_handoff_to_memory,
             project_id=project_id,
             graph_provider=graph_provider,
+            audience_profile=audience_profile,
         )
 
         logger.info(
@@ -139,6 +162,9 @@ class BlueprintService:
             model_usage=bp_run.model_usage,
             final_handoff=final_handoff,
             handoff_history=handoff_history,
+            audience_summary=(
+                format_audience_context(audience_profile) if audience_profile else None
+            ),
         )
 
 

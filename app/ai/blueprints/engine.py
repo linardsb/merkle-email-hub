@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
+    from app.ai.blueprints.audience_context import AudienceProfile
     from app.knowledge.graph.protocols import GraphSearchResult
 
 from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
@@ -93,12 +94,14 @@ class BlueprintEngine:
         on_handoff: HandoffMemoryCallback | None = None,
         project_id: int | None = None,
         graph_provider: GraphContextProvider | None = None,
+        audience_profile: "AudienceProfile | None" = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
         self._on_handoff = on_handoff
         self._project_id = project_id
         self._graph_provider = graph_provider
+        self._audience_profile = audience_profile
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -346,6 +349,12 @@ class BlueprintEngine:
                 graph_results = await self._search_graph(brief)
                 if graph_results:
                     context.metadata["graph_context"] = format_graph_context(graph_results)
+
+        # LAYER 7: Audience constraints (agentic + audience profile available)
+        if node.node_type == "agentic" and self._audience_profile is not None:
+            from app.ai.blueprints.audience_context import format_audience_context
+
+            context.metadata["audience_context"] = format_audience_context(self._audience_profile)
 
         return context
 

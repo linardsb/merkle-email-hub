@@ -12,6 +12,10 @@ class BlueprintRunRequest(BaseModel):
     options: dict[str, object] = Field(
         default_factory=dict, description="Blueprint-specific options"
     )
+    persona_ids: list[int] = Field(
+        default_factory=list,
+        description="Target audience persona IDs — agents will adapt output for these clients",
+    )
 
 
 class BlueprintProgress(BaseModel):
@@ -47,3 +51,4 @@ class BlueprintRunResponse(BaseModel):
     model_usage: dict[str, int] = Field(default_factory=dict)
     final_handoff: HandoffSummary | None = None
     handoff_history: list[HandoffSummary] = Field(default_factory=list)
+    audience_summary: str | None = None
