@@ -6,6 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.shared.models import SoftDeleteMixin, TimestampMixin
 
+__all__ = ["Component", "ComponentQAResult", "ComponentVersion"]
+
 
 class Component(Base, TimestampMixin, SoftDeleteMixin):
     """Reusable email component (e.g., header, CTA button, hero block)."""
@@ -46,3 +48,31 @@ class ComponentVersion(Base, TimestampMixin):
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     component: Mapped[Component] = relationship(back_populates="versions")
+    qa_results: Mapped[list["ComponentQAResult"]] = relationship(
+        back_populates="component_version", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class ComponentQAResult(Base, TimestampMixin):
+    """Links a component version to its QA result with denormalised compatibility."""
+
+    __tablename__ = "component_qa_results"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    component_version_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("component_versions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    qa_result_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("qa_results.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # Denormalised compatibility snapshot from css_support check
+    # e.g. {"gmail_web": "full", "outlook_2019": "partial", "outlook_2016": "none"}
+    compatibility: Mapped[dict[str, str]] = mapped_column(JSON, nullable=False, default=dict)
+
+    component_version: Mapped[ComponentVersion] = relationship(back_populates="qa_results")

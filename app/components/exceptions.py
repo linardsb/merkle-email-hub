@@ -9,3 +9,7 @@ class ComponentNotFoundError(NotFoundError):
 
 class ComponentAlreadyExistsError(ConflictError):
     """Raised when creating a component with a duplicate slug."""
+
+
+class ComponentQADataNotFoundError(NotFoundError):
+    """Raised when QA compatibility data is not available for a component."""

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.components.schemas import (
+    ComponentCompatibilityResponse,
     ComponentCreate,
     ComponentResponse,
     ComponentUpdate,
@@ -121,3 +122,38 @@ async def create_version(
     """Create a new version of a component."""
     _ = request
     return await service.create_version(component_id, data, user_id=current_user.id)
+
+
+@router.post(
+    "/{component_id}/versions/{version_number}/qa",
+    response_model=ComponentCompatibilityResponse,
+    status_code=200,
+)
+@limiter.limit("10/minute")
+async def run_component_qa(
+    request: Request,
+    component_id: int,
+    version_number: int,
+    service: ComponentService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(require_role("developer")),  # noqa: B008
+) -> ComponentCompatibilityResponse:
+    """Run QA checks on a component version and generate compatibility data."""
+    _ = request
+    return await service.run_qa_for_version(component_id, version_number)
+
+
+@router.get(
+    "/{component_id}/compatibility",
+    response_model=ComponentCompatibilityResponse,
+    status_code=200,
+)
+@limiter.limit("30/minute")
+async def get_component_compatibility(
+    request: Request,
+    component_id: int,
+    service: ComponentService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> ComponentCompatibilityResponse:
+    """Get aggregated compatibility badge data for a component."""
+    _ = request
+    return await service.get_compatibility(component_id)

@@ -4,10 +4,17 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.components.exceptions import ComponentAlreadyExistsError, ComponentNotFoundError
+from app.components.exceptions import (
+    ComponentAlreadyExistsError,
+    ComponentNotFoundError,
+    ComponentQADataNotFoundError,
+)
+from app.components.models import Component
 from app.components.repository import ComponentRepository
 from app.components.sanitize import sanitize_component_html
 from app.components.schemas import (
+    ClientCompatibility,
+    ComponentCompatibilityResponse,
     ComponentCreate,
     ComponentResponse,
     ComponentUpdate,
@@ -35,6 +42,8 @@ class ComponentService:
         latest = await self.repository.get_latest_version_number(component_id)
         resp = ComponentResponse.model_validate(component)
         resp.latest_version = latest if latest > 0 else None
+        compat = await self.repository.get_latest_compatibility(component_id)
+        resp.compatibility_badge = self._compute_badge(compat)
         return resp
 
     async def list_components(
@@ -99,3 +108,80 @@ class ComponentService:
             raise ComponentNotFoundError(f"Component {component_id} not found")
         versions = await self.repository.get_versions(component_id)
         return [VersionResponse.model_validate(v) for v in versions]
+
+    async def run_qa_for_version(
+        self, component_id: int, version_number: int
+    ) -> ComponentCompatibilityResponse:
+        """Run QA checks on a specific component version and store compatibility."""
+        from app.components.qa_bridge import run_component_qa
+
+        await self._get_or_404(component_id)
+        version = await self.repository.get_version(component_id, version_number)
+        if not version:
+            raise ComponentNotFoundError(
+                f"Version {version_number} not found for component {component_id}"
+            )
+
+        await run_component_qa(self.db, version)
+        return await self.get_compatibility(component_id)
+
+    async def get_compatibility(self, component_id: int) -> ComponentCompatibilityResponse:
+        """Get aggregated compatibility data for a component's latest QA'd version."""
+        from app.knowledge.ontology.registry import load_ontology
+
+        component = await self._get_or_404(component_id)
+        compat = await self.repository.get_latest_compatibility(component_id)
+
+        if not compat:
+            raise ComponentQADataNotFoundError(
+                f"No QA compatibility data for component {component_id}"
+            )
+
+        onto = load_ontology()
+        clients: list[ClientCompatibility] = []
+        for client_id, level in compat.items():
+            client = onto.get_client(client_id)
+            if client:
+                clients.append(
+                    ClientCompatibility(
+                        client_id=client_id,
+                        client_name=client.name,
+                        level=level,
+                        platform=client.platform,
+                    )
+                )
+
+        full = sum(1 for c in clients if c.level == "full")
+        partial = sum(1 for c in clients if c.level == "partial")
+        none_count = sum(1 for c in clients if c.level == "none")
+
+        return ComponentCompatibilityResponse(
+            component_id=component_id,
+            component_name=component.name,
+            version_number=component.versions[0].version_number if component.versions else 0,
+            full_count=full,
+            partial_count=partial,
+            none_count=none_count,
+            clients=clients,
+        )
+
+    async def _get_or_404(self, component_id: int) -> Component:
+        """Get component or raise 404."""
+
+        component = await self.repository.get(component_id)
+        if not component:
+            raise ComponentNotFoundError(f"Component {component_id} not found")
+        return component
+
+    @staticmethod
+    def _compute_badge(compatibility: dict[str, str] | None) -> str | None:
+        """Derive a badge label from compatibility data."""
+        if not compatibility:
+            return None
+        none_count = sum(1 for v in compatibility.values() if v == "none")
+        partial_count = sum(1 for v in compatibility.values() if v == "partial")
+        if none_count > 0:
+            return "issues"
+        if partial_count > 0:
+            return "partial"
+        return "full"

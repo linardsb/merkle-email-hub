@@ -116,8 +116,31 @@ class CanIEmailSyncPoller(DataPoller):
                 "ontology.sync.graph_refreshed",
                 datasets=len(by_dataset),
             )
+
+            # Also refresh component compatibility in graph
+            await self._refresh_component_graph(provider)
         except Exception:
             logger.warning("ontology.sync.graph_refresh_failed", exc_info=True)
+
+    @staticmethod
+    async def _refresh_component_graph(provider: object) -> None:
+        """Re-export component documents to Cognee after ontology changes."""
+        try:
+            from app.components.graph_export import export_component_documents
+            from app.core.database import get_db_context
+
+            async with get_db_context() as db:
+                comp_docs = await export_component_documents(db)
+                if comp_docs:
+                    texts = [text for _, text in comp_docs]
+                    await provider.add_documents(texts, dataset_name="email_components")  # type: ignore[union-attr]
+                    await provider.build_graph(dataset_name="email_components", background=True)  # type: ignore[union-attr]
+                    logger.info(
+                        "ontology.sync.component_graph_refreshed",
+                        component_count=len(comp_docs),
+                    )
+        except Exception:
+            logger.warning("ontology.sync.component_graph_refresh_failed", exc_info=True)
 
     async def _load_state(self) -> SyncState:
         """Load sync state from Redis."""

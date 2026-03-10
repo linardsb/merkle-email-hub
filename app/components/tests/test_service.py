@@ -27,6 +27,7 @@ async def test_get_component_success(service):
     component = make_component(id=1, name="Header")
     service.repository.get = AsyncMock(return_value=component)
     service.repository.get_latest_version_number = AsyncMock(return_value=2)
+    service.repository.get_latest_compatibility = AsyncMock(return_value=None)
 
     result = await service.get_component(1)
     assert result.id == 1

@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.components.models import Component, ComponentVersion
+from app.components.models import Component, ComponentQAResult, ComponentVersion
 from app.components.schemas import ComponentCreate, ComponentUpdate, VersionCreate
 from app.shared.models import utcnow
 from app.shared.utils import escape_like
@@ -127,3 +127,23 @@ class ComponentRepository:
             .order_by(ComponentVersion.version_number.desc())
         )
         return list(result.scalars().all())
+
+    async def get_version(self, component_id: int, version_number: int) -> ComponentVersion | None:
+        result = await self.db.execute(
+            select(ComponentVersion).where(
+                ComponentVersion.component_id == component_id,
+                ComponentVersion.version_number == version_number,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_latest_compatibility(self, component_id: int) -> dict[str, str] | None:
+        """Get compatibility from the latest version that has QA results."""
+        result = await self.db.execute(
+            select(ComponentQAResult.compatibility)
+            .join(ComponentVersion, ComponentVersion.id == ComponentQAResult.component_version_id)
+            .where(ComponentVersion.component_id == component_id)
+            .order_by(ComponentVersion.version_number.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
