@@ -2396,6 +2396,54 @@ export type ReadRootGetResponses = {
 
 export type ReadRootGetResponse = ReadRootGetResponses[keyof ReadRootGetResponses];
 
+// ── Blueprint Run ──
+
+export type BlueprintProgress = {
+  node_name: string;
+  node_type: "deterministic" | "agentic";
+  status: "success" | "failed" | "skipped";
+  iteration: number;
+  summary: string;
+  duration_ms: number;
+};
+
+export type HandoffSummary = {
+  agent_name: string;
+  decisions: string[];
+  warnings: string[];
+  component_refs: string[];
+  confidence: number | null;
+};
+
+export type RoutingDecisionResponse = {
+  node_name: string;
+  action: "skip" | "prioritise";
+  reason: string;
+};
+
+export type BlueprintRunRequest = {
+  blueprint_name: string;
+  brief: string;
+  initial_html?: string;
+  options?: Record<string, unknown>;
+  persona_ids?: number[];
+};
+
+export type BlueprintRunResponse = {
+  run_id: string;
+  blueprint_name: string;
+  status: "running" | "completed" | "completed_with_warnings" | "cost_cap_exceeded" | "needs_review";
+  html: string;
+  progress: BlueprintProgress[];
+  qa_passed: boolean | null;
+  model_usage: Record<string, number>;
+  final_handoff: HandoffSummary | null;
+  handoff_history: HandoffSummary[];
+  audience_summary: string | null;
+  skipped_nodes: string[];
+  routing_decisions: RoutingDecisionResponse[];
+};
+
 export type ClientOptions = {
     baseUrl: `${string}://openapi.json` | (string & {});
 };

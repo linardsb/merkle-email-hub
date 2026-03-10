@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ClipboardCheck, Download, FileText, ImagePlus, Palette, Save, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Download, FileText, ImagePlus, Palette, Save, ShieldCheck, Users, Zap } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
@@ -39,6 +39,7 @@ interface WorkspaceToolbarProps {
   collaborationStatus?: CollaborationStatus;
   targetClients?: string[] | null;
   onViewBrief?: () => void;
+  onRunBlueprint?: () => void;
 }
 
 export function WorkspaceToolbar({
@@ -65,6 +66,7 @@ export function WorkspaceToolbar({
   collaborationStatus,
   targetClients,
   onViewBrief,
+  onRunBlueprint,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
@@ -131,6 +133,21 @@ export function WorkspaceToolbar({
           <Save className="h-3.5 w-3.5" />
           {t("saveTemplate")}
         </button>
+        {/* Generate with Blueprint */}
+        {onRunBlueprint && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onRunBlueprint}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={t("generateBlueprint")}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              {t("generateBlueprint")}
+            </button>
+          </>
+        )}
         {/* QA Gate */}
         {onRunQA && (
           <>

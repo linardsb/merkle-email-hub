@@ -29,6 +29,7 @@ import {
 } from "./data/renderings";
 import { DEMO_EMAIL_CLIENTS } from "./data/email-clients";
 import { DEMO_COMPATIBILITY_BRIEF } from "./data/compatibility-brief";
+import { DEMO_BLUEPRINT_RUN } from "./data/blueprint-run";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -320,6 +321,11 @@ export function resolveDemo(urlStr: string): unknown | null {
   m = p.match(/^\/api\/v1\/projects\/\d+\/compatibility-brief$/);
   if (m) {
     return DEMO_COMPATIBILITY_BRIEF;
+  }
+
+  // ── Blueprint Run (POST simulated as GET for demo) ──
+  if (p === "/api/v1/blueprints/run") {
+    return DEMO_BLUEPRINT_RUN;
   }
 
   return null;

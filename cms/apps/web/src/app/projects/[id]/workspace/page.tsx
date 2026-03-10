@@ -36,6 +36,7 @@ import { useBrandConfig } from "@/hooks/use-brand";
 import { useCollaboration } from "@/hooks/use-collaboration";
 import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialog";
 import { CompatibilityBriefDialog } from "@/components/workspace/compatibility-brief-dialog";
+import { BlueprintRunDialog } from "@/components/workspace/blueprint-run-dialog";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
@@ -131,6 +132,7 @@ export default function WorkspacePage() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [imageGenOpen, setImageGenOpen] = useState(false);
   const [briefDialogOpen, setBriefDialogOpen] = useState(false);
+  const [blueprintOpen, setBlueprintOpen] = useState(false);
   const { addRecord } = useExportHistory();
 
   // ── Brand Config ──
@@ -314,6 +316,16 @@ export default function WorkspacePage() {
     [t]
   );
 
+  const handleApplyBlueprintResult = useCallback(
+    (html: string) => {
+      setEditorContent(html);
+      setSaveStatus("idle");
+      setBlueprintOpen(false);
+      toast.success(t("chatApplied"));
+    },
+    [t],
+  );
+
   // ── QA Handlers ──
   const tQA = useTranslations("qa");
 
@@ -423,6 +435,7 @@ export default function WorkspacePage() {
         collaborationStatus={collabStatus}
         targetClients={project.target_clients}
         onViewBrief={() => setBriefDialogOpen(true)}
+        onRunBlueprint={() => setBlueprintOpen(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -511,6 +524,14 @@ export default function WorkspacePage() {
         onOpenChange={setBriefDialogOpen}
         projectId={projectId}
         targetClients={project.target_clients ?? null}
+      />
+
+      <BlueprintRunDialog
+        open={blueprintOpen}
+        onOpenChange={setBlueprintOpen}
+        projectId={projectId}
+        currentHtml={editorContent}
+        onApplyResult={handleApplyBlueprintResult}
       />
 
       {chatCollapsed && (

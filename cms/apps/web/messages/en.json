@@ -71,12 +71,12 @@
     "newProjectFigmaUrl": "Figma File URL",
     "newProjectFigmaUrlPlaceholder": "https://www.figma.com/design/...",
     "newProjectFigmaUrlHint": "Optional — link a Figma design file to this project",
-    "newProjectTargetClients": "Target Email Clients",
-    "newProjectTargetClientsHint": "Select which email clients this campaign targets. Drives compatibility checks and AI agent routing.",
+    "newProjectTargetClients": "Priority Email Clients",
+    "newProjectTargetClientsHint": "QA checks all 25 clients. Priority clients get prominent display in results and drive agent retry focus.",
     "newProjectTargetClientsSearch": "Search clients...",
     "newProjectTargetClientsCommon": "Select Common",
     "newProjectTargetClientsSelected": "{count} clients selected",
-    "newProjectTargetClientsNone": "No clients selected — all clients assumed",
+    "newProjectTargetClientsNone": "No priority clients — all 25 clients treated equally",
     "newProjectCancel": "Cancel",
     "newProjectSubmit": "Create Project",
     "newProjectSubmitting": "Creating...",
@@ -240,6 +240,7 @@
     "exporting": "Exporting\u2026",
     "exportNoCompiledHtml": "Compile the template first before exporting",
     "brandViolations": "{count} brand violations",
+    "generateBlueprint": "Generate",
     "generateImage": "Generate Image",
     "editorTabCode": "Code",
     "editorTabVisual": "Visual",
@@ -251,7 +252,7 @@
     "description": "{clientCount} email clients \u00b7 {riskyCount} risky CSS properties",
     "loading": "Loading compatibility data...",
     "error": "Failed to load compatibility brief",
-    "noClients": "No target clients configured. Select target clients in project settings to generate a compatibility brief.",
+    "noClients": "No priority clients configured. Set priority clients in project settings to generate a focused compatibility brief, or view the full 25-client matrix.",
     "regenerate": "Regenerate Brief",
     "regenerating": "Regenerating...",
     "regenerateSuccess": "Compatibility brief regeneration started",
@@ -271,9 +272,9 @@
     "technique": "Technique",
     "noFallback": "No fallback available",
     "riskMatrix": "Cross-Client Risk Matrix",
-    "riskMatrixDescription": "CSS properties unsupported by 2+ target clients (highest risk)",
+    "riskMatrixDescription": "CSS properties unsupported by 2+ priority clients (highest risk)",
     "unsupportedIn": "Unsupported In",
-    "noRisks": "No CSS properties are unsupported across multiple target clients.",
+    "noRisks": "No CSS properties are unsupported across multiple priority clients.",
     "close": "Close"
   },
   "brand": {
@@ -797,12 +798,12 @@
     "you": "You"
   },
   "projects": {
-    "targetClients": "Target Clients",
+    "targetClients": "Priority Clients",
     "targetClientsEdit": "Edit",
     "targetClientsSave": "Save",
     "targetClientsSaving": "Saving...",
     "targetClientsUpdated": "Target clients updated",
-    "targetClientsUpdateError": "Failed to update target clients",
+    "targetClientsUpdateError": "Failed to update priority clients",
     "engineWord": "Word",
     "engineWebkit": "WebKit",
     "engineBlink": "Blink",
@@ -901,5 +902,60 @@
     "nextPage": "Next",
     "pageOf": "Page {page} of {total}",
     "testId": "Test #{id}"
+  },
+  "blueprintRun": {
+    "title": "Generate with Blueprint",
+    "description": "Run a multi-agent pipeline to generate, validate, and optimise your email template.",
+    "blueprintLabel": "Pipeline",
+    "briefLabel": "Campaign Brief",
+    "briefPlaceholder": "Describe your email campaign — audience, goals, tone, key sections...",
+    "includeHtml": "Include current editor HTML as starting point",
+    "run": "Run Pipeline",
+    "running": "Running...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "applyResult": "Apply to Editor",
+    "viewHandoffs": "View Agent Decisions",
+    "hideHandoffs": "Hide Agent Decisions",
+    "status": {
+      "running": "Running",
+      "completed": "Completed",
+      "completed_with_warnings": "Completed with Warnings",
+      "cost_cap_exceeded": "Cost Cap Exceeded",
+      "needs_review": "Needs Review"
+    },
+    "nodeType": {
+      "agentic": "AI Agent",
+      "deterministic": "System Check"
+    },
+    "nodeStatus": {
+      "pending": "Pending",
+      "running": "Running",
+      "success": "Passed",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    },
+    "qaPassed": "QA Gate Passed",
+    "qaFailed": "QA Gate Failed",
+    "qaNotReached": "QA Not Reached",
+    "confidence": "Confidence",
+    "iteration": "Attempt {count}",
+    "duration": "{ms}ms",
+    "tokens": "{count} tokens",
+    "skippedNodes": "Skipped by routing",
+    "routingReason": "Reason",
+    "handoffDecisions": "Decisions",
+    "handoffWarnings": "Warnings",
+    "handoffComponents": "Components Used",
+    "noProgress": "Pipeline not started yet",
+    "audienceSummary": "Audience Context",
+    "blueprintTemplates": {
+      "campaign": "Full Campaign",
+      "campaignDescription": "Generate a complete email from brief — scaffold, QA, fix, build, export"
+    },
+    "errors": {
+      "runFailed": "Blueprint run failed. Please try again.",
+      "invalidBrief": "Please enter a campaign brief."
+    }
   }
 }
