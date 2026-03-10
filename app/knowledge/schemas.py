@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
@@ -168,3 +168,54 @@ class SearchResponse(BaseModel):
     query: str
     total_candidates: int
     reranked: bool
+
+
+# ---------------------------------------------------------------------------
+# Graph knowledge schemas
+# ---------------------------------------------------------------------------
+
+
+class GraphSearchRequest(BaseModel):
+    """Request body for graph knowledge search."""
+
+    query: str = Field(..., min_length=1, max_length=2000)
+    dataset_name: str | None = None
+    top_k: int = Field(default=10, ge=1, le=50)
+    mode: Literal["chunks", "completion"] = "chunks"
+    system_prompt: str = ""
+
+
+class GraphEntityResponse(BaseModel):
+    """An entity from the knowledge graph."""
+
+    id: str
+    name: str
+    entity_type: str
+    description: str = ""
+    properties: dict[str, object] = Field(default_factory=dict)
+
+
+class GraphRelationshipResponse(BaseModel):
+    """A relationship edge between entities."""
+
+    source_id: str
+    target_id: str
+    relationship_type: str
+    properties: dict[str, object] = Field(default_factory=dict)
+
+
+class GraphSearchResultResponse(BaseModel):
+    """A single graph search result."""
+
+    content: str
+    entities: list[GraphEntityResponse] = Field(default_factory=lambda: [])
+    relationships: list[GraphRelationshipResponse] = Field(default_factory=lambda: [])
+    score: float = 0.0
+
+
+class GraphSearchResponse(BaseModel):
+    """Response for graph knowledge search."""
+
+    results: list[GraphSearchResultResponse]
+    query: str
+    mode: str

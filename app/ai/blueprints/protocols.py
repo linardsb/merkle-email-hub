@@ -5,7 +5,7 @@ the context and result data structures that flow through the graph.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Literal, Protocol, runtime_checkable
 
 __all__ = [
@@ -24,7 +24,7 @@ NodeType = Literal["deterministic", "agentic"]
 NodeStatus = Literal["success", "failed", "skipped"]
 
 
-class HandoffStatus(str, Enum):
+class HandoffStatus(StrEnum):
     """Status of an agentic node's execution for orchestrator routing."""
 
     OK = "ok"

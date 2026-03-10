@@ -1,9 +1,15 @@
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 """Knowledge base REST API endpoints."""
 
+from __future__ import annotations
+
 import re
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.knowledge.graph.cognee_provider import CogneeGraphProvider
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.requests import Request
@@ -22,6 +28,11 @@ from app.knowledge.schemas import (
     DocumentUpdate,
     DocumentUpload,
     DomainListResponse,
+    GraphEntityResponse,
+    GraphRelationshipResponse,
+    GraphSearchRequest,
+    GraphSearchResponse,
+    GraphSearchResultResponse,
     SearchRequest,
     SearchResponse,
     TagCreate,
@@ -335,3 +346,82 @@ async def search_knowledge(
     """Search the knowledge base with hybrid vector + fulltext search."""
     _ = request
     return await service.search(body)
+
+
+# ---------------------------------------------------------------------------
+# Graph knowledge search
+# ---------------------------------------------------------------------------
+
+
+def _get_graph_provider() -> CogneeGraphProvider | None:
+    """Factory: returns CogneeGraphProvider if enabled, else None."""
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    if not settings.cognee.enabled:
+        return None
+    from app.knowledge.graph.cognee_provider import CogneeGraphProvider as Provider
+
+    return Provider(settings)
+
+
+@router.post("/graph/search", response_model=GraphSearchResponse)
+@limiter.limit("20/minute")
+async def search_graph(
+    request: Request,
+    body: GraphSearchRequest,
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> GraphSearchResponse:
+    """Search the knowledge graph for entity-relationship results."""
+    _ = request
+    graph_provider = _get_graph_provider()
+    service = KnowledgeService(db=db, graph_provider=graph_provider)
+
+    if body.mode == "completion":
+        answer = await service.search_graph_completion(
+            body.query,
+            dataset_name=body.dataset_name,
+            system_prompt=body.system_prompt,
+        )
+        return GraphSearchResponse(
+            results=[GraphSearchResultResponse(content=answer)],
+            query=body.query,
+            mode="completion",
+        )
+
+    results = await service.search_graph(
+        body.query,
+        dataset_name=body.dataset_name,
+        top_k=body.top_k,
+    )
+    return GraphSearchResponse(
+        results=[
+            GraphSearchResultResponse(
+                content=r.content,
+                entities=[
+                    GraphEntityResponse(
+                        id=e.id,
+                        name=e.name,
+                        entity_type=e.entity_type,
+                        description=e.description,
+                        properties=e.properties,
+                    )
+                    for e in r.entities
+                ],
+                relationships=[
+                    GraphRelationshipResponse(
+                        source_id=rel.source_id,
+                        target_id=rel.target_id,
+                        relationship_type=rel.relationship_type,
+                        properties=rel.properties,
+                    )
+                    for rel in r.relationships
+                ],
+                score=r.score,
+            )
+            for r in results
+        ],
+        query=body.query,
+        mode="chunks",
+    )

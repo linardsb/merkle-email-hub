@@ -121,6 +121,25 @@ class MemoryConfig(BaseModel):
     dcg_promotion_min_frequency: int = 3
 
 
+class CogneeConfig(BaseModel):
+    """Cognee knowledge graph configuration."""
+
+    enabled: bool = False
+    llm_provider: str = ""  # empty = inherit from AI config
+    llm_model: str = ""  # empty = inherit from AI config
+    llm_api_key: str = ""  # empty = inherit from AI config
+    graph_db_provider: str = "kuzu"  # kuzu | neo4j
+    neo4j_url: str = ""
+    neo4j_user: str = ""
+    neo4j_password: str = ""
+    vector_db_provider: str = "pgvector"
+    chunk_size: int = 512
+    chunk_overlap: int = 50
+    data_directory: str = "data/cognee"
+    system_directory: str = "data/cognee/system"
+    background_cognify: bool = True
+
+
 class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
@@ -174,6 +193,7 @@ class Settings(BaseSettings):
     knowledge: KnowledgeConfig = KnowledgeConfig()
 
     memory: MemoryConfig = MemoryConfig()
+    cognee: CogneeConfig = CogneeConfig()
     blueprint: BlueprintConfig = BlueprintConfig()
     ws: WebSocketConfig = WebSocketConfig()
     rendering: RenderingConfig = RenderingConfig()

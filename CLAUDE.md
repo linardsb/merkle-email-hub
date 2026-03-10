@@ -78,7 +78,7 @@ merkle-email-hub/
 │   │   ├── agents/     # AI agents (scaffolder, dark_mode, content — per-agent subdirs)
 │   │   │   └── evals/  # Agent evaluation framework (synthetic data, runner, judges)
 │   │   └── blueprints/ # Blueprint state machine (engine, nodes, definitions, schemas)
-│   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search)
+│   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search) + graph/ (Cognee)
 │   ├── streaming/      # WebSocket streaming (Pub/Sub, connection manager)
 │   │
 │   │   ── Email Hub Modules ──
@@ -117,6 +117,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 - `AUTH__JWT_SECRET_KEY`, `AUTH__ACCESS_TOKEN_EXPIRE_MINUTES`
 
 - `AI__PROVIDER`, `AI__MODEL`, `AI__API_KEY`, `AI__MODEL_COMPLEX`, `AI__MODEL_STANDARD`, `AI__MODEL_LIGHTWEIGHT`
+- `COGNEE__ENABLED`, `COGNEE__GRAPH_DB_PROVIDER`, `COGNEE__LLM_PROVIDER` (inherits AI config if empty)
 
 
 ### Shared Utilities
@@ -314,7 +315,7 @@ Build infrastructure before remaining agents so every new agent inherits pattern
 
 ### Phase 8 — Knowledge Graph Integration (Cognee)
 Replace flat RAG with graph-structured knowledge using Cognee. Agents get structured entity relationships instead of similar text chunks. Depends on Phase 7 infrastructure.
-- [ ] 8.1 Cognee integration layer (`app/knowledge/graph/`, Protocol-based, alongside existing RAG)
+- [x] 8.1 Cognee integration layer (`app/knowledge/graph/`, `GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search` endpoint, optional dep `cognee[graph]`, 8 tests)
 - [ ] 8.2 Knowledge graph seeding (existing docs through Cognee ECL pipeline)
 - [ ] 8.3 Graph context provider for blueprint nodes (structured relationships in agent context)
 - [ ] 8.4 Blueprint outcome logging (feed run outcomes back into graph for institutional memory)
@@ -345,7 +346,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection
-- Knowledge: RAG pipeline with pgvector, hybrid search, document processing
+- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default)
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`

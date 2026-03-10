@@ -22,6 +22,7 @@ from app.knowledge.exceptions import (
     ProcessingError,
     TagNotFoundError,
 )
+from app.knowledge.graph.protocols import GraphKnowledgeProvider, GraphSearchResult
 from app.knowledge.models import DocumentChunk
 from app.knowledge.repository import KnowledgeRepository
 from app.knowledge.reranker import RerankerProvider, get_reranker_provider
@@ -68,14 +69,20 @@ def _get_reranker() -> RerankerProvider:
 class KnowledgeService:
     """Business logic for knowledge base operations."""
 
-    def __init__(self, db: AsyncSession) -> None:
-        """Initialize with database session.
+    def __init__(
+        self,
+        db: AsyncSession,
+        graph_provider: GraphKnowledgeProvider | None = None,
+    ) -> None:
+        """Initialize with database session and optional graph provider.
 
         Args:
             db: SQLAlchemy async session.
+            graph_provider: Optional graph knowledge provider (Cognee).
         """
         self.db = db
         self.repository = KnowledgeRepository(db)
+        self._graph = graph_provider
 
     async def ingest_document(
         self,
@@ -585,6 +592,42 @@ class KnowledgeService:
             action="remove",
         )
         return await self.get_document(document_id)
+
+    # ------------------------------------------------------------------
+    # Graph knowledge (Cognee)
+    # ------------------------------------------------------------------
+
+    async def search_graph(
+        self,
+        query: str,
+        *,
+        dataset_name: str | None = None,
+        top_k: int = 10,
+    ) -> list[GraphSearchResult]:
+        """Search the knowledge graph (delegates to graph provider)."""
+        if self._graph is None:
+            from app.knowledge.graph.exceptions import GraphNotEnabledError
+
+            raise GraphNotEnabledError("Graph knowledge provider not configured")
+        return await self._graph.search(query, dataset_name=dataset_name, top_k=top_k)
+
+    async def search_graph_completion(
+        self,
+        query: str,
+        *,
+        dataset_name: str | None = None,
+        system_prompt: str = "",
+    ) -> str:
+        """Graph-grounded conversational answer."""
+        if self._graph is None:
+            from app.knowledge.graph.exceptions import GraphNotEnabledError
+
+            raise GraphNotEnabledError("Graph knowledge provider not configured")
+        return await self._graph.search_completion(
+            query,
+            dataset_name=dataset_name,
+            system_prompt=system_prompt,
+        )
 
     # ------------------------------------------------------------------
     # Auto-tagging (LLM classification, best-effort)

@@ -32,6 +32,11 @@ dependencies = [
     "nh3>=0.3.3",
 ]
 
+[project.optional-dependencies]
+graph = [
+    "cognee>=0.1.0",
+]
+
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
@@ -157,6 +162,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "anthropic.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "cognee.*"
 ignore_missing_imports = true
 
 

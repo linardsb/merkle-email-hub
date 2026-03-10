@@ -68,7 +68,7 @@ def build_system_prompt(relevant_skills: list[str]) -> str:
 def detect_relevant_skills(
     operation: str,
     brand_voice: str | None = None,
-    text: str | None = None,
+    _text: str | None = None,
 ) -> list[str]:
     """Detect which L3 skill files are relevant based on the operation and context.
 
@@ -77,7 +77,7 @@ def detect_relevant_skills(
     Args:
         operation: Content operation type (subject_line, preheader, cta, etc.).
         brand_voice: Optional brand voice guidelines.
-        text: Optional source text to analyze.
+        _text: Optional source text to analyze (reserved for future content analysis).
 
     Returns:
         List of relevant skill keys.

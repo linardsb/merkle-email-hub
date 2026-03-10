@@ -691,8 +691,8 @@ Extended `BlueprintRun._handoff_history` to accumulate ALL handoffs (not just la
 ~~**Step 2.6 — SKILL.md Files for Existing Agents (Scaffolder, Dark Mode)**~~ DONE (2026-03-09)
 Created progressive disclosure SKILL.md files for Scaffolder (L1+L2 + 4 L3 files: client_compatibility, maizzle_syntax, mso_vml_quick_ref, table_layouts) and Dark Mode (L1+L2 + 3 L3 files: client_behavior, color_remapping, outlook_dark_mode). Services updated with `detect_relevant_skills()` + `build_system_prompt()` for on-demand skill loading based on brief analysis.
 
-**Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)**
-Install Cognee, define the full email ontology, seed the knowledge graph. This runs in parallel with Step 2 (independent work streams).
+**Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)** (8.1 DONE 2026-03-10)
+~~8.1 Cognee integration layer~~ DONE: `app/knowledge/graph/` module with `GraphKnowledgeProvider` Protocol + `CogneeGraphProvider` implementation; `CogneeConfig` in settings (disabled by default, inherits AI config); `POST /api/v1/knowledge/graph/search` endpoint (auth + 20/min rate limit, chunks + completion modes); `GraphError` → `AppError` hierarchy; cognee as optional dependency (`pip install -e ".[graph]"`); 8 unit tests (568 total). Remaining: 8.6 ontology definition, 8.2 knowledge graph seeding.
 
 **Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
 Wire graph search into blueprint nodes. ~~Author initial SKILL.md files for the 3 existing agents.~~ DONE for Scaffolder + Dark Mode (Step 2.6). Content agent SKILL.md pending. Re-run evals to measure improvement vs Step 0 baseline.
