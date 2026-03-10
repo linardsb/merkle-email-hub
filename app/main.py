@@ -93,9 +93,25 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             detail="Redis unavailable, WebSocket streaming disabled",
         )
 
+    # Start outcome graph poller (feeds blueprint outcomes into Cognee)
+    outcome_poller = None
+    if getattr(settings, "cognee", None) and settings.cognee.enabled:
+        try:
+            from app.ai.blueprints.outcome_poller import OutcomeGraphPoller
+
+            outcome_poller = OutcomeGraphPoller()
+            await outcome_poller.start()
+            logger.info("blueprint.outcome_poller_started")
+        except Exception:
+            logger.warning("blueprint.outcome_poller_start_failed", exc_info=True)
+
     yield
 
     # Shutdown
+
+    if outcome_poller is not None:
+        await outcome_poller.stop()
+        logger.info("blueprint.outcome_poller_stopped")
 
     await stop_ws_subscriber()
     close_ws_manager()

@@ -318,7 +318,7 @@ Replace flat RAG with graph-structured knowledge using Cognee. Agents get struct
 - [x] 8.1 Cognee integration layer (`app/knowledge/graph/`, `GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search` endpoint, optional dep `cognee[graph]`, 8 tests)
 - [ ] 8.2 Knowledge graph seeding (existing docs through Cognee ECL pipeline)
 - [ ] 8.3 Graph context provider for blueprint nodes (structured relationships in agent context)
-- [ ] 8.4 Blueprint outcome logging (feed run outcomes back into graph for institutional memory)
+- [x] 8.4 Blueprint outcome logging (`outcome_logger.py` formats+queues to Redis+Memory, `OutcomeGraphPoller` drains into Cognee, 19 tests)
 - [ ] 8.5 Per-agent domain SKILL.md files (Four Discipline structure, graph-grounded, self-growing)
 - [ ] 8.6 Email development ontology (full granularity OWL — 300+ CSS properties, all client versions)
 

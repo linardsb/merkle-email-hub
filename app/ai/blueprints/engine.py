@@ -28,6 +28,10 @@ logger = get_logger(__name__)
 # Signature: (handoff, run_id, project_id) -> None
 HandoffMemoryCallback = Callable[[AgentHandoff, str, int | None], Coroutine[Any, Any, None]]
 
+# Callback type for logging completed run outcomes to graph + memory.
+# Signature: (run, blueprint_name, project_id) -> None
+OutcomeCallback = Callable[["BlueprintRun", str, int | None], Coroutine[Any, Any, None]]
+
 MAX_SELF_CORRECTION_ROUNDS = 2
 MAX_TOTAL_STEPS = 20  # safety brake
 CONFIDENCE_REVIEW_THRESHOLD = 0.5

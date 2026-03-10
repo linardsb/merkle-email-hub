@@ -88,6 +88,22 @@ class BlueprintService:
             user_id=user_id,
         )
 
+        # Post-run: log outcome to graph queue + memory (fire-and-forget)
+        try:
+            from app.ai.blueprints.outcome_logger import (
+                persist_outcome_to_memory,
+                queue_outcome_for_graph,
+            )
+
+            await queue_outcome_for_graph(bp_run, definition.name, project_id)
+            await persist_outcome_to_memory(bp_run, definition.name, project_id)
+        except Exception:
+            logger.warning(
+                "blueprint.outcome_logging_failed",
+                run_id=bp_run.run_id,
+                exc_info=True,
+            )
+
         def _to_summary(h: AgentHandoff) -> HandoffSummary:
             return HandoffSummary(
                 agent_name=h.agent_name,
