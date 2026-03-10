@@ -4,7 +4,7 @@ export const DEMO_GENERATED_IMAGES: Record<number, GeneratedImage[]> = {
   1: [
     {
       id: 1,
-      url: "https://picsum.photos/seed/email-hero/600/400",
+      url: "https://placehold.co/600x400/1a5276/ffffff?text=Spring+Hero+Banner",
       prompt: "Modern email hero banner with spring flowers",
       style: "lifestyle",
       aspect_ratio: "4:3",
@@ -14,7 +14,7 @@ export const DEMO_GENERATED_IMAGES: Record<number, GeneratedImage[]> = {
     },
     {
       id: 2,
-      url: "https://picsum.photos/seed/product-shot/600/600",
+      url: "https://placehold.co/600x600/f5f5f5/333333?text=Product+Shot",
       prompt: "Professional product photography on white background",
       style: "product",
       aspect_ratio: "1:1",
@@ -24,7 +24,7 @@ export const DEMO_GENERATED_IMAGES: Record<number, GeneratedImage[]> = {
     },
     {
       id: 3,
-      url: "https://picsum.photos/seed/abstract-bg/800/400",
+      url: "https://placehold.co/800x400/4a148c/e1bee7?text=Abstract+Gradient",
       prompt: "Abstract gradient background blue and purple",
       style: "abstract",
       aspect_ratio: "16:9",
@@ -34,23 +34,13 @@ export const DEMO_GENERATED_IMAGES: Record<number, GeneratedImage[]> = {
     },
     {
       id: 4,
-      url: "https://picsum.photos/seed/pattern-tile/400/400",
-      prompt: "Seamless geometric pattern for email background",
-      style: "pattern",
-      aspect_ratio: "1:1",
-      width: 400,
-      height: 400,
-      created_at: "2026-02-28T15:00:00Z",
-    },
-    {
-      id: 5,
-      url: "https://picsum.photos/seed/illustration/600/400",
-      prompt: "Flat illustration of shopping cart with gifts",
-      style: "illustration",
+      url: "https://placehold.co/600x400/2e7d32/c8e6c9?text=Sale+Banner",
+      prompt: "Summer sale promotional banner with bold typography",
+      style: "lifestyle",
       aspect_ratio: "4:3",
       width: 600,
       height: 400,
-      created_at: "2026-02-27T09:00:00Z",
+      created_at: "2026-02-28T15:00:00Z",
     },
   ],
 };

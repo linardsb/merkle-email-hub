@@ -1,14 +1,8 @@
 export type ImageGenStatus = "idle" | "generating" | "completed" | "error";
 
-export type StylePreset =
-  | "product"
-  | "lifestyle"
-  | "abstract"
-  | "pattern"
-  | "illustration"
-  | "flat";
+export type StylePreset = "product" | "lifestyle" | "abstract";
 
-export type AspectRatio = "1:1" | "4:3" | "16:9" | "3:4" | "9:16";
+export type AspectRatio = "4:3" | "16:9" | "1:1";
 
 export interface ImageGenRequest {
   prompt: string;

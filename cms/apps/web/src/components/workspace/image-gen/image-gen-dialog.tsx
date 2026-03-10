@@ -14,7 +14,7 @@ import { useSWRConfig } from "swr";
 import { useGenerateImage, useProjectImages } from "@/hooks/use-image-gen";
 import { StylePresetGrid } from "./style-preset-grid";
 import { ImageGallery } from "./image-gallery";
-import type { StylePreset, AspectRatio, GeneratedImage } from "@/types/image-gen";
+import type { StylePreset, GeneratedImage } from "@/types/image-gen";
 
 interface ImageGenDialogProps {
   open: boolean;
@@ -22,14 +22,6 @@ interface ImageGenDialogProps {
   projectId: number;
   onInsertImage: (url: string, width: number, height: number, alt: string) => void;
 }
-
-const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
-  { value: "1:1", label: "1:1" },
-  { value: "4:3", label: "4:3" },
-  { value: "16:9", label: "16:9" },
-  { value: "3:4", label: "3:4" },
-  { value: "9:16", label: "9:16" },
-];
 
 export function ImageGenDialog({
   open,
@@ -45,14 +37,12 @@ export function ImageGenDialog({
   const [activeTab, setActiveTab] = useState<"generate" | "gallery">("generate");
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState<StylePreset>("product");
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("4:3");
 
   // Reset on open
   const [prevOpen, setPrevOpen] = useState(false);
   if (open && !prevOpen) {
     setPrompt("");
     setStyle("product");
-    setAspectRatio("4:3");
     setActiveTab("generate");
   }
   if (open !== prevOpen) setPrevOpen(open);
@@ -63,7 +53,7 @@ export function ImageGenDialog({
       const result = await trigger({
         prompt: prompt.trim(),
         style,
-        aspect_ratio: aspectRatio,
+        aspect_ratio: "4:3",
         project_id: projectId,
       });
       if (result?.image) {
@@ -143,27 +133,6 @@ export function ImageGenDialog({
             <div>
               <p className="mb-1.5 text-sm font-medium text-foreground">{t("styleLabel")}</p>
               <StylePresetGrid selected={style} onSelect={setStyle} />
-            </div>
-
-            {/* Aspect Ratio */}
-            <div>
-              <p className="mb-1.5 text-sm font-medium text-foreground">{t("aspectRatioLabel")}</p>
-              <div className="flex gap-2">
-                {ASPECT_RATIOS.map((ar) => (
-                  <button
-                    key={ar.value}
-                    type="button"
-                    onClick={() => setAspectRatio(ar.value)}
-                    className={`rounded border px-3 py-1 text-xs font-medium transition-colors ${
-                      aspectRatio === ar.value
-                        ? "border-interactive bg-interactive/10 text-foreground"
-                        : "border-card-border text-foreground-muted hover:bg-surface-hover"
-                    }`}
-                  >
-                    {ar.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Generate button */}

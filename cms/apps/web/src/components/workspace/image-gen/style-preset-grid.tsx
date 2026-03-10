@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Package, Camera, Sparkles, Grid3X3, Pencil, Square } from "lucide-react";
+import { Package, Camera, Sparkles } from "lucide-react";
 import type { StylePreset } from "@/types/image-gen";
 import type { LucideIcon } from "lucide-react";
 
@@ -9,9 +9,6 @@ const PRESETS: { value: StylePreset; icon: LucideIcon; labelKey: string }[] = [
   { value: "product", icon: Package, labelKey: "styleProduct" },
   { value: "lifestyle", icon: Camera, labelKey: "styleLifestyle" },
   { value: "abstract", icon: Sparkles, labelKey: "styleAbstract" },
-  { value: "pattern", icon: Grid3X3, labelKey: "stylePattern" },
-  { value: "illustration", icon: Pencil, labelKey: "styleIllustration" },
-  { value: "flat", icon: Square, labelKey: "styleFlat" },
 ];
 
 interface StylePresetGridProps {
