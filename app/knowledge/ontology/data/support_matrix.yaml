@@ -1,0 +1,3602 @@
+# =============================================================================
+# CSS Support Matrix — property_id x client_id -> support level
+# =============================================================================
+# DEFAULT IS FULL. Only entries with level: none | partial are recorded here.
+# If a property/client pair is absent, it means FULL support.
+#
+# Client IDs:
+#   outlook_2016_win, outlook_2019_win, outlook_365_win, outlook_mac,
+#   outlook_ios, outlook_android, outlook_web,
+#   gmail_web, gmail_ios, gmail_android,
+#   apple_mail_macos, apple_mail_ios,
+#   yahoo_web, yahoo_ios, yahoo_android,
+#   samsung_mail, thunderbird,
+#   aol_web, protonmail_web, hey_web, fastmail_web,
+#   comcast_web, t_online_web, gmx_web
+#
+# Levels: none | partial
+# =============================================================================
+
+support:
+
+  # ===========================================================================
+  # FLEXBOX PROPERTIES
+  # ===========================================================================
+
+  # --- display_flex ---
+  - property_id: display_flex
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word rendering engine does not support flexbox"
+    workaround: "Use table-based layout with role=presentation"
+  - property_id: display_flex
+    client_id: outlook_2019_win
+    level: none
+    notes: "Word rendering engine does not support flexbox"
+    workaround: "Use table-based layout with role=presentation"
+  - property_id: display_flex
+    client_id: outlook_365_win
+    level: none
+    notes: "Word rendering engine does not support flexbox"
+    workaround: "Use table-based layout with role=presentation"
+  - property_id: display_flex
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips flexbox declarations"
+    workaround: "Use table-based layout or display:inline-block with direction:ltr"
+  - property_id: display_flex
+    client_id: outlook_web
+    level: none
+    notes: "OWA strips flexbox declarations"
+    workaround: "Use table-based layout"
+  - property_id: display_flex
+    client_id: yahoo_web
+    level: none
+    notes: "Yahoo strips flexbox properties"
+    workaround: "Use table-based layout"
+  - property_id: display_flex
+    client_id: aol_web
+    level: none
+    notes: "AOL strips flexbox properties"
+    workaround: "Use table-based layout"
+  - property_id: display_flex
+    client_id: protonmail_web
+    level: none
+    notes: "ProtonMail CSS sanitizer removes flexbox"
+    workaround: "Use table-based layout"
+  - property_id: display_flex
+    client_id: comcast_web
+    level: none
+    notes: "Comcast webmail strips flexbox"
+  - property_id: display_flex
+    client_id: t_online_web
+    level: none
+    notes: "T-Online webmail strips flexbox"
+  - property_id: display_flex
+    client_id: gmx_web
+    level: none
+    notes: "GMX webmail strips flexbox"
+
+  # --- flex_direction ---
+  - property_id: flex_direction
+    client_id: outlook_2016_win
+    level: none
+  - property_id: flex_direction
+    client_id: outlook_2019_win
+    level: none
+  - property_id: flex_direction
+    client_id: outlook_365_win
+    level: none
+  - property_id: flex_direction
+    client_id: gmail_web
+    level: none
+  - property_id: flex_direction
+    client_id: outlook_web
+    level: none
+  - property_id: flex_direction
+    client_id: yahoo_web
+    level: none
+  - property_id: flex_direction
+    client_id: aol_web
+    level: none
+  - property_id: flex_direction
+    client_id: protonmail_web
+    level: none
+  - property_id: flex_direction
+    client_id: comcast_web
+    level: none
+  - property_id: flex_direction
+    client_id: t_online_web
+    level: none
+  - property_id: flex_direction
+    client_id: gmx_web
+    level: none
+
+  # --- flex_wrap ---
+  - property_id: flex_wrap
+    client_id: outlook_2016_win
+    level: none
+  - property_id: flex_wrap
+    client_id: outlook_2019_win
+    level: none
+  - property_id: flex_wrap
+    client_id: outlook_365_win
+    level: none
+  - property_id: flex_wrap
+    client_id: gmail_web
+    level: none
+  - property_id: flex_wrap
+    client_id: outlook_web
+    level: none
+  - property_id: flex_wrap
+    client_id: yahoo_web
+    level: none
+  - property_id: flex_wrap
+    client_id: aol_web
+    level: none
+  - property_id: flex_wrap
+    client_id: protonmail_web
+    level: none
+  - property_id: flex_wrap
+    client_id: comcast_web
+    level: none
+  - property_id: flex_wrap
+    client_id: t_online_web
+    level: none
+  - property_id: flex_wrap
+    client_id: gmx_web
+    level: none
+
+  # --- justify_content ---
+  - property_id: justify_content
+    client_id: outlook_2016_win
+    level: none
+  - property_id: justify_content
+    client_id: outlook_2019_win
+    level: none
+  - property_id: justify_content
+    client_id: outlook_365_win
+    level: none
+  - property_id: justify_content
+    client_id: gmail_web
+    level: none
+  - property_id: justify_content
+    client_id: outlook_web
+    level: none
+  - property_id: justify_content
+    client_id: yahoo_web
+    level: none
+  - property_id: justify_content
+    client_id: aol_web
+    level: none
+  - property_id: justify_content
+    client_id: protonmail_web
+    level: none
+  - property_id: justify_content
+    client_id: comcast_web
+    level: none
+  - property_id: justify_content
+    client_id: t_online_web
+    level: none
+  - property_id: justify_content
+    client_id: gmx_web
+    level: none
+
+  # --- align_items ---
+  - property_id: align_items
+    client_id: outlook_2016_win
+    level: none
+  - property_id: align_items
+    client_id: outlook_2019_win
+    level: none
+  - property_id: align_items
+    client_id: outlook_365_win
+    level: none
+  - property_id: align_items
+    client_id: gmail_web
+    level: none
+  - property_id: align_items
+    client_id: outlook_web
+    level: none
+  - property_id: align_items
+    client_id: yahoo_web
+    level: none
+  - property_id: align_items
+    client_id: aol_web
+    level: none
+  - property_id: align_items
+    client_id: protonmail_web
+    level: none
+  - property_id: align_items
+    client_id: comcast_web
+    level: none
+  - property_id: align_items
+    client_id: t_online_web
+    level: none
+  - property_id: align_items
+    client_id: gmx_web
+    level: none
+
+  # --- align_self ---
+  - property_id: align_self
+    client_id: outlook_2016_win
+    level: none
+  - property_id: align_self
+    client_id: outlook_2019_win
+    level: none
+  - property_id: align_self
+    client_id: outlook_365_win
+    level: none
+  - property_id: align_self
+    client_id: gmail_web
+    level: none
+  - property_id: align_self
+    client_id: outlook_web
+    level: none
+  - property_id: align_self
+    client_id: yahoo_web
+    level: none
+  - property_id: align_self
+    client_id: aol_web
+    level: none
+  - property_id: align_self
+    client_id: protonmail_web
+    level: none
+
+  # --- flex_grow ---
+  - property_id: flex_grow
+    client_id: outlook_2016_win
+    level: none
+  - property_id: flex_grow
+    client_id: outlook_2019_win
+    level: none
+  - property_id: flex_grow
+    client_id: outlook_365_win
+    level: none
+  - property_id: flex_grow
+    client_id: gmail_web
+    level: none
+  - property_id: flex_grow
+    client_id: outlook_web
+    level: none
+  - property_id: flex_grow
+    client_id: yahoo_web
+    level: none
+  - property_id: flex_grow
+    client_id: aol_web
+    level: none
+  - property_id: flex_grow
+    client_id: protonmail_web
+    level: none
+
+  # --- flex_shrink ---
+  - property_id: flex_shrink
+    client_id: outlook_2016_win
+    level: none
+  - property_id: flex_shrink
+    client_id: outlook_2019_win
+    level: none
+  - property_id: flex_shrink
+    client_id: outlook_365_win
+    level: none
+  - property_id: flex_shrink
+    client_id: gmail_web
+    level: none
+  - property_id: flex_shrink
+    client_id: outlook_web
+    level: none
+  - property_id: flex_shrink
+    client_id: yahoo_web
+    level: none
+  - property_id: flex_shrink
+    client_id: aol_web
+    level: none
+  - property_id: flex_shrink
+    client_id: protonmail_web
+    level: none
+
+  # --- flex_basis ---
+  - property_id: flex_basis
+    client_id: outlook_2016_win
+    level: none
+  - property_id: flex_basis
+    client_id: outlook_2019_win
+    level: none
+  - property_id: flex_basis
+    client_id: outlook_365_win
+    level: none
+  - property_id: flex_basis
+    client_id: gmail_web
+    level: none
+  - property_id: flex_basis
+    client_id: outlook_web
+    level: none
+  - property_id: flex_basis
+    client_id: yahoo_web
+    level: none
+  - property_id: flex_basis
+    client_id: aol_web
+    level: none
+  - property_id: flex_basis
+    client_id: protonmail_web
+    level: none
+
+  # --- order ---
+  - property_id: order
+    client_id: outlook_2016_win
+    level: none
+  - property_id: order
+    client_id: outlook_2019_win
+    level: none
+  - property_id: order
+    client_id: outlook_365_win
+    level: none
+  - property_id: order
+    client_id: gmail_web
+    level: none
+  - property_id: order
+    client_id: outlook_web
+    level: none
+  - property_id: order
+    client_id: yahoo_web
+    level: none
+  - property_id: order
+    client_id: aol_web
+    level: none
+  - property_id: order
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # GRID PROPERTIES
+  # ===========================================================================
+
+  # --- display_grid ---
+  - property_id: display_grid
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine has no CSS Grid support"
+    workaround: "Use nested tables for grid layouts"
+  - property_id: display_grid
+    client_id: outlook_2019_win
+    level: none
+    workaround: "Use nested tables for grid layouts"
+  - property_id: display_grid
+    client_id: outlook_365_win
+    level: none
+    workaround: "Use nested tables for grid layouts"
+  - property_id: display_grid
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips CSS Grid"
+    workaround: "Use nested tables"
+  - property_id: display_grid
+    client_id: outlook_web
+    level: none
+  - property_id: display_grid
+    client_id: yahoo_web
+    level: none
+  - property_id: display_grid
+    client_id: aol_web
+    level: none
+  - property_id: display_grid
+    client_id: protonmail_web
+    level: none
+  - property_id: display_grid
+    client_id: comcast_web
+    level: none
+  - property_id: display_grid
+    client_id: t_online_web
+    level: none
+  - property_id: display_grid
+    client_id: gmx_web
+    level: none
+
+  # --- grid_template_columns ---
+  - property_id: grid_template_columns
+    client_id: outlook_2016_win
+    level: none
+  - property_id: grid_template_columns
+    client_id: outlook_2019_win
+    level: none
+  - property_id: grid_template_columns
+    client_id: outlook_365_win
+    level: none
+  - property_id: grid_template_columns
+    client_id: gmail_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: outlook_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: yahoo_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: aol_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: protonmail_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: comcast_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: t_online_web
+    level: none
+  - property_id: grid_template_columns
+    client_id: gmx_web
+    level: none
+
+  # --- grid_template_rows ---
+  - property_id: grid_template_rows
+    client_id: outlook_2016_win
+    level: none
+  - property_id: grid_template_rows
+    client_id: outlook_2019_win
+    level: none
+  - property_id: grid_template_rows
+    client_id: outlook_365_win
+    level: none
+  - property_id: grid_template_rows
+    client_id: gmail_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: outlook_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: yahoo_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: aol_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: protonmail_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: comcast_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: t_online_web
+    level: none
+  - property_id: grid_template_rows
+    client_id: gmx_web
+    level: none
+
+  # --- grid_column ---
+  - property_id: grid_column
+    client_id: outlook_2016_win
+    level: none
+  - property_id: grid_column
+    client_id: outlook_2019_win
+    level: none
+  - property_id: grid_column
+    client_id: outlook_365_win
+    level: none
+  - property_id: grid_column
+    client_id: gmail_web
+    level: none
+  - property_id: grid_column
+    client_id: outlook_web
+    level: none
+  - property_id: grid_column
+    client_id: yahoo_web
+    level: none
+  - property_id: grid_column
+    client_id: aol_web
+    level: none
+  - property_id: grid_column
+    client_id: protonmail_web
+    level: none
+
+  # --- grid_row ---
+  - property_id: grid_row
+    client_id: outlook_2016_win
+    level: none
+  - property_id: grid_row
+    client_id: outlook_2019_win
+    level: none
+  - property_id: grid_row
+    client_id: outlook_365_win
+    level: none
+  - property_id: grid_row
+    client_id: gmail_web
+    level: none
+  - property_id: grid_row
+    client_id: outlook_web
+    level: none
+  - property_id: grid_row
+    client_id: yahoo_web
+    level: none
+  - property_id: grid_row
+    client_id: aol_web
+    level: none
+  - property_id: grid_row
+    client_id: protonmail_web
+    level: none
+
+  # --- grid_gap / gap ---
+  - property_id: gap
+    client_id: outlook_2016_win
+    level: none
+    workaround: "Use cellpadding/cellspacing on tables or margin on cells"
+  - property_id: gap
+    client_id: outlook_2019_win
+    level: none
+  - property_id: gap
+    client_id: outlook_365_win
+    level: none
+  - property_id: gap
+    client_id: gmail_web
+    level: none
+  - property_id: gap
+    client_id: outlook_web
+    level: none
+  - property_id: gap
+    client_id: yahoo_web
+    level: none
+  - property_id: gap
+    client_id: aol_web
+    level: none
+  - property_id: gap
+    client_id: protonmail_web
+    level: none
+  - property_id: gap
+    client_id: comcast_web
+    level: none
+  - property_id: gap
+    client_id: t_online_web
+    level: none
+  - property_id: gap
+    client_id: gmx_web
+    level: none
+
+  # --- row_gap ---
+  - property_id: row_gap
+    client_id: outlook_2016_win
+    level: none
+  - property_id: row_gap
+    client_id: outlook_2019_win
+    level: none
+  - property_id: row_gap
+    client_id: outlook_365_win
+    level: none
+  - property_id: row_gap
+    client_id: gmail_web
+    level: none
+  - property_id: row_gap
+    client_id: outlook_web
+    level: none
+  - property_id: row_gap
+    client_id: yahoo_web
+    level: none
+  - property_id: row_gap
+    client_id: aol_web
+    level: none
+  - property_id: row_gap
+    client_id: protonmail_web
+    level: none
+
+  # --- column_gap ---
+  - property_id: column_gap
+    client_id: outlook_2016_win
+    level: none
+  - property_id: column_gap
+    client_id: outlook_2019_win
+    level: none
+  - property_id: column_gap
+    client_id: outlook_365_win
+    level: none
+  - property_id: column_gap
+    client_id: gmail_web
+    level: none
+  - property_id: column_gap
+    client_id: outlook_web
+    level: none
+  - property_id: column_gap
+    client_id: yahoo_web
+    level: none
+  - property_id: column_gap
+    client_id: aol_web
+    level: none
+  - property_id: column_gap
+    client_id: protonmail_web
+    level: none
+
+  # --- grid_auto_flow ---
+  - property_id: grid_auto_flow
+    client_id: outlook_2016_win
+    level: none
+  - property_id: grid_auto_flow
+    client_id: outlook_2019_win
+    level: none
+  - property_id: grid_auto_flow
+    client_id: outlook_365_win
+    level: none
+  - property_id: grid_auto_flow
+    client_id: gmail_web
+    level: none
+  - property_id: grid_auto_flow
+    client_id: outlook_web
+    level: none
+  - property_id: grid_auto_flow
+    client_id: yahoo_web
+    level: none
+  - property_id: grid_auto_flow
+    client_id: aol_web
+    level: none
+  - property_id: grid_auto_flow
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # POSITION PROPERTIES
+  # ===========================================================================
+
+  # --- position_fixed ---
+  - property_id: position_fixed
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support fixed positioning"
+  - property_id: position_fixed
+    client_id: outlook_2019_win
+    level: none
+  - property_id: position_fixed
+    client_id: outlook_365_win
+    level: none
+  - property_id: position_fixed
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips position:fixed"
+  - property_id: position_fixed
+    client_id: outlook_web
+    level: none
+  - property_id: position_fixed
+    client_id: yahoo_web
+    level: none
+  - property_id: position_fixed
+    client_id: aol_web
+    level: none
+  - property_id: position_fixed
+    client_id: protonmail_web
+    level: none
+  - property_id: position_fixed
+    client_id: hey_web
+    level: none
+  - property_id: position_fixed
+    client_id: fastmail_web
+    level: none
+  - property_id: position_fixed
+    client_id: comcast_web
+    level: none
+  - property_id: position_fixed
+    client_id: t_online_web
+    level: none
+  - property_id: position_fixed
+    client_id: gmx_web
+    level: none
+
+  # --- position_sticky ---
+  - property_id: position_sticky
+    client_id: outlook_2016_win
+    level: none
+  - property_id: position_sticky
+    client_id: outlook_2019_win
+    level: none
+  - property_id: position_sticky
+    client_id: outlook_365_win
+    level: none
+  - property_id: position_sticky
+    client_id: gmail_web
+    level: none
+  - property_id: position_sticky
+    client_id: outlook_web
+    level: none
+  - property_id: position_sticky
+    client_id: yahoo_web
+    level: none
+  - property_id: position_sticky
+    client_id: aol_web
+    level: none
+  - property_id: position_sticky
+    client_id: protonmail_web
+    level: none
+  - property_id: position_sticky
+    client_id: hey_web
+    level: none
+  - property_id: position_sticky
+    client_id: fastmail_web
+    level: none
+  - property_id: position_sticky
+    client_id: comcast_web
+    level: none
+  - property_id: position_sticky
+    client_id: t_online_web
+    level: none
+  - property_id: position_sticky
+    client_id: gmx_web
+    level: none
+
+  # --- position_absolute ---
+  - property_id: position_absolute
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Works in some contexts but unreliable in Word engine"
+  - property_id: position_absolute
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: position_absolute
+    client_id: outlook_365_win
+    level: partial
+  - property_id: position_absolute
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips position:absolute"
+  - property_id: position_absolute
+    client_id: outlook_web
+    level: partial
+  - property_id: position_absolute
+    client_id: yahoo_web
+    level: partial
+  - property_id: position_absolute
+    client_id: protonmail_web
+    level: none
+  - property_id: position_absolute
+    client_id: comcast_web
+    level: none
+  - property_id: position_absolute
+    client_id: t_online_web
+    level: none
+  - property_id: position_absolute
+    client_id: gmx_web
+    level: none
+
+  # --- position_relative ---
+  - property_id: position_relative
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Partially supported but can cause layout shifts"
+  - property_id: position_relative
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: position_relative
+    client_id: outlook_365_win
+    level: partial
+  - property_id: position_relative
+    client_id: gmail_web
+    level: none
+  - property_id: position_relative
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # BORDER & BOX MODEL
+  # ===========================================================================
+
+  # --- border_radius ---
+  - property_id: border_radius
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Ignored on most elements; only works on v:roundrect VML"
+    workaround: "Use VML v:roundrect for rounded buttons in Outlook"
+  - property_id: border_radius
+    client_id: outlook_2019_win
+    level: partial
+    notes: "Ignored on most elements"
+    workaround: "Use VML v:roundrect for rounded buttons"
+  - property_id: border_radius
+    client_id: outlook_365_win
+    level: partial
+    notes: "Ignored on most elements"
+    workaround: "Use VML v:roundrect for rounded buttons"
+
+  # --- box_shadow ---
+  - property_id: box_shadow
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not render box-shadow"
+    workaround: "Use border for visual separation; VML shadow for Outlook-specific"
+  - property_id: box_shadow
+    client_id: outlook_2019_win
+    level: none
+    workaround: "Use border for visual separation"
+  - property_id: box_shadow
+    client_id: outlook_365_win
+    level: none
+    workaround: "Use border for visual separation"
+  - property_id: box_shadow
+    client_id: yahoo_web
+    level: partial
+    notes: "Some box-shadow values may be stripped"
+  - property_id: box_shadow
+    client_id: protonmail_web
+    level: none
+    notes: "ProtonMail strips box-shadow"
+  - property_id: box_shadow
+    client_id: comcast_web
+    level: partial
+  - property_id: box_shadow
+    client_id: t_online_web
+    level: partial
+  - property_id: box_shadow
+    client_id: gmx_web
+    level: partial
+
+  # --- box_sizing ---
+  - property_id: box_sizing
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Not reliably applied in Word engine"
+  - property_id: box_sizing
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: box_sizing
+    client_id: outlook_365_win
+    level: partial
+
+  # --- outline ---
+  - property_id: outline
+    client_id: outlook_2016_win
+    level: none
+  - property_id: outline
+    client_id: outlook_2019_win
+    level: none
+  - property_id: outline
+    client_id: outlook_365_win
+    level: none
+
+  # ===========================================================================
+  # BACKGROUND PROPERTIES
+  # ===========================================================================
+
+  # --- background_size ---
+  - property_id: background_size
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support background-size"
+    workaround: "Use VML v:fill for background images in Outlook"
+  - property_id: background_size
+    client_id: outlook_2019_win
+    level: none
+    workaround: "Use VML v:fill for background images"
+  - property_id: background_size
+    client_id: outlook_365_win
+    level: none
+    workaround: "Use VML v:fill for background images"
+  - property_id: background_size
+    client_id: outlook_web
+    level: partial
+    notes: "Some values may be stripped"
+
+  # --- background_size_cover ---
+  - property_id: background_size_cover
+    client_id: outlook_2016_win
+    level: none
+    workaround: "Use VML v:fill type=frame for cover-like behaviour"
+  - property_id: background_size_cover
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_size_cover
+    client_id: outlook_365_win
+    level: none
+  - property_id: background_size_cover
+    client_id: outlook_web
+    level: partial
+
+  # --- background_size_contain ---
+  - property_id: background_size_contain
+    client_id: outlook_2016_win
+    level: none
+  - property_id: background_size_contain
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_size_contain
+    client_id: outlook_365_win
+    level: none
+  - property_id: background_size_contain
+    client_id: outlook_web
+    level: partial
+
+  # --- background_image_linear_gradient ---
+  - property_id: background_image_linear_gradient
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support CSS gradients"
+    workaround: "Use VML v:fill type=gradient for Outlook"
+  - property_id: background_image_linear_gradient
+    client_id: outlook_2019_win
+    level: none
+    workaround: "Use VML v:fill type=gradient"
+  - property_id: background_image_linear_gradient
+    client_id: outlook_365_win
+    level: none
+    workaround: "Use VML v:fill type=gradient"
+  - property_id: background_image_linear_gradient
+    client_id: gmail_web
+    level: partial
+    notes: "Some gradient syntaxes stripped; data URIs blocked"
+  - property_id: background_image_linear_gradient
+    client_id: outlook_web
+    level: partial
+  - property_id: background_image_linear_gradient
+    client_id: yahoo_web
+    level: partial
+  - property_id: background_image_linear_gradient
+    client_id: protonmail_web
+    level: none
+
+  # --- background_image_radial_gradient ---
+  - property_id: background_image_radial_gradient
+    client_id: outlook_2016_win
+    level: none
+  - property_id: background_image_radial_gradient
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_image_radial_gradient
+    client_id: outlook_365_win
+    level: none
+  - property_id: background_image_radial_gradient
+    client_id: gmail_web
+    level: partial
+  - property_id: background_image_radial_gradient
+    client_id: outlook_web
+    level: partial
+  - property_id: background_image_radial_gradient
+    client_id: yahoo_web
+    level: partial
+  - property_id: background_image_radial_gradient
+    client_id: protonmail_web
+    level: none
+
+  # --- background_image ---
+  - property_id: background_image
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Only works via VML; CSS background-image on elements is unreliable"
+    workaround: "Use VML v:fill for background images"
+  - property_id: background_image
+    client_id: outlook_2019_win
+    level: partial
+    workaround: "Use VML v:fill"
+  - property_id: background_image
+    client_id: outlook_365_win
+    level: partial
+    workaround: "Use VML v:fill"
+  - property_id: background_image
+    client_id: gmail_web
+    level: partial
+    notes: "Data URIs stripped; external URLs mostly work in style attr"
+  - property_id: background_image
+    client_id: protonmail_web
+    level: partial
+    notes: "External images proxied; data URIs stripped"
+
+  # --- background_position ---
+  - property_id: background_position
+    client_id: outlook_2016_win
+    level: none
+  - property_id: background_position
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_position
+    client_id: outlook_365_win
+    level: none
+
+  # --- background_repeat ---
+  - property_id: background_repeat
+    client_id: outlook_2016_win
+    level: none
+  - property_id: background_repeat
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_repeat
+    client_id: outlook_365_win
+    level: none
+
+  # --- background_clip ---
+  - property_id: background_clip
+    client_id: outlook_2016_win
+    level: none
+  - property_id: background_clip
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_clip
+    client_id: outlook_365_win
+    level: none
+  - property_id: background_clip
+    client_id: gmail_web
+    level: none
+  - property_id: background_clip
+    client_id: outlook_web
+    level: none
+  - property_id: background_clip
+    client_id: yahoo_web
+    level: none
+  - property_id: background_clip
+    client_id: protonmail_web
+    level: none
+
+  # --- background_blend_mode ---
+  - property_id: background_blend_mode
+    client_id: outlook_2016_win
+    level: none
+  - property_id: background_blend_mode
+    client_id: outlook_2019_win
+    level: none
+  - property_id: background_blend_mode
+    client_id: outlook_365_win
+    level: none
+  - property_id: background_blend_mode
+    client_id: gmail_web
+    level: none
+  - property_id: background_blend_mode
+    client_id: outlook_web
+    level: none
+  - property_id: background_blend_mode
+    client_id: yahoo_web
+    level: none
+  - property_id: background_blend_mode
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # OPACITY & VISUAL EFFECTS
+  # ===========================================================================
+
+  # --- opacity ---
+  - property_id: opacity
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support opacity"
+    workaround: "Use transparent PNG images for opacity effects"
+  - property_id: opacity
+    client_id: outlook_2019_win
+    level: none
+  - property_id: opacity
+    client_id: outlook_365_win
+    level: none
+  - property_id: opacity
+    client_id: protonmail_web
+    level: partial
+
+  # --- mix_blend_mode ---
+  - property_id: mix_blend_mode
+    client_id: outlook_2016_win
+    level: none
+  - property_id: mix_blend_mode
+    client_id: outlook_2019_win
+    level: none
+  - property_id: mix_blend_mode
+    client_id: outlook_365_win
+    level: none
+  - property_id: mix_blend_mode
+    client_id: gmail_web
+    level: none
+  - property_id: mix_blend_mode
+    client_id: outlook_web
+    level: none
+  - property_id: mix_blend_mode
+    client_id: yahoo_web
+    level: none
+  - property_id: mix_blend_mode
+    client_id: aol_web
+    level: none
+  - property_id: mix_blend_mode
+    client_id: protonmail_web
+    level: none
+
+  # --- backdrop_filter ---
+  - property_id: backdrop_filter
+    client_id: outlook_2016_win
+    level: none
+  - property_id: backdrop_filter
+    client_id: outlook_2019_win
+    level: none
+  - property_id: backdrop_filter
+    client_id: outlook_365_win
+    level: none
+  - property_id: backdrop_filter
+    client_id: gmail_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: outlook_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: yahoo_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: aol_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: protonmail_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: hey_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: comcast_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: t_online_web
+    level: none
+  - property_id: backdrop_filter
+    client_id: gmx_web
+    level: none
+
+  # --- filter ---
+  - property_id: filter
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support CSS filters"
+  - property_id: filter
+    client_id: outlook_2019_win
+    level: none
+  - property_id: filter
+    client_id: outlook_365_win
+    level: none
+  - property_id: filter
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips filter property"
+  - property_id: filter
+    client_id: outlook_web
+    level: none
+  - property_id: filter
+    client_id: yahoo_web
+    level: none
+  - property_id: filter
+    client_id: aol_web
+    level: none
+  - property_id: filter
+    client_id: protonmail_web
+    level: none
+  - property_id: filter
+    client_id: hey_web
+    level: partial
+  - property_id: filter
+    client_id: comcast_web
+    level: none
+  - property_id: filter
+    client_id: t_online_web
+    level: none
+  - property_id: filter
+    client_id: gmx_web
+    level: none
+
+  # --- filter_blur ---
+  - property_id: filter_blur
+    client_id: outlook_2016_win
+    level: none
+  - property_id: filter_blur
+    client_id: outlook_2019_win
+    level: none
+  - property_id: filter_blur
+    client_id: outlook_365_win
+    level: none
+  - property_id: filter_blur
+    client_id: gmail_web
+    level: none
+  - property_id: filter_blur
+    client_id: outlook_web
+    level: none
+  - property_id: filter_blur
+    client_id: yahoo_web
+    level: none
+  - property_id: filter_blur
+    client_id: protonmail_web
+    level: none
+
+  # --- filter_grayscale ---
+  - property_id: filter_grayscale
+    client_id: outlook_2016_win
+    level: none
+  - property_id: filter_grayscale
+    client_id: outlook_2019_win
+    level: none
+  - property_id: filter_grayscale
+    client_id: outlook_365_win
+    level: none
+  - property_id: filter_grayscale
+    client_id: gmail_web
+    level: none
+  - property_id: filter_grayscale
+    client_id: outlook_web
+    level: none
+  - property_id: filter_grayscale
+    client_id: yahoo_web
+    level: none
+  - property_id: filter_grayscale
+    client_id: protonmail_web
+    level: none
+
+  # --- filter_drop_shadow ---
+  - property_id: filter_drop_shadow
+    client_id: outlook_2016_win
+    level: none
+  - property_id: filter_drop_shadow
+    client_id: outlook_2019_win
+    level: none
+  - property_id: filter_drop_shadow
+    client_id: outlook_365_win
+    level: none
+  - property_id: filter_drop_shadow
+    client_id: gmail_web
+    level: none
+  - property_id: filter_drop_shadow
+    client_id: outlook_web
+    level: none
+  - property_id: filter_drop_shadow
+    client_id: yahoo_web
+    level: none
+  - property_id: filter_drop_shadow
+    client_id: protonmail_web
+    level: none
+
+  # --- clip_path ---
+  - property_id: clip_path
+    client_id: outlook_2016_win
+    level: none
+  - property_id: clip_path
+    client_id: outlook_2019_win
+    level: none
+  - property_id: clip_path
+    client_id: outlook_365_win
+    level: none
+  - property_id: clip_path
+    client_id: gmail_web
+    level: none
+  - property_id: clip_path
+    client_id: outlook_web
+    level: none
+  - property_id: clip_path
+    client_id: yahoo_web
+    level: none
+  - property_id: clip_path
+    client_id: aol_web
+    level: none
+  - property_id: clip_path
+    client_id: protonmail_web
+    level: none
+  - property_id: clip_path
+    client_id: comcast_web
+    level: none
+  - property_id: clip_path
+    client_id: t_online_web
+    level: none
+  - property_id: clip_path
+    client_id: gmx_web
+    level: none
+
+  # ===========================================================================
+  # TRANSFORM & ANIMATION
+  # ===========================================================================
+
+  # --- transform ---
+  - property_id: transform
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support CSS transforms"
+  - property_id: transform
+    client_id: outlook_2019_win
+    level: none
+  - property_id: transform
+    client_id: outlook_365_win
+    level: none
+  - property_id: transform
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips transform declarations"
+  - property_id: transform
+    client_id: outlook_web
+    level: none
+  - property_id: transform
+    client_id: yahoo_web
+    level: none
+  - property_id: transform
+    client_id: aol_web
+    level: none
+  - property_id: transform
+    client_id: protonmail_web
+    level: none
+  - property_id: transform
+    client_id: comcast_web
+    level: none
+  - property_id: transform
+    client_id: t_online_web
+    level: none
+  - property_id: transform
+    client_id: gmx_web
+    level: none
+
+  # --- transform_origin ---
+  - property_id: transform_origin
+    client_id: outlook_2016_win
+    level: none
+  - property_id: transform_origin
+    client_id: outlook_2019_win
+    level: none
+  - property_id: transform_origin
+    client_id: outlook_365_win
+    level: none
+  - property_id: transform_origin
+    client_id: gmail_web
+    level: none
+  - property_id: transform_origin
+    client_id: outlook_web
+    level: none
+  - property_id: transform_origin
+    client_id: yahoo_web
+    level: none
+  - property_id: transform_origin
+    client_id: protonmail_web
+    level: none
+
+  # --- transition ---
+  - property_id: transition
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support CSS transitions"
+  - property_id: transition
+    client_id: outlook_2019_win
+    level: none
+  - property_id: transition
+    client_id: outlook_365_win
+    level: none
+  - property_id: transition
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips transition declarations"
+  - property_id: transition
+    client_id: outlook_web
+    level: none
+  - property_id: transition
+    client_id: yahoo_web
+    level: none
+  - property_id: transition
+    client_id: aol_web
+    level: none
+  - property_id: transition
+    client_id: protonmail_web
+    level: none
+  - property_id: transition
+    client_id: comcast_web
+    level: none
+  - property_id: transition
+    client_id: t_online_web
+    level: none
+  - property_id: transition
+    client_id: gmx_web
+    level: none
+
+  # --- animation ---
+  - property_id: animation
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support CSS animations"
+    workaround: "Use animated GIFs for simple animations; Outlook shows first frame"
+  - property_id: animation
+    client_id: outlook_2019_win
+    level: none
+  - property_id: animation
+    client_id: outlook_365_win
+    level: none
+  - property_id: animation
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips @keyframes and animation properties"
+  - property_id: animation
+    client_id: outlook_web
+    level: none
+  - property_id: animation
+    client_id: yahoo_web
+    level: none
+  - property_id: animation
+    client_id: aol_web
+    level: none
+  - property_id: animation
+    client_id: protonmail_web
+    level: none
+  - property_id: animation
+    client_id: comcast_web
+    level: none
+  - property_id: animation
+    client_id: t_online_web
+    level: none
+  - property_id: animation
+    client_id: gmx_web
+    level: none
+
+  # --- keyframes ---
+  - property_id: keyframes
+    client_id: outlook_2016_win
+    level: none
+  - property_id: keyframes
+    client_id: outlook_2019_win
+    level: none
+  - property_id: keyframes
+    client_id: outlook_365_win
+    level: none
+  - property_id: keyframes
+    client_id: gmail_web
+    level: none
+  - property_id: keyframes
+    client_id: outlook_web
+    level: none
+  - property_id: keyframes
+    client_id: yahoo_web
+    level: none
+  - property_id: keyframes
+    client_id: aol_web
+    level: none
+  - property_id: keyframes
+    client_id: protonmail_web
+    level: none
+  - property_id: keyframes
+    client_id: comcast_web
+    level: none
+  - property_id: keyframes
+    client_id: t_online_web
+    level: none
+  - property_id: keyframes
+    client_id: gmx_web
+    level: none
+
+  # --- will_change ---
+  - property_id: will_change
+    client_id: outlook_2016_win
+    level: none
+  - property_id: will_change
+    client_id: outlook_2019_win
+    level: none
+  - property_id: will_change
+    client_id: outlook_365_win
+    level: none
+  - property_id: will_change
+    client_id: gmail_web
+    level: none
+  - property_id: will_change
+    client_id: outlook_web
+    level: none
+  - property_id: will_change
+    client_id: yahoo_web
+    level: none
+  - property_id: will_change
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # SIZING & OVERFLOW
+  # ===========================================================================
+
+  # --- max_width ---
+  - property_id: max_width
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Unreliable in Word engine; may be ignored on some elements"
+    workaround: "Use fixed width on tables; wrap in <!--[if mso]> table for max-width effect"
+  - property_id: max_width
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: max_width
+    client_id: outlook_365_win
+    level: partial
+
+  # --- max_height ---
+  - property_id: max_height
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Unreliable in Word engine"
+  - property_id: max_height
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: max_height
+    client_id: outlook_365_win
+    level: partial
+
+  # --- min_width ---
+  - property_id: min_width
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: min_width
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: min_width
+    client_id: outlook_365_win
+    level: partial
+
+  # --- min_height ---
+  - property_id: min_height
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: min_height
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: min_height
+    client_id: outlook_365_win
+    level: partial
+
+  # --- overflow_hidden ---
+  - property_id: overflow_hidden
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Works on some elements but not reliably applied in Word engine"
+  - property_id: overflow_hidden
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: overflow_hidden
+    client_id: outlook_365_win
+    level: partial
+
+  # --- overflow_auto ---
+  - property_id: overflow_auto
+    client_id: outlook_2016_win
+    level: none
+  - property_id: overflow_auto
+    client_id: outlook_2019_win
+    level: none
+  - property_id: overflow_auto
+    client_id: outlook_365_win
+    level: none
+
+  # --- overflow_scroll ---
+  - property_id: overflow_scroll
+    client_id: outlook_2016_win
+    level: none
+  - property_id: overflow_scroll
+    client_id: outlook_2019_win
+    level: none
+  - property_id: overflow_scroll
+    client_id: outlook_365_win
+    level: none
+
+  # --- object_fit ---
+  - property_id: object_fit
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support object-fit"
+    workaround: "Use explicit width/height on img tags; VML for cropping"
+  - property_id: object_fit
+    client_id: outlook_2019_win
+    level: none
+  - property_id: object_fit
+    client_id: outlook_365_win
+    level: none
+  - property_id: object_fit
+    client_id: gmail_web
+    level: partial
+  - property_id: object_fit
+    client_id: outlook_web
+    level: partial
+  - property_id: object_fit
+    client_id: protonmail_web
+    level: none
+
+  # --- object_position ---
+  - property_id: object_position
+    client_id: outlook_2016_win
+    level: none
+  - property_id: object_position
+    client_id: outlook_2019_win
+    level: none
+  - property_id: object_position
+    client_id: outlook_365_win
+    level: none
+  - property_id: object_position
+    client_id: gmail_web
+    level: partial
+  - property_id: object_position
+    client_id: protonmail_web
+    level: none
+
+  # --- aspect_ratio ---
+  - property_id: aspect_ratio
+    client_id: outlook_2016_win
+    level: none
+  - property_id: aspect_ratio
+    client_id: outlook_2019_win
+    level: none
+  - property_id: aspect_ratio
+    client_id: outlook_365_win
+    level: none
+  - property_id: aspect_ratio
+    client_id: gmail_web
+    level: none
+  - property_id: aspect_ratio
+    client_id: outlook_web
+    level: none
+  - property_id: aspect_ratio
+    client_id: yahoo_web
+    level: none
+  - property_id: aspect_ratio
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # DISPLAY PROPERTIES
+  # ===========================================================================
+
+  # --- display_inline_block ---
+  - property_id: display_inline_block
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Partially supported; may not respect width/height"
+    workaround: "Use table cells or align attribute on elements"
+  - property_id: display_inline_block
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: display_inline_block
+    client_id: outlook_365_win
+    level: partial
+
+  # --- display_table ---
+  - property_id: display_table
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Use actual table elements instead of CSS display:table"
+  - property_id: display_table
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: display_table
+    client_id: outlook_365_win
+    level: partial
+
+  # --- display_none ---
+  - property_id: display_none
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Works in style attribute but not reliably from stylesheets"
+    workaround: "Use <!--[if !mso]><!-->...<!--<![endif]--> for Outlook hiding"
+  - property_id: display_none
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: display_none
+    client_id: outlook_365_win
+    level: partial
+
+  # ===========================================================================
+  # TEXT & TYPOGRAPHY
+  # ===========================================================================
+
+  # --- text_shadow ---
+  - property_id: text_shadow
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Renders inconsistently in Word engine; may show artifacts"
+  - property_id: text_shadow
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: text_shadow
+    client_id: outlook_365_win
+    level: partial
+  - property_id: text_shadow
+    client_id: protonmail_web
+    level: none
+
+  # --- text_overflow ---
+  - property_id: text_overflow
+    client_id: outlook_2016_win
+    level: none
+  - property_id: text_overflow
+    client_id: outlook_2019_win
+    level: none
+  - property_id: text_overflow
+    client_id: outlook_365_win
+    level: none
+
+  # --- word_break ---
+  - property_id: word_break
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: word_break
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: word_break
+    client_id: outlook_365_win
+    level: partial
+
+  # --- overflow_wrap ---
+  - property_id: overflow_wrap
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: overflow_wrap
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: overflow_wrap
+    client_id: outlook_365_win
+    level: partial
+
+  # --- text_decoration_style ---
+  - property_id: text_decoration_style
+    client_id: outlook_2016_win
+    level: none
+  - property_id: text_decoration_style
+    client_id: outlook_2019_win
+    level: none
+  - property_id: text_decoration_style
+    client_id: outlook_365_win
+    level: none
+  - property_id: text_decoration_style
+    client_id: gmail_web
+    level: partial
+
+  # --- text_decoration_color ---
+  - property_id: text_decoration_color
+    client_id: outlook_2016_win
+    level: none
+  - property_id: text_decoration_color
+    client_id: outlook_2019_win
+    level: none
+  - property_id: text_decoration_color
+    client_id: outlook_365_win
+    level: none
+
+  # --- text_decoration_thickness ---
+  - property_id: text_decoration_thickness
+    client_id: outlook_2016_win
+    level: none
+  - property_id: text_decoration_thickness
+    client_id: outlook_2019_win
+    level: none
+  - property_id: text_decoration_thickness
+    client_id: outlook_365_win
+    level: none
+
+  # --- writing_mode ---
+  - property_id: writing_mode
+    client_id: outlook_2016_win
+    level: none
+  - property_id: writing_mode
+    client_id: outlook_2019_win
+    level: none
+  - property_id: writing_mode
+    client_id: outlook_365_win
+    level: none
+  - property_id: writing_mode
+    client_id: gmail_web
+    level: none
+  - property_id: writing_mode
+    client_id: protonmail_web
+    level: none
+
+  # --- text_orientation ---
+  - property_id: text_orientation
+    client_id: outlook_2016_win
+    level: none
+  - property_id: text_orientation
+    client_id: outlook_2019_win
+    level: none
+  - property_id: text_orientation
+    client_id: outlook_365_win
+    level: none
+  - property_id: text_orientation
+    client_id: gmail_web
+    level: none
+
+  # --- hyphens ---
+  - property_id: hyphens
+    client_id: outlook_2016_win
+    level: none
+  - property_id: hyphens
+    client_id: outlook_2019_win
+    level: none
+  - property_id: hyphens
+    client_id: outlook_365_win
+    level: none
+  - property_id: hyphens
+    client_id: gmail_web
+    level: none
+
+  # --- font_face ---
+  - property_id: font_face
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine ignores @font-face; falls back to system fonts"
+    workaround: "Specify web-safe font stack with system fallbacks"
+  - property_id: font_face
+    client_id: outlook_2019_win
+    level: none
+    workaround: "Specify web-safe font stack with system fallbacks"
+  - property_id: font_face
+    client_id: outlook_365_win
+    level: none
+    workaround: "Specify web-safe font stack with system fallbacks"
+  - property_id: font_face
+    client_id: gmail_web
+    level: partial
+    notes: "Some @font-face support but unreliable; Google Fonts via link tag works"
+  - property_id: font_face
+    client_id: outlook_web
+    level: partial
+  - property_id: font_face
+    client_id: yahoo_web
+    level: partial
+  - property_id: font_face
+    client_id: protonmail_web
+    level: none
+
+  # --- font_feature_settings ---
+  - property_id: font_feature_settings
+    client_id: outlook_2016_win
+    level: none
+  - property_id: font_feature_settings
+    client_id: outlook_2019_win
+    level: none
+  - property_id: font_feature_settings
+    client_id: outlook_365_win
+    level: none
+  - property_id: font_feature_settings
+    client_id: gmail_web
+    level: none
+
+  # --- font_variant ---
+  - property_id: font_variant
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: font_variant
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: font_variant
+    client_id: outlook_365_win
+    level: partial
+
+  # --- letter_spacing ---
+  - property_id: letter_spacing
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Works but may render differently than web browsers"
+
+  # --- line_clamp ---
+  - property_id: line_clamp
+    client_id: outlook_2016_win
+    level: none
+  - property_id: line_clamp
+    client_id: outlook_2019_win
+    level: none
+  - property_id: line_clamp
+    client_id: outlook_365_win
+    level: none
+  - property_id: line_clamp
+    client_id: gmail_web
+    level: none
+  - property_id: line_clamp
+    client_id: outlook_web
+    level: none
+  - property_id: line_clamp
+    client_id: yahoo_web
+    level: none
+  - property_id: line_clamp
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # MEDIA QUERIES & AT-RULES
+  # ===========================================================================
+
+  # --- media_max_width ---
+  - property_id: media_max_width
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine ignores all @media queries"
+    workaround: "Use fluid/hybrid layout with max-width on tables and MSO conditionals"
+  - property_id: media_max_width
+    client_id: outlook_2019_win
+    level: none
+  - property_id: media_max_width
+    client_id: outlook_365_win
+    level: none
+  - property_id: media_max_width
+    client_id: gmail_web
+    level: partial
+    notes: "Gmail supports some @media queries in embedded styles but strips many"
+  - property_id: media_max_width
+    client_id: outlook_web
+    level: partial
+  - property_id: media_max_width
+    client_id: yahoo_web
+    level: partial
+    notes: "Yahoo supports some media queries but !important can interfere"
+  - property_id: media_max_width
+    client_id: protonmail_web
+    level: none
+    notes: "ProtonMail strips @media rules"
+  - property_id: media_max_width
+    client_id: comcast_web
+    level: none
+  - property_id: media_max_width
+    client_id: t_online_web
+    level: none
+  - property_id: media_max_width
+    client_id: gmx_web
+    level: none
+
+  # --- media_min_width ---
+  - property_id: media_min_width
+    client_id: outlook_2016_win
+    level: none
+  - property_id: media_min_width
+    client_id: outlook_2019_win
+    level: none
+  - property_id: media_min_width
+    client_id: outlook_365_win
+    level: none
+  - property_id: media_min_width
+    client_id: gmail_web
+    level: partial
+  - property_id: media_min_width
+    client_id: outlook_web
+    level: partial
+  - property_id: media_min_width
+    client_id: yahoo_web
+    level: partial
+  - property_id: media_min_width
+    client_id: protonmail_web
+    level: none
+  - property_id: media_min_width
+    client_id: comcast_web
+    level: none
+  - property_id: media_min_width
+    client_id: t_online_web
+    level: none
+  - property_id: media_min_width
+    client_id: gmx_web
+    level: none
+
+  # --- media_prefers_color_scheme ---
+  - property_id: media_prefers_color_scheme
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine ignores prefers-color-scheme"
+    workaround: "Use [data-ogsc] and [data-ogsb] selectors for Outlook dark mode"
+  - property_id: media_prefers_color_scheme
+    client_id: outlook_2019_win
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: outlook_365_win
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: gmail_web
+    level: none
+    notes: "Gmail does not support prefers-color-scheme"
+  - property_id: media_prefers_color_scheme
+    client_id: outlook_web
+    level: partial
+    notes: "OWA has its own dark mode that overrides colours"
+  - property_id: media_prefers_color_scheme
+    client_id: yahoo_web
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: aol_web
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: protonmail_web
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: comcast_web
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: t_online_web
+    level: none
+  - property_id: media_prefers_color_scheme
+    client_id: gmx_web
+    level: none
+
+  # --- media_prefers_reduced_motion ---
+  - property_id: media_prefers_reduced_motion
+    client_id: outlook_2016_win
+    level: none
+  - property_id: media_prefers_reduced_motion
+    client_id: outlook_2019_win
+    level: none
+  - property_id: media_prefers_reduced_motion
+    client_id: outlook_365_win
+    level: none
+  - property_id: media_prefers_reduced_motion
+    client_id: gmail_web
+    level: none
+  - property_id: media_prefers_reduced_motion
+    client_id: outlook_web
+    level: none
+  - property_id: media_prefers_reduced_motion
+    client_id: yahoo_web
+    level: none
+  - property_id: media_prefers_reduced_motion
+    client_id: protonmail_web
+    level: none
+
+  # --- media_hover ---
+  - property_id: media_hover
+    client_id: outlook_2016_win
+    level: none
+  - property_id: media_hover
+    client_id: outlook_2019_win
+    level: none
+  - property_id: media_hover
+    client_id: outlook_365_win
+    level: none
+  - property_id: media_hover
+    client_id: gmail_web
+    level: none
+  - property_id: media_hover
+    client_id: outlook_web
+    level: none
+  - property_id: media_hover
+    client_id: yahoo_web
+    level: none
+  - property_id: media_hover
+    client_id: protonmail_web
+    level: none
+
+  # --- supports ---
+  - property_id: supports
+    client_id: outlook_2016_win
+    level: none
+  - property_id: supports
+    client_id: outlook_2019_win
+    level: none
+  - property_id: supports
+    client_id: outlook_365_win
+    level: none
+  - property_id: supports
+    client_id: gmail_web
+    level: none
+  - property_id: supports
+    client_id: outlook_web
+    level: none
+  - property_id: supports
+    client_id: yahoo_web
+    level: none
+  - property_id: supports
+    client_id: aol_web
+    level: none
+  - property_id: supports
+    client_id: protonmail_web
+    level: none
+  - property_id: supports
+    client_id: comcast_web
+    level: none
+  - property_id: supports
+    client_id: t_online_web
+    level: none
+  - property_id: supports
+    client_id: gmx_web
+    level: none
+
+  # ===========================================================================
+  # PSEUDO-SELECTORS & SELECTORS
+  # ===========================================================================
+
+  # --- pseudo_hover ---
+  - property_id: pseudo_hover
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Works in some builds of Outlook Windows but not reliable"
+  - property_id: pseudo_hover
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: pseudo_hover
+    client_id: outlook_365_win
+    level: partial
+  - property_id: pseudo_hover
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips all pseudo-selectors from style blocks"
+  - property_id: pseudo_hover
+    client_id: outlook_web
+    level: partial
+  - property_id: pseudo_hover
+    client_id: yahoo_web
+    level: partial
+  - property_id: pseudo_hover
+    client_id: protonmail_web
+    level: none
+  - property_id: pseudo_hover
+    client_id: comcast_web
+    level: none
+  - property_id: pseudo_hover
+    client_id: t_online_web
+    level: none
+  - property_id: pseudo_hover
+    client_id: gmx_web
+    level: none
+
+  # --- pseudo_before ---
+  - property_id: pseudo_before
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support ::before pseudo-element"
+  - property_id: pseudo_before
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_before
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_before
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips ::before"
+  - property_id: pseudo_before
+    client_id: outlook_web
+    level: none
+  - property_id: pseudo_before
+    client_id: yahoo_web
+    level: partial
+  - property_id: pseudo_before
+    client_id: aol_web
+    level: partial
+  - property_id: pseudo_before
+    client_id: protonmail_web
+    level: none
+  - property_id: pseudo_before
+    client_id: comcast_web
+    level: none
+  - property_id: pseudo_before
+    client_id: t_online_web
+    level: none
+  - property_id: pseudo_before
+    client_id: gmx_web
+    level: none
+
+  # --- pseudo_after ---
+  - property_id: pseudo_after
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_after
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_after
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_after
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_after
+    client_id: outlook_web
+    level: none
+  - property_id: pseudo_after
+    client_id: yahoo_web
+    level: partial
+  - property_id: pseudo_after
+    client_id: aol_web
+    level: partial
+  - property_id: pseudo_after
+    client_id: protonmail_web
+    level: none
+  - property_id: pseudo_after
+    client_id: comcast_web
+    level: none
+  - property_id: pseudo_after
+    client_id: t_online_web
+    level: none
+  - property_id: pseudo_after
+    client_id: gmx_web
+    level: none
+
+  # --- pseudo_nth_child ---
+  - property_id: pseudo_nth_child
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support :nth-child"
+  - property_id: pseudo_nth_child
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips :nth-child selectors"
+  - property_id: pseudo_nth_child
+    client_id: outlook_web
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: yahoo_web
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: aol_web
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: protonmail_web
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: comcast_web
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: t_online_web
+    level: none
+  - property_id: pseudo_nth_child
+    client_id: gmx_web
+    level: none
+
+  # --- pseudo_first_child ---
+  - property_id: pseudo_first_child
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_first_child
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_first_child
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_first_child
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_first_child
+    client_id: outlook_web
+    level: none
+  - property_id: pseudo_first_child
+    client_id: yahoo_web
+    level: partial
+  - property_id: pseudo_first_child
+    client_id: protonmail_web
+    level: none
+  - property_id: pseudo_first_child
+    client_id: comcast_web
+    level: none
+  - property_id: pseudo_first_child
+    client_id: gmx_web
+    level: none
+
+  # --- pseudo_last_child ---
+  - property_id: pseudo_last_child
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_last_child
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_last_child
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_last_child
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_last_child
+    client_id: outlook_web
+    level: none
+  - property_id: pseudo_last_child
+    client_id: yahoo_web
+    level: partial
+  - property_id: pseudo_last_child
+    client_id: protonmail_web
+    level: none
+  - property_id: pseudo_last_child
+    client_id: comcast_web
+    level: none
+  - property_id: pseudo_last_child
+    client_id: gmx_web
+    level: none
+
+  # --- pseudo_not ---
+  - property_id: pseudo_not
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_not
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_not
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_not
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_not
+    client_id: outlook_web
+    level: partial
+  - property_id: pseudo_not
+    client_id: protonmail_web
+    level: none
+
+  # --- pseudo_placeholder ---
+  - property_id: pseudo_placeholder
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_placeholder
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_placeholder
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_placeholder
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_placeholder
+    client_id: outlook_web
+    level: none
+  - property_id: pseudo_placeholder
+    client_id: protonmail_web
+    level: none
+
+  # --- pseudo_focus ---
+  - property_id: pseudo_focus
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_focus
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_focus
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_focus
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_focus
+    client_id: outlook_web
+    level: partial
+  - property_id: pseudo_focus
+    client_id: yahoo_web
+    level: partial
+  - property_id: pseudo_focus
+    client_id: protonmail_web
+    level: none
+
+  # --- pseudo_active ---
+  - property_id: pseudo_active
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_active
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_active
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_active
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_active
+    client_id: outlook_web
+    level: partial
+  - property_id: pseudo_active
+    client_id: protonmail_web
+    level: none
+
+  # --- pseudo_visited ---
+  - property_id: pseudo_visited
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pseudo_visited
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pseudo_visited
+    client_id: outlook_365_win
+    level: none
+  - property_id: pseudo_visited
+    client_id: gmail_web
+    level: none
+  - property_id: pseudo_visited
+    client_id: protonmail_web
+    level: none
+
+  # --- selector_attribute ---
+  - property_id: selector_attribute
+    client_id: outlook_2016_win
+    level: none
+  - property_id: selector_attribute
+    client_id: outlook_2019_win
+    level: none
+  - property_id: selector_attribute
+    client_id: outlook_365_win
+    level: none
+  - property_id: selector_attribute
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips attribute selectors"
+  - property_id: selector_attribute
+    client_id: protonmail_web
+    level: none
+
+  # --- selector_class ---
+  - property_id: selector_class
+    client_id: gmail_web
+    level: partial
+    notes: "Gmail renames class attributes; use inline styles or data attributes"
+    workaround: "Inline all critical styles; use data-* attributes for targeting"
+
+  # --- selector_child_combinator ---
+  - property_id: selector_child_combinator
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: selector_child_combinator
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: selector_child_combinator
+    client_id: outlook_365_win
+    level: partial
+  - property_id: selector_child_combinator
+    client_id: gmail_web
+    level: none
+  - property_id: selector_child_combinator
+    client_id: protonmail_web
+    level: none
+
+  # --- selector_adjacent_sibling ---
+  - property_id: selector_adjacent_sibling
+    client_id: outlook_2016_win
+    level: none
+  - property_id: selector_adjacent_sibling
+    client_id: outlook_2019_win
+    level: none
+  - property_id: selector_adjacent_sibling
+    client_id: outlook_365_win
+    level: none
+  - property_id: selector_adjacent_sibling
+    client_id: gmail_web
+    level: none
+  - property_id: selector_adjacent_sibling
+    client_id: protonmail_web
+    level: none
+
+  # --- selector_general_sibling ---
+  - property_id: selector_general_sibling
+    client_id: outlook_2016_win
+    level: none
+  - property_id: selector_general_sibling
+    client_id: outlook_2019_win
+    level: none
+  - property_id: selector_general_sibling
+    client_id: outlook_365_win
+    level: none
+  - property_id: selector_general_sibling
+    client_id: gmail_web
+    level: none
+  - property_id: selector_general_sibling
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # CSS COLUMNS
+  # ===========================================================================
+
+  # --- column_count ---
+  - property_id: column_count
+    client_id: outlook_2016_win
+    level: none
+    workaround: "Use table columns for multi-column layouts"
+  - property_id: column_count
+    client_id: outlook_2019_win
+    level: none
+  - property_id: column_count
+    client_id: outlook_365_win
+    level: none
+  - property_id: column_count
+    client_id: gmail_web
+    level: none
+  - property_id: column_count
+    client_id: outlook_web
+    level: none
+  - property_id: column_count
+    client_id: yahoo_web
+    level: none
+  - property_id: column_count
+    client_id: protonmail_web
+    level: none
+
+  # --- column_width ---
+  - property_id: column_width
+    client_id: outlook_2016_win
+    level: none
+  - property_id: column_width
+    client_id: outlook_2019_win
+    level: none
+  - property_id: column_width
+    client_id: outlook_365_win
+    level: none
+  - property_id: column_width
+    client_id: gmail_web
+    level: none
+  - property_id: column_width
+    client_id: outlook_web
+    level: none
+  - property_id: column_width
+    client_id: yahoo_web
+    level: none
+  - property_id: column_width
+    client_id: protonmail_web
+    level: none
+
+  # --- column_rule ---
+  - property_id: column_rule
+    client_id: outlook_2016_win
+    level: none
+  - property_id: column_rule
+    client_id: outlook_2019_win
+    level: none
+  - property_id: column_rule
+    client_id: outlook_365_win
+    level: none
+  - property_id: column_rule
+    client_id: gmail_web
+    level: none
+  - property_id: column_rule
+    client_id: outlook_web
+    level: none
+  - property_id: column_rule
+    client_id: yahoo_web
+    level: none
+  - property_id: column_rule
+    client_id: protonmail_web
+    level: none
+
+  # --- column_span ---
+  - property_id: column_span
+    client_id: outlook_2016_win
+    level: none
+  - property_id: column_span
+    client_id: outlook_2019_win
+    level: none
+  - property_id: column_span
+    client_id: outlook_365_win
+    level: none
+  - property_id: column_span
+    client_id: gmail_web
+    level: none
+  - property_id: column_span
+    client_id: outlook_web
+    level: none
+  - property_id: column_span
+    client_id: yahoo_web
+    level: none
+  - property_id: column_span
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # DARK MODE SPECIFIC
+  # ===========================================================================
+
+  # --- color_scheme ---
+  - property_id: color_scheme
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine ignores color-scheme meta"
+    workaround: "Use [data-ogsc] and [data-ogsb] attribute selectors for Outlook dark mode overrides"
+  - property_id: color_scheme
+    client_id: outlook_2019_win
+    level: none
+  - property_id: color_scheme
+    client_id: outlook_365_win
+    level: none
+  - property_id: color_scheme
+    client_id: gmail_web
+    level: none
+    notes: "Gmail does not respect color-scheme"
+  - property_id: color_scheme
+    client_id: gmail_android
+    level: partial
+    notes: "Gmail Android has its own dark mode color inversion"
+  - property_id: color_scheme
+    client_id: outlook_web
+    level: partial
+    notes: "OWA applies its own dark mode transformations"
+  - property_id: color_scheme
+    client_id: outlook_android
+    level: partial
+  - property_id: color_scheme
+    client_id: yahoo_web
+    level: none
+  - property_id: color_scheme
+    client_id: protonmail_web
+    level: none
+  - property_id: color_scheme
+    client_id: comcast_web
+    level: none
+  - property_id: color_scheme
+    client_id: t_online_web
+    level: none
+  - property_id: color_scheme
+    client_id: gmx_web
+    level: none
+
+  # ===========================================================================
+  # TABLE-RELATED (email-critical)
+  # ===========================================================================
+
+  # --- border_spacing ---
+  - property_id: border_spacing
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Use cellspacing attribute instead for reliable results"
+  - property_id: border_spacing
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: border_spacing
+    client_id: outlook_365_win
+    level: partial
+
+  # --- border_collapse ---
+  - property_id: border_collapse
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Works but can cause rendering issues with nested tables"
+  - property_id: border_collapse
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: border_collapse
+    client_id: outlook_365_win
+    level: partial
+
+  # --- caption_side ---
+  - property_id: caption_side
+    client_id: outlook_2016_win
+    level: none
+  - property_id: caption_side
+    client_id: outlook_2019_win
+    level: none
+  - property_id: caption_side
+    client_id: outlook_365_win
+    level: none
+
+  # --- empty_cells ---
+  - property_id: empty_cells
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: empty_cells
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: empty_cells
+    client_id: outlook_365_win
+    level: partial
+
+  # ===========================================================================
+  # LIST PROPERTIES
+  # ===========================================================================
+
+  # --- list_style_type ---
+  - property_id: list_style_type
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Limited bullet styles; custom markers may not render"
+  - property_id: list_style_type
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: list_style_type
+    client_id: outlook_365_win
+    level: partial
+  - property_id: list_style_type
+    client_id: gmail_web
+    level: partial
+    notes: "Some list styles stripped in embedded CSS"
+
+  # --- list_style_position ---
+  - property_id: list_style_position
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: list_style_position
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: list_style_position
+    client_id: outlook_365_win
+    level: partial
+
+  # --- list_style_image ---
+  - property_id: list_style_image
+    client_id: outlook_2016_win
+    level: none
+  - property_id: list_style_image
+    client_id: outlook_2019_win
+    level: none
+  - property_id: list_style_image
+    client_id: outlook_365_win
+    level: none
+  - property_id: list_style_image
+    client_id: gmail_web
+    level: none
+  - property_id: list_style_image
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # MISC PROPERTIES
+  # ===========================================================================
+
+  # --- cursor ---
+  - property_id: cursor
+    client_id: outlook_2016_win
+    level: none
+  - property_id: cursor
+    client_id: outlook_2019_win
+    level: none
+  - property_id: cursor
+    client_id: outlook_365_win
+    level: none
+  - property_id: cursor
+    client_id: gmail_web
+    level: none
+  - property_id: cursor
+    client_id: outlook_web
+    level: partial
+  - property_id: cursor
+    client_id: protonmail_web
+    level: none
+
+  # --- resize ---
+  - property_id: resize
+    client_id: outlook_2016_win
+    level: none
+  - property_id: resize
+    client_id: outlook_2019_win
+    level: none
+  - property_id: resize
+    client_id: outlook_365_win
+    level: none
+  - property_id: resize
+    client_id: gmail_web
+    level: none
+  - property_id: resize
+    client_id: outlook_web
+    level: none
+  - property_id: resize
+    client_id: yahoo_web
+    level: none
+  - property_id: resize
+    client_id: protonmail_web
+    level: none
+
+  # --- pointer_events ---
+  - property_id: pointer_events
+    client_id: outlook_2016_win
+    level: none
+  - property_id: pointer_events
+    client_id: outlook_2019_win
+    level: none
+  - property_id: pointer_events
+    client_id: outlook_365_win
+    level: none
+  - property_id: pointer_events
+    client_id: gmail_web
+    level: none
+  - property_id: pointer_events
+    client_id: protonmail_web
+    level: none
+
+  # --- user_select ---
+  - property_id: user_select
+    client_id: outlook_2016_win
+    level: none
+  - property_id: user_select
+    client_id: outlook_2019_win
+    level: none
+  - property_id: user_select
+    client_id: outlook_365_win
+    level: none
+  - property_id: user_select
+    client_id: gmail_web
+    level: none
+  - property_id: user_select
+    client_id: protonmail_web
+    level: none
+
+  # --- scroll_behavior ---
+  - property_id: scroll_behavior
+    client_id: outlook_2016_win
+    level: none
+  - property_id: scroll_behavior
+    client_id: outlook_2019_win
+    level: none
+  - property_id: scroll_behavior
+    client_id: outlook_365_win
+    level: none
+  - property_id: scroll_behavior
+    client_id: gmail_web
+    level: none
+  - property_id: scroll_behavior
+    client_id: outlook_web
+    level: none
+  - property_id: scroll_behavior
+    client_id: yahoo_web
+    level: none
+  - property_id: scroll_behavior
+    client_id: protonmail_web
+    level: none
+
+  # --- content (CSS content property) ---
+  - property_id: content
+    client_id: outlook_2016_win
+    level: none
+    notes: "Requires ::before/::after which Word engine does not support"
+  - property_id: content
+    client_id: outlook_2019_win
+    level: none
+  - property_id: content
+    client_id: outlook_365_win
+    level: none
+  - property_id: content
+    client_id: gmail_web
+    level: none
+  - property_id: content
+    client_id: outlook_web
+    level: none
+  - property_id: content
+    client_id: protonmail_web
+    level: none
+
+  # --- counter_reset / counter_increment ---
+  - property_id: counter_reset
+    client_id: outlook_2016_win
+    level: none
+  - property_id: counter_reset
+    client_id: outlook_2019_win
+    level: none
+  - property_id: counter_reset
+    client_id: outlook_365_win
+    level: none
+  - property_id: counter_reset
+    client_id: gmail_web
+    level: none
+  - property_id: counter_reset
+    client_id: outlook_web
+    level: none
+  - property_id: counter_reset
+    client_id: protonmail_web
+    level: none
+
+  - property_id: counter_increment
+    client_id: outlook_2016_win
+    level: none
+  - property_id: counter_increment
+    client_id: outlook_2019_win
+    level: none
+  - property_id: counter_increment
+    client_id: outlook_365_win
+    level: none
+  - property_id: counter_increment
+    client_id: gmail_web
+    level: none
+  - property_id: counter_increment
+    client_id: outlook_web
+    level: none
+  - property_id: counter_increment
+    client_id: protonmail_web
+    level: none
+
+  # --- appearance ---
+  - property_id: appearance
+    client_id: outlook_2016_win
+    level: none
+  - property_id: appearance
+    client_id: outlook_2019_win
+    level: none
+  - property_id: appearance
+    client_id: outlook_365_win
+    level: none
+  - property_id: appearance
+    client_id: gmail_web
+    level: none
+  - property_id: appearance
+    client_id: protonmail_web
+    level: none
+
+  # --- touch_action ---
+  - property_id: touch_action
+    client_id: outlook_2016_win
+    level: none
+  - property_id: touch_action
+    client_id: outlook_2019_win
+    level: none
+  - property_id: touch_action
+    client_id: outlook_365_win
+    level: none
+  - property_id: touch_action
+    client_id: gmail_web
+    level: none
+  - property_id: touch_action
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # CSS VARIABLES & CALC
+  # ===========================================================================
+
+  # --- css_variables ---
+  - property_id: css_variables
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support CSS custom properties"
+    workaround: "Inline all values; use preprocessor variables at build time"
+  - property_id: css_variables
+    client_id: outlook_2019_win
+    level: none
+  - property_id: css_variables
+    client_id: outlook_365_win
+    level: none
+  - property_id: css_variables
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips CSS custom properties"
+  - property_id: css_variables
+    client_id: outlook_web
+    level: none
+  - property_id: css_variables
+    client_id: yahoo_web
+    level: none
+  - property_id: css_variables
+    client_id: aol_web
+    level: none
+  - property_id: css_variables
+    client_id: protonmail_web
+    level: none
+  - property_id: css_variables
+    client_id: comcast_web
+    level: none
+  - property_id: css_variables
+    client_id: t_online_web
+    level: none
+  - property_id: css_variables
+    client_id: gmx_web
+    level: none
+
+  # --- calc ---
+  - property_id: calc
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support calc()"
+    workaround: "Pre-compute values at build time"
+  - property_id: calc
+    client_id: outlook_2019_win
+    level: none
+  - property_id: calc
+    client_id: outlook_365_win
+    level: none
+  - property_id: calc
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips calc() expressions"
+  - property_id: calc
+    client_id: outlook_web
+    level: partial
+  - property_id: calc
+    client_id: yahoo_web
+    level: partial
+  - property_id: calc
+    client_id: protonmail_web
+    level: none
+  - property_id: calc
+    client_id: comcast_web
+    level: none
+  - property_id: calc
+    client_id: t_online_web
+    level: none
+  - property_id: calc
+    client_id: gmx_web
+    level: none
+
+  # --- clamp ---
+  - property_id: clamp
+    client_id: outlook_2016_win
+    level: none
+  - property_id: clamp
+    client_id: outlook_2019_win
+    level: none
+  - property_id: clamp
+    client_id: outlook_365_win
+    level: none
+  - property_id: clamp
+    client_id: gmail_web
+    level: none
+  - property_id: clamp
+    client_id: outlook_web
+    level: none
+  - property_id: clamp
+    client_id: yahoo_web
+    level: none
+  - property_id: clamp
+    client_id: protonmail_web
+    level: none
+  - property_id: clamp
+    client_id: comcast_web
+    level: none
+  - property_id: clamp
+    client_id: gmx_web
+    level: none
+
+  # ===========================================================================
+  # SVG IN EMAIL
+  # ===========================================================================
+
+  # --- svg_inline ---
+  - property_id: svg_inline
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not render inline SVG"
+    workaround: "Use PNG/GIF fallback images; VML for vector shapes in Outlook"
+  - property_id: svg_inline
+    client_id: outlook_2019_win
+    level: none
+  - property_id: svg_inline
+    client_id: outlook_365_win
+    level: none
+  - property_id: svg_inline
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips inline SVG"
+    workaround: "Use PNG/GIF fallback"
+  - property_id: svg_inline
+    client_id: outlook_web
+    level: none
+  - property_id: svg_inline
+    client_id: yahoo_web
+    level: partial
+  - property_id: svg_inline
+    client_id: aol_web
+    level: none
+  - property_id: svg_inline
+    client_id: protonmail_web
+    level: none
+  - property_id: svg_inline
+    client_id: comcast_web
+    level: none
+  - property_id: svg_inline
+    client_id: t_online_web
+    level: none
+  - property_id: svg_inline
+    client_id: gmx_web
+    level: none
+
+  # --- svg_background ---
+  - property_id: svg_background
+    client_id: outlook_2016_win
+    level: none
+  - property_id: svg_background
+    client_id: outlook_2019_win
+    level: none
+  - property_id: svg_background
+    client_id: outlook_365_win
+    level: none
+  - property_id: svg_background
+    client_id: gmail_web
+    level: none
+  - property_id: svg_background
+    client_id: outlook_web
+    level: none
+  - property_id: svg_background
+    client_id: yahoo_web
+    level: none
+  - property_id: svg_background
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # HTML5 / SEMANTIC ELEMENTS
+  # ===========================================================================
+
+  # --- html5_video ---
+  - property_id: html5_video
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support HTML5 video"
+    workaround: "Use animated GIF or static image with play button linking to video"
+  - property_id: html5_video
+    client_id: outlook_2019_win
+    level: none
+  - property_id: html5_video
+    client_id: outlook_365_win
+    level: none
+  - property_id: html5_video
+    client_id: gmail_web
+    level: none
+    workaround: "Use static image with play button linking to video"
+  - property_id: html5_video
+    client_id: gmail_android
+    level: none
+  - property_id: html5_video
+    client_id: gmail_ios
+    level: none
+  - property_id: html5_video
+    client_id: outlook_web
+    level: none
+  - property_id: html5_video
+    client_id: outlook_android
+    level: none
+  - property_id: html5_video
+    client_id: yahoo_web
+    level: none
+  - property_id: html5_video
+    client_id: yahoo_android
+    level: none
+  - property_id: html5_video
+    client_id: aol_web
+    level: none
+  - property_id: html5_video
+    client_id: protonmail_web
+    level: none
+  - property_id: html5_video
+    client_id: samsung_mail
+    level: none
+  - property_id: html5_video
+    client_id: thunderbird
+    level: partial
+  - property_id: html5_video
+    client_id: hey_web
+    level: none
+  - property_id: html5_video
+    client_id: fastmail_web
+    level: none
+  - property_id: html5_video
+    client_id: comcast_web
+    level: none
+  - property_id: html5_video
+    client_id: t_online_web
+    level: none
+  - property_id: html5_video
+    client_id: gmx_web
+    level: none
+
+  # --- html5_audio ---
+  - property_id: html5_audio
+    client_id: outlook_2016_win
+    level: none
+  - property_id: html5_audio
+    client_id: outlook_2019_win
+    level: none
+  - property_id: html5_audio
+    client_id: outlook_365_win
+    level: none
+  - property_id: html5_audio
+    client_id: gmail_web
+    level: none
+  - property_id: html5_audio
+    client_id: outlook_web
+    level: none
+  - property_id: html5_audio
+    client_id: yahoo_web
+    level: none
+  - property_id: html5_audio
+    client_id: protonmail_web
+    level: none
+  - property_id: html5_audio
+    client_id: comcast_web
+    level: none
+  - property_id: html5_audio
+    client_id: t_online_web
+    level: none
+  - property_id: html5_audio
+    client_id: gmx_web
+    level: none
+
+  # --- html5_semantic (article, section, nav, aside, header, footer, main) ---
+  - property_id: html5_semantic
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Word engine treats semantic elements as generic blocks; may lose semantic meaning"
+  - property_id: html5_semantic
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: html5_semantic
+    client_id: outlook_365_win
+    level: partial
+  - property_id: html5_semantic
+    client_id: gmail_web
+    level: partial
+    notes: "Gmail may strip or rename some HTML5 semantic elements"
+
+  # --- picture_element ---
+  - property_id: picture_element
+    client_id: outlook_2016_win
+    level: none
+    workaround: "Use img with explicit width/height; MSO conditionals for Outlook-specific images"
+  - property_id: picture_element
+    client_id: outlook_2019_win
+    level: none
+  - property_id: picture_element
+    client_id: outlook_365_win
+    level: none
+  - property_id: picture_element
+    client_id: gmail_web
+    level: none
+  - property_id: picture_element
+    client_id: outlook_web
+    level: none
+  - property_id: picture_element
+    client_id: yahoo_web
+    level: partial
+  - property_id: picture_element
+    client_id: protonmail_web
+    level: none
+
+  # --- srcset ---
+  - property_id: srcset
+    client_id: outlook_2016_win
+    level: none
+    workaround: "Use fixed-width img with explicit dimensions"
+  - property_id: srcset
+    client_id: outlook_2019_win
+    level: none
+  - property_id: srcset
+    client_id: outlook_365_win
+    level: none
+  - property_id: srcset
+    client_id: gmail_web
+    level: none
+  - property_id: srcset
+    client_id: outlook_web
+    level: none
+  - property_id: srcset
+    client_id: yahoo_web
+    level: partial
+  - property_id: srcset
+    client_id: protonmail_web
+    level: none
+
+  # ===========================================================================
+  # FORM ELEMENTS (limited email use but worth tracking)
+  # ===========================================================================
+
+  # --- form_elements ---
+  - property_id: form_elements
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine strips form elements"
+  - property_id: form_elements
+    client_id: outlook_2019_win
+    level: none
+  - property_id: form_elements
+    client_id: outlook_365_win
+    level: none
+  - property_id: form_elements
+    client_id: gmail_web
+    level: none
+    notes: "Gmail strips all form elements"
+  - property_id: form_elements
+    client_id: outlook_web
+    level: none
+  - property_id: form_elements
+    client_id: yahoo_web
+    level: none
+  - property_id: form_elements
+    client_id: aol_web
+    level: none
+  - property_id: form_elements
+    client_id: protonmail_web
+    level: none
+  - property_id: form_elements
+    client_id: samsung_mail
+    level: none
+  - property_id: form_elements
+    client_id: hey_web
+    level: none
+  - property_id: form_elements
+    client_id: fastmail_web
+    level: none
+  - property_id: form_elements
+    client_id: comcast_web
+    level: none
+  - property_id: form_elements
+    client_id: t_online_web
+    level: none
+  - property_id: form_elements
+    client_id: gmx_web
+    level: none
+
+  # ===========================================================================
+  # ADDITIONAL WEBMAIL-SPECIFIC RESTRICTIONS
+  # ===========================================================================
+
+  # --- ProtonMail aggressive sanitization ---
+  - property_id: background_color
+    client_id: protonmail_web
+    level: partial
+    notes: "ProtonMail may override background colors in dark mode"
+
+  - property_id: float
+    client_id: protonmail_web
+    level: none
+    notes: "ProtonMail strips float property"
+  - property_id: float
+    client_id: gmail_web
+    level: partial
+    notes: "Gmail has inconsistent float support"
+  - property_id: float
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Word engine has limited float support"
+  - property_id: float
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: float
+    client_id: outlook_365_win
+    level: partial
+
+  - property_id: clear
+    client_id: protonmail_web
+    level: none
+  - property_id: clear
+    client_id: outlook_2016_win
+    level: partial
+  - property_id: clear
+    client_id: outlook_2019_win
+    level: partial
+  - property_id: clear
+    client_id: outlook_365_win
+    level: partial
+
+  # --- ProtonMail strips z-index ---
+  - property_id: z_index
+    client_id: protonmail_web
+    level: none
+  - property_id: z_index
+    client_id: outlook_2016_win
+    level: none
+  - property_id: z_index
+    client_id: outlook_2019_win
+    level: none
+  - property_id: z_index
+    client_id: outlook_365_win
+    level: none
+  - property_id: z_index
+    client_id: gmail_web
+    level: none
+
+  # --- Important declaration handling ---
+  - property_id: important_declaration
+    client_id: yahoo_web
+    level: partial
+    notes: "Yahoo may inject !important overrides that break email styling"
+  - property_id: important_declaration
+    client_id: aol_web
+    level: partial
+    notes: "AOL may inject !important overrides"
+
+  # --- Embedded style tag support ---
+  - property_id: style_tag
+    client_id: gmail_web
+    level: partial
+    notes: "Gmail supports embedded style tags but renames classes and strips many selectors"
+    workaround: "Inline all critical styles; use embedded style only for enhancement"
+  - property_id: style_tag
+    client_id: protonmail_web
+    level: partial
+    notes: "ProtonMail aggressively sanitizes style tags"
+
+  # --- Link (stylesheet) tag ---
+  - property_id: link_stylesheet
+    client_id: outlook_2016_win
+    level: none
+    notes: "External stylesheets are not loaded"
+  - property_id: link_stylesheet
+    client_id: outlook_2019_win
+    level: none
+  - property_id: link_stylesheet
+    client_id: outlook_365_win
+    level: none
+  - property_id: link_stylesheet
+    client_id: gmail_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: outlook_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: yahoo_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: aol_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: protonmail_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: hey_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: fastmail_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: comcast_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: t_online_web
+    level: none
+  - property_id: link_stylesheet
+    client_id: gmx_web
+    level: none
+
+  # --- JavaScript ---
+  - property_id: javascript
+    client_id: outlook_2016_win
+    level: none
+  - property_id: javascript
+    client_id: outlook_2019_win
+    level: none
+  - property_id: javascript
+    client_id: outlook_365_win
+    level: none
+  - property_id: javascript
+    client_id: outlook_mac
+    level: none
+  - property_id: javascript
+    client_id: outlook_ios
+    level: none
+  - property_id: javascript
+    client_id: outlook_android
+    level: none
+  - property_id: javascript
+    client_id: outlook_web
+    level: none
+  - property_id: javascript
+    client_id: gmail_web
+    level: none
+  - property_id: javascript
+    client_id: gmail_ios
+    level: none
+  - property_id: javascript
+    client_id: gmail_android
+    level: none
+  - property_id: javascript
+    client_id: apple_mail_macos
+    level: none
+  - property_id: javascript
+    client_id: apple_mail_ios
+    level: none
+  - property_id: javascript
+    client_id: yahoo_web
+    level: none
+  - property_id: javascript
+    client_id: yahoo_ios
+    level: none
+  - property_id: javascript
+    client_id: yahoo_android
+    level: none
+  - property_id: javascript
+    client_id: samsung_mail
+    level: none
+  - property_id: javascript
+    client_id: thunderbird
+    level: none
+  - property_id: javascript
+    client_id: aol_web
+    level: none
+  - property_id: javascript
+    client_id: protonmail_web
+    level: none
+  - property_id: javascript
+    client_id: hey_web
+    level: none
+  - property_id: javascript
+    client_id: fastmail_web
+    level: none
+  - property_id: javascript
+    client_id: comcast_web
+    level: none
+  - property_id: javascript
+    client_id: t_online_web
+    level: none
+  - property_id: javascript
+    client_id: gmx_web
+    level: none
+
+  # ===========================================================================
+  # WEBP & MODERN IMAGE FORMATS
+  # ===========================================================================
+
+  # --- webp ---
+  - property_id: webp
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support WebP images"
+    workaround: "Use PNG or JPEG fallback with picture element where supported"
+  - property_id: webp
+    client_id: outlook_2019_win
+    level: none
+  - property_id: webp
+    client_id: outlook_365_win
+    level: partial
+    notes: "Some newer builds support WebP but inconsistent"
+
+  # --- avif ---
+  - property_id: avif
+    client_id: outlook_2016_win
+    level: none
+  - property_id: avif
+    client_id: outlook_2019_win
+    level: none
+  - property_id: avif
+    client_id: outlook_365_win
+    level: none
+  - property_id: avif
+    client_id: gmail_web
+    level: partial
+  - property_id: avif
+    client_id: outlook_web
+    level: none
+  - property_id: avif
+    client_id: yahoo_web
+    level: partial
+  - property_id: avif
+    client_id: protonmail_web
+    level: partial
+
+  # ===========================================================================
+  # UNITS
+  # ===========================================================================
+
+  # --- unit_rem ---
+  - property_id: unit_rem
+    client_id: outlook_2016_win
+    level: none
+    notes: "Word engine does not support rem units"
+    workaround: "Use px values"
+  - property_id: unit_rem
+    client_id: outlook_2019_win
+    level: none
+  - property_id: unit_rem
+    client_id: outlook_365_win
+    level: none
+  - property_id: unit_rem
+    client_id: gmail_web
+    level: partial
+  - property_id: unit_rem
+    client_id: protonmail_web
+    level: partial
+
+  # --- unit_em ---
+  - property_id: unit_em
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Em units may render inconsistently in Word engine"
+
+  # --- unit_vw ---
+  - property_id: unit_vw
+    client_id: outlook_2016_win
+    level: none
+  - property_id: unit_vw
+    client_id: outlook_2019_win
+    level: none
+  - property_id: unit_vw
+    client_id: outlook_365_win
+    level: none
+  - property_id: unit_vw
+    client_id: gmail_web
+    level: none
+  - property_id: unit_vw
+    client_id: outlook_web
+    level: partial
+  - property_id: unit_vw
+    client_id: yahoo_web
+    level: partial
+  - property_id: unit_vw
+    client_id: protonmail_web
+    level: none
+
+  # --- unit_vh ---
+  - property_id: unit_vh
+    client_id: outlook_2016_win
+    level: none
+  - property_id: unit_vh
+    client_id: outlook_2019_win
+    level: none
+  - property_id: unit_vh
+    client_id: outlook_365_win
+    level: none
+  - property_id: unit_vh
+    client_id: gmail_web
+    level: none
+  - property_id: unit_vh
+    client_id: outlook_web
+    level: none
+  - property_id: unit_vh
+    client_id: yahoo_web
+    level: none
+  - property_id: unit_vh
+    client_id: protonmail_web
+    level: none
+
+  # --- unit_ch ---
+  - property_id: unit_ch
+    client_id: outlook_2016_win
+    level: none
+  - property_id: unit_ch
+    client_id: outlook_2019_win
+    level: none
+  - property_id: unit_ch
+    client_id: outlook_365_win
+    level: none
+  - property_id: unit_ch
+    client_id: gmail_web
+    level: none
+  - property_id: unit_ch
+    client_id: protonmail_web
+    level: none
+
+  # --- unit_percent (width: %) ---
+  - property_id: unit_percent
+    client_id: outlook_2016_win
+    level: partial
+    notes: "Percentage widths work on table/td elements but unreliable on divs"
+    workaround: "Always use percentage widths on table elements, not divs"

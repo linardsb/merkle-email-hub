@@ -78,7 +78,7 @@ merkle-email-hub/
 │   │   ├── agents/     # AI agents (scaffolder, dark_mode, content — per-agent subdirs)
 │   │   │   └── evals/  # Agent evaluation framework (synthetic data, runner, judges)
 │   │   └── blueprints/ # Blueprint state machine (engine, nodes, definitions, schemas)
-│   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search) + graph/ (Cognee)
+│   ├── knowledge/      # RAG pipeline (pgvector, document processing, hybrid search) + graph/ (Cognee) + ontology/ (CSS/client support)
 │   ├── streaming/      # WebSocket streaming (Pub/Sub, connection manager)
 │   │
 │   │   ── Email Hub Modules ──
@@ -163,7 +163,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 Located in `app/qa_engine/checks/`. Each check implements `async run(html: str) -> QACheckResult`:
 
 1. `html_validation` — DOCTYPE, structural HTML tags
-2. `css_support` — Flags CSS properties with poor email client support
+2. `css_support` — Ontology-powered: scans 365 CSS properties against 25 email clients with severity scoring
 3. `file_size` — Gmail 102KB clipping threshold
 4. `link_validation` — HTTPS enforcement, valid protocols
 5. `spam_score` — Common spam trigger word detection
@@ -316,11 +316,11 @@ Build infrastructure before remaining agents so every new agent inherits pattern
 ### Phase 8 — Knowledge Graph Integration (Cognee)
 Replace flat RAG with graph-structured knowledge using Cognee. Agents get structured entity relationships instead of similar text chunks. Depends on Phase 7 infrastructure.
 - [x] 8.1 Cognee integration layer (`app/knowledge/graph/`, `GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search` endpoint, optional dep `cognee[graph]`, 8 tests)
-- [ ] 8.2 Knowledge graph seeding (existing docs through Cognee ECL pipeline)
-- [ ] 8.3 Graph context provider for blueprint nodes (structured relationships in agent context)
+- [x] 8.2 Knowledge graph seeding (`seed.py` feeds RAG docs + ontology through Cognee ECL pipeline per domain)
+- [x] 8.3 Graph context provider for blueprint nodes (`graph_context.py` structured relationships in agent context)
 - [x] 8.4 Blueprint outcome logging (`outcome_logger.py` formats+queues to Redis+Memory, `OutcomeGraphPoller` drains into Cognee, 19 tests)
-- [ ] 8.5 Per-agent domain SKILL.md files (Four Discipline structure, graph-grounded, self-growing)
-- [ ] 8.6 Email development ontology (full granularity OWL — 300+ CSS properties, all client versions)
+- [x] 8.5 Per-agent domain SKILL.md files (all 9 agents: Four Discipline structure, progressive disclosure L1+L2+L3)
+- [x] 8.6 Email development ontology (`app/knowledge/ontology/` — Python-native, 25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks, data-driven QA, Cognee graph export, 51 tests)
 
 ### Phase 9 — Graph-Driven Intelligence Layer
 Leverages Phase 8 knowledge graph across the entire Hub — personas, components, blueprints, competitive intel, skill evolution. Depends on Phase 8 core operational.
@@ -346,7 +346,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection
-- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default)
+- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export)
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`

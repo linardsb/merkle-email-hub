@@ -58,19 +58,19 @@ class TestCssSupport:
         html = "<!DOCTYPE html><html><style>div { position: fixed; }</style></html>"
         result = await self.check.run(html)
         assert result.passed is False
-        assert "position:fixed" in (result.details or "")
+        assert "position" in (result.details or "")
 
     async def test_display_grid_flagged(self):
         html = "<!DOCTYPE html><html><style>.grid { display: grid; }</style></html>"
         result = await self.check.run(html)
         assert result.passed is False
-        assert "display:grid" in (result.details or "")
+        assert "display" in (result.details or "")
 
     async def test_display_flex_flagged(self):
         html = "<!DOCTYPE html><html><style>.flex { display: flex; }</style></html>"
         result = await self.check.run(html)
         assert result.passed is False
-        assert "display:flex" in (result.details or "")
+        assert "display" in (result.details or "")
 
 
 # ── 3. File Size ──

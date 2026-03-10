@@ -1,0 +1,2336 @@
+# CSS Properties for Email Development Ontology
+# 335 entries covering all email-relevant CSS properties
+# Categories: layout, box_model, typography, color_background, border_shadow,
+#             transform_animation, selector, media_query, dark_mode, table,
+#             list, flexbox, grid, other
+
+properties:
+  # ============================================================================
+  # LAYOUT (~28 entries)
+  # ============================================================================
+  - id: display_block
+    property_name: display
+    value: block
+    category: layout
+    description: "Block-level element display"
+    tags: [fundamental]
+
+  - id: display_inline
+    property_name: display
+    value: inline
+    category: layout
+    description: "Inline element display"
+    tags: [fundamental]
+
+  - id: display_inline_block
+    property_name: display
+    value: inline-block
+    category: layout
+    description: "Inline-block element display, widely used in email layouts"
+    tags: [fundamental, email-staple]
+
+  - id: display_none
+    property_name: display
+    value: none
+    category: layout
+    description: "Hide element from rendering and layout flow"
+    tags: [fundamental]
+
+  - id: display_table
+    property_name: display
+    value: table
+    category: layout
+    description: "Table display mode for CSS-based table layouts"
+    tags: [fundamental]
+
+  - id: display_table_cell
+    property_name: display
+    value: table-cell
+    category: layout
+    description: "Table-cell display for vertical alignment patterns"
+    tags: [fundamental]
+
+  - id: display_table_row
+    property_name: display
+    value: table-row
+    category: layout
+    description: "Table-row display mode"
+    tags: [fundamental]
+
+  - id: position_relative
+    property_name: position
+    value: relative
+    category: layout
+    description: "Relative positioning offset from normal flow"
+    tags: [outlook-issue]
+
+  - id: position_absolute
+    property_name: position
+    value: absolute
+    category: layout
+    description: "Absolute positioning removed from normal flow"
+    tags: [outlook-issue]
+
+  - id: position_fixed
+    property_name: position
+    value: fixed
+    category: layout
+    description: "Fixed positioning relative to viewport"
+    tags: [outlook-issue, gmail-strips]
+
+  - id: position_sticky
+    property_name: position
+    value: sticky
+    category: layout
+    description: "Sticky positioning based on scroll position"
+    tags: [modern, outlook-issue, gmail-strips]
+
+  - id: float_left
+    property_name: float
+    value: left
+    category: layout
+    description: "Float element to the left"
+    tags: [fundamental, outlook-issue]
+
+  - id: float_right
+    property_name: float
+    value: right
+    category: layout
+    description: "Float element to the right"
+    tags: [fundamental, outlook-issue]
+
+  - id: clear
+    property_name: clear
+    category: layout
+    description: "Clear floated elements"
+    tags: [fundamental]
+
+  - id: overflow_hidden
+    property_name: overflow
+    value: hidden
+    category: layout
+    description: "Hide overflowing content"
+    tags: [fundamental]
+
+  - id: overflow_auto
+    property_name: overflow
+    value: auto
+    category: layout
+    description: "Auto scrollbar for overflowing content"
+    tags: [gmail-strips]
+
+  - id: overflow_visible
+    property_name: overflow
+    value: visible
+    category: layout
+    description: "Default overflow, content not clipped"
+    tags: [fundamental]
+
+  - id: z_index
+    property_name: z-index
+    category: layout
+    description: "Stack order of positioned elements"
+    tags: [outlook-issue]
+
+  - id: visibility
+    property_name: visibility
+    category: layout
+    description: "Element visibility without removing from layout"
+    tags: [fundamental]
+
+  - id: clip
+    property_name: clip
+    category: layout
+    description: "Deprecated clipping region for absolutely positioned elements"
+    tags: [deprecated]
+
+  - id: clip_path
+    property_name: clip-path
+    category: layout
+    description: "Clipping region using shape or SVG path"
+    tags: [modern, outlook-issue, gmail-strips]
+
+  - id: width
+    property_name: width
+    category: layout
+    description: "Element width"
+    tags: [fundamental]
+
+  - id: min_width
+    property_name: min-width
+    category: layout
+    description: "Minimum element width"
+    tags: [fundamental]
+
+  - id: max_width
+    property_name: max-width
+    category: layout
+    description: "Maximum element width, critical for responsive emails"
+    tags: [fundamental, email-staple]
+
+  - id: height
+    property_name: height
+    category: layout
+    description: "Element height"
+    tags: [fundamental]
+
+  - id: min_height
+    property_name: min-height
+    category: layout
+    description: "Minimum element height"
+    tags: [fundamental]
+
+  - id: max_height
+    property_name: max-height
+    category: layout
+    description: "Maximum element height"
+    tags: [fundamental]
+
+  - id: object_fit
+    property_name: object-fit
+    category: layout
+    description: "How replaced element content fits its box"
+    tags: [modern, outlook-issue]
+
+  - id: aspect_ratio
+    property_name: aspect-ratio
+    category: layout
+    description: "Preferred aspect ratio for element sizing"
+    tags: [modern, outlook-issue]
+
+  # ============================================================================
+  # BOX MODEL (~42 entries)
+  # ============================================================================
+  - id: margin
+    property_name: margin
+    category: box_model
+    description: "Shorthand margin on all four sides"
+    tags: [fundamental]
+
+  - id: margin_top
+    property_name: margin-top
+    category: box_model
+    description: "Top margin spacing"
+    tags: [fundamental]
+
+  - id: margin_right
+    property_name: margin-right
+    category: box_model
+    description: "Right margin spacing"
+    tags: [fundamental]
+
+  - id: margin_bottom
+    property_name: margin-bottom
+    category: box_model
+    description: "Bottom margin spacing"
+    tags: [fundamental]
+
+  - id: margin_left
+    property_name: margin-left
+    category: box_model
+    description: "Left margin spacing"
+    tags: [fundamental]
+
+  - id: margin_inline
+    property_name: margin-inline
+    category: box_model
+    description: "Logical inline-axis margins"
+    tags: [modern, outlook-issue]
+
+  - id: margin_block
+    property_name: margin-block
+    category: box_model
+    description: "Logical block-axis margins"
+    tags: [modern, outlook-issue]
+
+  - id: margin_inline_start
+    property_name: margin-inline-start
+    category: box_model
+    description: "Logical margin at inline start"
+    tags: [modern, outlook-issue]
+
+  - id: margin_inline_end
+    property_name: margin-inline-end
+    category: box_model
+    description: "Logical margin at inline end"
+    tags: [modern, outlook-issue]
+
+  - id: margin_block_start
+    property_name: margin-block-start
+    category: box_model
+    description: "Logical margin at block start"
+    tags: [modern, outlook-issue]
+
+  - id: margin_block_end
+    property_name: margin-block-end
+    category: box_model
+    description: "Logical margin at block end"
+    tags: [modern, outlook-issue]
+
+  - id: padding
+    property_name: padding
+    category: box_model
+    description: "Shorthand padding on all four sides"
+    tags: [fundamental]
+
+  - id: padding_top
+    property_name: padding-top
+    category: box_model
+    description: "Top padding spacing"
+    tags: [fundamental]
+
+  - id: padding_right
+    property_name: padding-right
+    category: box_model
+    description: "Right padding spacing"
+    tags: [fundamental]
+
+  - id: padding_bottom
+    property_name: padding-bottom
+    category: box_model
+    description: "Bottom padding spacing"
+    tags: [fundamental]
+
+  - id: padding_left
+    property_name: padding-left
+    category: box_model
+    description: "Left padding spacing"
+    tags: [fundamental]
+
+  - id: padding_inline
+    property_name: padding-inline
+    category: box_model
+    description: "Logical inline-axis padding"
+    tags: [modern, outlook-issue]
+
+  - id: padding_block
+    property_name: padding-block
+    category: box_model
+    description: "Logical block-axis padding"
+    tags: [modern, outlook-issue]
+
+  - id: padding_inline_start
+    property_name: padding-inline-start
+    category: box_model
+    description: "Logical padding at inline start"
+    tags: [modern, outlook-issue]
+
+  - id: padding_inline_end
+    property_name: padding-inline-end
+    category: box_model
+    description: "Logical padding at inline end"
+    tags: [modern, outlook-issue]
+
+  - id: padding_block_start
+    property_name: padding-block-start
+    category: box_model
+    description: "Logical padding at block start"
+    tags: [modern, outlook-issue]
+
+  - id: padding_block_end
+    property_name: padding-block-end
+    category: box_model
+    description: "Logical padding at block end"
+    tags: [modern, outlook-issue]
+
+  - id: box_sizing
+    property_name: box-sizing
+    category: box_model
+    description: "Box model calculation method (content-box or border-box)"
+    tags: [fundamental]
+
+  - id: box_sizing_border_box
+    property_name: box-sizing
+    value: border-box
+    category: box_model
+    description: "Include padding and border in element width/height"
+    tags: [fundamental, email-staple]
+
+  - id: box_sizing_content_box
+    property_name: box-sizing
+    value: content-box
+    category: box_model
+    description: "Default box model excluding padding and border from width/height"
+    tags: [fundamental]
+
+  - id: vertical_align
+    property_name: vertical-align
+    category: box_model
+    description: "Vertical alignment of inline or table-cell elements"
+    tags: [fundamental, email-staple]
+
+  - id: vertical_align_top
+    property_name: vertical-align
+    value: top
+    category: box_model
+    description: "Align element to top of line or cell"
+    tags: [fundamental, email-staple]
+
+  - id: vertical_align_middle
+    property_name: vertical-align
+    value: middle
+    category: box_model
+    description: "Align element to vertical middle"
+    tags: [fundamental, email-staple]
+
+  - id: vertical_align_bottom
+    property_name: vertical-align
+    value: bottom
+    category: box_model
+    description: "Align element to bottom of line or cell"
+    tags: [fundamental]
+
+  - id: vertical_align_baseline
+    property_name: vertical-align
+    value: baseline
+    category: box_model
+    description: "Align element to baseline of parent"
+    tags: [fundamental]
+
+  - id: direction_ltr
+    property_name: direction
+    value: ltr
+    category: box_model
+    description: "Left-to-right text direction"
+    tags: [fundamental, i18n]
+
+  - id: direction_rtl
+    property_name: direction
+    value: rtl
+    category: box_model
+    description: "Right-to-left text direction for Arabic/Hebrew"
+    tags: [fundamental, i18n]
+
+  - id: writing_mode
+    property_name: writing-mode
+    category: box_model
+    description: "Text flow direction (horizontal-tb, vertical-rl, vertical-lr)"
+    tags: [modern, i18n]
+
+  - id: unicode_bidi
+    property_name: unicode-bidi
+    category: box_model
+    description: "Bidirectional text algorithm override"
+    tags: [fundamental, i18n]
+
+  - id: width_box
+    property_name: width
+    category: box_model
+    description: "Element width in box model context"
+    tags: [fundamental]
+
+  - id: height_box
+    property_name: height
+    category: box_model
+    description: "Element height in box model context"
+    tags: [fundamental]
+
+  - id: max_width_box
+    property_name: max-width
+    category: box_model
+    description: "Maximum width constraint for responsive emails"
+    tags: [fundamental, email-staple]
+
+  - id: max_height_box
+    property_name: max-height
+    category: box_model
+    description: "Maximum height constraint"
+    tags: [fundamental]
+
+  - id: min_width_box
+    property_name: min-width
+    category: box_model
+    description: "Minimum width constraint"
+    tags: [fundamental]
+
+  - id: min_height_box
+    property_name: min-height
+    category: box_model
+    description: "Minimum height constraint"
+    tags: [fundamental]
+
+  - id: inline_size
+    property_name: inline-size
+    category: box_model
+    description: "Logical property for width in horizontal writing mode"
+    tags: [modern, outlook-issue]
+
+  - id: block_size
+    property_name: block-size
+    category: box_model
+    description: "Logical property for height in horizontal writing mode"
+    tags: [modern, outlook-issue]
+
+  # ============================================================================
+  # TYPOGRAPHY (~48 entries)
+  # ============================================================================
+  - id: font_family
+    property_name: font-family
+    category: typography
+    description: "Font family stack for text rendering"
+    tags: [fundamental, email-staple]
+
+  - id: font_size
+    property_name: font-size
+    category: typography
+    description: "Text size specification"
+    tags: [fundamental, email-staple]
+
+  - id: font_weight
+    property_name: font-weight
+    category: typography
+    description: "Text weight/boldness"
+    tags: [fundamental, email-staple]
+
+  - id: font_style
+    property_name: font-style
+    category: typography
+    description: "Italic or oblique text styling"
+    tags: [fundamental]
+
+  - id: font_variant
+    property_name: font-variant
+    category: typography
+    description: "Small-caps and other font variants"
+    tags: [fundamental]
+
+  - id: font_variant_numeric
+    property_name: font-variant-numeric
+    category: typography
+    description: "Numeric glyph variants (tabular-nums, oldstyle-nums)"
+    tags: [modern]
+
+  - id: line_height
+    property_name: line-height
+    category: typography
+    description: "Line box height for text spacing"
+    tags: [fundamental, email-staple]
+
+  - id: letter_spacing
+    property_name: letter-spacing
+    category: typography
+    description: "Space between characters"
+    tags: [fundamental]
+
+  - id: word_spacing
+    property_name: word-spacing
+    category: typography
+    description: "Space between words"
+    tags: [fundamental]
+
+  - id: text_align
+    property_name: text-align
+    category: typography
+    description: "Horizontal text alignment"
+    tags: [fundamental, email-staple]
+
+  - id: text_align_center
+    property_name: text-align
+    value: center
+    category: typography
+    description: "Center-aligned text"
+    tags: [fundamental, email-staple]
+
+  - id: text_align_last
+    property_name: text-align-last
+    category: typography
+    description: "Alignment of last line in a block"
+    tags: [modern, outlook-issue]
+
+  - id: text_justify
+    property_name: text-justify
+    category: typography
+    description: "Justification method for text-align:justify"
+    tags: [modern]
+
+  - id: text_decoration
+    property_name: text-decoration
+    category: typography
+    description: "Text decoration lines (underline, overline, line-through)"
+    tags: [fundamental]
+
+  - id: text_decoration_color
+    property_name: text-decoration-color
+    category: typography
+    description: "Color of text decoration lines"
+    tags: [modern]
+
+  - id: text_decoration_style
+    property_name: text-decoration-style
+    category: typography
+    description: "Style of text decoration (solid, wavy, dashed, dotted)"
+    tags: [modern]
+
+  - id: text_decoration_thickness
+    property_name: text-decoration-thickness
+    category: typography
+    description: "Thickness of text decoration lines"
+    tags: [modern]
+
+  - id: text_underline_offset
+    property_name: text-underline-offset
+    category: typography
+    description: "Offset of underline from text baseline"
+    tags: [modern]
+
+  - id: text_transform
+    property_name: text-transform
+    category: typography
+    description: "Text case transformation (uppercase, lowercase, capitalize)"
+    tags: [fundamental]
+
+  - id: text_indent
+    property_name: text-indent
+    category: typography
+    description: "First-line indentation of block text"
+    tags: [fundamental]
+
+  - id: text_overflow
+    property_name: text-overflow
+    category: typography
+    description: "How overflowed text is displayed (ellipsis, clip)"
+    tags: [fundamental]
+
+  - id: text_shadow
+    property_name: text-shadow
+    category: typography
+    description: "Shadow effect on text"
+    tags: [outlook-issue]
+
+  - id: white_space
+    property_name: white-space
+    category: typography
+    description: "White space handling and line wrapping"
+    tags: [fundamental]
+
+  - id: white_space_nowrap
+    property_name: white-space
+    value: nowrap
+    category: typography
+    description: "Prevent text from wrapping"
+    tags: [fundamental, email-staple]
+
+  - id: word_break
+    property_name: word-break
+    category: typography
+    description: "Line breaking rules for words"
+    tags: [fundamental]
+
+  - id: word_wrap
+    property_name: word-wrap
+    category: typography
+    description: "Legacy word wrapping (alias for overflow-wrap)"
+    tags: [fundamental]
+
+  - id: overflow_wrap
+    property_name: overflow-wrap
+    category: typography
+    description: "Whether to break words to prevent overflow"
+    tags: [fundamental]
+
+  - id: hyphens
+    property_name: hyphens
+    category: typography
+    description: "Automatic hyphenation control"
+    tags: [modern]
+
+  - id: font_display
+    property_name: font-display
+    category: typography
+    description: "Font loading display strategy (swap, block, fallback)"
+    tags: [modern]
+
+  - id: font_face
+    property_name: "@font-face"
+    category: typography
+    description: "Custom web font declaration"
+    tags: [modern, outlook-issue]
+
+  - id: webkit_font_smoothing
+    property_name: "-webkit-font-smoothing"
+    category: typography
+    description: "WebKit font anti-aliasing control"
+    tags: [vendor-prefix, webkit]
+
+  - id: moz_osx_font_smoothing
+    property_name: "-moz-osx-font-smoothing"
+    category: typography
+    description: "Firefox macOS font anti-aliasing"
+    tags: [vendor-prefix, firefox]
+
+  - id: font_feature_settings
+    property_name: font-feature-settings
+    category: typography
+    description: "OpenType font feature controls"
+    tags: [modern]
+
+  - id: font_size_adjust
+    property_name: font-size-adjust
+    category: typography
+    description: "Adjust font size based on x-height ratio"
+    tags: [modern, limited-support]
+
+  - id: text_rendering
+    property_name: text-rendering
+    category: typography
+    description: "Text rendering optimization hints"
+    tags: [modern]
+
+  - id: columns
+    property_name: columns
+    category: typography
+    description: "Shorthand for column-count and column-width"
+    tags: [modern, outlook-issue]
+
+  - id: column_count
+    property_name: column-count
+    category: typography
+    description: "Number of columns for multi-column layout"
+    tags: [modern, outlook-issue]
+
+  - id: column_gap
+    property_name: column-gap
+    category: typography
+    description: "Gap between columns in multi-column layout"
+    tags: [modern]
+
+  - id: column_rule
+    property_name: column-rule
+    category: typography
+    description: "Shorthand for column divider line"
+    tags: [modern, outlook-issue]
+
+  - id: column_width
+    property_name: column-width
+    category: typography
+    description: "Ideal width for columns in multi-column layout"
+    tags: [modern, outlook-issue]
+
+  - id: column_fill
+    property_name: column-fill
+    category: typography
+    description: "How content fills columns (auto, balance)"
+    tags: [modern]
+
+  - id: column_span
+    property_name: column-span
+    category: typography
+    description: "Element spanning across columns"
+    tags: [modern]
+
+  - id: quotes
+    property_name: quotes
+    category: typography
+    description: "Quotation mark styles for q element"
+    tags: [fundamental]
+
+  - id: content
+    property_name: content
+    category: typography
+    description: "Generated content for pseudo-elements"
+    tags: [fundamental, gmail-strips]
+
+  - id: counter_reset
+    property_name: counter-reset
+    category: typography
+    description: "Reset CSS counter to value"
+    tags: [modern, gmail-strips]
+
+  - id: counter_increment
+    property_name: counter-increment
+    category: typography
+    description: "Increment CSS counter"
+    tags: [modern, gmail-strips]
+
+  - id: tab_size
+    property_name: tab-size
+    category: typography
+    description: "Width of tab characters"
+    tags: [modern]
+
+  - id: font_kerning
+    property_name: font-kerning
+    category: typography
+    description: "Control kerning between character pairs"
+    tags: [modern]
+
+  # ============================================================================
+  # COLOR & BACKGROUND (~37 entries)
+  # ============================================================================
+  - id: color
+    property_name: color
+    category: color_background
+    description: "Text foreground color"
+    tags: [fundamental, email-staple]
+
+  - id: background_color
+    property_name: background-color
+    category: color_background
+    description: "Element background color"
+    tags: [fundamental, email-staple]
+
+  - id: background_image
+    property_name: background-image
+    category: color_background
+    description: "Background image for element"
+    tags: [outlook-issue]
+
+  - id: background_image_linear_gradient
+    property_name: background-image
+    value: linear-gradient
+    category: color_background
+    description: "Linear gradient background"
+    tags: [modern, outlook-issue]
+
+  - id: background_image_radial_gradient
+    property_name: background-image
+    value: radial-gradient
+    category: color_background
+    description: "Radial gradient background"
+    tags: [modern, outlook-issue]
+
+  - id: background_image_conic_gradient
+    property_name: background-image
+    value: conic-gradient
+    category: color_background
+    description: "Conic gradient background"
+    tags: [modern, outlook-issue, limited-support]
+
+  - id: background_repeat
+    property_name: background-repeat
+    category: color_background
+    description: "Background image repeat behavior"
+    tags: [fundamental]
+
+  - id: background_position
+    property_name: background-position
+    category: color_background
+    description: "Background image positioning"
+    tags: [fundamental, outlook-issue]
+
+  - id: background_size
+    property_name: background-size
+    category: color_background
+    description: "Background image sizing"
+    tags: [modern, outlook-issue]
+
+  - id: background_size_cover
+    property_name: background-size
+    value: cover
+    category: color_background
+    description: "Scale background to cover entire element"
+    tags: [modern, outlook-issue]
+
+  - id: background_size_contain
+    property_name: background-size
+    value: contain
+    category: color_background
+    description: "Scale background to fit within element"
+    tags: [modern, outlook-issue]
+
+  - id: background_clip
+    property_name: background-clip
+    category: color_background
+    description: "Background painting area (border-box, padding-box, content-box)"
+    tags: [modern]
+
+  - id: background_clip_text
+    property_name: background-clip
+    value: text
+    category: color_background
+    description: "Clip background to text shape for gradient text effects"
+    tags: [modern, limited-support]
+
+  - id: background_origin
+    property_name: background-origin
+    category: color_background
+    description: "Background positioning area origin"
+    tags: [modern]
+
+  - id: background_attachment
+    property_name: background-attachment
+    category: color_background
+    description: "Background scroll behavior (scroll, fixed, local)"
+    tags: [outlook-issue, gmail-strips]
+
+  - id: background
+    property_name: background
+    category: color_background
+    description: "Shorthand background property"
+    tags: [fundamental]
+
+  - id: opacity
+    property_name: opacity
+    category: color_background
+    description: "Element transparency level"
+    tags: [fundamental, outlook-issue]
+
+  - id: rgba
+    property_name: color
+    value: rgba()
+    category: color_background
+    description: "RGBA color function with alpha transparency"
+    tags: [modern]
+
+  - id: hsla
+    property_name: color
+    value: hsla()
+    category: color_background
+    description: "HSLA color function with alpha transparency"
+    tags: [modern]
+
+  - id: mix_blend_mode
+    property_name: mix-blend-mode
+    category: color_background
+    description: "Blending mode with background elements"
+    tags: [modern, outlook-issue, gmail-strips]
+
+  - id: isolation
+    property_name: isolation
+    category: color_background
+    description: "Create new stacking context for blend mode isolation"
+    tags: [modern, outlook-issue]
+
+  - id: filter
+    property_name: filter
+    category: color_background
+    description: "Graphical filter effects on element"
+    tags: [modern, outlook-issue]
+
+  - id: filter_blur
+    property_name: filter
+    value: blur()
+    category: color_background
+    description: "Gaussian blur filter effect"
+    tags: [modern, outlook-issue]
+
+  - id: filter_brightness
+    property_name: filter
+    value: brightness()
+    category: color_background
+    description: "Brightness adjustment filter"
+    tags: [modern, outlook-issue]
+
+  - id: filter_grayscale
+    property_name: filter
+    value: grayscale()
+    category: color_background
+    description: "Grayscale conversion filter"
+    tags: [modern, outlook-issue]
+
+  - id: filter_contrast
+    property_name: filter
+    value: contrast()
+    category: color_background
+    description: "Contrast adjustment filter"
+    tags: [modern, outlook-issue]
+
+  - id: filter_saturate
+    property_name: filter
+    value: saturate()
+    category: color_background
+    description: "Saturation adjustment filter"
+    tags: [modern, outlook-issue]
+
+  - id: filter_drop_shadow
+    property_name: filter
+    value: drop-shadow()
+    category: color_background
+    description: "Drop shadow filter following element alpha shape"
+    tags: [modern, outlook-issue]
+
+  - id: backdrop_filter
+    property_name: backdrop-filter
+    category: color_background
+    description: "Filter effects applied to area behind element"
+    tags: [modern, outlook-issue, gmail-strips]
+
+  - id: accent_color
+    property_name: accent-color
+    category: color_background
+    description: "Accent color for form controls"
+    tags: [modern]
+
+  - id: color_scheme
+    property_name: color-scheme
+    category: color_background
+    description: "Preferred color schemes (light, dark) for element"
+    tags: [modern, dark-mode]
+
+  - id: forced_colors
+    property_name: forced-colors
+    category: color_background
+    description: "Forced colors mode detection for high contrast"
+    tags: [modern, accessibility]
+
+  - id: webkit_text_fill_color
+    property_name: "-webkit-text-fill-color"
+    category: color_background
+    description: "WebKit text fill color, used for gradient text"
+    tags: [vendor-prefix, webkit]
+
+  - id: webkit_text_stroke
+    property_name: "-webkit-text-stroke"
+    category: color_background
+    description: "WebKit text stroke outline"
+    tags: [vendor-prefix, webkit]
+
+  - id: current_color
+    property_name: color
+    value: currentColor
+    category: color_background
+    description: "Inherit computed value of color property"
+    tags: [fundamental]
+
+  - id: color_inherit
+    property_name: color
+    value: inherit
+    category: color_background
+    description: "Inherit color from parent element"
+    tags: [fundamental]
+
+  - id: color_initial
+    property_name: color
+    value: initial
+    category: color_background
+    description: "Reset color to initial value"
+    tags: [fundamental]
+
+  # ============================================================================
+  # BORDER & SHADOW (~27 entries)
+  # ============================================================================
+  - id: border
+    property_name: border
+    category: border_shadow
+    description: "Shorthand border on all sides"
+    tags: [fundamental, email-staple]
+
+  - id: border_width
+    property_name: border-width
+    category: border_shadow
+    description: "Border width on all sides"
+    tags: [fundamental]
+
+  - id: border_style
+    property_name: border-style
+    category: border_shadow
+    description: "Border style (solid, dashed, dotted, double, none)"
+    tags: [fundamental]
+
+  - id: border_color
+    property_name: border-color
+    category: border_shadow
+    description: "Border color on all sides"
+    tags: [fundamental]
+
+  - id: border_top
+    property_name: border-top
+    category: border_shadow
+    description: "Top border shorthand"
+    tags: [fundamental]
+
+  - id: border_right
+    property_name: border-right
+    category: border_shadow
+    description: "Right border shorthand"
+    tags: [fundamental]
+
+  - id: border_bottom
+    property_name: border-bottom
+    category: border_shadow
+    description: "Bottom border shorthand"
+    tags: [fundamental]
+
+  - id: border_left
+    property_name: border-left
+    category: border_shadow
+    description: "Left border shorthand"
+    tags: [fundamental]
+
+  - id: border_top_width
+    property_name: border-top-width
+    category: border_shadow
+    description: "Top border width"
+    tags: [fundamental]
+
+  - id: border_right_width
+    property_name: border-right-width
+    category: border_shadow
+    description: "Right border width"
+    tags: [fundamental]
+
+  - id: border_bottom_width
+    property_name: border-bottom-width
+    category: border_shadow
+    description: "Bottom border width"
+    tags: [fundamental]
+
+  - id: border_left_width
+    property_name: border-left-width
+    category: border_shadow
+    description: "Left border width"
+    tags: [fundamental]
+
+  - id: border_radius
+    property_name: border-radius
+    category: border_shadow
+    description: "Rounded corners on element"
+    tags: [fundamental, outlook-issue]
+
+  - id: border_top_left_radius
+    property_name: border-top-left-radius
+    category: border_shadow
+    description: "Top-left corner radius"
+    tags: [fundamental, outlook-issue]
+
+  - id: border_top_right_radius
+    property_name: border-top-right-radius
+    category: border_shadow
+    description: "Top-right corner radius"
+    tags: [fundamental, outlook-issue]
+
+  - id: border_bottom_left_radius
+    property_name: border-bottom-left-radius
+    category: border_shadow
+    description: "Bottom-left corner radius"
+    tags: [fundamental, outlook-issue]
+
+  - id: border_bottom_right_radius
+    property_name: border-bottom-right-radius
+    category: border_shadow
+    description: "Bottom-right corner radius"
+    tags: [fundamental, outlook-issue]
+
+  - id: border_collapse
+    property_name: border-collapse
+    category: border_shadow
+    description: "Collapse table borders into single border"
+    tags: [fundamental, email-staple]
+
+  - id: border_spacing
+    property_name: border-spacing
+    category: border_shadow
+    description: "Space between table cell borders"
+    tags: [fundamental, email-staple]
+
+  - id: border_image
+    property_name: border-image
+    category: border_shadow
+    description: "Image-based border decoration"
+    tags: [modern, outlook-issue]
+
+  - id: box_shadow
+    property_name: box-shadow
+    category: border_shadow
+    description: "Shadow effect around element box"
+    tags: [modern, outlook-issue]
+
+  - id: outline
+    property_name: outline
+    category: border_shadow
+    description: "Outline around element outside border"
+    tags: [fundamental, accessibility]
+
+  - id: outline_offset
+    property_name: outline-offset
+    category: border_shadow
+    description: "Gap between outline and element border"
+    tags: [modern]
+
+  - id: outline_color
+    property_name: outline-color
+    category: border_shadow
+    description: "Outline color"
+    tags: [fundamental]
+
+  - id: outline_style
+    property_name: outline-style
+    category: border_shadow
+    description: "Outline style (solid, dashed, dotted)"
+    tags: [fundamental]
+
+  - id: outline_width
+    property_name: outline-width
+    category: border_shadow
+    description: "Outline width"
+    tags: [fundamental]
+
+  - id: box_decoration_break
+    property_name: box-decoration-break
+    category: border_shadow
+    description: "How box decorations render across fragment breaks"
+    tags: [modern, outlook-issue]
+
+  # ============================================================================
+  # FLEXBOX (~21 entries)
+  # ============================================================================
+  - id: display_flex
+    property_name: display
+    value: flex
+    category: flexbox
+    description: "Flex container display mode"
+    tags: [modern, outlook-issue]
+
+  - id: display_inline_flex
+    property_name: display
+    value: inline-flex
+    category: flexbox
+    description: "Inline flex container display mode"
+    tags: [modern, outlook-issue]
+
+  - id: flex_direction
+    property_name: flex-direction
+    category: flexbox
+    description: "Main axis direction (row, column, row-reverse, column-reverse)"
+    tags: [modern, outlook-issue]
+
+  - id: flex_wrap
+    property_name: flex-wrap
+    category: flexbox
+    description: "Whether flex items wrap to new lines"
+    tags: [modern, outlook-issue]
+
+  - id: flex_flow
+    property_name: flex-flow
+    category: flexbox
+    description: "Shorthand for flex-direction and flex-wrap"
+    tags: [modern, outlook-issue]
+
+  - id: justify_content
+    property_name: justify-content
+    category: flexbox
+    description: "Alignment along main axis"
+    tags: [modern, outlook-issue]
+
+  - id: align_items
+    property_name: align-items
+    category: flexbox
+    description: "Alignment along cross axis"
+    tags: [modern, outlook-issue]
+
+  - id: align_content
+    property_name: align-content
+    category: flexbox
+    description: "Alignment of flex lines in multi-line container"
+    tags: [modern, outlook-issue]
+
+  - id: align_self
+    property_name: align-self
+    category: flexbox
+    description: "Individual flex item cross-axis alignment override"
+    tags: [modern, outlook-issue]
+
+  - id: flex_grow
+    property_name: flex-grow
+    category: flexbox
+    description: "Flex item growth factor"
+    tags: [modern, outlook-issue]
+
+  - id: flex_shrink
+    property_name: flex-shrink
+    category: flexbox
+    description: "Flex item shrink factor"
+    tags: [modern, outlook-issue]
+
+  - id: flex_basis
+    property_name: flex-basis
+    category: flexbox
+    description: "Initial main size of flex item"
+    tags: [modern, outlook-issue]
+
+  - id: flex
+    property_name: flex
+    category: flexbox
+    description: "Shorthand for flex-grow, flex-shrink, flex-basis"
+    tags: [modern, outlook-issue]
+
+  - id: order
+    property_name: order
+    category: flexbox
+    description: "Visual order of flex item"
+    tags: [modern, outlook-issue]
+
+  - id: gap_flex
+    property_name: gap
+    category: flexbox
+    description: "Gap between flex items"
+    tags: [modern, outlook-issue]
+
+  - id: row_gap_flex
+    property_name: row-gap
+    category: flexbox
+    description: "Gap between flex rows"
+    tags: [modern, outlook-issue]
+
+  - id: column_gap_flex
+    property_name: column-gap
+    category: flexbox
+    description: "Gap between flex columns"
+    tags: [modern, outlook-issue]
+
+  - id: flex_direction_row
+    property_name: flex-direction
+    value: row
+    category: flexbox
+    description: "Flex items laid out in a row (default)"
+    tags: [modern, outlook-issue]
+
+  - id: flex_direction_column
+    property_name: flex-direction
+    value: column
+    category: flexbox
+    description: "Flex items laid out in a column"
+    tags: [modern, outlook-issue]
+
+  - id: flex_wrap_wrap
+    property_name: flex-wrap
+    value: wrap
+    category: flexbox
+    description: "Flex items wrap to new lines when needed"
+    tags: [modern, outlook-issue]
+
+  - id: flex_wrap_nowrap
+    property_name: flex-wrap
+    value: nowrap
+    category: flexbox
+    description: "Flex items stay on single line (default)"
+    tags: [modern, outlook-issue]
+
+  # ============================================================================
+  # GRID (~26 entries)
+  # ============================================================================
+  - id: display_grid
+    property_name: display
+    value: grid
+    category: grid
+    description: "Grid container display mode"
+    tags: [modern, outlook-issue, gmail-strips]
+
+  - id: display_inline_grid
+    property_name: display
+    value: inline-grid
+    category: grid
+    description: "Inline grid container display mode"
+    tags: [modern, outlook-issue, gmail-strips]
+
+  - id: grid_template_columns
+    property_name: grid-template-columns
+    category: grid
+    description: "Define column track sizes and names"
+    tags: [modern, outlook-issue]
+
+  - id: grid_template_rows
+    property_name: grid-template-rows
+    category: grid
+    description: "Define row track sizes and names"
+    tags: [modern, outlook-issue]
+
+  - id: grid_template_areas
+    property_name: grid-template-areas
+    category: grid
+    description: "Named grid areas for template layout"
+    tags: [modern, outlook-issue]
+
+  - id: grid_template
+    property_name: grid-template
+    category: grid
+    description: "Shorthand for grid-template-rows, columns, and areas"
+    tags: [modern, outlook-issue]
+
+  - id: grid_column
+    property_name: grid-column
+    category: grid
+    description: "Grid item column placement shorthand"
+    tags: [modern, outlook-issue]
+
+  - id: grid_row
+    property_name: grid-row
+    category: grid
+    description: "Grid item row placement shorthand"
+    tags: [modern, outlook-issue]
+
+  - id: grid_area
+    property_name: grid-area
+    category: grid
+    description: "Grid item area placement shorthand"
+    tags: [modern, outlook-issue]
+
+  - id: grid_gap
+    property_name: grid-gap
+    category: grid
+    description: "Deprecated shorthand for grid row and column gaps"
+    tags: [modern, deprecated, outlook-issue]
+
+  - id: gap_grid
+    property_name: gap
+    category: grid
+    description: "Gap between grid tracks"
+    tags: [modern, outlook-issue]
+
+  - id: grid_auto_columns
+    property_name: grid-auto-columns
+    category: grid
+    description: "Size of implicitly created grid columns"
+    tags: [modern, outlook-issue]
+
+  - id: grid_auto_rows
+    property_name: grid-auto-rows
+    category: grid
+    description: "Size of implicitly created grid rows"
+    tags: [modern, outlook-issue]
+
+  - id: grid_auto_flow
+    property_name: grid-auto-flow
+    category: grid
+    description: "Auto-placement algorithm (row, column, dense)"
+    tags: [modern, outlook-issue]
+
+  - id: justify_items_grid
+    property_name: justify-items
+    category: grid
+    description: "Default justify-self for grid items"
+    tags: [modern, outlook-issue]
+
+  - id: place_items
+    property_name: place-items
+    category: grid
+    description: "Shorthand for align-items and justify-items"
+    tags: [modern, outlook-issue]
+
+  - id: place_content
+    property_name: place-content
+    category: grid
+    description: "Shorthand for align-content and justify-content"
+    tags: [modern, outlook-issue]
+
+  - id: place_self
+    property_name: place-self
+    category: grid
+    description: "Shorthand for align-self and justify-self"
+    tags: [modern, outlook-issue]
+
+  - id: grid_column_start
+    property_name: grid-column-start
+    category: grid
+    description: "Starting column line for grid item"
+    tags: [modern, outlook-issue]
+
+  - id: grid_column_end
+    property_name: grid-column-end
+    category: grid
+    description: "Ending column line for grid item"
+    tags: [modern, outlook-issue]
+
+  - id: grid_row_start
+    property_name: grid-row-start
+    category: grid
+    description: "Starting row line for grid item"
+    tags: [modern, outlook-issue]
+
+  - id: grid_row_end
+    property_name: grid-row-end
+    category: grid
+    description: "Ending row line for grid item"
+    tags: [modern, outlook-issue]
+
+  - id: fr_unit
+    property_name: grid-template-columns
+    value: fr
+    category: grid
+    description: "Fractional unit for flexible grid track sizing"
+    tags: [modern, outlook-issue]
+
+  - id: minmax_function
+    property_name: grid-template-columns
+    value: minmax()
+    category: grid
+    description: "Size range constraint for grid tracks"
+    tags: [modern, outlook-issue]
+
+  - id: repeat_function
+    property_name: grid-template-columns
+    value: repeat()
+    category: grid
+    description: "Repeat track list pattern"
+    tags: [modern, outlook-issue]
+
+  - id: auto_fill
+    property_name: grid-template-columns
+    value: auto-fill
+    category: grid
+    description: "Fill row with as many tracks as fit"
+    tags: [modern, outlook-issue]
+
+  # ============================================================================
+  # TABLE (~16 entries)
+  # ============================================================================
+  - id: table_layout
+    property_name: table-layout
+    category: table
+    description: "Table layout algorithm (auto or fixed)"
+    tags: [fundamental, email-staple]
+
+  - id: table_layout_fixed
+    property_name: table-layout
+    value: fixed
+    category: table
+    description: "Fixed table layout for predictable column widths"
+    tags: [fundamental, email-staple]
+
+  - id: border_collapse_table
+    property_name: border-collapse
+    category: table
+    description: "Collapse or separate table cell borders"
+    tags: [fundamental, email-staple]
+
+  - id: border_spacing_table
+    property_name: border-spacing
+    category: table
+    description: "Spacing between table cell borders when separated"
+    tags: [fundamental, email-staple]
+
+  - id: caption_side
+    property_name: caption-side
+    category: table
+    description: "Position of table caption (top or bottom)"
+    tags: [fundamental]
+
+  - id: empty_cells
+    property_name: empty-cells
+    category: table
+    description: "Display borders on empty table cells"
+    tags: [fundamental, email-staple]
+
+  - id: vertical_align_table
+    property_name: vertical-align
+    category: table
+    description: "Vertical alignment within table cells"
+    tags: [fundamental, email-staple]
+
+  - id: display_table_element
+    property_name: display
+    value: table
+    category: table
+    description: "CSS table display for non-table elements"
+    tags: [fundamental]
+
+  - id: display_table_row_element
+    property_name: display
+    value: table-row
+    category: table
+    description: "CSS table-row display for non-tr elements"
+    tags: [fundamental]
+
+  - id: display_table_cell_element
+    property_name: display
+    value: table-cell
+    category: table
+    description: "CSS table-cell display for non-td elements"
+    tags: [fundamental]
+
+  - id: display_table_caption
+    property_name: display
+    value: table-caption
+    category: table
+    description: "CSS table-caption display mode"
+    tags: [fundamental]
+
+  - id: display_table_row_group
+    property_name: display
+    value: table-row-group
+    category: table
+    description: "CSS table-row-group (tbody equivalent)"
+    tags: [fundamental]
+
+  - id: display_table_header_group
+    property_name: display
+    value: table-header-group
+    category: table
+    description: "CSS table-header-group (thead equivalent)"
+    tags: [fundamental]
+
+  - id: display_table_footer_group
+    property_name: display
+    value: table-footer-group
+    category: table
+    description: "CSS table-footer-group (tfoot equivalent)"
+    tags: [fundamental]
+
+  - id: table_width
+    property_name: width
+    category: table
+    description: "Table element width (px or percentage)"
+    tags: [fundamental, email-staple]
+
+  - id: table_cell_padding
+    property_name: padding
+    category: table
+    description: "Padding inside table cells via CSS"
+    tags: [fundamental, email-staple]
+
+  # ============================================================================
+  # TRANSFORM & ANIMATION (~31 entries)
+  # ============================================================================
+  - id: transform
+    property_name: transform
+    category: transform_animation
+    description: "Apply 2D or 3D transformation to element"
+    tags: [modern, outlook-issue]
+
+  - id: translate
+    property_name: translate
+    category: transform_animation
+    description: "Individual translate transform property"
+    tags: [modern, outlook-issue]
+
+  - id: transform_translate
+    property_name: transform
+    value: translate()
+    category: transform_animation
+    description: "Move element along X and Y axes"
+    tags: [modern, outlook-issue]
+
+  - id: transform_translatex
+    property_name: transform
+    value: translateX()
+    category: transform_animation
+    description: "Move element along X axis"
+    tags: [modern, outlook-issue]
+
+  - id: transform_translatey
+    property_name: transform
+    value: translateY()
+    category: transform_animation
+    description: "Move element along Y axis"
+    tags: [modern, outlook-issue]
+
+  - id: rotate
+    property_name: rotate
+    category: transform_animation
+    description: "Individual rotate transform property"
+    tags: [modern, outlook-issue]
+
+  - id: transform_rotate
+    property_name: transform
+    value: rotate()
+    category: transform_animation
+    description: "Rotate element by angle"
+    tags: [modern, outlook-issue]
+
+  - id: scale
+    property_name: scale
+    category: transform_animation
+    description: "Individual scale transform property"
+    tags: [modern, outlook-issue]
+
+  - id: transform_scale
+    property_name: transform
+    value: scale()
+    category: transform_animation
+    description: "Scale element size"
+    tags: [modern, outlook-issue]
+
+  - id: transform_skew
+    property_name: transform
+    value: skew()
+    category: transform_animation
+    description: "Skew element along X and Y axes"
+    tags: [modern, outlook-issue]
+
+  - id: transform_skewx
+    property_name: transform
+    value: skewX()
+    category: transform_animation
+    description: "Skew element along X axis"
+    tags: [modern, outlook-issue]
+
+  - id: transform_skewy
+    property_name: transform
+    value: skewY()
+    category: transform_animation
+    description: "Skew element along Y axis"
+    tags: [modern, outlook-issue]
+
+  - id: transform_origin
+    property_name: transform-origin
+    category: transform_animation
+    description: "Origin point for transformations"
+    tags: [modern, outlook-issue]
+
+  - id: transform_style
+    property_name: transform-style
+    category: transform_animation
+    description: "3D rendering style (flat or preserve-3d)"
+    tags: [modern, outlook-issue]
+
+  - id: perspective
+    property_name: perspective
+    category: transform_animation
+    description: "3D perspective distance"
+    tags: [modern, outlook-issue]
+
+  - id: perspective_origin
+    property_name: perspective-origin
+    category: transform_animation
+    description: "Vanishing point for 3D perspective"
+    tags: [modern, outlook-issue]
+
+  - id: backface_visibility
+    property_name: backface-visibility
+    category: transform_animation
+    description: "Visibility of element back face when rotated"
+    tags: [modern, outlook-issue]
+
+  - id: transition
+    property_name: transition
+    category: transform_animation
+    description: "Shorthand CSS transition"
+    tags: [modern, gmail-strips]
+
+  - id: transition_property
+    property_name: transition-property
+    category: transform_animation
+    description: "CSS properties to animate on transition"
+    tags: [modern, gmail-strips]
+
+  - id: transition_duration
+    property_name: transition-duration
+    category: transform_animation
+    description: "Duration of transition effect"
+    tags: [modern, gmail-strips]
+
+  - id: transition_timing_function
+    property_name: transition-timing-function
+    category: transform_animation
+    description: "Easing function for transition"
+    tags: [modern, gmail-strips]
+
+  - id: transition_delay
+    property_name: transition-delay
+    category: transform_animation
+    description: "Delay before transition starts"
+    tags: [modern, gmail-strips]
+
+  - id: animation
+    property_name: animation
+    category: transform_animation
+    description: "Shorthand CSS animation"
+    tags: [modern, gmail-strips]
+
+  - id: animation_name
+    property_name: animation-name
+    category: transform_animation
+    description: "Name of @keyframes animation"
+    tags: [modern, gmail-strips]
+
+  - id: animation_duration
+    property_name: animation-duration
+    category: transform_animation
+    description: "Duration of animation cycle"
+    tags: [modern, gmail-strips]
+
+  - id: animation_timing_function
+    property_name: animation-timing-function
+    category: transform_animation
+    description: "Easing function for animation"
+    tags: [modern, gmail-strips]
+
+  - id: animation_delay
+    property_name: animation-delay
+    category: transform_animation
+    description: "Delay before animation starts"
+    tags: [modern, gmail-strips]
+
+  - id: animation_iteration_count
+    property_name: animation-iteration-count
+    category: transform_animation
+    description: "Number of animation cycle repetitions"
+    tags: [modern, gmail-strips]
+
+  - id: animation_direction
+    property_name: animation-direction
+    category: transform_animation
+    description: "Direction of animation playback (normal, reverse, alternate)"
+    tags: [modern, gmail-strips]
+
+  - id: animation_fill_mode
+    property_name: animation-fill-mode
+    category: transform_animation
+    description: "How animation applies styles before/after execution"
+    tags: [modern, gmail-strips]
+
+  - id: keyframes
+    property_name: "@keyframes"
+    category: transform_animation
+    description: "Define animation keyframe sequence"
+    tags: [modern, gmail-strips]
+
+  - id: will_change
+    property_name: will-change
+    category: transform_animation
+    description: "Hint browser about anticipated property changes"
+    tags: [modern]
+
+  # ============================================================================
+  # SELECTOR (~27 entries)
+  # ============================================================================
+  - id: pseudo_hover
+    property_name: ":hover"
+    category: selector
+    description: "Mouse hover pseudo-class"
+    tags: [fundamental, gmail-strips]
+
+  - id: pseudo_focus
+    property_name: ":focus"
+    category: selector
+    description: "Focus state pseudo-class"
+    tags: [fundamental, accessibility]
+
+  - id: pseudo_focus_visible
+    property_name: ":focus-visible"
+    category: selector
+    description: "Keyboard focus pseudo-class for accessibility"
+    tags: [modern, accessibility]
+
+  - id: pseudo_focus_within
+    property_name: ":focus-within"
+    category: selector
+    description: "Parent focus when descendant is focused"
+    tags: [modern, gmail-strips]
+
+  - id: pseudo_active
+    property_name: ":active"
+    category: selector
+    description: "Active/pressed state pseudo-class"
+    tags: [fundamental]
+
+  - id: pseudo_visited
+    property_name: ":visited"
+    category: selector
+    description: "Visited link pseudo-class (limited styling)"
+    tags: [fundamental]
+
+  - id: pseudo_first_child
+    property_name: ":first-child"
+    category: selector
+    description: "First child element selector"
+    tags: [fundamental, gmail-strips]
+
+  - id: pseudo_last_child
+    property_name: ":last-child"
+    category: selector
+    description: "Last child element selector"
+    tags: [fundamental, gmail-strips]
+
+  - id: pseudo_nth_child
+    property_name: ":nth-child()"
+    category: selector
+    description: "Nth child element selector with formula"
+    tags: [modern, gmail-strips]
+
+  - id: pseudo_nth_of_type
+    property_name: ":nth-of-type()"
+    category: selector
+    description: "Nth element of its type selector"
+    tags: [modern, gmail-strips]
+
+  - id: pseudo_first_of_type
+    property_name: ":first-of-type"
+    category: selector
+    description: "First element of its type"
+    tags: [modern, gmail-strips]
+
+  - id: pseudo_last_of_type
+    property_name: ":last-of-type"
+    category: selector
+    description: "Last element of its type"
+    tags: [modern, gmail-strips]
+
+  - id: pseudo_not
+    property_name: ":not()"
+    category: selector
+    description: "Negation pseudo-class selector"
+    tags: [modern, gmail-strips]
+
+  - id: pseudo_is
+    property_name: ":is()"
+    category: selector
+    description: "Matches-any pseudo-class (forgiving selector list)"
+    tags: [modern, limited-support]
+
+  - id: pseudo_where
+    property_name: ":where()"
+    category: selector
+    description: "Zero-specificity matches-any pseudo-class"
+    tags: [modern, limited-support]
+
+  - id: pseudo_has
+    property_name: ":has()"
+    category: selector
+    description: "Relational pseudo-class (parent selector)"
+    tags: [modern, limited-support]
+
+  - id: pseudo_before
+    property_name: "::before"
+    category: selector
+    description: "Before pseudo-element for generated content"
+    tags: [fundamental, gmail-strips]
+
+  - id: pseudo_after
+    property_name: "::after"
+    category: selector
+    description: "After pseudo-element for generated content"
+    tags: [fundamental, gmail-strips]
+
+  - id: pseudo_first_line
+    property_name: "::first-line"
+    category: selector
+    description: "First line of block text styling"
+    tags: [fundamental]
+
+  - id: pseudo_first_letter
+    property_name: "::first-letter"
+    category: selector
+    description: "First letter of block text styling"
+    tags: [fundamental]
+
+  - id: pseudo_placeholder
+    property_name: "::placeholder"
+    category: selector
+    description: "Placeholder text styling for form inputs"
+    tags: [modern]
+
+  - id: pseudo_selection
+    property_name: "::selection"
+    category: selector
+    description: "Selected text styling"
+    tags: [modern]
+
+  - id: pseudo_marker
+    property_name: "::marker"
+    category: selector
+    description: "List marker styling"
+    tags: [modern, limited-support]
+
+  - id: attr_selector
+    property_name: "[attribute]"
+    category: selector
+    description: "Elements with specified attribute"
+    tags: [fundamental]
+
+  - id: attr_equals
+    property_name: "[attribute=value]"
+    category: selector
+    description: "Attribute exact value match"
+    tags: [fundamental]
+
+  - id: attr_contains_word
+    property_name: "[attribute~=value]"
+    category: selector
+    description: "Attribute contains word in space-separated list"
+    tags: [fundamental]
+
+  - id: attr_starts_with
+    property_name: "[attribute^=value]"
+    category: selector
+    description: "Attribute value starts with string"
+    tags: [fundamental]
+
+  - id: attr_ends_with
+    property_name: "[attribute$=value]"
+    category: selector
+    description: "Attribute value ends with string"
+    tags: [fundamental]
+
+  - id: attr_contains
+    property_name: "[attribute*=value]"
+    category: selector
+    description: "Attribute value contains substring"
+    tags: [fundamental]
+
+  - id: attr_dash_match
+    property_name: "[attribute|=value]"
+    category: selector
+    description: "Attribute value starts with value followed by hyphen"
+    tags: [fundamental]
+
+  # ============================================================================
+  # MEDIA QUERY (~16 entries)
+  # ============================================================================
+  - id: media_screen
+    property_name: "@media"
+    value: screen
+    category: media_query
+    description: "Screen media type query"
+    tags: [fundamental]
+
+  - id: media_print
+    property_name: "@media"
+    value: print
+    category: media_query
+    description: "Print media type query"
+    tags: [fundamental]
+
+  - id: media_max_width
+    property_name: "@media"
+    value: max-width
+    category: media_query
+    description: "Maximum viewport width breakpoint"
+    tags: [fundamental, email-staple]
+
+  - id: media_min_width
+    property_name: "@media"
+    value: min-width
+    category: media_query
+    description: "Minimum viewport width breakpoint"
+    tags: [fundamental, email-staple]
+
+  - id: media_prefers_color_scheme
+    property_name: "@media"
+    value: prefers-color-scheme
+    category: media_query
+    description: "User color scheme preference (light/dark)"
+    tags: [modern, dark-mode]
+
+  - id: media_prefers_reduced_motion
+    property_name: "@media"
+    value: prefers-reduced-motion
+    category: media_query
+    description: "User preference for reduced motion"
+    tags: [modern, accessibility]
+
+  - id: media_hover
+    property_name: "@media"
+    value: hover
+    category: media_query
+    description: "Device hover capability detection"
+    tags: [modern]
+
+  - id: media_pointer
+    property_name: "@media"
+    value: pointer
+    category: media_query
+    description: "Pointing device accuracy (coarse, fine, none)"
+    tags: [modern]
+
+  - id: supports
+    property_name: "@supports"
+    category: media_query
+    description: "Feature query for CSS property support detection"
+    tags: [modern]
+
+  - id: media_orientation
+    property_name: "@media"
+    value: orientation
+    category: media_query
+    description: "Device orientation (portrait/landscape)"
+    tags: [fundamental]
+
+  - id: media_resolution
+    property_name: "@media"
+    value: resolution
+    category: media_query
+    description: "Device pixel density query"
+    tags: [modern]
+
+  - id: media_aspect_ratio
+    property_name: "@media"
+    value: aspect-ratio
+    category: media_query
+    description: "Viewport aspect ratio query"
+    tags: [modern]
+
+  - id: media_prefers_contrast
+    property_name: "@media"
+    value: prefers-contrast
+    category: media_query
+    description: "User preference for contrast level"
+    tags: [modern, accessibility]
+
+  - id: media_forced_colors
+    property_name: "@media"
+    value: forced-colors
+    category: media_query
+    description: "Forced colors mode detection (Windows High Contrast)"
+    tags: [modern, accessibility]
+
+  - id: media_all
+    property_name: "@media"
+    value: all
+    category: media_query
+    description: "All media types query"
+    tags: [fundamental]
+
+  - id: media_max_device_width
+    property_name: "@media"
+    value: max-device-width
+    category: media_query
+    description: "Deprecated device width query, still used in email"
+    tags: [deprecated, email-staple]
+
+  # ============================================================================
+  # DARK MODE (~12 entries)
+  # ============================================================================
+  - id: dm_color_scheme
+    property_name: color-scheme
+    category: dark_mode
+    description: "Declare supported color schemes (light dark)"
+    tags: [modern, dark-mode]
+
+  - id: dm_prefers_color_scheme_dark
+    property_name: "@media"
+    value: "prefers-color-scheme: dark"
+    category: dark_mode
+    description: "Dark mode media query"
+    tags: [modern, dark-mode]
+
+  - id: dm_prefers_color_scheme_light
+    property_name: "@media"
+    value: "prefers-color-scheme: light"
+    category: dark_mode
+    description: "Light mode media query"
+    tags: [modern, dark-mode]
+
+  - id: dm_data_ogsc
+    property_name: "[data-ogsc]"
+    category: dark_mode
+    description: "Outlook dark mode text color override selector"
+    tags: [outlook-issue, dark-mode]
+
+  - id: dm_data_ogsb
+    property_name: "[data-ogsb]"
+    category: dark_mode
+    description: "Outlook dark mode background override selector"
+    tags: [outlook-issue, dark-mode]
+
+  - id: dm_webkit_transform_hack
+    property_name: "-webkit-transform"
+    value: "translateZ(0)"
+    category: dark_mode
+    description: "WebKit transform hack to prevent dark mode color inversion"
+    tags: [vendor-prefix, dark-mode, hack]
+
+  - id: dm_color_revert
+    property_name: color
+    value: revert
+    category: dark_mode
+    description: "Revert color to user-agent default in dark mode context"
+    tags: [modern, dark-mode]
+
+  - id: dm_background_revert
+    property_name: background
+    value: revert
+    category: dark_mode
+    description: "Revert background to user-agent default in dark mode context"
+    tags: [modern, dark-mode]
+
+  - id: dm_meta_color_scheme
+    property_name: "meta[name=color-scheme]"
+    category: dark_mode
+    description: "HTML meta tag declaring color scheme support"
+    tags: [dark-mode]
+
+  - id: dm_mso_dark_mode_override
+    property_name: "mso-dark-mode-override"
+    category: dark_mode
+    description: "Microsoft-specific dark mode override property"
+    tags: [outlook-issue, dark-mode, vendor-prefix]
+
+  - id: dm_supported_color_schemes
+    property_name: "meta[name=supported-color-schemes]"
+    category: dark_mode
+    description: "Legacy meta tag for color scheme support (Apple Mail)"
+    tags: [dark-mode, deprecated]
+
+  - id: dm_color_adjust
+    property_name: "color-adjust"
+    category: dark_mode
+    description: "Control whether browser can adjust colors (deprecated for print-color-adjust)"
+    tags: [dark-mode, deprecated]
+
+  # ============================================================================
+  # LIST (~11 entries)
+  # ============================================================================
+  - id: list_style_type
+    property_name: list-style-type
+    category: list
+    description: "List marker type (disc, circle, square, decimal, none)"
+    tags: [fundamental]
+
+  - id: list_style_type_none
+    property_name: list-style-type
+    value: none
+    category: list
+    description: "Remove list markers"
+    tags: [fundamental, email-staple]
+
+  - id: list_style_position
+    property_name: list-style-position
+    category: list
+    description: "List marker position (inside or outside)"
+    tags: [fundamental]
+
+  - id: list_style_image
+    property_name: list-style-image
+    category: list
+    description: "Custom image as list marker"
+    tags: [fundamental]
+
+  - id: list_style
+    property_name: list-style
+    category: list
+    description: "Shorthand for list-style-type, position, and image"
+    tags: [fundamental]
+
+  - id: list_marker
+    property_name: "::marker"
+    category: list
+    description: "List marker pseudo-element for custom styling"
+    tags: [modern, limited-support]
+
+  - id: list_counter_reset
+    property_name: counter-reset
+    category: list
+    description: "Reset CSS counter for custom list numbering"
+    tags: [modern, gmail-strips]
+
+  - id: list_counter_increment
+    property_name: counter-increment
+    category: list
+    description: "Increment CSS counter for custom list numbering"
+    tags: [modern, gmail-strips]
+
+  - id: list_content_counter
+    property_name: content
+    value: "counter()"
+    category: list
+    description: "Display counter value in generated content"
+    tags: [modern, gmail-strips]
+
+  - id: list_style_type_decimal
+    property_name: list-style-type
+    value: decimal
+    category: list
+    description: "Decimal numbered list markers"
+    tags: [fundamental]
+
+  - id: list_style_type_disc
+    property_name: list-style-type
+    value: disc
+    category: list
+    description: "Disc bullet list markers (default for ul)"
+    tags: [fundamental]
+
+  # ============================================================================
+  # OTHER (~18 entries)
+  # ============================================================================
+  - id: cursor
+    property_name: cursor
+    category: other
+    description: "Mouse cursor style"
+    tags: [fundamental]
+
+  - id: cursor_pointer
+    property_name: cursor
+    value: pointer
+    category: other
+    description: "Hand pointer cursor for clickable elements"
+    tags: [fundamental]
+
+  - id: pointer_events
+    property_name: pointer-events
+    category: other
+    description: "Control whether element receives pointer events"
+    tags: [modern]
+
+  - id: pointer_events_none
+    property_name: pointer-events
+    value: none
+    category: other
+    description: "Disable pointer events on element"
+    tags: [modern]
+
+  - id: user_select
+    property_name: user-select
+    category: other
+    description: "Control text selection behavior"
+    tags: [modern]
+
+  - id: user_select_none
+    property_name: user-select
+    value: none
+    category: other
+    description: "Prevent text selection"
+    tags: [modern]
+
+  - id: resize
+    property_name: resize
+    category: other
+    description: "Element resize handle (none, both, horizontal, vertical)"
+    tags: [modern]
+
+  - id: scroll_behavior
+    property_name: scroll-behavior
+    category: other
+    description: "Smooth or instant scrolling"
+    tags: [modern]
+
+  - id: touch_action
+    property_name: touch-action
+    category: other
+    description: "Touch gesture handling (pan, pinch-zoom, manipulation)"
+    tags: [modern]
+
+  - id: appearance
+    property_name: appearance
+    category: other
+    description: "Native UI appearance override for form controls"
+    tags: [modern]
+
+  - id: webkit_appearance
+    property_name: "-webkit-appearance"
+    category: other
+    description: "WebKit-specific appearance override"
+    tags: [vendor-prefix, webkit]
+
+  - id: contain
+    property_name: contain
+    category: other
+    description: "Element containment for rendering optimization"
+    tags: [modern]
+
+  - id: content_visibility
+    property_name: content-visibility
+    category: other
+    description: "Skip rendering of off-screen content"
+    tags: [modern, limited-support]
+
+  - id: print_color_adjust
+    property_name: print-color-adjust
+    category: other
+    description: "Control whether browser adjusts colors for printing"
+    tags: [modern]
+
+  - id: image_rendering
+    property_name: image-rendering
+    category: other
+    description: "Image scaling algorithm (auto, pixelated, crisp-edges)"
+    tags: [modern]
+
+  - id: shape_outside
+    property_name: shape-outside
+    category: other
+    description: "Non-rectangular shape for float wrapping"
+    tags: [modern, outlook-issue]
+
+  - id: shape_margin
+    property_name: shape-margin
+    category: other
+    description: "Margin around shape-outside"
+    tags: [modern, outlook-issue]
+
+  - id: all
+    property_name: all
+    category: other
+    description: "Reset all properties except unicode-bidi and direction"
+    tags: [modern]

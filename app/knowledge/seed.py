@@ -159,6 +159,69 @@ async def _seed_graph(entries: list[SeedEntry]) -> None:
     )
 
 
+async def _seed_ontology_graph() -> None:
+    """Seed ontology-derived documents into Cognee graph."""
+    settings = get_settings()
+
+    if not settings.cognee.enabled:
+        print("\n  Ontology graph seeding skipped (COGNEE__ENABLED=false)")
+        return
+
+    try:
+        from app.knowledge.graph import cognee_provider as _cp
+
+        provider_cls = _cp.CogneeGraphProvider
+    except ImportError:
+        print("\n  Ontology graph seeding skipped (cognee not installed)")
+        return
+
+    from app.knowledge.ontology.graph_export import export_ontology_documents
+
+    print("\n  Seeding ontology into knowledge graph...")
+    start = time.monotonic()
+
+    provider = provider_cls(settings)
+    documents = export_ontology_documents()
+
+    # Group by dataset
+    by_dataset: dict[str, list[str]] = {}
+    for dataset_name, text in documents:
+        by_dataset.setdefault(dataset_name, []).append(text)
+
+    total_docs = 0
+    for dataset, texts in by_dataset.items():
+        try:
+            await provider.add_documents(texts, dataset_name=dataset)
+            print(f"  ONTOLOGY ADD  {dataset}: {len(texts)} documents")
+            total_docs += len(texts)
+        except Exception as e:
+            print(f"  ONTOLOGY FAIL {dataset}: {e}")
+            logger.error(
+                "knowledge.ontology_seed.add_failed",
+                dataset=dataset,
+                count=len(texts),
+                error=str(e),
+            )
+
+    for dataset in by_dataset:
+        try:
+            await provider.build_graph(dataset_name=dataset, background=False)
+            print(f"  ONTOLOGY BUILD {dataset}: cognify complete")
+        except Exception as e:
+            print(f"  ONTOLOGY BUILD FAIL {dataset}: {e}")
+            logger.error(
+                "knowledge.ontology_seed.build_failed",
+                dataset=dataset,
+                error=str(e),
+            )
+
+    duration = time.monotonic() - start
+    print(
+        f"  Ontology graph done in {duration:.1f}s"
+        f" ({total_docs} documents across {len(by_dataset)} datasets)"
+    )
+
+
 async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) -> None:
     """Seed the knowledge base with email development content.
 
@@ -224,6 +287,7 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
     # Use all manifest entries (not just newly seeded — graph needs full corpus)
     if not skip_graph:
         await _seed_graph(SEED_MANIFEST)
+        await _seed_ontology_graph()
     else:
         print("\n  Graph seeding skipped (--skip-graph flag)")
 

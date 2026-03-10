@@ -14,7 +14,7 @@ class SeedEntry:
     tags: list[str] = field(default_factory=lambda: list[str]())
 
 
-ALLOWED_DOMAINS = {"css_support", "best_practices", "client_quirks"}
+ALLOWED_DOMAINS = {"css_support", "best_practices", "client_quirks", "email_ontology"}
 
 SEED_MANIFEST: list[SeedEntry] = [
     # --- CSS Support (8 documents) ---

@@ -691,11 +691,11 @@ Extended `BlueprintRun._handoff_history` to accumulate ALL handoffs (not just la
 ~~**Step 2.6 — SKILL.md Files for Existing Agents (Scaffolder, Dark Mode)**~~ DONE (2026-03-09)
 Created progressive disclosure SKILL.md files for Scaffolder (L1+L2 + 4 L3 files: client_compatibility, maizzle_syntax, mso_vml_quick_ref, table_layouts) and Dark Mode (L1+L2 + 3 L3 files: client_behavior, color_remapping, outlook_dark_mode). Services updated with `detect_relevant_skills()` + `build_system_prompt()` for on-demand skill loading based on brief analysis.
 
-**Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)** (8.1 DONE 2026-03-10)
-~~8.1 Cognee integration layer~~ DONE: `app/knowledge/graph/` module with `GraphKnowledgeProvider` Protocol + `CogneeGraphProvider` implementation; `CogneeConfig` in settings (disabled by default, inherits AI config); `POST /api/v1/knowledge/graph/search` endpoint (auth + 20/min rate limit, chunks + completion modes); `GraphError` → `AppError` hierarchy; cognee as optional dependency (`pip install -e ".[graph]"`); 8 unit tests (568 total). Remaining: 8.6 ontology definition, 8.2 knowledge graph seeding.
+~~**Step 3 — Cognee Integration + Ontology + Seeding (8.1 + 8.6 + 8.2)**~~ DONE (2026-03-10)
+~~8.1 Cognee integration layer~~ DONE: `app/knowledge/graph/` module with `GraphKnowledgeProvider` Protocol + `CogneeGraphProvider` implementation; `CogneeConfig` in settings (disabled by default, inherits AI config); `POST /api/v1/knowledge/graph/search` endpoint (auth + 20/min rate limit, chunks + completion modes); `GraphError` → `AppError` hierarchy; cognee as optional dependency (`pip install -e ".[graph]"`); 8 unit tests (568 total). ~~8.6 Email development ontology~~ DONE: `app/knowledge/ontology/` Python-native module — 25 email clients, 365 CSS properties, 1011 support entries, 70 fallback relationships in YAML data files; `OntologyRegistry` singleton with indexed lookups; `unsupported_css_in_html()` query powering data-driven QA; `export_ontology_documents()` for Cognee graph ingestion; `css_support.py` QA check replaced with ontology-powered scan; 51 tests (661 total). ~~8.2 Knowledge graph seeding~~ DONE: `_seed_ontology_graph()` added to `seed.py` feeding ontology-derived documents into Cognee ECL pipeline alongside existing RAG document seeding.
 
-**Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**
-Wire graph search into blueprint nodes. ~~Author initial SKILL.md files for the 3 existing agents.~~ DONE for Scaffolder + Dark Mode (Step 2.6). Content agent SKILL.md pending. Re-run evals to measure improvement vs Step 0 baseline.
+~~**Step 4 — Graph Context Provider + SKILL.md Files (8.3 + 8.5)**~~ DONE (2026-03-10)
+~~8.3 Graph context provider~~ DONE: `app/ai/blueprints/graph_context.py` wired into blueprint engine `_build_node_context()`. ~~8.5 SKILL.md files~~ DONE: All 9 agents have progressive disclosure SKILL.md (L1+L2) + L3 skill files with on-demand loading via `detect_relevant_skills()` + `build_system_prompt()`.
 
 ~~**Step 5 — Build Remaining 6 Agents WITH Phase 7+8 Patterns (Task 4.1)**~~ DONE (Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation — all complete)
 Each new agent inherits handoff/confidence/context/graph/SKILL.md infrastructure from day one. No retrofitting needed.
@@ -706,8 +706,8 @@ All 6 phases complete. `BaseAgentService` shared pipeline extracted (`app/ai/age
 ~~**Step 6 — Eval-Informed Prompts (7.2)**~~ DONE (2026-03-09)
 Created `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.json` (from `make eval-analysis`), filters per-agent criteria below 85% pass rate, generates formatted warning fragments injected into all 9 agent `build_system_prompt()` between L2 SKILL.md and L3 reference files. Mtime-cached, max 5 warnings per agent (worst-first), mock reasoning cleanup, graceful degradation when no analysis file exists. 16 new tests, 560 total passing. Plan: `.agents/plans/eval-informed-prompts.md`.
 
-**Step 7 — Outcome Logging (8.4)**
-Feed blueprint outcomes into knowledge graph. Requires Phase 8 Cognee integration.
+~~**Step 7 — Outcome Logging (8.4)**~~ DONE (2026-03-10)
+`outcome_logger.py` formats blueprint run outcomes as narrative summaries + queues to Redis + stores in pgvector Memory. `OutcomeGraphPoller` background task drains Redis queue into Cognee graph with batch processing and leader election. Fire-and-forget pattern ensures graph/memory errors never impact blueprint API. 19 tests.
 
 ### ~~7.1 Structured Inter-Agent Handoff Schemas~~ DONE (extended 2026-03-09)
 **What:** Define typed handoff contracts between agents in blueprint pipelines. Currently agents chain via raw HTML output. Instead, each agent should emit a structured handoff object containing: the output artifact, metadata about decisions made (e.g., "used 2-column layout", "applied VML fallback for hero"), warnings/caveats, and context the next agent needs.
@@ -820,7 +820,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Cognee databases stored in project-scoped directories. No cross-tenant access. Graph queries logged to audit trail. Background tasks inherit existing Redis leader election for single-writer safety.
 **Verify:** `KnowledgeService.search()` can return graph-structured results alongside existing chunk results. Background `cognify()` completes without blocking API server. Unit tests for provider interface.
 
-### 8.2 Knowledge Graph Seeding
+### ~~8.2 Knowledge Graph Seeding~~ DONE (2026-03-10)
 **What:** Run existing knowledge base documents through Cognee's ECL pipeline (`add()` -> `cognify()`) to extract entities and relationships into a knowledge graph.
 **Why:** Transforms static document chunks into interconnected knowledge. "Gmail clips at 102KB" becomes a queryable entity linked to "file_size_check" and "Gmail" with relationship "clips_above_threshold."
 **Implementation:**
@@ -830,7 +830,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Same documents, additional index. No new data surface.
 **Verify:** After seeding, graph contains extracted entities from Can I Email data. Query "What does Outlook 2019 not support?" returns structured graph traversal results.
 
-### 8.3 Graph Context Provider for Blueprint Nodes
+### ~~8.3 Graph Context Provider for Blueprint Nodes~~ DONE (2026-03-10)
 **What:** Add graph-aware context retrieval to the blueprint engine's `_build_node_context()`. Before an agent generates output, query Cognee for structured relationships relevant to the task.
 **Why:** This is the highest-impact integration. Instead of "here are 5 similar chunks about dark mode," agents get: *"Apple Mail supports prefers-color-scheme -> use media query. Outlook ignores it -> use MSO conditional fallback. Gmail Android partially supports -> test with persona."*
 **Implementation:**
@@ -841,7 +841,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Graph queries scoped to project. Query content logged. No PII in graph (email dev knowledge only).
 **Verify:** Scaffolder agent generating a 3-column layout receives structured compatibility data for target email clients. Dark Mode agent receives known workarounds for components in the template.
 
-### 8.4 Blueprint Outcome Logging
+### ~~8.4 Blueprint Outcome Logging~~ DONE (2026-03-10)
 **What:** After a blueprint run completes, feed the outcome (which agents ran, what they produced, QA results, recovery actions taken) back into Cognee via `cognee.add()`.
 **Why:** Builds institutional memory. After 50 blueprint runs, agents can query: "What fixes have worked when QA fails for VML backgrounds in Outlook?" — answered from real outcomes, not LLM guessing.
 **Implementation:**
@@ -851,7 +851,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Outcomes contain generated HTML patterns, not client content. Project-scoped. Temporal decay applies (Section 5.6 Layer 5).
 **Verify:** After 10+ blueprint runs, querying "common Scaffolder failures" returns aggregated patterns from actual runs.
 
-### 8.5 Per-Agent Domain SKILL.md Files
+### ~~8.5 Per-Agent Domain SKILL.md Files~~ DONE (2026-03-10)
 **What:** Create a SKILL.md file for each of the 9 agents following the Four Discipline structure (Section 5.4). Each skill file contains domain-specific rules, examples, anti-patterns, and context requirements grounded by the knowledge graph. Skills start as manually authored baselines and grow over time as agents accumulate knowledge.
 **Why:** Currently agent prompts are static strings in `prompt.py` constants. SKILL.md files make agent expertise versionable, updatable without code changes, and benchmarkable via the eval system. Combined with the knowledge graph, skills reference verified entities rather than relying on LLM memory.
 **Implementation:**
@@ -873,7 +873,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** SKILL.md files contain no client data. Versioned in git. Growth proposals logged with source data references. Changes auditable.
 **Verify:** Agent loaded with SKILL.md produces measurably better output on eval suite vs static prompt. Skill updates don't require code deployment. Growth proposals reference specific graph entities and outcome data.
 
-### 8.6 Email Development Ontology (Full Granularity)
+### ~~8.6 Email Development Ontology (Full Granularity)~~ DONE (2026-03-10)
 **What:** Define a comprehensive OWL ontology for the email development domain. Full coverage of every email client version, every CSS property from Can I Email, all rendering engines, HTML elements relevant to email, ESP platforms, and template patterns.
 **Why:** Without an ontology, Cognee's LLM-based entity extraction invents entity types inconsistently ("Outlook" vs "Microsoft Outlook" vs "Outlook 2019"). The ontology grounds extraction against canonical domain concepts, ensuring the knowledge graph is consistent and queryable. Full granularity means agents can reason at the version level ("Outlook 2016 on Windows" vs "Outlook 365 on Mac" have different rendering engines).
 **Implementation:**

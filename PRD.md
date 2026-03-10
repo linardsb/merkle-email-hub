@@ -3,9 +3,9 @@
 ## Merkle Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 4.3
+**Version:** 4.4
 **Date:** 2026-03-10
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7 complete (7.1-7.6 all done); Phase 8.1 Cognee integration layer done (Protocol-based GraphKnowledgeProvider, optional dependency, 568 tests); remaining: human label calibration (540 rows), Phase 8.2-8.6 knowledge graph seeding + agents
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7 complete (7.1-7.6 all done); Phase 8 Knowledge Graph Integration COMPLETE (8.1-8.6 all done — Cognee integration, graph seeding, graph context provider, outcome logging, all 9 SKILL.md files, email development ontology with 365 CSS properties); remaining: human label calibration (540 rows), Phase 9 graph-driven intelligence
 
 ---
 
@@ -68,10 +68,15 @@
 | 7.6 | Agent architecture improvements | `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) — 7 HTML transformer agents refactored (~500 lines removed); thread-safe `_get_model_tier` + `_should_run_qa` hooks; standardised response schemas (`confidence` + `skills_loaded` on all 9 agents); `to_handoff()` for standardised `AgentHandoff` emission; memory recall wired into blueprint engine `_build_node_context()`; recovery router cycle detection via `handoff_history` + "fallback" keyword collision fix; eval trace fix (dark mode input HTML storage + judge graceful degradation); prompt gap fixes (scaffolder MSO/a11y/dark mode MANDATORY sections, content num_alternatives); 544 tests pass |
 | 7.2 | Eval-informed agent prompts | `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.json`, filters per-agent criteria <85% pass rate, injects `## KNOWN FAILURE PATTERNS` into all 9 agent `build_system_prompt()` between L2 SKILL.md and L3 reference files; mtime-cached, max 5 warnings (worst-first), mock reasoning cleanup, graceful degradation; 16 new tests (560 total) |
 | 8.1 | Cognee integration layer | `app/knowledge/graph/` module: `GraphKnowledgeProvider` Protocol with `GraphEntity`/`GraphRelationship`/`GraphSearchResult` frozen dataclasses; `CogneeGraphProvider` wrapping Cognee's add/cognify/search APIs with lazy import + config bridge; `CogneeConfig` (15 settings, inherits AI config for LLM); `POST /api/v1/knowledge/graph/search` with auth + rate limiting (20/min), two modes (chunks + completion); `GraphNotEnabledError` → 503 via `ServiceUnavailableError`; Cognee as optional dependency (`pip install -e ".[graph]"`); `KnowledgeService` extended with `search_graph()`/`search_graph_completion()`; 5 API schemas; 8 new tests (568 total) |
+| 8.2 | Knowledge graph seeding | `_seed_graph()` in `app/knowledge/seed.py` feeds RAG documents through Cognee ECL pipeline (add → cognify) grouped by domain; wired into `seed_knowledge_base()` after vector seeding; guarded by `cognee.enabled` config check + ImportError handling |
+| 8.3 | Graph context provider | `app/ai/blueprints/graph_context.py` queries Cognee knowledge graph before each agentic node; delivers structured entity relationships (triplets) into agent system prompts via `_build_node_context()`; progressive disclosure — only fetched for compatibility/CSS/component tasks |
+| 8.4 | Blueprint outcome logging | `outcome_logger.py` formats run outcomes as narrative summaries, queues to Redis + Memory; `OutcomeGraphPoller` background task drains Redis queue into Cognee graph with batch processing + leader election; fire-and-forget architecture isolates failures from blueprint API; 19 tests |
+| 8.5 | Per-agent domain SKILL.md files | All 9 agents have progressive disclosure SKILL.md (L1 YAML frontmatter + L2 core instructions); 6 agents have L3+ reference files loaded on-demand via `detect_relevant_skills()`; Four Discipline structure for domain expertise delivery |
+| 8.6 | Email development ontology | `app/knowledge/ontology/` — 365 CSS properties across 14 categories, 25 email clients, 1011 support entries, 70 fallback patterns; `OntologyRegistry` singleton with indexed lookups; `unsupported_css_in_html()` powers QA `css_support` check (replaced hardcoded rules); `export_ontology_documents()` generates Cognee graph documents; `_seed_ontology_graph()` wired into seed pipeline; 51 new tests (661 total) |
 
 ### In Progress
 
-**Remaining:** 8.5 SKILL.md for Content. Human label calibration (540 rows for TPR/TNR). Phase 8.2-8.6 knowledge graph seeding + agent integration.
+**Remaining:** Human label calibration (540 rows for TPR/TNR). Phase 9 graph-driven intelligence features.
 
 ### Infrastructure Built
 
@@ -83,7 +88,7 @@
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)
 - **Rendering Tests:** `RenderingProvider` Protocol with Litmus + Email on Acid providers; cross-client rendering with visual regression detection; circuit breaker resilience; full frontend UI (`/renderings`) with async test polling, pagination, visual regression comparison dialog, compatibility matrix, screenshot details
 - **Docker Deployment:** 7-service Docker Compose stack behind nginx reverse proxy; security-hardened containers (non-root, cap_drop ALL, no-new-privileges); SSL termination ready; `.env.example` for deployment config
-- **Testing:** Backend pytest (568 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests + 80 agent tests + 8 graph knowledge tests); Frontend Vitest + React Testing Library (`make test-fe`)
+- **Testing:** Backend pytest (661 tests, incl. 19 BOLA security tests + 23 error sanitizer tests + 58 eval tooling tests + 20 rate limiting/resource control tests + 42 Phase 6.4 tests + 21 Phase 7 handoff/confidence/component tests + 19 memory module tests + 80 agent tests + 8 graph knowledge tests + 19 outcome logging tests + 51 ontology tests); Frontend Vitest + React Testing Library (`make test-fe`)
 - **Security Scanning:** Semgrep SAST in CI/CD (`.github/workflows/semgrep.yml`); CI quality gate (`.github/workflows/ci.yml` — lint + types + security-check + tests); Mend Bolt dependency scanning (`.whitesource`); GitHub CodeQL default setup; OWASP API Top 10 audit documented in `TODO.md` Phase 6; PR security checklist template (`.github/PULL_REQUEST_TEMPLATE.md`)
 
 ---
