@@ -27,6 +27,7 @@ import {
   DEMO_RENDERING_TESTS,
   DEMO_RENDERING_COMPARISON,
 } from "./data/renderings";
+import { DEMO_EMAIL_CLIENTS } from "./data/email-clients";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -307,6 +308,11 @@ export function resolveDemo(urlStr: string): unknown | null {
   // ── Locales ──
   if (p === "/api/v1/locales") {
     return DEMO_LOCALES;
+  }
+
+  // ── Ontology: Email Clients ──
+  if (p === "/api/v1/ontology/clients") {
+    return DEMO_EMAIL_CLIENTS;
   }
 
   return null;
