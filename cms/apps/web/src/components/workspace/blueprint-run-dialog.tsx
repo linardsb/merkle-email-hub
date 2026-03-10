@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Bot,
@@ -12,6 +12,8 @@ import {
   Zap,
   Clock,
   AlertTriangle,
+  Search,
+  FileText,
 } from "lucide-react";
 import {
   Dialog,
@@ -24,8 +26,12 @@ import {
 import { Button } from "@merkle-email-hub/ui/components/ui/button";
 import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
 import { Label } from "@merkle-email-hub/ui/components/ui/label";
+import { Input } from "@merkle-email-hub/ui/components/ui/input";
 import { useBlueprintRun } from "@/hooks/use-blueprint-run";
+import { useAllBriefItems } from "@/hooks/use-briefs";
+import { useBriefDetail } from "@/hooks/use-briefs";
 import type { BlueprintProgress, HandoffSummary } from "@merkle-email-hub/sdk";
+import type { BriefItem } from "@/types/briefs";
 
 interface BlueprintRunDialogProps {
   open: boolean;
@@ -203,6 +209,83 @@ function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
   );
 }
 
+function BriefCard({
+  brief,
+  selected,
+  onSelect,
+}: {
+  brief: BriefItem;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const t = useTranslations("blueprintRun");
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`group relative flex gap-3 rounded-lg border p-2.5 text-left transition-colors ${
+        selected
+          ? "border-primary bg-primary/5 ring-1 ring-primary"
+          : "border-border bg-card hover:border-muted-foreground/40"
+      }`}
+    >
+      {/* Thumbnail */}
+      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-muted">
+        {brief.thumbnail_url ? (
+          <img
+            src={brief.thumbnail_url}
+            alt={brief.title}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <FileText className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">
+          {brief.title}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {brief.client_name && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              {brief.client_name}
+            </Badge>
+          )}
+          {brief.platform && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              {brief.platform}
+            </Badge>
+          )}
+        </div>
+        {brief.labels.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {brief.labels.slice(0, 3).map((label) => (
+              <span
+                key={label}
+                className="text-[10px] text-muted-foreground"
+              >
+                #{label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Selected indicator */}
+      {selected && (
+        <div className="absolute right-2 top-2">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+        </div>
+      )}
+    </button>
+  );
+}
+
 const STATUS_STYLES: Record<string, string> = {
   completed: "bg-chart-2/10 text-chart-2 border-chart-2/20",
   completed_with_warnings: "bg-accent text-accent-foreground border-border",
@@ -220,20 +303,45 @@ export function BlueprintRunDialog({
 }: BlueprintRunDialogProps) {
   const t = useTranslations("blueprintRun");
   const { run, isRunning, result, error, reset } = useBlueprintRun({ projectId });
+  const { data: briefItems } = useAllBriefItems();
 
-  const [brief, setBrief] = useState("");
+  const [selectedBriefId, setSelectedBriefId] = useState<number | null>(null);
+  const [briefSearch, setBriefSearch] = useState("");
   const [includeHtml, setIncludeHtml] = useState(false);
   const [showHandoffs, setShowHandoffs] = useState(false);
 
+  const { data: briefDetail } = useBriefDetail(selectedBriefId);
+
+  const filteredBriefs = useMemo(() => {
+    if (!briefItems) return [];
+    if (!briefSearch.trim()) return briefItems;
+    const q = briefSearch.toLowerCase();
+    return briefItems.filter(
+      (b) =>
+        b.title.toLowerCase().includes(q) ||
+        b.client_name?.toLowerCase().includes(q) ||
+        b.labels.some((l) => l.toLowerCase().includes(q)),
+    );
+  }, [briefItems, briefSearch]);
+
+  const selectedBrief = useMemo(
+    () => briefItems?.find((b) => b.id === selectedBriefId) ?? null,
+    [briefItems, selectedBriefId],
+  );
+
   const handleRun = useCallback(async () => {
-    if (!brief.trim()) return;
+    if (!selectedBrief) return;
+
+    const briefText = briefDetail?.description
+      ? `${selectedBrief.title}\n\n${briefDetail.description}`
+      : selectedBrief.title;
 
     await run({
       blueprint_name: "campaign",
-      brief: brief.trim(),
+      brief: briefText,
       initial_html: includeHtml ? currentHtml : undefined,
     });
-  }, [brief, includeHtml, currentHtml, run]);
+  }, [selectedBrief, briefDetail, includeHtml, currentHtml, run]);
 
   const handleApply = useCallback(() => {
     if (result?.html) {
@@ -244,7 +352,8 @@ export function BlueprintRunDialog({
 
   const handleClose = useCallback(() => {
     reset();
-    setBrief("");
+    setSelectedBriefId(null);
+    setBriefSearch("");
     setIncludeHtml(false);
     setShowHandoffs(false);
     onOpenChange(false);
@@ -254,7 +363,7 @@ export function BlueprintRunDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[40rem] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[52rem] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
@@ -278,19 +387,40 @@ export function BlueprintRunDialog({
               </div>
             </div>
 
-            {/* Brief input */}
+            {/* Brief selector */}
             <div>
-              <Label htmlFor="blueprint-brief" className="text-sm font-medium">
-                {t("briefLabel")}
-              </Label>
-              <textarea
-                id="blueprint-brief"
-                value={brief}
-                onChange={(e) => setBrief(e.target.value)}
-                placeholder={t("briefPlaceholder")}
-                rows={4}
-                className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+              <Label className="text-sm font-medium">{t("briefLabel")}</Label>
+              <div className="relative mt-1.5">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={briefSearch}
+                  onChange={(e) => setBriefSearch(e.target.value)}
+                  placeholder={t("briefSearch")}
+                  className="pl-9"
+                />
+              </div>
+              <div className="mt-2 max-h-[20rem] overflow-y-auto rounded-lg border border-border">
+                {!briefItems || briefItems.length === 0 ? (
+                  <p className="p-4 text-center text-sm text-muted-foreground">
+                    {t("noBriefs")}
+                  </p>
+                ) : filteredBriefs.length === 0 ? (
+                  <p className="p-4 text-center text-sm text-muted-foreground">
+                    {t("noBriefsMatch")}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 p-2">
+                    {filteredBriefs.map((brief) => (
+                      <BriefCard
+                        key={brief.id}
+                        brief={brief}
+                        selected={selectedBriefId === brief.id}
+                        onSelect={() => setSelectedBriefId(brief.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Include HTML checkbox */}
@@ -427,7 +557,7 @@ export function BlueprintRunDialog({
               <Button variant="outline" onClick={handleClose}>
                 {t("cancel")}
               </Button>
-              <Button onClick={handleRun} disabled={!brief.trim()}>
+              <Button onClick={handleRun} disabled={!selectedBrief}>
                 <Zap className="mr-1.5 h-3.5 w-3.5" />
                 {t("run")}
               </Button>
