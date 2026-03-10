@@ -1,8 +1,9 @@
 """Seed the knowledge base with email development content.
 
 Usage:
-    uv run python -m app.knowledge.seed          # Skip existing
-    uv run python -m app.knowledge.seed --force   # Re-ingest all
+    uv run python -m app.knowledge.seed              # Skip existing
+    uv run python -m app.knowledge.seed --force       # Re-ingest all
+    uv run python -m app.knowledge.seed --skip-graph  # RAG only, no Cognee
 
 Requires:
     - Database running (make db)
@@ -16,6 +17,7 @@ import sys
 import time
 from pathlib import Path
 
+from app.core.config import get_settings
 from app.core.database import get_db_context
 from app.core.logging import get_logger
 from app.knowledge.data.seed_manifest import SEED_MANIFEST, SeedEntry
@@ -87,11 +89,82 @@ async def _ingest_entry(
     return doc.chunk_count
 
 
-async def seed_knowledge_base(*, force: bool = False) -> None:
+async def _seed_graph(entries: list[SeedEntry]) -> None:
+    """Feed seed documents through Cognee's ECL pipeline.
+
+    Reads each document file, groups by domain (dataset), and runs
+    cognee.add() + cognee.cognify() per dataset.
+
+    Skipped gracefully if Cognee is disabled or not installed.
+    """
+    settings = get_settings()
+
+    if not settings.cognee.enabled:
+        print("\n  Graph seeding skipped (COGNEE__ENABLED=false)")
+        return
+
+    try:
+        from app.knowledge.graph import cognee_provider as _cp
+
+        provider_cls = _cp.CogneeGraphProvider
+    except ImportError:
+        print("\n  Graph seeding skipped (cognee not installed — pip install -e '.[graph]')")
+        return
+
+    print("\n  Seeding knowledge graph...")
+    start = time.monotonic()
+
+    provider = provider_cls(settings)
+
+    # Group documents by domain for per-dataset ingestion
+    by_domain: dict[str, list[str]] = {}
+    for entry in entries:
+        file_path = SEED_DIR / entry.filename
+        if not file_path.is_file():
+            continue
+        text = file_path.read_text(encoding="utf-8")
+        by_domain.setdefault(entry.domain, []).append(text)
+
+    total_docs = 0
+    for domain, texts in by_domain.items():
+        try:
+            await provider.add_documents(texts, dataset_name=domain)
+            print(f"  GRAPH ADD  {domain}: {len(texts)} documents")
+            total_docs += len(texts)
+        except Exception as e:
+            print(f"  GRAPH FAIL {domain}: {e}")
+            logger.error(
+                "knowledge.graph_seed.add_failed",
+                domain=domain,
+                count=len(texts),
+                error=str(e),
+            )
+
+    # Run ECL pipeline per dataset (foreground — we want to see errors)
+    for domain in by_domain:
+        try:
+            await provider.build_graph(dataset_name=domain, background=False)
+            print(f"  GRAPH BUILD {domain}: cognify complete")
+        except Exception as e:
+            print(f"  GRAPH BUILD FAIL {domain}: {e}")
+            logger.error(
+                "knowledge.graph_seed.build_failed",
+                domain=domain,
+                error=str(e),
+            )
+
+    duration = time.monotonic() - start
+    print(
+        f"  Graph seeding done in {duration:.1f}s ({total_docs} documents across {len(by_domain)} datasets)"
+    )
+
+
+async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) -> None:
     """Seed the knowledge base with email development content.
 
     Args:
         force: If True, skip idempotency checks and re-ingest all documents.
+        skip_graph: If True, skip Cognee graph seeding (RAG only).
     """
     start = time.monotonic()
     print(f"\n  Seeding knowledge base ({len(SEED_MANIFEST)} documents)...")
@@ -147,6 +220,13 @@ async def seed_knowledge_base(*, force: bool = False) -> None:
     print(f"\n  Done in {duration:.1f}s: {seeded} seeded, {skipped} skipped, {failed} failed")
     print(f"  Total chunks: {total_chunks}\n")
 
+    # --- Phase 2: Graph seeding (Cognee ECL pipeline) ---
+    # Use all manifest entries (not just newly seeded — graph needs full corpus)
+    if not skip_graph:
+        await _seed_graph(SEED_MANIFEST)
+    else:
+        print("\n  Graph seeding skipped (--skip-graph flag)")
+
     if failed > 0:
         sys.exit(1)
 
@@ -154,7 +234,8 @@ async def seed_knowledge_base(*, force: bool = False) -> None:
 def main() -> None:
     """CLI entry point."""
     force = "--force" in sys.argv
-    asyncio.run(seed_knowledge_base(force=force))
+    skip_graph = "--skip-graph" in sys.argv
+    asyncio.run(seed_knowledge_base(force=force, skip_graph=skip_graph))
 
 
 if __name__ == "__main__":
