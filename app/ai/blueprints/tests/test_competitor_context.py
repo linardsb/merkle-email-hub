@@ -62,3 +62,39 @@ class TestFullCompetitiveReport:
     def test_report_contains_gap_analysis(self) -> None:
         report = format_full_competitive_report()
         assert "advantage" in report.lower() or "Hub" in report
+
+
+class TestBuildAudienceCompetitiveContext:
+    """Test audience-aware competitive context wrapper."""
+
+    def test_delegates_to_feasibility_with_clients(self) -> None:
+        """When client_ids provided, uses feasibility module."""
+        from app.ai.blueprints.competitor_context import build_audience_competitive_context
+
+        ctx = build_audience_competitive_context(
+            technique="AMP carousel competitor",
+            client_ids=("gmail_web", "outlook_2019_win"),
+        )
+        assert "audience-aware" in ctx.lower() or "coverage" in ctx.lower()
+
+    def test_falls_back_without_clients(self) -> None:
+        """Without client_ids, falls back to standard context."""
+        from app.ai.blueprints.competitor_context import build_audience_competitive_context
+
+        ctx = build_audience_competitive_context(
+            technique="AMP carousel competitor analysis",
+            client_ids=(),
+        )
+        # Should still work — falls back to build_competitive_context
+        if ctx:
+            assert "COMPETITIVE LANDSCAPE" in ctx
+
+    def test_empty_for_unrelated_technique(self) -> None:
+        """Returns empty for technique with no capability match."""
+        from app.ai.blueprints.competitor_context import build_audience_competitive_context
+
+        ctx = build_audience_competitive_context(
+            technique="quantum flux capacitor",
+            client_ids=("gmail_web",),
+        )
+        assert ctx == ""

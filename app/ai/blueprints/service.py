@@ -15,6 +15,7 @@ from app.ai.blueprints.schemas import (
     BlueprintRunRequest,
     BlueprintRunResponse,
     HandoffSummary,
+    RoutingDecisionResponse,
 )
 from app.core.logging import get_logger
 from app.personas.schemas import PersonaResponse
@@ -170,6 +171,14 @@ class BlueprintService:
                 format_audience_context(audience_profile) if audience_profile else None
             ),
             skipped_nodes=bp_run.skipped_nodes,
+            routing_decisions=[
+                RoutingDecisionResponse(
+                    node_name=d.node_name,
+                    action=d.action.value,
+                    reason=d.reason,
+                )
+                for d in bp_run.routing_decisions
+            ],
         )
 
 

@@ -159,6 +159,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `knowledge` | `/api/v1/knowledge` | RAG pipeline: document ingestion, hybrid search, tagging (`make seed-knowledge`) |
 | `memory` | `/memory` | Agent memory: pgvector semantic search, temporal decay, DCG promotion bridge |
 | `blueprints` | `/api/v1/blueprints` | Blueprint state machine engine: orchestrated agent pipelines with self-correction |
+| `ontology` | `/api/v1/ontology` | Competitive intelligence reports: audience-scoped feasibility, Hub vs competitor capability matrix |
 
 ### QA Gate System (10 checks)
 
@@ -314,7 +315,7 @@ Build infrastructure before remaining agents so every new agent inherits pattern
 - [x] 7.3 Agent confidence scoring (0-1 via `<!-- CONFIDENCE: X.XX -->` HTML comment, threshold 0.5 → `needs_review` status)
 - [x] 7.4 Template-aware component context (`ComponentResolver` Protocol, `DbComponentResolver`, auto-detect `<component>` refs, inject metadata into agentic node context)
 - [x] 7.5 Hub Agent Memory System (`app/memory/` VSA module, pgvector Vector(1024), HNSW index, temporal decay, DCG promotion bridge, 5 REST endpoints, 19 tests)
-- [x] 7.6 Agent architecture improvements (`BaseAgentService` shared pipeline in `app/ai/agents/base.py`, 7 agents refactored, standardised response schemas with `confidence` + `skills_loaded` on all 9 agents, `to_handoff()` method, memory recall in blueprint engine, recovery router cycle detection + keyword collision fix, eval trace fixes)
+- [x] 7.6 DCG cross-agent memory Phase 1 (`destructive_command_guard/src/notes.rs` — `store_note` + `recall_notes` MCP tools, JSONL-based project-scoped note storage, agent auto-detection, file locking for concurrency safety) + Agent architecture improvements (`BaseAgentService` shared pipeline in `app/ai/agents/base.py`, 7 agents refactored, standardised response schemas with `confidence` + `skills_loaded` on all 9 agents, `to_handoff()` method, memory recall in blueprint engine, recovery router cycle detection + keyword collision fix, eval trace fixes)
 
 ### Phase 8 — Knowledge Graph Integration (Cognee)
 Replace flat RAG with graph-structured knowledge using Cognee. Agents get structured entity relationships instead of similar text chunks. Depends on Phase 7 infrastructure.
@@ -332,8 +333,8 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - [x] 9.3 Component-to-graph bidirectional linking (`qa_bridge.py` + `graph_export.py`, `ComponentQAResult` join model, 2 new endpoints, compatibility badge on `ComponentResponse`, 20 tests)
 - [x] 9.4 Failure pattern propagation across agents (`failure_patterns.py` — extract from QA failures + handoff history, dual persist to memory + graph, recall into engine LAYER 9 by agent + client_ids, 27 tests)
 - [x] 9.5 Client-specific subgraphs for project onboarding (`onboarding.py` generates scoped docs from ontology, `target_clients` JSON column, LAYER 8 engine context, `POST .../onboarding-brief` endpoint, 14 tests)
-- [ ] 9.6 Graph-informed blueprint route selection (dynamic node skipping/addition based on audience)
-- [ ] 9.7 Competitive intelligence graph (competitor capabilities in ontology for Innovation Agent)
+- [x] 9.6 Graph-informed blueprint route selection (`route_advisor.py` — `RoutingPlan` with audience-aware skip/add logic, engine pre-execution routing, `RoutingDecisionResponse` in API, 724 lines tests)
+- [x] 9.7 Competitive intelligence graph (`competitive_feasibility.py` — audience-aware feasibility scoring, `GET /api/v1/ontology/competitive-report` endpoint, LAYER 10 enhanced with audience coverage, 35 tests)
 - [x] 9.8 SKILL.md A/B testing via eval system (`skill_override.py` runtime registry, `skill_ab.py` A/B runner CLI, all 9 prompt.py files wired, `make eval-skill-test`, 17 tests)
 
 ## Feature Scope by Stack
@@ -348,8 +349,8 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Approval: ApprovalRequest, Feedback, AuditEntry models + workflow
 - Personas: test subscriber profile presets
 - AI: provider registry, model routing (Opus/Sonnet/Haiku), streaming via WebSocket
-- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection, project subgraph context (LAYER 8)
-- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`)
+- Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection, project subgraph context (LAYER 8), graph-informed route selection (`route_advisor.py` — audience-aware node skipping/addition), audience-aware competitive feasibility (LAYER 10)
+- Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`); `app/knowledge/ontology/competitive_feasibility.py` audience-aware competitive reports (`GET /api/v1/ontology/competitive-report`)
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5); SKILL.md A/B testing (`skill_ab.py` + `skill_override.py` runtime override registry, `make eval-skill-test`)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`

@@ -39,6 +39,14 @@ class HandoffSummary(BaseModel):
     confidence: float | None = None
 
 
+class RoutingDecisionResponse(BaseModel):
+    """A single routing decision from the route advisor."""
+
+    node_name: str
+    action: str  # "skip" or "prioritise"
+    reason: str
+
+
 class BlueprintRunResponse(BaseModel):
     """Response from a completed blueprint run."""
 
@@ -53,3 +61,4 @@ class BlueprintRunResponse(BaseModel):
     handoff_history: list[HandoffSummary] = Field(default_factory=list)
     audience_summary: str | None = None
     skipped_nodes: list[str] = Field(default_factory=list)
+    routing_decisions: list[RoutingDecisionResponse] = Field(default_factory=list)

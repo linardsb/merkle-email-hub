@@ -136,6 +136,24 @@ def format_full_competitive_report() -> str:
     return "\n".join(lines)
 
 
+def build_audience_competitive_context(
+    technique: str,
+    client_ids: tuple[str, ...],
+) -> str:
+    """Build competitive context enhanced with audience feasibility.
+
+    Delegates to competitive_feasibility module when audience data available.
+    Falls back to standard competitive context otherwise.
+    """
+    if client_ids:
+        from app.knowledge.ontology.competitive_feasibility import (
+            format_feasibility_context,
+        )
+
+        return format_feasibility_context(client_ids=client_ids, technique=technique)
+    return build_competitive_context(technique)
+
+
 def _match_capabilities(
     technique_lower: str,
     registry: CompetitorRegistry,

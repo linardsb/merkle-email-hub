@@ -39,6 +39,7 @@ from app.core.rate_limit import limiter
 from app.core.redis import close_redis, redis_available
 from app.email_engine.routes import router as email_engine_router
 from app.example.routes import router as example_router
+from app.knowledge.ontology.routes import router as ontology_router
 from app.knowledge.routes import router as knowledge_router
 from app.memory.routes import router as memory_router
 from app.personas.routes import router as personas_router
@@ -173,6 +174,7 @@ app.include_router(ai_router)
 
 
 app.include_router(knowledge_router)
+app.include_router(ontology_router)
 
 
 app.include_router(ws_router)

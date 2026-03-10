@@ -5,7 +5,10 @@ from __future__ import annotations
 import pytest
 
 from app.ai.blueprints.audience_context import AudienceConstraint, AudienceProfile
-from app.ai.blueprints.route_advisor import is_node_relevant
+from app.ai.blueprints.route_advisor import (
+    build_routing_plan,
+    is_node_relevant,
+)
 from app.knowledge.ontology.types import ClientEngine, EmailClient
 
 # -- Factories --
@@ -420,3 +423,141 @@ class TestSkippedNodesInResponse:
             skipped_nodes=["outlook_fixer", "dark_mode"],
         )
         assert resp.skipped_nodes == ["outlook_fixer", "dark_mode"]
+
+
+# -- Routing plan node list --
+
+CAMPAIGN_NODES = [
+    "scaffolder",
+    "qa_gate",
+    "maizzle_build",
+    "export",
+    "recovery_router",
+    "dark_mode",
+    "outlook_fixer",
+    "accessibility",
+    "personalisation",
+    "code_reviewer",
+    "knowledge",
+    "innovation",
+]
+
+
+class TestBuildRoutingPlan:
+    """Tests for build_routing_plan() graph-informed route selection."""
+
+    def test_no_audience_no_content_skips_only_personalisation(self) -> None:
+        """No audience + empty content → personalisation skipped (no dynamic markers)."""
+        plan = build_routing_plan(CAMPAIGN_NODES, None, "", "Create an email")
+        assert plan.skip_nodes == frozenset({"personalisation"})
+        assert plan.prioritise_nodes == frozenset()
+
+    def test_outlook_skipped_without_word_engine(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,))
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Create an email")
+        assert "outlook_fixer" in plan.skip_nodes
+
+    def test_dark_mode_skipped_when_not_required(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=False)
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Create an email")
+        assert "dark_mode" in plan.skip_nodes
+
+    def test_personalisation_skipped_without_dynamic_content(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=True)
+        plan = build_routing_plan(
+            CAMPAIGN_NODES, profile, "<html><body>Static</body></html>", "Simple newsletter"
+        )
+        assert "personalisation" in plan.skip_nodes
+
+    def test_personalisation_included_with_liquid(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=True)
+        plan = build_routing_plan(
+            CAMPAIGN_NODES, profile, "<html>{{ user.name }}</html>", "Personalised email"
+        )
+        assert "personalisation" not in plan.skip_nodes
+
+    def test_personalisation_included_with_ampscript_in_brief(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=True)
+        plan = build_routing_plan(
+            CAMPAIGN_NODES, profile, "<html></html>", "Use AMPscript for dynamic content"
+        )
+        assert "personalisation" not in plan.skip_nodes
+
+    def test_accessibility_prioritised_when_mentioned(self) -> None:
+        plan = build_routing_plan(CAMPAIGN_NODES, None, "", "Create WCAG AA compliant email")
+        assert "accessibility" in plan.prioritise_nodes
+
+    def test_code_reviewer_prioritised_for_large_html(self) -> None:
+        large_html = "<html>" + "x" * 60_000 + "</html>"
+        plan = build_routing_plan(CAMPAIGN_NODES, None, large_html, "Optimize")
+        assert "code_reviewer" in plan.prioritise_nodes
+
+    def test_dark_mode_prioritised_with_mixed_engines(self) -> None:
+        gmail = _make_client()
+        outlook = _make_client(
+            id="outlook_2019_win",
+            name="Outlook 2019",
+            engine=ClientEngine.WORD,
+        )
+        profile = _make_profile(
+            clients=(gmail, outlook),
+            dark_mode_required=True,
+        )
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Email")
+        assert "dark_mode" in plan.prioritise_nodes
+
+    def test_force_full_sets_flag(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=False)
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Email", force_full=True)
+        assert plan.force_full is True
+        assert "dark_mode" in plan.skip_nodes  # still computed for audit
+
+    def test_deterministic_nodes_never_in_decisions(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=False)
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Email")
+        decision_names = {d.node_name for d in plan.decisions}
+        assert "qa_gate" not in decision_names
+        assert "recovery_router" not in decision_names
+        assert "maizzle_build" not in decision_names
+        assert "export" not in decision_names
+
+    def test_scaffolder_never_skipped(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=False)
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Email")
+        assert "scaffolder" not in plan.skip_nodes
+
+    def test_decisions_have_reasons(self) -> None:
+        gmail = _make_client()
+        profile = _make_profile(clients=(gmail,), dark_mode_required=False)
+        plan = build_routing_plan(CAMPAIGN_NODES, profile, "", "Email")
+        for d in plan.decisions:
+            assert len(d.reason) > 0
+
+    def test_routing_decision_response_in_api_schema(self) -> None:
+        from app.ai.blueprints.schemas import BlueprintRunResponse, RoutingDecisionResponse
+
+        resp = BlueprintRunResponse(
+            run_id="test",
+            blueprint_name="campaign",
+            status="completed",
+            html="",
+            progress=[],
+            qa_passed=True,
+            model_usage={},
+            handoff_history=[],
+            routing_decisions=[
+                RoutingDecisionResponse(
+                    node_name="dark_mode", action="skip", reason="Not required"
+                ),
+            ],
+        )
+        assert len(resp.routing_decisions) == 1
+        assert resp.routing_decisions[0].action == "skip"

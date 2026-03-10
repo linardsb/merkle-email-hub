@@ -747,22 +747,22 @@ Created `app/ai/agents/evals/failure_warnings.py` — reads `traces/analysis.jso
 **Implementation:** `MemoryEntry` model with `Vector(1024)` embedding, HNSW index, 3 memory types (procedural/episodic/semantic), temporal decay via `POWER(2, -age/half_life)`, 5 REST endpoints (`POST /memory`, `POST /memory/search`, `GET /memory/{id}`, `DELETE /memory/{id}`, `POST /memory/promote`), `MemoryCompactionPoller` background task, `MemoryConfig` in settings. Alembic migration `f1a2b3c4d5e6`. 19 unit tests (repository: 6, service: 6, routes: 7).
 **Verify:** Store, recall, promote all tested. Auth on all endpoints (admin/developer). Viewer role blocked (403). 404 on missing entries. Lint, mypy, pyright all clean.
 
-### 7.6 DCG-Based Lightweight Cross-Agent Memory (Research — 2026-03-06)
+### ~~7.6 DCG-Based Lightweight Cross-Agent Memory~~ DONE
 **Plan ref:** PRD Section 4.9.7 (DCG Agent Memory), `destructive_command_guard/docs/prd-agent-memory-sharing.md`
 **What:** Add 2 MCP tools (`store_note`, `recall_notes`) to the existing dcg MCP server, enabling agents to share project-scoped observations via append-only JSONL files. Zero new dependencies, ~150 lines of Rust.
 **Why:** dcg already sits in the critical path of every agent's command execution and auto-detects which agent is calling. The history DB already stores per-agent evaluation data. Exposing a lightweight key/value note layer via MCP gives agents cross-agent memory with no infrastructure cost — complementing the Hub's full pgvector memory system (7.5) at the shell/tool layer.
 **Dependencies:** None. Uses existing dcg MCP server, agent detection, and JSONL I/O.
 **Implementation:**
 
-#### Phase 1 — Core (MVP, ~2-3 hours)
-- [ ] Add `AgentNote` struct to `destructive_command_guard/src/mcp.rs` (timestamp, agent, key, value, project)
-- [ ] Implement `store_note()` — append to `.dcg/agent_notes.jsonl` with auto-detected agent identity
-- [ ] Implement `recall_notes()` — read + filter from JSONL (by key, agent, project; limit 50)
-- [ ] Register both tools in `handle_list_tools_request` and `handle_call_tool_request`
-- [ ] Enforce size limits (1024 char value, 500 notes max per project, 128 char key)
-- [ ] Key namespace convention: `project.*`, `safety.*`, `workflow.*`, `config.*`
-- [ ] Unit tests for store/recall round-trip
-- [ ] MCP integration test (store from "agent A", recall from "agent B")
+#### Phase 1 — Core (MVP) DONE
+- [x] Add `AgentNote` struct to `destructive_command_guard/src/notes.rs` (timestamp, agent, key, value, project)
+- [x] Implement `store_note()` — append to `.dcg/{project}_notes.jsonl` with auto-detected agent identity
+- [x] Implement `recall_notes()` — read + filter from JSONL (by key, agent, project; limit 50)
+- [x] Register both tools in `handle_list_tools_request` and `handle_call_tool_request`
+- [x] Enforce size limits (1024 char value, 500 notes max per project, 128 char key)
+- [x] Key namespace convention: `project.*`, `safety.*`, `workflow.*`, `config.*`
+- [x] 13 unit tests for store/recall round-trip, isolation, limits, sanitization
+- [x] 1 MCP integration test (store from "agent A", recall from "agent B")
 
 #### Phase 2 — CLI
 - [ ] Add `dcg memory list` subcommand (pretty + JSON output)
@@ -968,32 +968,30 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Subgraph inherits project scope (RLS). Contains only email dev knowledge filtered for the project's target audience. No cross-project data.
 **Verify:** Creating a project with Outlook 2019 + Apple Mail personas generates a subgraph with compatibility constraints for those clients. Agent working on the project receives subgraph context. New developer querying the Knowledge Agent gets project-specific answers.
 
-### 9.6 Graph-Informed Blueprint Route Selection
+### ~~9.6 Graph-Informed Blueprint Route Selection~~ DONE
 **What:** Blueprint engine dynamically adjusts node sequence based on graph data about the target audience and template content. Skip unnecessary nodes, add required ones, reorder for efficiency.
 **Why:** Currently blueprints follow a fixed sequence (scaffolder → dark_mode → QA → export). But if the target audience is 100% Apple Mail (internal corporate comms), the Outlook Fixer node is wasted work. If the template uses AMP components, an AMP validation node should be added. Graph-informed routing makes blueprints adaptive.
 **Implementation:**
-- `app/ai/blueprints/route_advisor.py` — analyses template content + project subgraph (9.5) to recommend node sequence
-- Rules engine based on graph traversal:
-  - Skip Outlook Fixer if no Microsoft clients in project personas
-  - Skip Dark Mode node if no dark-mode-capable clients in audience
-  - Add AMP validation node if template contains AMP components
-  - Prioritise nodes based on audience coverage (most common client issues first)
-- Route advisor runs before blueprint execution, proposes modified sequence
-- Blueprint engine accepts or overrides (developer can force full pipeline)
-- Routing decisions logged in audit trail with reasoning
+- `app/ai/blueprints/route_advisor.py` — `RoutingPlan` with `build_routing_plan()` analysing audience profile + content keywords to recommend skip/add/reorder
+- `app/ai/blueprints/engine.py` — pre-execution routing plan, `skip_nodes` set consulted before each node, `routing_decisions` logged on run, `_skip_summary()` helper
+- `app/ai/blueprints/schemas.py` — `RoutingDecisionResponse` in `BlueprintRunResponse`
+- Rules: skip Outlook Fixer for non-Microsoft audiences, skip Dark Mode for non-dark-mode clients, add AMP validation for AMP content, audience-based prioritisation
+- Developer can force full pipeline (overrides routing plan)
+- 563 lines test coverage (`test_route_advisor.py`) + 161 lines engine integration tests (`test_engine_routing.py`)
 **Security:** Route decisions based on project-scoped graph data. No new access surface. Audit trail captures routing rationale.
 **Verify:** Blueprint for Apple Mail-only project skips Outlook nodes. Blueprint for template with AMP adds AMP validation. Routing decisions visible in blueprint run log with graph-backed reasoning.
 
-### 9.7 Competitive Intelligence Graph
+### ~~9.7 Competitive Intelligence Graph~~ DONE
 **What:** Extend the ontology to include competitor capabilities (Stripo, Parcel, Chamaileon, Dyspatch, Knak — from Plan Section 15.4). When the Innovation Agent evaluates new techniques, it checks the graph for feasibility and competitive landscape.
 **Why:** Section 15.4 maps competitor features. This data in the graph lets the Innovation Agent answer: "Is this technique feasible for the client's audience AND do competitors support it?" Powers the capability reports mentioned in Section 12.2 with structured data instead of manual research.
 **Implementation:**
-- Extend ontology (8.6) with `Competitor` entity type and relationships: `supports_feature`, `pricing_tier`, `target_market`
-- Competitor data seeded from Plan Section 15.4 table + periodic manual updates
-- Relationships to email capabilities: `Stripo → supports → AMP_email`, `Parcel → supports → dark_mode_preview`
-- Innovation Agent queries: "techniques the Hub supports that competitors don't" and "techniques competitors support that the Hub should add"
-- Capability report generation: structured graph query → formatted report showing Hub vs competitor feature matrix with audience feasibility data
-**Security:** Competitor data is public knowledge (pricing pages, feature lists). No proprietary intelligence. Clearly marked as external data in graph.
+- `app/knowledge/ontology/competitive_feasibility.py` — `compute_audience_coverage()` cross-references capability CSS deps with ontology support matrix, `build_competitive_report()` generates full audience-scoped report, `format_feasibility_context()` for agent prompt injection
+- `app/knowledge/ontology/schemas.py` + `routes.py` — `GET /api/v1/ontology/competitive-report` (JSON) + `/text` (formatted), auth + rate limited
+- Engine LAYER 10 enhanced: uses audience-aware feasibility when `audience_client_ids` available (from LAYER 7), falls back to standard competitive context
+- `app/ai/blueprints/competitor_context.py` — added `build_audience_competitive_context()` convenience wrapper
+- 5 competitors (Stripo, Parcel, Chamaileon, Dyspatch, Knak), 24 capabilities, 55+ Hub capabilities with agent mappings
+- 17 feasibility tests + 5 route tests + 3 audience-aware context tests (35 total new)
+**Security:** Competitor data is public knowledge (pricing pages, feature lists). No proprietary intelligence. All endpoints auth + rate limited.
 **Verify:** Innovation Agent asked "what techniques can we offer that Stripo can't?" returns graph-backed answer with audience feasibility. Capability report includes competitive positioning data.
 
 ### ~~9.8 SKILL.md A/B Testing via Eval System~~ DONE
@@ -1012,6 +1010,172 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - 17 unit tests (override registry, comparison logic, report builder, edge cases)
 **Security:** A/B tests run on synthetic test data (no client data). Results logged for audit. Rejected proposals archived with reasoning.
 **Verify:** Proposed SKILL.md update runs through A/B test. Report shows per-criterion comparison. Update that improves 3 criteria and degrades none is recommended for merge. Update that degrades 1 criterion by >5% is auto-rejected.
+
+---
+
+## Phase 10 — Full-Stack Agent Workflow (Frontend Integration)
+
+**What:** Wire all Phase 8-9 backend intelligence into the frontend so email developers can run the full AI-powered workflow from the UI — from project setup with target clients, through blueprint-orchestrated multi-agent pipelines, to graph-informed QA and export. Currently ~50% of backend capabilities are invisible from the frontend.
+**Dependencies:** Phase 8 (knowledge graph) + Phase 9 (graph intelligence) backend complete. Phase 0-3 frontend foundation in place.
+
+### 10.1 Project Target Clients Selector
+**What:** Add a multi-select "Target Email Clients" field to project creation and project settings forms. Populated from the ontology's 25 email clients. Persists to the existing `target_clients` JSON column on `Project`. Shows client icons, engine type (WebKit/Blink/Word), and market share from ontology data.
+**Why:** `target_clients` drives audience profiles (9.1), onboarding subgraphs (9.5), failure pattern filtering (9.4), and blueprint route selection (9.6). Without this field in the UI, none of those features activate — they all depend on knowing which clients the project targets.
+**Implementation:**
+- New component: `target-clients-selector.tsx` — searchable multi-select with client metadata (icon, engine, share %)
+- Add to `create-project-dialog.tsx` as optional step (defaults to common set: Gmail, Outlook, Apple Mail)
+- Add to project settings page for editing after creation
+- New API hook: `useEmailClients()` fetching from ontology endpoint (or static list from SDK)
+- `ProjectCreateRequest` / `ProjectUpdateRequest` schemas already support `target_clients`
+- SDK regeneration to include `target_clients` in `ProjectResponse`
+**Security:** Client list is public ontology data. Project-scoped via existing RLS. Input validated against known client IDs.
+**Verify:** Create project with "Outlook 2019 + Gmail" selected. Project detail shows target clients. Editing project updates the field. Blueprint runs for this project receive audience context.
+
+### 10.2 Onboarding Compatibility Brief UI
+**What:** Add a "Compatibility Brief" tab/section to the project workspace that displays the auto-generated onboarding subgraph (9.5). Shows: executive summary, per-client CSS constraint profiles, cross-client risk matrix, and a "Regenerate" button that calls `POST /projects/{id}/onboarding-brief`.
+**Why:** The backend generates rich compatibility briefs per project but there's no way to see them. Email developers need this as a reference while building — "what CSS is safe across my target clients?"
+**Implementation:**
+- New page/tab: `project-compatibility-brief.tsx` in workspace or project settings
+- Sections: Summary card (client count, total risky properties, dark mode warning), per-client accordion (unsupported CSS list, fallbacks, engine info), risk matrix table (properties × clients heat map)
+- "Regenerate Brief" button → `POST /api/v1/projects/{id}/onboarding-brief`
+- Auto-generate on first visit if brief doesn't exist
+- New API hook: `useOnboardingBrief(projectId)` with SWR caching
+- SDK types: `OnboardingBriefResponse` (message, dataset_name, document_count, client_count)
+**Security:** Brief data is project-scoped. Read-only for viewer role. Regenerate requires developer+ role.
+**Verify:** Navigate to project compatibility tab. Brief displays with per-client profiles. "Regenerate" updates the content. Brief matches the project's target clients.
+
+### 10.3 Blueprint Run Trigger & Pipeline Visualisation
+**What:** Add a "Generate with Blueprint" button in the workspace that triggers a full multi-agent blueprint run (not just a single agent call). Show real-time pipeline progress: which agent is running, QA gate status, self-correction loops, handoff chain, and final result with confidence score.
+**Why:** The chat sidebar currently calls individual agent endpoints, bypassing the blueprint engine entirely. The engine is where all the intelligence layers (audience context, failure patterns, component injection, handoff memory, self-correction) converge. Without a UI trigger, the most powerful feature in the hub is CLI-only.
+**Implementation:**
+- New component: `blueprint-run-dialog.tsx` — select blueprint template (campaign, dark-mode-fix, accessibility-audit, etc.), input brief text, optional HTML input, confirm target clients
+- Pipeline visualisation: `blueprint-pipeline-view.tsx` — vertical node list showing: agent name + status (pending/running/complete/failed), QA gate results per node, self-correction attempt count, handoff decisions and warnings, confidence score per agent
+- WebSocket or SSE streaming for real-time updates (blueprint engine already emits events)
+- New API hooks: `useBlueprintRun(runId)` for status polling, `useBlueprintTemplates()` for available blueprints
+- "Apply Result" button to insert generated HTML into Monaco editor
+- "View Handoff History" expandable panel showing cross-agent decisions
+- SDK types: `BlueprintRunResponse`, `BlueprintNodeStatus`, `HandoffSummary`
+**Security:** Blueprint runs consume AI quota (existing rate limits apply). Run status scoped to project. Only project members can trigger runs.
+**Verify:** Click "Generate with Blueprint" → select campaign → enter brief → pipeline shows agents executing in sequence → QA gate results appear → final HTML available with "Apply" button. Self-correction visible when QA fails.
+
+### 10.4 Blueprint Run History & Outcomes
+**What:** Add a "Runs" tab in the workspace showing all blueprint runs for the project — status, agents involved, QA pass/fail, duration, token usage. Click into a run to see full handoff history, agent decisions, failure patterns discovered, and the generated output.
+**Why:** Blueprint outcome logging (8.4) captures rich data but it's only in the database/graph. Developers need to review past runs to understand what agents did, why QA failed, and what patterns were discovered. Essential for debugging and iterating on email quality.
+**Implementation:**
+- New page: `blueprint-runs-list.tsx` — table with columns: run ID, blueprint name, status (badge), agents involved, QA result, duration, created_at
+- Run detail view: `blueprint-run-detail.tsx` — timeline of node executions, expandable handoff cards, QA check breakdown, failure patterns extracted, generated HTML diff
+- Filter/sort: by status, date range, blueprint type
+- New API hooks: `useBlueprintRuns(projectId)` with pagination, `useBlueprintRun(runId)` for detail
+- Link from pipeline visualisation (10.3) to run detail after completion
+- New backend endpoints needed: `GET /api/v1/blueprints/runs?project_id=X` (list), `GET /api/v1/blueprints/runs/{id}` (detail)
+**Security:** Run history scoped to project (RLS). Viewer role can read but not trigger new runs. Token usage visible to developer+ only.
+**Verify:** Run a blueprint → appears in runs list with correct status → click into detail → see full handoff history and QA breakdown. Filter by "failed" shows only failed runs.
+
+### 10.5 Component Compatibility Badges & Matrix
+**What:** Display per-client compatibility badges on component cards in the component browser. Add a compatibility matrix view showing which components work in which clients. Add a "Run QA" button on component detail to trigger `POST /components/{id}/versions/{v}/qa`.
+**Why:** Component-to-graph linking (9.3) generates compatibility data but the frontend never shows it. Email developers choosing components need to know "will this CTA button work in Outlook?" before inserting it into their template.
+**Implementation:**
+- Update `ComponentResponse` SDK type to include `compatibility_badge` (full/partial/issues/untested)
+- Badge component: coloured dot/icon on component cards (green=full, yellow=partial, red=issues, grey=untested)
+- Component detail: compatibility section showing per-client support status (full/partial/none per client)
+- "Run QA" button on component version detail → `POST /api/v1/components/{id}/versions/{v}/qa`
+- Compatibility matrix page: `components-compatibility-matrix.tsx` — grid of components × clients with support indicators
+- Filter component browser by "compatible with [client]" using project's target clients as default filter
+- New API hook: `useComponentCompatibility(componentId)`
+**Security:** QA trigger rate-limited (10/min). Compatibility data is read-only for viewers. Component data project-scoped.
+**Verify:** Component card shows green badge (all clients pass). Click component → see per-client breakdown. "Run QA" updates badge. Filter by "Outlook compatible" hides incompatible components.
+
+### 10.6 Graph-Powered Knowledge Search
+**What:** Upgrade the `/knowledge` page to support graph search mode alongside existing RAG search. Add a toggle: "Text Search" (current) vs "Graph Search" (Cognee). Graph search returns entities and relationships with visual presentation — entity cards with relationship links between them.
+**Why:** The flat RAG search on `/knowledge` returns text chunks. The graph search (Phase 8.1) returns structured entities (email clients, CSS properties) with relationships (supports, fallback_for, incompatible_with). This is far more useful for understanding compatibility.
+**Implementation:**
+- Search mode toggle: "Text" | "Graph" (graph disabled with tooltip if `COGNEE__ENABLED=false`)
+- Graph results component: `graph-search-results.tsx` — entity cards showing name, type, properties, related entities
+- Relationship visualisation: simple list view with "→ supports →", "→ fallback_for →" relationship labels (not full graph viz)
+- Search modes map to: Text → `POST /api/v1/knowledge/search`, Graph → `POST /api/v1/knowledge/graph/search`
+- Graph search supports `dataset_name` filter (email_ontology, email_components, project_onboarding_X)
+- Optional: "Ask" mode using graph completion (`mode: "completion"`) for natural language Q&A
+- New API hook: `useGraphSearch()` calling `/api/v1/knowledge/graph/search`
+- SDK types: `GraphSearchRequest`, `GraphSearchResponse`, `GraphEntity`, `GraphRelationship`
+**Security:** Graph search has same auth + rate limits as text search. Dataset names validated server-side. No graph write access from frontend.
+**Verify:** Toggle to Graph Search → search "Outlook dark mode" → see entity cards for Outlook + dark mode CSS properties with support relationships. Toggle back to Text → same query returns text chunks.
+
+### 10.7 Failure Pattern Dashboard
+**What:** Add a "Failure Patterns" section to the intelligence dashboard showing extracted patterns across blueprint runs — which agents fail on which checks for which clients, how patterns trend over time, and which patterns have been resolved.
+**Why:** Failure pattern propagation (9.4) collects rich data about cross-agent failures but there's no visibility. Email developers and leads need to see: "Outlook dark mode fails 40% of the time" → "we need to update the SKILL.md" or "this client needs a workaround documented."
+**Implementation:**
+- New section on intelligence dashboard or standalone page: `failure-patterns.tsx`
+- Pattern list: agent name, QA check, affected clients, frequency, first/last seen, status (active/resolved)
+- Trend chart: failure frequency over time per agent/check (simple line chart)
+- Filter by: agent, QA check, email client, date range
+- Pattern detail: shows the description, workaround hint, associated blueprint runs
+- New backend endpoint needed: `GET /api/v1/blueprints/failure-patterns?project_id=X` (paginated list with filters)
+- Link from QA results panel → "View related failure patterns"
+**Security:** Pattern data project-scoped. Contains only technical details (CSS properties, email clients), no user data. Read-only for all roles.
+**Verify:** After several blueprint runs with QA failures, dashboard shows patterns. Filter by "Outlook" shows Outlook-specific failures. Trend chart shows pattern frequency. Click pattern → see detail with workaround.
+
+### 10.8 Agent Confidence & Handoff Visibility
+**What:** Display agent confidence scores in the chat sidebar and blueprint pipeline view. Show a "needs review" badge when confidence < 0.5. Display handoff decisions (what the agent decided and warned about) in an expandable panel below agent responses.
+**Why:** Agents already emit confidence scores (7.3) and structured handoffs (7.1) but the frontend doesn't show them. Developers need to know when an agent is unsure and what decisions were made during generation.
+**Implementation:**
+- Confidence indicator: coloured bar/badge on agent responses (green ≥0.7, yellow 0.5-0.7, red <0.5)
+- "Needs Review" badge on responses with confidence < 0.5
+- Handoff panel: expandable section below response showing: decisions made (list), warnings (list), component references (links), skills loaded (list)
+- Blueprint pipeline view (10.3): confidence score per node, handoff arrows between nodes showing decisions
+- Update chat API response parsing to extract `confidence` and handoff metadata from agent responses
+- SDK types: agent response schemas already include `confidence` + `skills_loaded`
+**Security:** Confidence scores and handoff data are informational. No new access surface.
+**Verify:** Agent responds with 0.45 confidence → "Needs Review" badge appears. Expand handoff → see decisions and warnings. Blueprint pipeline shows confidence per step.
+
+### 10.9 Workspace Agent Context Panel
+**What:** Add a collapsible "Agent Context" panel in the workspace that shows what intelligence layers are active for the current project — audience profile summary, active failure patterns, loaded SKILL.md version, component context, and onboarding brief status.
+**Why:** All intelligence layers inject silently into agent prompts. Developers have no visibility into what context agents are working with. This panel makes the invisible visible — "the scaffolder knows about 3 failure patterns for Outlook and has 12 component references loaded."
+**Implementation:**
+- New component: `agent-context-panel.tsx` — collapsible sidebar section or drawer
+- Sections: Audience Profile (target clients, constraints summary), Active Failure Patterns (count + top patterns), SKILL.md Status (loaded version, last A/B test result), Component Context (detected components in current template), Onboarding Brief (generated/not generated, last refresh)
+- Data sources: project target_clients, memory recall for failure patterns, agent response metadata for skills_loaded
+- Refresh button to re-fetch context state
+- Link each section to its detail view (compatibility brief, failure dashboard, etc.)
+- New backend endpoint: `GET /api/v1/projects/{id}/agent-context-summary` (aggregates all context layers)
+**Security:** Context summary is read-only, project-scoped. No sensitive data — only agent configuration state.
+**Verify:** Open workspace for project with target clients set → context panel shows audience profile, failure pattern count, SKILL.md status. Change template to include a component → component context section updates.
+
+### 10.10 SDK Regeneration & Type Coverage
+**What:** Regenerate the TypeScript SDK to include all Phase 8-10 response types and endpoints. Add missing types: `BlueprintRunResponse`, `BlueprintNodeStatus`, `HandoffSummary`, `GraphSearchRequest/Response`, `GraphEntity`, `GraphRelationship`, `FailurePatternResponse`, `OnboardingBriefResponse`, `ComponentCompatibilityResponse`, `AgentContextSummary`.
+**Why:** The SDK is the contract between backend and frontend. Missing types mean frontend components use `any` or manual type definitions, which defeats the type-safety principle. All new endpoints from Phase 8-10 need SDK coverage.
+**Implementation:**
+- Run `make sdk` (or equivalent generation command) against updated backend OpenAPI spec
+- Verify all new endpoints appear in generated types
+- Add new React hooks in `cms/apps/web/src/hooks/`: `useBlueprintRun()`, `useBlueprintRuns()`, `useBlueprintTemplates()`, `useGraphSearch()`, `useOnboardingBrief()`, `useComponentCompatibility()`, `useFailurePatterns()`, `useAgentContextSummary()`, `useEmailClients()`
+- Update existing hooks where response types changed (e.g., `useComponents()` now includes `compatibility_badge`)
+- Ensure all hooks use `authFetch` with proper error handling and SWR caching
+**Security:** SDK generation is automated from OpenAPI spec — no manual type definitions that could diverge. All hooks use authenticated fetch.
+**Verify:** `make check-fe` passes. All new components use typed SDK hooks — zero `any` types. New endpoints callable from frontend with full type safety.
+
+### 10.11 Blueprint-Aware Chat Mode
+**What:** Add a "Blueprint Mode" toggle to the AI chat sidebar. When enabled, chat messages trigger blueprint runs instead of single-agent calls. The user selects agents to include, and the chat orchestrates a full pipeline with QA gating and self-correction, streaming progress updates into the chat panel.
+**Why:** Some developers prefer the chat interface over a separate blueprint dialog. Blueprint mode in chat means they can type "create a responsive email for Outlook and Gmail with dark mode" and get a full pipeline run inline — with the same audience context, failure patterns, and self-correction as the standalone blueprint trigger (10.3).
+**Implementation:**
+- Toggle button in chat header: "Single Agent" | "Blueprint Mode"
+- Blueprint mode: chat input triggers `POST /api/v1/blueprints/run` instead of individual agent endpoints
+- Progress messages streamed into chat: "Scaffolder generating... → QA gate running... → Dark Mode agent fixing... → Complete (confidence: 0.82)"
+- Blueprint selects agents automatically based on brief content (or user can pin specific agents)
+- Final result appears as a chat message with "Apply to Editor" button
+- Handoff history shown as collapsible thread under the result
+- Falls back to single agent mode if blueprint service is unavailable
+**Security:** Same rate limits and quota as standalone blueprint runs. Chat history project-scoped.
+**Verify:** Toggle Blueprint Mode → type brief → see pipeline progress in chat → result appears with confidence score and "Apply" button → handoff history expandable. Switch back to Single Agent → normal agent behaviour.
+
+### 10.12 Intelligence Dashboard Enhancements
+**What:** Extend the existing intelligence dashboard (`/intelligence`) with Phase 8-9 data: graph entity counts, knowledge freshness (last Can I Email sync), blueprint success rates over time, top failure patterns, agent performance by confidence distribution, and component compatibility coverage.
+**Why:** The intelligence dashboard currently shows QA trends and support matrices. Phase 8-9 generates much richer data that should surface here — graph health, sync status, agent quality trends, and failure pattern analysis.
+**Implementation:**
+- New dashboard cards: Graph Health (entity count, last sync, dataset sizes), Blueprint Success Rate (chart: pass/fail/self-corrected over time), Agent Performance (confidence distribution per agent, mean/median), Failure Patterns (top 5 most frequent, trend arrows), Component Coverage (% of components with QA data, average compatibility score)
+- Can I Email sync status: last sync timestamp, changes applied, next scheduled sync
+- Data from existing backend endpoints + new aggregation endpoint: `GET /api/v1/intelligence/summary`
+- Export enhanced: PDF/CSV now includes graph metrics and blueprint stats
+**Security:** Dashboard read-only. Aggregated data only — no individual run details without clicking through. Developer+ role required.
+**Verify:** Dashboard shows graph entity count, last sync date, blueprint success rate chart, top failure patterns. Data updates after running blueprints and syncing knowledge.
 
 ---
 

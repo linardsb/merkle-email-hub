@@ -20,7 +20,7 @@ from app.ai.blueprints.protocols import (
     NodeContext,
     NodeResult,
 )
-from app.ai.blueprints.route_advisor import is_node_relevant
+from app.ai.blueprints.route_advisor import RoutingDecision, RoutingPlan, build_routing_plan
 from app.ai.blueprints.schemas import BlueprintProgress
 from app.core.logging import get_logger
 
@@ -76,6 +76,7 @@ class BlueprintRun:
         default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     )
     skipped_nodes: list[str] = field(default_factory=list)
+    routing_decisions: tuple[RoutingDecision, ...] = ()
     _last_result: NodeResult | None = field(default=None, repr=False)
     _last_handoff: AgentHandoff | None = field(default=None, repr=False)
     _handoff_history: list[AgentHandoff] = field(default_factory=list, repr=False)
@@ -115,6 +116,15 @@ class BlueprintEngine:
         current_node_name: str | None = self._definition.entry_node
         steps = 0
 
+        # Build routing plan before main loop (deterministic, no I/O)
+        routing_plan = build_routing_plan(
+            node_names=list(self._definition.nodes.keys()),
+            audience_profile=self._audience_profile,
+            html=initial_html,
+            brief=brief,
+        )
+        run.routing_decisions = routing_plan.decisions
+
         # Set up cost tracking if user_id provided
         cost_tracker: BlueprintCostTracker | None = None
         if user_id is not None:
@@ -138,15 +148,17 @@ class BlueprintEngine:
             if node.node_type == "agentic" and iteration >= MAX_SELF_CORRECTION_ROUNDS:
                 raise BlueprintEscalatedError(current_node_name, iteration)
 
-            # Skip irrelevant agentic nodes based on audience profile
-            if node.node_type == "agentic" and not is_node_relevant(
-                current_node_name, self._audience_profile
+            # Skip irrelevant agentic nodes based on routing plan
+            if (
+                node.node_type == "agentic"
+                and not routing_plan.force_full
+                and current_node_name in routing_plan.skip_nodes
             ):
                 logger.info(
                     "blueprint.node_skipped",
                     node=current_node_name,
                     run_id=run.run_id,
-                    reason="audience_irrelevant",
+                    reason="routing_plan_skip",
                 )
                 run.skipped_nodes.append(current_node_name)
                 run.progress.append(
@@ -155,7 +167,7 @@ class BlueprintEngine:
                         node_type=node.node_type,
                         status="skipped",
                         iteration=iteration,
-                        summary="Skipped: not relevant for target audience",
+                        summary=_skip_summary(current_node_name, routing_plan),
                         duration_ms=0.0,
                     )
                 )
@@ -386,6 +398,7 @@ class BlueprintEngine:
             from app.ai.blueprints.audience_context import format_audience_context
 
             context.metadata["audience_context"] = format_audience_context(self._audience_profile)
+            context.metadata["audience_client_ids"] = tuple(self._audience_profile.client_ids)
 
         # LAYER 8: Project-specific subgraph context (agentic + project_id set + graph available)
         if (
@@ -418,7 +431,22 @@ class BlueprintEngine:
             )
 
             if should_fetch_competitive_context(brief):
-                competitive_ctx = build_competitive_context(brief)
+                # Use audience-aware feasibility when audience profile available
+                audience_client_ids: tuple[str, ...] = tuple(
+                    context.metadata.get("audience_client_ids", ())
+                )
+                if audience_client_ids:
+                    from app.knowledge.ontology.competitive_feasibility import (
+                        format_feasibility_context,
+                    )
+
+                    competitive_ctx = format_feasibility_context(
+                        client_ids=audience_client_ids,
+                        technique=brief,
+                    )
+                else:
+                    competitive_ctx = build_competitive_context(brief)
+
                 if competitive_ctx:
                     context.metadata["competitive_context"] = competitive_ctx
 
@@ -529,3 +557,11 @@ class BlueprintEngine:
             else:
                 parts.append(f"{entry.node_name}:{entry.summary[:60]}")
         return "[PROGRESS] " + " → ".join(parts)
+
+
+def _skip_summary(node_name: str, plan: RoutingPlan) -> str:
+    """Get the skip reason from routing plan for the progress log."""
+    for d in plan.decisions:
+        if d.node_name == node_name and d.action.value == "skip":
+            return f"Skipped: {d.reason}"
+    return "Skipped: not relevant for target audience"

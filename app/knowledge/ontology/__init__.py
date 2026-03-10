@@ -9,6 +9,13 @@ Usage:
     fallbacks = onto.fallbacks_for("display_flex")
 """
 
+from app.knowledge.ontology.competitive_feasibility import (
+    CapabilityFeasibility,
+    CompetitiveReport,
+    build_competitive_report,
+    compute_audience_coverage,
+    format_feasibility_context,
+)
 from app.knowledge.ontology.registry import OntologyRegistry, load_ontology
 from app.knowledge.ontology.types import (
     ClientEngine,
@@ -23,12 +30,17 @@ from app.knowledge.ontology.types import (
 __all__ = [
     "CSSCategory",
     "CSSProperty",
+    "CapabilityFeasibility",
     "ClientEngine",
+    "CompetitiveReport",
     "EmailClient",
     "Fallback",
     "OntologyRegistry",
     "SupportEntry",
     "SupportLevel",
+    "build_competitive_report",
+    "compute_audience_coverage",
+    "format_feasibility_context",
     "get_ontology",
     "load_ontology",
 ]
