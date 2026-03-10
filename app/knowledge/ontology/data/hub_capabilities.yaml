@@ -1,0 +1,215 @@
+# Hub's own capability manifest — used for competitive gap analysis
+# Each entry maps to a Hub feature/agent
+
+hub_capabilities:
+  # Builder
+  - id: code_editor
+    name: Monaco Code Editor
+    category: builder
+    agent: ""
+    description: Full Monaco editor with HTML/CSS/Liquid syntax, Can I Email autocomplete
+
+  - id: visual_drag_drop_builder
+    name: Visual Liquid Builder
+    category: builder
+    agent: ""
+    description: Drag-and-drop block composition with Liquid template syntax
+
+  - id: template_library
+    name: Template Library
+    category: builder
+    agent: ""
+    description: Versioned email template management with soft delete and restore
+
+  - id: modular_design_system
+    name: Component Library
+    category: builder
+    agent: ""
+    description: Versioned reusable email components with dark mode variants
+
+  # AI agents (Hub differentiators)
+  - id: ai_code_generation
+    name: AI Scaffolder Agent
+    category: ai
+    agent: scaffolder
+    description: Campaign brief → complete Maizzle HTML with table layouts, MSO conditionals, VML
+
+  - id: ai_content_generation
+    name: AI Content Agent
+    category: ai
+    agent: content
+    description: Subject lines, preheaders, CTA text, tone adjustment, anti-spam
+
+  - id: ai_image_generation
+    name: AI Image Generation
+    category: ai
+    agent: ""
+    description: AI-generated images with style presets for email content
+
+  - id: ai_innovation_prototyping
+    name: Innovation Agent
+    category: ai
+    agent: innovation
+    description: Experimental technique prototyping with feasibility assessment and fallback generation
+
+  - id: ai_knowledge_qa
+    name: Knowledge Agent
+    category: ai
+    agent: knowledge
+    description: RAG-powered Q&A from email development knowledge base with citations
+
+  - id: ai_code_review
+    name: Code Review Agent
+    category: ai
+    agent: code_reviewer
+    description: Static analysis — redundant code, CSS support, nesting, file size optimisation
+
+  - id: ai_self_correction_pipeline
+    name: Blueprint Self-Correction Pipeline
+    category: ai
+    agent: ""
+    description: State machine engine with QA gating, recovery routing, bounded self-correction
+
+  # Compatibility agents (Hub differentiators)
+  - id: outlook_specific_fixes
+    name: Outlook Fixer Agent
+    category: compatibility
+    agent: outlook_fixer
+    description: Automated MSO conditionals, VML backgrounds, ghost tables, DPI scaling
+
+  - id: dark_mode_agent
+    name: Dark Mode Agent
+    category: compatibility
+    agent: dark_mode
+    description: Inject dark mode CSS, Outlook data-ogsc/data-ogsb selectors, colour remapping
+
+  - id: accessibility_agent
+    name: Accessibility Auditor Agent
+    category: compatibility
+    agent: accessibility
+    description: WCAG 2.1 AA audit — alt text, table roles, contrast, screen reader compatibility
+
+  - id: personalisation_syntax
+    name: Personalisation Agent
+    category: personalisation
+    agent: personalisation
+    description: Inject ESP-specific dynamic content — Braze Liquid, SFMC AMPscript, Adobe Campaign JS
+
+  # Techniques
+  - id: amp_email
+    name: AMP for Email (via Innovation Agent)
+    category: interactive
+    agent: innovation
+    description: Prototype AMP components with feasibility assessment
+
+  - id: css_checkbox_interactivity
+    name: CSS Checkbox Interactivity (via Innovation Agent)
+    category: interactive
+    agent: innovation
+    description: CSS-only tabs, accordions, carousels with client coverage analysis
+
+  - id: css_animations
+    name: CSS Animations (via Innovation Agent)
+    category: visual
+    agent: innovation
+    description: Email-safe keyframe animations with fallback strategy
+
+  - id: progressive_enhancement
+    name: Progressive Enhancement (via Innovation Agent)
+    category: technique
+    agent: innovation
+    description: Advanced CSS with graceful degradation for capable clients
+
+  - id: responsive_email
+    name: Responsive Email
+    category: technique
+    agent: scaffolder
+    description: Mobile-responsive layouts with media queries and table fallbacks
+
+  # Testing & QA
+  - id: cross_client_rendering
+    name: Cross-Client Rendering Tests
+    category: testing
+    agent: ""
+    description: Litmus and Email on Acid integration with visual regression detection
+
+  - id: dark_mode_preview
+    name: Dark Mode Preview
+    category: testing
+    agent: ""
+    description: Preview panel with dark mode toggle in workspace
+
+  - id: accessibility_checking
+    name: Accessibility Checking
+    category: testing
+    agent: accessibility
+    description: 10-point QA gate with dedicated accessibility check
+
+  - id: spam_score_testing
+    name: Spam Score Testing
+    category: testing
+    agent: ""
+    description: QA gate spam trigger detection check
+
+  # Export
+  - id: esp_integration_braze
+    name: Braze Connector
+    category: export
+    agent: ""
+    description: Content Block export with Liquid personalisation
+
+  - id: esp_integration_sfmc
+    name: SFMC Connector
+    category: export
+    agent: ""
+    description: Salesforce Marketing Cloud export
+
+  - id: esp_integration_multi
+    name: Multi-ESP Export
+    category: export
+    agent: ""
+    description: 4 connectors — Braze, SFMC, Adobe Campaign, Taxi for Email
+
+  # Workflow
+  - id: collaboration_realtime
+    name: Real-Time Collaboration
+    category: workflow
+    agent: ""
+    description: Yjs CRDT collaborative editing with presence avatars
+
+  - id: approval_workflow
+    name: Approval Workflow
+    category: workflow
+    agent: ""
+    description: Client approval portal with section feedback and audit trail
+
+  - id: version_control
+    name: Version Control
+    category: workflow
+    agent: ""
+    description: Template versioning with side-by-side diff comparison
+
+  - id: figma_integration
+    name: Figma Integration
+    category: design
+    agent: ""
+    description: Design token extraction — colours, typography, spacing
+
+  # Knowledge (Hub differentiators)
+  - id: knowledge_graph
+    name: Knowledge Graph
+    category: knowledge
+    agent: ""
+    description: Cognee-powered entity relationships — CSS support, client quirks, fallback chains
+
+  - id: email_ontology
+    name: Email Development Ontology
+    category: knowledge
+    agent: ""
+    description: 25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA
+
+  - id: agent_memory
+    name: Agent Memory System
+    category: knowledge
+    agent: ""
+    description: pgvector semantic memory with temporal decay, cross-agent sharing, DCG bridge

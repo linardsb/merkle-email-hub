@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
+from app.ai.agents.skill_override import get_override
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -72,8 +73,12 @@ def detect_relevant_skills(question: str) -> list[str]:
 
 def build_system_prompt(relevant_skills: list[str]) -> str:
     """Build system prompt from SKILL.md + relevant L3 files."""
-    skill_path = _AGENT_DIR / "SKILL.md"
-    base_prompt = skill_path.read_text()
+    override = get_override("knowledge")
+    if override is not None:
+        base_prompt = override
+    else:
+        skill_path = _AGENT_DIR / "SKILL.md"
+        base_prompt = skill_path.read_text()
 
     # Inject eval-informed failure warnings (task 7.2)
     failure_warnings = get_failure_warnings("knowledge")

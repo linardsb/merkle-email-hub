@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
+from app.ai.agents.skill_override import get_override
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -15,6 +16,7 @@ SKILL_FILES: dict[str, str] = {
     "amp_email": "amp_email.md",
     "css_animations": "css_animations.md",
     "feasibility_framework": "feasibility_framework.md",
+    "competitive_landscape": "competitive_landscape.md",
 }
 
 
@@ -74,13 +76,35 @@ def detect_relevant_skills(technique: str) -> list[str]:
     if any(kw in t for kw in animation_keywords):
         relevant.append("css_animations")
 
+    # Competitive landscape
+    competitive_keywords = [
+        "competitor",
+        "alternative",
+        "stripo",
+        "parcel",
+        "chamaileon",
+        "dyspatch",
+        "knak",
+        "differentiate",
+        "unique",
+        "advantage",
+        "gap",
+        "landscape",
+    ]
+    if any(kw in t for kw in competitive_keywords):
+        relevant.append("competitive_landscape")
+
     return relevant
 
 
 def build_system_prompt(relevant_skills: list[str]) -> str:
     """Build system prompt from SKILL.md + relevant L3 files."""
-    skill_path = _AGENT_DIR / "SKILL.md"
-    base_prompt = skill_path.read_text()
+    override = get_override("innovation")
+    if override is not None:
+        base_prompt = override
+    else:
+        skill_path = _AGENT_DIR / "SKILL.md"
+        base_prompt = skill_path.read_text()
 
     # Inject eval-informed failure warnings (task 7.2)
     failure_warnings = get_failure_warnings("innovation")

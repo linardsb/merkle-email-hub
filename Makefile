@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline
+.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline eval-skill-test
 
 # === Local Development ===
 
@@ -135,6 +135,9 @@ eval-full: ## Full eval pipeline (requires LLM provider)
 	$(MAKE) eval-blueprint
 	$(MAKE) eval-regression
 	@echo "\n=== Full eval pipeline complete ==="
+
+eval-skill-test: eval-verify ## A/B test a SKILL.md change (AGENT=scaffolder PROPOSED=path/to/SKILL.md)
+	uv run python -m app.ai.agents.evals.skill_ab --agent $(AGENT) --proposed $(PROPOSED) --output traces/
 
 eval-baseline: ## Run full eval pipeline and establish baseline (first time)
 	$(MAKE) eval-run

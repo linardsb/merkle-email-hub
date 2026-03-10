@@ -85,6 +85,46 @@ class RegressionReport:
 
 
 @dataclass(frozen=True)
+class SkillABCriterionDelta:
+    """Per-criterion comparison between variant A and variant B."""
+
+    criterion: str
+    variant_a_rate: float  # Pass rate with current SKILL.md
+    variant_b_rate: float  # Pass rate with proposed SKILL.md
+    delta: float  # B - A (positive = improvement)
+    is_degraded: bool  # True if delta < -threshold
+
+
+@dataclass(frozen=True)
+class SkillABResult:
+    """A/B test result for a single agent."""
+
+    agent: str
+    variant_a_label: str  # "current"
+    variant_b_label: str  # "proposed"
+    variant_a_overall_pass_rate: float
+    variant_b_overall_pass_rate: float
+    overall_delta: float  # B - A
+    criteria_deltas: list[SkillABCriterionDelta] = field(
+        default_factory=lambda: list[SkillABCriterionDelta]()
+    )
+    degraded_criteria: list[str] = field(default_factory=lambda: list[str]())
+    improved_criteria: list[str] = field(default_factory=lambda: list[str]())
+    total_cases: int = 0
+    recommendation: str = "merge"  # "merge" | "reject" | "needs_more_data"
+    rejection_reason: str | None = None
+
+
+@dataclass(frozen=True)
+class SkillABReport:
+    """Full A/B test report (may cover multiple agents in future)."""
+
+    results: list[SkillABResult] = field(default_factory=lambda: list[SkillABResult]())
+    degradation_threshold: float = 0.05
+    min_cases_required: int = 10
+
+
+@dataclass(frozen=True)
 class BlueprintEvalTrace:
     """End-to-end blueprint pipeline evaluation trace."""
 

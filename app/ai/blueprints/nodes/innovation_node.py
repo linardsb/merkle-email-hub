@@ -61,9 +61,12 @@ class InnovationNode:
         graph_ctx = context.metadata.get("graph_context", "")
         graph_section = f"\n\n{graph_ctx}" if graph_ctx else ""
 
+        competitive_ctx = context.metadata.get("competitive_context", "")
+        competitive_section = f"\n\n{competitive_ctx}" if competitive_ctx else ""
+
         user_message = (
             f"## TECHNIQUE REQUEST\n{technique}"
-            f"{graph_section}\n\n"
+            f"{graph_section}{competitive_section}\n\n"
             "Provide a working prototype, feasibility assessment with client coverage %, "
             "risk level, and recommendation, plus a static fallback.\n"
             "End with <!-- CONFIDENCE: 0.XX -->"

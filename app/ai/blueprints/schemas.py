@@ -52,3 +52,4 @@ class BlueprintRunResponse(BaseModel):
     final_handoff: HandoffSummary | None = None
     handoff_history: list[HandoffSummary] = Field(default_factory=list)
     audience_summary: str | None = None
+    skipped_nodes: list[str] = Field(default_factory=list)

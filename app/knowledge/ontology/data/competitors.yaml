@@ -1,0 +1,288 @@
+# Competitive intelligence — email development platforms
+# Source: public pricing pages, feature lists, product documentation
+# Last updated: 2026-03-10
+
+capabilities:
+  # Builder features
+  - id: visual_drag_drop_builder
+    name: Visual Drag-and-Drop Builder
+    category: builder
+    description: No-code email builder with visual block composition
+
+  - id: code_editor
+    name: Code Editor
+    category: builder
+    description: Direct HTML/CSS code editing with syntax highlighting
+
+  - id: template_library
+    name: Template Library
+    category: builder
+    description: Pre-built email template gallery
+
+  - id: modular_design_system
+    name: Modular Design System
+    category: builder
+    description: Reusable component/module library for email assembly
+
+  # Interactive techniques
+  - id: amp_email
+    name: AMP for Email
+    category: interactive
+    description: Google AMP dynamic content in email (forms, carousels, live data)
+
+  - id: css_checkbox_interactivity
+    name: CSS Checkbox Interactivity
+    category: interactive
+    description: CSS-only interactive elements (tabs, accordions, toggles)
+
+  - id: css_animations
+    name: CSS Animations
+    category: visual
+    description: CSS keyframe animations and transitions in email
+
+  # Testing & QA
+  - id: cross_client_rendering
+    name: Cross-Client Rendering Tests
+    category: testing
+    description: Automated rendering previews across email clients
+
+  - id: dark_mode_preview
+    name: Dark Mode Preview
+    category: testing
+    description: Visual preview of email in dark mode contexts
+
+  - id: accessibility_checking
+    name: Accessibility Checking
+    category: testing
+    description: WCAG compliance scanning for email HTML
+
+  - id: spam_score_testing
+    name: Spam Score Testing
+    category: testing
+    description: Pre-send spam score analysis
+
+  # Export & integration
+  - id: esp_integration_braze
+    name: Braze Integration
+    category: export
+    description: Direct export/sync with Braze ESP
+
+  - id: esp_integration_sfmc
+    name: SFMC Integration
+    category: export
+    description: Direct export/sync with Salesforce Marketing Cloud
+
+  - id: esp_integration_multi
+    name: Multi-ESP Export
+    category: export
+    description: Export to 3+ ESP platforms
+
+  - id: figma_integration
+    name: Figma Integration
+    category: design
+    description: Design-to-email pipeline from Figma
+
+  - id: collaboration_realtime
+    name: Real-Time Collaboration
+    category: workflow
+    description: Multi-user simultaneous editing
+
+  - id: approval_workflow
+    name: Approval Workflow
+    category: workflow
+    description: Client review and approval process
+
+  - id: version_control
+    name: Version Control
+    category: workflow
+    description: Template version history and rollback
+
+  # AI features
+  - id: ai_content_generation
+    name: AI Content Generation
+    category: ai
+    description: LLM-powered copy writing for emails
+
+  - id: ai_code_generation
+    name: AI Code Generation
+    category: ai
+    description: LLM-powered HTML/CSS generation from briefs
+
+  - id: ai_image_generation
+    name: AI Image Generation
+    category: ai
+    description: AI-generated images for email content
+
+  # Advanced techniques
+  - id: outlook_specific_fixes
+    name: Outlook-Specific Fixes
+    category: compatibility
+    description: Automated MSO conditionals, VML, ghost tables for Outlook
+
+  - id: personalisation_syntax
+    name: ESP Personalisation Syntax
+    category: personalisation
+    description: Dynamic content tokens (Liquid, AMPscript, etc.)
+
+  - id: progressive_enhancement
+    name: Progressive Enhancement
+    category: technique
+    description: Advanced CSS with graceful fallback for capable clients
+
+  - id: responsive_email
+    name: Responsive Email
+    category: technique
+    description: Mobile-responsive email with media queries
+
+competitors:
+  - id: stripo
+    name: Stripo
+    homepage_url: https://stripo.email
+    category: visual_builder
+    pricing_tier: freemium
+    target_market: ecommerce
+    capabilities:
+      - visual_drag_drop_builder
+      - code_editor
+      - template_library
+      - modular_design_system
+      - amp_email
+      - cross_client_rendering
+      - dark_mode_preview
+      - esp_integration_multi
+      - ai_content_generation
+      - ai_image_generation
+      - collaboration_realtime
+      - approval_workflow
+      - version_control
+      - responsive_email
+      - personalisation_syntax
+    strengths:
+      - Mature AMP for Email support with visual AMP block builder
+      - 1100+ free templates
+      - 70+ ESP integrations
+      - Drag-and-drop with code fallback
+    weaknesses:
+      - No AI code generation from briefs
+      - Limited Outlook-specific fix automation
+      - No graph-powered knowledge base
+      - No agent-based self-correction pipeline
+    notes: Market leader in drag-and-drop email builders. Strong AMP support.
+
+  - id: parcel
+    name: Parcel
+    homepage_url: https://parcel.io
+    category: code_editor
+    pricing_tier: paid
+    target_market: agencies
+    capabilities:
+      - code_editor
+      - cross_client_rendering
+      - dark_mode_preview
+      - accessibility_checking
+      - spam_score_testing
+      - collaboration_realtime
+      - version_control
+      - css_animations
+      - responsive_email
+      - personalisation_syntax
+    strengths:
+      - Best-in-class code editor with real-time preview
+      - Built-in accessibility checker
+      - Excellent CSS support validation
+      - Strong developer-focused workflow
+    weaknesses:
+      - No drag-and-drop builder
+      - No AI agents (code generation, content, innovation)
+      - No AMP for Email support
+      - Limited ESP integrations
+      - No automated Outlook fix pipeline
+    notes: Developer-focused code editor. Strong on code quality and accessibility.
+
+  - id: chamaileon
+    name: Chamaileon
+    homepage_url: https://chamaileon.io
+    category: visual_builder
+    pricing_tier: enterprise
+    target_market: enterprise
+    capabilities:
+      - visual_drag_drop_builder
+      - code_editor
+      - template_library
+      - modular_design_system
+      - cross_client_rendering
+      - collaboration_realtime
+      - approval_workflow
+      - version_control
+      - esp_integration_multi
+      - responsive_email
+    strengths:
+      - Enterprise white-label solution
+      - Embeddable editor SDK
+      - Strong governance and brand control
+    weaknesses:
+      - No AI features
+      - No AMP for Email
+      - No accessibility checking
+      - No dark mode preview
+      - No advanced technique prototyping
+    notes: Enterprise-focused embeddable email editor. Strong on governance.
+
+  - id: dyspatch
+    name: Dyspatch
+    homepage_url: https://www.dyspatch.io
+    category: platform
+    pricing_tier: enterprise
+    target_market: enterprise
+    capabilities:
+      - visual_drag_drop_builder
+      - modular_design_system
+      - amp_email
+      - approval_workflow
+      - version_control
+      - esp_integration_multi
+      - collaboration_realtime
+      - personalisation_syntax
+      - responsive_email
+    strengths:
+      - Strong AMP for Email with interactive modules
+      - Enterprise approval workflows
+      - Modular block-based architecture
+    weaknesses:
+      - No code editor mode
+      - No AI features
+      - No cross-client rendering tests
+      - No accessibility checking
+      - No dark mode support
+    notes: Enterprise platform focused on AMP and modular email production.
+
+  - id: knak
+    name: Knak
+    homepage_url: https://knak.com
+    category: platform
+    pricing_tier: enterprise
+    target_market: enterprise
+    capabilities:
+      - visual_drag_drop_builder
+      - template_library
+      - modular_design_system
+      - approval_workflow
+      - collaboration_realtime
+      - esp_integration_sfmc
+      - esp_integration_braze
+      - version_control
+      - responsive_email
+      - ai_content_generation
+    strengths:
+      - Deep Marketo/SFMC integration
+      - Enterprise brand governance
+      - No-code for marketers
+    weaknesses:
+      - No code editor
+      - No AMP for Email
+      - No cross-client rendering
+      - No accessibility checking
+      - No dark mode support
+      - No AI code generation
+      - Limited developer tooling
+    notes: Enterprise no-code platform. Strong ESP integrations for Marketo/SFMC.

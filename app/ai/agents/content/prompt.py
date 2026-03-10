@@ -7,12 +7,18 @@ and skills/*.md via progressive disclosure in the service layer.
 from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
+from app.ai.agents.skill_override import get_override
 
 _SKILL_DIR = Path(__file__).parent
 
 # Load L1+L2 instructions from SKILL.md (always loaded)
 _SKILL_PATH = _SKILL_DIR / "SKILL.md"
 _SKILL_CONTENT = _SKILL_PATH.read_text(encoding="utf-8") if _SKILL_PATH.exists() else ""
+
+_PROMPT_PREFIX = """\
+You are an expert email marketing copywriter specialising in high-conversion email copy.
+Your task: generate or refine email marketing text based on the requested operation.
+"""
 
 
 def _load_skill_file(name: str) -> str:
@@ -31,12 +37,11 @@ SKILL_FILES: dict[str, str] = {
     "operation_best_practices": "operation_best_practices.md",
 }
 
-CONTENT_SYSTEM_PROMPT = f"""\
-You are an expert email marketing copywriter specialising in high-conversion email copy.
-Your task: generate or refine email marketing text based on the requested operation.
 
-{_SKILL_CONTENT}
-"""
+def _base_system_prompt() -> str:
+    """Build base system prompt, checking for A/B test override."""
+    skill = get_override("content") or _SKILL_CONTENT
+    return f"{_PROMPT_PREFIX}\n{skill}"
 
 
 def build_system_prompt(relevant_skills: list[str]) -> str:
@@ -48,7 +53,7 @@ def build_system_prompt(relevant_skills: list[str]) -> str:
     Returns:
         Complete system prompt with relevant L3 files appended.
     """
-    parts = [CONTENT_SYSTEM_PROMPT]
+    parts = [_base_system_prompt()]
 
     # Inject eval-informed failure warnings (task 7.2)
     failure_warnings = get_failure_warnings("content")

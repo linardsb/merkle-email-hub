@@ -19,6 +19,7 @@ def export_ontology_documents() -> list[tuple[str, str]]:
     documents.extend(_export_client_profiles(onto))
     documents.extend(_export_category_matrices(onto))
     documents.extend(_export_fallbacks(onto))
+    documents.extend(_export_competitor_profiles())
 
     return documents
 
@@ -127,3 +128,94 @@ def _export_fallbacks(onto: OntologyRegistry) -> list[tuple[str, str]]:
         lines.append("")
 
     return [("email_ontology", "\n".join(lines))]
+
+
+def _export_competitor_profiles() -> list[tuple[str, str]]:
+    """Export competitive intelligence for Cognee graph ingestion."""
+    try:
+        from app.knowledge.ontology.competitors import load_competitors
+    except ImportError:
+        return []
+
+    try:
+        registry = load_competitors()
+    except FileNotFoundError:
+        return []
+
+    docs: list[tuple[str, str]] = []
+
+    # One document per competitor
+    for comp in registry.competitors:
+        lines = [f"# Competitor: {comp.name}\n"]
+        lines.append(f"- Category: {comp.category}")
+        lines.append(f"- Pricing: {comp.pricing_tier}")
+        lines.append(f"- Target Market: {comp.target_market}")
+
+        if comp.strengths:
+            lines.append("\n## Strengths")
+            for s in comp.strengths:
+                lines.append(f"- {s}")
+
+        if comp.weaknesses:
+            lines.append("\n## Weaknesses")
+            for w in comp.weaknesses:
+                lines.append(f"- {w}")
+
+        caps = registry.capabilities_of(comp.id)
+        if caps:
+            lines.append(f"\n## Capabilities ({len(caps)} total)")
+            for cat in sorted({c.category for c in caps}):
+                cat_caps = [c for c in caps if c.category == cat]
+                lines.append(f"\n### {cat.title()}")
+                for c in cat_caps:
+                    lines.append(f"- {c.name}: {c.description}")
+
+        # Gap analysis vs Hub
+        hub_only, _shared, comp_only = registry.hub_vs_competitor(comp.id)
+        if hub_only:
+            lines.append(f"\n## Hub Advantages Over {comp.name} ({len(hub_only)} capabilities)")
+            for cap_id in hub_only:
+                hub_cap = registry.get_hub_capability(cap_id)
+                name = hub_cap.name if hub_cap else cap_id
+                lines.append(f"- {name}")
+
+        if comp_only:
+            lines.append(f"\n## {comp.name} Has But Hub Does Not ({len(comp_only)} capabilities)")
+            for cap_id in comp_only:
+                cap = registry.get_capability(cap_id)
+                name = cap.name if cap else cap_id
+                lines.append(f"- {name}")
+
+        if comp.notes:
+            lines.append(f"\n{comp.notes}")
+
+        lines.append("")
+        docs.append(("competitive_intelligence", "\n".join(lines)))
+
+    # Summary document: Hub vs all competitors feature matrix
+    matrix_lines = ["# Competitive Landscape — Hub vs All Competitors\n"]
+    matrix_lines.append(
+        "| Capability | Hub | " + " | ".join(c.name for c in registry.competitors) + " |"
+    )
+    matrix_lines.append("|" + "---|" * (len(registry.competitors) + 2))
+
+    all_cap_ids = sorted(
+        {c.id for c in registry.capabilities} | {h.id for h in registry.hub_capabilities}
+    )
+    hub_cap_ids = {h.id for h in registry.hub_capabilities}
+
+    for cap_id in all_cap_ids:
+        cap = registry.get_capability(cap_id)
+        hub_cap = registry.get_hub_capability(cap_id)
+        name = cap.name if cap else (hub_cap.name if hub_cap else cap_id)
+
+        hub_check = "\u2713" if cap_id in hub_cap_ids else "\u2717"
+        comp_checks = []
+        for comp in registry.competitors:
+            comp_checks.append("\u2713" if cap_id in comp.capabilities else "\u2717")
+
+        matrix_lines.append(f"| {name} | {hub_check} | " + " | ".join(comp_checks) + " |")
+
+    docs.append(("competitive_intelligence", "\n".join(matrix_lines)))
+
+    return docs

@@ -20,6 +20,7 @@ from app.ai.blueprints.protocols import (
     NodeContext,
     NodeResult,
 )
+from app.ai.blueprints.route_advisor import is_node_relevant
 from app.ai.blueprints.schemas import BlueprintProgress
 from app.core.logging import get_logger
 
@@ -74,6 +75,7 @@ class BlueprintRun:
     model_usage: dict[str, int] = field(
         default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     )
+    skipped_nodes: list[str] = field(default_factory=list)
     _last_result: NodeResult | None = field(default=None, repr=False)
     _last_handoff: AgentHandoff | None = field(default=None, repr=False)
     _handoff_history: list[AgentHandoff] = field(default_factory=list, repr=False)
@@ -135,6 +137,31 @@ class BlueprintEngine:
             iteration = run.iteration_counts.get(current_node_name, 0)
             if node.node_type == "agentic" and iteration >= MAX_SELF_CORRECTION_ROUNDS:
                 raise BlueprintEscalatedError(current_node_name, iteration)
+
+            # Skip irrelevant agentic nodes based on audience profile
+            if node.node_type == "agentic" and not is_node_relevant(
+                current_node_name, self._audience_profile
+            ):
+                logger.info(
+                    "blueprint.node_skipped",
+                    node=current_node_name,
+                    run_id=run.run_id,
+                    reason="audience_irrelevant",
+                )
+                run.skipped_nodes.append(current_node_name)
+                run.progress.append(
+                    BlueprintProgress(
+                        node_name=current_node_name,
+                        node_type=node.node_type,
+                        status="skipped",
+                        iteration=iteration,
+                        summary="Skipped: not relevant for target audience",
+                        duration_ms=0.0,
+                    )
+                )
+                skip_result = NodeResult(status="skipped", html=run.html)
+                current_node_name = self._resolve_next_node(current_node_name, skip_result)
+                continue
 
             context = await self._build_node_context(node, run, brief, iteration)
 
@@ -350,6 +377,10 @@ class BlueprintEngine:
                 if graph_results:
                     context.metadata["graph_context"] = format_graph_context(graph_results)
 
+        # Inject audience profile reference for recovery router filtering
+        if self._audience_profile is not None:
+            context.metadata["audience_profile"] = self._audience_profile
+
         # LAYER 7: Audience constraints (agentic + audience profile available)
         if node.node_type == "agentic" and self._audience_profile is not None:
             from app.ai.blueprints.audience_context import format_audience_context
@@ -365,6 +396,18 @@ class BlueprintEngine:
             project_subgraph = await self._search_project_subgraph(brief)
             if project_subgraph:
                 context.metadata["project_subgraph"] = project_subgraph
+
+        # LAYER 9: Competitive context (innovation node + keyword triggered)
+        if node.node_type == "agentic" and node.name == "innovation":
+            from app.ai.blueprints.competitor_context import (
+                build_competitive_context,
+                should_fetch_competitive_context,
+            )
+
+            if should_fetch_competitive_context(brief):
+                competitive_ctx = build_competitive_context(brief)
+                if competitive_ctx:
+                    context.metadata["competitive_context"] = competitive_ctx
 
         return context
 

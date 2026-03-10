@@ -8,12 +8,18 @@ from pathlib import Path
 
 from app.ai.agents.code_reviewer.schemas import ReviewFocus
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
+from app.ai.agents.skill_override import get_override
 
 _SKILL_DIR = Path(__file__).parent
 
 # Load L1+L2 instructions from SKILL.md (always loaded)
 _SKILL_PATH = _SKILL_DIR / "SKILL.md"
 _SKILL_CONTENT = _SKILL_PATH.read_text(encoding="utf-8") if _SKILL_PATH.exists() else ""
+
+_PROMPT_PREFIX = """\
+You are an expert email HTML code reviewer. Your sole task is to
+analyse email HTML and report issues — you NEVER modify the source HTML.
+"""
 
 
 def _load_skill_file(name: str) -> str:
@@ -32,12 +38,11 @@ SKILL_FILES: dict[str, str] = {
     "file_size_optimization": "file_size_optimization.md",
 }
 
-CODE_REVIEWER_SYSTEM_PROMPT = f"""\
-You are an expert email HTML code reviewer. Your sole task is to
-analyse email HTML and report issues — you NEVER modify the source HTML.
 
-{_SKILL_CONTENT}
-"""
+def _base_system_prompt() -> str:
+    """Build base system prompt, checking for A/B test override."""
+    skill = get_override("code_reviewer") or _SKILL_CONTENT
+    return f"{_PROMPT_PREFIX}\n{skill}"
 
 
 def build_system_prompt(relevant_skills: list[str]) -> str:
@@ -49,7 +54,7 @@ def build_system_prompt(relevant_skills: list[str]) -> str:
     Returns:
         Complete system prompt with relevant L3 files appended.
     """
-    parts = [CODE_REVIEWER_SYSTEM_PROMPT]
+    parts = [_base_system_prompt()]
 
     # Inject eval-informed failure warnings (task 7.2)
     failure_warnings = get_failure_warnings("code_reviewer")

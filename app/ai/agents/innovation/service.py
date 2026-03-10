@@ -24,6 +24,7 @@ class InnovationService:
     async def process(
         self,
         request: InnovationRequest,
+        competitive_context: str = "",
     ) -> InnovationResponse:
         """Process an innovation technique request.
 
@@ -44,7 +45,7 @@ class InnovationService:
         system_prompt = build_system_prompt(relevant_skills)
 
         # 2. Build user message
-        user_message = _build_user_message(request)
+        user_message = _build_user_message(request, competitive_context)
 
         # 3. Call LLM (use complex model for creative/experimental work)
         settings = get_settings()
@@ -96,7 +97,7 @@ class InnovationService:
         )
 
 
-def _build_user_message(request: InnovationRequest) -> str:
+def _build_user_message(request: InnovationRequest, competitive_context: str = "") -> str:
     """Build the user message with technique request and constraints."""
     parts = [f"## TECHNIQUE REQUEST\n{request.technique}"]
 
@@ -106,6 +107,9 @@ def _build_user_message(request: InnovationRequest) -> str:
     if request.target_clients:
         clients = ", ".join(request.target_clients)
         parts.append(f"\n## TARGET CLIENTS\n{clients}")
+
+    if competitive_context:
+        parts.append(f"\n{competitive_context}")
 
     parts.append(
         "\n## INSTRUCTIONS\n"

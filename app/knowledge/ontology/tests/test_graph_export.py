@@ -16,8 +16,9 @@ class TestExportOntologyDocuments:
 
     def test_document_format(self) -> None:
         docs = export_ontology_documents()
+        valid_datasets = {"email_ontology", "competitive_intelligence"}
         for dataset_name, text in docs:
-            assert dataset_name == "email_ontology"
+            assert dataset_name in valid_datasets
             assert isinstance(text, str)
             assert len(text) > 0
 

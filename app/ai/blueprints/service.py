@@ -165,6 +165,7 @@ class BlueprintService:
             audience_summary=(
                 format_audience_context(audience_profile) if audience_profile else None
             ),
+            skipped_nodes=bp_run.skipped_nodes,
         )
 
 

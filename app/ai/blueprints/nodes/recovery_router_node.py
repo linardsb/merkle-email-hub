@@ -1,6 +1,14 @@
 """Recovery Router deterministic node — routes QA failures to appropriate fixer nodes."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.ai.blueprints.audience_context import AudienceProfile
+
 from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.route_advisor import is_node_relevant
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -19,6 +27,47 @@ _FAILURE_ROUTING: dict[str, str] = {
     "image_optimization": "scaffolder",
     "brand_compliance": "scaffolder",
 }
+
+
+# Priority order for fixer fallback when audience filters out the primary target.
+# Scaffolder is last — always relevant, always available as a general fixer.
+_FIXER_PRIORITY = (
+    "dark_mode",
+    "outlook_fixer",
+    "accessibility",
+    "personalisation",
+    "code_reviewer",
+    "scaffolder",
+)
+
+
+def _has_matching_failure(
+    candidate: str,
+    qa_failures: list[str],
+    upstream: AgentHandoff | object | None,
+) -> bool:
+    """Check if the candidate fixer has a matching failure in QA results or upstream warnings."""
+    _CANDIDATE_PATTERNS: dict[str, tuple[str, ...]] = {
+        "dark_mode": ("dark_mode:",),
+        "outlook_fixer": ("fallback:", "mso", "outlook"),
+        "accessibility": ("accessibility:",),
+        "personalisation": ("personalisation", "personalization", "liquid", "ampscript"),
+        "code_reviewer": ("code_review", "redundant", "css_support", "file_size"),
+    }
+    patterns = _CANDIDATE_PATTERNS.get(candidate, ())
+    if not patterns:
+        return False
+
+    for f in qa_failures:
+        if any(p in f.lower() for p in patterns):
+            return True
+
+    if isinstance(upstream, AgentHandoff):
+        for w in upstream.warnings:
+            if any(p in w.lower() for p in patterns):
+                return True
+
+    return False
 
 
 class RecoveryRouterNode:
@@ -166,6 +215,28 @@ class RecoveryRouterNode:
                 iteration=context.iteration,
             )
             target = "scaffolder"
+
+        # Filter out audience-irrelevant fixers
+        raw_profile = context.metadata.get("audience_profile")
+        audience_profile: AudienceProfile | None = raw_profile if raw_profile is not None else None  # type: ignore[assignment]
+        if not is_node_relevant(target, audience_profile):
+            logger.info(
+                "blueprint.recovery_router.audience_filtered",
+                original_target=target,
+                reason="audience_irrelevant",
+            )
+            fallback_found = False
+            for candidate in _FIXER_PRIORITY:
+                if candidate == target:
+                    continue
+                if _has_matching_failure(
+                    candidate, context.qa_failures, upstream
+                ) and is_node_relevant(candidate, audience_profile):
+                    target = candidate
+                    fallback_found = True
+                    break
+            if not fallback_found:
+                target = "scaffolder"  # Always relevant, always available
 
         logger.info(
             "blueprint.recovery_router.routing",

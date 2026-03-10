@@ -996,17 +996,20 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Competitor data is public knowledge (pricing pages, feature lists). No proprietary intelligence. Clearly marked as external data in graph.
 **Verify:** Innovation Agent asked "what techniques can we offer that Stripo can't?" returns graph-backed answer with audience feasibility. Capability report includes competitive positioning data.
 
-### 9.8 SKILL.md A/B Testing via Eval System
+### ~~9.8 SKILL.md A/B Testing via Eval System~~ DONE
 **What:** When the skill growth system (8.5) proposes a SKILL.md update, automatically A/B test it against the current version using the eval suite. Only merge if the updated skill performs equal or better.
 **Why:** Skill growth proposals are currently review-only (dev reads the diff and decides). A/B testing adds empirical evidence: run the eval suite with current SKILL.md, then with proposed update, compare pass rates. This closes the loop: knowledge graph → skill proposal → eval validation → merge.
 **Implementation:**
-- `app/ai/agents/evals/skill_ab.py` — A/B test runner
-- Takes: current SKILL.md, proposed SKILL.md, agent name, eval suite
+- `app/ai/agents/skill_override.py` — Runtime SKILL.md override registry (in-process, no disk writes)
+- `app/ai/agents/evals/skill_ab.py` — A/B test runner CLI (`compare_variants`, `build_ab_report`, `run_ab_test`)
+- `app/ai/agents/evals/schemas.py` — `SkillABCriterionDelta`, `SkillABResult`, `SkillABReport` dataclasses
+- All 9 agent `prompt.py` files refactored to check `get_override()` before file-loaded SKILL.md
 - Runs eval suite twice (current vs proposed) on same synthetic test data
-- Computes per-criterion pass rate delta, overall improvement, and statistical significance (minimum 10 cases per dimension)
-- Output: comparison report with recommendation (merge / reject / needs more data)
-- Integrates with `make eval-skill-test` CLI command
+- Computes per-criterion pass rate delta, overall improvement, minimum 10 cases per dimension
+- Output: JSON comparison report with recommendation (merge / reject / needs_more_data)
+- `make eval-skill-test AGENT=scaffolder PROPOSED=path/to/SKILL.md` CLI command
 - Proposed updates that degrade any criterion by >5% auto-rejected with explanation
+- 17 unit tests (override registry, comparison logic, report builder, edge cases)
 **Security:** A/B tests run on synthetic test data (no client data). Results logged for audit. Rejected proposals archived with reasoning.
 **Verify:** Proposed SKILL.md update runs through A/B test. Report shows per-criterion comparison. Update that improves 3 criteria and degrades none is recommended for merge. Update that degrades 1 criterion by >5% is auto-rejected.
 

@@ -57,6 +57,7 @@ make eval-full       # Full pipeline (requires LLM provider)
 make eval-baseline   # Run full pipeline + establish baseline (first time)
 make eval-calibrate  # Calibrate judges against human labels
 make eval-qa-calibrate # Calibrate QA gate against human labels
+make eval-skill-test AGENT=scaffolder PROPOSED=path/to/SKILL.md  # A/B test a SKILL.md change
 
 # Docker
 make docker          # Full stack (port :80)
@@ -215,13 +216,14 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - `runner.py` — CLI: `python -m app.ai.agents.evals.runner --agent scaffolder --output traces/`
 - `judges/` — Binary pass/fail LLM judges: `ScaffolderJudge` (5 criteria), `DarkModeJudge` (5 criteria), `ContentJudge` (5 criteria), `OutlookFixerJudge` (5 criteria), `AccessibilityJudge` (5 criteria), `PersonalisationJudge` (5 criteria), `CodeReviewerJudge` (5 criteria), `KnowledgeJudge` (5 criteria), `InnovationJudge` (5 criteria); `Judge` Protocol, `JUDGE_REGISTRY`, shared prompt template
 - `judge_runner.py` — CLI: `python -m app.ai.agents.evals.judge_runner --agent {agent} --traces X --output Y`
-- `schemas.py` — Shared dataclasses: `FailureCluster`, `HumanLabel`, `CalibrationResult`, `QACalibrationResult`, `RegressionReport`, `BlueprintEvalTrace`
+- `schemas.py` — Shared dataclasses: `FailureCluster`, `HumanLabel`, `CalibrationResult`, `QACalibrationResult`, `RegressionReport`, `SkillABCriterionDelta`, `SkillABResult`, `SkillABReport`, `BlueprintEvalTrace`
 - `error_analysis.py` — Failure clustering + pass rate computation from verdict JSONL (`make eval-analysis`)
 - `scaffold_labels.py` — Generates prefilled human label templates from traces+verdicts (`make eval-labels`)
 - `calibration.py` — TPR/TNR computation against human labels per criterion
 - `qa_calibration.py` — QA gate check-vs-human agreement rates, flags checks <75%
 - `blueprint_eval.py` — End-to-end blueprint pipeline runner with 5 test briefs (`make eval-blueprint`)
 - `regression.py` — Baseline comparison with configurable tolerance, CI gate exit code (`make eval-regression`)
+- `skill_ab.py` — SKILL.md A/B test runner: runs eval suite with current vs proposed SKILL.md, compares per-criterion pass rates, auto-recommends merge/reject (`make eval-skill-test`)
 
 ### API Security Patterns
 
@@ -332,7 +334,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - [x] 9.5 Client-specific subgraphs for project onboarding (`onboarding.py` generates scoped docs from ontology, `target_clients` JSON column, LAYER 8 engine context, `POST .../onboarding-brief` endpoint, 14 tests)
 - [ ] 9.6 Graph-informed blueprint route selection (dynamic node skipping/addition based on audience)
 - [ ] 9.7 Competitive intelligence graph (competitor capabilities in ontology for Innovation Agent)
-- [ ] 9.8 SKILL.md A/B testing via eval system (empirical skill evolution with eval validation)
+- [x] 9.8 SKILL.md A/B testing via eval system (`skill_override.py` runtime registry, `skill_ab.py` A/B runner CLI, all 9 prompt.py files wired, `make eval-skill-test`, 17 tests)
 
 ## Feature Scope by Stack
 
@@ -349,7 +351,7 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection, project subgraph context (LAYER 8)
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`)
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
-- Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5)
+- Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5); SKILL.md A/B testing (`skill_ab.py` + `skill_override.py` runtime override registry, `make eval-skill-test`)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`
 - Phase 7: `AgentHandoff` structured handoffs with full history + episodic memory auto-persistence (`handoff_memory.py`), confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection, SKILL.md progressive disclosure files for all 9 agents; `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) with `_get_model_tier` + `_should_run_qa` hooks, standardised response schemas (`confidence` + `skills_loaded` on all agents), `to_handoff()` for standardised handoff emission, memory recall wired into blueprint engine, recovery router cycle detection via `handoff_history`; eval-informed prompts (`app/ai/agents/evals/failure_warnings.py`) — reads `traces/analysis.json`, injects per-agent failure warnings into all 9 `build_system_prompt()` for criteria <85% pass rate, mtime-cached
 

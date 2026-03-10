@@ -8,12 +8,18 @@ from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
 from app.ai.agents.personalisation.schemas import ESPPlatform
+from app.ai.agents.skill_override import get_override
 
 _SKILL_DIR = Path(__file__).parent
 
 # Load L1+L2 instructions from SKILL.md (always loaded)
 _SKILL_PATH = _SKILL_DIR / "SKILL.md"
 _SKILL_CONTENT = _SKILL_PATH.read_text(encoding="utf-8") if _SKILL_PATH.exists() else ""
+
+_PROMPT_PREFIX = """\
+You are an expert email personalisation engineer. Your sole task is to
+inject ESP-specific dynamic content syntax into email HTML.
+"""
 
 
 def _load_skill_file(name: str) -> str:
@@ -32,12 +38,11 @@ SKILL_FILES: dict[str, str] = {
     "fallback_patterns": "fallback_patterns.md",
 }
 
-PERSONALISATION_SYSTEM_PROMPT = f"""\
-You are an expert email personalisation engineer. Your sole task is to
-inject ESP-specific dynamic content syntax into email HTML.
 
-{_SKILL_CONTENT}
-"""
+def _base_system_prompt() -> str:
+    """Build base system prompt, checking for A/B test override."""
+    skill = get_override("personalisation") or _SKILL_CONTENT
+    return f"{_PROMPT_PREFIX}\n{skill}"
 
 
 def build_system_prompt(relevant_skills: list[str]) -> str:
@@ -49,7 +54,7 @@ def build_system_prompt(relevant_skills: list[str]) -> str:
     Returns:
         Complete system prompt with relevant L3 files appended.
     """
-    parts = [PERSONALISATION_SYSTEM_PROMPT]
+    parts = [_base_system_prompt()]
 
     # Inject eval-informed failure warnings (task 7.2)
     failure_warnings = get_failure_warnings("personalisation")
