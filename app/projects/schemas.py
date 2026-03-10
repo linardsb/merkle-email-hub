@@ -69,3 +69,37 @@ class ProjectMemberResponse(BaseModel):
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ── Compatibility Brief ──
+
+
+class UnsupportedPropertySchema(BaseModel):
+    css: str
+    fallback: str | None
+    technique: str | None
+
+
+class ClientProfileSchema(BaseModel):
+    id: str
+    name: str
+    platform: str
+    engine: str
+    market_share: float
+    notes: str | None
+    unsupported_count: int
+    unsupported_properties: list[UnsupportedPropertySchema]
+
+
+class RiskMatrixEntrySchema(BaseModel):
+    css: str
+    unsupported_in: list[str]
+    fallback: str | None
+
+
+class CompatibilityBriefResponse(BaseModel):
+    client_count: int
+    total_risky_properties: int
+    dark_mode_warning: bool
+    clients: list[ClientProfileSchema]
+    risk_matrix: list[RiskMatrixEntrySchema]

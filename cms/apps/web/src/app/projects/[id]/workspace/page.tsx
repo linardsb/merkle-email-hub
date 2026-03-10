@@ -35,6 +35,7 @@ import { useExportHistory } from "@/hooks/use-export-history";
 import { useBrandConfig } from "@/hooks/use-brand";
 import { useCollaboration } from "@/hooks/use-collaboration";
 import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialog";
+import { CompatibilityBriefDialog } from "@/components/workspace/compatibility-brief-dialog";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
@@ -129,6 +130,7 @@ export default function WorkspacePage() {
   // ── Export State ──
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [imageGenOpen, setImageGenOpen] = useState(false);
+  const [briefDialogOpen, setBriefDialogOpen] = useState(false);
   const { addRecord } = useExportHistory();
 
   // ── Brand Config ──
@@ -420,6 +422,7 @@ export default function WorkspacePage() {
         collaborators={collaborators}
         collaborationStatus={collabStatus}
         targetClients={project.target_clients}
+        onViewBrief={() => setBriefDialogOpen(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -501,6 +504,13 @@ export default function WorkspacePage() {
         onOpenChange={setImageGenOpen}
         projectId={projectId}
         onInsertImage={handleInsertImage}
+      />
+
+      <CompatibilityBriefDialog
+        open={briefDialogOpen}
+        onOpenChange={setBriefDialogOpen}
+        projectId={projectId}
+        targetClients={project.target_clients ?? null}
       />
 
       {chatCollapsed && (

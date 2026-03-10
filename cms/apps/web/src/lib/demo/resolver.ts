@@ -28,6 +28,7 @@ import {
   DEMO_RENDERING_COMPARISON,
 } from "./data/renderings";
 import { DEMO_EMAIL_CLIENTS } from "./data/email-clients";
+import { DEMO_COMPATIBILITY_BRIEF } from "./data/compatibility-brief";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -313,6 +314,12 @@ export function resolveDemo(urlStr: string): unknown | null {
   // ── Ontology: Email Clients ──
   if (p === "/api/v1/ontology/clients") {
     return DEMO_EMAIL_CLIENTS;
+  }
+
+  // ── Project Compatibility Brief ──
+  m = p.match(/^\/api\/v1\/projects\/\d+\/compatibility-brief$/);
+  if (m) {
+    return DEMO_COMPATIBILITY_BRIEF;
   }
 
   return null;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ClipboardCheck, Download, ImagePlus, Palette, Save, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Download, FileText, ImagePlus, Palette, Save, ShieldCheck, Users } from "lucide-react";
 import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
@@ -38,6 +38,7 @@ interface WorkspaceToolbarProps {
   collaborators?: Collaborator[];
   collaborationStatus?: CollaborationStatus;
   targetClients?: string[] | null;
+  onViewBrief?: () => void;
 }
 
 export function WorkspaceToolbar({
@@ -63,6 +64,7 @@ export function WorkspaceToolbar({
   collaborators,
   collaborationStatus,
   targetClients,
+  onViewBrief,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
@@ -94,6 +96,17 @@ export function WorkspaceToolbar({
               <span className="text-[10px] text-muted-foreground">
                 +{targetClients.length - 3}
               </span>
+            )}
+            {onViewBrief && (
+              <button
+                type="button"
+                onClick={onViewBrief}
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                title={t("viewCompatibilityBrief")}
+              >
+                <FileText className="h-3 w-3" />
+                {t("brief")}
+              </button>
             )}
           </div>
         )}

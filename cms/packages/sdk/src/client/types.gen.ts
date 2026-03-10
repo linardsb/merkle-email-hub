@@ -590,6 +590,37 @@ export type EmailClientResponse = {
     market_share: number;
 };
 
+export type UnsupportedPropertySchema = {
+    css: string;
+    fallback: string | null;
+    technique: string | null;
+};
+
+export type ClientProfileSchema = {
+    id: string;
+    name: string;
+    platform: string;
+    engine: string;
+    market_share: number;
+    notes: string | null;
+    unsupported_count: number;
+    unsupported_properties: UnsupportedPropertySchema[];
+};
+
+export type RiskMatrixEntrySchema = {
+    css: string;
+    unsupported_in: string[];
+    fallback: string | null;
+};
+
+export type CompatibilityBriefResponse = {
+    client_count: number;
+    total_risky_properties: number;
+    dark_mode_warning: boolean;
+    clients: ClientProfileSchema[];
+    risk_matrix: RiskMatrixEntrySchema[];
+};
+
 /**
  * Result of a single QA check.
  */

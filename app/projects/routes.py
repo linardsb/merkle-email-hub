@@ -13,10 +13,14 @@ from app.core.rate_limit import limiter
 from app.projects.schemas import (
     ClientOrgCreate,
     ClientOrgResponse,
+    ClientProfileSchema,
+    CompatibilityBriefResponse,
     ProjectCreate,
     ProjectMemberResponse,
     ProjectResponse,
     ProjectUpdate,
+    RiskMatrixEntrySchema,
+    UnsupportedPropertySchema,
 )
 from app.projects.service import ProjectService
 from app.shared.schemas import PaginatedResponse, PaginationParams
@@ -153,6 +157,61 @@ async def regenerate_onboarding_brief(
     )
 
     return {"status": "accepted", "message": "Onboarding brief regeneration started"}
+
+
+@router.get(
+    "/projects/{project_id}/compatibility-brief",
+    response_model=CompatibilityBriefResponse,
+)
+@limiter.limit("30/minute")
+async def get_compatibility_brief(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> CompatibilityBriefResponse:
+    """Return structured compatibility brief for project's target clients."""
+    _ = request
+    project = await service.verify_project_access(project_id, current_user)
+
+    if not project.target_clients:
+        raise DomainValidationError("No target clients configured")
+
+    from app.projects.compatibility_brief import generate_compatibility_brief
+
+    brief = generate_compatibility_brief(project.target_clients)
+    if not brief:
+        raise DomainValidationError("No valid clients found in target list")
+
+    return CompatibilityBriefResponse(
+        client_count=brief.client_count,
+        total_risky_properties=brief.total_risky_properties,
+        dark_mode_warning=brief.dark_mode_warning,
+        clients=[
+            ClientProfileSchema(
+                id=c.id,
+                name=c.name,
+                platform=c.platform,
+                engine=c.engine,
+                market_share=c.market_share,
+                notes=c.notes,
+                unsupported_count=c.unsupported_count,
+                unsupported_properties=[
+                    UnsupportedPropertySchema(
+                        css=p.css, fallback=p.fallback, technique=p.technique,
+                    )
+                    for p in c.unsupported_properties
+                ],
+            )
+            for c in brief.clients
+        ],
+        risk_matrix=[
+            RiskMatrixEntrySchema(
+                css=r.css, unsupported_in=r.unsupported_in, fallback=r.fallback,
+            )
+            for r in brief.risk_matrix
+        ],
+    )
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
