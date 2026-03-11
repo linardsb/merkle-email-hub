@@ -52,6 +52,11 @@ export default async function DashboardLayout({
       icon: <Image src="/icons/brand/intelligence.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
+      href: "/failure-patterns",
+      label: (messages as any)?.nav?.failurePatterns || "Failure Patterns",
+      icon: <Image src="/icons/brand/intelligence.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+    },
+    {
       href: "/knowledge",
       label: (messages as any)?.nav?.knowledge || "Knowledge",
       icon: <Image src="/icons/brand/knowledge.svg" alt="" width={20} height={20} className="h-5 w-5" />,

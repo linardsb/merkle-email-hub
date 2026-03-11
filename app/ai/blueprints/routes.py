@@ -1,15 +1,31 @@
-# pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
+# pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 """Blueprint API routes — synchronous run endpoint for v1."""
 
-from fastapi import APIRouter, Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+import json
+from typing import Any
 
-from app.ai.blueprints.schemas import BlueprintRunRequest, BlueprintRunResponse
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import distinct, func, literal, select, type_coerce
+from sqlalchemy.dialects.postgresql import JSONB as JSONB_TYPE
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Select
+
+from app.ai.blueprints.schemas import (
+    BlueprintRunRequest,
+    BlueprintRunResponse,
+    FailurePatternListResponse,
+    FailurePatternResponse,
+    FailurePatternStats,
+)
 from app.ai.blueprints.service import get_blueprint_service
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.database import get_db
+from app.core.logging import get_logger
 from app.core.rate_limit import limiter
+from app.memory.models import MemoryEntry
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/blueprints", tags=["blueprints"])
 
@@ -32,3 +48,179 @@ async def run_blueprint(
     """
     service = get_blueprint_service()
     return await service.run(body, user_id=current_user.id, db=db)
+
+
+def _build_failure_pattern_query(
+    project_id: int | None,
+    agent_name: str | None,
+    qa_check: str | None,
+    client_id: str | None,
+) -> Select[Any]:
+    """Build the base query for failure pattern memory entries."""
+    query = select(MemoryEntry).where(
+        MemoryEntry.memory_type == "semantic",
+        MemoryEntry.metadata_json["source"].astext == "failure_pattern",  # pyright: ignore[reportIndexIssue,reportUnknownMemberType]
+    )
+    if project_id is not None:
+        query = query.where(MemoryEntry.project_id == project_id)
+    if agent_name is not None:
+        query = query.where(MemoryEntry.agent_type == agent_name)
+    if qa_check is not None:
+        query = query.where(
+            MemoryEntry.metadata_json["qa_check"].astext == qa_check  # pyright: ignore[reportIndexIssue,reportUnknownMemberType]
+        )
+    if client_id is not None:
+        # Use proper JSON parameter binding — never interpolate user input into JSON literals
+        query = query.where(
+            MemoryEntry.metadata_json["client_ids"].contains(  # pyright: ignore[reportIndexIssue,reportUnknownMemberType]
+                type_coerce(json.dumps([client_id]), JSONB_TYPE)
+            )
+        )
+    return query
+
+
+@router.get(
+    "/failure-patterns/stats",
+    response_model=FailurePatternStats,
+    dependencies=[Depends(require_role("admin", "developer", "viewer"))],
+)
+@limiter.limit("30/minute")
+async def get_failure_pattern_stats(
+    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    project_id: int | None = None,
+    agent_name: str | None = None,
+    qa_check: str | None = None,
+    client_id: str | None = None,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> FailurePatternStats:
+    """Aggregated failure pattern statistics with optional filters."""
+    base = _build_failure_pattern_query(project_id, agent_name, qa_check, client_id)
+    sub = base.subquery()
+
+    # Single SQL query for all aggregations — no full-table scan into Python
+    agg_q = select(
+        func.count(literal(1)).label("total"),
+        func.count(distinct(sub.c.agent_type)).label("unique_agents"),
+    ).select_from(sub)
+    agg_result = await db.execute(agg_q)
+    row = agg_result.one()
+    total_patterns: int = row.total  # pyright: ignore[reportAttributeAccessIssue]
+    unique_agents: int = row.unique_agents  # pyright: ignore[reportAttributeAccessIssue]
+
+    if total_patterns == 0:
+        return FailurePatternStats(total_patterns=0, unique_agents=0, unique_checks=0)
+
+    # Distinct qa_checks + top agent/check via subqueries (avoids loading all rows)
+    check_col = sub.c.metadata_json["qa_check"].astext  # pyright: ignore[reportIndexIssue]
+    unique_checks_q = select(func.count(distinct(check_col))).select_from(sub)
+    unique_checks_result = await db.execute(unique_checks_q)
+    unique_checks: int = unique_checks_result.scalar_one()
+
+    # Top agent: most frequent agent_type
+    top_agent_q = (
+        select(sub.c.agent_type)
+        .select_from(sub)
+        .group_by(sub.c.agent_type)
+        .order_by(func.count(literal(1)).desc())
+        .limit(1)
+    )
+    top_agent_result = await db.execute(top_agent_q)
+    top_agent: str | None = top_agent_result.scalar_one_or_none()
+
+    # Top check: most frequent qa_check
+    top_check_q = (
+        select(check_col.label("qc"))
+        .select_from(sub)
+        .where(check_col.is_not(None))
+        .group_by(check_col)
+        .order_by(func.count(literal(1)).desc())
+        .limit(1)
+    )
+    top_check_result = await db.execute(top_check_q)
+    top_check: str | None = top_check_result.scalar_one_or_none()
+
+    logger.info(
+        "blueprints.failure_patterns_stats_fetched",
+        total=total_patterns,
+        unique_agents=unique_agents,
+    )
+
+    return FailurePatternStats(
+        total_patterns=total_patterns,
+        unique_agents=unique_agents,
+        unique_checks=unique_checks,
+        top_agent=top_agent,
+        top_check=top_check,
+    )
+
+
+@router.get(
+    "/failure-patterns",
+    response_model=FailurePatternListResponse,
+    dependencies=[Depends(require_role("admin", "developer", "viewer"))],
+)
+@limiter.limit("30/minute")
+async def list_failure_patterns(
+    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    project_id: int | None = None,
+    agent_name: str | None = None,
+    qa_check: str | None = None,
+    client_id: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> FailurePatternListResponse:
+    """List failure patterns from blueprint runs with optional filters."""
+    query = _build_failure_pattern_query(project_id, agent_name, qa_check, client_id)
+
+    # Count total matching rows
+    count_q = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_q)
+    total = total_result.scalar_one()
+
+    # Fetch paginated results
+    query = query.order_by(MemoryEntry.created_at.desc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    entries = list(result.scalars().all())
+
+    items: list[FailurePatternResponse] = []
+    for entry in entries:
+        meta = entry.metadata_json or {}
+        content = entry.content or ""
+
+        # Extract workaround from content — stored as "Agent context: ..." by
+        # _format_pattern_for_memory() in failure_patterns.py
+        workaround = ""
+        for segment in content.split(". "):
+            if segment.strip().startswith("Agent context:"):
+                workaround = segment.split(":", 1)[1].strip()
+                break
+
+        items.append(
+            FailurePatternResponse(
+                id=entry.id,
+                agent_name=entry.agent_type,
+                qa_check=meta.get("qa_check", ""),
+                client_ids=meta.get("client_ids", []),
+                description=content,
+                workaround=workaround,
+                confidence=meta.get("confidence"),
+                run_id=meta.get("run_id", ""),
+                blueprint_name=meta.get("blueprint_name", ""),
+                first_seen=entry.created_at,
+                last_seen=entry.updated_at,
+                frequency=1,
+            )
+        )
+
+    logger.info(
+        "blueprints.failure_patterns_listed",
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+    return FailurePatternListResponse(items=items, total=total, page=page, page_size=page_size)

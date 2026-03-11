@@ -31,6 +31,7 @@ import { DEMO_EMAIL_CLIENTS } from "./data/email-clients";
 import { DEMO_COMPATIBILITY_BRIEF } from "./data/compatibility-brief";
 import { DEMO_BLUEPRINT_RUN } from "./data/blueprint-run";
 import { DEMO_BLUEPRINT_RUNS } from "./data/blueprint-runs";
+import { DEMO_FAILURE_PATTERNS, DEMO_FAILURE_PATTERN_STATS } from "./data/failure-patterns";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -345,6 +346,21 @@ export function resolveDemo(urlStr: string): unknown | null {
   // ── Blueprint Run (POST simulated as GET for demo) ──
   if (p === "/api/v1/blueprints/run") {
     return DEMO_BLUEPRINT_RUN;
+  }
+
+  // ── Failure Patterns ──
+  if (p === "/api/v1/blueprints/failure-patterns/stats") {
+    return DEMO_FAILURE_PATTERN_STATS;
+  }
+  if (p === "/api/v1/blueprints/failure-patterns") {
+    let patterns = [...DEMO_FAILURE_PATTERNS];
+    const agentFilter = url.searchParams.get("agent_name");
+    if (agentFilter) patterns = patterns.filter((fp) => fp.agent_name === agentFilter);
+    const checkFilter = url.searchParams.get("qa_check");
+    if (checkFilter) patterns = patterns.filter((fp) => fp.qa_check === checkFilter);
+    const clientFilter = url.searchParams.get("client_id");
+    if (clientFilter) patterns = patterns.filter((fp) => fp.client_ids.includes(clientFilter));
+    return paginate(patterns, url);
   }
 
   return null;

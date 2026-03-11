@@ -1,5 +1,7 @@
 """Pydantic schemas for blueprint API requests and responses."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -62,3 +64,39 @@ class BlueprintRunResponse(BaseModel):
     audience_summary: str | None = None
     skipped_nodes: list[str] = Field(default_factory=list)
     routing_decisions: list[RoutingDecisionResponse] = Field(default_factory=list)
+
+
+class FailurePatternResponse(BaseModel):
+    """A failure pattern extracted from blueprint runs."""
+
+    id: int
+    agent_name: str
+    qa_check: str
+    client_ids: list[str]
+    description: str
+    workaround: str
+    confidence: float | None = None
+    run_id: str
+    blueprint_name: str
+    first_seen: datetime
+    last_seen: datetime
+    frequency: int = 1
+
+
+class FailurePatternListResponse(BaseModel):
+    """Paginated list of failure patterns."""
+
+    items: list[FailurePatternResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class FailurePatternStats(BaseModel):
+    """Aggregated failure pattern statistics."""
+
+    total_patterns: int
+    unique_agents: int
+    unique_checks: int
+    top_agent: str | None = None
+    top_check: str | None = None
