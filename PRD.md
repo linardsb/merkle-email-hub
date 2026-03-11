@@ -3,9 +3,9 @@
 ## Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 4.9
+**Version:** 4.11
 **Date:** 2026-03-11
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete; Phase 6 OWASP complete; Phase 7 complete; Phase 8 Knowledge Graph COMPLETE; Phase 9 Graph-Driven Intelligence COMPLETE; Phase 10.1-10.10 frontend integration done (priority clients, compatibility brief, blueprint run UI, component badges, graph search, failure patterns, confidence/handoff visibility, agent context panel, SDK regeneration); remaining: 10.11-10.12 + human label calibration (540 rows)
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete; Phase 6 OWASP complete; Phase 7 complete; Phase 8 Knowledge Graph COMPLETE; Phase 9 Graph-Driven Intelligence COMPLETE; Phase 10 Frontend Integration COMPLETE (10.1-10.12); remaining: human label calibration (540 rows)
 
 ---
 
@@ -92,10 +92,12 @@
 | 10.8 | Agent confidence & handoff visibility | `confidence-indicator.tsx` on chat message bubbles (green ≥0.8, yellow 0.5-0.8, red <0.5, "Needs Review" badge); `node-handoff-panel.tsx` with expandable decisions/warnings/component refs in blueprint views; `ConfidenceBar` shared component |
 | 10.9 | Workspace agent context panel | `agent-context-panel.tsx` as "Context" tab in workspace bottom panel; 4 sections: audience profile (target clients/constraints), active failure patterns (count + top patterns), agent skills (SKILL.md + L3 status for all 9 agents), component context (auto-detected `<component>` refs); project-scoped data via existing hooks |
 | 10.10 | SDK regeneration & type coverage | Regenerated SDK from 63 → 102 endpoint functions; all Phase 3-10 types in `types.gen.ts`; 7 local type barrel files (`templates`, `rendering`, `failure-patterns`, `graph-search`, `knowledge`, `qa`, `connectors`) migrated to SDK re-exports; fixed `VersionResponse` naming + ~40 optional property guards across 17 component files; `make check-fe` clean (0 TS errors, 26/26 tests) |
+| 10.11 | Blueprint-aware chat mode | Blueprint Mode toggle in chat header (Agent/Blueprint); `sendBlueprintRun` in `useChat` hook routes to `POST /api/v1/blueprints/run`; `BlueprintResultCard` renders inline pipeline timeline, status banner, handoff history, stats, "Apply to Editor" button; "Include current HTML" checkbox passes editor content; demo mode support; 9 i18n keys |
+| 10.12 | Intelligence dashboard enhancements | 5 new cards on `/intelligence`: `GraphHealthCard` (Cognee online/offline), `BlueprintSuccessCard` (failure pattern stats: total patterns, unique agents/checks, top failing check), `AgentPerformanceChart` (per-agent failure frequency bars), `TopFailurePatternsCard` (top 5 with link to `/failure-patterns`), `ComponentCoverageCard` (stacked bar: full/partial/issues/untested); `useComponentCoverage` + `useGraphHealth` hooks; 28 i18n keys |
 
 ### In Progress
 
-**Remaining:** Phase 10 full-stack integration (10.11-10.12: blueprint chat mode, intelligence dashboard enhancements), human label calibration (540 rows for TPR/TNR).
+**Remaining:** Human label calibration (540 rows for TPR/TNR).
 
 ### Infrastructure Built
 

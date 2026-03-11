@@ -349,6 +349,8 @@ Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 ba
 - [x] 10.8 Agent confidence & handoff visibility (`confidence-indicator.tsx` on chat messages, `node-handoff-panel.tsx` in blueprint views, color-coded 0.5 threshold)
 - [x] 10.9 Workspace agent context panel (`agent-context-panel.tsx` as Context tab in bottom panel — audience profile, failure patterns, SKILL.md status, component context)
 - [x] 10.10 SDK regeneration & type coverage (102 endpoints from 63, all Phase 3-10 types, 7 local type files migrated to SDK re-exports, `make check-fe` clean)
+- [x] 10.11 Blueprint-aware chat mode (Blueprint Mode toggle in chat sidebar, routes input to blueprint run API, inline pipeline progress + result card with Apply button)
+- [x] 10.12 Intelligence dashboard enhancements (graph health card, blueprint health from failure pattern stats, agent performance chart, top failure patterns summary, component compatibility coverage)
 
 ## Feature Scope by Stack
 
@@ -380,7 +382,7 @@ Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 ba
 - Export Console: platform selector (Raw HTML, Braze), export preview
 - AI Chat Sidebar: agent toggles, streaming display, accept/reject/merge
 - Approval Portal: viewer login, read-only preview, section feedback, approve/reject
-- Intelligence Dashboard: QA trends, support matrices, quality scores
+- Intelligence Dashboard: QA trends, support matrices, quality scores, graph health, blueprint health, agent performance, failure patterns summary, component coverage
 - Knowledge Base Search: document browser, natural language search, domain/tag filters
 - Figma Sync: connection management, design token extraction (colors, typography, spacing)
 - Client Briefs: Jira/Asana/Monday.com connection cards, brief items, import-to-project

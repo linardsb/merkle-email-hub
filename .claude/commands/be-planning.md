@@ -5,7 +5,7 @@ Research the codebase and create a self-contained implementation plan.
 ## Process
 
 1. **Understand the task** — Read the user's requirements carefully
-2. **Research existing code** — Find related features, patterns, and conventions
+2. **Research existing code** — Use jCodeMunch `search_symbols` and `get_file_outline` to find related features, patterns, and conventions without reading entire files. Use jDocMunch `get_section` to pull relevant architecture sections from `CLAUDE.md` (e.g. `::modules-and-their-purpose#3`, `::api-security-patterns#3`) and task context from `TODO.md` phase sections. Repo: `local/merkle-email-hub`.
 3. **Identify files to create/modify** — List every file that needs changes
 4. **Write the plan** — Step-by-step instructions that another agent can follow
 

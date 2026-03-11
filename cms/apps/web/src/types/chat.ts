@@ -1,3 +1,5 @@
+import type { BlueprintRunResponse } from "@email-hub/sdk";
+
 export type ChatRole = "user" | "assistant";
 
 export type AgentMode =
@@ -22,6 +24,7 @@ export interface ChatMessage {
   agent: AgentMode;
   isStreaming: boolean;
   confidence?: number | null;
+  blueprintResult?: BlueprintRunResponse | null;
 }
 
 /** A single delta inside an SSE chunk choice. */
@@ -50,6 +53,8 @@ export interface UseChatReturn {
   status: ChatStatus;
   error: string | null;
   sendMessage: (content: string, agent: AgentMode) => void;
+  sendBlueprintRun: (brief: string, options?: { includeHtml?: boolean; currentHtml?: string; projectId?: string }) => void;
+  blueprintRunning: boolean;
   stopStreaming: () => void;
   clearMessages: () => void;
   replaceMessages: (messages: ChatMessage[]) => void;

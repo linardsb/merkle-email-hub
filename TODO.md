@@ -1144,7 +1144,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** SDK generation is automated from OpenAPI spec — no manual type definitions that could diverge. All hooks use authenticated fetch.
 **Verify:** `make check-fe` passes. All new components use typed SDK hooks — zero `any` types. New endpoints callable from frontend with full type safety.
 
-### 10.11 Blueprint-Aware Chat Mode
+### ~~10.11 Blueprint-Aware Chat Mode~~ DONE
 **What:** Add a "Blueprint Mode" toggle to the AI chat sidebar. When enabled, chat messages trigger blueprint runs instead of single-agent calls. The user selects agents to include, and the chat orchestrates a full pipeline with QA gating and self-correction, streaming progress updates into the chat panel.
 **Why:** Some developers prefer the chat interface over a separate blueprint dialog. Blueprint mode in chat means they can type "create a responsive email for Outlook and Gmail with dark mode" and get a full pipeline run inline — with the same audience context, failure patterns, and self-correction as the standalone blueprint trigger (10.3).
 **Implementation:**
@@ -1158,7 +1158,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Same rate limits and quota as standalone blueprint runs. Chat history project-scoped.
 **Verify:** Toggle Blueprint Mode → type brief → see pipeline progress in chat → result appears with confidence score and "Apply" button → handoff history expandable. Switch back to Single Agent → normal agent behaviour.
 
-### 10.12 Intelligence Dashboard Enhancements
+### ~~10.12 Intelligence Dashboard Enhancements~~ DONE
 **What:** Extend the existing intelligence dashboard (`/intelligence`) with Phase 8-9 data: graph entity counts, knowledge freshness (last Can I Email sync), blueprint success rates over time, top failure patterns, agent performance by confidence distribution, and component compatibility coverage.
 **Why:** The intelligence dashboard currently shows QA trends and support matrices. Phase 8-9 generates much richer data that should surface here — graph health, sync status, agent quality trends, and failure pattern analysis.
 **Implementation:**

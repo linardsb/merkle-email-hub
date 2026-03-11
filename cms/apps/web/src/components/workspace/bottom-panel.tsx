@@ -83,6 +83,7 @@ export function BottomPanel({
             projectId={projectId}
             onApplyToEditor={onApplyToEditor}
             initialAgent={initialAgent}
+            editorContent={editorContent}
           />
         ) : activeTab === "runs" ? (
           <BlueprintRunsList

@@ -5,7 +5,7 @@ Research the codebase and create a self-contained frontend implementation plan.
 ## Process
 
 1. **Understand the task** — Read the user's requirements carefully
-2. **Research existing code** — Find related pages, components, hooks, and patterns
+2. **Research existing code** — Use jCodeMunch `search_symbols` and `get_file_outline` to find related pages, components, hooks, and patterns without reading entire files. Use jDocMunch `get_section` to pull relevant sections from `CLAUDE.md` (e.g. `::frontend-features-for-fe-prime#3`, `::project-structure#3`) and task context from `TODO.md` phase sections. Repo: `local/merkle-email-hub`.
 3. **Identify files to create/modify** — List every file that needs changes
 4. **Write the plan** — Step-by-step instructions that another agent can follow
 

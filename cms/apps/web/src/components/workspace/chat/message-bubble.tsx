@@ -6,6 +6,7 @@ import { Bot, Check, Copy, Loader2, User } from "lucide-react";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatMessage } from "@/types/chat";
 import { ConfidenceIndicator } from "./confidence-indicator";
+import { BlueprintResultCard } from "./blueprint-result-card";
 
 /** Regex to split content into text and fenced code blocks. */
 const CODE_BLOCK_RE = /```(\w*)\n([\s\S]*?)```/g;
@@ -160,6 +161,13 @@ export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
               {seg.content}
             </p>
           )
+        )}
+        {/* Blueprint pipeline result */}
+        {!message.isStreaming && message.blueprintResult && (
+          <BlueprintResultCard
+            result={message.blueprintResult}
+            onApplyHtml={onApplyHtml}
+          />
         )}
         {message.isStreaming && message.content && (
           <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-primary" />

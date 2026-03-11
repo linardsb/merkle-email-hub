@@ -7,20 +7,24 @@
 4. Run `search_symbols({ "query": "AppError" })` and similar to discover key abstractions
 
 ## Step 1: Load Core Files
-Read the following files for full context (these need complete content, not just outlines):
 
-1. Read `/CLAUDE.md` for project overview and conventions
-2. Read `/app/core/config.py` for configuration structure
-3. Read `/app/core/database.py` for database patterns
-4. Read `/app/core/exceptions.py` for error hierarchy
-5. Read `/app/shared/schemas.py` for shared response patterns
-6. Read `/app/shared/models.py` for model mixins
-7. Read `/TODO.md` for the full implementation roadmap and remaining tasks
+**Code files** — Read in full (need complete content for patterns):
+1. Read `/app/core/config.py` for configuration structure
+2. Read `/app/core/database.py` for database patterns
+3. Read `/app/core/exceptions.py` for error hierarchy
+4. Read `/app/shared/schemas.py` for shared response patterns
+5. Read `/app/shared/models.py` for model mixins
+
+**Documentation** — Use jDocMunch (repo: `local/merkle-email-hub`) for targeted section reads:
+6. `CLAUDE.md` — `get_section` on `::project-overview#2`, `::core-principles#2`, `::project-structure#3`, `::development-guidelines#2`, `::modules-and-their-purpose#3`, `::api-security-patterns#3`
+7. `TODO.md` — `get_document_outline` to list phases, then `get_section` on backend-relevant phases only
+
+If jDocMunch index is stale, fall back to full `Read`.
 
 After reading, summarize what you've loaded.
 
 ## Step 2: Assess Task Status
-Read `/TODO.md` and extract only the **backend-relevant tasks** below. Use `search_symbols` to check if implementations exist in the codebase rather than reading every file. Report their status (done/not started):
+Use jDocMunch `get_section` on each backend-relevant phase in `TODO.md` (by section ID) instead of reading the full file. Use jCodeMunch `search_symbols` to check if implementations exist in the codebase. Report status (done/not started):
 
 **Phase 0 — Foundation Blockers:**
 - 0.1 Database migration for all email-hub models + RLS policies

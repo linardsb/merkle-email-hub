@@ -7,18 +7,24 @@
 4. Run `get_file_outline` on key files below to understand their exports before reading full content
 
 ## Step 1: Load Core Files
-Read the following files for full context (these need complete content, not just outlines):
 
+**Code files** — Read in full (need complete content for patterns):
 1. Read `/cms/apps/web/src/app/layout.tsx` for provider hierarchy
 2. Read `/cms/apps/web/auth.ts` for authentication setup
 3. Read `/cms/apps/web/middleware.ts` for RBAC route protection
 4. Read `/cms/apps/web/src/lib/auth-fetch.ts` for API fetching patterns
 5. Read `/cms/apps/web/src/lib/sdk.ts` for SDK client setup
 
+**Documentation** — Use jDocMunch (repo: `local/merkle-email-hub`) for targeted section reads:
+6. `CLAUDE.md` — `get_section` on `::project-overview#2`, `::core-principles#2`, `::project-structure#3`, `::frontend-features-for-fe-prime#3`
+7. `TODO.md` — `get_document_outline` to list phases, then `get_section` on frontend-relevant phases only
+
+If jDocMunch index is stale, fall back to full `Read`.
+
 After reading, summarize what you've loaded.
 
 ## Step 2: Assess Task Status
-Read `/TODO.md` and extract only the **frontend-relevant tasks** below. Use `search_symbols` to check if implementations exist in the codebase rather than reading every file. Report their status (done/not started):
+Use jDocMunch `get_section` on each frontend-relevant phase in `TODO.md` (by section ID) instead of reading the full file. Use jCodeMunch `search_symbols` to check if implementations exist in the codebase. Report status (done/not started):
 
 **Phase 0 — Foundation Blockers:**
 - 0.2 Initialize shadcn/ui component library in `cms/apps/web/`
