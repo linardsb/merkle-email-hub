@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr-fetcher";
-import type { EmailClientResponse } from "@merkle-email-hub/sdk";
+import type { EmailClientResponse } from "@email-hub/sdk";
 
 export function useEmailClients() {
   return useSWR<EmailClientResponse[]>(

@@ -1,4 +1,4 @@
-import type { ProjectResponse } from "@merkle-email-hub/sdk";
+import type { ProjectResponse } from "@email-hub/sdk";
 
 export const DEMO_PROJECTS: ProjectResponse[] = [
   {

@@ -52,7 +52,7 @@ def upgrade() -> None:
         conn.execute(
             sa.text(
                 "INSERT INTO users (id, email, hashed_password, name, role, is_active, failed_attempts, created_at, updated_at) "
-                "VALUES (1, 'system@merkle-hub.local', '$2b$12$placeholder_not_for_login', 'System', 'admin', true, 0, :now, :now)"
+                "VALUES (1, 'system@email-hub.local', '$2b$12$placeholder_not_for_login', 'System', 'admin', true, 0, :now, :now)"
             ),
             {"now": now},
         )

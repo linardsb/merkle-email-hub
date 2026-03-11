@@ -1,6 +1,5 @@
 """Tests for audience-aware competitive feasibility analysis."""
 
-
 from app.knowledge.ontology.competitive_feasibility import (
     CompetitiveReport,
     build_competitive_report,

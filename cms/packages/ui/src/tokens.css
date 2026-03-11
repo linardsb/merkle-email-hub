@@ -7,7 +7,7 @@
 
 @theme {
   /* ── Tier 1: Primitive Palette (oklch) ── */
-  /* Neutrals: hue 270 (purple-gray, per Merkle Frontify #8888A1) */
+  /* Neutrals: hue 270 (purple-gray, per Brand Frontify #8888A1) */
   --color-neutral-50: oklch(0.98 0.005 270);
   --color-neutral-100: oklch(0.96 0.008 270);
   --color-neutral-200: oklch(0.91 0.012 270);
@@ -20,7 +20,7 @@
   --color-neutral-900: oklch(0.18 0.012 270);
   --color-neutral-950: oklch(0.12 0.010 270);
 
-  /* Merkle brand red (#E4002B) — hue ~27 in OKLCH */
+  /* Brand brand red (#E4002B) — hue ~27 in OKLCH */
   --color-primary-50: oklch(0.97 0.015 25);
   --color-primary-100: oklch(0.93 0.040 25);
   --color-primary-200: oklch(0.87 0.080 25);
@@ -32,7 +32,7 @@
   --color-primary-800: oklch(0.36 0.150 27);
   --color-primary-900: oklch(0.29 0.100 27);
 
-  /* Success: Merkle teal #06757E */
+  /* Success: Brand teal #06757E */
   --color-success-500: oklch(0.52 0.09 195);
   --color-success-600: oklch(0.45 0.09 195);
   --color-warning-500: oklch(0.75 0.150 75);
@@ -76,7 +76,7 @@
 
   /* ── Tier 3: Component Tokens ── */
 
-  /* Sidebar — Merkle navy #12295D */
+  /* Sidebar — Brand navy #12295D */
   --color-sidebar-bg: oklch(0.25 0.09 265);
   --color-sidebar-text: var(--color-neutral-200);
   --color-sidebar-text-active: white;
@@ -114,11 +114,11 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* ── Typography (Merkle: Proxima Nova primary, Space Grotesk secondary) ── */
+  /* ── Typography (Brand: Proxima Nova primary, Space Grotesk secondary) ── */
   --font-sans: "Proxima Nova", "proxima-nova", "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* ── Radius (Merkle brand: sharp corners, no rounding) ── */
+  /* ── Radius (Brand brand: sharp corners, no rounding) ── */
   --radius-xs: 0;
   --radius-sm: 0;
   --radius-md: 0;
@@ -160,7 +160,7 @@
   --color-sidebar-ring: var(--color-border-focus);
   --radius: 0;
 
-  /* ── Chart / Data Visualization (Merkle brand palette) ── */
+  /* ── Chart / Data Visualization (Brand brand palette) ── */
   --color-chart-1: oklch(0.25 0.09 265);   /* Navy #12295D */
   --color-chart-2: oklch(0.45 0.09 195);   /* Teal #06757E */
   --color-chart-3: oklch(0.55 0.220 27);   /* Brand red #E4002B */
@@ -207,7 +207,7 @@
   --color-status-danger: var(--color-danger-500);
   --color-status-info: var(--color-primary-400);
 
-  /* Component: Sidebar — Merkle navy (darker for dark mode) */
+  /* Component: Sidebar — Brand navy (darker for dark mode) */
   --color-sidebar-bg: oklch(0.17 0.09 268);
   --color-sidebar-text: var(--color-neutral-300);
   --color-sidebar-text-active: white;

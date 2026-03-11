@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
-import type { BlueprintRunResponse } from "@merkle-email-hub/sdk";
+import type { BlueprintRunResponse } from "@email-hub/sdk";
 
 const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 

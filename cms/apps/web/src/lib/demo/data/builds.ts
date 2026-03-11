@@ -1,4 +1,4 @@
-import type { BuildResponse } from "@merkle-email-hub/sdk";
+import type { BuildResponse } from "@email-hub/sdk";
 import {
   SPRING_SALE_HERO_HTML,
   SPRING_SALE_REMINDER_HTML,

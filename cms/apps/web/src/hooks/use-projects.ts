@@ -8,7 +8,7 @@ import type {
   PaginatedResponseProjectResponse,
   ProjectCreate,
   ProjectResponse,
-} from "@merkle-email-hub/sdk";
+} from "@email-hub/sdk";
 
 interface UseProjectsOptions {
   page?: number;

@@ -1,5 +1,5 @@
 import { SkeletonKnowledgeCard } from "@/components/ui/skeletons";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 
 export default function KnowledgeLoading() {
   return (

@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-## Merkle Email Innovation Hub
+## Email Innovation Hub
 
 **Classification:** Internal / Confidential
 **Version:** 4.7
@@ -18,7 +18,7 @@
 | Task | Description | Key Deliverables |
 |------|-------------|-----------------|
 | 0.1 | Database migrations | All email-hub models migrated; PostgreSQL RLS policies on `client_org_id` |
-| 0.2 | shadcn/ui component library | 16 foundational components installed; Merkle design tokens wired |
+| 0.2 | shadcn/ui component library | 16 foundational components installed; [REDACTED] design tokens wired |
 | 0.3 | OpenAPI TypeScript SDK | `cms/packages/sdk/` generates typed client for 61 endpoints; offline generation via `make sdk` |
 | 0.4 | Authenticated API client layer | `authFetch` with timeout (30s/120s), 401 redirect interceptor, 429 retry with backoff, 8 domain-specific SWR hooks (`use-projects`, `use-orgs`, `use-components`, `use-email`, `use-qa`, `use-personas`, `use-approvals`, `use-connectors`), `ApiError` class, mutation fetchers |
 | 1.1 | Project dashboard page | Dashboard at `/(dashboard)/` with stats cards, project grid, org data; SWR data fetching from live API |
@@ -107,7 +107,7 @@
 
 ### Problem
 
-Merkle serves clients across diverse email platforms (Braze, SFMC, Adobe Campaign, Taxi for Email) yet email development remains **fragmented, manual, and siloed between engagements**. Knowledge, components, and rendering fixes developed for one client are invisible to teams working with others. There is no platform designed for the multi-client, multi-platform agency model.
+[REDACTED] serves clients across diverse email platforms (Braze, SFMC, Adobe Campaign, Taxi for Email) yet email development remains **fragmented, manual, and siloed between engagements**. Knowledge, components, and rendering fixes developed for one client are invisible to teams working with others. There is no platform designed for the multi-client, multi-platform agency model.
 
 ### Vision
 
@@ -117,7 +117,7 @@ A self-hosted, CMS-agnostic platform that centralises email innovation, prototyp
 
 **"Build it once, use it everywhere, improve it continuously."**
 
-Every piece of email development work becomes a reusable, testable, deployable asset — owned entirely by Merkle with zero vendor lock-in.
+Every piece of email development work becomes a reusable, testable, deployable asset — owned entirely by [REDACTED] with zero vendor lock-in.
 
 ---
 
@@ -125,7 +125,7 @@ Every piece of email development work becomes a reusable, testable, deployable a
 
 | # | Objective | Metric |
 |---|-----------|--------|
-| 1 | **100% Merkle-Owned IP** | Zero SaaS dependencies; entire stack open-source |
+| 1 | **100% [REDACTED]-Owned IP** | Zero SaaS dependencies; entire stack open-source |
 | 2 | **Centralise Innovation** | Single platform for R&D + production across all clients |
 | 3 | **CMS-Agnostic Pipeline** | Modular connectors: Braze (V1), SFMC, Adobe, Taxi (V2) |
 | 4 | **AI-Powered Development** | 9 specialised sub-agents; 70% local LLM / 30% cloud hybrid |
@@ -516,7 +516,7 @@ Gemini CLI calls:   recall_notes(key="project.deletion_pattern")
 | AI | Local LLMs (Ollama/vLLM) + Claude/GPT-4o APIs | Hybrid: 70% local (free) / 30% cloud |
 | Email Build | Maizzle (primary) | Full HTML control; Tailwind-native |
 | Vector Search | pgvector (PostgreSQL) | Open-source; no Pinecone fees |
-| Infrastructure | Docker Compose + nginx + Alembic | Self-hosted on Merkle servers |
+| Infrastructure | Docker Compose + nginx + Alembic | Self-hosted on [REDACTED] servers |
 | Testing | Playwright (core) + Litmus/EoA (optional) | Built-in speed + optional comprehensive coverage |
 
 ---
@@ -526,7 +526,7 @@ Gemini CLI calls:   recall_notes(key="project.deletion_pattern")
 ### Repository Structure
 
 ```
-merkle-email-hub/
+email-hub/
 ├── app/                    # Backend (FastAPI, VSA)
 │   ├── core/               # Infrastructure (config, db, logging, middleware)
 │   ├── shared/             # Cross-feature (pagination, timestamps, errors)
@@ -658,7 +658,7 @@ vs. SaaS alternatives: £50K–150K+/year
 
 ## 12. Competitive Differentiation
 
-| Aspect | SaaS Competitors | Merkle Hub |
+| Aspect | SaaS Competitors | [REDACTED] Hub |
 |--------|-----------------|-----------|
 | Target user | Single brand, single CMS | Multi-client agency, any CMS |
 | AI capability | Generic content generation | 9 specialised email dev agents |

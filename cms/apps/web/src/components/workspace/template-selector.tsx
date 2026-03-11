@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@merkle-email-hub/ui/components/ui/dropdown-menu";
+} from "@email-hub/ui/components/ui/dropdown-menu";
 import type { TemplateResponse } from "@/types/templates";
 
 interface TemplateSelectorProps {

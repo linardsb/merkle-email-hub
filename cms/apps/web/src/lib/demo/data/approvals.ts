@@ -2,7 +2,7 @@ import type {
   ApprovalResponse,
   FeedbackResponse,
   AuditResponse,
-} from "@merkle-email-hub/sdk";
+} from "@email-hub/sdk";
 
 export const DEMO_APPROVALS: ApprovalResponse[] = [
   {

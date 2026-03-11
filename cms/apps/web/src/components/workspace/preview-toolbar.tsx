@@ -12,7 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { PersonaSelector } from "./persona-selector";
-import type { PersonaResponse } from "@merkle-email-hub/sdk";
+import type { PersonaResponse } from "@email-hub/sdk";
 
 export type Viewport = "desktop" | "tablet" | "mobile";
 

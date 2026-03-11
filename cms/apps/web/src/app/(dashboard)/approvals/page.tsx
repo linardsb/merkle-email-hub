@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonListItem } from "@/components/ui/skeletons";
 import { useApprovals } from "@/hooks/use-approvals";
 import { ApprovalCard } from "@/components/approvals/approval-card";
-import type { ApprovalResponse } from "@merkle-email-hub/sdk";
+import type { ApprovalResponse } from "@email-hub/sdk";
 
 const STATUS_FILTERS = [
   "all",

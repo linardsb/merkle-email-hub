@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class DatabaseConfig(BaseModel):
     """Database connection settings."""
 
-    url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/merkle_email_hub"
+    url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/email_hub"
     pool_size: int = 3
     pool_max_overflow: int = 5
     pool_recycle: int = 3600
@@ -183,7 +183,7 @@ class Settings(BaseSettings):
     )
 
     # Application metadata
-    app_name: str = "merkle-email-hub"
+    app_name: str = "email-hub"
     version: str = "0.1.0"
     environment: str = "development"
     log_level: str = "INFO"

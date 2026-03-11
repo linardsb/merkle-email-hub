@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Database backup script for merkle-email-hub.
+# Database backup script for email-hub.
 # Usage: ./scripts/backup_db.sh [backup_dir]
 #
 # Requires: pg_dump, gzip
@@ -9,10 +9,10 @@ set -euo pipefail
 
 BACKUP_DIR="${1:-./backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/merkle_email_hub_${TIMESTAMP}.sql.gz"
+BACKUP_FILE="${BACKUP_DIR}/email_hub_${TIMESTAMP}.sql.gz"
 
 # Parse DATABASE__URL or fall back to default
-DB_URL="${DATABASE__URL:-postgresql://postgres:postgres@localhost:5432/merkle_email_hub}"
+DB_URL="${DATABASE__URL:-postgresql://postgres:postgres@localhost:5432/email_hub}"
 
 # Extract connection parts from URL
 # Format: postgresql://user:pass@host:port/dbname
@@ -43,11 +43,11 @@ echo "Backup complete: ${BACKUP_FILE} ($(du -h "$BACKUP_FILE" | cut -f1))"
 
 # Retention: keep last 30 backups, remove older ones
 KEEP=30
-BACKUP_COUNT=$(find "$BACKUP_DIR" -name "merkle_email_hub_*.sql.gz" | wc -l | tr -d ' ')
+BACKUP_COUNT=$(find "$BACKUP_DIR" -name "email_hub_*.sql.gz" | wc -l | tr -d ' ')
 if [ "$BACKUP_COUNT" -gt "$KEEP" ]; then
     REMOVE_COUNT=$((BACKUP_COUNT - KEEP))
     echo "Pruning ${REMOVE_COUNT} old backup(s)..."
-    find "$BACKUP_DIR" -name "merkle_email_hub_*.sql.gz" -type f \
+    find "$BACKUP_DIR" -name "email_hub_*.sql.gz" -type f \
         | sort | head -n "$REMOVE_COUNT" | xargs rm -f
 fi
 

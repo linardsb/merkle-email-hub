@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getMessages } from "next-intl/server";
 import { LogOut } from "lucide-react";
-import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
+import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
 import { LocaleSelector } from "@/components/ui/locale-selector";
@@ -24,57 +24,57 @@ export default async function DashboardLayout({
     {
       href: "/",
       label: (messages as any)?.nav?.dashboard || "Dashboard",
-      icon: <Image src="/icons/merkle/dashboard.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/dashboard.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/projects",
       label: (messages as any)?.nav?.projects || "Projects",
-      icon: <Image src="/icons/merkle/projects.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/projects.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/components",
       label: (messages as any)?.nav?.components || "Components",
-      icon: <Image src="/icons/merkle/components.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/components.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/approvals",
       label: (messages as any)?.nav?.approvals || "Approvals",
-      icon: <Image src="/icons/merkle/approvals.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/approvals.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/connectors",
       label: (messages as any)?.nav?.connectors || "Connectors",
-      icon: <Image src="/icons/merkle/connectors.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/connectors.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/intelligence",
       label: (messages as any)?.nav?.intelligence || "Intelligence",
-      icon: <Image src="/icons/merkle/intelligence.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/intelligence.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/knowledge",
       label: (messages as any)?.nav?.knowledge || "Knowledge",
-      icon: <Image src="/icons/merkle/knowledge.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/knowledge.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/renderings",
       label: (messages as any)?.nav?.renderings || "Renderings",
-      icon: <Image src="/icons/merkle/renderings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/renderings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/figma",
       label: (messages as any)?.nav?.figma || "Figma Sync",
-      icon: <Image src="/icons/merkle/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/briefs",
       label: (messages as any)?.nav?.briefs || "Briefs",
-      icon: <Image src="/icons/merkle/briefs.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/briefs.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/settings",
       label: (messages as any)?.nav?.settings || "Settings",
-      icon: <Image src="/icons/merkle/settings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Image src="/icons/brand/settings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
   ];
 
@@ -86,14 +86,7 @@ export default async function DashboardLayout({
       {/* Sidebar */}
       <aside className="hidden w-60 flex-col bg-sidebar-bg text-sidebar-text md:flex">
         <div className="flex h-14 items-center border-b border-sidebar-border px-3">
-          <Image
-            src="/merkle-logo.png"
-            alt="Merkle — a dentsu company"
-            width={501}
-            height={102}
-            className="h-6 w-auto"
-            priority
-          />
+          <span className="text-sm font-semibold text-sidebar-text">Email Hub</span>
         </div>
         <SidebarNav items={navItems} />
         <div className="border-t border-sidebar-border p-2">

@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr-fetcher";
-import type { PaginatedResponseClientOrgResponse } from "@merkle-email-hub/sdk";
+import type { PaginatedResponseClientOrgResponse } from "@email-hub/sdk";
 
 interface UseOrgsOptions {
   page?: number;

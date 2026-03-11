@@ -16,8 +16,8 @@ import {
   Lightbulb,
   History,
 } from "lucide-react";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
-import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
+import { Button } from "@email-hub/ui/components/ui/button";
+import { Badge } from "@email-hub/ui/components/ui/badge";
 import { useChat } from "@/hooks/use-chat";
 import { useChatHistory } from "@/hooks/use-chat-history";
 import { MessageList } from "./chat/message-list";

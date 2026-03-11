@@ -9,21 +9,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@merkle-email-hub/ui/components/ui/dialog";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
+} from "@email-hub/ui/components/ui/dialog";
+import { Button } from "@email-hub/ui/components/ui/button";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@merkle-email-hub/ui/components/ui/accordion";
-import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+} from "@email-hub/ui/components/ui/accordion";
+import { Badge } from "@email-hub/ui/components/ui/badge";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import {
   useCompatibilityBrief,
   useRegenerateBrief,
 } from "@/hooks/use-compatibility-brief";
-import type { ClientProfileSchema } from "@merkle-email-hub/sdk";
+import type { ClientProfileSchema } from "@email-hub/sdk";
 
 interface CompatibilityBriefDialogProps {
   open: boolean;

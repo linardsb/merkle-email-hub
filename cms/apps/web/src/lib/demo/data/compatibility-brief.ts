@@ -1,4 +1,4 @@
-import type { CompatibilityBriefResponse } from "@merkle-email-hub/sdk";
+import type { CompatibilityBriefResponse } from "@email-hub/sdk";
 
 export const DEMO_COMPATIBILITY_BRIEF: CompatibilityBriefResponse = {
   client_count: 5,

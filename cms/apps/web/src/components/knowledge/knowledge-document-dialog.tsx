@@ -7,8 +7,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@merkle-email-hub/ui/components/ui/dialog";
-import { ScrollArea } from "@merkle-email-hub/ui/components/ui/scroll-area";
+} from "@email-hub/ui/components/ui/dialog";
+import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 import {
   useKnowledgeDocument,
   useKnowledgeDocumentContent,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, ClipboardCheck, Download, FileText, ImagePlus, Palette, Save, ShieldCheck, Users, Zap } from "lucide-react";
-import { ThemeToggle } from "@merkle-email-hub/ui/components/theme-toggle";
+import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
 import { CollaboratorAvatars } from "./collaboration/collaborator-avatars";

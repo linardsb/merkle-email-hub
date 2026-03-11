@@ -45,9 +45,9 @@ if you want, next we can: – pressure‑test who the first 10 customers actuall
 – or rewrite the value prop in “agency partner” language instead of platform language
 – or talk about how you’d sell this before you have case studies
 
-great. lets see who would be first 10 customers. as well  great value prop would be great too. and about selling it, when all the features and planned roadmap is build how much it could go for and what kind of sell it could be? SaaS, one of sale? consultancy? I've worked myself in Merkle for 7 years in total. 2 years in MRM McCann, Ometria
+great. lets see who would be first 10 customers. as well  great value prop would be great too. and about selling it, when all the features and planned roadmap is build how much it could go for and what kind of sell it could be? SaaS, one of sale? consultancy? I've worked myself in [REDACTED] for 7 years in total. 2 years in [REDACTED], Ometria
 
-nice background btw — merkle + mrm + ometria is basically the exact résumé that makes this not theoretical 😄
+nice background btw — [REDACTED] + mrm + ometria is basically the exact résumé that makes this not theoretical 😄
 you’ve lived the pain, which already answers half the “is this real” question.
 
 i’ll keep this conversational and structured in my head, not on the page.
@@ -61,7 +61,7 @@ the clearest first 10 look like: – lifecycle / CRM agencies doing heavy braze,
 – agencies with multiple enterprise clients and shared delivery teams
 – teams that already talk about “email frameworks,” “design systems,” or “build accelerators”
 
-very concretely, places like: – merkle‑type regional offices or pods, not global procurement day one
+very concretely, places like: – [REDACTED]‑type regional offices or pods, not global procurement day one
 – smaller but senior consultancies founded by ex‑big‑agency people
 – boutique lifecycle agencies with 10–40 people where 2–5 are email specialists
 – ometria partners doing complex email for retail brands
@@ -71,7 +71,7 @@ your buyer is usually: – head of CRM / lifecycle – director of engineering f
 
 your champion is: – senior email dev / tech lead who is tired of being the single point of failure
 
-important: the first 10 almost certainly come from warm adjacency. ex‑colleagues, slack groups, people who know your name from merkle/mrm days. this product does not cold‑sell well at the beginning.
+important: the first 10 almost certainly come from warm adjacency. ex‑colleagues, slack groups, people who know your name from [REDACTED]/mrm days. this product does not cold‑sell well at the beginning.
 
 the value prop — in language that actually sells
 your strongest value prop is not innovation. it’s compound leverage.
@@ -127,7 +127,7 @@ if you stay consultancy‑first forever, you cap scale.
 if you go SaaS‑only too early, you lose trust.
 
 why your background matters here
-your merkle / mrm / ometria time is actually part of the pitch.
+your [REDACTED] / mrm / ometria time is actually part of the pitch.
 
 you’re not saying: “we built a cool email tool”
 
@@ -135,7 +135,7 @@ you’re saying: “we built the platform we wish we’d had when juggling 12 cl
 
 that lands.
 
-if you want, next we can: – script the exact first conversation you’d have with an ex‑Merkle director
+if you want, next we can: – script the exact first conversation you’d have with an ex‑[REDACTED] director
 – design the “paid pilot” offer so it doesn’t feel like consulting
 – or sanity‑check whether you should start with agencies or in‑house teams first
 
@@ -145,7 +145,7 @@ perfect. this is where it gets fun.
 
 i’ll walk through all three, but in the way you’d actually use them, not as theory.
 
-1. the exact first conversation (ex‑Merkle / ex‑agency director)
+1. the exact first conversation (ex‑[REDACTED] / ex‑agency director)
 this is not a pitch. it’s a recognition test.
 
 you reach out with something like:
@@ -156,7 +156,7 @@ if they say yes, you’re in.
 
 then you continue:
 
-“i’m building the internal platform i always wished we’d had at merkle — one place where every email fix, component, and qa rule compounds across clients instead of dying in a project folder.”
+“i’m building the internal platform i always wished we’d had at [REDACTED] — one place where every email fix, component, and qa rule compounds across clients instead of dying in a project folder.”
 
 pause. let them react.
 
@@ -322,7 +322,7 @@ this is selling: organizational memory for email delivery.
 
 agencies understand that instantly, even if they’ve never named it that way.
 
-if you want next (and this would be the natural step): – we can write the exact outreach message to your first 5 ex‑Merkle / MRM contacts
+if you want next (and this would be the natural step): – we can write the exact outreach message to your first 5 ex‑[REDACTED] / [REDACTED] contacts
 – or pressure‑test pricing confidence (“why isn’t this €3k?”)
 – or flip this into an in‑house pitch just to see how different it looks
 
@@ -331,14 +331,14 @@ all three
 alright, let’s finish this properly and make it usable, not theoretical. i’ll do all three, clean and concrete.
 
 1. exact outreach messages (copy‑paste ready)
-warm ex‑Merkle / MRM / Ometria contact
+warm ex‑[REDACTED] / [REDACTED] / Ometria contact
 “hey — quick question. do you still have one or two people on your team who are the unofficial ‘email experts’ because they know all the outlook + dark mode + esp quirks?”
 
 (wait for reply)
 
 then:
 
-“i’m building the internal email platform i always wished we’d had at merkle — one place where fixes, components, and qa rules actually compound across clients instead of dying in project folders.
+“i’m building the internal email platform i always wished we’d had at [REDACTED] — one place where fixes, components, and qa rules actually compound across clients instead of dying in project folders.
 i’m doing a couple of paid pilots with teams like yours. want to sanity‑check if this is even relevant for you?”
 
 no links. no deck. just recognition.
@@ -405,20 +405,20 @@ that’s rare.
 
 if you want the next next step, the one that actually moves this forward: tell me which 3 people you’d message first. i’ll help you tailor the opening line for each so it lands naturally.
 
-Matt Heffer - Merkle Dentsu, Rob Lord - Ometria and Misbah Husain-Shaw - T&P
+Matt Heffer - [REDACTED] Dentsu, Rob Lord - Ometria and Misbah Husain-Shaw - T&P
 
 perfect. these are exactly the right profiles. i’ll tailor each opener so it sounds like you, not a vendor, and fits how these people think.
 
 i’ll keep them short on purpose.
 
-Matt Heffer — Merkle Dentsu
+Matt Heffer — [REDACTED] Dentsu
 Matt will respond to credibility + scale pain.
 
-opener “hey matt — random question from the email trenches: do you still have a couple of people at merkle who everyone relies on for outlook / dark mode / esp edge‑case fixes?”
+opener “hey matt — random question from the email trenches: do you still have a couple of people at [REDACTED] who everyone relies on for outlook / dark mode / esp edge‑case fixes?”
 
 follow‑up (only if he bites) “i’m building the internal email platform i wish we’d had when juggling multiple clients and esp’s — basically turning email delivery fixes into shared infrastructure instead of one‑off project knowledge. doing a small number of paid pilots with agency teams. worth a quick sanity check?”
 
-this positions you as a peer, not someone selling to merkle.
+this positions you as a peer, not someone selling to [REDACTED].
 
 Rob Lord — Ometria
 Rob will care about velocity, partners, and repeatability.
@@ -454,7 +454,7 @@ all three
 nice, let’s lock all three down so you can actually walk into the calls calm and in control.
 
 1. role‑play: how each call should flow
-Matt (Merkle) — scale + risk conversation
+Matt ([REDACTED]) — scale + risk conversation
 you (opening) “this isn’t a pitch — i’m trying to sanity‑check something i wish we’d had when i was there.”
 
 early question “where do email fixes actually live right now — docs, people, or muscle memory?”
@@ -510,7 +510,7 @@ most likely order:
 
 Misbah / T&P — smaller, craft‑led, faster decisions
 Rob / Ometria — either direct or via partner intro
-Matt / Merkle — highest value, longest cycle
+Matt / [REDACTED] — highest value, longest cycle
 your goal isn’t to “win them all.”
 your goal is to get one deep pilot that proves compounding value.
 

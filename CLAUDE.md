@@ -69,7 +69,7 @@ make docker-down     # Stop all services
 ### Project Structure
 
 ```
-merkle-email-hub/
+email-hub/
 ├── app/                # Backend features (VSA)
 │   ├── core/           # Infrastructure (config, database, logging, middleware, health, rate_limit, redis)
 │   ├── shared/         # Cross-feature utilities (pagination, timestamps, error schemas)

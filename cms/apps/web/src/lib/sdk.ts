@@ -1,4 +1,4 @@
-import { client } from "@merkle-email-hub/sdk";
+import { client } from "@email-hub/sdk";
 import { authFetch } from "./auth-fetch";
 
 // Configure the SDK client

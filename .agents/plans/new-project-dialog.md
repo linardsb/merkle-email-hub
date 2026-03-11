@@ -78,7 +78,7 @@ Add to the existing file, following the `useCreatePersona` pattern:
 ```typescript
 import useSWRMutation from "swr/mutation";
 import { mutationFetcher } from "@/lib/mutation-fetcher";
-import type { ProjectCreate, ProjectResponse } from "@merkle-email-hub/sdk";
+import type { ProjectCreate, ProjectResponse } from "@email-hub/sdk";
 
 export function useCreateProject() {
   return useSWRMutation<ProjectResponse, Error, string, ProjectCreate>(

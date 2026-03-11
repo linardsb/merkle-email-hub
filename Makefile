@@ -16,7 +16,7 @@ dev-fe: ## Start frontend dev server
 # === Docker ===
 
 docker: ## Build and start all services (local dev, port :80)
-	@docker volume create merkle-email-hub_postgres_data 2>/dev/null || true
+	@docker volume create email-hub_postgres_data 2>/dev/null || true
 	AUTH_SECRET=$$(openssl rand -base64 32) docker-compose up -d --build
 
 docker-down: ## Stop all Docker services
@@ -59,15 +59,15 @@ e2e-ui: ## Open Playwright UI mode
 # === SDK ===
 
 sdk: ## Generate TypeScript SDK from backend OpenAPI spec (backend must be running)
-	cd cms && pnpm --filter @merkle-email-hub/sdk generate-sdk:fetch
+	cd cms && pnpm --filter @email-hub/sdk generate-sdk:fetch
 
 sdk-local: ## Generate TypeScript SDK from local openapi.json snapshot
-	cd cms && pnpm --filter @merkle-email-hub/sdk generate-sdk
+	cd cms && pnpm --filter @email-hub/sdk generate-sdk
 
 # === Database ===
 
 db: ## Start only PostgreSQL + Redis
-	@docker volume create merkle-email-hub_postgres_data 2>/dev/null || true
+	@docker volume create email-hub_postgres_data 2>/dev/null || true
 	AUTH_SECRET=dev-placeholder docker-compose up -d db redis
 
 db-migrate: ## Run database migrations

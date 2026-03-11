@@ -1,5 +1,5 @@
 [project]
-name = "merkle-email-hub"
+name = "email-hub"
 version = "0.1.0"
 description = "Centralised email development platform with AI-powered agents"
 readme = "README.md"

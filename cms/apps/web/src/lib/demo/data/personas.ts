@@ -1,4 +1,4 @@
-import type { PersonaResponse } from "@merkle-email-hub/sdk";
+import type { PersonaResponse } from "@email-hub/sdk";
 
 export const DEMO_PERSONAS: PersonaResponse[] = [
   {

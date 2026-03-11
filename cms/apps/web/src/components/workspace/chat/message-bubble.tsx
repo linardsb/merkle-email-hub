@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bot, Check, Copy, Loader2, User } from "lucide-react";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
+import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatMessage } from "@/types/chat";
 
 /** Regex to split content into text and fenced code blocks. */

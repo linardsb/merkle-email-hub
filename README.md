@@ -1,4 +1,4 @@
-# Merkle Email Innovation Hub
+# [REDACTED] Email Innovation Hub
 
 Centralised email development platform with AI-powered agents. Build, preview, QA, and export HTML emails from a single workspace — CMS-agnostic, security-first, GDPR-compliant.
 
@@ -116,7 +116,7 @@ Services: PostgreSQL, Redis, FastAPI backend, Next.js frontend, Maizzle builder 
 ## Project Structure
 
 ```
-merkle-email-hub/
+email-hub/
 ├── app/                    # Backend features (VSA)
 │   ├── core/               # Infrastructure (config, database, logging, middleware, health, rate_limit, redis)
 │   ├── shared/             # Cross-feature utilities (pagination, timestamps, error schemas)

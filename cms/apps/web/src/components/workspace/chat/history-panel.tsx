@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { History, Trash2 } from "lucide-react";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
+import { Button } from "@email-hub/ui/components/ui/button";
 import { SessionCard } from "./session-card";
 import type { ChatSession } from "@/types/chat-history";
 

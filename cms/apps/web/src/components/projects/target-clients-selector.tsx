@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { useEmailClients } from "@/hooks/use-email-clients";
-import type { EmailClientResponse } from "@merkle-email-hub/sdk";
+import type { EmailClientResponse } from "@email-hub/sdk";
 
 const COMMON_CLIENTS = [
   "gmail_web",

@@ -4,7 +4,7 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
 import { mutationFetcher } from "@/lib/mutation-fetcher";
-import type { PersonaCreate, PersonaResponse } from "@merkle-email-hub/sdk";
+import type { PersonaCreate, PersonaResponse } from "@email-hub/sdk";
 
 export function usePersonas() {
   return useSWR<PersonaResponse[]>("/api/v1/personas", fetcher);

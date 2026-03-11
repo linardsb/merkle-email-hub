@@ -7,7 +7,7 @@ import {
   TrendingUp,
   Clock,
 } from "lucide-react";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useQADashboard } from "@/hooks/use-qa-dashboard";

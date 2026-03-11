@@ -22,15 +22,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@merkle-email-hub/ui/components/ui/dialog";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
-import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
-import { Label } from "@merkle-email-hub/ui/components/ui/label";
-import { Input } from "@merkle-email-hub/ui/components/ui/input";
+} from "@email-hub/ui/components/ui/dialog";
+import { Button } from "@email-hub/ui/components/ui/button";
+import { Badge } from "@email-hub/ui/components/ui/badge";
+import { Label } from "@email-hub/ui/components/ui/label";
+import { Input } from "@email-hub/ui/components/ui/input";
 import { useBlueprintRun } from "@/hooks/use-blueprint-run";
 import { useAllBriefItems } from "@/hooks/use-briefs";
 import { useBriefDetail } from "@/hooks/use-briefs";
-import type { BlueprintProgress, HandoffSummary } from "@merkle-email-hub/sdk";
+import type { BlueprintProgress, HandoffSummary } from "@email-hub/sdk";
 import type { BriefItem } from "@/types/briefs";
 
 interface BlueprintRunDialogProps {

@@ -1,4 +1,4 @@
-import type { ClientOrgResponse } from "@merkle-email-hub/sdk";
+import type { ClientOrgResponse } from "@email-hub/sdk";
 
 export const DEMO_ORGS: ClientOrgResponse[] = [
   {

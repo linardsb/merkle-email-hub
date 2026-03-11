@@ -1,7 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "merkle-email-hub",
+        "title": "email-hub",
         "version": "0.1.0"
     },
     "paths": {

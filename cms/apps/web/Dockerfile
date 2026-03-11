@@ -25,7 +25,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_DEMO_MODE=true
 ENV NEXT_PUBLIC_DEMO_MODE=$NEXT_PUBLIC_DEMO_MODE
 
-RUN pnpm --filter @merkle-email-hub/web build
+RUN pnpm --filter @email-hub/web build
 
 # ── Runner ──
 FROM node:22-alpine AS runner

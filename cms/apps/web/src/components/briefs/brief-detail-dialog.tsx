@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@merkle-email-hub/ui/components/ui/dialog";
+} from "@email-hub/ui/components/ui/dialog";
 import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2 } from "lucide-react";
 import { useBriefDetail } from "@/hooks/use-briefs";
 import { BriefPlatformBadge } from "./brief-platform-badge";

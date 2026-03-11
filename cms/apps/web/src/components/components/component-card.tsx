@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useComponentVersions } from "@/hooks/use-components";
 import { ComponentPreview } from "./component-preview";
-import type { ComponentResponse } from "@merkle-email-hub/sdk";
+import type { ComponentResponse } from "@email-hub/sdk";
 
 interface ComponentCardProps {
   component: ComponentResponse;

@@ -6,7 +6,7 @@ import type {
   PaginatedResponseComponentResponse,
   ComponentResponse,
   VersionResponse,
-} from "@merkle-email-hub/sdk";
+} from "@email-hub/sdk";
 
 interface UseComponentsOptions {
   page?: number;

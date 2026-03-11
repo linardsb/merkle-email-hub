@@ -60,9 +60,7 @@ class TestGenerateCompatibilityBrief:
 
     def test_risk_matrix_sorted_by_count(self) -> None:
         """Risk matrix entries should be sorted by number of failing clients (desc)."""
-        brief = generate_compatibility_brief(
-            ["gmail_web", "outlook_2019_win", "outlook_2016_win"]
-        )
+        brief = generate_compatibility_brief(["gmail_web", "outlook_2019_win", "outlook_2016_win"])
         assert brief is not None
         if len(brief.risk_matrix) >= 2:
             for i in range(len(brief.risk_matrix) - 1):

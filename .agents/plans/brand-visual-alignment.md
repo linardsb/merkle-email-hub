@@ -1,12 +1,12 @@
-# Plan: Merkle Brand Visual Alignment
+# Plan: [REDACTED] Brand Visual Alignment
 
 ## Context
-Align the CMS frontend visual design with Merkle's official brand guidelines from Frontify. Three key changes:
-1. **Typography** — Inter → Proxima Nova (Merkle's brand typeface)
+Align the CMS frontend visual design with [REDACTED]'s official brand guidelines from Frontify. Three key changes:
+1. **Typography** — Inter → Proxima Nova ([REDACTED]'s brand typeface)
 2. **Colors** — Shift neutral palette to purple-gray undertone, success to teal, add chart palette
 3. **Border radius** — Remove ALL rounded corners application-wide (user requirement: "no rounded corners for anything")
 
-Source: https://merkleinc.frontify.com/d/e2B69vudmb6N/guidelines
+Source: https://[REDACTED].frontify.com/d/e2B69vudmb6N/guidelines
 
 ## Files to Modify
 
@@ -39,7 +39,7 @@ Replace line 117:
 Notes:
 - `"Proxima Nova"` — local install / Adobe Fonts
 - `"proxima-nova"` — Adobe Fonts CSS class name variant
-- `"Space Grotesk"` — Merkle's secondary font (free Google Font, good fallback)
+- `"Space Grotesk"` — [REDACTED]'s secondary font (free Google Font, good fallback)
 - System fonts as final fallback
 
 ### Step 2: Update `globals.css` — Font Loading
@@ -47,8 +47,8 @@ Notes:
 Add Google Fonts import for Space Grotesk (free secondary font) and a comment about Proxima Nova:
 
 ```css
-/* Merkle brand fonts — Proxima Nova requires Adobe Fonts license.
-   Space Grotesk (Merkle secondary) loaded as visible fallback. */
+/* [REDACTED] brand fonts — Proxima Nova requires Adobe Fonts license.
+   Space Grotesk ([REDACTED] secondary) loaded as visible fallback. */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
@@ -60,7 +60,7 @@ Add Google Fonts import for Space Grotesk (free secondary font) and a comment ab
 Replace the radius section (lines 121-125) with:
 
 ```css
-/* ── Radius (Merkle brand: sharp corners, no rounding) ── */
+/* ── Radius ([REDACTED] brand: sharp corners, no rounding) ── */
 --radius-xs: 0;
 --radius-sm: 0;
 --radius-md: 0;
@@ -82,7 +82,7 @@ This propagates through ALL Tailwind `rounded-*` utilities and shadcn component 
 
 After the existing `@layer base` block, add:
 ```css
-/* Merkle brand: zero border-radius globally — catches any inline styles
+/* [REDACTED] brand: zero border-radius globally — catches any inline styles
    or third-party components that don't use Tailwind utilities */
 @layer base {
   *,
@@ -97,11 +97,11 @@ Merge this into the existing `@layer base` block.
 
 ### Step 5: Update `tokens.css` — Neutral Palette Hue Shift
 
-Shift neutral hue from 260 (blue) to 270 (purple-gray) to match Merkle's `#8888A1` muted text tones:
+Shift neutral hue from 260 (blue) to 270 (purple-gray) to match [REDACTED]'s `#8888A1` muted text tones:
 
 ```css
 /* ── Tier 1: Primitive Palette (oklch) ── */
-/* Neutrals: hue 270 (purple-gray, per Merkle Frontify #8888A1) */
+/* Neutrals: hue 270 (purple-gray, per [REDACTED] Frontify #8888A1) */
 --color-neutral-50: oklch(0.98 0.005 270);
 --color-neutral-100: oklch(0.96 0.008 270);
 --color-neutral-200: oklch(0.91 0.012 270);
@@ -117,10 +117,10 @@ Shift neutral hue from 260 (blue) to 270 (purple-gray) to match Merkle's `#8888A
 
 ### Step 6: Update `tokens.css` — Success Color (Green → Teal)
 
-Match Merkle's teal "Do" color `#06757E` / `rgba(6, 117, 126)`:
+Match [REDACTED]'s teal "Do" color `#06757E` / `rgba(6, 117, 126)`:
 
 ```css
-/* Success: Merkle teal #06757E */
+/* Success: [REDACTED] teal #06757E */
 --color-success-500: oklch(0.52 0.09 195);
 --color-success-600: oklch(0.45 0.09 195);
 ```
@@ -137,9 +137,9 @@ Update dark mode badge:
 --color-badge-success-text: var(--color-success-500);
 ```
 
-### Step 7: Update `tokens.css` — Sidebar Navy (Fine-tune to Merkle Exact)
+### Step 7: Update `tokens.css` — Sidebar Navy (Fine-tune to [REDACTED] Exact)
 
-Match Merkle's exact navy `#12295D` = `oklch(0.25 0.09 265)`:
+Match [REDACTED]'s exact navy `#12295D` = `oklch(0.25 0.09 265)`:
 
 ```css
 /* Light mode sidebar */
@@ -158,7 +158,7 @@ Match Merkle's exact navy `#12295D` = `oklch(0.25 0.09 265)`:
 Add new Tier 3 tokens for the intelligence dashboard charts:
 
 ```css
-/* ── Chart / Data Visualization (Merkle brand palette) ── */
+/* ── Chart / Data Visualization ([REDACTED] brand palette) ── */
 --color-chart-1: oklch(0.25 0.09 265);   /* Navy #12295D */
 --color-chart-2: oklch(0.45 0.09 195);   /* Teal #06757E */
 --color-chart-3: oklch(0.55 0.220 27);   /* Brand red #E4002B */
@@ -189,7 +189,7 @@ However, verify these specific patterns render correctly with 0 radius:
 - Status indicator dots (`rounded-full h-2 w-2` → becomes small squares)
 - Scrollbar thumb (pill → becomes rectangular)
 
-All of these are valid with sharp corners for a corporate Merkle aesthetic.
+All of these are valid with sharp corners for a corporate [REDACTED] aesthetic.
 
 ### Step 10: Update Intelligence Dashboard Chart Colors
 
@@ -217,14 +217,14 @@ In the `@media print` section of `tokens.css`, the hardcoded border color `#e5e7
 | `--color-success-500` | oklch(0.65 0.160 145) | oklch(0.52 0.09 195) |
 | `--color-success-600` | oklch(0.55 0.160 145) | oklch(0.45 0.09 195) |
 | `--color-sidebar-bg` | oklch(0.22 0.045 260) | oklch(0.25 0.09 265) |
-| New: `--color-chart-1..6` | — | Merkle brand palette |
+| New: `--color-chart-1..6` | — | [REDACTED] brand palette |
 
 ## Verification
 
 - [ ] `cd cms && pnpm build` passes with no TypeScript errors
 - [ ] Light mode: All cards, buttons, inputs, badges have sharp corners (0 radius)
 - [ ] Dark mode: Same — no rounded corners visible anywhere
-- [ ] Sidebar uses Merkle navy blue (`#12295D` approximate)
+- [ ] Sidebar uses [REDACTED] navy blue (`#12295D` approximate)
 - [ ] Success badges/indicators show teal instead of green
 - [ ] Font renders as Space Grotesk (or Proxima Nova if installed)
 - [ ] Intelligence dashboard charts use semantic status colors (teal success)

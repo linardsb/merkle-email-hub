@@ -1,4 +1,4 @@
-import type { BlueprintRunResponse } from "@merkle-email-hub/sdk";
+import type { BlueprintRunResponse } from "@email-hub/sdk";
 
 export const DEMO_BLUEPRINT_RUN: BlueprintRunResponse = {
   run_id: "a1b2c3d4e5f6",

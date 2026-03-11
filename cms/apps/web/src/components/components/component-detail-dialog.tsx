@@ -9,12 +9,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@merkle-email-hub/ui/components/ui/dialog";
+} from "@email-hub/ui/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@merkle-email-hub/ui/components/ui/popover";
+} from "@email-hub/ui/components/ui/popover";
 import {
   Command,
   CommandInput,
@@ -22,11 +22,11 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-} from "@merkle-email-hub/ui/components/ui/command";
+} from "@email-hub/ui/components/ui/command";
 import { useComponent, useComponentVersions } from "@/hooks/use-components";
 import { useProjects } from "@/hooks/use-projects";
 import { ComponentPreview } from "./component-preview";
-import { ScrollArea } from "@merkle-email-hub/ui/components/ui/scroll-area";
+import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 
 interface ComponentDetailDialogProps {
   componentId: number | null;

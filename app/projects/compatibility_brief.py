@@ -90,26 +90,34 @@ def generate_compatibility_brief(client_ids: list[str]) -> CompatibilityBrief | 
                 fb = relevant[0]
                 target = onto.get_property(fb.target_property_id)
                 fallback_text = (
-                    f"{target.property_name}: {target.value}" if target and target.value
-                    else target.property_name if target
+                    f"{target.property_name}: {target.value}"
+                    if target and target.value
+                    else target.property_name
+                    if target
                     else fb.target_property_id
                 )
-                props.append(UnsupportedProperty(
-                    css=css_decl, fallback=fallback_text, technique=fb.technique,
-                ))
+                props.append(
+                    UnsupportedProperty(
+                        css=css_decl,
+                        fallback=fallback_text,
+                        technique=fb.technique,
+                    )
+                )
             else:
                 props.append(UnsupportedProperty(css=css_decl, fallback=None, technique=None))
 
-        client_profiles.append(ClientProfile(
-            id=client.id,
-            name=client.name,
-            platform=client.platform,
-            engine=client.engine.value,
-            market_share=client.market_share,
-            notes=client.notes or None,
-            unsupported_count=len(unsupported),
-            unsupported_properties=props,
-        ))
+        client_profiles.append(
+            ClientProfile(
+                id=client.id,
+                name=client.name,
+                platform=client.platform,
+                engine=client.engine.value,
+                market_share=client.market_share,
+                notes=client.notes or None,
+                unsupported_count=len(unsupported),
+                unsupported_properties=props,
+            )
+        )
 
     # Build risk matrix: properties unsupported by 2+ clients (reuse cached lookups)
     prop_fail_count: dict[str, list[str]] = {}

@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { FileText } from "lucide-react";
 import { ApprovalStatusBadge } from "./approval-status-badge";
-import type { ApprovalResponse } from "@merkle-email-hub/sdk";
+import type { ApprovalResponse } from "@email-hub/sdk";
 
 interface ApprovalCardProps {
   approval: ApprovalResponse;

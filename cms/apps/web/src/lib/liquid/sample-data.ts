@@ -16,8 +16,8 @@ export const SAMPLE_DATA: Record<string, unknown> = {
     { name: "Water Bottle", price: "$24.99", image_url: "https://picsum.photos/seed/bottle/200/200" },
   ],
   company: {
-    name: "Merkle Inc.",
-    website: "https://www.merkle.com",
+    name: "Acme Inc.",
+    website: "https://www.example.com",
     logo_url: "https://picsum.photos/seed/logo/150/50",
   },
   unsubscribe_url: "https://example.com/unsubscribe?token=abc123",

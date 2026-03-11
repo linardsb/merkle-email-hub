@@ -9,8 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@merkle-email-hub/ui/components/ui/dropdown-menu";
-import type { PersonaResponse } from "@merkle-email-hub/sdk";
+} from "@email-hub/ui/components/ui/dropdown-menu";
+import type { PersonaResponse } from "@email-hub/sdk";
 import { CreatePersonaDialog } from "./create-persona-dialog";
 
 interface PersonaSelectorProps {

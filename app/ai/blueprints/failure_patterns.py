@@ -377,7 +377,9 @@ async def recall_failure_patterns(
                 continue
             # Check client overlap
             raw_clients = metadata.get("client_ids", [])
-            pattern_clients: set[object] = set(raw_clients) if isinstance(raw_clients, list) else set()
+            pattern_clients: set[object] = (
+                set(raw_clients) if isinstance(raw_clients, list) else set()
+            )
             if pattern_clients and not pattern_clients.intersection(client_ids):
                 continue
             relevant.append(memory.content)

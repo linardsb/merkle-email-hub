@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { RotateCcw, Trash2 } from "lucide-react";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
-import { Badge } from "@merkle-email-hub/ui/components/ui/badge";
+import { Button } from "@email-hub/ui/components/ui/button";
+import { Badge } from "@email-hub/ui/components/ui/badge";
 import { AGENT_LABEL_KEYS } from "@/types/chat";
 import type { ChatSession } from "@/types/chat-history";
 

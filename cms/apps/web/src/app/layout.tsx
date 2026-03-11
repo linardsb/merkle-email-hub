@@ -4,10 +4,10 @@ import { getMessages } from "next-intl/server";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { SWRConfig } from "swr";
-import { ThemeProvider } from "@merkle-email-hub/ui/components/theme-provider";
+import { ThemeProvider } from "@email-hub/ui/components/theme-provider";
 import { cookies } from "next/headers";
 import { getLocaleConfig } from "@/lib/locales";
-import "@merkle-email-hub/ui/globals.css";
+import "@email-hub/ui/globals.css";
 
 export const metadata: Metadata = {
   title: "Centralised email development platform with AI-powered agents",

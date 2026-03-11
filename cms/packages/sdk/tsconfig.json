@@ -1,5 +1,5 @@
 {
-  "extends": "@merkle-email-hub/typescript-config/base.json",
+  "extends": "@email-hub/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

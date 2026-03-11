@@ -8,7 +8,7 @@ import type {
   BuildResponse,
   PreviewRequest,
   PreviewResponse,
-} from "@merkle-email-hub/sdk";
+} from "@email-hub/sdk";
 
 export function useEmailBuild() {
   return useSWRMutation<BuildResponse, ApiError, string, BuildRequest>(

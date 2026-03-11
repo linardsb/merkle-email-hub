@@ -1,4 +1,4 @@
-import type { ComponentResponse, VersionResponse } from "@merkle-email-hub/sdk";
+import type { ComponentResponse, VersionResponse } from "@email-hub/sdk";
 
 const COMPAT_FULL: Record<string, string> = {
   gmail: "full",

@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import type { ExportHistoryRecord } from "@/types/connectors";
 
-const STORAGE_KEY = "merkle-export-history";
+const STORAGE_KEY = "email-hub-export-history";
 const MAX_RECORDS = 100;
 
 const listeners = new Set<() => void>();

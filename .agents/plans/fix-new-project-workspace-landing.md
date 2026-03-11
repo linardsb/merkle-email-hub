@@ -32,7 +32,7 @@ Create `cms/apps/web/src/lib/demo/demo-store.ts`:
  * Data lives only for the current browser session (page reload clears it).
  */
 
-import type { ProjectResponse } from "@merkle-email-hub/sdk";
+import type { ProjectResponse } from "@email-hub/sdk";
 import type { TemplateResponse, VersionResponse } from "@/types/templates";
 
 const projects: ProjectResponse[] = [];

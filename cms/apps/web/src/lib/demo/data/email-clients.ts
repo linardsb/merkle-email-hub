@@ -1,4 +1,4 @@
-import type { EmailClientResponse } from "@merkle-email-hub/sdk";
+import type { EmailClientResponse } from "@email-hub/sdk";
 
 export const DEMO_EMAIL_CLIENTS: EmailClientResponse[] = [
   { id: "outlook_2016_win", name: "Outlook 2016 (Windows)", family: "outlook", platform: "windows", engine: "word", market_share: 3.2 },

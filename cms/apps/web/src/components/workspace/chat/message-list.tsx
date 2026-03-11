@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "@merkle-email-hub/ui/components/ui/scroll-area";
+import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 import { MessageBubble } from "./message-bubble";
 import type { ChatMessage } from "@/types/chat";
 

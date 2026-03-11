@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Send, Square } from "lucide-react";
-import { Button } from "@merkle-email-hub/ui/components/ui/button";
+import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatStatus } from "@/types/chat";
 
 interface ChatInputProps {

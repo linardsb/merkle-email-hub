@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-merkle_email_hub}
+      POSTGRES_DB: ${POSTGRES_DB:-email_hub}
     ports:
       - "5434:5432"
     volumes:
@@ -68,7 +68,7 @@ services:
       - path: .env
         required: false
     environment:
-      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-merkle_email_hub}
+      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-email_hub}
     depends_on:
       db:
         condition: service_healthy
@@ -102,7 +102,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-merkle_email_hub}
+      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-email_hub}
       - REDIS__URL=redis://:${REDIS_PASSWORD:-devpassword}@redis:6379/0
       - MAIZZLE_BUILDER_URL=http://maizzle-builder:3001
     depends_on:

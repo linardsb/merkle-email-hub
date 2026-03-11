@@ -7,7 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@merkle-email-hub/ui/components/ui/dialog";
+} from "@email-hub/ui/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";

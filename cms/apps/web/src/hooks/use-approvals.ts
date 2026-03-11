@@ -12,7 +12,7 @@ import type {
   FeedbackResponse,
   AuditResponse,
   BuildResponse,
-} from "@merkle-email-hub/sdk";
+} from "@email-hub/sdk";
 
 /** List approvals for a project. */
 export function useApprovals(projectId: number | null) {

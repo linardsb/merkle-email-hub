@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { MonitorSmartphone } from "lucide-react";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useRenderingTests } from "@/hooks/use-renderings";
 
 export function RenderingSummaryCard() {

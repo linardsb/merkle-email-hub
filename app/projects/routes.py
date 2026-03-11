@@ -198,7 +198,9 @@ async def get_compatibility_brief(
                 unsupported_count=c.unsupported_count,
                 unsupported_properties=[
                     UnsupportedPropertySchema(
-                        css=p.css, fallback=p.fallback, technique=p.technique,
+                        css=p.css,
+                        fallback=p.fallback,
+                        technique=p.technique,
                     )
                     for p in c.unsupported_properties
                 ],
@@ -207,7 +209,9 @@ async def get_compatibility_brief(
         ],
         risk_matrix=[
             RiskMatrixEntrySchema(
-                css=r.css, unsupported_in=r.unsupported_in, fallback=r.fallback,
+                css=r.css,
+                unsupported_in=r.unsupported_in,
+                fallback=r.fallback,
             )
             for r in brief.risk_matrix
         ],

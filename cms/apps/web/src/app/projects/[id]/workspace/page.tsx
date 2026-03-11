@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PersonaResponse } from "@merkle-email-hub/sdk";
+import type { PersonaResponse } from "@email-hub/sdk";
 import { useTranslations } from "next-intl";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {

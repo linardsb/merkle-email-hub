@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  transpilePackages: ["@merkle-email-hub/ui", "@merkle-email-hub/sdk"],
+  transpilePackages: ["@email-hub/ui", "@email-hub/sdk"],
   async rewrites() {
     return [
       {

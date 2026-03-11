@@ -141,7 +141,7 @@ Delete line 32: `jwt_algorithm: str = "HS256"` from `AuthConfig`.
 
 In project CLAUDE.md, the security section says "JWT RS256". Update to "JWT HS256" to match reality. The docs-say-RS256 inconsistency IS task 6.4.2.
 
-Lines to update in `/Users/Berzins/Desktop/merkle-email-hub/CLAUDE.md`:
+Lines to update in `/Users/Berzins/Desktop/email-hub/CLAUDE.md`:
 - "JWT RS256" → "JWT HS256" (search for all occurrences)
 
 **Step 4: Create tests `app/tests/test_jwt_algorithm.py`**

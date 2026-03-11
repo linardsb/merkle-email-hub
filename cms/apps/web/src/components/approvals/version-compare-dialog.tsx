@@ -8,11 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@merkle-email-hub/ui/components/ui/dialog";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+} from "@email-hub/ui/components/ui/dialog";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useTemplates, useTemplateVersions } from "@/hooks/use-templates";
 import type { VersionResponse } from "@/types/templates";
-import type { BuildResponse } from "@merkle-email-hub/sdk";
+import type { BuildResponse } from "@email-hub/sdk";
 
 interface VersionCompareDialogProps {
   open: boolean;

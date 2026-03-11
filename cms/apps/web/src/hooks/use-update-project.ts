@@ -1,7 +1,7 @@
 "use client";
 
 import useSWRMutation from "swr/mutation";
-import type { ProjectResponse, ProjectUpdate } from "@merkle-email-hub/sdk";
+import type { ProjectResponse, ProjectUpdate } from "@email-hub/sdk";
 import { authFetch } from "@/lib/auth-fetch";
 import { ApiError } from "@/lib/api-error";
 

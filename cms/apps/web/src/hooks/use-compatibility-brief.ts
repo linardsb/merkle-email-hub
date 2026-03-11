@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr-fetcher";
 import { authFetch } from "@/lib/auth-fetch";
-import type { CompatibilityBriefResponse } from "@merkle-email-hub/sdk";
+import type { CompatibilityBriefResponse } from "@email-hub/sdk";
 
 export function useCompatibilityBrief(projectId: number | null) {
   return useSWR<CompatibilityBriefResponse>(

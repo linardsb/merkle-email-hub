@@ -1,5 +1,5 @@
 {
-  "name": "merkle-email-hub-cms",
+  "name": "email-hub-cms",
   "private": true,
   "scripts": {
     "dev": "turbo dev",

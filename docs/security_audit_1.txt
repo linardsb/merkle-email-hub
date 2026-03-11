@@ -1,10 +1,10 @@
 think how could you plan out this implementation methodically and carefully
 
-https://deepwiki.com/linardsb/merkle-email-hub/1-overview
+https://deepwiki.com/linardsb/email-hub/1-overview
 
-https://deepwiki.com/linardsb/merkle-email-hub/2.3.1-ai-agents
+https://deepwiki.com/linardsb/email-hub/2.3.1-ai-agents
 
-https://deepwiki.com/linardsb/merkle-email-hub/2.3.2-blueprint-engine
+https://deepwiki.com/linardsb/email-hub/2.3.2-blueprint-engine
 
 
 https://deepwiki.com/search/what-you-think-of-this-app_7f232b0f-1e5d-49b4-ac11-44d02fff0ccb
@@ -14,99 +14,99 @@ https://deepwiki.com/search/what-you-think-of-this-app_7f232b0f-1e5d-49b4-ac11-4
 
 ### JWT Implementation
 
-**✅ Algorithm pinning** — `_JWT_ALGORITHM: str = "HS256"` is a module-level constant, explicitly never read from config, to prevent algorithm confusion attacks (e.g., RS256→HS256 downgrade). merkle-email-hub:16-18 
+**✅ Algorithm pinning** — `_JWT_ALGORITHM: str = "HS256"` is a module-level constant, explicitly never read from config, to prevent algorithm confusion attacks (e.g., RS256→HS256 downgrade). email-hub:16-18 
 
-**✅ Token lifetimes** — Access tokens expire per `access_token_expire_minutes` (default 30 min); refresh tokens expire per `refresh_token_expire_days` (default 7 days). Each token has a `jti` UUID for revocation. merkle-email-hub:31-53 
+**✅ Token lifetimes** — Access tokens expire per `access_token_expire_minutes` (default 30 min); refresh tokens expire per `refresh_token_expire_days` (default 7 days). Each token has a `jti` UUID for revocation. email-hub:31-53 
 
-**✅ Token revocation** — Redis-backed blocklist via `setex(f"auth:revoked:{jti}", ttl_seconds, "1")`. merkle-email-hub:80-98 
+**✅ Token revocation** — Redis-backed blocklist via `setex(f"auth:revoked:{jti}", ttl_seconds, "1")`. email-hub:80-98 
 
 **⚠️ CRITICAL: Fail-open token revocation** — When Redis is unavailable, `is_token_revoked()` silently returns `False`, explicitly allowing revoked tokens through. This is documented as `fail-open for availability`:
 
-> `"Redis unavailable - token revocation check skipped (fail-open)"` merkle-email-hub:118-124 
+> `"Redis unavailable - token revocation check skipped (fail-open)"` email-hub:118-124 
 
 **⚠️ 30-second stale cache for deactivated users** — A TTL cache avoids DB lookups but means a deactivated user still has up to 30s of valid access after deactivation. Documented in the codebase comments:
 
-> `"User deactivation has max 30s delay"` merkle-email-hub:22-32 
+> `"User deactivation has max 30s delay"` email-hub:22-32 
 
-**⚠️ Weak JWT default secret in config** — `jwt_secret_key: str = "CHANGE-ME-IN-PRODUCTION"` is the default; `demo_user_password: str = "admin"` is also a plaintext default. Both have mitigation (startup check for JWT; dev-only seeding for demo), but the config itself is a risk if `.env` is not set. merkle-email-hub:29-34 
+**⚠️ Weak JWT default secret in config** — `jwt_secret_key: str = "CHANGE-ME-IN-PRODUCTION"` is the default; `demo_user_password: str = "admin"` is also a plaintext default. Both have mitigation (startup check for JWT; dev-only seeding for demo), but the config itself is a risk if `.env` is not set. email-hub:29-34 
 
-**✅ Startup hard-fail for insecure secrets** — Application refuses to start in non-development environments if the JWT secret is in a known-weak set or shorter than 32 characters. merkle-email-hub:64-75 
+**✅ Startup hard-fail for insecure secrets** — Application refuses to start in non-development environments if the JWT secret is in a known-weak set or shorter than 32 characters. email-hub:64-75 
 
-**⚠️ Access token in WebSocket URL query parameter** — The WebSocket endpoint authenticates via `?token=` in the URL, because the browser WebSocket API doesn't support custom headers. This means the JWT appears in server access logs and browser history. The code acknowledges this: merkle-email-hub:1-8 merkle-email-hub:69-105 
+**⚠️ Access token in WebSocket URL query parameter** — The WebSocket endpoint authenticates via `?token=` in the URL, because the browser WebSocket API doesn't support custom headers. This means the JWT appears in server access logs and browser history. The code acknowledges this: email-hub:1-8 email-hub:69-105 
 
-**⚠️ `accessTokenExpires` mismatch** — The frontend sets `accessTokenExpires: Date.now() + 14 * 60 * 1000` (14 minutes), but the backend config defaults to 30 minutes. On refresh, the backend returns a fresh pair, but the frontend hardcodes 14 minutes rather than reading the expiry from the JWT. merkle-email-hub:114-130 
+**⚠️ `accessTokenExpires` mismatch** — The frontend sets `accessTokenExpires: Date.now() + 14 * 60 * 1000` (14 minutes), but the backend config defaults to 30 minutes. On refresh, the backend returns a fresh pair, but the frontend hardcodes 14 minutes rather than reading the expiry from the JWT. email-hub:114-130 
 
-**⚠️ Demo mode returns a literal string `"demo-access-token"`** — When `NEXT_PUBLIC_DEMO_MODE=true`, the auth handler returns `accessToken: "demo-access-token"` and `role: "admin"`, bypassing all real authentication. This is intentional for the demo deployment but is explicitly baked into the CMS Docker build. merkle-email-hub:67-83 
+**⚠️ Demo mode returns a literal string `"demo-access-token"`** — When `NEXT_PUBLIC_DEMO_MODE=true`, the auth handler returns `accessToken: "demo-access-token"` and `role: "admin"`, bypassing all real authentication. This is intentional for the demo deployment but is explicitly baked into the CMS Docker build. email-hub:67-83 
 
 ---
 
 ### RBAC
 
-**✅ Three-role system** — `admin`, `developer`, `viewer` enforced at route level via `require_role()` dependency factory. merkle-email-hub:121-143 
+**✅ Three-role system** — `admin`, `developer`, `viewer` enforced at route level via `require_role()` dependency factory. email-hub:121-143 
 
-**✅ Role escalation attempt logging** — `auth.role_escalation_attempt` is logged including `user_id`, `user_role`, and `required_roles`. merkle-email-hub:131-141 
+**✅ Role escalation attempt logging** — `auth.role_escalation_attempt` is logged including `user_id`, `user_role`, and `required_roles`. email-hub:131-141 
 
-**✅ Password complexity validation** — Minimum 10 characters, requires uppercase, lowercase, and digit; validated via Pydantic `field_validator` on all user-facing schemas. merkle-email-hub:7-34 
+**✅ Password complexity validation** — Minimum 10 characters, requires uppercase, lowercase, and digit; validated via Pydantic `field_validator` on all user-facing schemas. email-hub:7-34 
 
 ---
 
 ## 2. OWASP API Top 10 Security Audit (Phase 6)
 
-A formal audit was conducted on **2026-03-06 using CodeQL + Semgrep + manual route review**. The root cause was identified as: `current_user` authenticated at route level but **not passed to the service layer** for authorization. The `templates` module was identified as the correct reference implementation. merkle-email-hub:582-585 
+A formal audit was conducted on **2026-03-06 using CodeQL + Semgrep + manual route review**. The root cause was identified as: `current_user` authenticated at route level but **not passed to the service layer** for authorization. The `templates` module was identified as the correct reference implementation. email-hub:582-585 
 
 ### 6.1 BOLA (Broken Object-Level Authorization) — ALL FIXED ✅
 
-All nine BOLA vulnerabilities were patched using the `verify_project_access()` pattern: merkle-email-hub:586-599 
+All nine BOLA vulnerabilities were patched using the `verify_project_access()` pattern: email-hub:586-599 
 
-The pattern is implemented in `ProjectService.verify_project_access()`: merkle-email-hub:44-64 
+The pattern is implemented in `ProjectService.verify_project_access()`: email-hub:44-64 
 
-Downstream modules now call it through the FK chain (e.g., build→project, QA result→build→project): merkle-email-hub:51-60 merkle-email-hub:33-40 
+Downstream modules now call it through the FK chain (e.g., build→project, QA result→build→project): email-hub:51-60 email-hub:33-40 
 
-**⚠️ Remaining BOLA gap: `GET /email/builds/{build_id}`** — The `get_build` endpoint only requires `get_current_user` (authentication), not project membership authorization. Any authenticated user can fetch any build by ID if they know the integer ID: merkle-email-hub:35-45 
+**⚠️ Remaining BOLA gap: `GET /email/builds/{build_id}`** — The `get_build` endpoint only requires `get_current_user` (authentication), not project membership authorization. Any authenticated user can fetch any build by ID if they know the integer ID: email-hub:35-45 
 
 ### 6.2 Response & Error Hardening — ALL FIXED ✅
 
-- Raw exception messages sanitized via `error_sanitizer.py` with a safe message registry: merkle-email-hub:11-56 
+- Raw exception messages sanitized via `error_sanitizer.py` with a safe message registry: email-hub:11-56 
 
-- LLM provider calls wrapped with `CircuitBreaker` (5 failures → 60s open): merkle-email-hub:41-116 
+- LLM provider calls wrapped with `CircuitBreaker` (5 failures → 60s open): email-hub:41-116 
 
-- Exception class names never returned to clients; `get_safe_error_type()` returns generic categories: merkle-email-hub:90-125 
+- Exception class names never returned to clients; `get_safe_error_type()` returns generic categories: email-hub:90-125 
 
-**⚠️ Minor: `InvalidCredentialsError` and `AccountLockedError` handlers pass the exception type string literally in the response JSON** (`"type": "InvalidCredentialsError"`), leaking internal exception class names: merkle-email-hub:91-118 
+**⚠️ Minor: `InvalidCredentialsError` and `AccountLockedError` handlers pass the exception type string literally in the response JSON** (`"type": "InvalidCredentialsError"`), leaking internal exception class names: email-hub:91-118 
 
 ### 6.3 Rate Limiting & Resource Controls — ALL FIXED ✅
 
-- Per-user Redis-backed AI quota tracker (`UserQuotaTracker`) with in-memory fallback: merkle-email-hub:25-103 
+- Per-user Redis-backed AI quota tracker (`UserQuotaTracker`) with in-memory fallback: email-hub:25-103 
 
-- Blueprint daily token cap (`BlueprintCostTracker`, 500k tokens/user/day): merkle-email-hub:105-176 
+- Blueprint daily token cap (`BlueprintCostTracker`, 500k tokens/user/day): email-hub:105-176 
 
-- WebSocket: global 100 connections, per-user 5 connections: merkle-email-hub:48-96 
+- WebSocket: global 100 connections, per-user 5 connections: email-hub:48-96 
 
-- Stream timeout: 120 seconds on LLM streaming responses. merkle-email-hub:47-65 
+- Stream timeout: 120 seconds on LLM streaming responses. email-hub:47-65 
 
-**⚠️ Rate limiter falls back to in-memory (per-worker) when Redis is unavailable** — Rate limits are not shared across Gunicorn workers under Redis failure: merkle-email-hub:29-47 
+**⚠️ Rate limiter falls back to in-memory (per-worker) when Redis is unavailable** — Rate limits are not shared across Gunicorn workers under Redis failure: email-hub:29-47 
 
 ### 6.4 Business Logic Hardening — ALL FIXED ✅
 
-- **Approval state machine**: `VALID_TRANSITIONS` dict prevents invalid status jumps; `approved` and `rejected` are terminal states with no outgoing transitions: merkle-email-hub:11-17 
+- **Approval state machine**: `VALID_TRANSITIONS` dict prevents invalid status jumps; `approved` and `rejected` are terminal states with no outgoing transitions: email-hub:11-17 
 
-- **JWT algorithm pinned**: `_JWT_ALGORITHM` constant removed from configurable path (Phase 6.4.2): merkle-email-hub:16-18 
+- **JWT algorithm pinned**: `_JWT_ALGORITHM` constant removed from configurable path (Phase 6.4.2): email-hub:16-18 
 
-- **LLM output sanitization via `nh3`**: Rust-based allowlist HTML sanitizer replacing prior regex approach; strips `<script>`, `<iframe>`, `<embed>`, `<object>`, `<form>`, event handlers, `javascript:` and `data:` URLs: merkle-email-hub:150-160 
+- **LLM output sanitization via `nh3`**: Rust-based allowlist HTML sanitizer replacing prior regex approach; strips `<script>`, `<iframe>`, `<embed>`, `<object>`, `<form>`, event handlers, `javascript:` and `data:` URLs: email-hub:150-160 
 
 ---
 
 ## 3. Input Validation Patterns
 
-**✅ Pydantic schemas on all request bodies** — Architecture principle: `Input validation: Pydantic schemas on ALL request bodies. Reject unknown fields.` merkle-email-hub:13-14 
+**✅ Pydantic schemas on all request bodies** — Architecture principle: `Input validation: Pydantic schemas on ALL request bodies. Reject unknown fields.` email-hub:13-14 
 
-**✅ Body size limit middleware** — Default 100KB for API requests; 50MB exception for `/api/v1/knowledge` file uploads: merkle-email-hub:24-61 
+**✅ Body size limit middleware** — Default 100KB for API requests; 50MB exception for `/api/v1/knowledge` file uploads: email-hub:24-61 
 
-**✅ PII stripping from AI prompts** — Regex patterns strip email addresses, phone numbers (US and international), SSNs, and credit card numbers before sending to external LLM APIs: merkle-email-hub:13-56 
+**✅ PII stripping from AI prompts** — Regex patterns strip email addresses, phone numbers (US and international), SSNs, and credit card numbers before sending to external LLM APIs: email-hub:13-56 
 
-**✅ AI response output validation** — Null byte stripping and 100,000-character truncation on all LLM responses: merkle-email-hub:59-84 
+**✅ AI response output validation** — Null byte stripping and 100,000-character truncation on all LLM responses: email-hub:59-84 
 
-**✅ Scaffolder system prompt security rules** — Absolute prohibitions injected into the agent system prompt: no `<script>`, no `on*` event handlers, no `javascript:` protocol, no `<iframe>/<embed>/<object>/<form>`, no `data:` URIs: merkle-email-hub:84-92 
+**✅ Scaffolder system prompt security rules** — Absolute prohibitions injected into the agent system prompt: no `<script>`, no `on*` event handlers, no `javascript:` protocol, no `<iframe>/<embed>/<object>/<form>`, no `data:` URIs: email-hub:84-92 
 
 ---
 
@@ -116,39 +116,39 @@ Downstream modules now call it through the FK chain (e.g., build→project, QA r
 
 **All four ESP connectors (Braze, SFMC, Adobe Campaign, Taxi) are placeholder implementations** — they mock API calls and return fake IDs. The **AES-256 encryption for stored API keys** is explicitly deferred:
 
-> `"No credential storage yet (placeholder implementations) — AES-256 encryption deferred to real API integration"` merkle-email-hub:390-395 
+> `"No credential storage yet (placeholder implementations) — AES-256 encryption deferred to real API integration"` email-hub:390-395 
 
-Braze service exports a hardcoded mock ID with no real API call and no credential handling: merkle-email-hub:27-39 merkle-email-hub:8-26 
+Braze service exports a hardcoded mock ID with no real API call and no credential handling: email-hub:27-39 email-hub:8-26 
 
 ### 4.2 Connector Export — Placeholder HTML TODO ⚠️
 
-The `ConnectorService.export()` method contains a hardcoded `# TODO` — it sends a literal placeholder HTML string `"<html><body>Placeholder</body></html>"` to all connectors instead of the actual compiled build: merkle-email-hub:81-83 
+The `ConnectorService.export()` method contains a hardcoded `# TODO` — it sends a literal placeholder HTML string `"<html><body>Placeholder</body></html>"` to all connectors instead of the actual compiled build: email-hub:81-83 
 
 ### 4.3 Brand Compliance QA Check — Always Passes ⚠️
 
-The `BrandComplianceCheck` is a documented stub that **always returns `passed=True`** with score `1.0`. It never validates brand colors, fonts, logos, or footer compliance: merkle-email-hub:1-24 
+The `BrandComplianceCheck` is a documented stub that **always returns `passed=True`** with score `1.0`. It never validates brand colors, fonts, logos, or footer compliance: email-hub:1-24 
 
 ### 4.4 Accessibility QA Check — Incomplete ⚠️
 
-The `AccessibilityCheck` only verifies three shallow conditions (lang attribute, missing `alt` on images, `role="presentation"`). It does **not** check WCAG AA contrast ratios, touch targets, semantic heading hierarchy, or ARIA attributes: merkle-email-hub:13-33 
+The `AccessibilityCheck` only verifies three shallow conditions (lang attribute, missing `alt` on images, `role="presentation"`). It does **not** check WCAG AA contrast ratios, touch targets, semantic heading hierarchy, or ARIA attributes: email-hub:13-33 
 
 ### 4.5 Rendering Providers — Fully Mocked ⚠️
 
-Both **Litmus** and **Email on Acid** rendering services are complete placeholders returning hardcoded mock test IDs and static screenshot URLs. No real API calls are made: merkle-email-hub:1-42 merkle-email-hub:1-42 
+Both **Litmus** and **Email on Acid** rendering services are complete placeholders returning hardcoded mock test IDs and static screenshot URLs. No real API calls are made: email-hub:1-42 email-hub:1-42 
 
-Visual regression comparison is also mocked — it computes `0.0%` diff when URLs match, `5.0%` otherwise, with no real pixel-level comparison: merkle-email-hub:160-185 
+Visual regression comparison is also mocked — it computes `0.0%` diff when URLs match, `5.0%` otherwise, with no real pixel-level comparison: email-hub:160-185 
 
 ### 4.6 SSL/TLS — Commented Out ⚠️
 
-The nginx SSL server block is entirely commented out. The system runs HTTP-only in production until certificates are manually provisioned: merkle-email-hub:128-143 
+The nginx SSL server block is entirely commented out. The system runs HTTP-only in production until certificates are manually provisioned: email-hub:128-143 
 
 ### 4.7 Row-Level Security — Partial Coverage ⚠️
 
-RLS is applied only to `client_orgs` and `projects` tables. Other sensitive tables (`email_builds`, `qa_results`, `approvals`, `components`, etc.) rely solely on application-layer `verify_project_access()` checks rather than database-enforced RLS: merkle-email-hub:20-48 
+RLS is applied only to `client_orgs` and `projects` tables. Other sensitive tables (`email_builds`, `qa_results`, `approvals`, `components`, etc.) rely solely on application-layer `verify_project_access()` checks rather than database-enforced RLS: email-hub:20-48 
 
 ### 4.8 Figma Real API Integration — Deferred ⚠️
 
-The Figma design sync is frontend-only (demo data). Real Figma REST API integration, change webhook handling, and the plugin ecosystem are explicitly deferred: merkle-email-hub:400-402 
+The Figma design sync is frontend-only (demo data). Real Figma REST API integration, change webhook handling, and the plugin ecosystem are explicitly deferred: email-hub:400-402 
 
 ---
 
@@ -163,11 +163,11 @@ The eval framework is built but **live execution is pending** — no real LLM pr
 
 The CI regression gate (`make eval-check`) **is not wired to CI/CD** — it is Makefile-only for now:
 
-> `"CI integration deferred — Makefile targets only for now"` merkle-email-hub:447-458 merkle-email-hub:289-293 
+> `"CI integration deferred — Makefile targets only for now"` email-hub:447-458 email-hub:289-293 
 
-**Security concern in eval test data**: The Content agent synthetic test data includes real PII patterns (SSN, account numbers) explicitly marked as `"security rules are absolute"` — intended as adversarial test cases: merkle-email-hub:510-523 
+**Security concern in eval test data**: The Content agent synthetic test data includes real PII patterns (SSN, account numbers) explicitly marked as `"security rules are absolute"` — intended as adversarial test cases: email-hub:510-523 
 
-**Judge prompt security rule**: Judges must not include agent system prompts (information leakage) and must not make external API calls: merkle-email-hub:507-511 
+**Judge prompt security rule**: Judges must not include agent system prompts (information leakage) and must not make external API calls: email-hub:507-511 
 
 ---
 
@@ -175,61 +175,61 @@ The CI regression gate (`make eval-check`) **is not wired to CI/CD** — it is M
 
 ### Phase 7 (Agent Capability Improvements)
 
-**⚠️ 7.2 Eval-informed agent prompts — BLOCKED** — Cannot generate eval-informed prompt safety improvements until live LLM traces are collected: merkle-email-hub:656-662 
+**⚠️ 7.2 Eval-informed agent prompts — BLOCKED** — Cannot generate eval-informed prompt safety improvements until live LLM traces are collected: email-hub:656-662 
 
-**⚠️ 7.6 DCG Cross-Agent Memory — NOT STARTED** — `store_note`/`recall_notes` MCP tools for cross-agent memory sharing are all Phase 1 items with unchecked checkboxes: merkle-email-hub:694-702 
+**⚠️ 7.6 DCG Cross-Agent Memory — NOT STARTED** — `store_note`/`recall_notes` MCP tools for cross-agent memory sharing are all Phase 1 items with unchecked checkboxes: email-hub:694-702 
 
-Security note for 7.6: notes are project-local, agent identity auto-detected (not self-reported), `.dcg/` gitignored. merkle-email-hub:711-714 
+Security note for 7.6: notes are project-local, agent identity auto-detected (not self-reported), `.dcg/` gitignored. email-hub:711-714 
 
 ### Phase 8 (Cognee Knowledge Graph) — ALL PENDING ⚠️
 
-All 6 tasks (8.1–8.6) are unchecked. This includes the full knowledge graph integration, ontology seeding, and blueprint outcome logging. No security hardening for graph access or cross-tenant isolation is implemented yet: merkle-email-hub:313-319 
+All 6 tasks (8.1–8.6) are unchecked. This includes the full knowledge graph integration, ontology seeding, and blueprint outcome logging. No security hardening for graph access or cross-tenant isolation is implemented yet: email-hub:313-319 
 
 ### Phase 9 (Graph-Driven Intelligence) — ALL PENDING ⚠️
 
-All 8 tasks (9.1–9.8) are unchecked. These include competitive intelligence data and client-specific subgraph generation — both of which carry data sensitivity concerns to be addressed on build: merkle-email-hub:321-329 
+All 8 tasks (9.1–9.8) are unchecked. These include competitive intelligence data and client-specific subgraph generation — both of which carry data sensitivity concerns to be addressed on build: email-hub:321-329 
 
 ---
 
 ## 7. Nginx / Infrastructure Security
 
-**✅ Security headers** — X-Frame-Options DENY, X-Content-Type-Options nosniff, X-XSS-Protection, Referrer-Policy strict-origin-when-cross-origin, HSTS max-age=63072000: merkle-email-hub:10-15 
+**✅ Security headers** — X-Frame-Options DENY, X-Content-Type-Options nosniff, X-XSS-Protection, Referrer-Policy strict-origin-when-cross-origin, HSTS max-age=63072000: email-hub:10-15 
 
-**✅ Path blocking** — `.env`, `.git`, `alembic/`, `__pycache__/` paths return 403: merkle-email-hub:47-57 
+**✅ Path blocking** — `.env`, `.git`, `alembic/`, `__pycache__/` paths return 403: email-hub:47-57 
 
-**✅ Stricter rate limit on auth endpoints** — 5 req/s vs 30 req/s for general API: merkle-email-hub:18-20 merkle-email-hub:69-76 
+**✅ Stricter rate limit on auth endpoints** — 5 req/s vs 30 req/s for general API: email-hub:18-20 email-hub:69-76 
 
-**✅ HTTP/2 Upgrade header restriction** — `map $http_upgrade $connection_upgrade` prevents HTTP/2 cleartext upgrade smuggling: merkle-email-hub:34-38 
+**✅ HTTP/2 Upgrade header restriction** — `map $http_upgrade $connection_upgrade` prevents HTTP/2 cleartext upgrade smuggling: email-hub:34-38 
 
-**⚠️ OpenAPI docs accessible at `/docs` and `/openapi.json`** — The nginx config proxies these with no authentication, though the FastAPI app disables them in non-development environments: merkle-email-hub:107-116 merkle-email-hub:113-120 
+**⚠️ OpenAPI docs accessible at `/docs` and `/openapi.json`** — The nginx config proxies these with no authentication, though the FastAPI app disables them in non-development environments: email-hub:107-116 email-hub:113-120 
 
-**⚠️ Development server binds to `0.0.0.0`** — Suppressed with `# noqa: S104`: merkle-email-hub:177-183 
+**⚠️ Development server binds to `0.0.0.0`** — Suppressed with `# noqa: S104`: email-hub:177-183 
 
 ---
 
 ## 8. Frontend Security
 
-**✅ Tokens stored in Next-Auth server-side session** — Access tokens are managed by Next-Auth's JWT session strategy (encrypted cookie), not `localStorage`. The `authFetch` utility reads tokens from the session: merkle-email-hub:42-73 
+**✅ Tokens stored in Next-Auth server-side session** — Access tokens are managed by Next-Auth's JWT session strategy (encrypted cookie), not `localStorage`. The `authFetch` utility reads tokens from the session: email-hub:42-73 
 
-**✅ 401 interceptor** — SDK's response interceptor calls `signOut()` on 401 responses: merkle-email-hub:28-35 
+**✅ 401 interceptor** — SDK's response interceptor calls `signOut()` on 401 responses: email-hub:28-35 
 
-**⚠️ Export history stored unencrypted in `sessionStorage`** — Up to 100 export records (connector type, build ID, status) are stored in `sessionStorage` in plaintext with key `merkle-export-history`: merkle-email-hub:28-38 
+**⚠️ Export history stored unencrypted in `sessionStorage`** — Up to 100 export records (connector type, build ID, status) are stored in `sessionStorage` in plaintext with key `email-hub-export-history`: email-hub:28-38 
 
-**⚠️ `(user as any)` type casts bypass TypeScript safety in auth callbacks** — The `jwt` callback uses `(user as any).accessToken`, `(user as any).role`, etc., bypassing type-safe token handling: merkle-email-hub:114-131 
+**⚠️ `(user as any)` type casts bypass TypeScript safety in auth callbacks** — The `jwt` callback uses `(user as any).accessToken`, `(user as any).role`, etc., bypassing type-safe token handling: email-hub:114-131 
 
 ---
 
 ## 9. Security Checklist (Pre-Sprint, Run Before Each Demo)
 
-The codebase documents a formal security checklist to be validated before each sprint demo. Key unchecked categories include rate limiting on new endpoints, RLS on new tables, and CORS verification: merkle-email-hub:947-962 
+The codebase documents a formal security checklist to be validated before each sprint demo. Key unchecked categories include rate limiting on new endpoints, RLS on new tables, and CORS verification: email-hub:947-962 
 
 ---
 
 ## 10. Architecture Principles (Documented Intentions vs. Reality)
 
-The documented security architecture principles define the target state: merkle-email-hub:11-26 
+The documented security architecture principles define the target state: email-hub:11-26 
 
-The `CLAUDE.md` summarizes the security architecture as implemented: merkle-email-hub:224-233 
+The `CLAUDE.md` summarizes the security architecture as implemented: email-hub:224-233 
 
 ---
 
@@ -265,7 +265,7 @@ The `CLAUDE.md` summarizes the security architecture as implemented: merkle-emai
 
 4. **Phase 6 (OWASP hardening) is declared complete** in `CLAUDE.md`, but the `GET /email/builds/{build_id}` BOLA gap was not listed in the Phase 6 checklist and remains open.
 
-5. **The 6 remaining AI agents** (Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation) have no eval data, no judge prompts, and no security audit of their test fixtures yet — per the rule: *"No agent goes to production without completing steps 5.1–5.5 for that agent."* merkle-email-hub:438-440
+5. **The 6 remaining AI agents** (Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation) have no eval data, no judge prompts, and no security audit of their test fixtures yet — per the rule: *"No agent goes to production without completing steps 5.1–5.5 for that agent."* email-hub:438-440
 ### Citations
 **File:** app/auth/token.py (L16-18)
 ```python
@@ -1788,8 +1788,8 @@ function getSnapshot(): ExportHistoryRecord[] {
 ```
 ## Q3
 no think properly and hard about where is the security problems in this repo, be it backend, API, agent or any other. suggest fixes.
-## Security Vulnerabilities in Merkle Email Hub
-This codemap traces critical security vulnerabilities across the Merkle Email Hub's authentication, authorization, and infrastructure layers. Key findings include fail-open Redis dependencies for token revocation [1b] and rate limiting [7c], a BOLA vulnerability allowing any user to access email builds [2c], JWT tokens exposed in WebSocket URLs [3b], hardcoded demo credentials in production builds [4b], placeholder ESP connectors with no real security [5b], and incomplete Row-Level Security coverage [6c]. These vulnerabilities create significant attack surfaces that could be exploited in production environments.
+## Security Vulnerabilities in [REDACTED] Email Hub
+This codemap traces critical security vulnerabilities across the [REDACTED] Email Hub's authentication, authorization, and infrastructure layers. Key findings include fail-open Redis dependencies for token revocation [1b] and rate limiting [7c], a BOLA vulnerability allowing any user to access email builds [2c], JWT tokens exposed in WebSocket URLs [3b], hardcoded demo credentials in production builds [4b], placeholder ESP connectors with no real security [5b], and incomplete Row-Level Security coverage [6c]. These vulnerabilities create significant attack surfaces that could be exploited in production environments.
 ### 1. Fail-Open Token Revocation - Redis Outage Risk
 Authentication system allows revoked tokens during Redis failures
 ### 1a. Token revocation check (`token.py:101`)
@@ -1946,8 +1946,8 @@ Warning indicates reduced protection
 
 ```
 
-## Security Development Cycle & Best Practices in Merkle Email Hub
-This codemap traces the security development cycle in Merkle Email Hub, revealing a strong foundation with comprehensive unit tests and security principles, but critical gaps in CI automation [1a], fail-open Redis dependencies [2c], and manual security verification [6a]. The system has excellent security testing coverage [3a-3d] and pre-commit hooks [4a-4d], but lacks automated regression prevention [5d] and complete RLS coverage [6b].
+## Security Development Cycle & Best Practices in [REDACTED] Email Hub
+This codemap traces the security development cycle in [REDACTED] Email Hub, revealing a strong foundation with comprehensive unit tests and security principles, but critical gaps in CI automation [1a], fail-open Redis dependencies [2c], and manual security verification [6a]. The system has excellent security testing coverage [3a-3d] and pre-commit hooks [4a-4d], but lacks automated regression prevention [5d] and complete RLS coverage [6b].
 ### 1. CI/CD Security Pipeline Gap
 Only Semgrep SAST runs in CI; full security suite is manual
 ### 1a. Only CI workflow (`semgrep.yml:1`)

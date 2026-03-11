@@ -1,4 +1,4 @@
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 
 export function SkeletonCard() {
   return (

@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { MonitorSmartphone, ChevronLeft, ChevronRight, GitCompareArrows } from "lucide-react";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useRenderingTests } from "@/hooks/use-renderings";

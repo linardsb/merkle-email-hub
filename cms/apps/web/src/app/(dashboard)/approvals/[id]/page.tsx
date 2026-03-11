@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { ArrowLeft, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
-import { Skeleton } from "@merkle-email-hub/ui/components/ui/skeleton";
+import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useApproval, useBuild } from "@/hooks/use-approvals";
 import { ApprovalStatusBadge } from "@/components/approvals/approval-status-badge";

@@ -1,6 +1,6 @@
-# Merkle Email Innovation Hub — Implementation Roadmap
+# [REDACTED] Email Innovation Hub — Implementation Roadmap
 
-> Derived from `Merkle_Email_Innovation_Hub_Plan.md` Sections 2-16
+> Derived from `[REDACTED]_Email_Innovation_Hub_Plan.md` Sections 2-16
 > Architecture: Security-first, development-pattern-adjustable, GDPR-compliant
 > Pattern: Each task = one planning + implementation session
 
@@ -51,7 +51,7 @@
 - Ensure all form components have proper ARIA attributes
 - Input components must sanitise rendered content (XSS prevention)
 - Dialog/sheet components must trap focus (accessibility + security)
-**Verify:** Components render with correct Merkle brand tokens. Dark mode toggle works. All components pass accessibility audit.
+**Verify:** Components render with correct [REDACTED] brand tokens. Dark mode toggle works. All components pass accessibility audit.
 
 ### ~~0.3 Generate OpenAPI TypeScript SDK~~ DONE
 **Plan ref:** Section 9.1 (Frontend Architecture)
@@ -229,7 +229,7 @@
 **Security:**
 - Knowledge entries classified: public (Can I Email), internal (best practices), confidential (client quirks)
 - Client-specific quirks tagged with client_org_id (access-controlled)
-- Embedding model runs on infrastructure Merkle controls (no PII sent to external embedding APIs)
+- Embedding model runs on infrastructure [REDACTED] controls (no PII sent to external embedding APIs)
 **Verify:** `make seed-knowledge` ingests all 20 documents. Search "Outlook dark mode background image" → get relevant Can I Email data + rendering quirk entries. Knowledge Agent uses RAG context in responses.
 
 ---
@@ -1175,7 +1175,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 
 Techniques adapted from the autoresearch autonomous experiment framework. These patterns apply autoresearch's iterative modify→run→measure→keep/revert loop to agent and blueprint quality optimization.
 
-> Source: autoresearch repo analysis (2026-03-09). Cross-referenced with merkle-email-hub architecture.
+> Source: autoresearch repo analysis (2026-03-09). Cross-referenced with email-hub architecture.
 
 ### Pattern 1: Autonomous Agent Eval Loop
 - [ ] **Automated Eval Loop for Blueprint Pass Rate** — Implement autoresearch-style modify→run→measure→keep/revert cycle for agent prompt optimization. Use existing 36 eval traces + QA gate as the scoring mechanism. After each prompt/config change: run scaffolder/dark-mode/content agents against the same briefs, score via QA gate (deterministic) + LLM judge (subjective quality), record in `eval_results.tsv`. Collapse 10 QA checks into a single "QA pass rate" aggregate for the keep/revert decision. Keep changes that improve pass rate, revert those that don't. Target: move from 16.7% baseline pass rate upward through automated overnight sweeps.
@@ -1195,7 +1195,7 @@ Techniques adapted from the autoresearch autonomous experiment framework. These 
 
 Patterns identified from LMCache (distributed KV cache engine for LLM serving). These are infrastructure-level improvements that can be retrofitted without modifying existing agents or the blueprint engine.
 
-> Source: LMCache repo analysis (2026-03-09). Cross-referenced with merkle-email-hub architecture.
+> Source: LMCache repo analysis (2026-03-09). Cross-referenced with email-hub architecture.
 
 ### Quick Wins (Low Effort, High Impact)
 - [ ] **Recoverable vs Irrecoverable Exception Hierarchy** — Add `IrrecoverableError` to exception hierarchy alongside existing `AIError`/`BlueprintError`. Use in WebSocket broadcaster, health monitors, and background services to distinguish "log and retry" from "shut down and alert." Blueprint engine already has bounded retries; this targets the infrastructure layer beneath it.

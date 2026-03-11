@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { PreviewToolbar, type Viewport } from "./preview-toolbar";
 import { PreviewIframe } from "./preview-iframe";
-import type { PersonaResponse } from "@merkle-email-hub/sdk";
+import type { PersonaResponse } from "@email-hub/sdk";
 
 const ZOOM_STEPS = [50, 75, 100, 125, 150, 200] as const;
 

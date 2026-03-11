@@ -1,9 +1,9 @@
 schema_version: 1
-id: merkle.email_hub
-name: Merkle Email Hub Database Protection
+id: email_hub
+name: Email Hub Database Protection
 version: 1.0.0
 description: >
-  Prevents accidental database destruction in the merkle-email-hub project.
+  Prevents accidental database destruction in the email-hub project.
   Catches Alembic downgrades, raw SQL deletions, and production-targeting commands.
 
 keywords:
@@ -14,7 +14,7 @@ keywords:
   - DELETE
   - dropdb
   - pg_dump
-  - merkle_email_hub
+  - email_hub
   - psql
   - shutil.rmtree
 
@@ -43,12 +43,12 @@ destructive_patterns:
       This causes the DB schema and migration state to diverge, which can lead to
       data loss on the next upgrade attempt.
 
-  - name: drop-merkle-db
-    pattern: (?i)(DROP\s+DATABASE|dropdb)\s+.*merkle
+  - name: drop-db
+    pattern: (?i)(DROP\s+DATABASE|dropdb)\s+.*email.hub
     severity: critical
-    description: Dropping the merkle_email_hub database destroys all data
+    description: Dropping the email_hub database destroys all data
     explanation: |
-      This will permanently delete the entire merkle_email_hub database
+      This will permanently delete the entire email_hub database
       including all users, documents, templates, components, and knowledge base data.
 
   - name: truncate-app-tables
@@ -77,7 +77,7 @@ destructive_patterns:
         platform: all
 
   - name: psql-production
-    pattern: psql\s+.*(?:prod|production|merkle-email-hub-prod)
+    pattern: psql\s+.*(?:prod|production|email-hub-prod)
     severity: high
     description: Direct psql connection to production database
     explanation: |
@@ -85,12 +85,12 @@ destructive_patterns:
       application-level protections (soft deletes, RLS, audit logging).
       Use the application API or a read-only replica for queries.
     suggestions:
-      - command: "psql -h <host> -U readonly_user -d merkle_email_hub_prod"
+      - command: "psql -h <host> -U readonly_user -d email_hub_prod"
         description: Connect with a read-only user instead
         platform: all
 
-  - name: pg-dump-clean-merkle
-    pattern: pg_dump\s+.*(?:--clean|-c\b).*merkle
+  - name: pg-dump-clean
+    pattern: pg_dump\s+.*(?:--clean|-c\b).*email.hub
     severity: high
     description: pg_dump --clean adds DROP statements that destroy data on restore
     explanation: |

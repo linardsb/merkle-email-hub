@@ -8,4 +8,10 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #18087 | 9:26 AM | 🔵 | Shared Pattern Architecture - Literal Enums, Integer PKs, No Soft Deletes | ~829 |
+
+### Mar 9, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #20838 | 4:39 PM | 🔵 | Analyzed ARCHITECTURE.md revealing ADRs and merkle-email-hub's evolution from VTV platform | ~705 |
 </claude-mem-context>
