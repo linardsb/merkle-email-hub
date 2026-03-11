@@ -12,6 +12,7 @@ import type {
   KnowledgeDomainList,
   KnowledgeTagList,
 } from "@/types/knowledge";
+import type { GraphSearchResponse, GraphSearchArgs } from "@/types/graph-search";
 
 // ── Browse documents (GET) ──
 
@@ -78,6 +79,15 @@ interface SearchArg {
 export function useKnowledgeSearch() {
   return useSWRMutation<KnowledgeSearchResponse, Error, string, SearchArg>(
     "/api/v1/knowledge/search",
+    mutationFetcher,
+  );
+}
+
+// ── Graph Search (POST via useSWRMutation) ──
+
+export function useGraphSearch() {
+  return useSWRMutation<GraphSearchResponse, Error, string, GraphSearchArgs>(
+    "/api/v1/knowledge/graph/search",
     mutationFetcher,
   );
 }

@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { BookOpen, Search } from "lucide-react";
+import { BookOpen, Search, Network, MessageSquare } from "lucide-react";
 import {
   useKnowledgeDocuments,
   useKnowledgeDomains,
   useKnowledgeTags,
   useKnowledgeSearch,
+  useGraphSearch,
 } from "@/hooks/use-knowledge";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,6 +19,9 @@ import {
 import { KnowledgeSearchResultCard } from "@/components/knowledge/knowledge-search-result";
 import { KnowledgeDocumentCard } from "@/components/knowledge/knowledge-document-card";
 import { KnowledgeDocumentDialog } from "@/components/knowledge/knowledge-document-dialog";
+import { GraphSearchResults } from "@/components/knowledge/graph-search-results";
+import { GraphCompletionResult } from "@/components/knowledge/graph-completion-result";
+import type { SearchMode } from "@/types/graph-search";
 
 const PAGE_SIZE = 12;
 
@@ -40,6 +44,8 @@ export default function KnowledgePage() {
   const [page, setPage] = useState(1);
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchMode, setSearchMode] = useState<SearchMode>("text");
+  const [datasetName, setDatasetName] = useState<string | undefined>(undefined);
 
   // ── Debounce search ──
   useEffect(() => {
@@ -74,20 +80,37 @@ export default function KnowledgePage() {
     error: searchError,
   } = useKnowledgeSearch();
 
+  // Graph search mode
+  const {
+    trigger: triggerGraphSearch,
+    data: graphSearchData,
+    isMutating: graphSearchLoading,
+    error: graphSearchError,
+  } = useGraphSearch();
+
   // Domains & tags for filters
   const { data: domainsData } = useKnowledgeDomains();
   const { data: tagsData } = useKnowledgeTags();
 
   // ── Trigger search when query changes ──
   useEffect(() => {
-    if (debouncedQuery) {
+    if (!debouncedQuery) return;
+
+    if (searchMode === "text") {
       triggerSearch({
         query: debouncedQuery,
         domain: activeDomain,
         limit: 20,
       });
+    } else {
+      triggerGraphSearch({
+        query: debouncedQuery,
+        dataset_name: datasetName,
+        top_k: 10,
+        mode: searchMode === "ask" ? "completion" : "chunks",
+      });
     }
-  }, [debouncedQuery, activeDomain, triggerSearch]);
+  }, [debouncedQuery, activeDomain, searchMode, datasetName, triggerSearch, triggerGraphSearch]);
 
   // ── Handlers ──
   const handleDomainChange = useCallback(
@@ -138,6 +161,62 @@ export default function KnowledgePage() {
           aria-label={t("searchPlaceholder")}
         />
       </div>
+
+      {/* Search mode toggle — visible when in search mode */}
+      {isSearchMode && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground mr-1">{t("graphSearchMode")}:</span>
+          <button
+            type="button"
+            onClick={() => setSearchMode("text")}
+            className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              searchMode === "text"
+                ? "bg-interactive text-foreground-inverse"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <Search className="h-3 w-3" />
+            {t("graphModeText")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchMode("graph")}
+            className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              searchMode === "graph"
+                ? "bg-interactive text-foreground-inverse"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <Network className="h-3 w-3" />
+            {t("graphModeGraph")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchMode("ask")}
+            className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              searchMode === "ask"
+                ? "bg-interactive text-foreground-inverse"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <MessageSquare className="h-3 w-3" />
+            {t("graphModeAsk")}
+          </button>
+
+          {/* Dataset filter (graph/ask modes only) */}
+          {(searchMode === "graph" || searchMode === "ask") && (
+            <select
+              value={datasetName ?? ""}
+              onChange={(e) => setDatasetName(e.target.value || undefined)}
+              className="ml-2 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
+            >
+              <option value="">{t("graphAllDatasets")}</option>
+              <option value="email_ontology">{t("graphDatasetOntology")}</option>
+              <option value="email_components">{t("graphDatasetComponents")}</option>
+            </select>
+          )}
+        </div>
+      )}
 
       {/* Domain filter pills */}
       <div className="flex flex-wrap gap-2">
@@ -191,49 +270,122 @@ export default function KnowledgePage() {
       {/* ── Search Results Mode ── */}
       {isSearchMode && (
         <>
-          {searchData && !searchLoading && (
-            <p className="text-sm text-foreground-muted">
-              {t("searchResultsCount", {
-                count: searchData.results.length,
-                total: searchData.total_candidates,
-              })}
-            </p>
+          {/* Text search results */}
+          {searchMode === "text" && (
+            <>
+              {searchData && !searchLoading && (
+                <p className="text-sm text-muted-foreground">
+                  {t("searchResultsCount", {
+                    count: searchData.results.length,
+                    total: searchData.total_candidates,
+                  })}
+                </p>
+              )}
+              {searchLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <SkeletonSearchResult key={i} />
+                  ))}
+                </div>
+              ) : searchError ? (
+                <ErrorState
+                  message={t("searchError")}
+                  onRetry={() =>
+                    triggerSearch({
+                      query: debouncedQuery,
+                      domain: activeDomain,
+                      limit: 20,
+                    })
+                  }
+                  retryLabel={t("retry")}
+                />
+              ) : searchData?.results.length === 0 ? (
+                <EmptyState
+                  icon={Search}
+                  title={t("noSearchResults")}
+                  description={t("noSearchResultsDescription")}
+                />
+              ) : (
+                <div className="animate-fade-in space-y-3">
+                  {searchData?.results.map((result, i) => (
+                    <KnowledgeSearchResultCard
+                      key={`${result.document_id}-${result.chunk_index}-${i}`}
+                      result={result}
+                      onViewDocument={handleViewDocument}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
-          {searchLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <SkeletonSearchResult key={i} />
-              ))}
-            </div>
-          ) : searchError ? (
-            <ErrorState
-              message={t("searchError")}
-              onRetry={() =>
-                triggerSearch({
-                  query: debouncedQuery,
-                  domain: activeDomain,
-                  limit: 20,
-                })
-              }
-              retryLabel={t("retry")}
-            />
-          ) : searchData?.results.length === 0 ? (
-            <EmptyState
-              icon={Search}
-              title={t("noSearchResults")}
-              description={t("noSearchResultsDescription")}
-            />
-          ) : (
-            <div className="animate-fade-in space-y-3">
-              {searchData?.results.map((result, i) => (
-                <KnowledgeSearchResultCard
-                  key={`${result.document_id}-${result.chunk_index}-${i}`}
-                  result={result}
-                  onViewDocument={handleViewDocument}
+          {/* Graph search results */}
+          {searchMode === "graph" && (
+            <>
+              {graphSearchLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <SkeletonSearchResult key={i} />
+                  ))}
+                </div>
+              ) : graphSearchError ? (
+                <ErrorState
+                  message={t("graphSearchError")}
+                  onRetry={() =>
+                    triggerGraphSearch({
+                      query: debouncedQuery,
+                      dataset_name: datasetName,
+                      top_k: 10,
+                      mode: "chunks",
+                    })
+                  }
+                  retryLabel={t("retry")}
                 />
-              ))}
-            </div>
+              ) : graphSearchData?.results.length === 0 ? (
+                <EmptyState
+                  icon={Network}
+                  title={t("graphNoResults")}
+                  description={t("graphNoResultsDescription")}
+                />
+              ) : graphSearchData ? (
+                <GraphSearchResults results={graphSearchData.results} />
+              ) : null}
+            </>
+          )}
+
+          {/* Ask (completion) mode */}
+          {searchMode === "ask" && (
+            <>
+              {graphSearchLoading ? (
+                <div className="space-y-3">
+                  <SkeletonSearchResult />
+                </div>
+              ) : graphSearchError ? (
+                <ErrorState
+                  message={t("graphSearchError")}
+                  onRetry={() =>
+                    triggerGraphSearch({
+                      query: debouncedQuery,
+                      dataset_name: datasetName,
+                      top_k: 10,
+                      mode: "completion",
+                    })
+                  }
+                  retryLabel={t("retry")}
+                />
+              ) : graphSearchData?.results?.[0]?.content ? (
+                <GraphCompletionResult
+                  content={graphSearchData.results[0].content}
+                  query={graphSearchData.query}
+                />
+              ) : graphSearchData ? (
+                <EmptyState
+                  icon={MessageSquare}
+                  title={t("graphNoAnswer")}
+                  description={t("graphNoAnswerDescription")}
+                />
+              ) : null}
+            </>
           )}
         </>
       )}

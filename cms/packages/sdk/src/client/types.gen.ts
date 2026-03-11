@@ -1666,6 +1666,42 @@ export type RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDelet
 
 export type RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDeleteResponse = RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDeleteResponses[keyof RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDeleteResponses];
 
+export interface GraphEntity {
+    id: string;
+    name: string;
+    entity_type: string;
+    description?: string | null;
+    properties?: Record<string, unknown>;
+}
+
+export interface GraphRelationship {
+    source_id: string;
+    target_id: string;
+    relationship_type: string;
+    properties?: Record<string, unknown>;
+}
+
+export interface GraphSearchResult {
+    content: string;
+    entities?: Array<GraphEntity>;
+    relationships?: Array<GraphRelationship>;
+    score?: number;
+}
+
+export interface GraphSearchRequest {
+    query: string;
+    dataset_name?: string | null;
+    top_k?: number;
+    mode?: "chunks" | "completion";
+    system_prompt?: string;
+}
+
+export interface GraphSearchResponse {
+    results: Array<GraphSearchResult>;
+    query: string;
+    mode: string;
+}
+
 export type SearchKnowledgeApiV1KnowledgeSearchPostData = {
     body: SearchRequest;
     path?: never;

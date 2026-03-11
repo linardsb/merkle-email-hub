@@ -7,6 +7,7 @@ import type { QACheckResult, QAResultResponse } from "@/types/qa";
 import { SPRING_SALE_HERO_HTML } from "./data/html-sources";
 import { DEMO_KNOWLEDGE_DOCUMENTS } from "./data/knowledge";
 import { DEMO_RENDERING_COMPARISON } from "./data/renderings";
+import { buildDemoGraphSearchResults, buildDemoGraphCompletion } from "./data/graph-search";
 import { demoStore } from "./demo-store";
 
 const CHECK_NAMES = [
@@ -215,6 +216,35 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
       query: body?.query ?? "",
       total_candidates: results.length * 3,
       reranked: true,
+    };
+  }
+
+  // Graph knowledge search
+  if (p === "/api/v1/knowledge/graph/search") {
+    const body = _body as Record<string, unknown> | null;
+    const query = (body?.query as string | undefined) ?? "";
+    const mode = (body?.mode as string | undefined) ?? "chunks";
+    const topK = (body?.top_k as number | undefined) ?? 10;
+
+    if (mode === "completion") {
+      return {
+        results: [
+          {
+            content: buildDemoGraphCompletion(query),
+            entities: [],
+            relationships: [],
+            score: 1.0,
+          },
+        ],
+        query,
+        mode: "completion",
+      };
+    }
+
+    return {
+      results: buildDemoGraphSearchResults(query, topK),
+      query,
+      mode: "chunks",
     };
   }
 
