@@ -9,6 +9,7 @@ import type {
   SSEChunk,
   UseChatReturn,
 } from "@/types/chat";
+import { extractConfidence, stripConfidenceComment } from "@/lib/confidence";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
@@ -120,7 +121,14 @@ export function useChat(projectId?: string): UseChatReturn {
 
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, isStreaming: false } : m,
+              m.id === assistantId
+                ? {
+                    ...m,
+                    isStreaming: false,
+                    confidence: extractConfidence(m.content),
+                    content: stripConfidenceComment(m.content),
+                  }
+                : m,
             ),
           );
           setStatus("idle");
@@ -187,7 +195,14 @@ export function useChat(projectId?: string): UseChatReturn {
           // Mark streaming complete
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, isStreaming: false } : m
+              m.id === assistantId
+                ? {
+                    ...m,
+                    isStreaming: false,
+                    confidence: extractConfidence(m.content),
+                    content: stripConfidenceComment(m.content),
+                  }
+                : m
             )
           );
           setStatus("idle");

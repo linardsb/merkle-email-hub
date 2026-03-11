@@ -70,7 +70,7 @@ export function FailurePatternTable({
         </thead>
         <tbody>
           {patterns.map((pattern) => {
-            const badge = confidenceBadge(pattern.confidence);
+            const badge = confidenceBadge(pattern.confidence ?? null);
             return (
               <tr
                 key={pattern.id}

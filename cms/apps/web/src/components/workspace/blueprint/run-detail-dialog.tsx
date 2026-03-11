@@ -66,7 +66,7 @@ export function RunDetailDialog({
 
           {runData ? (
             <>
-              <StatusBanner status={runData.status} qaPassed={runData.qa_passed} />
+              <StatusBanner status={runData.status} qaPassed={runData.qa_passed ?? false} />
 
               {runData.audience_summary && (
                 <div className="rounded-lg border border-border bg-muted/50 p-3">
@@ -77,15 +77,15 @@ export function RunDetailDialog({
                 </div>
               )}
 
-              <PipelineTimeline progress={runData.progress} />
+              <PipelineTimeline progress={runData.progress} handoffHistory={runData.handoff_history} />
 
-              {runData.skipped_nodes.length > 0 && (
+              {(runData.skipped_nodes ?? []).length > 0 && (
                 <div className="rounded-lg border border-border bg-muted/50 p-3">
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                     {tRun("skippedNodes")}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {runData.skipped_nodes.map((node) => (
+                    {(runData.skipped_nodes ?? []).map((node) => (
                       <Badge key={node} variant="outline" className="text-xs">
                         {formatNodeName(node)}
                       </Badge>
@@ -94,7 +94,7 @@ export function RunDetailDialog({
                 </div>
               )}
 
-              <CollapsibleHandoffs handoffs={runData.handoff_history} />
+              <CollapsibleHandoffs handoffs={runData.handoff_history ?? []} />
             </>
           ) : (
             <p className="text-sm text-muted-foreground">{t("noRunData")}</p>

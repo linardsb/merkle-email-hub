@@ -12,7 +12,7 @@ export type ApprovalCreate = {
 };
 
 export type ApprovalDecision = {
-    status: string;
+    status: 'pending' | 'approved' | 'rejected' | 'revision_requested';
     review_note?: string | null;
 };
 
@@ -35,6 +35,66 @@ export type AuditResponse = {
     actor_id: number;
     details?: string | null;
     created_at: string;
+};
+
+/**
+ * Progress entry for a single node execution within a blueprint run.
+ */
+export type BlueprintProgress = {
+    node_name: string;
+    node_type: string;
+    status: string;
+    iteration: number;
+    summary: string;
+    duration_ms: number;
+};
+
+/**
+ * Request to execute a named blueprint.
+ */
+export type BlueprintRunRequest = {
+    /**
+     * Registered blueprint name (e.g. 'campaign')
+     */
+    blueprint_name: string;
+    /**
+     * Campaign brief or instructions for agentic nodes
+     */
+    brief: string;
+    /**
+     * Pre-existing HTML to process
+     */
+    initial_html?: string;
+    /**
+     * Blueprint-specific options
+     */
+    options?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Target audience persona IDs — agents will adapt output for these clients
+     */
+    persona_ids?: Array<number>;
+};
+
+/**
+ * Response from a completed blueprint run.
+ */
+export type BlueprintRunResponse = {
+    run_id: string;
+    blueprint_name: string;
+    status: string;
+    html: string;
+    progress: Array<BlueprintProgress>;
+    qa_passed?: boolean | null;
+    model_usage?: {
+        [key: string]: number;
+    };
+    final_handoff?: HandoffSummary | null;
+    handoff_history?: Array<HandoffSummary>;
+    audience_summary?: string | null;
+    skipped_nodes?: Array<string>;
+    routing_decisions?: Array<RoutingDecisionResponse>;
 };
 
 export type BodyUploadDocumentApiV1KnowledgeDocumentsPost = {
@@ -86,17 +146,17 @@ export type BuildResponse = {
 };
 
 /**
- * A single completion choice in the response.
- *
- * Attributes:
- * index: The index of this choice in the list.
- * message: The assistant's response message.
- * finish_reason: Why the completion stopped.
+ * A single capability's feasibility and competitive status.
  */
-export type ChatCompletionChoice = {
-    index?: number;
-    message: ChatMessage;
-    finish_reason?: string;
+export type CapabilityFeasibilityResponse = {
+    id: string;
+    name: string;
+    category: string;
+    audience_coverage: number;
+    blocking_clients: Array<string>;
+    hub_supports: boolean;
+    hub_agent: string;
+    competitor_names: Array<string>;
 };
 
 /**
@@ -109,28 +169,9 @@ export type ChatCompletionChoice = {
 export type ChatCompletionRequest = {
     messages: Array<ChatMessage>;
     model?: string | null;
-};
-
-/**
- * Response from the chat completions endpoint.
- *
- * Follows the OpenAI Chat Completions API response format.
- *
- * Attributes:
- * id: Unique identifier for this completion.
- * object: Object type (always "chat.completion").
- * created: Unix timestamp when the completion was created.
- * model: The model used for the completion.
- * choices: List of completion choices.
- * usage: Token usage information.
- */
-export type ChatCompletionResponse = {
-    id?: string;
-    object?: 'chat.completion';
-    created?: number;
-    model: string;
-    choices: Array<ChatCompletionChoice>;
-    usage?: UsageInfo;
+    stream?: boolean;
+    task_tier?: ('complex' | 'standard' | 'lightweight') | null;
+    project_id?: number | null;
 };
 
 /**
@@ -143,6 +184,16 @@ export type ChatCompletionResponse = {
 export type ChatMessage = {
     role: 'user' | 'assistant' | 'system';
     content: string;
+};
+
+/**
+ * Per-client compatibility entry.
+ */
+export type ClientCompatibility = {
+    client_id: string;
+    client_name: string;
+    level: string;
+    platform: string;
 };
 
 export type ClientOrgCreate = {
@@ -169,6 +220,59 @@ export type ClientOrgResponse = {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+};
+
+export type ClientProfileSchema = {
+    id: string;
+    name: string;
+    platform: string;
+    engine: string;
+    market_share: number;
+    notes: string | null;
+    unsupported_count: number;
+    unsupported_properties: Array<UnsupportedPropertySchema>;
+};
+
+export type CompatibilityBriefResponse = {
+    client_count: number;
+    total_risky_properties: number;
+    dark_mode_warning: boolean;
+    clients: Array<ClientProfileSchema>;
+    risk_matrix: Array<RiskMatrixEntrySchema>;
+};
+
+/**
+ * Full audience-scoped competitive feasibility report.
+ */
+export type CompetitiveReportResponse = {
+    audience_client_ids: Array<string>;
+    total_capabilities: number;
+    hub_advantages: Array<CapabilityFeasibilityResponse>;
+    gaps: Array<CapabilityFeasibilityResponse>;
+    opportunities: Array<CapabilityFeasibilityResponse>;
+    full_matrix: Array<CapabilityFeasibilityResponse>;
+};
+
+/**
+ * Formatted text competitive landscape report.
+ */
+export type CompetitiveReportTextResponse = {
+    report: string;
+};
+
+/**
+ * Aggregated compatibility for a component.
+ */
+export type ComponentCompatibilityResponse = {
+    component_id: number;
+    component_name: string;
+    version_number: number;
+    full_count: number;
+    partial_count: number;
+    none_count: number;
+    clients: Array<ClientCompatibility>;
+    qa_score?: number | null;
+    last_checked?: string | null;
 };
 
 export type ComponentCreate = {
@@ -202,23 +306,36 @@ export type ComponentUpdate = {
     category?: string | null;
 };
 
-export type ClientCompatibility = {
-    client_id: string;
-    client_name: string;
-    level: string;
-    platform: string;
-};
-
-export type ComponentCompatibilityResponse = {
-    component_id: number;
-    component_name: string;
-    version_number: number;
-    full_count: number;
-    partial_count: number;
-    none_count: number;
-    clients: Array<ClientCompatibility>;
-    qa_score?: number | null;
-    last_checked?: string | null;
+/**
+ * Request body for the content generate endpoint.
+ *
+ * Attributes:
+ * operation: The copywriting operation to perform.
+ * text: Source text or campaign brief.
+ * tone: Target tone for tone_adjust, optional hint for others.
+ * brand_voice: Brand guidelines loaded from project settings.
+ * num_alternatives: Number of alternatives to generate.
+ * stream: Whether to return SSE streaming response.
+ */
+export type ContentRequest = {
+    operation: 'subject_line' | 'preheader' | 'cta' | 'body_copy' | 'rewrite' | 'shorten' | 'expand' | 'tone_adjust';
+    /**
+     * Source text or brief
+     */
+    text: string;
+    /**
+     * Target tone
+     */
+    tone?: string | null;
+    /**
+     * Brand voice guidelines from project settings
+     */
+    brand_voice?: string | null;
+    /**
+     * Number of alternatives
+     */
+    num_alternatives?: number;
+    stream?: boolean;
 };
 
 /**
@@ -229,6 +346,35 @@ export type CreateUserRequest = {
     name: string;
     password: string;
     role?: string;
+};
+
+/**
+ * Request body for the dark mode process endpoint.
+ *
+ * Attributes:
+ * html: Existing email HTML to enhance with dark mode support.
+ * color_overrides: Optional mapping of light-mode hex colours to dark-mode hex colours.
+ * preserve_colors: Optional list of hex colours that should not be remapped.
+ * stream: Whether to return SSE streaming response.
+ * run_qa: Whether to run the 10-point QA gate on the enhanced HTML.
+ */
+export type DarkModeRequest = {
+    /**
+     * Existing email HTML
+     */
+    html: string;
+    /**
+     * Light→dark colour mappings (e.g., {'#ffffff': '#1a1a2e'})
+     */
+    color_overrides?: {
+        [key: string]: string;
+    } | null;
+    /**
+     * Hex colours that should not be remapped
+     */
+    preserve_colors?: Array<string> | null;
+    stream?: boolean;
+    run_qa?: boolean;
 };
 
 /**
@@ -327,6 +473,18 @@ export type DomainListResponse = {
 };
 
 /**
+ * Public email client metadata from ontology.
+ */
+export type EmailClientResponse = {
+    id: string;
+    name: string;
+    family: string;
+    platform: string;
+    engine: string;
+    market_share: number;
+};
+
+/**
  * Request to export an email build to an ESP.
  */
 export type ExportRequest = {
@@ -354,6 +512,45 @@ export type ExportResponse = {
     created_at: string;
 };
 
+/**
+ * Paginated list of failure patterns.
+ */
+export type FailurePatternListResponse = {
+    items: Array<FailurePatternResponse>;
+    total: number;
+    page: number;
+    page_size: number;
+};
+
+/**
+ * A failure pattern extracted from blueprint runs.
+ */
+export type FailurePatternResponse = {
+    id: number;
+    agent_name: string;
+    qa_check: string;
+    client_ids: Array<string>;
+    description: string;
+    workaround: string;
+    confidence?: number | null;
+    run_id: string;
+    blueprint_name: string;
+    first_seen: string;
+    last_seen: string;
+    frequency?: number;
+};
+
+/**
+ * Aggregated failure pattern statistics.
+ */
+export type FailurePatternStats = {
+    total_patterns: number;
+    unique_agents: number;
+    unique_checks: number;
+    top_agent?: string | null;
+    top_check?: string | null;
+};
+
 export type FeedbackCreate = {
     content: string;
     feedback_type?: string;
@@ -368,8 +565,74 @@ export type FeedbackResponse = {
     created_at: string;
 };
 
+/**
+ * An entity from the knowledge graph.
+ */
+export type GraphEntityResponse = {
+    id: string;
+    name: string;
+    entity_type: string;
+    description?: string;
+    properties?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * A relationship edge between entities.
+ */
+export type GraphRelationshipResponse = {
+    source_id: string;
+    target_id: string;
+    relationship_type: string;
+    properties?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * Request body for graph knowledge search.
+ */
+export type GraphSearchRequest = {
+    query: string;
+    dataset_name?: string | null;
+    top_k?: number;
+    mode?: 'chunks' | 'completion';
+    system_prompt?: string;
+};
+
+/**
+ * Response for graph knowledge search.
+ */
+export type GraphSearchResponse = {
+    results: Array<GraphSearchResultResponse>;
+    query: string;
+    mode: string;
+};
+
+/**
+ * A single graph search result.
+ */
+export type GraphSearchResultResponse = {
+    content: string;
+    entities?: Array<GraphEntityResponse>;
+    relationships?: Array<GraphRelationshipResponse>;
+    score?: number;
+};
+
 export type HttpValidationError = {
     detail?: Array<ValidationError>;
+};
+
+/**
+ * Summary of the last agent handoff in a blueprint run.
+ */
+export type HandoffSummary = {
+    agent_name: string;
+    decisions: Array<string>;
+    warnings: Array<string>;
+    component_refs: Array<string>;
+    confidence?: number | null;
 };
 
 /**
@@ -442,6 +705,61 @@ export type LoginResponse = {
     refresh_token: string;
 };
 
+/**
+ * Request to store a new memory entry.
+ */
+export type MemoryCreate = {
+    agent_type: string;
+    memory_type: string;
+    content: string;
+    project_id?: number | null;
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    is_evergreen?: boolean;
+};
+
+/**
+ * Request to promote a DCG note into Hub memory.
+ */
+export type MemoryPromote = {
+    key: string;
+    value: string;
+    agent_type?: string;
+    project_id?: number | null;
+};
+
+/**
+ * Memory entry response.
+ */
+export type MemoryResponse = {
+    id: number;
+    agent_type: string;
+    memory_type: string;
+    content: string;
+    project_id: number | null;
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    decay_weight: number;
+    source: string;
+    is_evergreen: boolean;
+    created_at: string;
+    updated_at: string;
+    similarity?: number | null;
+};
+
+/**
+ * Search request for memory retrieval.
+ */
+export type MemorySearch = {
+    query: string;
+    agent_type?: string | null;
+    memory_type?: string | null;
+    project_id?: number | null;
+    limit?: number;
+};
+
 export type PaginatedResponseClientOrgResponse = {
     items: Array<ClientOrgResponse>;
     total: number;
@@ -479,6 +797,27 @@ export type PaginatedResponseItemResponse = {
 
 export type PaginatedResponseProjectResponse = {
     items: Array<ProjectResponse>;
+    total: number;
+    page: number;
+    page_size: number;
+};
+
+export type PaginatedResponseQaResultResponse = {
+    items: Array<QaResultResponse>;
+    total: number;
+    page: number;
+    page_size: number;
+};
+
+export type PaginatedResponseRenderingTestResponse = {
+    items: Array<RenderingTestResponse>;
+    total: number;
+    page: number;
+    page_size: number;
+};
+
+export type PaginatedResponseTemplateResponse = {
+    items: Array<TemplateResponse>;
     total: number;
     page: number;
     page_size: number;
@@ -557,9 +896,17 @@ export type ProjectCreate = {
      */
     client_org_id: number;
     /**
-     * Target email client IDs from ontology
+     * Priority email client IDs from ontology (e.g. gmail_web, outlook_2019_win). QA checks all 25 clients; priority clients get prominent display and agent focus.
      */
     target_clients?: Array<string> | null;
+};
+
+export type ProjectMemberResponse = {
+    id: number;
+    project_id: number;
+    user_id: number;
+    role: string;
+    created_at: string;
 };
 
 export type ProjectResponse = {
@@ -579,12 +926,9 @@ export type ProjectResponse = {
     status: string;
     created_by_id: number;
     is_active: boolean;
+    target_clients?: Array<string> | null;
     created_at: string;
     updated_at: string;
-    /**
-     * Target email client IDs from ontology
-     */
-    target_clients?: Array<string> | null;
 };
 
 export type ProjectUpdate = {
@@ -592,53 +936,7 @@ export type ProjectUpdate = {
     description?: string | null;
     status?: string | null;
     is_active?: boolean | null;
-    /**
-     * Target email client IDs from ontology
-     */
     target_clients?: Array<string> | null;
-};
-
-/**
- * Public email client metadata from ontology.
- */
-export type EmailClientResponse = {
-    id: string;
-    name: string;
-    family: string;
-    platform: string;
-    engine: string;
-    market_share: number;
-};
-
-export type UnsupportedPropertySchema = {
-    css: string;
-    fallback: string | null;
-    technique: string | null;
-};
-
-export type ClientProfileSchema = {
-    id: string;
-    name: string;
-    platform: string;
-    engine: string;
-    market_share: number;
-    notes: string | null;
-    unsupported_count: number;
-    unsupported_properties: UnsupportedPropertySchema[];
-};
-
-export type RiskMatrixEntrySchema = {
-    css: string;
-    unsupported_in: string[];
-    fallback: string | null;
-};
-
-export type CompatibilityBriefResponse = {
-    client_count: number;
-    total_risky_properties: number;
-    dark_mode_warning: boolean;
-    clients: ClientProfileSchema[];
-    risk_matrix: RiskMatrixEntrySchema[];
 };
 
 /**
@@ -653,16 +951,44 @@ export type QaCheckResult = {
 };
 
 /**
+ * Request to override failing QA checks.
+ */
+export type QaOverrideRequest = {
+    /**
+     * Reason for overriding failing checks
+     */
+    justification: string;
+    /**
+     * Check names to override
+     */
+    checks_overridden: Array<string>;
+};
+
+/**
+ * Response for a QA override.
+ */
+export type QaOverrideResponse = {
+    id: number;
+    qa_result_id: number;
+    overridden_by_id: number;
+    justification: string;
+    checks_overridden: Array<string>;
+    created_at: string;
+};
+
+/**
  * Full QA result with individual checks.
  */
 export type QaResultResponse = {
     id: number;
-    build_id: number;
+    build_id?: number | null;
+    template_version_id?: number | null;
     overall_score: number;
     passed: boolean;
     checks_passed: number;
     checks_total: number;
     checks?: Array<QaCheckResult>;
+    override?: QaOverrideResponse | null;
     created_at: string;
 };
 
@@ -673,7 +999,11 @@ export type QaRunRequest = {
     /**
      * Email build ID to validate
      */
-    build_id: number;
+    build_id?: number | null;
+    /**
+     * Template version ID for audit linkage
+     */
+    template_version_id?: number | null;
     /**
      * Compiled HTML to validate
      */
@@ -692,6 +1022,121 @@ export type RefreshRequest = {
  */
 export type RefreshResponse = {
     access_token: string;
+};
+
+/**
+ * Request to compare two rendering test results.
+ */
+export type RenderingComparisonRequest = {
+    /**
+     * ID of the baseline rendering test
+     */
+    baseline_test_id: number;
+    /**
+     * ID of the current rendering test
+     */
+    current_test_id: number;
+};
+
+/**
+ * Response for a rendering comparison.
+ */
+export type RenderingComparisonResponse = {
+    baseline_test_id: number;
+    current_test_id: number;
+    total_clients: number;
+    regressions_found: number;
+    diffs?: Array<RenderingDiff>;
+};
+
+/**
+ * Visual diff result for a single client.
+ */
+export type RenderingDiff = {
+    client_name: string;
+    diff_percentage: number;
+    has_regression?: boolean;
+    baseline_url?: string | null;
+    current_url?: string | null;
+};
+
+/**
+ * Request to submit a rendering test.
+ */
+export type RenderingTestRequest = {
+    /**
+     * Compiled HTML to render
+     */
+    html: string;
+    subject?: string;
+    clients?: Array<string>;
+    /**
+     * Optional link to email build
+     */
+    build_id?: number | null;
+    /**
+     * Optional link to template version
+     */
+    template_version_id?: number | null;
+};
+
+/**
+ * Response for a rendering test.
+ */
+export type RenderingTestResponse = {
+    id: number;
+    external_test_id: string;
+    provider: string;
+    status: string;
+    build_id?: number | null;
+    template_version_id?: number | null;
+    clients_requested: number;
+    clients_completed?: number;
+    screenshots?: Array<ScreenshotResult>;
+    created_at: string;
+};
+
+export type RiskMatrixEntrySchema = {
+    css: string;
+    unsupported_in: Array<string>;
+    fallback: string | null;
+};
+
+/**
+ * A single routing decision from the route advisor.
+ */
+export type RoutingDecisionResponse = {
+    node_name: string;
+    action: string;
+    reason: string;
+};
+
+/**
+ * Request body for the scaffolder generate endpoint.
+ *
+ * Attributes:
+ * brief: The campaign brief describing the email to generate.
+ * stream: Whether to return SSE streaming response.
+ * run_qa: Whether to run the 10-point QA gate on the generated HTML.
+ */
+export type ScaffolderRequest = {
+    /**
+     * Campaign brief
+     */
+    brief: string;
+    stream?: boolean;
+    run_qa?: boolean;
+};
+
+/**
+ * A single client rendering screenshot.
+ */
+export type ScreenshotResult = {
+    client_name: string;
+    screenshot_url?: string | null;
+    os?: string;
+    category?: string;
+    status?: string;
 };
 
 /**
@@ -767,6 +1212,46 @@ export type TagResponse = {
     created_at: string;
 };
 
+export type TemplateCreate = {
+    name: string;
+    description?: string | null;
+    subject_line?: string | null;
+    preheader_text?: string | null;
+    /**
+     * Initial HTML source for version 1
+     */
+    html_source?: string;
+    css_source?: string | null;
+};
+
+export type TemplateResponse = {
+    name: string;
+    description?: string | null;
+    subject_line?: string | null;
+    preheader_text?: string | null;
+    id: number;
+    project_id: number;
+    status: string;
+    created_by_id: number;
+    latest_version?: number | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type TemplateUpdate = {
+    name?: string | null;
+    description?: string | null;
+    subject_line?: string | null;
+    preheader_text?: string | null;
+    status?: string | null;
+};
+
+export type UnsupportedPropertySchema = {
+    css: string;
+    fallback: string | null;
+    technique: string | null;
+};
+
 /**
  * Admin updates user fields.
  */
@@ -775,20 +1260,6 @@ export type UpdateUserRequest = {
     email?: string | null;
     role?: string | null;
     is_active?: boolean | null;
-};
-
-/**
- * Token usage information for the completion.
- *
- * Attributes:
- * prompt_tokens: Tokens used in the prompt.
- * completion_tokens: Tokens generated in the response.
- * total_tokens: Total tokens used.
- */
-export type UsageInfo = {
-    prompt_tokens?: number;
-    completion_tokens?: number;
-    total_tokens?: number;
 };
 
 /**
@@ -825,15 +1296,38 @@ export type ValidationError = {
     };
 };
 
-export type VersionCreate = {
+export type AppComponentsSchemasVersionCreate = {
+    html_source: string;
+    css_source?: string | null;
+    changelog?: string | null;
+    compatibility?: {
+        [key: string]: string;
+    } | null;
+};
+
+export type AppComponentsSchemasVersionResponse = {
+    id: number;
+    component_id: number;
+    version_number: number;
+    html_source: string;
+    css_source: string | null;
+    changelog: string | null;
+    compatibility?: {
+        [key: string]: string;
+    } | null;
+    created_by_id: number;
+    created_at: string;
+};
+
+export type AppTemplatesSchemasVersionCreate = {
     html_source: string;
     css_source?: string | null;
     changelog?: string | null;
 };
 
-export type VersionResponse = {
+export type AppTemplatesSchemasVersionResponse = {
     id: number;
-    component_id: number;
+    template_id: number;
     version_number: number;
     html_source: string;
     css_source: string | null;
@@ -1315,10 +1809,8 @@ export type ChatCompletionsV1ChatCompletionsPostResponses = {
     /**
      * Successful Response
      */
-    200: ChatCompletionResponse;
+    200: unknown;
 };
-
-export type ChatCompletionsV1ChatCompletionsPostResponse = ChatCompletionsV1ChatCompletionsPostResponses[keyof ChatCompletionsV1ChatCompletionsPostResponses];
 
 export type ListModelsV1ModelsGetData = {
     body?: never;
@@ -1666,42 +2158,6 @@ export type RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDelet
 
 export type RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDeleteResponse = RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDeleteResponses[keyof RemoveTagFromDocumentApiV1KnowledgeDocumentsDocumentIdTagsTagIdDeleteResponses];
 
-export interface GraphEntity {
-    id: string;
-    name: string;
-    entity_type: string;
-    description?: string | null;
-    properties?: Record<string, unknown>;
-}
-
-export interface GraphRelationship {
-    source_id: string;
-    target_id: string;
-    relationship_type: string;
-    properties?: Record<string, unknown>;
-}
-
-export interface GraphSearchResult {
-    content: string;
-    entities?: Array<GraphEntity>;
-    relationships?: Array<GraphRelationship>;
-    score?: number;
-}
-
-export interface GraphSearchRequest {
-    query: string;
-    dataset_name?: string | null;
-    top_k?: number;
-    mode?: "chunks" | "completion";
-    system_prompt?: string;
-}
-
-export interface GraphSearchResponse {
-    results: Array<GraphSearchResult>;
-    query: string;
-    mode: string;
-}
-
 export type SearchKnowledgeApiV1KnowledgeSearchPostData = {
     body: SearchRequest;
     path?: never;
@@ -1726,6 +2182,91 @@ export type SearchKnowledgeApiV1KnowledgeSearchPostResponses = {
 };
 
 export type SearchKnowledgeApiV1KnowledgeSearchPostResponse = SearchKnowledgeApiV1KnowledgeSearchPostResponses[keyof SearchKnowledgeApiV1KnowledgeSearchPostResponses];
+
+export type SearchGraphApiV1KnowledgeGraphSearchPostData = {
+    body: GraphSearchRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/knowledge/graph/search';
+};
+
+export type SearchGraphApiV1KnowledgeGraphSearchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SearchGraphApiV1KnowledgeGraphSearchPostError = SearchGraphApiV1KnowledgeGraphSearchPostErrors[keyof SearchGraphApiV1KnowledgeGraphSearchPostErrors];
+
+export type SearchGraphApiV1KnowledgeGraphSearchPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: GraphSearchResponse;
+};
+
+export type SearchGraphApiV1KnowledgeGraphSearchPostResponse = SearchGraphApiV1KnowledgeGraphSearchPostResponses[keyof SearchGraphApiV1KnowledgeGraphSearchPostResponses];
+
+export type ListEmailClientsApiV1OntologyClientsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ontology/clients';
+};
+
+export type ListEmailClientsApiV1OntologyClientsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<EmailClientResponse>;
+};
+
+export type ListEmailClientsApiV1OntologyClientsGetResponse = ListEmailClientsApiV1OntologyClientsGetResponses[keyof ListEmailClientsApiV1OntologyClientsGetResponses];
+
+export type GetCompetitiveReportApiV1OntologyCompetitiveReportGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        client_ids?: Array<string>;
+        competitor_id?: string | null;
+    };
+    url: '/api/v1/ontology/competitive-report';
+};
+
+export type GetCompetitiveReportApiV1OntologyCompetitiveReportGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCompetitiveReportApiV1OntologyCompetitiveReportGetError = GetCompetitiveReportApiV1OntologyCompetitiveReportGetErrors[keyof GetCompetitiveReportApiV1OntologyCompetitiveReportGetErrors];
+
+export type GetCompetitiveReportApiV1OntologyCompetitiveReportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompetitiveReportResponse;
+};
+
+export type GetCompetitiveReportApiV1OntologyCompetitiveReportGetResponse = GetCompetitiveReportApiV1OntologyCompetitiveReportGetResponses[keyof GetCompetitiveReportApiV1OntologyCompetitiveReportGetResponses];
+
+export type GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ontology/competitive-report/text';
+};
+
+export type GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompetitiveReportTextResponse;
+};
+
+export type GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponse = GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponses[keyof GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponses];
 
 export type ListOrgsApiV1OrgsGetData = {
     body?: never;
@@ -1916,6 +2457,89 @@ export type UpdateProjectApiV1ProjectsProjectIdPatchResponses = {
 
 export type UpdateProjectApiV1ProjectsProjectIdPatchResponse = UpdateProjectApiV1ProjectsProjectIdPatchResponses[keyof UpdateProjectApiV1ProjectsProjectIdPatchResponses];
 
+export type ListProjectMembersApiV1ProjectsProjectIdMembersGetData = {
+    body?: never;
+    path: {
+        project_id: number;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/members';
+};
+
+export type ListProjectMembersApiV1ProjectsProjectIdMembersGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListProjectMembersApiV1ProjectsProjectIdMembersGetError = ListProjectMembersApiV1ProjectsProjectIdMembersGetErrors[keyof ListProjectMembersApiV1ProjectsProjectIdMembersGetErrors];
+
+export type ListProjectMembersApiV1ProjectsProjectIdMembersGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<ProjectMemberResponse>;
+};
+
+export type ListProjectMembersApiV1ProjectsProjectIdMembersGetResponse = ListProjectMembersApiV1ProjectsProjectIdMembersGetResponses[keyof ListProjectMembersApiV1ProjectsProjectIdMembersGetResponses];
+
+export type RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostData = {
+    body?: never;
+    path: {
+        project_id: number;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/onboarding-brief';
+};
+
+export type RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostError = RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostErrors[keyof RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostErrors];
+
+export type RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostResponses = {
+    /**
+     * Successful Response
+     */
+    202: {
+        [key: string]: string;
+    };
+};
+
+export type RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostResponse = RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostResponses[keyof RegenerateOnboardingBriefApiV1ProjectsProjectIdOnboardingBriefPostResponses];
+
+export type GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetData = {
+    body?: never;
+    path: {
+        project_id: number;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/compatibility-brief';
+};
+
+export type GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetError = GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetErrors[keyof GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetErrors];
+
+export type GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompatibilityBriefResponse;
+};
+
+export type GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetResponse = GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetResponses[keyof GetCompatibilityBriefApiV1ProjectsProjectIdCompatibilityBriefGetResponses];
+
 export type BuildEmailApiV1EmailBuildPostData = {
     body: BuildRequest;
     path?: never;
@@ -1940,6 +2564,33 @@ export type BuildEmailApiV1EmailBuildPostResponses = {
 };
 
 export type BuildEmailApiV1EmailBuildPostResponse = BuildEmailApiV1EmailBuildPostResponses[keyof BuildEmailApiV1EmailBuildPostResponses];
+
+export type GetBuildApiV1EmailBuildsBuildIdGetData = {
+    body?: never;
+    path: {
+        build_id: number;
+    };
+    query?: never;
+    url: '/api/v1/email/builds/{build_id}';
+};
+
+export type GetBuildApiV1EmailBuildsBuildIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBuildApiV1EmailBuildsBuildIdGetError = GetBuildApiV1EmailBuildsBuildIdGetErrors[keyof GetBuildApiV1EmailBuildsBuildIdGetErrors];
+
+export type GetBuildApiV1EmailBuildsBuildIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BuildResponse;
+};
+
+export type GetBuildApiV1EmailBuildsBuildIdGetResponse = GetBuildApiV1EmailBuildsBuildIdGetResponses[keyof GetBuildApiV1EmailBuildsBuildIdGetResponses];
 
 export type PreviewEmailApiV1EmailPreviewPostData = {
     body: PreviewRequest;
@@ -2124,13 +2775,13 @@ export type ListVersionsApiV1ComponentsComponentIdVersionsGetResponses = {
     /**
      * Successful Response
      */
-    200: Array<VersionResponse>;
+    200: Array<AppComponentsSchemasVersionResponse>;
 };
 
 export type ListVersionsApiV1ComponentsComponentIdVersionsGetResponse = ListVersionsApiV1ComponentsComponentIdVersionsGetResponses[keyof ListVersionsApiV1ComponentsComponentIdVersionsGetResponses];
 
 export type CreateVersionApiV1ComponentsComponentIdVersionsPostData = {
-    body: VersionCreate;
+    body: AppComponentsSchemasVersionCreate;
     path: {
         component_id: number;
     };
@@ -2151,10 +2802,65 @@ export type CreateVersionApiV1ComponentsComponentIdVersionsPostResponses = {
     /**
      * Successful Response
      */
-    201: VersionResponse;
+    201: AppComponentsSchemasVersionResponse;
 };
 
 export type CreateVersionApiV1ComponentsComponentIdVersionsPostResponse = CreateVersionApiV1ComponentsComponentIdVersionsPostResponses[keyof CreateVersionApiV1ComponentsComponentIdVersionsPostResponses];
+
+export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostData = {
+    body?: never;
+    path: {
+        component_id: number;
+        version_number: number;
+    };
+    query?: never;
+    url: '/api/v1/components/{component_id}/versions/{version_number}/qa';
+};
+
+export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostError = RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostErrors[keyof RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostErrors];
+
+export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentCompatibilityResponse;
+};
+
+export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponse = RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponses[keyof RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponses];
+
+export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetData = {
+    body?: never;
+    path: {
+        component_id: number;
+    };
+    query?: never;
+    url: '/api/v1/components/{component_id}/compatibility';
+};
+
+export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetError = GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetErrors[keyof GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetErrors];
+
+export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentCompatibilityResponse;
+};
+
+export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponse = GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses[keyof GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses];
 
 export type RunQaChecksApiV1QaRunPostData = {
     body: QaRunRequest;
@@ -2181,6 +2887,119 @@ export type RunQaChecksApiV1QaRunPostResponses = {
 
 export type RunQaChecksApiV1QaRunPostResponse = RunQaChecksApiV1QaRunPostResponses[keyof RunQaChecksApiV1QaRunPostResponses];
 
+export type GetLatestQaResultApiV1QaResultsLatestGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        build_id?: number | null;
+        template_version_id?: number | null;
+    };
+    url: '/api/v1/qa/results/latest';
+};
+
+export type GetLatestQaResultApiV1QaResultsLatestGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetLatestQaResultApiV1QaResultsLatestGetError = GetLatestQaResultApiV1QaResultsLatestGetErrors[keyof GetLatestQaResultApiV1QaResultsLatestGetErrors];
+
+export type GetLatestQaResultApiV1QaResultsLatestGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: QaResultResponse;
+};
+
+export type GetLatestQaResultApiV1QaResultsLatestGetResponse = GetLatestQaResultApiV1QaResultsLatestGetResponses[keyof GetLatestQaResultApiV1QaResultsLatestGetResponses];
+
+export type GetQaResultApiV1QaResultsResultIdGetData = {
+    body?: never;
+    path: {
+        result_id: number;
+    };
+    query?: never;
+    url: '/api/v1/qa/results/{result_id}';
+};
+
+export type GetQaResultApiV1QaResultsResultIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetQaResultApiV1QaResultsResultIdGetError = GetQaResultApiV1QaResultsResultIdGetErrors[keyof GetQaResultApiV1QaResultsResultIdGetErrors];
+
+export type GetQaResultApiV1QaResultsResultIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: QaResultResponse;
+};
+
+export type GetQaResultApiV1QaResultsResultIdGetResponse = GetQaResultApiV1QaResultsResultIdGetResponses[keyof GetQaResultApiV1QaResultsResultIdGetResponses];
+
+export type ListQaResultsApiV1QaResultsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        build_id?: number | null;
+        template_version_id?: number | null;
+        passed?: boolean | null;
+        page?: number;
+        page_size?: number;
+    };
+    url: '/api/v1/qa/results';
+};
+
+export type ListQaResultsApiV1QaResultsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListQaResultsApiV1QaResultsGetError = ListQaResultsApiV1QaResultsGetErrors[keyof ListQaResultsApiV1QaResultsGetErrors];
+
+export type ListQaResultsApiV1QaResultsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedResponseQaResultResponse;
+};
+
+export type ListQaResultsApiV1QaResultsGetResponse = ListQaResultsApiV1QaResultsGetResponses[keyof ListQaResultsApiV1QaResultsGetResponses];
+
+export type OverrideQaResultApiV1QaResultsResultIdOverridePostData = {
+    body: QaOverrideRequest;
+    path: {
+        result_id: number;
+    };
+    query?: never;
+    url: '/api/v1/qa/results/{result_id}/override';
+};
+
+export type OverrideQaResultApiV1QaResultsResultIdOverridePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type OverrideQaResultApiV1QaResultsResultIdOverridePostError = OverrideQaResultApiV1QaResultsResultIdOverridePostErrors[keyof OverrideQaResultApiV1QaResultsResultIdOverridePostErrors];
+
+export type OverrideQaResultApiV1QaResultsResultIdOverridePostResponses = {
+    /**
+     * Successful Response
+     */
+    201: QaOverrideResponse;
+};
+
+export type OverrideQaResultApiV1QaResultsResultIdOverridePostResponse = OverrideQaResultApiV1QaResultsResultIdOverridePostResponses[keyof OverrideQaResultApiV1QaResultsResultIdOverridePostResponses];
+
 export type ExportEmailApiV1ConnectorsExportPostData = {
     body: ExportRequest;
     path?: never;
@@ -2205,6 +3024,33 @@ export type ExportEmailApiV1ConnectorsExportPostResponses = {
 };
 
 export type ExportEmailApiV1ConnectorsExportPostResponse = ExportEmailApiV1ConnectorsExportPostResponses[keyof ExportEmailApiV1ConnectorsExportPostResponses];
+
+export type ListApprovalsApiV1ApprovalsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        project_id?: number | null;
+    };
+    url: '/api/v1/approvals/';
+};
+
+export type ListApprovalsApiV1ApprovalsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListApprovalsApiV1ApprovalsGetError = ListApprovalsApiV1ApprovalsGetErrors[keyof ListApprovalsApiV1ApprovalsGetErrors];
+
+export type ListApprovalsApiV1ApprovalsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<ApprovalResponse>;
+};
+
+export type ListApprovalsApiV1ApprovalsGetResponse = ListApprovalsApiV1ApprovalsGetResponses[keyof ListApprovalsApiV1ApprovalsGetResponses];
 
 export type CreateApprovalApiV1ApprovalsPostData = {
     body: ApprovalCreate;
@@ -2434,6 +3280,649 @@ export type GetPersonaApiV1PersonasPersonaIdGetResponses = {
 
 export type GetPersonaApiV1PersonasPersonaIdGetResponse = GetPersonaApiV1PersonasPersonaIdGetResponses[keyof GetPersonaApiV1PersonasPersonaIdGetResponses];
 
+export type ListTemplatesApiV1ProjectsProjectIdTemplatesGetData = {
+    body?: never;
+    path: {
+        project_id: number;
+    };
+    query?: {
+        search?: string | null;
+        status?: string | null;
+        page?: number;
+        page_size?: number;
+    };
+    url: '/api/v1/projects/{project_id}/templates';
+};
+
+export type ListTemplatesApiV1ProjectsProjectIdTemplatesGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListTemplatesApiV1ProjectsProjectIdTemplatesGetError = ListTemplatesApiV1ProjectsProjectIdTemplatesGetErrors[keyof ListTemplatesApiV1ProjectsProjectIdTemplatesGetErrors];
+
+export type ListTemplatesApiV1ProjectsProjectIdTemplatesGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedResponseTemplateResponse;
+};
+
+export type ListTemplatesApiV1ProjectsProjectIdTemplatesGetResponse = ListTemplatesApiV1ProjectsProjectIdTemplatesGetResponses[keyof ListTemplatesApiV1ProjectsProjectIdTemplatesGetResponses];
+
+export type CreateTemplateApiV1ProjectsProjectIdTemplatesPostData = {
+    body: TemplateCreate;
+    path: {
+        project_id: number;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/templates';
+};
+
+export type CreateTemplateApiV1ProjectsProjectIdTemplatesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateTemplateApiV1ProjectsProjectIdTemplatesPostError = CreateTemplateApiV1ProjectsProjectIdTemplatesPostErrors[keyof CreateTemplateApiV1ProjectsProjectIdTemplatesPostErrors];
+
+export type CreateTemplateApiV1ProjectsProjectIdTemplatesPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: TemplateResponse;
+};
+
+export type CreateTemplateApiV1ProjectsProjectIdTemplatesPostResponse = CreateTemplateApiV1ProjectsProjectIdTemplatesPostResponses[keyof CreateTemplateApiV1ProjectsProjectIdTemplatesPostResponses];
+
+export type DeleteTemplateApiV1TemplatesTemplateIdDeleteData = {
+    body?: never;
+    path: {
+        template_id: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}';
+};
+
+export type DeleteTemplateApiV1TemplatesTemplateIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteTemplateApiV1TemplatesTemplateIdDeleteError = DeleteTemplateApiV1TemplatesTemplateIdDeleteErrors[keyof DeleteTemplateApiV1TemplatesTemplateIdDeleteErrors];
+
+export type DeleteTemplateApiV1TemplatesTemplateIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteTemplateApiV1TemplatesTemplateIdDeleteResponse = DeleteTemplateApiV1TemplatesTemplateIdDeleteResponses[keyof DeleteTemplateApiV1TemplatesTemplateIdDeleteResponses];
+
+export type GetTemplateApiV1TemplatesTemplateIdGetData = {
+    body?: never;
+    path: {
+        template_id: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}';
+};
+
+export type GetTemplateApiV1TemplatesTemplateIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTemplateApiV1TemplatesTemplateIdGetError = GetTemplateApiV1TemplatesTemplateIdGetErrors[keyof GetTemplateApiV1TemplatesTemplateIdGetErrors];
+
+export type GetTemplateApiV1TemplatesTemplateIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplateResponse;
+};
+
+export type GetTemplateApiV1TemplatesTemplateIdGetResponse = GetTemplateApiV1TemplatesTemplateIdGetResponses[keyof GetTemplateApiV1TemplatesTemplateIdGetResponses];
+
+export type UpdateTemplateApiV1TemplatesTemplateIdPatchData = {
+    body: TemplateUpdate;
+    path: {
+        template_id: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}';
+};
+
+export type UpdateTemplateApiV1TemplatesTemplateIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateTemplateApiV1TemplatesTemplateIdPatchError = UpdateTemplateApiV1TemplatesTemplateIdPatchErrors[keyof UpdateTemplateApiV1TemplatesTemplateIdPatchErrors];
+
+export type UpdateTemplateApiV1TemplatesTemplateIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplateResponse;
+};
+
+export type UpdateTemplateApiV1TemplatesTemplateIdPatchResponse = UpdateTemplateApiV1TemplatesTemplateIdPatchResponses[keyof UpdateTemplateApiV1TemplatesTemplateIdPatchResponses];
+
+export type ListVersionsApiV1TemplatesTemplateIdVersionsGetData = {
+    body?: never;
+    path: {
+        template_id: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}/versions';
+};
+
+export type ListVersionsApiV1TemplatesTemplateIdVersionsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListVersionsApiV1TemplatesTemplateIdVersionsGetError = ListVersionsApiV1TemplatesTemplateIdVersionsGetErrors[keyof ListVersionsApiV1TemplatesTemplateIdVersionsGetErrors];
+
+export type ListVersionsApiV1TemplatesTemplateIdVersionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<AppTemplatesSchemasVersionResponse>;
+};
+
+export type ListVersionsApiV1TemplatesTemplateIdVersionsGetResponse = ListVersionsApiV1TemplatesTemplateIdVersionsGetResponses[keyof ListVersionsApiV1TemplatesTemplateIdVersionsGetResponses];
+
+export type CreateVersionApiV1TemplatesTemplateIdVersionsPostData = {
+    body: AppTemplatesSchemasVersionCreate;
+    path: {
+        template_id: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}/versions';
+};
+
+export type CreateVersionApiV1TemplatesTemplateIdVersionsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateVersionApiV1TemplatesTemplateIdVersionsPostError = CreateVersionApiV1TemplatesTemplateIdVersionsPostErrors[keyof CreateVersionApiV1TemplatesTemplateIdVersionsPostErrors];
+
+export type CreateVersionApiV1TemplatesTemplateIdVersionsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: AppTemplatesSchemasVersionResponse;
+};
+
+export type CreateVersionApiV1TemplatesTemplateIdVersionsPostResponse = CreateVersionApiV1TemplatesTemplateIdVersionsPostResponses[keyof CreateVersionApiV1TemplatesTemplateIdVersionsPostResponses];
+
+export type GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetData = {
+    body?: never;
+    path: {
+        template_id: number;
+        version_number: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}/versions/{version_number}';
+};
+
+export type GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetError = GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetErrors[keyof GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetErrors];
+
+export type GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppTemplatesSchemasVersionResponse;
+};
+
+export type GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetResponse = GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetResponses[keyof GetVersionApiV1TemplatesTemplateIdVersionsVersionNumberGetResponses];
+
+export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostData = {
+    body?: never;
+    path: {
+        template_id: number;
+        version_number: number;
+    };
+    query?: never;
+    url: '/api/v1/templates/{template_id}/restore/{version_number}';
+};
+
+export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostError = RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostErrors[keyof RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostErrors];
+
+export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: AppTemplatesSchemasVersionResponse;
+};
+
+export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponse = RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponses[keyof RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponses];
+
+export type ListRenderingTestsApiV1RenderingTestsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        build_id?: number | null;
+        template_version_id?: number | null;
+        status?: string | null;
+        page?: number;
+        page_size?: number;
+    };
+    url: '/api/v1/rendering/tests';
+};
+
+export type ListRenderingTestsApiV1RenderingTestsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListRenderingTestsApiV1RenderingTestsGetError = ListRenderingTestsApiV1RenderingTestsGetErrors[keyof ListRenderingTestsApiV1RenderingTestsGetErrors];
+
+export type ListRenderingTestsApiV1RenderingTestsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaginatedResponseRenderingTestResponse;
+};
+
+export type ListRenderingTestsApiV1RenderingTestsGetResponse = ListRenderingTestsApiV1RenderingTestsGetResponses[keyof ListRenderingTestsApiV1RenderingTestsGetResponses];
+
+export type SubmitRenderingTestApiV1RenderingTestsPostData = {
+    body: RenderingTestRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/tests';
+};
+
+export type SubmitRenderingTestApiV1RenderingTestsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SubmitRenderingTestApiV1RenderingTestsPostError = SubmitRenderingTestApiV1RenderingTestsPostErrors[keyof SubmitRenderingTestApiV1RenderingTestsPostErrors];
+
+export type SubmitRenderingTestApiV1RenderingTestsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: RenderingTestResponse;
+};
+
+export type SubmitRenderingTestApiV1RenderingTestsPostResponse = SubmitRenderingTestApiV1RenderingTestsPostResponses[keyof SubmitRenderingTestApiV1RenderingTestsPostResponses];
+
+export type GetRenderingTestApiV1RenderingTestsTestIdGetData = {
+    body?: never;
+    path: {
+        test_id: number;
+    };
+    query?: never;
+    url: '/api/v1/rendering/tests/{test_id}';
+};
+
+export type GetRenderingTestApiV1RenderingTestsTestIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetRenderingTestApiV1RenderingTestsTestIdGetError = GetRenderingTestApiV1RenderingTestsTestIdGetErrors[keyof GetRenderingTestApiV1RenderingTestsTestIdGetErrors];
+
+export type GetRenderingTestApiV1RenderingTestsTestIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenderingTestResponse;
+};
+
+export type GetRenderingTestApiV1RenderingTestsTestIdGetResponse = GetRenderingTestApiV1RenderingTestsTestIdGetResponses[keyof GetRenderingTestApiV1RenderingTestsTestIdGetResponses];
+
+export type CompareRenderingTestsApiV1RenderingComparePostData = {
+    body: RenderingComparisonRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/compare';
+};
+
+export type CompareRenderingTestsApiV1RenderingComparePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompareRenderingTestsApiV1RenderingComparePostError = CompareRenderingTestsApiV1RenderingComparePostErrors[keyof CompareRenderingTestsApiV1RenderingComparePostErrors];
+
+export type CompareRenderingTestsApiV1RenderingComparePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenderingComparisonResponse;
+};
+
+export type CompareRenderingTestsApiV1RenderingComparePostResponse = CompareRenderingTestsApiV1RenderingComparePostResponses[keyof CompareRenderingTestsApiV1RenderingComparePostResponses];
+
+export type StoreMemoryMemoryPostData = {
+    body: MemoryCreate;
+    path?: never;
+    query?: never;
+    url: '/memory/';
+};
+
+export type StoreMemoryMemoryPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StoreMemoryMemoryPostError = StoreMemoryMemoryPostErrors[keyof StoreMemoryMemoryPostErrors];
+
+export type StoreMemoryMemoryPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: MemoryResponse;
+};
+
+export type StoreMemoryMemoryPostResponse = StoreMemoryMemoryPostResponses[keyof StoreMemoryMemoryPostResponses];
+
+export type SearchMemoriesMemorySearchPostData = {
+    body: MemorySearch;
+    path?: never;
+    query?: never;
+    url: '/memory/search';
+};
+
+export type SearchMemoriesMemorySearchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SearchMemoriesMemorySearchPostError = SearchMemoriesMemorySearchPostErrors[keyof SearchMemoriesMemorySearchPostErrors];
+
+export type SearchMemoriesMemorySearchPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<MemoryResponse>;
+};
+
+export type SearchMemoriesMemorySearchPostResponse = SearchMemoriesMemorySearchPostResponses[keyof SearchMemoriesMemorySearchPostResponses];
+
+export type DeleteMemoryMemoryMemoryIdDeleteData = {
+    body?: never;
+    path: {
+        memory_id: number;
+    };
+    query?: never;
+    url: '/memory/{memory_id}';
+};
+
+export type DeleteMemoryMemoryMemoryIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteMemoryMemoryMemoryIdDeleteError = DeleteMemoryMemoryMemoryIdDeleteErrors[keyof DeleteMemoryMemoryMemoryIdDeleteErrors];
+
+export type DeleteMemoryMemoryMemoryIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteMemoryMemoryMemoryIdDeleteResponse = DeleteMemoryMemoryMemoryIdDeleteResponses[keyof DeleteMemoryMemoryMemoryIdDeleteResponses];
+
+export type GetMemoryMemoryMemoryIdGetData = {
+    body?: never;
+    path: {
+        memory_id: number;
+    };
+    query?: never;
+    url: '/memory/{memory_id}';
+};
+
+export type GetMemoryMemoryMemoryIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMemoryMemoryMemoryIdGetError = GetMemoryMemoryMemoryIdGetErrors[keyof GetMemoryMemoryMemoryIdGetErrors];
+
+export type GetMemoryMemoryMemoryIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryResponse;
+};
+
+export type GetMemoryMemoryMemoryIdGetResponse = GetMemoryMemoryMemoryIdGetResponses[keyof GetMemoryMemoryMemoryIdGetResponses];
+
+export type PromoteDcgNoteMemoryPromotePostData = {
+    body: MemoryPromote;
+    path?: never;
+    query?: never;
+    url: '/memory/promote';
+};
+
+export type PromoteDcgNoteMemoryPromotePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PromoteDcgNoteMemoryPromotePostError = PromoteDcgNoteMemoryPromotePostErrors[keyof PromoteDcgNoteMemoryPromotePostErrors];
+
+export type PromoteDcgNoteMemoryPromotePostResponses = {
+    /**
+     * Successful Response
+     */
+    201: MemoryResponse;
+};
+
+export type PromoteDcgNoteMemoryPromotePostResponse = PromoteDcgNoteMemoryPromotePostResponses[keyof PromoteDcgNoteMemoryPromotePostResponses];
+
+export type GenerateEmailApiV1AgentsScaffolderGeneratePostData = {
+    body: ScaffolderRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/agents/scaffolder/generate';
+};
+
+export type GenerateEmailApiV1AgentsScaffolderGeneratePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GenerateEmailApiV1AgentsScaffolderGeneratePostError = GenerateEmailApiV1AgentsScaffolderGeneratePostErrors[keyof GenerateEmailApiV1AgentsScaffolderGeneratePostErrors];
+
+export type GenerateEmailApiV1AgentsScaffolderGeneratePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ProcessDarkModeApiV1AgentsDarkModeProcessPostData = {
+    body: DarkModeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/agents/dark-mode/process';
+};
+
+export type ProcessDarkModeApiV1AgentsDarkModeProcessPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ProcessDarkModeApiV1AgentsDarkModeProcessPostError = ProcessDarkModeApiV1AgentsDarkModeProcessPostErrors[keyof ProcessDarkModeApiV1AgentsDarkModeProcessPostErrors];
+
+export type ProcessDarkModeApiV1AgentsDarkModeProcessPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GenerateContentApiV1AgentsContentGeneratePostData = {
+    body: ContentRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/agents/content/generate';
+};
+
+export type GenerateContentApiV1AgentsContentGeneratePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GenerateContentApiV1AgentsContentGeneratePostError = GenerateContentApiV1AgentsContentGeneratePostErrors[keyof GenerateContentApiV1AgentsContentGeneratePostErrors];
+
+export type GenerateContentApiV1AgentsContentGeneratePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type RunBlueprintApiV1BlueprintsRunPostData = {
+    body: BlueprintRunRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/blueprints/run';
+};
+
+export type RunBlueprintApiV1BlueprintsRunPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunBlueprintApiV1BlueprintsRunPostError = RunBlueprintApiV1BlueprintsRunPostErrors[keyof RunBlueprintApiV1BlueprintsRunPostErrors];
+
+export type RunBlueprintApiV1BlueprintsRunPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: BlueprintRunResponse;
+};
+
+export type RunBlueprintApiV1BlueprintsRunPostResponse = RunBlueprintApiV1BlueprintsRunPostResponses[keyof RunBlueprintApiV1BlueprintsRunPostResponses];
+
+export type GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        project_id?: number | null;
+        agent_name?: string | null;
+        qa_check?: string | null;
+        client_id?: string | null;
+    };
+    url: '/api/v1/blueprints/failure-patterns/stats';
+};
+
+export type GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetError = GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetErrors[keyof GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetErrors];
+
+export type GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: FailurePatternStats;
+};
+
+export type GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetResponse = GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetResponses[keyof GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetResponses];
+
+export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        project_id?: number | null;
+        agent_name?: string | null;
+        qa_check?: string | null;
+        client_id?: string | null;
+        page?: number;
+        page_size?: number;
+    };
+    url: '/api/v1/blueprints/failure-patterns';
+};
+
+export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetError = ListFailurePatternsApiV1BlueprintsFailurePatternsGetErrors[keyof ListFailurePatternsApiV1BlueprintsFailurePatternsGetErrors];
+
+export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: FailurePatternListResponse;
+};
+
+export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponse = ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponses[keyof ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponses];
+
 export type ReadRootGetData = {
     body?: never;
     path?: never;
@@ -2451,54 +3940,6 @@ export type ReadRootGetResponses = {
 };
 
 export type ReadRootGetResponse = ReadRootGetResponses[keyof ReadRootGetResponses];
-
-// ── Blueprint Run ──
-
-export type BlueprintProgress = {
-  node_name: string;
-  node_type: "deterministic" | "agentic";
-  status: "success" | "failed" | "skipped";
-  iteration: number;
-  summary: string;
-  duration_ms: number;
-};
-
-export type HandoffSummary = {
-  agent_name: string;
-  decisions: string[];
-  warnings: string[];
-  component_refs: string[];
-  confidence: number | null;
-};
-
-export type RoutingDecisionResponse = {
-  node_name: string;
-  action: "skip" | "prioritise";
-  reason: string;
-};
-
-export type BlueprintRunRequest = {
-  blueprint_name: string;
-  brief: string;
-  initial_html?: string;
-  options?: Record<string, unknown>;
-  persona_ids?: number[];
-};
-
-export type BlueprintRunResponse = {
-  run_id: string;
-  blueprint_name: string;
-  status: "running" | "completed" | "completed_with_warnings" | "cost_cap_exceeded" | "needs_review";
-  html: string;
-  progress: BlueprintProgress[];
-  qa_passed: boolean | null;
-  model_usage: Record<string, number>;
-  final_handoff: HandoffSummary | null;
-  handoff_history: HandoffSummary[];
-  audience_summary: string | null;
-  skipped_nodes: string[];
-  routing_decisions: RoutingDecisionResponse[];
-};
 
 export type ClientOptions = {
     baseUrl: `${string}://openapi.json` | (string & {});

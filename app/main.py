@@ -22,6 +22,7 @@ from slowapi.errors import RateLimitExceeded  # pyright: ignore[reportMissingTyp
 from app.ai.agents.content.routes import router as content_router
 from app.ai.agents.dark_mode.routes import router as dark_mode_router
 from app.ai.agents.scaffolder.routes import router as scaffolder_router
+from app.ai.agents.skills_routes import router as skills_router
 from app.ai.blueprints.routes import router as blueprint_router
 from app.ai.exceptions import setup_ai_exception_handlers
 from app.ai.routes import router as ai_router
@@ -196,6 +197,8 @@ app.include_router(scaffolder_router)
 app.include_router(dark_mode_router)
 app.include_router(content_router)
 app.include_router(blueprint_router)
+
+app.include_router(skills_router)
 
 
 @app.get("/")

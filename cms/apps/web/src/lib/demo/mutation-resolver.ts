@@ -196,7 +196,7 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
     const results = docs
       .filter((d) => {
         const text =
-          `${d.title ?? ""} ${d.description ?? ""} ${d.tags.map((dt) => dt.name).join(" ")}`.toLowerCase();
+          `${d.title ?? ""} ${d.description ?? ""} ${(d.tags ?? []).map((dt) => dt.name).join(" ")}`.toLowerCase();
         return text.includes(query);
       })
       .slice(0, limit)

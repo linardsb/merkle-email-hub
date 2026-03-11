@@ -36,13 +36,13 @@ export function RenderingSummaryCard() {
   // Compute latest completion rate
   const latest = tests[0]!;
   const latestScore = latest.clients_requested > 0
-    ? Math.round((latest.clients_completed / latest.clients_requested) * 100)
+    ? Math.round(((latest.clients_completed ?? 0) / latest.clients_requested) * 100)
     : 0;
 
   // Find most problematic clients
   const clientFails: Record<string, { fails: number; total: number; name: string }> = {};
   for (const test of tests) {
-    for (const s of test.screenshots) {
+    for (const s of (test.screenshots ?? [])) {
       if (!clientFails[s.client_name]) {
         clientFails[s.client_name] = { fails: 0, total: 0, name: s.client_name };
       }

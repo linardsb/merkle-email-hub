@@ -27,7 +27,7 @@ export function RenderingStatsCards({ tests }: Props) {
       ? Math.round(
           tests.reduce((s, test) => {
             const rate = test.clients_requested > 0
-              ? (test.clients_completed / test.clients_requested) * 100
+              ? ((test.clients_completed ?? 0) / test.clients_requested) * 100
               : 0;
             return s + rate;
           }, 0) / tests.length,
@@ -37,7 +37,7 @@ export function RenderingStatsCards({ tests }: Props) {
   // Find worst client (highest fail rate across all tests)
   const clientFailCounts: Record<string, { fails: number; total: number; name: string }> = {};
   for (const test of tests) {
-    for (const s of test.screenshots) {
+    for (const s of (test.screenshots ?? [])) {
       if (!clientFailCounts[s.client_name]) {
         clientFailCounts[s.client_name] = { fails: 0, total: 0, name: s.client_name };
       }

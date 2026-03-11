@@ -37,13 +37,14 @@ export function QAResultsPanel({
   const [showPassing, setShowPassing] = useState(false);
 
   const scorePercent = Math.round(result.overall_score * 100);
+  const checks = result.checks ?? [];
   const failedChecks = useMemo(
-    () => result.checks.filter((c) => !c.passed),
-    [result.checks]
+    () => checks.filter((c) => !c.passed),
+    [checks]
   );
   const passedChecks = useMemo(
-    () => result.checks.filter((c) => c.passed),
-    [result.checks]
+    () => checks.filter((c) => c.passed),
+    [checks]
   );
   const overriddenNames = useMemo(
     () => new Set(result.override?.checks_overridden ?? []),

@@ -1,4 +1,4 @@
-import type { ComponentResponse, VersionResponse, ComponentCompatibilityResponse, ClientCompatibility } from "@email-hub/sdk";
+import type { ComponentResponse, AppComponentsSchemasVersionResponse as VersionResponse, ComponentCompatibilityResponse, ClientCompatibility } from "@email-hub/sdk";
 import { DEMO_EMAIL_CLIENTS } from "./email-clients";
 
 const COMPAT_FULL: Record<string, string> = {

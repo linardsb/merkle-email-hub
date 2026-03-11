@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { MessageSquare, Zap } from "lucide-react";
+import { MessageSquare, Zap, Layers } from "lucide-react";
 import { ChatPanel } from "./chat-panel";
 import { BlueprintRunsList } from "./blueprint/runs-list";
+import { AgentContextPanel } from "./agent-context-panel";
 import type { AgentMode } from "@/types/chat";
 
-type BottomPanelTab = "chat" | "runs";
+type BottomPanelTab = "chat" | "runs" | "context";
 
 interface BottomPanelProps {
   projectId: string;
   projectIdNum: number;
   onApplyToEditor?: (html: string) => void;
   initialAgent?: AgentMode;
+  editorContent?: string;
 }
 
 export function BottomPanel({
@@ -21,6 +23,7 @@ export function BottomPanel({
   projectIdNum,
   onApplyToEditor,
   initialAgent,
+  editorContent,
 }: BottomPanelProps) {
   const t = useTranslations("workspace");
   const [activeTab, setActiveTab] = useState<BottomPanelTab>("chat");
@@ -57,6 +60,20 @@ export function BottomPanel({
           <Zap className="h-3.5 w-3.5" />
           {t("runsTabLabel")}
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "context"}
+          onClick={() => setActiveTab("context")}
+          className={`flex cursor-pointer items-center gap-1.5 rounded-t-md px-3 py-1.5 text-xs font-medium transition-all ${
+            activeTab === "context"
+              ? "border border-b-0 border-border bg-background text-foreground"
+              : "border border-transparent text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground"
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          {t("contextTabLabel")}
+        </button>
       </div>
 
       {/* Tab content */}
@@ -67,10 +84,15 @@ export function BottomPanel({
             onApplyToEditor={onApplyToEditor}
             initialAgent={initialAgent}
           />
-        ) : (
+        ) : activeTab === "runs" ? (
           <BlueprintRunsList
             projectId={projectIdNum}
             onApplyResult={onApplyToEditor}
+          />
+        ) : (
+          <AgentContextPanel
+            projectId={projectIdNum}
+            editorContent={editorContent ?? ""}
           />
         )}
       </div>

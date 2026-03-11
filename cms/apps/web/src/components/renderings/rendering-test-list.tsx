@@ -46,7 +46,7 @@ function formatDate(iso: string): string {
 
 function completionRate(test: RenderingTest): number {
   if (test.clients_requested === 0) return 0;
-  return Math.round((test.clients_completed / test.clients_requested) * 100);
+  return Math.round(((test.clients_completed ?? 0) / test.clients_requested) * 100);
 }
 
 const GRID_COLS = "grid-cols-[2rem_2rem_6rem_1fr_7rem_5.5rem_3rem_9rem]";
@@ -117,7 +117,7 @@ export function RenderingTestList({ tests, onScreenshotClick, compareIds, onComp
               {isExpanded && (
                 <div className="border-b border-card-border bg-surface-muted/20 p-4">
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {test.screenshots.map((screenshot) => (
+                    {(test.screenshots ?? []).map((screenshot) => (
                       <button
                         key={screenshot.client_name}
                         className="group/thumb relative overflow-hidden rounded-md border border-card-border bg-card-bg transition-shadow hover:shadow-md"
@@ -139,7 +139,7 @@ export function RenderingTestList({ tests, onScreenshotClick, compareIds, onComp
                           <span className="truncate text-xs text-foreground">
                             {screenshot.client_name}
                           </span>
-                          <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${screenshotStatusDot(screenshot.status)}`} />
+                          <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${screenshotStatusDot(screenshot.status ?? "")}`} />
                         </div>
                       </button>
                     ))}

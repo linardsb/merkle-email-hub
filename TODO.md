@@ -1023,7 +1023,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Client list is public ontology data. Project-scoped via existing RLS. Input validated against known client IDs.
 **Verify:** Create project with "Outlook 2019 + Gmail" as priority. Project detail shows priority clients. QA results show ALL 25 clients but priority clients are visually emphasised. Empty priority = all clients shown equally. Blueprint runs receive audience context for priority clients.
 
-### 10.2 Onboarding Compatibility Brief UI
+### ~~10.2 Onboarding Compatibility Brief UI~~ DONE
 **What:** Add a "Compatibility Brief" tab/section to the project workspace that displays the auto-generated onboarding subgraph (9.5). Shows: executive summary, per-client CSS constraint profiles, cross-client risk matrix, and a "Regenerate" button that calls `POST /projects/{id}/onboarding-brief`.
 **Why:** The backend generates rich compatibility briefs per project but there's no way to see them. Email developers need this as a reference while building — "what CSS is safe across all clients, and where do my priority clients have constraints?"
 **Implementation:**
@@ -1036,7 +1036,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Brief data is project-scoped. Read-only for viewer role. Regenerate requires developer+ role.
 **Verify:** Navigate to project compatibility tab. Brief displays with per-client profiles (all 25 clients, priority clients highlighted). "Regenerate" updates the content. Brief reflects project's priority clients with emphasis.
 
-### 10.3 Blueprint Run Trigger & Pipeline Visualisation
+### ~~10.3 Blueprint Run Trigger & Pipeline Visualisation~~ DONE
 **What:** Add a "Generate with Blueprint" button in the workspace that triggers a full multi-agent blueprint run (not just a single agent call). Show real-time pipeline progress: which agent is running, QA gate status, self-correction loops, handoff chain, and final result with confidence score.
 **Why:** The chat sidebar currently calls individual agent endpoints, bypassing the blueprint engine entirely. The engine is where all the intelligence layers (audience context, failure patterns, component injection, handoff memory, self-correction) converge. Without a UI trigger, the most powerful feature in the hub is CLI-only.
 **Implementation:**
@@ -1050,7 +1050,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Blueprint runs consume AI quota (existing rate limits apply). Run status scoped to project. Only project members can trigger runs.
 **Verify:** Click "Generate with Blueprint" → select campaign → enter brief → pipeline shows agents executing in sequence → QA gate results appear → final HTML available with "Apply" button. Self-correction visible when QA fails.
 
-### 10.4 Blueprint Run History & Outcomes
+### ~~10.4 Blueprint Run History & Outcomes~~ DONE
 **What:** Add a "Runs" tab in the workspace showing all blueprint runs for the project — status, agents involved, QA pass/fail, duration, token usage. Click into a run to see full handoff history, agent decisions, failure patterns discovered, and the generated output.
 **Why:** Blueprint outcome logging (8.4) captures rich data but it's only in the database/graph. Developers need to review past runs to understand what agents did, why QA failed, and what patterns were discovered. Essential for debugging and iterating on email quality.
 **Implementation:**
@@ -1063,7 +1063,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Run history scoped to project (RLS). Viewer role can read but not trigger new runs. Token usage visible to developer+ only.
 **Verify:** Run a blueprint → appears in runs list with correct status → click into detail → see full handoff history and QA breakdown. Filter by "failed" shows only failed runs.
 
-### 10.5 Component Compatibility Badges & Matrix
+### ~~10.5 Component Compatibility Badges & Matrix~~ DONE
 **What:** Display per-client compatibility badges on component cards in the component browser. Add a compatibility matrix view showing which components work in which clients. Add a "Run QA" button on component detail to trigger `POST /components/{id}/versions/{v}/qa`.
 **Why:** Component-to-graph linking (9.3) generates compatibility data but the frontend never shows it. Email developers choosing components need to know "will this CTA button work in Outlook?" before inserting it into their template.
 **Implementation:**
@@ -1077,7 +1077,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** QA trigger rate-limited (10/min). Compatibility data is read-only for viewers. Component data project-scoped.
 **Verify:** Component card shows green badge (all clients pass). Click component → see per-client breakdown. "Run QA" updates badge. Filter by "Outlook compatible" hides incompatible components.
 
-### 10.6 Graph-Powered Knowledge Search
+### ~~10.6 Graph-Powered Knowledge Search~~ DONE
 **What:** Upgrade the `/knowledge` page to support graph search mode alongside existing RAG search. Add a toggle: "Text Search" (current) vs "Graph Search" (Cognee). Graph search returns entities and relationships with visual presentation — entity cards with relationship links between them.
 **Why:** The flat RAG search on `/knowledge` returns text chunks. The graph search (Phase 8.1) returns structured entities (email clients, CSS properties) with relationships (supports, fallback_for, incompatible_with). This is far more useful for understanding compatibility.
 **Implementation:**
@@ -1092,7 +1092,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Graph search has same auth + rate limits as text search. Dataset names validated server-side. No graph write access from frontend.
 **Verify:** Toggle to Graph Search → search "Outlook dark mode" → see entity cards for Outlook + dark mode CSS properties with support relationships. Toggle back to Text → same query returns text chunks.
 
-### 10.7 Failure Pattern Dashboard
+### ~~10.7 Failure Pattern Dashboard~~ DONE
 **What:** Add a "Failure Patterns" section to the intelligence dashboard showing extracted patterns across blueprint runs — which agents fail on which checks for which clients, how patterns trend over time, and which patterns have been resolved.
 **Why:** Failure pattern propagation (9.4) collects rich data about cross-agent failures but there's no visibility. Email developers and leads need to see: "Outlook dark mode fails 40% of the time" → "we need to update the SKILL.md" or "this client needs a workaround documented."
 **Implementation:**
@@ -1106,7 +1106,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Pattern data project-scoped. Contains only technical details (CSS properties, email clients), no user data. Read-only for all roles.
 **Verify:** After several blueprint runs with QA failures, dashboard shows patterns. Filter by "Outlook" shows Outlook-specific failures. Trend chart shows pattern frequency. Click pattern → see detail with workaround.
 
-### 10.8 Agent Confidence & Handoff Visibility
+### ~~10.8 Agent Confidence & Handoff Visibility~~ DONE
 **What:** Display agent confidence scores in the chat sidebar and blueprint pipeline view. Show a "needs review" badge when confidence < 0.5. Display handoff decisions (what the agent decided and warned about) in an expandable panel below agent responses.
 **Why:** Agents already emit confidence scores (7.3) and structured handoffs (7.1) but the frontend doesn't show them. Developers need to know when an agent is unsure and what decisions were made during generation.
 **Implementation:**
@@ -1119,7 +1119,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Confidence scores and handoff data are informational. No new access surface.
 **Verify:** Agent responds with 0.45 confidence → "Needs Review" badge appears. Expand handoff → see decisions and warnings. Blueprint pipeline shows confidence per step.
 
-### 10.9 Workspace Agent Context Panel
+### ~~10.9 Workspace Agent Context Panel~~ DONE
 **What:** Add a collapsible "Agent Context" panel in the workspace that shows what intelligence layers are active for the current project — audience profile summary, active failure patterns, loaded SKILL.md version, component context, and onboarding brief status.
 **Why:** All intelligence layers inject silently into agent prompts. Developers have no visibility into what context agents are working with. This panel makes the invisible visible — "the scaffolder knows about 3 failure patterns for Outlook and has 12 component references loaded."
 **Implementation:**
@@ -1132,7 +1132,7 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 **Security:** Context summary is read-only, project-scoped. No sensitive data — only agent configuration state.
 **Verify:** Open workspace for project with target clients set → context panel shows audience profile, failure pattern count, SKILL.md status. Change template to include a component → component context section updates.
 
-### 10.10 SDK Regeneration & Type Coverage
+### ~~10.10 SDK Regeneration & Type Coverage~~ DONE
 **What:** Regenerate the TypeScript SDK to include all Phase 8-10 response types and endpoints. Add missing types: `BlueprintRunResponse`, `BlueprintNodeStatus`, `HandoffSummary`, `GraphSearchRequest/Response`, `GraphEntity`, `GraphRelationship`, `FailurePatternResponse`, `OnboardingBriefResponse`, `ComponentCompatibilityResponse`, `AgentContextSummary`.
 **Why:** The SDK is the contract between backend and frontend. Missing types mean frontend components use `any` or manual type definitions, which defeats the type-safety principle. All new endpoints from Phase 8-10 need SDK coverage.
 **Implementation:**

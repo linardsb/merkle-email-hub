@@ -37,9 +37,9 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
   const clients = useMemo(() => {
     const seen = new Map<string, DerivedClient>();
     for (const test of tests) {
-      for (const s of test.screenshots) {
+      for (const s of (test.screenshots ?? [])) {
         if (!seen.has(s.client_name)) {
-          seen.set(s.client_name, { name: s.client_name, category: s.category });
+          seen.set(s.client_name, { name: s.client_name, category: s.category ?? "" });
         }
       }
     }
@@ -54,7 +54,7 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
   ];
 
   function getScreenshotStatus(test: RenderingTest, clientName: string): string {
-    const screenshot = test.screenshots.find((s) => s.client_name === clientName);
+    const screenshot = (test.screenshots ?? []).find((s) => s.client_name === clientName);
     return screenshot?.status ?? "not_tested";
   }
 

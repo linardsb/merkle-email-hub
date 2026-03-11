@@ -14,6 +14,7 @@ import {
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { BlueprintProgress, HandoffSummary } from "@email-hub/sdk";
 import { useState } from "react";
+import { NodeHandoffPanel } from "./node-handoff-panel";
 
 export const NODE_LABELS: Record<string, string> = {
   scaffolder: "Scaffolder",
@@ -68,7 +69,7 @@ export function ConfidenceBar({ value }: { value: number }) {
   );
 }
 
-export function PipelineTimeline({ progress }: { progress: BlueprintProgress[] }) {
+export function PipelineTimeline({ progress, handoffHistory }: { progress: BlueprintProgress[]; handoffHistory?: HandoffSummary[] }) {
   const t = useTranslations("blueprintRun");
   return (
     <div className="space-y-1">
@@ -110,6 +111,10 @@ export function PipelineTimeline({ progress }: { progress: BlueprintProgress[] }
                 )}
               </div>
               <p className="text-xs text-muted-foreground">{node.summary}</p>
+              {node.node_type === "agentic" && handoffHistory && (() => {
+                const handoff = handoffHistory.find((h) => h.agent_name === node.node_name);
+                return handoff ? <NodeHandoffPanel handoff={handoff} /> : null;
+              })()}
             </div>
             <div className="ml-2 flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
@@ -133,8 +138,8 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
               <Badge variant="outline" className="text-xs">
                 {formatNodeName(handoff.agent_name)}
               </Badge>
-              {handoff.confidence !== null && (
-                <ConfidenceBar value={handoff.confidence} />
+              {handoff.confidence != null && (
+                <ConfidenceBar value={handoff.confidence ?? 0} />
               )}
             </div>
           </div>

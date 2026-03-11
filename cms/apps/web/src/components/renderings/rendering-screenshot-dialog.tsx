@@ -41,9 +41,9 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props)
     >
       <div className="flex items-center justify-between border-b border-card-border p-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-foreground">{result.client_name}</h2>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusLabel(result.status)}`}>
-            {t(result.status)}
+          <h2 className="text-lg font-semibold text-foreground">{result.client_name ?? ""}</h2>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusLabel(result.status ?? "")}`}>
+            {t(result.status ?? "pending")}
           </span>
         </div>
         <button

@@ -3,15 +3,15 @@
 ## Email Innovation Hub
 
 **Classification:** Internal / Confidential
-**Version:** 4.7
-**Date:** 2026-03-10
-**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete (36 traces, 16.7% pass rate baseline, 5/5 blueprint evals); Phase 6 OWASP complete; Phase 7 complete (7.1-7.6 all done); Phase 8 Knowledge Graph Integration COMPLETE (8.1-8.6 all done); Phase 9 Graph-Driven Intelligence COMPLETE (9.1-9.8 all done); remaining: human label calibration (540 rows)
+**Version:** 4.9
+**Date:** 2026-03-11
+**Status:** V1 Complete — Sprint 3 done (3.1-3.5); V2 tasks 4.1-4.5, 4.8-4.13 done; ALL 9 AI agents built (eval-first + skills workflow); Phase 5.1-5.8 eval system complete; Phase 6 OWASP complete; Phase 7 complete; Phase 8 Knowledge Graph COMPLETE; Phase 9 Graph-Driven Intelligence COMPLETE; Phase 10.1-10.10 frontend integration done (priority clients, compatibility brief, blueprint run UI, component badges, graph search, failure patterns, confidence/handoff visibility, agent context panel, SDK regeneration); remaining: 10.11-10.12 + human label calibration (540 rows)
 
 ---
 
 ## 0. Implementation Status
 
-> Last updated: 2026-03-10
+> Last updated: 2026-03-11
 
 ### Completed
 
@@ -19,7 +19,7 @@
 |------|-------------|-----------------|
 | 0.1 | Database migrations | All email-hub models migrated; PostgreSQL RLS policies on `client_org_id` |
 | 0.2 | shadcn/ui component library | 16 foundational components installed; [REDACTED] design tokens wired |
-| 0.3 | OpenAPI TypeScript SDK | `cms/packages/sdk/` generates typed client for 61 endpoints; offline generation via `make sdk` |
+| 0.3 | OpenAPI TypeScript SDK | `cms/packages/sdk/` generates typed client for 102 endpoints; offline generation via `make sdk`; 7 local type barrel files re-export from SDK |
 | 0.4 | Authenticated API client layer | `authFetch` with timeout (30s/120s), 401 redirect interceptor, 429 retry with backoff, 8 domain-specific SWR hooks (`use-projects`, `use-orgs`, `use-components`, `use-email`, `use-qa`, `use-personas`, `use-approvals`, `use-connectors`), `ApiError` class, mutation fetchers |
 | 1.1 | Project dashboard page | Dashboard at `/(dashboard)/` with stats cards, project grid, org data; SWR data fetching from live API |
 | 1.2 | Project workspace layout | 3-pane resizable workspace at `/projects/[id]/workspace` using `react-resizable-panels` v4; collapsible AI chat panel; full-screen layout (sidebar extracted to dashboard route group); project access verified via backend API |
@@ -83,16 +83,25 @@
 | 9.7 | Competitive intelligence graph | `competitive_feasibility.py` — audience-aware feasibility scoring cross-referencing CSS support with competitor capabilities; `GET /api/v1/ontology/competitive-report` + `/text` endpoints (auth + rate limited); LAYER 10 enhanced with audience coverage data; `build_audience_competitive_context()` wrapper; 35 new tests |
 
 | 10.1 | Project target clients selector | `target-clients-selector.tsx` searchable multi-select with engine badges + market share; `GET /api/v1/ontology/clients` endpoint (25 clients from registry, rate limited, auth); `useEmailClients` + `useUpdateProject` SWR hooks; create-project-dialog integration; project card client badges; workspace toolbar display; i18n keys (dashboard + projects namespaces); SDK types updated; 4 backend tests |
+| 10.2 | Onboarding compatibility brief UI | `compatibility-brief-dialog.tsx` with per-client CSS constraint profiles, risk summary, regenerate button (`POST .../onboarding-brief`); `useCompatibilityBrief` SWR hook; workspace toolbar integration; demo data |
+| 10.3 | Blueprint run trigger & pipeline visualisation | `blueprint-run-dialog.tsx` with selectable brief cards + priority clients display; `blueprint-pipeline-view` showing node status, QA results, confidence scores; `useBlueprintRun` hook; "Apply Result" to editor |
+| 10.4 | Blueprint run history & outcomes | `runs-list.tsx` + `run-detail-dialog.tsx` in workspace bottom panel Runs tab; `useBlueprintRuns` hook with pagination; status badges, agent list, QA breakdown, handoff history; filter/sort |
+| 10.5 | Component compatibility badges & matrix | `compatibility-badge.tsx` (full/partial/issues/untested) on component cards; per-client compatibility matrix in detail dialog; data from `ComponentQAResult` join model |
+| 10.6 | Graph-powered knowledge search | Text/Graph/Ask mode toggle on `/knowledge` page; `graph-search-results.tsx` entity cards with relationship labels; `useGraphSearch` hook; Ask mode for natural language Q&A via graph completion; dataset filter support |
+| 10.7 | Failure pattern dashboard | `/failure-patterns` page with stats cards (total patterns, top agents/checks), filterable pattern table (agent, QA check, frequency, clients), detail dialog with workaround hints; `useFailurePatterns` + `useFailurePatternStats` hooks; dashboard nav integration |
+| 10.8 | Agent confidence & handoff visibility | `confidence-indicator.tsx` on chat message bubbles (green ≥0.8, yellow 0.5-0.8, red <0.5, "Needs Review" badge); `node-handoff-panel.tsx` with expandable decisions/warnings/component refs in blueprint views; `ConfidenceBar` shared component |
+| 10.9 | Workspace agent context panel | `agent-context-panel.tsx` as "Context" tab in workspace bottom panel; 4 sections: audience profile (target clients/constraints), active failure patterns (count + top patterns), agent skills (SKILL.md + L3 status for all 9 agents), component context (auto-detected `<component>` refs); project-scoped data via existing hooks |
+| 10.10 | SDK regeneration & type coverage | Regenerated SDK from 63 → 102 endpoint functions; all Phase 3-10 types in `types.gen.ts`; 7 local type barrel files (`templates`, `rendering`, `failure-patterns`, `graph-search`, `knowledge`, `qa`, `connectors`) migrated to SDK re-exports; fixed `VersionResponse` naming + ~40 optional property guards across 17 component files; `make check-fe` clean (0 TS errors, 26/26 tests) |
 
 ### In Progress
 
-**Remaining:** Phase 10 full-stack integration (10.2–10.6), human label calibration (540 rows for TPR/TNR).
+**Remaining:** Phase 10 full-stack integration (10.11-10.12: blueprint chat mode, intelligence dashboard enhancements), human label calibration (540 rows for TPR/TNR).
 
 ### Infrastructure Built
 
 - **Backend:** Full VSA implementation across 8 email-hub modules with CRUD, pagination, RBAC, rate limiting, soft delete
 - **Frontend:** Next.js 16 monorepo with next-intl (6 locales with cookie-based switching, RTL support), auth middleware, RBAC route guards, semantic Tailwind tokens, shared `ErrorState`/`EmptyState` components, route-level loading skeletons, fade-in animations, Yjs CRDT collaborative editing, @dnd-kit visual Liquid builder
-- **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec; `make sdk` for regeneration
+- **SDK Pipeline:** `openapi-ts` generates typed fetch client from backend OpenAPI spec (102 endpoints); `make sdk` for regeneration; 7 local type barrel files re-export from SDK for stable import surface
 - **API Client:** Interceptor-based error handling with automatic auth refresh, typed error classes, SWR cache integration, 20 domain-specific hooks
 - **AI Layer:** Protocol-based LLM abstraction with provider registry, model tier routing, PII sanitization, output validation, SSE streaming; `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) with thread-safe `_get_model_tier` + `_should_run_qa` hooks, standardised response schemas (`confidence` + `skills_loaded` on all 9 agents), `to_handoff()` for handoff emission; Blueprint state machine engine for multi-node orchestration with self-correction, structured `AgentHandoff` propagation (full history + episodic memory auto-persistence via `handoff_memory.py`), confidence-based routing (threshold 0.5 → `needs_review`), memory recall in `_build_node_context()`, and template-aware component context injection (`ComponentResolver` Protocol); Progressive disclosure SKILL.md files for all 9 agents with on-demand L3 skill loading; Eval loop tooling with dry-run pipeline (error analysis, judge/QA calibration, blueprint eval, regression detection; `make eval-dry-run`); SKILL.md A/B testing (`skill_ab.py` + `skill_override.py` runtime override, `make eval-skill-test`); baseline establishment workflow (`make eval-baseline`); human labeling guide (`docs/eval-labeling-guide.md`)
 - **Connector Architecture:** Data-driven ESP connector frontend supporting 5 platforms (Raw HTML, Braze, SFMC, Adobe Campaign, Taxi); backend `ConnectorProvider` Protocol with all 4 ESP connectors implemented (placeholder APIs)

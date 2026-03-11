@@ -214,7 +214,7 @@ export function resolveDemo(urlStr: string): unknown | null {
     const tag = url.searchParams.get("tag");
     let docs = [...DEMO_KNOWLEDGE_DOCUMENTS];
     if (domain) docs = docs.filter((d) => d.domain === domain);
-    if (tag) docs = docs.filter((d) => d.tags.some((dt) => dt.name === tag));
+    if (tag) docs = docs.filter((d) => (d.tags ?? []).some((dt) => dt.name === tag));
     return paginate(docs, url);
   }
 

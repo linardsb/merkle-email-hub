@@ -81,7 +81,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
   };
 
   const progressPct = polledTest
-    ? Math.round((polledTest.clients_completed / Math.max(polledTest.clients_requested, 1)) * 100)
+    ? Math.round(((polledTest.clients_completed ?? 0) / Math.max(polledTest.clients_requested, 1)) * 100)
     : 0;
 
   return (
@@ -158,7 +158,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
               <>
                 <p className="text-sm text-foreground-muted">
                   {t("testProgress", {
-                    completed: polledTest.clients_completed,
+                    completed: polledTest.clients_completed ?? 0,
                     total: polledTest.clients_requested,
                   })}
                 </p>

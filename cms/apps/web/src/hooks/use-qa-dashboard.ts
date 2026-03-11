@@ -46,7 +46,7 @@ function computeMetrics(items: QAResultResponse[]): QADashboardMetrics {
     let count = 0;
 
     for (const result of items) {
-      const check = result.checks.find((c) => c.check_name === checkName);
+      const check = (result.checks ?? []).find((c) => c.check_name === checkName);
       if (check) {
         scoreSum += check.score;
         if (check.passed) passCount++;

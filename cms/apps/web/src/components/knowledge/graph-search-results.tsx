@@ -55,9 +55,9 @@ function EntityCard({ entity }: { entity: GraphEntity }) {
             {entity.description}
           </p>
         )}
-        {Object.keys(entity.properties).length > 0 && (
+        {Object.keys(entity.properties ?? {}).length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {Object.entries(entity.properties).map(([key, value]) => (
+            {Object.entries(entity.properties ?? {}).map(([key, value]) => (
               <span
                 key={key}
                 className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
@@ -123,7 +123,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
   // Build entity map for relationship lookups
   const entityMap = new Map<string, GraphEntity>();
   for (const result of results) {
-    for (const entity of result.entities) {
+    for (const entity of (result.entities ?? [])) {
       entityMap.set(entity.id, entity);
     }
   }
@@ -133,7 +133,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
       {results.map((result, i) => {
         // Group entities by type
         const grouped = new Map<string, GraphEntity[]>();
-        for (const entity of result.entities) {
+        for (const entity of (result.entities ?? [])) {
           const group = grouped.get(entity.entity_type) ?? [];
           group.push(entity);
           grouped.set(entity.entity_type, group);
@@ -146,9 +146,9 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
               <Network className="mt-0.5 h-5 w-5 shrink-0 text-interactive" />
               <div>
                 <p className="text-sm text-foreground">{result.content}</p>
-                {result.score > 0 && (
+                {(result.score ?? 0) > 0 && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {t("graphRelevance", { score: Math.round(result.score * 100) })}
+                    {t("graphRelevance", { score: Math.round((result.score ?? 0) * 100) })}
                   </p>
                 )}
               </div>
@@ -177,14 +177,14 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
             })}
 
             {/* Relationships */}
-            {result.relationships.length > 0 && (
+            {(result.relationships ?? []).length > 0 && (
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {t("graphRelationships")}
-                  <span className="ml-1.5 opacity-70">({result.relationships.length})</span>
+                  <span className="ml-1.5 opacity-70">({(result.relationships ?? []).length})</span>
                 </h3>
                 <div className="space-y-1.5">
-                  {result.relationships.map((rel, ri) => (
+                  {(result.relationships ?? []).map((rel, ri) => (
                     <RelationshipRow key={ri} relationship={rel} entityMap={entityMap} />
                   ))}
                 </div>

@@ -21,6 +21,7 @@ export interface ChatMessage {
   timestamp: number;
   agent: AgentMode;
   isStreaming: boolean;
+  confidence?: number | null;
 }
 
 /** A single delta inside an SSE chunk choice. */

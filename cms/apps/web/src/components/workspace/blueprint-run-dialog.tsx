@@ -269,7 +269,7 @@ export function BlueprintRunDialog({
 
         {result && (
           <div className="space-y-4 py-2">
-            <StatusBanner status={result.status} qaPassed={result.qa_passed} />
+            <StatusBanner status={result.status} qaPassed={result.qa_passed ?? false} />
 
             {/* Audience summary */}
             {result.audience_summary && (
@@ -284,21 +284,21 @@ export function BlueprintRunDialog({
             <PipelineTimeline progress={result.progress} />
 
             {/* Skipped nodes */}
-            {result.skipped_nodes.length > 0 && (
+            {(result.skipped_nodes ?? []).length > 0 && (
               <div className="rounded-lg border border-border bg-muted/50 p-3">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                   {t("skippedNodes")}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {result.skipped_nodes.map((node) => (
+                  {(result.skipped_nodes ?? []).map((node) => (
                     <Badge key={node} variant="outline" className="text-xs">
                       {formatNodeName(node)}
                     </Badge>
                   ))}
                 </div>
-                {result.routing_decisions.length > 0 && (
+                {(result.routing_decisions ?? []).length > 0 && (
                   <div className="mt-2 space-y-1">
-                    {result.routing_decisions
+                    {(result.routing_decisions ?? [])
                       .filter((rd) => rd.action === "skip")
                       .map((rd, i) => (
                         <p key={i} className="text-xs text-muted-foreground">
@@ -312,7 +312,7 @@ export function BlueprintRunDialog({
               </div>
             )}
 
-            <CollapsibleHandoffs handoffs={result.handoff_history} />
+            <CollapsibleHandoffs handoffs={result.handoff_history ?? []} />
 
             {/* Token usage */}
             {totalTokens > 0 && (

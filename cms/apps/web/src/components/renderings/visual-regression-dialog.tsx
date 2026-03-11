@@ -87,7 +87,7 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
 
             {/* Diff grid */}
             <div className="space-y-4">
-              {data.diffs.map((diff) => {
+              {(data.diffs ?? []).map((diff) => {
                 const badge = diffBadge(diff.diff_percentage, t);
                 return (
                   <div key={diff.client_name} className="rounded-lg border border-card-border p-3">

@@ -5,7 +5,7 @@ import { fetcher } from "@/lib/swr-fetcher";
 import type {
   PaginatedResponseComponentResponse,
   ComponentResponse,
-  VersionResponse,
+  AppComponentsSchemasVersionResponse as VersionResponse,
   ComponentCompatibilityResponse,
 } from "@email-hub/sdk";
 

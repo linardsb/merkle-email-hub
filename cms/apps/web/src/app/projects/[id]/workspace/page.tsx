@@ -498,6 +498,7 @@ export default function WorkspacePage() {
               projectIdNum={projectId}
               onApplyToEditor={handleApplyToEditor}
               initialAgent={initialAgent}
+              editorContent={editorContent}
             />
           </Panel>
         </Group>

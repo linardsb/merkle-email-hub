@@ -39,9 +39,9 @@ export function KnowledgeDocumentCard({ document, onClick }: Props) {
       </div>
 
       {/* Tags */}
-      {document.tags.length > 0 && (
+      {(document.tags ?? []).length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {document.tags.map((tag) => (
+          {(document.tags ?? []).map((tag) => (
             <span
               key={tag.id}
               className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-foreground-muted"

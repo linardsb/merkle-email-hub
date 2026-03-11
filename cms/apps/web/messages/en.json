@@ -182,6 +182,8 @@
     "chatThinking": "Thinking...",
     "chatCopyCode": "Copy",
     "chatApplyToEditor": "Apply",
+    "chatConfidence": "Confidence: {pct}%",
+    "chatNeedsReview": "Needs Review",
     "chatApplied": "AI output applied to editor",
     "chatError": "Something went wrong. Please try again.",
     "chatTab": "Chat",
@@ -248,7 +250,25 @@
     "editorTabCode": "Code",
     "editorTabVisual": "Visual",
     "brief": "Brief",
-    "viewCompatibilityBrief": "View Compatibility Brief"
+    "viewCompatibilityBrief": "View Compatibility Brief",
+    "contextTabLabel": "Context",
+    "contextPanel": {
+      "loading": "Loading...",
+      "audienceProfile": "Audience Profile",
+      "audienceEmpty": "No priority clients set. All 25 email clients are weighted equally.",
+      "darkModeRequired": "Dark mode required",
+      "cssConstraints": "{count} risky CSS properties",
+      "failurePatterns": "Failure Patterns",
+      "noFailurePatterns": "No failure patterns recorded for this project.",
+      "topAgent": "Top agent: {agent}",
+      "topCheck": "Top check: {check}",
+      "agentSkills": "Agent Skills",
+      "noSkillData": "No agent skill data available.",
+      "noSkill": "no SKILL.md",
+      "failureWarningsActive": "Failure warnings active — criteria below 85% pass rate",
+      "componentContext": "Component Context",
+      "noComponentsDetected": "No component references detected in current template."
+    }
   },
   "compatibilityBrief": {
     "title": "Compatibility Brief",
@@ -1017,6 +1037,7 @@
     "tokens": "{count} tokens",
     "skippedNodes": "Skipped by routing",
     "routingReason": "Reason",
+    "nodeHandoffToggle": "Agent Decisions",
     "handoffDecisions": "Decisions",
     "handoffWarnings": "Warnings",
     "handoffComponents": "Components Used",

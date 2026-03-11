@@ -1,33 +1,19 @@
-export interface GraphEntity {
-  id: string;
-  name: string;
-  entity_type: string;
-  description: string;
-  properties: Record<string, unknown>;
-}
+/**
+ * Graph search types — re-exported from SDK where available.
+ * Frontend-only UI types kept locally.
+ */
+export type {
+  GraphEntityResponse as GraphEntity,
+  GraphRelationshipResponse as GraphRelationship,
+  GraphSearchResultResponse as GraphSearchResult,
+  GraphSearchResponse,
+  GraphSearchRequest,
+} from "@email-hub/sdk";
 
-export interface GraphRelationship {
-  source_id: string;
-  target_id: string;
-  relationship_type: string;
-  properties: Record<string, unknown>;
-}
-
-export interface GraphSearchResult {
-  content: string;
-  entities: GraphEntity[];
-  relationships: GraphRelationship[];
-  score: number;
-}
-
-export interface GraphSearchResponse {
-  results: GraphSearchResult[];
-  query: string;
-  mode: "chunks" | "completion";
-}
-
+/** Frontend-only: search mode toggle (maps to SDK's GraphSearchRequest.mode) */
 export type SearchMode = "text" | "graph" | "ask";
 
+/** Frontend-only: hook arguments for graph search */
 export interface GraphSearchArgs {
   query: string;
   dataset_name?: string;

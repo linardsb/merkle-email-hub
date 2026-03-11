@@ -85,7 +85,7 @@ export function FailurePatternDetailDialog({
                 {t("confidence")}
               </p>
               <p className="mt-1 text-sm text-foreground">
-                {pattern.confidence !== null
+                {pattern.confidence != null
                   ? `${Math.round(pattern.confidence * 100)}%`
                   : "-"}
               </p>

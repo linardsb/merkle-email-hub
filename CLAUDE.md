@@ -340,6 +340,15 @@ Leverages Phase 8 knowledge graph across the entire Hub — personas, components
 ### Phase 10 — Full-Stack Agent Workflow (Frontend Integration)
 Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 backend complete, Phase 0-3 frontend foundation. Design principle: QA always checks ALL 25 email clients; "priority clients" affect display emphasis and agent attention, never exclusion.
 - [x] 10.1 Project priority clients selector (`target-clients-selector.tsx` multi-select, `GET /api/v1/ontology/clients` endpoint, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar integration, project card badges, i18n keys, 4 backend tests — empty = all clients equal priority)
+- [x] 10.2 Onboarding compatibility brief UI (`compatibility-brief-dialog.tsx`, `useCompatibilityBrief` hook, per-client constraint profiles, regenerate button, workspace toolbar integration)
+- [x] 10.3 Blueprint run trigger & pipeline visualisation (`blueprint-run-dialog.tsx`, `useBlueprintRun` hook, brief card selection, pipeline progress view with node status/confidence)
+- [x] 10.4 Blueprint run history & outcomes (`runs-list.tsx` + `run-detail-dialog.tsx` in workspace bottom panel Runs tab, `useBlueprintRuns` hook, status badges, handoff/QA breakdown)
+- [x] 10.5 Component compatibility badges & matrix (`compatibility-badge.tsx` on component cards, per-client matrix in detail dialog, `ComponentQAResult` data surfaced)
+- [x] 10.6 Graph-powered knowledge search (text/graph/ask mode toggle on `/knowledge` page, `graph-search-results.tsx` entity cards with relationships, `useGraphSearch` hook)
+- [x] 10.7 Failure pattern dashboard (`/failure-patterns` page with stats cards, filterable pattern table, detail dialog, `useFailurePatterns` + `useFailurePatternStats` hooks)
+- [x] 10.8 Agent confidence & handoff visibility (`confidence-indicator.tsx` on chat messages, `node-handoff-panel.tsx` in blueprint views, color-coded 0.5 threshold)
+- [x] 10.9 Workspace agent context panel (`agent-context-panel.tsx` as Context tab in bottom panel — audience profile, failure patterns, SKILL.md status, component context)
+- [x] 10.10 SDK regeneration & type coverage (102 endpoints from 63, all Phase 3-10 types, 7 local type files migrated to SDK re-exports, `make check-fe` clean)
 
 ## Feature Scope by Stack
 
@@ -382,6 +391,14 @@ Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 ba
 - Rendering Tests: `/renderings` page with test list, stats cards, compatibility matrix, screenshot dialog, visual regression comparison, async polling
 - Collaborative Editing: Yjs CRDT, y-codemirror.next, collaborator avatars, connection status
 - Priority Clients Selector: `target-clients-selector.tsx` multi-select with engine badges, `useEmailClients` + `useUpdateProject` hooks, create dialog + workspace toolbar + project card badges (empty = all clients equal priority, QA always checks all 25)
+- Compatibility Brief: `compatibility-brief-dialog.tsx` with per-client CSS constraints, risk summary, regenerate button; `useCompatibilityBrief` hook
+- Blueprint Run UI: `blueprint-run-dialog.tsx` trigger with brief cards + `blueprint-pipeline-view`; `runs-list.tsx` + `run-detail-dialog.tsx` in bottom panel Runs tab; `useBlueprintRun` + `useBlueprintRuns` hooks
+- Component Compatibility: `compatibility-badge.tsx` on cards (full/partial/issues/untested), per-client matrix in detail dialog
+- Graph Knowledge Search: text/graph/ask mode toggle on `/knowledge`, `graph-search-results.tsx` entity cards with relationship labels
+- Failure Pattern Dashboard: `/failure-patterns` page with stats cards, filterable table, detail dialog, agent/check filters
+- Agent Confidence & Handoff Visibility: `confidence-indicator.tsx` on chat messages (green/yellow/red), `node-handoff-panel.tsx` in blueprint views
+- Workspace Agent Context Panel: `agent-context-panel.tsx` as "Context" tab in bottom panel — audience, failure patterns, SKILL.md, component refs
+- SDK Type Coverage: 102 SDK endpoints, 7 local type barrel files re-export from `@email-hub/sdk`, zero `as any` casts
 
 ## Compact instructions
 
