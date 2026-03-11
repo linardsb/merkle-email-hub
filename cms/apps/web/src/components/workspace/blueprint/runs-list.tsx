@@ -1,0 +1,164 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
+import {
+  Zap,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Clock,
+  Ban,
+} from "lucide-react";
+import { Badge } from "@email-hub/ui/components/ui/badge";
+import { Button } from "@email-hub/ui/components/ui/button";
+import { useBlueprintRuns } from "@/hooks/use-blueprint-runs";
+import { formatDuration } from "./shared";
+import { RunDetailDialog } from "./run-detail-dialog";
+import type { BlueprintRunRecord, BlueprintRunsFilter } from "@/types/blueprint-runs";
+
+const FILTER_OPTIONS: { value: BlueprintRunsFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "filterAll" },
+  { value: "completed", labelKey: "filterCompleted" },
+  { value: "completed_with_warnings", labelKey: "filterWarnings" },
+  { value: "needs_review", labelKey: "filterNeedsReview" },
+  { value: "cost_cap_exceeded", labelKey: "filterCostCap" },
+];
+
+const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  completed: CheckCircle2,
+  completed_with_warnings: AlertTriangle,
+  needs_review: Clock,
+  cost_cap_exceeded: Ban,
+  running: Clock,
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  completed: "text-chart-2",
+  completed_with_warnings: "text-accent-foreground",
+  needs_review: "text-accent-foreground",
+  cost_cap_exceeded: "text-destructive",
+  running: "text-muted-foreground",
+};
+
+interface BlueprintRunsListProps {
+  projectId: number;
+  onApplyResult?: (html: string) => void;
+}
+
+export function BlueprintRunsList({ projectId, onApplyResult }: BlueprintRunsListProps) {
+  const t = useTranslations("blueprintRuns");
+  const [filter, setFilter] = useState<BlueprintRunsFilter>("all");
+  const [selectedRun, setSelectedRun] = useState<BlueprintRunRecord | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const { data, isLoading } = useBlueprintRuns(projectId, filter);
+  const runs = data?.items ?? [];
+
+  const handleOpenDetail = useCallback((run: BlueprintRunRecord) => {
+    setSelectedRun(run);
+    setDetailOpen(true);
+  }, []);
+
+  return (
+    <div className="flex h-full flex-col bg-background">
+      {/* Filter bar */}
+      <div className="flex items-center gap-1 border-b border-border px-3 py-2 overflow-x-auto scrollbar-none">
+        {FILTER_OPTIONS.map((opt) => (
+          <Button
+            key={opt.value}
+            variant="ghost"
+            size="sm"
+            className={`h-7 shrink-0 px-2 text-xs ${
+              filter === opt.value ? "bg-accent text-accent-foreground" : ""
+            }`}
+            onClick={() => setFilter(opt.value)}
+          >
+            {t(opt.labelKey)}
+          </Button>
+        ))}
+      </div>
+
+      {/* Runs list */}
+      <div className="flex-1 overflow-y-auto">
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          </div>
+        )}
+
+        {!isLoading && runs.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+            <Zap className="h-5 w-5" />
+            <p className="text-sm">{t("empty")}</p>
+          </div>
+        )}
+
+        {!isLoading && runs.length > 0 && (
+          <div className="divide-y divide-border">
+            {runs.map((run) => {
+              const Icon = STATUS_ICON[run.status] ?? Clock;
+              const colorClass = STATUS_COLOR[run.status] ?? "text-muted-foreground";
+              const date = new Date(run.created_at);
+              const timeAgo = formatRelativeTime(date, t);
+
+              return (
+                <button
+                  key={run.id}
+                  type="button"
+                  onClick={() => handleOpenDetail(run)}
+                  className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/50"
+                >
+                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${colorClass}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {run.brief_excerpt}
+                    </p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>{timeAgo}</span>
+                      <span>·</span>
+                      <span>{formatDuration(run.duration_ms)}</span>
+                      <span>·</span>
+                      <span>{t("tokenCount", { count: run.total_tokens.toLocaleString() })}</span>
+                      {run.qa_passed === true && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {t("qaBadgePass")}
+                        </Badge>
+                      )}
+                      {run.qa_passed === false && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                          {t("qaBadgeFail")}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <RunDetailDialog
+        run={selectedRun}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onApplyResult={onApplyResult}
+      />
+    </div>
+  );
+}
+
+function formatRelativeTime(date: Date, t: (key: string, values?: Record<string, string | number>) => string): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return t("justNow");
+  if (diffMin < 60) return t("minutesAgo", { count: diffMin });
+  if (diffHr < 24) return t("hoursAgo", { count: diffHr });
+  if (diffDay < 7) return t("daysAgo", { count: diffDay });
+  return date.toLocaleDateString();
+}

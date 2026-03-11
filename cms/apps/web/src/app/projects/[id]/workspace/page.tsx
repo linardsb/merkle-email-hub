@@ -27,7 +27,7 @@ import { fetcher } from "@/lib/swr-fetcher";
 import { WorkspaceToolbar } from "@/components/workspace/workspace-toolbar";
 import { EditorPanel } from "@/components/workspace/editor-panel";
 import { PreviewPanel } from "@/components/workspace/preview-panel";
-import { ChatPanel } from "@/components/workspace/chat-panel";
+import { BottomPanel } from "@/components/workspace/bottom-panel";
 import type { AgentMode } from "@/types/chat";
 import { QAResultsPanel } from "@/components/workspace/qa-results-panel";
 import { ExportDialog } from "@/components/connectors/export-dialog";
@@ -493,7 +493,12 @@ export default function WorkspacePage() {
             collapsedSize={0}
             onResize={handleChatResize}
           >
-            <ChatPanel projectId={params.id} onApplyToEditor={handleApplyToEditor} initialAgent={initialAgent} />
+            <BottomPanel
+              projectId={params.id}
+              projectIdNum={projectId}
+              onApplyToEditor={handleApplyToEditor}
+              initialAgent={initialAgent}
+            />
           </Panel>
         </Group>
 

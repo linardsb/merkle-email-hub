@@ -194,6 +194,8 @@
     "historyClearAll": "Clear all",
     "collapseChat": "Collapse",
     "expandChat": "Expand AI Assistant",
+    "chatTabLabel": "AI Chat",
+    "runsTabLabel": "Blueprint Runs",
     "members": "Members",
     "saveTemplate": "Save",
     "saving": "Saving...",
@@ -961,5 +963,23 @@
       "runFailed": "Blueprint run failed. Please try again.",
       "invalidBrief": "Please enter a campaign brief."
     }
+  },
+  "blueprintRuns": {
+    "filterAll": "All Runs",
+    "filterCompleted": "Completed",
+    "filterWarnings": "Warnings",
+    "filterNeedsReview": "Needs Review",
+    "filterCostCap": "Cost Cap",
+    "empty": "No blueprint runs yet. Run a pipeline to see history here.",
+    "detailTitle": "Blueprint Run Details",
+    "noRunData": "Full run data is not available for this run.",
+    "tokenCount": "{count} tokens",
+    "qaBadgePass": "QA Pass",
+    "qaBadgeFail": "QA Fail",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "durationLabel": "{value}s"
   }
 }

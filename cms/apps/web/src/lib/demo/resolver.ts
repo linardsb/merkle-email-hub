@@ -30,6 +30,7 @@ import {
 import { DEMO_EMAIL_CLIENTS } from "./data/email-clients";
 import { DEMO_COMPATIBILITY_BRIEF } from "./data/compatibility-brief";
 import { DEMO_BLUEPRINT_RUN } from "./data/blueprint-run";
+import { DEMO_BLUEPRINT_RUNS } from "./data/blueprint-runs";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -321,6 +322,20 @@ export function resolveDemo(urlStr: string): unknown | null {
   m = p.match(/^\/api\/v1\/projects\/\d+\/compatibility-brief$/);
   if (m) {
     return DEMO_COMPATIBILITY_BRIEF;
+  }
+
+  // ── Blueprint Runs (history) ──
+  m = p.match(/^\/api\/v1\/projects\/(\d+)\/blueprint-runs$/);
+  if (m) {
+    const projectId = matchId(m, 1);
+    const statusFilter = url.searchParams.get("status");
+    let runs = DEMO_BLUEPRINT_RUNS.filter((r) => r.project_id === projectId);
+    if (statusFilter) runs = runs.filter((r) => r.status === statusFilter);
+    return paginate(runs, url);
+  }
+  m = p.match(/^\/api\/v1\/blueprint-runs\/(\d+)$/);
+  if (m) {
+    return DEMO_BLUEPRINT_RUNS.find((r) => r.id === matchId(m!, 1)) ?? null;
   }
 
   // ── Blueprint Run (POST simulated as GET for demo) ──
