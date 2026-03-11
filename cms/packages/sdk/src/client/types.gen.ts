@@ -193,12 +193,32 @@ export type ComponentResponse = {
     created_at: string;
     updated_at: string;
     latest_version?: number | null;
+    compatibility_badge?: string | null;
 };
 
 export type ComponentUpdate = {
     name?: string | null;
     description?: string | null;
     category?: string | null;
+};
+
+export type ClientCompatibility = {
+    client_id: string;
+    client_name: string;
+    level: string;
+    platform: string;
+};
+
+export type ComponentCompatibilityResponse = {
+    component_id: number;
+    component_name: string;
+    version_number: number;
+    full_count: number;
+    partial_count: number;
+    none_count: number;
+    clients: Array<ClientCompatibility>;
+    qa_score?: number | null;
+    last_checked?: string | null;
 };
 
 /**

@@ -358,7 +358,17 @@
     "addToCampaign": "Add to Campaign",
     "searchCampaigns": "Search campaigns...",
     "noCampaigns": "No campaigns found",
-    "addedToCampaign": "Component added to {campaign}"
+    "addedToCampaign": "Component added to {campaign}",
+    "badgeFull": "Full Support",
+    "badgePartial": "Partial",
+    "badgeIssues": "Issues",
+    "compatibilityTab": "Compatibility",
+    "compatibilityNoData": "No compatibility data available. Run QA to generate.",
+    "compatibilityFullCount": "{count} full",
+    "compatibilityPartialCount": "{count} partial",
+    "compatibilityNoneCount": "{count} unsupported",
+    "compatibilityQaScore": "QA Score: {score}%",
+    "compatibilityLastChecked": "Last checked: {date}"
   },
   "qa": {
     "title": "QA Results",

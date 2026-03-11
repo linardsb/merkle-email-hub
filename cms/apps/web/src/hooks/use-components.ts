@@ -6,6 +6,7 @@ import type {
   PaginatedResponseComponentResponse,
   ComponentResponse,
   VersionResponse,
+  ComponentCompatibilityResponse,
 } from "@email-hub/sdk";
 
 interface UseComponentsOptions {
@@ -41,6 +42,13 @@ export function useComponent(componentId: number | null) {
 export function useComponentVersions(componentId: number | null) {
   return useSWR<VersionResponse[]>(
     componentId ? `/api/v1/components/${componentId}/versions` : null,
+    fetcher
+  );
+}
+
+export function useComponentCompatibility(componentId: number | null) {
+  return useSWR<ComponentCompatibilityResponse>(
+    componentId ? `/api/v1/components/${componentId}/compatibility` : null,
     fetcher
   );
 }

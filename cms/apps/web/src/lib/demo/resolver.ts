@@ -7,7 +7,7 @@
 import { DEMO_ORGS } from "./data/orgs";
 import { DEMO_PROJECTS } from "./data/projects";
 import { DEMO_TEMPLATES, DEMO_VERSIONS } from "./data/templates";
-import { DEMO_COMPONENTS, DEMO_COMPONENT_VERSIONS } from "./data/components";
+import { DEMO_COMPONENTS, DEMO_COMPONENT_VERSIONS, buildCompatibilityResponse } from "./data/components";
 import { DEMO_PERSONAS } from "./data/personas";
 import { DEMO_APPROVALS, DEMO_FEEDBACK, DEMO_AUDIT } from "./data/approvals";
 import { DEMO_QA_RESULTS } from "./data/qa-results";
@@ -132,6 +132,10 @@ export function resolveDemo(urlStr: string): unknown | null {
   m = p.match(/^\/api\/v1\/components\/(\d+)$/);
   if (m) {
     return DEMO_COMPONENTS.find((c) => c.id === matchId(m!, 1)) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/components\/(\d+)\/compatibility$/);
+  if (m) {
+    return buildCompatibilityResponse(matchId(m!, 1));
   }
   m = p.match(/^\/api\/v1\/components\/(\d+)\/versions$/);
   if (m) {

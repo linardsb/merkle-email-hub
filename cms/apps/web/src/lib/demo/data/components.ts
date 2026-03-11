@@ -1,4 +1,5 @@
-import type { ComponentResponse, VersionResponse } from "@email-hub/sdk";
+import type { ComponentResponse, VersionResponse, ComponentCompatibilityResponse, ClientCompatibility } from "@email-hub/sdk";
+import { DEMO_EMAIL_CLIENTS } from "./email-clients";
 
 const COMPAT_FULL: Record<string, string> = {
   gmail: "full",
@@ -321,7 +322,43 @@ const seeds: ComponentSeed[] = [
   },
 ];
 
-export const DEMO_COMPONENTS: ComponentResponse[] = seeds.map((s) => s.component);
+export const DEMO_COMPONENTS: ComponentResponse[] = seeds.map((s) => ({
+  ...s.component,
+  compatibility_badge: Object.values(s.compatibility).includes("none")
+    ? "issues"
+    : Object.values(s.compatibility).includes("partial")
+      ? "partial"
+      : "full",
+}));
 export const DEMO_COMPONENT_VERSIONS: VersionResponse[] = seeds.map((s) => s.version);
 export const DEMO_COMPONENT_COMPATIBILITY: Record<number, Record<string, string>> =
   Object.fromEntries(seeds.map((s) => [s.component.id, s.compatibility]));
+
+export function buildCompatibilityResponse(componentId: number): ComponentCompatibilityResponse | null {
+  const compat = DEMO_COMPONENT_COMPATIBILITY[componentId];
+  const comp = DEMO_COMPONENTS.find((c) => c.id === componentId);
+  if (!compat || !comp) return null;
+
+  const clients: ClientCompatibility[] = DEMO_EMAIL_CLIENTS.map((ec) => ({
+    client_id: ec.id,
+    client_name: ec.name,
+    level: compat[ec.id] ?? compat[ec.family] ?? "full",
+    platform: ec.platform,
+  }));
+
+  const full_count = clients.filter((c) => c.level === "full").length;
+  const partial_count = clients.filter((c) => c.level === "partial").length;
+  const none_count = clients.filter((c) => c.level === "none").length;
+
+  return {
+    component_id: componentId,
+    component_name: comp.name,
+    version_number: comp.latest_version ?? 1,
+    full_count,
+    partial_count,
+    none_count,
+    clients,
+    qa_score: none_count === 0 && partial_count === 0 ? 1.0 : partial_count > 0 ? 0.85 : 0.6,
+    last_checked: "2026-03-10T14:30:00Z",
+  };
+}

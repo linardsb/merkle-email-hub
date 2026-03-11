@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useComponentVersions } from "@/hooks/use-components";
 import { ComponentPreview } from "./component-preview";
+import { CompatibilityBadge } from "./compatibility-badge";
 import type { ComponentResponse } from "@email-hub/sdk";
 
 interface ComponentCardProps {
@@ -50,6 +51,7 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
               {component.category}
             </span>
           )}
+          <CompatibilityBadge badge={component.compatibility_badge} />
           <span className="text-xs text-foreground-muted">
             {component.latest_version
               ? t("version", { version: component.latest_version })

@@ -26,6 +26,8 @@ import {
 import { useComponent, useComponentVersions } from "@/hooks/use-components";
 import { useProjects } from "@/hooks/use-projects";
 import { ComponentPreview } from "./component-preview";
+import { CompatibilityBadge } from "./compatibility-badge";
+import { CompatibilityMatrix } from "./compatibility-matrix";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 
 interface ComponentDetailDialogProps {
@@ -34,7 +36,7 @@ interface ComponentDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Tab = "preview" | "source" | "versions";
+type Tab = "preview" | "source" | "versions" | "compatibility";
 
 export function ComponentDetailDialog({
   componentId,
@@ -74,14 +76,16 @@ export function ComponentDetailDialog({
     { key: "preview", label: t("previewTab") },
     { key: "source", label: t("sourceTab") },
     { key: "versions", label: t("versionsTab") },
+    { key: "compatibility", label: t("compatibilityTab") },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
             {component?.name ?? t("detailTitle")}
+            <CompatibilityBadge badge={component?.compatibility_badge} />
           </DialogTitle>
           {component?.description && (
             <p className="text-sm text-foreground-muted">
@@ -238,6 +242,10 @@ export function ComponentDetailDialog({
                 </p>
               )}
             </div>
+          )}
+
+          {activeTab === "compatibility" && componentId && (
+            <CompatibilityMatrix componentId={componentId} />
           )}
         </div>
 
