@@ -103,6 +103,7 @@ def sample_html_valid() -> str:
 </head>
 <body>
 <table role="presentation" width="600">
+<tr><td><h1>Welcome</h1></td></tr>
 <tr><td><img src="https://example.com/hero.png" alt="Hero image" width="600" height="300"></td></tr>
 <tr><td><a href="https://example.com">Visit us</a></td></tr>
 </table>

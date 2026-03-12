@@ -1,0 +1,210 @@
+# Email Structure & Component Rules
+# Source: docs/html-email-components.md + existing html_validation.py (11.2)
+# Used by: app/qa_engine/checks/html_validation.py
+# Also indexed in RAG knowledge base via: make seed-knowledge
+
+rules:
+  # ─── Group A: Document Skeleton ───
+
+  - id: "doc-doctype"
+    group: "skeleton"
+    name: "DOCTYPE declaration present"
+    check: "raw_html_pattern"
+    patterns: ["(?i)<!doctype"]
+    deduction_key: "deduction_doctype"
+    default_deduction: 0.15
+    message: "Missing DOCTYPE declaration"
+
+  - id: "doc-html-structure"
+    group: "skeleton"
+    name: "<html> wraps <head> + <body>"
+    check: "custom"
+    custom_fn: "check_html_structure"
+    deduction_key: "deduction_structure"
+    default_deduction: 0.15
+    message: "Missing <html>, <head>, or <body> structure"
+
+  - id: "doc-charset"
+    group: "skeleton"
+    name: "Character encoding declared"
+    check: "custom"
+    custom_fn: "check_charset"
+    deduction_key: "deduction_charset"
+    default_deduction: 0.15
+    message: "Missing <meta charset> in <head>"
+
+  - id: "doc-viewport"
+    group: "skeleton"
+    name: "Viewport meta present"
+    check: "custom"
+    custom_fn: "check_viewport"
+    deduction_key: "deduction_viewport"
+    default_deduction: 0.10
+    message: 'Missing <meta name="viewport"> in <head>'
+
+  - id: "doc-title"
+    group: "skeleton"
+    name: "Non-empty title"
+    check: "custom"
+    custom_fn: "check_title"
+    deduction_key: "deduction_title"
+    default_deduction: 0.10
+    message: "Missing or empty <title> in <head>"
+
+  # ─── Group B: Tag Integrity ───
+
+  - id: "tag-unclosed"
+    group: "tag_integrity"
+    name: "No unclosed block-level tags"
+    check: "custom"
+    custom_fn: "unclosed_tags"
+    deduction_key: "deduction_unclosed_tag"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_unclosed_tags_reported"
+    default_cap: 5
+    message: "Unclosed block-level tag"
+
+  - id: "tag-nesting"
+    group: "tag_integrity"
+    name: "No block-in-inline nesting"
+    check: "custom"
+    custom_fn: "block_in_inline"
+    deduction_key: "deduction_nesting"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_nesting_violations_reported"
+    default_cap: 5
+    message: "Block element inside inline element"
+
+  - id: "tag-duplicate-id"
+    group: "tag_integrity"
+    name: "No duplicate id attributes"
+    check: "custom"
+    custom_fn: "duplicate_ids"
+    deduction_key: "deduction_duplicate_id"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_duplicate_ids_reported"
+    default_cap: 5
+    message: "Duplicate id attribute"
+
+  # ─── Group C: Content Integrity ───
+
+  - id: "content-empty-sections"
+    group: "content"
+    name: "No empty <head> or <body>"
+    check: "custom"
+    custom_fn: "empty_sections"
+    deduction_key: "deduction_empty_section"
+    default_deduction: 0.15
+    message: "Empty <head> or <body> section"
+
+  - id: "content-style-placement"
+    group: "content"
+    name: "<style> in <head>, no external stylesheets"
+    check: "custom"
+    custom_fn: "style_placement"
+    deduction_key: "deduction_style_placement"
+    default_deduction: 0.10
+    message: "<style> in <body> or external stylesheet found"
+
+  # ─── Group D: Email-Specific Structure ───
+
+  - id: "email-table-structure"
+    group: "email_structure"
+    name: "Table hierarchy integrity"
+    check: "custom"
+    custom_fn: "table_structure"
+    deduction_key: "deduction_table_structure"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_table_violations_reported"
+    default_cap: 5
+    message: "Table element in wrong parent"
+
+  - id: "email-list-structure"
+    group: "email_structure"
+    name: "List hierarchy integrity"
+    check: "custom"
+    custom_fn: "list_structure"
+    deduction_key: "deduction_list_structure"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_list_violations_reported"
+    default_cap: 5
+    message: "<li> outside <ul>/<ol>"
+
+  - id: "email-duplicate-structural"
+    group: "email_structure"
+    name: "No duplicate <head>, <body>, <title>"
+    check: "custom"
+    custom_fn: "duplicate_structural_tags"
+    deduction_key: "deduction_duplicate_structural"
+    default_deduction: 0.15
+    message: "Duplicate structural tag"
+
+  - id: "email-nested-links"
+    group: "email_structure"
+    name: "No nested <a> tags"
+    check: "custom"
+    custom_fn: "nested_links"
+    deduction_key: "deduction_nested_link"
+    default_deduction: 0.15
+    message: "Nested <a> tag inside <a> — illegal per HTML spec"
+
+  # ─── Group E: Progressive Enhancement ───
+
+  - id: "enhance-video-poster"
+    group: "progressive"
+    name: "<video> requires poster and fallback"
+    check: "custom"
+    custom_fn: "video_structure"
+    deduction_key: "deduction_missing_fallback"
+    default_deduction: 0.10
+    message: "<video> missing poster or fallback content"
+
+  - id: "enhance-audio-fallback"
+    group: "progressive"
+    name: "<audio> requires fallback"
+    check: "custom"
+    custom_fn: "audio_structure"
+    deduction_key: "deduction_missing_fallback"
+    default_deduction: 0.10
+    message: "<audio> missing fallback content"
+
+  - id: "enhance-picture-img"
+    group: "progressive"
+    name: "<picture> requires <img> fallback"
+    check: "custom"
+    custom_fn: "picture_structure"
+    deduction_key: "deduction_missing_fallback"
+    default_deduction: 0.10
+    message: "<picture> missing <img> fallback"
+
+  - id: "enhance-interactive"
+    group: "progressive"
+    name: "Interactive elements properly structured"
+    check: "custom"
+    custom_fn: "interactive_elements"
+    deduction_key: "deduction_interactive_structure"
+    default_deduction: 0.10
+    message: "Interactive element structure issue"
+
+  - id: "enhance-no-template"
+    group: "progressive"
+    name: "No <template> element"
+    check: "custom"
+    custom_fn: "template_element"
+    deduction_key: "deduction_dangerous_element"
+    default_deduction: 0.15
+    message: "<template> element found — content is inert and will not render in email. Remove and use regular HTML elements instead"
+
+  - id: "enhance-no-base"
+    group: "progressive"
+    name: "No <base> tag"
+    check: "custom"
+    custom_fn: "base_tag"
+    deduction_key: "deduction_dangerous_element"
+    default_deduction: 0.15
+    message: "<base> tag breaks all relative URLs in email"

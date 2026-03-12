@@ -157,7 +157,7 @@ class ContentService(BaseAgentService):
     # Content uses generate/stream_generate names for backward compat with routes
     async def generate(self, request: ContentRequest) -> ContentResponse:
         """Generate content via LLM with spam detection."""
-        return await self.process(request)  # type: ignore[return-value]
+        return await self.process(request)  # type: ignore[no-any-return]
 
     async def stream_generate(self, request: ContentRequest) -> AsyncIterator[str]:
         """Stream content generation via SSE."""

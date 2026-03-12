@@ -94,7 +94,7 @@ class CodeReviewerJudge:
             issues = judge_input.output_data.get("issues", [])
             summary = judge_input.output_data.get("summary", "")
             review_output = f"Summary: {summary}\n\nIssues:\n"
-            for issue in issues:
+            for issue in issues:  # type: ignore[attr-defined]
                 if isinstance(issue, dict):
                     review_output += (
                         f"- [{issue.get('severity', '?')}] {issue.get('rule', '?')}: "

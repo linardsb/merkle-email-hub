@@ -23,6 +23,7 @@ references:
   - skills/css_client_support.md
   - skills/nesting_validation.md
   - skills/file_size_optimization.md
+  - skills/html_email_components.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

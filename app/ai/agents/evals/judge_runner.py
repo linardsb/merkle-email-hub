@@ -23,6 +23,8 @@ from app.ai.agents.evals.judges.content import ContentJudge
 from app.ai.agents.evals.judges.dark_mode import DarkModeJudge
 from app.ai.agents.evals.judges.outlook_fixer import OutlookFixerJudge
 from app.ai.agents.evals.judges.personalisation import PersonalisationJudge
+from app.ai.agents.evals.judges.innovation import InnovationJudge
+from app.ai.agents.evals.judges.knowledge import KnowledgeJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
 from app.ai.agents.evals.judges.schemas import CriterionResult, JudgeInput, JudgeVerdict
 from app.ai.protocols import CompletionResponse, LLMProvider, Message
@@ -62,7 +64,9 @@ async def judge_trace(
     | OutlookFixerJudge
     | AccessibilityJudge
     | PersonalisationJudge
-    | CodeReviewerJudge,
+    | CodeReviewerJudge
+    | KnowledgeJudge
+    | InnovationJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,

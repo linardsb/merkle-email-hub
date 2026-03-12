@@ -93,7 +93,45 @@ accessibility:
   severity: warning
   threshold: 0.5
   params:
-    deduction_per_issue: 0.25
+    # Group A: Language
+    deduction_lang_missing: 0.15
+    deduction_lang_invalid: 0.10
+    # Group B: Table Semantics
+    deduction_table_no_role: 0.10
+    deduction_table_mixed_signals: 0.10
+    deduction_data_table_no_headers: 0.10
+    # Group C: Image Accessibility
+    deduction_img_no_alt: 0.10
+    deduction_tracking_pixel_alt: 0.05
+    deduction_linked_img_no_alt: 0.10
+    # Group D: Heading Hierarchy
+    deduction_no_headings: 0.10
+    deduction_multiple_h1: 0.10
+    deduction_skipped_heading: 0.10
+    # Group E: Link Accessibility
+    deduction_generic_link_text: 0.08
+    deduction_empty_link: 0.10
+    deduction_redundant_links: 0.05
+    # Group F: Content Semantics & Screen Reader
+    deduction_non_semantic_emphasis: 0.05
+    deduction_preview_padding_no_aria: 0.08
+    deduction_spacer_no_aria: 0.05
+    deduction_separator_no_aria: 0.05
+    deduction_outline_removed: 0.10
+    deduction_br_spacing: 0.05
+    # Group G: Dark Mode Contrast
+    deduction_dark_unsafe_colors: 0.08
+    deduction_dark_no_overrides: 0.10
+    # Group H: AMP Form Accessibility
+    deduction_input_no_label: 0.10
+    deduction_required_no_aria: 0.08
+    # Reporting caps
+    max_table_issues_reported: 5
+    max_img_issues_reported: 5
+    max_heading_issues_reported: 5
+    max_link_issues_reported: 5
+    max_content_issues_reported: 5
+    max_form_issues_reported: 5
 
 fallback:
   enabled: true

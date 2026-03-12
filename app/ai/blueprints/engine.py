@@ -433,7 +433,7 @@ class BlueprintEngine:
             if should_fetch_competitive_context(brief):
                 # Use audience-aware feasibility when audience profile available
                 audience_client_ids: tuple[str, ...] = tuple(
-                    context.metadata.get("audience_client_ids", ())
+                    context.metadata.get("audience_client_ids", ())  # type: ignore[arg-type]
                 )
                 if audience_client_ids:
                     from app.knowledge.ontology.competitive_feasibility import (

@@ -34,7 +34,7 @@ Located in `app/qa_engine/checks/`. Each check implements `async run(html: str, 
 4. `link_validation` -- HTTPS enforcement, valid protocols
 5. `spam_score` -- Common spam trigger word detection
 6. `dark_mode` -- color-scheme meta, prefers-color-scheme, Outlook overrides
-7. `accessibility` -- lang attribute, image alt text, table roles
+7. `accessibility` -- WCAG AA: 24 DOM-parsed checks across 8 groups (language, tables, images, headings, links, content semantics, dark mode, AMP forms) via YAML rule engine
 8. `fallback` -- MSO conditional comments, VML namespaces
 9. `image_optimization` -- Explicit dimensions, format validation
 10. `brand_compliance` -- Placeholder for client brand rules

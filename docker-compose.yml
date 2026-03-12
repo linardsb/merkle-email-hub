@@ -184,6 +184,32 @@ services:
           cpus: "0.5"
           memory: 256M
 
+  mock-esp:
+    build:
+      context: ./services/mock-esp
+      dockerfile: Dockerfile
+    expose:
+      - "3002"
+    ports:
+      - "3002:3002"
+    volumes:
+      - mock_esp_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
   nginx:
     build:
       context: ./nginx
@@ -225,4 +251,5 @@ volumes:
   redis_data:
 
   document_data:
+  mock_esp_data:
 

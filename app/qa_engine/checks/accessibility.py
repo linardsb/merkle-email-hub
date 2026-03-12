@@ -1,43 +1,76 @@
-"""Email accessibility check."""
+"""Email accessibility check — WCAG AA DOM-parsed validation for email HTML.
 
-import re
+Uses the shared rule engine with rules loaded from rules/accessibility.yaml.
+Complex checks delegated to custom functions in custom_checks.py.
 
+Implements 24 checks across 8 groups:
+A (1-2): Language
+B (3-5): Table Semantics
+C (6-8): Image Accessibility
+D (9-11): Heading Hierarchy
+E (12-14): Link Accessibility
+F (15-20): Content Semantics & Screen Reader
+G (21-22): Dark Mode Contrast
+H (23-24): AMP Form Accessibility
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from lxml import html as lxml_html
+
+# Import custom checks to ensure they are registered
+import app.qa_engine.custom_checks  # noqa: F401
 from app.qa_engine.check_config import QACheckConfig
+from app.qa_engine.rule_engine import RuleEngine, load_rules
 from app.qa_engine.schemas import QACheckResult
 
-_DEFAULT_DEDUCTION = 0.25
+_RULES_PATH = Path(__file__).parent.parent / "rules" / "accessibility.yaml"
 
 
 class AccessibilityCheck:
-    """Checks email HTML for basic accessibility requirements."""
+    """Validates email HTML for WCAG AA accessibility using YAML-driven rule engine.
+
+    Loads rules from rules/accessibility.yaml covering 24 checks across 8 groups.
+    """
 
     name = "accessibility"
 
+    def __init__(self) -> None:
+        self._rules = load_rules(_RULES_PATH)
+        self._engine = RuleEngine(self._rules)
+
     async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
-        deduction: float = (
-            config.params.get("deduction_per_issue", _DEFAULT_DEDUCTION)
-            if config
-            else _DEFAULT_DEDUCTION
-        )
+        """Run all accessibility checks against the provided HTML."""
+        if not html or not html.strip():
+            return QACheckResult(
+                check_name=self.name,
+                passed=False,
+                score=0.0,
+                details="Empty HTML document",
+                severity="error",
+            )
 
-        issues: list[str] = []
+        try:
+            doc = lxml_html.document_fromstring(html)
+        except Exception:
+            return QACheckResult(
+                check_name=self.name,
+                passed=False,
+                score=0.0,
+                details="HTML could not be parsed",
+                severity="error",
+            )
 
-        if "lang=" not in html.lower():
-            issues.append("Missing lang attribute on <html>")
-        images = re.findall(r"<img[^>]*>", html, re.IGNORECASE)
-        for img in images:
-            if "alt=" not in img.lower():
-                issues.append("Image missing alt attribute")
-                break
-        if 'role="presentation"' not in html:
-            issues.append("Layout tables should use role='presentation'")
+        issues, total_deduction = self._engine.evaluate(doc, html, config)
 
+        score = max(0.0, round(1.0 - total_deduction, 2))
         passed = len(issues) == 0
-        score = max(0.0, 1.0 - len(issues) * deduction)
         return QACheckResult(
             check_name=self.name,
             passed=passed,
-            score=round(score, 2),
+            score=score,
             details="; ".join(issues) if issues else None,
-            severity="warning",
+            severity="warning" if not passed else "info",
         )

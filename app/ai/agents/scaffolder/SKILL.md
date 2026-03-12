@@ -24,6 +24,7 @@ references:
   - skills/maizzle_syntax.md
   - skills/client_compatibility.md
   - skills/mso_vml_quick_ref.md
+  - skills/html_email_components.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

@@ -62,7 +62,7 @@ class ScaffolderService(BaseAgentService):
     # Scaffolder uses generate/stream_generate names for backward compat with routes
     async def generate(self, request: ScaffolderRequest) -> ScaffolderResponse:
         """Generate email HTML from a campaign brief."""
-        return await self.process(request)  # type: ignore[return-value]
+        return await self.process(request)  # type: ignore[no-any-return]
 
     async def stream_generate(self, request: ScaffolderRequest) -> AsyncIterator[str]:
         """Stream email HTML generation as SSE-formatted chunks."""

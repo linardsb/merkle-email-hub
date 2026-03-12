@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getMessages } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import { OfflineBanner } from "@/components/ui/offline-banner";
@@ -18,62 +18,62 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const messages = await getMessages();
+  const t = await getTranslations("nav");
 
   const navItems: NavItem[] = [
     {
       href: "/",
-      label: (messages as any)?.nav?.dashboard || "Dashboard",
+      label: t("dashboard"),
       icon: <Image src="/icons/brand/dashboard.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/projects",
-      label: (messages as any)?.nav?.projects || "Projects",
+      label: t("projects"),
       icon: <Image src="/icons/brand/projects.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/components",
-      label: (messages as any)?.nav?.components || "Components",
+      label: t("components"),
       icon: <Image src="/icons/brand/components.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/approvals",
-      label: (messages as any)?.nav?.approvals || "Approvals",
+      label: t("approvals"),
       icon: <Image src="/icons/brand/approvals.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/connectors",
-      label: (messages as any)?.nav?.connectors || "Connectors",
+      label: t("connectors"),
       icon: <Image src="/icons/brand/connectors.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/intelligence",
-      label: (messages as any)?.nav?.intelligence || "Intelligence",
+      label: t("intelligence"),
       icon: <Image src="/icons/brand/intelligence.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/knowledge",
-      label: (messages as any)?.nav?.knowledge || "Knowledge",
+      label: t("knowledge"),
       icon: <Image src="/icons/brand/knowledge.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/renderings",
-      label: (messages as any)?.nav?.renderings || "Renderings",
+      label: t("renderings"),
       icon: <Image src="/icons/brand/renderings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/design-sync",
-      label: (messages as any)?.nav?.designSync || "Design Sync",
+      label: t("designSync"),
       icon: <Image src="/icons/brand/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/briefs",
-      label: (messages as any)?.nav?.briefs || "Briefs",
+      label: t("briefs"),
       icon: <Image src="/icons/brand/briefs.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
       href: "/settings",
-      label: (messages as any)?.nav?.settings || "Settings",
+      label: t("settings"),
       icon: <Image src="/icons/brand/settings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
   ];
@@ -96,7 +96,7 @@ export default async function DashboardLayout({
               className="flex items-center gap-3 text-sm text-sidebar-text transition-colors hover:text-sidebar-text-active"
             >
               <LogOut className="h-5 w-5" />
-              {(messages as any)?.nav?.logout || "Logout"}
+              {t("logout")}
             </Link>
             <div className="flex items-center gap-2">
               <LocaleSelector />

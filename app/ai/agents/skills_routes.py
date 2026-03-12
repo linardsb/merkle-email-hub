@@ -68,7 +68,7 @@ def _get_agent_skill_info(agent_name: str, analysis: dict[str, Any]) -> dict[str
 
 @router.get("/skills")
 async def list_agent_skills(
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> dict[str, list[dict[str, object]]]:
     """Return skill metadata for all agents."""
     analysis = _load_analysis()

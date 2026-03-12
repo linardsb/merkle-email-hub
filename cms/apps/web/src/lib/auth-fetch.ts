@@ -45,7 +45,7 @@ async function getAccessToken(): Promise<string | null> {
     try {
       const { auth } = await import("../../auth");
       const session = await auth();
-      return (session as any)?.accessToken ?? null;
+      return session?.accessToken ?? null;
     } catch {
       return null;
     }

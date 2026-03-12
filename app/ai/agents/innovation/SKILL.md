@@ -25,6 +25,7 @@ references:
   - skills/amp_email.md
   - skills/css_animations.md
   - skills/feasibility_framework.md
+  - skills/html_email_components.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

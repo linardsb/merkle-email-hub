@@ -133,8 +133,8 @@ class CanIEmailSyncPoller(DataPoller):
                 comp_docs = await export_component_documents(db)
                 if comp_docs:
                     texts = [text for _, text in comp_docs]
-                    await provider.add_documents(texts, dataset_name="email_components")  # type: ignore[union-attr]
-                    await provider.build_graph(dataset_name="email_components", background=True)  # type: ignore[union-attr]
+                    await provider.add_documents(texts, dataset_name="email_components")  # type: ignore[attr-defined]
+                    await provider.build_graph(dataset_name="email_components", background=True)  # type: ignore[attr-defined]
                     logger.info(
                         "ontology.sync.component_graph_refreshed",
                         component_count=len(comp_docs),

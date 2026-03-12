@@ -54,4 +54,4 @@ async def process_dark_mode(
             },
         )
 
-    return await service.process(body)
+    return await service.process(body)  # type: ignore[no-any-return]

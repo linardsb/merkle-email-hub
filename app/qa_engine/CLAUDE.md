@@ -22,7 +22,7 @@
 4. `link_validation` — HTTPS enforcement
 5. `spam_score` — Spam trigger word detection
 6. `dark_mode` — color-scheme meta, prefers-color-scheme, Outlook overrides
-7. `accessibility` — lang attr, alt text, table roles
+7. `accessibility` — WCAG AA: 24 DOM-parsed checks across 8 groups (language, tables, images, headings, links, content semantics, dark mode, AMP forms) via YAML rule engine; 21 custom check functions
 8. `fallback` — MSO conditionals, VML namespaces
 9. `image_optimization` — Explicit dimensions, format validation
 10. `brand_compliance` — Client brand rules (placeholder)

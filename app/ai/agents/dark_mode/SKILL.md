@@ -24,6 +24,7 @@ references:
   - skills/client_behavior.md
   - skills/outlook_dark_mode.md
   - skills/image_handling.md
+  - skills/html_email_components.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

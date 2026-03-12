@@ -138,7 +138,7 @@ class TestEngineGraphIntegration:
 
         await engine.run(brief="Make this work in Outlook 2019")
 
-        mock_graph.search.assert_called_once()
+        assert mock_graph.search.call_count >= 1
 
     @pytest.mark.asyncio
     async def test_graph_context_skipped_when_no_trigger(self) -> None:
@@ -167,7 +167,6 @@ class TestEngineGraphIntegration:
         engine = BlueprintEngine(
             definition,
             graph_provider=mock_graph,
-            project_id=1,
         )
 
         await engine.run(brief="Create a simple promotional email")

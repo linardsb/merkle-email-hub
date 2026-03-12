@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline eval-skill-test
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline eval-skill-test
 
 # === Local Development ===
 
@@ -12,6 +12,9 @@ dev-be: ## Start backend dev server
 
 dev-fe: ## Start frontend dev server
 	cd cms && pnpm --filter web dev
+
+dev-mock-esp: ## Start mock ESP server
+	cd services/mock-esp && uvicorn main:app --reload --port 3002
 
 # === Docker ===
 

@@ -20,6 +20,9 @@ class TestCampaignBlueprint:
                 "```html\n"
                 '<!DOCTYPE html>\n<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" '
                 'xmlns:o="urn:schemas-microsoft-com:office:office">\n<head>\n'
+                '<meta charset="utf-8">\n'
+                '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+                '<title>Test Email</title>\n'
                 '<meta name="color-scheme" content="light dark">\n'
                 "<style>\n"
                 "@media (prefers-color-scheme: dark) { .dark-bg { background-color: #1a1a1a; } }\n"

@@ -187,7 +187,7 @@ class RecoveryRouterNode:
         history = context.metadata.get("handoff_history", [])
         agents_already_run: set[str] = set()
         all_history_warnings: list[str] = []
-        for h in history:
+        for h in history:  # type: ignore[attr-defined]
             if isinstance(h, AgentHandoff):
                 agents_already_run.add(h.agent_name)
                 all_history_warnings.extend(h.warnings)

@@ -12,10 +12,10 @@ client.interceptors.request.use(async (request) => {
     try {
       const { auth } = await import("@/auth");
       const session = await auth();
-      if ((session as any)?.accessToken) {
+      if (session?.accessToken) {
         request.headers.set(
           "Authorization",
-          `Bearer ${(session as any).accessToken}`
+          `Bearer ${session.accessToken}`
         );
       }
     } catch {

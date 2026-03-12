@@ -12,6 +12,7 @@ class _StubNode:
     """Stub node that returns configurable token usage."""
 
     node_type = "agentic"
+    name = "stub"
 
     def __init__(self, usage_tokens: int = 100, html: str = "<p>ok</p>") -> None:
         self._usage = {
@@ -29,6 +30,7 @@ class _DeterministicNode:
     """Stub deterministic node (no tokens)."""
 
     node_type = "deterministic"
+    name = "deterministic_stub"
 
     async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
         return NodeResult(status="success")

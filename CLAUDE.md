@@ -145,15 +145,14 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 
 ## Implementation Roadmap
 
-See `TODO.md` for full task details with security requirements and verification criteria.
-
-<!-- Phases 0-10 (all completed): see docs/roadmap-completed.md -->
+See `TODO.md` for active task details (phases 11-13). Completed phases (0-10): see `docs/TODO-completed.md`.
 
 ### Phase 11 — QA Engine Hardening & Agent Quality Improvements
 Upgrade QA checks from shallow string matching to DOM-parsed validation, add new checks, fix worst agent failure modes. Target: 95%+ issue detection, 60%+ agent eval pass rate. **33 tasks (31 BE, 0 FE, 2 BOTH)**
 - [x] `BE` 11.1 QA check configuration system (`QACheckConfig` model, per-project overrides, `defaults.yaml`)
 - [x] `BE` 11.2 HTML validation — DOM parser upgrade (`lxml`, 20 DOM-parsed checks across 5 groups, configurable deductions)
-- [ ] `BE` 11.3 Accessibility — WCAG AA coverage (all images, heading hierarchy, link text, contrast, table semantics)
+- [x] `BE` 11.2a Shared QA rule engine — YAML-driven check definitions (`rule_engine.py`, `rules/email_structure.yaml`, `rules/accessibility.yaml`, refactor 11.2 to rule-driven, RAG integration)
+- [x] `BE` 11.3 Accessibility — WCAG AA coverage (24 YAML rules across 8 groups, 21 custom check functions, rule engine wrapper)
 - [ ] `BE` 11.4 Fallback — MSO conditional parser (balanced pairs, VML nesting, namespace validation, ghost tables)
 - [ ] `BE` 11.5 Dark mode — semantic validation (meta tag correctness, non-empty media queries, color coherence)
 - [ ] `BE` 11.6 Spam score — production trigger database (50+ weighted triggers, word boundaries, formatting heuristics)
