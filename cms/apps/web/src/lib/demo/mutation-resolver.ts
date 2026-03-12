@@ -283,12 +283,13 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
     return project;
   }
 
-  // Figma connection create
-  if (p === "/api/v1/figma/connections") {
+  // Design sync connection create
+  if (p === "/api/v1/design-sync/connections") {
     const body = _body as Record<string, unknown> | null;
     return {
       id: Math.floor(Math.random() * 10000) + 100,
       name: body?.name ?? "New Connection",
+      provider: body?.provider ?? "figma",
       file_key: "demoFileKey" + Math.floor(Math.random() * 1000),
       file_url: body?.file_url ?? "",
       access_token_last4: (body?.access_token as string)?.slice(-4) ?? "demo",
@@ -301,17 +302,18 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
     };
   }
 
-  // Figma connection delete
-  if (p === "/api/v1/figma/connections/delete") {
+  // Design sync connection delete
+  if (p === "/api/v1/design-sync/connections/delete") {
     return { success: true };
   }
 
-  // Figma connection sync
-  if (p === "/api/v1/figma/connections/sync") {
+  // Design sync connection sync
+  if (p === "/api/v1/design-sync/connections/sync") {
     const body = _body as Record<string, unknown> | null;
     return {
       id: body?.id ?? 1,
       name: "Synced Connection",
+      provider: "figma",
       file_key: "syncedKey",
       file_url: "",
       access_token_last4: "sync",

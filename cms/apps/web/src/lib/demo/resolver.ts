@@ -18,7 +18,7 @@ import {
   DEMO_KNOWLEDGE_DOMAINS,
   DEMO_KNOWLEDGE_CONTENT,
 } from "./data/knowledge";
-import { DEMO_FIGMA_CONNECTIONS, DEMO_FIGMA_TOKENS } from "./data/figma";
+import { DEMO_DESIGN_CONNECTIONS, DEMO_DESIGN_TOKENS } from "./data/design-sync";
 import { DEMO_BRIEF_CONNECTIONS, DEMO_BRIEF_ITEMS, DEMO_BRIEF_DETAILS } from "./data/briefs";
 import { DEMO_BRAND_CONFIG } from "./data/brand";
 import { DEMO_GENERATED_IMAGES } from "./data/image-gen";
@@ -236,17 +236,17 @@ export function resolveDemo(urlStr: string): unknown | null {
     return { tags: DEMO_KNOWLEDGE_TAGS, total: DEMO_KNOWLEDGE_TAGS.length };
   }
 
-  // ── Figma Connections ──
-  if (p === "/api/v1/figma/connections") {
-    return DEMO_FIGMA_CONNECTIONS;
+  // ── Design Sync Connections ──
+  if (p === "/api/v1/design-sync/connections") {
+    return DEMO_DESIGN_CONNECTIONS;
   }
-  m = p.match(/^\/api\/v1\/figma\/connections\/(\d+)$/);
+  m = p.match(/^\/api\/v1\/design-sync\/connections\/(\d+)$/);
   if (m) {
-    return DEMO_FIGMA_CONNECTIONS.find((c) => c.id === matchId(m!, 1)) ?? null;
+    return DEMO_DESIGN_CONNECTIONS.find((c) => c.id === matchId(m!, 1)) ?? null;
   }
-  m = p.match(/^\/api\/v1\/figma\/connections\/(\d+)\/tokens$/);
+  m = p.match(/^\/api\/v1\/design-sync\/connections\/(\d+)\/tokens$/);
   if (m) {
-    return DEMO_FIGMA_TOKENS[matchId(m, 1)] ?? null;
+    return DEMO_DESIGN_TOKENS[matchId(m, 1)] ?? null;
   }
 
   // ── Project Images ──

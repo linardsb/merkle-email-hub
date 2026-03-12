@@ -92,6 +92,7 @@ email-hub/
 │   ├── personas/       # Test persona engine (subscriber profile presets)
 │   ├── memory/         # Agent memory (pgvector embeddings, temporal decay, DCG bridge)
 │   ├── rendering/      # Cross-client rendering tests (Litmus, Email on Acid)
+│   ├── design_sync/    # Multi-provider design tool sync (Figma API, Sketch/Canva stubs)
 │   └── tests/          # Integration tests
 ├── cms/               # Frontend monorepo (Next.js 16 + React 19)
 ├── email-templates/   # Maizzle project (layouts, templates, components)
@@ -120,6 +121,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 - `AI__PROVIDER`, `AI__MODEL`, `AI__API_KEY`, `AI__MODEL_COMPLEX`, `AI__MODEL_STANDARD`, `AI__MODEL_LIGHTWEIGHT`
 - `COGNEE__ENABLED`, `COGNEE__GRAPH_DB_PROVIDER`, `COGNEE__LLM_PROVIDER` (inherits AI config if empty)
 - `ONTOLOGY_SYNC__ENABLED`, `ONTOLOGY_SYNC__INTERVAL_HOURS` (default 168/weekly), `ONTOLOGY_SYNC__GITHUB_TOKEN` (optional, for rate limits)
+- `DESIGN_SYNC__ENCRYPTION_KEY` (if empty, derived from `AUTH__JWT_SECRET_KEY` via PBKDF2)
 
 
 ### Shared Utilities
@@ -160,6 +162,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 | `memory` | `/memory` | Agent memory: pgvector semantic search, temporal decay, DCG promotion bridge |
 | `blueprints` | `/api/v1/blueprints` | Blueprint state machine engine: orchestrated agent pipelines with self-correction |
 | `ontology` | `/api/v1/ontology` | Competitive intelligence reports: audience-scoped feasibility, Hub vs competitor capability matrix |
+| `design_sync` | `/api/v1/design-sync` | Multi-provider design tool connections (Figma real API, Sketch/Canva stubs), Fernet-encrypted PAT storage, design token extraction |
 
 ### QA Gate System (10 checks)
 
@@ -231,7 +234,7 @@ Located in `app/ai/agents/evals/`. Based on the [evals-skills methodology](https
 - **JWT HS256**: Pinned algorithm constant in `app/auth/token.py` (not configurable). 15-min access + 7-day refresh tokens. Redis-backed blocklist for revocation.
 - **Brute-force protection**: exponential backoff, lock after 5 failed attempts (15 min), Redis-tracked.
 - **Row-Level Security**: PostgreSQL RLS on `client_org_id`. Database enforces isolation independently of app layer.
-- **Credential storage**: AES-256 for stored API keys (Braze, Figma). Never returned in responses, never logged.
+- **Credential storage**: AES-256 for ESP API keys (Braze); Fernet (PBKDF2-derived) for design tool PATs (`app/design_sync/crypto.py`). Never returned in responses, never logged.
 - **AI rate limits**: 20 req/min per user for chat, 5 req/min for generation. Per-user daily quota via Redis (`app/core/quota.py`). Stream timeout 120s. Blueprint daily token cap 500k.
 - **WebSocket limits**: Global 100 connections + per-user 5 connections (`app/streaming/manager.py`).
 - **LLM output sanitization**: `nh3` (Rust-based) allowlist HTML sanitizer in `app/ai/shared.py`. Preserves email HTML (tables, styles, MSO comments). Approval state machine prevents invalid transitions.
@@ -284,7 +287,7 @@ See `TODO.md` for full task details with security requirements and verification 
 - [x] 4.13 Blueprint state machine engine (agent orchestration with self-correction, QA gating, recovery routing)
 - [x] 4.1 All 9 AI agents complete — eval-first + skills workflow (Outlook Fixer, Accessibility Auditor, Personalisation, Code Reviewer, Knowledge, Innovation — all DONE)
 - [x] 4.2 Additional CMS connectors (SFMC, Adobe Campaign, Taxi for Email)
-- [x] 4.3 Figma design sync (frontend demo: `/figma` page, connection management, token extraction UI)
+- [x] 4.3 Design sync — multi-provider backend (`app/design_sync/` VSA module: Figma real API + Sketch/Canva stubs, Fernet-encrypted PATs, BOLA enforcement, 19 tests) + frontend rename (`/figma` → `/design-sync`, provider filter tabs, generic connect dialog)
 - [x] 4.4 Litmus / Email on Acid API integration (backend: `app/rendering/` VSA module, Litmus + EoA providers, visual regression)
 - [x] 4.5 Advanced features (collaborative editing, localisation, brand guardrails, AI image gen, visual Liquid builder, client briefs)
 
@@ -367,6 +370,7 @@ Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 ba
 - Blueprints: state machine engine orchestrating agents with QA gating, recovery routing, bounded self-correction, structured handoffs (`AgentHandoff` with full history + episodic memory persistence), confidence-based routing, component context injection, project subgraph context (LAYER 8), graph-informed route selection (`route_advisor.py` — audience-aware node skipping/addition), audience-aware competitive feasibility (LAYER 10)
 - Knowledge: RAG pipeline with pgvector, hybrid search, document processing; `app/knowledge/graph/` Cognee integration (`GraphKnowledgeProvider` Protocol, `CogneeGraphProvider`, `POST /graph/search`, disabled by default); `app/knowledge/ontology/` email development ontology (25 clients, 365 CSS properties, 1011 support entries, 70 fallbacks — powers data-driven QA + Cognee graph export); `app/knowledge/ontology/sync/` Can I Email live sync (`CanIEmailSyncPoller` via `DataPoller`, GitHub Trees API → YAML diff → graph re-export, `OntologySyncConfig`); `app/knowledge/ontology/competitive_feasibility.py` audience-aware competitive reports (`GET /api/v1/ontology/competitive-report`); `GET /api/v1/ontology/clients` lists all 25 email clients for frontend selectors
 - Rendering: cross-client rendering tests (Litmus, EoA) via `RenderingProvider` Protocol, circuit breaker, visual regression comparison
+- Design Sync: `app/design_sync/` VSA module — `DesignSyncProvider` Protocol with Figma (real API via `httpx`), Sketch/Canva (stubs); Fernet-encrypted PAT storage (PBKDF2-derived key); `DesignConnection` + `DesignTokenSnapshot` models; BOLA enforcement via `verify_project_access()` + user-scoped list queries; 6 REST endpoints at `/api/v1/design-sync/`; 19 tests
 - Agent Evals: dimension-based synthetic test data, JSONL trace runner, binary LLM judges, TPR/TNR calibration, error analysis, QA gate calibration, blueprint pipeline evals, regression detection (Phase 5); SKILL.md A/B testing (`skill_ab.py` + `skill_override.py` runtime override registry, `make eval-skill-test`)
 - Memory: `app/memory/` VSA module — pgvector Vector(1024) embeddings, HNSW similarity search, temporal decay, 3 memory types (procedural/episodic/semantic), DCG promotion bridge, `MemoryCompactionPoller`
 - Phase 7: `AgentHandoff` structured handoffs with full history + episodic memory auto-persistence (`handoff_memory.py`), confidence scoring (threshold 0.5 → needs_review), `ComponentResolver` for template-aware component context injection, SKILL.md progressive disclosure files for all 9 agents; `BaseAgentService` shared pipeline (`app/ai/agents/base.py`) with `_get_model_tier` + `_should_run_qa` hooks, standardised response schemas (`confidence` + `skills_loaded` on all agents), `to_handoff()` for standardised handoff emission, memory recall wired into blueprint engine, recovery router cycle detection via `handoff_history`; eval-informed prompts (`app/ai/agents/evals/failure_warnings.py`) — reads `traces/analysis.json`, injects per-agent failure warnings into all 9 `build_system_prompt()` for criteria <85% pass rate, mtime-cached
@@ -384,7 +388,7 @@ Wire Phase 8-9 backend intelligence into the frontend. Depends on Phase 8 + 9 ba
 - Approval Portal: viewer login, read-only preview, section feedback, approve/reject
 - Intelligence Dashboard: QA trends, support matrices, quality scores, graph health, blueprint health, agent performance, failure patterns summary, component coverage
 - Knowledge Base Search: document browser, natural language search, domain/tag filters
-- Figma Sync: connection management, design token extraction (colors, typography, spacing)
+- Design Sync: `/design-sync` page with provider filter tabs (All/Figma/Sketch/Canva), multi-provider connect dialog, connection cards with provider icons, design token extraction (colors, typography, spacing)
 - Client Briefs: Jira/Asana/Monday.com connection cards, brief items, import-to-project
 - Brand Guardrails: per-client color/typography/logo rules, CodeMirror linter, toolbar violations badge
 - AI Image Generation: workspace dialog with style presets, gallery, insert-into-template

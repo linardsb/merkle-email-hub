@@ -67,8 +67,8 @@ export default async function DashboardLayout({
       icon: <Image src="/icons/brand/renderings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
-      href: "/figma",
-      label: (messages as any)?.nav?.figma || "Figma Sync",
+      href: "/design-sync",
+      label: (messages as any)?.nav?.designSync || "Design Sync",
       icon: <Image src="/icons/brand/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {

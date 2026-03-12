@@ -152,6 +152,12 @@ class OntologySyncConfig(BaseModel):
     max_features_per_sync: int = 500  # Safety cap
 
 
+class DesignSyncConfig(BaseModel):
+    """Design tool sync settings."""
+
+    encryption_key: str = ""  # If empty, derived from jwt_secret_key via PBKDF2
+
+
 class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
@@ -210,6 +216,7 @@ class Settings(BaseSettings):
     ws: WebSocketConfig = WebSocketConfig()
     rendering: RenderingConfig = RenderingConfig()
     ontology_sync: OntologySyncConfig = OntologySyncConfig()
+    design_sync: DesignSyncConfig = DesignSyncConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

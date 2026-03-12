@@ -180,7 +180,7 @@ export function CreateProjectDialog({
       if (figmaUrl.trim() && project) {
         try {
           const { mutationFetcher: mf } = await import("@/lib/mutation-fetcher");
-          await mf("/api/v1/figma/connections", {
+          await mf("/api/v1/design-sync/connections", {
             arg: {
               name: name.trim(),
               file_url: figmaUrl.trim(),

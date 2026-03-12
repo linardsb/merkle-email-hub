@@ -29,6 +29,7 @@ dependencies = [
     "pymupdf>=1.27.1",
     "pytesseract>=0.3.13",
     "python-docx>=1.2.0",
+    "cryptography>=44.0.0",
     "nh3>=0.3.3",
 ]
 
@@ -96,6 +97,7 @@ ignore = [
 
 
 "app/knowledge/routes.py" = ["ARG001"]
+"app/design_sync/routes.py" = ["B008", "ARG001"]
 
 "app/core/rate_limit.py" = ["B008"]
 
@@ -170,6 +172,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "yaml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "cryptography.*"
 ignore_missing_imports = true
 
 

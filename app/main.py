@@ -38,6 +38,7 @@ from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
 from app.core.rate_limit import limiter
 from app.core.redis import close_redis, redis_available
+from app.design_sync.routes import router as design_sync_router
 from app.email_engine.routes import router as email_engine_router
 from app.example.routes import router as example_router
 from app.knowledge.ontology.routes import router as ontology_router
@@ -186,6 +187,7 @@ app.include_router(email_engine_router)
 app.include_router(components_router)
 app.include_router(qa_router)
 app.include_router(connectors_router)
+app.include_router(design_sync_router)
 app.include_router(approval_router)
 app.include_router(personas_router)
 app.include_router(templates_router)
