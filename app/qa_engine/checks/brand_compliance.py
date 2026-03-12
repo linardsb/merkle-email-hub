@@ -1,5 +1,6 @@
 """Brand compliance check placeholder."""
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
 
 
@@ -12,7 +13,16 @@ class BrandComplianceCheck:
 
     name = "brand_compliance"
 
-    async def run(self, html: str) -> QACheckResult:
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        if config and not config.enabled:
+            return QACheckResult(
+                check_name=self.name,
+                passed=True,
+                score=1.0,
+                details="Brand compliance check disabled by configuration",
+                severity="info",
+            )
+
         # Placeholder — always passes until brand rules are configured
         _ = html
         return QACheckResult(

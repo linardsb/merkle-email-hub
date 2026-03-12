@@ -1,7 +1,12 @@
 """CSS email client support check — powered by ontology."""
 
 from app.knowledge.ontology.query import unsupported_css_in_html
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
+
+_DEFAULT_ERROR_DEDUCTION = 0.2
+_DEFAULT_WARNING_DEDUCTION = 0.1
+_DEFAULT_MAX_DETAILS = 10
 
 
 class CssSupportCheck:
@@ -13,27 +18,36 @@ class CssSupportCheck:
 
     name = "css_support"
 
-    async def run(self, html: str) -> QACheckResult:
-        issues = unsupported_css_in_html(html)
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        error_deduction: float = (
+            config.params.get("error_deduction", _DEFAULT_ERROR_DEDUCTION)
+            if config
+            else _DEFAULT_ERROR_DEDUCTION
+        )
+        warning_deduction: float = (
+            config.params.get("warning_deduction", _DEFAULT_WARNING_DEDUCTION)
+            if config
+            else _DEFAULT_WARNING_DEDUCTION
+        )
+        max_details: int = (
+            config.params.get("max_issues_in_details", _DEFAULT_MAX_DETAILS)
+            if config
+            else _DEFAULT_MAX_DETAILS
+        )
 
-        # Filter to error/warning severity only (skip "info" for low-share clients)
+        issues = unsupported_css_in_html(html)
         actionable = [i for i in issues if i["severity"] in ("error", "warning")]
 
         if not actionable:
             return QACheckResult(
-                check_name=self.name,
-                passed=True,
-                score=1.0,
-                details=None,
-                severity="info",
+                check_name=self.name, passed=True, score=1.0, details=None, severity="info"
             )
 
         errors = [i for i in actionable if i["severity"] == "error"]
         warnings = [i for i in actionable if i["severity"] == "warning"]
 
-        # Build human-readable details
         detail_parts: list[str] = []
-        for issue in actionable[:10]:
+        for issue in actionable[:max_details]:
             prop_str = f"{issue['property_name']}"
             if issue["value"]:
                 prop_str += f": {issue['value']}"
@@ -41,11 +55,10 @@ class CssSupportCheck:
             fallback = " (fallback available)" if issue["fallback_available"] else ""
             detail_parts.append(f"Unsupported: {prop_str} ({client_count} clients){fallback}")
 
-        if len(actionable) > 10:
-            detail_parts.append(f"... and {len(actionable) - 10} more")
+        if len(actionable) > max_details:
+            detail_parts.append(f"... and {len(actionable) - max_details} more")
 
-        # Score: deduct based on severity
-        score = max(0.0, 1.0 - len(errors) * 0.2 - len(warnings) * 0.1)
+        score = max(0.0, 1.0 - len(errors) * error_deduction - len(warnings) * warning_deduction)
         passed = len(errors) == 0
         severity = "error" if errors else "warning"
 

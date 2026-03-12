@@ -91,6 +91,9 @@ def sample_html_valid() -> str:
     return """<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email</title>
 <meta name="color-scheme" content="light dark">
 <style>
 @media (prefers-color-scheme: dark) { .dark-bg { background-color: #1a1a1a; } }

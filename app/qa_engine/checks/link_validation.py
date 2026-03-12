@@ -2,7 +2,11 @@
 
 import re
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
+
+_DEFAULT_DEDUCTION = 0.1
+_DEFAULT_ALLOWED_PROTOCOLS = ("http", "mailto:", "tel:", "sms:")
 
 
 class LinkValidationCheck:
@@ -10,7 +14,13 @@ class LinkValidationCheck:
 
     name = "link_validation"
 
-    async def run(self, html: str) -> QACheckResult:
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        deduction: float = (
+            config.params.get("deduction_per_issue", _DEFAULT_DEDUCTION)
+            if config
+            else _DEFAULT_DEDUCTION
+        )
+
         issues: list[str] = []
         hrefs = re.findall(r'href=["\']([^"\']*)["\']', html)
 
@@ -25,7 +35,7 @@ class LinkValidationCheck:
                 issues.append(f"Invalid link protocol: {href[:80]}")
 
         passed = len(issues) == 0
-        score = 1.0 if passed else max(0.0, 1.0 - len(issues) * 0.1)
+        score = 1.0 if passed else max(0.0, 1.0 - len(issues) * deduction)
         return QACheckResult(
             check_name=self.name,
             passed=passed,

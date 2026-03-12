@@ -12,6 +12,9 @@ class QARunRequest(BaseModel):
     template_version_id: int | None = Field(
         None, description="Template version ID for audit linkage"
     )
+    project_id: int | None = Field(
+        None, description="Project ID for per-project QA config (optional)"
+    )
     html: str = Field(
         ..., min_length=1, max_length=500_000, description="Compiled HTML to validate"
     )

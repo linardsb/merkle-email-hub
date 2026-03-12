@@ -2,7 +2,10 @@
 
 import re
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
+
+_DEFAULT_DEDUCTION = 0.25
 
 
 class AccessibilityCheck:
@@ -10,7 +13,13 @@ class AccessibilityCheck:
 
     name = "accessibility"
 
-    async def run(self, html: str) -> QACheckResult:
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        deduction: float = (
+            config.params.get("deduction_per_issue", _DEFAULT_DEDUCTION)
+            if config
+            else _DEFAULT_DEDUCTION
+        )
+
         issues: list[str] = []
 
         if "lang=" not in html.lower():
@@ -24,7 +33,7 @@ class AccessibilityCheck:
             issues.append("Layout tables should use role='presentation'")
 
         passed = len(issues) == 0
-        score = max(0.0, 1.0 - len(issues) * 0.25)
+        score = max(0.0, 1.0 - len(issues) * deduction)
         return QACheckResult(
             check_name=self.name,
             passed=passed,

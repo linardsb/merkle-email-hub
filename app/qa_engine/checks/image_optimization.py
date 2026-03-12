@@ -2,6 +2,7 @@
 
 import re
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
 
 
@@ -10,7 +11,9 @@ class ImageOptimizationCheck:
 
     name = "image_optimization"
 
-    async def run(self, html: str) -> QACheckResult:
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        _ = config  # Reserved for future params (e.g., allowed formats)
+
         issues: list[str] = []
         images = re.findall(r"<img[^>]*>", html, re.IGNORECASE)
 

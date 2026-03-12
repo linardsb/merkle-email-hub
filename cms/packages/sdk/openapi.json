@@ -8908,6 +8908,18 @@
             "title": "Template Version Id",
             "description": "Template version ID for audit linkage"
           },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id",
+            "description": "Project ID for per-project QA config (optional)"
+          },
           "html": {
             "type": "string",
             "maxLength": 500000,

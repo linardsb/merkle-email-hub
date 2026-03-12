@@ -1,6 +1,9 @@
 """Fallback rendering check."""
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
+
+_DEFAULT_DEDUCTION = 0.4
 
 
 class FallbackCheck:
@@ -8,7 +11,13 @@ class FallbackCheck:
 
     name = "fallback"
 
-    async def run(self, html: str) -> QACheckResult:
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        deduction: float = (
+            config.params.get("deduction_per_issue", _DEFAULT_DEDUCTION)
+            if config
+            else _DEFAULT_DEDUCTION
+        )
+
         issues: list[str] = []
 
         if "<!--[if mso" not in html.lower():
@@ -17,7 +26,7 @@ class FallbackCheck:
             issues.append("No VML namespace declarations")
 
         passed = len(issues) == 0
-        score = max(0.0, 1.0 - len(issues) * 0.4)
+        score = max(0.0, 1.0 - len(issues) * deduction)
         return QACheckResult(
             check_name=self.name,
             passed=passed,

@@ -1,6 +1,9 @@
 """Dark mode compatibility check."""
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.schemas import QACheckResult
+
+_DEFAULT_DEDUCTION = 0.33
 
 
 class DarkModeCheck:
@@ -8,9 +11,14 @@ class DarkModeCheck:
 
     name = "dark_mode"
 
-    async def run(self, html: str) -> QACheckResult:
-        issues: list[str] = []
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        deduction: float = (
+            config.params.get("deduction_per_issue", _DEFAULT_DEDUCTION)
+            if config
+            else _DEFAULT_DEDUCTION
+        )
 
+        issues: list[str] = []
         if "color-scheme" not in html.lower():
             issues.append("Missing color-scheme meta or CSS")
         if "prefers-color-scheme" not in html.lower():
@@ -19,7 +27,7 @@ class DarkModeCheck:
             issues.append("No Outlook dark mode overrides ([data-ogsc]/[data-ogsb])")
 
         passed = len(issues) == 0
-        score = max(0.0, 1.0 - len(issues) * 0.33)
+        score = max(0.0, 1.0 - len(issues) * deduction)
         return QACheckResult(
             check_name=self.name,
             passed=passed,

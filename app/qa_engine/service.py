@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.core.logging import get_logger
+from app.projects.models import Project
 from app.projects.service import ProjectService
+from app.qa_engine.check_config import load_defaults, merge_profile
 from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.exceptions import QAOverrideNotAllowedError, QAResultNotFoundError
 from app.qa_engine.models import QAOverride, QAResult
@@ -37,11 +39,33 @@ class QAEngineService:
             "qa_engine.run_started",
             build_id=data.build_id,
             template_version_id=data.template_version_id,
+            project_id=data.project_id,
         )
+
+        # Load QA config: defaults + per-project overrides
+        profile = load_defaults()
+        if data.project_id:
+            db_result = await self.db.execute(
+                select(Project.qa_profile).where(Project.id == data.project_id)
+            )
+            project_qa_profile = db_result.scalar_one_or_none()
+            profile = merge_profile(profile, project_qa_profile)
 
         check_results: list[QACheckResult] = []
         for check in ALL_CHECKS:
-            result = await check.run(data.html)
+            check_config = profile.get_check_config(check.name)
+            if check_config and not check_config.enabled:
+                check_results.append(
+                    QACheckResult(
+                        check_name=check.name,
+                        passed=True,
+                        score=1.0,
+                        details="Check disabled by project configuration",
+                        severity="info",
+                    )
+                )
+                continue
+            result = await check.run(data.html, check_config)
             check_results.append(result)
 
         passed_count = sum(1 for c in check_results if c.passed)

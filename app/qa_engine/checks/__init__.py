@@ -2,6 +2,7 @@
 
 from typing import Protocol
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.checks.accessibility import AccessibilityCheck
 from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
 from app.qa_engine.checks.css_support import CssSupportCheck
@@ -20,7 +21,7 @@ class QACheckProtocol(Protocol):
 
     name: str
 
-    async def run(self, html: str) -> QACheckResult: ...
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult: ...
 
 
 ALL_CHECKS: list[QACheckProtocol] = [

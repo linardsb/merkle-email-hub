@@ -1,0 +1,115 @@
+# Default QA check configuration.
+# Per-project overrides stored in projects.qa_profile JSON column.
+
+html_validation:
+  enabled: true
+  severity: error
+  threshold: 0.5
+  params:
+    # Group A: Document Skeleton
+    deduction_doctype: 0.15
+    deduction_structure: 0.15
+    deduction_charset: 0.15
+    deduction_viewport: 0.10
+    deduction_title: 0.10
+    # Group B: Tag Integrity
+    deduction_unclosed_tag: 0.15
+    deduction_nesting: 0.10
+    deduction_duplicate_id: 0.10
+    # Group C: Content Integrity
+    deduction_empty_section: 0.15
+    deduction_style_placement: 0.10
+    # Group D: Email-Specific Structure
+    deduction_table_structure: 0.15
+    deduction_list_structure: 0.10
+    deduction_duplicate_structural: 0.15
+    deduction_nested_link: 0.15
+    # Group E: Progressive Enhancement
+    deduction_missing_fallback: 0.10
+    deduction_interactive_structure: 0.10
+    deduction_dangerous_element: 0.15
+    # Reporting caps
+    max_unclosed_tags_reported: 5
+    max_nesting_violations_reported: 5
+    max_duplicate_ids_reported: 5
+    max_table_violations_reported: 5
+    max_list_violations_reported: 5
+
+css_support:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    error_deduction: 0.2
+    warning_deduction: 0.1
+    max_issues_in_details: 10
+
+file_size:
+  enabled: true
+  severity: error
+  threshold: 0.5
+  params:
+    max_size_kb: 102
+
+link_validation:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    deduction_per_issue: 0.1
+    allowed_protocols:
+      - https
+      - http
+      - mailto
+      - tel
+
+spam_score:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    deduction_per_trigger: 0.15
+    triggers:
+      - "buy now"
+      - "free"
+      - "click here"
+      - "act now"
+      - "limited time"
+      - "100%"
+      - "guarantee"
+      - "no obligation"
+      - "winner"
+      - "congratulations"
+
+dark_mode:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    deduction_per_issue: 0.33
+
+accessibility:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    deduction_per_issue: 0.25
+
+fallback:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    deduction_per_issue: 0.4
+
+image_optimization:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params: {}
+
+brand_compliance:
+  enabled: false
+  severity: info
+  threshold: 0.5
+  params: {}

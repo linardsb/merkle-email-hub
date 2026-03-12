@@ -13,10 +13,10 @@
 
 # QA Engine (`app/qa_engine/`)
 
-10-point quality gate system. Each check in `checks/` implements `async run(html: str) -> QACheckResult`.
+10-point quality gate system. Each check in `checks/` implements `async run(html: str, config: QACheckConfig | None = None) -> QACheckResult`. Per-project config via `defaults.yaml` + `qa_profile` JSON column.
 
 ## Checks
-1. `html_validation` — DOCTYPE, structural tags
+1. `html_validation` — lxml DOM-parsed: 20 checks across 5 groups (skeleton, tag integrity, content, email structure, progressive enhancement); 17 configurable deductions
 2. `css_support` — Flags poorly-supported CSS properties
 3. `file_size` — Gmail 102KB clipping threshold
 4. `link_validation` — HTTPS enforcement

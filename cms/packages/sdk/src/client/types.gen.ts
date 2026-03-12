@@ -1005,6 +1005,10 @@ export type QaRunRequest = {
      */
     template_version_id?: number | null;
     /**
+     * Project ID for per-project QA config (optional)
+     */
+    project_id?: number | null;
+    /**
      * Compiled HTML to validate
      */
     html: string;
