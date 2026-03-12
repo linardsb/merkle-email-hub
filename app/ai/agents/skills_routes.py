@@ -1,4 +1,5 @@
 """Read-only endpoint exposing per-agent skill metadata."""
+
 from __future__ import annotations
 
 import json
@@ -42,9 +43,7 @@ def _load_analysis() -> dict[str, Any]:
         return {}
 
 
-def _get_agent_skill_info(
-    agent_name: str, analysis: dict[str, Any]
-) -> dict[str, object]:
+def _get_agent_skill_info(agent_name: str, analysis: dict[str, Any]) -> dict[str, object]:
     agent_dir = AGENTS_DIR / agent_name
     skill_file = agent_dir / "SKILL.md"
     skills_dir = agent_dir / "skills"
@@ -57,9 +56,7 @@ def _get_agent_skill_info(
     has_failure_warnings = False
     agent_data = analysis.get("per_agent", {}).get(agent_name, {})
     criteria = agent_data.get("per_criterion", {})
-    has_failure_warnings = any(
-        c.get("pass_rate", 1.0) < 0.85 for c in criteria.values()
-    )
+    has_failure_warnings = any(c.get("pass_rate", 1.0) < 0.85 for c in criteria.values())
 
     return {
         "name": agent_name,

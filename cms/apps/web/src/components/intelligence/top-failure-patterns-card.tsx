@@ -46,7 +46,7 @@ export function TopFailurePatternsCard() {
           </h2>
         </div>
         <Link
-          href="/failure-patterns"
+          href="/renderings?tab=patterns"
           className="text-sm text-foreground-accent hover:underline"
         >
           {t("viewAllPatterns")}

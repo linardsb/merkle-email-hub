@@ -17,7 +17,6 @@ const ROLE_PERMISSIONS: Record<string, AppRole[]> = {
   "/figma": ["admin", "developer", "viewer"],
   "/briefs": ["admin", "developer", "viewer"],
   "/renderings": ["admin", "developer", "viewer"],
-  "/failure-patterns": ["admin", "developer", "viewer"],
   "/settings": ["admin", "developer"],
 };
 

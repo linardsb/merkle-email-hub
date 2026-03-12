@@ -1,4 +1,21 @@
 {
+  "permissions": {
+    "allow": [
+      "Edit(*)",
+      "Write(*)",
+      "Bash(make:*)",
+      "Bash(pnpm:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(wc:*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +25,11 @@
             "type": "command",
             "command": ".claude/hooks/block-dangerous.sh",
             "statusMessage": "Checking command safety..."
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-security.sh",
+            "statusMessage": "Scanning for secrets..."
           }
         ]
       }

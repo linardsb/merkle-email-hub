@@ -1032,7 +1032,9 @@
     "prevPage": "Previous",
     "nextPage": "Next",
     "pageOf": "Page {page} of {total}",
-    "testId": "Test #{id}"
+    "testId": "Test #{id}",
+    "tabTests": "Rendering Tests",
+    "tabPatterns": "Failure Patterns"
   },
   "blueprintRun": {
     "title": "Generate with Blueprint",
