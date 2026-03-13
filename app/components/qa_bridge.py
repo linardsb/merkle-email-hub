@@ -71,7 +71,7 @@ async def run_component_qa(
     # Run QA engine
     qa_service = QAEngineService(db)
     qa_response = await qa_service.run_checks(
-        QARunRequest(html=version.html_source),
+        QARunRequest(html=version.html_source),  # pyright: ignore[reportCallIssue]
     )
 
     # Extract compatibility from ontology analysis

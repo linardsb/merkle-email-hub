@@ -36,6 +36,9 @@ SKILL_FILES: dict[str, str] = {
     "css_client_support": "css_client_support.md",
     "nesting_validation": "nesting_validation.md",
     "file_size_optimization": "file_size_optimization.md",
+    "anti_patterns": "anti_patterns.md",
+    "spam_patterns": "spam_patterns.md",
+    "link_validation": "link_validation.md",
 }
 
 
@@ -84,9 +87,10 @@ def detect_relevant_skills(focus: ReviewFocus) -> list[str]:
         return list(SKILL_FILES.keys())
 
     focus_map: dict[ReviewFocus, list[str]] = {
-        "redundant_code": ["redundant_code"],
+        "redundant_code": ["redundant_code", "anti_patterns", "spam_patterns"],
         "css_support": ["css_client_support"],
         "nesting": ["nesting_validation"],
         "file_size": ["file_size_optimization"],
+        "link_validation": ["link_validation", "anti_patterns"],
     }
     return focus_map.get(focus, list(SKILL_FILES.keys()))

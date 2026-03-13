@@ -1,0 +1,99 @@
+# MSO Fallback Rules — Outlook Conditional Comment Validation
+# Source: docs/outlook-mso-fallback-reference.md
+# Used by: app/qa_engine/checks/fallback.py
+# Also indexed in RAG knowledge base via: make seed-knowledge
+
+rules:
+  # ─── Group A: Conditional Balance ───
+
+  - id: "mso-balanced-pairs"
+    group: "conditional_balance"
+    name: "MSO conditional pairs are balanced"
+    check: "custom"
+    custom_fn: "mso_balanced_pairs"
+    deduction_key: "deduction_unbalanced_pair"
+    default_deduction: 0.25
+    per_element: true
+    cap_key: "max_mso_issues_reported"
+    default_cap: 5
+    message: "Unbalanced MSO conditional comment — opener without matching closer (or vice versa)"
+
+  - id: "mso-conditional-syntax"
+    group: "conditional_balance"
+    name: "Valid MSO conditional syntax"
+    check: "custom"
+    custom_fn: "mso_conditional_syntax"
+    deduction_key: "deduction_invalid_syntax"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_mso_issues_reported"
+    default_cap: 5
+    message: "Invalid MSO conditional syntax — use valid operators (gte, gt, lte, lt) and versions (12, 14, 15, 16)"
+
+  # ─── Group B: VML Nesting ───
+
+  - id: "mso-vml-inside-conditional"
+    group: "vml_nesting"
+    name: "VML elements inside MSO conditionals"
+    check: "custom"
+    custom_fn: "mso_vml_nesting"
+    deduction_key: "deduction_vml_orphan"
+    default_deduction: 0.20
+    per_element: true
+    cap_key: "max_mso_issues_reported"
+    default_cap: 5
+    message: "VML element outside MSO conditional — will render as broken markup in non-Outlook clients"
+
+  # ─── Group C: Namespace Declarations ───
+
+  - id: "mso-vml-namespace"
+    group: "namespaces"
+    name: "VML namespace on <html> tag"
+    check: "custom"
+    custom_fn: "mso_namespace_validation"
+    deduction_key: "deduction_missing_namespace"
+    default_deduction: 0.15
+    message: "VML present but missing xmlns:v or xmlns:o namespace on <html> tag"
+
+  # ─── Group D: Ghost Tables ───
+
+  - id: "mso-ghost-table-width"
+    group: "ghost_tables"
+    name: "Ghost tables have width attributes"
+    check: "custom"
+    custom_fn: "mso_ghost_table_validation"
+    deduction_key: "deduction_ghost_table_issue"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_mso_issues_reported"
+    default_cap: 5
+    message: "MSO ghost table missing width attribute — Outlook needs explicit widths"
+
+  # ─── Group E: MSO Presence (existing checks, kept for backward compat) ───
+
+  - id: "mso-conditionals-present"
+    group: "presence"
+    name: "MSO conditionals exist"
+    check: "custom"
+    custom_fn: "mso_conditionals_present"
+    deduction_key: "deduction_no_mso"
+    default_deduction: 0.30
+    message: "No MSO conditional comments for Outlook fallbacks"
+
+  - id: "mso-namespaces-present"
+    group: "presence"
+    name: "VML/Office namespace declarations exist"
+    check: "custom"
+    custom_fn: "mso_namespaces_present"
+    deduction_key: "deduction_no_namespaces"
+    default_deduction: 0.20
+    message: "No VML/Office namespace declarations"
+
+  - id: "mso-dpi-fix"
+    group: "presence"
+    name: "PixelsPerInch DPI fix present"
+    check: "raw_html_pattern"
+    patterns: ["PixelsPerInch"]
+    deduction_key: "deduction_no_dpi_fix"
+    default_deduction: 0.05
+    message: "Missing o:PixelsPerInch — Outlook may scale images on high-DPI displays"

@@ -80,7 +80,7 @@ class TestSeedGraph:
             else:
                 sys.modules.pop(mod_key, None)
             if saved_attr is not None:
-                _graph_pkg.cognee_provider = saved_attr
+                _graph_pkg.cognee_provider = saved_attr  # pyright: ignore[reportAttributeAccessIssue]
 
         captured = capsys.readouterr()
         assert "skipped" in captured.out.lower()

@@ -36,6 +36,13 @@ class CssSupportCheck:
         )
 
         issues = unsupported_css_in_html(html)
+
+        # Downgrade errors to warnings when a fallback is available — the property
+        # is used as progressive enhancement, not a hard dependency.
+        for issue in issues:
+            if issue["severity"] == "error" and issue["fallback_available"]:
+                issue["severity"] = "warning"
+
         actionable = [i for i in issues if i["severity"] in ("error", "warning")]
 
         if not actionable:

@@ -22,7 +22,7 @@ class _StubNode:
         }
         self._html = html
 
-    async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+    async def execute(self, context: NodeContext) -> NodeResult:
         return NodeResult(status="success", html=self._html, usage=self._usage)
 
 
@@ -32,7 +32,7 @@ class _DeterministicNode:
     node_type = "deterministic"
     name = "deterministic_stub"
 
-    async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+    async def execute(self, context: NodeContext) -> NodeResult:
         return NodeResult(status="success")
 
 

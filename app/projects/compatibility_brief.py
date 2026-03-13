@@ -31,7 +31,9 @@ class ClientProfile:
     market_share: float
     notes: str | None
     unsupported_count: int
-    unsupported_properties: list[UnsupportedProperty] = field(default_factory=list)
+    unsupported_properties: list[UnsupportedProperty] = field(
+        default_factory=lambda: list[UnsupportedProperty]()
+    )
 
 
 @dataclass(frozen=True)
@@ -50,8 +52,8 @@ class CompatibilityBrief:
     client_count: int
     total_risky_properties: int
     dark_mode_warning: bool
-    clients: list[ClientProfile] = field(default_factory=list)
-    risk_matrix: list[RiskMatrixEntry] = field(default_factory=list)
+    clients: list[ClientProfile] = field(default_factory=lambda: list[ClientProfile]())
+    risk_matrix: list[RiskMatrixEntry] = field(default_factory=lambda: list[RiskMatrixEntry]())
 
 
 def generate_compatibility_brief(client_ids: list[str]) -> CompatibilityBrief | None:

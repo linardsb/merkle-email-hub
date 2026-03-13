@@ -23,7 +23,13 @@ references:
   - skills/css_client_support.md
   - skills/nesting_validation.md
   - skills/file_size_optimization.md
-  - skills/html_email_components.md
+  - skills/anti_patterns.md
+  - skills/spam_patterns.md
+l4_sources:
+  - docs/SKILL_outlook-mso-fallback-reference.md
+  - docs/SKILL_email-dark-mode-dom-reference.md
+  - docs/SKILL_html-email-components.md
+  - docs/SKILL_email-spam-score-dom-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

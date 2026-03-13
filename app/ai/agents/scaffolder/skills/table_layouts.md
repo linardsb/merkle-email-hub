@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_html-email-components.md sections 2, 11 -->
+<!-- Last synced: 2026-03-13 -->
+
 # Table Layouts — Email Grid Patterns
 
 ## Single Column (600px)
@@ -151,6 +154,18 @@
 <![endif]-->
 ```
 
+## Fluid-Hybrid (Spongy) Layout
+
+Responsive without media queries — works in Gmail which strips `<style>`:
+
+```html
+<div style="display:inline-block; width:100%; min-width:200px; max-width:290px; vertical-align:top;">
+  <!-- Column auto-stacks when container < min-width -->
+</div>
+```
+
+Combined with MSO ghost table for Outlook (which ignores `max-width`).
+
 ## Responsive Stacking Pattern
 
 All multi-column layouts above stack on mobile via `display:inline-block` + `max-width`.
@@ -164,3 +179,28 @@ Add a media query for explicit mobile override:
 ```
 
 Apply class `column` to the `<div>` wrappers and `column-pad` to inner `<td>` elements.
+
+## Content Reordering (Mobile)
+
+```css
+@media only screen and (max-width: 599px) {
+  .mobile-first { display: table-header-group !important; }
+  .mobile-last { display: table-footer-group !important; }
+}
+```
+
+## Spacer Cells
+
+Email's replacement for `margin` (unreliable across clients):
+
+```html
+<!-- Fixed spacer -->
+<tr>
+  <td style="font-size:0; line-height:0; mso-line-height-rule:exactly; height:20px;">&nbsp;</td>
+</tr>
+
+<!-- Divider row -->
+<tr>
+  <td style="border-top:1px solid #e0e0e0; font-size:1px; line-height:1px; height:1px;">&nbsp;</td>
+</tr>
+```

@@ -1,0 +1,66 @@
+# Spam Score Rules — weighted trigger matching + formatting heuristics
+# Source: docs/SKILL_email-spam-score-dom-reference.md
+# Used by: app/qa_engine/checks/spam_score.py
+
+rules:
+  # ─── Group A: Trigger Phrase Matching ───
+
+  - id: "spam-trigger-scan"
+    group: "trigger_phrases"
+    name: "Scan for known spam trigger phrases"
+    check: "custom"
+    custom_fn: "spam_trigger_scan"
+    deduction_key: "deduction_trigger_scan"
+    default_deduction: 0.0
+    message: "Spam trigger phrases detected in email content"
+
+  # ─── Group B: Subject Line Analysis ───
+
+  - id: "spam-subject-triggers"
+    group: "subject_line"
+    name: "Subject line spam trigger check"
+    check: "custom"
+    custom_fn: "spam_subject_triggers"
+    deduction_key: "deduction_subject_triggers"
+    default_deduction: 0.0
+    message: "Subject line contains spam trigger phrases (3x weight)"
+
+  # ─── Group C: Formatting Heuristics ───
+
+  - id: "spam-excessive-punctuation"
+    group: "formatting"
+    name: "Excessive punctuation detection"
+    check: "custom"
+    custom_fn: "spam_excessive_punctuation"
+    deduction_key: "deduction_excessive_punctuation"
+    default_deduction: 0.10
+    message: "Excessive punctuation detected (3+ consecutive ! or ?)"
+
+  - id: "spam-all-caps-words"
+    group: "formatting"
+    name: "All-caps words detection"
+    check: "custom"
+    custom_fn: "spam_all_caps_words"
+    deduction_key: "deduction_all_caps"
+    default_deduction: 0.10
+    message: "Excessive all-caps words detected (3+ consecutive)"
+
+  - id: "spam-obfuscation"
+    group: "formatting"
+    name: "Character obfuscation detection"
+    check: "custom"
+    custom_fn: "spam_obfuscation"
+    deduction_key: "deduction_obfuscation"
+    default_deduction: 0.15
+    message: "Obfuscated text detected (leet-speak or character substitution)"
+
+  # ─── Group D: Summary ───
+
+  - id: "spam-score-summary"
+    group: "summary"
+    name: "Spam score summary"
+    check: "custom"
+    custom_fn: "spam_score_summary"
+    deduction_key: "deduction_summary"
+    default_deduction: 0.0
+    message: "Spam score analysis summary"

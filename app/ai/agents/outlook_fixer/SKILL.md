@@ -24,7 +24,7 @@ references:
   - skills/vml_reference.md
   - skills/mso_conditionals.md
   - skills/diagnostic.md
-  - skills/html_email_components.md
+l4_source: docs/SKILL_outlook-mso-fallback-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

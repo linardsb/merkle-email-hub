@@ -49,7 +49,26 @@ file_size:
   severity: error
   threshold: 0.5
   params:
-    max_size_kb: 102
+    # Group A: Client thresholds (KB)
+    gmail_threshold_kb: 102
+    outlook_threshold_kb: 100
+    yahoo_threshold_kb: 75
+    braze_threshold_kb: 100
+    # Group A: Deductions
+    deduction_gmail_clip: 0.30
+    deduction_outlook_perf: 0.20
+    deduction_yahoo_clip: 0.10
+    deduction_braze_limit: 0.15
+    # Group B: Content distribution
+    inline_css_max_pct: 40
+    mso_conditional_max_pct: 25
+    deduction_inline_css_bloat: 0.05
+    deduction_mso_bloat: 0.05
+    # Group C: Compression
+    gzip_min_reduction_pct: 50
+    deduction_poor_gzip: 0.05
+    # Group D: Summary (no deduction)
+    deduction_size_summary: 0.0
 
 link_validation:
   enabled: true
@@ -68,18 +87,14 @@ spam_score:
   severity: warning
   threshold: 0.5
   params:
-    deduction_per_trigger: 0.15
-    triggers:
-      - "buy now"
-      - "free"
-      - "click here"
-      - "act now"
-      - "limited time"
-      - "100%"
-      - "guarantee"
-      - "no obligation"
-      - "winner"
-      - "congratulations"
+    # Group A: Trigger scan (deductions come from per-trigger weights in data/spam_triggers.yaml)
+    max_triggers_reported: 10
+    # Group B: Subject line
+    subject_weight_multiplier: 3.0
+    # Group C: Formatting heuristics
+    deduction_excessive_punctuation: 0.10
+    deduction_all_caps: 0.10
+    deduction_obfuscation: 0.15
 
 dark_mode:
   enabled: true

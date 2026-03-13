@@ -57,14 +57,14 @@ class TestListEmailClientsEndpoint:
         """Authenticated request returns all ontology clients."""
         resp = authenticated_client.get("/api/v1/ontology/clients")
         assert resp.status_code == 200
-        data = resp.json()
+        data: list[dict[str, object]] = resp.json()
         assert isinstance(data, list)
         assert len(data) == 25  # 25 clients in ontology
 
     def test_response_shape(self, authenticated_client: TestClient) -> None:
         """Each client has required fields with correct types."""
         resp = authenticated_client.get("/api/v1/ontology/clients")
-        data = resp.json()
+        data: list[dict[str, object]] = resp.json()
         first = data[0]
         assert isinstance(first["id"], str)
         assert isinstance(first["name"], str)

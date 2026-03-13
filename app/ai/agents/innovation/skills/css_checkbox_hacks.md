@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_html-email-components.md section 20 -->
+<!-- Last synced: 2026-03-13 -->
+
 # CSS Checkbox Hacks for Interactive Email
 
 ## How It Works
@@ -25,7 +28,9 @@ When checkbox is checked: input:checked ~ .content { display: block }
 
 **Coverage:** ~25-35% of email opens (Apple Mail + Yahoo + Thunderbird)
 
-## Pattern 1: Tabbed Content
+## Pattern 1: Tabbed Content (Radio Button Navigation)
+
+Uses radio inputs for mutually exclusive states — only one tab visible at a time.
 
 ```html
 <style>
@@ -87,7 +92,9 @@ When checkbox is checked: input:checked ~ .content { display: block }
 
 **Fallback:** Show all sections expanded.
 
-## Pattern 3: Image Carousel
+## Pattern 3: Image Carousel (CSS-Only Sliding Gallery)
+
+Uses radio inputs for mutually exclusive slide visibility via checkbox/radio hack.
 
 ```html
 <style>
@@ -127,9 +134,53 @@ When checkbox is checked: input:checked ~ .content { display: block }
 
 **Fallback:** Show first slide only as static image.
 
-## Fallback Strategy for Checkbox Hacks
+## Pattern 4: CSS-Only Hamburger Menu
 
-Always wrap the interactive version in a class that hides in unsupported clients:
+```html
+<style>
+  .menu-toggle { display: none !important; }
+  .menu-content { max-height: 0; overflow: hidden; transition: max-height 0.3s; }
+  .menu-toggle:checked ~ .menu-content { max-height: 400px; }
+  .menu-label { display: inline-block; padding: 10px; cursor: pointer; font-size: 24px; }
+</style>
+
+<input type="checkbox" class="menu-toggle" id="menu" style="display:none !important;">
+<label class="menu-label" for="menu">&#9776;</label>
+<div class="menu-content">
+  <a href="https://example.com/1" style="display:block; padding:10px;">Link 1</a>
+  <a href="https://example.com/2" style="display:block; padding:10px;">Link 2</a>
+  <a href="https://example.com/3" style="display:block; padding:10px;">Link 3</a>
+</div>
+```
+
+**Fallback:** Show all links stacked (no hamburger toggle).
+
+## Pattern 5: Star Rating Selector
+
+```css
+.star-input { display: none !important; }
+.star-label { cursor: pointer; font-size: 24px; color: #ccc; }
+#star5:checked ~ .stars .star-label:nth-child(-n+5),
+#star4:checked ~ .stars .star-label:nth-child(-n+4),
+#star3:checked ~ .stars .star-label:nth-child(-n+3) { color: #ffc107; }
+```
+
+**Fallback:** Static star display or link to external survey.
+
+## Advanced Interactive Techniques
+
+### Live Countdown Timers
+Server-side generated animated GIF with real-time countdown calculated at email open. Not CSS-based — the server renders a new frame sequence on each HTTP request. Degrades to static "offer expires" text.
+
+### Gamification Elements
+Scratch cards, spin-to-win wheels, and reveal mechanics built via checkbox hack — user clicks/taps to toggle hidden content states. Must degrade to a direct CTA link in unsupported clients.
+
+### CSS-Only Shopping Cart Interactions
+Visual add/remove states using checkbox toggles — purely cosmetic state changes in email. Actual cart operations require link to web checkout. Degrade to product listing with "Shop Now" links.
+
+## Fallback Strategy (CRITICAL)
+
+**All interactive elements MUST degrade gracefully to static content.** Wrap interactive and static versions separately:
 
 ```html
 <!-- Interactive version (Apple Mail, Yahoo) -->

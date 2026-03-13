@@ -95,9 +95,15 @@ def sample_html_valid() -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Email</title>
 <meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <style>
-@media (prefers-color-scheme: dark) { .dark-bg { background-color: #1a1a1a; } }
-[data-ogsc] .dark-bg { background-color: #1a1a1a; }
+:root { color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  .dark-bg { background-color: #1a1a1a !important; }
+  .dark-text { color: #e0e0e0 !important; }
+}
+[data-ogsc] .dark-text { color: #e0e0e0; }
+[data-ogsb] .dark-bg { background-color: #1a1a1a; }
 </style>
 <!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
 </head>

@@ -1,0 +1,195 @@
+# Spam Trigger Database — weighted phrases with categories
+# Source: SpamAssassin rules, Mailchimp/Braze spam filter guidance
+# Used by: app/qa_engine/checks/spam_score.py via custom_checks.py
+#
+# Each trigger has:
+#   phrase: case-insensitive word-boundary match
+#   weight: deduction amount (0.05 = minor, 0.30 = critical)
+#   category: urgency | money | action | clickbait | legal | deceptive | excessive
+
+triggers:
+  # ─── Urgency (pressure tactics) ───
+  - phrase: "act now"
+    weight: 0.15
+    category: urgency
+  - phrase: "limited time"
+    weight: 0.10
+    category: urgency
+  - phrase: "hurry"
+    weight: 0.10
+    category: urgency
+  - phrase: "expires"
+    weight: 0.05
+    category: urgency
+  - phrase: "urgent"
+    weight: 0.15
+    category: urgency
+  - phrase: "don't delay"
+    weight: 0.10
+    category: urgency
+  - phrase: "don't miss"
+    weight: 0.05
+    category: urgency
+  - phrase: "last chance"
+    weight: 0.10
+    category: urgency
+  - phrase: "only today"
+    weight: 0.10
+    category: urgency
+  - phrase: "time is running out"
+    weight: 0.10
+    category: urgency
+  - phrase: "before it's too late"
+    weight: 0.10
+    category: urgency
+  - phrase: "ending soon"
+    weight: 0.05
+    category: urgency
+
+  # ─── Money (financial promises) ───
+  - phrase: "free"
+    weight: 0.05
+    category: money
+  - phrase: "no cost"
+    weight: 0.10
+    category: money
+  - phrase: "100%"
+    weight: 0.05
+    category: money
+  - phrase: "double your"
+    weight: 0.20
+    category: money
+  - phrase: "earn extra cash"
+    weight: 0.20
+    category: money
+  - phrase: "extra income"
+    weight: 0.15
+    category: money
+  - phrase: "cash bonus"
+    weight: 0.15
+    category: money
+  - phrase: "million dollars"
+    weight: 0.30
+    category: money
+  - phrase: "save big"
+    weight: 0.10
+    category: money
+  - phrase: "lowest price"
+    weight: 0.10
+    category: money
+  - phrase: "best price"
+    weight: 0.05
+    category: money
+  - phrase: "incredible deal"
+    weight: 0.15
+    category: money
+  - phrase: "risk free"
+    weight: 0.15
+    category: money
+  - phrase: "money back"
+    weight: 0.05
+    category: money
+
+  # ─── Action (aggressive CTAs) ───
+  - phrase: "buy now"
+    weight: 0.10
+    category: action
+  - phrase: "click here"
+    weight: 0.10
+    category: action
+  - phrase: "click below"
+    weight: 0.10
+    category: action
+  - phrase: "order now"
+    weight: 0.10
+    category: action
+  - phrase: "sign up free"
+    weight: 0.10
+    category: action
+  - phrase: "subscribe now"
+    weight: 0.05
+    category: action
+  - phrase: "call now"
+    weight: 0.10
+    category: action
+  - phrase: "apply now"
+    weight: 0.05
+    category: action
+  - phrase: "get it now"
+    weight: 0.10
+    category: action
+  - phrase: "buy direct"
+    weight: 0.10
+    category: action
+
+  # ─── Clickbait (sensationalism) ───
+  - phrase: "congratulations"
+    weight: 0.15
+    category: clickbait
+  - phrase: "you have been selected"
+    weight: 0.25
+    category: clickbait
+  - phrase: "you're a winner"
+    weight: 0.25
+    category: clickbait
+  - phrase: "winner"
+    weight: 0.10
+    category: clickbait
+  - phrase: "dear friend"
+    weight: 0.20
+    category: clickbait
+  - phrase: "as seen on"
+    weight: 0.10
+    category: clickbait
+  - phrase: "exclusive deal"
+    weight: 0.10
+    category: clickbait
+  - phrase: "once in a lifetime"
+    weight: 0.20
+    category: clickbait
+
+  # ─── Legal / Compliance Red Flags ───
+  - phrase: "no obligation"
+    weight: 0.10
+    category: legal
+  - phrase: "guarantee"
+    weight: 0.05
+    category: legal
+  - phrase: "no questions asked"
+    weight: 0.15
+    category: legal
+  - phrase: "no strings attached"
+    weight: 0.15
+    category: legal
+  - phrase: "no purchase necessary"
+    weight: 0.10
+    category: legal
+
+  # ─── Deceptive / Obfuscation ───
+  - phrase: "this is not spam"
+    weight: 0.25
+    category: deceptive
+  - phrase: "not junk"
+    weight: 0.20
+    category: deceptive
+  - phrase: "undisclosed recipients"
+    weight: 0.20
+    category: deceptive
+  - phrase: "confidential"
+    weight: 0.10
+    category: deceptive
+  - phrase: "multi level marketing"
+    weight: 0.25
+    category: deceptive
+  - phrase: "weight loss"
+    weight: 0.15
+    category: deceptive
+  - phrase: "miracle"
+    weight: 0.15
+    category: deceptive
+  - phrase: "viagra"
+    weight: 0.30
+    category: deceptive
+  - phrase: "casino"
+    weight: 0.20
+    category: deceptive

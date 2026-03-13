@@ -24,7 +24,7 @@ references:
   - skills/alt_text_guidelines.md
   - skills/color_contrast.md
   - skills/screen_reader_behavior.md
-  - skills/email_accessibility_reference.md
+l4_source: docs/SKILL_email-accessibility-wcag-aa.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

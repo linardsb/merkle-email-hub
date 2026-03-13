@@ -9,7 +9,7 @@ from app.ai.protocols import CompletionResponse
 
 @pytest.fixture
 def sample_html_valid() -> str:
-    """Minimal valid email HTML that passes most QA checks."""
+    """Minimal valid email HTML that passes all 10 QA checks."""
     return """<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -17,14 +17,21 @@ def sample_html_valid() -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Test Email</title>
 <meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <style>
-@media (prefers-color-scheme: dark) { .dark-bg { background-color: #1a1a1a; } }
-[data-ogsc] .dark-bg { background-color: #1a1a1a; }
+:root { color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  .dark-bg { background-color: #1a1a1a !important; }
+  .dark-text { color: #e0e0e0 !important; }
+}
+[data-ogsc] .dark-text { color: #e0e0e0; }
+[data-ogsb] .dark-bg { background-color: #1a1a1a; }
 </style>
 <!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
 </head>
 <body>
 <table role="presentation" width="600">
+<tr><td><h1>Welcome</h1></td></tr>
 <tr><td><img src="https://example.com/hero.png" alt="Hero image" width="600" height="300"></td></tr>
 <tr><td><a href="https://example.com">Visit us</a></td></tr>
 </table>
@@ -48,7 +55,7 @@ def mock_provider() -> AsyncMock:
             '<!DOCTYPE html><html lang="en"><head>'
             '<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            '<title>Test Email</title>'
+            "<title>Test Email</title>"
             '<meta name="color-scheme" content="light dark">'
             "</head><body>"
             '<table role="presentation"><tr><td>Generated</td></tr></table>'

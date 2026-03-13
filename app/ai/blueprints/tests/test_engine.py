@@ -380,7 +380,7 @@ class TestNodeError:
             def node_type(self) -> NodeType:
                 return "deterministic"
 
-            async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+            async def execute(self, context: NodeContext) -> NodeResult:
                 msg = "Something went wrong"
                 raise RuntimeError(msg)
 

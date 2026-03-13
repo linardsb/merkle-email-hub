@@ -1,5 +1,6 @@
 """Tests for Can I Email GitHub client (mocked HTTP)."""
 
+from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
@@ -8,7 +9,7 @@ from app.knowledge.ontology.sync.caniemail_client import CanIEmailClient
 
 
 @pytest.fixture()
-def client() -> CanIEmailClient:  # type: ignore[misc]
+def client() -> Generator[CanIEmailClient, None, None]:
     with patch("app.knowledge.ontology.sync.caniemail_client.get_settings") as mock:
         settings = mock.return_value
         settings.ontology_sync.github_repo = "hteumeuleu/caniemail"

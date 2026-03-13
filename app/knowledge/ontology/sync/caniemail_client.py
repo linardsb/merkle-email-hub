@@ -118,5 +118,5 @@ class CanIEmailClient:
             category=str(data.get("category", "css")),
             last_test_date=str(data.get("last_test_date", "")),
             stats=data.get("stats", {}),
-            notes={str(k): str(v) for k, v in (data.get("notes_by_num") or {}).items()},
+            notes={str(k): str(v) for k, v in (dict(data.get("notes_by_num") or {})).items()},
         )

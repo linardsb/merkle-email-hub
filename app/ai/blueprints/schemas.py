@@ -15,7 +15,7 @@ class BlueprintRunRequest(BaseModel):
         default_factory=dict, description="Blueprint-specific options"
     )
     persona_ids: list[int] = Field(
-        default_factory=list,
+        default_factory=lambda: list[int](),
         description="Target audience persona IDs — agents will adapt output for these clients",
     )
 
@@ -60,10 +60,12 @@ class BlueprintRunResponse(BaseModel):
     qa_passed: bool | None = None
     model_usage: dict[str, int] = Field(default_factory=dict)
     final_handoff: HandoffSummary | None = None
-    handoff_history: list[HandoffSummary] = Field(default_factory=list)
+    handoff_history: list[HandoffSummary] = Field(default_factory=lambda: list[HandoffSummary]())
     audience_summary: str | None = None
-    skipped_nodes: list[str] = Field(default_factory=list)
-    routing_decisions: list[RoutingDecisionResponse] = Field(default_factory=list)
+    skipped_nodes: list[str] = Field(default_factory=lambda: list[str]())
+    routing_decisions: list[RoutingDecisionResponse] = Field(
+        default_factory=lambda: list[RoutingDecisionResponse]()
+    )
 
 
 class FailurePatternResponse(BaseModel):

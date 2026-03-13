@@ -75,11 +75,13 @@ class BlueprintRun:
     model_usage: dict[str, int] = field(
         default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     )
-    skipped_nodes: list[str] = field(default_factory=list)
+    skipped_nodes: list[str] = field(default_factory=lambda: list[str]())
     routing_decisions: tuple[RoutingDecision, ...] = ()
     _last_result: NodeResult | None = field(default=None, repr=False)
     _last_handoff: AgentHandoff | None = field(default=None, repr=False)
-    _handoff_history: list[AgentHandoff] = field(default_factory=list, repr=False)
+    _handoff_history: list[AgentHandoff] = field(
+        default_factory=lambda: list[AgentHandoff](), repr=False
+    )
 
 
 class BlueprintEngine:
@@ -432,8 +434,8 @@ class BlueprintEngine:
 
             if should_fetch_competitive_context(brief):
                 # Use audience-aware feasibility when audience profile available
-                audience_client_ids: tuple[str, ...] = tuple(
-                    context.metadata.get("audience_client_ids", ())  # type: ignore[arg-type]
+                audience_client_ids: tuple[str, ...] = tuple(  # pyright: ignore[reportUnknownVariableType]
+                    context.metadata.get("audience_client_ids", ())  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
                 )
                 if audience_client_ids:
                     from app.knowledge.ontology.competitive_feasibility import (
@@ -525,9 +527,9 @@ class BlueprintEngine:
         try:
             dataset = f"project_onboarding_{self._project_id}"
             # dataset_name is supported by CogneeGraphProvider but not in the Protocol
-            results = await self._graph_provider.search(  # type: ignore[call-arg]
+            results = await self._graph_provider.search(  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
                 f"email client compatibility constraints for: {brief}",
-                dataset_name=dataset,
+                dataset_name=dataset,  # pyright: ignore[reportCallIssue]
                 top_k=5,
             )
             if not results:
@@ -535,7 +537,7 @@ class BlueprintEngine:
 
             from app.ai.blueprints.graph_context import format_graph_context
 
-            formatted = format_graph_context(results)
+            formatted = format_graph_context(results)  # pyright: ignore[reportUnknownArgumentType]
             return formatted.replace(
                 "--- GRAPH KNOWLEDGE CONTEXT ---",
                 "--- PROJECT COMPATIBILITY CONTEXT ---",

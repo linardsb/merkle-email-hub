@@ -49,7 +49,7 @@ dev = [
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.2",
-    "lxml-stubs>=0.5",
+    "types-lxml>=2026.2",
 ]
 
 [tool.ruff]
@@ -86,9 +86,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ANN", "ARG001", "D", "E731", "S105", "S106"]
-"test_*.py" = ["S101", "ANN", "ARG001", "D", "E731", "S105", "S106"]
-"**/tests/**/*.py" = ["S101", "ANN", "ARG001", "D", "E731", "S105", "S106"]
+"tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106"]
+"test_*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106"]
+"**/tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106"]
 "__init__.py" = ["F401"]
 "scripts/**/*.py" = ["T201"]
 "app/core/health.py" = ["B008", "ARG001"]
@@ -100,6 +100,7 @@ ignore = [
 
 "app/knowledge/routes.py" = ["ARG001"]
 "app/design_sync/routes.py" = ["B008", "ARG001"]
+"app/design_sync/figma/service.py" = ["ANN401"]
 
 "app/core/rate_limit.py" = ["B008"]
 

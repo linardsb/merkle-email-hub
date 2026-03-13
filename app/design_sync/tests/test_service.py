@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.design_sync.crypto import decrypt_token, encrypt_token
 from app.design_sync.exceptions import (
@@ -73,33 +74,33 @@ class TestProtocol:
 
 class TestDesignSyncService:
     @pytest.fixture
-    def mock_db(self):
-        db = AsyncMock()
+    def mock_db(self) -> AsyncMock:
+        db = AsyncMock(spec=AsyncSession)
         return db
 
     @pytest.fixture
-    def service(self, mock_db):
+    def service(self, mock_db: AsyncMock) -> DesignSyncService:
         return DesignSyncService(mock_db)
 
-    def test_unsupported_provider(self, service):
+    def test_unsupported_provider(self, service: DesignSyncService) -> None:
         with pytest.raises(UnsupportedProviderError, match="not supported"):
             service._get_provider("adobe_xd")
 
-    def test_supported_providers(self, service):
+    def test_supported_providers(self, service: DesignSyncService) -> None:
         for name in ("figma", "sketch", "canva"):
             provider = service._get_provider(name)
             assert isinstance(provider, DesignSyncProvider)
 
-    def test_provider_caching(self, service):
+    def test_provider_caching(self, service: DesignSyncService) -> None:
         p1 = service._get_provider("figma")
         p2 = service._get_provider("figma")
         assert p1 is p2
 
-    def test_extract_file_ref_figma(self, service):
+    def test_extract_file_ref_figma(self, service: DesignSyncService) -> None:
         ref = service._extract_file_ref("figma", "https://www.figma.com/design/abc123/My-File")
         assert ref == "abc123"
 
-    def test_extract_file_ref_stub(self, service):
+    def test_extract_file_ref_stub(self, service: DesignSyncService) -> None:
         url = "https://sketch.cloud/s/something"
         ref = service._extract_file_ref("sketch", url)
         assert ref == url

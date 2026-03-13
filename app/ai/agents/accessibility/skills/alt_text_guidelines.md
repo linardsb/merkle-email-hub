@@ -1,91 +1,160 @@
-# Alt Text Decision Tree & Guidelines
+<!-- L4 source: docs/SKILL_email-accessibility-wcag-aa.md section 3 -->
+<!-- Last synced: 2026-03-13 -->
 
-## Decision Tree: What Alt Text to Use
+# Email Image Accessibility — Alt Text & Image-Off Strategy
+
+Rules for every image type in HTML email. In email, images are blocked by
+default in many corporate clients (Outlook, Gmail) — alt text is often the
+**primary content**, not a fallback.
+
+---
+
+## Decision Tree
 
 ```
-Is the image decorative (no information)?
-├── Yes → alt="" (empty string, NOT missing)
-│   Examples: spacer GIFs, decorative borders, background patterns
+Is the image purely decorative (spacer, border, divider, tracking pixel)?
+├── Yes → alt="" + role="presentation" + aria-hidden="true"
 │
-└── No → Is the image inside a link?
-    ├── Yes → alt describes the link destination/action
-    │   Example: <a href="/sale"><img alt="Shop the summer sale" ...></a>
+└── No → Is the image inside a link (<a>)?
+    ├── Yes → Is there adjacent text linking to the same URL?
+    │   ├── Yes → Wrap both in single <a>, use alt="" on image
+    │   └── No → alt describes the link destination/action
     │
-    └── No → Is it a complex image (chart, diagram)?
-        ├── Yes → Brief alt + detailed description nearby
-        │   Example: alt="Q3 revenue chart — details below"
-        │
-        └── No → Write descriptive alt text
-            Example: alt="Woman using laptop at coffee shop"
+    └── No → Is it a complex image (chart, diagram, infographic)?
+        ├── Yes → Brief alt (key data point) + detailed text nearby
+        └── No → Descriptive alt text (max 125 characters)
 ```
 
-## Alt Text Rules
+---
 
-### Rule 1: Max 125 Characters
-Screen readers may truncate longer alt text. Be concise.
-- X "This is an image of a beautiful sunset over the ocean with orange and pink clouds reflected in the calm blue water while seagulls fly overhead"
-- O "Sunset over ocean with orange and pink clouds"
+## Meaningful Images — WCAG 1.1.1 (Level A)
 
-### Rule 2: Don't Start with "Image of" or "Photo of"
-Screen readers already announce it as an image.
-- X alt="Image of team members collaborating"
-- O alt="Team members collaborating around a whiteboard"
+Every `<img>` MUST have an `alt` attribute — no exceptions.
 
-### Rule 3: Include Relevant Details
-What information does this image convey that text doesn't?
-- Product image: include product name, color, key feature
-- Person image: include action or context, not physical description unless relevant
-- Location image: include place name and key visual element
+### By Image Type
 
-### Rule 4: Functional Images Describe the Action
-When an image is a link or button:
-- X alt="Arrow icon"
-- O alt="Next page"
-- X alt="Logo"
-- O alt="Acme Corp homepage"
+| Type | Alt Text Strategy | Example |
+|------|------------------|---------|
+| Product | Name + key detail + price | `alt="Blue cotton t-shirt, front view — $29.99"` |
+| Hero/banner | Scene + overlay text content | `alt="Summer Sale — Up to 50% off all styles"` |
+| Chart/graph | Key data point or trend | `alt="Q3 revenue up 15% — details below"` |
+| Icon | Action or meaning, not appearance | `alt="Email us"` not `alt="envelope icon"` |
+| CTA button | Action verb + object | `alt="Shop now"` not `alt="button"` |
+| Logo | Company name | `alt="Acme Corp"` |
+| Person/team | Name + context if relevant | `alt="Sarah Chen, CEO, at annual conference"` |
 
-### Rule 5: Decorative Images Use Empty Alt
-Spacer GIFs, border images, decorative icons alongside text:
+### Alt Text Rules
+
+1. **Max 125 characters** — screen readers may truncate longer text
+2. **Never start with "Image of" or "Photo of"** — screen readers already announce "image"
+3. **Describe purpose, not appearance** — convey what the image communicates in context
+4. **Functional images describe the action** — `alt="Next page"` not `alt="Arrow icon"`
+
+---
+
+## Decorative Images
+
+All decorative images need the triple treatment for cross-client safety:
+
 ```html
-<img src="spacer.gif" alt="" width="1" height="20" style="display:block;">
-<img src="decorative-line.png" alt="" width="600" height="2">
+<img src="spacer.gif" alt="" role="presentation" aria-hidden="true"
+     width="1" height="20" style="display:block;">
 ```
 
-## Context-Aware Alt Text
+### What Counts as Decorative
 
-### Hero Images
-Include the headline/message if the image contains text:
+- Spacer GIFs (still common in email templates)
+- Decorative divider/border images
+- Background pattern images used via `<img>` tag
+- Tracking pixels (1x1 open tracking)
+- Icons that duplicate adjacent text (e.g., phone icon next to "Call us: 555-0123")
+
+---
+
+## Image-Off Rendering (Email-Specific)
+
+Many corporate Outlook installations and Gmail block images by default. Email
+must be fully understandable with images off.
+
+### Styled Alt Text
+
+Email-specific technique — style the `<img>` tag so alt text renders on-brand:
+
 ```html
-<img alt="Summer Sale — Up to 50% off all styles" src="hero-banner.jpg" ...>
+<img src="hero.jpg" alt="Summer Sale — 50% Off"
+     width="600" height="200"
+     style="display:block; font-family:Arial,sans-serif;
+            font-size:24px; font-weight:bold; color:#1a1a1a;">
 ```
 
-### Product Images
-Include product name and distinguishing features:
+When images are blocked, the alt text renders with these styles.
+
+### Image-Off Design Principles
+
+- Critical information MUST be in live text (CTAs, pricing, deadlines, key messages)
+- CTA buttons: use bulletproof HTML/CSS buttons, not image buttons
+- Design "image-off first" — test every template with images disabled
+- Hero text baked into images is invisible without alt text
+
+---
+
+## Linked Images
+
+### Adjacent Image + Text Link (Same URL)
+
+The most common email a11y failure — causes double announcement:
+
 ```html
-<img alt="Classic White Cotton T-Shirt, front view" src="product-01.jpg" ...>
+<!-- BAD: Two separate links, screen reader announces twice -->
+<a href="/product"><img src="shoe.jpg" alt="Running Shoe"></a>
+<a href="/product">Running Shoe — $89</a>
+
+<!-- GOOD: Single link wrapper, image is decorative -->
+<a href="/product">
+  <img src="shoe.jpg" alt="" style="display:block;">
+  Running Shoe — $89
+</a>
 ```
 
-### Team/People Images
-Include name and context if relevant:
+### Logo Linking to Website
+
 ```html
-<img alt="Sarah Chen, CEO, speaking at the annual conference" src="ceo.jpg" ...>
+<a href="https://example.com">
+  <img src="logo.png" alt="Acme Corp — visit website" style="display:block;">
+</a>
 ```
 
-### Logo Images
-Use company name, optionally with "logo" for clarity:
+---
+
+## Animated GIFs
+
+- Must not flash more than 3 times per second (WCAG 2.3.1)
+- First frame must be meaningful — Outlook desktop shows only the first frame
+- Never convey critical information solely through animation
+- GIF file size affects load time; blank spaces while loading hurt comprehension
+
+---
+
+## SVG in Email
+
+Limited email client SVG support — always provide `<img>` fallback:
+
 ```html
-<img alt="Acme Corp" src="logo.png" ...>
+<svg role="img" aria-label="Descriptive label">
+  <title>Descriptive label</title>
+  <!-- SVG content -->
+</svg>
+<!-- Fallback for most email clients -->
+<img src="fallback.png" alt="Descriptive label" style="display:block;">
 ```
 
-### Icons Next to Text
-If the icon duplicates the adjacent text, use empty alt:
-```html
-<img alt="" src="phone-icon.png"> Call us: 555-0123
-```
+Decorative SVGs: `aria-hidden="true"` + no title/aria-label.
 
-### Social Media Icons
-Describe the action, not the icon:
-```html
-<a href="https://example.com/twitter"><img alt="Follow us on Twitter" ...></a>
-<a href="https://example.com/instagram"><img alt="See our Instagram" ...></a>
-```
+---
+
+## Background Images (VML)
+
+- Never convey critical information via CSS `background-image` alone
+- Outlook requires VML (`<v:rect>`) for background images — without it, no background renders
+- Always provide readable text content on top of background images
+- The `<td>` text is the accessible content; the VML fill is decorative

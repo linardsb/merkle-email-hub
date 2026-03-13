@@ -54,7 +54,7 @@ def _append_properties(
     """Append new CSS properties to css_properties.yaml."""
     props_path = _DATA_DIR / "css_properties.yaml"
     with props_path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {"properties": []}
+        data: dict[str, Any] = yaml.safe_load(f) or {"properties": []}
 
     feature_by_prop_id: dict[str, CanIEmailFeature] = {}
     for feat in features:
@@ -94,7 +94,7 @@ def _update_support_matrix(diff: SyncDiff) -> int:
     """Update support_matrix.yaml with new and changed entries."""
     support_path = _DATA_DIR / "support_matrix.yaml"
     with support_path.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {"support": []}
+        data: dict[str, Any] = yaml.safe_load(f) or {"support": []}
 
     entries: list[dict[str, Any]] = data.get("support", [])
 

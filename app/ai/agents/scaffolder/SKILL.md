@@ -24,7 +24,11 @@ references:
   - skills/maizzle_syntax.md
   - skills/client_compatibility.md
   - skills/mso_vml_quick_ref.md
-  - skills/html_email_components.md
+  - skills/email_structure.md
+l4_sources:
+  - docs/SKILL_outlook-mso-fallback-reference.md
+  - docs/SKILL_html-email-components.md
+  - docs/SKILL_email-dark-mode-dom-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

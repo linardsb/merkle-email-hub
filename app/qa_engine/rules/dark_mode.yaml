@@ -1,0 +1,178 @@
+# Dark Mode Rules — Semantic validation of email dark mode implementation
+# Source: docs/email-dark-mode-dom-reference.md
+# Used by: app/qa_engine/checks/dark_mode.py
+
+rules:
+  # ─── Group A: Meta Tag Declarations ───
+
+  - id: "dm-color-scheme-meta"
+    group: "meta_tags"
+    name: "color-scheme meta tag present and valid"
+    check: "custom"
+    custom_fn: "dm_color_scheme_meta"
+    deduction_key: "deduction_missing_color_scheme"
+    default_deduction: 0.15
+    message: "Missing or invalid <meta name='color-scheme' content='light dark'> in <head>"
+
+  - id: "dm-supported-color-schemes"
+    group: "meta_tags"
+    name: "supported-color-schemes meta tag present"
+    check: "custom"
+    custom_fn: "dm_supported_color_schemes"
+    deduction_key: "deduction_missing_supported"
+    default_deduction: 0.05
+    message: "Missing <meta name='supported-color-schemes'> companion tag for older Apple Mail"
+
+  - id: "dm-css-color-scheme"
+    group: "meta_tags"
+    name: "CSS color-scheme property on :root"
+    check: "custom"
+    custom_fn: "dm_css_color_scheme_property"
+    deduction_key: "deduction_missing_css_color_scheme"
+    default_deduction: 0.05
+    message: "Missing 'color-scheme: light dark' CSS property on :root — Apple Mail/iOS Mail use this"
+
+  - id: "dm-meta-in-head"
+    group: "meta_tags"
+    name: "color-scheme meta is in <head> not <body>"
+    check: "custom"
+    custom_fn: "dm_meta_placement"
+    deduction_key: "deduction_meta_misplaced"
+    default_deduction: 0.10
+    message: "color-scheme meta tag found in <body> instead of <head>"
+
+  # ─── Group B: Media Query Validation ───
+
+  - id: "dm-media-query-exists"
+    group: "media_queries"
+    name: "@media (prefers-color-scheme: dark) block present"
+    check: "custom"
+    custom_fn: "dm_media_query_present"
+    deduction_key: "deduction_no_media_query"
+    default_deduction: 0.25
+    message: "No @media (prefers-color-scheme: dark) block found"
+
+  - id: "dm-media-query-not-empty"
+    group: "media_queries"
+    name: "Dark mode media query contains color declarations"
+    check: "custom"
+    custom_fn: "dm_media_query_has_colors"
+    deduction_key: "deduction_empty_media_query"
+    default_deduction: 0.20
+    message: "prefers-color-scheme: dark block exists but contains no color properties"
+
+  - id: "dm-media-query-important"
+    group: "media_queries"
+    name: "Dark mode declarations use !important"
+    check: "custom"
+    custom_fn: "dm_media_query_important"
+    deduction_key: "deduction_missing_important"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_dm_issues_reported"
+    default_cap: 5
+    message: "Dark mode CSS declaration missing !important — inline styles will override"
+
+  # ─── Group C: Outlook Selectors ───
+
+  - id: "dm-outlook-ogsc-present"
+    group: "outlook_selectors"
+    name: "[data-ogsc] Outlook.com text color selectors"
+    check: "custom"
+    custom_fn: "dm_ogsc_present"
+    deduction_key: "deduction_no_ogsc"
+    default_deduction: 0.10
+    message: "No [data-ogsc] selectors — Outlook.com will force-invert text colors"
+
+  - id: "dm-outlook-ogsb-present"
+    group: "outlook_selectors"
+    name: "[data-ogsb] Outlook.com background selectors"
+    check: "custom"
+    custom_fn: "dm_ogsb_present"
+    deduction_key: "deduction_no_ogsb"
+    default_deduction: 0.10
+    message: "No [data-ogsb] selectors — Outlook.com will force-invert background colors"
+
+  - id: "dm-outlook-selectors-not-empty"
+    group: "outlook_selectors"
+    name: "Outlook selectors contain actual declarations"
+    check: "custom"
+    custom_fn: "dm_outlook_selectors_have_content"
+    deduction_key: "deduction_empty_outlook"
+    default_deduction: 0.10
+    message: "Outlook [data-ogsc]/[data-ogsb] selectors present but contain no CSS declarations"
+
+  # ─── Group D: Color Coherence ───
+
+  - id: "dm-no-white-on-white"
+    group: "color_coherence"
+    name: "No white-on-white in dark mode"
+    check: "custom"
+    custom_fn: "dm_no_invisible_text"
+    deduction_key: "deduction_invisible_text"
+    default_deduction: 0.20
+    per_element: true
+    cap_key: "max_dm_issues_reported"
+    default_cap: 3
+    message: "Potential invisible text in dark mode — foreground and background too similar"
+
+  - id: "dm-contrast-ratio"
+    group: "color_coherence"
+    name: "Dark mode color pairs meet WCAG AA contrast"
+    check: "custom"
+    custom_fn: "dm_contrast_ratio"
+    deduction_key: "deduction_low_contrast"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_dm_issues_reported"
+    default_cap: 5
+    message: "Dark mode color pair fails WCAG AA 4.5:1 contrast ratio"
+
+  - id: "dm-dark-values-are-dark"
+    group: "color_coherence"
+    name: "Dark mode backgrounds are actually dark"
+    check: "custom"
+    custom_fn: "dm_backgrounds_are_dark"
+    deduction_key: "deduction_light_dark_bg"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_dm_issues_reported"
+    default_cap: 3
+    message: "Dark mode background color has high luminance — should be dark"
+
+  # ─── Group E: Image Handling ───
+
+  - id: "dm-image-swap-alt"
+    group: "image_handling"
+    name: "Dark mode swap images have correct alt text"
+    check: "custom"
+    custom_fn: "dm_image_swap_alt"
+    deduction_key: "deduction_swap_img_alt"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_dm_issues_reported"
+    default_cap: 3
+    message: "Dark mode swap image should have alt='' to avoid duplicate screen reader announcements"
+
+  - id: "dm-hidden-img-mso-hide"
+    group: "image_handling"
+    name: "Hidden dark mode images use mso-hide:all"
+    check: "custom"
+    custom_fn: "dm_hidden_img_mso"
+    deduction_key: "deduction_no_mso_hide"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_dm_issues_reported"
+    default_cap: 3
+    message: "Dark mode swap image hidden by default should include 'mso-hide: all' for Outlook"
+
+  # ─── Group F: Backward Compatibility (presence checks) ───
+
+  - id: "dm-any-dark-mode-support"
+    group: "presence"
+    name: "Any dark mode support exists"
+    check: "custom"
+    custom_fn: "dm_any_support_present"
+    deduction_key: "deduction_no_dark_mode"
+    default_deduction: 0.30
+    message: "No dark mode support detected — no meta tags, no media queries, no Outlook selectors"

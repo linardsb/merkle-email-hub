@@ -72,7 +72,7 @@ class TestGenerateCompatibilityBrief:
         """total_risky_properties should be the union of all unsupported across clients."""
         brief = generate_compatibility_brief(["gmail_web", "outlook_2019_win"])
         assert brief is not None
-        all_css = set()
+        all_css: set[str] = set()
         for c in brief.clients:
             all_css.update(p.css for p in c.unsupported_properties)
         assert brief.total_risky_properties == len(all_css)

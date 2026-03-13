@@ -22,10 +22,14 @@ class CanIEmailFeature:
 class SyncDiff:
     """Delta between current ontology and incoming Can I Email data."""
 
-    new_clients: list[str] = field(default_factory=list)
-    new_properties: list[str] = field(default_factory=list)
-    updated_support: list[tuple[str, str, str, str]] = field(default_factory=list)
-    new_support: list[tuple[str, str, str]] = field(default_factory=list)
+    new_clients: list[str] = field(default_factory=lambda: list[str]())
+    new_properties: list[str] = field(default_factory=lambda: list[str]())
+    updated_support: list[tuple[str, str, str, str]] = field(
+        default_factory=lambda: list[tuple[str, str, str, str]]()
+    )
+    new_support: list[tuple[str, str, str]] = field(
+        default_factory=lambda: list[tuple[str, str, str]]()
+    )
     unchanged_count: int = 0
 
     @property

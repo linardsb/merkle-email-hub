@@ -43,9 +43,9 @@ class TestQAProfileConfig:
 class TestLoadDefaults:
     def test_loads_yaml(self) -> None:
         profile = load_defaults()
-        assert profile.file_size.params.get("max_size_kb") == 102
+        assert profile.file_size.params.get("gmail_threshold_kb") == 102
         assert profile.brand_compliance.enabled is False
-        assert len(profile.spam_score.params.get("triggers", [])) == 10
+        assert profile.spam_score.params.get("max_triggers_reported") == 10
 
     def test_cached(self) -> None:
         p1 = load_defaults()
@@ -61,12 +61,12 @@ class TestMergeProfile:
 
     def test_override_single_check(self) -> None:
         defaults = load_defaults()
-        merged = merge_profile(defaults, {"file_size": {"params": {"max_size_kb": 75}}})
-        assert merged.file_size.params["max_size_kb"] == 75
+        merged = merge_profile(defaults, {"file_size": {"params": {"gmail_threshold_kb": 75}}})
+        assert merged.file_size.params["gmail_threshold_kb"] == 75
         # Other checks unaffected
-        assert merged.spam_score.params.get("triggers") == defaults.spam_score.params.get(
-            "triggers"
-        )
+        assert merged.spam_score.params.get(
+            "max_triggers_reported"
+        ) == defaults.spam_score.params.get("max_triggers_reported")
 
     def test_disable_check(self) -> None:
         defaults = load_defaults()
@@ -88,32 +88,33 @@ class TestCheckWithConfig:
         from app.qa_engine.checks.file_size import FileSizeCheck
 
         check = FileSizeCheck()
-        html = "x" * (50 * 1024)  # 50KB
+        html = "x" * (80 * 1024)  # 80KB — exceeds Yahoo 75KB by default
 
-        # Default: passes (under 102KB)
+        # Default: fails (over Yahoo 75KB threshold)
         result_default = await check.run(html)
-        assert result_default.passed is True
+        assert result_default.passed is False
 
-        # Custom: fails (over 40KB)
-        config = QACheckConfig(params={"max_size_kb": 40})
+        # Custom: raise Yahoo threshold above 80KB so it passes
+        config = QACheckConfig(params={"yahoo_threshold_kb": 90})
         result_custom = await check.run(html, config)
-        assert result_custom.passed is False
+        assert result_custom.passed is True
 
     @pytest.mark.anyio
-    async def test_spam_custom_triggers(self) -> None:
+    async def test_spam_custom_config(self) -> None:
         from app.qa_engine.checks.spam_score import SpamScoreCheck
 
         check = SpamScoreCheck()
-        html = "<p>Get your free samples today</p>"
+        # HTML with excessive punctuation
+        html = "<html><body><p>Amazing offer!!!! Act now!!!</p></body></html>"
 
-        # Default triggers include "free"
+        # Default: punctuation deduction is 0.10
         result_default = await check.run(html)
-        assert result_default.score < 1.0
+        default_score = result_default.score
 
-        # Custom: empty triggers = always clean
-        config = QACheckConfig(params={"triggers": []})
+        # Custom: increase punctuation deduction
+        config = QACheckConfig(params={"deduction_excessive_punctuation": 0.30})
         result_custom = await check.run(html, config)
-        assert result_custom.score == 1.0
+        assert result_custom.score < default_score
 
     @pytest.mark.anyio
     async def test_dark_mode_custom_deduction(self) -> None:
@@ -122,14 +123,24 @@ class TestCheckWithConfig:
         check = DarkModeCheck()
         html = "<html><body>Hello</body></html>"  # Missing all dark mode features
 
-        # Default deduction: 0.33 per issue (3 issues = 0.01)
+        # Default: many rules trigger with standard deductions, score very low
         result_default = await check.run(html)
         assert result_default.score < 0.1
 
-        # Custom: smaller deduction (0.1 per issue, 3 issues = 0.7)
-        config = QACheckConfig(params={"deduction_per_issue": 0.1})
+        # Custom: reduce all deductions to minimal values
+        config = QACheckConfig(
+            params={
+                "deduction_missing_color_scheme": 0.01,
+                "deduction_missing_supported": 0.01,
+                "deduction_missing_css_color_scheme": 0.01,
+                "deduction_no_media_query": 0.01,
+                "deduction_no_ogsc": 0.01,
+                "deduction_no_ogsb": 0.01,
+                "deduction_no_dark_mode": 0.01,
+            }
+        )
         result_custom = await check.run(html, config)
-        assert result_custom.score == 0.7
+        assert result_custom.score > 0.9
 
     @pytest.mark.anyio
     async def test_disabled_check_skipped_in_service(self) -> None:

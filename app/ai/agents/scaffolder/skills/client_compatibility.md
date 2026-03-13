@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_html-email-components.md sections 12-13, docs/SKILL_email-dark-mode-dom-reference.md section 18 -->
+<!-- Last synced: 2026-03-13 -->
+
 # Email Client Compatibility Reference
 
 ## CSS Property Support Matrix
@@ -55,6 +58,11 @@
 - Auto-links URLs, dates, addresses, phone numbers
 - Prevent with zero-width non-joiner: `&zwnj;` or `<span>` wrapping
 
+### Gmail Dark Mode
+- Strips `<style>` blocks, ignores `@media (prefers-color-scheme: dark)`
+- Uses forced color inversion — no developer control
+- Only approach: defensive color choices (avoid pure `#ffffff`/`#000000`)
+
 ## Outlook-Specific Constraints
 
 - Uses Word rendering engine (Outlook 2007-2019, Microsoft 365 desktop)
@@ -62,12 +70,15 @@
 - No CSS `max-width`, `border-radius`, `background-image`, `opacity`
 - Tables are the ONLY reliable layout mechanism
 - Set width via HTML `width` attribute AND CSS `width` property
+- VML `fillcolor` may be inverted in dark mode — no reliable override
 
 ## Apple Mail
 
 - Best CSS support of any email client
 - Supports `<style>`, media queries, `border-radius`, `background-image`
-- Supports dark mode via `prefers-color-scheme`
+- Full `@media (prefers-color-scheme: dark)` support
+- Supports `<picture><source media="(prefers-color-scheme: dark)">` for image swap
+- `color-scheme: light only` prevents dark mode inversion
 - Can be used as the "ideal" target — others degrade gracefully
 
 ## Yahoo Mail
@@ -76,3 +87,34 @@
 - Strips `id` attributes
 - Renames CSS class names (prefix with `.yiv`)
 - Limited media query support in mobile app
+- Limited/inconsistent dark mode support
+
+## Samsung Mail
+
+- Supports `@media (prefers-color-scheme: dark)` (Android 9+)
+- Caution: applies BOTH your dark styles AND its own partial inversion — double-inversion risk
+- Use `!important` on all dark mode declarations
+
+## Dark Mode Support Matrix
+
+| Feature | Apple Mail | Outlook.com | Outlook Desktop | Gmail | Samsung |
+|---------|-----------|-------------|----------------|-------|---------|
+| `color-scheme` meta | Yes | No | No | Stripped | No |
+| `prefers-color-scheme` | Yes | No | No | No | Yes |
+| `[data-ogsc]`/`[data-ogsb]` | No | Yes | No | No | No |
+| `<picture>` dark swap | Yes | No | No | No | No |
+| Developer control | Full | Partial | None | None | Partial |
+
+## Client Targeting Selectors
+
+```css
+/* WebKit (Apple Mail, iOS) */
+@media screen and (-webkit-min-device-pixel-ratio: 0) { }
+
+/* Mozilla (Thunderbird) */
+@media all and (min--moz-device-pixel-ratio: 0) { }
+
+/* Outlook.com dark mode */
+[data-ogsc] .text { color: #fff !important; }
+[data-ogsb] .bg { background-color: #1a1a1a !important; }
+```

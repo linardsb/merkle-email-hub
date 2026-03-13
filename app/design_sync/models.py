@@ -1,6 +1,7 @@
 """Database models for design tool sync."""
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSON
@@ -47,7 +48,7 @@ class DesignTokenSnapshot(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
-    tokens_json: Mapped[dict] = mapped_column(JSON, nullable=False)  # type: ignore[type-arg]
+    tokens_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     extracted_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     connection: Mapped["DesignConnection"] = relationship(back_populates="snapshots")

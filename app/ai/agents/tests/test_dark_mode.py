@@ -17,11 +17,13 @@ _SAMPLE_HTML = (
     '<meta name="color-scheme" content="light dark">'
     '<meta name="supported-color-schemes" content="light dark">'
     "<style>"
+    ":root { color-scheme: light dark; }"
     "@media (prefers-color-scheme: dark) {"
     "  .dark-bg { background-color: #1a1a2e !important; }"
-    "  [data-ogsc] .dark-text { color: #e0e0e0 !important; }"
-    "  [data-ogsb] .dark-bg { background-color: #1a1a2e !important; }"
+    "  .dark-text { color: #e0e0e0 !important; }"
     "}"
+    "[data-ogsc] .dark-text { color: #e0e0e0; }"
+    "[data-ogsb] .dark-bg { background-color: #1a1a2e; }"
     "</style>"
     "</head><body>"
     '<table role="presentation"><tr><td class="dark-bg dark-text">Hello</td></tr></table>'

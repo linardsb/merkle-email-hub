@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_email-dark-mode-dom-reference.md section 11 -->
+<!-- Last synced: 2026-03-13 -->
+
 # Color Remapping Strategies
 
 ## Strategy 1: Auto-Remapping (Default)
@@ -46,6 +49,47 @@ For maximum accessibility:
 - Text: #ffffff
 - Links: #6cb4ff (light blue)
 - Borders: #404040
+
+## Forced Inversion Survival Patterns
+
+How colors behave when email clients forcibly invert (Outlook desktop, Gmail):
+
+### Background Survival
+| Color | Inversion Behavior |
+|-------|-------------------|
+| #ffffff (pure white) | Always inverted to dark — avoid if preserving background |
+| #f5f5f5 to #fafafa (off-white) | Sometimes inverted, sometimes not — less predictable |
+| #e0e0e0 to #eeeeee (light gray) | Usually inverted |
+| #666666 to #999999 (mid-gray) | **Unpredictable zone** — may or may not invert |
+| #333333 to #444444 (dark gray) | Usually NOT inverted (already dark) |
+| #1a1a1a to #222222 (near-black) | Never inverted |
+| #000000 (pure black) | Never inverted |
+
+### Text Survival
+| Color | Inversion Behavior |
+|-------|-------------------|
+| #000000 (pure black) | Always inverted to light/white |
+| #333333 (dark gray) | Usually inverted to light gray |
+| #666666 (mid-gray) | Unpredictable |
+| #cccccc (light gray) | Usually NOT inverted (already light) |
+| #ffffff (white) | Never inverted |
+
+### Accent Color Survival
+| Pattern | Inversion Behavior |
+|---------|-------------------|
+| High saturation + high brightness (#ffcc00) | Likely inverted or muted |
+| High saturation + medium brightness (#1a73e8) | May or may not be inverted |
+| High saturation + low brightness (#0d47a1) | Usually NOT inverted |
+| Low saturation / pastels (#e3f2fd) | Likely inverted |
+
+## Magic Color Values
+
+Specific color values that may cause Outlook to skip inversion:
+
+- `#010101` vs `#000000` — Outlook may treat pure black differently from near-black; `#010101` is more reliably left alone
+- `#fefefe` vs `#ffffff` — near-white may be treated differently from pure white; `#fefefe` avoids some forced-inversion triggers
+
+**Warning:** These are anecdotal and version-dependent. Do not rely on them as the sole strategy — use as an additional defense alongside `[data-ogsc]`/`[data-ogsb]` overrides.
 
 ## WCAG AA Contrast Formula
 

@@ -14,7 +14,7 @@ class TestCampaignBlueprint:
 
     @pytest.fixture
     def valid_html_response(self) -> CompletionResponse:
-        """LLM response with valid HTML that passes QA checks."""
+        """LLM response with valid HTML that passes all 10 QA checks."""
         return CompletionResponse(
             content=(
                 "```html\n"
@@ -22,17 +22,24 @@ class TestCampaignBlueprint:
                 'xmlns:o="urn:schemas-microsoft-com:office:office">\n<head>\n'
                 '<meta charset="utf-8">\n'
                 '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-                '<title>Test Email</title>\n'
+                "<title>Test Email</title>\n"
                 '<meta name="color-scheme" content="light dark">\n'
+                '<meta name="supported-color-schemes" content="light dark">\n'
                 "<style>\n"
-                "@media (prefers-color-scheme: dark) { .dark-bg { background-color: #1a1a1a; } }\n"
-                "[data-ogsc] .dark-bg { background-color: #1a1a1a; }\n"
+                ":root { color-scheme: light dark; }\n"
+                "@media (prefers-color-scheme: dark) {\n"
+                "  .dark-bg { background-color: #1a1a1a !important; }\n"
+                "  .dark-text { color: #e0e0e0 !important; }\n"
+                "}\n"
+                "[data-ogsc] .dark-text { color: #e0e0e0; }\n"
+                "[data-ogsb] .dark-bg { background-color: #1a1a1a; }\n"
                 "</style>\n"
                 "<!--[if mso]><xml><o:OfficeDocumentSettings>"
                 "<o:PixelsPerInch>96</o:PixelsPerInch>"
                 "</o:OfficeDocumentSettings></xml><![endif]-->\n"
                 "</head>\n<body>\n"
                 '<table role="presentation" width="600">\n'
+                "<tr><td><h1>Welcome</h1></td></tr>\n"
                 '<tr><td><img src="https://example.com/hero.png" alt="Hero image" '
                 'width="600" height="300"></td></tr>\n'
                 '<tr><td><a href="https://example.com">Visit us</a></td></tr>\n'

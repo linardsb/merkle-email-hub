@@ -55,7 +55,7 @@ class RuleResult:
 
     rule_id: str
     passed: bool
-    issues: list[str] = field(default_factory=list)
+    issues: list[str] = field(default_factory=lambda: list[str]())
     deduction: float = 0.0
 
 
@@ -506,7 +506,7 @@ def _check_children_match(
 
     for el in elements:
         children = [c for c in el if isinstance(c.tag, str)]
-        if not children or children[0].tag.lower() != rule.value:
+        if not children or str(children[0].tag).lower() != rule.value:
             if len(issues) == 0:
                 issues.append(rule.message)
                 total += deduction

@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from app.ai.blueprints.audience_context import AudienceConstraint, AudienceProfile
+from app.ai.blueprints.protocols import NodeType
 from app.ai.blueprints.route_advisor import (
     build_routing_plan,
     is_node_relevant,
@@ -215,18 +216,18 @@ class TestEngineNodeSkipping:
         from app.ai.blueprints.protocols import NodeContext, NodeResult
 
         class FakeDarkMode:
-            name = "dark_mode"
-            node_type = "agentic"
+            name: str = "dark_mode"
+            node_type: NodeType = "agentic"
 
-            async def execute(self, _ctx: NodeContext) -> NodeResult:
+            async def execute(self, context: NodeContext) -> NodeResult:
                 raise AssertionError("Should not be called when skipped")
 
         class FakeQAGate:
-            name = "qa_gate"
-            node_type = "deterministic"
+            name: str = "qa_gate"
+            node_type: NodeType = "deterministic"
 
-            async def execute(self, ctx: NodeContext) -> NodeResult:
-                return NodeResult(status="success", html=ctx.html, details="All checks passed")
+            async def execute(self, context: NodeContext) -> NodeResult:
+                return NodeResult(status="success", html=context.html, details="All checks passed")
 
         definition = BlueprintDefinition(
             name="test",
@@ -254,18 +255,18 @@ class TestEngineNodeSkipping:
         from app.ai.blueprints.protocols import NodeContext, NodeResult
 
         class FakeDarkMode:
-            name = "dark_mode"
-            node_type = "agentic"
+            name: str = "dark_mode"
+            node_type: NodeType = "agentic"
 
-            async def execute(self, _ctx: NodeContext) -> NodeResult:
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(status="success", html="<html>dark</html>")
 
         class FakeQAGate:
-            name = "qa_gate"
-            node_type = "deterministic"
+            name: str = "qa_gate"
+            node_type: NodeType = "deterministic"
 
-            async def execute(self, ctx: NodeContext) -> NodeResult:
-                return NodeResult(status="success", html=ctx.html)
+            async def execute(self, context: NodeContext) -> NodeResult:
+                return NodeResult(status="success", html=context.html)
 
         definition = BlueprintDefinition(
             name="test",
@@ -289,10 +290,10 @@ class TestEngineNodeSkipping:
         from app.ai.blueprints.protocols import NodeContext, NodeResult
 
         class FakeDarkMode:
-            name = "dark_mode"
-            node_type = "agentic"
+            name: str = "dark_mode"
+            node_type: NodeType = "agentic"
 
-            async def execute(self, _ctx: NodeContext) -> NodeResult:
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(status="success", html="<html>dark</html>")
 
         definition = BlueprintDefinition(
@@ -314,17 +315,17 @@ class TestEngineNodeSkipping:
         from app.ai.blueprints.protocols import NodeContext, NodeResult
 
         class FakeOutlookFixer:
-            name = "outlook_fixer"
-            node_type = "agentic"
+            name: str = "outlook_fixer"
+            node_type: NodeType = "agentic"
 
-            async def execute(self, _ctx: NodeContext) -> NodeResult:
+            async def execute(self, context: NodeContext) -> NodeResult:
                 raise AssertionError("Should not be called when skipped")
 
         class FakeScaffolder:
-            name = "scaffolder"
-            node_type = "agentic"
+            name: str = "scaffolder"
+            node_type: NodeType = "agentic"
 
-            async def execute(self, _ctx: NodeContext) -> NodeResult:
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(status="success", html="<html>scaffolded</html>")
 
         definition = BlueprintDefinition(

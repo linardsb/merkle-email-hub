@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any, cast
 
 import httpx
 
@@ -77,8 +78,8 @@ class FigmaDesignSyncService:
                 headers=headers,
             )
 
-        file_data = file_resp.json()
-        styles_data = styles_resp.json() if styles_resp.status_code == 200 else {}
+        file_data: dict[str, Any] = file_resp.json()
+        styles_data: dict[str, Any] = styles_resp.json() if styles_resp.status_code == 200 else {}
 
         colors = self._parse_colors(file_data, styles_data)
         typography = self._parse_typography(file_data, styles_data)
@@ -95,28 +96,32 @@ class FigmaDesignSyncService:
 
     def _parse_colors(
         self,
-        file_data: dict[str, object],
-        styles_data: dict[str, object],  # noqa: ARG002
+        file_data: dict[str, Any],
+        styles_data: dict[str, Any],  # noqa: ARG002
     ) -> list[ExtractedColor]:
         """Extract colour tokens from styles metadata."""
         colors: list[ExtractedColor] = []
-        styles = file_data.get("styles", {})
-        if not isinstance(styles, dict):
+        raw_styles = file_data.get("styles", {})
+        if not isinstance(raw_styles, dict):
             return colors
+        styles = cast(dict[str, Any], raw_styles)
 
         for style_id, style_meta in styles.items():
             if not isinstance(style_meta, dict):
                 continue
-            if style_meta.get("styleType") != "FILL":
+            style_meta_d = cast(dict[str, Any], style_meta)
+            if style_meta_d.get("styleType") != "FILL":
                 continue
-            name = str(style_meta.get("name", f"Color-{style_id}"))
+            name = str(style_meta_d.get("name", f"Color-{style_id}"))
             # Try to find colour from style node
             fills = self._find_fills_for_style(file_data, str(style_id))
             if fills:
                 fill = fills[0]
                 if isinstance(fill, dict) and "color" in fill:
-                    c = fill["color"]
-                    if isinstance(c, dict):
+                    fill_d = cast(dict[str, Any], fill)
+                    color_raw = fill_d["color"]
+                    if isinstance(color_raw, dict):
+                        c = cast(dict[str, Any], color_raw)
                         hex_val = _rgba_to_hex(
                             float(c.get("r", 0)),
                             float(c.get("g", 0)),
@@ -128,35 +133,38 @@ class FigmaDesignSyncService:
 
     def _parse_typography(
         self,
-        file_data: dict[str, object],
-        styles_data: dict[str, object],  # noqa: ARG002
+        file_data: dict[str, Any],
+        styles_data: dict[str, Any],  # noqa: ARG002
     ) -> list[ExtractedTypography]:
         """Extract typography tokens from styles metadata."""
         typography: list[ExtractedTypography] = []
-        styles = file_data.get("styles", {})
-        if not isinstance(styles, dict):
+        raw_styles = file_data.get("styles", {})
+        if not isinstance(raw_styles, dict):
             return typography
+        styles = cast(dict[str, Any], raw_styles)
 
         for style_id, style_meta in styles.items():
             if not isinstance(style_meta, dict):
                 continue
-            if style_meta.get("styleType") != "TEXT":
+            style_meta_d = cast(dict[str, Any], style_meta)
+            if style_meta_d.get("styleType") != "TEXT":
                 continue
-            name = str(style_meta.get("name", f"Type-{style_id}"))
+            name = str(style_meta_d.get("name", f"Type-{style_id}"))
             type_props = self._find_type_style_for_style(file_data, str(style_id))
             if type_props and isinstance(type_props, dict):
+                tp = cast(dict[str, Any], type_props)
                 typography.append(
                     ExtractedTypography(
                         name=name,
-                        family=str(type_props.get("fontFamily", "Unknown")),
-                        weight=str(type_props.get("fontWeight", "400")),
-                        size=float(type_props.get("fontSize", 16)),
-                        line_height=float(type_props.get("lineHeightPx", 24)),
+                        family=str(tp.get("fontFamily", "Unknown")),
+                        weight=str(tp.get("fontWeight", "400")),
+                        size=float(tp.get("fontSize", 16)),
+                        line_height=float(tp.get("lineHeightPx", 24)),
                     )
                 )
         return typography
 
-    def _parse_spacing(self, file_data: dict[str, object]) -> list[ExtractedSpacing]:
+    def _parse_spacing(self, file_data: dict[str, Any]) -> list[ExtractedSpacing]:
         """Extract spacing from auto-layout frames in the document tree."""
         spacing: list[ExtractedSpacing] = []
         seen: set[float] = set()
@@ -165,41 +173,44 @@ class FigmaDesignSyncService:
 
     def _walk_for_spacing(
         self,
-        node: object,
+        node: Any,
         spacing: list[ExtractedSpacing],
         seen: set[float],
     ) -> None:
         if not isinstance(node, dict):
             return
+        node_d = cast(dict[str, Any], node)
         # Auto-layout frames expose itemSpacing / paddingLeft etc.
         for key in ("itemSpacing", "paddingLeft", "paddingTop"):
-            val = node.get(key)
+            val: Any = node_d.get(key)
             if isinstance(val, (int, float)) and val > 0 and val not in seen:
                 seen.add(float(val))
                 spacing.append(ExtractedSpacing(name=f"spacing-{int(val)}", value=float(val)))
-        for child in node.get("children", []):
+        for child in cast(list[Any], node_d.get("children", [])):
             self._walk_for_spacing(child, spacing, seen)
 
-    def _find_fills_for_style(self, file_data: dict[str, object], style_id: str) -> list[object]:
+    def _find_fills_for_style(self, file_data: dict[str, Any], style_id: str) -> list[Any]:
         """Walk document tree looking for a node that references this style."""
         return self._walk_for_style_property(file_data.get("document", {}), style_id, "fills")
 
-    def _find_type_style_for_style(self, file_data: dict[str, object], style_id: str) -> object:
+    def _find_type_style_for_style(self, file_data: dict[str, Any], style_id: str) -> Any:
         """Walk document tree looking for a node with this text style."""
         results = self._walk_for_style_property(file_data.get("document", {}), style_id, "style")
         return results[0] if results else None
 
-    def _walk_for_style_property(self, node: object, style_id: str, prop: str) -> list[object]:
+    def _walk_for_style_property(self, node: Any, style_id: str, prop: str) -> list[Any]:
         """Recursively search for a node referencing the given style ID."""
         if not isinstance(node, dict):
             return []
-        node_styles = node.get("styles", {})
+        node_d = cast(dict[str, Any], node)
+        node_styles = node_d.get("styles", {})
         if isinstance(node_styles, dict):
-            for _key, sid in node_styles.items():
-                if str(sid) == style_id and prop in node:
-                    return [node[prop]]
-        results: list[object] = []
-        for child in node.get("children", []):
+            node_styles_d = cast(dict[str, Any], node_styles)
+            for _key, sid in node_styles_d.items():
+                if str(sid) == style_id and prop in node_d:
+                    return [node_d[prop]]
+        results: list[Any] = []
+        for child in cast(list[Any], node_d.get("children", [])):
             results.extend(self._walk_for_style_property(child, style_id, prop))
             if results:
                 return results

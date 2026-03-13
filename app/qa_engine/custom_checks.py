@@ -13,10 +13,23 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
+from pathlib import Path
+from typing import Any
 
 from lxml.html import HtmlElement
 
 from app.qa_engine.check_config import QACheckConfig
+from app.qa_engine.dark_mode_parser import (
+    _COLOR_PROPERTIES as _DM_COLOR_PROPERTIES,
+)
+from app.qa_engine.dark_mode_parser import (
+    _hex_to_luminance,
+    _parse_css_color,
+    get_cached_dm_result,
+)
+from app.qa_engine.file_size_analyzer import get_cached_result as get_fs_cached_result
+from app.qa_engine.link_parser import get_cached_link_result
+from app.qa_engine.mso_parser import get_cached_result
 from app.qa_engine.rule_engine import register_custom_check
 
 # --- Constants ---
@@ -655,7 +668,7 @@ def interactive_elements(
     # Details/Summary
     for details in doc.iter("details"):
         children = [c for c in details if isinstance(c.tag, str)]
-        if not children or children[0].tag.lower() != "summary":
+        if not children or str(children[0].tag).lower() != "summary":
             issues.append("<details> must have <summary> as first child")
             total += deduction
 
@@ -1210,8 +1223,7 @@ def redundant_links(
             if href1 and href1 == href2:
                 if len(issues) < cap:
                     issues.append(
-                        "Redundant adjacent links to same URL — "
-                        "wrap image and text in a single <a>"
+                        "Redundant adjacent links to same URL — wrap image and text in a single <a>"
                     )
                 total += deduction
 
@@ -1604,3 +1616,1071 @@ register_custom_check("dark_unsafe_colors", dark_unsafe_colors)
 register_custom_check("dark_no_overrides", dark_no_overrides)
 register_custom_check("input_label", input_label)
 register_custom_check("required_aria", required_aria)
+
+
+# ─── MSO Fallback Custom Checks ─── (delegates to mso_parser module)
+
+
+def _mso_param(config: QACheckConfig | None, key: str, default: float = 0.0) -> float:
+    """Resolve an MSO check parameter from config or default."""
+    if config:
+        return float(config.params.get(key, default))
+    return default
+
+
+def mso_balanced_pairs(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check MSO conditional opener/closer balance."""
+    result = get_cached_result(raw_html)
+    issues = [i.message for i in result.issues if i.category == "balanced_pair"]
+    deduction = _mso_param(config, "deduction_unbalanced_pair", 0.25) * len(issues)
+    return issues, deduction
+
+
+def mso_conditional_syntax(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check MSO conditional expression syntax validity."""
+    result = get_cached_result(raw_html)
+    issues = [i.message for i in result.issues if i.category == "syntax"]
+    deduction = _mso_param(config, "deduction_invalid_syntax", 0.15) * len(issues)
+    return issues, deduction
+
+
+def mso_vml_nesting(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check VML elements are inside MSO conditional blocks."""
+    result = get_cached_result(raw_html)
+    issues = [i.message for i in result.issues if i.category == "vml_orphan"]
+    deduction = _mso_param(config, "deduction_vml_orphan", 0.20) * len(issues)
+    return issues, deduction
+
+
+def mso_namespace_validation(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check VML/Office namespace declarations when VML elements are present."""
+    result = get_cached_result(raw_html)
+    issues = [i.message for i in result.issues if i.category == "namespace"]
+    deduction = _mso_param(config, "deduction_missing_namespace", 0.15) * len(issues)
+    return issues, deduction
+
+
+def mso_ghost_table_validation(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check ghost table structure in MSO conditional blocks."""
+    result = get_cached_result(raw_html)
+    issues = [i.message for i in result.issues if i.category == "ghost_table"]
+    deduction = _mso_param(config, "deduction_ghost_table_issue", 0.10) * len(issues)
+    return issues, deduction
+
+
+def mso_conditionals_present(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check that MSO conditional comments exist."""
+    result = get_cached_result(raw_html)
+    if result.opener_count == 0:
+        deduction = _mso_param(config, "deduction_no_mso", 0.30)
+        return ["No MSO conditional comments for Outlook fallbacks"], deduction
+    return [], 0.0
+
+
+def mso_namespaces_present(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check that VML/Office namespace declarations exist."""
+    result = get_cached_result(raw_html)
+    if not result.has_vml_namespace and not result.has_office_namespace:
+        deduction = _mso_param(config, "deduction_no_namespaces", 0.20)
+        return ["No VML/Office namespace declarations"], deduction
+    return [], 0.0
+
+
+register_custom_check("mso_balanced_pairs", mso_balanced_pairs)
+register_custom_check("mso_conditional_syntax", mso_conditional_syntax)
+register_custom_check("mso_vml_nesting", mso_vml_nesting)
+register_custom_check("mso_namespace_validation", mso_namespace_validation)
+register_custom_check("mso_ghost_table_validation", mso_ghost_table_validation)
+register_custom_check("mso_conditionals_present", mso_conditionals_present)
+register_custom_check("mso_namespaces_present", mso_namespaces_present)
+
+
+# ─── Dark Mode Semantic Checks ─── (delegates to dark_mode_parser module)
+
+
+def _dm_param(config: QACheckConfig | None, key: str, default: float = 0.0) -> float:
+    """Resolve a dark mode check parameter from config or default."""
+    if config:
+        return float(config.params.get(key, default))
+    return default
+
+
+def dm_color_scheme_meta(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check color-scheme meta tag is present, valid, and includes 'dark'."""
+    deduction = float(_dm_param(config, "deduction_missing_color_scheme", 0.15))
+    result = get_cached_dm_result(raw_html)
+    if not result.meta_tags.has_color_scheme:
+        return (["Missing <meta name='color-scheme' content='light dark'>"], deduction)
+    if "dark" not in result.meta_tags.content_value.lower():
+        return (["color-scheme meta present but content doesn't include 'dark'"], deduction)
+    return ([], 0.0)
+
+
+def dm_supported_color_schemes(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check supported-color-schemes companion meta tag."""
+    deduction = float(_dm_param(config, "deduction_missing_supported", 0.05))
+    result = get_cached_dm_result(raw_html)
+    if not result.meta_tags.has_supported_color_schemes:
+        return (
+            ["Missing <meta name='supported-color-schemes'> companion tag for older Apple Mail"],
+            deduction,
+        )
+    return ([], 0.0)
+
+
+def dm_css_color_scheme_property(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check CSS color-scheme property on :root or html."""
+    deduction = float(_dm_param(config, "deduction_missing_css_color_scheme", 0.05))
+    result = get_cached_dm_result(raw_html)
+    if not result.meta_tags.has_css_color_scheme:
+        return (
+            ["Missing 'color-scheme: light dark' CSS property on :root"],
+            deduction,
+        )
+    return ([], 0.0)
+
+
+def dm_meta_placement(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check color-scheme meta tag is in <head> not <body>."""
+    deduction = float(_dm_param(config, "deduction_meta_misplaced", 0.10))
+    result = get_cached_dm_result(raw_html)
+    # Only flag if meta exists AND is misplaced
+    if result.meta_tags.has_color_scheme and not result.meta_tags.color_scheme_in_head:
+        return (["color-scheme meta tag found in <body> instead of <head>"], deduction)
+    return ([], 0.0)
+
+
+def dm_media_query_present(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check @media (prefers-color-scheme: dark) block exists."""
+    deduction = float(_dm_param(config, "deduction_no_media_query", 0.25))
+    result = get_cached_dm_result(raw_html)
+    if not result.media_queries:
+        return (["No @media (prefers-color-scheme: dark) block found"], deduction)
+    return ([], 0.0)
+
+
+def dm_media_query_has_colors(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check dark mode media query contains color declarations."""
+    deduction = float(_dm_param(config, "deduction_empty_media_query", 0.20))
+    result = get_cached_dm_result(raw_html)
+    if not result.media_queries:
+        return ([], 0.0)  # No media query — handled by dm_media_query_present
+    if not any(mq.has_color_props for mq in result.media_queries):
+        return (
+            ["prefers-color-scheme: dark block exists but contains no color properties"],
+            deduction,
+        )
+    return ([], 0.0)
+
+
+def dm_media_query_important(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check dark mode color declarations use !important."""
+    deduction = float(_dm_param(config, "deduction_missing_important", 0.10))
+    cap = int(_dm_param(config, "max_dm_issues_reported", 5))
+    result = get_cached_dm_result(raw_html)
+    issues: list[str] = []
+    total = 0.0
+
+    for mq in result.media_queries:
+        for decl in mq.declarations:
+            if decl.property in _DM_COLOR_PROPERTIES and not decl.has_important:
+                if len(issues) < cap:
+                    issues.append(f"Dark mode '{decl.property}: {decl.value}' missing !important")
+                total += deduction
+
+    return issues, total
+
+
+def dm_ogsc_present(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check [data-ogsc] Outlook.com text color selectors exist."""
+    deduction = float(_dm_param(config, "deduction_no_ogsc", 0.10))
+    result = get_cached_dm_result(raw_html)
+    if not any(s.selector_type == "ogsc" for s in result.outlook_selectors):
+        return (["No [data-ogsc] selectors — Outlook.com will force-invert text colors"], deduction)
+    return ([], 0.0)
+
+
+def dm_ogsb_present(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check [data-ogsb] Outlook.com background selectors exist."""
+    deduction = float(_dm_param(config, "deduction_no_ogsb", 0.10))
+    result = get_cached_dm_result(raw_html)
+    if not any(s.selector_type == "ogsb" for s in result.outlook_selectors):
+        return (
+            ["No [data-ogsb] selectors — Outlook.com will force-invert background colors"],
+            deduction,
+        )
+    return ([], 0.0)
+
+
+def dm_outlook_selectors_have_content(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check Outlook selectors contain actual CSS declarations."""
+    deduction = float(_dm_param(config, "deduction_empty_outlook", 0.10))
+    result = get_cached_dm_result(raw_html)
+    if not result.outlook_selectors:
+        return ([], 0.0)  # No selectors — handled by ogsc/ogsb presence checks
+    empty = [s for s in result.outlook_selectors if not s.has_declarations]
+    if empty:
+        return (
+            ["Outlook [data-ogsc]/[data-ogsb] selectors present but contain no CSS declarations"],
+            deduction,
+        )
+    return ([], 0.0)
+
+
+def dm_no_invisible_text(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check for near-identical foreground/background in dark mode color pairs."""
+    deduction = float(_dm_param(config, "deduction_invisible_text", 0.20))
+    cap = int(_dm_param(config, "max_dm_issues_reported", 3))
+    result = get_cached_dm_result(raw_html)
+    issues: list[str] = []
+    total = 0.0
+
+    for pair in result.color_pairs:
+        if pair.contrast_ratio > 0 and pair.contrast_ratio < 1.5:
+            if len(issues) < cap:
+                issues.append(
+                    f"Near-invisible text in dark mode: {pair.selector} "
+                    f"{pair.css_property} contrast ratio {pair.contrast_ratio}:1"
+                )
+            total += deduction
+
+    return issues, total
+
+
+def dm_contrast_ratio(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check dark mode color pairs meet WCAG AA 4.5:1 contrast ratio."""
+    deduction = float(_dm_param(config, "deduction_low_contrast", 0.10))
+    cap = int(_dm_param(config, "max_dm_issues_reported", 5))
+    result = get_cached_dm_result(raw_html)
+    issues: list[str] = []
+    total = 0.0
+
+    for pair in result.color_pairs:
+        if pair.contrast_ratio > 0 and pair.contrast_ratio < 4.5:
+            # Skip if already caught as invisible (< 1.5)
+            if pair.contrast_ratio >= 1.5:
+                if len(issues) < cap:
+                    issues.append(
+                        f"Low contrast in dark mode: {pair.selector} "
+                        f"{pair.css_property} ratio {pair.contrast_ratio}:1 (need 4.5:1)"
+                    )
+                total += deduction
+
+    return issues, total
+
+
+def dm_backgrounds_are_dark(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check dark mode background colors have low luminance (are actually dark)."""
+    deduction = float(_dm_param(config, "deduction_light_dark_bg", 0.10))
+    cap = int(_dm_param(config, "max_dm_issues_reported", 3))
+    result = get_cached_dm_result(raw_html)
+    issues: list[str] = []
+    total = 0.0
+
+    for pair in result.color_pairs:
+        if pair.css_property in {"background-color", "background"}:
+            dark_hex = _parse_css_color(pair.dark_value)
+            if dark_hex:
+                luminance = _hex_to_luminance(dark_hex)
+                if luminance > 0.4:
+                    if len(issues) < cap:
+                        issues.append(
+                            f"Dark mode background {pair.dark_value} on {pair.selector} "
+                            f"has high luminance ({luminance:.2f}) — should be dark"
+                        )
+                    total += deduction
+
+    return issues, total
+
+
+def dm_image_swap_alt(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check dark mode swap images have empty alt text."""
+    deduction = float(_dm_param(config, "deduction_swap_img_alt", 0.05))
+    cap = int(_dm_param(config, "max_dm_issues_reported", 3))
+    issues: list[str] = []
+    total = 0.0
+
+    # Find images with dark-mode-related classes that are hidden by default
+    for img in doc.iter("img"):
+        classes = (img.get("class") or "").lower()
+        style = (img.get("style") or "").lower()
+        if any(c in classes for c in ("dark-img", "dark-image", "dark-logo", "dark_img")):
+            if "display: none" in style or "display:none" in style:
+                alt = img.get("alt")
+                if alt is not None and alt != "":
+                    if len(issues) < cap:
+                        issues.append(
+                            "Dark mode swap image should have alt='' to avoid "
+                            "duplicate screen reader announcements"
+                        )
+                    total += deduction
+
+    return issues, total
+
+
+def dm_hidden_img_mso(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check hidden dark mode images include mso-hide:all for Outlook."""
+    deduction = float(_dm_param(config, "deduction_no_mso_hide", 0.05))
+    cap = int(_dm_param(config, "max_dm_issues_reported", 3))
+    issues: list[str] = []
+    total = 0.0
+
+    for img in doc.iter("img"):
+        classes = (img.get("class") or "").lower()
+        style = img.get("style") or ""
+        if any(c in classes for c in ("dark-img", "dark-image", "dark-logo", "dark_img")):
+            if "display: none" in style.lower() or "display:none" in style.lower():
+                if not re.search(r"mso-hide\s*:\s*all", style, re.IGNORECASE):
+                    if len(issues) < cap:
+                        issues.append(
+                            "Dark mode swap image hidden by default should include "
+                            "'mso-hide: all' for Outlook"
+                        )
+                    total += deduction
+
+    return issues, total
+
+
+def dm_any_support_present(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check that at least some dark mode support exists."""
+    deduction = float(_dm_param(config, "deduction_no_dark_mode", 0.30))
+    result = get_cached_dm_result(raw_html)
+    has_meta = result.meta_tags.has_color_scheme
+    has_media = len(result.media_queries) > 0
+    has_outlook = len(result.outlook_selectors) > 0
+    if not has_meta and not has_media and not has_outlook:
+        return (
+            [
+                "No dark mode support detected — no meta tags, no media queries, no Outlook selectors"
+            ],
+            deduction,
+        )
+    return ([], 0.0)
+
+
+register_custom_check("dm_color_scheme_meta", dm_color_scheme_meta)
+register_custom_check("dm_supported_color_schemes", dm_supported_color_schemes)
+register_custom_check("dm_css_color_scheme_property", dm_css_color_scheme_property)
+register_custom_check("dm_meta_placement", dm_meta_placement)
+register_custom_check("dm_media_query_present", dm_media_query_present)
+register_custom_check("dm_media_query_has_colors", dm_media_query_has_colors)
+register_custom_check("dm_media_query_important", dm_media_query_important)
+register_custom_check("dm_ogsc_present", dm_ogsc_present)
+register_custom_check("dm_ogsb_present", dm_ogsb_present)
+register_custom_check("dm_outlook_selectors_have_content", dm_outlook_selectors_have_content)
+register_custom_check("dm_no_invisible_text", dm_no_invisible_text)
+register_custom_check("dm_contrast_ratio", dm_contrast_ratio)
+register_custom_check("dm_backgrounds_are_dark", dm_backgrounds_are_dark)
+register_custom_check("dm_image_swap_alt", dm_image_swap_alt)
+register_custom_check("dm_hidden_img_mso", dm_hidden_img_mso)
+register_custom_check("dm_any_support_present", dm_any_support_present)
+
+
+# ─── Link Validation Custom Checks ─── (delegates to link_parser module)
+
+
+def _link_param(config: QACheckConfig | None, key: str, default: float) -> float:
+    """Resolve a link check parameter from config."""
+    if config:
+        return float(config.params.get(key, default))
+    return default
+
+
+def link_non_https(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag non-HTTPS links (except localhost)."""
+    deduction = _link_param(config, "deduction_http_link", 0.10)
+    cap = int(_link_param(config, "max_link_issues_reported", 5))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "non_https"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_malformed_url(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag malformed URLs (missing scheme, netloc, path traversal)."""
+    deduction = _link_param(config, "deduction_malformed_url", 0.15)
+    cap = int(_link_param(config, "max_link_issues_reported", 5))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "malformed_url"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_blocked_protocol(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag javascript:/data:/vbscript: protocols."""
+    deduction = _link_param(config, "deduction_blocked_protocol", 0.25)
+    cap = int(_link_param(config, "max_link_issues_reported", 3))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "suspicious_protocol"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_empty_href(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag empty or fragment-only hrefs."""
+    deduction = _link_param(config, "deduction_empty_href", 0.05)
+    cap = int(_link_param(config, "max_link_issues_reported", 5))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "empty_href"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_template_balanced(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag unbalanced ESP template variable delimiters in hrefs."""
+    deduction = _link_param(config, "deduction_template_unbalanced", 0.15)
+    cap = int(_link_param(config, "max_link_issues_reported", 5))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "template_syntax"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_unencoded_chars(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag unencoded spaces or special characters in URLs."""
+    deduction = _link_param(config, "deduction_unencoded", 0.05)
+    cap = int(_link_param(config, "max_link_issues_reported", 3))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "unencoded_chars"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_double_encoded(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag double-encoded URL characters (e.g. %2520)."""
+    deduction = _link_param(config, "deduction_double_encoded", 0.05)
+    cap = int(_link_param(config, "max_link_issues_reported", 3))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "double_encoded"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_phishing_mismatch(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag links where display text URL domain differs from href domain."""
+    deduction = _link_param(config, "deduction_phishing", 0.20)
+    cap = int(_link_param(config, "max_link_issues_reported", 3))
+    result = get_cached_link_result(raw_html)
+    matching = [i for i in result.issues if i.category == "phishing_mismatch"]
+    issues = [i.message for i in matching[:cap]]
+    total = deduction * len(matching)
+    return issues, total
+
+
+def link_has_any(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational: report if zero links found."""
+    result = get_cached_link_result(raw_html)
+    if result.total_links == 0:
+        return ["No links found in email"], 0.0
+    return [], 0.0
+
+
+def link_accessible_text(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check links have visible text or image alt text."""
+    deduction = _link_param(config, "deduction_no_link_text", 0.05)
+    cap = int(_link_param(config, "max_link_issues_reported", 5))
+    result = get_cached_link_result(raw_html)
+    issues: list[str] = []
+    total = 0.0
+
+    for link in result.links:
+        if link.text:
+            continue
+        # link.text comes from lxml text_content() which includes descendant
+        # img alt text — so empty text means no visible text AND no img alt
+        if link.href:
+            if len(issues) < cap:
+                issues.append(f"Link has no accessible text: {link.href[:60]}")
+            total += deduction
+
+    return issues, total
+
+
+def link_vml_href(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check VML elements with href attributes in MSO conditional blocks."""
+    from app.qa_engine.link_parser import _VML_HREF_RE
+
+    deduction = _link_param(config, "deduction_vml_href", 0.10)
+    cap = int(_link_param(config, "max_link_issues_reported", 3))
+    issues: list[str] = []
+    total = 0.0
+
+    for match in _VML_HREF_RE.finditer(raw_html):
+        vml_href = match.group(1)
+        if vml_href:
+            if len(issues) < cap:
+                issues.append(
+                    f"VML href found: {vml_href[:60]} — ensure it matches "
+                    f"the corresponding <a> href (ESPs only rewrite <a> tags)"
+                )
+            total += deduction
+
+    return issues, total
+
+
+register_custom_check("link_non_https", link_non_https)
+register_custom_check("link_malformed_url", link_malformed_url)
+register_custom_check("link_blocked_protocol", link_blocked_protocol)
+register_custom_check("link_empty_href", link_empty_href)
+register_custom_check("link_template_balanced", link_template_balanced)
+register_custom_check("link_unencoded_chars", link_unencoded_chars)
+register_custom_check("link_double_encoded", link_double_encoded)
+register_custom_check("link_phishing_mismatch", link_phishing_mismatch)
+register_custom_check("link_has_any", link_has_any)
+register_custom_check("link_accessible_text", link_accessible_text)
+register_custom_check("link_vml_href", link_vml_href)
+
+
+# ─── File Size Custom Checks ─── (delegates to file_size_analyzer module)
+
+
+def _fs_param(config: QACheckConfig | None, key: str, default: float) -> float:
+    """Resolve file size config parameter."""
+    if config and key in config.params:
+        return float(config.params[key])
+    return default
+
+
+def file_size_gmail_threshold(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check HTML size against Gmail 102KB clipping threshold."""
+    result = get_fs_cached_result(raw_html)
+    threshold = _fs_param(config, "gmail_threshold_kb", 102.0)
+    if result.raw_size_kb > threshold:
+        deduction = _fs_param(config, "deduction_gmail_clip", 0.30)
+        return [
+            f"HTML is {result.raw_size_kb:.1f}KB — exceeds Gmail {threshold:.0f}KB clipping threshold"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_outlook_threshold(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check HTML size against Outlook 100KB performance threshold."""
+    result = get_fs_cached_result(raw_html)
+    threshold = _fs_param(config, "outlook_threshold_kb", 100.0)
+    if result.raw_size_kb > threshold:
+        deduction = _fs_param(config, "deduction_outlook_perf", 0.20)
+        return [
+            f"HTML is {result.raw_size_kb:.1f}KB — exceeds Outlook {threshold:.0f}KB performance threshold"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_yahoo_threshold(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check HTML size against Yahoo 75KB conservative threshold."""
+    result = get_fs_cached_result(raw_html)
+    threshold = _fs_param(config, "yahoo_threshold_kb", 75.0)
+    if result.raw_size_kb > threshold:
+        deduction = _fs_param(config, "deduction_yahoo_clip", 0.10)
+        return [
+            f"HTML is {result.raw_size_kb:.1f}KB — exceeds Yahoo {threshold:.0f}KB threshold"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_braze_limit(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check HTML size against Braze 100KB hard limit."""
+    result = get_fs_cached_result(raw_html)
+    threshold = _fs_param(config, "braze_threshold_kb", 100.0)
+    if result.raw_size_kb > threshold:
+        deduction = _fs_param(config, "deduction_braze_limit", 0.15)
+        return [
+            f"HTML is {result.raw_size_kb:.1f}KB — exceeds Braze {threshold:.0f}KB hard limit"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_inline_css_ratio(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check inline CSS does not exceed configured percentage of total size."""
+    result = get_fs_cached_result(raw_html)
+    max_pct = _fs_param(config, "inline_css_max_pct", 40.0)
+    if result.breakdown.inline_styles_pct > max_pct:
+        deduction = _fs_param(config, "deduction_inline_css_bloat", 0.05)
+        return [
+            f"Inline styles are {result.breakdown.inline_styles_pct:.0f}% of HTML "
+            f"({result.breakdown.inline_styles_bytes / 1024:.1f}KB) — exceeds {max_pct:.0f}% threshold"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_mso_ratio(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check MSO conditional blocks do not exceed configured percentage."""
+    result = get_fs_cached_result(raw_html)
+    max_pct = _fs_param(config, "mso_conditional_max_pct", 25.0)
+    if result.breakdown.mso_conditional_pct > max_pct:
+        deduction = _fs_param(config, "deduction_mso_bloat", 0.05)
+        return [
+            f"MSO conditionals are {result.breakdown.mso_conditional_pct:.0f}% of HTML "
+            f"({result.breakdown.mso_conditional_bytes / 1024:.1f}KB) — exceeds {max_pct:.0f}% threshold"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_gzip_efficiency(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check gzip compression achieves minimum reduction (skip tiny emails)."""
+    result = get_fs_cached_result(raw_html)
+    min_reduction = _fs_param(config, "gzip_min_reduction_pct", 50.0)
+    reduction_pct = (1.0 - result.compression_ratio) * 100
+    if reduction_pct < min_reduction and result.raw_size_kb > 20:
+        deduction = _fs_param(config, "deduction_poor_gzip", 0.05)
+        return [
+            f"Gzip compression only reduces size by {reduction_pct:.0f}% "
+            f"({result.raw_size_kb:.1f}KB → {result.gzip_size_kb:.1f}KB) — "
+            f"may contain base64-encoded data or large inline assets"
+        ], deduction
+    return [], 0.0
+
+
+def file_size_summary(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational summary — always 0 deduction."""
+    result = get_fs_cached_result(raw_html)
+    b = result.breakdown
+    summary = (
+        f"Raw: {result.raw_size_kb:.1f}KB | Gzip: {result.gzip_size_kb:.1f}KB "
+        f"({(1 - result.compression_ratio) * 100:.0f}% reduction) | "
+        f"Breakdown: styles {b.inline_styles_pct:.0f}%/{b.head_styles_pct:.0f}%, "
+        f"MSO {b.mso_conditional_pct:.0f}%, "
+        f"images {b.image_tag_bytes / max(b.total_bytes, 1) * 100:.0f}%"
+    )
+    return [summary], 0.0
+
+
+register_custom_check("file_size_gmail_threshold", file_size_gmail_threshold)
+register_custom_check("file_size_outlook_threshold", file_size_outlook_threshold)
+register_custom_check("file_size_yahoo_threshold", file_size_yahoo_threshold)
+register_custom_check("file_size_braze_limit", file_size_braze_limit)
+register_custom_check("file_size_inline_css_ratio", file_size_inline_css_ratio)
+register_custom_check("file_size_mso_ratio", file_size_mso_ratio)
+register_custom_check("file_size_gzip_efficiency", file_size_gzip_efficiency)
+register_custom_check("file_size_summary", file_size_summary)
+
+
+# ---------------------------------------------------------------------------
+# Spam Score — trigger phrases, formatting heuristics, obfuscation detection
+# ---------------------------------------------------------------------------
+
+_SPAM_TRIGGERS_PATH = Path(__file__).parent / "data" / "spam_triggers.yaml"
+
+_spam_trigger_cache: list[dict[str, str | float]] | None = None
+
+
+def _load_spam_triggers() -> list[dict[str, str | float]]:
+    """Load and cache spam trigger phrases from YAML."""
+    global _spam_trigger_cache
+    if _spam_trigger_cache is not None:
+        return _spam_trigger_cache
+
+    import yaml
+
+    if not _SPAM_TRIGGERS_PATH.exists():
+        _spam_trigger_cache = []
+        return _spam_trigger_cache
+
+    with _SPAM_TRIGGERS_PATH.open() as f:
+        data: dict[str, Any] = yaml.safe_load(f) or {}
+    triggers: list[dict[str, str | float]] = data.get("triggers", [])
+    _spam_trigger_cache = triggers
+    return _spam_trigger_cache
+
+
+# Pre-compiled regex cache for trigger phrases
+_trigger_patterns: dict[str, re.Pattern[str]] = {}
+
+
+def _get_trigger_pattern(phrase: str) -> re.Pattern[str]:
+    """Get pre-compiled word-boundary regex for a trigger phrase."""
+    if phrase not in _trigger_patterns:
+        _trigger_patterns[phrase] = re.compile(rf"\b{re.escape(phrase)}\b", re.IGNORECASE)
+    return _trigger_patterns[phrase]
+
+
+def _extract_text(raw_html: str) -> str:
+    """Strip HTML tags to get plain text for trigger matching."""
+    return re.sub(r"<[^>]+>", " ", raw_html)
+
+
+def spam_trigger_scan(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Scan email body text for known spam trigger phrases with weighted scoring."""
+    triggers = _load_spam_triggers()
+    text = _extract_text(raw_html)
+
+    issues: list[str] = []
+    total_deduction = 0.0
+    max_reported: int = int(config.params.get("max_triggers_reported", 10) if config else 10)
+
+    for trigger in triggers:
+        phrase = str(trigger.get("phrase", ""))
+        weight = float(trigger.get("weight", 0.10))
+        category = str(trigger.get("category", "unknown"))
+        pattern = _get_trigger_pattern(phrase)
+
+        matches = pattern.findall(text)
+        if matches:
+            total_deduction += weight
+            if len(issues) < max_reported:
+                issues.append(f"'{phrase}' ({category}, -{weight:.2f})")
+
+    return issues, total_deduction
+
+
+def spam_subject_triggers(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check subject line (title tag) for spam triggers — 3x weight multiplier."""
+    triggers = _load_spam_triggers()
+    subject_multiplier = float(
+        config.params.get("subject_weight_multiplier", 3.0) if config else 3.0
+    )
+
+    # Extract subject from <title> tag
+    titles = list(doc.iter("title"))
+    if not titles:
+        return [], 0.0
+
+    subject_text = (titles[0].text_content() or "").strip()
+    if not subject_text:
+        return [], 0.0
+
+    issues: list[str] = []
+    total_deduction = 0.0
+
+    for trigger in triggers:
+        phrase = str(trigger.get("phrase", ""))
+        weight = float(trigger.get("weight", 0.10))
+        category = str(trigger.get("category", "unknown"))
+        pattern = _get_trigger_pattern(phrase)
+
+        if pattern.search(subject_text):
+            adjusted_weight = weight * subject_multiplier
+            total_deduction += adjusted_weight
+            issues.append(f"Subject: '{phrase}' ({category}, -{adjusted_weight:.2f})")
+
+    return issues, total_deduction
+
+
+# Formatting heuristic patterns (pre-compiled at module load)
+_EXCESSIVE_PUNCTUATION = re.compile(r"[!?]{3,}")
+_ALL_CAPS_WORD = re.compile(r"\b[A-Z]{2,}\b")
+_OBFUSCATION_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\b\w*\d+\w*\b"), "leet-speak"),  # words with digits mixed in
+]
+# Common leet-speak substitutions
+_LEET_MAP: dict[str, str] = {
+    "0": "o",
+    "1": "i",
+    "3": "e",
+    "4": "a",
+    "5": "s",
+    "7": "t",
+    "8": "b",
+    "@": "a",
+    "$": "s",
+}
+_LEET_DECODE = re.compile(r"[0134578@$]")
+_KNOWN_LEET_WORDS = frozenset(
+    {
+        "free",
+        "sale",
+        "discount",
+        "offer",
+        "cash",
+        "prize",
+        "bonus",
+        "credit",
+        "viagra",
+        "casino",
+        "winner",
+    }
+)
+
+
+def spam_excessive_punctuation(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect excessive punctuation (3+ consecutive ! or ?)."""
+    text = _extract_text(raw_html)
+    matches = _EXCESSIVE_PUNCTUATION.findall(text)
+    deduction = float(
+        config.params.get("deduction_excessive_punctuation", 0.10) if config else 0.10
+    )
+
+    if not matches:
+        return [], 0.0
+
+    issues = [f"Excessive punctuation: {len(matches)} instance(s) of 3+ consecutive !/?"]
+    return issues, deduction
+
+
+def spam_all_caps_words(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect sequences of 3+ all-caps words."""
+    text = _extract_text(raw_html)
+    words = text.split()
+    deduction = float(config.params.get("deduction_all_caps", 0.10) if config else 0.10)
+
+    # Find runs of consecutive all-caps words (2+ chars each)
+    consecutive = 0
+    max_run = 0
+    for word in words:
+        # Strip punctuation for check
+        clean = re.sub(r"[^\w]", "", word)
+        if len(clean) >= 2 and clean.isupper():
+            consecutive += 1
+            max_run = max(max_run, consecutive)
+        else:
+            consecutive = 0
+
+    if max_run >= 3:
+        return [f"All-caps sequence: {max_run} consecutive all-caps words"], deduction
+
+    return [], 0.0
+
+
+def spam_obfuscation(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect character obfuscation (leet-speak substitution)."""
+    text = _extract_text(raw_html)
+    deduction = float(config.params.get("deduction_obfuscation", 0.15) if config else 0.15)
+
+    # Find words containing digit substitutions and decode them
+    issues: list[str] = []
+    # Match words that have a mix of letters and digits (potential leet-speak)
+    leet_candidates = re.findall(r"\b[a-zA-Z0-9@$]{3,}\b", text)
+
+    for candidate in leet_candidates:
+        if not _LEET_DECODE.search(candidate):
+            continue
+        # Decode leet-speak
+        decoded = ""
+        for ch in candidate.lower():
+            decoded += _LEET_MAP.get(ch) or ch
+        if decoded in _KNOWN_LEET_WORDS and decoded != candidate.lower():
+            issues.append(f"Obfuscated word: '{candidate}' (decoded: '{decoded}')")
+
+    if issues:
+        return issues[:5], deduction
+
+    return [], 0.0
+
+
+def spam_score_summary(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational summary — no deduction."""
+    triggers = _load_spam_triggers()
+    text = _extract_text(raw_html)
+
+    matched_count = 0
+    categories: Counter[str] = Counter()
+
+    for trigger in triggers:
+        phrase = str(trigger.get("phrase", ""))
+        category = str(trigger.get("category", "unknown"))
+        pattern = _get_trigger_pattern(phrase)
+        if pattern.search(text):
+            matched_count += 1
+            categories[category] += 1
+
+    if matched_count == 0:
+        return [], 0.0
+
+    cat_breakdown = ", ".join(f"{cat}: {count}" for cat, count in categories.most_common())
+    return [f"Triggers matched: {matched_count}/{len(triggers)} ({cat_breakdown})"], 0.0
+
+
+register_custom_check("spam_trigger_scan", spam_trigger_scan)
+register_custom_check("spam_subject_triggers", spam_subject_triggers)
+register_custom_check("spam_excessive_punctuation", spam_excessive_punctuation)
+register_custom_check("spam_all_caps_words", spam_all_caps_words)
+register_custom_check("spam_obfuscation", spam_obfuscation)
+register_custom_check("spam_score_summary", spam_score_summary)

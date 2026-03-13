@@ -1,6 +1,8 @@
 # pyright: reportReturnType=false, reportArgumentType=false
 """Tests for AgentHandoff propagation through the blueprint engine."""
 
+from typing import cast
+
 import pytest
 
 from app.ai.blueprints.engine import BlueprintDefinition, BlueprintEngine, Edge
@@ -230,8 +232,9 @@ class TestHandoffPropagation:
         assert node_b.last_context is not None
         history = node_b.last_context.metadata.get("handoff_history")
         assert isinstance(history, list)
-        assert len(history) == 1
-        assert history[0].agent_name == "scaffolder"
+        typed_history = cast(list[AgentHandoff], history)
+        assert len(typed_history) == 1
+        assert typed_history[0].agent_name == "scaffolder"
 
     @pytest.mark.asyncio()
     async def test_on_handoff_callback_fires(self) -> None:

@@ -20,7 +20,7 @@
 2. `css_support` — Flags poorly-supported CSS properties
 3. `file_size` — Gmail 102KB clipping threshold
 4. `link_validation` — HTTPS enforcement
-5. `spam_score` — Spam trigger word detection
+5. `spam_score` — 59 weighted triggers (7 categories), word-boundary matching, formatting heuristics (punctuation, all-caps, obfuscation), subject line 3x weight; 6 YAML rules via rule engine, `data/spam_triggers.yaml`
 6. `dark_mode` — color-scheme meta, prefers-color-scheme, Outlook overrides
 7. `accessibility` — WCAG AA: 24 DOM-parsed checks across 8 groups (language, tables, images, headings, links, content semantics, dark mode, AMP forms) via YAML rule engine; 21 custom check functions
 8. `fallback` — MSO conditionals, VML namespaces

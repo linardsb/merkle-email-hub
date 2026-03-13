@@ -1,0 +1,76 @@
+rules:
+  # ─── Group A: Client Thresholds (critical) ───
+  - id: "fs-gmail-clip"
+    group: "client_thresholds"
+    name: "Gmail 102KB clipping threshold"
+    check: "custom"
+    custom_fn: "file_size_gmail_threshold"
+    deduction_key: "deduction_gmail_clip"
+    default_deduction: 0.30
+    message: "HTML exceeds Gmail 102KB clipping threshold — email will be truncated with 'View entire message' link"
+
+  - id: "fs-outlook-perf"
+    group: "client_thresholds"
+    name: "Outlook 100KB performance threshold"
+    check: "custom"
+    custom_fn: "file_size_outlook_threshold"
+    deduction_key: "deduction_outlook_perf"
+    default_deduction: 0.20
+    message: "HTML exceeds 100KB — Outlook Desktop may exhibit rendering performance issues"
+
+  - id: "fs-yahoo-clip"
+    group: "client_thresholds"
+    name: "Yahoo 75KB conservative threshold"
+    check: "custom"
+    custom_fn: "file_size_yahoo_threshold"
+    deduction_key: "deduction_yahoo_clip"
+    default_deduction: 0.10
+    message: "HTML exceeds Yahoo Mail 75KB conservative threshold — may be clipped"
+
+  - id: "fs-braze-limit"
+    group: "client_thresholds"
+    name: "Braze ESP 100KB hard limit"
+    check: "custom"
+    custom_fn: "file_size_braze_limit"
+    deduction_key: "deduction_braze_limit"
+    default_deduction: 0.15
+    message: "HTML exceeds Braze 100KB hard limit — content block will be rejected"
+
+  # ─── Group B: Content Distribution ───
+  - id: "fs-inline-css-bloat"
+    group: "content_distribution"
+    name: "Inline CSS exceeds 40% of total"
+    check: "custom"
+    custom_fn: "file_size_inline_css_ratio"
+    deduction_key: "deduction_inline_css_bloat"
+    default_deduction: 0.05
+    message: "Inline styles account for >40% of HTML size — consider CSS consolidation or shared classes"
+
+  - id: "fs-mso-bloat"
+    group: "content_distribution"
+    name: "MSO conditionals exceed 25% of total"
+    check: "custom"
+    custom_fn: "file_size_mso_ratio"
+    deduction_key: "deduction_mso_bloat"
+    default_deduction: 0.05
+    message: "MSO conditional blocks account for >25% of HTML size — review for redundant Outlook fallbacks"
+
+  # ─── Group C: Compression Efficiency ───
+  - id: "fs-gzip-ratio"
+    group: "compression"
+    name: "Poor gzip compression ratio"
+    check: "custom"
+    custom_fn: "file_size_gzip_efficiency"
+    deduction_key: "deduction_poor_gzip"
+    default_deduction: 0.05
+    message: "Gzip compression ratio below 50% — HTML may contain large inline assets or base64 data"
+
+  # ─── Group D: Size Summary (informational) ───
+  - id: "fs-size-summary"
+    group: "summary"
+    name: "File size summary"
+    check: "custom"
+    custom_fn: "file_size_summary"
+    deduction_key: "deduction_size_summary"
+    default_deduction: 0.0
+    message: "File size analysis summary"

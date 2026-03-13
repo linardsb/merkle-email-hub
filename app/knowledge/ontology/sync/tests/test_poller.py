@@ -1,5 +1,7 @@
 """Tests for CanIEmailSyncPoller."""
 
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,7 +11,7 @@ from app.knowledge.ontology.sync.schemas import SyncDiff, SyncState
 
 
 @pytest.fixture()
-def poller() -> CanIEmailSyncPoller:  # type: ignore[misc]
+def poller() -> Generator[CanIEmailSyncPoller, None, None]:
     with patch("app.knowledge.ontology.sync.poller.get_settings") as mock_settings:
         settings = mock_settings.return_value
         settings.ontology_sync.interval_hours = 168
@@ -57,7 +59,7 @@ class TestStore:
     @pytest.mark.anyio()
     async def test_applies_diff_when_changes(self, poller: CanIEmailSyncPoller) -> None:
         diff = SyncDiff(new_properties=["display_flex"])
-        data = {"sha": "abc123", "features": [], "diff": diff}
+        data: dict[str, Any] = {"sha": "abc123", "features": [], "diff": diff}
 
         with (
             patch("app.knowledge.ontology.sync.poller.apply_sync", return_value=1) as mock_apply,
@@ -72,7 +74,7 @@ class TestStore:
     @pytest.mark.anyio()
     async def test_noop_when_no_changes(self, poller: CanIEmailSyncPoller) -> None:
         diff = SyncDiff()
-        data = {"sha": "abc123", "features": [], "diff": diff}
+        data: dict[str, Any] = {"sha": "abc123", "features": [], "diff": diff}
 
         with patch("app.knowledge.ontology.sync.poller.apply_sync") as mock_apply:
             poller._save_state = AsyncMock()  # type: ignore[method-assign]

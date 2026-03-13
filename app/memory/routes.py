@@ -29,7 +29,7 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> MemoryService:  # noqa: 
 
 
 @router.post("/", response_model=MemoryResponse, status_code=201)
-@limiter.limit("10/minute")
+@limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def store_memory(
     request: Request,  # noqa: ARG001
     data: MemoryCreate,
@@ -42,7 +42,7 @@ async def store_memory(
 
 
 @router.post("/search", response_model=list[MemoryResponse])
-@limiter.limit("30/minute")
+@limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def search_memories(
     request: Request,  # noqa: ARG001
     data: MemorySearch,
@@ -66,7 +66,7 @@ async def search_memories(
 
 
 @router.get("/{memory_id}", response_model=MemoryResponse)
-@limiter.limit("30/minute")
+@limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_memory(
     request: Request,  # noqa: ARG001
     memory_id: int,
@@ -79,7 +79,7 @@ async def get_memory(
 
 
 @router.delete("/{memory_id}", status_code=204)
-@limiter.limit("10/minute")
+@limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def delete_memory(
     request: Request,  # noqa: ARG001
     memory_id: int,
@@ -91,7 +91,7 @@ async def delete_memory(
 
 
 @router.post("/promote", response_model=MemoryResponse, status_code=201)
-@limiter.limit("10/minute")
+@limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def promote_dcg_note(
     request: Request,  # noqa: ARG001
     data: MemoryPromote,

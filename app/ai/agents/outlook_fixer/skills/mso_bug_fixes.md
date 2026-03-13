@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md sections 6-8, 11 -->
+<!-- Last synced: 2026-03-13 -->
+
 # MSO Bug Fixes — 15 Common Outlook Rendering Patterns
 
 ## Bug 1: Ghost Table for Multi-Column Layout
@@ -156,19 +159,10 @@ For web fonts:
 
 ## Bug 10: Padding on Table Cells Being Ignored
 **Symptom:** CSS `padding` on `<td>` not respected consistently
-**Fix:** Use explicit `padding` in inline styles AND set on the `<td>` directly
+**Fix:** Use explicit `padding` in inline styles AND `mso-padding-alt`
 
 ```html
 <td style="padding:20px 30px; mso-padding-alt:20px 30px;">
-```
-
-For Outlook-specific padding overrides:
-```css
-<!--[if mso]>
-<style>
-  .content-cell { padding: 20px 30px !important; }
-</style>
-<![endif]-->
 ```
 
 ## Bug 11: Max-Width Not Supported
@@ -192,22 +186,6 @@ For Outlook-specific padding overrides:
 **Symptom:** `border-radius` on any element is completely ignored in Outlook
 **Fix:** Use VML for rounded elements OR accept square corners with graceful degradation
 
-For images with rounded corners, wrap in VML:
-```html
-<!--[if mso]>
-<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"
-  style="width:200px; height:200px;"
-  arcsize="50%"
-  fill="false" stroke="false">
-<v:fill type="frame" src="https://placehold.co/200x200" />
-</v:roundrect>
-<![endif]-->
-<!--[if !mso]><!-->
-<img src="https://placehold.co/200x200" alt="Profile"
-  style="border-radius:50%; display:block;" width="200" height="200">
-<!--<![endif]-->
-```
-
 ## Bug 13: Outlook Adding Extra Spacing to Paragraphs
 **Symptom:** `<p>` tags get extra top/bottom margin in Outlook
 **Fix:** Reset margins explicitly and use `mso-margin-top-alt`
@@ -222,47 +200,59 @@ For images with rounded corners, wrap in VML:
 **Symptom:** `float:left/right` breaks layout in Outlook
 **Fix:** Use MSO conditional tables instead of floats for layout
 
-```html
-<!--[if mso]>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0">
-<tr><td width="200" valign="top">
-<![endif]-->
-<div style="float:left; width:200px;">
-  <img src="https://placehold.co/200x150" alt="Product" width="200" height="150"
-    style="display:block; border:0;">
-</div>
-<!--[if mso]>
-</td><td width="20"></td><td valign="top">
-<![endif]-->
-<div style="margin-left:220px;">
-  <p>Product description text that wraps alongside the image.</p>
-</div>
-<!--[if mso]>
-</td></tr></table>
-<![endif]-->
-```
-
 ## Bug 15: Outlook Dark Mode Color Overrides
 **Symptom:** Outlook desktop and Outlook.com override colors in dark mode unpredictably
 **Fix:** Add `[data-ogsc]` (text) and `[data-ogsb]` (background) selectors
 
 ```css
-/* Standard dark mode */
-@media (prefers-color-scheme: dark) {
-  .dark-text { color: #ffffff !important; }
-  .dark-bg { background-color: #1a1a2e !important; }
-}
-
 /* Outlook-specific dark mode overrides */
 [data-ogsc] .dark-text { color: #ffffff !important; }
 [data-ogsb] .dark-bg { background-color: #1a1a2e !important; }
 ```
 
-For VML elements in dark mode, set both light and dark fills:
+---
+
+## Outlook HTML Attribute Requirements
+
+These HTML attributes are more reliable than CSS equivalents in Outlook:
+
+**Tables:** `cellpadding="0"`, `cellspacing="0"`, `border="0"`, `width="600"`, `align="center"`, `bgcolor="#ffffff"`, `valign="top"`
+
+**Images:** `width="600"` (no `px`), `height="300"`, `border="0"`, `style="display:block;"`
+
+**Spacers:** `<!--[if mso]>&nbsp;<![endif]-->` or `&#8203;` (zero-width space) to prevent empty cell collapse.
+
+## MSO Conditional Style Block Resets
+
 ```html
 <!--[if mso]>
-<v:rect style="width:600px;" fillcolor="#ffffff">
-  <v:fill color="#ffffff" />
-</v:rect>
+<style type="text/css">
+  body { margin: 0; padding: 0; }
+  table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; }
+  p { margin: 0; padding: 0; mso-line-height-rule: exactly; }
+  span.MsoHyperlink { color: inherit !important; mso-style-priority: 99 !important; }
+  span.MsoHyperlinkFollowed { color: inherit !important; mso-style-priority: 99 !important; }
+  .ExternalClass { width: 100%; }
+  .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass td, .ExternalClass div { line-height: 100%; }
+</style>
 <![endif]-->
 ```
+
+## Properties Outlook Ignores (Require VML/MSO Fallback)
+
+- `max-width`, `min-width` — Use MSO conditional fixed-width table
+- `border-radius` — Use VML `<v:roundrect>` with `arcsize`
+- `background-image` (CSS) — Use VML `<v:rect>` + `<v:fill>`
+- `background-size`, `background-position` — Use VML fill attributes
+- `box-shadow` — Use VML `<v:shadow>`
+- `text-shadow` — No VML equivalent
+- `opacity`, `rgba()` — Use hex colors; VML supports opacity on fill/stroke
+- `linear-gradient()` — Use VML `<v:fill type="gradient">`
+- `display: flex/grid` — Use table layout
+- `float` — Use table `align` attribute
+- `position: absolute/relative/fixed` — Use table-based positioning
+- `margin`/`padding` on `<div>` — Use `<td>` padding or `mso-padding-alt`
+- `calc()`, `object-fit`, `clip-path` — Not supported
+- `@media` queries — Ignored; inline styles only
+- `animation`, `transition`, `transform`, `:hover` — Not supported

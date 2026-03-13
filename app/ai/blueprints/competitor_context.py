@@ -160,10 +160,6 @@ def _match_capabilities(
 ) -> list[CompetitorCapability]:
     """Match technique text to relevant capabilities via keyword overlap."""
     from app.knowledge.ontology.competitors import CompetitorCapability as _Cap
-    from app.knowledge.ontology.competitors import CompetitorRegistry as _Reg
-
-    if not isinstance(registry, _Reg):
-        return []
 
     # Keyword → capability ID mapping
     keyword_map: dict[str, list[str]] = {

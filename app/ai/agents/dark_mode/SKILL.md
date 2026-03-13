@@ -24,7 +24,8 @@ references:
   - skills/client_behavior.md
   - skills/outlook_dark_mode.md
   - skills/image_handling.md
-  - skills/html_email_components.md
+  - skills/dom_rendering_reference.md
+l4_source: docs/SKILL_email-dark-mode-dom-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

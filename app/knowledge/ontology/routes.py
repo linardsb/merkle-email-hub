@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/v1/ontology", tags=["ontology"])
 
 
 @router.get("/clients", response_model=list[EmailClientResponse])
-@limiter.limit("30/minute")
+@limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def list_email_clients(
     request: Request,  # noqa: ARG001
     current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001
@@ -59,7 +59,7 @@ def _to_response(f: CapabilityFeasibility) -> CapabilityFeasibilityResponse:
 
 
 @router.get("/competitive-report", response_model=CompetitiveReportResponse)
-@limiter.limit("10/minute")
+@limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_competitive_report(
     request: Request,  # noqa: ARG001
     current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001
@@ -90,7 +90,7 @@ async def get_competitive_report(
 
 
 @router.get("/competitive-report/text", response_model=CompetitiveReportTextResponse)
-@limiter.limit("10/minute")
+@limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_competitive_report_text(
     request: Request,  # noqa: ARG001
     current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001

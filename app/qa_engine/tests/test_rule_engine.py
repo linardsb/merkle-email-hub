@@ -7,7 +7,7 @@ from lxml import html as lxml_html
 from lxml.html import HtmlElement
 
 # Ensure custom checks are registered
-import app.qa_engine.custom_checks  # noqa: F401
+import app.qa_engine.custom_checks  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.rule_engine import (
     _CHECK_TYPES,
@@ -25,10 +25,10 @@ def _doc(html: str) -> HtmlElement:
 
 
 class TestLoadRules:
-    def setup_method(self):
+    def setup_method(self) -> None:
         clear_rules_cache()
 
-    def test_loads_valid_yaml(self, tmp_path: Path):
+    def test_loads_valid_yaml(self, tmp_path: Path) -> None:
         yaml_file = tmp_path / "test_rules.yaml"
         yaml_file.write_text("""
 rules:
@@ -44,17 +44,17 @@ rules:
         assert rules[0].id == "test-rule"
         assert rules[0].check_type == "element_present"
 
-    def test_missing_file_returns_empty(self, tmp_path: Path):
+    def test_missing_file_returns_empty(self, tmp_path: Path) -> None:
         rules = load_rules(tmp_path / "nonexistent.yaml")
         assert rules == []
 
-    def test_malformed_yaml_returns_empty(self, tmp_path: Path):
+    def test_malformed_yaml_returns_empty(self, tmp_path: Path) -> None:
         yaml_file = tmp_path / "bad.yaml"
         yaml_file.write_text("{{invalid yaml")
         rules = load_rules(yaml_file)
         assert rules == []
 
-    def test_skips_invalid_rules(self, tmp_path: Path):
+    def test_skips_invalid_rules(self, tmp_path: Path) -> None:
         yaml_file = tmp_path / "partial.yaml"
         yaml_file.write_text("""
 rules:
@@ -72,7 +72,7 @@ rules:
         assert len(rules) == 1
         assert rules[0].id == "good"
 
-    def test_caches_after_first_load(self, tmp_path: Path):
+    def test_caches_after_first_load(self, tmp_path: Path) -> None:
         yaml_file = tmp_path / "cached.yaml"
         yaml_file.write_text("""
 rules:

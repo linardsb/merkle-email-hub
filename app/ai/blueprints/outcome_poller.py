@@ -43,11 +43,11 @@ class OutcomeGraphPoller(DataPoller):
             if raw is None:
                 break
             try:
-                outcomes.append(json.loads(raw))
+                outcomes.append(json.loads(str(raw)))  # pyright: ignore[reportUnknownArgumentType]
             except json.JSONDecodeError:
                 logger.warning(
                     "blueprint.outcome_parse_failed",
-                    raw=str(raw)[:200],
+                    raw=str(raw)[:200],  # pyright: ignore[reportUnknownArgumentType]
                 )
 
         return outcomes

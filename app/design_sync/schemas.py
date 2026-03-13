@@ -1,6 +1,7 @@
 """Pydantic schemas for design sync."""
 
 import datetime
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -75,8 +76,8 @@ class ConnectionResponse(BaseModel):
             last_synced_at=conn.last_synced_at,
             project_id=conn.project_id,
             project_name=project_name,
-            created_at=conn.created_at,
-            updated_at=conn.updated_at,
+            created_at=cast(datetime.datetime, conn.created_at),
+            updated_at=cast(datetime.datetime, conn.updated_at),
         )
 
 

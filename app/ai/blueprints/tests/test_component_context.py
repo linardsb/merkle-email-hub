@@ -96,7 +96,7 @@ class TestComponentContextInjection:
             def node_type(self) -> NodeType:
                 return "agentic"
 
-            async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(status="success", html="<p>ok</p>")
 
         definition = BlueprintDefinition(
@@ -152,7 +152,7 @@ class TestComponentContextInjection:
             def node_type(self) -> NodeType:
                 return "deterministic"
 
-            async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(
                     status="success",
                     html='<component src="components/header.html" /><component src="components/footer.html" />',
@@ -182,7 +182,7 @@ class TestComponentContextInjection:
         resolver_called = False
 
         class TrackingResolver:
-            async def resolve(self, slugs: list[str]) -> list[ComponentMeta]:  # noqa: ARG002
+            async def resolve(self, slugs: list[str]) -> list[ComponentMeta]:
                 nonlocal resolver_called
                 resolver_called = True
                 return []
@@ -196,7 +196,7 @@ class TestComponentContextInjection:
             def node_type(self) -> NodeType:
                 return "agentic"
 
-            async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(status="success", html="<p>plain</p>")
 
         # Need initial HTML without component refs
@@ -209,7 +209,7 @@ class TestComponentContextInjection:
             def node_type(self) -> NodeType:
                 return "deterministic"
 
-            async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+            async def execute(self, context: NodeContext) -> NodeResult:
                 return NodeResult(status="success", html="<table><tr><td>no refs</td></tr></table>")
 
         definition = BlueprintDefinition(

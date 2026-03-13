@@ -210,7 +210,7 @@ def _export_competitor_profiles() -> list[tuple[str, str]]:
         name = cap.name if cap else (hub_cap.name if hub_cap else cap_id)
 
         hub_check = "\u2713" if cap_id in hub_cap_ids else "\u2717"
-        comp_checks = []
+        comp_checks: list[str] = []
         for comp in registry.competitors:
             comp_checks.append("\u2713" if cap_id in comp.capabilities else "\u2717")
 

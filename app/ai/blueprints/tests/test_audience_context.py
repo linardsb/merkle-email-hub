@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -22,7 +23,7 @@ from app.knowledge.ontology.types import (
 )
 from app.personas.schemas import PersonaResponse
 
-_NOW = "2026-01-01T00:00:00"
+_NOW = datetime.fromisoformat("2026-01-01T00:00:00")
 
 
 def _make_persona(
@@ -43,8 +44,8 @@ def _make_persona(
         viewport_width=viewport_width,
         os_name="macOS",
         is_preset=True,
-        created_at=_NOW,  # type: ignore[arg-type]
-        updated_at=_NOW,  # type: ignore[arg-type]
+        created_at=_NOW,
+        updated_at=_NOW,
     )
 
 
@@ -86,7 +87,7 @@ class TestBuildAudienceProfile:
         assert build_audience_profile(personas) is None
 
     @patch("app.ai.blueprints.audience_context.load_ontology")
-    def test_outlook_has_constraints(self, mock_ontology: object) -> None:
+    def test_outlook_has_constraints(self, mock_ontology: MagicMock) -> None:
         """Outlook personas should produce constraints for unsupported CSS."""
         flexbox_prop = CSSProperty(
             id="flexbox",
@@ -131,7 +132,7 @@ class TestBuildAudienceProfile:
         assert profile.constraints[0].workaround == "Use table layout"
 
     @patch("app.ai.blueprints.audience_context.load_ontology")
-    def test_dark_mode_required(self, mock_ontology: object) -> None:
+    def test_dark_mode_required(self, mock_ontology: MagicMock) -> None:
         registry = mock_ontology.return_value
         registry.get_client.return_value = EmailClient(
             id="gmail_web",
@@ -152,7 +153,7 @@ class TestBuildAudienceProfile:
         assert profile.dark_mode_required is True
 
     @patch("app.ai.blueprints.audience_context.load_ontology")
-    def test_mobile_viewports(self, mock_ontology: object) -> None:
+    def test_mobile_viewports(self, mock_ontology: MagicMock) -> None:
         registry = mock_ontology.return_value
         registry.get_client.return_value = EmailClient(
             id="gmail_web",
@@ -338,8 +339,9 @@ class TestEngineAudienceIntegration:
         assert len(captured_context) == 1
         ctx = captured_context[0]
         assert "audience_context" in ctx.metadata
-        assert "Gmail (Web)" in ctx.metadata["audience_context"]
-        assert "TARGET AUDIENCE CONSTRAINTS" in ctx.metadata["audience_context"]
+        audience_context = str(ctx.metadata["audience_context"])
+        assert "Gmail (Web)" in audience_context
+        assert "TARGET AUDIENCE CONSTRAINTS" in audience_context
 
     @pytest.mark.asyncio
     async def test_no_audience_context_when_profile_is_none(self) -> None:

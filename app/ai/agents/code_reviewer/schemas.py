@@ -11,6 +11,7 @@ ReviewFocus = Literal[
     "css_support",
     "nesting",
     "file_size",
+    "link_validation",
     "all",
 ]
 
@@ -42,7 +43,7 @@ class CodeReviewResponse(BaseModel):
     """Response from the Code Reviewer process endpoint."""
 
     html: str = Field(description="Original HTML (unmodified)")
-    issues: list[CodeReviewIssue] = Field(default_factory=list)
+    issues: list[CodeReviewIssue] = Field(default_factory=lambda: list[CodeReviewIssue]())
     summary: str = Field(description="Brief natural-language review summary")
     skills_loaded: list[str] = Field(default_factory=list)
     qa_results: list[QACheckResult] | None = None

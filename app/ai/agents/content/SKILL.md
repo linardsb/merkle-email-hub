@@ -24,6 +24,7 @@ references:
   - skills/subject_line_formulas.md
   - skills/brand_voice.md
   - skills/operation_best_practices.md
+l4_source: docs/SKILL_email-spam-score-dom-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

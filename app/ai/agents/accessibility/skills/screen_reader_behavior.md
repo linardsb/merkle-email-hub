@@ -1,103 +1,185 @@
-# Screen Reader Behavior in Email Clients
+<!-- L4 source: docs/SKILL_email-accessibility-wcag-aa.md section 12 -->
+<!-- Last synced: 2026-03-13 -->
+
+# Screen Reader Behavior in Email
+
+How screen readers interact with email HTML — hidden content techniques, ARIA
+attributes, announcement patterns, and content patterns that need special
+treatment. Covers VoiceOver, NVDA, JAWS, and TalkBack across major clients.
+
+---
 
 ## Screen Reader + Email Client Matrix
 
-| Screen Reader | Platform | Email Client | Notes |
-|--------------|----------|-------------|-------|
-| VoiceOver | macOS | Apple Mail | Best support, reads role="article" |
-| VoiceOver | iOS | Mail app | Good support, reads semantic markup |
-| NVDA | Windows | Outlook desktop | Reads tables as data by default |
-| JAWS | Windows | Outlook desktop | Similar to NVDA, respects role="presentation" |
-| NVDA | Windows | Outlook web | Web rendering, good support |
-| TalkBack | Android | Gmail app | Limited, basic structure reading |
+| Screen Reader | Platform | Email Client | Support Level |
+|--------------|----------|-------------|---------------|
+| VoiceOver | macOS | Apple Mail | Best — reads `role="article"`, full ARIA |
+| VoiceOver | iOS | Mail app | Good — semantic markup respected |
+| NVDA | Windows | Outlook desktop | Good — respects `role="presentation"` |
+| JAWS | Windows | Outlook desktop | Good — similar to NVDA |
+| NVDA | Windows | Outlook.com | Good — web rendering |
+| TalkBack | Android | Gmail app | Limited — basic structure reading |
 
-## Table Reading Behavior
+---
 
-### Without `role="presentation"` (BAD)
-```
-NVDA: "Table with 3 rows and 2 columns. Row 1, Column 1: Header..."
-```
-Screen reader announces grid structure, confusing for layout tables.
+## Hidden Content Techniques
 
-### With `role="presentation"` (GOOD)
-```
-NVDA: "Header text. Content text..."
-```
-Screen reader treats table as layout, reads content linearly.
+Each technique has different screen reader behavior — choose carefully:
 
-### Critical Rule
-ALL layout tables MUST have `role="presentation"`:
+| Technique | Visual | Screen Reader | Use Case |
+|-----------|--------|---------------|----------|
+| `display: none` | Hidden | Skipped | Content for one breakpoint only (desktop/mobile) |
+| `visibility: hidden` | Hidden | Skipped | Same as `display: none` |
+| `aria-hidden="true"` | **Visible** | Skipped | Decorative elements that sighted users see |
+| `mso-hide: all` | Hidden (Outlook only) | **Still read** | Outlook visual hide — NOT an a11y tool |
+| `max-height:0; overflow:hidden` | Hidden | **Read** | Preheader text (want SR to read it) |
+| SR-only class (below) | Hidden | **Read** | Extra context for screen readers only |
+
+### Visually Hidden (Screen Reader Only)
+
+Email-safe method that works across clients:
+
+```css
+position: absolute;
+width: 1px;
+height: 1px;
+overflow: hidden;
+clip: rect(0,0,0,0);
+white-space: nowrap;
+```
+
+### Preview Text Padding
+
+The `&zwnj;&nbsp;` padding after preheader text MUST be hidden from screen readers:
+
 ```html
-<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<span style="max-height:0; overflow:hidden; mso-hide:all;">
+  Preheader text here.
+</span>
+<span aria-hidden="true" style="max-height:0; overflow:hidden; mso-hide:all;">
+  &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;<!-- repeated to push preview -->
+</span>
 ```
 
-## Heading Navigation
+---
 
-Screen reader users navigate by headings (H key in NVDA/JAWS).
-Proper heading hierarchy enables efficient scanning:
+## ARIA Attributes in Email
+
+### Essential ARIA (Use Always)
+
+| Attribute | Where | Why |
+|-----------|-------|-----|
+| `role="presentation"` | Every layout table | **#1 email a11y rule** — prevents SR from announcing grid dimensions |
+| `role="article"` | Main email wrapper `<div>` or `<td>` | Identifies email body vs client UI |
+| `aria-roledescription="email"` | Same wrapper as `role="article"` | Announces "email" instead of "article" |
+| `aria-hidden="true"` | Decorative elements, spacers, tracking pixels, preview padding | Prevents noise announcements |
+
+### Structural ARIA
+
+| Attribute | Where | Why |
+|-----------|-------|-----|
+| `role="img"` | SVG, VML shapes acting as images | Announces as image |
+| `role="separator"` | Decorative `<hr>` or divider `<td>` | Semantic separation |
+| `role="list"` + `role="listitem"` | Table-faked lists (Outlook compatibility) | Maintains list semantics |
+| `role="heading"` + `aria-level` | Non-heading elements acting as headings | Rare — prefer real `<h1>`-`<h6>` |
+
+### Labeling ARIA
+
+| Attribute | Where | Caveat |
+|-----------|-------|--------|
+| `aria-label` | Elements without visible text | **Gmail strips this** — don't rely on it solely |
+| `aria-labelledby` | References another element's text | **Gmail strips this** |
+| `aria-describedby` | Additional description | Primarily useful in AMP forms |
+| `aria-live="polite"` | Dynamic update regions | AMP email form feedback |
+
+**Critical note:** Gmail, Yahoo, and some clients strip many ARIA attributes.
+Content must always be understandable WITHOUT ARIA as a baseline.
+
+---
+
+## Announcement Patterns — What Gets Read Aloud
+
+### Elements That Cause Unwanted Announcements
+
+| Element | SR Announces | Fix |
+|---------|-------------|-----|
+| `&nbsp;` spacer cells | "space" | `aria-hidden="true"` on cell |
+| `&zwnj;` characters | "zero-width joiner" | `aria-hidden="true"` on container |
+| `\|` pipe separators | "vertical bar" | `aria-hidden="true"` |
+| `•` bullet separators | "bullet" | `aria-hidden="true"` |
+| Decorative dashes/dots | Character name | `aria-hidden="true"` + visually hidden text if meaningful |
+| Emoji | Varies wildly by client | Provide text alternative or `aria-label` |
+| Unicode symbols | Character name | `aria-hidden="true"` + adjacent hidden text |
+
+### Table-Faked List Bullets
 
 ```html
-<h1>Summer Sale</h1>                    <!-- Main topic -->
-  <h2>Women's Collection</h2>            <!-- Section -->
-    <h3>Dresses</h3>                     <!-- Subsection -->
-    <h3>Accessories</h3>                 <!-- Subsection -->
-  <h2>Men's Collection</h2>             <!-- Section -->
+<table role="list">
+  <tr role="listitem">
+    <td aria-hidden="true" style="width:20px;">•</td>
+    <td>List item content</td>
+  </tr>
+</table>
 ```
 
-**Never skip levels:** h1 -> h3 (skipping h2) breaks navigation expectations.
+---
 
-## MSO Conditional Content
+## Content Patterns Needing Special Treatment
 
-### VoiceOver Behavior with MSO Comments
-VoiceOver (Apple Mail) ignores MSO conditional content — reads only non-MSO content.
-NVDA/JAWS (Outlook) reads MSO content — ignores non-MSO fallbacks.
+These common email patterns are not conveyed correctly by screen readers
+without explicit text alternatives:
 
-This means both versions need proper alt text and semantic markup:
+| Pattern | Problem | Fix |
+|---------|---------|-----|
+| Strikethrough pricing (`<del>$50</del> $30`) | SR may not convey strikethrough | Add "Was $50, now $30" text |
+| Discount badges | Image-only badge invisible | Include "50% off" as text |
+| Star ratings (★★★★☆) | SR announces unicode chars | Add "Rated 4 out of 5 stars" text |
+| Progress/status bars | Image-only bar invisible | Include text description |
+| "New"/"Sale" badges | Image-only badges invisible | Use real text or meaningful `alt` |
+| Countdown urgency | Animation-only invisible | Include live text version |
+| Order status steps | Colored indicator image only | Text label per status step |
+
+---
+
+## MSO Conditional Content & Screen Readers
+
+VoiceOver (Apple Mail) ignores MSO conditional content. NVDA/JAWS (Outlook)
+reads MSO content and ignores non-MSO fallbacks.
+
+**Both branches need proper accessibility:**
+
 ```html
 <!--[if mso]>
 <v:roundrect ...>
-<center style="...">Shop Now</center>
+  <center style="...">Shop Now</center>
 </v:roundrect>
 <![endif]-->
 <!--[if !mso]><!-->
-<a href="..." role="button" style="...">Shop Now</a>
+<a href="..." style="...">Shop Now</a>
 <!--<![endif]-->
 ```
 
-Both the VML center text and the `<a>` text should convey the same action.
+### VML Accessibility
 
-## VML Accessibility
-
-VML elements (`<v:rect>`, `<v:roundrect>`, etc.) have limited screen reader support:
 - Text inside `<v:textbox>` IS read by NVDA/JAWS in Outlook
 - VML shapes themselves are NOT announced
 - Alt text on VML elements is NOT reliably read
+- **Always** ensure VML content has equivalent text in `<v:textbox>` or `<center>`
 
-**Best practice:** Ensure all VML content has equivalent text in `<v:textbox>` or `<center>`.
-
-## Email-Level ARIA
-
-### Recommended ARIA for Email
-```html
-<html lang="en">
-<body>
-  <div role="article" aria-roledescription="email" aria-label="Email from Brand Name">
-    <!-- All email content -->
-  </div>
-</body>
-</html>
-```
-
-### ARIA on Decorative Elements
-```html
-<img src="spacer.gif" alt="" role="presentation" aria-hidden="true">
-<hr role="presentation" aria-hidden="true">
-```
+---
 
 ## Reading Order
 
 Screen readers follow DOM order, not visual order.
-In multi-column email layouts:
-- Source order should be: left column content -> right column content
-- On mobile (stacked), this becomes top-to-bottom
-- Ensure the reading order makes sense in both layouts
+
+### Multi-Column Layouts
+
+- Source order: left column content, then right column content
+- On mobile (stacked): becomes top-to-bottom following source order
+- Ensure reading sequence makes sense in both layouts
+- Two-column: text should not depend on seeing the adjacent image first
+
+### Key Principle
+
+There is no CSS grid/flexbox `order` property in email — source order is the
+ONLY reading order. Get it right in the markup.

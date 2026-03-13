@@ -376,9 +376,9 @@ async def recall_failure_patterns(
             if metadata.get("source") != "failure_pattern":
                 continue
             # Check client overlap
-            raw_clients = metadata.get("client_ids", [])
+            raw_clients: object = metadata.get("client_ids", [])
             pattern_clients: set[object] = (
-                set(raw_clients) if isinstance(raw_clients, list) else set()
+                set(raw_clients) if isinstance(raw_clients, list) else set()  # pyright: ignore[reportUnknownArgumentType]
             )
             if pattern_clients and not pattern_clients.intersection(client_ids):
                 continue

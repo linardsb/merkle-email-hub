@@ -35,6 +35,7 @@ SKILL_FILES: dict[str, str] = {
     "maizzle_syntax": "maizzle_syntax.md",
     "client_compatibility": "client_compatibility.md",
     "mso_vml_quick_ref": "mso_vml_quick_ref.md",
+    "email_structure": "email_structure.md",
 }
 
 
@@ -122,6 +123,25 @@ def detect_relevant_skills(brief: str, context: dict[str, str] | None = None) ->
         ]
     ):
         skills.append("mso_vml_quick_ref")
+
+    # Email structure (preheader, header, footer, hero, accessibility, images)
+    if any(
+        kw in brief_lower
+        for kw in [
+            "preheader",
+            "preview text",
+            "header",
+            "footer",
+            "hero",
+            "banner",
+            "unsubscribe",
+            "accessibility",
+            "a11y",
+            "alt text",
+            "logo",
+        ]
+    ):
+        skills.append("email_structure")
 
     # Client compatibility concerns
     if any(

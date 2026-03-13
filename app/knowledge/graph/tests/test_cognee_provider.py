@@ -63,13 +63,13 @@ def _reset_config_flag():
 def test_provider_raises_if_disabled():
     settings = _make_settings(enabled=False)
     with pytest.raises(GraphNotEnabledError, match="disabled"):
-        CogneeGraphProvider(settings)
+        CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
 async def test_add_documents_calls_cognee_add():
     settings = _make_settings()
-    provider = CogneeGraphProvider(settings)
+    provider = CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
     mock_cognee = MagicMock()
     mock_cognee.add = AsyncMock(return_value=None)
@@ -85,7 +85,7 @@ async def test_add_documents_calls_cognee_add():
 @pytest.mark.asyncio
 async def test_build_graph_calls_cognify():
     settings = _make_settings()
-    provider = CogneeGraphProvider(settings)
+    provider = CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
     mock_cognee = MagicMock()
     mock_cognee.cognify = AsyncMock(return_value=None)
@@ -104,7 +104,7 @@ async def test_build_graph_calls_cognify():
 @pytest.mark.asyncio
 async def test_search_returns_results():
     settings = _make_settings()
-    provider = CogneeGraphProvider(settings)
+    provider = CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
     mock_search_type = MagicMock()
     mock_search_type.CHUNKS = "CHUNKS"
@@ -138,7 +138,7 @@ async def test_search_returns_results():
 @pytest.mark.asyncio
 async def test_search_completion_returns_answer():
     settings = _make_settings()
-    provider = CogneeGraphProvider(settings)
+    provider = CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
     mock_search_type = MagicMock()
     mock_search_type.GRAPH_COMPLETION = "GRAPH_COMPLETION"
@@ -170,7 +170,7 @@ async def test_search_completion_returns_answer():
 @pytest.mark.asyncio
 async def test_search_handles_cognee_error():
     settings = _make_settings()
-    provider = CogneeGraphProvider(settings)
+    provider = CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
     mock_search_type = MagicMock()
     mock_search_type.CHUNKS = "CHUNKS"
@@ -201,7 +201,7 @@ async def test_search_handles_cognee_error():
 @pytest.mark.asyncio
 async def test_config_applied_once():
     settings = _make_settings()
-    provider = CogneeGraphProvider(settings)
+    provider = CogneeGraphProvider(settings)  # type: ignore[arg-type]
 
     mock_cognee = MagicMock()
     mock_cognee.add = AsyncMock(return_value=None)
@@ -228,7 +228,7 @@ async def test_config_inherits_ai_settings():
         # Call apply_cognee_config directly to verify AI setting inheritance
         from app.knowledge.graph.config import apply_cognee_config
 
-        apply_cognee_config(settings)
+        apply_cognee_config(settings)  # type: ignore[arg-type]
 
     # Verify LLM config was set with AI fallback values
     mock_cognee.config.set_llm_config.assert_called_once_with(

@@ -6,7 +6,7 @@ import pytest
 
 from app.ai.blueprints.audience_context import AudienceProfile
 from app.ai.blueprints.engine import BlueprintDefinition, BlueprintEngine, Edge
-from app.ai.blueprints.protocols import NodeContext, NodeResult
+from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType
 from app.knowledge.ontology.types import ClientEngine, EmailClient
 
 
@@ -37,20 +37,20 @@ def _make_profile(
 class _FakeNode:
     """Generic fake node for testing."""
 
-    def __init__(self, name: str, node_type: str = "agentic") -> None:
+    def __init__(self, name: str, node_type: NodeType = "agentic") -> None:
         self._name = name
-        self._type = node_type
+        self._type: NodeType = node_type
 
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def node_type(self) -> str:
+    def node_type(self) -> NodeType:
         return self._type
 
-    async def execute(self, ctx: NodeContext) -> NodeResult:
-        return NodeResult(status="success", html=ctx.html, details=f"{self._name} done")
+    async def execute(self, context: NodeContext) -> NodeResult:
+        return NodeResult(status="success", html=context.html, details=f"{self._name} done")
 
 
 class _FailingNode:
@@ -64,10 +64,10 @@ class _FailingNode:
         return self._name
 
     @property
-    def node_type(self) -> str:
+    def node_type(self) -> NodeType:
         return "agentic"
 
-    async def execute(self, _ctx: NodeContext) -> NodeResult:
+    async def execute(self, context: NodeContext) -> NodeResult:
         raise AssertionError(f"{self._name} should not be called")
 
 

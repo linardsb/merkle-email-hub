@@ -1,0 +1,147 @@
+# Link Validation Rules — DOM-parsed link extraction + URL format validation
+# Source: docs/SKILL_email-link-validation-dom-reference.md
+# Used by: app/qa_engine/checks/link_validation.py
+
+rules:
+  # ─── Group A: URL Protocol & Format ───
+
+  - id: "link-non-https"
+    group: "url_protocol"
+    name: "HTTPS required for web links"
+    check: "custom"
+    custom_fn: "link_non_https"
+    deduction_key: "deduction_http_link"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 5
+    message: "Non-HTTPS link — may trigger mixed-content warnings and spam filter scoring"
+
+  - id: "link-malformed-url"
+    group: "url_protocol"
+    name: "Valid URL format (scheme, netloc, path)"
+    check: "custom"
+    custom_fn: "link_malformed_url"
+    deduction_key: "deduction_malformed_url"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 5
+    message: "Malformed URL — missing scheme, invalid characters, or broken structure"
+
+  - id: "link-blocked-protocol"
+    group: "url_protocol"
+    name: "No javascript:/data:/vbscript: protocols"
+    check: "custom"
+    custom_fn: "link_blocked_protocol"
+    deduction_key: "deduction_blocked_protocol"
+    default_deduction: 0.25
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 3
+    message: "Blocked protocol in href — javascript:/data:/vbscript: are stripped by all email clients"
+
+  # ─── Group B: Empty & Suspicious ───
+
+  - id: "link-empty-href"
+    group: "empty_suspicious"
+    name: "No empty or fragment-only hrefs"
+    check: "custom"
+    custom_fn: "link_empty_href"
+    deduction_key: "deduction_empty_href"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 5
+    message: "Empty href or href='#' — links should be functional"
+
+  # ─── Group C: ESP Template Syntax ───
+
+  - id: "link-template-balanced"
+    group: "template_syntax"
+    name: "ESP template variable delimiters are balanced"
+    check: "custom"
+    custom_fn: "link_template_balanced"
+    deduction_key: "deduction_template_unbalanced"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 5
+    message: "Unbalanced ESP template variable syntax in href — check {{ }}, %%[ ]%%, or <%= %>"
+
+  # ─── Group D: URL Encoding ───
+
+  - id: "link-unencoded-chars"
+    group: "encoding"
+    name: "URLs are properly percent-encoded"
+    check: "custom"
+    custom_fn: "link_unencoded_chars"
+    deduction_key: "deduction_unencoded"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 3
+    message: "Unencoded spaces or special characters in URL — will break in email clients"
+
+  - id: "link-double-encoded"
+    group: "encoding"
+    name: "No double-encoded URLs"
+    check: "custom"
+    custom_fn: "link_double_encoded"
+    deduction_key: "deduction_double_encoded"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 3
+    message: "Double-encoded URL characters (e.g. %2520) — indicates broken encoding pipeline"
+
+  # ─── Group E: Phishing Signals ───
+
+  - id: "link-text-url-mismatch"
+    group: "phishing"
+    name: "Display text URL matches href domain"
+    check: "custom"
+    custom_fn: "link_phishing_mismatch"
+    deduction_key: "deduction_phishing"
+    default_deduction: 0.20
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 3
+    message: "Link display text contains a URL domain that differs from the href destination — phishing signal"
+
+  # ─── Group F: Presence & Statistics ───
+
+  - id: "link-has-links"
+    group: "presence"
+    name: "Email contains at least one link"
+    check: "custom"
+    custom_fn: "link_has_any"
+    deduction_key: "deduction_no_links"
+    default_deduction: 0.0
+    message: "No links found in email — informational only"
+
+  - id: "link-all-have-text"
+    group: "presence"
+    name: "All links have visible text or image alt text"
+    check: "custom"
+    custom_fn: "link_accessible_text"
+    deduction_key: "deduction_no_link_text"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 5
+    message: "Link has no visible text and no image alt text — inaccessible and poor for deliverability"
+
+  # ─── Group G: VML Link Coherence ───
+
+  - id: "link-vml-href-present"
+    group: "vml_links"
+    name: "VML elements with href attribute are valid"
+    check: "custom"
+    custom_fn: "link_vml_href"
+    deduction_key: "deduction_vml_href"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_link_issues_reported"
+    default_cap: 3
+    message: "VML href found — ensure it matches the corresponding HTML <a> href (ESPs only rewrite <a> tags)"

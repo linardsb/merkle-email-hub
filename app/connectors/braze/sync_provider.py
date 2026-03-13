@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 
 from app.connectors.sync_schemas import ESPTemplate
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -17,8 +17,11 @@ class BrazeSyncProvider:
     Credentials: ``{"api_key": "..."}``
     """
 
-    def __init__(self) -> None:
-        self._base_url = get_settings().esp_sync.braze_base_url
+    _base_url: str
+
+    def __init__(self, settings: Settings | None = None) -> None:
+        _settings = settings or get_settings()
+        self._base_url = _settings.esp_sync.braze_base_url  # type: ignore[attr-defined]
 
     def _headers(self, credentials: dict[str, str]) -> dict[str, str]:
         return {"Authorization": f"Bearer {credentials['api_key']}"}

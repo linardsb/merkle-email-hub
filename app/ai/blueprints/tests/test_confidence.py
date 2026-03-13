@@ -23,7 +23,7 @@ class StubAgenticNode:
     def node_type(self) -> NodeType:
         return "agentic"
 
-    async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+    async def execute(self, context: NodeContext) -> NodeResult:
         self.call_count += 1
         return NodeResult(
             status="success",
@@ -48,7 +48,7 @@ class StubDeterministicNode:
     def node_type(self) -> NodeType:
         return "deterministic"
 
-    async def execute(self, context: NodeContext) -> NodeResult:  # noqa: ARG002
+    async def execute(self, context: NodeContext) -> NodeResult:
         self.call_count += 1
         return NodeResult(status="success", html="<p>gate</p>")
 

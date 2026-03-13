@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md sections 1, 3, 10 -->
+<!-- Last synced: 2026-03-13 -->
+
 # MSO & VML Quick Reference
 
 ## MSO Conditional Comments
@@ -24,6 +27,7 @@
 <!--[if mso 16]>  Outlook 2016/2019/365  <![endif]-->
 <!--[if gte mso 12]>  Outlook 2007 and later  <![endif]-->
 <!--[if lte mso 15]>  Outlook 2013 and earlier  <![endif]-->
+<!--[if mso | IE]>  Outlook + legacy IE  <![endif]-->
 ```
 
 ### Ghost Table (Width Constraint)
@@ -45,7 +49,8 @@
 When using VML, add to `<html>` tag:
 ```html
 <html xmlns:v="urn:schemas-microsoft-com:vml"
-      xmlns:o="urn:schemas-microsoft-com:office:office">
+      xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word">
 ```
 
 ## VML Bulletproof Button
@@ -53,11 +58,13 @@ When using VML, add to `<html>` tag:
 ```html
 <!--[if mso]>
 <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:w="urn:schemas-microsoft-com:office:word"
   href="https://example.com/cta"
   style="height:44px; v-text-anchor:middle; width:200px;"
   arcsize="10%"
   strokecolor="#007bff"
   fillcolor="#007bff">
+<w:anchorlock/>
 <center style="color:#ffffff; font-family:Arial,sans-serif; font-size:16px; font-weight:bold;">
   Button Text
 </center>
@@ -79,7 +86,7 @@ When using VML, add to `<html>` tag:
 <!--[if mso]>
 <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
   style="width:600px; height:300px;">
-<v:fill type="frame" src="https://placehold.co/600x300" />
+<v:fill type="frame" src="https://placehold.co/600x300" color="#333333" />
 <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">
 <![endif]-->
 <div style="background-image:url('https://placehold.co/600x300');
@@ -89,6 +96,50 @@ When using VML, add to `<html>` tag:
 <!--[if mso]>
 </v:textbox>
 </v:rect>
+<![endif]-->
+```
+
+## VML Gradient Background
+
+```html
+<!--[if gte mso 9]>
+<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+  style="width:600px;height:200px;">
+<v:fill type="gradient" color="#1a73e8" color2="#6ab7ff" angle="90" />
+<v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">
+<![endif]-->
+<div style="background: linear-gradient(90deg, #1a73e8, #6ab7ff);">
+  <!-- Content -->
+</div>
+<!--[if gte mso 9]>
+</v:textbox>
+</v:rect>
+<![endif]-->
+```
+
+## Outlook Column Fallback (2-col with gutter)
+
+```html
+<!--[if mso]>
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center">
+<tr>
+<td width="290" valign="top">
+<![endif]-->
+<div style="display:inline-block; max-width:290px; width:100%; vertical-align:top;">
+  <!-- Column 1 -->
+</div>
+<!--[if mso]>
+</td>
+<td width="20"></td>
+<td width="290" valign="top">
+<![endif]-->
+<div style="display:inline-block; max-width:290px; width:100%; vertical-align:top;">
+  <!-- Column 2 -->
+</div>
+<!--[if mso]>
+</td>
+</tr>
+</table>
 <![endif]-->
 ```
 
@@ -113,18 +164,50 @@ mso-table-rspace: 0pt;             /* Remove table right spacing */
 mso-padding-alt: 20px 30px;        /* Outlook padding override */
 mso-margin-top-alt: 0;             /* Paragraph margin override */
 mso-margin-bottom-alt: 16px;       /* Paragraph margin override */
+mso-text-raise: 10px;              /* Vertical text alignment */
+mso-hide: all;                     /* Hide from Outlook only */
 ```
 
-## XML Processing Instructions
+## Full MSO Namespace Setup
 
-For Office XML features (used in `<head>`):
 ```html
-<!--[if gte mso 9]>
-<xml>
-  <o:OfficeDocumentSettings>
-    <o:AllowPNG/>
-    <o:PixelsPerInch>96</o:PixelsPerInch>
-  </o:OfficeDocumentSettings>
-</xml>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office"
+      lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Email Title</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <o:OfficeDocumentSettings>
+      <o:AllowPNG/>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+  </xml>
+  <![endif]-->
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, a, p { font-family: Arial, Helvetica, sans-serif; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; }
+    p { margin: 0; padding: 0; mso-line-height-rule: exactly; }
+    span.MsoHyperlink { color: inherit !important; }
+    span.MsoHyperlinkFollowed { color: inherit !important; }
+  </style>
+  <![endif]-->
+</head>
+```
+
+## Outlook Spacer Row
+
+```html
+<!--[if mso]>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+<td style="height:30px; font-size:1px; line-height:1px; mso-line-height-rule:exactly;">&nbsp;</td>
+</tr></table>
 <![endif]-->
 ```

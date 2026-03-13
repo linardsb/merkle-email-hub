@@ -35,6 +35,7 @@ SKILL_FILES: dict[str, str] = {
     "client_behavior": "client_behavior.md",
     "outlook_dark_mode": "outlook_dark_mode.md",
     "image_handling": "image_handling.md",
+    "dom_reference": "dom_rendering_reference.md",
 }
 
 
@@ -111,5 +112,12 @@ def detect_relevant_skills(html: str, color_overrides: dict[str, str] | None = N
     # Complex or unknown situations — load client behavior matrix
     if color_overrides or len(html) > 5000:
         skills.append("client_behavior")
+
+    # Complex dark mode validation — load full DOM reference
+    if any(
+        pat in html_lower
+        for pat in ["1x1", "background-image", "data-outlook-cycle", ".darkmode", ".dark-img"]
+    ):
+        skills.append("dom_reference")
 
     return list(dict.fromkeys(skills))  # deduplicate preserving order

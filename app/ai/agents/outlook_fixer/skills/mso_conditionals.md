@@ -1,3 +1,6 @@
+<!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md sections 1-2 -->
+<!-- Last synced: 2026-03-13 -->
+
 # MSO Conditional Comments — Version Targeting Reference
 
 ## Basic Conditional Syntax
@@ -26,7 +29,7 @@ Getting this wrong breaks rendering in all clients.
 <!--[if mso 12]>  <!-- Outlook 2007 only -->
 <!--[if mso 14]>  <!-- Outlook 2010 only -->
 <!--[if mso 15]>  <!-- Outlook 2013 only -->
-<!--[if mso 16]>  <!-- Outlook 2016, 2019, and Microsoft 365 -->
+<!--[if mso 16]>  <!-- Outlook 2016, 2019, 2021, Microsoft 365 -->
 ```
 
 ### Version Ranges
@@ -44,21 +47,24 @@ Getting this wrong breaks rendering in all clients.
 - `lte mso X` — Less than or equal to version X
 - `gt mso X` — Greater than version X
 - `lt mso X` — Less than version X
+- `!mso` — NOT Outlook (everything else)
+- `mso | IE` — Outlook OR Internet Explorer
+- `mso & IE` — Outlook AND IE context (rare)
 
-### Version Numbers
+### Full Version Number Mapping
 | Version Number | Outlook Version |
 |---------------|-----------------|
-| 12 | Outlook 2007 |
-| 14 | Outlook 2010 |
+| 9 | Outlook 2000 |
+| 10 | Outlook 2002/XP |
+| 11 | Outlook 2003 |
+| 12 | Outlook 2007 (first Word engine) |
+| 14 | Outlook 2010 (skipped 13) |
 | 15 | Outlook 2013 |
-| 16 | Outlook 2016, 2019, Microsoft 365 |
+| 16 | Outlook 2016, 2019, 2021, Microsoft 365 |
 
-**Note:** Outlook 2016, 2019, and Microsoft 365 all report as `mso 16`.
-There is no way to distinguish between them via conditionals.
+**Note:** Outlook 2016+ all report as `mso 16` — no way to distinguish via conditionals.
 
 ## Ghost Table Pattern (Multi-Column Layouts)
-
-The ghost table is the standard pattern for multi-column layouts in Outlook:
 
 ### Two-Column Ghost Table
 ```html
@@ -118,15 +124,10 @@ The ghost table is the standard pattern for multi-column layouts in Outlook:
 <![endif]-->
 ```
 
-## DPI Scaling Fix
+## Office XML Namespace Block
 
-Outlook on high-DPI displays scales images and VML incorrectly.
-
-### Fix: Add Office XML namespace and DPI declaration
+Required in `<head>` for DPI fix and PNG support:
 ```html
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-      xmlns:v="urn:schemas-microsoft-com:vml">
-<head>
 <!--[if gte mso 9]>
 <xml>
   <o:OfficeDocumentSettings>
@@ -135,10 +136,22 @@ Outlook on high-DPI displays scales images and VML incorrectly.
   </o:OfficeDocumentSettings>
 </xml>
 <![endif]-->
-</head>
 ```
 
-This forces Outlook to render at 96 DPI regardless of display scaling.
+- `<o:AllowPNG/>` — Enables PNG rendering (some Outlook versions need this)
+- `<o:PixelsPerInch>96</o:PixelsPerInch>` — Prevents high-DPI scaling distortion
+- `<o:TargetScreenSize>` — Target display resolution (rarely used)
+
+### Namespace Declarations on `<html>`
+```html
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word">
+```
+- `xmlns:v` — Required for ALL VML shapes
+- `xmlns:o` — Required for `<o:OfficeDocumentSettings>`, `<o:AllowPNG/>`, `<o:PixelsPerInch>`
+- `xmlns:w` — Required for `<w:anchorlock/>` in VML buttons
 
 ## MSO-Specific CSS Properties
 
@@ -153,7 +166,7 @@ mso-table-rspace: 0pt;            /* Remove right table spacing */
 mso-padding-alt: 10px 20px;       /* Override cell padding */
 mso-font-alt: Arial;              /* Fallback font for Word engine */
 mso-text-raise: 0;                /* Vertical text alignment */
-mso-style-textfill-fill-color: #333; /* Text fill in VML context */
+mso-hide: all;                    /* Hide element from Outlook only */
 ```
 
 ## Conditional Comment Nesting Rules

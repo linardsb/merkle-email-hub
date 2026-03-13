@@ -38,9 +38,9 @@ class ExtractedSpacing:
 class ExtractedTokens:
     """All design tokens extracted from a design file."""
 
-    colors: list[ExtractedColor] = field(default_factory=list)
-    typography: list[ExtractedTypography] = field(default_factory=list)
-    spacing: list[ExtractedSpacing] = field(default_factory=list)
+    colors: list[ExtractedColor] = field(default_factory=list[ExtractedColor])
+    typography: list[ExtractedTypography] = field(default_factory=list[ExtractedTypography])
+    spacing: list[ExtractedSpacing] = field(default_factory=list[ExtractedSpacing])
 
 
 @runtime_checkable

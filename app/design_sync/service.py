@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime
+from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -191,29 +193,40 @@ class DesignSyncService:
                 colors=[],
                 typography=[],
                 spacing=[],
-                extracted_at=conn.created_at,
+                extracted_at=cast(datetime, conn.created_at),
             )
 
-        tj = snapshot.tokens_json
+        tj: dict[str, Any] = snapshot.tokens_json
+        colors_list: list[dict[str, Any]] = [c for c in tj.get("colors", []) if isinstance(c, dict)]
+        typography_list: list[dict[str, Any]] = [
+            t for t in tj.get("typography", []) if isinstance(t, dict)
+        ]
+        spacing_list: list[dict[str, Any]] = [
+            s for s in tj.get("spacing", []) if isinstance(s, dict)
+        ]
         return DesignTokensResponse(
             connection_id=connection_id,
             colors=[
-                DesignColorResponse(name=c["name"], hex=c["hex"], opacity=c.get("opacity", 1.0))
-                for c in tj.get("colors", [])
+                DesignColorResponse(
+                    name=str(c["name"]),
+                    hex=str(c["hex"]),
+                    opacity=float(c.get("opacity", 1.0)),
+                )
+                for c in colors_list
             ],
             typography=[
                 DesignTypographyResponse(
-                    name=t["name"],
-                    family=t["family"],
-                    weight=t["weight"],
-                    size=t["size"],
-                    lineHeight=t.get("line_height", t.get("lineHeight", 24)),
+                    name=str(t["name"]),
+                    family=str(t["family"]),
+                    weight=str(t["weight"]),
+                    size=float(t["size"]),
+                    lineHeight=float(t.get("line_height", t.get("lineHeight", 24))),
                 )
-                for t in tj.get("typography", [])
+                for t in typography_list
             ],
             spacing=[
-                DesignSpacingResponse(name=s["name"], value=s["value"])
-                for s in tj.get("spacing", [])
+                DesignSpacingResponse(name=str(s["name"]), value=float(s["value"]))
+                for s in spacing_list
             ],
             extracted_at=snapshot.extracted_at,
         )
