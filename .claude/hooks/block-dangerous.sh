@@ -19,7 +19,10 @@ if [[ -z "$COMMAND" ]]; then
 fi
 
 # --- Force push protection ---
-if echo "$COMMAND" | grep -qE 'git\s+push\s+.*--force|git\s+push\s+-f\b'; then
+# Allow --force-with-lease (safe) but block bare --force and -f
+if echo "$COMMAND" | grep -qE 'git\s+push\s+.*--force-with-lease'; then
+  : # safe — allow --force-with-lease
+elif echo "$COMMAND" | grep -qE 'git\s+push\s+.*--force|git\s+push\s+-f\b'; then
   echo "BLOCKED: Force push is not allowed. Use --force-with-lease if you must." >&2
   exit 2
 fi
