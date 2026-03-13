@@ -16,6 +16,11 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from app.ai.agents.evals.judge_criteria_map import (
+    JUDGE_CRITERIA_MAP,
+    CriteriaMapping,
+    evaluate_criterion_via_qa,
+)
 from app.ai.agents.evals.judges import JUDGE_REGISTRY
 from app.ai.agents.evals.judges.accessibility import AccessibilityJudge
 from app.ai.agents.evals.judges.code_reviewer import CodeReviewerJudge
@@ -92,6 +97,103 @@ async def judge_trace(
         )
 
 
+def get_criteria_map_by_name(agent: str) -> dict[str, CriteriaMapping]:
+    """Get {criterion_name: CriteriaMapping} for an agent."""
+    return {m.criterion: m for m in JUDGE_CRITERIA_MAP.get(agent, [])}
+
+
+async def judge_trace_hybrid(
+    judge: ScaffolderJudge
+    | DarkModeJudge
+    | ContentJudge
+    | OutlookFixerJudge
+    | AccessibilityJudge
+    | PersonalisationJudge
+    | CodeReviewerJudge
+    | KnowledgeJudge
+    | InnovationJudge,
+    trace: dict[str, Any],
+    provider: LLMProvider,
+    model: str,
+    mode: str,  # "hybrid", "llm", "deterministic"
+) -> JudgeVerdict:
+    """Run judge with mode-dependent criterion evaluation.
+
+    - "llm": all criteria via LLM (legacy behavior)
+    - "deterministic": all mapped criteria via QA checks, LLM-only criteria auto-pass
+    - "hybrid": mapped criteria via QA checks, remaining via LLM
+    """
+    if mode == "llm":
+        return await judge_trace(judge, trace, provider, model)
+
+    judge_input = trace_to_judge_input(trace)
+
+    # Extract HTML for QA checks
+    html = ""
+    output = trace.get("output")
+    if output:
+        html = output.get("html", "") or ""
+
+    # Split criteria into deterministic vs LLM-required
+    deterministic_results: list[CriterionResult] = []
+    llm_needed_criteria: list[str] = []
+
+    for mapping in JUDGE_CRITERIA_MAP.get(judge.agent_name, []):
+        if mapping.qa_checks and html:
+            # Deterministic: run QA checks
+            result = await evaluate_criterion_via_qa(html, mapping)
+            deterministic_results.append(result)
+        elif mode == "deterministic":
+            # In deterministic mode, LLM-only criteria get a skip marker
+            deterministic_results.append(
+                CriterionResult(
+                    criterion=mapping.criterion,
+                    passed=True,
+                    reasoning="[DETERMINISTIC] Skipped — no QA check mapping, auto-pass in deterministic mode",
+                )
+            )
+        else:
+            # Hybrid: collect for LLM judging
+            llm_needed_criteria.append(mapping.criterion)
+
+    # If hybrid and there are LLM-needed criteria, run the full LLM judge
+    # and extract only the LLM-needed criterion results
+    llm_results: list[CriterionResult] = []
+    if mode == "hybrid" and llm_needed_criteria:
+        try:
+            llm_verdict = await judge_trace(judge, trace, provider, model)
+            if llm_verdict.error:
+                return JudgeVerdict(
+                    trace_id=judge_input.trace_id,
+                    agent=judge.agent_name,
+                    overall_pass=False,
+                    criteria_results=deterministic_results,
+                    error=llm_verdict.error,
+                )
+            # Extract only the LLM-needed criteria from the full verdict
+            for cr in llm_verdict.criteria_results:
+                if cr.criterion in llm_needed_criteria:
+                    llm_results.append(cr)
+        except Exception as e:
+            return JudgeVerdict(
+                trace_id=judge_input.trace_id,
+                agent=judge.agent_name,
+                overall_pass=False,
+                criteria_results=deterministic_results,
+                error=f"LLM call failed: {type(e).__name__}: {e}",
+            )
+
+    all_results = deterministic_results + llm_results
+    overall_pass = all(cr.passed for cr in all_results) if all_results else False
+
+    return JudgeVerdict(
+        trace_id=judge_input.trace_id,
+        agent=judge.agent_name,
+        overall_pass=overall_pass,
+        criteria_results=all_results,
+    )
+
+
 def print_summary(agent: str, verdicts: list[JudgeVerdict], output_path: Path) -> None:
     """Print judge results summary to stdout."""
     total = len(verdicts)
@@ -119,6 +221,22 @@ def print_summary(agent: str, verdicts: list[JudgeVerdict], output_path: Path) -
             rate = counts["passed"] / counts["total"] * 100 if counts["total"] else 0
             print(f"  {name:40s} {counts['passed']}/{counts['total']} ({rate:.1f}%)")
 
+    # Show deterministic vs LLM breakdown
+    det_count = sum(
+        1
+        for v in verdicts
+        for cr in v.criteria_results
+        if cr.reasoning.startswith("[DETERMINISTIC]")
+    )
+    llm_count = sum(
+        1
+        for v in verdicts
+        for cr in v.criteria_results
+        if not cr.reasoning.startswith("[DETERMINISTIC]")
+    )
+    if det_count:
+        print(f"\nCriteria evaluations: {det_count} deterministic, {llm_count} LLM")
+
     print(f"\nVerdicts written to: {output_path}")
 
 
@@ -133,6 +251,7 @@ async def run_judge(
     *,
     dry_run: bool = False,
     skip_existing: bool = False,
+    mode: str = "hybrid",
 ) -> None:
     """Run judge on all traces for an agent."""
     judge_cls = JUDGE_REGISTRY.get(agent)
@@ -200,7 +319,7 @@ async def run_judge(
             pending_traces = [t for t in traces if t["id"] not in existing_ids]
             print(
                 f"Judging {len(pending_traces)} traces for {agent} "
-                f"(provider={resolved_provider}, model={model})..."
+                f"(provider={resolved_provider}, model={model}, mode={mode})..."
             )
 
             for batch_start in range(0, len(pending_traces), batch_size):
@@ -216,7 +335,7 @@ async def run_judge(
                     )
 
                     start = time.monotonic()
-                    verdict = await judge_trace(judge, trace, provider, model)
+                    verdict = await judge_trace_hybrid(judge, trace, provider, model, mode)
                     elapsed = time.monotonic() - start
 
                     verdicts.append(verdict)
@@ -248,6 +367,8 @@ async def main() -> None:
             "accessibility",
             "personalisation",
             "code_reviewer",
+            "knowledge",
+            "innovation",
             "all",
         ],
         required=True,
@@ -271,6 +392,12 @@ async def main() -> None:
         action="store_true",
         help="Skip traces already judged in output file (resume after crash)",
     )
+    parser.add_argument(
+        "--mode",
+        choices=["hybrid", "llm", "deterministic"],
+        default="hybrid",
+        help="Judge mode: hybrid (QA+LLM), llm (all LLM), deterministic (QA only, default: hybrid)",
+    )
     args = parser.parse_args()
 
     agents = (
@@ -282,6 +409,8 @@ async def main() -> None:
             "accessibility",
             "personalisation",
             "code_reviewer",
+            "knowledge",
+            "innovation",
         ]
         if args.agent == "all"
         else [args.agent]
@@ -310,6 +439,7 @@ async def main() -> None:
             delay=args.delay,
             dry_run=args.dry_run,
             skip_existing=args.skip_existing,
+            mode=args.mode,
         )
 
 

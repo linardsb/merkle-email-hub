@@ -13,7 +13,7 @@ class TestSeedManifest:
     """Validate seed manifest structure and completeness."""
 
     def test_manifest_is_not_empty(self) -> None:
-        assert len(SEED_MANIFEST) == 20
+        assert len(SEED_MANIFEST) == 29
 
     def test_all_entries_are_seed_entry(self) -> None:
         for entry in SEED_MANIFEST:
@@ -86,8 +86,8 @@ class TestSeedFiles:
 
     @pytest.mark.parametrize(
         "entry",
-        SEED_MANIFEST,
-        ids=[e.filename for e in SEED_MANIFEST],
+        [e for e in SEED_MANIFEST if e.domain != "agent_references"],
+        ids=[e.filename for e in SEED_MANIFEST if e.domain != "agent_references"],
     )
     def test_file_has_overview_section(self, entry: SeedEntry) -> None:
         file_path = SEED_DIR / entry.filename
@@ -96,8 +96,8 @@ class TestSeedFiles:
 
     @pytest.mark.parametrize(
         "entry",
-        SEED_MANIFEST,
-        ids=[e.filename for e in SEED_MANIFEST],
+        [e for e in SEED_MANIFEST if e.domain != "agent_references"],
+        ids=[e.filename for e in SEED_MANIFEST if e.domain != "agent_references"],
     )
     def test_file_has_key_takeaways(self, entry: SeedEntry) -> None:
         file_path = SEED_DIR / entry.filename

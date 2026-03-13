@@ -1,4 +1,4 @@
-"""QA gate calibration: measure 10-point QA checks against human judgments.
+"""QA gate calibration: measure 11-point QA checks against human judgments.
 
 Reads agent traces (which contain HTML output), runs QA checks on each,
 then compares QA check pass/fail against human labels on the same traces.
@@ -37,13 +37,14 @@ QA_CHECK_NAMES: list[str] = [
     "fallback",
     "image_optimization",
     "brand_compliance",
+    "personalisation_syntax",
 ]
 
 
 async def run_qa_on_traces(
     traces: list[dict[str, Any]],
 ) -> dict[str, dict[str, bool]]:
-    """Run all 10 QA checks on each trace's HTML output.
+    """Run all 11 QA checks on each trace's HTML output.
 
     Returns: {trace_id: {check_name: passed}}
     """

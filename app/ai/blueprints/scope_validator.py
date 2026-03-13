@@ -67,10 +67,10 @@ def validate_scope(
             )
 
     if scope.additive_only:
-        pre_tags = _count_tags(pre_doc)
-        post_tags = _count_tags(post_doc)
-        for tag, count in pre_tags.items():
-            post_count = post_tags.get(tag, 0)
+        pre_counts = _count_tags(pre_doc)
+        post_counts = _count_tags(post_doc)
+        for tag, count in pre_counts.items():
+            post_count = post_counts.get(tag, 0)
             if post_count < count:
                 violations.append(
                     ScopeViolation(

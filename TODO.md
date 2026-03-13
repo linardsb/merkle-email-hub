@@ -10,9 +10,9 @@
 
 ## Phase 11 — QA Engine Hardening & Agent Quality Improvements
 
-**What:** Upgrade QA checks from shallow string matching to production-grade DOM-parsed validation, expand coverage with new checks, and fix the highest-failure agent skills. Current QA checks detect ~60% of real email issues; target is 95%+. Agent eval pass rate is 16.7% overall — targeted fixes on worst-performing dimensions should lift to 60%+.
+**What:** Upgrade QA checks from shallow string matching to production-grade DOM-parsed validation, expand coverage with new checks, and fix the highest-failure agent skills. Current QA checks detect ~60% of real email issues; target is 95%+. Then migrate all 10 agents to deterministic architecture (structured JSON output + template assembly + cascading auto-repair) lifting eval pass rate from 16.7% → 99%+.
 **Dependencies:** Phase 5 (eval framework operational), Phase 8-9 (ontology + graph available for enriched checks). All 10 QA checks exist and run end-to-end.
-**Design principle:** Every check upgrade must be backward-compatible (same `QACheckResult` schema). New checks added to `ALL_CHECKS` list. Agent fixes validated via `make eval-run` before/after comparison.
+**Design principle:** Every check upgrade must be backward-compatible (same `QACheckResult` schema). New checks added to `ALL_CHECKS` list. Agent fixes validated via `make eval-run` before/after comparison. Deterministic architecture (11.22) uses PIV loop pattern: LLM decides (structured JSON) → code assembles (deterministic) → QA validates (deterministic) → LLM fixes (structured retry).
 
 ### ~~11.1 QA Check Configuration System~~ DONE
 **What:** Replace hardcoded thresholds and trigger lists with a per-check configuration model. Currently values like `MAX_SIZE_KB=102`, spam triggers (10 words), and pass thresholds are baked into check implementations. Add `QACheckConfig` that supports per-project overrides and per-client tuning.
@@ -323,7 +323,7 @@
 **Security:** Failure details are derived from QA check output (already sanitised). No user input injection.
 **Verify:** Blueprint test: intentionally broken HTML with 3 QA failures → recovery router passes all 3 with details → fixer agent receives structured context. Fewer retry loops than current generic routing. Retry output diff stays within allowed scope per agent.
 
-### 11.21 Deterministic Micro-Judges — Codify Judge Criteria into QA Checks
+### ~~11.21 Deterministic Micro-Judges — Codify Judge Criteria into QA Checks~~ DONE
 **What:** Extract the subset of eval judge criteria that can be validated deterministically and add them as enhanced QA checks. ~60% of judge criteria across all 9 agents map to codifiable rules (e.g., "uses nested tables with 600px max-width" from ScaffolderJudge, "balanced MSO conditionals" from OutlookFixerJudge). This gives judge-quality detection at QA-gate speed (0 tokens, <50ms per check).
 **Why:** Items 11.2–11.12 already upgrade individual QA checks. This task explicitly maps each judge criterion to its deterministic equivalent, ensuring QA checks cover what judges catch. After this, the QA gate catches ~90% of what LLM judges would flag, making inline judges (11.23) only necessary for the remaining ~10% that requires LLM reasoning (brief fidelity, tone accuracy, copy quality).
 **Implementation:**
@@ -338,101 +338,94 @@
 **Security:** No new attack surface — extends existing deterministic checks only.
 **Verify:** Run `make eval-qa-coverage` on all 9 agents' synthetic data. For each mapped criterion, QA check agrees with judge verdict >85% of the time. Unmapped criteria (brief_fidelity, tone_accuracy, etc.) documented as "LLM-only" — these are what 11.23 inline judges cover.
 
-### 11.22 Template-First Hybrid Architecture — From 16.7% to 99%+ Structural Pass Rate
+### 11.22 Template-First Hybrid Architecture — From 16.7% to 99%+ Overall Pass Rate
 
 **What:** Replace LLM-generates-everything architecture with a hybrid model where deterministic code generates all structural HTML and the LLM makes content/design decisions only. The LLM never writes a `<table>` tag, `<!--[if mso]>` conditional, or `<meta>` tag — it selects templates, fills content slots, and chooses design tokens. Deterministic Python assembles the final HTML from tested, pre-validated building blocks.
 
 **Why:** Current 16.7% pass rate (36 traces via claude-sonnet-4) fails because the LLM is asked to generate the hardest HTML that exists — table layouts, MSO conditionals, VML, 25-client compatibility. Even frontier models struggle (Sonnet: 0% on MSO conditionals, 8% on accessibility, 10% on html_preservation). The insight: **if deterministic code generates every structural element, QA checks are validating code we wrote and tested, not LLM output.** This eliminates entire failure categories by construction rather than correction. No model changes needed — this extracts maximum value from Claude Sonnet/Opus by giving the LLM the job it's actually good at (creative content decisions) and taking away the job it's bad at (syntax-precise structural HTML). Local/weaker models are not viable — email HTML generation is one of the hardest LLM tasks; substituting models would degrade quality further.
 
-**Target ceiling:** 99%+ on structural QA checks (deterministic guarantees), ~95% on semantic quality (brief fidelity, tone), **93-97% overall**. The irreducible ~3-5% gap comes from subjective criteria (tone accuracy, copy quality, novel layout requests) that require LLM judgment.
+**Target ceiling:** 99%+ overall pass rate. Structural checks: deterministic guarantees via golden templates + cascading repair. Semantic quality (tone, copy): structured output schemas with per-field retry.
 
 **Dependencies:** 11.1–11.21 (upgraded QA checks + deterministic micro-judges provide better feedback signals). Phase 8-9 (ontology for client compatibility data). Phase 7 (SKILL.md, BaseAgentService). Phase 2 (component library for golden template building blocks).
 
+**Detailed implementation plan:** `.agents/plans/11.22-deterministic-agent-architecture.md`
+
+**Key decisions:**
+- **Golden templates:** Maizzle source (`app/ai/templates/maizzle_src/`) + pre-compiled HTML (`app/ai/templates/library/`). Templates extend existing `main.html` layout.
+- **Slot markers:** `data-slot="{id}"` attributes on HTML elements (survives lxml parsing, easy to target).
+- **Template metadata:** YAML companion files in `_metadata/*.yaml` (decoupled from HTML).
+- **Structured output:** Provider-agnostic — Anthropic adapter uses tool_use, OpenAI adapter uses response_format, fallback to JSON-in-prompt + Pydantic validation. `CompletionResponse.parsed` field.
+- **Repair pipeline:** Lives in `app/qa_engine/repair/` (paired with QA checks). 7 deterministic stages, reuses existing `mso_repair.py` and `meta_injector.py`.
+- **Section blocks:** Reuse existing Maizzle components (`email-templates/components/`) as starting material, harden with MSO/a11y/dark mode for QA compliance.
+- **Backward compatibility:** `output_mode: Literal["html", "structured"] = "html"` on all agent requests. `_process_structured()` hook in `BaseAgentService`.
+
+**Execution order (4 weeks):**
+| Week | Subtasks (parallel where possible) | Milestone |
+|------|-------------------------------------|-----------|
+| W1 | 11.22.1 + 11.22.2 (parallel — no deps) | Foundation: templates + schemas |
+| W2 | 11.22.3 + 11.22.4 (depend on W1) | **M1: 70%** — pipeline + auto-repair |
+| W3 | 11.22.5 + 11.22.6 (depend on W1-W2) | **M2: 85%** — architect prompts + context budget |
+| W4 | 11.22.7 + 11.22.8 (depend on W1-W3) | **M3: 95%** — 5 HTML agents migrated |
+| Ongoing | 11.22.9 (continuous) | **M4: 99%+** — iteration on failure modes |
+
+**Architecture pattern (PIV loop):** Inspired by Stripe Minions + deterministic agentic coding workshop. LLM makes decisions (structured JSON) → deterministic code assembles HTML → deterministic QA validates → LLM retries with exact errors. Each agent gets per-agent decision schema (`DarkModePlan`, `OutlookFixPlan`, `AccessibilityPlan`, `PersonalisationPlan`, `CodeReviewPlan`, `ContentPlan`). Backward compatible via `output_mode: Literal["html", "structured"]` flag on each agent's request schema.
+
+**Files (~62 new, ~30 modified):** Templates (~20 HTML + 4 Python), schemas (8 Python), pipeline (3 Python), repair stages (9 Python), SKILL.md rewrites (7 + 5 prompt.py), composer (15 HTML + 2 Python), agent migrations (14 service.py + nodes), tests (5 Python).
+
 #### 11.22.1 Golden Template Library — Pre-Validated Email Skeletons
-**What:** Build 15-20 battle-tested email HTML templates covering ~95% of real campaign briefs. Each template passes all 10 QA checks at 100% out of the box. Templates contain named content slots (`<!-- SLOT:hero -->`, `<!-- SLOT:body -->`) that the LLM fills — the LLM never generates structural HTML.
-**Why:** This is the single highest-impact change. MSO conditionals go from 0% to ~99% because they're pre-written and tested. Dark mode goes from ~50% to ~99% because meta tags, media queries, and Outlook selectors are pre-wired. The LLM's job shrinks from "generate a complete email" to "pick a template and fill in the blanks."
+**What:** Build 15 battle-tested email templates (Maizzle source + pre-compiled HTML) covering ~95% of real campaign briefs. Each template passes all 11 QA checks with score >= 0.9. Templates use `data-slot="{id}"` attribute markers on HTML elements — the LLM fills slots, never generates structural HTML.
+**Why:** Highest-impact change. MSO conditionals go from 0% to ~99% (pre-written, pre-tested). Dark mode ~50% to ~99% (meta tags, media queries, Outlook selectors pre-wired). The LLM's job shrinks from "generate a complete email" to "pick a template and fill in the blanks."
 **Implementation:**
-- Create `app/ai/templates/` directory — golden template library:
-  - `app/ai/templates/library.py` — `TemplateLibrary` class: `list_templates() -> list[TemplateMeta]`, `get_template(id) -> GoldenTemplate`, `match_template(brief: str) -> list[TemplateMeta]` (brief-to-template matching via keyword analysis)
-  - `app/ai/templates/models.py` — `GoldenTemplate` dataclass: `id`, `name`, `description`, `category` (promotional/transactional/newsletter/notification), `layout_type` (single_col/two_col/hero_cards/sidebar/hybrid), `slot_definitions: list[SlotDef]`, `html_skeleton: str`, `supported_clients: list[str]`, `qa_scores: dict[str, float]`
-  - `app/ai/templates/slots.py` — `SlotDef` dataclass: `name`, `slot_type` (text/image/cta/repeatable/conditional), `constraints` (max_chars, allowed_tags, required_fields), `default_content: str`
-  - `app/ai/templates/assembler.py` — `assemble(template: GoldenTemplate, slot_fills: dict[str, SlotFill]) -> str` — replaces slot markers with filled content, validates constraints, returns complete HTML
-- Build 15 initial templates covering core layout categories:
-  - **Single column** (3 variants): simple announcement, long-form article, transactional receipt
-  - **Two column** (3 variants): product comparison, feature highlight, content + sidebar
-  - **Hero + cards** (3 variants): promotional splash, event invitation, product launch
-  - **Newsletter** (2 variants): multi-story digest, curated links
-  - **Transactional** (2 variants): order confirmation, account notification
-  - **Hybrid** (2 variants): hero + 2-col + CTA stack, progressive disclosure (expandable)
+- Create `app/ai/templates/` directory with dual-format template library:
+  - `app/ai/templates/models.py` — `GoldenTemplate`, `TemplateSlot`, `TemplateMetadata` frozen dataclasses. `SlotType` Literal (headline/body/cta/image/etc), `LayoutType` Literal (newsletter/promotional/transactional/event/retention/announcement/minimal)
+  - `app/ai/templates/registry.py` — `TemplateRegistry` class: `get(name)`, `search(layout_type, column_count, has_hero)`, `fill_slots(template, fills)`, `list_for_selection() -> list[TemplateMetadata]`. Module-level `get_template_registry()` singleton
+  - `app/ai/templates/compiler.py` — `compile_template(name)` / `compile_all()` via maizzle-builder sidecar HTTP call. Caches compiled HTML in `library/`
+  - `app/ai/templates/maizzle_src/` — 15 Maizzle source templates extending `src/layouts/main.html`, using `<component>` includes
+  - `app/ai/templates/library/` — Pre-compiled HTML (committed, works without sidecar)
+  - `app/ai/templates/library/_metadata/` — YAML companion files per template (name, display_name, layout_type, column_count, sections, ideal_for, description, slot definitions with slot_id/slot_type/selector/required/max_chars/placeholder)
+- Build 15 initial templates:
+  - **Newsletter** (2): single-column, two-column
+  - **Promotional** (3): hero image, product grid, 50/50 split
+  - **Transactional** (3): receipt, shipping, welcome/onboarding
+  - **Event** (2): invitation, reminder
+  - **Retention** (2): win-back, survey
+  - **Announcement** (2): product launch, company news
+  - **Minimal** (1): text-heavy minimal design
 - Each template must:
-  - Pass all 10 QA checks at 1.0 score (verified by automated test)
-  - Have balanced MSO conditionals (validated by `validate_mso_conditionals()`)
-  - Include complete dark mode (meta tags + media query + Outlook selectors + color remapping for 5 base color slots)
-  - Include WCAG AA accessibility (lang, alt placeholders with guidance, heading hierarchy, table roles, link text slots with constraints)
-  - Include VML namespaces on `<html>` tag
-  - Support all 25 email clients in the ontology
-  - Use fluid hybrid layout pattern (600px max-width, responsive to 320px)
-- Template QA regression test: `tests/test_golden_templates.py` — runs all 10 QA checks on all 15 templates, fails CI if any score < 1.0
-**Security:** Templates are static files in the repo. No user input in template structure. Slot fills are validated by `SlotDef.constraints` before assembly.
-**Verify:** `python -m pytest tests/test_golden_templates.py` — all 15 templates pass all 10 QA checks at 1.0. Manual review: templates render correctly in Litmus across 25 clients.
+  - Extend `src/layouts/main.html` (inherits MSO skeleton, dark mode meta, VML/Office namespaces)
+  - Use `data-slot="{id}"` attributes on all content elements
+  - Have `role="presentation"` on all layout tables, `alt` on all images, `scope` on `<th>`
+  - Pass all 11 QA checks with score >= 0.9 (verified by parametrized pytest)
+  - Use fluid hybrid layout (600px max-width, responsive to 320px)
+- QA regression test: `app/ai/templates/tests/test_templates.py` — parametrized over all templates × all 11 checks
+**Security:** Templates are static files in the repo. No user input in template structure. Slot fills validated by `TemplateSlot.max_chars` before assembly. HTML slot content sanitised by `sanitize_html_xss()`.
+**Verify:** `make test -k test_templates` — all 15 templates pass all 11 QA checks >= 0.9. `make types` — zero errors.
 
-#### 11.22.2 Structured Output Schema — LLM Returns JSON, Not HTML
-**What:** Replace the current "generate full HTML" prompt with a structured output schema where the LLM returns a JSON object containing template selection, slot content, and design token choices. Deterministic code assembles this into HTML. The LLM never writes HTML tags.
-**Why:** Structured output is dramatically more reliable than freeform generation. The LLM excels at content decisions (copy, layout choice, color selection) but fails at syntax-precise structural HTML. JSON output is parseable, validatable, and retryable at the field level — a malformed subject line doesn't require regenerating the entire email.
+#### 11.22.2 Structured Output Schemas — LLM Returns JSON, Not HTML
+**What:** Define typed dataclass schemas for each agent's decisions (not HTML output). Extend LLM provider protocol for provider-agnostic structured output. Add `output_mode` flag to all agent requests and `_process_structured()` hook to `BaseAgentService`.
+**Why:** Structured output is dramatically more reliable than freeform generation. JSON is parseable, validatable, and retryable at the field level — a malformed subject line doesn't require regenerating the entire email. Provider-agnostic approach lets each adapter use its best mechanism (Anthropic→tool_use, OpenAI→response_format).
 **Implementation:**
-- Create `app/ai/templates/schemas.py` — structured output models:
-  ```python
-  class TemplateSelection(BaseModel):
-      template_id: str                          # Which golden template to use
-      reasoning: str                            # Why this template fits the brief
-
-  class SlotFill(BaseModel):
-      slot_name: str                            # Matches SlotDef.name
-      content_type: Literal["text", "image", "cta", "repeatable"]
-      heading: str | None = None                # For sections with headings
-      body_text: str                            # Main content
-      image_alt: str | None = None              # Alt text for images in this slot
-      cta_text: str | None = None               # CTA button text (2-5 words)
-      cta_url_variable: str | None = None       # ESP variable for CTA href
-      items: list[SlotFill] | None = None       # For repeatable slots (card grids)
-
-  class DesignTokens(BaseModel):
-      primary_color: str                        # Hex, used for headers/CTAs
-      secondary_color: str                      # Hex, used for accents
-      background_color: str                     # Hex, email body background
-      text_color: str                           # Hex, body text
-      dark_primary: str                         # Hex, dark mode remap of primary
-      dark_secondary: str                       # Hex, dark mode remap of secondary
-      dark_background: str                      # Hex, dark mode background
-      dark_text: str                            # Hex, dark mode text
-      heading_font: str                         # Font stack
-      body_font: str                            # Font stack
-
-  class PersonalisationConfig(BaseModel):
-      esp_platform: Literal["liquid", "ampscript", "jssp", "none"]
-      variables: list[PersonalisationVariable]   # Name, fallback, location
-
-  class EmailBuildPlan(BaseModel):
-      template_selection: TemplateSelection
-      slot_fills: list[SlotFill]
-      design_tokens: DesignTokens
-      personalisation: PersonalisationConfig
-      subject_line: str                         # 30-60 chars
-      preheader: str                            # 85-100 chars
-  ```
-- Update Scaffolder agent to return `EmailBuildPlan` JSON instead of HTML:
-  - System prompt instructs: "You are an email architect. Analyse the brief and return a structured build plan. Do NOT generate HTML."
-  - Use Claude's tool_use / structured output mode to enforce schema compliance
-  - If JSON validation fails, retry with specific field-level error (not full regeneration)
-- Update `app/ai/templates/assembler.py` to consume `EmailBuildPlan`:
-  - `assemble_from_plan(plan: EmailBuildPlan, library: TemplateLibrary) -> str`
-  - Fetches golden template by `plan.template_selection.template_id`
-  - Fills slots using `plan.slot_fills` with constraint validation
-  - Injects `plan.design_tokens` into CSS variables and dark mode block
-  - Injects `plan.personalisation` variables at marked positions
-  - Returns complete, QA-ready HTML
-**Security:** JSON schema enforced by Pydantic — no injection via slot content. HTML content in slot fills is escaped by the assembler. Design token hex values validated by regex. ESP variables validated against known patterns per platform.
-**Verify:** Test with 10 diverse briefs: LLM returns valid `EmailBuildPlan` JSON ≥95% of the time. Assembled HTML passes all 10 QA checks at 1.0 for every valid plan. Invalid JSON triggers field-level retry (not full regen). Token usage: measure ~60% reduction vs current full-HTML generation.
+- Create `app/ai/agents/schemas/` — 7 decision dataclass files:
+  - `build_plan.py` — `EmailBuildPlan` (master scaffolder output): `TemplateSelection` (template_name, reasoning, section_order for compose, fallback), `SlotFill` (slot_id, content, is_personalisable), `DesignTokens` (primary/secondary/background/text colors, font families, border_radius, button_style), `SectionDecision` (section_name, background_color, hidden)
+  - `dark_mode_plan.py` — `DarkModePlan`: `ColorMapping` (light/dark color, selector, property), meta_tag_strategy, outlook_override_strategy, preserve_brand_colors
+  - `outlook_plan.py` — `OutlookFixPlan`: `MSOFix` (issue_type, location_hint, fix_description, fix_html), add_namespaces, add_ghost_tables
+  - `accessibility_plan.py` — `AccessibilityPlan`: `AltTextDecision` (img_selector, category, alt_text, is_decorative), `A11yFix` (issue_type, selector, fix_value)
+  - `personalisation_plan.py` — `PersonalisationPlan`: `PersonalisationTag` (slot_id, tag_syntax, fallback, is_conditional), `ConditionalBlock` (condition, true/false content, platform_syntax)
+  - `code_review_plan.py` — `CodeReviewPlan`: formalises existing `CodeReviewIssue` as `CodeReviewFinding` (rule_name, severity, responsible_agent, current/fix values, selector, is_actionable)
+  - `content_plan.py` — `ContentPlan`: `ContentAlternative` (text, tone, char/word count, reasoning), selected_index
+- Extend `app/ai/protocols.py` — add `parsed: dict[str, object] | None = None` field to `CompletionResponse`
+- Extend adapters (provider-agnostic):
+  - `app/ai/adapters/anthropic.py` — detect `output_schema` in kwargs → define tool with schema, set `tool_choice`, parse tool_use response → `CompletionResponse.parsed`
+  - `app/ai/adapters/openai_compat.py` — detect `output_schema` in kwargs → set `response_format` with json_schema → parse response → `CompletionResponse.parsed`
+  - Both pass through gracefully when `output_schema` not provided (no behavioral change)
+- Extend `app/ai/agents/base.py`:
+  - Add `output_mode_default`, `_output_mode_supported` class attrs
+  - Split `process()` into `_process_html()` (current) + `_process_structured()` (new hook, raises `NotImplementedError` by default)
+  - Add `_get_output_mode(request)` helper
+- Add `output_mode: Literal["html", "structured"] = "html"` to all 5 HTML agent request schemas
+- Add `plan: dict[str, object] | None = None` to all 5 HTML agent response schemas
+**Security:** JSON schema enforced by frozen dataclasses. Slot fill content sanitised by `sanitize_html_xss()` during assembly. Design token hex values validated. No raw dict access.
+**Verify:** `make types` — zero errors. `make test` — existing tests pass (backward compatible, output_mode defaults to "html").
 
 #### 11.22.3 Multi-Pass Generation Pipeline — Decompose for Reliability
 **What:** Replace the single LLM call with 3 focused passes, each with a narrow scope and independent validation. Errors in one pass don't cascade — a bad CTA doesn't require regenerating the layout decision.
@@ -468,41 +461,39 @@
 **Verify:** Run all 36 eval synthetic cases through multi-pass pipeline. Measure per-pass success rate (target: ≥95% per pass). Measure overall first-attempt QA pass rate (target: ≥85%). Measure token usage (target: ≤ 5,000 tokens total vs ~8,000-15,000 for current single-call). Measure latency (target: ≤ 8s wall time with parallel slots).
 
 #### 11.22.4 Cascading Auto-Repair Pipeline — Belt-and-Suspenders Post-Processing
-**What:** Multi-stage deterministic repair pipeline that runs between assembly and QA gate. Each stage targets a specific failure category, and each stage's output feeds the next. The pipeline guarantees structural correctness — if the assembler produced valid HTML (which it should from golden templates), repair is a no-op. If the LLM snuck malformed content into a slot, repair catches it.
-**Why:** Defense in depth. Golden templates + structured output + multi-pass should yield ~95% QA pass rate. The repair pipeline catches the remaining ~4-5% of structural issues (malformed slot content, edge cases in personalisation variable injection, unexpected LLM output in slot fills). This is the difference between 95% and 99%+.
+**What:** 7-stage deterministic repair pipeline in `app/qa_engine/repair/` (paired with QA checks). Runs between assembly and QA gate. Each stage is a pure function — no LLM. Wraps existing `mso_repair.py` and `meta_injector.py`. Replaces per-agent post-processing with a unified repair chain.
+**Why:** Defense in depth. Golden templates + structured output should yield ~95% QA pass rate. Repair catches remaining structural issues (malformed slot content, edge cases in personalisation injection). The difference between 95% and 99%+.
 **Implementation:**
-- Create `app/ai/agents/repair_pipeline.py` — `RepairPipeline` with ordered stages:
-  - **Stage 1: Structure validator** — `lxml` parse, verify DOCTYPE/html/head/body present and well-formed. If broken, rebuild from golden template skeleton (content preserved).
-  - **Stage 2: MSO balancer** — count `<!--[if` vs `<![endif]-->`, inject missing closers at correct nesting depth. Verify VML inside conditionals. Add missing namespaces. (Reuses `validate_mso_conditionals()` from 11.4)
-  - **Stage 3: Dark mode completeness** — verify meta tags in `<head>`, media query non-empty, Outlook selectors present with color declarations. If media query empty, populate from `DesignTokens` dark colors. If meta tags missing, inject.
-  - **Stage 4: Accessibility enforcer** — verify all `<img>` have `alt`, heading hierarchy valid, tables have `role`, links have descriptive text. Add `alt=""` to images missing alt. Add `role="presentation"` to layout tables.
-  - **Stage 5: Personalisation syntax validator** — verify balanced Liquid `{% %}` / `{{ }}`, AMPscript `%%[ ]%%`, JSSP `<%= %>`. Report unbalanced but don't auto-fix (semantic — flag for LLM retry of personalisation pass).
-  - **Stage 6: Size optimizer** — if assembled HTML > 102KB (Gmail clipping), remove redundant whitespace, inline duplicate CSS, warn if still over threshold.
-  - **Stage 7: Link sanitizer** — verify all `href` values well-formed, no empty hrefs, no `javascript:` protocols, ESP template variables syntactically valid.
-- Each stage returns `RepairResult(html: str, fixes: list[str], warnings: list[str])`
-- Pipeline logs all fixes applied: `agent.repair_pipeline.stage_{n}.fixes_applied`
-- If total fixes > 5, flag for human review (too much repair suggests a deeper issue)
-- Wire into `BaseAgentService` — runs after assembly, before QA gate
-**Security:** All repair operations are deterministic HTML manipulation via `lxml`. No external fetches. No LLM calls. Slot content is escaped during assembly — repair doesn't re-introduce injection vectors.
-**Verify:** Feed all 36 eval synthetic cases (original LLM output, before any pipeline changes) through repair pipeline alone. Measure: how many QA failures does repair fix without any upstream changes? Target: ≥50% of current failures fixable by repair alone. Combined with golden templates + structured output: 99%+ QA pass rate on structural checks.
+- Create `app/qa_engine/repair/` directory with `RepairStage` Protocol and `RepairPipeline` orchestrator:
+  - `pipeline.py` — `RepairPipeline.run(html) -> RepairResult(html, repairs_applied, warnings)`. Sequential stages, failure-safe (stage errors logged, not crashed).
+  - `structure.py` — Stage 1: ensure DOCTYPE/html/head/body via lxml parse+serialize. Preserve MSO comments and `data-slot` attrs.
+  - `mso.py` — Stage 2: wrap existing `app/ai/agents/outlook_fixer/mso_repair.repair_mso_issues()`. Add namespace injection (`xmlns:v`, `xmlns:o`).
+  - `dark_mode.py` — Stage 3: wrap existing `app/ai/agents/dark_mode/meta_injector.inject_missing_meta_tags()`. Ensure `@media (prefers-color-scheme: dark)` block exists.
+  - `accessibility.py` — Stage 4: add `lang="en"` if missing, `role="presentation"` on layout tables, `scope="col"` on `<th>`, `alt=""` on images missing alt.
+  - `personalisation.py` — Stage 5: count ESP delimiter balance (Liquid `{{`/`}}`, AMPscript `%%`/`%%`). Warn on imbalance (don't auto-close).
+  - `size.py` — Stage 6: strip HTML comments (except MSO `<!--[if`), collapse whitespace, remove empty `style=""`.
+  - `links.py` — Stage 7: replace empty `href=""` with `href="#"`, warn on `javascript:` hrefs.
+- Integrate into `app/ai/blueprints/engine.py` — run after agentic node returns HTML, before QA gate. Store `repair_log` and `repair_warnings` in `run.metadata`.
+- Test idempotency: running pipeline twice = same output.
+**Security:** All deterministic HTML manipulation via lxml/regex. No external fetches. No LLM calls. No `eval()`.
+**Verify:** `make test -k test_repair_pipeline` — each stage independently tested + end-to-end. Pipeline is idempotent. Golden templates unchanged after repair (no-op). `make test` — no regressions.
 
 #### 11.22.5 SKILL.md Rewrite — Architect Prompts, Not Generator Prompts
-**What:** Rewrite all 9 agent SKILL.md files to match the new template-first architecture. Agents are no longer "HTML generators" — they are "email architects" that make content and design decisions. Prompts must instruct the LLM to return structured decisions, not raw HTML.
-**Why:** Current SKILL.md files instruct agents to generate complete HTML, which is the root cause of structural failures. The prompt must match the architecture — telling the LLM "return JSON with your decisions" produces fundamentally different (better) output than "generate an HTML email."
+**What:** Add dual-mode structure to all 7 HTML agent SKILL.md files: a `## Output Mode: Structured (JSON)` section with schema examples and a `## Output Mode: HTML (Legacy)` section preserving current instructions. Update `prompt.py` files to detect `output_mode` and load the appropriate section.
+**Why:** The prompt must match the architecture — "return JSON decisions" produces fundamentally different (better) output than "generate HTML."
 **Implementation:**
-- **Scaffolder SKILL.md**: Rewrite from "generate Maizzle HTML" to "analyse brief → select golden template → fill content slots → choose design tokens." Include the `EmailBuildPlan` schema in L1. Add template selection heuristics in L2. Few-shot examples of brief → JSON plan in L3.
-- **Dark Mode SKILL.md**: Rewrite from "inject dark mode CSS" to "analyse existing colors → generate dark mode color remapping." LLM returns `DesignTokens.dark_*` fields only. Deterministic code handles meta tags, media queries, Outlook selectors.
-- **Content SKILL.md**: Rewrite from "generate copy" to "fill content slots with constraints." Include `SlotDef.constraints` (char limits, required fields) as hard rules. Per-operation limits: subject 30-60 chars, preheader 85-100 chars, CTA 2-5 words.
-- **Outlook Fixer SKILL.md**: Rewrite from "fix MSO conditionals" to "diagnose structural issues in build plan." If using golden templates, this agent's scope shrinks to edge cases where slot content breaks MSO structure — provide specific diagnostic patterns.
-- **Accessibility SKILL.md**: Rewrite from "audit accessibility" to "fill alt text slots and validate heading hierarchy." LLM returns structured accessibility decisions (`{image_id: alt_text, table_id: role}`), code applies them.
-- **Personalisation SKILL.md**: Rewrite from "add Liquid/AMPscript" to "specify variable placements." LLM returns `PersonalisationConfig`, code injects syntax-correct ESP variables.
-- **Code Reviewer SKILL.md**: Rewrite to focus on build plan review (template choice appropriateness, slot content quality, design token contrast) rather than raw HTML review.
-- **Knowledge SKILL.md**: Unchanged (RAG Q&A doesn't generate HTML).
-- **Innovation SKILL.md**: Rewrite to prototype new golden template variants and slot types rather than freeform HTML generation.
-- Add negative examples to all generation agents: "Do NOT return raw HTML. Return the structured JSON plan. The assembler handles HTML generation."
-- Use `make eval-skill-test` for each SKILL.md rewrite to validate improvement
-**Security:** No change to security surface — SKILL.md files are prompt content only.
-**Verify:** `make eval-run` per agent before/after rewrite. Target: each agent's structured output compliance ≥95% (LLM returns valid JSON matching schema). Combined with template library: overall QA pass rate ≥90%.
+- Each SKILL.md gets structured mode section: JSON schema, example input→output pairs, "Do NOT return HTML" instruction
+- **Scaffolder**: "Select template + fill slots" with `EmailBuildPlan` schema example
+- **Dark Mode**: "Return color mappings" with `DarkModePlan` schema example
+- **Outlook Fixer**: "Return MSO fix plan" with `OutlookFixPlan` schema example
+- **Accessibility**: "Return a11y fix plan" with `AccessibilityPlan` schema example (alt text decisions + structural fixes)
+- **Personalisation**: "Return tag injection plan" with `PersonalisationPlan` schema example
+- **Code Reviewer**: Tighten schema compliance (already structured, formalise `CodeReviewPlan`)
+- **Content**: Add explicit JSON format spec (already text-based, formalise `ContentPlan`)
+- Update `prompt.py` per agent: `build_system_prompt(skills, output_mode)` loads appropriate SKILL.md section
+- Use `make eval-skill-test` for each rewrite to A/B compare pass rates
+**Security:** SKILL.md files are prompt content only.
+**Verify:** `make eval-skill-test AGENT={agent} PROPOSED=...` for each agent. Structured output compliance ≥95%.
 
 #### 11.22.6 Context Assembly Optimisation — Token Budget Enforcement
 **What:** Optimise what context each agent receives per pass. Multi-pass architecture enables pass-specific context — Pass 1 (layout) needs only the brief, Pass 2 (content) needs brief + slot definitions, Pass 3 (design) needs brief + template palette. No pass needs full SKILL.md + handoff history + failure warnings.
@@ -568,8 +559,8 @@
   - M2 (after 11.22.3 multi-pass): 85% overall — per-field retry catches content generation errors
   - M3 (after 11.22.4 repair pipeline): 95% overall — cascading repair catches remaining structural edge cases
   - M4 (after 11.22.5 SKILL.md rewrites): 97% overall — LLM produces better structured decisions
-  - M5 (after 11.22.6 context optimisation + 11.22.7 novel layout fallback): 99%+ structural, ~95% semantic, **97%+ overall**
-  - M6 (after 11.22.8 agent redefinition): sustained 97%+ with reduced token cost and latency
+  - M5 (after 11.22.6 context optimisation + 11.22.7 novel layout fallback): 99%+ structural, ~98% semantic, **99%+ overall**
+  - M6 (after 11.22.8 agent redefinition): sustained 99%+ with reduced token cost and latency
 - If a change decreases any agent's pass rate by >3 percentage points, revert and investigate
 - **Autonomous eval loop:** Implement modify→run→measure→keep/revert cycle for prompt optimization. After each prompt/SKILL.md change: run agents against the same briefs, score via QA gate (deterministic) + LLM judge (subjective), record in `traces/improvement_log.jsonl`. Keep changes that improve pass rate, auto-revert those that don't. Can run overnight as unattended sweeps.
 - **CI golden test cases:** Small set of email templates with known-correct QA outcomes that must pass in CI (`make eval-golden`). Catches regressions on model/prompt/check changes without running full eval suite. Golden cases derived from highest-confidence eval traces.

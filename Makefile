@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-dry-run eval-full eval-baseline eval-skill-test
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test
 
 # === Local Development ===
 
@@ -120,6 +120,9 @@ eval-qa-calibrate: ## Calibrate QA gate against human labels (all 3 agents)
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/scaffolder_traces.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/qa_calibration_scaffolder.json
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/dark_mode_traces.jsonl --labels traces/dark_mode_human_labels.jsonl --output traces/qa_calibration_dark_mode.json
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/content_traces.jsonl --labels traces/content_human_labels.jsonl --output traces/qa_calibration_content.json
+
+eval-qa-coverage: ## Report judge criteria → QA check coverage and agreement rates
+	uv run python -m app.ai.agents.evals.judge_criteria_map --traces traces/ --output traces/qa_coverage.json
 
 eval-dry-run: ## Full eval pipeline dry-run (no LLM needed)
 	uv run python -m app.ai.agents.evals.runner --agent all --output traces/ --dry-run

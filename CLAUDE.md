@@ -57,6 +57,7 @@ make eval-full       # Full pipeline (requires LLM provider)
 make eval-baseline   # Run full pipeline + establish baseline (first time)
 make eval-calibrate  # Calibrate judges against human labels
 make eval-qa-calibrate # Calibrate QA gate against human labels
+make eval-qa-coverage  # Judge-vs-QA coverage report (deterministic micro-judges)
 make eval-skill-test AGENT=scaffolder PROPOSED=path/to/SKILL.md  # A/B test a SKILL.md change
 
 # Docker
@@ -148,7 +149,7 @@ Nested Pydantic settings with `env_nested_delimiter="__"`:
 See `TODO.md` for active task details (phases 11-13). Completed phases (0-10): see `docs/TODO-completed.md`.
 
 ### Phase 11 — QA Engine Hardening & Agent Quality Improvements
-Upgrade QA checks from shallow string matching to DOM-parsed validation, add new checks, fix worst agent failure modes. Target: 95%+ issue detection, 60%+ agent eval pass rate. **33 tasks (31 BE, 0 FE, 2 BOTH)**
+Upgrade QA checks from shallow string matching to DOM-parsed validation, add new checks, fix worst agent failure modes. Target: 95%+ issue detection, 99%+ agent eval pass rate via deterministic architecture. **33 tasks (31 BE, 0 FE, 2 BOTH)**
 - [x] `BE` 11.1 QA check configuration system (`QACheckConfig` model, per-project overrides, `defaults.yaml`)
 - [x] `BE` 11.2 HTML validation — DOM parser upgrade (`lxml`, 20 DOM-parsed checks across 5 groups, configurable deductions)
 - [x] `BE` 11.2a Shared QA rule engine — YAML-driven check definitions (`rule_engine.py`, `rules/email_structure.yaml`, `rules/accessibility.yaml`, refactor 11.2 to rule-driven, RAG integration)
@@ -170,17 +171,17 @@ Upgrade QA checks from shallow string matching to DOM-parsed validation, add new
 - [x] `BE` 11.18 Accessibility agent — alt text quality framework (`alt_text_validator.py` with 4 image categories + generic/filename/prefix/length checks; `_post_process()` with contextvars; SKILL.md 7 categories incl. landmarks + contrast ratios; blueprint node alt warnings in `AgentHandoff`; 14 eval cases, 29 tests)
 - [x] `BE` 11.19 Content agent — length guardrails (`length_guardrail.py` with `LengthLimit` per-operation limits + ratio validation; `process()` override with selective retry; `ContentResponse.length_warnings`; SKILL.md hard limits; 18 eval cases, 51 tests)
 - [x] `BE` 11.20 Recovery router — enriched failure context (`StructuredFailure` + `AllowedScope` in `protocols.py`, `scope_validator.py`, QA gate produces structured failures, priority-based routing with fingerprint cycle detection, per-agent scope constraints, legacy fallback, 26 tests)
-- [ ] `BE` 11.21 Deterministic micro-judges — map judge criteria to QA checks, `judge_criteria_map.py`, `make eval-qa-coverage`
-- [ ] `BE` 11.22 Template-first hybrid architecture — 16.7% → 99%+ structural / 97%+ overall (LLM makes decisions in JSON, deterministic code assembles HTML)
-  - [ ] `BE` 11.22.1 Golden template library (15-20 pre-validated email skeletons, 100% QA pass, content slots — `app/ai/templates/`)
-  - [ ] `BE` 11.22.2 Structured output schema (`EmailBuildPlan` JSON — template selection, slot fills, design tokens, personalisation config)
-  - [ ] `BE` 11.22.3 Multi-pass generation pipeline (3 focused LLM calls: layout→content→design, per-field retry, parallel slots)
-  - [ ] `BE` 11.22.4 Cascading auto-repair pipeline (`repair_pipeline.py` — 7-stage deterministic fix: structure→MSO→dark mode→a11y→personalisation→size→links)
-  - [ ] `BE` 11.22.5 SKILL.md rewrite — architect prompts not generator prompts (all 9 agents return structured decisions, not HTML)
-  - [ ] `BE` 11.22.6 Context assembly optimisation (`context_budget.py` — per-pass budgets, selective SKILL.md, handoff summarisation)
-  - [ ] `BE` 11.22.7 Novel layout fallback (`TemplateComposer` — compose from section blocks when no golden template matches)
-  - [ ] `BE` 11.22.8 Agent role redefinition (tighten specialisation — each agent owns a slice of `EmailBuildPlan`, no raw HTML generation)
-  - [ ] `BOTH` 11.22.9 Eval-driven iteration loop (milestones: 70%→85%→95%→97%→99%+, regression detection, new template-selection eval dimensions)
+- [x] `BE` 11.21 Deterministic micro-judges — map judge criteria to QA checks, `judge_criteria_map.py`, `make eval-qa-coverage`
+- [ ] `BE` 11.22 Template-first hybrid architecture — 16.7% → 99%+ overall pass rate (LLM returns JSON decisions, deterministic code assembles HTML). **Detailed plan:** `.agents/plans/11.22-deterministic-agent-architecture.md`. **Execution:** W1: 11.22.1+11.22.2 → W2: 11.22.3+11.22.4 → W3: 11.22.5+11.22.6 → W4: 11.22.7+11.22.8. **Milestones:** M1 70%, M2 85%, M3 95%, M4 99%+. **Decisions:** Maizzle src + pre-compiled HTML; provider-agnostic structured output; repair in `app/qa_engine/repair/`; `data-slot` attrs; YAML metadata; reuse Maizzle components.
+  - [ ] `BE` 11.22.1 Golden template library — 15 Maizzle src + compiled HTML in `app/ai/templates/`, YAML metadata, `TemplateRegistry`, `data-slot` markers, QA validation (all 11 checks >= 0.9)
+  - [ ] `BE` 11.22.2 Structured output schemas — 7 decision dataclasses in `app/ai/agents/schemas/`, `CompletionResponse.parsed`, provider-agnostic adapter extension (tool_use/response_format), `output_mode` flag + `_process_structured()` hook
+  - [ ] `BE` 11.22.3 Multi-pass pipeline — `ScaffolderPipeline` (layout→content→design, parallel 2+3), `TemplateAssembler` deterministic assembly, wired into service + blueprint node
+  - [ ] `BE` 11.22.4 Cascading auto-repair — `RepairPipeline` + 7 stages in `app/qa_engine/repair/` (structure→MSO→dark mode→a11y→personalisation→size→links), wraps `mso_repair.py` + `meta_injector.py`, pre-QA gate
+  - [ ] `BE` 11.22.5 SKILL.md rewrite — dual-mode architect prompts (structured JSON + legacy HTML sections), prompt.py detects output_mode
+  - [ ] `BE` 11.22.6 Context optimisation — `ContextBudget` per-pass, handoff summarisation, selective L3 loading, 40-60% prompt reduction
+  - [ ] `BE` 11.22.7 Novel layout fallback — `TemplateComposer` + ~13 section blocks in `app/ai/templates/sections/` (hardened from Maizzle components), `__compose__` fallback
+  - [ ] `BE` 11.22.8 Agent migration — 5 HTML agents get `_process_structured()` (LLM→JSON plan→deterministic apply→repair), backward compat via `output_mode="html"` default
+  - [ ] `BOTH` 11.22.9 Eval iteration — M0→M1(70%)→M2(85%)→M3(95%)→M4(99%+), template-selection dimension, schema/decision/assembly judge criteria
 - [ ] `BE` 11.23 Inline eval judges — selective LLM judge on recovery retries (`inline_judge.py`, judge verdict in API, opt-in per blueprint)
 - [ ] `BOTH` 11.24 Production trace sampling — async judge worker, production verdicts → `failure_warnings.py` feedback loop (`production_sampler.py`)
 

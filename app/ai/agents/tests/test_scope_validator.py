@@ -1,6 +1,5 @@
 """Tests for the scope validator — per-agent modification constraint enforcement."""
 
-
 from app.ai.blueprints.protocols import AllowedScope
 from app.ai.blueprints.scope_validator import validate_scope
 
