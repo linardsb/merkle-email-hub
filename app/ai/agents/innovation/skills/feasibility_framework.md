@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — risk assessment template) -->
 # Feasibility Assessment Framework
 
 ## Assessment Template

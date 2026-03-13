@@ -38,6 +38,7 @@ class AccessibilityResponse(BaseModel):
 
     html: str
     skills_loaded: list[str] = Field(default_factory=list)
+    alt_text_warnings: list[str] = Field(default_factory=list)
     qa_results: list[QACheckResult] | None = None
     qa_passed: bool | None = None
     model: str

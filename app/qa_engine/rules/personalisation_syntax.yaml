@@ -1,0 +1,145 @@
+# Personalisation Syntax Validation Rules
+# L4 Reference: docs/esp_personalisation/
+# L3 Skills: app/ai/agents/personalisation/skills/
+
+rules:
+  # --- Group A: Platform Detection ---
+  - id: "ps-platform-mixed"
+    group: "platform_detection"
+    name: "Mixed platform syntax detected"
+    check: "custom"
+    custom_fn: "personalisation_mixed_platform"
+    deduction_key: "deduction_mixed_platform"
+    default_deduction: 0.30
+    message: "Multiple ESP personalisation syntaxes detected in same template"
+
+  - id: "ps-platform-unknown"
+    group: "platform_detection"
+    name: "Unrecognised personalisation syntax"
+    check: "custom"
+    custom_fn: "personalisation_unknown_platform"
+    deduction_key: "deduction_unknown_platform"
+    default_deduction: 0.10
+    message: "Personalisation tags detected but platform could not be identified"
+
+  # --- Group B: Delimiter Balance ---
+  - id: "ps-delimiter-unbalanced"
+    group: "delimiter_balance"
+    name: "Unbalanced personalisation delimiters"
+    check: "custom"
+    custom_fn: "personalisation_delimiter_balance"
+    deduction_key: "deduction_delimiter_unbalanced"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_delimiter_issues"
+    default_cap: 5
+    message: "Unclosed or mismatched personalisation delimiter"
+
+  - id: "ps-conditional-unbalanced"
+    group: "delimiter_balance"
+    name: "Unbalanced conditional blocks"
+    check: "custom"
+    custom_fn: "personalisation_conditional_balance"
+    deduction_key: "deduction_conditional_unbalanced"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_conditional_issues"
+    default_cap: 5
+    message: "Unclosed conditional block (if/endif, IF/ENDIF, etc.)"
+
+  # --- Group C: Fallback Completeness ---
+  - id: "ps-fallback-missing"
+    group: "fallback_completeness"
+    name: "Output tags without fallback values"
+    check: "custom"
+    custom_fn: "personalisation_fallback_missing"
+    deduction_key: "deduction_fallback_missing"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_fallback_issues"
+    default_cap: 10
+    message: "Personalisation output tag has no default/fallback value"
+
+  - id: "ps-fallback-empty"
+    group: "fallback_completeness"
+    name: "Fallback value is empty string"
+    check: "custom"
+    custom_fn: "personalisation_fallback_empty"
+    deduction_key: "deduction_fallback_empty"
+    default_deduction: 0.03
+    per_element: true
+    cap_key: "max_fallback_empty_issues"
+    default_cap: 5
+    message: "Fallback value is an empty string — may produce awkward rendering"
+
+  # --- Group D: Syntax Correctness ---
+  - id: "ps-syntax-liquid"
+    group: "syntax_correctness"
+    name: "Liquid syntax errors (Braze/Klaviyo)"
+    check: "custom"
+    custom_fn: "personalisation_liquid_syntax"
+    deduction_key: "deduction_syntax_error"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_syntax_issues"
+    default_cap: 5
+    message: "Invalid Liquid syntax"
+
+  - id: "ps-syntax-ampscript"
+    group: "syntax_correctness"
+    name: "AMPscript syntax errors (SFMC)"
+    check: "custom"
+    custom_fn: "personalisation_ampscript_syntax"
+    deduction_key: "deduction_syntax_error"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_syntax_issues"
+    default_cap: 5
+    message: "Invalid AMPscript syntax"
+
+  - id: "ps-syntax-jssp"
+    group: "syntax_correctness"
+    name: "JSSP/EL syntax errors (Adobe Campaign)"
+    check: "custom"
+    custom_fn: "personalisation_jssp_syntax"
+    deduction_key: "deduction_syntax_error"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_syntax_issues"
+    default_cap: 5
+    message: "Invalid JSSP/EL syntax"
+
+  - id: "ps-syntax-other"
+    group: "syntax_correctness"
+    name: "Template syntax errors (Mailchimp/HubSpot/Iterable)"
+    check: "custom"
+    custom_fn: "personalisation_other_syntax"
+    deduction_key: "deduction_syntax_error"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_syntax_issues"
+    default_cap: 5
+    message: "Invalid template syntax"
+
+  # --- Group E: Best Practices ---
+  - id: "ps-nesting-depth"
+    group: "best_practices"
+    name: "Excessive conditional nesting"
+    check: "custom"
+    custom_fn: "personalisation_nesting_depth"
+    deduction_key: "deduction_nesting_depth"
+    default_deduction: 0.03
+    per_element: true
+    cap_key: "max_nesting_issues"
+    default_cap: 3
+    message: "Conditional nesting exceeds 3 levels — reduces readability"
+
+  # --- Group F: Summary ---
+  - id: "ps-summary"
+    group: "summary"
+    name: "Personalisation syntax summary"
+    check: "custom"
+    custom_fn: "personalisation_summary_stats"
+    deduction_key: "deduction_summary"
+    default_deduction: 0.0
+    message: "Summary of personalisation tags found"

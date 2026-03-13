@@ -1,3 +1,4 @@
+<!-- L4 source: docs/SKILL_email-link-validation-dom-reference.md -->
 # Link Validation Patterns for Email HTML
 
 > L3 skill file — distilled from docs/SKILL_email-link-validation-dom-reference.md

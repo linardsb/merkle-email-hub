@@ -1,7 +1,8 @@
 # pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
 # ruff: noqa: ANN401, ARG002
-"""Scaffolder agent service — orchestrates LLM → extract → sanitize → QA."""
+"""Scaffolder agent service — orchestrates LLM → extract → sanitize → MSO validate → QA."""
 
+import contextvars
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -13,14 +14,24 @@ from app.ai.agents.scaffolder.prompt import (
     detect_relevant_skills as _detect_relevant_skills,
 )
 from app.ai.agents.scaffolder.schemas import ScaffolderRequest, ScaffolderResponse
+from app.ai.shared import extract_html, sanitize_html_xss
+from app.core.logging import get_logger
+from app.qa_engine.mso_parser import validate_mso_conditionals
 from app.qa_engine.schemas import QACheckResult
+
+logger = get_logger(__name__)
+
+# Per-request storage for MSO warnings (avoids race on singleton instance)
+_mso_warnings_var: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "scaffolder_mso_warnings", default=None
+)
 
 
 class ScaffolderService(BaseAgentService):
     """Orchestrates the scaffolder agent pipeline.
 
     Pipeline: build messages → LLM call → validate output →
-    extract HTML → XSS sanitize → optional QA checks.
+    extract HTML → XSS sanitize → MSO validate → optional QA checks.
     """
 
     agent_name = "scaffolder"
@@ -38,6 +49,27 @@ class ScaffolderService(BaseAgentService):
         req: ScaffolderRequest = request
         return req.brief
 
+    def _post_process(self, raw_content: str) -> str:
+        """Extract HTML, sanitize XSS, then run MSO validation."""
+        html = extract_html(raw_content)
+        html = sanitize_html_xss(html)
+
+        # MSO-first: validate generated HTML for Outlook issues
+        mso_result = validate_mso_conditionals(html)
+        warnings = [
+            f"[{issue.severity}] {issue.category}: {issue.message}" for issue in mso_result.issues
+        ]
+        _mso_warnings_var.set(warnings)
+
+        if warnings:
+            logger.warning(
+                "agents.scaffolder.mso_validation_issues",
+                issue_count=len(warnings),
+                categories=list({i.category for i in mso_result.issues}),
+            )
+
+        return html
+
     def _build_response(
         self,
         *,
@@ -50,6 +82,7 @@ class ScaffolderService(BaseAgentService):
         skills_loaded: list[str],
         raw_content: str,
     ) -> ScaffolderResponse:
+        warnings = _mso_warnings_var.get(None) or []
         return ScaffolderResponse(
             html=html,
             qa_results=qa_results,
@@ -57,6 +90,7 @@ class ScaffolderService(BaseAgentService):
             model=model_id,
             confidence=confidence,
             skills_loaded=skills_loaded,
+            mso_warnings=warnings,
         )
 
     # Scaffolder uses generate/stream_generate names for backward compat with routes

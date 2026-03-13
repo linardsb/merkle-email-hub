@@ -1,0 +1,94 @@
+# CSS Support Rules — syntax validation, vendor prefixes, external resources
+# Source: docs/SKILL_html-email-css-dom-reference.md
+# Used by: app/qa_engine/checks/css_support.py
+
+rules:
+  # ─── Group A: Syntax Validation ───
+
+  - id: "css-syntax-errors"
+    group: "syntax"
+    name: "CSS syntax error detection"
+    check: "custom"
+    custom_fn: "css_syntax_errors"
+    deduction_key: "deduction_syntax_error"
+    default_deduction: 0.15
+    cap_key: "max_syntax_errors_reported"
+    default_cap: 5
+    message: "CSS syntax errors detected (invalid property values, unclosed rules)"
+
+  - id: "css-empty-declarations"
+    group: "syntax"
+    name: "Empty CSS declarations"
+    check: "custom"
+    custom_fn: "css_empty_declarations"
+    deduction_key: "deduction_empty_declaration"
+    default_deduction: 0.05
+    cap_key: "max_empty_declarations_reported"
+    default_cap: 5
+    message: "Empty CSS declarations found (property with no value)"
+
+  # ─── Group B: Vendor Prefixes ───
+
+  - id: "css-vendor-prefixes"
+    group: "vendor_prefixes"
+    name: "Unnecessary vendor prefix detection"
+    check: "custom"
+    custom_fn: "css_vendor_prefixes"
+    deduction_key: "deduction_vendor_prefix"
+    default_deduction: 0.05
+    cap_key: "max_vendor_prefixes_reported"
+    default_cap: 5
+    message: "Vendor-prefixed CSS properties detected (ignored by most email clients)"
+
+  # ─── Group C: External Resources ───
+
+  - id: "css-external-stylesheet"
+    group: "external_resources"
+    name: "External stylesheet detection"
+    check: "custom"
+    custom_fn: "css_external_stylesheet"
+    deduction_key: "deduction_external_stylesheet"
+    default_deduction: 0.25
+    message: "External stylesheet (<link rel='stylesheet'>) detected — stripped by all major email clients"
+
+  - id: "css-import-rule"
+    group: "external_resources"
+    name: "@import rule detection"
+    check: "custom"
+    custom_fn: "css_import_rule"
+    deduction_key: "deduction_import_rule"
+    default_deduction: 0.20
+    message: "@import CSS rule detected — stripped by Gmail and most email clients"
+
+  # ─── Group D: Best Practices ───
+
+  - id: "css-important-overuse"
+    group: "best_practices"
+    name: "Excessive !important usage"
+    check: "custom"
+    custom_fn: "css_important_overuse"
+    deduction_key: "deduction_important_overuse"
+    default_deduction: 0.10
+    message: "Excessive !important usage detected — may conflict with email client dark mode"
+
+  - id: "css-non-inline-dependency"
+    group: "best_practices"
+    name: "Non-inlined style dependency"
+    check: "custom"
+    custom_fn: "css_non_inline_dependency"
+    deduction_key: "deduction_non_inline"
+    default_deduction: 0.10
+    cap_key: "max_non_inline_reported"
+    default_cap: 5
+    message: "Layout-critical CSS in <style> block without inline fallbacks (Gmail strips <style>)"
+
+  # ─── Group E: Summary ───
+
+  - id: "css-syntax-summary"
+    group: "summary"
+    name: "CSS syntax validation summary"
+    check: "custom"
+    custom_fn: "css_syntax_summary"
+    deduction_key: "deduction_summary"
+    default_deduction: 0.0
+    message: "CSS syntax validation complete"

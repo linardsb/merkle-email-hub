@@ -24,7 +24,9 @@ references:
   - skills/alt_text_guidelines.md
   - skills/color_contrast.md
   - skills/screen_reader_behavior.md
-l4_source: docs/SKILL_email-accessibility-wcag-aa.md
+l4_sources:
+  - docs/SKILL_email-accessibility-wcag-aa.md
+  - docs/SKILL_email-image-optimization-dom-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -76,18 +78,69 @@ and fix all WCAG 2.1 AA violations while preserving the email's visual design.
 - Data tables (rare in email) should have `<th>`, `scope`, `<caption>`
 - Never use table for visual formatting without `role="presentation"`
 
-### Category 3: Image Alt Text
-- Every `<img>` MUST have an `alt` attribute
-- Informative images: descriptive alt text (max 125 characters)
-- Decorative images: `alt=""` (empty, not missing)
-- Functional images (links): alt describes the action/destination
-- Complex images: brief alt + `aria-describedby` for detailed description
+### Category 3: Image Alt Text — 4-Category Classification
 
-### Category 4: Color & Contrast
-- Text/background contrast minimum 4.5:1 (normal text)
-- Large text (>=18px or >=14px bold) minimum 3:1
-- Never convey information through color alone
-- Links must be distinguishable from surrounding text (underline or 3:1 contrast)
+Every `<img>` MUST have an `alt` attribute. Classify each image first, then apply the correct rule:
+
+#### 3a. Decorative Images → `alt=""`
+Spacers, borders, dividers, tracking pixels, background textures, visual separators.
+```html
+<img src="spacer.gif" alt="" width="1" height="20" style="display:block;">
+<img src="divider-line.png" alt="" width="600" height="2">
+```
+**Rule:** Always `alt=""` (empty string, NOT missing). Non-empty alt on decorative images clutters screen readers.
+
+#### 3b. Content Images → 2-25 words describing what's shown
+Product photos, hero images, event photos, team headshots, infographics.
+```html
+<img src="hero.jpg" alt="Blue cotton t-shirt, front view on white background" width="600">
+<img src="team.jpg" alt="Marketing team at the 2024 annual conference" width="400">
+```
+**Rules:**
+- 2-25 words (roughly 10-125 characters)
+- Describe what the image SHOWS, not what it IS
+- NEVER use filenames (e.g., `hero-banner.jpg`)
+- NEVER use generic terms: "image", "photo", "picture", "graphic", "icon", "button", "banner", "img", "pic", "screenshot", "thumbnail", "untitled", "placeholder", "default"
+- NEVER start with: "Image of", "Photo of", "Picture of", "Graphic of", "An image", "A photo" — screen readers already announce "image"
+
+#### 3c. Functional Images → describe the ACTION
+Images inside links, CTA buttons as images, social media icons in links.
+```html
+<a href="/shop"><img src="shop-btn.png" alt="Shop the spring collection"></a>
+<a href="https://facebook.com/brand"><img src="fb-icon.png" alt="Visit us on Facebook"></a>
+```
+**Rule:** Describe where the link goes or what the button does, NOT the image appearance.
+
+#### 3d. Logo Images → company name only
+```html
+<img src="logo.png" alt="Acme Corp" width="200">
+```
+**Rule:** Company/brand name only. NOT "Acme Corp logo" or "Acme Corp logo image" — screen readers already say "image".
+
+#### Complex Images (charts, infographics, data visualizations)
+Use brief alt + `aria-describedby` for extended description:
+```html
+<img src="chart.png" alt="Q3 revenue up 15% year-over-year" aria-describedby="chart-desc">
+<div id="chart-desc" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+  Full breakdown: Q1 $2.1M, Q2 $2.4M, Q3 $2.8M (up from $2.4M in Q3 last year).
+</div>
+```
+
+### Category 4: Color & Contrast (WCAG AA Ratios)
+- **Normal text** (<18px): minimum **4.5:1** contrast ratio
+- **Large text** (>=18px or >=14px bold): minimum **3:1** contrast ratio
+- **UI components** (form borders, icon-only buttons): minimum **3:1**
+- Never convey information through color alone — add text labels, icons, or patterns
+- Links must be distinguishable from surrounding text (underline or 3:1 contrast vs body text)
+
+**Common email color pair failures:**
+| Pair | Ratio | Verdict |
+|------|-------|---------|
+| `#999999` on `#ffffff` | 2.85:1 | FAIL — use `#767676` (4.54:1) or darker |
+| `#aaaaaa` on `#ffffff` | 2.32:1 | FAIL — use `#757575` (4.6:1) or darker |
+| `#88bbdd` on `#ffffff` | 2.47:1 | FAIL — use `#3d7aab` (4.5:1) or darker |
+| `#666666` on `#ffffff` | 5.74:1 | PASS |
+| `#333333` on `#ffffff` | 12.63:1 | PASS |
 
 ### Category 5: Heading Hierarchy
 - Sequential hierarchy: h1 -> h2 -> h3 (never skip levels)
@@ -98,6 +151,20 @@ and fix all WCAG 2.1 AA violations while preserving the email's visual design.
 - Descriptive link text (never "click here" or "read more" alone)
 - Links should make sense out of context
 - Distinguish visited and unvisited link states where possible
+
+### Category 7: Screen Reader Landmarks
+Add ARIA landmark roles to the main structural sections of the email:
+```html
+<div role="banner"><!-- Logo, preheader, header content --></div>
+<div role="main"><!-- Primary email content --></div>
+<div role="contentinfo"><!-- Footer, unsubscribe, legal --></div>
+```
+**Rules:**
+- One `role="banner"` for the header section
+- One `role="main"` for the primary content area
+- One `role="contentinfo"` for the footer
+- Do NOT add landmarks to every `<td>` or `<table>` — only major sections
+- Landmarks help screen reader users jump between sections efficiently
 
 ## Preservation Rules (CRITICAL)
 

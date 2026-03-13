@@ -1,3 +1,4 @@
+<!-- L4 source: docs/esp_personalisation/esp_03_adobe_campaign.md -->
 # Adobe Campaign Personalisation Reference
 
 ## Recipient Fields

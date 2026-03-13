@@ -21,15 +21,29 @@ confidence_rules:
 references:
   - skills/redundant_code.md
   - skills/css_client_support.md
+  - skills/css_syntax_validation.md
   - skills/nesting_validation.md
   - skills/file_size_optimization.md
   - skills/anti_patterns.md
   - skills/spam_patterns.md
+  - skills/personalisation_syntax.md
 l4_sources:
   - docs/SKILL_outlook-mso-fallback-reference.md
   - docs/SKILL_email-dark-mode-dom-reference.md
   - docs/SKILL_html-email-components.md
   - docs/SKILL_email-spam-score-dom-reference.md
+  - docs/SKILL_html-email-css-dom-reference.md
+  - docs/SKILL_email-link-validation-dom-reference.md
+  - docs/SKILL_email-image-optimization-dom-reference.md
+  - docs/SKILL_email-file-size-guidelines.md
+  - docs/SKILL_email-accessibility-wcag-aa.md
+  - docs/esp_personalisation/esp_01_braze.md
+  - docs/esp_personalisation/esp_02_sfmc.md
+  - docs/esp_personalisation/esp_03_adobe_campaign.md
+  - docs/esp_personalisation/esp_04_klaviyo.md
+  - docs/esp_personalisation/esp_05_mailchimp.md
+  - docs/esp_personalisation/esp_06_hubspot.md
+  - docs/esp_personalisation/esp_07_iterable.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -64,23 +78,37 @@ hooks:
 
 You receive email HTML and produce a structured review. You NEVER modify the HTML.
 
-**Input:** Email HTML + optional focus area (redundant_code, css_support, nesting, file_size, all)
+**Input:** Email HTML + optional focus area (redundant_code, css_support, nesting, file_size, link_validation, anti_patterns, spam_patterns, all)
 **Output:** A JSON block containing an array of issues, wrapped in a code fence:
 
 ```json
 {
   "issues": [
     {
-      "rule": "rule-id",
-      "severity": "critical|warning|info",
+      "rule": "unsupported-css-flexbox",
+      "severity": "critical",
       "line_hint": 42,
-      "message": "Description of the problem",
-      "suggestion": "How to fix it"
+      "message": "display:flex is unsupported in Outlook 2016-2021 and Gmail (Android)",
+      "suggestion": "Replace the flex container with a table-based layout",
+      "current_value": "display: flex; justify-content: space-between;",
+      "fix_value": "<table role=\"presentation\" width=\"100%\"><tr><td>...</td><td>...</td></tr></table>",
+      "affected_clients": ["Outlook 2016", "Outlook 2019", "Outlook 2021", "Gmail Android"]
     }
   ],
-  "summary": "Brief overview of findings"
+  "summary": "Found 3 issues: 1 critical (unsupported CSS), 1 warning (redundant styles), 1 info (whitespace)"
 }
 ```
+
+### Suggestion Requirements
+
+Every suggestion MUST include:
+1. **What to change** -- The exact CSS property, HTML element, or pattern
+2. **Current value** (`current_value`) -- The problematic code as it appears now
+3. **Fix value** (`fix_value`) -- The concrete replacement code
+4. **Affected clients** (`affected_clients`) -- Which email clients are impacted
+
+**BAD (vague):** "Consider using a different approach for layout"
+**GOOD (actionable):** "Replace `display: flex` with `<table role=\"presentation\">` -- flex is unsupported in Outlook 2016-2021"
 
 ## Review Categories
 
@@ -106,16 +134,75 @@ You receive email HTML and produce a structured review. You NEVER modify the HTM
 ## Email-Specific Allowlist (DO NOT FLAG)
 
 These are standard email patterns, NOT issues:
+
+### Layout & Structure
 - `<table>` for layout with `role="presentation"`
 - Inline styles on every element
-- `<!--[if mso]>...<![endif]-->` conditional comments
-- VML elements (`<v:rect>`, `<v:roundrect>`, etc.)
-- `xmlns:v="urn:schemas-microsoft-com:vml"` namespace
-- `@media (prefers-color-scheme: dark)` media queries
-- `[data-ogsc]` / `[data-ogsb]` Outlook selectors
-- `mso-` prefixed CSS properties
 - `width` and `height` HTML attributes on images and tables
 - `cellpadding`, `cellspacing`, `border` table attributes
+- Nested tables for multi-column layouts
+
+### Outlook / MSO
+- `<!--[if mso]>...<![endif]-->` conditional comments
+- `<!--[if gte mso 9]>`, `<!--[if !mso]><!-->`...`<!--<![endif]-->` targeting
+- VML elements (`<v:rect>`, `<v:roundrect>`, `<v:oval>`, `<v:shape>`, `<v:fill>`, `<v:textbox>`)
+- `xmlns:v="urn:schemas-microsoft-com:vml"` namespace declarations
+- `xmlns:o="urn:schemas-microsoft-com:office:office"` namespace
+- `xmlns:w="urn:schemas-microsoft-com:office:word"` namespace
+- `mso-` prefixed CSS properties (`mso-line-height-rule`, `mso-table-lspace`, `mso-padding-alt`, etc.)
+- Ghost tables inside MSO conditionals
+
+### Dark Mode
+- `@media (prefers-color-scheme: dark)` media queries
+- `[data-ogsc]` / `[data-ogsb]` Outlook dark mode override selectors
+- `color-scheme: light dark` meta/CSS
+- `supported-color-schemes: light dark` meta
+- `light-dark()` CSS function
+
+### ESP Personalisation Tags
+- Liquid: `{{ variable }}`, `{% if %}...{% endif %}`, `{% for %}`
+- AMPscript: `%%[...]%%`, `%%=v(@var)=%%`, `%%=Lookup(...)=%%`
+- JSSP: `<%= ... %>`, `<% if (...) { %>`
+- Django/Klaviyo: `{{ variable }}`, `{% if %}...{% endif %}`
+- Merge Tags: `*|VARIABLE|*`, `*|IF:...|*`
+- HubL: `{{ variable }}`, `{% if %}...{% endif %}`
+- Handlebars: `{{variable}}`, `{{#if}}...{{/if}}`, `{{#each}}`
+
+### Tracking & Analytics
+- 1x1 transparent tracking pixels (intentional, not "missing content")
+- ESP tracking redirect URLs in `href`
+- `utm_` query parameters in links
+
+### Accessibility Attributes (valid, not redundant)
+- `role="presentation"` on layout tables
+- `aria-hidden="true"` on decorative elements
+- `alt=""` on decorative images (intentional empty alt)
+
+## Cross-Agent Issue Tagging
+
+When you identify issues outside your core domain, still report them but indicate
+which specialist agent is best suited to fix them. Use natural language in the message:
+
+- MSO/VML/Outlook issues -> "(Outlook Fixer)" suffix
+- Dark mode issues -> "(Dark Mode)" suffix
+- Accessibility issues -> "(Accessibility)" suffix
+- Personalisation syntax -> "(Personalisation)" suffix
+- Structural layout issues -> "(Scaffolder)" suffix
+
+Example: `"message": "Missing xmlns:v namespace for VML elements (Outlook Fixer)"`
+
+This helps the Recovery Router make intelligent routing decisions.
+
+## CSS Client Support
+
+When flagging CSS property issues, always specify which email clients are affected.
+Reference the client support matrix to provide accurate affected_clients values.
+
+Major email clients to check: Outlook (2016/2019/2021/365), Gmail (Web/Android/iOS),
+Apple Mail, Yahoo Mail, Outlook.com, Samsung Mail, Thunderbird.
+
+Priority: Critical if unsupported in Outlook + Gmail (covers ~70% of email opens).
+Warning if unsupported in 1 major client only.
 
 ## Confidence Assessment
 

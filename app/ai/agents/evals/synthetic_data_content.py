@@ -521,4 +521,134 @@ CONTENT_TEST_CASES = [
             "security rules are absolute",
         ],
     },
+    # =========================================================================
+    # LENGTH GUARDRAIL stress tests (task 11.19)
+    # =========================================================================
+    {
+        "id": "content-015",
+        "dimensions": {
+            "operation": "subject_line",
+            "industry": "ecommerce_fashion",
+            "tone_target": "luxury_aspirational",
+            "constraint_pressure": "tight_character_limit",
+            "output_length": "at_boundary",
+        },
+        "input": {
+            "operation": "subject_line",
+            "text": (
+                "Introducing our new Spring 2026 collection of Italian leather "
+                "handbags and accessories, now available with complimentary monogramming "
+                "for loyalty members during the exclusive early access preview event."
+            ),
+            "tone": "luxury_aspirational",
+            "brand_voice": (
+                "Sophisticated, understated. Every word should feel considered. "
+                "No exclamation marks. European sensibility."
+            ),
+            "num_alternatives": 5,
+        },
+        "expected_challenges": [
+            "HARD LIMIT: must stay under 60 characters",
+            "rich brief tempts long subject lines (58+ chars)",
+            "luxury tone needs concise elegance, not verbose descriptions",
+            "5 alternatives all must pass the 60-char limit",
+        ],
+        "expected_length_behavior": "at_boundary — all alternatives must be ≤60 chars",
+    },
+    {
+        "id": "content-016",
+        "dimensions": {
+            "operation": "cta",
+            "industry": "b2b_saas",
+            "tone_target": "professional_formal",
+            "constraint_pressure": "must_avoid_spam_words",
+            "output_length": "over_max",
+        },
+        "input": {
+            "operation": "cta",
+            "text": (
+                "We want a CTA button for our enterprise security compliance platform. "
+                "The button should communicate that clicking will start a guided demo "
+                "of the automated compliance monitoring and real-time threat detection features. "
+                "Target audience: CISOs and security directors at Fortune 500 companies."
+            ),
+            "tone": "professional",
+            "brand_voice": (
+                "Enterprise-grade trust. Precision over personality. "
+                "Every word should convey authority and reliability."
+            ),
+            "num_alternatives": 5,
+        },
+        "expected_challenges": [
+            "HARD LIMIT: 5 words maximum",
+            "complex product tempts verbose CTAs (6-7 words)",
+            "must start with action verb",
+            "avoid generic 'Learn More', 'Click Here'",
+            "professional tone in minimal word count",
+        ],
+        "expected_length_behavior": "over_max — brief tempts 6-7 word CTAs",
+    },
+    {
+        "id": "content-017",
+        "dimensions": {
+            "operation": "expand",
+            "industry": "healthcare",
+            "tone_target": "empathetic_supportive",
+            "constraint_pressure": "legal_compliance_required",
+            "output_length": "ratio_violation",
+        },
+        "input": {
+            "operation": "expand",
+            "text": "Book your telehealth appointment today.",
+            "tone": "empathetic",
+            "brand_voice": (
+                "Healthcare should feel human. Plain language, warm delivery. "
+                "Acknowledge the patient's time and comfort."
+            ),
+            "num_alternatives": 1,
+        },
+        "expected_challenges": [
+            "HARD LIMIT: output must not exceed 150% of original",
+            "very short input (39 chars) — 150% = 58 chars max",
+            "tempts LLM to add full paragraph of benefits",
+            "must expand meaningfully within tight ratio",
+            "healthcare compliance — no outcome guarantees",
+        ],
+        "expected_length_behavior": "ratio_violation — short input makes 150% cap very tight",
+    },
+    {
+        "id": "content-018",
+        "dimensions": {
+            "operation": "shorten",
+            "industry": "real_estate",
+            "tone_target": "professional_formal",
+            "constraint_pressure": "tight_character_limit",
+            "output_length": "under_min",
+        },
+        "input": {
+            "operation": "shorten",
+            "text": (
+                "We are absolutely thrilled to present this magnificent and truly extraordinary "
+                "five-bedroom estate nestled in the highly prestigious and sought-after enclave "
+                "of Pacific Heights, featuring panoramic bay views from every single floor, "
+                "a chef's kitchen with imported Italian marble countertops and professional-grade "
+                "Viking appliances, a temperature-controlled wine cellar housing up to 500 bottles, "
+                "and an award-winning landscaped garden designed by the renowned horticulturist "
+                "Elena Marchetti. The property spans an impressive 6,200 square feet across "
+                "three meticulously appointed levels, includes a detached two-car garage with "
+                "an EV charging station, and is situated within walking distance of the finest "
+                "dining establishments, boutique shopping destinations, and highly rated schools."
+            ),
+            "tone": None,
+            "brand_voice": None,
+            "num_alternatives": 1,
+        },
+        "expected_challenges": [
+            "HARD LIMIT: output must be 50-70% of original length",
+            "bloated input with redundant adjectives",
+            "must preserve key selling points (beds, location, features)",
+            "shorten output must not over-cut below 50%",
+        ],
+        "expected_length_behavior": "under_min — LLM may over-cut below 50% threshold",
+    },
 ]

@@ -35,6 +35,10 @@ SKILL_FILES: dict[str, str] = {
     "braze_liquid": "braze_liquid.md",
     "sfmc_ampscript": "sfmc_ampscript.md",
     "adobe_campaign_js": "adobe_campaign_js.md",
+    "klaviyo_django": "klaviyo_django.md",
+    "mailchimp_merge": "mailchimp_merge.md",
+    "hubspot_hubl": "hubspot_hubl.md",
+    "iterable_handlebars": "iterable_handlebars.md",
     "fallback_patterns": "fallback_patterns.md",
 }
 
@@ -93,6 +97,10 @@ def detect_relevant_skills(platform: ESPPlatform, requirements: str) -> list[str
         "braze": "braze_liquid",
         "sfmc": "sfmc_ampscript",
         "adobe_campaign": "adobe_campaign_js",
+        "klaviyo": "klaviyo_django",
+        "mailchimp": "mailchimp_merge",
+        "hubspot": "hubspot_hubl",
+        "iterable": "iterable_handlebars",
     }
     platform_skill = platform_map.get(platform)
     if platform_skill:
@@ -106,5 +114,13 @@ def detect_relevant_skills(platform: ESPPlatform, requirements: str) -> list[str
         skills.append("sfmc_ampscript")
     if platform != "adobe_campaign" and ("adobe" in req_lower or "jssp" in req_lower):
         skills.append("adobe_campaign_js")
+    if platform != "klaviyo" and ("klaviyo" in req_lower or "django template" in req_lower):
+        skills.append("klaviyo_django")
+    if platform != "mailchimp" and ("mailchimp" in req_lower or "merge tag" in req_lower):
+        skills.append("mailchimp_merge")
+    if platform != "hubspot" and ("hubspot" in req_lower or "hubl" in req_lower):
+        skills.append("hubspot_hubl")
+    if platform != "iterable" and ("iterable" in req_lower or "handlebars" in req_lower):
+        skills.append("iterable_handlebars")
 
     return list(dict.fromkeys(skills))  # deduplicate preserving order

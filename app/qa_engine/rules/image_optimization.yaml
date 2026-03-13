@@ -1,0 +1,123 @@
+rules:
+  # ─── Group A: Core Attributes (critical) ───
+  - id: "img-missing-dimensions"
+    group: "core_attributes"
+    name: "Image missing width/height dimensions"
+    check: "custom"
+    custom_fn: "image_missing_dimensions"
+    deduction_key: "deduction_missing_dimensions"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_dimension_issues_reported"
+    default_cap: 5
+    message: "Image missing explicit width and/or height — causes layout shift on load"
+
+  - id: "img-missing-alt"
+    group: "core_attributes"
+    name: "Image missing alt attribute"
+    check: "custom"
+    custom_fn: "image_missing_alt"
+    deduction_key: "deduction_missing_alt"
+    default_deduction: 0.05
+    per_element: true
+    cap_key: "max_alt_issues_reported"
+    default_cap: 5
+    message: "Non-decorative image missing alt text — screen reader cannot describe image"
+
+  - id: "img-empty-src"
+    group: "core_attributes"
+    name: "Image with empty or missing src"
+    check: "custom"
+    custom_fn: "image_empty_src"
+    deduction_key: "deduction_empty_src"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_src_issues_reported"
+    default_cap: 3
+    message: "Image has empty or missing src — displays broken image icon in all clients"
+
+  # ─── Group B: Format Validation ───
+  - id: "img-banned-format"
+    group: "format_validation"
+    name: "Banned image format detected"
+    check: "custom"
+    custom_fn: "image_banned_format"
+    deduction_key: "deduction_banned_format"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_format_issues_reported"
+    default_cap: 3
+    message: "BMP/TIFF format detected — unsupported or poorly supported across email clients"
+
+  - id: "img-data-uri-size"
+    group: "format_validation"
+    name: "Oversized data URI image"
+    check: "custom"
+    custom_fn: "image_data_uri_oversize"
+    deduction_key: "deduction_data_uri_oversize"
+    default_deduction: 0.10
+    per_element: true
+    cap_key: "max_data_uri_issues_reported"
+    default_cap: 3
+    message: "Data URI exceeds size threshold — bloats HTML and may be stripped by email clients"
+
+  # ─── Group C: Dimension Integrity ───
+  - id: "img-invalid-dimension-value"
+    group: "dimension_integrity"
+    name: "Invalid dimension value on image"
+    check: "custom"
+    custom_fn: "image_invalid_dimension_value"
+    deduction_key: "deduction_invalid_dimension"
+    default_deduction: 0.03
+    per_element: true
+    cap_key: "max_dimension_issues_reported"
+    default_cap: 5
+    message: "Image width/height contains non-numeric value — email clients require plain integers"
+
+  # ─── Group D: Tracking Pixels ───
+  - id: "img-tracking-pixel-visible"
+    group: "tracking_pixels"
+    name: "Tracking pixel accessibility issue"
+    check: "custom"
+    custom_fn: "image_tracking_pixel_visible"
+    deduction_key: "deduction_tracking_pixel"
+    default_deduction: 0.03
+    per_element: true
+    cap_key: "max_tracking_issues_reported"
+    default_cap: 3
+    message: "Tracking pixel should have alt='' and aria-hidden='true' for screen readers"
+
+  # ─── Group E: Rendering Best Practices ───
+  - id: "img-missing-border-zero"
+    group: "rendering_practices"
+    name: "Linked image missing border='0'"
+    check: "custom"
+    custom_fn: "image_missing_border_zero"
+    deduction_key: "deduction_missing_border"
+    default_deduction: 0.03
+    per_element: true
+    cap_key: "max_border_issues_reported"
+    default_cap: 5
+    message: "Image inside <a> tag without border='0' — shows blue border in Outlook"
+
+  - id: "img-missing-display-block"
+    group: "rendering_practices"
+    name: "Image missing display:block style"
+    check: "custom"
+    custom_fn: "image_missing_display_block"
+    deduction_key: "deduction_missing_display_block"
+    default_deduction: 0.02
+    per_element: true
+    cap_key: "max_display_issues_reported"
+    default_cap: 5
+    message: "Image without display:block in style — causes gap below image in some email clients"
+
+  # ─── Group F: Summary (informational) ───
+  - id: "img-summary"
+    group: "summary"
+    name: "Image optimization summary"
+    check: "custom"
+    custom_fn: "image_summary"
+    deduction_key: "deduction_img_summary"
+    default_deduction: 0.0
+    message: "Image analysis summary"

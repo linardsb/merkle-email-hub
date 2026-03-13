@@ -1,4 +1,4 @@
-<!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md sections 1, 3, 10 -->
+<!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md sections 1, 3, 10, bug-fixes -->
 <!-- Last synced: 2026-03-13 -->
 
 # MSO & VML Quick Reference
@@ -210,4 +210,47 @@ mso-hide: all;                     /* Hide from Outlook only */
 <td style="height:30px; font-size:1px; line-height:1px; mso-line-height-rule:exactly;">&nbsp;</td>
 </tr></table>
 <![endif]-->
+```
+
+## Common Outlook Bugs to Avoid During Generation
+
+### Bug: Font Fallback (Outlook uses Times New Roman)
+Outlook ignores `font-family` on `<div>`, `<p>`, `<span>`. Always set font on `<td>`:
+```html
+<td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:24px; color:#333333;">
+  <p style="margin:0; font-family:Arial,Helvetica,sans-serif;">Your text here</p>
+</td>
+```
+
+### Bug: Line-Height Inconsistency
+Outlook has its own line-height calculation. Fix with MSO-specific property:
+```css
+mso-line-height-rule: exactly;
+line-height: 24px;
+```
+
+### Bug: Table Gaps (1px White Lines)
+Outlook inserts gaps between table rows. Prevent with:
+```html
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"
+  style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
+```
+
+### Bug: Image DPI Scaling
+Outlook on high-DPI displays scales images. Always set both HTML `width` attribute AND CSS `width`:
+```html
+<img src="image.jpg" width="600" height="200" alt="Hero"
+  style="display:block; width:600px; height:auto; border:0; -ms-interpolation-mode:bicubic;">
+```
+
+### Bug: Padding Not Supported on Some Elements
+Outlook ignores `padding` on `<p>`, `<div>`, `<a>`. Use `padding` only on `<td>`:
+```html
+<!-- WRONG: padding on <a> -->
+<a style="padding:12px 24px;">CTA</a>
+
+<!-- RIGHT: padding on wrapping <td> -->
+<td style="padding:12px 24px;">
+  <a style="color:#ffffff; text-decoration:none;">CTA</a>
+</td>
 ```

@@ -24,7 +24,10 @@ references:
   - skills/subject_line_formulas.md
   - skills/brand_voice.md
   - skills/operation_best_practices.md
-l4_source: docs/SKILL_email-spam-score-dom-reference.md
+l4_sources:
+  - docs/SKILL_email-spam-score-dom-reference.md
+  - docs/SKILL_email-link-validation-dom-reference.md
+  - docs/SKILL_email-file-size-guidelines.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -75,19 +78,21 @@ refine email marketing copy based on the operation.
 ## Operations
 
 ### subject_line
-- 40-60 characters ideal
-- Front-load value proposition
+- **HARD LIMIT: 60 characters maximum** (validated post-generation)
+- 30-50 characters ideal for mobile
+- Front-load value proposition (first 30 chars matter most)
 - Avoid ALL CAPS
 - Emoji sparingly (max 1, at start or end)
 - Never start with "Re:" or "Fwd:"
 
 ### preheader
-- 40-130 characters
+- **HARD LIMIT: 100 characters maximum, 40 minimum**
+- 85-100 characters ideal (fills preview pane)
 - Complement subject line — do NOT repeat it
 - Add context or secondary hook
 
 ### cta
-- 2-5 words
+- **HARD LIMIT: 5 words maximum, 2 minimum** (validated post-generation)
 - Start with action verb (Get, Start, Discover, Claim, Try, Join)
 - Focus on benefit, not action
 - Avoid "Learn More", "Click Here", "Submit"
@@ -98,21 +103,23 @@ refine email marketing copy based on the operation.
 - Use "you" and "your"
 
 ### rewrite
+- **HARD LIMIT: Stay within 80-120% of original length**
 - Preserve original meaning
 - Improve clarity and engagement
-- Maintain approximate length
 
 ### shorten
-- Reduce 30-50%
-- Keep core message
+- **HARD LIMIT: Output must be 50-70% of original length**
+- Keep core message intact
 - Remove filler and weak qualifiers
 
 ### expand
-- Add detail and persuasive elements
-- Maintain tone
+- **HARD LIMIT: Output must not exceed 150% of original length**
+- Minimum 120% of original
+- Add depth without verbosity
 - No unsupported claims
 
 ### tone_adjust
+- **HARD LIMIT: Stay within 80-120% of original length**
 - Transform to requested tone
 - Preserve factual content
 - Adjust vocabulary and register
@@ -120,7 +127,7 @@ refine email marketing copy based on the operation.
 ## Anti-Spam Rules
 
 - NEVER use ALL CAPS for emphasis
-- Avoid excessive punctuation (!!!, ???)
+- Avoid excessive punctuation (!!!, ???) — stripped automatically post-generation: !!! → !, ??? → ?, ... → …
 - Avoid standalone "free" — reframe as value
 - Avoid trigger phrases (see spam_triggers.md reference)
 - Use specific numbers and proof points

@@ -1,0 +1,1 @@
+../../../../../docs/SKILL_email-image-optimization-dom-reference.md

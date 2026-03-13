@@ -6,7 +6,15 @@ from pydantic import BaseModel, Field
 
 from app.qa_engine.schemas import QACheckResult
 
-ESPPlatform = Literal["braze", "sfmc", "adobe_campaign"]
+ESPPlatform = Literal[
+    "braze",
+    "sfmc",
+    "adobe_campaign",
+    "klaviyo",
+    "mailchimp",
+    "hubspot",
+    "iterable",
+]
 
 
 class PersonalisationRequest(BaseModel):
@@ -46,6 +54,7 @@ class PersonalisationResponse(BaseModel):
     html: str
     platform: ESPPlatform
     tags_injected: list[str] = Field(default_factory=list)
+    syntax_warnings: list[str] = Field(default_factory=list)
     qa_results: list[QACheckResult] | None = None
     qa_passed: bool | None = None
     model: str

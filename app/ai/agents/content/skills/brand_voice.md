@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — brand guidelines framework) -->
 # Brand Voice Calibration Framework
 
 ## The 4 Voice Axes

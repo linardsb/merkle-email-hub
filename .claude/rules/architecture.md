@@ -24,20 +24,21 @@ globs: "**/*.{py,ts,tsx}"
 | `ontology` | `/api/v1/ontology` | Competitive intelligence reports: audience-scoped feasibility, Hub vs competitor capability matrix |
 | `design_sync` | `/api/v1/design-sync` | Multi-provider design tool connections (Figma real API, Sketch/Canva stubs), Fernet-encrypted PAT storage, design token extraction |
 
-## QA Gate System (10 checks)
+## QA Gate System (11 checks)
 
 Located in `app/qa_engine/checks/`. Each check implements `async run(html: str, config: QACheckConfig | None = None) -> QACheckResult`:
 
 1. `html_validation` -- lxml DOM-parsed: 20 structural checks (skeleton, tag integrity, content, email structure, progressive enhancement)
-2. `css_support` -- Ontology-powered: scans 365 CSS properties against 25 email clients with severity scoring
+2. `css_support` -- Ontology-powered client support scan (365 CSS properties, 25 clients) + cssutils syntax validation (vendor prefixes, external stylesheets, @import, !important overuse); 8 YAML rules via rule engine
 3. `file_size` -- Multi-client thresholds (Yahoo 75KB, Outlook 100KB, Gmail 102KB), content breakdown, gzip estimate; 8 YAML rules via rule engine
 4. `link_validation` -- DOM-parsed link extraction, URL format validation (`urlparse`), ESP template syntax checking, empty href detection; 11 YAML rules via rule engine
 5. `spam_score` -- 59 weighted triggers (7 categories), word-boundary matching, formatting heuristics (punctuation, all-caps, obfuscation), subject line 3x weight; 6 YAML rules via rule engine
 6. `dark_mode` -- color-scheme meta, prefers-color-scheme, Outlook overrides
 7. `accessibility` -- WCAG AA: 24 DOM-parsed checks across 8 groups (language, tables, images, headings, links, content semantics, dark mode, AMP forms) via YAML rule engine
 8. `fallback` -- MSO conditional comments, VML namespaces
-9. `image_optimization` -- Explicit dimensions, format validation
-10. `brand_compliance` -- Placeholder for client brand rules
+9. `image_optimization` -- DOM-parsed: 10 rules across 6 groups (core attributes, format validation, dimension integrity, tracking pixels, rendering practices, summary) via YAML rule engine; `image_analyzer.py` for cached DOM analysis
+10. `brand_compliance` -- Per-project brand rules (colors, typography, required elements, forbidden patterns) via YAML rule engine; 7 rules across 5 groups
+11. `personalisation_syntax` -- ESP-specific syntax validation (7 ESPs: Braze/Liquid, SFMC/AMPscript, Adobe/JSSP, Klaviyo/Django, Mailchimp/Merge, HubSpot/HubL, Iterable/Handlebars); 12 YAML rules via rule engine; `personalisation_validator.py` for cached analysis
 
 ## Maizzle Builder Sidecar
 

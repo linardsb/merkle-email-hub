@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — answer formatting rules) -->
 # Citation & Answer Formatting Rules
 
 ## Citation Format

@@ -1,7 +1,9 @@
 """Synthetic test data for Code Reviewer agent evaluation.
 
-12 test cases covering: redundant code, unsupported CSS, invalid nesting,
-file size issues, and clean HTML (false positive testing).
+20 test cases covering: redundant code, unsupported CSS, invalid nesting,
+file size issues, anti-patterns, spam patterns, link validation,
+dark-mode-optimised (false positive), multi-ESP (false positive),
+and agent tagging verification.
 """
 
 # -- Base HTML fragments (reused across cases) --
@@ -374,5 +376,266 @@ CODE_REVIEWER_TEST_CASES: list[dict] = [  # type: ignore[type-arg]
 </v:rect>
 <![endif]-->"""),
         "expected_challenges": ["VML elements and MSO comments are valid — should NOT be flagged"],
+    },
+    # --- Anti-Pattern Cases ---
+    {
+        "id": "cr-013",
+        "focus": "anti_patterns",
+        "dimensions": {
+            "issue_category": "anti_pattern",
+            "html_complexity": "simple_single_column",
+            "expected_severity": "warning_dominant",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td style="background: #ffffff; padding:20px;">
+      <p style="background: #f0f0f0 url('bg.png') no-repeat center;">
+        Background shorthand instead of background-color
+      </p>
+      <div style="background: linear-gradient(to right, #ff0000, #0000ff);">
+        Gradient in shorthand
+      </div>
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "Detect background shorthand instead of background-color",
+            "Flag gradient which has limited support",
+        ],
+    },
+    {
+        "id": "cr-014",
+        "focus": "spam_patterns",
+        "dimensions": {
+            "issue_category": "spam_trigger",
+            "html_complexity": "simple_single_column",
+            "expected_severity": "warning_dominant",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td style="padding:20px; font-family:Arial,sans-serif;">
+      <h1 style="font-size:36px; color:#ff0000; text-transform:uppercase;">FREE!!! ACT NOW!!!</h1>
+      <p style="display:none;">Hidden text for spam</p>
+      <p style="font-size:24px;">GUARANTEED WINNER — CLICK HERE IMMEDIATELY</p>
+      <p style="color:#ffffff; background-color:#ffffff;">White text on white background</p>
+      <a href="https://example.com" style="font-size:20px;">$$$ CLAIM YOUR PRIZE $$$</a>
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "Detect hidden text (display:none)",
+            "Flag spam trigger words (FREE, ACT NOW, GUARANTEED)",
+            "Detect same-color text (white on white)",
+        ],
+    },
+    # --- Link Validation Cases ---
+    {
+        "id": "cr-015",
+        "focus": "link_validation",
+        "dimensions": {
+            "issue_category": "malformed_link",
+            "html_complexity": "simple_single_column",
+            "expected_severity": "mixed_severity",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td style="padding:20px;">
+      <a href="{{ campaign_url }}">Liquid template URL (valid)</a>
+      <a href="%%=RedirectTo(@link)=%%">AMPscript redirect (valid)</a>
+      <a href="mailto:">Empty mailto</a>
+      <a href="">Empty href</a>
+      <a href="https://example.com/path with spaces">Spaces in URL</a>
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "Allow ESP template URLs (Liquid, AMPscript)",
+            "Flag empty mailto and empty href",
+            "Flag spaces in URL",
+        ],
+    },
+    {
+        "id": "cr-016",
+        "focus": "link_validation",
+        "dimensions": {
+            "issue_category": "malformed_link",
+            "html_complexity": "simple_single_column",
+            "expected_severity": "critical_only",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td style="padding:20px;">
+      <a href="javascript:alert(1)">XSS attempt</a>
+      <a href="example.com/no-protocol">Missing protocol</a>
+      <a href="ftp://files.example.com/doc">FTP link in email</a>
+      <a href="https://example.com" target="_blank">Valid link with target</a>
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "Flag javascript: protocol (critical)",
+            "Flag missing protocol",
+            "Note FTP link unusual in email context",
+        ],
+    },
+    # --- Deprecated HTML Case ---
+    {
+        "id": "cr-017",
+        "focus": "anti_patterns",
+        "dimensions": {
+            "issue_category": "deprecated_html",
+            "html_complexity": "simple_single_column",
+            "expected_severity": "warning_dominant",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td>
+      <font face="Arial" size="3" color="#333333">
+        <center>
+          <b>Deprecated HTML elements</b>
+        </center>
+      </font>
+      <table bgcolor="#f0f0f0" width="100%">
+        <tr><td><font color="red">More deprecated font tags</font></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "Detect <font> tag usage",
+            "Detect <center> tag usage",
+            "Note bgcolor attribute (acceptable in email but should prefer inline style)",
+        ],
+    },
+    # --- Dark Mode Optimised (False Positive Testing) ---
+    {
+        "id": "cr-018",
+        "focus": "all",
+        "dimensions": {
+            "issue_category": "mixed_issues",
+            "html_complexity": "dark_mode_optimised",
+            "expected_severity": "clean_no_issues",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": f"""{_VALID_HEAD.replace("</head>", "")}\
+<style>
+  @media (prefers-color-scheme: dark) {{
+    .dark-bg {{ background-color: #1a1a2e !important; }}
+    .dark-text {{ color: #e0e0e0 !important; }}
+    .dark-link {{ color: #64b5f6 !important; }}
+  }}
+  [data-ogsc] .dark-text {{ color: #e0e0e0 !important; }}
+  [data-ogsb] .dark-bg {{ background-color: #1a1a2e !important; }}
+</style>
+</head>
+{_VALID_BODY_OPEN}
+<table role="presentation" width="100%" style="max-width:600px; margin:0 auto;">
+  <tr>
+    <td class="dark-bg" style="padding:20px; background-color:#ffffff;">
+      <h1 class="dark-text" style="color:#333333; font-size:24px;">Dark Mode Ready</h1>
+      <p class="dark-text" style="color:#555555; font-size:14px; line-height:22px;">
+        This email is fully optimised for dark mode.
+      </p>
+      <a href="https://example.com" class="dark-link" style="color:#007bff;">Read more</a>
+    </td>
+  </tr>
+</table>
+{_VALID_BODY_CLOSE}""",
+        "expected_challenges": [
+            "Clean dark-mode-optimised HTML — prefers-color-scheme, data-ogsc, data-ogsb are valid",
+            "Should report zero or minimal issues",
+        ],
+    },
+    # --- Multi-ESP (False Positive Testing) ---
+    {
+        "id": "cr-019",
+        "focus": "all",
+        "dimensions": {
+            "issue_category": "mixed_issues",
+            "html_complexity": "multi_esp_personalised",
+            "expected_severity": "clean_no_issues",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "code_reviewer_only",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td style="padding:20px; font-family:Arial,sans-serif;">
+      <!-- Braze Liquid -->
+      <p>Hello {{ first_name | default: "there" }},</p>
+      {% if vip_member %}
+        <p style="color:#gold;">Welcome back, VIP!</p>
+      {% endif %}
+
+      <!-- SFMC AMPscript -->
+      <p>Your order: %%=v(@orderNumber)=%%</p>
+      %%[ IF @loyaltyTier == "Gold" THEN ]%%
+        <p>Gold member discount applied.</p>
+      %%[ ENDIF ]%%
+
+      <!-- Tracking pixel -->
+      <img src="https://track.example.com/open.gif" width="1" height="1" alt="" style="display:block;">
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "ESP template tags (Liquid, AMPscript) are valid — should NOT be flagged",
+            "Tracking pixel is valid — should NOT be flagged",
+        ],
+    },
+    # --- Agent Tagging Verification ---
+    {
+        "id": "cr-020",
+        "focus": "all",
+        "dimensions": {
+            "issue_category": "mixed_issues",
+            "html_complexity": "mixed_layout",
+            "expected_severity": "mixed_severity",
+            "file_size_scenario": "under_60kb",
+            "agent_routing": "multi_agent_tagged",
+        },
+        "html_input": _wrap("""
+<table role="presentation" width="600">
+  <tr>
+    <td style="display:flex; padding:20px;">
+      <!-- MSO issue: unbalanced conditional -->
+      <!--[if mso]>
+      <table><tr><td>Ghost table opened but not closed
+      <!-- Missing <![endif]--> -->
+
+      <!-- Dark mode issue: no prefers-color-scheme but has data-ogsc -->
+      <style>[data-ogsc] .text { color: #fff !important; }</style>
+
+      <!-- Accessibility issue: image without alt -->
+      <img src="https://placehold.co/600x200" width="600" height="200" style="display:block;">
+
+      <!-- Redundant code -->
+      <p style="font-family:Arial; font-size:14px; color:#333;">Text</p>
+      <p style="font-family:Arial; font-size:14px; color:#333;">Same style</p>
+    </td>
+  </tr>
+</table>"""),
+        "expected_challenges": [
+            "Flag display:flex (critical, code_reviewer)",
+            "Flag unbalanced MSO conditional (critical, outlook_fixer tagged)",
+            "Flag missing alt text (warning, accessibility tagged)",
+            "Detect redundant styles (info, code_reviewer)",
+        ],
     },
 ]

@@ -1,3 +1,4 @@
+<!-- L4 source: docs/SKILL_email-dark-mode-dom-reference.md -->
 # Email Dark Mode DOM Rendering — Validation Reference
 
 Condensed validation-focused reference from `docs/SKILL_email-dark-mode-dom-reference.md`.

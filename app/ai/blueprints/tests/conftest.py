@@ -9,7 +9,7 @@ from app.ai.protocols import CompletionResponse
 
 @pytest.fixture
 def sample_html_valid() -> str:
-    """Minimal valid email HTML that passes all 10 QA checks."""
+    """Minimal valid email HTML that passes all 11 QA checks."""
     return """<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -32,7 +32,7 @@ def sample_html_valid() -> str:
 <body>
 <table role="presentation" width="600">
 <tr><td><h1>Welcome</h1></td></tr>
-<tr><td><img src="https://example.com/hero.png" alt="Hero image" width="600" height="300"></td></tr>
+<tr><td><img src="https://example.com/hero.png" alt="Hero image" width="600" height="300" style="display: block; border: 0;"></td></tr>
 <tr><td><a href="https://example.com">Visit us</a></td></tr>
 </table>
 </body>

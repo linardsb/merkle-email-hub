@@ -2,14 +2,23 @@
 """Code Reviewer agentic node -- analyses email HTML and reports issues."""
 
 import json
+from typing import Any
 
+from app.ai.agents.code_reviewer.actionability import detect_responsible_agent
 from app.ai.agents.code_reviewer.prompt import (
     build_system_prompt,
     detect_relevant_skills,
 )
-from app.ai.agents.code_reviewer.schemas import ReviewFocus
+from app.ai.agents.code_reviewer.schemas import CodeReviewIssue, ReviewFocus
 from app.ai.blueprints.component_context import detect_component_refs
-from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    NodeContext,
+    NodeResult,
+    NodeType,
+    StructuredFailure,
+)
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -19,6 +28,17 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _detect_agent_from_item(item: dict[str, Any]) -> str:
+    """Detect responsible agent from a raw issue dict."""
+    issue = CodeReviewIssue(
+        rule=str(item.get("rule", "unknown")),
+        severity=item.get("severity", "info"),
+        message=str(item.get("message", "")),
+        suggestion=item.get("suggestion"),
+    )
+    return detect_responsible_agent(issue)
 
 
 class CodeReviewerNode:
@@ -84,7 +104,9 @@ class CodeReviewerNode:
             data = json.loads(content)
             raw_issues = data.get("issues", [])
             issues_as_warnings = tuple(
-                f"code_review: [{item.get('severity', 'info')}] {item.get('rule', 'unknown')}: {item.get('message', '')}"
+                f"code_review: [{item.get('severity', 'info')}] {item.get('rule', 'unknown')}: "
+                f"{item.get('message', '')}"
+                f" | agent={_detect_agent_from_item(item)}"  # pyright: ignore[reportUnknownArgumentType]
                 for item in raw_issues
                 if isinstance(item, dict)
             )
@@ -131,27 +153,52 @@ class CodeReviewerNode:
             f"Review the following email HTML. Focus on: {focus_label}.\n\n" + context.html[:12000]
         ]
 
-        if context.iteration > 0 and context.qa_failures:
-            relevant_failures = [
-                f
-                for f in context.qa_failures
-                if any(
-                    kw in f.lower()
-                    for kw in (
-                        "code_review",
-                        "redundant",
-                        "css_support",
-                        "nesting",
-                        "file_size",
-                        "unsupported",
+        if context.iteration > 0:
+            structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+                "qa_failure_details", []
+            )
+            if structured:
+                relevant = [f for f in structured if f.suggested_agent == "code_reviewer"]
+                other = [f for f in structured if f.suggested_agent != "code_reviewer"]
+                if relevant:
+                    failure_lines = [
+                        f"[P{f.priority}] {f.check_name} (score={f.score:.2f}): {f.details}"
+                        for f in relevant
+                    ]
+                    parts.append(
+                        "\n\n--- CODE REVIEW QA FAILURES (address these — ordered by priority) ---\n"
+                        + "\n".join(f"- {line}" for line in failure_lines)
                     )
-                )
-            ]
-            if relevant_failures:
-                parts.append(
-                    "\n\n--- CODE REVIEW QA FAILURES (address these) ---\n"
-                    + "\n".join(f"- {f}" for f in relevant_failures)
-                )
+                if other:
+                    other_lines = [f"- {f.check_name}: {f.details}" for f in other[:3]]
+                    parts.append(
+                        "\n\n--- OTHER QA ISSUES (fix if possible without breaking your changes) ---\n"
+                        + "\n".join(other_lines)
+                    )
+                scope_constraint = SCOPE_PROMPTS.get("code_reviewer", "")
+                if scope_constraint:
+                    parts.append(f"\n\n--- MODIFICATION SCOPE ---\n{scope_constraint}")
+            elif context.qa_failures:
+                relevant_failures = [
+                    f
+                    for f in context.qa_failures
+                    if any(
+                        kw in f.lower()
+                        for kw in (
+                            "code_review",
+                            "redundant",
+                            "css_support",
+                            "nesting",
+                            "file_size",
+                            "unsupported",
+                        )
+                    )
+                ]
+                if relevant_failures:
+                    parts.append(
+                        "\n\n--- CODE REVIEW QA FAILURES (address these) ---\n"
+                        + "\n".join(f"- {f}" for f in relevant_failures)
+                    )
 
         # Read upstream handoff warnings
         upstream = context.metadata.get("upstream_handoff")

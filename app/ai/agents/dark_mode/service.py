@@ -2,10 +2,12 @@
 # ruff: noqa: ANN401, ARG002
 """Dark Mode agent service — orchestrates LLM → extract → sanitize → QA."""
 
+import contextvars
 from collections.abc import AsyncIterator
 from typing import Any
 
 from app.ai.agents.base import BaseAgentService
+from app.ai.agents.dark_mode.meta_injector import inject_missing_meta_tags
 from app.ai.agents.dark_mode.prompt import (
     build_system_prompt as _build_system_prompt,
 )
@@ -17,17 +19,29 @@ from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.checks.dark_mode import DarkModeCheck
 from app.qa_engine.schemas import QACheckResult
 
+# Per-request storage for injected tag names (avoids race on singleton instance)
+_injected_tags_var: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "dm_injected_tags", default=None
+)
+
 
 class DarkModeService(BaseAgentService):
     """Orchestrates the dark mode agent pipeline.
 
     Pipeline: build messages → LLM call → validate output →
-    extract HTML → XSS sanitize → optional QA checks.
+    extract HTML → XSS sanitize → inject meta tags → optional QA checks.
     """
 
     agent_name = "dark_mode"
     model_tier = "standard"
     stream_prefix = "darkmode"
+
+    def _post_process(self, raw_content: str) -> str:
+        """Post-process LLM output: extract HTML, sanitize, then inject missing meta tags."""
+        html = super()._post_process(raw_content)
+        result = inject_missing_meta_tags(html)
+        _injected_tags_var.set(list(result.injected_tags))
+        return result.html
 
     def build_system_prompt(self, relevant_skills: list[str]) -> str:
         return _build_system_prompt(relevant_skills)
@@ -88,6 +102,7 @@ class DarkModeService(BaseAgentService):
             model=model_id,
             confidence=confidence,
             skills_loaded=skills_loaded,
+            meta_tags_injected=_injected_tags_var.get(None) or [],
         )
 
     async def stream_process(self, request: Any) -> AsyncIterator[str]:

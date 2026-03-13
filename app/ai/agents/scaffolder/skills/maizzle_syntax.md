@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — Maizzle framework docs) -->
 # Maizzle Template Syntax Reference
 
 ## Frontmatter

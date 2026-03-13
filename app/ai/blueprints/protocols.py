@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AgentHandoff",
+    "AllowedScope",
     "BlueprintNode",
     "ComponentMeta",
     "ComponentResolver",
@@ -24,6 +25,7 @@ __all__ = [
     "NodeResult",
     "NodeStatus",
     "NodeType",
+    "StructuredFailure",
 ]
 
 NodeType = Literal["deterministic", "agentic"]
@@ -81,6 +83,7 @@ class NodeResult:
     error: str = ""
     usage: dict[str, int] | None = None
     handoff: AgentHandoff | None = None
+    structured_failures: tuple[StructuredFailure, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -98,6 +101,31 @@ class AgentHandoff:
     warnings: tuple[str, ...] = ()
     component_refs: tuple[str, ...] = ()
     confidence: float | None = None
+
+
+@dataclass(frozen=True)
+class StructuredFailure:
+    """Structured QA failure with routing metadata."""
+
+    check_name: str
+    score: float
+    details: str
+    suggested_agent: str
+    priority: int  # lower = higher priority (1 = highest)
+    severity: str = "warning"
+
+
+@dataclass(frozen=True)
+class AllowedScope:
+    """Defines what a fixer agent is allowed to modify on retry.
+
+    Used by scope_validator to reject changes outside the agent's domain.
+    """
+
+    styles_only: bool = False
+    additive_only: bool = False
+    text_only: bool = False
+    structure_only: bool = False
 
 
 @dataclass(frozen=True)

@@ -34,11 +34,14 @@ def _load_skill_file(name: str) -> str:
 SKILL_FILES: dict[str, str] = {
     "redundant_code": "redundant_code.md",
     "css_client_support": "css_client_support.md",
+    "css_syntax_validation": "css_syntax_validation.md",
+    "css_support_matrix": "css_support_matrix.md",
     "nesting_validation": "nesting_validation.md",
     "file_size_optimization": "file_size_optimization.md",
     "anti_patterns": "anti_patterns.md",
     "spam_patterns": "spam_patterns.md",
     "link_validation": "link_validation.md",
+    "quality_checklist": "quality_checklist.md",
 }
 
 
@@ -87,10 +90,12 @@ def detect_relevant_skills(focus: ReviewFocus) -> list[str]:
         return list(SKILL_FILES.keys())
 
     focus_map: dict[ReviewFocus, list[str]] = {
-        "redundant_code": ["redundant_code", "anti_patterns", "spam_patterns"],
-        "css_support": ["css_client_support"],
+        "redundant_code": ["redundant_code", "anti_patterns"],
+        "css_support": ["css_client_support", "css_syntax_validation", "css_support_matrix"],
         "nesting": ["nesting_validation"],
         "file_size": ["file_size_optimization"],
-        "link_validation": ["link_validation", "anti_patterns"],
+        "link_validation": ["link_validation"],
+        "anti_patterns": ["anti_patterns", "spam_patterns", "quality_checklist"],
+        "spam_patterns": ["spam_patterns", "anti_patterns"],
     }
     return focus_map.get(focus, list(SKILL_FILES.keys()))

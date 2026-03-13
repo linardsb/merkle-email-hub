@@ -30,6 +30,7 @@ dependencies = [
     "pytesseract>=0.3.13",
     "python-docx>=1.2.0",
     "cryptography>=44.0.0",
+    "cssutils>=2.9.0",
     "nh3>=0.3.3",
     "lxml>=5.0",
 ]
@@ -179,6 +180,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "cryptography.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "cssutils.*"
 ignore_missing_imports = true
 
 

@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — pre-QA gate checklist) -->
 # 40-Point Email Quality Checklist
 
 ## Document Structure (10 points)

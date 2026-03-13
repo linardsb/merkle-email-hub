@@ -44,8 +44,12 @@ class TestLoadDefaults:
     def test_loads_yaml(self) -> None:
         profile = load_defaults()
         assert profile.file_size.params.get("gmail_threshold_kb") == 102
-        assert profile.brand_compliance.enabled is False
+        assert profile.brand_compliance.enabled is True
         assert profile.spam_score.params.get("max_triggers_reported") == 10
+        # CSS syntax validation params (11.10)
+        assert profile.css_support.params.get("deduction_syntax_error") == 0.15
+        assert profile.css_support.params.get("deduction_vendor_prefix") == 0.05
+        assert profile.css_support.params.get("deduction_external_stylesheet") == 0.25
 
     def test_cached(self) -> None:
         p1 = load_defaults()

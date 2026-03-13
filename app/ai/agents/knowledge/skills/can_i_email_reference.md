@@ -1,3 +1,4 @@
+<!-- L4 source: docs/SKILL_html-email-css-dom-reference.md -->
 # Can I Email — Reference Guide
 
 ## Data Structure

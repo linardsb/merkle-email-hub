@@ -2,7 +2,14 @@
 
 from app.ai.agents.scaffolder.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.blueprints.component_context import detect_component_refs
-from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    NodeContext,
+    NodeResult,
+    NodeType,
+    StructuredFailure,
+)
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -15,6 +22,7 @@ from app.ai.shared import (
 )
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.qa_engine.mso_parser import validate_mso_conditionals
 
 logger = get_logger(__name__)
 
@@ -68,11 +76,23 @@ class ScaffolderNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        # MSO-first: validate generated HTML for Outlook issues
+        mso_result = validate_mso_conditionals(html)
+        mso_warnings = tuple(
+            f"[{issue.severity}] {issue.category}: {issue.message}" for issue in mso_result.issues
+        )
+
+        if mso_warnings:
+            logger.warning(
+                "blueprint.scaffolder_node.mso_issues",
+                issue_count=len(mso_warnings),
+            )
+
         handoff = AgentHandoff(
             agent_name="scaffolder",
             artifact=html,
             decisions=(f"Generated {len(html)} chars from brief",),
-            warnings=(),
+            warnings=mso_warnings,
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
         )
@@ -109,7 +129,31 @@ class ScaffolderNode:
 
         parts = [context.brief]
 
-        if context.qa_failures:
+        structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+            "qa_failure_details", []
+        )
+        if structured:
+            relevant = [f for f in structured if f.suggested_agent == "scaffolder"]
+            other = [f for f in structured if f.suggested_agent != "scaffolder"]
+            if relevant:
+                failure_lines = [
+                    f"[P{f.priority}] {f.check_name} (score={f.score:.2f}): {f.details}"
+                    for f in relevant
+                ]
+                parts.append(
+                    "\n\n--- QA FAILURES (fix these — ordered by priority) ---\n"
+                    + "\n".join(f"- {line}" for line in failure_lines)
+                )
+            if other:
+                other_lines = [f"- {f.check_name}: {f.details}" for f in other[:3]]
+                parts.append(
+                    "\n\n--- OTHER QA ISSUES (fix if possible without breaking your changes) ---\n"
+                    + "\n".join(other_lines)
+                )
+            scope_constraint = SCOPE_PROMPTS.get("scaffolder", "")
+            if scope_constraint:
+                parts.append(f"\n\n--- MODIFICATION SCOPE ---\n{scope_constraint}")
+        elif context.qa_failures:
             parts.append(
                 "\n\n--- QA FAILURES (fix these) ---\n"
                 + "\n".join(f"- {f}" for f in context.qa_failures)

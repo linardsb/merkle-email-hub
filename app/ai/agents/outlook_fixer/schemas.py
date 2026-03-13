@@ -43,3 +43,7 @@ class OutlookFixerResponse(BaseModel):
     model: str
     confidence: float | None = None
     skills_loaded: list[str] = Field(default_factory=list)
+    mso_validation_warnings: list[str] = Field(
+        default_factory=list,
+        description="MSO validation warnings from post-generation validator",
+    )

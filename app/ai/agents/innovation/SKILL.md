@@ -26,7 +26,10 @@ references:
   - skills/css_animations.md
   - skills/feasibility_framework.md
   - skills/competitive_landscape.md
-l4_source: docs/SKILL_html-email-components.md
+l4_sources:
+  - docs/SKILL_html-email-components.md
+  - docs/SKILL_html-email-css-dom-reference.md
+  - docs/SKILL_email-accessibility-wcag-aa.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

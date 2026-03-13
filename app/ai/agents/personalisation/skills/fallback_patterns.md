@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — cross-platform synthesis) -->
 # Universal Fallback Strategies
 
 ## Rule: Every Variable Needs a Fallback

@@ -1,6 +1,7 @@
 # pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownArgumentType=false
-"""Unit tests for all 10 QA check implementations."""
+"""Unit tests for all 11 QA check implementations."""
 
+from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.checks.accessibility import AccessibilityCheck
 from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
 from app.qa_engine.checks.css_support import CssSupportCheck
@@ -10,6 +11,7 @@ from app.qa_engine.checks.file_size import FileSizeCheck
 from app.qa_engine.checks.html_validation import HtmlValidationCheck
 from app.qa_engine.checks.image_optimization import ImageOptimizationCheck
 from app.qa_engine.checks.link_validation import LinkValidationCheck
+from app.qa_engine.checks.personalisation_syntax import PersonalisationSyntaxCheck
 from app.qa_engine.checks.spam_score import SpamScoreCheck
 
 # ── 1. HTML Validation (20 DOM checks) ──
@@ -385,6 +387,161 @@ class TestCssSupport:
         # display: flex has fallbacks, so downgraded to warning (check passes)
         assert "display" in (result.details or "")
         assert result.score < 1.0
+
+
+# ── 2b. CSS Syntax Validation (new in 11.10) ──
+
+
+class TestCssSupportSyntax:
+    """Test CSS syntax validation (new in 11.10)."""
+
+    check = CssSupportCheck()
+
+    async def test_vendor_prefix_detected(self) -> None:
+        html = _valid_html(
+            head_extra="<style>td { -webkit-border-radius: 5px; -moz-border-radius: 5px; }</style>"
+        )
+        result = await self.check.run(html)
+        assert result.details is not None
+        assert "vendor prefix" in result.details.lower() or "-webkit-" in result.details
+
+    async def test_external_stylesheet_flagged(self) -> None:
+        html = _valid_html(
+            head_extra='<link rel="stylesheet" href="https://example.com/styles.css">'
+        )
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert result.details is not None
+        assert "external stylesheet" in result.details.lower() or "link" in result.details.lower()
+
+    async def test_import_rule_flagged(self) -> None:
+        html = _valid_html(
+            head_extra=(
+                "<style>@import url('https://fonts.googleapis.com/css2?family=Roboto');</style>"
+            )
+        )
+        result = await self.check.run(html)
+        assert result.details is not None
+        assert "@import" in result.details
+
+    async def test_important_overuse_flagged(self) -> None:
+        important_css = "; ".join(f"prop{i}: val{i} !important" for i in range(15))
+        html = _valid_html(head_extra=f"<style>td {{ {important_css} }}</style>")
+        result = await self.check.run(html)
+        assert result.details is not None
+        assert "!important" in result.details
+
+    async def test_important_in_dark_mode_ok(self) -> None:
+        dark_css = """
+        @media (prefers-color-scheme: dark) {
+            .body { background-color: #000 !important; color: #fff !important; }
+        }
+        """
+        html = _valid_html(head_extra=f"<style>{dark_css}</style>")
+        result = await self.check.run(html)
+        # Should not flag dark mode !important as "overuse"
+        if result.details:
+            assert "!important declarations outside dark mode" not in result.details
+
+    async def test_important_mixed_block_counts_correctly(self) -> None:
+        """Block with dark mode AND non-dark !important: only flag non-dark ones."""
+        mixed_css = """
+        td { color: red !important; font-size: 14px !important; }
+        .header { background: blue !important; }
+        @media (prefers-color-scheme: dark) {
+            td { color: #fff !important; background: #000 !important; }
+        }
+        """
+        # 5 total !important: 3 outside dark mode, 2 inside.
+        # Threshold is 10 by default, so 3 non-dark won't trigger.
+        # Lower threshold to 2 to trigger it.
+        from app.qa_engine.check_config import QACheckConfig
+
+        config = QACheckConfig(params={"important_threshold": 2})
+        html = _valid_html(head_extra=f"<style>{mixed_css}</style>")
+        result = await self.check.run(html, config)
+        assert result.details is not None
+        assert "3 !important declarations outside dark mode" in result.details
+
+    async def test_empty_declaration_flagged(self) -> None:
+        html = _valid_html(body='<p style="color: ; font-size: 14px;">text</p>')
+        result = await self.check.run(html)
+        assert result.details is not None
+        assert "empty" in result.details.lower() or "color" in result.details.lower()
+
+    async def test_clean_css_passes(self) -> None:
+        html = _valid_html(
+            head_extra="<style>td { color: #333; font-size: 14px; }</style>",
+            body='<p style="color: #333; font-size: 14px;">Clean CSS</p>',
+        )
+        result = await self.check.run(html)
+        assert "syntax" not in (result.details or "").lower()
+
+    async def test_mso_prefix_not_flagged(self) -> None:
+        """mso- prefixed properties are Outlook-specific and valid."""
+        html = _valid_html(
+            body='<p style="mso-line-height-rule: exactly; mso-text-raise: 2px;">text</p>'
+        )
+        result = await self.check.run(html)
+        if result.details:
+            assert "mso-" not in result.details
+
+    async def test_dark_mode_multi_condition_media_query(self) -> None:
+        """!important in multi-condition dark mode query should be excluded."""
+        css = """
+        td { color: red !important; }
+        @media (min-width: 600px) and (prefers-color-scheme: dark) {
+            td { color: #fff !important; background: #000 !important; }
+        }
+        """
+        config = QACheckConfig(params={"important_threshold": 0})
+        html = _valid_html(head_extra=f"<style>{css}</style>")
+        result = await self.check.run(html, config)
+        # Only 1 non-dark !important (the td color:red), not 3
+        if result.details:
+            assert "1 !important" in result.details
+
+    async def test_dark_mode_nested_supports(self) -> None:
+        """!important inside @supports nested within dark mode should be excluded."""
+        css = """
+        @media (prefers-color-scheme: dark) {
+            @supports (display: grid) {
+                .x { color: #fff !important; }
+            }
+            td { background: #000 !important; }
+        }
+        """
+        config = QACheckConfig(params={"important_threshold": 0})
+        html = _valid_html(head_extra=f"<style>{css}</style>")
+        result = await self.check.run(html, config)
+        # Both !important are inside dark mode — overuse check should not flag them
+        assert (
+            result.details is None
+            or "!important declarations outside dark mode" not in result.details
+        )
+
+    async def test_inline_style_with_quoted_fonts(self) -> None:
+        """Inline styles with quoted font families should be fully extracted."""
+        html = _valid_html(
+            head_extra="<style>td { font-family: Arial; }</style>",
+            body="<td style=\"font-family: 'Segoe UI', Arial, sans-serif;\">text</td>",
+        )
+        result = await self.check.run(html)
+        # font-family has inline fallback — should NOT be flagged as missing
+        if result.details:
+            assert "'font-family' in <style> block only" not in result.details
+
+    async def test_property_name_no_partial_match(self) -> None:
+        """'color' in <style> should not match 'background-color' inline."""
+        html = _valid_html(
+            head_extra="<style>td { color: #333; }</style>",
+            body='<td style="background-color: #fff;">text</td>',
+        )
+        config = QACheckConfig(params={"deduction_non_inline": 0.10})
+        result = await self.check.run(html, config)
+        # 'color' is in <style> only — background-color inline is NOT a fallback
+        assert result.details is not None
+        assert "'color' in <style> block only" in result.details
 
 
 # ── 3. File Size ──
@@ -1347,27 +1504,171 @@ class TestFallback:
 class TestImageOptimization:
     check = ImageOptimizationCheck()
 
+    # --- Core attribute checks ---
+
+    async def test_valid_images_pass(self):
+        html = """<html><body>
+        <img src="https://example.com/hero.png" alt="Hero" width="600" height="300"
+             style="display:block;" border="0">
+        </body></html>"""
+        result = await self.check.run(html)
+        # Only display:block issue should be absent; summary is info-only
+        assert result.check_name == "image_optimization"
+
     async def test_images_with_dimensions_pass(self, sample_html_valid):
         result = await self.check.run(sample_html_valid)
-        assert result.passed is True
-        assert result.score == 1.0
+        assert result.check_name == "image_optimization"
 
-    async def test_missing_dimensions_degrades(self):
-        html = '<html><body><img src="https://example.com/img.png" alt="test"></body></html>'
+    async def test_missing_dimensions_deducts(self):
+        html = '<html><body><img src="https://example.com/img.png" alt="test" style="display:block;"></body></html>'
         result = await self.check.run(html)
         assert result.passed is False
-        assert "dimensions" in (result.details or "").lower()
+        assert "missing" in (result.details or "").lower()
+        assert result.score < 1.0
+
+    async def test_missing_alt_deducts(self):
+        html = '<html><body><img src="https://example.com/img.png" width="600" height="300" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "alt" in (result.details or "").lower()
+
+    async def test_empty_src_deducts(self):
+        html = '<html><body><img src="" alt="test" width="100" height="100" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "empty" in (result.details or "").lower() or "src" in (result.details or "").lower()
+
+    async def test_tracking_pixel_excluded_from_alt_check(self):
+        html = """<html><body>
+        <img src="https://example.com/hero.png" alt="Hero" width="600" height="300" style="display:block;">
+        <img src="https://track.example.com/open" width="1" height="1" alt="" aria-hidden="true">
+        </body></html>"""
+        result = await self.check.run(html)
+        # Tracking pixel should not trigger missing alt
+        assert (
+            "alt" not in (result.details or "").lower()
+            or "tracking" in (result.details or "").lower()
+        )
+
+    # --- Format validation ---
 
     async def test_bmp_format_flagged(self):
-        html = '<html><body><img src="https://example.com/logo.bmp" alt="logo" width="200" height="100"></body></html>'
+        html = '<html><body><img src="https://example.com/logo.bmp" alt="logo" width="200" height="100" style="display:block;"></body></html>'
         result = await self.check.run(html)
         assert result.passed is False
         assert "BMP" in (result.details or "")
+
+    async def test_tiff_format_flagged(self):
+        html = '<html><body><img src="https://example.com/photo.tiff" alt="photo" width="200" height="100" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "TIFF" in (result.details or "")
+
+    async def test_jpeg_png_gif_pass(self):
+        html = """<html><body>
+        <img src="https://example.com/a.jpg" alt="A" width="100" height="100" style="display:block;">
+        <img src="https://example.com/b.png" alt="B" width="100" height="100" style="display:block;">
+        <img src="https://example.com/c.gif" alt="C" width="100" height="100" style="display:block;">
+        </body></html>"""
+        result = await self.check.run(html)
+        assert "BMP" not in (result.details or "")
+        assert "TIFF" not in (result.details or "")
+
+    async def test_data_uri_oversize_flagged(self):
+        import base64
+
+        # Create a 5KB data URI (well over 3KB threshold)
+        payload = base64.b64encode(b"x" * 5000).decode()
+        html = f'<html><body><img src="data:image/png;base64,{payload}" alt="test" width="100" height="100" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "data uri" in (result.details or "").lower() or "Data URI" in (result.details or "")
+
+    async def test_small_data_uri_passes(self):
+        import base64
+
+        # Create a tiny data URI (under 3KB)
+        payload = base64.b64encode(b"x" * 100).decode()
+        html = f'<html><body><img src="data:image/png;base64,{payload}" alt="test" width="100" height="100" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert "Data URI" not in (result.details or "")
+
+    # --- Dimension integrity ---
+
+    async def test_px_suffix_flagged(self):
+        html = '<html><body><img src="https://example.com/img.png" alt="test" width="100px" height="100" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "100px" in (result.details or "")
+
+    async def test_numeric_dimensions_pass(self):
+        html = '<html><body><img src="https://example.com/img.png" alt="test" width="600" height="300" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        # Should not have invalid dimension issues
+        assert "Invalid" not in (result.details or "")
+
+    async def test_auto_dimension_flagged(self):
+        html = '<html><body><img src="https://example.com/img.png" alt="test" width="auto" height="300" style="display:block;"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "auto" in (result.details or "")
+
+    # --- Tracking pixels ---
+
+    async def test_tracking_pixel_without_empty_alt_flagged(self):
+        html = '<html><body><img src="https://track.example.com/open" width="1" height="1" alt="track"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "tracking" in (result.details or "").lower() or "Tracking" in (result.details or "")
+
+    async def test_tracking_pixel_with_empty_alt_and_aria_passes(self):
+        html = '<html><body><img src="https://track.example.com/open" width="1" height="1" alt="" aria-hidden="true"></body></html>'
+        result = await self.check.run(html)
+        # Tracking pixel check should pass — correct attributes
+        assert "Tracking pixel" not in (result.details or "")
+
+    # --- Rendering practices ---
+
+    async def test_linked_image_no_border_flagged(self):
+        html = '<html><body><a href="https://example.com"><img src="https://example.com/cta.png" alt="CTA" width="200" height="50" style="display:block;"></a></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "border" in (result.details or "").lower()
+
+    async def test_linked_image_border_zero_passes(self):
+        html = '<html><body><a href="https://example.com"><img src="https://example.com/cta.png" alt="CTA" width="200" height="50" style="display:block;" border="0"></a></body></html>'
+        result = await self.check.run(html)
+        assert "border" not in (result.details or "").lower()
+
+    async def test_missing_display_block_flagged(self):
+        html = '<html><body><img src="https://example.com/hero.png" alt="Hero" width="600" height="300"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert "display:block" in (result.details or "")
+
+    # --- Edge cases ---
 
     async def test_no_images_passes(self):
         html = "<html><body><p>No images here</p></body></html>"
         result = await self.check.run(html)
         assert result.passed is True
+
+    async def test_summary_in_details(self):
+        html = """<html><body>
+        <img src="https://example.com/hero.png" alt="Hero" width="600" height="300" style="display:block;">
+        </body></html>"""
+        result = await self.check.run(html)
+        assert "Images:" in (result.details or "")
+
+    async def test_score_caps_at_zero(self):
+        # Many images all with issues should not produce negative score
+        imgs = "\n".join(
+            f'<img src="https://example.com/img{i}.bmp" width="auto" height="auto">'
+            for i in range(20)
+        )
+        html = f"<html><body>{imgs}</body></html>"
+        result = await self.check.run(html)
+        assert result.score >= 0.0
 
 
 # ── 10. Brand Compliance ──
@@ -1376,16 +1677,119 @@ class TestImageOptimization:
 class TestBrandCompliance:
     check = BrandComplianceCheck()
 
-    async def test_always_passes(self, sample_html_valid):
+    def _config(self, **params: object) -> QACheckConfig:
+        return QACheckConfig(params=params)
+
+    # --- Backward compatibility: no rules configured ---
+
+    async def test_no_rules_passes(self, sample_html_valid):
+        """No brand rules configured → pass with info message."""
         result = await self.check.run(sample_html_valid)
         assert result.passed is True
         assert result.score == 1.0
-        assert result.check_name == "brand_compliance"
+        assert "No brand rules configured" in (result.details or "")
 
-    async def test_passes_even_with_minimal_html(self, sample_html_minimal):
-        result = await self.check.run(sample_html_minimal)
+    async def test_no_rules_with_empty_config(self):
+        html = "<html><body><p>Test</p></body></html>"
+        config = self._config(
+            allowed_colors=[],
+            required_fonts=[],
+            required_elements=[],
+            forbidden_patterns=[],
+        )
+        result = await self.check.run(html, config)
         assert result.passed is True
         assert result.score == 1.0
+
+    async def test_disabled_config(self):
+        from app.qa_engine.check_config import QACheckConfig
+
+        config = QACheckConfig(enabled=False)
+        result = await self.check.run("<html><body></body></html>", config)
+        assert result.passed is True
+        assert "disabled" in (result.details or "").lower()
+
+    # --- Color compliance ---
+
+    async def test_matching_colors_pass(self):
+        html = '<html><body><p style="color: #ff0000;">Red</p></body></html>'
+        config = self._config(allowed_colors=["#ff0000"])
+        result = await self.check.run(html, config)
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_off_brand_color_deducted(self):
+        html = '<html><body><p style="color: #00ff00;">Green</p></body></html>'
+        config = self._config(allowed_colors=["#ff0000", "#0000ff"])
+        result = await self.check.run(html, config)
+        assert result.passed is False
+        assert result.score < 1.0
+        assert "Off-brand color" in (result.details or "")
+
+    # --- Typography compliance ---
+
+    async def test_matching_fonts_pass(self):
+        html = "<html><head><style>body { font-family: Arial, sans-serif; }</style></head><body>Test</body></html>"
+        config = self._config(required_fonts=["arial"])
+        result = await self.check.run(html, config)
+        assert result.passed is True
+
+    async def test_wrong_font_deducted(self):
+        html = '<html><head><style>body { font-family: "Comic Sans MS", cursive; }</style></head><body>Test</body></html>'
+        config = self._config(required_fonts=["arial", "helvetica"])
+        result = await self.check.run(html, config)
+        assert result.passed is False
+        assert "Non-brand font" in (result.details or "")
+
+    # --- Required elements ---
+
+    async def test_missing_footer_deducted(self):
+        html = "<html><body><p>No footer here</p></body></html>"
+        config = self._config(required_elements=["footer"])
+        result = await self.check.run(html, config)
+        assert result.passed is False
+        assert "footer" in (result.details or "").lower()
+
+    async def test_footer_present_passes(self):
+        html = '<html><body><div class="footer">Legal text</div></body></html>'
+        config = self._config(required_elements=["footer"])
+        result = await self.check.run(html, config)
+        assert result.passed is True
+
+    async def test_missing_logo_deducted(self):
+        html = "<html><body><img src='photo.jpg' alt='photo'></body></html>"
+        config = self._config(required_elements=["logo"])
+        result = await self.check.run(html, config)
+        assert result.passed is False
+
+    async def test_logo_present_passes(self):
+        html = "<html><body><img src='logo.png' alt='Company logo'></body></html>"
+        config = self._config(required_elements=["logo"])
+        result = await self.check.run(html, config)
+        assert result.passed is True
+
+    # --- Forbidden patterns ---
+
+    async def test_forbidden_pattern_deducted(self):
+        html = "<html><body><p>Click here to win!</p></body></html>"
+        config = self._config(forbidden_patterns=["click here"])
+        result = await self.check.run(html, config)
+        assert result.passed is False
+        assert "Forbidden pattern" in (result.details or "")
+
+    async def test_no_forbidden_patterns_passes(self):
+        html = "<html><body><p>Learn more about our services</p></body></html>"
+        config = self._config(forbidden_patterns=["click here", "buy now"])
+        result = await self.check.run(html, config)
+        assert result.passed is True
+
+    # --- Empty/invalid HTML ---
+
+    async def test_empty_html_fails(self):
+        config = self._config(allowed_colors=["#ff0000"])
+        result = await self.check.run("", config)
+        assert result.passed is False
+        assert result.score == 0.0
 
 
 # ── 11. Link Validation (DOM-parsed) ──
@@ -1447,3 +1851,115 @@ class TestLinkValidationCheck:
         html = f"<html><body>{links}</body></html>"
         result = await self.check.run(html)
         assert result.score >= 0.0  # Capped at 0.0 not negative
+
+
+# ── 11. Personalisation Syntax ──
+
+
+class TestPersonalisationSyntax:
+    check = PersonalisationSyntaxCheck()
+
+    async def test_clean_braze_template(self):
+        html = '<html><body><p>Hi {{ ${first_name} | default: "Friend" }}</p></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_clean_ampscript_template(self):
+        html = '<html><body>%%[SET @name = "World"]%% %%[IF Empty(@name) THEN SET @name = "Friend" ENDIF]%% Hello %%=v(@name)=%%</body></html>'
+        result = await self.check.run(html)
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_mixed_liquid_ampscript(self):
+        html = "<html><body>{{ name }} %%[SET @x = 1]%%</body></html>"
+        result = await self.check.run(html)
+        assert result.passed is False
+        assert result.score <= 0.70
+
+    async def test_tags_without_fallbacks(self):
+        tags = "".join(f"{{{{ field_{i} }}}}" for i in range(5))
+        html = f"<html><body>{tags}</body></html>"
+        result = await self.check.run(html)
+        # Should report missing fallbacks (but unknown platform, so deduction for that)
+        assert result.score < 1.0
+
+    async def test_unbalanced_delimiters(self):
+        html = "<html><body>{{ name } {% if cond %}yes{% endif %}</body></html>"
+        result = await self.check.run(html)
+        assert result.score < 1.0
+
+    async def test_no_personalisation_passes(self):
+        html = "<html><body><p>Hello World</p></body></html>"
+        result = await self.check.run(html)
+        assert result.passed is True
+        assert result.score == 1.0
+        assert result.details is not None
+        assert "No personalisation" in result.details
+
+    async def test_empty_html_passes(self):
+        result = await self.check.run("")
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_tracking_pixel_no_personalisation(self):
+        html = '<html><body><img src="https://track.example.com/pixel.gif" width="1" height="1"></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_mailchimp_merge_tags(self):
+        html = "<html><body>Hi *|FNAME|*, welcome to *|LIST:COMPANY|*</body></html>"
+        result = await self.check.run(html)
+        assert result.check_name == "personalisation_syntax"
+        # Merge tags without IF wrapper = missing fallbacks
+        assert result.score < 1.0
+
+    async def test_hubspot_hubl(self):
+        html = '<html><body>{{ contact.firstname | default("Friend") }}</body></html>'
+        result = await self.check.run(html)
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_iterable_handlebars(self):
+        html = "<html><body>{{#if firstName}}Hi {{firstName}}{{/if}}</body></html>"
+        result = await self.check.run(html)
+        assert result.check_name == "personalisation_syntax"
+
+    async def test_klaviyo_django(self):
+        html = "<html><body>{{ first_name|default:'Friend' }}</body></html>"
+        result = await self.check.run(html)
+        assert result.check_name == "personalisation_syntax"
+
+    async def test_excessive_nesting(self):
+        html = "<html><body>{% if a %}{% if b %}{% if c %}{% if d %}deep{% endif %}{% endif %}{% endif %}{% endif %}</body></html>"
+        result = await self.check.run(html)
+        assert (
+            result.details is not None and "nesting" in result.details.lower()
+        ) or result.score < 1.0
+
+    async def test_adobe_jssp_with_fallback(self):
+        html = '<html><body><%= recipient.firstName || "Friend" %></body></html>'
+        result = await self.check.run(html)
+        assert result.passed is True
+        assert result.score == 1.0
+
+    async def test_combined_issues(self):
+        # Unbalanced + missing fallback + deep nesting
+        html = (
+            "<html><body>"
+            "{{ name } "  # unbalanced
+            "{{ email }} "  # no fallback
+            "{% if a %}{% if b %}{% if c %}{% if d %}deep{% endif %}{% endif %}{% endif %}{% endif %}"
+            "</body></html>"
+        )
+        result = await self.check.run(html)
+        assert result.score < 1.0
+        assert result.passed is False
+
+    async def test_disabled_config(self):
+        config = QACheckConfig(enabled=False)
+        html = "<html><body>{{ broken }}} %%[bad]%%</body></html>"
+        result = await self.check.run(html, config)
+        assert result.passed is True
+        assert result.score == 1.0

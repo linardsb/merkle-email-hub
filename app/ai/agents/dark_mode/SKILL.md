@@ -25,7 +25,10 @@ references:
   - skills/outlook_dark_mode.md
   - skills/image_handling.md
   - skills/dom_rendering_reference.md
-l4_source: docs/SKILL_email-dark-mode-dom-reference.md
+  - skills/meta_tag_injection.md
+l4_sources:
+  - docs/SKILL_email-dark-mode-dom-reference.md
+  - docs/SKILL_email-image-optimization-dom-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -92,11 +95,12 @@ with comprehensive dark mode CSS while preserving everything else.
 
 ## Deterministic Checks (Run Before Output)
 
-1. `<meta name="color-scheme">` present in `<head>`
-2. `@media (prefers-color-scheme: dark)` block exists
-3. `[data-ogsc]` and `[data-ogsb]` selectors present
-4. All remapped color pairs meet 4.5:1 contrast
-5. No elements removed from original HTML
+1. `<meta name="color-scheme" content="light dark">` present in `<head>` (**auto-injected if missing**)
+2. `<meta name="supported-color-schemes" content="light dark">` present in `<head>` (**auto-injected if missing**)
+3. `@media (prefers-color-scheme: dark)` block exists
+4. `[data-ogsc]` and `[data-ogsb]` selectors present
+5. All remapped color pairs meet 4.5:1 contrast
+6. No elements removed from original HTML
 
 ## Confidence Assessment
 

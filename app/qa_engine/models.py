@@ -26,7 +26,7 @@ class QAResult(Base, TimestampMixin):
     overall_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     checks_passed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    checks_total: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    checks_total: Mapped[int] = mapped_column(Integer, nullable=False, default=11)
 
     checks: Mapped[list["QACheck"]] = relationship(
         back_populates="qa_result", cascade="all, delete-orphan", lazy="selectin"

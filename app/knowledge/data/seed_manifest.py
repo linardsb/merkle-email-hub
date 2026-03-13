@@ -14,7 +14,13 @@ class SeedEntry:
     tags: list[str] = field(default_factory=lambda: list[str]())
 
 
-ALLOWED_DOMAINS = {"css_support", "best_practices", "client_quirks", "email_ontology"}
+ALLOWED_DOMAINS = {
+    "css_support",
+    "best_practices",
+    "client_quirks",
+    "email_ontology",
+    "agent_references",
+}
 
 SEED_MANIFEST: list[SeedEntry] = [
     # --- CSS Support (8 documents) ---
@@ -159,5 +165,71 @@ SEED_MANIFEST: list[SeedEntry] = [
         title="Outlook.com and Office 365 Web Rendering Quirks",
         description="CSS subset differences, dark mode forced colors, class/id renaming, and safe styles.",
         tags=["outlook-web", "office-365", "dark-mode", "quirks"],
+    ),
+    # --- Agent References (9 documents) ---
+    # L4 deep-reference docs used by agents via SKILL.md l4_sources pointers.
+    # Symlinked from docs/SKILL_*.md into seeds/agent_references/.
+    SeedEntry(
+        filename="agent_references/SKILL_outlook-mso-fallback-reference.md",
+        domain="agent_references",
+        title="MSO Conditional & VML Fallback Reference",
+        description="Complete MSO conditional comment patterns, VML backgrounds/buttons, ghost tables, DPI scaling, and Outlook version targeting for email HTML.",
+        tags=["outlook", "mso", "vml", "fallback", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_html-email-css-dom-reference.md",
+        domain="agent_references",
+        title="HTML Email CSS DOM Reference",
+        description="CSS property support across email clients, inline vs embedded strategies, vendor prefixes, and DOM-parsed validation rules.",
+        tags=["css", "dom", "validation", "compatibility", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_html-email-components.md",
+        domain="agent_references",
+        title="HTML Email Component Patterns",
+        description="Reusable email component patterns: headers, heroes, CTAs, footers, navigation, and table-based layout building blocks.",
+        tags=["components", "layout", "patterns", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_email-spam-score-dom-reference.md",
+        domain="agent_references",
+        title="Email Spam Score DOM Reference",
+        description="Spam trigger patterns, weighted scoring rules, word-boundary matching, formatting heuristics, and subject line risk factors.",
+        tags=["spam", "deliverability", "triggers", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_email-link-validation-dom-reference.md",
+        domain="agent_references",
+        title="Email Link Validation DOM Reference",
+        description="Link extraction patterns, URL format validation, ESP template syntax checking, empty href detection, and tracking parameter rules.",
+        tags=["links", "validation", "url", "esp", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_email-image-optimization-dom-reference.md",
+        domain="agent_references",
+        title="Email Image Optimization DOM Reference",
+        description="Image dimension validation, format support, alt text rules, tracking pixel accessibility, data URI sizing, and retina/HiDPI patterns.",
+        tags=["images", "optimization", "alt-text", "dimensions", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_email-file-size-guidelines.md",
+        domain="agent_references",
+        title="Email File Size Guidelines",
+        description="Multi-client size thresholds (Gmail 102KB, Yahoo 75KB, Outlook 100KB), content breakdown analysis, gzip estimation, and minification strategies.",
+        tags=["file-size", "optimization", "gmail", "clipping", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_email-dark-mode-dom-reference.md",
+        domain="agent_references",
+        title="Email Dark Mode DOM Reference",
+        description="Color-scheme meta tags, prefers-color-scheme media queries, Outlook data-ogsc/data-ogsb selectors, color remapping, and image swap patterns.",
+        tags=["dark-mode", "meta-tags", "color-scheme", "outlook", "agent-reference"],
+    ),
+    SeedEntry(
+        filename="agent_references/SKILL_email-accessibility-wcag-aa.md",
+        domain="agent_references",
+        title="Email Accessibility WCAG AA Reference",
+        description="WCAG 2.1 AA compliance rules for email: alt text quality, color contrast ratios, semantic structure, table roles, heading hierarchy, and ARIA attributes.",
+        tags=["accessibility", "wcag", "alt-text", "contrast", "agent-reference"],
     ),
 ]

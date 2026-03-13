@@ -18,6 +18,7 @@ from typing import Any
 
 from lxml.html import HtmlElement
 
+from app.qa_engine.brand_analyzer import analyze_brand
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.dark_mode_parser import (
     _COLOR_PROPERTIES as _DM_COLOR_PROPERTIES,
@@ -2684,3 +2685,1060 @@ register_custom_check("spam_excessive_punctuation", spam_excessive_punctuation)
 register_custom_check("spam_all_caps_words", spam_all_caps_words)
 register_custom_check("spam_obfuscation", spam_obfuscation)
 register_custom_check("spam_score_summary", spam_score_summary)
+
+
+# ---------------------------------------------------------------------------
+# Custom check functions — brand compliance
+# ---------------------------------------------------------------------------
+
+_GENERIC_FONTS = frozenset(
+    {
+        "serif",
+        "sans-serif",
+        "monospace",
+        "cursive",
+        "fantasy",
+        "system-ui",
+        "ui-serif",
+        "ui-sans-serif",
+        "ui-monospace",
+    }
+)
+
+
+def _brand_param(config: QACheckConfig | None, key: str, default: float) -> float:
+    """Resolve a brand compliance config parameter."""
+    if config and key in config.params:
+        return float(config.params[key])
+    return default
+
+
+def brand_color_compliance(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check CSS colors against allowed brand palette."""
+    allowed_raw: list[str] = config.params.get("allowed_colors", []) if config else []
+    if not allowed_raw:
+        return [], 0.0
+
+    allowed = {c.strip().lower() for c in allowed_raw}
+    # Expand 3-char hex
+    expanded: set[str] = set()
+    for c in allowed:
+        expanded.add(c)
+        if re.match(r"^#[0-9a-f]{3}$", c):
+            expanded.add(f"#{c[1] * 2}{c[2] * 2}{c[3] * 2}")
+    allowed = expanded
+
+    analysis = analyze_brand(doc, raw_html)
+    off_brand = analysis.colors_found - allowed
+
+    if not off_brand:
+        return [], 0.0
+
+    deduction_each = _brand_param(config, "deduction_off_brand_color", 0.20)
+    cap = int(_brand_param(config, "max_color_issues_reported", 10))
+    issues: list[str] = []
+    for color in sorted(off_brand):
+        if len(issues) < cap:
+            issues.append(f"Off-brand color: {color}")
+
+    return issues, deduction_each * len(off_brand)
+
+
+def brand_font_compliance(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check font-family declarations against approved brand fonts."""
+    required_raw: list[str] = config.params.get("required_fonts", []) if config else []
+    if not required_raw:
+        return [], 0.0
+
+    approved = {f.strip().lower() for f in required_raw}
+
+    analysis = analyze_brand(doc, raw_html)
+    non_brand = analysis.fonts_found - approved - _GENERIC_FONTS
+
+    if not non_brand:
+        return [], 0.0
+
+    deduction_each = _brand_param(config, "deduction_wrong_font", 0.15)
+    cap = int(_brand_param(config, "max_font_issues_reported", 5))
+    issues: list[str] = []
+    for font in sorted(non_brand):
+        if len(issues) < cap:
+            issues.append(f"Non-brand font: {font}")
+
+    return issues, deduction_each * len(non_brand)
+
+
+def brand_required_footer(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check footer section is present (if required by brand rules)."""
+    required: list[str] = config.params.get("required_elements", []) if config else []
+    if "footer" not in required:
+        return [], 0.0
+
+    analysis = analyze_brand(doc, raw_html)
+    if analysis.has_footer:
+        return [], 0.0
+
+    deduction = _brand_param(config, "deduction_missing_footer", 0.25)
+    return ["Required footer section missing"], deduction
+
+
+def brand_required_logo(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check brand logo image is present (if required by brand rules)."""
+    required: list[str] = config.params.get("required_elements", []) if config else []
+    if "logo" not in required:
+        return [], 0.0
+
+    analysis = analyze_brand(doc, raw_html)
+    if analysis.has_logo:
+        return [], 0.0
+
+    deduction = _brand_param(config, "deduction_missing_logo", 0.25)
+    return ["Required brand logo missing"], deduction
+
+
+def brand_required_unsubscribe(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check unsubscribe link is present (if required by brand rules)."""
+    required: list[str] = config.params.get("required_elements", []) if config else []
+    if "unsubscribe" not in required:
+        return [], 0.0
+
+    analysis = analyze_brand(doc, raw_html)
+    if analysis.has_unsubscribe:
+        return [], 0.0
+
+    deduction = _brand_param(config, "deduction_missing_unsubscribe", 0.25)
+    return ["Required unsubscribe link missing"], deduction
+
+
+def brand_forbidden_patterns(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check for forbidden text patterns in email content."""
+    patterns_raw: list[str] = config.params.get("forbidden_patterns", []) if config else []
+    if not patterns_raw:
+        return [], 0.0
+
+    analysis = analyze_brand(doc, raw_html)
+    text_lower = analysis.raw_text.lower()
+
+    deduction_each = _brand_param(config, "deduction_forbidden_pattern", 0.20)
+    cap = int(_brand_param(config, "max_pattern_issues_reported", 5))
+    issues: list[str] = []
+    total = 0.0
+
+    for pattern in patterns_raw:
+        try:
+            if re.search(re.escape(pattern.lower()), text_lower):
+                if len(issues) < cap:
+                    issues.append(f'Forbidden pattern found: "{pattern}"')
+                total += deduction_each
+        except re.error:
+            continue
+
+    return issues, total
+
+
+def brand_compliance_summary(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational brand compliance summary — no deduction."""
+    analysis = analyze_brand(doc, raw_html)
+    parts: list[str] = [
+        f"Brand compliance: {len(analysis.colors_found)} colors, "
+        f"{len(analysis.fonts_found)} fonts found; "
+        f"footer={'yes' if analysis.has_footer else 'no'}, "
+        f"logo={'yes' if analysis.has_logo else 'no'}, "
+        f"unsubscribe={'yes' if analysis.has_unsubscribe else 'no'}"
+    ]
+    return parts, 0.0
+
+
+# Register brand compliance custom checks
+register_custom_check("brand_color_compliance", brand_color_compliance)
+register_custom_check("brand_font_compliance", brand_font_compliance)
+register_custom_check("brand_required_footer", brand_required_footer)
+register_custom_check("brand_required_logo", brand_required_logo)
+register_custom_check("brand_required_unsubscribe", brand_required_unsubscribe)
+register_custom_check("brand_forbidden_patterns", brand_forbidden_patterns)
+register_custom_check("brand_compliance_summary", brand_compliance_summary)
+
+
+# ---------------------------------------------------------------------------
+# Image Optimization check functions
+# ---------------------------------------------------------------------------
+
+from app.qa_engine.image_analyzer import BANNED_FORMATS  # noqa: E402
+from app.qa_engine.image_analyzer import get_cached_result as get_img_cached_result  # noqa: E402
+
+
+def _img_param(config: QACheckConfig | None, key: str, default: float) -> float:
+    """Resolve image optimization config parameter."""
+    if config and key in config.params:
+        return float(config.params[key])
+    return default
+
+
+def image_missing_dimensions(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag images missing width and/or height attributes (excluding tracking pixels)."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_missing_dimensions", 0.05)
+    cap = int(_img_param(config, "max_dimension_issues_reported", 5))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if img.is_tracking_pixel:
+            continue
+        if img.width is None or img.height is None:
+            count += 1
+            if len(issues) < cap:
+                missing: list[str] = []
+                if img.width is None:
+                    missing.append("width")
+                if img.height is None:
+                    missing.append("height")
+                src_display = img.src[:60] + "..." if len(img.src) > 60 else img.src
+                issues.append(f"Image missing {', '.join(missing)}: {src_display}")
+    if count > cap:
+        issues.append(f"... and {count - cap} more images with missing dimensions")
+    return issues, round(count * deduction, 4)
+
+
+def image_missing_alt(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag non-decorative images missing alt attribute entirely."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_missing_alt", 0.05)
+    cap = int(_img_param(config, "max_alt_issues_reported", 5))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if img.is_tracking_pixel:
+            continue
+        if img.alt is None:  # None = attribute absent (not empty string)
+            count += 1
+            if len(issues) < cap:
+                src_display = img.src[:60] + "..." if len(img.src) > 60 else img.src
+                issues.append(f"Image missing alt attribute: {src_display}")
+    if count > cap:
+        issues.append(f"... and {count - cap} more images without alt")
+    return issues, round(count * deduction, 4)
+
+
+def image_empty_src(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag images with empty or missing src."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_empty_src", 0.10)
+    cap = int(_img_param(config, "max_src_issues_reported", 3))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if not img.src:
+            count += 1
+            if len(issues) < cap:
+                issues.append("Image with empty or missing src attribute")
+    if count > cap:
+        issues.append(f"... and {count - cap} more images with empty src")
+    return issues, round(count * deduction, 4)
+
+
+def image_banned_format(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag BMP/TIFF images."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_banned_format", 0.10)
+    cap = int(_img_param(config, "max_format_issues_reported", 3))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if img.format in BANNED_FORMATS:
+            count += 1
+            if len(issues) < cap:
+                src_display = img.src[:60] + "..." if len(img.src) > 60 else img.src
+                issues.append(f"{img.format.value.upper()} format: {src_display}")
+    if count > cap:
+        issues.append(f"... and {count - cap} more banned format images")
+    return issues, round(count * deduction, 4)
+
+
+def image_data_uri_oversize(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag data URIs exceeding size threshold."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_data_uri_oversize", 0.10)
+    threshold = int(_img_param(config, "data_uri_max_bytes", 3072))  # 3KB
+    cap = int(_img_param(config, "max_data_uri_issues_reported", 3))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if img.is_data_uri and img.data_uri_bytes > threshold:
+            count += 1
+            if len(issues) < cap:
+                kb = round(img.data_uri_bytes / 1024, 1)
+                issues.append(f"Data URI image {kb}KB exceeds {threshold // 1024}KB threshold")
+    if count > cap:
+        issues.append(f"... and {count - cap} more oversized data URI images")
+    return issues, round(count * deduction, 4)
+
+
+def image_invalid_dimension_value(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag non-numeric dimension values (e.g., '100px', 'auto')."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_invalid_dimension", 0.03)
+    cap = int(_img_param(config, "max_dimension_issues_reported", 5))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        for attr_name, attr_val in [("width", img.width), ("height", img.height)]:
+            if attr_val is not None:
+                stripped = attr_val.strip()
+                if stripped and not stripped.isdigit():
+                    count += 1
+                    if len(issues) < cap:
+                        src_display = img.src[:50] + "..." if len(img.src) > 50 else img.src
+                        issues.append(f'Invalid {attr_name}="{attr_val}" on: {src_display}')
+    if count > cap:
+        issues.append(f"... and {count - cap} more invalid dimension values")
+    return issues, round(count * deduction, 4)
+
+
+def image_tracking_pixel_visible(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag tracking pixels that are visible to screen readers."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_tracking_pixel", 0.03)
+    cap = int(_img_param(config, "max_tracking_issues_reported", 3))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if not img.is_tracking_pixel:
+            continue
+        problems: list[str] = []
+        if img.alt is None or img.alt != "":
+            problems.append('needs alt=""')
+        if not img.has_aria_hidden:
+            problems.append('needs aria-hidden="true"')
+        if problems:
+            count += 1
+            if len(issues) < cap:
+                src_display = img.src[:50] + "..." if len(img.src) > 50 else img.src
+                issues.append(f"Tracking pixel ({', '.join(problems)}): {src_display}")
+    if count > cap:
+        issues.append(f"... and {count - cap} more tracking pixel issues")
+    return issues, round(count * deduction, 4)
+
+
+def image_missing_border_zero(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag images inside <a> tags without border='0'."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_missing_border", 0.03)
+    cap = int(_img_param(config, "max_border_issues_reported", 5))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if img.is_inside_link and not img.has_border_zero:
+            count += 1
+            if len(issues) < cap:
+                src_display = img.src[:60] + "..." if len(img.src) > 60 else img.src
+                issues.append(f"Linked image without border='0': {src_display}")
+    if count > cap:
+        issues.append(f"... and {count - cap} more images without border='0'")
+    return issues, round(count * deduction, 4)
+
+
+def image_missing_display_block(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag images without display:block in inline style."""
+    result = get_img_cached_result(raw_html)
+    deduction = _img_param(config, "deduction_missing_display_block", 0.02)
+    cap = int(_img_param(config, "max_display_issues_reported", 5))
+    issues: list[str] = []
+    count = 0
+    for img in result.images:
+        if img.is_tracking_pixel:
+            continue
+        if not img.has_display_block:
+            count += 1
+            if len(issues) < cap:
+                src_display = img.src[:60] + "..." if len(img.src) > 60 else img.src
+                issues.append(f"Image without display:block: {src_display}")
+    if count > cap:
+        issues.append(f"... and {count - cap} more images without display:block")
+    return issues, round(count * deduction, 4)
+
+
+def image_summary(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational summary of image analysis."""
+    result = get_img_cached_result(raw_html)
+    if result.total_count == 0:
+        return ["Images: none found"], 0.0
+
+    parts = [f"Images: {result.total_count} total"]
+    if result.tracking_pixel_count:
+        parts.append(f"{result.tracking_pixel_count} tracking pixel(s)")
+    if result.format_distribution:
+        fmt_str = ", ".join(f"{k}: {v}" for k, v in sorted(result.format_distribution.items()))
+        parts.append(f"formats: {fmt_str}")
+    parts.append(f"{result.images_with_alt}/{result.total_count} with alt text")
+    return ["; ".join(parts)], 0.0
+
+
+# Register image optimization custom checks
+register_custom_check("image_missing_dimensions", image_missing_dimensions)
+register_custom_check("image_missing_alt", image_missing_alt)
+register_custom_check("image_empty_src", image_empty_src)
+register_custom_check("image_banned_format", image_banned_format)
+register_custom_check("image_data_uri_oversize", image_data_uri_oversize)
+register_custom_check("image_invalid_dimension_value", image_invalid_dimension_value)
+register_custom_check("image_tracking_pixel_visible", image_tracking_pixel_visible)
+register_custom_check("image_missing_border_zero", image_missing_border_zero)
+register_custom_check("image_missing_display_block", image_missing_display_block)
+register_custom_check("image_summary", image_summary)
+
+
+# ---------------------------------------------------------------------------
+# CSS Syntax Validation check functions
+# ---------------------------------------------------------------------------
+
+import logging as _stdlib_logging  # noqa: E402
+
+import cssutils  # noqa: E402
+
+# Silence cssutils logging (it logs parse errors to stderr by default)
+cssutils.log.setLevel(_stdlib_logging.CRITICAL)  # pyright: ignore[reportUnknownMemberType,reportArgumentType]
+
+_VENDOR_PREFIX_RE = re.compile(r"-(?:webkit|moz|ms|o)-[\w-]+")
+_IMPORTANT_RE = re.compile(r"!important", re.IGNORECASE)
+_IMPORT_RE = re.compile(r"@import\s", re.IGNORECASE)
+_STYLE_BLOCK_RE_CSS = re.compile(r"<style[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
+_INLINE_STYLE_RE_CSS = re.compile(r"style\s*=\s*(?:\"([^\"]*)\"|'([^']*)')", re.IGNORECASE)
+_LINK_STYLESHEET_RE = re.compile(r"<link[^>]+rel\s*=\s*[\"']stylesheet[\"'][^>]*>", re.IGNORECASE)
+_EMPTY_DECL_RE = re.compile(r"([\w-]+)\s*:\s*;")
+# Layout-critical properties that MUST be inlined for Gmail
+_LAYOUT_CRITICAL_PROPS = frozenset(
+    {
+        "display",
+        "width",
+        "max-width",
+        "min-width",
+        "height",
+        "float",
+        "position",
+        "margin",
+        "padding",
+        "text-align",
+        "vertical-align",
+        "background-color",
+        "color",
+        "font-size",
+        "font-family",
+        "line-height",
+        "border",
+    }
+)
+
+
+def _css_param(config: QACheckConfig | None, key: str, default: float) -> float:
+    """Resolve a CSS syntax check parameter from config."""
+    if config and key in config.params:
+        return float(config.params[key])
+    return default
+
+
+def _parse_css_blocks(html: str) -> list[str]:
+    """Extract CSS content from <style> blocks."""
+    return [m.group(1) for m in _STYLE_BLOCK_RE_CSS.finditer(html)]
+
+
+def _parse_inline_styles(html: str) -> list[str]:
+    """Extract inline style values from both double- and single-quoted attributes."""
+    return [m.group(1) or m.group(2) for m in _INLINE_STYLE_RE_CSS.finditer(html)]
+
+
+def css_syntax_errors(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect CSS syntax errors using cssutils parser."""
+    blocks = _parse_css_blocks(raw_html)
+    if not blocks:
+        return [], 0.0
+
+    max_reported = int(_css_param(config, "max_syntax_errors_reported", 5))
+    deduction = _css_param(config, "deduction_syntax_error", 0.15)
+
+    all_errors: list[str] = []
+    for block in blocks:
+        sheet = cssutils.parseString(block, validate=True)  # pyright: ignore[reportUnknownMemberType]  # type: ignore[no-untyped-call]
+        for rule in sheet:
+            if rule.type == rule.UNKNOWN_RULE:
+                all_errors.append(f"Unknown CSS rule: {rule.cssText[:60]}")
+
+    if not all_errors:
+        return [], 0.0
+
+    issues = all_errors[:max_reported]
+    if len(all_errors) > max_reported:
+        issues.append(f"... and {len(all_errors) - max_reported} more syntax errors")
+
+    return issues, deduction
+
+
+def css_empty_declarations(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect empty CSS declarations (property: ;)."""
+    max_reported = int(_css_param(config, "max_empty_declarations_reported", 5))
+    deduction = _css_param(config, "deduction_empty_declaration", 0.05)
+
+    all_css = _parse_css_blocks(raw_html) + _parse_inline_styles(raw_html)
+    issues: list[str] = []
+
+    for css in all_css:
+        for m in _EMPTY_DECL_RE.finditer(css):
+            issues.append(f"Empty declaration: '{m.group(1)}: ;'")
+
+    if not issues:
+        return [], 0.0
+
+    reported = issues[:max_reported]
+    if len(issues) > max_reported:
+        reported.append(f"... and {len(issues) - max_reported} more")
+
+    return reported, deduction
+
+
+def css_vendor_prefixes(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect vendor-prefixed CSS properties (useless in email)."""
+    max_reported = int(_css_param(config, "max_vendor_prefixes_reported", 5))
+    deduction = _css_param(config, "deduction_vendor_prefix", 0.05)
+
+    all_css = "\n".join(_parse_css_blocks(raw_html) + _parse_inline_styles(raw_html))
+    matches = _VENDOR_PREFIX_RE.findall(all_css)
+
+    if not matches:
+        return [], 0.0
+
+    unique = sorted(set(matches))
+    issues = [f"Vendor prefix: '{p}' (ignored by email clients)" for p in unique[:max_reported]]
+    if len(unique) > max_reported:
+        issues.append(f"... and {len(unique) - max_reported} more vendor prefixes")
+
+    return issues, deduction
+
+
+def css_external_stylesheet(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect <link rel='stylesheet'> tags (stripped by all email clients)."""
+    deduction = _css_param(config, "deduction_external_stylesheet", 0.25)
+
+    matches = _LINK_STYLESHEET_RE.findall(raw_html)
+    if not matches:
+        return [], 0.0
+
+    issues = [f"External stylesheet detected: {m[:80]}" for m in matches]
+    return issues, deduction
+
+
+def css_import_rule(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect @import rules (stripped by Gmail and most clients)."""
+    deduction = _css_param(config, "deduction_import_rule", 0.20)
+
+    blocks = _parse_css_blocks(raw_html)
+    issues: list[str] = []
+    for block in blocks:
+        for m in _IMPORT_RE.finditer(block):
+            line_start = block.rfind("\n", 0, m.start()) + 1
+            line_end = block.find(";", m.start())
+            if line_end == -1:
+                line_end = block.find("\n", m.start())
+            if line_end == -1:
+                line_end = len(block)
+            line = block[line_start : line_end + 1].strip()
+            issues.append(f"@import rule: {line[:80]}")
+
+    if not issues:
+        return [], 0.0
+
+    return issues, deduction
+
+
+def css_important_overuse(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect excessive !important usage (may conflict with dark mode)."""
+    threshold = int(_css_param(config, "important_threshold", 10))
+    deduction = _css_param(config, "deduction_important_overuse", 0.10)
+
+    all_css = "\n".join(_parse_css_blocks(raw_html) + _parse_inline_styles(raw_html))
+    count = len(_IMPORTANT_RE.findall(all_css))
+
+    if count <= threshold:
+        return [], 0.0
+
+    # Don't count !important inside dark mode media queries (those are expected).
+    # Use brace-balancing to extract content of dark mode blocks, supporting
+    # multi-condition queries like @media (min-width: 600px) and (prefers-color-scheme: dark).
+    dark_mode_count = 0
+    dark_media_start_re = re.compile(
+        r"@media\s[^{]*prefers-color-scheme\s*:\s*dark[^{]*\{",
+        re.IGNORECASE,
+    )
+    for block in _parse_css_blocks(raw_html):
+        for dm_match in dark_media_start_re.finditer(block):
+            # Walk forward from opening brace, balancing braces to find the end
+            start = dm_match.end()
+            depth = 1
+            pos = start
+            while pos < len(block) and depth > 0:
+                if block[pos] == "{":
+                    depth += 1
+                elif block[pos] == "}":
+                    depth -= 1
+                pos += 1
+            dark_content = block[start : pos - 1]
+            dark_mode_count += len(_IMPORTANT_RE.findall(dark_content))
+    non_dark_count = count - dark_mode_count
+
+    if non_dark_count <= threshold:
+        return [], 0.0
+
+    issues = [
+        f"{non_dark_count} !important declarations outside dark mode "
+        f"(threshold: {threshold}) — may conflict with client dark mode injection"
+    ]
+    return issues, deduction
+
+
+def css_non_inline_dependency(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect layout-critical CSS in <style> blocks without inline fallbacks."""
+    max_reported = int(_css_param(config, "max_non_inline_reported", 5))
+    deduction = _css_param(config, "deduction_non_inline", 0.10)
+
+    style_blocks = _parse_css_blocks(raw_html)
+    if not style_blocks:
+        return [], 0.0
+
+    all_block_css = "\n".join(style_blocks)
+    inline_styles = _parse_inline_styles(raw_html)
+    issues: list[str] = []
+
+    for prop in sorted(_LAYOUT_CRITICAL_PROPS):
+        # Use word boundary (or start-of-line/semicolon) to prevent partial matches
+        # e.g. "color" must not match "background-color"
+        prop_pattern = rf"(?<![a-zA-Z-]){re.escape(prop)}\s*:"
+        prop_in_block = re.search(prop_pattern, all_block_css, re.IGNORECASE)
+        if prop_in_block:
+            prop_inline = any(
+                re.search(prop_pattern, style, re.IGNORECASE) for style in inline_styles
+            )
+            if not prop_inline:
+                issues.append(f"'{prop}' in <style> block only — no inline fallback for Gmail")
+
+    if not issues:
+        return [], 0.0
+
+    reported = issues[:max_reported]
+    if len(issues) > max_reported:
+        reported.append(f"... and {len(issues) - max_reported} more")
+
+    return reported, deduction
+
+
+def css_syntax_summary(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational summary of CSS syntax validation."""
+    blocks = _parse_css_blocks(raw_html)
+    inline = _parse_inline_styles(raw_html)
+    all_css = "\n".join(blocks + inline)
+
+    vendor_count = len(set(_VENDOR_PREFIX_RE.findall(all_css)))
+    important_count = len(_IMPORTANT_RE.findall(all_css))
+    external_count = len(_LINK_STYLESHEET_RE.findall(raw_html))
+    import_count = len(_IMPORT_RE.findall(all_css))
+
+    parts: list[str] = []
+    if vendor_count:
+        parts.append(f"{vendor_count} vendor prefixes")
+    if important_count:
+        parts.append(f"{important_count} !important")
+    if external_count:
+        parts.append(f"{external_count} external stylesheets")
+    if import_count:
+        parts.append(f"{import_count} @import rules")
+
+    summary = f"CSS audit: {len(blocks)} style blocks, {len(inline)} inline styles"
+    if parts:
+        summary += f" — {', '.join(parts)}"
+
+    return [summary], 0.0
+
+
+# Register CSS syntax validation custom checks
+register_custom_check("css_syntax_errors", css_syntax_errors)
+register_custom_check("css_empty_declarations", css_empty_declarations)
+register_custom_check("css_vendor_prefixes", css_vendor_prefixes)
+register_custom_check("css_external_stylesheet", css_external_stylesheet)
+register_custom_check("css_import_rule", css_import_rule)
+register_custom_check("css_important_overuse", css_important_overuse)
+register_custom_check("css_non_inline_dependency", css_non_inline_dependency)
+register_custom_check("css_syntax_summary", css_syntax_summary)
+
+
+# ---------------------------------------------------------------------------
+# Personalisation Syntax Validation check functions
+# ---------------------------------------------------------------------------
+
+from app.qa_engine.personalisation_validator import (  # noqa: E402
+    ESPPlatform,
+    analyze_personalisation,
+)
+
+
+def _ps_param(config: QACheckConfig | None, key: str, default: float) -> float:
+    """Resolve personalisation config parameter."""
+    if config and key in config.params:
+        return float(config.params[key])
+    return default
+
+
+def personalisation_mixed_platform(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Detect if multiple ESP platforms are used in same template."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    if analysis.is_mixed_platform:
+        deduction = _ps_param(config, "deduction_mixed_platform", 0.30)
+        platforms = ", ".join(p.value for p in analysis.detected_platforms)
+        return [f"Mixed platforms detected: {platforms}"], deduction
+    return [], 0.0
+
+
+def personalisation_unknown_platform(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag when personalisation tags exist but platform can't be identified."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    if analysis.primary_platform == ESPPlatform.UNKNOWN:
+        deduction = _ps_param(config, "deduction_unknown_platform", 0.10)
+        return ["Personalisation tags detected but ESP platform could not be identified"], deduction
+    return [], 0.0
+
+
+def personalisation_delimiter_balance(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check all personalisation delimiters are properly balanced."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    errors = analysis.unbalanced_delimiters
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_delimiter_unbalanced", 0.15)
+    cap = int(_ps_param(config, "max_delimiter_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more delimiter issues")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_conditional_balance(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Check conditional blocks (if/endif, IF/ENDIF, etc.) are balanced."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    errors = analysis.unbalanced_conditionals
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_conditional_unbalanced", 0.15)
+    cap = int(_ps_param(config, "max_conditional_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more conditional issues")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_fallback_missing(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag output tags without fallback values."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    # Find output tags without fallbacks
+    missing = [t for t in analysis.tags if t.tag_type == "output" and not t.has_fallback]
+    if not missing:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_fallback_missing", 0.05)
+    cap = int(_ps_param(config, "max_fallback_issues", 10))
+    issues: list[str] = []
+    for t in missing[:cap]:
+        var = t.variable_name or t.raw[:40]
+        issues.append(f"No fallback for '{var}' at line {t.line_number}")
+    if len(missing) > cap:
+        issues.append(f"... and {len(missing) - cap} more tags without fallbacks")
+    return issues, round(len(missing) * deduction, 4)
+
+
+def personalisation_fallback_empty(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag fallbacks that resolve to empty string."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    errors = analysis.empty_fallbacks
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_fallback_empty", 0.03)
+    cap = int(_ps_param(config, "max_fallback_empty_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more empty fallbacks")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_liquid_syntax(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Validate Liquid syntax for Braze/Klaviyo templates."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    if analysis.primary_platform not in (ESPPlatform.BRAZE, ESPPlatform.KLAVIYO):
+        return [], 0.0
+    errors = analysis.syntax_errors
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_syntax_error", 0.10)
+    cap = int(_ps_param(config, "max_syntax_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more syntax errors")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_ampscript_syntax(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Validate AMPscript syntax for SFMC templates."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    if analysis.primary_platform != ESPPlatform.SFMC:
+        return [], 0.0
+    errors = analysis.syntax_errors
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_syntax_error", 0.10)
+    cap = int(_ps_param(config, "max_syntax_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more syntax errors")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_jssp_syntax(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Validate JSSP/EL syntax for Adobe Campaign templates."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    if analysis.primary_platform != ESPPlatform.ADOBE_CAMPAIGN:
+        return [], 0.0
+    errors = analysis.syntax_errors
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_syntax_error", 0.10)
+    cap = int(_ps_param(config, "max_syntax_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more syntax errors")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_other_syntax(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Validate syntax for Mailchimp/HubSpot/Iterable templates."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    if analysis.primary_platform not in (
+        ESPPlatform.MAILCHIMP,
+        ESPPlatform.HUBSPOT,
+        ESPPlatform.ITERABLE,
+    ):
+        return [], 0.0
+    errors = analysis.syntax_errors
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_syntax_error", 0.10)
+    cap = int(_ps_param(config, "max_syntax_issues", 5))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more syntax errors")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_nesting_depth(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Flag excessive conditional nesting (>3 levels)."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return [], 0.0
+    errors = analysis.nested_depth_violations
+    if not errors:
+        return [], 0.0
+    deduction = _ps_param(config, "deduction_nesting_depth", 0.03)
+    cap = int(_ps_param(config, "max_nesting_issues", 3))
+    issues = errors[:cap]
+    if len(errors) > cap:
+        issues.append(f"... and {len(errors) - cap} more nesting violations")
+    return issues, round(len(errors) * deduction, 4)
+
+
+def personalisation_summary_stats(
+    doc: HtmlElement,
+    raw_html: str,
+    config: QACheckConfig | None,
+) -> tuple[list[str], float]:
+    """Informational summary — no deduction."""
+    analysis = analyze_personalisation(raw_html)
+    if not analysis.has_personalisation:
+        return ["Summary: No personalisation tags found"], 0.0
+
+    platform = analysis.primary_platform.value
+    parts = [f"Summary: {analysis.total_tags} tag(s), platform: {platform}"]
+    if analysis.tags_with_fallback:
+        parts.append(f"{analysis.tags_with_fallback} with fallback")
+    if analysis.tags_without_fallback:
+        parts.append(f"{analysis.tags_without_fallback} without fallback")
+    return [", ".join(parts)], 0.0
+
+
+# Register personalisation syntax custom checks
+register_custom_check("personalisation_mixed_platform", personalisation_mixed_platform)
+register_custom_check("personalisation_unknown_platform", personalisation_unknown_platform)
+register_custom_check("personalisation_delimiter_balance", personalisation_delimiter_balance)
+register_custom_check("personalisation_conditional_balance", personalisation_conditional_balance)
+register_custom_check("personalisation_fallback_missing", personalisation_fallback_missing)
+register_custom_check("personalisation_fallback_empty", personalisation_fallback_empty)
+register_custom_check("personalisation_liquid_syntax", personalisation_liquid_syntax)
+register_custom_check("personalisation_ampscript_syntax", personalisation_ampscript_syntax)
+register_custom_check("personalisation_jssp_syntax", personalisation_jssp_syntax)
+register_custom_check("personalisation_other_syntax", personalisation_other_syntax)
+register_custom_check("personalisation_nesting_depth", personalisation_nesting_depth)
+register_custom_check("personalisation_summary_stats", personalisation_summary_stats)

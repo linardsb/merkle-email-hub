@@ -1,3 +1,4 @@
+<!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md -->
 # Diagnostic Table — Symptom to Cause to Fix
 
 Use this table to identify the root cause of an Outlook rendering issue

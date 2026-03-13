@@ -1,0 +1,86 @@
+# Brand Compliance Rules — per-project color, typography, element, and pattern validation
+# Source: docs/SKILL_email-brand-compliance-reference.md
+# Used by: app/qa_engine/checks/brand_compliance.py
+
+rules:
+  # ─── Group A: Color Compliance ───
+
+  - id: "brand-color-check"
+    group: "colors"
+    name: "Validate colors against brand palette"
+    check: "custom"
+    custom_fn: "brand_color_compliance"
+    deduction_key: "deduction_off_brand_color"
+    default_deduction: 0.20
+    per_element: true
+    cap_key: "max_color_issues_reported"
+    default_cap: 10
+    message: "Off-brand color detected"
+
+  # ─── Group B: Typography Compliance ───
+
+  - id: "brand-font-check"
+    group: "typography"
+    name: "Validate fonts against brand-approved list"
+    check: "custom"
+    custom_fn: "brand_font_compliance"
+    deduction_key: "deduction_wrong_font"
+    default_deduction: 0.15
+    per_element: true
+    cap_key: "max_font_issues_reported"
+    default_cap: 5
+    message: "Non-brand font detected"
+
+  # ─── Group C: Required Elements ───
+
+  - id: "brand-required-footer"
+    group: "required_elements"
+    name: "Footer section present"
+    check: "custom"
+    custom_fn: "brand_required_footer"
+    deduction_key: "deduction_missing_footer"
+    default_deduction: 0.25
+    message: "Required footer section missing"
+
+  - id: "brand-required-logo"
+    group: "required_elements"
+    name: "Brand logo present"
+    check: "custom"
+    custom_fn: "brand_required_logo"
+    deduction_key: "deduction_missing_logo"
+    default_deduction: 0.25
+    message: "Required brand logo missing"
+
+  - id: "brand-required-unsubscribe"
+    group: "required_elements"
+    name: "Unsubscribe link present"
+    check: "custom"
+    custom_fn: "brand_required_unsubscribe"
+    deduction_key: "deduction_missing_unsubscribe"
+    default_deduction: 0.25
+    message: "Required unsubscribe link missing"
+
+  # ─── Group D: Forbidden Patterns ───
+
+  - id: "brand-forbidden-patterns"
+    group: "forbidden_patterns"
+    name: "Check for forbidden text patterns"
+    check: "custom"
+    custom_fn: "brand_forbidden_patterns"
+    deduction_key: "deduction_forbidden_pattern"
+    default_deduction: 0.20
+    per_element: true
+    cap_key: "max_pattern_issues_reported"
+    default_cap: 5
+    message: "Forbidden text pattern detected"
+
+  # ─── Group E: Summary ───
+
+  - id: "brand-summary"
+    group: "summary"
+    name: "Brand compliance summary"
+    check: "custom"
+    custom_fn: "brand_compliance_summary"
+    deduction_key: "deduction_summary"
+    default_deduction: 0.0
+    message: "Brand compliance analysis summary"

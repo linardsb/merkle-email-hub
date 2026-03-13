@@ -778,3 +778,63 @@ Email clients can render an unwanted 2–4px gap below images due to the inline 
 ---
 
 *Total image optimization DOM elements, attributes, properties, techniques, and rules: 350+*
+
+---
+
+## 17. QA Check Rule Mapping
+
+The QA engine validates images using 10 YAML rules in `app/qa_engine/rules/image_optimization.yaml`, powered by the shared rule engine. Each rule maps to a custom Python function in `app/qa_engine/custom_checks.py` using cached analysis from `app/qa_engine/image_analyzer.py`.
+
+### Group A: Core Attributes
+| Rule ID | Condition | Default Deduction | Per Element | Cap |
+|---------|-----------|-------------------|-------------|-----|
+| `img-missing-dimensions` | `<img>` without `width` and/or `height` (excl. tracking pixels) | -0.05 | Yes | 5 |
+| `img-missing-alt` | Non-decorative `<img>` without `alt` attribute | -0.05 | Yes | 5 |
+| `img-empty-src` | `<img>` with empty or absent `src` | -0.10 | Yes | 3 |
+
+### Group B: Format Validation
+| Rule ID | Condition | Default Deduction | Per Element | Cap |
+|---------|-----------|-------------------|-------------|-----|
+| `img-banned-format` | BMP or TIFF format detected | -0.10 | Yes | 3 |
+| `img-data-uri-size` | Data URI exceeds 3KB threshold | -0.10 | Yes | 3 |
+
+### Group C: Dimension Integrity
+| Rule ID | Condition | Default Deduction | Per Element | Cap |
+|---------|-----------|-------------------|-------------|-----|
+| `img-invalid-dimension-value` | Width/height contains "px", "auto", or non-numeric value | -0.03 | Yes | 5 |
+
+### Group D: Tracking Pixels
+| Rule ID | Condition | Default Deduction | Per Element | Cap |
+|---------|-----------|-------------------|-------------|-----|
+| `img-tracking-pixel-visible` | 1x1 image without `alt=""` or `aria-hidden="true"` | -0.03 | Yes | 3 |
+
+### Group E: Rendering Best Practices
+| Rule ID | Condition | Default Deduction | Per Element | Cap |
+|---------|-----------|-------------------|-------------|-----|
+| `img-missing-border-zero` | Image inside `<a>` without `border="0"` | -0.03 | Yes | 5 |
+| `img-missing-display-block` | Non-decorative image without `display:block` in style | -0.02 | Yes | 5 |
+
+### Group F: Summary
+| Rule ID | Purpose | Deduction |
+|---------|---------|-----------|
+| `img-summary` | Total count, format distribution, tracking pixel count, alt text coverage | 0.00 |
+
+### Score Impact Examples
+- **3 images, all valid**: Score 1.0 — all checks pass
+- **5 images, 2 missing dimensions**: Score 0.90 — 2 x -0.05
+- **5 images, 1 BMP + 1 missing alt + 2 missing dimensions**: Score 0.75 — (-0.10) + (-0.05) + 2x(-0.05)
+- **10 images, 5 missing everything**: Score capped by per-rule caps
+
+### Configuration Override
+All deductions and caps configurable in `defaults.yaml` under `image_optimization.params` or per-project via `qa_profile`:
+```yaml
+image_optimization:
+  params:
+    deduction_missing_dimensions: 0.05
+    deduction_missing_alt: 0.05
+    deduction_empty_src: 0.10
+    deduction_banned_format: 0.10
+    data_uri_max_bytes: 3072
+    max_dimension_issues_reported: 5
+    max_alt_issues_reported: 5
+```

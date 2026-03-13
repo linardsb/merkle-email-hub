@@ -5,7 +5,11 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-from app.ai.agents.base import BaseAgentService
+from app.ai.agents.base import CONFIDENCE_INSTRUCTION, BaseAgentService
+from app.ai.agents.outlook_fixer.mso_repair import (
+    format_validation_errors,
+    repair_mso_issues,
+)
 from app.ai.agents.outlook_fixer.prompt import (
     build_system_prompt as _build_system_prompt,
 )
@@ -16,14 +20,25 @@ from app.ai.agents.outlook_fixer.schemas import (
     OutlookFixerRequest,
     OutlookFixerResponse,
 )
+from app.ai.protocols import Message
+from app.ai.registry import get_registry
+from app.ai.routing import resolve_model
+from app.ai.sanitize import sanitize_prompt, validate_output
+from app.ai.shared import extract_confidence, sanitize_html_xss
+from app.core.config import get_settings
+from app.core.logging import get_logger
+from app.qa_engine.mso_parser import MSOValidationResult, validate_mso_conditionals
 from app.qa_engine.schemas import QACheckResult
+
+logger = get_logger(__name__)
 
 
 class OutlookFixerService(BaseAgentService):
     """Orchestrates the Outlook Fixer agent pipeline.
 
     Pipeline: detect skills → build prompt → LLM call → validate output →
-    extract HTML → XSS sanitize → optional QA checks.
+    extract HTML → XSS sanitize → MSO validate → programmatic repair →
+    optional LLM retry → optional QA checks.
     """
 
     agent_name = "outlook_fixer"
@@ -68,6 +83,139 @@ class OutlookFixerService(BaseAgentService):
             model=model_id,
             confidence=confidence,
             skills_loaded=skills_loaded,
+        )
+
+    async def process(self, request: Any) -> Any:
+        """Execute pipeline with post-generation MSO validation and repair.
+
+        Flow: LLM call → MSO validate → programmatic repair → (optional) LLM retry → QA.
+        Max 1 retry to avoid loops.
+        """
+        response: OutlookFixerResponse = await super().process(request)
+
+        # Validate MSO structure
+        mso_result = validate_mso_conditionals(response.html)
+
+        if mso_result.is_valid:
+            response.mso_validation_warnings = []
+            return response
+
+        # Attempt programmatic repair
+        repaired_html, repairs = repair_mso_issues(response.html, mso_result)
+
+        # Re-validate after repair
+        post_repair_result = validate_mso_conditionals(repaired_html)
+
+        if post_repair_result.is_valid:
+            logger.info(
+                "agents.outlook_fixer.mso_repaired_programmatically",
+                repairs=repairs,
+            )
+            response.html = repaired_html
+            response.mso_validation_warnings = repairs
+            return response
+
+        # Programmatic repair insufficient — retry LLM with error context
+        logger.warning(
+            "agents.outlook_fixer.mso_repair_insufficient",
+            remaining_issues=len(post_repair_result.issues),
+            attempting_retry=True,
+        )
+
+        retry_response = await self._retry_with_mso_errors(
+            request, repaired_html, post_repair_result
+        )
+
+        if retry_response is not None:
+            return retry_response
+
+        # Retry failed or didn't improve — return repaired version with warnings
+        response.html = repaired_html
+        response.mso_validation_warnings = [
+            f"MSO: {issue.message}" for issue in post_repair_result.issues
+        ]
+        return response
+
+    async def _retry_with_mso_errors(
+        self,
+        request: Any,
+        current_html: str,
+        mso_result: MSOValidationResult,
+    ) -> OutlookFixerResponse | None:
+        """Retry LLM call with structured MSO error context.
+
+        Returns improved response if retry succeeds, None if it doesn't improve.
+        """
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self._get_model_tier(request))
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills)
+        system_prompt += CONFIDENCE_INSTRUCTION
+
+        error_context = format_validation_errors(mso_result)
+        retry_message = (
+            f"Your previous output has MSO validation errors. Fix them in this HTML:\n\n"
+            f"{current_html[:12000]}\n\n{error_context}"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(retry_message)),
+        ]
+
+        try:
+            registry = get_registry()
+            provider = registry.get_llm(provider_name)
+            result = await provider.complete(
+                messages, model_override=model, max_tokens=self.max_tokens
+            )
+        except Exception as e:
+            logger.error(
+                "agents.outlook_fixer.mso_retry_failed",
+                error=str(e),
+            )
+            return None
+
+        raw_content = validate_output(result.content)
+        confidence = extract_confidence(raw_content)
+        retry_html = self._post_process(raw_content)
+
+        # Validate retry result
+        retry_mso = validate_mso_conditionals(retry_html)
+
+        if len(retry_mso.issues) >= len(mso_result.issues):
+            logger.warning("agents.outlook_fixer.mso_retry_no_improvement")
+            return None
+
+        logger.info(
+            "agents.outlook_fixer.mso_retry_improved",
+            issues_before=len(mso_result.issues),
+            issues_after=len(retry_mso.issues),
+        )
+
+        # Build response from retry
+        should_run_qa = self._should_run_qa(request)
+        qa_results: list[QACheckResult] | None = None
+        qa_passed: bool | None = None
+
+        if should_run_qa:
+            qa_results_list, qa_passed = await self._run_qa(retry_html)
+            qa_results = qa_results_list
+
+        return OutlookFixerResponse(
+            html=sanitize_html_xss(retry_html),
+            fixes_applied=relevant_skills,
+            qa_results=qa_results,
+            qa_passed=qa_passed,
+            model=model_id,
+            confidence=confidence,
+            skills_loaded=relevant_skills,
+            mso_validation_warnings=[f"MSO: {issue.message}" for issue in retry_mso.issues]
+            if not retry_mso.is_valid
+            else ["MSO: All issues resolved after retry"],
         )
 
     async def stream_process(self, request: Any) -> AsyncIterator[str]:

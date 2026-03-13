@@ -14,7 +14,7 @@ class TestCampaignBlueprint:
 
     @pytest.fixture
     def valid_html_response(self) -> CompletionResponse:
-        """LLM response with valid HTML that passes all 10 QA checks."""
+        """LLM response with valid HTML that passes all 11 QA checks."""
         return CompletionResponse(
             content=(
                 "```html\n"
@@ -41,7 +41,7 @@ class TestCampaignBlueprint:
                 '<table role="presentation" width="600">\n'
                 "<tr><td><h1>Welcome</h1></td></tr>\n"
                 '<tr><td><img src="https://example.com/hero.png" alt="Hero image" '
-                'width="600" height="300"></td></tr>\n'
+                'width="600" height="300" style="display: block; border: 0;"></td></tr>\n'
                 '<tr><td><a href="https://example.com">Visit us</a></td></tr>\n'
                 "</table>\n</body>\n</html>\n"
                 "```"

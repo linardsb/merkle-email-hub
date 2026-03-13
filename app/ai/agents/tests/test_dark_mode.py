@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.ai.agents.dark_mode.meta_injector import inject_missing_meta_tags
 from app.ai.agents.dark_mode.schemas import DarkModeRequest
 from app.ai.agents.dark_mode.service import DarkModeService
 from app.ai.exceptions import AIExecutionError
@@ -231,7 +232,7 @@ class TestDarkModeService:
             response = await service.process(request)
 
         assert response.qa_results is not None
-        assert len(response.qa_results) == 10
+        assert len(response.qa_results) == 11
         assert response.qa_passed is not None
         # Dark mode check should be first and should pass (our sample has all markers)
         assert response.qa_results[0].check_name == "dark_mode"
@@ -359,3 +360,128 @@ class TestDarkModeService:
             await service.process(request)
 
         mock_resolve.assert_called_once_with("standard")
+
+
+# ── Meta Tag Injection ──
+
+
+class TestMetaTagInjection:
+    """Tests for deterministic meta tag injection."""
+
+    def test_injects_both_missing_meta_tags(self) -> None:
+        html = "<html><head><style>body{}</style></head><body><p>Hello</p></body></html>"
+        result = inject_missing_meta_tags(html)
+        assert result.was_modified is True
+        assert "color-scheme" in result.injected_tags
+        assert "supported-color-schemes" in result.injected_tags
+        assert '<meta name="color-scheme" content="light dark">' in result.html
+        assert '<meta name="supported-color-schemes" content="light dark">' in result.html
+        # Tags should be before </head>
+        head_close = result.html.index("</head>")
+        cs_pos = result.html.index('<meta name="color-scheme"')
+        assert cs_pos < head_close
+
+    def test_injects_missing_supported_color_schemes(self) -> None:
+        html = (
+            '<html><head><meta name="color-scheme" content="light dark">'
+            "</head><body><p>Hello</p></body></html>"
+        )
+        result = inject_missing_meta_tags(html)
+        assert result.was_modified is True
+        assert result.injected_tags == ("supported-color-schemes",)
+        assert '<meta name="supported-color-schemes"' in result.html
+
+    def test_injects_missing_color_scheme(self) -> None:
+        html = (
+            '<html><head><meta name="supported-color-schemes" content="light dark">'
+            "</head><body><p>Hello</p></body></html>"
+        )
+        result = inject_missing_meta_tags(html)
+        assert result.was_modified is True
+        assert result.injected_tags == ("color-scheme",)
+        assert '<meta name="color-scheme" content="light dark">' in result.html
+
+    def test_no_injection_when_both_present(self) -> None:
+        html = (
+            '<html><head><meta name="color-scheme" content="light dark">'
+            '<meta name="supported-color-schemes" content="light dark">'
+            "</head><body><p>Hello</p></body></html>"
+        )
+        result = inject_missing_meta_tags(html)
+        assert result.was_modified is False
+        assert result.injected_tags == ()
+        assert result.html == html
+
+    def test_no_injection_on_empty_html(self) -> None:
+        result = inject_missing_meta_tags("")
+        assert result.was_modified is False
+
+    def test_no_injection_without_head_close(self) -> None:
+        html = (
+            '<html><meta name="viewport" content="width=device-width"><body><p>Hi</p></body></html>'
+        )
+        result = inject_missing_meta_tags(html)
+        assert result.was_modified is False
+
+    def test_preserves_existing_html_structure(self) -> None:
+        html = (
+            '<!DOCTYPE html><html lang="en"><head>'
+            "<title>Test</title>"
+            "<style>body { margin: 0; }</style>"
+            "</head><body>"
+            "<!--[if mso]><table><tr><td><![endif]-->"
+            "<p>Content</p>"
+            "<!--[if mso]></td></tr></table><![endif]-->"
+            "</body></html>"
+        )
+        result = inject_missing_meta_tags(html)
+        assert result.was_modified is True
+        assert "<!--[if mso]>" in result.html
+        assert "<![endif]-->" in result.html
+        assert "<p>Content</p>" in result.html
+
+    def test_service_post_process_injects_tags(self) -> None:
+        """Integration: DarkModeService._post_process injects missing tags."""
+        service = DarkModeService()
+        raw_content = (
+            "```html\n"
+            "<html><head><style>"
+            "@media (prefers-color-scheme: dark) { .x { color: #fff !important; } }"
+            "</style></head><body><p>Test</p></body></html>\n"
+            "```"
+        )
+        html = service._post_process(raw_content)
+        assert '<meta name="color-scheme" content="light dark">' in html
+        assert '<meta name="supported-color-schemes" content="light dark">' in html
+
+    @pytest.mark.asyncio()
+    async def test_process_response_includes_injected_tags(self) -> None:
+        """Verify meta_tags_injected field in response when tags are missing."""
+        # LLM returns HTML *without* meta tags — injector should add them
+        html_without_meta = (
+            "<html><head><style>"
+            "@media (prefers-color-scheme: dark) { .x { color: #fff !important; } }"
+            "</style></head><body><p>Test</p></body></html>"
+        )
+        provider = AsyncMock()
+        provider.complete.return_value = CompletionResponse(
+            content=f"```html\n{html_without_meta}\n```",
+            model="test-model",
+            usage={"prompt_tokens": 500, "completion_tokens": 800, "total_tokens": 1300},
+        )
+        service = DarkModeService()
+        request = DarkModeRequest(
+            html="<html><body><table><tr><td>Hello World Email</td></tr></table></body></html>"
+        )
+        with (
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_registry.return_value.get_llm.return_value = provider
+            response = await service.process(request)
+
+        assert "color-scheme" in response.meta_tags_injected
+        assert "supported-color-schemes" in response.meta_tags_injected
+        assert '<meta name="color-scheme" content="light dark">' in response.html

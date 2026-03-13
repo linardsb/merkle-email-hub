@@ -1,3 +1,4 @@
+<!-- L4 source: docs/esp_personalisation/esp_01_braze.md -->
 # Braze Liquid Syntax Reference
 
 ## Variables

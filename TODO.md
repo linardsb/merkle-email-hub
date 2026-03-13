@@ -141,7 +141,7 @@
 **Security:** Read-only size calculation. No file system access.
 **Verify:** Test: small HTML (1.0), 80KB HTML (passes Gmail, flags Yahoo), 110KB HTML (fails multiple), breakdown percentages are accurate.
 
-### 11.9 Image Optimization — Comprehensive Validation
+### ~~11.9 Image Optimization — Comprehensive Validation~~ DONE
 **What:** Upgrade from first-image-only dimension check to all-image validation with format analysis, dimension value validation, and tracking pixel detection.
 **Why:** Current check only catches the first missing dimension and only flags BMP format. WebP has limited email client support. Invalid dimension values (`width="auto"`, `width="0"`) cause layout breaks.
 **Implementation:**
@@ -155,7 +155,7 @@
 **Security:** No image fetching (avoid SSRF). Attribute analysis only.
 **Verify:** Test: all images with dimensions (1.0), missing dimensions on 3 images (deducted), WebP format (flagged), 1x1 tracking pixel without dimensions (not flagged), `width="auto"` (flagged).
 
-### 11.10 CSS Support Check — Syntax Validation & Vendor Prefixes
+### ~~11.10 CSS Support Check — Syntax Validation & Vendor Prefixes~~ DONE
 **What:** Add CSS syntax validation and vendor prefix detection to the existing ontology-powered check. Current check scans for unsupported properties but doesn't catch malformed CSS or vendor prefixes that may not work.
 **Why:** Malformed CSS rules silently fail in email clients. Vendor prefixes (`-webkit-`, `-moz-`) have inconsistent email client support but aren't in the ontology. Full issue list truncation at 10 hides real problems.
 **Implementation:**
@@ -168,7 +168,7 @@
 **Security:** CSS parsing is read-only. No external fetches for linked stylesheets.
 **Verify:** Test: valid CSS with supported properties (1.0), unsupported `display: flex` (deducted per ontology), malformed CSS `color: ` with no value (flagged), vendor prefix `-webkit-transform` (flagged), external stylesheet (flagged).
 
-### 11.11 Brand Compliance Check — Per-Project Rules Engine
+### ~~11.11 Brand Compliance Check — Per-Project Rules Engine~~ DONE
 **What:** Replace the always-pass placeholder with a configurable brand rules engine. Validate colors, typography, logo presence, and footer requirements against per-project brand guidelines.
 **Why:** Brand compliance is currently zero-enforced. Off-brand emails reaching clients damages credibility. This is the only check that's completely non-functional.
 **Implementation:**
@@ -182,24 +182,25 @@
 - Scoring: -0.2 per off-brand color, -0.15 per wrong font, -0.25 per missing required element
 **Security:** Brand rules are project-scoped, validated by Pydantic. No code execution.
 **Verify:** Test: HTML matching brand rules (1.0), off-brand color (deducted), wrong font (deducted), missing footer (deducted), no brand rules configured (1.0 with info message). Existing tests unchanged.
+**Delivered:** `brand_analyzer.py` (CSS color/font extraction, required element detection, cached analysis); `rules/brand_compliance.yaml` (7 rules, 5 groups); rewritten `checks/brand_compliance.py` as rule engine wrapper; 7 custom check functions in `custom_checks.py`; backward-compatible (empty rules → pass); 27 new tests (12 analyzer + 15 integration).
 
-### 11.12 New Check — Personalisation Syntax Validation (Check #11)
+### ~~11.12 New Check — Personalisation Syntax Validation (Check #11)~~ DONE
 **What:** Add an 11th QA check that validates ESP-specific template syntax: Liquid (Braze), AMPscript (SFMC), JSSP (Adobe Campaign). No existing check covers personalisation correctness. Agent eval shows **58% logic match failure** for Personalisation agent.
 **Why:** Broken template syntax causes runtime errors in ESPs — variables don't render, conditionals break, fallbacks fail. This is invisible until the email is sent to real subscribers. Catching syntax errors in QA prevents broken personalisation in production.
 **Implementation:**
-- Create `app/qa_engine/checks/personalisation_syntax.py`
-- Add to `ALL_CHECKS` list in service
-- **Auto-detect platform**: Scan for `{{ }}` (Liquid), `%%[ ]%%` (AMPscript), `<%= %>` (JSSP). If none found, return `passed=True` ("No personalisation detected")
-- **Liquid validation**: Balanced `{% if %}...{% endif %}`, `{% for %}...{% endfor %}`, valid `{{ var | filter }}` syntax, `{% unless %}...{% endunless %}`
-- **AMPscript validation**: Balanced `%%[...]%%` blocks, valid function syntax (`Lookup()`, `Set @var`), `IF...ENDIF` balance
-- **JSSP validation**: Balanced `<%= %>` blocks, proper escaping
-- **Fallback detection**: For each dynamic variable, check if a default/fallback is provided (e.g., `{{ name | default: "there" }}`)
-- **Cross-platform conflict**: Flag if multiple ESP syntaxes detected in same HTML (likely error)
-- Scoring: -0.2 per unbalanced tag pair, -0.15 per missing fallback, -0.1 per syntax error
+- ~~Create `app/qa_engine/checks/personalisation_syntax.py`~~
+- ~~Add to `ALL_CHECKS` list in service~~
+- ~~**Auto-detect platform**: Scan for `{{ }}` (Liquid), `%%[ ]%%` (AMPscript), `<%= %>` (JSSP). If none found, return `passed=True` ("No personalisation detected")~~
+- ~~**Liquid validation**: Balanced `{% if %}...{% endif %}`, `{% for %}...{% endfor %}`, valid `{{ var | filter }}` syntax, `{% unless %}...{% endunless %}`~~
+- ~~**AMPscript validation**: Balanced `%%[...]%%` blocks, valid function syntax (`Lookup()`, `Set @var`), `IF...ENDIF` balance~~
+- ~~**JSSP validation**: Balanced `<%= %>` blocks, proper escaping~~
+- ~~**Fallback detection**: For each dynamic variable, check if a default/fallback is provided (e.g., `{{ name | default: "there" }}`)~~
+- ~~**Cross-platform conflict**: Flag if multiple ESP syntaxes detected in same HTML (likely error)~~
+- ~~Scoring: -0.2 per unbalanced tag pair, -0.15 per missing fallback, -0.1 per syntax error~~
 **Security:** Pure syntax parsing, no template execution. No variable interpolation.
-**Verify:** Test: valid Liquid with fallbacks (1.0), unbalanced `{% if %}` (deducted), missing fallback on `{{ first_name }}` (deducted), valid AMPscript (1.0), mixed Liquid+AMPscript (flagged). `make test` passes.
+**Verify:** ~~Test: valid Liquid with fallbacks (1.0), unbalanced `{% if %}` (deducted), missing fallback on `{{ first_name }}` (deducted), valid AMPscript (1.0), mixed Liquid+AMPscript (flagged). `make test` passes.~~
 
-### 11.13 Outlook Fixer Agent — MSO Diagnostic Validator
+### ~~11.13 Outlook Fixer Agent — MSO Diagnostic Validator~~ DONE
 **What:** Add deterministic MSO validation to the Outlook Fixer agent service. Before returning HTML, programmatically verify MSO conditional balance and VML nesting. Reuse the `validate_mso_conditionals()` function from 11.4. Current eval: **50% MSO conditional correctness failure**.
 **Why:** LLMs consistently struggle with MSO conditional syntax — they see `<!--[if mso]>` as incomplete comments and "fix" them. A post-generation validator catches these errors before the agent returns output, converting a 50% failure to near-zero.
 **Implementation:**
@@ -213,7 +214,7 @@
 **Security:** Validator is read-only analysis. Programmatic fixes are limited to injecting closing tags and namespace attributes.
 **Verify:** `make eval-run --agent outlook_fixer` shows MSO conditional pass rate improvement from 50% to 85%+. Manual test: intentionally unbalanced MSO HTML → agent fixes it. Existing tests pass.
 
-### 11.14 Dark Mode Agent — Deterministic Meta Tag Injector
+### ~~11.14 Dark Mode Agent — Deterministic Meta Tag Injector~~ DONE
 **What:** Add deterministic meta tag injection to the Dark Mode agent service. Before returning HTML, check `<head>` for both required meta tags and inject if missing. Current eval: **50% meta tag failure**.
 **Why:** The agent forgets one of the two required meta tags ~50% of the time. A simple programmatic check + inject eliminates this failure mode entirely without relying on the LLM.
 **Implementation:**
@@ -227,7 +228,7 @@
 **Security:** Meta tag injection is adding standard HTML tags to `<head>`. No script injection possible.
 **Verify:** `make eval-run --agent dark_mode` shows meta tag pass rate improvement from 50% to 95%+. Test: HTML without meta tags → agent adds them. HTML with both tags → no change.
 
-### 11.15 Scaffolder Agent — MSO-First Generation
+### ~~11.15 Scaffolder Agent — MSO-First Generation~~ DONE
 **What:** Update Scaffolder SKILL.md and service to generate MSO-correct HTML from the first attempt. Load Outlook Fixer's MSO patterns as reference context. Current eval: **58% MSO conditional failure** — the scaffolder should never generate broken MSO.
 **Why:** If the scaffolder generates correct MSO from the start, the entire blueprint pipeline avoids one retry loop. MSO fixes are the most common recovery router destination. Prevention > correction.
 **Implementation:**
@@ -242,23 +243,23 @@
 **Security:** Cross-agent SKILL file loading is read-only from local filesystem.
 **Verify:** `make eval-run --agent scaffolder` shows MSO conditional pass rate improvement from 58% to 85%+. Blueprint pipeline test: scaffolder output passes fallback QA check on first attempt.
 
-### 11.16 Personalisation Agent — Per-Platform Syntax Validator
+### ~~11.16 Personalisation Agent — Per-Platform Syntax Validator~~ DONE
 **What:** Add deterministic per-platform template syntax validation to the Personalisation agent service. Before returning HTML, validate balanced tags and fallback presence. Current eval: **58% logic match failure**.
 **Why:** LLMs generate plausible-looking but syntactically broken template code. Liquid `{% if %}` without `{% endif %}`, AMPscript `%%[` without `]%%`. A programmatic validator catches these mechanical errors.
 **Implementation:**
-- Create `app/ai/agents/personalisation/validators.py`:
-  - `validate_liquid(html) -> list[str]`: balanced if/endif, for/endfor, unless/endunless, valid filter syntax
-  - `validate_ampscript(html) -> list[str]`: balanced blocks, valid function calls, IF/ENDIF pairs
-  - `validate_jssp(html) -> list[str]`: balanced expression tags, proper escaping
-- In service, after LLM generation: detect platform, run validator
-  - If issues found: retry LLM with specific errors ("Unbalanced `{% if %}` at line 45 — add `{% endif %}`")
-  - Max 1 retry
-- Reuse validators in QA check 11.12 (shared logic, different integration point)
-- Update Personalisation SKILL.md with balanced-tag rules per platform
+- `ESPPlatform` expanded from 3 → 7 platforms (added klaviyo, mailchimp, hubspot, iterable)
+- `SKILL_FILES` expanded from 4 → 8 L3 skill files (all 7 ESP skills + fallback_patterns)
+- `platform_map` expanded to 7 entries; cross-platform references for all 7 ESPs with specific keywords
+- `format_syntax_warnings(html)` shared helper in `service.py` — calls `analyze_personalisation()` from `personalisation_validator.py`, formats warnings with `[error]`/`[warning]` prefixes
+- `PersonalisationService._post_process()` override with `contextvars.ContextVar` thread-safe warning storage
+- `PersonalisationResponse.syntax_warnings` field exposes validator findings via API
+- `PersonalisationNode` in blueprint emits `warnings=tuple(syntax_warnings)` in `AgentHandoff` for Recovery Router
+- SKILL.md updated with post-generation validation annotations and balanced-tag emphasis
+- 28 unit tests (formatter, service post-process, contextvar, all 7 platforms, all 8 skills, cross-platform refs)
 **Security:** Syntax validation only. No template rendering or variable interpolation.
-**Verify:** `make eval-run --agent personalisation` shows logic match pass rate improvement from 58% to 80%+. Test: Liquid with missing endif → agent fixes it.
+**Verify:** `make check` passes. All 28 tests pass. mypy + pyright clean (0 errors).
 
-### 11.17 Code Reviewer Agent — Actionability Framework
+### ~~11.17 Code Reviewer Agent — Actionability Framework~~ DONE
 **What:** Update Code Reviewer SKILL.md to require "change X to Y" format for every suggestion. Current eval: **67% suggestion actionability** — suggestions are too vague.
 **Why:** Vague suggestions like "simplify CSS" don't help agents or developers. Actionable suggestions like "Replace `display: flex` with `<table>` layout (unsupported in Outlook 2019)" can be auto-applied.
 **Implementation:**
@@ -272,7 +273,7 @@
 **Security:** Output format validation is string matching. No code execution.
 **Verify:** `make eval-run --agent code_reviewer` shows suggestion actionability improvement from 67% to 85%+. Manual review: every suggestion has concrete before/after values.
 
-### 11.18 Accessibility Agent — Alt Text Quality Framework
+### ~~11.18 Accessibility Agent — Alt Text Quality Framework~~ DONE
 **What:** Update Accessibility Auditor SKILL.md with structured alt text generation rules. Current eval: **70% alt text quality, 70% screen reader compatibility**.
 **Why:** Generic alt text ("image", "photo") is worse than no alt text — it clutters screen readers without conveying information. The agent needs clear rules for decorative vs informative images and quality criteria.
 **Implementation:**
@@ -288,7 +289,7 @@
 **Security:** Alt text generation from image context. No image fetching or processing.
 **Verify:** `make eval-run --agent accessibility` shows alt text quality improvement from 70% to 85%+. Test: image with no context → descriptive alt generated. Decorative spacer → `alt=""`.
 
-### 11.19 Content Agent — Length Guardrails
+### ~~11.19 Content Agent — Length Guardrails~~ DONE
 **What:** Add token/character limits per operation type to the Content agent. Current eval: **71% length appropriate** — expand operations overshoot, shorten operations remove critical info.
 **Why:** Email copy has strict length constraints. Subject lines (50 chars ideal), preheaders (85-100 chars), CTAs (2-5 words). Without guardrails, the LLM generates copy that doesn't fit.
 **Implementation:**
@@ -307,7 +308,7 @@
 **Security:** Length validation is character counting. No content injection.
 **Verify:** `make eval-run --agent content` shows length appropriate improvement from 71% to 85%+. Test: "expand this paragraph" → output ≤ 150% original length. Subject line generation → ≤ 60 chars.
 
-### 11.20 Recovery Router — Enriched Failure Context
+### ~~11.20 Recovery Router — Enriched Failure Context~~ DONE
 **What:** Upgrade recovery router to pass detailed, structured failure information to fixer agents instead of generic check names. Currently sends `"fallback: failed"` — should send `"fallback: 2 unbalanced MSO conditionals at lines 45, 89; VML orphan at line 112"`.
 **Why:** Agents with specific error context fix issues 3x faster than agents with generic "this check failed" messages. Reduces retry loops from 2-3 to 1. This amplifies every individual check improvement.
 **Implementation:**

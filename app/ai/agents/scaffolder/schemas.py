@@ -35,3 +35,4 @@ class ScaffolderResponse(BaseModel):
     model: str
     confidence: float | None = None
     skills_loaded: list[str] = Field(default_factory=list)
+    mso_warnings: list[str] = Field(default_factory=list)

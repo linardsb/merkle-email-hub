@@ -19,6 +19,7 @@ from app.ai.blueprints.protocols import (
     HandoffStatus,
     NodeContext,
     NodeResult,
+    StructuredFailure,
 )
 from app.ai.blueprints.route_advisor import RoutingDecision, RoutingPlan, build_routing_plan
 from app.ai.blueprints.schemas import BlueprintProgress
@@ -71,6 +72,12 @@ class BlueprintRun:
     progress: list[BlueprintProgress] = field(default_factory=lambda: list[BlueprintProgress]())
     iteration_counts: dict[str, int] = field(default_factory=lambda: dict[str, int]())
     qa_failures: list[str] = field(default_factory=lambda: list[str]())
+    qa_failure_details: list[StructuredFailure] = field(
+        default_factory=lambda: list[StructuredFailure]()
+    )
+    previous_qa_failure_details: list[StructuredFailure] = field(
+        default_factory=lambda: list[StructuredFailure]()
+    )
     qa_passed: bool | None = None
     model_usage: dict[str, int] = field(
         default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -192,6 +199,34 @@ class BlueprintEngine:
                 raise BlueprintNodeError(current_node_name, "execution failed") from exc
             duration_ms = (time.monotonic() - start) * 1000
 
+            # Scope validation: reject out-of-scope fixer changes on retry
+            if node.node_type == "agentic" and iteration > 0 and run.html and result.html:
+                from app.ai.blueprints.nodes.recovery_router_node import AGENT_SCOPES
+                from app.ai.blueprints.scope_validator import validate_scope
+
+                agent_scope = AGENT_SCOPES.get(current_node_name)
+                if agent_scope is not None:
+                    violations = validate_scope(
+                        pre_html=run.html,
+                        post_html=result.html,
+                        scope=agent_scope,
+                        agent_name=current_node_name,
+                    )
+                    if violations:
+                        logger.warning(
+                            "blueprint.scope_violation",
+                            agent=current_node_name,
+                            violations=[v.description for v in violations],
+                            run_id=run.run_id,
+                        )
+                        # Reject the change — keep pre-fix HTML, escalate
+                        result = NodeResult(
+                            status="failed",
+                            html=run.html,
+                            details=f"scope_violation:{current_node_name}",
+                            error=f"Scope violation: {violations[0].description}",
+                        )
+
             # Record progress
             run.progress.append(
                 BlueprintProgress(
@@ -232,11 +267,15 @@ class BlueprintEngine:
                 if result.status == "success":
                     run.qa_passed = True
                     run.qa_failures = []
+                    run.qa_failure_details = []
                 else:
                     run.qa_passed = False
                     run.qa_failures = [
                         line.strip() for line in result.details.split("\n") if line.strip()
                     ]
+                    # Save previous failures for cycle detection before updating
+                    run.previous_qa_failure_details = list(run.qa_failure_details)
+                    run.qa_failure_details = list(result.structured_failures)
 
             # Increment iteration for agentic nodes
             if node.node_type == "agentic":
@@ -350,6 +389,12 @@ class BlueprintEngine:
             context.metadata["upstream_handoff"] = run._last_handoff
         if run._handoff_history:
             context.metadata["handoff_history"] = list(run._handoff_history)
+
+        # Inject structured QA failure details for recovery router and fixer nodes
+        if run.qa_failure_details:
+            context.metadata["qa_failure_details"] = list(run.qa_failure_details)
+        if run.previous_qa_failure_details:
+            context.metadata["previous_qa_failure_details"] = list(run.previous_qa_failure_details)
 
         # Inject progress anchor on retries for agentic nodes
         if node.node_type == "agentic" and iteration > 0:

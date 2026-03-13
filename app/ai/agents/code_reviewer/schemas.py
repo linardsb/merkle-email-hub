@@ -12,10 +12,22 @@ ReviewFocus = Literal[
     "nesting",
     "file_size",
     "link_validation",
+    "anti_patterns",
+    "spam_patterns",
     "all",
 ]
 
 IssueSeverity = Literal["critical", "warning", "info"]
+
+# Specialist agents that handle specific issue domains
+ResponsibleAgent = Literal[
+    "code_reviewer",
+    "outlook_fixer",
+    "dark_mode",
+    "accessibility",
+    "personalisation",
+    "scaffolder",
+]
 
 
 class CodeReviewIssue(BaseModel):
@@ -25,9 +37,18 @@ class CodeReviewIssue(BaseModel):
         description="Rule identifier (e.g., 'redundant-mso-comment', 'unsupported-css-grid')"
     )
     severity: IssueSeverity
-    line_hint: int | None = Field(default=None, description="Approximate line number (best effort)")
+    line_hint: int | None = Field(default=None, description="Approximate line number")
     message: str = Field(description="Human-readable description of the issue")
     suggestion: str | None = Field(default=None, description="Actionable fix suggestion")
+    current_value: str | None = Field(default=None, description="Current problematic value")
+    fix_value: str | None = Field(default=None, description="Recommended replacement value")
+    affected_clients: list[str] | None = Field(
+        default=None, description="Email clients affected (e.g., ['Outlook', 'Gmail'])"
+    )
+    responsible_agent: ResponsibleAgent = Field(
+        default="code_reviewer",
+        description="Specialist agent best suited to fix this issue",
+    )
 
 
 class CodeReviewRequest(BaseModel):
@@ -37,6 +58,10 @@ class CodeReviewRequest(BaseModel):
     focus: ReviewFocus = Field(default="all", description="Area to focus the review on")
     stream: bool = False
     run_qa: bool = False
+    enrich_with_qa: bool = Field(
+        default=False,
+        description="Cross-check issues against QA engine results",
+    )
 
 
 class CodeReviewResponse(BaseModel):
@@ -50,3 +75,7 @@ class CodeReviewResponse(BaseModel):
     qa_passed: bool | None = None
     model: str
     confidence: float | None = None
+    actionability_warnings: list[str] = Field(
+        default_factory=list,
+        description="Post-process validation warnings about suggestion quality",
+    )

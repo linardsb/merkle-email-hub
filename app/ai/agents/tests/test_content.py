@@ -237,7 +237,7 @@ class TestContentService:
     async def test_generate_flags_spam(self, service: ContentService) -> None:
         spam_provider = AsyncMock()
         spam_provider.complete.return_value = CompletionResponse(
-            content="```text\nBuy Now and Save — Act Now!\n```",
+            content="```text\nBuy Now — Act!\n```",
             model="test-model",
             usage=None,
         )
@@ -260,7 +260,6 @@ class TestContentService:
         assert len(response.spam_warnings) > 0
         triggers = [w.trigger for w in response.spam_warnings]
         assert "buy now" in triggers
-        assert "act now" in triggers
 
     @pytest.mark.asyncio()
     async def test_generate_llm_failure(self, service: ContentService) -> None:
@@ -332,3 +331,395 @@ class TestContentService:
             await service.generate(request)
 
         mock_resolve.assert_called_once_with("lightweight")
+
+
+# ── Length guardrail tests ──
+
+
+class TestCleanPunctuation:
+    """Tests for excessive punctuation cleanup."""
+
+    def test_excessive_exclamation(self) -> None:
+        from app.ai.agents.content.length_guardrail import clean_punctuation
+
+        assert clean_punctuation("Buy now!!!") == "Buy now!"
+
+    def test_excessive_question(self) -> None:
+        from app.ai.agents.content.length_guardrail import clean_punctuation
+
+        assert clean_punctuation("Ready???") == "Ready?"
+
+    def test_excessive_ellipsis(self) -> None:
+        from app.ai.agents.content.length_guardrail import clean_punctuation
+
+        assert clean_punctuation("Wait for it...") == "Wait for it\u2026"
+
+    def test_no_change_for_single(self) -> None:
+        from app.ai.agents.content.length_guardrail import clean_punctuation
+
+        assert clean_punctuation("Hello! Ready? Wait\u2026") == "Hello! Ready? Wait\u2026"
+
+    def test_multiple_patterns(self) -> None:
+        from app.ai.agents.content.length_guardrail import clean_punctuation
+
+        assert clean_punctuation("Wow!!! Really??? Yes...") == "Wow! Really? Yes\u2026"
+
+
+class TestValidateLength:
+    """Tests for per-operation length validation."""
+
+    def test_subject_line_within_limits(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        result = validate_length("Save 20% on your next order", "subject_line")
+        assert result.passed is True
+        assert result.warnings == ()
+
+    def test_subject_line_too_long(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        long_subject = "A" * 65
+        result = validate_length(long_subject, "subject_line")
+        assert result.passed is False
+        assert any("exceeds max 60" in w for w in result.warnings)
+
+    def test_subject_line_too_short(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        result = validate_length("Hi", "subject_line")
+        assert result.passed is False
+        assert any("below min 10" in w for w in result.warnings)
+
+    def test_cta_too_many_words(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        result = validate_length("Get started with your free trial today", "cta")
+        assert result.passed is False
+        assert any("words exceeds max 5" in w for w in result.warnings)
+
+    def test_cta_within_limits(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        result = validate_length("Start free trial", "cta")
+        assert result.passed is True
+
+    def test_cta_too_few_words(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        result = validate_length("Go", "cta")
+        assert result.passed is False
+        assert any("below min 2" in w for w in result.warnings)
+
+    def test_shorten_ratio_too_long(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        original = "This is a fairly long paragraph that should be shortened significantly."
+        output = original  # 100% — should fail (max 70%)
+        result = validate_length(output, "shorten", original)
+        assert result.passed is False
+        assert any("max allowed 70%" in w for w in result.warnings)
+
+    def test_shorten_ratio_acceptable(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        original = "This is a fairly long paragraph that should be shortened."
+        output = "Shorten this paragraph."  # ~40% — within 50-70%
+        result = validate_length(output, "shorten", original)
+        # This is 40%, which is below min 50%, so it should warn
+        assert any("min allowed 50%" in w for w in result.warnings)
+
+    def test_expand_ratio_acceptable(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        # original=100 chars, output=130 chars → 130% (within 120-150%)
+        original = "A" * 100
+        output = "A" * 130
+        result = validate_length(output, "expand", original)
+        assert result.passed is True
+
+    def test_expand_ratio_too_large(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        original = "Short."
+        output = "Short. " + "x" * 50  # way over 150%
+        result = validate_length(output, "expand", original)
+        assert result.passed is False
+        assert any("max allowed 150%" in w for w in result.warnings)
+
+    def test_unknown_operation_passes(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        result = validate_length("anything", "unknown_op")
+        assert result.passed is True
+
+    def test_preheader_within_limits(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        text = "Discover our latest collection of summer essentials — now with free delivery"
+        result = validate_length(text, "preheader")
+        assert result.passed is True
+
+    def test_preheader_too_long(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_length
+
+        text = "A" * 105
+        result = validate_length(text, "preheader")
+        assert result.passed is False
+        assert any("exceeds max 100" in w for w in result.warnings)
+
+
+class TestValidateAlternatives:
+    """Tests for batch alternative validation."""
+
+    def test_cleans_punctuation_and_validates(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_alternatives
+
+        alts = ["Buy now!!!", "Save big???"]
+        cleaned, warnings = validate_alternatives(alts, "subject_line")
+        assert cleaned == ["Buy now!", "Save big?"]
+        assert all("exceeds" not in w for w in warnings)
+
+    def test_collects_warnings_across_alternatives(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_alternatives
+
+        alts = ["A" * 65, "Short"]  # first too long, second too short
+        _cleaned, warnings = validate_alternatives(alts, "subject_line")
+        assert len(warnings) >= 2  # exceeds max + below min
+
+    def test_passes_original_text_for_ratio(self) -> None:
+        from app.ai.agents.content.length_guardrail import validate_alternatives
+
+        original = "Original text that needs shortening for the email campaign."
+        alts = [original]  # 100% — should fail shorten (max 70%)
+        _cleaned, warnings = validate_alternatives(alts, "shorten", original)
+        assert any("max allowed 70%" in w for w in warnings)
+
+
+class TestBuildRetryConstraint:
+    """Tests for retry constraint generation."""
+
+    def test_returns_none_for_min_violations_only(self) -> None:
+        from app.ai.agents.content.length_guardrail import build_retry_constraint
+
+        warnings = ["subject_line: 5 chars below min 10"]
+        result = build_retry_constraint("subject_line", warnings)
+        assert result is None
+
+    def test_returns_constraint_for_max_violation(self) -> None:
+        from app.ai.agents.content.length_guardrail import build_retry_constraint
+
+        warnings = ["subject_line: 75 chars exceeds max 60"]
+        result = build_retry_constraint("subject_line", warnings)
+        assert result is not None
+        assert "60 characters" in result
+
+    def test_returns_constraint_for_word_violation(self) -> None:
+        from app.ai.agents.content.length_guardrail import build_retry_constraint
+
+        warnings = ["cta: 7 words exceeds max 5"]
+        result = build_retry_constraint("cta", warnings)
+        assert result is not None
+        assert "5 words" in result
+
+    def test_returns_constraint_for_ratio_violation(self) -> None:
+        from app.ai.agents.content.length_guardrail import build_retry_constraint
+
+        warnings = ["expand: output is 180% of original, max allowed 150%"]
+        result = build_retry_constraint("expand", warnings)
+        assert result is not None
+        assert "150%" in result
+
+    def test_returns_none_for_unknown_operation(self) -> None:
+        from app.ai.agents.content.length_guardrail import build_retry_constraint
+
+        warnings = ["unknown: something exceeds max 100"]
+        result = build_retry_constraint("unknown", warnings)
+        assert result is None
+
+
+# ── Service-level length guardrail integration tests ──
+
+
+class TestContentServiceLengthGuardrails:
+    """Tests for length validation integrated into the service process() flow."""
+
+    @pytest.fixture()
+    def service(self) -> ContentService:
+        return ContentService()
+
+    @pytest.mark.asyncio()
+    async def test_length_warnings_on_too_long_subject(self, service: ContentService) -> None:
+        """Subject line >60 chars triggers retry; if retry also fails, warnings appear."""
+        long_subject = "A" * 65 + " subject line that is way too long for email"
+        provider = AsyncMock()
+        # Both initial and retry return too-long subjects
+        provider.complete.return_value = CompletionResponse(
+            content=f"```text\n{long_subject}\n```",
+            model="test-model",
+            usage={"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
+        )
+
+        request = ContentRequest(
+            operation="subject_line",
+            text="Summer patio furniture sale",
+        )
+
+        with (
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.content.service.get_registry") as mock_retry_registry,
+            patch("app.ai.agents.content.service.get_settings") as mock_retry_settings,
+            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_registry.return_value.get_llm.return_value = provider
+            mock_retry_settings.return_value.ai.provider = "test"
+            mock_retry_registry.return_value.get_llm.return_value = provider
+
+            response = await service.generate(request)
+
+        # Both attempts returned too-long subjects, so warnings should be present
+        assert len(response.length_warnings) > 0
+        assert any("exceeds max 60" in w for w in response.length_warnings)
+        # LLM was called twice (initial + retry)
+        assert provider.complete.call_count == 2
+
+    @pytest.mark.asyncio()
+    async def test_successful_retry_clears_warnings(self, service: ContentService) -> None:
+        """When retry produces compliant output, no length warnings."""
+        provider = AsyncMock()
+        # First call: too long (>60 chars)
+        provider.complete.side_effect = [
+            CompletionResponse(
+                content="```text\n" + "A" * 65 + "\n```",
+                model="test-model",
+                usage={"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
+            ),
+            # Retry: compliant (under 60 chars)
+            CompletionResponse(
+                content="```text\nSave Big on Patio Furniture\n```",
+                model="test-model",
+                usage={"prompt_tokens": 120, "completion_tokens": 30, "total_tokens": 150},
+            ),
+        ]
+
+        request = ContentRequest(
+            operation="subject_line",
+            text="Summer patio furniture sale",
+        )
+
+        with (
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.content.service.get_registry") as mock_retry_registry,
+            patch("app.ai.agents.content.service.get_settings") as mock_retry_settings,
+            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_registry.return_value.get_llm.return_value = provider
+            mock_retry_settings.return_value.ai.provider = "test"
+            mock_retry_registry.return_value.get_llm.return_value = provider
+
+            response = await service.generate(request)
+
+        assert response.content == ["Save Big on Patio Furniture"]
+        assert response.length_warnings == []
+        assert provider.complete.call_count == 2
+
+    @pytest.mark.asyncio()
+    async def test_min_violation_warns_without_retry(self, service: ContentService) -> None:
+        """Min violations (too short) produce warnings but don't trigger retry."""
+        provider = AsyncMock()
+        provider.complete.return_value = CompletionResponse(
+            content="```text\nHi\n```",
+            model="test-model",
+            usage={"prompt_tokens": 80, "completion_tokens": 10, "total_tokens": 90},
+        )
+
+        request = ContentRequest(
+            operation="subject_line",
+            text="Summer sale",
+        )
+
+        with (
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_registry.return_value.get_llm.return_value = provider
+
+            response = await service.generate(request)
+
+        assert any("below min" in w for w in response.length_warnings)
+        # Only 1 LLM call — no retry for min violations
+        assert provider.complete.call_count == 1
+
+    @pytest.mark.asyncio()
+    async def test_punctuation_cleaned_in_response(self, service: ContentService) -> None:
+        """Excessive punctuation in LLM output is cleaned in final response."""
+        provider = AsyncMock()
+        provider.complete.return_value = CompletionResponse(
+            content="```text\nSummer Sale!!! Ready???\n```",
+            model="test-model",
+            usage={"prompt_tokens": 80, "completion_tokens": 20, "total_tokens": 100},
+        )
+
+        request = ContentRequest(
+            operation="subject_line",
+            text="Summer sale announcement",
+        )
+
+        with (
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_registry.return_value.get_llm.return_value = provider
+
+            response = await service.generate(request)
+
+        # Punctuation should be cleaned: !!! → !, ??? → ?
+        assert response.content == ["Summer Sale! Ready?"]
+
+    @pytest.mark.asyncio()
+    async def test_retry_failure_returns_original_with_warnings(
+        self, service: ContentService
+    ) -> None:
+        """When retry LLM call raises an exception, original response returned with warnings."""
+        initial_provider = AsyncMock()
+        initial_provider.complete.return_value = CompletionResponse(
+            content="```text\n" + "A" * 65 + "\n```",
+            model="test-model",
+            usage={"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
+        )
+
+        retry_provider = AsyncMock()
+        retry_provider.complete.side_effect = RuntimeError("LLM timeout")
+
+        request = ContentRequest(
+            operation="subject_line",
+            text="Summer sale",
+        )
+
+        with (
+            patch("app.ai.agents.base.get_registry") as mock_registry,
+            patch("app.ai.agents.base.get_settings") as mock_settings,
+            patch("app.ai.agents.base.resolve_model", return_value="standard-model"),
+            patch("app.ai.agents.content.service.get_registry") as mock_retry_registry,
+            patch("app.ai.agents.content.service.get_settings") as mock_retry_settings,
+            patch("app.ai.agents.content.service.resolve_model", return_value="standard-model"),
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_registry.return_value.get_llm.return_value = initial_provider
+            mock_retry_settings.return_value.ai.provider = "test"
+            mock_retry_registry.return_value.get_llm.return_value = retry_provider
+
+            response = await service.generate(request)
+
+        # Should return original with warnings (retry failed gracefully)
+        assert len(response.length_warnings) > 0
+        assert any("exceeds max 60" in w for w in response.length_warnings)

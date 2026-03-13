@@ -5,8 +5,16 @@ from app.ai.agents.personalisation.prompt import (
     detect_relevant_skills,
 )
 from app.ai.agents.personalisation.schemas import ESPPlatform
+from app.ai.agents.personalisation.service import format_syntax_warnings
 from app.ai.blueprints.component_context import detect_component_refs
-from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    NodeContext,
+    NodeResult,
+    NodeType,
+    StructuredFailure,
+)
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -76,6 +84,15 @@ class PersonalisationNode:
         html = strip_confidence_comment(html)
         html = sanitize_html_xss(html)
 
+        # Validate personalisation syntax
+        syntax_warnings = format_syntax_warnings(html)
+        if syntax_warnings:
+            logger.warning(
+                "blueprint.personalisation_node.syntax_issues",
+                issue_count=len(syntax_warnings),
+                platform=platform,
+            )
+
         usage = dict(response.usage) if response.usage else None
 
         handoff = AgentHandoff(
@@ -85,7 +102,7 @@ class PersonalisationNode:
                 f"Injected {platform} personalisation into {len(html)} chars",
                 f"Skills loaded: {', '.join(relevant_skills)}",
             ),
-            warnings=(),
+            warnings=tuple(syntax_warnings),
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
         )
@@ -119,29 +136,54 @@ class PersonalisationNode:
         if requirements:
             parts.append(f"\n\nPersonalisation requirements:\n{requirements}")
 
-        if context.iteration > 0 and context.qa_failures:
-            relevant_failures = [
-                f
-                for f in context.qa_failures
-                if any(
-                    kw in f.lower()
-                    for kw in (
-                        "personalisation",
-                        "personalization",
-                        "liquid",
-                        "ampscript",
-                        "variable",
-                        "fallback",
-                        "dynamic",
-                        "tag",
+        if context.iteration > 0:
+            structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+                "qa_failure_details", []
+            )
+            if structured:
+                relevant = [f for f in structured if f.suggested_agent == "personalisation"]
+                other = [f for f in structured if f.suggested_agent != "personalisation"]
+                if relevant:
+                    failure_lines = [
+                        f"[P{f.priority}] {f.check_name} (score={f.score:.2f}): {f.details}"
+                        for f in relevant
+                    ]
+                    parts.append(
+                        "\n\n--- PERSONALISATION QA FAILURES (fix these — ordered by priority) ---\n"
+                        + "\n".join(f"- {line}" for line in failure_lines)
                     )
-                )
-            ]
-            if relevant_failures:
-                parts.append(
-                    "\n\n--- PERSONALISATION QA FAILURES (fix these) ---\n"
-                    + "\n".join(f"- {f}" for f in relevant_failures)
-                )
+                if other:
+                    other_lines = [f"- {f.check_name}: {f.details}" for f in other[:3]]
+                    parts.append(
+                        "\n\n--- OTHER QA ISSUES (fix if possible without breaking your changes) ---\n"
+                        + "\n".join(other_lines)
+                    )
+                scope_constraint = SCOPE_PROMPTS.get("personalisation", "")
+                if scope_constraint:
+                    parts.append(f"\n\n--- MODIFICATION SCOPE ---\n{scope_constraint}")
+            elif context.qa_failures:
+                relevant_failures = [
+                    f
+                    for f in context.qa_failures
+                    if any(
+                        kw in f.lower()
+                        for kw in (
+                            "personalisation",
+                            "personalization",
+                            "liquid",
+                            "ampscript",
+                            "variable",
+                            "fallback",
+                            "dynamic",
+                            "tag",
+                        )
+                    )
+                ]
+                if relevant_failures:
+                    parts.append(
+                        "\n\n--- PERSONALISATION QA FAILURES (fix these) ---\n"
+                        + "\n".join(f"- {f}" for f in relevant_failures)
+                    )
 
         # Read upstream handoff warnings
         upstream = context.metadata.get("upstream_handoff")

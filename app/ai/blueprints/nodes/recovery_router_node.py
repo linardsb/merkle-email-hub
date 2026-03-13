@@ -2,23 +2,46 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
 
-from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    AllowedScope,
+    NodeContext,
+    NodeResult,
+    NodeType,
+    StructuredFailure,
+)
 from app.ai.blueprints.route_advisor import is_node_relevant
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Maps QA check names to the node that can fix them.
-# Dark mode failures → dark_mode node; fallback/MSO → outlook_fixer; rest → scaffolder.
-_FAILURE_ROUTING: dict[str, str] = {
+# Priority order: lower number = fix first (most impactful failures)
+CHECK_PRIORITY: dict[str, int] = {
+    "fallback": 1,
+    "accessibility": 2,
+    "dark_mode": 3,
+    "personalisation_syntax": 4,
+    "spam_score": 5,
+    "css_support": 6,
+    "brand_compliance": 7,
+    "link_validation": 8,
+    "image_optimization": 9,
+    "file_size": 10,
+    "html_validation": 11,
+}
+
+# Maps check names to suggested fixer agent
+CHECK_TO_AGENT: dict[str, str] = {
     "dark_mode": "dark_mode",
     "fallback": "outlook_fixer",
     "accessibility": "accessibility",
+    "personalisation_syntax": "personalisation",
     "html_validation": "scaffolder",
     "css_support": "code_reviewer",
     "file_size": "code_reviewer",
@@ -28,9 +51,27 @@ _FAILURE_ROUTING: dict[str, str] = {
     "brand_compliance": "scaffolder",
 }
 
+# Per-agent allowed modification scope on retry
+AGENT_SCOPES: dict[str, AllowedScope] = {
+    "dark_mode": AllowedScope(styles_only=True),
+    "outlook_fixer": AllowedScope(additive_only=True),
+    "accessibility": AllowedScope(),
+    "personalisation": AllowedScope(text_only=True),
+    "code_reviewer": AllowedScope(styles_only=True),
+    "scaffolder": AllowedScope(structure_only=True),
+}
+
+# Scope constraint prompts for fixer nodes on retry
+SCOPE_PROMPTS: dict[str, str] = {
+    "scaffolder": "You may modify HTML structure only. Do NOT add new CSS frameworks or external stylesheets.",
+    "dark_mode": "You may ONLY modify <style> blocks and inline style attributes. Do NOT change HTML structure or text content.",
+    "outlook_fixer": "You may ONLY ADD MSO conditional comments and VML elements. Do NOT remove any existing HTML elements.",
+    "accessibility": "You may modify attributes (alt, aria-*, role, lang), text content, and add semantic elements.",
+    "code_reviewer": "You may ONLY modify <style> blocks, inline styles, and remove redundant code. Do NOT change text content.",
+    "personalisation": "You may ONLY modify text content, template tags, and text-related attributes (alt, title, aria-label).",
+}
 
 # Priority order for fixer fallback when audience filters out the primary target.
-# Scaffolder is last — always relevant, always available as a general fixer.
 _FIXER_PRIORITY = (
     "dark_mode",
     "outlook_fixer",
@@ -70,11 +111,17 @@ def _has_matching_failure(
     return False
 
 
+def _fingerprint(sf: StructuredFailure) -> str:
+    """Build a compact fingerprint for cycle detection."""
+    return f"{sf.check_name}:{hashlib.md5(sf.details.encode()).hexdigest()[:8]}"  # noqa: S324
+
+
 class RecoveryRouterNode:
     """Deterministic node that examines QA failures and routes to the appropriate fixer.
 
-    Parses failure details to identify which check failed, then routes to the
-    relevant fixer node via metadata in the result details.
+    Supports two modes:
+    1. Structured routing via StructuredFailure objects (priority-based, fingerprint cycle detection)
+    2. Legacy string-based routing (backward compatible fallback)
     """
 
     @property
@@ -87,7 +134,11 @@ class RecoveryRouterNode:
 
     async def execute(self, context: NodeContext) -> NodeResult:
         """Analyze failures and decide which fixer node to route to."""
-        if not context.qa_failures:
+        structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+            "qa_failure_details", []
+        )
+
+        if not structured and not context.qa_failures:
             logger.warning("blueprint.recovery_router.no_failures")
             return NodeResult(
                 status="success",
@@ -95,19 +146,82 @@ class RecoveryRouterNode:
                 details="route_to:scaffolder",
             )
 
-        # Determine if any failures are dark-mode-specific
-        has_dark_mode_failure = any(f.startswith("dark_mode:") for f in context.qa_failures)
+        # Fall back to string-based routing if no structured data
+        if not structured:
+            return self._legacy_route(context)
 
-        # Determine if any failures are Outlook/MSO/fallback-specific
+        # Already sorted by priority from QA gate
+        target = structured[0].suggested_agent
+
+        # --- Enhanced cycle detection ---
+        history = context.metadata.get("handoff_history", [])
+        agents_already_run: set[str] = set()
+        for h in history:  # type: ignore[attr-defined]
+            if isinstance(h, AgentHandoff):
+                agents_already_run.add(h.agent_name)
+
+        # Build fingerprints from previous iteration's failures
+        prev_structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+            "previous_qa_failure_details", []
+        )
+        previous_fingerprints: set[str] = {_fingerprint(pf) for pf in prev_structured}
+
+        # Current failure fingerprints
+        current_fingerprints: set[str] = {_fingerprint(sf) for sf in structured}
+
+        # If same failures persist after a fixer ran → escalate to scaffolder
+        repeated = current_fingerprints & previous_fingerprints
+        if target in agents_already_run and repeated:
+            logger.warning(
+                "blueprint.recovery_router.cycle_detected",
+                original_target=target,
+                repeated_failures=len(repeated),
+                agents_already_run=sorted(agents_already_run),
+            )
+            target = "scaffolder"
+
+        # Filter out audience-irrelevant fixers
+        raw_profile = context.metadata.get("audience_profile")
+        audience_profile: AudienceProfile | None = raw_profile if raw_profile is not None else None  # type: ignore[assignment]
+        if not is_node_relevant(target, audience_profile):
+            logger.info(
+                "blueprint.recovery_router.audience_filtered",
+                original_target=target,
+                reason="audience_irrelevant",
+            )
+            # Try other agents by priority
+            fallback_found = False
+            for sf in structured[1:]:
+                candidate = sf.suggested_agent
+                if candidate != target and is_node_relevant(candidate, audience_profile):
+                    target = candidate
+                    fallback_found = True
+                    break
+            if not fallback_found:
+                target = "scaffolder"
+
+        logger.info(
+            "blueprint.recovery_router.routing",
+            target=target,
+            failure_count=len(structured),
+            highest_priority_check=structured[0].check_name,
+            agents_already_run=sorted(agents_already_run),
+        )
+
+        return NodeResult(
+            status="success",
+            html=context.html,
+            details=f"route_to:{target}",
+        )
+
+    def _legacy_route(self, context: NodeContext) -> NodeResult:
+        """String-based routing for backward compatibility."""
+        has_dark_mode_failure = any(f.startswith("dark_mode:") for f in context.qa_failures)
         has_outlook_failure = any(
             f.startswith("fallback:") or "mso" in f.lower() or "outlook" in f.lower()
             for f in context.qa_failures
         )
-
-        # Determine if any failures are accessibility-specific
         has_accessibility_failure = any(f.startswith("accessibility:") for f in context.qa_failures)
-
-        # Determine if any failures are code-review-specific
         has_code_review_failure = any(
             any(
                 kw in f.lower()
@@ -122,10 +236,6 @@ class RecoveryRouterNode:
             )
             for f in context.qa_failures
         )
-
-        # Determine if any failures are personalisation-specific
-        # NOTE: "fallback" was removed — it collides with MSO fallback check names
-        # (e.g. "fallback: No MSO conditional comments") causing misrouting.
         has_personalisation_failure = any(
             any(
                 kw in f.lower()
@@ -141,7 +251,7 @@ class RecoveryRouterNode:
             for f in context.qa_failures
         )
 
-        # Also check upstream handoff warnings for routing hints
+        # Also check upstream handoff warnings
         upstream = context.metadata.get("upstream_handoff")
         if isinstance(upstream, AgentHandoff) and upstream.warnings:
             if not has_dark_mode_failure:
@@ -183,14 +293,12 @@ class RecoveryRouterNode:
                     for w in upstream.warnings
                 )
 
-        # Track which agents already ran via handoff_history to avoid cycles
+        # Track agents already run
         history = context.metadata.get("handoff_history", [])
         agents_already_run: set[str] = set()
-        all_history_warnings: list[str] = []
         for h in history:  # type: ignore[attr-defined]
             if isinstance(h, AgentHandoff):
                 agents_already_run.add(h.agent_name)
-                all_history_warnings.extend(h.warnings)
 
         if has_dark_mode_failure:
             target = "dark_mode"
@@ -205,8 +313,6 @@ class RecoveryRouterNode:
         else:
             target = "scaffolder"
 
-        # If the target agent already ran and the same failure persists,
-        # fall back to scaffolder (general fixer) to avoid infinite loops
         if target in agents_already_run and context.iteration > 0:
             logger.warning(
                 "blueprint.recovery_router.cycle_detected",
@@ -236,7 +342,7 @@ class RecoveryRouterNode:
                     fallback_found = True
                     break
             if not fallback_found:
-                target = "scaffolder"  # Always relevant, always available
+                target = "scaffolder"
 
         logger.info(
             "blueprint.recovery_router.routing",

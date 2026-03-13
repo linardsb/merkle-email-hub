@@ -2,7 +2,14 @@
 
 from app.ai.agents.dark_mode.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.blueprints.component_context import detect_component_refs
-from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    NodeContext,
+    NodeResult,
+    NodeType,
+    StructuredFailure,
+)
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -98,13 +105,38 @@ class DarkModeNode:
             "Enhance the following email HTML with dark mode support:\n\n" + context.html[:12000]
         ]
 
-        if context.iteration > 0 and context.qa_failures:
-            dm_failures = [f for f in context.qa_failures if "dark_mode" in f.lower()]
-            if dm_failures:
-                parts.append(
-                    "\n\n--- DARK MODE QA FAILURES (fix these) ---\n"
-                    + "\n".join(f"- {f}" for f in dm_failures)
-                )
+        if context.iteration > 0:
+            structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+                "qa_failure_details", []
+            )
+            if structured:
+                relevant = [f for f in structured if f.suggested_agent == "dark_mode"]
+                other = [f for f in structured if f.suggested_agent != "dark_mode"]
+                if relevant:
+                    failure_lines = [
+                        f"[P{f.priority}] {f.check_name} (score={f.score:.2f}): {f.details}"
+                        for f in relevant
+                    ]
+                    parts.append(
+                        "\n\n--- DARK MODE QA FAILURES (fix these — ordered by priority) ---\n"
+                        + "\n".join(f"- {line}" for line in failure_lines)
+                    )
+                if other:
+                    other_lines = [f"- {f.check_name}: {f.details}" for f in other[:3]]
+                    parts.append(
+                        "\n\n--- OTHER QA ISSUES (fix if possible without breaking your changes) ---\n"
+                        + "\n".join(other_lines)
+                    )
+                scope_constraint = SCOPE_PROMPTS.get("dark_mode", "")
+                if scope_constraint:
+                    parts.append(f"\n\n--- MODIFICATION SCOPE ---\n{scope_constraint}")
+            elif context.qa_failures:
+                dm_failures = [f for f in context.qa_failures if "dark_mode" in f.lower()]
+                if dm_failures:
+                    parts.append(
+                        "\n\n--- DARK MODE QA FAILURES (fix these) ---\n"
+                        + "\n".join(f"- {f}" for f in dm_failures)
+                    )
 
         progress = context.metadata.get("progress_anchor", "")
         if progress:

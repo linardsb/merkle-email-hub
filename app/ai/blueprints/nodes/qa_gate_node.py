@@ -1,6 +1,7 @@
-"""QA Gate deterministic node — runs 10-point quality checks against HTML."""
+"""QA Gate deterministic node — runs 11-point quality checks against HTML."""
 
-from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType
+from app.ai.blueprints.nodes.recovery_router_node import CHECK_PRIORITY, CHECK_TO_AGENT
+from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType, StructuredFailure
 from app.core.logging import get_logger
 from app.qa_engine.checks import ALL_CHECKS
 
@@ -11,7 +12,7 @@ class QAGateNode:
     """Deterministic node that runs all QA checks against the current HTML.
 
     Returns success if all checks pass, failed with details if any fail.
-    The failure details are consumed by the recovery router.
+    Produces StructuredFailure objects for the recovery router.
     """
 
     @property
@@ -32,6 +33,7 @@ class QAGateNode:
             )
 
         failures: list[str] = []
+        structured_failures: list[StructuredFailure] = []
         passed_count = 0
 
         for check in ALL_CHECKS:
@@ -41,6 +43,19 @@ class QAGateNode:
             else:
                 detail = result.details or "no details"
                 failures.append(f"{result.check_name}: {detail} (score={result.score:.2f})")
+                structured_failures.append(
+                    StructuredFailure(
+                        check_name=result.check_name,
+                        score=result.score,
+                        details=detail,
+                        suggested_agent=CHECK_TO_AGENT.get(result.check_name, "scaffolder"),
+                        priority=CHECK_PRIORITY.get(result.check_name, 99),
+                        severity=result.severity,
+                    )
+                )
+
+        # Sort by priority (lower = higher priority)
+        structured_failures.sort(key=lambda f: f.priority)
 
         total = len(ALL_CHECKS)
 
@@ -62,4 +77,5 @@ class QAGateNode:
             status="failed",
             html=context.html,
             details=summary,
+            structured_failures=tuple(structured_failures),
         )

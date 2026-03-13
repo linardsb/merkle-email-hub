@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — copywriting patterns) -->
 # Subject Line Formulas & Best Practices
 
 ## Proven Formula Patterns

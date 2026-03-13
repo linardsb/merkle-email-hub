@@ -36,6 +36,7 @@ SKILL_FILES: dict[str, str] = {
     "client_compatibility": "client_compatibility.md",
     "mso_vml_quick_ref": "mso_vml_quick_ref.md",
     "email_structure": "email_structure.md",
+    "css_email_reference": "css_email_reference.md",
 }
 
 
@@ -89,6 +90,9 @@ def detect_relevant_skills(brief: str, context: dict[str, str] | None = None) ->
     # Always load Maizzle syntax reference
     skills.append("maizzle_syntax")
 
+    # MSO-first: ALWAYS load MSO/VML reference — every email needs Outlook support
+    skills.append("mso_vml_quick_ref")
+
     # Multi-column layouts need table layout reference
     if any(
         kw in brief_lower
@@ -107,22 +111,6 @@ def detect_relevant_skills(brief: str, context: dict[str, str] | None = None) ->
         ]
     ):
         skills.append("table_layouts")
-
-    # MSO/VML needs
-    if any(
-        kw in brief_lower
-        for kw in [
-            "outlook",
-            "mso",
-            "vml",
-            "button",
-            "bulletproof",
-            "background image",
-            "rounded",
-            "ghost table",
-        ]
-    ):
-        skills.append("mso_vml_quick_ref")
 
     # Email structure (preheader, header, footer, hero, accessibility, images)
     if any(

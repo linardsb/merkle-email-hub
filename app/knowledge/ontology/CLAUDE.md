@@ -7,9 +7,6 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #21653 | 1:49 PM | 🔵 | Ontology Registry Architecture | ~586 |
-| #21620 | 1:41 PM | 🔵 | OntologyRegistry Core Loading Mechanism | ~447 |
-| #21503 | 9:33 AM | 🟣 | Competitive Intelligence Registry Created | ~321 |
-| #21498 | 9:30 AM | 🔵 | Ontology System Implements Full CRUD Lifecycle with Live CanIEmail Sync | ~466 |
-| #21484 | 9:25 AM | 🔵 | Existing Ontology Models CSS Email Client Compatibility | ~320 |
+| #21783 | 3:01 PM | 🟣 | Phase 10.1 Project Target Clients Selector committed | ~635 |
+| #21782 | 3:00 PM | 🟣 | Phase 10.1 Project Target Clients Selector implemented and committed | ~856 |
 </claude-mem-context>

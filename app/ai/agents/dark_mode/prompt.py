@@ -36,6 +36,7 @@ SKILL_FILES: dict[str, str] = {
     "outlook_dark_mode": "outlook_dark_mode.md",
     "image_handling": "image_handling.md",
     "dom_reference": "dom_rendering_reference.md",
+    "meta_tag_injection": "meta_tag_injection.md",
 }
 
 
@@ -86,8 +87,9 @@ def detect_relevant_skills(html: str, color_overrides: dict[str, str] | None = N
     html_lower = html.lower()
     skills: list[str] = []
 
-    # Always load color remapping reference
+    # Always load color remapping and meta tag injection references
     skills.append("color_remapping")
+    skills.append("meta_tag_injection")
 
     # Outlook-specific patterns need Outlook dark mode reference
     if any(

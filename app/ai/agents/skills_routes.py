@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import yaml
 from fastapi import APIRouter, Depends
 
 from app.auth.dependencies import get_current_user
@@ -43,6 +44,29 @@ def _load_analysis() -> dict[str, Any]:
         return {}
 
 
+def _parse_l4_sources(skill_path: Path) -> list[str]:
+    """Extract l4_sources from SKILL.md YAML frontmatter."""
+    if not skill_path.exists():
+        return []
+    content = skill_path.read_text()
+    if not content.startswith("---"):
+        return []
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return []
+    try:
+        raw = yaml.safe_load(parts[1])  # pyright: ignore[reportAny]
+        if not isinstance(raw, dict):
+            return []
+        meta: dict[str, object] = raw  # pyright: ignore[reportUnknownVariableType]
+        sources = meta.get("l4_sources", [])
+        if isinstance(sources, list):
+            return [str(s) for s in sources]  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+        return []
+    except yaml.YAMLError:
+        return []
+
+
 def _get_agent_skill_info(agent_name: str, analysis: dict[str, Any]) -> dict[str, object]:
     agent_dir = AGENTS_DIR / agent_name
     skill_file = agent_dir / "SKILL.md"
@@ -62,6 +86,7 @@ def _get_agent_skill_info(agent_name: str, analysis: dict[str, Any]) -> dict[str
         "name": agent_name,
         "skill_file": "SKILL.md" if skill_file.exists() else None,
         "l3_files": l3_files,
+        "l4_sources": _parse_l4_sources(skill_file),
         "has_failure_warnings": has_failure_warnings,
     }
 

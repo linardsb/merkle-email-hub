@@ -43,6 +43,19 @@ css_support:
     error_deduction: 0.2
     warning_deduction: 0.1
     max_issues_in_details: 10
+    # Syntax validation params
+    deduction_syntax_error: 0.15
+    deduction_empty_declaration: 0.05
+    deduction_vendor_prefix: 0.05
+    deduction_external_stylesheet: 0.25
+    deduction_import_rule: 0.20
+    deduction_important_overuse: 0.10
+    deduction_non_inline: 0.10
+    max_syntax_errors_reported: 5
+    max_empty_declarations_reported: 5
+    max_vendor_prefixes_reported: 5
+    max_non_inline_reported: 5
+    important_threshold: 10
 
 file_size:
   enabled: true
@@ -159,10 +172,81 @@ image_optimization:
   enabled: true
   severity: warning
   threshold: 0.5
-  params: {}
+  params:
+    # Group A: Core attributes
+    deduction_missing_dimensions: 0.05
+    deduction_missing_alt: 0.05
+    deduction_empty_src: 0.10
+    # Group B: Format validation
+    deduction_banned_format: 0.10
+    deduction_data_uri_oversize: 0.10
+    data_uri_max_bytes: 3072          # 3KB threshold
+    # Group C: Dimension integrity
+    deduction_invalid_dimension: 0.03
+    # Group D: Tracking pixels
+    deduction_tracking_pixel: 0.03
+    # Group E: Rendering practices
+    deduction_missing_border: 0.03
+    deduction_missing_display_block: 0.02
+    # Group F: Summary (no deduction)
+    deduction_img_summary: 0.0
+    # Reporting caps
+    max_dimension_issues_reported: 5
+    max_alt_issues_reported: 5
+    max_src_issues_reported: 3
+    max_format_issues_reported: 3
+    max_data_uri_issues_reported: 3
+    max_tracking_issues_reported: 3
+    max_border_issues_reported: 5
+    max_display_issues_reported: 5
 
 brand_compliance:
-  enabled: false
-  severity: info
+  enabled: true
+  severity: warning
   threshold: 0.5
-  params: {}
+  params:
+    # Brand rules — set per-project via qa_profile JSON column
+    # When empty, check passes with info message (backward-compatible)
+    allowed_colors: []           # e.g. ["#ff0000", "#003366", "#ffffff"]
+    required_fonts: []           # e.g. ["arial", "helvetica"]
+    required_elements: []        # e.g. ["footer", "logo", "unsubscribe"]
+    forbidden_patterns: []       # e.g. ["click here", "buy now"]
+    # Deductions
+    deduction_off_brand_color: 0.20
+    deduction_wrong_font: 0.15
+    deduction_missing_footer: 0.25
+    deduction_missing_logo: 0.25
+    deduction_missing_unsubscribe: 0.25
+    deduction_forbidden_pattern: 0.20
+    # Reporting caps
+    max_color_issues_reported: 10
+    max_font_issues_reported: 5
+    max_pattern_issues_reported: 5
+
+personalisation_syntax:
+  enabled: true
+  severity: warning
+  threshold: 0.5
+  params:
+    # Group A: Platform Detection
+    deduction_mixed_platform: 0.30
+    deduction_unknown_platform: 0.10
+    # Group B: Delimiter Balance
+    deduction_delimiter_unbalanced: 0.15
+    deduction_conditional_unbalanced: 0.15
+    max_delimiter_issues: 5
+    max_conditional_issues: 5
+    # Group C: Fallback Completeness
+    deduction_fallback_missing: 0.05
+    deduction_fallback_empty: 0.03
+    max_fallback_issues: 10
+    max_fallback_empty_issues: 5
+    # Group D: Syntax Correctness
+    deduction_syntax_error: 0.10
+    max_syntax_issues: 5
+    # Group E: Best Practices
+    deduction_nesting_depth: 0.03
+    max_nesting_issues: 3
+    max_nesting_depth: 3
+    # Group F: Summary
+    deduction_summary: 0.0

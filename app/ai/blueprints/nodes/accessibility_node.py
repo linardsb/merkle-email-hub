@@ -1,11 +1,19 @@
 """Accessibility Auditor agentic node — fixes WCAG AA issues in email HTML."""
 
+from app.ai.agents.accessibility.alt_text_validator import format_alt_text_warnings
 from app.ai.agents.accessibility.prompt import (
     build_system_prompt,
     detect_relevant_skills,
 )
 from app.ai.blueprints.component_context import detect_component_refs
-from app.ai.blueprints.protocols import AgentHandoff, NodeContext, NodeResult, NodeType
+from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
+from app.ai.blueprints.protocols import (
+    AgentHandoff,
+    NodeContext,
+    NodeResult,
+    NodeType,
+    StructuredFailure,
+)
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -73,6 +81,8 @@ class AccessibilityNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        alt_warnings = format_alt_text_warnings(html)
+
         handoff = AgentHandoff(
             agent_name="accessibility",
             artifact=html,
@@ -80,7 +90,7 @@ class AccessibilityNode:
                 f"Fixed accessibility issues in {len(html)} chars",
                 f"Skills loaded: {', '.join(relevant_skills)}",
             ),
-            warnings=(),
+            warnings=tuple(alt_warnings),
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
         )
@@ -91,6 +101,7 @@ class AccessibilityNode:
             html_length=len(html),
             confidence=confidence,
             skills_loaded=relevant_skills,
+            alt_text_warnings=len(alt_warnings),
         )
 
         return NodeResult(
@@ -108,28 +119,53 @@ class AccessibilityNode:
             + context.html[:12000]
         ]
 
-        if context.iteration > 0 and context.qa_failures:
-            a11y_failures = [
-                f
-                for f in context.qa_failures
-                if any(
-                    kw in f.lower()
-                    for kw in (
-                        "accessibility",
-                        "alt",
-                        "lang",
-                        "role",
-                        "contrast",
-                        "heading",
-                        "wcag",
+        if context.iteration > 0:
+            structured: list[StructuredFailure] = context.metadata.get(  # type: ignore[assignment]
+                "qa_failure_details", []
+            )
+            if structured:
+                relevant = [f for f in structured if f.suggested_agent == "accessibility"]
+                other = [f for f in structured if f.suggested_agent != "accessibility"]
+                if relevant:
+                    failure_lines = [
+                        f"[P{f.priority}] {f.check_name} (score={f.score:.2f}): {f.details}"
+                        for f in relevant
+                    ]
+                    parts.append(
+                        "\n\n--- ACCESSIBILITY QA FAILURES (fix these — ordered by priority) ---\n"
+                        + "\n".join(f"- {line}" for line in failure_lines)
                     )
-                )
-            ]
-            if a11y_failures:
-                parts.append(
-                    "\n\n--- ACCESSIBILITY QA FAILURES (fix these) ---\n"
-                    + "\n".join(f"- {f}" for f in a11y_failures)
-                )
+                if other:
+                    other_lines = [f"- {f.check_name}: {f.details}" for f in other[:3]]
+                    parts.append(
+                        "\n\n--- OTHER QA ISSUES (fix if possible without breaking your changes) ---\n"
+                        + "\n".join(other_lines)
+                    )
+                scope_constraint = SCOPE_PROMPTS.get("accessibility", "")
+                if scope_constraint:
+                    parts.append(f"\n\n--- MODIFICATION SCOPE ---\n{scope_constraint}")
+            elif context.qa_failures:
+                a11y_failures = [
+                    f
+                    for f in context.qa_failures
+                    if any(
+                        kw in f.lower()
+                        for kw in (
+                            "accessibility",
+                            "alt",
+                            "lang",
+                            "role",
+                            "contrast",
+                            "heading",
+                            "wcag",
+                        )
+                    )
+                ]
+                if a11y_failures:
+                    parts.append(
+                        "\n\n--- ACCESSIBILITY QA FAILURES (fix these) ---\n"
+                        + "\n".join(f"- {f}" for f in a11y_failures)
+                    )
 
         progress = context.metadata.get("progress_anchor", "")
         if progress:

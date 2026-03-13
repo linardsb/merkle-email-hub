@@ -24,7 +24,8 @@ references:
   - skills/vml_reference.md
   - skills/mso_conditionals.md
   - skills/diagnostic.md
-l4_source: docs/SKILL_outlook-mso-fallback-reference.md
+l4_sources:
+  - docs/SKILL_outlook-mso-fallback-reference.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -119,6 +120,41 @@ Before generating output, verify:
 3. All `<v:*>` elements are inside `<!--[if mso]>` blocks
 4. No orphaned `<![endif]-->` or `<!--[if` without matching pair
 5. All `<table>` elements have `cellpadding` and `cellspacing` attributes
+
+## Common LLM Mistakes (AVOID THESE)
+
+LLMs frequently make these MSO errors. Your output is validated programmatically — these WILL be caught:
+
+### Mistake 1: Unbalanced Conditionals
+```
+BAD:  <!--[if mso]> <table>...</table>        ← Missing closer
+GOOD: <!--[if mso]> <table>...</table> <![endif]-->
+```
+
+### Mistake 2: Wrong Closer for Non-MSO Blocks
+```
+BAD:  <!--[if !mso]><!--> <div>...</div> <![endif]-->     ← Wrong closer type
+GOOD: <!--[if !mso]><!--> <div>...</div> <!--<![endif]-->  ← Note the <!--
+```
+
+### Mistake 3: VML Outside MSO Blocks
+```
+BAD:  <v:roundrect>...</v:roundrect>           ← VML not in MSO block
+GOOD: <!--[if mso]> <v:roundrect>...</v:roundrect> <![endif]-->
+```
+
+### Mistake 4: Missing Namespace Declarations
+```
+BAD:  <html lang="en">                        ← No xmlns when VML is present
+GOOD: <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+```
+
+### Mistake 5: Nesting MSO Inside Non-MSO
+```
+BAD:  <!--[if !mso]><!--> <!--[if mso]> ... <![endif]--> <!--<![endif]-->
+      ↑ MSO block inside non-MSO block makes no logical sense
+GOOD: Keep MSO and non-MSO blocks at the same nesting level, side by side
+```
 
 ## Confidence Assessment
 

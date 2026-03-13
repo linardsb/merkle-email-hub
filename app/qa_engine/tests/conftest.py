@@ -19,7 +19,7 @@ def make_qa_result(**overrides: object) -> QAResult:
         "overall_score": 0.85,
         "passed": False,
         "checks_passed": 8,
-        "checks_total": 10,
+        "checks_total": 11,
         "created_at": now,
         "updated_at": now,
     }
@@ -87,7 +87,7 @@ def make_qa_check_result(
 
 @pytest.fixture
 def sample_html_valid() -> str:
-    """Minimal valid email HTML that passes all 10 QA checks."""
+    """Minimal valid email HTML that passes all 11 QA checks."""
     return """<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>

@@ -162,6 +162,16 @@ CONTENT_DIMENSIONS = {
             "no_constraints",
         ],
     },
+    "output_length": {
+        "description": "Output length behavior being tested",
+        "values": [
+            "within_limits",
+            "at_boundary",
+            "over_max",
+            "under_min",
+            "ratio_violation",
+        ],
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -224,6 +234,7 @@ ACCESSIBILITY_DIMENSIONS = {
             "missing_table_role",
             "color_only_information",
             "missing_document_title",
+            "landmark_roles",
         ],
     },
     "html_complexity": {
@@ -321,6 +332,10 @@ CODE_REVIEWER_DIMENSIONS = {
             "base64_embedded_image",
             "excessive_table_depth",
             "mixed_issues",
+            "anti_pattern",
+            "spam_trigger",
+            "malformed_link",
+            "deprecated_html",
         ],
     },
     "html_complexity": {
@@ -332,6 +347,8 @@ CODE_REVIEWER_DIMENSIONS = {
             "vml_elements_present",
             "mixed_layout",
             "production_template",
+            "dark_mode_optimised",
+            "multi_esp_personalised",
         ],
     },
     "expected_severity": {
@@ -352,6 +369,16 @@ CODE_REVIEWER_DIMENSIONS = {
             "over_102kb_clipping",
             "bloated_base64",
             "minimal",
+        ],
+    },
+    "agent_routing": {
+        "description": "Which specialist agents should be tagged for issues",
+        "values": [
+            "code_reviewer_only",
+            "outlook_fixer_tagged",
+            "dark_mode_tagged",
+            "accessibility_tagged",
+            "multi_agent_tagged",
         ],
     },
 }

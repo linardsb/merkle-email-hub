@@ -1,3 +1,4 @@
+<!-- L4 source: docs/esp_personalisation/esp_02_sfmc.md -->
 # SFMC AMPscript Syntax Reference
 
 ## Variable Declaration

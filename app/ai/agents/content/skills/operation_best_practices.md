@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — agent operation specs) -->
 # Per-Operation Best Practices
 
 ## subject_line

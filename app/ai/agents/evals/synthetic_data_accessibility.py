@@ -286,6 +286,94 @@ _COLOR_ONLY_INFO = _BASE_HTML.format(
 )
 
 
+# 11. Logo images with company name — should use name only, never "logo image"
+_LOGO_WITH_TEXT = _BASE_HTML.format(
+    body_content="""\
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:20px; font-family:Arial,sans-serif;">
+      <a href="https://example.com">
+        <img src="https://placehold.co/200x60" width="200" height="60"
+          alt="Acme Corp logo image" style="display:block;">
+      </a>
+      <h1>Welcome to Our Newsletter</h1>
+      <p>Your weekly dose of inspiration and deals.</p>
+      <img src="https://placehold.co/100x40" width="100" height="40"
+        alt="Image of Partner Inc logo" style="display:inline;">
+      <p>In partnership with Partner Inc.</p>
+    </td>
+  </tr>
+</table>"""
+)
+
+# 12. Complex infographic / chart that needs aria-describedby
+_COMPLEX_INFOGRAPHIC = _BASE_HTML.format(
+    body_content="""\
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:20px; font-family:Arial,sans-serif;">
+      <h1>Q3 Performance Report</h1>
+      <img src="https://placehold.co/600x400" width="600" height="400"
+        style="display:block; width:100%; height:auto;">
+      <p>Revenue grew 15% quarter-over-quarter, driven by expansion in EMEA.</p>
+      <img src="https://placehold.co/600x300" width="600" height="300"
+        alt="data table" style="display:block; width:100%; height:auto;">
+      <p>Customer satisfaction scores improved across all regions.</p>
+    </td>
+  </tr>
+</table>"""
+)
+
+# 13. Decorative images with wrong (non-empty) alt text
+_DECORATIVE_WRONG_ALT = _BASE_HTML.format(
+    body_content="""\
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:20px; font-family:Arial,sans-serif;">
+      <img src="https://placehold.co/600x20/spacer.gif" width="600" height="20"
+        alt="spacer image" style="display:block;">
+      <h1>Important Announcement</h1>
+      <p>We have exciting news to share with you.</p>
+      <img src="https://placehold.co/600x2/divider.png" width="600" height="2"
+        alt="divider" style="display:block;">
+      <p>More details coming soon.</p>
+      <img src="https://placehold.co/1x1/tracking.gif" width="1" height="1"
+        alt="tracking" style="display:none;">
+      <img src="https://placehold.co/600x3/border.png" width="600" height="3"
+        alt="decorative border line" style="display:block;">
+    </td>
+  </tr>
+</table>"""
+)
+
+# 14. Missing landmark roles + generic alt text
+_MISSING_LANDMARKS = _BASE_HTML.format(
+    body_content="""\
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:10px; font-family:Arial,sans-serif; background-color:#f5f5f5;">
+      <img src="https://placehold.co/150x50" width="150" height="50"
+        alt="image" style="display:block;">
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:20px; font-family:Arial,sans-serif;">
+      <h1>Monthly Newsletter</h1>
+      <img src="https://placehold.co/600x300" width="600" height="300"
+        alt="photo" style="display:block; width:100%; height:auto;">
+      <p>This month we're thrilled to share our latest updates.</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:10px; font-family:Arial,sans-serif; font-size:12px; color:#666666;">
+      <p>© 2024 Example Corp. All rights reserved.</p>
+      <a href="https://example.com/unsubscribe">Unsubscribe</a>
+    </td>
+  </tr>
+</table>"""
+)
+
+
 # ── Test Cases ──
 
 ACCESSIBILITY_TEST_CASES: list[dict[str, object]] = [
@@ -461,6 +549,74 @@ ACCESSIBILITY_TEST_CASES: list[dict[str, object]] = [
             "Add non-color indicator for Processing status (e.g., clock symbol)",
             "Preserve existing color coding as supplementary cue",
             "Ensure status text is readable without color perception",
+        ],
+    },
+    # 11. Logo images with text — agent should use company name only as alt
+    {
+        "id": "a11y-011",
+        "dimensions": {
+            "violation_category": "missing_alt_text",
+            "html_complexity": "simple_single_column",
+            "image_scenario": "logo_with_text",
+            "severity": "multiple_moderate",
+        },
+        "html_input": _LOGO_WITH_TEXT,
+        "expected_challenges": [
+            "Logo alt should be company name only, not 'Acme Corp logo image'",
+            "Alt text must not start with 'Image of' or 'Logo of'",
+            "Secondary logo should also follow logo classification rules",
+            "Preserve visual layout of logos alongside text",
+        ],
+    },
+    # 12. Complex infographic needing aria-describedby pattern
+    {
+        "id": "a11y-012",
+        "dimensions": {
+            "violation_category": "missing_alt_text",
+            "html_complexity": "simple_single_column",
+            "image_scenario": "complex_infographic",
+            "severity": "mixed_severity",
+        },
+        "html_input": _COMPLEX_INFOGRAPHIC,
+        "expected_challenges": [
+            "Add brief alt text summarising chart conclusion",
+            "Add aria-describedby linking to detailed text description",
+            "Create visually hidden description div for screen readers",
+            "Data table image needs full data in accessible text",
+        ],
+    },
+    # 13. Decorative images with wrong non-empty alt text
+    {
+        "id": "a11y-013",
+        "dimensions": {
+            "violation_category": "decorative_img_no_empty_alt",
+            "html_complexity": "simple_single_column",
+            "image_scenario": "decorative_missing_empty_alt",
+            "severity": "many_minor",
+        },
+        "html_input": _DECORATIVE_WRONG_ALT,
+        "expected_challenges": [
+            "Convert spacer alt='spacer image' to alt=''",
+            "Convert divider alt='divider' to alt=''",
+            "Convert tracking pixel alt='tracking' to alt=''",
+            "Identify border images as decorative and empty their alt",
+        ],
+    },
+    # 14. Missing landmark roles + generic alt text
+    {
+        "id": "a11y-014",
+        "dimensions": {
+            "violation_category": "landmark_roles",
+            "html_complexity": "simple_single_column",
+            "image_scenario": "informative_no_alt",
+            "severity": "mixed_severity",
+        },
+        "html_input": _MISSING_LANDMARKS,
+        "expected_challenges": [
+            "Add role='banner' to header section",
+            "Add role='main' to primary content area",
+            "Add role='contentinfo' to footer section",
+            "Fix generic alt text 'image' and 'photo' on content images",
         ],
     },
 ]

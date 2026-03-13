@@ -3,10 +3,10 @@ name: personalisation
 version: "1.0"
 description: >
   Inject ESP-specific personalisation syntax into email HTML. Handles Braze
-  Liquid (variables, filters, connected content, content blocks), SFMC
-  AMPscript (SET, Lookup, data extensions, inline functions), Adobe Campaign
-  JavaScript (recipient fields, personalization blocks), and universal fallback
-  patterns. Use when email HTML needs dynamic content for a specific ESP.
+  Liquid, SFMC AMPscript, Adobe Campaign JSSP, Klaviyo Django Template Language,
+  Mailchimp Merge Language, HubSpot HubL, and Iterable Handlebars. Supports
+  universal fallback patterns. Use when email HTML needs dynamic content for
+  a specific ESP.
 input: Email HTML with personalisation requirements and target ESP platform
 output: Email HTML with correct ESP-specific personalisation syntax and fallbacks
 eval_criteria:
@@ -23,7 +23,19 @@ references:
   - skills/braze_liquid.md
   - skills/sfmc_ampscript.md
   - skills/adobe_campaign_js.md
+  - skills/klaviyo_django.md
+  - skills/mailchimp_merge.md
+  - skills/hubspot_hubl.md
+  - skills/iterable_handlebars.md
   - skills/fallback_patterns.md
+l4_sources:
+  - docs/esp_personalisation/esp_01_braze.md
+  - docs/esp_personalisation/esp_02_sfmc.md
+  - docs/esp_personalisation/esp_03_adobe_campaign.md
+  - docs/esp_personalisation/esp_04_klaviyo.md
+  - docs/esp_personalisation/esp_05_mailchimp.md
+  - docs/esp_personalisation/esp_06_hubspot.md
+  - docs/esp_personalisation/esp_07_iterable.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -67,6 +79,10 @@ the correct ESP-specific dynamic content syntax.
 1. **Braze** — Liquid syntax ({{ }}, {% %})
 2. **SFMC** — AMPscript (%%[...]%%, %%=...=%%)
 3. **Adobe Campaign** — JavaScript/JSSP (<%= %>, <% %>)
+4. **Klaviyo** — Django Template Language ({{ }}, {% %}, |lookup:)
+5. **Mailchimp** — Merge Language (*|TAG|*, *|IF:FIELD|*)
+6. **HubSpot** — HubL ({{ contact.field }}, {% if %}, | default())
+7. **Iterable** — Handlebars ({{field}}, {{#if}}, [[catalog]])
 
 ## Core Rules
 
@@ -84,6 +100,19 @@ the correct ESP-specific dynamic content syntax.
 4. Preserve MSO conditionals and VML
 5. Preserve dark mode support
 6. Preserve accessibility attributes
+
+## Post-Generation Validation (AUTO-APPLIED)
+
+After generation, your output is automatically validated for:
+- **Delimiter balance** — Every `{{` has `}}`, every `{%` has `%}`, every `%%[` has `]%%`, etc.
+- **Conditional balance** — Every `{% if %}` has `{% endif %}`, every `IF` has `ENDIF`, etc.
+- **Syntax correctness** — No empty tags, no dangling filter pipes, no missing @ prefixes
+- **Nesting depth** — Max 3 levels of conditional nesting
+- **Fallback presence** — Every output variable should have a default value
+- **Platform purity** — No mixed ESP syntax in a single template
+
+Violations are surfaced as warnings and may trigger a self-correction retry.
+Aim for ZERO syntax warnings on first generation.
 
 ## Confidence Assessment
 

@@ -25,10 +25,15 @@ references:
   - skills/client_compatibility.md
   - skills/mso_vml_quick_ref.md
   - skills/email_structure.md
+  - skills/css_email_reference.md
 l4_sources:
   - docs/SKILL_outlook-mso-fallback-reference.md
   - docs/SKILL_html-email-components.md
   - docs/SKILL_email-dark-mode-dom-reference.md
+  - docs/SKILL_html-email-css-dom-reference.md
+  - docs/SKILL_email-link-validation-dom-reference.md
+  - docs/SKILL_email-image-optimization-dom-reference.md
+  - docs/SKILL_email-file-size-guidelines.md
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -107,7 +112,11 @@ preheader: "Preview text for inbox"
 - Always include: `style="display:block; border:0;"`
 - Use `https://placehold.co/WxH` for placeholder URLs
 
-## Outlook / MSO Compatibility (MANDATORY)
+## Outlook / MSO Compatibility (MANDATORY — MSO-FIRST)
+
+**CRITICAL:** Every email you generate will be validated for MSO correctness. Outlook desktop
+(Word rendering engine) is the most restrictive email client. Generate MSO-correct HTML from
+the start — do NOT assume a downstream fixer will repair issues.
 
 Every generated email MUST include these namespace declarations in the `<html>` tag:
 ```html
@@ -147,9 +156,10 @@ Every generated email MUST include ALL of the following:
 
 1. Template has valid Maizzle frontmatter (--- block)
 2. All layout tables have `role="presentation"`
-3. MSO conditionals are balanced
-4. All `<img>` tags have `alt`, `width`, `height`
-5. Dark mode meta tags present in `<head>`
+3. MSO conditionals are balanced (every `<!--[if` has matching `<![endif]-->`)
+4. VML elements (if any) are inside MSO conditional blocks
+5. All `<img>` tags have `alt`, `width`, `height`
+6. Dark mode meta tags present in `<head>`
 
 ## Confidence Assessment
 

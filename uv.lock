@@ -841,6 +841,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cssutils"
+version = "2.11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/9f/329d26121fe165be44b1dfff21aa0dc348f04633931f1d20ed6cf448a236/cssutils-2.11.1.tar.gz", hash = "sha256:0563a76513b6af6eebbe788c3bf3d01c920e46b3f90c8416738c5cfc773ff8e2", size = 711657, upload-time = "2024-06-04T15:51:39.373Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a7/ec/bb273b7208c606890dc36540fe667d06ce840a6f62f9fae7e658fcdc90fb/cssutils-2.11.1-py3-none-any.whl", hash = "sha256:a67bfdfdff4f3867fab43698ec4897c1a828eca5973f4073321b3bccaf1199b1", size = 385747, upload-time = "2024-06-04T15:51:37.499Z" },
+]
+
+[[package]]
 name = "cyclonedx-python-lib"
 version = "11.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -956,6 +968,7 @@ dependencies = [
     { name = "bcrypt" },
     { name = "cachetools" },
     { name = "cryptography" },
+    { name = "cssutils" },
     { name = "email-validator" },
     { name = "fastapi" },
     { name = "gunicorn" },
@@ -1006,6 +1019,7 @@ requires-dist = [
     { name = "cachetools", specifier = ">=5.5.0" },
     { name = "cognee", marker = "extra == 'graph'", specifier = ">=0.1.0" },
     { name = "cryptography", specifier = ">=44.0.0" },
+    { name = "cssutils", specifier = ">=2.9.0" },
     { name = "email-validator", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.120.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },

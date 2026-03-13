@@ -24,6 +24,23 @@ references:
   - skills/email_client_engines.md
   - skills/can_i_email_reference.md
   - skills/citation_rules.md
+l4_sources:
+  - docs/SKILL_html-email-components.md
+  - docs/SKILL_html-email-css-dom-reference.md
+  - docs/SKILL_outlook-mso-fallback-reference.md
+  - docs/SKILL_email-dark-mode-dom-reference.md
+  - docs/SKILL_email-accessibility-wcag-aa.md
+  - docs/SKILL_email-spam-score-dom-reference.md
+  - docs/SKILL_email-link-validation-dom-reference.md
+  - docs/SKILL_email-file-size-guidelines.md
+  - docs/SKILL_email-image-optimization-dom-reference.md
+  - docs/esp_personalisation/esp_01_braze.md
+  - docs/esp_personalisation/esp_02_sfmc.md
+  - docs/esp_personalisation/esp_03_adobe_campaign.md
+  - docs/esp_personalisation/esp_04_klaviyo.md
+  - docs/esp_personalisation/esp_05_mailchimp.md
+  - docs/esp_personalisation/esp_06_hubspot.md
+  - docs/esp_personalisation/esp_07_iterable.md
 hooks:
   PreToolUse:
     - matcher: "Bash"

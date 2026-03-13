@@ -1,3 +1,4 @@
+<!-- L4 source: none (original content — competitive analysis) -->
 # L3: Competitive Landscape Analysis
 
 ## When to Use

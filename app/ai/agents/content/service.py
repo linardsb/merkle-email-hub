@@ -1,12 +1,17 @@
 # pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
 # ruff: noqa: ANN401, ARG002
-"""Content agent service — orchestrates LLM → extract → spam check."""
+"""Content agent service — orchestrates LLM → extract → spam check → length validate."""
 
+import contextvars
 import re
 from collections.abc import AsyncIterator
 from typing import Any
 
-from app.ai.agents.base import BaseAgentService
+from app.ai.agents.base import CONFIDENCE_INSTRUCTION, BaseAgentService
+from app.ai.agents.content.length_guardrail import (
+    build_retry_constraint,
+    validate_alternatives,
+)
 from app.ai.agents.content.prompt import (
     build_system_prompt as _build_system_prompt,
 )
@@ -14,10 +19,17 @@ from app.ai.agents.content.prompt import (
     detect_relevant_skills as _detect_relevant_skills,
 )
 from app.ai.agents.content.schemas import ContentRequest, ContentResponse, SpamWarning
-from app.ai.routing import TaskTier
-from app.ai.sanitize import validate_output
+from app.ai.protocols import Message
+from app.ai.registry import get_registry
+from app.ai.routing import TaskTier, resolve_model
+from app.ai.sanitize import sanitize_prompt, validate_output
+from app.ai.shared import extract_confidence
+from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.qa_engine.checks.spam_score import SPAM_TRIGGERS
 from app.qa_engine.schemas import QACheckResult
+
+logger = get_logger(__name__)
 
 # ── Regex patterns for content extraction ──
 
@@ -40,6 +52,11 @@ _OPERATION_TIERS: dict[str, TaskTier] = {
     "expand": "lightweight",
     "tone_adjust": "standard",
 }
+
+# Per-request storage for length warnings (avoids race on singleton instance)
+_length_warnings_var: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "content_length_warnings", default=None
+)
 
 
 def extract_content(raw: str) -> list[str]:
@@ -81,7 +98,7 @@ class ContentService(BaseAgentService):
     """Orchestrates the content agent pipeline.
 
     Pipeline: build messages → LLM call → validate output →
-    extract content → spam check.
+    extract content → spam check → length validate → optional retry.
     """
 
     agent_name = "content"
@@ -121,7 +138,12 @@ class ContentService(BaseAgentService):
         return "\n".join(parts)
 
     def _post_process(self, raw_content: str) -> str:
-        """Content agent returns text, not HTML. Return validated raw content."""
+        """Content agent returns text, not HTML. Return validated raw content.
+
+        Punctuation cleanup is NOT applied here — it runs per-alternative
+        in validate_alternatives() after extraction, where it targets actual
+        content rather than raw LLM output (which includes code fences).
+        """
         return validate_output(raw_content)
 
     def _build_response(
@@ -140,10 +162,12 @@ class ContentService(BaseAgentService):
         # For content agent, "html" is actually raw text (via overridden _post_process)
         alternatives = extract_content(html)
         warnings = check_spam_triggers(alternatives)
+        length_warns = _length_warnings_var.get(None) or []
         return ContentResponse(
             content=alternatives,
             operation=req.operation,
             spam_warnings=warnings,
+            length_warnings=length_warns,
             model=model_id,
             confidence=confidence,
             skills_loaded=skills_loaded,
@@ -153,6 +177,129 @@ class ContentService(BaseAgentService):
         """Return operation-specific model tier (thread-safe, no state mutation)."""
         req: ContentRequest = request
         return _OPERATION_TIERS.get(req.operation, "standard")
+
+    async def process(self, request: Any) -> Any:
+        """Execute pipeline with post-generation length validation.
+
+        Flow: LLM call → extract → spam check → length validate →
+        (optional) retry with constraint → return.
+        Max 1 retry for length violations.
+        """
+        _length_warnings_var.set(None)
+        response: ContentResponse = await super().process(request)
+        req: ContentRequest = request
+
+        # Validate lengths of all alternatives
+        cleaned, warnings = validate_alternatives(response.content, req.operation, req.text)
+        response.content = cleaned
+
+        if not warnings:
+            _length_warnings_var.set([])
+            return response
+
+        # Check if retry is warranted (only for "too long" violations)
+        constraint = build_retry_constraint(req.operation, warnings)
+
+        if constraint is None:
+            # Min violations only — warn but don't retry
+            response.length_warnings = warnings
+            _length_warnings_var.set(warnings)
+            logger.info(
+                "agents.content.length_warnings",
+                warning_count=len(warnings),
+                warnings=warnings[:5],
+            )
+            return response
+
+        # Retry once with explicit length constraint
+        logger.warning(
+            "agents.content.length_violation_retrying",
+            warnings=warnings[:5],
+            constraint=constraint,
+        )
+
+        retry_response = await self._retry_with_length_constraint(request, constraint)
+
+        if retry_response is not None:
+            return retry_response
+
+        # Retry didn't help — return original with warnings
+        response.length_warnings = warnings
+        _length_warnings_var.set(warnings)
+        return response
+
+    async def _retry_with_length_constraint(
+        self,
+        request: Any,
+        constraint: str,
+    ) -> ContentResponse | None:
+        """Retry LLM call with explicit length constraint injected.
+
+        Returns improved response if retry passes length check, None otherwise.
+        """
+        req: ContentRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self._get_model_tier(request))
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills)
+        system_prompt += CONFIDENCE_INSTRUCTION
+
+        # Build retry message with constraint injected
+        user_message = self._build_user_message(request)
+        retry_message = f"{user_message}\n\n{constraint}"
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(retry_message)),
+        ]
+
+        try:
+            registry = get_registry()
+            provider = registry.get_llm(provider_name)
+            result = await provider.complete(
+                messages, model_override=model, max_tokens=self.max_tokens
+            )
+        except Exception as e:
+            logger.error(
+                "agents.content.length_retry_failed",
+                error=str(e),
+            )
+            return None
+
+        raw_content = validate_output(result.content)
+        confidence = extract_confidence(raw_content)
+        processed = self._post_process(raw_content)
+
+        # Extract and validate retry output
+        alternatives = extract_content(processed)
+        cleaned, retry_warnings = validate_alternatives(alternatives, req.operation, req.text)
+        spam_warnings = check_spam_triggers(cleaned)
+
+        # Accept retry only if no max violations remain
+        max_violations = [w for w in retry_warnings if "exceeds max" in w or "max allowed" in w]
+        if max_violations:
+            logger.warning("agents.content.length_retry_no_improvement")
+            return None
+
+        logger.info(
+            "agents.content.length_retry_improved",
+            remaining_warnings=len(retry_warnings),
+        )
+
+        _length_warnings_var.set(retry_warnings)
+
+        return ContentResponse(
+            content=cleaned,
+            operation=req.operation,
+            spam_warnings=spam_warnings,
+            length_warnings=retry_warnings,
+            model=model_id,
+            confidence=confidence,
+            skills_loaded=relevant_skills,
+        )
 
     # Content uses generate/stream_generate names for backward compat with routes
     async def generate(self, request: ContentRequest) -> ContentResponse:
