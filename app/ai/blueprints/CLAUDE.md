@@ -15,11 +15,11 @@
 State machine that orchestrates agents as pipeline nodes with deterministic gates.
 
 ## Flow
-`Scaffolder → QA Gate → (pass) Maizzle Build → Export / (fail) Recovery Router → Fixer → QA Gate loop`
+`Scaffolder → Repair → QA Gate → (pass) Maizzle Build → Export / (fail) Recovery Router → Fixer → Repair → QA Gate loop`
 
 ## Constraints
 - `MAX_SELF_CORRECTION_ROUNDS = 2` — Fixer gets max 2 attempts per QA failure
-- `MAX_TOTAL_STEPS = 20` — Hard limit prevents runaway pipelines
+- `MAX_TOTAL_STEPS = 25` — Hard limit prevents runaway pipelines (includes deterministic repair node steps)
 - `CONFIDENCE_REVIEW_THRESHOLD = 0.5` — Below this, run status → `needs_review` instead of retrying
 - Progressive context hydration — each node gets only relevant data
 

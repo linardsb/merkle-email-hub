@@ -10,6 +10,11 @@ if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
     from app.knowledge.graph.protocols import GraphSearchResult
 
+from app.ai.agents.context_budget import (
+    ECONOMY_MODE_THRESHOLD,
+    compact_handoff_history,
+    summarize_trajectory,
+)
 from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -36,7 +41,7 @@ HandoffMemoryCallback = Callable[[AgentHandoff, str, int | None], Coroutine[Any,
 OutcomeCallback = Callable[["BlueprintRun", str, int | None], Coroutine[Any, Any, None]]
 
 MAX_SELF_CORRECTION_ROUNDS = 2
-MAX_TOTAL_STEPS = 20  # safety brake
+MAX_TOTAL_STEPS = 25  # safety brake (includes repair node steps between agents and QA gate)
 CONFIDENCE_REVIEW_THRESHOLD = 0.5
 
 EdgeCondition = Literal["success", "qa_fail", "always", "route_to"]
@@ -89,6 +94,15 @@ class BlueprintRun:
     _handoff_history: list[AgentHandoff] = field(
         default_factory=lambda: list[AgentHandoff](), repr=False
     )
+    token_budget: int = 500_000
+
+    @property
+    def remaining_budget(self) -> float:
+        """Fraction of token budget remaining (0.0 to 1.0)."""
+        used = self.model_usage.get("total_tokens", 0)
+        if self.token_budget <= 0:
+            return 0.0
+        return max(0.0, min(1.0, 1.0 - used / self.token_budget))
 
 
 class BlueprintEngine:
@@ -384,17 +398,33 @@ class BlueprintEngine:
             qa_failures=list(run.qa_failures),
         )
 
-        # Inject upstream handoff for agentic nodes (latest + full history)
-        if run._last_handoff is not None:
-            context.metadata["upstream_handoff"] = run._last_handoff
-        if run._handoff_history:
-            context.metadata["handoff_history"] = list(run._handoff_history)
+        # Context budget: determine economy mode
+        economy = run.remaining_budget < ECONOMY_MODE_THRESHOLD
 
-        # Inject structured QA failure details for recovery router and fixer nodes
+        # Inject upstream handoff for agentic nodes (compact in economy mode)
+        if run._last_handoff is not None:
+            context.metadata["upstream_handoff"] = (
+                run._last_handoff.compact() if economy else run._last_handoff
+            )
+        if run._handoff_history:
+            context.metadata["handoff_history"] = compact_handoff_history(
+                run._handoff_history, economy=economy
+            )
+
+        # Inject structured QA failure details (compact in economy mode)
         if run.qa_failure_details:
-            context.metadata["qa_failure_details"] = list(run.qa_failure_details)
+            context.metadata["qa_failure_details"] = (
+                [f.compact() for f in run.qa_failure_details]
+                if economy
+                else list(run.qa_failure_details)
+            )
         if run.previous_qa_failure_details:
             context.metadata["previous_qa_failure_details"] = list(run.previous_qa_failure_details)
+
+        # Economy mode: inject trajectory summary and flag
+        if economy:
+            context.metadata["trajectory_summary"] = summarize_trajectory(run)
+            context.metadata["economy_mode"] = True
 
         # Inject progress anchor on retries for agentic nodes
         if node.node_type == "agentic" and iteration > 0:

@@ -145,8 +145,12 @@ class TestCampaignBlueprint:
         assert "knowledge" in definition.nodes
         assert "innovation" in definition.nodes
 
-        # Verify edge count (13 + 2 for code_reviewer route + loop)
-        assert len(definition.edges) == 15
+        # Verify repair node exists
+        assert "repair" in definition.nodes
+        assert definition.nodes["repair"].node_type == "deterministic"
+
+        # Verify edge count (16: repair node adds 1 extra edge vs original 15)
+        assert len(definition.edges) == 16
 
         # Verify agentic vs deterministic
         assert definition.nodes["scaffolder"].node_type == "agentic"

@@ -460,7 +460,7 @@
 **Security:** Each pass receives only the context it needs (principle of least privilege for LLM context). Pass outputs validated by Pydantic before assembly. No pass has access to credentials or system internals.
 **Verify:** Run all 36 eval synthetic cases through multi-pass pipeline. Measure per-pass success rate (target: ≥95% per pass). Measure overall first-attempt QA pass rate (target: ≥85%). Measure token usage (target: ≤ 5,000 tokens total vs ~8,000-15,000 for current single-call). Measure latency (target: ≤ 8s wall time with parallel slots).
 
-#### 11.22.4 Cascading Auto-Repair Pipeline — Belt-and-Suspenders Post-Processing
+#### ~~11.22.4 Cascading Auto-Repair Pipeline — Belt-and-Suspenders Post-Processing~~ DONE
 **What:** 7-stage deterministic repair pipeline in `app/qa_engine/repair/` (paired with QA checks). Runs between assembly and QA gate. Each stage is a pure function — no LLM. Wraps existing `mso_repair.py` and `meta_injector.py`. Replaces per-agent post-processing with a unified repair chain.
 **Why:** Defense in depth. Golden templates + structured output should yield ~95% QA pass rate. Repair catches remaining structural issues (malformed slot content, edge cases in personalisation injection). The difference between 95% and 99%+.
 **Implementation:**
@@ -495,7 +495,7 @@
 **Security:** SKILL.md files are prompt content only.
 **Verify:** `make eval-skill-test AGENT={agent} PROPOSED=...` for each agent. Structured output compliance ≥95%.
 
-#### 11.22.6 Context Assembly Optimisation — Token Budget Enforcement
+#### ~~11.22.6 Context Assembly Optimisation — Token Budget Enforcement~~ DONE
 **What:** Optimise what context each agent receives per pass. Multi-pass architecture enables pass-specific context — Pass 1 (layout) needs only the brief, Pass 2 (content) needs brief + slot definitions, Pass 3 (design) needs brief + template palette. No pass needs full SKILL.md + handoff history + failure warnings.
 **Implementation:**
 - Create `app/ai/agents/context_budget.py`:

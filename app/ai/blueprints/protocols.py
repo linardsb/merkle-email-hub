@@ -102,6 +102,18 @@ class AgentHandoff:
     component_refs: tuple[str, ...] = ()
     confidence: float | None = None
 
+    def compact(self) -> AgentHandoff:
+        """Return a copy with large fields stripped (artifact cleared)."""
+        return AgentHandoff(
+            status=self.status,
+            agent_name=self.agent_name,
+            artifact="",
+            decisions=self.decisions,
+            warnings=self.warnings,
+            component_refs=self.component_refs,
+            confidence=self.confidence,
+        )
+
 
 @dataclass(frozen=True)
 class StructuredFailure:
@@ -113,6 +125,17 @@ class StructuredFailure:
     suggested_agent: str
     priority: int  # lower = higher priority (1 = highest)
     severity: str = "warning"
+
+    def compact(self) -> StructuredFailure:
+        """Return a copy with large fields stripped (details cleared)."""
+        return StructuredFailure(
+            check_name=self.check_name,
+            score=self.score,
+            details="",
+            suggested_agent=self.suggested_agent,
+            priority=self.priority,
+            severity=self.severity,
+        )
 
 
 @dataclass(frozen=True)

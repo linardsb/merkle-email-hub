@@ -35,9 +35,9 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 
 ## Roadmap
 
-See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.21, 11.22.1-11.22.3.
+See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.21, 11.22.1-11.22.4, 11.22.6.
 
-**Active:** 11.22 Template-first hybrid architecture (subtasks 1-3 done, 4-9 remaining, plan: `.agents/plans/11.22-deterministic-agent-architecture.md`). Next: 11.22.4 (cascading auto-repair). Then 11.23-11.24, Phase 12 (Figma import), Phase 13 (ESP sync).
+**Active:** 11.22 Template-first hybrid architecture (subtasks 1-4,6 done; 5,7-9 remaining, plan: `.agents/plans/11.22-deterministic-agent-architecture.md`). Next: 11.22.5 (SKILL.md rewrite). Then 11.22.7-11.22.9, 11.23-11.24, Phase 12 (Figma import), Phase 13 (ESP sync).
 
 ## Compact instructions
 

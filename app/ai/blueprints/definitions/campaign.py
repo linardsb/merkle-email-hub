@@ -1,13 +1,13 @@
 """Campaign blueprint — full email generation pipeline with self-correction.
 
 Graph:
-  scaffolder → qa_gate → (success) → maizzle_build → export
-                       → (qa_fail) → recovery_router → dark_mode → qa_gate (loop)
-                                                      → outlook_fixer → qa_gate (loop)
-                                                      → accessibility → qa_gate (loop)
-                                                      → personalisation → qa_gate (loop)
-                                                      → code_reviewer → qa_gate (loop)
-                                                      → scaffolder (loop)
+  scaffolder → repair → qa_gate → (success) → maizzle_build → export
+                                → (qa_fail) → recovery_router → dark_mode → repair → qa_gate (loop)
+                                                               → outlook_fixer → repair → qa_gate (loop)
+                                                               → accessibility → repair → qa_gate (loop)
+                                                               → personalisation → repair → qa_gate (loop)
+                                                               → code_reviewer → repair → qa_gate (loop)
+                                                               → scaffolder (loop)
 """
 
 from app.ai.blueprints.engine import BlueprintDefinition, Edge
@@ -22,6 +22,7 @@ from app.ai.blueprints.nodes.outlook_fixer_node import OutlookFixerNode
 from app.ai.blueprints.nodes.personalisation_node import PersonalisationNode
 from app.ai.blueprints.nodes.qa_gate_node import QAGateNode
 from app.ai.blueprints.nodes.recovery_router_node import RecoveryRouterNode
+from app.ai.blueprints.nodes.repair_node import RepairNode
 from app.ai.blueprints.nodes.scaffolder_node import ScaffolderNode
 from app.ai.blueprints.protocols import BlueprintNode
 
@@ -29,6 +30,7 @@ from app.ai.blueprints.protocols import BlueprintNode
 def build_campaign_blueprint() -> BlueprintDefinition:
     """Construct the campaign email generation blueprint."""
     scaffolder = ScaffolderNode()
+    repair = RepairNode()
     qa_gate = QAGateNode()
     maizzle_build = MaizzleBuildNode()
     export = ExportNode()
@@ -43,6 +45,7 @@ def build_campaign_blueprint() -> BlueprintDefinition:
 
     nodes: dict[str, BlueprintNode] = {
         scaffolder.name: scaffolder,
+        repair.name: repair,
         qa_gate.name: qa_gate,
         maizzle_build.name: maizzle_build,
         export.name: export,
@@ -57,8 +60,9 @@ def build_campaign_blueprint() -> BlueprintDefinition:
     }
 
     edges = [
-        # scaffolder always feeds into QA
-        Edge(from_node="scaffolder", to_node="qa_gate", condition="always"),
+        # scaffolder → repair → qa_gate
+        Edge(from_node="scaffolder", to_node="repair", condition="always"),
+        Edge(from_node="repair", to_node="qa_gate", condition="always"),
         # QA pass → build
         Edge(from_node="qa_gate", to_node="maizzle_build", condition="success"),
         # QA fail → recovery router
@@ -100,16 +104,12 @@ def build_campaign_blueprint() -> BlueprintDefinition:
             condition="route_to",
             route_value="scaffolder",
         ),
-        # Dark mode fix loops back to QA
-        Edge(from_node="dark_mode", to_node="qa_gate", condition="always"),
-        # Outlook fixer loops back to QA
-        Edge(from_node="outlook_fixer", to_node="qa_gate", condition="always"),
-        # Accessibility fix loops back to QA
-        Edge(from_node="accessibility", to_node="qa_gate", condition="always"),
-        # Personalisation fix loops back to QA
-        Edge(from_node="personalisation", to_node="qa_gate", condition="always"),
-        # Code reviewer loops back to QA
-        Edge(from_node="code_reviewer", to_node="qa_gate", condition="always"),
+        # Fixer loops: fixer → repair → qa_gate
+        Edge(from_node="dark_mode", to_node="repair", condition="always"),
+        Edge(from_node="outlook_fixer", to_node="repair", condition="always"),
+        Edge(from_node="accessibility", to_node="repair", condition="always"),
+        Edge(from_node="personalisation", to_node="repair", condition="always"),
+        Edge(from_node="code_reviewer", to_node="repair", condition="always"),
         # Build → export
         Edge(from_node="maizzle_build", to_node="export", condition="always"),
     ]
