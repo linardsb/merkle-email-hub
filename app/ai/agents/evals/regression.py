@@ -21,6 +21,17 @@ from typing import Any
 
 from app.ai.agents.evals.schemas import RegressionReport
 
+# Per-agent regression tolerance: if any single agent's pass rate drops by
+# more than this many percentage points, it's flagged as a regression.
+# This is stricter than the global tolerance CLI flag — it catches cases
+# where overall pass rate holds but one agent silently degrades.
+AGENT_REGRESSION_TOLERANCE = 0.03  # 3 percentage points
+
+
+def is_agent_regression(before: float, after: float) -> bool:
+    """True if an agent's overall pass rate dropped by more than 3pp."""
+    return (before - after) > AGENT_REGRESSION_TOLERANCE
+
 
 def compare_pass_rates(
     current: dict[str, dict[str, float]],
@@ -74,6 +85,10 @@ def compare_pass_rates(
         curr_avg = sum(curr_rates.values()) / len(curr_rates) if curr_rates else 0.0
         base_avg = sum(base_rates.values()) / len(base_rates) if base_rates else 0.0
 
+        # Flag as regression if any criterion regressed OR if the agent's
+        # overall pass rate dropped by more than 3 percentage points.
+        agent_regressed = len(regressed) > 0 or is_agent_regression(base_avg, curr_avg)
+
         reports.append(
             RegressionReport(
                 agent=agent,
@@ -82,7 +97,7 @@ def compare_pass_rates(
                 delta=round(curr_avg - base_avg, 4),
                 regressed_criteria=regressed,
                 improved_criteria=improved,
-                is_regression=len(regressed) > 0,
+                is_regression=agent_regressed,
             )
         )
 

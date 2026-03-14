@@ -372,4 +372,243 @@ SCAFFOLDER_TEST_CASES = [
             "skip navigation for screen readers",
         ],
     },
+    # =========================================================================
+    # Template Selection Edge Cases (11.22.9)
+    # =========================================================================
+    # -------------------------------------------------------------------------
+    # 13. Ambiguous brief — could be newsletter or promotional
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-013",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "newsletter_digest",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "vague_one_liner",
+            "template_selection_accuracy": "ambiguous",
+        },
+        "brief": (
+            "We need an email about our latest product updates and a 20% discount "
+            "for existing customers. Mix of news and promotion."
+        ),
+        "expected_challenges": [
+            "ambiguous intent — newsletter vs promotional",
+            "agent must pick a reasonable template for hybrid content",
+            "should not fail due to ambiguity",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 14. Multi-intent brief — newsletter + CTA + event
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-014",
+        "dimensions": {
+            "layout_complexity": "two_column",
+            "content_type": "newsletter_digest",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "detailed_with_sections",
+            "template_selection_accuracy": "reasonable_choice",
+        },
+        "brief": (
+            "Monthly update email that includes: 1) Company news article, "
+            "2) Product spotlight with buy CTA, 3) Upcoming webinar invitation "
+            "with registration button, 4) Customer testimonial quote. "
+            "This serves as newsletter, promotional, and event invite combined."
+        ),
+        "expected_challenges": [
+            "multi-intent brief spanning 3 template categories",
+            "agent must select best-fit template for dominant intent",
+            "all sections should be accommodated",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 15. Novel layout request — no single template fits
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-015",
+        "dimensions": {
+            "layout_complexity": "full_width_mixed",
+            "content_type": "product_launch",
+            "client_quirk": "outlook_vml_buttons",
+            "brief_quality": "detailed_with_sections",
+            "template_selection_accuracy": "novel_layout",
+        },
+        "brief": (
+            "Interactive product showcase with: full-width video placeholder (600x338), "
+            "tabbed content area showing 3 product variants side-by-side with comparison "
+            "table, accordion FAQ section, floating sticky CTA bar at bottom, "
+            "and a dynamically-generated color swatch grid (4x3). "
+            "This is a unique layout not matching any standard template."
+        ),
+        "expected_challenges": [
+            "should trigger __compose__ mode or fallback",
+            "agent must handle gracefully when no template matches",
+            "still produce valid email HTML despite novel requirements",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 16. Contradictory requirements — simple + complex
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-016",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "promotional_sale",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "contradictory_requirements",
+            "template_selection_accuracy": "ambiguous",
+        },
+        "brief": (
+            "Create a simple, minimal email with just a headline and one CTA. "
+            "But also include 12 product cards, a carousel, countdown timer, "
+            "social proof section with 5 reviews, and an interactive size guide. "
+            "Keep it under 30KB."
+        ),
+        "expected_challenges": [
+            "contradictory: minimal vs feature-heavy",
+            "agent must resolve to a sensible template choice",
+            "should prioritize deliverability over feature requests",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 17. Minimal brief — tests default template selection
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-017",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "welcome_series",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "vague_one_liner",
+            "template_selection_accuracy": "ambiguous",
+        },
+        "brief": "email",
+        "expected_challenges": [
+            "near-zero context brief",
+            "agent must fall back to a sensible default template",
+            "should produce valid HTML despite minimal input",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 18. Exact template match — promotional hero
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-018",
+        "dimensions": {
+            "layout_complexity": "hero_plus_grid",
+            "content_type": "promotional_sale",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "detailed_with_sections",
+            "template_selection_accuracy": "exact_match",
+        },
+        "brief": (
+            "Flash sale email with a large hero banner at the top showing "
+            "'48 Hour Flash Sale — Up to 60% Off'. Below the hero, a 2-column "
+            "grid of 4 featured products with images, names, and prices. "
+            "Single CTA button: 'Shop the Sale'. Footer with unsubscribe."
+        ),
+        "expected_challenges": [
+            "should clearly map to promotional_hero template",
+            "template selection should be deterministic for this brief",
+            "slot fills should align with template structure",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 19. Exact match — transactional shipping
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-019",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "transactional_receipt",
+            "client_quirk": "outlook_mso_tables",
+            "brief_quality": "detailed_with_sections",
+            "template_selection_accuracy": "exact_match",
+        },
+        "brief": (
+            "Shipping confirmation email: 'Your order has shipped!' "
+            "Include tracking number, carrier name, estimated delivery date, "
+            "order summary (1-3 items with thumbnails), and a 'Track Package' CTA. "
+            "Clean, transactional layout — no promotional content."
+        ),
+        "expected_challenges": [
+            "should map to transactional_shipping template",
+            "must not select promotional or newsletter template",
+            "transactional tone, no upsell",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 20. Brief with strong brand constraints — slot fill quality test
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-020",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "event_invitation",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "detailed_with_sections",
+            "slot_fill_quality": "complete",
+        },
+        "brief": (
+            "Webinar invitation for 'AI in Email Marketing' on April 15, 2025 at 2pm EST. "
+            "Speaker: Dr. Sarah Chen, VP of AI at TechCorp. "
+            "Include event title, date/time, speaker bio (2 sentences), "
+            "3 key takeaways as bullet points, and a 'Reserve Your Spot' CTA. "
+            "Brand colors: #1A1A2E primary, #E94560 accent. Font: Inter."
+        ),
+        "expected_challenges": [
+            "all slot content clearly specified — no ambiguity",
+            "slot fills should capture every detail from brief",
+            "design tokens should use specified brand colors",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 21. Mismatched slot expectations — retention survey
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-021",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "re_engagement",
+            "client_quirk": "no_special_quirks",
+            "brief_quality": "copy_heavy_no_structure",
+            "slot_fill_quality": "partial",
+        },
+        "brief": (
+            "Hey we need a survey email. Ask customers to rate their experience "
+            "from 1-5 stars and leave a comment. Also mention our new rewards program "
+            "and remind them about free shipping on orders over $75. Oh and there's "
+            "a store locator link somewhere. The CEO wants to include a personal note "
+            "at the top but hasn't written it yet — use placeholder text for now."
+        ),
+        "expected_challenges": [
+            "mixed intent: survey + promotional + transactional",
+            "CEO note is a placeholder — partial slot fill expected",
+            "agent must structure freeform into coherent template slots",
+        ],
+    },
+    # -------------------------------------------------------------------------
+    # 22. Design token coherence — contrast edge case
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-022",
+        "dimensions": {
+            "layout_complexity": "single_column",
+            "content_type": "announcement_company",
+            "client_quirk": "yahoo_dark_mode",
+            "brief_quality": "detailed_with_sections",
+            "design_token_coherence": "contrast_violation",
+        },
+        "brief": (
+            "Company announcement email. Brand colors: light yellow #FFFACD background "
+            "with light gray #C0C0C0 text. Header uses white text on pale blue #ADD8E6. "
+            "CTA button: light pink #FFB6C1 with white text. "
+            "These colors fail WCAG contrast — agent should detect and fix."
+        ),
+        "expected_challenges": [
+            "brand colors have low contrast ratios",
+            "agent should flag or auto-correct contrast violations",
+            "dark mode variant must also maintain contrast",
+        ],
+    },
 ]

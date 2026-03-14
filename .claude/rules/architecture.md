@@ -21,9 +21,13 @@ Scaffolder, Dark Mode, Content, Outlook Fixer, Accessibility, Personalisation, C
 
 ## Eval System (`app/ai/agents/evals/`)
 
-Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `judge_runner.py`, `judges/`, `dimensions.py`, `synthetic_data_*.py`, `calibration.py`, `qa_calibration.py`, `regression.py`, `skill_ab.py`.
+Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `judge_runner.py`, `judges/`, `dimensions.py`, `synthetic_data_*.py`, `calibration.py`, `qa_calibration.py`, `regression.py`, `skill_ab.py`, `improvement_tracker.py`, `golden_cases.py`.
 
 **Inline judges (11.23):** `app/ai/blueprints/inline_judge.py` bridges `JUDGE_REGISTRY` into live blueprint execution on recovery retries (`iteration > 0`). Lightweight model tier, `temperature=0.0`, failure-safe. Config: `BLUEPRINT__JUDGE_ON_RETRY=true`.
+
+**Eval-driven iteration (11.22.9):** `improvement_tracker.py` records pass rate deltas to `traces/improvement_log.jsonl`. `golden_cases.py` validates 7 templates deterministically in CI (`make eval-golden`). `dimensions.py` includes template-first criteria (template_selection_accuracy, slot_fill_quality, design_token_coherence). `regression.py` enforces 3pp per-agent tolerance via `AGENT_REGRESSION_TOLERANCE`. Scaffolder has 22 synthetic test cases (10 template selection edge cases added).
+
+**Production trace sampling (11.24):** `app/ai/agents/evals/production_sampler.py` closes the eval feedback loop. Successful blueprint runs are probabilistically enqueued to Redis (`service.py` post-run hook), `ProductionJudgeWorker` (DataPoller) processes the queue with LLM judges, verdicts append to `traces/production_verdicts.jsonl`, `refresh_analysis()` merges with synthetic verdicts into `traces/analysis.json`. Existing `failure_warnings.py` reads merged analysis — agents learn from production failures. Config: `EVAL__PRODUCTION_SAMPLE_RATE` (default `0.0` = disabled). Command: `make eval-refresh`.
 
 ## Maizzle Sidecar
 

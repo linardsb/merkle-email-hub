@@ -16,6 +16,7 @@ make check-fe        # Frontend type-check + unit tests
 make db-migrate      # Run migrations
 make eval-full       # Full eval pipeline (requires LLM)
 make eval-check      # Eval gate (analysis + regression)
+make eval-golden     # CI golden test (deterministic, no LLM)
 make eval-qa-coverage # Deterministic micro-judges coverage
 ```
 
@@ -35,9 +36,9 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 
 ## Roadmap
 
-See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.21, 11.22.1-11.22.8, 11.23.
+See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.24 (including 11.22 template-first architecture — all 9 subtasks, 11.23 inline judges, 11.24 production trace sampling).
 
-**Active:** 11.22 Template-first hybrid architecture (subtasks 1-8 done; 9 remaining, plan: `.agents/plans/11.22-deterministic-agent-architecture.md`). Next: 11.22.9 (eval-driven iteration loop). Then 11.24, **11.25** (client design system & template customisation — bridges `app/components/` ↔ `app/ai/templates/`, adds per-project design systems, project-scoped template registry, constraint injection into agent pipeline), Phase 12 (Figma import), Phase 13 (ESP sync).
+**Next:** **11.25** (client design system & template customisation — bridges `app/components/` ↔ `app/ai/templates/`, adds per-project design systems, project-scoped template registry, constraint injection into agent pipeline), Phase 12 (Figma import), Phase 13 (ESP sync).
 
 ## Compact instructions
 

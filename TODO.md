@@ -338,7 +338,7 @@
 **Security:** No new attack surface — extends existing deterministic checks only.
 **Verify:** Run `make eval-qa-coverage` on all 9 agents' synthetic data. For each mapped criterion, QA check agrees with judge verdict >85% of the time. Unmapped criteria (brief_fidelity, tone_accuracy, etc.) documented as "LLM-only" — these are what 11.23 inline judges cover.
 
-### 11.22 Template-First Hybrid Architecture — From 16.7% to 99%+ Overall Pass Rate
+### ~~11.22 Template-First Hybrid Architecture — From 16.7% to 99%+ Overall Pass Rate~~ DONE
 
 **What:** Replace LLM-generates-everything architecture with a hybrid model where deterministic code generates all structural HTML and the LLM makes content/design decisions only. The LLM never writes a `<table>` tag, `<!--[if mso]>` conditional, or `<meta>` tag — it selects templates, fills content slots, and chooses design tokens. Deterministic Python assembles the final HTML from tested, pre-validated building blocks.
 
@@ -547,7 +547,7 @@
 **Security:** No change — agents produce structured data, code handles HTML. Attack surface reduced (less raw HTML in LLM output).
 **Verify:** Blueprint end-to-end test: brief → Scaffolder (plan) → Content (refine slots) → Dark Mode (dark tokens) → Personalisation (variables) → Assembly (deterministic) → QA → Export. Each agent's output is valid JSON matching its schema. No agent produces raw HTML.
 
-#### 11.22.9 Eval-Driven Iteration Loop — Milestone Tracking to 99%
+#### ~~11.22.9 Eval-Driven Iteration Loop — Milestone Tracking to 99%~~ DONE
 **What:** Establish the measurement framework for tracking progress from 16.7% to 99%+. Every change in 11.22.1–11.22.8 must be validated by the eval system before merging. Regression detection prevents backsliding.
 **Implementation:**
 - Define baseline: current `traces/baseline.json` (16.7% overall, per-agent and per-criterion breakpoints)
@@ -723,21 +723,21 @@
 **Security:** Judge prompts contain only generated HTML + brief (already in agent context). No new user input paths. Judge response parsed as structured JSON, validated against `JudgeVerdict` schema.
 **Verify:** Blueprint test with intentionally flawed HTML: first attempt → QA fail → recovery → fixer retry triggers judge → judge verdict surfaces in API response. Compare: run with judge enabled escalates bad retries faster (fewer wasted loops) vs run without judge retries blindly. Cost delta measurable via `run.model_usage`.
 
-### 11.24 Production Trace Sampling for Offline Judge Feedback Loop
+### ~~11.24 Production Trace Sampling for Offline Judge Feedback Loop~~ DONE
 **What:** Sample a configurable percentage of successful production blueprint runs and judge them asynchronously in a background worker. Results feed back into `traces/analysis.json`, which `failure_warnings.py` reads to inject updated failure patterns into agent system prompts. This closes the eval feedback loop — agents continuously learn from production data, not just synthetic test cases.
 **Why:** Current eval data is synthetic (12-14 cases per agent). Real production briefs have different distributions of complexity, client requirements, and edge cases. Without production sampling, `failure_warnings.py` only reflects synthetic test failures. With sampling, agents get warnings based on actual production quality — the feedback loop becomes self-improving.
 **Implementation:**
-- Create `app/ai/agents/evals/production_sampler.py`:
-  - `enqueue_for_judging(trace: BlueprintTrace, sample_rate: float)` — probabilistic Redis enqueue
-  - `ProductionJudgeWorker` — pulls from Redis queue, runs agent-specific judge, appends verdict to `traces/production_verdicts.jsonl`
-  - `refresh_analysis()` — merges production verdicts with synthetic verdicts, regenerates `traces/analysis.json`
-- Update `app/ai/blueprints/engine.py` — on successful blueprint completion, call `enqueue_for_judging()` with configured sample rate
-- Add config: `EVAL__PRODUCTION_SAMPLE_RATE` (default `0.0` — disabled until opted in), `EVAL__PRODUCTION_QUEUE_KEY` (Redis key)
-- Update `app/ai/agents/evals/failure_warnings.py` — read from merged analysis (production + synthetic)
-- Add `make eval-refresh` command to manually trigger analysis refresh from production verdicts
-- Worker runs via `DataPoller` pattern (same as `MemoryCompactionPoller`, `CanIEmailSyncPoller`)
+- ~~Create `app/ai/agents/evals/production_sampler.py`:~~
+  - ~~`enqueue_for_judging(trace: BlueprintTrace, sample_rate: float)` — probabilistic Redis enqueue~~
+  - ~~`ProductionJudgeWorker` — pulls from Redis queue, runs agent-specific judge, appends verdict to `traces/production_verdicts.jsonl`~~
+  - ~~`refresh_analysis()` — merges production verdicts with synthetic verdicts, regenerates `traces/analysis.json`~~
+- ~~Update `app/ai/blueprints/service.py` — on successful blueprint completion (`status == "completed"` and `qa_passed`), call `enqueue_for_judging()` with configured sample rate~~
+- ~~Add config: `EVAL__PRODUCTION_SAMPLE_RATE` (default `0.0` — disabled until opted in), `EVAL__PRODUCTION_QUEUE_KEY` (Redis key)~~
+- ~~`failure_warnings.py` already reads from `traces/analysis.json` — no changes needed (production verdicts merged via `refresh_analysis()`)~~
+- ~~Add `make eval-refresh` command to manually trigger analysis refresh from production verdicts~~
+- ~~Worker runs via `DataPoller` pattern (same as `OutcomeGraphPoller`, `CanIEmailSyncPoller`), registered in `app/main.py` lifecycle~~
 **Security:** Production traces contain generated HTML + briefs (no raw user credentials). Sampling rate configurable to control LLM cost. Redis queue uses same auth as existing Redis config. Verdicts stored locally in `traces/` (not exposed via API).
-**Verify:** Set sample rate to 1.0 (100%) in test. Run 5 blueprints → verify 5 traces enqueued → worker processes all 5 → `production_verdicts.jsonl` has 5 entries → `refresh_analysis()` produces updated `analysis.json` with production data merged. Agent prompt includes warnings derived from production failures.
+**Verify:** ~~Set sample rate to 1.0 (100%) in test. Run 5 blueprints → verify 5 traces enqueued → worker processes all 5 → `production_verdicts.jsonl` has 5 entries → `refresh_analysis()` produces updated `analysis.json` with production data merged. Agent prompt includes warnings derived from production failures.~~ 15/15 tests pass, mypy + pyright clean.
 
 ---
 

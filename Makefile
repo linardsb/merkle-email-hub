@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden
 
 # === Local Development ===
 
@@ -154,6 +154,12 @@ eval-baseline: ## Run full eval pipeline and establish baseline (first time)
 	cp traces/analysis.json traces/baseline.json
 	@echo "\n=== Baseline established at traces/baseline.json ==="
 	@echo "Commit traces/baseline.json to version control."
+
+eval-golden: ## CI golden test — deterministic assembly regression (no LLM)
+	uv run python -m app.ai.agents.evals.golden_cases --verbose
+
+eval-refresh: ## Refresh analysis.json from production + synthetic verdicts
+	uv run python -c "from app.ai.agents.evals.production_sampler import refresh_analysis; refresh_analysis()"
 
 # === Security ===
 
