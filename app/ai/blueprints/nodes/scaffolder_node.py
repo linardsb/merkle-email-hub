@@ -10,7 +10,7 @@ from app.ai.blueprints.protocols import (
     NodeType,
     StructuredFailure,
 )
-from app.ai.protocols import Message
+from app.ai.protocols import LLMProvider, Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
@@ -47,6 +47,11 @@ class ScaffolderNode:
         settings = get_settings()
         provider = get_registry().get_llm(settings.ai.provider)
         model = resolve_model("complex")
+
+        # Structured mode: 3-pass pipeline + deterministic assembly
+        output_mode = context.metadata.get("output_mode", "html")
+        if output_mode == "structured":
+            return await self._execute_structured(context, provider, model)
 
         relevant_skills = detect_relevant_skills(context.brief)
         system_prompt = build_system_prompt(relevant_skills)
@@ -109,6 +114,52 @@ class ScaffolderNode:
             html=html,
             details=f"Generated {len(html)} chars (iteration {context.iteration})",
             usage=usage,
+            handoff=handoff,
+        )
+
+    async def _execute_structured(
+        self,
+        context: NodeContext,
+        provider: LLMProvider,
+        model: str,
+    ) -> NodeResult:
+        """Execute using 3-pass pipeline + deterministic assembly."""
+        from app.ai.agents.scaffolder.assembler import TemplateAssembler
+        from app.ai.agents.scaffolder.pipeline import ScaffolderPipeline
+
+        pipeline = ScaffolderPipeline(provider, model)
+        try:
+            plan = await pipeline.execute(context.brief)
+        except Exception as exc:
+            logger.error("blueprint.scaffolder_node.pipeline_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Pipeline failed: {exc}")
+
+        assembler = TemplateAssembler()
+        try:
+            html = assembler.assemble(plan)
+        except Exception as exc:
+            logger.error("blueprint.scaffolder_node.assembly_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Assembly failed: {exc}")
+
+        html = sanitize_html_xss(html)
+
+        handoff = AgentHandoff(
+            agent_name="scaffolder",
+            artifact=html,
+            decisions=(
+                f"Template: {plan.template.template_name}",
+                f"Slots filled: {len(plan.slot_fills)}",
+                f"Reasoning: {plan.template.reasoning}",
+            ),
+            warnings=(),
+            component_refs=tuple(detect_component_refs(html)),
+            confidence=plan.confidence,
+        )
+
+        return NodeResult(
+            status="success",
+            html=html,
+            details=f"Structured pipeline: {plan.template.template_name}, {len(plan.slot_fills)} slots",
             handoff=handoff,
         )
 

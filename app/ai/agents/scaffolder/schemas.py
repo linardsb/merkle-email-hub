@@ -21,6 +21,10 @@ class ScaffolderRequest(BaseModel):
     stream: bool = False
     run_qa: bool = False
     output_mode: Literal["html", "structured"] = "html"
+    brand_config: dict[str, object] | None = Field(
+        default=None,
+        description="Brand guidelines for design token selection (colours, fonts, etc.)",
+    )
 
 
 class ScaffolderResponse(BaseModel):

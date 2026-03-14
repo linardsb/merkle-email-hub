@@ -372,7 +372,7 @@
 
 **Files (~62 new, ~30 modified):** Templates (~20 HTML + 4 Python), schemas (8 Python), pipeline (3 Python), repair stages (9 Python), SKILL.md rewrites (7 + 5 prompt.py), composer (15 HTML + 2 Python), agent migrations (14 service.py + nodes), tests (5 Python).
 
-#### 11.22.1 Golden Template Library — Pre-Validated Email Skeletons
+#### ~~11.22.1 Golden Template Library — Pre-Validated Email Skeletons~~ DONE
 **What:** Build 15 battle-tested email templates (Maizzle source + pre-compiled HTML) covering ~95% of real campaign briefs. Each template passes all 11 QA checks with score >= 0.9. Templates use `data-slot="{id}"` attribute markers on HTML elements — the LLM fills slots, never generates structural HTML.
 **Why:** Highest-impact change. MSO conditionals go from 0% to ~99% (pre-written, pre-tested). Dark mode ~50% to ~99% (meta tags, media queries, Outlook selectors pre-wired). The LLM's job shrinks from "generate a complete email" to "pick a template and fill in the blanks."
 **Implementation:**
@@ -401,7 +401,7 @@
 **Security:** Templates are static files in the repo. No user input in template structure. Slot fills validated by `TemplateSlot.max_chars` before assembly. HTML slot content sanitised by `sanitize_html_xss()`.
 **Verify:** `make test -k test_templates` — all 15 templates pass all 11 QA checks >= 0.9. `make types` — zero errors.
 
-#### 11.22.2 Structured Output Schemas — LLM Returns JSON, Not HTML
+#### ~~11.22.2 Structured Output Schemas — LLM Returns JSON, Not HTML~~ DONE
 **What:** Define typed dataclass schemas for each agent's decisions (not HTML output). Extend LLM provider protocol for provider-agnostic structured output. Add `output_mode` flag to all agent requests and `_process_structured()` hook to `BaseAgentService`.
 **Why:** Structured output is dramatically more reliable than freeform generation. JSON is parseable, validatable, and retryable at the field level — a malformed subject line doesn't require regenerating the entire email. Provider-agnostic approach lets each adapter use its best mechanism (Anthropic→tool_use, OpenAI→response_format).
 **Implementation:**
@@ -427,7 +427,7 @@
 **Security:** JSON schema enforced by frozen dataclasses. Slot fill content sanitised by `sanitize_html_xss()` during assembly. Design token hex values validated. No raw dict access.
 **Verify:** `make types` — zero errors. `make test` — existing tests pass (backward compatible, output_mode defaults to "html").
 
-#### 11.22.3 Multi-Pass Generation Pipeline — Decompose for Reliability
+#### ~~11.22.3 Multi-Pass Generation Pipeline — Decompose for Reliability~~ DONE
 **What:** Replace the single LLM call with 3 focused passes, each with a narrow scope and independent validation. Errors in one pass don't cascade — a bad CTA doesn't require regenerating the layout decision.
 **Why:** Compound reliability: if each pass has 95% accuracy, a single pass = 95% overall, but the current single-call approach asks for 10+ correct decisions simultaneously (95%^10 = 60%). Three focused passes with 3-4 decisions each: (95%^4)^3 = 70% worst case, but with per-field retry the effective rate approaches 99%.
 **Implementation:**

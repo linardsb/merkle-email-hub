@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-13
+> Last updated: 2026-03-14
 
 ### Completed
 
@@ -110,11 +110,14 @@
 | 11.19 | Content agent — length guardrails | `length_guardrail.py` (`LengthLimit` per-operation limits + ratio validation for expand/shorten); `ContentService.process()` override with selective retry on length violation (max 1 retry); `ContentResponse.length_warnings` field; `_cleanup_punctuation()` post-processing; SKILL.md hard character limits; 18 eval cases, 51 tests (26 guardrail unit + 5 service integration) |
 | 11.20 | Recovery router — enriched failure context | `StructuredFailure` + `AllowedScope` frozen dataclasses in `protocols.py`; `scope_validator.py` (lxml-based pre/post HTML diff, 4 scope modes: styles_only, additive_only, text_only, structure_only); QA gate produces `StructuredFailure` objects sorted by priority; recovery router rewritten with priority-based routing (11 QA checks ranked 1-11), fingerprint cycle detection (`check_name:md5_hash[:8]`), legacy `_legacy_route()` fallback; engine validates scope after fixer nodes on retry; all 6 fixer nodes consume structured failures with scope constraint prompts; `SCOPE_PROMPTS`, `CHECK_PRIORITY`, `CHECK_TO_AGENT`, `AGENT_SCOPES` exported; 26 tests (14 router + 12 scope validator) |
 | 11.21 | Deterministic micro-judges | `judge_criteria_map.py` mapping 45 judge criteria across 9 agents to QA checks; 27/45 (60%) mapped deterministically; `CriteriaMapping` dataclass with multi-check AND logic; `compute_coverage()` + `generate_report()` for per-agent coverage stats; `make eval-qa-coverage` target; `qa_calibration.py` updated with `personalisation_syntax`; comprehensive test suite validating mapping completeness, criterion-registry alignment, QA check existence, and coverage statistics |
+| 11.22.1 | Golden template library | `app/ai/templates/` module: `GoldenTemplate`, `TemplateSlot`, `TemplateMetadata` frozen dataclasses; `TemplateRegistry` with `get()`, `search()`, `fill_slots()`, `list_for_selection()`; 15 pre-compiled HTML templates (newsletter, promotional, transactional, event, retention, announcement, minimal) with YAML metadata; `data-slot` attribute markers; slot filling via regex with lambda replacements (fixes `re.escape` dollar sign bug); `get_template_registry()` singleton; 1665 tests |
+| 11.22.2 | Structured output schemas | `app/ai/agents/schemas/` with 7 decision dataclasses: `EmailBuildPlan` (build_plan.py), `DarkModePlan`, `OutlookFixPlan`, `AccessibilityPlan`, `PersonalisationPlan`, `CodeReviewPlan`, `ContentPlan`; `CompletionResponse.parsed` field; `output_mode: Literal["html", "structured"]` on all agent requests; `_process_structured()` hook in `BaseAgentService`; backward compatible (defaults to "html") |
+| 11.22.3 | Multi-pass generation pipeline | `ScaffolderPipeline` 3-pass orchestrator (layout → content ∥ design via `asyncio.gather`); `TemplateAssembler` deterministic HTML assembly (zero LLM calls); `_call_json()` with 1-retry JSON parse; `_parse_json()` handles code fences, raw JSON, embedded JSON; `ScaffolderService._process_structured()` override; `ScaffolderNode._execute_structured()` blueprint integration; `brand_config` on `ScaffolderRequest`; `PipelineError`/`AssemblyError` → `AIExecutionError` wrapping; `sanitize_prompt()` + `sanitize_html_xss()` security chain; 13 new tests (1665 total) |
 
 ### In Progress
 
-**Phase 11:** QA Engine Hardening — 11.1–11.21 complete (22 numbered tasks + rule engine + L4 docs + L1-L4 skill integration), 11.22–11.24 remaining (11 tasks).
-**Task 11.22** (template-first hybrid architecture) is the major remaining effort — 9 subtasks, ~76 new files + ~33 modified, 4-week plan. Architecture shift: LLM returns structured JSON decisions → deterministic code assembles HTML → cascading auto-repair → QA gate. Key decisions: Maizzle src + pre-compiled golden templates (15 layouts); provider-agnostic structured output (Anthropic→tool_use, OpenAI→response_format); repair pipeline in `app/qa_engine/repair/` (7 stages); `data-slot` attribute markers; reuse Maizzle components as section blocks. Milestones: M1 70% (W2), M2 85% (W3), M3 95% (W4), M4 99%+ (iteration). Detailed plan: `.agents/plans/11.22-deterministic-agent-architecture.md`.
+**Phase 11:** QA Engine Hardening — 11.1–11.21 complete (22 numbered tasks + rule engine + L4 docs + L1-L4 skill integration), 11.22.1-11.22.3 complete, 11.22.4–11.22.9 + 11.23–11.24 remaining.
+**Task 11.22** (template-first hybrid architecture) — subtasks 1-3 done (foundation + pipeline), subtasks 4-9 remaining. Next: 11.22.4 (cascading auto-repair pipeline). Milestones: M1 70% target reached (W2), M2 85% (W3), M3 95% (W4), M4 99%+ (iteration). Detailed plan: `.agents/plans/11.22-deterministic-agent-architecture.md`.
 **Remaining:** Human label calibration (540 rows for TPR/TNR).
 
 ### Infrastructure Built
