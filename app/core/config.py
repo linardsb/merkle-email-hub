@@ -165,6 +165,15 @@ class BlueprintConfig(BaseModel):
     judge_on_retry: bool = False  # When True, run LLM judge on recovery retries (iteration > 0)
 
 
+class EvalConfig(BaseModel):
+    """Eval and production sampling settings."""
+
+    production_sample_rate: float = 0.0  # 0.0 = disabled; 1.0 = 100%
+    production_queue_key: str = "eval:production_judge_queue"
+    worker_interval_seconds: int = 300  # 5 min polling
+    verdicts_path: str = "traces/production_verdicts.jsonl"
+
+
 class WebSocketConfig(BaseModel):
     """WebSocket streaming settings."""
 
@@ -218,6 +227,7 @@ class Settings(BaseSettings):
     rendering: RenderingConfig = RenderingConfig()
     ontology_sync: OntologySyncConfig = OntologySyncConfig()
     design_sync: DesignSyncConfig = DesignSyncConfig()
+    eval: EvalConfig = EvalConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

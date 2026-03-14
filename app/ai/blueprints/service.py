@@ -135,6 +135,26 @@ class BlueprintService:
                 exc_info=True,
             )
 
+        # Post-run: enqueue for production judge sampling (fire-and-forget)
+        if bp_run.status == "completed" and bp_run.qa_passed:
+            try:
+                from app.ai.agents.evals.production_sampler import enqueue_for_judging
+
+                agents_executed = [p.node_name for p in bp_run.progress if p.node_type == "agentic"]
+                await enqueue_for_judging(
+                    run_id=bp_run.run_id,
+                    blueprint_name=definition.name,
+                    brief=request.brief,
+                    html=bp_run.html,
+                    agents_executed=agents_executed,
+                )
+            except Exception:
+                logger.warning(
+                    "blueprint.production_sampling_failed",
+                    run_id=bp_run.run_id,
+                    exc_info=True,
+                )
+
         def _to_summary(h: AgentHandoff) -> HandoffSummary:
             return HandoffSummary(
                 agent_name=h.agent_name,

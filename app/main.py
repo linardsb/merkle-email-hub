@@ -120,9 +120,25 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("ontology.sync.poller_start_failed", exc_info=True)
 
+    # Start production judge worker (samples successful runs for offline LLM judging)
+    judge_worker = None
+    if settings.eval.production_sample_rate > 0.0 and await redis_available():
+        try:
+            from app.ai.agents.evals.production_sampler import ProductionJudgeWorker
+
+            judge_worker = ProductionJudgeWorker()
+            await judge_worker.start()
+            logger.info("eval.production_judge_worker_started")
+        except Exception:
+            logger.warning("eval.production_judge_worker_start_failed", exc_info=True)
+
     yield
 
     # Shutdown
+
+    if judge_worker is not None:
+        await judge_worker.stop()
+        logger.info("eval.production_judge_worker_stopped")
 
     if caniemail_poller is not None:
         await caniemail_poller.stop()
