@@ -1,8 +1,9 @@
-# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 # ruff: noqa: ANN401, ARG002
 """Personalisation agent service -- injects ESP personalisation syntax into email HTML."""
 
 import contextvars
+import json
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -16,6 +17,10 @@ from app.ai.agents.personalisation.prompt import (
 from app.ai.agents.personalisation.schemas import (
     PersonalisationRequest,
     PersonalisationResponse,
+)
+from app.ai.agents.schemas.personalisation_decisions import (
+    PersonalisationDecisions,
+    VariablePlacement,
 )
 from app.core.logging import get_logger
 from app.qa_engine.personalisation_validator import analyze_personalisation
@@ -58,6 +63,7 @@ class PersonalisationService(BaseAgentService):
     agent_name = "personalisation"
     model_tier = "standard"
     stream_prefix = "personalise"
+    _output_mode_supported: bool = True
 
     def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
         return _build_system_prompt(relevant_skills, output_mode=output_mode)
@@ -114,6 +120,106 @@ class PersonalisationService(BaseAgentService):
             model=model_id,
             confidence=confidence,
             skills_loaded=skills_loaded,
+        )
+
+    async def _process_structured(self, request: Any) -> PersonalisationResponse:
+        """Structured mode: analyze plan and return personalisation decisions."""
+        from app.ai.protocols import Message
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.ai.sanitize import sanitize_prompt
+        from app.core.config import get_settings
+
+        req: PersonalisationRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self.model_tier)
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_data = req.build_plan or {}
+        user_message = (
+            f"Analyze the following EmailBuildPlan for {req.platform} personalisation.\n\n"
+            f"Plan: {json.dumps(plan_data, default=str)}\n\n"
+            f"Requirements: {req.requirements}\n\n"
+            "Return a JSON object with:\n"
+            "- esp_platform: string\n"
+            "- variables: array of {slot_id, variable_name, fallback_value, syntax}\n"
+            "- conditional_blocks: array of slot_ids needing conditionals\n"
+            "- confidence: float 0-1\n"
+            "- reasoning: string"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+        result = await provider.complete(messages, model_override=model, max_tokens=self.max_tokens)
+
+        decisions = self._parse_personalisation_decisions(result.content)
+
+        logger.info(
+            "agents.personalisation.structured_completed",
+            variables=len(decisions.variables),
+            platform=decisions.esp_platform,
+            confidence=decisions.confidence,
+        )
+
+        return PersonalisationResponse(
+            html="",
+            platform=req.platform,
+            tags_injected=[],
+            syntax_warnings=[],
+            model=model_id,
+            confidence=decisions.confidence,
+            skills_loaded=relevant_skills,
+            decisions=decisions,
+        )
+
+    def _parse_personalisation_decisions(self, raw_content: str) -> PersonalisationDecisions:
+        """Parse LLM response into PersonalisationDecisions."""
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("agents.personalisation.structured_parse_failed")
+            return PersonalisationDecisions(
+                confidence=0.0, reasoning="Failed to parse LLM response"
+            )
+
+        variables = tuple(
+            VariablePlacement(
+                slot_id=str(v.get("slot_id", "")),
+                variable_name=str(v.get("variable_name", "")),
+                fallback_value=str(v.get("fallback_value", "")),
+                syntax=str(v.get("syntax", "")),
+            )
+            for v in data.get("variables", [])
+            if isinstance(v, dict)
+        )
+
+        conditional_blocks = tuple(str(c) for c in data.get("conditional_blocks", []))
+
+        return PersonalisationDecisions(
+            esp_platform=str(data.get("esp_platform", "")),
+            variables=variables,
+            conditional_blocks=conditional_blocks,
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     async def stream_process(self, request: Any) -> AsyncIterator[str]:

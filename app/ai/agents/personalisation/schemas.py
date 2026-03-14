@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.ai.agents.schemas.personalisation_decisions import PersonalisationDecisions
 from app.qa_engine.schemas import QACheckResult
 
 ESPPlatform = Literal[
@@ -35,6 +36,9 @@ class PersonalisationRequest(BaseModel):
         max_length=5_000,
         description="What personalisation to add (e.g., 'Add first name greeting with fallback, show VIP section for premium users')",
     )
+    build_plan: dict[str, object] | None = Field(
+        default=None, description="EmailBuildPlan from scaffolder (structured mode)"
+    )
     output_mode: Literal["html", "structured"] = "html"
     stream: bool = False
     run_qa: bool = False
@@ -61,4 +65,5 @@ class PersonalisationResponse(BaseModel):
     model: str
     confidence: float | None = None
     skills_loaded: list[str] = Field(default_factory=list)
+    decisions: PersonalisationDecisions | None = None
     plan: dict[str, object] | None = None

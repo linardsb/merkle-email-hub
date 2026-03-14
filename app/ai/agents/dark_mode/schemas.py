@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.ai.agents.schemas.dark_mode_decisions import DarkModeDecisions
 from app.qa_engine.schemas import QACheckResult
 
 
@@ -28,6 +29,9 @@ class DarkModeRequest(BaseModel):
         description="Hex colours that should not be remapped",
     )
     output_mode: Literal["html", "structured"] = "html"
+    build_plan: dict[str, object] | None = Field(
+        default=None, description="EmailBuildPlan from scaffolder (structured mode)"
+    )
     stream: bool = False
     run_qa: bool = False
 
@@ -50,3 +54,4 @@ class DarkModeResponse(BaseModel):
     skills_loaded: list[str] = Field(default_factory=list)
     meta_tags_injected: list[str] = Field(default_factory=list)
     plan: dict[str, object] | None = None
+    decisions: DarkModeDecisions | None = None

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Campaign Developer Workflow — Merkle Email Innovation Hub</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a26;
+    --surface-3: #222233;
+    --border: #2a2a3d;
+    --border-glow: #3a3a5d;
+    --text: #e8e8f0;
+    --text-muted: #8888a8;
+    --text-dim: #5c5c78;
+    --accent-1: #6366f1;
+    --accent-1-dim: #4f46e520;
+    --accent-2: #8b5cf6;
+    --accent-3: #a78bfa;
+    --accent-4: #c4b5fd;
+    --green: #34d399;
+    --green-dim: #34d39920;
+    --amber: #fbbf24;
+    --amber-dim: #fbbf2420;
+    --rose: #fb7185;
+    --rose-dim: #fb718520;
+    --cyan: #22d3ee;
+    --cyan-dim: #22d3ee20;
+    --blue: #60a5fa;
+    --blue-dim: #60a5fa20;
+    --pink: #f472b6;
+    --pink-dim: #f472b620;
+    --orange: #fb923c;
+    --orange-dim: #fb923c20;
+    --teal: #2dd4bf;
+    --teal-dim: #2dd4bf20;
+    --lime: #a3e635;
+    --lime-dim: #a3e63520;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* --- HEADER --- */
+  .header {
+    text-align: center;
+    padding: 80px 40px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, var(--accent-1-dim) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-3);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .header-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .header h1 {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent-3) 50%, var(--accent-1) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  .header p {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 640px;
+    margin: 0 auto;
+    font-weight: 300;
+  }
+
+  /* --- TIMELINE --- */
+  .timeline {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, var(--border) 5%, var(--border) 95%, transparent);
+    transform: translateX(-50%);
+  }
+
+  /* --- STEP --- */
+  .step {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: start;
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .step:nth-child(odd) .step-content { grid-column: 1; text-align: right; }
+  .step:nth-child(odd) .step-number { grid-column: 2; }
+  .step:nth-child(odd) .step-empty { grid-column: 3; }
+  .step:nth-child(even) .step-empty { grid-column: 1; }
+  .step:nth-child(even) .step-number { grid-column: 2; }
+  .step:nth-child(even) .step-content { grid-column: 3; text-align: left; }
+
+  .step-number {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+  .step-number span {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    border: 2px solid;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .step-content {
+    padding: 0 24px;
+  }
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .step-card:hover {
+    border-color: var(--border-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .step-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .step-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .step-phase {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .step-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 8px;
+  }
+  .step-card > p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  .substeps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .substeps li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .step:nth-child(odd) .substeps li {
+    justify-content: flex-end;
+    text-align: right;
+    flex-direction: row-reverse;
+  }
+  .substep-marker {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+  .substeps li strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .tools-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .step:nth-child(odd) .tools-row {
+    justify-content: flex-end;
+  }
+  .tool-tag {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+
+  /* --- COLOR THEMES PER STEP --- */
+  .step[data-color="indigo"] .step-number span { color: var(--accent-1); border-color: var(--accent-1); }
+  .step[data-color="indigo"] .step-card::before { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
+  .step[data-color="indigo"] .step-phase { color: var(--accent-3); }
+  .step[data-color="indigo"] .substep-marker { background: var(--accent-1-dim); color: var(--accent-3); }
+  .step[data-color="indigo"] .tool-tag { color: var(--accent-3); border-color: var(--accent-1-dim); background: var(--accent-1-dim); }
+
+  .step[data-color="cyan"] .step-number span { color: var(--cyan); border-color: var(--cyan); }
+  .step[data-color="cyan"] .step-card::before { background: linear-gradient(90deg, var(--cyan), var(--blue)); }
+  .step[data-color="cyan"] .step-phase { color: var(--cyan); }
+  .step[data-color="cyan"] .substep-marker { background: var(--cyan-dim); color: var(--cyan); }
+  .step[data-color="cyan"] .tool-tag { color: var(--cyan); border-color: var(--cyan-dim); background: var(--cyan-dim); }
+
+  .step[data-color="green"] .step-number span { color: var(--green); border-color: var(--green); }
+  .step[data-color="green"] .step-card::before { background: linear-gradient(90deg, var(--green), var(--teal)); }
+  .step[data-color="green"] .step-phase { color: var(--green); }
+  .step[data-color="green"] .substep-marker { background: var(--green-dim); color: var(--green); }
+  .step[data-color="green"] .tool-tag { color: var(--green); border-color: var(--green-dim); background: var(--green-dim); }
+
+  .step[data-color="amber"] .step-number span { color: var(--amber); border-color: var(--amber); }
+  .step[data-color="amber"] .step-card::before { background: linear-gradient(90deg, var(--amber), var(--orange)); }
+  .step[data-color="amber"] .step-phase { color: var(--amber); }
+  .step[data-color="amber"] .substep-marker { background: var(--amber-dim); color: var(--amber); }
+  .step[data-color="amber"] .tool-tag { color: var(--amber); border-color: var(--amber-dim); background: var(--amber-dim); }
+
+  .step[data-color="rose"] .step-number span { color: var(--rose); border-color: var(--rose); }
+  .step[data-color="rose"] .step-card::before { background: linear-gradient(90deg, var(--rose), var(--pink)); }
+  .step[data-color="rose"] .step-phase { color: var(--rose); }
+  .step[data-color="rose"] .substep-marker { background: var(--rose-dim); color: var(--rose); }
+  .step[data-color="rose"] .tool-tag { color: var(--rose); border-color: var(--rose-dim); background: var(--rose-dim); }
+
+  .step[data-color="violet"] .step-number span { color: var(--accent-2); border-color: var(--accent-2); }
+  .step[data-color="violet"] .step-card::before { background: linear-gradient(90deg, var(--accent-2), var(--pink)); }
+  .step[data-color="violet"] .step-phase { color: var(--accent-4); }
+  .step[data-color="violet"] .substep-marker { background: var(--accent-1-dim); color: var(--accent-4); }
+  .step[data-color="violet"] .tool-tag { color: var(--accent-4); border-color: var(--accent-1-dim); background: var(--accent-1-dim); }
+
+  .step[data-color="blue"] .step-number span { color: var(--blue); border-color: var(--blue); }
+  .step[data-color="blue"] .step-card::before { background: linear-gradient(90deg, var(--blue), var(--accent-1)); }
+  .step[data-color="blue"] .step-phase { color: var(--blue); }
+  .step[data-color="blue"] .substep-marker { background: var(--blue-dim); color: var(--blue); }
+  .step[data-color="blue"] .tool-tag { color: var(--blue); border-color: var(--blue-dim); background: var(--blue-dim); }
+
+  .step[data-color="teal"] .step-number span { color: var(--teal); border-color: var(--teal); }
+  .step[data-color="teal"] .step-card::before { background: linear-gradient(90deg, var(--teal), var(--green)); }
+  .step[data-color="teal"] .step-phase { color: var(--teal); }
+  .step[data-color="teal"] .substep-marker { background: var(--teal-dim); color: var(--teal); }
+  .step[data-color="teal"] .tool-tag { color: var(--teal); border-color: var(--teal-dim); background: var(--teal-dim); }
+
+  .step[data-color="orange"] .step-number span { color: var(--orange); border-color: var(--orange); }
+  .step[data-color="orange"] .step-card::before { background: linear-gradient(90deg, var(--orange), var(--amber)); }
+  .step[data-color="orange"] .step-phase { color: var(--orange); }
+  .step[data-color="orange"] .substep-marker { background: var(--orange-dim); color: var(--orange); }
+  .step[data-color="orange"] .tool-tag { color: var(--orange); border-color: var(--orange-dim); background: var(--orange-dim); }
+
+  .step[data-color="pink"] .step-number span { color: var(--pink); border-color: var(--pink); }
+  .step[data-color="pink"] .step-card::before { background: linear-gradient(90deg, var(--pink), var(--rose)); }
+  .step[data-color="pink"] .step-phase { color: var(--pink); }
+  .step[data-color="pink"] .substep-marker { background: var(--pink-dim); color: var(--pink); }
+  .step[data-color="pink"] .tool-tag { color: var(--pink); border-color: var(--pink-dim); background: var(--pink-dim); }
+
+  /* --- FOOTER --- */
+  .footer {
+    text-align: center;
+    padding: 60px 40px 80px;
+    border-top: 1px solid var(--border);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .footer p {
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  .footer .brand {
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 900px) {
+    .timeline::before { left: 32px; }
+    .step {
+      grid-template-columns: 64px 1fr;
+      grid-template-rows: auto;
+    }
+    .step .step-number { grid-column: 1 !important; grid-row: 1; }
+    .step .step-content { grid-column: 2 !important; grid-row: 1; text-align: left !important; }
+    .step .step-empty { display: none; }
+    .step:nth-child(odd) .substeps li { justify-content: flex-start; text-align: left; flex-direction: row; }
+    .step:nth-child(odd) .tools-row { justify-content: flex-start; }
+    .step-number span { width: 40px; height: 40px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-badge">
+    <span class="dot"></span>
+    Merkle Email Innovation Hub
+  </div>
+  <h1>Email Campaign<br>Developer Workflow</h1>
+  <p>From campaign brief to ESP delivery — 10 steps with AI-powered quality gates, multi-agent refinement, and cross-client validation.</p>
+</header>
+
+<!-- TIMELINE -->
+<section class="timeline">
+
+  <!-- STEP 1 -->
+  <div class="step" data-color="indigo">
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">01</span>
+        <span class="step-phase">Initiation</span>
+        <h3>Campaign Brief & Project Setup</h3>
+        <p>Define the campaign scope, select target clients, and configure brand constraints within a project workspace.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Create project workspace</strong> — set client org, brand guidelines (colours, typography, required elements), and ESP target (Braze/SFMC/Adobe/Taxi)</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Write campaign brief</strong> — describe layout intent, content sections, personalisation needs, and target audience in natural language</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Select target email clients</strong> — choose from 25 client profiles (Gmail, Outlook, Apple Mail, Samsung, etc.) to set CSS constraint boundaries</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Fetch competitive intelligence</strong> — get audience-scoped feasibility report showing which CSS features are safe vs. risky for selected clients</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Project Workspace</span>
+          <span class="tool-tag">Brand Rules</span>
+          <span class="tool-tag">Ontology</span>
+          <span class="tool-tag">Personas</span>
+        </div>
+      </div>
+    </div>
+    <div class="step-number"><span>1</span></div>
+    <div class="step-empty"></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" data-color="cyan">
+    <div class="step-empty"></div>
+    <div class="step-number"><span>2</span></div>
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">02</span>
+        <span class="step-phase">Design Import</span>
+        <h3>Design-to-Code Conversion</h3>
+        <p>Import Figma designs or start from scratch — the AI layout analyser converts visual designs into structured email briefs automatically.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Connect Figma file</strong> — browse design file tree, select frames to import, auto-extract layout structure and design tokens</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>AI layout analysis</strong> — Figma structure parsed into email sections (hero, content blocks, CTA, footer) with a generated markdown brief</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Asset pipeline</strong> — images downloaded, resized to email-safe dimensions, served with access control, referenced in the generated template</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Component extraction</strong> — reusable Figma components detected and saved to the Hub Component Library with versioning</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Design Sync</span>
+          <span class="tool-tag">Figma API</span>
+          <span class="tool-tag">Asset Pipeline</span>
+          <span class="tool-tag">Components</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" data-color="green">
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">03</span>
+        <span class="step-phase">Generation</span>
+        <h3>AI Scaffolding & Template Build</h3>
+        <p>The Scaffolder agent generates MSO-first Maizzle HTML from the brief, using the component library and knowledge base for best practices.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Scaffolder agent generates HTML</strong> — MSO-first approach using always-loaded VML/conditional skills, Maizzle syntax, and email CSS reference</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Component composition</strong> — reusable components (header, CTA, hero) injected from the versioned library with slot-based content fills</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Maizzle build pipeline</strong> — Node.js sidecar compiles Tailwind CSS to inline styles, processes layouts, generates production-ready HTML</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Post-generation MSO validation</strong> — automatic conditional comment checking, namespace verification, and structured warnings propagated to handoff</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Scaffolder Agent</span>
+          <span class="tool-tag">Maizzle Builder</span>
+          <span class="tool-tag">Knowledge RAG</span>
+          <span class="tool-tag">Components</span>
+        </div>
+      </div>
+    </div>
+    <div class="step-number"><span>3</span></div>
+    <div class="step-empty"></div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step" data-color="violet">
+    <div class="step-empty"></div>
+    <div class="step-number"><span>4</span></div>
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">04</span>
+        <span class="step-phase">Refinement</span>
+        <h3>AI Multi-Agent Enhancement</h3>
+        <p>Specialised AI agents refine the email — dark mode support, content polish, personalisation tags, accessibility compliance, and code review.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Dark Mode agent</strong> — injects <code>color-scheme</code> meta tags, <code>prefers-color-scheme</code> media queries, Outlook overrides, and colour remapping with deterministic safety net</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Content agent</strong> — generates subject lines, preheaders, CTA variations, applies brand tone, validates length guardrails per content type</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Personalisation agent</strong> — injects ESP-specific dynamic content (Liquid for Braze, AMPscript for SFMC, JSSP for Adobe) with syntax balance checking</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Code Reviewer + Accessibility agents</strong> — flag redundant code, CSS support issues, WCAG AA violations, generate alt text, check contrast ratios</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Dark Mode</span>
+          <span class="tool-tag">Content</span>
+          <span class="tool-tag">Personalisation</span>
+          <span class="tool-tag">Accessibility</span>
+          <span class="tool-tag">Code Reviewer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step" data-color="amber">
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">05</span>
+        <span class="step-phase">Quality Gate</span>
+        <h3>11-Point QA Validation</h3>
+        <p>Every email passes through the DOM-parsed QA engine — 11 automated checks covering structure, rendering, accessibility, compliance, and deliverability.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Structural & rendering checks</strong> — HTML validation (20 DOM rules), MSO conditional balance, VML namespace integrity, CSS support scoring against 25 clients</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Deliverability checks</strong> — spam score (59 weighted triggers), file size per client (Yahoo 75KB, Outlook 100KB, Gmail 102KB), link validation, image optimisation</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Compliance checks</strong> — WCAG AA accessibility (24 rules), dark mode correctness, brand compliance (colours/typography/required elements), personalisation syntax</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Auto-repair pipeline</strong> — failures route to the Recovery Router for bounded self-correction (max 2 retries) with enriched failure context per agent</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">QA Engine</span>
+          <span class="tool-tag">Rule Engine</span>
+          <span class="tool-tag">Recovery Router</span>
+          <span class="tool-tag">Blueprint Engine</span>
+        </div>
+      </div>
+    </div>
+    <div class="step-number"><span>5</span></div>
+    <div class="step-empty"></div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step" data-color="rose">
+    <div class="step-empty"></div>
+    <div class="step-number"><span>6</span></div>
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">06</span>
+        <span class="step-phase">Manual Editing</span>
+        <h3>Code Editor & Live Preview</h3>
+        <p>Fine-tune the email in the Monaco code editor with syntax highlighting, live multi-viewport preview, and real-time Maizzle compilation.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Monaco editor</strong> — full HTML/CSS/Liquid syntax highlighting, intelligent autocomplete, inline error markers from QA checks</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Live preview panel</strong> — desktop, tablet, and mobile viewports with dark mode toggle, real-time recompilation via Maizzle sidecar</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Visual Liquid builder</strong> — drag-and-drop dynamic content blocks for non-technical users, generates Liquid/AMPscript behind the scenes</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Collaborative editing</strong> — Yjs CRDT-based real-time co-editing with live cursors, version history, and side-by-side diff view</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Monaco Editor</span>
+          <span class="tool-tag">Maizzle Preview</span>
+          <span class="tool-tag">Liquid Builder</span>
+          <span class="tool-tag">Yjs CRDT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="step" data-color="blue">
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">07</span>
+        <span class="step-phase">Testing</span>
+        <h3>Cross-Client Rendering Tests</h3>
+        <p>Validate how the email renders across 90+ email client/device combinations with visual regression detection and persona-driven test profiles.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Rendering test execution</strong> — submit to Litmus or Email on Acid, receive screenshots from 90+ client/device combos (Gmail, Outlook, Apple Mail, Samsung, etc.)</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Visual regression detection</strong> — compare against baseline screenshots, flag layout shifts, colour mismatches, and broken elements per client</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Persona-driven testing</strong> — 8 subscriber presets (device, email client, dark mode preference, screen reader usage) simulate real-world reading conditions</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Compatibility matrix</strong> — per-client pass/fail dashboard with deduction breakdown, links to specific rendering issues and suggested fixes</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Litmus</span>
+          <span class="tool-tag">Email on Acid</span>
+          <span class="tool-tag">Personas</span>
+          <span class="tool-tag">Visual Regression</span>
+        </div>
+      </div>
+    </div>
+    <div class="step-number"><span>7</span></div>
+    <div class="step-empty"></div>
+  </div>
+
+  <!-- STEP 8 -->
+  <div class="step" data-color="teal">
+    <div class="step-empty"></div>
+    <div class="step-number"><span>8</span></div>
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">08</span>
+        <span class="step-phase">Versioning</span>
+        <h3>Template Versioning & Component Save</h3>
+        <p>Save the finalised email as a versioned template, extract reusable components, and persist agent learnings for future campaigns.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Template versioning</strong> — save as a versioned email template with metadata, diff against previous versions, soft delete with restore capability</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Component extraction</strong> — isolate reusable sections (headers, footers, CTAs, hero blocks) into the versioned component library for future campaigns</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Agent memory persistence</strong> — handoff decisions, QA patterns, and successful fix strategies stored as episodic memory for cross-session recall</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Knowledge graph update</strong> — new patterns (CSS workarounds, client-specific fixes) promoted to durable semantic knowledge via DCG bridge</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Templates</span>
+          <span class="tool-tag">Components</span>
+          <span class="tool-tag">Agent Memory</span>
+          <span class="tool-tag">Knowledge Graph</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 9 -->
+  <div class="step" data-color="orange">
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">09</span>
+        <span class="step-phase">Approval</span>
+        <h3>Client Review & Approval Portal</h3>
+        <p>Share the email with stakeholders through the approval portal — collect structured feedback, track revision rounds, and maintain a full audit trail.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>Approval request</strong> — generate a shareable review link with multi-viewport preview (desktop/mobile/dark mode) for client stakeholders</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Structured feedback</strong> — inline annotations on specific sections, categorised feedback (copy, design, compliance), priority tagging</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Revision workflow</strong> — state machine (draft &rarr; review &rarr; revision &rarr; approved) with automatic status transitions and notification triggers</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Audit trail</strong> — every approval action logged with timestamp, user, and state change — immutable history for compliance and accountability</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Approval Portal</span>
+          <span class="tool-tag">Feedback</span>
+          <span class="tool-tag">Audit Trail</span>
+          <span class="tool-tag">Notifications</span>
+        </div>
+      </div>
+    </div>
+    <div class="step-number"><span>9</span></div>
+    <div class="step-empty"></div>
+  </div>
+
+  <!-- STEP 10 -->
+  <div class="step" data-color="pink">
+    <div class="step-empty"></div>
+    <div class="step-number"><span>10</span></div>
+    <div class="step-content">
+      <div class="step-card">
+        <span class="step-icon">10</span>
+        <span class="step-phase">Delivery</span>
+        <h3>ESP Export & Bidirectional Sync</h3>
+        <p>Push the approved email to your ESP with personalisation tags intact — or sync templates bidirectionally between the Hub and your production platform.</p>
+        <ul class="substeps">
+          <li>
+            <span class="substep-marker">a</span>
+            <span><strong>ESP export</strong> — one-click push to Braze (Content Blocks with Liquid), SFMC (Content Builder), Adobe Campaign, or Taxi for Email with tag mapping</span>
+          </li>
+          <li>
+            <span class="substep-marker">b</span>
+            <span><strong>Bidirectional sync</strong> — pull existing ESP templates into the Hub for QA/enhancement, push updated versions back with conflict resolution</span>
+          </li>
+          <li>
+            <span class="substep-marker">c</span>
+            <span><strong>Raw HTML download</strong> — export compiled production HTML with all styles inlined, images referenced, and personalisation tags preserved</span>
+          </li>
+          <li>
+            <span class="substep-marker">d</span>
+            <span><strong>Production trace sampling</strong> — async quality monitoring on deployed emails, judge verdicts feed back into the agent improvement loop</span>
+          </li>
+        </ul>
+        <div class="tools-row">
+          <span class="tool-tag">Braze</span>
+          <span class="tool-tag">SFMC</span>
+          <span class="tool-tag">Adobe Campaign</span>
+          <span class="tool-tag">Taxi</span>
+          <span class="tool-tag">Trace Sampling</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>
+    <span class="brand">Merkle Email Innovation Hub</span><br>
+    9 AI agents &middot; 11-point QA gate &middot; 25 email clients &middot; 4 ESP integrations &middot; Maizzle + Tailwind CSS
+  </p>
+</footer>
+
+</body>
+</html>

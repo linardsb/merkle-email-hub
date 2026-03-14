@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.ai.agents.schemas.code_review_decisions import CodeReviewDecisions
 from app.qa_engine.schemas import QACheckResult
 
 ReviewFocus = Literal[
@@ -56,6 +57,8 @@ class CodeReviewRequest(BaseModel):
 
     html: str = Field(min_length=50, max_length=200_000, description="Email HTML to review")
     focus: ReviewFocus = Field(default="all", description="Area to focus the review on")
+    build_plan: dict[str, object] | None = None
+    output_mode: str = "html"
     stream: bool = False
     run_qa: bool = False
     enrich_with_qa: bool = Field(
@@ -75,6 +78,7 @@ class CodeReviewResponse(BaseModel):
     qa_passed: bool | None = None
     model: str
     confidence: float | None = None
+    decisions: CodeReviewDecisions | None = None
     actionability_warnings: list[str] = Field(
         default_factory=list,
         description="Post-process validation warnings about suggestion quality",

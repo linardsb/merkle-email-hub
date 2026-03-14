@@ -134,6 +134,9 @@ class ScaffolderNode:
             logger.error("blueprint.scaffolder_node.pipeline_failed", error=str(exc))
             return NodeResult(status="failed", error=f"Pipeline failed: {exc}")
 
+        # Store plan in context for downstream agents
+        context.build_plan = plan
+
         assembler = TemplateAssembler()
         try:
             html = assembler.assemble(plan)

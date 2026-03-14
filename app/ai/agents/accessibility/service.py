@@ -1,8 +1,9 @@
-# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 # ruff: noqa: ANN401, ARG002
 """Accessibility Auditor agent service — audits and fixes WCAG issues in email HTML."""
 
 import contextvars
+import json
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -18,6 +19,11 @@ from app.ai.agents.accessibility.schemas import (
     AccessibilityResponse,
 )
 from app.ai.agents.base import BaseAgentService
+from app.ai.agents.schemas.accessibility_decisions import (
+    AccessibilityDecisions,
+    AltTextDecision,
+    HeadingDecision,
+)
 from app.core.logging import get_logger
 from app.qa_engine.schemas import QACheckResult
 
@@ -39,6 +45,7 @@ class AccessibilityService(BaseAgentService):
     agent_name = "accessibility"
     model_tier = "standard"
     stream_prefix = "a11y-fix"
+    _output_mode_supported: bool = True
 
     def _post_process(self, raw_content: str) -> str:
         """Post-process LLM output: extract HTML, sanitize, then validate alt text quality."""
@@ -91,6 +98,109 @@ class AccessibilityService(BaseAgentService):
             qa_passed=qa_passed,
             model=model_id,
             confidence=confidence,
+        )
+
+    async def _process_structured(self, request: Any) -> AccessibilityResponse:
+        """Structured mode: analyze plan and return accessibility decisions."""
+        from app.ai.protocols import Message
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.ai.sanitize import sanitize_prompt
+        from app.core.config import get_settings
+
+        req: AccessibilityRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self.model_tier)
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_data = req.build_plan or {}
+        user_message = (
+            "Analyze the following EmailBuildPlan and return accessibility decisions as JSON.\n\n"
+            f"Plan: {json.dumps(plan_data, default=str)}\n\n"
+            "Return a JSON object with:\n"
+            "- alt_texts: array of {slot_id, alt_text, is_decorative}\n"
+            "- heading_fixes: array of {slot_id, current_level, recommended_level, reason}\n"
+            "- lang_attribute: string\n"
+            "- confidence: float 0-1\n"
+            "- reasoning: string"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+        result = await provider.complete(messages, model_override=model, max_tokens=self.max_tokens)
+
+        decisions = self._parse_accessibility_decisions(result.content)
+
+        logger.info(
+            "agents.accessibility.structured_completed",
+            alt_texts=len(decisions.alt_texts),
+            heading_fixes=len(decisions.heading_fixes),
+            confidence=decisions.confidence,
+        )
+
+        return AccessibilityResponse(
+            html="",
+            model=model_id,
+            confidence=decisions.confidence,
+            skills_loaded=relevant_skills,
+            alt_text_warnings=[],
+            decisions=decisions,
+        )
+
+    def _parse_accessibility_decisions(self, raw_content: str) -> AccessibilityDecisions:
+        """Parse LLM response into AccessibilityDecisions."""
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("agents.accessibility.structured_parse_failed")
+            return AccessibilityDecisions(confidence=0.0, reasoning="Failed to parse LLM response")
+
+        alt_texts = tuple(
+            AltTextDecision(
+                slot_id=str(a.get("slot_id", "")),
+                alt_text=str(a.get("alt_text", "")),
+                is_decorative=bool(a.get("is_decorative", False)),
+            )
+            for a in data.get("alt_texts", [])
+            if isinstance(a, dict)
+        )
+
+        heading_fixes = tuple(
+            HeadingDecision(
+                slot_id=str(h.get("slot_id", "")),
+                current_level=int(h.get("current_level", 1)),
+                recommended_level=int(h.get("recommended_level", 1)),
+                reason=str(h.get("reason", "")),
+            )
+            for h in data.get("heading_fixes", [])
+            if isinstance(h, dict)
+        )
+
+        return AccessibilityDecisions(
+            alt_texts=alt_texts,
+            heading_fixes=heading_fixes,
+            lang_attribute=str(data.get("lang_attribute", "en")),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     async def stream_process(self, request: Any) -> AsyncIterator[str]:

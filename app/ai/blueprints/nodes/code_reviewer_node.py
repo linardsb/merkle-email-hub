@@ -1,4 +1,5 @@
-# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+# ruff: noqa: ANN401
 """Code Reviewer agentic node -- analyses email HTML and reports issues."""
 
 import json
@@ -10,6 +11,7 @@ from app.ai.agents.code_reviewer.prompt import (
     detect_relevant_skills,
 )
 from app.ai.agents.code_reviewer.schemas import CodeReviewIssue, ReviewFocus
+from app.ai.agents.schemas.code_review_decisions import CodeReviewDecisions, PlanQualityIssue
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
@@ -65,6 +67,10 @@ class CodeReviewerNode:
 
         # Read focus from metadata (default to "all")
         focus: ReviewFocus = context.metadata.get("review_focus", "all")  # type: ignore[assignment]
+
+        # Structured mode: review plan quality
+        if context.build_plan is not None:
+            return await self._execute_structured(context, provider, model, focus)
 
         # Progressive disclosure: detect which skills are relevant
         relevant_skills = detect_relevant_skills(focus)
@@ -144,6 +150,127 @@ class CodeReviewerNode:
             details=f"Code review completed: {len(issues_as_warnings)} issue(s) found (iteration {context.iteration})",
             usage=usage,
             handoff=handoff,
+        )
+
+    async def _execute_structured(
+        self,
+        context: NodeContext,
+        provider: Any,
+        model: str,
+        focus: ReviewFocus,
+    ) -> NodeResult:
+        """Execute in structured mode: review EmailBuildPlan quality."""
+        plan = context.build_plan
+        assert plan is not None  # noqa: S101
+
+        relevant_skills = detect_relevant_skills(focus)
+        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_summary = {
+            "template": plan.template.template_name,
+            "slot_count": len(plan.slot_fills),
+            "design_tokens": {
+                "primary_color": plan.design_tokens.primary_color,
+                "secondary_color": plan.design_tokens.secondary_color,
+                "background_color": plan.design_tokens.background_color,
+                "text_color": plan.design_tokens.text_color,
+            },
+            "dark_mode_strategy": plan.dark_mode_strategy,
+            "personalisation_platform": plan.personalisation_platform,
+            "subject_line": plan.subject_line,
+            "preheader": plan.preheader_text,
+        }
+
+        user_message = (
+            f"Review the quality of this EmailBuildPlan. Focus: {focus}.\n\n"
+            f"Plan: {json.dumps(plan_summary)}\n\n"
+            "Return JSON with: issues (array of {{field, severity, issue, recommendation}}), "
+            "template_appropriate, slot_quality_score, design_token_coherent, "
+            "personalisation_complete, confidence, reasoning"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        try:
+            response = await provider.complete(messages, model=model)
+        except Exception as exc:
+            logger.error("blueprint.code_reviewer_node.structured_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Structured code review failed: {exc}")
+
+        decisions = self._parse_review_decisions(response.content)
+
+        usage = dict(response.usage) if response.usage else None
+
+        issue_warnings = tuple(
+            f"plan_review: [{i.severity}] {i.field}: {i.issue}" for i in decisions.issues
+        )
+
+        handoff = AgentHandoff(
+            agent_name="code_reviewer",
+            artifact=context.html,
+            decisions=(
+                f"Plan review: {len(decisions.issues)} issues, quality={decisions.slot_quality_score:.2f}",
+            ),
+            warnings=issue_warnings,
+            confidence=decisions.confidence,
+        )
+
+        logger.info(
+            "blueprint.code_reviewer_node.structured_completed",
+            issues=len(decisions.issues),
+            slot_quality=decisions.slot_quality_score,
+            confidence=decisions.confidence,
+        )
+
+        return NodeResult(
+            status="success",
+            html=context.html,
+            details=f"Plan review: {len(decisions.issues)} issues (quality={decisions.slot_quality_score:.2f})",
+            usage=usage,
+            handoff=handoff,
+        )
+
+    def _parse_review_decisions(self, raw_content: str) -> CodeReviewDecisions:
+        """Parse LLM response into CodeReviewDecisions."""
+
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("blueprint.code_reviewer_node.structured_parse_failed")
+            return CodeReviewDecisions(confidence=0.0, reasoning="Parse failed")
+
+        issues = tuple(
+            PlanQualityIssue(
+                field=str(i.get("field", "")),
+                severity=i.get("severity", "suggestion"),
+                issue=str(i.get("issue", "")),
+                recommendation=str(i.get("recommendation", "")),
+            )
+            for i in data.get("issues", [])
+            if isinstance(i, dict)
+        )
+
+        return CodeReviewDecisions(
+            issues=issues,
+            template_appropriate=bool(data.get("template_appropriate", True)),
+            slot_quality_score=float(data.get("slot_quality_score", 1.0)),
+            design_token_coherent=bool(data.get("design_token_coherent", True)),
+            personalisation_complete=bool(data.get("personalisation_complete", True)),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     def _build_user_message(self, context: NodeContext, focus: ReviewFocus) -> str:

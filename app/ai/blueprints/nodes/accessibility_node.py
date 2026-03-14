@@ -1,9 +1,20 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+# ruff: noqa: ANN401
 """Accessibility Auditor agentic node — fixes WCAG AA issues in email HTML."""
+
+import json
+from typing import Any
 
 from app.ai.agents.accessibility.alt_text_validator import format_alt_text_warnings
 from app.ai.agents.accessibility.prompt import (
     build_system_prompt,
     detect_relevant_skills,
+)
+from app.ai.agents.scaffolder.plan_merger import merge_accessibility
+from app.ai.agents.schemas.accessibility_decisions import (
+    AccessibilityDecisions,
+    AltTextDecision,
+    HeadingDecision,
 )
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
@@ -51,6 +62,10 @@ class AccessibilityNode:
         settings = get_settings()
         provider = get_registry().get_llm(settings.ai.provider)
         model = resolve_model("standard")
+
+        # Structured mode: return decisions instead of HTML
+        if context.build_plan is not None:
+            return await self._execute_structured(context, provider, model)
 
         # Progressive disclosure: detect which skills are relevant
         relevant_skills = detect_relevant_skills(context.html)
@@ -189,3 +204,123 @@ class AccessibilityNode:
             parts.append(f"\n\n{graph_ctx}")
 
         return "\n".join(parts)
+
+    async def _execute_structured(
+        self,
+        context: NodeContext,
+        provider: Any,
+        model: str,
+    ) -> NodeResult:
+        """Execute in structured mode: analyze plan, return decisions, merge."""
+
+        plan = context.build_plan
+        assert plan is not None  # noqa: S101
+
+        relevant_skills = detect_relevant_skills("")
+        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+
+        slot_ids = [sf.slot_id for sf in plan.slot_fills]
+        plan_summary = {
+            "template": plan.template.template_name,
+            "slot_ids": slot_ids,
+            "slot_fills": [
+                {"slot_id": sf.slot_id, "content": sf.content[:200]} for sf in plan.slot_fills
+            ],
+        }
+
+        user_message = (
+            "Analyze this email build plan and return accessibility decisions as JSON.\n\n"
+            f"Plan: {json.dumps(plan_summary)}\n\n"
+            "Return JSON with: alt_texts (array of {{slot_id, alt_text, is_decorative}}), "
+            "heading_fixes (array of {{slot_id, current_level, recommended_level, reason}}), "
+            "lang_attribute, confidence, reasoning"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        try:
+            response = await provider.complete(messages, model=model)
+        except Exception as exc:
+            logger.error("blueprint.accessibility_node.structured_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Structured accessibility failed: {exc}")
+
+        decisions = self._parse_decisions(response.content)
+        context.build_plan = merge_accessibility(plan, decisions)
+
+        usage = dict(response.usage) if response.usage else None
+
+        handoff = AgentHandoff(
+            agent_name="accessibility",
+            artifact="",
+            decisions=(
+                f"Accessibility decisions: {len(decisions.alt_texts)} alt texts, {len(decisions.heading_fixes)} heading fixes",
+            ),
+            warnings=(),
+            confidence=decisions.confidence,
+        )
+
+        logger.info(
+            "blueprint.accessibility_node.structured_completed",
+            alt_texts=len(decisions.alt_texts),
+            heading_fixes=len(decisions.heading_fixes),
+            confidence=decisions.confidence,
+        )
+
+        return NodeResult(
+            status="success",
+            html=context.html,
+            details=f"Accessibility decisions: {len(decisions.alt_texts)} alt texts",
+            usage=usage,
+            handoff=handoff,
+        )
+
+    def _parse_decisions(self, raw_content: str) -> AccessibilityDecisions:
+        """Parse LLM response into AccessibilityDecisions."""
+
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("blueprint.accessibility_node.parse_failed")
+            return AccessibilityDecisions(confidence=0.0, reasoning="Parse failed")
+
+        alt_texts = tuple(
+            AltTextDecision(
+                slot_id=str(a.get("slot_id", "")),
+                alt_text=str(a.get("alt_text", "")),
+                is_decorative=bool(a.get("is_decorative", False)),
+            )
+            for a in data.get("alt_texts", [])
+            if isinstance(a, dict)
+        )
+
+        heading_fixes = tuple(
+            HeadingDecision(
+                slot_id=str(h.get("slot_id", "")),
+                current_level=int(h.get("current_level", 1)),
+                recommended_level=int(h.get("recommended_level", 1)),
+                reason=str(h.get("reason", "")),
+            )
+            for h in data.get("heading_fixes", [])
+            if isinstance(h, dict)
+        )
+
+        return AccessibilityDecisions(
+            alt_texts=alt_texts,
+            heading_fixes=heading_fixes,
+            lang_attribute=str(data.get("lang_attribute", "en")),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
+        )

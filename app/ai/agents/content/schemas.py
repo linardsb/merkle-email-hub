@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.ai.agents.schemas.content_decisions import ContentDecisions
+
 
 class ContentRequest(BaseModel):
     """Request body for the content generate endpoint.
@@ -35,6 +37,8 @@ class ContentRequest(BaseModel):
         description="Brand voice guidelines from project settings",
     )
     num_alternatives: int = Field(default=1, ge=1, le=10, description="Number of alternatives")
+    build_plan: dict[str, object] | None = None
+    output_mode: str = "html"
     stream: bool = False
 
 
@@ -67,3 +71,4 @@ class ContentResponse(BaseModel):
     model: str
     confidence: float | None = None
     skills_loaded: list[str] = Field(default_factory=list)
+    decisions: ContentDecisions | None = None

@@ -1,8 +1,9 @@
-# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 # ruff: noqa: ANN401, ARG002
 """Content agent service — orchestrates LLM → extract → spam check → length validate."""
 
 import contextvars
+import json
 import re
 from collections.abc import AsyncIterator
 from typing import Any
@@ -19,6 +20,7 @@ from app.ai.agents.content.prompt import (
     detect_relevant_skills as _detect_relevant_skills,
 )
 from app.ai.agents.content.schemas import ContentRequest, ContentResponse, SpamWarning
+from app.ai.agents.schemas.content_decisions import ContentDecisions, SlotContentRefinement
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import TaskTier, resolve_model
@@ -106,6 +108,7 @@ class ContentService(BaseAgentService):
     max_tokens = 2048
     run_qa_default = False
     stream_prefix = "content"
+    _output_mode_supported: bool = True
 
     def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
         return _build_system_prompt(relevant_skills, output_mode=output_mode)
@@ -177,6 +180,102 @@ class ContentService(BaseAgentService):
         """Return operation-specific model tier (thread-safe, no state mutation)."""
         req: ContentRequest = request
         return _OPERATION_TIERS.get(req.operation, "standard")
+
+    async def _process_structured(self, request: Any) -> ContentResponse:
+        """Structured mode: refine slot content and return decisions."""
+        from app.ai.protocols import Message
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.ai.sanitize import sanitize_prompt
+        from app.core.config import get_settings
+
+        req: ContentRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self._get_model_tier(request))
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_data = req.build_plan or {}
+        user_message = (
+            f"Refine content in the following EmailBuildPlan. Operation: {req.operation}\n\n"
+            f"Plan: {json.dumps(plan_data, default=str)}\n\n"
+            f"Source text: {req.text}\n\n"
+            "Return a JSON object with:\n"
+            "- subject_line: refined subject line (empty string if not changing)\n"
+            "- preheader: refined preheader (empty string if not changing)\n"
+            "- slot_refinements: array of {slot_id, refined_content, reasoning}\n"
+            "- cta_text: CTA button text (empty string if not changing)\n"
+            "- confidence: float 0-1\n"
+            "- reasoning: string"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+        result = await provider.complete(messages, model_override=model, max_tokens=self.max_tokens)
+
+        decisions = self._parse_content_decisions(result.content)
+
+        logger.info(
+            "agents.content.structured_completed",
+            refinements=len(decisions.slot_refinements),
+            confidence=decisions.confidence,
+        )
+
+        return ContentResponse(
+            content=[],
+            operation=req.operation,
+            model=model_id,
+            confidence=decisions.confidence,
+            skills_loaded=relevant_skills,
+            decisions=decisions,
+        )
+
+    def _parse_content_decisions(self, raw_content: str) -> ContentDecisions:
+        """Parse LLM response into ContentDecisions."""
+        import json
+
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("agents.content.structured_parse_failed")
+            return ContentDecisions(confidence=0.0, reasoning="Failed to parse")
+
+        refinements = tuple(
+            SlotContentRefinement(
+                slot_id=str(r.get("slot_id", "")),
+                refined_content=str(r.get("refined_content", "")),
+                reasoning=str(r.get("reasoning", "")),
+            )
+            for r in data.get("slot_refinements", [])
+            if isinstance(r, dict)
+        )
+
+        return ContentDecisions(
+            subject_line=str(data.get("subject_line", "")),
+            preheader=str(data.get("preheader", "")),
+            slot_refinements=refinements,
+            cta_text=str(data.get("cta_text", "")),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
+        )
 
     async def process(self, request: Any) -> Any:
         """Execute pipeline with post-generation length validation.

@@ -1,4 +1,9 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+# ruff: noqa: ANN401
 """Personalisation agentic node -- injects ESP dynamic content into email HTML."""
+
+import json
+from typing import Any
 
 from app.ai.agents.personalisation.prompt import (
     build_system_prompt,
@@ -6,6 +11,11 @@ from app.ai.agents.personalisation.prompt import (
 )
 from app.ai.agents.personalisation.schemas import ESPPlatform
 from app.ai.agents.personalisation.service import format_syntax_warnings
+from app.ai.agents.scaffolder.plan_merger import merge_personalisation
+from app.ai.agents.schemas.personalisation_decisions import (
+    PersonalisationDecisions,
+    VariablePlacement,
+)
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
@@ -56,6 +66,10 @@ class PersonalisationNode:
         # Read platform from metadata (default to braze if not specified)
         platform: ESPPlatform = context.metadata.get("esp_platform", "braze")  # type: ignore[assignment]
         requirements: str = str(context.metadata.get("personalisation_requirements", ""))
+
+        # Structured mode: return decisions instead of HTML
+        if context.build_plan is not None:
+            return await self._execute_structured(context, provider, model, platform, requirements)
 
         # Progressive disclosure: detect which skills are relevant
         relevant_skills = detect_relevant_skills(platform, requirements)
@@ -203,3 +217,115 @@ class PersonalisationNode:
             parts.append(f"\n\n{graph_ctx}")
 
         return "\n".join(parts)
+
+    async def _execute_structured(
+        self,
+        context: NodeContext,
+        provider: Any,
+        model: str,
+        platform: ESPPlatform,
+        requirements: str,
+    ) -> NodeResult:
+        """Execute in structured mode: analyze plan, return decisions, merge."""
+
+        plan = context.build_plan
+        assert plan is not None  # noqa: S101
+
+        relevant_skills = detect_relevant_skills(platform, requirements)
+        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+
+        personalisable_slots = [
+            {
+                "slot_id": sf.slot_id,
+                "content": sf.content[:200],
+                "is_personalisable": sf.is_personalisable,
+            }
+            for sf in plan.slot_fills
+        ]
+
+        user_message = (
+            f"Analyze this email build plan for {platform} personalisation.\n\n"
+            f"Slots: {json.dumps(personalisable_slots)}\n\n"
+            f"Requirements: {requirements}\n\n"
+            "Return JSON with: esp_platform, variables (array of {{slot_id, variable_name, fallback_value, syntax}}), "
+            "conditional_blocks, confidence, reasoning"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        try:
+            response = await provider.complete(messages, model=model)
+        except Exception as exc:
+            logger.error("blueprint.personalisation_node.structured_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Structured personalisation failed: {exc}")
+
+        decisions = self._parse_decisions(response.content)
+        context.build_plan = merge_personalisation(plan, decisions)
+
+        usage = dict(response.usage) if response.usage else None
+
+        handoff = AgentHandoff(
+            agent_name="personalisation",
+            artifact="",
+            decisions=(
+                f"Personalisation decisions: {len(decisions.variables)} variables for {platform}",
+            ),
+            warnings=(),
+            confidence=decisions.confidence,
+        )
+
+        logger.info(
+            "blueprint.personalisation_node.structured_completed",
+            platform=platform,
+            variables=len(decisions.variables),
+            confidence=decisions.confidence,
+        )
+
+        return NodeResult(
+            status="success",
+            html=context.html,
+            details=f"Personalisation ({platform}): {len(decisions.variables)} variables",
+            usage=usage,
+            handoff=handoff,
+        )
+
+    def _parse_decisions(self, raw_content: str) -> PersonalisationDecisions:
+        """Parse LLM response into PersonalisationDecisions."""
+
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("blueprint.personalisation_node.parse_failed")
+            return PersonalisationDecisions(confidence=0.0, reasoning="Parse failed")
+
+        variables = tuple(
+            VariablePlacement(
+                slot_id=str(v.get("slot_id", "")),
+                variable_name=str(v.get("variable_name", "")),
+                fallback_value=str(v.get("fallback_value", "")),
+                syntax=str(v.get("syntax", "")),
+            )
+            for v in data.get("variables", [])
+            if isinstance(v, dict)
+        )
+
+        return PersonalisationDecisions(
+            esp_platform=str(data.get("esp_platform", "")),
+            variables=variables,
+            conditional_blocks=tuple(str(c) for c in data.get("conditional_blocks", [])),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
+        )

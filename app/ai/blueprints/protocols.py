@@ -11,6 +11,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
+    from app.ai.agents.schemas.build_plan import EmailBuildPlan
     from app.knowledge.graph.protocols import GraphSearchResult
 
 __all__ = [
@@ -63,6 +64,7 @@ class NodeContext:
     qa_failures: list[str] = field(default_factory=lambda: list[str]())
     iteration: int = 0
     metadata: dict[str, object] = field(default_factory=lambda: dict[str, object]())
+    build_plan: EmailBuildPlan | None = None
 
 
 @dataclass

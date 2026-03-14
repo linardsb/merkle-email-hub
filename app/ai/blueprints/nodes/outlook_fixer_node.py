@@ -1,10 +1,16 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+# ruff: noqa: ANN401
 """Outlook Fixer agentic node — fixes Outlook rendering issues in email HTML."""
+
+import json
+from typing import Any
 
 from app.ai.agents.outlook_fixer.mso_repair import repair_mso_issues
 from app.ai.agents.outlook_fixer.prompt import (
     build_system_prompt,
     detect_relevant_skills,
 )
+from app.ai.agents.schemas.outlook_diagnostic import MSOIssue, OutlookDiagnostic
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
@@ -52,6 +58,10 @@ class OutlookFixerNode:
         settings = get_settings()
         provider = get_registry().get_llm(settings.ai.provider)
         model = resolve_model("standard")
+
+        # Structured mode: diagnostic-only
+        if context.build_plan is not None:
+            return await self._execute_structured(context, provider, model)
 
         # Progressive disclosure: detect which skills are relevant
         relevant_skills = detect_relevant_skills(context.html)
@@ -130,6 +140,109 @@ class OutlookFixerNode:
             details=f"Outlook fixes applied to {len(html)} chars (iteration {context.iteration})",
             usage=usage,
             handoff=handoff,
+        )
+
+    async def _execute_structured(
+        self,
+        context: NodeContext,
+        provider: Any,
+        model: str,
+    ) -> NodeResult:
+        """Execute in diagnostic mode: report MSO issues without modifying HTML."""
+
+        relevant_skills = detect_relevant_skills(context.html or "")
+        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+
+        user_message = (
+            "Analyze this assembled email HTML for MSO/Outlook compatibility issues. "
+            "Report issues but do NOT fix — golden templates handle MSO.\n\n"
+            f"HTML (first 8000 chars):\n{context.html[:8000]}\n\n"
+            "Return JSON with: issues (array of {{issue_type, severity, location, recommendation}}), "
+            "template_bug, composition_bug, overall_mso_safe, confidence, reasoning"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        try:
+            response = await provider.complete(messages, model=model)
+        except Exception as exc:
+            logger.error("blueprint.outlook_fixer_node.diagnostic_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Outlook diagnostic failed: {exc}")
+
+        diagnostic = self._parse_diagnostic(response.content)
+
+        usage = dict(response.usage) if response.usage else None
+
+        warnings = tuple(
+            f"MSO [{i.severity}] {i.issue_type}: {i.recommendation}" for i in diagnostic.issues
+        )
+
+        handoff = AgentHandoff(
+            agent_name="outlook_fixer",
+            artifact=context.html,  # Pass through unchanged
+            decisions=(
+                f"Diagnostic: {len(diagnostic.issues)} MSO issues found",
+                f"MSO safe: {diagnostic.overall_mso_safe}",
+            ),
+            warnings=warnings,
+            confidence=diagnostic.confidence,
+        )
+
+        logger.info(
+            "blueprint.outlook_fixer_node.diagnostic_completed",
+            issues=len(diagnostic.issues),
+            mso_safe=diagnostic.overall_mso_safe,
+            confidence=diagnostic.confidence,
+        )
+
+        return NodeResult(
+            status="success",
+            html=context.html,  # Unchanged
+            details=f"Outlook diagnostic: {len(diagnostic.issues)} issues",
+            usage=usage,
+            handoff=handoff,
+        )
+
+    def _parse_diagnostic(self, raw_content: str) -> OutlookDiagnostic:
+        """Parse LLM response into OutlookDiagnostic."""
+
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("blueprint.outlook_fixer_node.diagnostic_parse_failed")
+            return OutlookDiagnostic(confidence=0.0, reasoning="Parse failed")
+
+        issues = tuple(
+            MSOIssue(
+                issue_type=str(i.get("issue_type", "")),
+                severity=i.get("severity", "info"),
+                location=str(i.get("location", "")),
+                recommendation=str(i.get("recommendation", "")),
+            )
+            for i in data.get("issues", [])
+            if isinstance(i, dict)
+        )
+
+        return OutlookDiagnostic(
+            issues=issues,
+            template_bug=bool(data.get("template_bug", False)),
+            composition_bug=bool(data.get("composition_bug", False)),
+            overall_mso_safe=bool(data.get("overall_mso_safe", True)),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     def _build_user_message(self, context: NodeContext) -> str:

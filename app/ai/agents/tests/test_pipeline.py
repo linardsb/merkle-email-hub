@@ -206,6 +206,88 @@ class TestTemplateAssembler:
         assert "Check out our sale!" in html
         assert "Preview" not in html
 
+    def test_assemble_compose_mode(self, registry: TemplateRegistry) -> None:
+        """__compose__ template name delegates to TemplateComposer."""
+        assembler = TemplateAssembler(registry=registry)
+
+        plan = EmailBuildPlan(
+            template=TemplateSelection(
+                template_name="__compose__",
+                reasoning="Novel layout",
+                section_order=("hero_image", "content_1col", "cta_button", "footer_standard"),
+                fallback_template=None,
+            ),
+            slot_fills=(
+                SlotFill(slot_id="hero_image_headline", content="Welcome!"),
+                SlotFill(slot_id="content_1col_body", content="Body text here"),
+            ),
+            design_tokens=DesignTokens(
+                primary_color="#000",
+                secondary_color="#000",
+                background_color="#fff",
+                text_color="#333",
+                font_family="Arial",
+                heading_font_family="Georgia",
+            ),
+        )
+
+        html = assembler.assemble(plan)
+        assert "<!DOCTYPE html>" in html
+        assert "Welcome!" in html
+        assert "Body text here" in html
+
+    def test_assemble_compose_fallback_on_unknown_section(
+        self, registry: TemplateRegistry, sample_template: GoldenTemplate
+    ) -> None:
+        """Composition with unknown sections falls back to fallback_template."""
+        registry._templates["test_template"] = sample_template
+        assembler = TemplateAssembler(registry=registry)
+
+        plan = EmailBuildPlan(
+            template=TemplateSelection(
+                template_name="__compose__",
+                reasoning="Novel layout",
+                section_order=("hero_image", "nonexistent_block"),
+                fallback_template="test_template",
+            ),
+            slot_fills=(SlotFill(slot_id="headline", content="Fallback!"),),
+            design_tokens=DesignTokens(
+                primary_color="#000",
+                secondary_color="#000",
+                background_color="#fff",
+                text_color="#333",
+                font_family="Arial",
+                heading_font_family="Georgia",
+            ),
+        )
+
+        html = assembler.assemble(plan)
+        assert "Fallback!" in html
+
+    def test_assemble_compose_empty_section_order_raises(self, registry: TemplateRegistry) -> None:
+        """Composition with empty section_order raises AssemblyError."""
+        assembler = TemplateAssembler(registry=registry)
+
+        plan = EmailBuildPlan(
+            template=TemplateSelection(
+                template_name="__compose__",
+                reasoning="Novel layout",
+                section_order=(),
+            ),
+            slot_fills=(),
+            design_tokens=DesignTokens(
+                primary_color="#000",
+                secondary_color="#000",
+                background_color="#fff",
+                text_color="#333",
+                font_family="Arial",
+                heading_font_family="Georgia",
+            ),
+        )
+
+        with pytest.raises(AssemblyError, match="non-empty section_order"):
+            assembler.assemble(plan)
+
     def test_assemble_preserves_dollar_signs(
         self, registry: TemplateRegistry, sample_template: GoldenTemplate
     ) -> None:

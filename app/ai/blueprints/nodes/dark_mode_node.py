@@ -1,6 +1,13 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+# ruff: noqa: ANN401
 """Dark Mode agentic node — enhances HTML with dark mode CSS and Outlook overrides."""
 
+import json
+from typing import Any
+
 from app.ai.agents.dark_mode.prompt import build_system_prompt, detect_relevant_skills
+from app.ai.agents.scaffolder.plan_merger import merge_dark_mode
+from app.ai.agents.schemas.dark_mode_decisions import DarkColorOverride, DarkModeDecisions
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
@@ -46,6 +53,10 @@ class DarkModeNode:
         settings = get_settings()
         provider = get_registry().get_llm(settings.ai.provider)
         model = resolve_model("standard")
+
+        # Structured mode: return decisions instead of HTML
+        if context.build_plan is not None:
+            return await self._execute_structured(context, provider, model)
 
         relevant_skills = detect_relevant_skills(context.html)
         system_prompt = build_system_prompt(relevant_skills)
@@ -160,3 +171,118 @@ class DarkModeNode:
             parts.append(f"\n\n{graph_ctx}")
 
         return "\n".join(parts)
+
+    async def _execute_structured(
+        self,
+        context: NodeContext,
+        provider: Any,
+        model: str,
+    ) -> NodeResult:
+        """Execute in structured mode: analyze plan, return decisions, merge."""
+
+        plan = context.build_plan
+        assert plan is not None  # noqa: S101
+
+        relevant_skills = detect_relevant_skills("")  # No HTML in structured mode
+        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_summary = {
+            "template": plan.template.template_name,
+            "design_tokens": {
+                "primary_color": plan.design_tokens.primary_color,
+                "secondary_color": plan.design_tokens.secondary_color,
+                "background_color": plan.design_tokens.background_color,
+                "text_color": plan.design_tokens.text_color,
+            },
+            "dark_mode_strategy": plan.dark_mode_strategy,
+        }
+
+        user_message = (
+            "Analyze this email build plan and return dark mode color decisions as JSON.\n\n"
+            f"Plan: {json.dumps(plan_summary)}\n\n"
+            "Return JSON with: color_overrides (array of {{token_name, light_value, dark_value, reasoning}}), "
+            "background_dark, text_dark, enable_prefers_color_scheme, confidence, reasoning"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        try:
+            response = await provider.complete(messages, model=model)
+        except Exception as exc:
+            logger.error("blueprint.dark_mode_node.structured_failed", error=str(exc))
+            return NodeResult(status="failed", error=f"Structured dark mode failed: {exc}")
+
+        # Parse decisions
+        decisions = self._parse_decisions(response.content)
+
+        # Merge into plan
+        context.build_plan = merge_dark_mode(plan, decisions)
+
+        usage = dict(response.usage) if response.usage else None
+
+        handoff = AgentHandoff(
+            agent_name="dark_mode",
+            artifact="",  # No HTML artifact in structured mode
+            decisions=(
+                f"Dark mode decisions: {len(decisions.color_overrides)} overrides",
+                f"Strategy: {'custom' if decisions.color_overrides else 'auto'}",
+            ),
+            warnings=(),
+            confidence=decisions.confidence,
+        )
+
+        logger.info(
+            "blueprint.dark_mode_node.structured_completed",
+            overrides=len(decisions.color_overrides),
+            confidence=decisions.confidence,
+        )
+
+        return NodeResult(
+            status="success",
+            html=context.html,  # Pass through existing HTML
+            details=f"Dark mode decisions: {len(decisions.color_overrides)} overrides",
+            usage=usage,
+            handoff=handoff,
+        )
+
+    def _parse_decisions(self, raw_content: str) -> DarkModeDecisions:
+        """Parse LLM response into DarkModeDecisions."""
+
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("blueprint.dark_mode_node.parse_failed")
+            return DarkModeDecisions(confidence=0.0, reasoning="Parse failed")
+
+        overrides = tuple(
+            DarkColorOverride(
+                token_name=str(o.get("token_name", "")),
+                light_value=str(o.get("light_value", "")),
+                dark_value=str(o.get("dark_value", "")),
+                reasoning=str(o.get("reasoning", "")),
+            )
+            for o in data.get("color_overrides", [])
+            if isinstance(o, dict)
+        )
+
+        return DarkModeDecisions(
+            color_overrides=overrides,
+            background_dark=str(data.get("background_dark", "#1a1a2e")),
+            text_dark=str(data.get("text_dark", "#e0e0e0")),
+            enable_prefers_color_scheme=bool(data.get("enable_prefers_color_scheme", True)),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
+        )

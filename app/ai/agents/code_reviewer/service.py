@@ -25,6 +25,7 @@ from app.ai.agents.code_reviewer.schemas import (
     CodeReviewRequest,
     CodeReviewResponse,
 )
+from app.ai.agents.schemas.code_review_decisions import CodeReviewDecisions, PlanQualityIssue
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -108,6 +109,7 @@ class CodeReviewService(BaseAgentService):
     agent_name = "code_reviewer"
     model_tier = "standard"
     stream_prefix = "review"
+    _output_mode_supported: bool = True
 
     def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
         return _build_system_prompt(relevant_skills, output_mode=output_mode)
@@ -160,6 +162,104 @@ class CodeReviewService(BaseAgentService):
             qa_passed=qa_passed,
             model=model_id,
             confidence=confidence,
+        )
+
+    async def _process_structured(self, request: Any) -> CodeReviewResponse:
+        """Structured mode: review EmailBuildPlan quality instead of HTML."""
+        from app.ai.protocols import Message
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.ai.sanitize import sanitize_prompt
+        from app.core.config import get_settings
+
+        req: CodeReviewRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self.model_tier)
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_data = req.build_plan or {}
+        user_message = (
+            "Review the quality of the following EmailBuildPlan.\n\n"
+            f"Plan: {json.dumps(plan_data, default=str)}\n\n"
+            "Return a JSON object with:\n"
+            "- issues: array of {field, severity (critical/warning/suggestion), issue, recommendation}\n"
+            "- template_appropriate: boolean\n"
+            "- slot_quality_score: float 0-1\n"
+            "- design_token_coherent: boolean\n"
+            "- personalisation_complete: boolean\n"
+            "- confidence: float 0-1\n"
+            "- reasoning: string"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+        result = await provider.complete(messages, model_override=model, max_tokens=self.max_tokens)
+
+        decisions = self._parse_review_decisions(result.content)
+
+        logger.info(
+            "agents.code_reviewer.structured_completed",
+            issues=len(decisions.issues),
+            slot_quality=decisions.slot_quality_score,
+            confidence=decisions.confidence,
+        )
+
+        return CodeReviewResponse(
+            html=req.html if hasattr(req, "html") and req.html else "",
+            issues=[],
+            summary=decisions.reasoning,
+            model=model_id,
+            confidence=decisions.confidence,
+            skills_loaded=relevant_skills,
+            decisions=decisions,
+        )
+
+    def _parse_review_decisions(self, raw_content: str) -> CodeReviewDecisions:
+        """Parse LLM response into CodeReviewDecisions."""
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("agents.code_reviewer.structured_parse_failed")
+            return CodeReviewDecisions(confidence=0.0, reasoning="Failed to parse")
+
+        issues = tuple(
+            PlanQualityIssue(
+                field=str(i.get("field", "")),
+                severity=i.get("severity", "suggestion"),
+                issue=str(i.get("issue", "")),
+                recommendation=str(i.get("recommendation", "")),
+            )
+            for i in data.get("issues", [])
+            if isinstance(i, dict)
+        )
+
+        return CodeReviewDecisions(
+            issues=issues,
+            template_appropriate=bool(data.get("template_appropriate", True)),
+            slot_quality_score=float(data.get("slot_quality_score", 1.0)),
+            design_token_coherent=bool(data.get("design_token_coherent", True)),
+            personalisation_complete=bool(data.get("personalisation_complete", True)),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     def _should_run_qa(self, request: Any) -> bool:

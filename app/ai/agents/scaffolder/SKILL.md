@@ -226,9 +226,32 @@ The assembly code will build HTML from your decisions.
 }
 ```
 
+### Composition Mode (Novel Layouts)
+
+When no golden template matches well (confidence < 0.7), use composition mode:
+- Set `template_name` to `"__compose__"`
+- Set `section_order` to an ordered list of section block IDs
+- Set `fallback_template` to the closest golden template as backup
+- Always include at least one content block and one footer block
+
+Available section blocks: `hero_image`, `hero_text`, `content_1col`, `content_2col`, `cta_button`, `footer_standard`, `footer_minimal`, `product_card`, `social_links`, `divider`, `spacer`, `navigation`, `image_full`
+
+Example composition:
+```json
+{
+  "template": {
+    "template_name": "__compose__",
+    "reasoning": "Brief requires 3-section product showcase — no golden template matches",
+    "section_order": ["navigation", "hero_image", "product_card", "product_card", "cta_button", "social_links", "footer_standard"],
+    "fallback_template": "promotional_hero"
+  }
+}
+```
+
 ### Rules
-- `template_name` must be one of the available templates (provided in context)
-- `slot_fills` must cover every slot defined in the selected template
+- `template_name` must be one of the available templates (provided in context) or `"__compose__"` for composition mode
+- When using `"__compose__"`, `section_order` must be a non-empty list of valid section block IDs
+- `slot_fills` must cover every slot defined in the selected template (or composed sections)
 - Colors must be valid hex values
 - Font families must be web-safe with system fallbacks
 - `confidence` is 0.0–1.0 (same criteria as HTML mode)

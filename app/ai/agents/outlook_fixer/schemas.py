@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.ai.agents.schemas.outlook_diagnostic import OutlookDiagnostic
 from app.qa_engine.schemas import QACheckResult
 
 
@@ -22,6 +23,9 @@ class OutlookFixerRequest(BaseModel):
     issues: list[str] | None = Field(
         default=None,
         description="Specific Outlook issues to fix (auto-detect if None)",
+    )
+    build_plan: dict[str, object] | None = Field(
+        default=None, description="EmailBuildPlan from scaffolder (structured mode)"
     )
     output_mode: Literal["html", "structured"] = "html"
     stream: bool = False
@@ -50,4 +54,5 @@ class OutlookFixerResponse(BaseModel):
         default_factory=list,
         description="MSO validation warnings from post-generation validator",
     )
+    diagnostic: OutlookDiagnostic | None = None
     plan: dict[str, object] | None = None

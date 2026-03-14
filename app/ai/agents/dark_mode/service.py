@@ -1,8 +1,9 @@
-# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 # ruff: noqa: ANN401, ARG002
 """Dark Mode agent service — orchestrates LLM → extract → sanitize → QA."""
 
 import contextvars
+import json
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -15,11 +16,15 @@ from app.ai.agents.dark_mode.prompt import (
     detect_relevant_skills as _detect_relevant_skills,
 )
 from app.ai.agents.dark_mode.schemas import DarkModeRequest, DarkModeResponse
+from app.ai.agents.schemas.dark_mode_decisions import DarkColorOverride, DarkModeDecisions
+from app.core.logging import get_logger
 from app.qa_engine.checks import ALL_CHECKS
 from app.qa_engine.checks.dark_mode import DarkModeCheck
 from app.qa_engine.schemas import QACheckResult
 
 # Per-request storage for injected tag names (avoids race on singleton instance)
+logger = get_logger(__name__)
+
 _injected_tags_var: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
     "dm_injected_tags", default=None
 )
@@ -35,6 +40,7 @@ class DarkModeService(BaseAgentService):
     agent_name = "dark_mode"
     model_tier = "standard"
     stream_prefix = "darkmode"
+    _output_mode_supported: bool = True
 
     def _post_process(self, raw_content: str) -> str:
         """Post-process LLM output: extract HTML, sanitize, then inject missing meta tags."""
@@ -103,6 +109,103 @@ class DarkModeService(BaseAgentService):
             confidence=confidence,
             skills_loaded=skills_loaded,
             meta_tags_injected=_injected_tags_var.get(None) or [],
+        )
+
+    async def _process_structured(self, request: Any) -> DarkModeResponse:
+        """Structured mode: analyze plan and return dark mode color decisions."""
+        from app.ai.protocols import Message
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.ai.sanitize import sanitize_prompt
+        from app.core.config import get_settings
+
+        req: DarkModeRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self.model_tier)
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode="structured")
+
+        # Build plan context for LLM
+        plan_data = req.build_plan or {}
+        user_message = (
+            "Analyze the following EmailBuildPlan and return dark mode color decisions as JSON.\n\n"
+            f"Plan: {json.dumps(plan_data, default=str)}\n\n"
+            "Return a JSON object with these fields:\n"
+            "- color_overrides: array of {token_name, light_value, dark_value, reasoning}\n"
+            "- background_dark: hex color for dark mode background\n"
+            "- text_dark: hex color for dark mode text\n"
+            "- enable_prefers_color_scheme: boolean\n"
+            "- confidence: float 0-1\n"
+            "- reasoning: string explaining strategy"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+        result = await provider.complete(messages, model_override=model, max_tokens=self.max_tokens)
+
+        # Parse structured response
+        decisions = self._parse_dark_mode_decisions(result.content)
+
+        logger.info(
+            "agents.dark_mode.structured_completed",
+            overrides=len(decisions.color_overrides),
+            confidence=decisions.confidence,
+        )
+
+        return DarkModeResponse(
+            html="",  # No HTML in structured mode
+            model=model_id,
+            confidence=decisions.confidence,
+            skills_loaded=relevant_skills,
+            meta_tags_injected=[],
+            decisions=decisions,
+        )
+
+    def _parse_dark_mode_decisions(self, raw_content: str) -> DarkModeDecisions:
+        """Parse LLM response into DarkModeDecisions."""
+        content = raw_content.strip()
+        # Extract JSON from code fence if present
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("agents.dark_mode.structured_parse_failed")
+            return DarkModeDecisions(confidence=0.0, reasoning="Failed to parse LLM response")
+
+        overrides = tuple(
+            DarkColorOverride(
+                token_name=str(o.get("token_name", "")),
+                light_value=str(o.get("light_value", "")),
+                dark_value=str(o.get("dark_value", "")),
+                reasoning=str(o.get("reasoning", "")),
+            )
+            for o in data.get("color_overrides", [])
+            if isinstance(o, dict)
+        )
+
+        return DarkModeDecisions(
+            color_overrides=overrides,
+            background_dark=str(data.get("background_dark", "#1a1a2e")),
+            text_dark=str(data.get("text_dark", "#e0e0e0")),
+            enable_prefers_color_scheme=bool(data.get("enable_prefers_color_scheme", True)),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     async def stream_process(self, request: Any) -> AsyncIterator[str]:

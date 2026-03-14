@@ -512,7 +512,7 @@
 **Security:** No new attack surface. Context trimming is deterministic.
 **Verify:** Measure prompt token counts per pass. Target: total across 3 passes ≤ 8,000 tokens (vs current single-call ~10,000-15,000). Per-pass accuracy should not decrease from trimming (same or better signal-to-noise).
 
-#### 11.22.7 Novel Layout Fallback — Graceful Degradation for Edge Cases
+#### ~~11.22.7 Novel Layout Fallback — Graceful Degradation for Edge Cases~~ DONE
 **What:** Handle the ~5% of briefs that don't match any golden template. Instead of falling back to unreliable full-HTML generation, compose new layouts by combining tested building blocks (sections from golden templates). This is the difference between 95% and 97-99%.
 **Why:** Golden templates cover common layouts, but clients occasionally request unusual combinations (e.g., 3-column on mobile, accordion sections, gamification elements). Without a fallback, these briefs either fail or revert to the old unreliable pipeline.
 **Implementation:**
@@ -530,7 +530,7 @@
 **Security:** Section blocks are derived from golden templates (pre-validated). Composition is deterministic concatenation + MSO wrapper generation. No LLM involvement in structural composition.
 **Verify:** Create 5 "unusual" briefs that don't match any golden template. Verify: composer produces valid compositions, assembled HTML passes QA, fallback to closest template works when composition fails. Measure: composition QA pass rate ≥90%.
 
-#### 11.22.8 Agent Role Redefinition — Tighten Specialisation
+#### ~~11.22.8 Agent Role Redefinition — Tighten Specialisation~~ DONE
 **What:** Redefine agent responsibilities to eliminate overlap and match the template-first architecture. Several agents become simpler or unnecessary when templates handle structure.
 **Why:** Current agent overlap causes conflicting fixes — Scaffolder generates dark mode, then Dark Mode agent overwrites it. Template-first architecture means each agent owns a specific slice of the `EmailBuildPlan`, with no structural HTML generation.
 **Implementation:**
@@ -574,6 +574,141 @@
 - `html_preservation` ≥99% (from 10% — assembler preserves template structure)
 - Token usage per blueprint run: ≤ 8,000 tokens (from ~15,000-30,000 with self-correction loops)
 - Latency per blueprint run: ≤ 10s (from ~30-60s with retry loops)
+
+### 11.25 Client Design System & Template Customisation
+
+**What:** Bridge the gap between the global golden template library (`app/ai/templates/`) and the user-managed component library (`app/components/`) by adding per-project design systems, component-to-section adapters, project-scoped template registries, and constraint injection into the agent pipeline. Currently these two HTML stores are completely disconnected — golden templates are global with no client scoping, `DesignTokens` are invented by the LLM from scratch every request, and user-created components never enter the agent composition pipeline.
+
+**Why:** Without client-level customisation, every project gets identical template choices and the LLM guesses brand colors/fonts each time, producing inconsistent output that fails brand compliance. A Pampers email could end up with Nike's typography. A client's custom branded footer sits unused in the component library while the agent generates a generic one. The brand compliance check catches violations AFTER generation (reactive), triggering retry loops — instead of preventing them at generation time (proactive). This task makes design systems the single source of truth used for generation (Pass 3 constraints), repair (brand repair stage), and validation (brand compliance check).
+
+**Dependencies:** 11.22.1 (golden templates), 11.22.3 (multi-pass pipeline), 11.22.4 (repair pipeline), 11.22.7 (composer/sections). Phase 2 (component library). 11.22.8 (agent role redefinition — Phase A is a prerequisite for meaningful agent constraint injection).
+
+**Architecture pattern:** One source of truth (design system) → three uses: generative constraints (Pass 3 locked tokens), deterministic repair (brand repair stage), validation (brand compliance check). Component → Section bridge uses existing repair pipeline to harden user HTML before it enters the composition system.
+
+**Use cases:**
+1. **Single-brand onboarding (Nike):** Admin configures design system (palette, fonts, logo, footer text) + pins branded header/footer components as section overrides. Every agent-generated email inherits Nike's exact identity. Pass 3 locks colors to the palette. Assembly swaps footer section with Nike's component. Brand compliance validates the same data used for generation — zero drift.
+2. **Multi-brand portfolio (P&G — Tide + Pampers):** Same ClientOrg, two Projects with distinct design systems. Tide gets bold orange palette + Impact headings + sharp CTAs + `promotional_grid` preference. Pampers gets soft teal/pink + Georgia serif + rounded CTAs + `newsletter_1col` preference. Same agent pipeline, radically different outputs driven by project config. Zero cross-contamination.
+3. **Campaign-specific template iteration (Sephora Holiday):** Developer creates `holiday-gift-grid` component, annotates slots, QA bridge validates (0.87 → repair hardens to 0.94), promotes to project section block. Composer uses it for December campaigns. January: unpinned, component stays in library but exits the composition pipeline. Temporary customisation without permanent architecture changes.
+
+#### 11.25.1 Client Design System Model — Per-Project Brand Identity Store
+**What:** Create a `DesignSystem` Pydantic model storing brand palette, typography, logo, footer config, button style, and social links. Persist as a JSON column on the `Project` model. Expose via API endpoints. Link to brand compliance so validation and generation use identical data.
+**Why:** Highest-impact change — eliminates LLM color/font guessing entirely. Currently `DesignTokens` are generated from scratch every request. With a design system, Pass 3 receives the client's exact palette as constraints, not suggestions.
+**Implementation:**
+- Create `app/projects/design_system.py`:
+  - `BrandPalette` frozen dataclass: `primary`, `secondary`, `accent`, `background`, `text`, `link` (hex strings), optional `dark_background`, `dark_text` for dark mode variants
+  - `Typography` frozen dataclass: `heading_font`, `body_font` (CSS font stacks), `base_size` (default `"16px"`)
+  - `LogoConfig` frozen dataclass: `url`, `alt_text`, `width: int`, `height: int`
+  - `FooterConfig` frozen dataclass: `company_name`, `legal_text`, `address`, `unsubscribe_text`
+  - `SocialLink` frozen dataclass: `platform` (Literal), `url`, `icon_url`
+  - `DesignSystem` frozen dataclass: `palette`, `typography`, `logo: LogoConfig | None`, `footer: FooterConfig | None`, `social_links: tuple[SocialLink, ...]`, `button_border_radius`, `button_style: Literal["filled", "outlined", "text"]`
+  - `load_design_system(raw: dict) -> DesignSystem` — parse JSON from DB column
+  - `design_system_to_brand_rules(ds: DesignSystem) -> dict` — convert to `brand_compliance` params format (`allowed_colors`, `required_fonts`, `required_elements`)
+- Add `design_system: Mapped[dict[str, Any] | None]` JSON column to `Project` model
+- Alembic migration: `add_design_system_to_project`
+- Add API endpoints to `app/projects/routes.py`:
+  - `GET /api/v1/projects/{id}/design-system` — returns `DesignSystem` or empty default
+  - `PUT /api/v1/projects/{id}/design-system` — validates via Pydantic, stores JSON
+  - Auth: `developer`+`admin` for PUT, `viewer`+ for GET
+- When `design_system` is set and `qa_profile.brand_compliance.params` is empty, auto-populate brand compliance params from design system via `design_system_to_brand_rules()` — one source of truth, no manual duplication
+**Security:** Design system is project-scoped, validated by Pydantic. Hex color values validated by regex (`^#[0-9a-fA-F]{6}$`). Font stacks are strings (no code execution). Logo URL validated as HTTPS. No raw user input reaches SQL.
+**Verify:** Create project with design system via API. Verify JSON stored correctly. Verify `design_system_to_brand_rules()` produces valid brand compliance params. Run brand compliance check — uses design system colors. `make test` passes. `make types` clean.
+- [ ] 11.25.1 Client design system model
+
+#### 11.25.2 Component → Section Bridge — Adapter for Agent Pipeline
+**What:** Create a `SectionAdapter` that converts a QA-validated `ComponentVersion` into a `SectionBlock` compatible with the `TemplateComposer`. Users annotate content slots when uploading components. The adapter hardens HTML via the repair pipeline before it enters the composition system.
+**Why:** User-created components (branded headers, footers, CTAs, product cards) currently sit in the component library with no path into the agent pipeline. This bridge lets users' best components become building blocks that the composer and agents can use, while the repair pipeline ensures they meet golden template quality standards.
+**Implementation:**
+- Create `app/components/section_adapter.py`:
+  - `SlotHint` dataclass: `slot_id`, `slot_type: SlotType`, `selector: str`, `required: bool`, `max_chars: int | None`
+  - `SectionAdapter` class:
+    - `adapt(version: ComponentVersion, slot_hints: list[SlotHint]) -> SectionBlock` — takes component HTML, runs through `RepairPipeline.run()` to harden (MSO, dark mode, a11y), injects `data-slot` markers from slot_hints, validates QA score ≥ 0.8, returns `SectionBlock`
+    - `validate_for_composition(block: SectionBlock) -> list[QACheckResult]` — runs QA checks, returns results
+  - `AdaptationError` exception — raised if QA score < 0.8 after repair
+- Extend `ComponentVersion` model: add `slot_definitions: Mapped[list[dict[str, Any]] | None]` JSON column
+- Extend `VersionCreate` schema: add optional `slot_definitions: list[SlotHint] | None`
+- Alembic migration: `add_slot_definitions_to_component_versions`
+- Cache adapted sections per component version ID (immutable once version is created)
+**Security:** Component HTML sanitised by existing `sanitize_component_html()` before adaptation. Repair pipeline is deterministic (no LLM). Slot hints validated by Pydantic. `data-slot` injection uses `lxml` DOM manipulation (no string interpolation).
+**Verify:** Create component with slot_definitions. Adapt via `SectionAdapter`. Verify: repair pipeline hardens HTML (adds MSO/dark mode/a11y). Slot markers injected correctly. QA score ≥ 0.8. Adapted `SectionBlock` works with `TemplateComposer.compose()`. Component with un-repairable HTML raises `AdaptationError`. `make test` passes.
+- [ ] 11.25.2 Component → section bridge
+
+#### 11.25.3 Project-Scoped Template Registry — Client-Specific Template Sets
+**What:** Extend `TemplateRegistry` with project awareness. Each project sees global golden templates (minus disabled ones) + project-specific custom templates (adapted from components) + section overrides (client components replacing default sections). Add `ProjectTemplateConfig` model stored as JSON on `Project`.
+**Why:** Without project scoping, all projects see identical templates. A client that only sends transactional emails still sees promotional templates in the LLM's selection list (noise). A client with custom branded sections can't inject them into the composition pipeline.
+**Implementation:**
+- Create `app/projects/template_config.py`:
+  - `SectionOverride` dataclass: `section_block_id: str`, `component_version_id: int`
+  - `CustomSection` dataclass: `component_version_id: int`, `block_id: str`
+  - `ProjectTemplateConfig` dataclass:
+    - `section_overrides: tuple[SectionOverride, ...]` — e.g., `("footer_standard", 42)` → "always use component v42 as footer"
+    - `custom_sections: tuple[CustomSection, ...]` — component versions promoted to section blocks
+    - `disabled_templates: tuple[str, ...]` — golden template names to exclude
+    - `preferred_templates: tuple[str, ...]` — golden template names to prioritise in selection
+- Add `template_config: Mapped[dict[str, Any] | None]` JSON column to `Project` model
+- Alembic migration: `add_template_config_to_project`
+- Extend `TemplateRegistry`:
+  - `get_for_project(project_id: int, template_config: ProjectTemplateConfig, db: AsyncSession) -> list[GoldenTemplate]` — returns merged template list:
+    1. Load global golden templates
+    2. Remove `disabled_templates`
+    3. Adapt `custom_sections` via `SectionAdapter` (Phase B) and add to composer's available sections
+    4. Apply `section_overrides` — when composing, swap default sections with client's components
+    5. Tag `preferred_templates` for LLM selection prompt (listed first with "recommended" marker)
+  - `list_for_selection_scoped(project_id, template_config) -> list[TemplateMetadata]` — project-aware version of `list_for_selection()`
+- Add API endpoints to `app/projects/routes.py`:
+  - `GET /api/v1/projects/{id}/template-config` — returns `ProjectTemplateConfig` or empty default
+  - `PUT /api/v1/projects/{id}/template-config` — validates, stores JSON
+  - Auth: `developer`+`admin` for PUT, `viewer`+ for GET
+**Security:** Template config is project-scoped, validated by Pydantic. Component version IDs validated against DB (must exist and be accessible to project). Disabled/preferred template names validated against registry (must exist). No arbitrary code paths.
+**Verify:** Configure project with `disabled_templates=["minimal_text"]`, `preferred_templates=["promotional_hero"]`, one section override, one custom section. Call `get_for_project()`. Verify: `minimal_text` excluded, `promotional_hero` first in list, section override swaps correctly, custom section available to composer. Unconfigured project returns full global list (backward compatible). `make test` passes.
+- [ ] 11.25.3 Project-scoped template registry
+
+#### 11.25.4 Agent Pipeline Constraint Injection — Design System as Generation Constraints
+**What:** Update the multi-pass pipeline to inject design system constraints into each pass. Pass 1 receives project-scoped template list. Pass 2 receives design system footer text as locked slot content. Pass 3 receives the design system palette as constraints — the LLM decides which palette color goes where but CANNOT invent new colors. Assembly enforces locked fields, overriding any LLM deviation.
+**Why:** Without constraint injection, the design system is validation-only (brand compliance catches violations after generation). Constraint injection makes it generative — the LLM works within the client's brand identity from the start, eliminating retry loops caused by brand violations.
+**Implementation:**
+- Extend `DesignTokens` in `app/ai/agents/schemas/build_plan.py`:
+  - Add `source: Literal["design_system", "llm_generated", "brief_extracted"] = "llm_generated"`
+  - Add `locked_fields: tuple[str, ...] = ()` — field names from design system that assembly should enforce
+- Update `app/ai/agents/scaffolder/pipeline.py` (multi-pass pipeline):
+  - Accept `design_system: DesignSystem | None` and `template_config: ProjectTemplateConfig | None` parameters
+  - **Pass 1 (Layout):** inject project-scoped template list via `list_for_selection_scoped()`. If `preferred_templates` set, include "RECOMMENDED" marker in prompt
+  - **Pass 2 (Content):** if `design_system.footer` exists, pre-fill footer slot content as locked (LLM cannot override). If `design_system.logo` exists, pre-fill logo image slot
+  - **Pass 3 (Design):** inject `design_system.palette` as "You MUST use ONLY these colors: {palette}. Assign each color to a role (primary_color, background_color, etc.)." Set `locked_fields` on output `DesignTokens`
+- Update `app/ai/agents/scaffolder/assembler.py`:
+  - After assembly, enforce locked fields: if `design_tokens.source == "design_system"`, replace any LLM-deviated values with design system originals
+  - Apply section overrides: swap sections per `template_config.section_overrides`
+- Update `app/ai/blueprints/nodes/scaffolder_node.py`:
+  - Load project's `design_system` and `template_config` from `NodeContext.metadata` (injected by blueprint engine from project config)
+  - Pass to pipeline
+**Security:** Design system values are project-owned, loaded from DB. Palette colors validated as hex. Font stacks are CSS strings (no injection). Locked field enforcement is deterministic string replacement. No new LLM prompt injection surface (design system is system-prompt-level context, not user input).
+**Verify:** Create project with design system (palette + footer + logo). Run scaffolder pipeline. Verify: Pass 1 uses project-scoped template list. Pass 2 pre-fills footer/logo slots. Pass 3 output uses only palette colors. Assembly enforces locked fields. Brand compliance check passes on first attempt (no retry needed). Compare: same brief without design system → LLM invents colors → may fail brand compliance. `make test` passes.
+- [ ] 11.25.4 Agent pipeline constraint injection
+
+#### 11.25.5 Consistency Enforcement — Brand Repair Stage & End-to-End Validation
+**What:** Add a `brand` repair stage to the repair pipeline that auto-corrects off-palette colors and missing design system elements. Link brand compliance check to read from design system directly. Create end-to-end integration test covering the full flow: design system config → agent generation → repair → QA gate.
+**Why:** Defense in depth. Even with constraint injection (11.25.4), edge cases can produce off-brand output (LLM hallucinating a color despite constraints, slot content from user input containing off-brand styles). The brand repair stage is the last deterministic safety net before QA validation.
+**Implementation:**
+- Create `app/qa_engine/repair/brand.py` — `BrandRepair(RepairStage)`:
+  - If project has design system, scan assembled HTML for inline CSS colors
+  - Replace off-palette colors with nearest palette match (Euclidean distance in RGB space)
+  - If footer text doesn't match `design_system.footer.legal_text`, inject correct footer
+  - If logo `src` doesn't match `design_system.logo.url`, correct it
+  - Log all corrections as `repair_warnings`
+- Register `BrandRepair` as Stage 8 in `RepairPipeline` (after existing Stage 7 links.py)
+- Update `app/qa_engine/checks/brand_compliance.py`:
+  - If `QACheckConfig.params` is empty but project has `design_system`, auto-populate params from `design_system_to_brand_rules()` at check time
+  - This ensures brand compliance uses the same data regardless of whether params were manually configured or derived from design system
+- Create `app/ai/templates/tests/test_design_system_e2e.py` — end-to-end integration test:
+  - Set up project with design system (Nike use case)
+  - Set up section overrides (custom footer component)
+  - Run scaffolder pipeline with design system constraints
+  - Verify: output HTML uses only palette colors, correct fonts, Nike footer, Nike logo
+  - Run repair pipeline — verify no-op (constraints already correct)
+  - Run QA gate — verify brand compliance passes
+  - Compare: remove design system, run same brief — verify inconsistent output
+**Security:** Brand repair is deterministic color replacement via lxml/regex. No LLM calls. Nearest-color calculation is pure math. Footer/logo injection uses design system values (trusted, admin-configured). No user input in repair logic.
+**Verify:** Run repair pipeline on HTML with 3 off-palette colors → all corrected to nearest palette match. Run on HTML with wrong footer → footer replaced. Run on already-correct HTML → no-op (idempotent). End-to-end test passes for all 3 use cases (Nike, P&G multi-brand, Sephora holiday). `make test` passes. `make types` clean. `make check` green.
+- [ ] 11.25.5 Consistency enforcement
 
 ### 11.23 Inline Eval Judges — Selective LLM Judge on Recovery Retries
 **What:** Wire eval judges (`JUDGE_REGISTRY`) into the blueprint engine as an inline quality signal, but ONLY on self-correction retries (`iteration > 0`). First-attempt agents rely on the fast QA gate (0 tokens, <200ms). When an agent has already failed QA and is retrying, invoke the LLM judge for that agent to get a nuanced verdict before deciding whether to retry again or escalate to human review.
@@ -1045,3 +1180,76 @@
 - SDK regeneration (`make sdk`) for new endpoints
 **Verify:** `make test -k test_checkpoint` — all tests pass. `make test -k test_resume` — route tests pass. `make check` — full suite green. `make types` clean.
 - [ ] 14.7 Tests & documentation
+
+---
+
+## Phase 15 — Agent Communication & Efficiency Refinements
+
+**What:** Five incremental improvements to existing agent orchestration, memory, routing, evaluation, and knowledge graph systems. No architectural changes — these refine what's already built to improve token efficiency, context quality, cost, agent quality, and reduce redundant work.
+**Dependencies:** Phase 11 (QA engine + agent deterministic architecture), Phase 14 (blueprint checkpoints), Phase 8-9 (knowledge graph).
+**Design principle:** Each task is independently shippable. No task blocks another. All changes are backward-compatible with existing APIs and schemas.
+
+### 15.1 Typed Handoff Schemas Between Blueprint Agents
+**What:** Replace raw HTML/text handoffs between DAG nodes with structured, typed contracts. When agent A passes output to agent B, the handoff includes metadata: components used, client constraints, confidence scores, and uncertainty flags.
+**Why:** Currently downstream agents re-infer context from raw output. The Scaffolder generates HTML but the Dark Mode agent doesn't know which components were used, what the Scaffolder was uncertain about, or what client constraints apply. This causes redundant LLM inference and occasional hallucinated assumptions.
+**Implementation:**
+- Create `app/ai/blueprints/handoff.py` — `AgentHandoff` Pydantic model with fields: `output: str`, `components_used: list[str]`, `constraints: dict[str, Any]`, `confidence: float`, `uncertainties: list[str]`, `metadata: dict[str, Any]`
+- Update `app/ai/blueprints/nodes/agent_node.py` — agent nodes produce `AgentHandoff` instead of raw string output
+- Update `app/ai/blueprints/engine.py` — engine passes `AgentHandoff` to downstream nodes, each agent's system prompt includes relevant handoff context
+- Each agent's SKILL.md updated to instruct structured JSON output that maps to `AgentHandoff` fields
+- Backward-compatible: if an agent returns raw string, engine wraps it in `AgentHandoff(output=raw, confidence=1.0)` with empty metadata
+**Security:** Handoff schemas are internal data structures. No user input reaches handoff construction directly.
+**Verify:** Run a multi-agent blueprint (Scaffolder → Dark Mode → QA). Verify Dark Mode agent receives component list and constraints from Scaffolder. Compare token usage before/after. `make test` passes. `make eval-run` shows no regression.
+- [ ] 15.1 Typed handoff schemas between blueprint agents
+
+### 15.2 Phase-Aware Memory Decay Rates
+**What:** Replace the fixed 30-day half-life with project-phase-aware decay. Active projects retain memories longer; shipped/dormant projects decay faster. Add intent-aware compaction that merges functionally redundant memories even when textually different.
+**Why:** A fixed decay rate is a compromise. During active client development, 30 days is too aggressive — useful context fades before the project ships. After a project goes to maintenance, 30 days is too slow — stale assumptions linger. Additionally, compaction by text similarity misses semantic duplicates (e.g., "client X prefers blue CTAs" and "brand guide says primary action color is #0066CC" are functionally identical).
+**Implementation:**
+- Add `phase: Literal["active", "maintenance", "archived"]` field to `Project` model (default: `"active"`)
+- Update `app/memory/service.py` — `MemoryService.get_decay_rate()` returns half-life based on project phase: active=60 days, maintenance=14 days, archived=3 days
+- Update `app/memory/compaction.py` — add intent-aware merging step: before similarity check, run lightweight embedding comparison (cosine > 0.85) + LLM judge call (lightweight tier) to confirm functional equivalence before merging
+- Add `MEMORY__DECAY_ACTIVE_DAYS`, `MEMORY__DECAY_MAINTENANCE_DAYS`, `MEMORY__DECAY_ARCHIVED_DAYS` config options
+- Migration: add `phase` column to `projects` table, default `"active"`
+**Security:** Phase field is enum-validated. LLM judge call for compaction uses sanitized memory content (no PII). No user-facing API changes.
+**Verify:** Create project in each phase. Store memories. Run decay cycle. Verify active memories persist longer, archived memories decay faster. Run compaction on two semantically equivalent but textually different memories — verify they merge. `make test` passes.
+- [ ] 15.2 Phase-aware memory decay rates
+
+### 15.3 Adaptive Model Tier Routing
+**What:** Track per-agent, per-client success rates and auto-downgrade model tier when confidence is high. If the Content agent consistently produces accepted output on lightweight models for client X, don't use standard tier just because the blueprint default says "standard."
+**Why:** The current tier mapping is static: task complexity → model. But complexity varies by client and agent. Simple brand voices need lightweight models; complex personalisation needs standard+. Static routing wastes budget on easy tasks and under-serves hard ones. This directly reduces the £60-150/month API spend.
+**Implementation:**
+- Create `app/ai/routing_history.py` — `RoutingHistory` model: `agent_id`, `client_org_id`, `tier_used`, `accepted: bool`, `created_at`
+- Update `app/ai/routing.py` — before selecting tier, query last 20 runs for this agent+client. If acceptance rate > 90% on a lower tier, downgrade. If acceptance rate < 70% on current tier, upgrade. Minimum 10 runs before adaptive routing kicks in.
+- Add `AI__ADAPTIVE_ROUTING_ENABLED=true` config flag (default off, opt-in)
+- Dashboard metric: show current effective tier per agent per client in admin panel
+- Fallback: if adaptive routing produces a rejection, auto-retry on one tier higher (single retry, not loop)
+**Security:** Routing history is internal analytics data. No PII. Rate decisions are server-side only; clients cannot influence tier selection.
+**Verify:** Seed 20 successful lightweight runs for Content agent + client X. Next run should auto-select lightweight instead of default standard. Seed 15 runs with 50% failure rate — should auto-upgrade. `AI__ADAPTIVE_ROUTING_ENABLED=false` bypasses all adaptive logic. `make test` passes.
+- [ ] 15.3 Adaptive model tier routing
+
+### 15.4 Auto-Surfacing Prompt Amendments from Eval Failures
+**What:** Close the eval feedback loop. When `make eval-judge` identifies recurring failure patterns, automatically generate suggested SKILL.md amendments and surface them for developer review — not auto-applied, but ready to merge.
+**Why:** The eval pipeline currently produces reports, but translating failure taxonomy into prompt improvements is a manual process. Recurring patterns (e.g., "Outlook Fixer misses VML backgrounds in 2-column layouts") sit in reports until someone reads them and manually edits SKILL.md. This delays quality improvements.
+**Implementation:**
+- Create `app/ai/evals/amendment_suggester.py` — after `make eval-judge`, group failures by agent + failure category. For clusters with 3+ occurrences, generate a suggested SKILL.md patch using the complex-tier LLM with the failure examples as context
+- Output: `evals/suggestions/{agent_name}_{date}.md` — each file contains: failure pattern description, example traces, suggested SKILL.md diff, confidence score
+- Add `make eval-suggest` command that runs the suggester after `make eval-judge`
+- Update `make eval-full` pipeline to include suggestion step
+- Suggestions are review-only: developer approves/rejects via PR or manual edit. No auto-application.
+**Security:** Suggestions are generated from eval traces (already sanitized). Output is local markdown files, not applied to production prompts.
+**Verify:** Run `make eval-full` on a dataset with known recurring failures. Verify suggestion files are generated with actionable SKILL.md diffs. Apply a suggestion manually, re-run eval — verify the failure cluster shrinks. `make test` passes.
+- [ ] 15.4 Auto-surfacing prompt amendments from eval failures
+
+### 15.5 Bidirectional Knowledge Graph — Agent Pre-Query
+**What:** Before generating from scratch, agents query the Cognee knowledge graph for similar past outcomes. If a similar template was built for this client before, the agent starts from that baseline instead of zero.
+**Why:** The outcome poller already feeds agent results into the knowledge graph, but it's write-only. Agents never read from it before starting work. This means the Scaffolder rebuilds similar templates from scratch every time, even when a proven baseline exists. Bidirectional flow turns the knowledge graph from an archive into an active asset.
+**Implementation:**
+- Create `app/ai/agents/knowledge_prefetch.py` — `KnowledgePrefetch` service: takes agent type + task description + client_org_id, queries Cognee for top-3 similar past outcomes (by embedding similarity + client match)
+- Update `app/ai/agents/base.py` — `BaseAgent.execute()` calls `KnowledgePrefetch` before LLM invocation. If relevant prior work found, inject into system prompt as "Reference: a similar task was completed previously with this approach: {summary}"
+- Add `COGNEE__PREFETCH_ENABLED=true` config flag (default off when Cognee disabled)
+- Prefetch is advisory only: agents can ignore prior work if the task differs meaningfully
+- Cache prefetch results in Redis (5-min TTL) to avoid repeated graph queries within a blueprint run
+**Security:** Prefetch results are filtered by `client_org_id` — agents only see outcomes from the same organization. No cross-tenant data leakage. Redis cache key includes org_id.
+**Verify:** Run Scaffolder for client X with a brief similar to a past completed task. Verify prefetch returns the prior outcome. Verify the generated template shows influence from the baseline (not identical, but structurally similar). Run for client Y — verify no cross-tenant results. `COGNEE__PREFETCH_ENABLED=false` skips prefetch entirely. `make test` passes.
+- [ ] 15.5 Bidirectional knowledge graph — agent pre-query

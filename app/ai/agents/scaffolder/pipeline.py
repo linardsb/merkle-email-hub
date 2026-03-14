@@ -22,7 +22,7 @@ from app.ai.agents.schemas.build_plan import (
 )
 from app.ai.protocols import LLMProvider, Message
 from app.ai.sanitize import sanitize_prompt
-from app.ai.templates import TemplateRegistry, get_template_registry
+from app.ai.templates import GoldenTemplate, TemplateRegistry, get_template_registry
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -67,9 +67,7 @@ class ScaffolderPipeline:
         template_selection, section_decisions = await self._layout_pass(brief)
 
         # Resolve slot IDs from selected template
-        template = self._registry.get(template_selection.template_name)
-        if template is None and template_selection.fallback_template:
-            template = self._registry.get(template_selection.fallback_template)
+        template = self._resolve_template_for_slots(template_selection)
         slot_details: list[dict[str, object]] = (
             [
                 {
@@ -109,6 +107,35 @@ class ScaffolderPipeline:
         )
         return plan
 
+    def _resolve_template_for_slots(self, selection: TemplateSelection) -> GoldenTemplate | None:
+        """Resolve template to extract slot definitions for Pass 2.
+
+        For '__compose__' mode, composes the template from section blocks.
+        For regular templates, looks up in the registry.
+        """
+        if selection.template_name == "__compose__":
+            from app.ai.templates.composer import CompositionError, get_composer
+
+            composer = get_composer()
+            section_order = list(selection.section_order)
+            if section_order:
+                try:
+                    return composer.compose(section_order)
+                except CompositionError:
+                    logger.warning(
+                        "scaffolder.slot_resolution_fallback",
+                        template=selection.template_name,
+                    )
+            # Fall through to fallback
+            if selection.fallback_template:
+                return self._registry.get(selection.fallback_template)
+            return None
+
+        template = self._registry.get(selection.template_name)
+        if template is None and selection.fallback_template:
+            template = self._registry.get(selection.fallback_template)
+        return template
+
     # ── Pass 1: Layout ──
 
     async def _layout_pass(
@@ -121,14 +148,27 @@ class ScaffolderPipeline:
             for m in available
         )
 
+        # Load available section blocks for composition fallback
+        from app.ai.templates.composer import get_composer
+
+        composer = get_composer()
+        section_blocks = composer.available_sections()
+        section_list = ", ".join(section_blocks)
+
         system = (
             "You are an email layout architect. Select the best template for the brief.\n\n"
             "Return a JSON object with these fields:\n"
-            "- template_name: string (one of the available template names)\n"
+            "- template_name: string (one of the available template names, or '__compose__' for custom composition)\n"
             "- reasoning: string (why this template fits)\n"
-            "- fallback_template: string | null (backup if primary doesn't work)\n"
+            "- section_order: array of strings (section block IDs, required when template_name is '__compose__')\n"
+            "- fallback_template: string | null (backup golden template)\n"
             "- section_decisions: array of {section_name: string, background_color?: string, hidden?: boolean}\n\n"
             f"Available templates:\n{template_list}\n\n"
+            "If no template is a good fit (confidence < 0.7), compose a custom layout:\n"
+            '- Set template_name to "__compose__"\n'
+            f"- Set section_order to an ordered list of section block IDs from: {section_list}\n"
+            "- Set fallback_template to the closest matching golden template as backup\n"
+            "- Always include at least one content block and one footer block\n\n"
             "Respond ONLY with valid JSON, no markdown fences."
         )
         user = f"Campaign brief:\n{brief}"

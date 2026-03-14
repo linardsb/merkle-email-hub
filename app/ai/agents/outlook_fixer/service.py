@@ -1,7 +1,8 @@
-# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownVariableType=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false, reportUnknownArgumentType=false
 # ruff: noqa: ANN401, ARG002
 """Outlook Fixer agent service — fixes Outlook rendering issues in email HTML."""
 
+import json
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -20,6 +21,7 @@ from app.ai.agents.outlook_fixer.schemas import (
     OutlookFixerRequest,
     OutlookFixerResponse,
 )
+from app.ai.agents.schemas.outlook_diagnostic import MSOIssue, OutlookDiagnostic
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -44,6 +46,7 @@ class OutlookFixerService(BaseAgentService):
     agent_name = "outlook_fixer"
     model_tier = "standard"
     stream_prefix = "outlook-fix"
+    _output_mode_supported: bool = True
 
     def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
         return _build_system_prompt(relevant_skills, output_mode=output_mode)
@@ -83,6 +86,101 @@ class OutlookFixerService(BaseAgentService):
             model=model_id,
             confidence=confidence,
             skills_loaded=skills_loaded,
+        )
+
+    async def _process_structured(self, request: Any) -> OutlookFixerResponse:
+        """Structured mode: diagnostic-only, reports MSO issues without fixing HTML."""
+        from app.ai.protocols import Message
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.ai.sanitize import sanitize_prompt
+        from app.core.config import get_settings
+
+        req: OutlookFixerRequest = request
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self.model_tier)
+        model_id = f"{provider_name}:{model}"
+
+        relevant_skills = self._detect_skills_from_request(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode="structured")
+
+        plan_data = req.build_plan or {}
+        user_message = (
+            "Analyze the following EmailBuildPlan for MSO/Outlook compatibility issues. "
+            "Report issues but do NOT fix them — golden templates handle MSO compatibility.\n\n"
+            f"Plan: {json.dumps(plan_data, default=str)}\n\n"
+            "Return a JSON object with:\n"
+            "- issues: array of {issue_type, severity (critical/warning/info), location, recommendation}\n"
+            "- template_bug: boolean (true if golden template has MSO issues)\n"
+            "- composition_bug: boolean (true if TemplateComposer introduced issues)\n"
+            "- overall_mso_safe: boolean\n"
+            "- confidence: float 0-1\n"
+            "- reasoning: string"
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=sanitize_prompt(user_message)),
+        ]
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+        result = await provider.complete(messages, model_override=model, max_tokens=self.max_tokens)
+
+        diagnostic = self._parse_diagnostic(result.content)
+
+        logger.info(
+            "agents.outlook_fixer.diagnostic_completed",
+            issues=len(diagnostic.issues),
+            mso_safe=diagnostic.overall_mso_safe,
+            confidence=diagnostic.confidence,
+        )
+
+        return OutlookFixerResponse(
+            html=req.html if req.html else "",
+            model=model_id,
+            confidence=diagnostic.confidence,
+            skills_loaded=relevant_skills,
+            diagnostic=diagnostic,
+        )
+
+    def _parse_diagnostic(self, raw_content: str) -> OutlookDiagnostic:
+        """Parse LLM response into OutlookDiagnostic."""
+        content = raw_content.strip()
+        if "```json" in content:
+            start = content.index("```json") + 7
+            end = content.index("```", start)
+            content = content[start:end].strip()
+        elif "```" in content:
+            start = content.index("```") + 3
+            end = content.index("```", start)
+            content = content[start:end].strip()
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            logger.warning("agents.outlook_fixer.diagnostic_parse_failed")
+            return OutlookDiagnostic(confidence=0.0, reasoning="Failed to parse")
+
+        issues = tuple(
+            MSOIssue(
+                issue_type=str(i.get("issue_type", "")),
+                severity=i.get("severity", "info"),
+                location=str(i.get("location", "")),
+                recommendation=str(i.get("recommendation", "")),
+            )
+            for i in data.get("issues", [])
+            if isinstance(i, dict)
+        )
+
+        return OutlookDiagnostic(
+            issues=issues,
+            template_bug=bool(data.get("template_bug", False)),
+            composition_bug=bool(data.get("composition_bug", False)),
+            overall_mso_safe=bool(data.get("overall_mso_safe", True)),
+            confidence=float(data.get("confidence", 0.0)),
+            reasoning=str(data.get("reasoning", "")),
         )
 
     async def process(self, request: Any) -> Any:

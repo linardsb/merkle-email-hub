@@ -75,7 +75,10 @@ class TemplateAssembler:
         return html
 
     def _resolve_template(self, plan: EmailBuildPlan) -> GoldenTemplate:
-        """Resolve template by name, falling back to fallback_template."""
+        """Resolve template by name. Delegates to TemplateComposer for '__compose__'."""
+        if plan.template.template_name == "__compose__":
+            return self._compose_template(plan)
+
         template = self._registry.get(plan.template.template_name)
         if template is None and plan.template.fallback_template:
             template = self._registry.get(plan.template.fallback_template)
@@ -85,6 +88,37 @@ class TemplateAssembler:
                 f"Available: {self._registry.names()}"
             )
         return template
+
+    def _compose_template(self, plan: EmailBuildPlan) -> GoldenTemplate:
+        """Compose template from section blocks. Falls back on failure."""
+        from app.ai.templates.composer import CompositionError, get_composer
+
+        composer = get_composer()
+        section_order = list(plan.template.section_order)
+
+        if not section_order:
+            raise AssemblyError("Composition mode ('__compose__') requires non-empty section_order")
+
+        try:
+            composed = composer.compose(section_order)
+            logger.info(
+                "scaffolder.composition_completed",
+                sections=section_order,
+                slots=len(composed.slots),
+            )
+            return composed
+        except CompositionError as e:
+            if plan.template.fallback_template:
+                fallback = self._registry.get(plan.template.fallback_template)
+                if fallback:
+                    logger.warning(
+                        "scaffolder.composition_fallback",
+                        error=str(e),
+                        fallback=plan.template.fallback_template,
+                    )
+                    return fallback
+
+            raise AssemblyError(f"Composition failed: {e}. No fallback template available.") from e
 
     def _apply_design_tokens(self, html: str, tokens: DesignTokens) -> str:
         """Replace CSS custom property fallback values with design token values.
