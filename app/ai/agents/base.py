@@ -52,6 +52,14 @@ class BaseAgentService:
     max_tokens: int = 8192
     run_qa_default: bool = True
     stream_prefix: str = "agent"
+    output_mode_default: str = "html"
+    _output_mode_supported: bool = False
+
+    # ── Output mode ──
+
+    def _get_output_mode(self, request: Any) -> str:
+        """Extract output_mode from request, with fallback to class default."""
+        return str(getattr(request, "output_mode", self.output_mode_default))
 
     # ── Subclass hooks ──
 
@@ -139,8 +147,17 @@ class BaseAgentService:
 
     # ── Shared pipeline ──
 
+    async def _process_structured(self, request: Any) -> Any:
+        """New pipeline: LLM -> structured JSON -> deterministic assembly.
+
+        Override in subclass when implementing structured mode.
+        """
+        raise NotImplementedError(f"{self.agent_name} does not support structured output mode")
+
     async def process(self, request: Any) -> Any:
         """Execute the full agent pipeline (non-streaming).
+
+        Routes to structured pipeline when output_mode="structured" and supported.
 
         Steps:
         1. Resolve model from tier
@@ -152,6 +169,10 @@ class BaseAgentService:
         7. Run QA checks (if enabled)
         8. Build and return response
         """
+        output_mode = self._get_output_mode(request)
+        if output_mode == "structured" and self._output_mode_supported:
+            return await self._process_structured(request)
+
         settings = get_settings()
         provider_name = settings.ai.provider
         model = resolve_model(self._get_model_tier(request))

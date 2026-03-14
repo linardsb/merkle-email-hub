@@ -1,0 +1,62 @@
+name: announcement_company
+display_name: "Company Announcement"
+layout_type: announcement
+column_count: 1
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - cta
+  - footer
+ideal_for:
+  - company news
+  - org update
+  - CEO letter
+description: >
+  A company announcement template with headline, body content, an executive
+  quote block, and a CTA. Ideal for company news and leadership communications.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Important announcement from our team"
+  - slot_id: announcement_headline
+    slot_type: headline
+    selector: "[data-slot='announcement_headline']"
+    required: true
+    max_chars: 80
+    placeholder: "An Important Update From Our Team"
+  - slot_id: announcement_body
+    slot_type: body
+    selector: "[data-slot='announcement_body']"
+    required: true
+    max_chars: 2000
+    placeholder: "Announcement body content goes here"
+  - slot_id: quote_text
+    slot_type: body
+    selector: "[data-slot='quote_text']"
+    required: false
+    max_chars: 500
+    placeholder: "This is a transformative moment for our company."
+  - slot_id: quote_author
+    slot_type: body
+    selector: "[data-slot='quote_author']"
+    required: false
+    max_chars: 100
+    placeholder: "— Jane Smith, CEO"
+  - slot_id: cta_url
+    slot_type: cta
+    selector: "[data-slot='cta_url']"
+    required: false
+    max_chars: null
+    placeholder: "https://example.com/announcement"
+  - slot_id: cta_text
+    slot_type: cta
+    selector: "[data-slot='cta_text']"
+    required: false
+    max_chars: 30
+    placeholder: "Read the Full Announcement"

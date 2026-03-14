@@ -1,5 +1,7 @@
 """Request/response schemas for the Accessibility Auditor agent."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from app.qa_engine.schemas import QACheckResult
@@ -21,6 +23,7 @@ class AccessibilityRequest(BaseModel):
         default=None,
         description="Specific audit areas to focus on (all areas if None)",
     )
+    output_mode: Literal["html", "structured"] = "html"
     stream: bool = False
     run_qa: bool = False
 
@@ -43,3 +46,4 @@ class AccessibilityResponse(BaseModel):
     qa_passed: bool | None = None
     model: str
     confidence: float | None = None
+    plan: dict[str, object] | None = None

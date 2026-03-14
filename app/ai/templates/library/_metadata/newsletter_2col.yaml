@@ -1,0 +1,63 @@
+name: newsletter_2col
+display_name: "Two-Column Newsletter"
+layout_type: newsletter
+column_count: 2
+has_hero_image: true
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - hero
+  - body
+  - cta
+  - footer
+ideal_for:
+  - comparison
+  - two-topic
+  - side-by-side content
+description: >
+  A two-column newsletter with hero image, headline, and side-by-side content
+  columns. Ideal for comparison content or covering two topics in one email.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Two-column newsletter update"
+  - slot_id: hero_image
+    slot_type: image
+    selector: "[data-slot='hero_image']"
+    required: false
+    max_chars: null
+    placeholder: "https://via.placeholder.com/600x250"
+  - slot_id: hero_headline
+    slot_type: headline
+    selector: "[data-slot='hero_headline']"
+    required: true
+    max_chars: 80
+    placeholder: "Two-Column Newsletter"
+  - slot_id: col1_content
+    slot_type: body
+    selector: "[data-slot='col1_content']"
+    required: true
+    max_chars: 2000
+    placeholder: "Left column content goes here"
+  - slot_id: col2_content
+    slot_type: body
+    selector: "[data-slot='col2_content']"
+    required: true
+    max_chars: 2000
+    placeholder: "Right column content goes here"
+  - slot_id: cta_url
+    slot_type: cta
+    selector: "[data-slot='cta_url']"
+    required: false
+    max_chars: null
+    placeholder: "https://example.com"
+  - slot_id: cta_text
+    slot_type: cta
+    selector: "[data-slot='cta_text']"
+    required: false
+    max_chars: 30
+    placeholder: "Read More"

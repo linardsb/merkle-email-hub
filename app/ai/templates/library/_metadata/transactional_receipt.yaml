@@ -1,0 +1,66 @@
+name: transactional_receipt
+display_name: "Transaction Receipt"
+layout_type: transactional
+column_count: 1
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - footer
+ideal_for:
+  - order confirmation
+  - purchase receipt
+description: >
+  A transactional receipt template with order details, itemized list, and
+  cost summary. Ideal for order confirmations and purchase receipts.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Your order has been confirmed"
+  - slot_id: order_number
+    slot_type: body
+    selector: "[data-slot='order_number']"
+    required: true
+    max_chars: 50
+    placeholder: "#ORD-12345"
+  - slot_id: order_date
+    slot_type: body
+    selector: "[data-slot='order_date']"
+    required: true
+    max_chars: 50
+    placeholder: "March 14, 2026"
+  - slot_id: item_details
+    slot_type: body
+    selector: "[data-slot='item_details']"
+    required: true
+    max_chars: 2000
+    placeholder: "Item details and descriptions go here"
+  - slot_id: subtotal
+    slot_type: body
+    selector: "[data-slot='subtotal']"
+    required: true
+    max_chars: 50
+    placeholder: "$49.99"
+  - slot_id: tax
+    slot_type: body
+    selector: "[data-slot='tax']"
+    required: true
+    max_chars: 50
+    placeholder: "$4.50"
+  - slot_id: total
+    slot_type: body
+    selector: "[data-slot='total']"
+    required: true
+    max_chars: 50
+    placeholder: "$54.49"
+  - slot_id: support_url
+    slot_type: cta
+    selector: "[data-slot='support_url']"
+    required: false
+    max_chars: null
+    placeholder: "https://example.com/support"

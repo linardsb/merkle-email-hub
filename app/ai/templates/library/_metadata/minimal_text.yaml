@@ -1,0 +1,37 @@
+name: minimal_text
+display_name: "Minimal Text"
+layout_type: minimal
+column_count: 1
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - footer
+ideal_for:
+  - personal note
+  - transactional plain text
+  - internal announcement
+description: >
+  A minimal plain-text-style template with body content and a signature block.
+  No images, no buttons. Ideal for personal notes and internal communications.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "A personal message for you"
+  - slot_id: body_content
+    slot_type: body
+    selector: "[data-slot='body_content']"
+    required: true
+    max_chars: 2000
+    placeholder: "Your message content goes here"
+  - slot_id: signature
+    slot_type: footer
+    selector: "[data-slot='signature']"
+    required: true
+    max_chars: 500
+    placeholder: "Best regards, Your Name"

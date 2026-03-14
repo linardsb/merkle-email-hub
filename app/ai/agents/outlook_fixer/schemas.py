@@ -1,5 +1,7 @@
 """Request/response schemas for the Outlook Fixer agent."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from app.qa_engine.schemas import QACheckResult
@@ -21,6 +23,7 @@ class OutlookFixerRequest(BaseModel):
         default=None,
         description="Specific Outlook issues to fix (auto-detect if None)",
     )
+    output_mode: Literal["html", "structured"] = "html"
     stream: bool = False
     run_qa: bool = False
 
@@ -47,3 +50,4 @@ class OutlookFixerResponse(BaseModel):
         default_factory=list,
         description="MSO validation warnings from post-generation validator",
     )
+    plan: dict[str, object] | None = None

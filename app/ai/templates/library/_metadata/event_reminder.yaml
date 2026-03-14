@@ -1,0 +1,68 @@
+name: event_reminder
+display_name: "Event Reminder"
+layout_type: event
+column_count: 1
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - cta
+  - footer
+ideal_for:
+  - event reminder
+  - countdown
+  - last-chance RSVP
+description: >
+  An event reminder template with event name, date, time, location, and
+  reminder body. Ideal for event reminders and last-chance RSVP notifications.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Reminder: Your event is coming up soon"
+  - slot_id: event_name
+    slot_type: headline
+    selector: "[data-slot='event_name']"
+    required: true
+    max_chars: 80
+    placeholder: "Annual Community Summit 2026"
+  - slot_id: event_date
+    slot_type: body
+    selector: "[data-slot='event_date']"
+    required: true
+    max_chars: 50
+    placeholder: "April 15, 2026"
+  - slot_id: event_time
+    slot_type: body
+    selector: "[data-slot='event_time']"
+    required: true
+    max_chars: 50
+    placeholder: "9:00 AM - 5:00 PM EST"
+  - slot_id: event_location
+    slot_type: body
+    selector: "[data-slot='event_location']"
+    required: true
+    max_chars: 100
+    placeholder: "Grand Convention Center, New York"
+  - slot_id: reminder_body
+    slot_type: body
+    selector: "[data-slot='reminder_body']"
+    required: true
+    max_chars: 2000
+    placeholder: "We look forward to seeing you at the event."
+  - slot_id: cta_url
+    slot_type: cta
+    selector: "[data-slot='cta_url']"
+    required: false
+    max_chars: null
+    placeholder: "https://example.com/event-details"
+  - slot_id: cta_text
+    slot_type: cta
+    selector: "[data-slot='cta_text']"
+    required: false
+    max_chars: 30
+    placeholder: "View Event Details"

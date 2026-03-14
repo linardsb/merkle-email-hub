@@ -1,5 +1,7 @@
 """Request/response schemas for the Dark Mode agent."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from app.qa_engine.schemas import QACheckResult
@@ -25,6 +27,7 @@ class DarkModeRequest(BaseModel):
         default=None,
         description="Hex colours that should not be remapped",
     )
+    output_mode: Literal["html", "structured"] = "html"
     stream: bool = False
     run_qa: bool = False
 
@@ -46,3 +49,4 @@ class DarkModeResponse(BaseModel):
     confidence: float | None = None
     skills_loaded: list[str] = Field(default_factory=list)
     meta_tags_injected: list[str] = Field(default_factory=list)
+    plan: dict[str, object] | None = None

@@ -1,0 +1,69 @@
+name: event_invitation
+display_name: "Event Invitation"
+layout_type: event
+column_count: 1
+has_hero_image: true
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - hero
+  - body
+  - cta
+  - footer
+ideal_for:
+  - event invite
+  - webinar
+  - conference
+description: >
+  An event invitation template with hero image, event name, date, location,
+  description, and RSVP button. Ideal for event invites and webinar promotions.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "You're invited to an exclusive event"
+  - slot_id: hero_image
+    slot_type: image
+    selector: "[data-slot='hero_image']"
+    required: false
+    max_chars: null
+    placeholder: "https://via.placeholder.com/600x300"
+  - slot_id: event_name
+    slot_type: headline
+    selector: "[data-slot='event_name']"
+    required: true
+    max_chars: 80
+    placeholder: "Annual Community Summit 2026"
+  - slot_id: event_date
+    slot_type: body
+    selector: "[data-slot='event_date']"
+    required: true
+    max_chars: 50
+    placeholder: "April 15, 2026"
+  - slot_id: event_location
+    slot_type: body
+    selector: "[data-slot='event_location']"
+    required: true
+    max_chars: 100
+    placeholder: "Grand Convention Center, New York"
+  - slot_id: event_description
+    slot_type: body
+    selector: "[data-slot='event_description']"
+    required: true
+    max_chars: 2000
+    placeholder: "Join us for an inspiring day of keynote speakers, workshops, and networking."
+  - slot_id: rsvp_url
+    slot_type: cta
+    selector: "[data-slot='rsvp_url']"
+    required: true
+    max_chars: null
+    placeholder: "https://example.com/rsvp"
+  - slot_id: rsvp_text
+    slot_type: cta
+    selector: "[data-slot='rsvp_text']"
+    required: true
+    max_chars: 30
+    placeholder: "RSVP Now"

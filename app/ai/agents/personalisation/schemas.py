@@ -35,6 +35,7 @@ class PersonalisationRequest(BaseModel):
         max_length=5_000,
         description="What personalisation to add (e.g., 'Add first name greeting with fallback, show VIP section for premium users')",
     )
+    output_mode: Literal["html", "structured"] = "html"
     stream: bool = False
     run_qa: bool = False
 
@@ -60,3 +61,4 @@ class PersonalisationResponse(BaseModel):
     model: str
     confidence: float | None = None
     skills_loaded: list[str] = Field(default_factory=list)
+    plan: dict[str, object] | None = None

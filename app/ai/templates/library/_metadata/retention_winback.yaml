@@ -1,0 +1,57 @@
+name: retention_winback
+display_name: "Win-Back Campaign"
+layout_type: retention
+column_count: 1
+has_hero_image: true
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - hero
+  - body
+  - cta
+  - footer
+ideal_for:
+  - win-back
+  - re-engagement
+  - special offer
+description: >
+  A re-engagement template with hero image, emotional headline, offer details
+  section, and a redemption CTA. Ideal for win-back and special offer campaigns.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "We miss you! Here's a special offer to welcome you back"
+  - slot_id: hero_image
+    slot_type: image
+    selector: "[data-slot='hero_image']"
+    required: false
+    max_chars: null
+    placeholder: "https://via.placeholder.com/600x300"
+  - slot_id: winback_headline
+    slot_type: headline
+    selector: "[data-slot='winback_headline']"
+    required: true
+    max_chars: 80
+    placeholder: "We Miss You!"
+  - slot_id: offer_details
+    slot_type: body
+    selector: "[data-slot='offer_details']"
+    required: true
+    max_chars: 2000
+    placeholder: "Special offer details and incentive go here"
+  - slot_id: cta_url
+    slot_type: cta
+    selector: "[data-slot='cta_url']"
+    required: true
+    max_chars: null
+    placeholder: "https://example.com/shop"
+  - slot_id: cta_text
+    slot_type: cta
+    selector: "[data-slot='cta_text']"
+    required: true
+    max_chars: 30
+    placeholder: "Redeem Your Offer"

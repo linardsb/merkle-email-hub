@@ -1,0 +1,55 @@
+name: transactional_shipping
+display_name: "Shipping Notification"
+layout_type: transactional
+column_count: 1
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - cta
+  - footer
+ideal_for:
+  - shipping notification
+  - delivery update
+description: >
+  A transactional shipping notification with tracking details, carrier info,
+  estimated delivery date, and a tracking link. Ideal for shipment updates.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Your order has shipped!"
+  - slot_id: tracking_number
+    slot_type: body
+    selector: "[data-slot='tracking_number']"
+    required: true
+    max_chars: 100
+    placeholder: "1Z999AA10123456784"
+  - slot_id: carrier
+    slot_type: body
+    selector: "[data-slot='carrier']"
+    required: true
+    max_chars: 50
+    placeholder: "UPS Ground"
+  - slot_id: estimated_delivery
+    slot_type: body
+    selector: "[data-slot='estimated_delivery']"
+    required: true
+    max_chars: 50
+    placeholder: "March 18, 2026"
+  - slot_id: shipping_address
+    slot_type: body
+    selector: "[data-slot='shipping_address']"
+    required: true
+    max_chars: 200
+    placeholder: "123 Main Street, Apt 4B, New York, NY 10001"
+  - slot_id: tracking_url
+    slot_type: cta
+    selector: "[data-slot='tracking_url']"
+    required: true
+    max_chars: null
+    placeholder: "https://example.com/track"

@@ -45,6 +45,7 @@ class CompletionResponse:
     content: str
     model: str
     usage: dict[str, int] | None = None
+    parsed: dict[str, object] | None = None
 
 
 @dataclass

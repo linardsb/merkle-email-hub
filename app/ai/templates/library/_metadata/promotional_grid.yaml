@@ -1,0 +1,110 @@
+name: promotional_grid
+display_name: "Promotional Grid"
+layout_type: promotional
+column_count: 2
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - cta
+  - footer
+ideal_for:
+  - multi-product
+  - catalog
+  - collection showcase
+description: >
+  A product grid layout showcasing four items in a two-column arrangement.
+  Each item has an image, title, and price. Ideal for catalogs and collections.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Browse our latest product collection"
+  - slot_id: grid_item_1_image
+    slot_type: image
+    selector: "[data-slot='grid_item_1_image']"
+    required: true
+    max_chars: null
+    placeholder: "https://via.placeholder.com/248x248"
+  - slot_id: grid_item_1_title
+    slot_type: headline
+    selector: "[data-slot='grid_item_1_title']"
+    required: true
+    max_chars: 80
+    placeholder: "Product One"
+  - slot_id: grid_item_1_price
+    slot_type: body
+    selector: "[data-slot='grid_item_1_price']"
+    required: true
+    max_chars: 50
+    placeholder: "$49.99"
+  - slot_id: grid_item_2_image
+    slot_type: image
+    selector: "[data-slot='grid_item_2_image']"
+    required: true
+    max_chars: null
+    placeholder: "https://via.placeholder.com/248x248"
+  - slot_id: grid_item_2_title
+    slot_type: headline
+    selector: "[data-slot='grid_item_2_title']"
+    required: true
+    max_chars: 80
+    placeholder: "Product Two"
+  - slot_id: grid_item_2_price
+    slot_type: body
+    selector: "[data-slot='grid_item_2_price']"
+    required: true
+    max_chars: 50
+    placeholder: "$59.99"
+  - slot_id: grid_item_3_image
+    slot_type: image
+    selector: "[data-slot='grid_item_3_image']"
+    required: true
+    max_chars: null
+    placeholder: "https://via.placeholder.com/248x248"
+  - slot_id: grid_item_3_title
+    slot_type: headline
+    selector: "[data-slot='grid_item_3_title']"
+    required: true
+    max_chars: 80
+    placeholder: "Product Three"
+  - slot_id: grid_item_3_price
+    slot_type: body
+    selector: "[data-slot='grid_item_3_price']"
+    required: true
+    max_chars: 50
+    placeholder: "$39.99"
+  - slot_id: grid_item_4_image
+    slot_type: image
+    selector: "[data-slot='grid_item_4_image']"
+    required: true
+    max_chars: null
+    placeholder: "https://via.placeholder.com/248x248"
+  - slot_id: grid_item_4_title
+    slot_type: headline
+    selector: "[data-slot='grid_item_4_title']"
+    required: true
+    max_chars: 80
+    placeholder: "Product Four"
+  - slot_id: grid_item_4_price
+    slot_type: body
+    selector: "[data-slot='grid_item_4_price']"
+    required: true
+    max_chars: 50
+    placeholder: "$69.99"
+  - slot_id: cta_url
+    slot_type: cta
+    selector: "[data-slot='cta_url']"
+    required: false
+    max_chars: null
+    placeholder: "https://example.com/shop"
+  - slot_id: cta_text
+    slot_type: cta
+    selector: "[data-slot='cta_text']"
+    required: false
+    max_chars: 30
+    placeholder: "View All Products"

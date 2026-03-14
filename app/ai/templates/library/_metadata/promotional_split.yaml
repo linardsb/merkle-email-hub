@@ -1,0 +1,55 @@
+name: promotional_split
+display_name: "Promotional Split"
+layout_type: promotional
+column_count: 2
+has_hero_image: false
+has_navigation: false
+has_social_links: false
+sections:
+  - header
+  - body
+  - cta
+  - footer
+ideal_for:
+  - feature highlight
+  - image + text campaign
+description: >
+  A split-layout promotional template with an image on one side and text with
+  a CTA on the other. Ideal for feature highlights and image-text campaigns.
+slots:
+  - slot_id: preheader
+    slot_type: preheader
+    selector: "[data-slot='preheader']"
+    required: false
+    max_chars: 100
+    placeholder: "Check out our latest offer"
+  - slot_id: split_image
+    slot_type: image
+    selector: "[data-slot='split_image']"
+    required: true
+    max_chars: null
+    placeholder: "https://via.placeholder.com/300x400"
+  - slot_id: split_headline
+    slot_type: headline
+    selector: "[data-slot='split_headline']"
+    required: true
+    max_chars: 80
+    placeholder: "Discover Something New"
+  - slot_id: split_body
+    slot_type: body
+    selector: "[data-slot='split_body']"
+    required: true
+    max_chars: 2000
+    placeholder: "Explore our curated selection of products designed to elevate your everyday experience."
+  - slot_id: cta_url
+    slot_type: cta
+    selector: "[data-slot='cta_url']"
+    required: true
+    max_chars: null
+    placeholder: "https://example.com/offer"
+  - slot_id: cta_text
+    slot_type: cta
+    selector: "[data-slot='cta_text']"
+    required: true
+    max_chars: 30
+    placeholder: "Shop Now"
