@@ -38,7 +38,7 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 
 See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.24 (including 11.22 template-first architecture — all 9 subtasks, 11.23 inline judges, 11.24 production trace sampling).
 
-**Next:** **11.25** (client design system & template customisation — bridges `app/components/` ↔ `app/ai/templates/`, adds per-project design systems, project-scoped template registry, constraint injection into agent pipeline), Phase 12 (Figma import), Phase 13 (ESP sync).
+**Active:** **11.25** client design system & template customisation (11.25.1 design system model done — `app/projects/design_system.py`, API endpoints, brand compliance fallback; remaining: 11.25.2-11.25.5). Then Phase 12 (Figma import), Phase 13 (ESP sync).
 
 ## Compact instructions
 

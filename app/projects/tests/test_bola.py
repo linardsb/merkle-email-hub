@@ -29,6 +29,9 @@ def _make_project(project_id: int = 1) -> MagicMock:
     project.created_by_id = 1
     project.is_active = True
     project.deleted_at = None
+    project.target_clients = None
+    project.qa_profile = None
+    project.design_system = None
     project.created_at = "2026-01-01T00:00:00Z"
     project.updated_at = "2026-01-01T00:00:00Z"
     return project

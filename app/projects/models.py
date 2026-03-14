@@ -44,6 +44,12 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
     qa_profile: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, nullable=True, default=None, comment="Per-project QA check configuration overrides"
     )
+    design_system: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        default=None,
+        comment="Per-project brand identity (palette, typography, logo, footer, social links)",
+    )
 
     client_org: Mapped[ClientOrg] = relationship(back_populates="projects")
 

@@ -1,7 +1,7 @@
 """Pydantic schemas for projects and client organizations."""
 
 import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -55,6 +55,7 @@ class ProjectResponse(ProjectBase):
     created_by_id: int
     is_active: bool
     target_clients: list[str] | None = None
+    design_system: dict[str, Any] | None = None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 

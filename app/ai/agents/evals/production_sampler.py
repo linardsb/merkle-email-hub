@@ -53,7 +53,7 @@ async def enqueue_for_judging(
     if rate <= 0.0:
         return False
 
-    if random.random() > rate:  # noqa: S311 — non-crypto sampling
+    if random.random() > rate:
         return False
 
     trace_payload = {

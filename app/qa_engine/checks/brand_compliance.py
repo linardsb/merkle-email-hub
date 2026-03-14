@@ -18,9 +18,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from lxml import html as lxml_html
+from pydantic import ValidationError
 
 # Import custom checks to ensure brand check functions are registered
 import app.qa_engine.custom_checks  # noqa: F401  # pyright: ignore[reportUnusedImport]
+from app.projects.design_system import design_system_to_brand_rules, load_design_system
 from app.qa_engine.brand_analyzer import clear_brand_cache
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.rule_engine import RuleEngine, load_rules
@@ -42,6 +44,37 @@ def _has_brand_rules(config: QACheckConfig | None) -> bool:
     )
 
 
+def _enrich_config_from_design_system(config: QACheckConfig | None) -> QACheckConfig | None:
+    """If no explicit brand rules but _design_system is in params, derive brand rules.
+
+    The QA runner passes the project's design_system raw dict via params["_design_system"]
+    when running checks for a project that has a design system configured.
+    """
+    if config is None:
+        return None
+    if _has_brand_rules(config):
+        return config
+    ds_raw = config.params.get("_design_system")
+    if not ds_raw:
+        return config
+    try:
+        ds = load_design_system(ds_raw)
+    except ValidationError:
+        return config
+    if ds is None:
+        return config
+    derived = design_system_to_brand_rules(ds)
+    # Merge derived rules into params (don't overwrite existing), strip internal key
+    merged_params = {k: v for k, v in config.params.items() if k != "_design_system"}
+    merged_params.update(derived)
+    return QACheckConfig(
+        enabled=config.enabled,
+        severity=config.severity,
+        threshold=config.threshold,
+        params=merged_params,
+    )
+
+
 class BrandComplianceCheck:
     """Per-project brand compliance validation via YAML rule engine.
 
@@ -56,6 +89,8 @@ class BrandComplianceCheck:
         self._engine = RuleEngine(self._rules)
 
     async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
+        config = _enrich_config_from_design_system(config)
+
         if config and not config.enabled:
             return QACheckResult(
                 check_name=self.name,

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.core.logging import get_logger
+from app.projects.design_system import DesignSystem, load_design_system
 from app.projects.exceptions import (
     ClientOrgAlreadyExistsError,
     ClientOrgNotFoundError,
@@ -147,6 +148,35 @@ class ProjectService:
         if not project:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         await self.projects.delete(project)
+
+    async def get_design_system(self, project_id: int, user: User) -> DesignSystem | None:
+        """Get the design system for a project. Returns None if not configured."""
+        logger.info("projects.design_system_fetch_started", project_id=project_id)
+        project_response = await self.verify_project_access(project_id, user)
+        return load_design_system(project_response.design_system)
+
+    async def update_design_system(
+        self, project_id: int, design_system: DesignSystem, user: User
+    ) -> DesignSystem:
+        """Set or update the design system for a project."""
+        logger.info("projects.design_system_update_started", project_id=project_id, user_id=user.id)
+        await self.verify_project_access(project_id, user)
+        project = await self.projects.get(project_id)
+        if not project:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+        await self.projects.update_design_system(project, design_system.model_dump())
+        logger.info("projects.design_system_update_completed", project_id=project_id)
+        return design_system
+
+    async def delete_design_system(self, project_id: int, user: User) -> None:
+        """Remove the design system from a project."""
+        logger.info("projects.design_system_delete_started", project_id=project_id, user_id=user.id)
+        await self.verify_project_access(project_id, user)
+        project = await self.projects.get(project_id)
+        if not project:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+        await self.projects.update_design_system(project, None)
+        logger.info("projects.design_system_delete_completed", project_id=project_id)
 
     async def create_org(self, data: ClientOrgCreate) -> ClientOrgResponse:
         logger.info("orgs.create_started", name=data.name)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,6 +112,14 @@ class ProjectRepository:
     async def update(self, project: Project, data: ProjectUpdate) -> Project:
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(project, field, value)
+        await self.db.commit()
+        await self.db.refresh(project)
+        return project
+
+    async def update_design_system(
+        self, project: Project, design_system: dict[str, Any] | None
+    ) -> Project:
+        project.design_system = design_system
         await self.db.commit()
         await self.db.refresh(project)
         return project

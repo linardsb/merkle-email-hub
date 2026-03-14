@@ -29,6 +29,10 @@ Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `jud
 
 **Production trace sampling (11.24):** `app/ai/agents/evals/production_sampler.py` closes the eval feedback loop. Successful blueprint runs are probabilistically enqueued to Redis (`service.py` post-run hook), `ProductionJudgeWorker` (DataPoller) processes the queue with LLM judges, verdicts append to `traces/production_verdicts.jsonl`, `refresh_analysis()` merges with synthetic verdicts into `traces/analysis.json`. Existing `failure_warnings.py` reads merged analysis — agents learn from production failures. Config: `EVAL__PRODUCTION_SAMPLE_RATE` (default `0.0` = disabled). Command: `make eval-refresh`.
 
+## Design System (11.25.1)
+
+Per-project brand identity in `app/projects/design_system.py`. `DesignSystem` Pydantic model (frozen) with `BrandPalette`, `Typography`, `LogoConfig`, `FooterConfig`, `SocialLink`. Stored as JSON column on `Project`. API: GET/PUT/DELETE `/api/v1/projects/{id}/design-system`. `design_system_to_brand_rules()` bridges to brand compliance params. Brand compliance check auto-derives rules from design system via `_enrich_config_from_design_system()` when no explicit `qa_profile` brand rules exist (read-time, no stale data).
+
 ## Maizzle Sidecar
 
 `services/maizzle-builder/` — POST /build, POST /preview, GET /health.

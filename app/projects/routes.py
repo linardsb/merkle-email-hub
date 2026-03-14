@@ -1,6 +1,8 @@
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 """REST API routes for project and client organization management."""
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +12,7 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.exceptions import DomainValidationError
 from app.core.rate_limit import limiter
+from app.projects.design_system import DesignSystem
 from app.projects.schemas import (
     ClientOrgCreate,
     ClientOrgResponse,
@@ -216,6 +219,53 @@ async def get_compatibility_brief(
             for r in brief.risk_matrix
         ],
     )
+
+
+# ── Design System ──
+
+
+@router.get("/projects/{project_id}/design-system")
+@limiter.limit("30/minute")
+async def get_design_system(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> dict[str, Any]:
+    """Get the design system for a project."""
+    _ = request
+    ds = await service.get_design_system(project_id, current_user)
+    if ds is None:
+        return {}
+    return ds.model_dump()
+
+
+@router.put("/projects/{project_id}/design-system")
+@limiter.limit("10/minute")
+async def update_design_system(
+    request: Request,
+    project_id: int,
+    data: DesignSystem,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> dict[str, Any]:
+    """Set or update the design system for a project."""
+    _ = request
+    ds = await service.update_design_system(project_id, data, current_user)
+    return ds.model_dump()
+
+
+@router.delete("/projects/{project_id}/design-system", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def delete_design_system(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> None:
+    """Remove the design system from a project."""
+    _ = request
+    await service.delete_design_system(project_id, current_user)
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
