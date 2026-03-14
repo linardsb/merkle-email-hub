@@ -7,6 +7,7 @@ skills/*.md via progressive disclosure based on HTML content analysis.
 from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
+from app.ai.agents.skill_loader import extract_skill_for_mode
 from app.ai.agents.skill_override import get_override
 
 _SKILL_DIR = Path(__file__).parent
@@ -39,22 +40,24 @@ SKILL_FILES: dict[str, str] = {
 }
 
 
-def _base_system_prompt() -> str:
-    """Build base system prompt, checking for A/B test override."""
+def _base_system_prompt(output_mode: str = "html") -> str:
+    """Build base system prompt with output-mode-aware section extraction."""
     skill = get_override("accessibility") or _SKILL_CONTENT
+    skill = extract_skill_for_mode(skill, output_mode)
     return f"{_PROMPT_PREFIX}\n{skill}"
 
 
-def build_system_prompt(relevant_skills: list[str]) -> str:
+def build_system_prompt(relevant_skills: list[str], output_mode: str = "html") -> str:
     """Build system prompt with progressive disclosure of L3 reference files.
 
     Args:
         relevant_skills: List of skill keys to load.
+        output_mode: "html" or "structured" — controls which output format section is included.
 
     Returns:
         Complete system prompt with relevant L3 files appended.
     """
-    parts = [_base_system_prompt()]
+    parts = [_base_system_prompt(output_mode)]
 
     # Inject eval-informed failure warnings (task 7.2)
     failure_warnings = get_failure_warnings("accessibility")

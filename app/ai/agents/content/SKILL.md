@@ -66,7 +66,11 @@ refine email marketing copy based on the operation.
 **Input:** Operation type + source text + optional brand voice and tone
 **Output:** Text inside a ```text code block (multiple alternatives separated by ---)
 
-## Output Format
+## Output Format: HTML
+
+When `output_mode` is "html" (default), return text content inside a ```text code fence.
+Multiple alternatives separated by `---`. This is the standard content output format.
+End with `<!-- CONFIDENCE: X.XX -->` comment.
 
 - Single result: text on its own inside the code block
 - Multiple alternatives: separated by a line containing only `---`
@@ -74,6 +78,32 @@ refine email marketing copy based on the operation.
 - No HTML, no markdown formatting (except the code block wrapper)
 
 **CRITICAL:** When `num_alternatives=1` or the request asks for a single result, return EXACTLY ONE result. Do NOT provide alternatives, variations, or options unless explicitly asked. One request = one output unless told otherwise.
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a `ContentPlan` JSON object with
+typed alternatives.
+
+### ContentPlan Schema
+
+```json
+{
+  "operation": "subject_line",
+  "alternatives": [
+    {"text": "Your Weekly Tech Digest", "tone": "professional", "char_count": 24, "word_count": 4, "reasoning": "Clear, concise, no spam triggers"},
+    {"text": "5 Stories You Need to Read This Week", "tone": "urgent", "char_count": 37, "word_count": 8, "reasoning": "Creates urgency without spam words"}
+  ],
+  "selected_index": 0
+}
+```
+
+### Rules
+- `operation` must match the requested operation type
+- At least 2 alternatives for subject_line, preheader, cta operations
+- `char_count` and `word_count` must be accurate
+- `selected_index` indicates the recommended alternative
+- Respect the character limits for each operation type (from Core Instructions above)
+- Respond ONLY with valid JSON
 
 ## Operations
 

@@ -118,6 +118,48 @@ Aim for ZERO syntax warnings on first generation.
 
 `<!-- CONFIDENCE: 0.XX -->`
 
+## Output Format: HTML
+
+When `output_mode` is "html", return the complete modified HTML with:
+- ESP-specific personalisation tags injected at appropriate locations
+- Fallback values for all dynamic content
+- Conditional blocks with correct platform syntax
+- End with `<!-- CONFIDENCE: X.XX -->` comment
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a JSON object describing where to place
+personalisation tags. Do NOT modify the HTML — the assembly code will inject them.
+
+### PersonalisationPlan Schema
+
+```json
+{
+  "platform": "braze",
+  "tags": [
+    {"slot_id": "greeting", "tag_syntax": "{{ ${first_name} }}", "fallback": "there", "is_conditional": false},
+    {"slot_id": "hero_headline", "tag_syntax": "{{ ${preferred_category} }}", "fallback": "Latest Updates", "is_conditional": false}
+  ],
+  "conditional_blocks": [
+    {
+      "condition": "vip_status == true",
+      "true_content": "As a valued VIP member, enjoy exclusive access",
+      "false_content": "Join our VIP program today",
+      "platform_syntax": "{% if ${vip_status} == 'true' %}"
+    }
+  ],
+  "reasoning": "2 personalisation slots + 1 conditional VIP block for Braze Liquid"
+}
+```
+
+### Rules
+- `platform` must match one of the 7 supported ESPs
+- `tag_syntax` must use the correct platform syntax (Liquid for Braze, AMPscript for SFMC, etc.)
+- Every tag MUST have a `fallback` value
+- `is_conditional` is true for tags inside conditional blocks
+- Conditional blocks use platform-native syntax in `platform_syntax`
+- Respond ONLY with valid JSON
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript (except Adobe Campaign JSSP)

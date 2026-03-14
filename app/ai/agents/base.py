@@ -63,7 +63,7 @@ class BaseAgentService:
 
     # ── Subclass hooks ──
 
-    def build_system_prompt(self, relevant_skills: list[str]) -> str:
+    def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
         """Build the system prompt from skill files.
 
         Every agent has its own ``prompt.py`` with ``build_system_prompt()``.
@@ -180,7 +180,7 @@ class BaseAgentService:
 
         # Progressive disclosure — load only relevant skill files
         relevant_skills = self._detect_skills_from_request(request)
-        system_prompt = self.build_system_prompt(relevant_skills)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode=output_mode)
         system_prompt += CONFIDENCE_INSTRUCTION
 
         # Build messages
@@ -268,7 +268,8 @@ class BaseAgentService:
         response_id = f"{self.stream_prefix}-{uuid.uuid4().hex[:12]}"
 
         relevant_skills = self._detect_skills_from_request(request)
-        system_prompt = self.build_system_prompt(relevant_skills)
+        output_mode = self._get_output_mode(request)
+        system_prompt = self.build_system_prompt(relevant_skills, output_mode=output_mode)
         system_prompt += CONFIDENCE_INSTRUCTION
 
         user_message = self._build_user_message(request)

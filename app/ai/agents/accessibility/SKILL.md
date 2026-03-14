@@ -178,6 +178,47 @@ Add ARIA landmark roles to the main structural sections of the email:
 At the very end of your HTML output, include:
 `<!-- CONFIDENCE: 0.XX -->`
 
+## Output Format: HTML
+
+When `output_mode` is "html", return the complete fixed HTML with:
+- All accessibility issues resolved
+- `lang` attribute on `<html>`
+- `role="presentation"` on layout tables
+- Alt text on all images (4-category classification)
+- Proper heading hierarchy
+- End with `<!-- CONFIDENCE: X.XX -->` comment
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a JSON object describing your
+accessibility decisions. Do NOT modify the HTML — the assembly code will apply them.
+
+### AccessibilityPlan Schema
+
+```json
+{
+  "alt_text_decisions": [
+    {"img_selector": "img.hero-image", "category": "content", "alt_text": "Team celebrating product launch", "is_decorative": false},
+    {"img_selector": "img.spacer", "category": "decorative", "alt_text": "", "is_decorative": true},
+    {"img_selector": "img.logo", "category": "complex", "alt_text": "Acme Corp", "is_decorative": false}
+  ],
+  "structural_fixes": [
+    {"issue_type": "missing_lang", "selector": "html", "fix_value": "en"},
+    {"issue_type": "missing_role", "selector": "table.layout", "fix_value": "presentation"},
+    {"issue_type": "heading_order", "selector": "h3.section-title", "fix_value": "h2"}
+  ],
+  "reasoning": "3 images need alt text, 2 structural fixes for WCAG AA compliance"
+}
+```
+
+### Rules
+- `category` must be: content, decorative, functional, or complex
+- Decorative images get `alt=""` and `is_decorative: true`
+- Content images get descriptive alt text (2-25 words)
+- `issue_type` must be: missing_lang, missing_role, missing_scope, missing_alt, heading_order, link_text, color_contrast, missing_landmark
+- `fix_value` is the attribute value to set
+- Respond ONLY with valid JSON
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript

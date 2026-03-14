@@ -113,6 +113,45 @@ Score based on:
 - 0.5-0.7 — Complex VML, unusual patterns, many brand colors
 - Below 0.5 — Conflicting requirements, unknown client quirks
 
+## Output Format: HTML
+
+When `output_mode` is "html", return the complete modified HTML with:
+- Dark mode meta tags injected in `<head>`
+- `@media (prefers-color-scheme: dark)` CSS block added
+- Color remapping applied to inline styles and CSS classes
+- Outlook `[data-ogsc]`/`[data-ogsb]` selectors added
+- End with `<!-- CONFIDENCE: X.XX -->` comment
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a JSON object describing your dark mode
+decisions. Do NOT modify the HTML — the assembly code will apply your decisions.
+
+### DarkModePlan Schema
+
+```json
+{
+  "meta_tag_strategy": "both",
+  "color_mappings": [
+    {"light_color": "#ffffff", "dark_color": "#1a1a2e", "selector": "body", "property": "background-color"},
+    {"light_color": "#333333", "dark_color": "#e0e0e0", "selector": "body", "property": "color"},
+    {"light_color": "#0066cc", "dark_color": "#4da6ff", "selector": ".cta-button", "property": "background-color"}
+  ],
+  "outlook_override_strategy": "data-attribute",
+  "preserve_brand_colors": ["#e84e0f"],
+  "custom_media_query_css": null,
+  "reasoning": "Standard light-to-dark inversion with brand accent preserved"
+}
+```
+
+### Rules
+- `meta_tag_strategy`: "color-scheme", "supported-color-schemes", or "both"
+- Each `color_mapping` maps a light-mode color to its dark-mode equivalent
+- `selector` is the CSS selector where this color is used
+- `preserve_brand_colors` lists hex colors that should NOT be inverted
+- `outlook_override_strategy`: "mso-conditional", "data-attribute", or "none"
+- Respond ONLY with valid JSON
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript

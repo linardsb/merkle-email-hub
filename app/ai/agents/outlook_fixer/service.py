@@ -45,8 +45,8 @@ class OutlookFixerService(BaseAgentService):
     model_tier = "standard"
     stream_prefix = "outlook-fix"
 
-    def build_system_prompt(self, relevant_skills: list[str]) -> str:
-        return _build_system_prompt(relevant_skills)
+    def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
+        return _build_system_prompt(relevant_skills, output_mode=output_mode)
 
     def detect_relevant_skills(self, request: Any) -> list[str]:
         req: OutlookFixerRequest = request

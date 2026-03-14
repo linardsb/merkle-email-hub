@@ -208,6 +208,44 @@ Warning if unsupported in 1 major client only.
 
 `<!-- CONFIDENCE: 0.XX -->`
 
+## Output Format: HTML
+
+When `output_mode` is "html" (default), return issues as a JSON array in a ```json code fence.
+This is the standard code review output format. Do NOT modify the input HTML.
+End with `<!-- CONFIDENCE: X.XX -->` comment.
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a `CodeReviewPlan` JSON object.
+This formalizes the existing output with typed fields.
+
+### CodeReviewPlan Schema
+
+```json
+{
+  "findings": [
+    {
+      "rule_name": "redundant-mso-conditional",
+      "severity": "warning",
+      "responsible_agent": "outlook_fixer",
+      "current_value": "<!--[if mso]><!--[if mso]>",
+      "fix_value": "<!--[if mso]>",
+      "selector": "table.header > tr:first-child",
+      "is_actionable": true
+    }
+  ],
+  "summary": "1 redundant MSO conditional found in header table",
+  "overall_quality": "good"
+}
+```
+
+### Rules
+- `severity` must be: error, warning, or info
+- `responsible_agent` identifies which agent should fix this (e.g., "outlook_fixer", "dark_mode")
+- `is_actionable` is true only if `fix_value` provides a concrete replacement
+- `overall_quality` must be: excellent, good, needs_work, or poor
+- Respond ONLY with valid JSON
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript

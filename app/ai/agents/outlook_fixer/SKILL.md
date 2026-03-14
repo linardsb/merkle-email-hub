@@ -167,6 +167,50 @@ Score based on:
 - 0.5-0.7 — Complex VML nesting, multi-version targeting, DPI issues
 - Below 0.5 — Undocumented quirks, unusual VML combinations, conflicting requirements
 
+## Output Format: HTML
+
+When `output_mode` is "html", return the complete fixed HTML with:
+- All MSO conditional issues resolved
+- VML elements properly wrapped
+- Ghost tables added where needed
+- Namespace declarations in `<html>` tag
+- End with `<!-- CONFIDENCE: X.XX -->` comment
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a JSON object describing the fixes
+needed. Do NOT modify the HTML — the assembly code will apply your fix plan.
+
+### OutlookFixPlan Schema
+
+```json
+{
+  "fixes": [
+    {
+      "issue_type": "unbalanced_pair",
+      "location_hint": "line 45, after <td class='hero'>",
+      "fix_description": "Missing <![endif]--> closer for <!--[if mso]> opener",
+      "fix_html": "<![endif]-->"
+    },
+    {
+      "issue_type": "vml_background",
+      "location_hint": "hero section table",
+      "fix_description": "Add VML background image for Outlook",
+      "fix_html": "<!--[if gte mso 9]><v:rect>...<![endif]-->"
+    }
+  ],
+  "add_namespaces": ["xmlns:v", "xmlns:o"],
+  "add_ghost_tables": true,
+  "reasoning": "2 MSO issues found: unbalanced conditional + missing VML background"
+}
+```
+
+### Rules
+- `issue_type` must be one of: missing_conditional, unbalanced_pair, missing_namespace, vml_background, table_width, ghost_table, css_fallback
+- `location_hint` describes WHERE in the HTML the fix applies (CSS selector or line reference)
+- `fix_html` is the exact HTML snippet to insert/replace (optional — null if fix is structural)
+- Respond ONLY with valid JSON
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript

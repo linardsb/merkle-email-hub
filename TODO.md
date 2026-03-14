@@ -478,7 +478,7 @@
 **Security:** All deterministic HTML manipulation via lxml/regex. No external fetches. No LLM calls. No `eval()`.
 **Verify:** `make test -k test_repair_pipeline` — each stage independently tested + end-to-end. Pipeline is idempotent. Golden templates unchanged after repair (no-op). `make test` — no regressions.
 
-#### 11.22.5 SKILL.md Rewrite — Architect Prompts, Not Generator Prompts
+#### ~~11.22.5 SKILL.md Rewrite — Architect Prompts, Not Generator Prompts~~ DONE
 **What:** Add dual-mode structure to all 7 HTML agent SKILL.md files: a `## Output Mode: Structured (JSON)` section with schema examples and a `## Output Mode: HTML (Legacy)` section preserving current instructions. Update `prompt.py` files to detect `output_mode` and load the appropriate section.
 **Why:** The prompt must match the architecture — "return JSON decisions" produces fundamentally different (better) output than "generate HTML."
 **Implementation:**
@@ -890,3 +890,158 @@
 - `Makefile` — add `dev-mock-esp` target
 - SDK regeneration (`make sdk`) to include new sync endpoints
 **Verify:** `make check` passes (lint + types + tests + security). `docker compose up` starts mock-esp healthy. SDK includes sync types.
+
+---
+
+## Phase 14 — Blueprint Checkpoint & Recovery
+
+**What:** Add per-node checkpoint persistence to the blueprint engine so that failed or interrupted runs can resume from the last successful node instead of restarting from scratch. Inspired by LangGraph's checkpoint-based execution model (Deep Agents SDK).
+**Why:** Currently `BlueprintEngine.run()` holds all state in an in-memory `BlueprintRun` dataclass. If the Maizzle sidecar times out, a container restarts mid-pipeline, or the 11.22.3 multi-pass pipeline fails at Pass 2, the entire run restarts from the entry node — wasting tokens, time, and API budget. With checkpointing, a 5-node blueprint that fails at node 4 resumes from node 4 (saving ~80% of the rerun cost). This also enables long-running blueprints to survive process restarts and provides a full audit trail of per-node state for debugging.
+**Dependencies:** Phase 11.22 (blueprint engine, multi-pass pipeline, repair pipeline). Phase 0.3 (PostgreSQL, Redis).
+**Design principle:** Checkpoints are opt-in (disabled by default for backward compatibility). The engine serialises `BlueprintRun` state after each successful node completion. Resume loads the latest checkpoint and continues from the next node in the graph. Checkpoint storage uses PostgreSQL (durable) with Redis as optional write-ahead cache for latency.
+
+### 14.1 Checkpoint Storage Layer
+**What:** Create `app/ai/blueprints/checkpoint.py` — `CheckpointStore` protocol + PostgreSQL implementation. Each checkpoint captures the full `BlueprintRun` state (HTML, progress, iteration counts, handoff history, QA results, model usage) after a node completes successfully.
+**Why:** The storage layer must be durable (survive process restarts), fast (< 50ms write), and queryable (list runs, find latest checkpoint for a run). PostgreSQL provides durability; optional Redis write-ahead provides speed.
+**Implementation:**
+- Create `app/ai/blueprints/checkpoint.py`:
+  - `CheckpointData` frozen dataclass: `run_id: str`, `blueprint_name: str`, `node_name: str`, `node_index: int`, `status: str`, `html: str`, `progress: list[dict]`, `iteration_counts: dict[str, int]`, `qa_failures: list[str]`, `qa_failure_details: list[dict]`, `qa_passed: bool | None`, `model_usage: dict[str, int]`, `skipped_nodes: list[str]`, `routing_decisions: list[dict]`, `handoff_history: list[dict]`, `created_at: datetime`
+  - `CheckpointStore` Protocol (runtime_checkable): `save(data: CheckpointData) -> None`, `load_latest(run_id: str) -> CheckpointData | None`, `list_checkpoints(run_id: str) -> list[CheckpointData]`, `delete_run(run_id: str) -> int`
+  - `PostgresCheckpointStore(db: AsyncSession)` — implements protocol using `blueprint_checkpoints` table
+  - `serialize_run(run: BlueprintRun, node_name: str, node_index: int, blueprint_name: str) -> CheckpointData` — snapshot current run state
+  - `restore_run(data: CheckpointData) -> BlueprintRun` — reconstruct run state from checkpoint
+- Create `app/ai/blueprints/checkpoint_models.py`:
+  - `BlueprintCheckpoint(Base, TimestampMixin)` SQLAlchemy model: `id` (PK), `run_id` (indexed), `blueprint_name`, `node_name`, `node_index`, `state_json` (JSONB — serialised `CheckpointData`), `html_hash` (SHA-256 of HTML for deduplication), `created_at`
+  - Composite index on `(run_id, node_index)` for fast latest-checkpoint lookup
+  - `run_id` index for listing checkpoints per run
+- Alembic migration for `blueprint_checkpoints` table
+**Security:** `state_json` contains generated HTML and brief text (already in memory during execution). No credentials stored. JSONB column validated by Pydantic before write. RLS scoped by project (via join through future `project_id` column if needed).
+**Verify:** Unit tests: `serialize_run` → `restore_run` round-trips correctly. `save` + `load_latest` returns most recent checkpoint. `list_checkpoints` returns ordered history. `delete_run` removes all checkpoints for a run. `make test` passes. `make types` clean.
+- [ ] 14.1 Checkpoint storage layer
+
+### 14.2 Engine Integration — Save Checkpoints After Each Node
+**What:** Update `BlueprintEngine.run()` to optionally save a checkpoint after each successful node completion. The checkpoint captures the full `BlueprintRun` state at that point, enabling resume from any node boundary.
+**Why:** This is the core integration — the engine must checkpoint without impacting the hot path performance. Checkpoint writes are fire-and-forget (logged warning on failure, never crash the run).
+**Implementation:**
+- Update `BlueprintEngine.__init__()` — add `checkpoint_store: CheckpointStore | None = None` parameter
+- In `BlueprintEngine.run()`, after updating run state and before resolving the next node:
+  ```python
+  # Checkpoint after successful node completion (fire-and-forget)
+  if self._checkpoint_store is not None and result.status in ("success", "skipped"):
+      try:
+          data = serialize_run(run, current_node_name, steps, self._definition.name)
+          await self._checkpoint_store.save(data)
+      except Exception:
+          logger.warning(
+              "blueprint.checkpoint_save_failed",
+              node=current_node_name,
+              run_id=run.run_id,
+              exc_info=True,
+          )
+  ```
+- Do NOT checkpoint on failed nodes (the retry loop handles those)
+- Do NOT checkpoint on `qa_gate` failures (they trigger recovery routing, not resume)
+- Checkpoint on `qa_gate` success (marks a clean resumption point)
+- Update `BlueprintService.run()` — instantiate `PostgresCheckpointStore(db)` if `settings.blueprint.checkpoints_enabled` is True, pass to engine
+- Add `checkpoints_enabled: bool = False` to `BlueprintConfig` in `app/core/config.py`
+**Security:** No new endpoints. Checkpoint writes use existing DB session. No user input in checkpoint data.
+**Verify:** Enable checkpoints, run a blueprint end-to-end. Verify: checkpoint row created for each successful node. Disable checkpoints — no rows created (backward compatible). Checkpoint write failure doesn't crash the run. `make test` passes.
+- [ ] 14.2 Engine integration — save checkpoints
+
+### 14.3 Engine Integration — Resume From Checkpoint
+**What:** Add `BlueprintEngine.resume(run_id: str)` method that loads the latest checkpoint and continues execution from the next node in the graph.
+**Why:** This is the payoff — a failed run can be retried without re-running completed nodes, saving tokens, API cost, and latency.
+**Implementation:**
+- Add `BlueprintEngine.resume(run_id: str, brief: str) -> BlueprintRun`:
+  - Load latest checkpoint via `self._checkpoint_store.load_latest(run_id)`
+  - If no checkpoint found, raise `BlueprintError("No checkpoint found for run {run_id}")`
+  - Call `restore_run(data)` to reconstruct `BlueprintRun` state
+  - Determine next node: use `_resolve_next_node()` with a synthetic success `NodeResult` from the checkpointed node, OR store `next_node_name` in `CheckpointData` (simpler)
+  - Update `CheckpointData` to include `next_node_name: str | None` — the node that should execute next
+  - Continue the `while` loop from `next_node_name` with restored state
+  - Log `blueprint.run_resumed` with run_id, checkpoint node, next node
+- Handle edge cases:
+  - If `next_node_name` is None (checkpoint was at terminal node), return the restored run as-is (status = completed)
+  - If the blueprint definition has changed since the checkpoint (node removed/renamed), raise `BlueprintError` with details
+  - Validate blueprint name matches between checkpoint and current definition
+- Add resume endpoint to routes:
+  - `POST /api/v1/blueprints/resume` — `BlueprintResumeRequest(run_id: str, brief: str)` → `BlueprintRunResponse`
+  - Auth: `admin`, `developer` roles. Rate limit: `3/minute` (same as run)
+- Add `BlueprintResumeRequest` schema to `schemas.py`
+- Update `BlueprintService` with `resume()` method
+**Security:** Resume loads only checkpoints from `blueprint_checkpoints` table (no user-controlled paths). `run_id` is a server-generated UUID hex — not guessable. Future: add `user_id` to checkpoint for BOLA (ensure user can only resume their own runs).
+**Verify:** Run a blueprint with checkpoints enabled. Kill the process mid-run (or mock a node failure). Call resume with the `run_id`. Verify: run continues from the last successful node, not from the start. Final output matches a full run. Progress log shows resumed nodes. `make test` passes.
+- [ ] 14.3 Engine integration — resume from checkpoint
+
+### 14.4 Multi-Pass Pipeline Checkpoints
+**What:** Extend checkpoint support into the 11.22.3 scaffolder `MultiPassPipeline` (3-pass: layout → content → design). Each pass is a natural checkpoint boundary — if Pass 2 (content generation) fails, resume from Pass 2 with the Pass 1 result (template selection) intact.
+**Why:** The multi-pass pipeline is the most token-expensive component (~5,000 tokens total). Without per-pass checkpointing, a failure in Pass 3 (design tokens, ~500 tokens) wastes the Pass 1 + Pass 2 results (~3,500 tokens). With checkpointing, only the failed pass is re-run.
+**Implementation:**
+- Create `PipelineCheckpoint` dataclass in `app/ai/agents/scaffolder/pipeline.py`:
+  - `run_id: str`, `pass_number: int`, `pass_name: str`, `result: dict` (serialised pass output), `accumulated_plan: dict` (partial `EmailBuildPlan` so far)
+- Add `checkpoint_store: CheckpointStore | None` parameter to pipeline's execution method
+- After each successful pass, save a `PipelineCheckpoint`
+- On resume: load latest pipeline checkpoint for the run, skip completed passes, continue from the next pass with accumulated context
+- The blueprint-level checkpoint (14.2) stores which node was executing; the pipeline-level checkpoint stores which pass within that node was executing — two levels of granularity
+**Security:** Pipeline checkpoints contain pass-specific JSON (template selection, slot fills, design tokens). No credentials. Same JSONB storage as blueprint checkpoints.
+**Verify:** Run scaffolder with 3-pass pipeline. Mock Pass 2 failure. Resume → Pass 1 skipped (cached), Pass 2 re-runs, Pass 3 runs. Token usage shows savings (~60% reduction vs full rerun). `make test` passes.
+- [ ] 14.4 Multi-pass pipeline checkpoints
+
+### 14.5 Checkpoint Cleanup & Observability
+**What:** Automatic cleanup of old checkpoints + observability integration for checkpoint-related events.
+**Why:** Without cleanup, the `blueprint_checkpoints` table grows unbounded. Without observability, operators can't monitor checkpoint health or debug resume failures.
+**Implementation:**
+- Create `app/ai/blueprints/checkpoint_cleanup.py`:
+  - `cleanup_old_checkpoints(db, max_age_days: int = 7) -> int` — delete checkpoints older than `max_age_days`, return count deleted
+  - `cleanup_completed_runs(db) -> int` — delete all checkpoints for runs with status `completed` (no resume needed)
+  - Wire into existing `DataPoller` pattern (same as `MemoryCompactionPoller`) — run daily
+- Add `BLUEPRINT__CHECKPOINT_RETENTION_DAYS` config (default 7)
+- Add structured logging events:
+  - `blueprint.checkpoint_saved` — node, run_id, size_bytes, duration_ms
+  - `blueprint.checkpoint_loaded` — run_id, node, age_seconds
+  - `blueprint.checkpoint_cleanup` — deleted_count, retained_count
+- Add `GET /api/v1/blueprints/runs/{run_id}/checkpoints` endpoint:
+  - Returns list of checkpoints with node names, timestamps, sizes
+  - Auth: `admin`, `developer` roles
+  - Useful for debugging failed runs
+- Update `BlueprintRunResponse` — add `checkpoint_count: int = 0` field (how many checkpoints exist for this run)
+- Update `BlueprintRunResponse` — add `resumed_from: str | None = None` field (node name if this was a resumed run)
+**Security:** Cleanup runs on the server, not user-triggered (except via explicit API call). Checkpoint listing is read-only. No new write paths.
+**Verify:** Create 10 blueprint runs with checkpoints. Run cleanup with `max_age_days=0`. Verify all deleted. Run cleanup with `max_age_days=30`. Verify none deleted. Completed run cleanup removes only completed runs. `make test` passes. `make types` clean.
+- [ ] 14.5 Checkpoint cleanup & observability
+
+### 14.6 Frontend — Run History & Resume UI
+**What:** Frontend components for viewing blueprint run history, inspecting checkpoints, and resuming failed runs.
+**Why:** Without UI, resume is API-only. Developers need to see which runs failed, where they failed, and trigger a resume with one click.
+**Implementation:**
+- Update `cms/apps/web/src/components/workspace/blueprint/runs-list.tsx`:
+  - Add "Resume" button on failed/interrupted runs (visible only when checkpoints exist)
+  - Show `resumed_from` badge on resumed runs
+- Create `cms/apps/web/src/components/workspace/blueprint/run-checkpoints.tsx`:
+  - Expandable checkpoint timeline within run detail view
+  - Shows node name, timestamp, status for each checkpoint
+  - Highlights the resume point
+- Add `useResumeBlueprint` hook in `cms/apps/web/src/hooks/`:
+  - Calls `POST /api/v1/blueprints/resume` with run_id
+  - Handles loading state, error display
+- Update `cms/apps/web/src/types/blueprint-runs.ts` — add `checkpoint_count`, `resumed_from` fields
+- i18n keys for resume UI text
+**Security:** Resume action requires `developer` role (same as run). UI shows no checkpoint content (only metadata).
+**Verify:** Run a blueprint that fails. See "Resume" button in UI. Click resume → run continues from checkpoint. Checkpoint timeline shows progression. Completed runs don't show resume button.
+- [ ] 14.6 Frontend — run history & resume UI
+
+### 14.7 Tests & Documentation
+**What:** Comprehensive tests for the checkpoint system + architecture documentation.
+**Implementation:**
+- `app/ai/blueprints/tests/test_checkpoint.py`:
+  - `TestCheckpointStore` — CRUD operations, round-trip serialisation, edge cases (empty run, max checkpoints)
+  - `TestEngineCheckpoints` — engine saves checkpoints at correct points, skips on failure, fire-and-forget on error
+  - `TestEngineResume` — resume from checkpoint, validate state restoration, handle missing checkpoint, handle stale blueprint
+  - `TestPipelineCheckpoints` — multi-pass pipeline per-pass checkpointing and resume
+  - `TestCheckpointCleanup` — age-based cleanup, completed-run cleanup, retention config
+- `app/ai/blueprints/tests/test_resume_route.py`:
+  - Route-level tests: auth, rate limiting, valid resume, invalid run_id, no checkpoints
+- Update `docs/ARCHITECTURE.md` — add Checkpoint & Recovery section explaining the two-level checkpoint model (blueprint node + pipeline pass)
+- SDK regeneration (`make sdk`) for new endpoints
+**Verify:** `make test -k test_checkpoint` — all tests pass. `make test -k test_resume` — route tests pass. `make check` — full suite green. `make types` clean.
+- [ ] 14.7 Tests & documentation

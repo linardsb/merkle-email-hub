@@ -172,6 +172,68 @@ Score based on:
 - 0.5-0.7 — Complex layout, vague brief, advanced components
 - Below 0.5 — Contradictory requirements, unusual patterns
 
+## Output Format: HTML
+
+When `output_mode` is "html", return a complete Maizzle email template:
+- Include `---` frontmatter with `extends` and `preheader`
+- Use table-based layouts with `role="presentation"`
+- Include all MSO conditionals, dark mode CSS, and accessibility attributes
+- End with `<!-- CONFIDENCE: X.XX -->` comment
+
+## Output Format: Structured
+
+When `output_mode` is "structured", return a JSON object. Do NOT return HTML.
+The assembly code will build HTML from your decisions.
+
+### EmailBuildPlan Schema
+
+```json
+{
+  "template": {
+    "template_name": "newsletter_1col",
+    "reasoning": "Weekly digest format matches the brief's content-driven goals",
+    "section_order": ["hero", "body", "cta", "footer"],
+    "fallback_template": "minimal_1col"
+  },
+  "slot_fills": [
+    {"slot_id": "hero_headline", "content": "This Week in Tech", "is_personalisable": false},
+    {"slot_id": "hero_subheadline", "content": "Your weekly roundup of what matters", "is_personalisable": false},
+    {"slot_id": "body_text", "content": "Here are the top stories...", "is_personalisable": false},
+    {"slot_id": "cta_text", "content": "Read More", "is_personalisable": false},
+    {"slot_id": "cta_url", "content": "https://example.com/newsletter", "is_personalisable": false}
+  ],
+  "design_tokens": {
+    "primary_color": "#0066cc",
+    "secondary_color": "#004499",
+    "background_color": "#ffffff",
+    "text_color": "#333333",
+    "font_family": "Arial, Helvetica, sans-serif",
+    "heading_font_family": "Georgia, 'Times New Roman', serif",
+    "border_radius": "4px",
+    "button_style": "filled"
+  },
+  "sections": [
+    {"section_name": "hero", "background_color": "#0066cc"},
+    {"section_name": "body", "background_color": "#ffffff"}
+  ],
+  "preheader_text": "Your weekly tech digest — 5 stories you need to read",
+  "subject_line": "This Week in Tech: AI, Security & More",
+  "dark_mode_strategy": "auto",
+  "personalisation_platform": null,
+  "personalisation_slots": [],
+  "confidence": 0.85,
+  "reasoning": "Standard newsletter layout with clear content hierarchy"
+}
+```
+
+### Rules
+- `template_name` must be one of the available templates (provided in context)
+- `slot_fills` must cover every slot defined in the selected template
+- Colors must be valid hex values
+- Font families must be web-safe with system fallbacks
+- `confidence` is 0.0–1.0 (same criteria as HTML mode)
+- Respond ONLY with valid JSON — no markdown fences, no commentary
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript
