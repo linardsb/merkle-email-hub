@@ -710,7 +710,7 @@
 **Verify:** Run repair pipeline on HTML with 3 off-palette colors → all corrected to nearest palette match. Run on HTML with wrong footer → footer replaced. Run on already-correct HTML → no-op (idempotent). End-to-end test passes for all 3 use cases (Nike, P&G multi-brand, Sephora holiday). `make test` passes. `make types` clean. `make check` green.
 - [ ] 11.25.5 Consistency enforcement
 
-### 11.23 Inline Eval Judges — Selective LLM Judge on Recovery Retries
+### ~~11.23 Inline Eval Judges — Selective LLM Judge on Recovery Retries~~ DONE
 **What:** Wire eval judges (`JUDGE_REGISTRY`) into the blueprint engine as an inline quality signal, but ONLY on self-correction retries (`iteration > 0`). First-attempt agents rely on the fast QA gate (0 tokens, <200ms). When an agent has already failed QA and is retrying, invoke the LLM judge for that agent to get a nuanced verdict before deciding whether to retry again or escalate to human review.
 **Why:** The 10-point QA gate catches structural issues but misses semantic quality (brief fidelity, tone accuracy, colour coherence). Eval judges check 5 nuanced criteria per agent but cost ~3,200 tokens per call. Running judges on every handoff is cost-prohibitive (+67% per run). Running them only on retries bounds the cost (max 2 retries × 1 judge = 6,400 extra tokens) and targets the moment where the signal is most valuable — the agent already failed once and extra context prevents wasted retry loops. After 11.22 (template-first), retries are rare (~5% of runs), making the cost negligible.
 **Implementation:**
@@ -1253,3 +1253,138 @@
 **Security:** Prefetch results are filtered by `client_org_id` — agents only see outcomes from the same organization. No cross-tenant data leakage. Redis cache key includes org_id.
 **Verify:** Run Scaffolder for client X with a brief similar to a past completed task. Verify prefetch returns the prior outcome. Verify the generated template shows influence from the baseline (not identical, but structurally similar). Run for client Y — verify no cross-tenant results. `COGNEE__PREFETCH_ENABLED=false` skips prefetch entirely. `make test` passes.
 - [ ] 15.5 Bidirectional knowledge graph — agent pre-query
+
+---
+
+## Phase 16 — Domain-Specific RAG Architecture
+
+**What:** Transform the knowledge RAG pipeline from generic document retrieval into a multi-path, domain-aware retrieval system with post-generation validation. Add a query router that classifies intent and routes to the optimal retrieval path (structured ontology lookup, component search, or existing hybrid search), code-aware HTML chunking, multi-representation indexing, and a CRAG validation loop that catches incompatible CSS before it ships.
+**Why:** The current RAG embeds everything as text chunks and runs cosine similarity — losing the relational precision of the ontology (335+ CSS properties × 25+ clients × support levels) and the structural integrity of HTML code. Email development is a constraint satisfaction problem (does property X work in client Y?), not a document retrieval problem. Developers asking "Does Gmail support flexbox?" get text chunks instead of a definitive structured answer. Code chunks split mid-tag, MSO conditionals get fragmented, and agents generate CSS that looks correct but breaks in major clients.
+**Dependencies:** Phase 8-9 (ontology + graph operational), Phase 11 (QA engine + agent deterministic architecture), Phase 4 (components table exists).
+**Design principle:** Each sub-phase is independently shippable behind feature flags. New `/search/routed` endpoint sits alongside existing `/search` — no breaking changes. All schema additions are nullable. Specialized retrieval paths fall back to existing `search()` when they return empty results.
+
+### 16.1 Query Router — Intent Classification & Entity Extraction
+**What:** Classify incoming knowledge queries by intent (compatibility, how_to, template, debug, general) and route to the optimal retrieval path. Two-tier classification: fast regex patterns (pre-compiled from ontology client/property IDs) with optional LLM fallback for ambiguous queries. Entity extraction resolves fuzzy names to ontology IDs ("Gmail" → `gmail_web`, "flexbox" → `display_flex`).
+**Why:** Currently all queries go through the same hybrid search pipeline. A factual question like "Does Gmail support flexbox?" gets the same treatment as "Email best practices?" — cosine similarity over text chunks. The router enables each query type to use its strongest retrieval path without changing the existing pipeline for queries that work well today.
+**Implementation:**
+- Create `app/knowledge/router.py` — `QueryIntent` enum (compatibility, how_to, template, debug, general), `ClassifiedQuery` dataclass (intent, original_query, extracted_entities, confidence), `QueryRouter` class with regex-first + optional LLM fallback classification
+- Entity extraction: build regex patterns from `OntologyRegistry.client_ids()` and `OntologyRegistry.property_ids()`. Reuse `_property_id_from_css()` from `app/knowledge/ontology/query.py` for CSS name → property_id resolution. Resolve fuzzy client names by matching against `EmailClient.name` and `EmailClient.family` fields
+- Modify `app/knowledge/service.py` (`KnowledgeService`) — add `async search_routed(request: SearchRequest) -> SearchResponse` that classifies via `QueryRouter`, then routes to `_search_compatibility()`, `_search_components()`, `_search_debug()`, or falls back to existing `search()`. Constructor unchanged (`__init__(self, db, graph_provider)`)
+- Modify `app/knowledge/schemas.py` — add `intent: str | None = None` to `SearchResponse` (alongside existing `results`, `query`, `total_candidates`, `reranked` fields)
+- Modify `app/knowledge/routes.py` — add `POST /api/v1/knowledge/search/routed` with `@limiter.limit("30/minute")` and auth dependency (matching existing `search_knowledge` endpoint pattern). Existing `/search` endpoint unchanged
+- Modify `app/ai/agents/knowledge/service.py` (`KnowledgeAgentService`) — update `process(request, rag_service)` to call `rag_service.search_routed(search_request)` instead of `rag_service.search(search_request)`. Note: `KnowledgeAgentService` is standalone (not a `BaseAgentService` subclass), receives `rag_service: RAGService` as a parameter
+- Config (`app/core/config.py` → `KnowledgeConfig`): `router_enabled: bool = False`, `router_llm_fallback: bool = False`, `router_llm_model: str = "gpt-4o-mini"`. When `router_enabled=False`, `search_routed()` delegates directly to `search()` (zero-cost bypass)
+**Security:** Router input is the `query` field from `SearchRequest` (Pydantic-validated, max 1000 chars). LLM fallback (when enabled) passes query through `sanitize_prompt()` from `app/ai/sanitize.py`. New endpoint uses same auth + rate limit pattern as existing `/search`. No new credential handling — LLM fallback uses provider registry (`get_registry().get_llm()`).
+**Verify:** Test 10+ cases per intent — compatibility queries ("Does Gmail support flexbox?", "flexbox support") classified correctly, how-to queries fall through to existing search, template queries route to component search, debug queries include ontology context. Entity extraction resolves common aliases ("Gmail" → `gmail_web`, "Outlook desktop" → `outlook_2019_win`). Confidence gating works (low-confidence → fallback to general). `search_routed()` with `router_enabled=False` produces identical results to `search()`. `make test` passes.
+- [ ] 16.1 Query router — intent classification & entity extraction
+
+### 16.2 Structured Compatibility Queries via Ontology
+**What:** For `compatibility` intent, bypass vector search and query `OntologyRegistry` directly for exact, structured answers. Returns property support levels per client, known workarounds, and safe alternatives — formatted as backward-compatible `SearchResult` objects.
+**Why:** The ontology already has 335+ CSS properties × 25+ clients with support levels, fallbacks, and workarounds. Embedding this data as text chunks and doing cosine similarity loses relational precision. "Does Gmail support flexbox?" should return a definitive yes/no with fallback, not a text snippet that might mention it. The existing `lookup_support()` in `query.py` already does name+value → support level lookup but isn't wired into the RAG pipeline.
+**Dependencies:** 16.1 (router classifies query as `compatibility`)
+**Implementation:**
+- Create `app/knowledge/ontology/structured_query.py` — `CompatibilityAnswer` frozen dataclass (property: `CSSProperty`, client_results: `tuple[ClientSupportResult, ...]`, fallbacks: `tuple[Fallback, ...]`, summary: `str`), `ClientSupportResult` frozen dataclass (client: `EmailClient`, level: `SupportLevel`, notes: `str`, workaround: `str`), `OntologyQueryEngine` class (stateless, receives `OntologyRegistry` via `load_ontology()`):
+  - `query_property_support(property_id, client_ids: list[str] | None) -> CompatibilityAnswer` — uses `registry.get_support_entry()` for each client, collects into structured answer
+  - `query_client_limitations(client_id) -> list[CSSProperty]` — delegates to `registry.properties_unsupported_by(client_id)`
+  - `find_safe_alternatives(property_id, target_clients) -> list[Fallback]` — delegates to `registry.fallbacks_for(property_id)`, filters by `target_clients ∩ fallback.client_ids`
+  - `format_as_search_results(answer) -> list[SearchResult]` — renders structured answer as `SearchResult` objects (backward-compatible with `SearchResponse.results`)
+- Modify `app/knowledge/ontology/registry.py` — add two fuzzy lookup methods to `OntologyRegistry`:
+  - `find_property_by_name(css_name: str, value: str | None = None) -> CSSProperty | None` — tries exact `_property_id_from_css(css_name, value)` lookup first, falls back to case-insensitive scan of `property_name` field, then prefix match. Reuses ID construction logic from `app/knowledge/ontology/query.py._property_id_from_css()`
+  - `find_client_by_name(name: str) -> EmailClient | None` — case-insensitive match against `EmailClient.name`, then `EmailClient.family`, then substring match. Returns highest-market-share match on ambiguity
+- Modify `app/knowledge/service.py` — implement `async _search_compatibility(classified: ClassifiedQuery) -> SearchResponse` using `OntologyQueryEngine`. When structured answer found → format as `SearchResult` list with `intent="compatibility"`. When no ontology match (extracted entities don't resolve) → fall back to `search()` with note in first result
+**Security:** Ontology queries are read-only lookups against the in-memory `OntologyRegistry` (frozen dataclasses, `__slots__`, `lru_cache`). No SQL, no external API calls, no user input reaches any mutable state. Input entities already validated by router's regex + Pydantic.
+**Verify:** "Does Gmail support flexbox?" → structured answer: `display_flex` + `gmail_web` → `SupportLevel.FULL` (Gmail supports flexbox). "Does Outlook support flexbox?" → `SupportLevel.NONE` + table fallback from `fallbacks.yaml`. "What CSS properties don't work in Outlook?" → `properties_unsupported_by("outlook_2019_win")` list. Unknown property ("does Gmail support container queries?") → graceful fallback to vector search. `make test` passes.
+- [ ] 16.2 Structured compatibility queries via ontology
+
+### 16.3 Code-Aware HTML Chunking
+**What:** Replace generic text splitter with HTML/CSS-aware chunker that respects structural boundaries. `<style>` blocks become standalone chunks, MSO conditional blocks (`<!--[if mso]>`) are preserved whole, and `<body>` is split by major structural elements (first-level `<table>` or `<div>`). Sections exceeding chunk_size are split at nested level (rows → cells). Parse failures fall back to existing `chunk_text()`.
+**Why:** The current `chunk_text()` in `app/knowledge/chunking.py` splits on character count (default 512 chars, 50-char overlap) using separator hierarchy (`\n\n`, `\n`, `. `, ` `). This fragments code mid-tag, splits MSO conditionals, and separates CSS properties from their selectors. Retrieval returns broken code that agents must guess how to reassemble.
+**Independent:** Can run in parallel with 16.1-16.2.
+**Implementation:**
+- Create `app/knowledge/chunking_html.py`:
+  - `HTMLChunkStrategy` enum (section, component, style_block, mso_conditional, table, text_fallback)
+  - `HTMLChunkResult` dataclass — extends pattern of existing `ChunkResult` from `chunking.py` (content, chunk_index, metadata dict) but adds `section_type: str | None` and `summary: str | None`. Must remain convertible to `DocumentChunk` model in `ingest_document()`
+  - `chunk_html(html: str, chunk_size: int = 1024, overlap: int = 100) -> list[HTMLChunkResult]` — main entry point:
+    1. Detect if content is HTML (check for `<!DOCTYPE`, `<html`, `<table` — reuse pattern from `app/qa_engine/checks/html_validation.py`)
+    2. Parse with `lxml.html.document_fromstring()` (already a dependency, used by rule engine in `app/qa_engine/rule_engine.py`)
+    3. Extract `<style>` blocks as standalone chunks (metadata: `section_type="style"`)
+    4. Extract MSO conditional blocks using regex patterns from `app/qa_engine/mso_parser.py` (`MSOConditionalPattern` constants) as standalone chunks (metadata: `section_type="mso_conditional"`)
+    5. Split `<body>` content by first-level structural elements (`<table>`, `<div>`, `<section>`)
+    6. If any section exceeds `chunk_size`, recurse into nested elements (table rows → cells)
+    7. Wrap in try/except → fall back to `chunk_text()` from `app/knowledge/chunking.py` on any parse error
+- Modify `app/knowledge/service.py` → `ingest_document()` — after text extraction via `processing.extract_text()`, detect HTML content type. If HTML and `html_chunking_enabled`: call `chunk_html()` instead of `chunk_text()`. Convert `HTMLChunkResult` objects to `DocumentChunk` model instances (same pattern as existing `ChunkResult` → `DocumentChunk` conversion, but populate new `section_type` and `summary` columns)
+- Modify `app/knowledge/models.py` → `DocumentChunk` — add two nullable columns:
+  - `section_type: Mapped[str | None] = mapped_column(String(50), nullable=True)` — chunk content type
+  - `summary: Mapped[str | None] = mapped_column(Text, nullable=True)` — human-readable summary (used by 16.6)
+- Config (`app/core/config.py` → `KnowledgeConfig`): `html_chunk_size: int = 1024`, `html_chunk_overlap: int = 100`, `html_chunking_enabled: bool = True`
+- Migration: `add_chunk_section_type_and_summary` — two nullable columns with no defaults (instant `ALTER TABLE` in PostgreSQL, no table rewrite)
+**Security:** Parser input is document content already extracted by `processing.extract_text()` and stored in the knowledge base. `lxml.html.document_fromstring()` is lenient by design (handles malformed HTML without raising). No external fetches. Feature flag `html_chunking_enabled` allows instant rollback.
+**Verify:** Valid HTML email → chunks respect `<style>` boundaries (never split mid-rule), MSO conditionals preserved whole (opener through closer), structural elements intact. `chunk_html()` on malformed HTML → falls back to `chunk_text()` (no exception). Plain-text markdown document → `chunk_text()` used (unchanged behavior). Re-ingest existing seed HTML doc → verify new chunk boundaries vs old. Migration up/down clean (`alembic upgrade head && alembic downgrade -1`). `make test` passes.
+- [ ] 16.3 Code-aware HTML chunking
+
+### 16.4 Template/Component Retrieval
+**What:** For `template` intent, search the `Component` table for reusable code artifacts. Extends the existing `ComponentRepository.list(search=..., category=...)` pattern with compatibility-aware filtering via `ComponentQAResult.compatibility` JSON column. Results formatted as backward-compatible `SearchResult` objects alongside top-3 knowledge base results.
+**Why:** When an agent asks "Show me a CTA button component," the current pipeline searches text chunks of knowledge documents. But tested, QA'd components already exist in the `components` table with `ComponentVersion.html_source`, `ComponentVersion.css_source`, and per-client compatibility data via `ComponentQAResult`. This connects the retrieval pipeline to the existing component library.
+**Dependencies:** 16.1 (router classifies query as `template`)
+**Implementation:**
+- Create `app/knowledge/component_search.py` — `ComponentSearchService` class (receives `AsyncSession`):
+  - `async search_components(query: str, *, category: str | None = None, compatible_with: list[str] | None = None, limit: int = 5) -> list[SearchResult]` — orchestrates text search + optional compatibility filter + result formatting
+  - `format_as_search_results(components: list[Component], versions: dict[int, ComponentVersion]) -> list[SearchResult]` — converts component + latest version HTML to `SearchResult` objects (backward-compatible with `SearchResponse.results`)
+  - Optional embedding search: if `Component.search_embedding` is populated, combine text ILIKE score with pgvector cosine distance (same operator pattern as `KnowledgeRepository.search_vector()`)
+- Modify `app/knowledge/service.py` — implement `async _search_components(classified: ClassifiedQuery) -> SearchResponse`: instantiate `ComponentSearchService(self.db)`, call `search_components()`, merge with top-3 results from existing `search()` for supplementary knowledge context
+- Modify `app/components/repository.py` — add two methods:
+  - `async search_with_compatibility(search: str | None, category: str | None, compatible_with: list[str] | None, limit: int) -> list[tuple[Component, ComponentVersion]]` — extends existing `list()` pattern: ILIKE on `Component.name` using `escape_like()` from `app/shared/utils`, join to latest `ComponentVersion`, optional join to `ComponentQAResult` filtering where `compatibility->>client_id != 'none'` for each client in `compatible_with`. Uses parameterised queries throughout
+  - `async search_by_embedding(embedding: list[float], limit: int) -> list[tuple[Component, float]]` — pgvector cosine distance on `Component.search_embedding`, same pattern as `KnowledgeRepository.search_vector()` (`.cosine_distance().label("distance")`)
+- Modify `app/components/models.py` — add to `Component`:
+  - `search_embedding = mapped_column(Vector(1024), nullable=True)` — matches `DocumentChunk.embedding` dimension. Import `Vector` from `pgvector.sqlalchemy` (already imported in `app/knowledge/models.py`)
+- Migration: `add_component_search_embedding` — one nullable `vector(1024)` column on `components` table (no default, instant in PostgreSQL)
+**Security:** Text search uses `escape_like()` utility (prevents LIKE injection, same pattern as existing `ComponentRepository.list()`). All queries use SQLAlchemy ORM parameterisation. Components are not project-scoped (all authenticated users can search), matching existing `ComponentRepository` access pattern. No new credential handling. Soft-deleted components excluded via `deleted_at.is_(None)` filter (existing pattern).
+**Verify:** "CTA button" → returns matching components with `html_source` from latest `ComponentVersion`. Category filter ("cta") narrows results. Compatibility filter (`compatible_with=["outlook_2019_win"]`) excludes components with `"none"` support for that client. Empty component results → falls back to knowledge search only. Soft-deleted components excluded. Migration up/down clean. `make test` passes.
+- [ ] 16.4 Template/component retrieval
+
+### 16.5 CRAG Validation Loop
+**What:** After HTML generation, validate against the compatibility matrix. If incompatible CSS is detected, retrieve fallbacks from ontology and re-generate. Implemented as a `CRAGMixin` class providing `_crag_validate_and_correct()`. Capped at 1 correction round to avoid loops.
+**Why:** Agents generate CSS that passes QA string checks but breaks in major clients. The ontology knows `display:flex` doesn't work in Outlook, but that knowledge isn't in the generation loop — only in post-hoc QA reports the user reads after the fact. The existing `CssSupportCheck` in QA engine calls `unsupported_css_in_html()` but only reports issues — it never corrects them. CRAG closes the loop: detect → retrieve fallback → correct → ship.
+**Independent:** Benefits from 16.2's `OntologyQueryEngine` but can use ontology directly via `load_ontology()`.
+**Implementation:**
+- Create `app/ai/agents/validation_loop.py` — `CRAGMixin` class (no `__init__`, stateless):
+  - `async _crag_validate_and_correct(html: str, system_prompt: str, model: str) -> tuple[str, list[str]]` — returns `(corrected_html, corrections_applied)`. Flow:
+    1. Call `unsupported_css_in_html(html)` from `app/knowledge/ontology/query.py` (same function used by `CssSupportCheck`)
+    2. Filter to issues with severity ≥ `crag_min_severity` (default: `"error"` = >20% market share affected)
+    3. If no qualifying issues → return `(html, [])` (no LLM call, zero cost)
+    4. For each issue: call `load_ontology().fallbacks_for(issue["property_id"])` to get `Fallback` objects with `code_example` and `technique`
+    5. Build correction prompt: list each issue + its fallback code example. Pass through `sanitize_prompt()` from `app/ai/sanitize.py`
+    6. Call LLM via `get_registry().get_llm(provider_name).complete()` (same pattern as `BaseAgentService.process()`)
+    7. Validate output: `validate_output()` → `extract_html()` → `sanitize_html_xss()` (same pipeline as `BaseAgentService._post_process()`)
+    8. Return `(corrected_html, [issue["property_id"] for issue in qualifying_issues])`
+  - Settings access via `get_settings()` singleton (same as all agents)
+- Modify `app/ai/agents/base.py` → `process()` — insert CRAG step between `_post_process()` (step 14) and QA gate (step 15): `if hasattr(self, '_crag_validate_and_correct') and settings.knowledge.crag_enabled: html, corrections = await self._crag_validate_and_correct(html, system_prompt, model)`. This hooks CRAG into all `BaseAgentService` subclasses that mix in `CRAGMixin`
+- Modify `app/ai/agents/scaffolder/service.py` — add `CRAGMixin` to class inheritance: `class ScaffolderService(CRAGMixin, BaseAgentService)`. For structured mode (`_process_structured()`), add explicit CRAG call after `TemplateAssembler.assemble()` and `sanitize_html_xss()` but before QA gate
+- Modify `app/ai/agents/outlook_fixer/service.py` — add `CRAGMixin` to class inheritance: `class OutlookFixerService(CRAGMixin, BaseAgentService)`. Integration note: OutlookFixerService overrides `process()` with its own MSO repair loop (programmatic `repair_mso_issues()` + LLM retry via `_retry_with_mso_errors()`). CRAG should run BEFORE the MSO repair loop — CSS compatibility first (semantic), then MSO syntax (structural). Insert `_crag_validate_and_correct()` call after `super().process()` returns but before `validate_mso_conditionals()` check
+- Config (`app/core/config.py` → `KnowledgeConfig`): `crag_enabled: bool = False`, `crag_max_rounds: int = 1`, `crag_min_severity: str = "error"` (matches severity levels from `_compute_severity()` in `query.py`: `"error"` >20% market share, `"warning"` >5%, `"info"` rest)
+**Security:** CRAG correction prompt contains only ontology data (CSS property names, fallback code examples from `fallbacks.yaml`) — no user PII. Prompt sanitised via `sanitize_prompt()`. Output sanitised via `sanitize_html_xss()` (nh3 allowlist). LLM call uses same `get_registry().get_llm()` with circuit breaker protection (`_ResilientLLMProvider`). Cost capped: `max_rounds=1` (single retry), `crag_min_severity="error"` (only fires on high-impact issues), global `crag_enabled=False` default. Output validated via `validate_output()` (null byte stripping, 100K char truncation).
+**Verify:** Generate HTML with `display:flex` via Scaffolder → CRAG detects (`unsupported_css_in_html` returns severity="error" for Outlook's ~8% market share × multiple Outlook clients), retrieves `flex_to_table` fallback with MSO conditional code example, re-generates with table layout. Generate compatible HTML (only properties with FULL support) → CRAG passes through unchanged (no LLM call, verified by checking no `complete()` call in logs). `crag_enabled=False` skips entirely (verified). OutlookFixerService: CRAG runs before MSO repair loop (verified by log ordering). ScaffolderService structured mode: CRAG runs after `TemplateAssembler.assemble()`. `make test` passes. `make eval-run` shows no regression (CRAG corrections counted in eval metrics).
+- [ ] 16.5 CRAG validation loop
+
+### 16.6 Multi-Representation Indexing
+**What:** Store summaries for retrieval (better embedding match) but return full code for generation. Summaries are embedded instead of raw content; `search_vector()` returns the original full chunk. CSS blocks get deterministic summaries (list properties/values). HTML sections get deterministic summaries (tag structure, classes, styles). Optional LLM-generated summaries for complex content.
+**Why:** Raw HTML/CSS code embeds poorly — angle brackets, property names, and hex values don't capture semantic meaning. A summary like "responsive 2-column layout using media queries with mobile-first stacking" embeds much better for the query "how to make a responsive email layout" than the raw `<table>` markup it describes.
+**Dependencies:** 16.3 (uses `summary` column on `DocumentChunk`)
+**Implementation:**
+- Create `app/knowledge/summarizer.py` — `ChunkSummarizer` class (stateless):
+  - `summarize_css_block(css: str) -> str` — deterministic: parse CSS text, list selectors + property names + values (no LLM, pure string processing)
+  - `summarize_html_section(html: str) -> str` — deterministic: parse with `lxml.html`, list tag structure, class names, inline style properties (no LLM, uses `lxml.html.document_fromstring()`)
+  - `async summarize_batch(chunks: list[DocumentChunk]) -> list[str]` — for chunks where deterministic summary is insufficient (e.g., prose mixed with code): call LLM via `httpx.AsyncClient` (same pattern as `KnowledgeService._auto_tag_document()` — uses `settings.knowledge.multi_rep_model` and `settings.knowledge.multi_rep_api_base_url`). Best-effort: on failure, fall back to first 200 chars of content
+  - Route by `section_type`: `"style"` → `summarize_css_block()`, `"mso_conditional"` → deterministic MSO description, HTML sections → `summarize_html_section()`, `None`/text → `summarize_batch()` LLM call
+- Modify `app/knowledge/service.py` → `ingest_document()` — after chunking, if `settings.knowledge.multi_rep_enabled`:
+  1. Generate summaries via `ChunkSummarizer` (deterministic where possible, LLM for remainder)
+  2. Store summaries in `DocumentChunk.summary` column
+  3. Embed summaries (not raw content) via module-level `_get_embedding()` provider
+  4. Store embeddings in `DocumentChunk.embedding` column as usual
+  5. `DocumentChunk.content` retains full original code (unchanged)
+- `app/knowledge/repository.py` → `search_vector()` — NO CHANGE needed. Already returns `chunk.content` (full code) alongside the distance score. The embedding was built from summary, but the returned content is always the full chunk
+- Config (`app/core/config.py` → `KnowledgeConfig`): `multi_rep_enabled: bool = False`, `multi_rep_model: str = "gpt-4o-mini"`, `multi_rep_api_base_url: str = "https://api.openai.com/v1"`, `multi_rep_api_key: str = ""` (follows same pattern as existing `auto_tag_*` config fields)
+- Migration: None (uses 16.3's `summary` column)
+**Security:** Summaries are generated from document content already in the knowledge base. LLM summarization uses `httpx.AsyncClient` with the same pattern as `_auto_tag_document()` (API key from config, timeout, best-effort error handling). No user PII in summaries (document content is knowledge base articles, not user data). `multi_rep_api_key` stored in config alongside existing `auto_tag_api_key` — same security posture.
+**Verify:** Ingest HTML document with `multi_rep_enabled=True` → chunks have deterministic summaries (CSS blocks list properties, HTML sections list structure). Search "responsive layout" → returns full `<table>` markup (not summary), but ranking improved because summary embedding matches better. Ingest plain-text document → LLM-generated summaries for prose chunks. `multi_rep_enabled=False` → existing behavior unchanged (content embedded directly, no summaries). Chunks without summaries still searchable (embedding from content as before). `make test` passes.
+- [ ] 16.6 Multi-representation indexing

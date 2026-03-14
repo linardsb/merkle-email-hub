@@ -23,6 +23,8 @@ Scaffolder, Dark Mode, Content, Outlook Fixer, Accessibility, Personalisation, C
 
 Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `judge_runner.py`, `judges/`, `dimensions.py`, `synthetic_data_*.py`, `calibration.py`, `qa_calibration.py`, `regression.py`, `skill_ab.py`.
 
+**Inline judges (11.23):** `app/ai/blueprints/inline_judge.py` bridges `JUDGE_REGISTRY` into live blueprint execution on recovery retries (`iteration > 0`). Lightweight model tier, `temperature=0.0`, failure-safe. Config: `BLUEPRINT__JUDGE_ON_RETRY=true`.
+
 ## Maizzle Sidecar
 
 `services/maizzle-builder/` — POST /build, POST /preview, GET /health.

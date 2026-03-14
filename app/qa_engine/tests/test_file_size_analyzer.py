@@ -163,7 +163,7 @@ class TestGzipEdgeCases:
         """Random/diverse content has higher compression ratio than repetitive."""
         import random
 
-        rng = random.Random(42)
+        rng = random.Random(42)  # noqa: S311 — seeded RNG for deterministic test data, not crypto
         chars = "".join(rng.choices(string.printable, k=50_000))
         html = _make_html(f"<p>{chars}</p>")
         result = analyze_file_size(html)

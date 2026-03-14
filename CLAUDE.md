@@ -35,9 +35,9 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 
 ## Roadmap
 
-See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.21, 11.22.1-11.22.8.
+See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.21, 11.22.1-11.22.8, 11.23.
 
-**Active:** 11.22 Template-first hybrid architecture (subtasks 1-8 done; 9 remaining, plan: `.agents/plans/11.22-deterministic-agent-architecture.md`). Next: 11.22.9 (eval-driven iteration loop). Then 11.23-11.24, **11.25** (client design system & template customisation — bridges `app/components/` ↔ `app/ai/templates/`, adds per-project design systems, project-scoped template registry, constraint injection into agent pipeline), Phase 12 (Figma import), Phase 13 (ESP sync).
+**Active:** 11.22 Template-first hybrid architecture (subtasks 1-8 done; 9 remaining, plan: `.agents/plans/11.22-deterministic-agent-architecture.md`). Next: 11.22.9 (eval-driven iteration loop). Then 11.24, **11.25** (client design system & template customisation — bridges `app/components/` ↔ `app/ai/templates/`, adds per-project design systems, project-scoped template registry, constraint injection into agent pipeline), Phase 12 (Figma import), Phase 13 (ESP sync).
 
 ## Compact instructions
 

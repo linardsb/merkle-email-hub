@@ -15,6 +15,8 @@ from app.ai.blueprints.schemas import (
     BlueprintRunRequest,
     BlueprintRunResponse,
     HandoffSummary,
+    InlineJudgeCriterionResponse,
+    InlineJudgeVerdictResponse,
     RoutingDecisionResponse,
 )
 from app.core.logging import get_logger
@@ -80,11 +82,11 @@ class BlueprintService:
                 audience_profile = build_audience_profile(personas)
 
         # Wire graph knowledge provider (optional — only if Cognee enabled)
+        from app.core.config import get_settings
+
+        settings = get_settings()
         graph_provider: GraphContextProvider | None = None
         try:
-            from app.core.config import get_settings
-
-            settings = get_settings()
             if settings.cognee.enabled:
                 from app.knowledge.graph.cognee_provider import CogneeGraphProvider
 
@@ -99,6 +101,7 @@ class BlueprintService:
             project_id=project_id,
             graph_provider=graph_provider,
             audience_profile=audience_profile,
+            judge_on_retry=settings.blueprint.judge_on_retry,
         )
 
         logger.info(
@@ -147,6 +150,23 @@ class BlueprintService:
 
         handoff_history = [_to_summary(h) for h in bp_run._handoff_history]
 
+        # Map inline judge verdict to response
+        judge_verdict_response: InlineJudgeVerdictResponse | None = None
+        if bp_run.judge_verdict is not None:
+            judge_verdict_response = InlineJudgeVerdictResponse(
+                trace_id=bp_run.judge_verdict.trace_id,
+                agent=bp_run.judge_verdict.agent,
+                overall_pass=bp_run.judge_verdict.overall_pass,
+                criteria_results=[
+                    InlineJudgeCriterionResponse(
+                        criterion=cr.criterion,
+                        passed=cr.passed,
+                        reasoning=cr.reasoning,
+                    )
+                    for cr in bp_run.judge_verdict.criteria_results
+                ],
+            )
+
         return BlueprintRunResponse(
             run_id=bp_run.run_id,
             blueprint_name=definition.name,
@@ -179,6 +199,7 @@ class BlueprintService:
                 )
                 for d in bp_run.routing_decisions
             ],
+            judge_verdict=judge_verdict_response,
         )
 
 

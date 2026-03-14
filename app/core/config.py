@@ -162,6 +162,7 @@ class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
     daily_token_cap: int = 500_000  # Max tokens per user per day across all blueprint runs
+    judge_on_retry: bool = False  # When True, run LLM judge on recovery retries (iteration > 0)
 
 
 class WebSocketConfig(BaseModel):

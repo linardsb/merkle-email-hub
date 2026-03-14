@@ -15,6 +15,7 @@ from app.ai.agents.context_budget import (
     compact_handoff_history,
     summarize_trajectory,
 )
+from app.ai.agents.evals.judges.schemas import JudgeVerdict
 from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -84,6 +85,7 @@ class BlueprintRun:
         default_factory=lambda: list[StructuredFailure]()
     )
     qa_passed: bool | None = None
+    judge_verdict: JudgeVerdict | None = None
     model_usage: dict[str, int] = field(
         default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     )
@@ -121,6 +123,7 @@ class BlueprintEngine:
         project_id: int | None = None,
         graph_provider: GraphContextProvider | None = None,
         audience_profile: "AudienceProfile | None" = None,
+        judge_on_retry: bool = False,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
@@ -128,6 +131,7 @@ class BlueprintEngine:
         self._project_id = project_id
         self._graph_provider = graph_provider
         self._audience_profile = audience_profile
+        self._judge_on_retry = judge_on_retry
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -239,6 +243,43 @@ class BlueprintEngine:
                             html=run.html,
                             details=f"scope_violation:{current_node_name}",
                             error=f"Scope violation: {violations[0].description}",
+                        )
+
+            # --- Inline judge on recovery retries ---
+            if (
+                self._judge_on_retry
+                and node.node_type == "agentic"
+                and iteration > 0
+                and result.status == "success"
+                and result.html
+            ):
+                from app.ai.blueprints.inline_judge import run_inline_judge
+
+                agent_name = node.name.removesuffix("_node")
+                verdict = await run_inline_judge(
+                    agent_name=agent_name,
+                    context=context,
+                    html_output=result.html,
+                    run=run,
+                )
+                if verdict is not None:
+                    run.judge_verdict = verdict
+                    if not verdict.overall_pass:
+                        run.status = "needs_review"
+                        logger.warning(
+                            "blueprint.inline_judge_rejected",
+                            agent=agent_name,
+                            run_id=run.run_id,
+                            failed_criteria=[
+                                cr.criterion for cr in verdict.criteria_results if not cr.passed
+                            ],
+                        )
+                        break
+                    else:
+                        logger.info(
+                            "blueprint.inline_judge_approved",
+                            agent=agent_name,
+                            run_id=run.run_id,
                         )
 
             # Record progress

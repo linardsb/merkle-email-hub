@@ -49,6 +49,23 @@ class RoutingDecisionResponse(BaseModel):
     reason: str
 
 
+class InlineJudgeCriterionResponse(BaseModel):
+    """Result for a single judge criterion in an inline verdict."""
+
+    criterion: str
+    passed: bool
+    reasoning: str
+
+
+class InlineJudgeVerdictResponse(BaseModel):
+    """Inline judge verdict from a recovery retry."""
+
+    trace_id: str
+    agent: str
+    overall_pass: bool
+    criteria_results: list[InlineJudgeCriterionResponse]
+
+
 class BlueprintRunResponse(BaseModel):
     """Response from a completed blueprint run."""
 
@@ -66,6 +83,7 @@ class BlueprintRunResponse(BaseModel):
     routing_decisions: list[RoutingDecisionResponse] = Field(
         default_factory=lambda: list[RoutingDecisionResponse]()
     )
+    judge_verdict: InlineJudgeVerdictResponse | None = None
 
 
 class FailurePatternResponse(BaseModel):
