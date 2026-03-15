@@ -330,7 +330,7 @@
 - `make sdk` to cover all new endpoints
 - Update frontend type imports
 **Verify:** `make test` — all design_sync tests pass. `make types` — clean. `make lint` — clean. `make check-fe` — clean.
-- [ ] 12.9 SDK regeneration & tests
+- [x] ~~12.9 SDK regeneration & tests~~ DONE
 
 ---
 

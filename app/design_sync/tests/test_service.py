@@ -9,12 +9,12 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.design_sync.crypto import decrypt_token, encrypt_token
-from app.design_sync.models import DesignImport
 from app.design_sync.exceptions import (
     SyncFailedError,
     UnsupportedProviderError,
 )
 from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
+from app.design_sync.models import DesignImport
 from app.design_sync.protocol import (
     DesignComponent,
     DesignFileStructure,
@@ -27,6 +27,7 @@ from app.design_sync.protocol import (
     ExtractedTokens,
     ExtractedTypography,
 )
+from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import ConnectionResponse
 from app.design_sync.service import SUPPORTED_PROVIDERS, DesignSyncService
 
@@ -610,9 +611,7 @@ class TestGetImportByTemplate:
         return AsyncMock(spec=AsyncSession)
 
     @pytest.fixture
-    def repo(self, mock_db: AsyncMock) -> "DesignSyncRepository":
-        from app.design_sync.repository import DesignSyncRepository
-
+    def repo(self, mock_db: AsyncMock) -> DesignSyncRepository:
         return DesignSyncRepository(mock_db)
 
     def _make_import(
@@ -636,7 +635,7 @@ class TestGetImportByTemplate:
 
     @pytest.mark.asyncio
     async def test_get_import_by_template_returns_completed_import(
-        self, repo: "DesignSyncRepository", mock_db: AsyncMock
+        self, repo: DesignSyncRepository, mock_db: AsyncMock
     ) -> None:
         """Repository returns a completed import matching result_template_id."""
         expected = self._make_import(result_template_id=42, status="completed")
@@ -646,6 +645,7 @@ class TestGetImportByTemplate:
 
         result = await repo.get_import_by_template_id(template_id=42, project_id=100)
 
+        assert result is not None
         assert result is expected
         assert result.status == "completed"
         assert result.result_template_id == 42
@@ -653,7 +653,7 @@ class TestGetImportByTemplate:
 
     @pytest.mark.asyncio
     async def test_get_import_by_template_returns_none_when_no_import(
-        self, repo: "DesignSyncRepository", mock_db: AsyncMock
+        self, repo: DesignSyncRepository, mock_db: AsyncMock
     ) -> None:
         """Returns None when no import exists for the given template."""
         mock_result = MagicMock()
@@ -667,7 +667,7 @@ class TestGetImportByTemplate:
 
     @pytest.mark.asyncio
     async def test_get_import_by_template_returns_none_for_non_completed(
-        self, repo: "DesignSyncRepository", mock_db: AsyncMock
+        self, repo: DesignSyncRepository, mock_db: AsyncMock
     ) -> None:
         """Returns None for non-completed imports (query filters status='completed')."""
         mock_result = MagicMock()
