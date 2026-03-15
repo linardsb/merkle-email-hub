@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, cast
 
 from cssselect import SelectorSyntaxError
 from lxml import html as lxml_html
@@ -129,10 +129,10 @@ class SectionAdapter:
         raw_tokens: dict[str, object] | None = getattr(version, "default_tokens", None)
         if raw_tokens:
             component_tokens = DefaultTokens(
-                colors=dict(raw_tokens.get("colors", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
-                fonts=dict(raw_tokens.get("fonts", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
-                font_sizes=dict(raw_tokens.get("font_sizes", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
-                spacing=dict(raw_tokens.get("spacing", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
+                colors=cast(dict[str, str], raw_tokens.get("colors", {})),
+                fonts=cast(dict[str, str], raw_tokens.get("fonts", {})),
+                font_sizes=cast(dict[str, str], raw_tokens.get("font_sizes", {})),
+                spacing=cast(dict[str, str], raw_tokens.get("spacing", {})),
             )
 
         logger.info(

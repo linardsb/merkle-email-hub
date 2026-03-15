@@ -56,7 +56,12 @@ class ScaffolderService(BaseAgentService):
 
     def _build_user_message(self, request: Any) -> str:
         req: ScaffolderRequest = request
-        return req.brief
+        message = req.brief
+        if req.design_context:
+            from app.ai.agents.scaffolder.prompt import build_design_context_section
+
+            message += "\n\n" + build_design_context_section(req.design_context)
+        return message
 
     def _post_process(self, raw_content: str) -> str:
         """Extract HTML, sanitize XSS, then run MSO validation."""

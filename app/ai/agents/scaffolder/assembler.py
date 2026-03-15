@@ -187,10 +187,13 @@ class TemplateAssembler:
         tokens: DesignTokens,
     ) -> str:
         """Apply palette replacement for each composed SectionBlock's default_tokens."""
-        if not hasattr(template, "composed_sections") or not template.composed_sections:  # pyright: ignore[reportAttributeAccessIssue]
+        from app.ai.templates.composer import SectionBlock
+
+        composed: tuple[SectionBlock, ...] | None = getattr(template, "composed_sections", None)
+        if not composed:
             return html
 
-        for section in template.composed_sections:  # pyright: ignore[reportAttributeAccessIssue]
+        for section in composed:
             if section.default_tokens is not None:
                 html = self._apply_palette_replacement(
                     html,

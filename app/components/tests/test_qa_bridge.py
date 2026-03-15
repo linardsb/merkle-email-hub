@@ -45,6 +45,7 @@ async def test_run_component_qa_stores_result():
     """Full flow: creates QA result + ComponentQAResult + updates version.compatibility."""
     version = make_version(id=10, component_id=1, version_number=1)
     mock_db = AsyncMock()
+    mock_db.add = MagicMock()
 
     mock_qa_response = MagicMock()
     mock_qa_response.id = 42
@@ -70,6 +71,7 @@ async def test_run_component_qa_links_qa_result():
     """Verifies the ComponentQAResult references the QA result ID from the engine."""
     version = make_version(id=20, component_id=2, version_number=3)
     mock_db = AsyncMock()
+    mock_db.add = MagicMock()
 
     mock_qa_response = MagicMock()
     mock_qa_response.id = 99

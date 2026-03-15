@@ -25,6 +25,10 @@ class ScaffolderRequest(BaseModel):
         default=None,
         description="Brand guidelines for design token selection (colours, fonts, etc.)",
     )
+    design_context: dict[str, object] | None = Field(
+        default=None,
+        description="Figma design context: image URLs, layout analysis, design tokens",
+    )
 
 
 class ScaffolderResponse(BaseModel):

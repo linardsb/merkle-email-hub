@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 from auth import require_taxi_auth
+from database import DatabaseManager
 from fastapi import APIRouter, Depends, HTTPException
 
 from taxi.schemas import (
@@ -16,7 +17,7 @@ from taxi.schemas import (
 router = APIRouter(prefix="/taxi", tags=["Taxi for Email"])
 
 
-def _get_db():
+def _get_db() -> DatabaseManager:
     from main import db
 
     return db

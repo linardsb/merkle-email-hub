@@ -61,10 +61,10 @@ class TemplateMetadata:
 class DefaultTokens:
     """A template's built-in default values, keyed by semantic role."""
 
-    colors: dict[str, str] = field(default_factory=dict)
-    fonts: dict[str, str] = field(default_factory=dict)
-    font_sizes: dict[str, str] = field(default_factory=dict)
-    spacing: dict[str, str] = field(default_factory=dict)
+    colors: dict[str, str] = field(default_factory=dict[str, str])
+    fonts: dict[str, str] = field(default_factory=dict[str, str])
+    font_sizes: dict[str, str] = field(default_factory=dict[str, str])
+    spacing: dict[str, str] = field(default_factory=dict[str, str])
 
 
 @dataclass(frozen=True)

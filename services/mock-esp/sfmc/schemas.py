@@ -11,7 +11,7 @@ class TokenRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "Bearer"
+    token_type: str = "Bearer"  # noqa: S105
     expires_in: int = 3600
 
 

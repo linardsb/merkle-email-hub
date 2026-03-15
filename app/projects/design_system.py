@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -146,16 +146,16 @@ class DesignSystem(BaseModel):
 
     @field_validator("colors", mode="before")
     @classmethod
-    def validate_color_values(cls, v: object) -> object:  # pyright: ignore[reportUnknownParameterType]
+    def validate_color_values(cls, v: object) -> object:
         if not isinstance(v, dict):
             return v
         raw: dict[str, str] = {}
-        for key, color in v.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        for key, color in cast(dict[str, object], v).items():
             if not isinstance(color, str):
                 msg = f"Color value for role '{key}' must be a string, got {type(color).__name__}"
                 raise ValueError(msg)
             _validate_hex_color(color)
-            raw[str(key)] = color.lower()  # pyright: ignore[reportUnknownArgumentType]
+            raw[str(key)] = color.lower()
         return raw
 
 

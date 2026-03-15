@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false, reportUnknownMemberType=false
 """System prompt for the Scaffolder agent.
 
 Thin prompt — core rules only. Detailed patterns loaded from SKILL.md
@@ -71,6 +72,45 @@ def build_system_prompt(relevant_skills: list[str], output_mode: str = "html") -
             content = _load_skill_file(filename)
             if content:
                 parts.append(f"\n\n--- REFERENCE: {skill_key} ---\n\n{content}")
+
+    return "\n".join(parts)
+
+
+def build_design_context_section(design_context: dict[str, object]) -> str:
+    """Build a prompt section from Figma design context."""
+    parts: list[str] = ["## Design Reference (Figma Import)\n"]
+
+    layout = design_context.get("layout_summary")
+    if layout:
+        parts.append(f"**Detected layout:** {layout}\n")
+
+    image_urls = design_context.get("image_urls", {})
+    if isinstance(image_urls, dict) and image_urls:
+        parts.append("**Available images (use as img src):**")
+        for node_id, url in image_urls.items():
+            parts.append(f"- `{node_id}`: `{url}`")
+        parts.append("")
+
+    tokens = design_context.get("design_tokens")
+    if tokens and isinstance(tokens, dict):
+        colors = tokens.get("colors", [])
+        if isinstance(colors, list) and colors:
+            color_list = ", ".join(
+                f"{c.get('name', '?')}: {c.get('hex', '?')}" for c in colors if isinstance(c, dict)
+            )
+            parts.append(f"**Brand colors:** {color_list}")
+        typography = tokens.get("typography", [])
+        if isinstance(typography, list) and typography:
+            typo_dicts: list[dict[str, object]] = [t for t in typography if isinstance(t, dict)]
+            font_list = ", ".join(
+                f"{t.get('name', '?')}: {t.get('family', '?')} {t.get('size', '?')}px"
+                for t in typo_dicts
+            )
+            parts.append(f"**Typography:** {font_list}")
+
+    source = design_context.get("source_file")
+    if source:
+        parts.append(f"\n_Source: {source}_")
 
     return "\n".join(parts)
 

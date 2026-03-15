@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-14
+> Last updated: 2026-03-15
 
 ### Completed
 
@@ -126,10 +126,12 @@
 | 11.25.3 | Project-scoped template registry | `app/projects/template_config.py` — `ProjectTemplateConfig` frozen Pydantic with `SectionOverride`, `CustomSection`, `disabled_templates`, `preferred_templates`; `template_config` JSON column on `Project`; GET/PUT/DELETE `/template-config` API; `TemplateRegistry.get_for_project()` filters disabled + reorders preferred; `list_for_selection_scoped()` adds `[RECOMMENDED]` markers; service validates template names against registry; 16 tests |
 | 11.25.4 | Agent pipeline constraint injection | Design system as generation constraints with role-based token mapping. `DesignSystem` extended with dynamic `colors`/`fonts`/`font_sizes`/`spacing` dicts; `resolve_color_map()` merges `BrandPalette` + explicit overrides; `DesignTokens` redesigned with dynamic dicts + `source` + `locked_roles`; `DefaultTokens` on `GoldenTemplate` + `SectionBlock` for per-template/component default hex values; `ScaffolderPipeline._design_pass_from_system()` zero-LLM deterministic token build; `_build_locked_fills()` locks footer/logo slots; `TemplateAssembler` role-based palette replacement + font replacement + logo enforcement + social links + dark mode + brand color sweep safety net; LAYER 11 in `BlueprintEngine._build_node_context()` injects design system + color/font maps + template_config for all nodes; `list_for_selection_scoped()` in layout pass; `default_tokens` JSON column on `ComponentVersion`; component palette replacement for composed templates |
 | 11.25.5 | Consistency enforcement — brand repair + e2e | `app/qa_engine/repair/brand.py` — `BrandRepair` stage 8 in repair pipeline; deterministic off-palette color correction (Euclidean RGB distance to nearest palette match); footer legal text injection; logo URL correction; `RepairPipeline` accepts `design_system` parameter; `app/ai/blueprints/tests/test_e2e_brand_enforcement.py` end-to-end test covering design system → pipeline → repair → validation; `app/qa_engine/repair/tests/test_brand_repair.py` unit tests for color correction + footer/logo repair |
+| 12.5 | AI-assisted conversion pipeline | `app/design_sync/import_service.py` — `DesignImportService` orchestrator with own DB session (`get_db_context`); two-phase UX (create import with brief → trigger conversion); `DesignContextSchema` for Scaffolder (image URLs, layout summary, design tokens, source file); `build_design_context_section()` prompt injection; `ScaffolderRequest.design_context` field; 4 new endpoints (`POST /imports` 10/min, `GET /imports/{id}` 30/min, `PATCH /imports/{id}/brief` 10/min, `POST /imports/{id}/convert` 3/min 202 Accepted); atomic Template+TemplateVersion creation via `flush()`+`commit()`; state machine validation (pending/failed → converting); `ImportStateError` exception; background task with `add_done_callback` error logging; BOLA on all endpoints; 24 tests (1671 total) |
 
 ### In Progress
 
-**Phase 11:** QA Engine Hardening — COMPLETE. All tasks 11.1–11.25 done, including 11.25 Client Design System & Template Customisation (all 5 subtasks: design system model, component→section bridge, project-scoped template registry, agent pipeline constraint injection, consistency enforcement).
+**Phase 11:** QA Engine Hardening — COMPLETE. All tasks 11.1–11.25 done.
+**Phase 12:** Design-to-Email Import Pipeline — backend complete (12.1–12.6). Remaining: 12.7–12.9 (frontend file browser, design reference in workspace, SDK regeneration).
 **Remaining:** Human label calibration (540 rows for TPR/TNR).
 
 ### Infrastructure Built

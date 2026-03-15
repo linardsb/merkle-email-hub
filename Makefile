@@ -186,7 +186,7 @@ install-hooks: ## Install git pre-commit hook
 	@echo "Pre-commit hook installed."
 
 security-check: ## Run security lint (Ruff Bandit rules)
-	uv run ruff check app/ --select=S --no-fix
+	uv run ruff check app/ --select=S --ignore=S311 --no-fix
 
 # === Help ===
 

@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 from auth import issue_token, require_adobe_auth
+from database import DatabaseManager
 from fastapi import APIRouter, Depends, Form, HTTPException
 
 from adobe.schemas import (
@@ -17,7 +18,7 @@ from adobe.schemas import (
 router = APIRouter(prefix="/adobe", tags=["Adobe Campaign"])
 
 
-def _get_db():
+def _get_db() -> DatabaseManager:
     from main import db
 
     return db
@@ -26,7 +27,7 @@ def _get_db():
 @router.post("/ims/token/v3", response_model=TokenResponse)
 async def ims_token_exchange(
     client_id: str = Form(...),
-    client_secret: str = Form(...),
+    client_secret: str = Form(...),  # noqa: ARG001
     grant_type: str = Form(default="client_credentials"),
 ) -> TokenResponse:
     if grant_type != "client_credentials":

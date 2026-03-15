@@ -66,7 +66,7 @@ class DesignNode:
     id: str
     name: str
     type: DesignNodeType
-    children: list[DesignNode] = field(default_factory=list)
+    children: list[DesignNode] = field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
     width: float | None = None
     height: float | None = None
     x: float | None = None
@@ -79,7 +79,7 @@ class DesignFileStructure:
     """Top-level structure of a design file."""
 
     file_name: str
-    pages: list[DesignNode] = field(default_factory=list)
+    pages: list[DesignNode] = field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
 
 
 @dataclass(frozen=True)

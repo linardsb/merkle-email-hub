@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.ai.agents.scaffolder.assembler import TemplateAssembler
 from app.ai.agents.schemas.build_plan import DesignTokens
 from app.ai.templates.models import DefaultTokens
@@ -18,9 +20,9 @@ from app.projects.design_system import (
 )
 
 
-def _make_design_system(**overrides: object) -> DesignSystem:
+def _make_design_system(**overrides: Any) -> DesignSystem:
     """Build a DesignSystem with sensible defaults, overridable."""
-    defaults: dict[str, object] = {
+    defaults: dict[str, Any] = {
         "palette": BrandPalette(
             primary="#ff0000",
             secondary="#00ff00",

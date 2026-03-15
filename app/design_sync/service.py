@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,8 @@ from app.design_sync.canva.service import CanvaDesignSyncService
 from app.design_sync.crypto import decrypt_token, encrypt_token
 from app.design_sync.exceptions import (
     ConnectionNotFoundError,
+    ImportNotFoundError,
+    ImportStateError,
     SyncFailedError,
     UnsupportedProviderError,
 )
@@ -54,7 +56,9 @@ from app.design_sync.schemas import (
     GenerateBriefResponse,
     ImageExportResponse,
     ImagePlaceholderResponse,
+    ImportResponse,
     LayoutAnalysisResponse,
+    StartImportRequest,
     StoredAssetResponse,
     TextBlockResponse,
 )
@@ -551,6 +555,125 @@ class DesignSyncService:
             message=f"Extracting {len(components)} components in the background",
         )
 
+    # ── Phase 12.5: Design Import & Conversion Pipeline ──
+
+    async def create_design_import(
+        self,
+        data: StartImportRequest,
+        user: User,
+    ) -> ImportResponse:
+        """Create a new import record with brief. Status = pending."""
+        from app.core.exceptions import DomainValidationError
+
+        conn = await self._repo.get_connection(data.connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {data.connection_id} not found")
+        if conn.project_id is None:
+            raise DomainValidationError("Connection must be linked to a project")
+        await self._verify_access(conn.project_id, user)
+
+        design_import = await self._repo.create_import(
+            connection_id=data.connection_id,
+            project_id=conn.project_id,
+            selected_node_ids=data.selected_node_ids,
+            created_by_id=user.id,
+        )
+        # Store brief and optional template name
+        await self._repo.update_import_status(
+            design_import,
+            "pending",
+            generated_brief=data.brief,
+            structure_json={"template_name": data.template_name} if data.template_name else None,
+        )
+
+        logger.info(
+            "design_sync.import_created",
+            import_id=design_import.id,
+            connection_id=data.connection_id,
+        )
+        return self._import_to_response(design_import)
+
+    async def get_design_import(self, import_id: int, user: User) -> ImportResponse:
+        """Get import status with BOLA check."""
+        design_import = await self._repo.get_import_with_assets(import_id)
+        if design_import is None:
+            raise ImportNotFoundError(f"Import {import_id} not found")
+        await self._verify_access(design_import.project_id, user)
+        return self._import_to_response(design_import)
+
+    async def update_import_brief(self, import_id: int, brief: str, user: User) -> ImportResponse:
+        """Update the brief on a pending import."""
+        design_import = await self._repo.get_import(import_id)
+        if design_import is None:
+            raise ImportNotFoundError(f"Import {import_id} not found")
+        await self._verify_access(design_import.project_id, user)
+        if design_import.status != "pending":
+            raise ImportStateError(
+                f"Cannot edit brief: import is '{design_import.status}', expected 'pending'"
+            )
+        await self._repo.update_import_status(design_import, "pending", generated_brief=brief)
+        logger.info("design_sync.import_brief_updated", import_id=import_id)
+        return self._import_to_response(design_import)
+
+    async def start_conversion(
+        self,
+        import_id: int,
+        user: User,
+        *,
+        run_qa: bool = True,
+        output_mode: Literal["html", "structured"] = "structured",
+    ) -> ImportResponse:
+        """Kick off the background conversion pipeline."""
+        from app.core.exceptions import DomainValidationError
+
+        design_import = await self._repo.get_import(import_id)
+        if design_import is None:
+            raise ImportNotFoundError(f"Import {import_id} not found")
+        await self._verify_access(design_import.project_id, user)
+        if design_import.status not in ("pending", "failed"):
+            raise ImportStateError(
+                f"Cannot convert: import is '{design_import.status}', expected 'pending' or 'failed'"
+            )
+        if not design_import.generated_brief:
+            raise DomainValidationError("Import has no brief — set one before converting")
+
+        # Update status before launching background task to avoid race
+        await self._repo.update_import_status(design_import, "converting")
+        logger.info("design_sync.conversion_started", import_id=import_id)
+
+        # Launch background pipeline with its own DB session
+        from app.design_sync.import_service import DesignImportService
+
+        import_service = DesignImportService(
+            design_service_factory=type(self),
+            user=user,
+        )
+
+        def _on_task_done(task: asyncio.Task[None]) -> None:
+            if task.cancelled():
+                logger.warning("design_sync.conversion_cancelled", import_id=import_id)
+            elif task.exception() is not None:
+                logger.error(
+                    "design_sync.conversion_task_failed",
+                    import_id=import_id,
+                    error=str(task.exception()),
+                )
+
+        task = asyncio.create_task(
+            import_service.run_conversion(
+                import_id=import_id,
+                run_qa=run_qa,
+                output_mode=output_mode,
+            )
+        )
+        task.add_done_callback(_on_task_done)
+
+        return self._import_to_response(design_import)
+
+    def _import_to_response(self, design_import: object) -> ImportResponse:
+        """Convert DesignImport model to response schema."""
+        return ImportResponse.model_validate(design_import, from_attributes=True)
+
     # ── Helpers ──
 
     async def _verify_access(self, project_id: int, user: User) -> None:
@@ -559,34 +682,11 @@ class DesignSyncService:
 
     async def _get_project_name(self, project_id: int | None) -> str | None:
         """Fetch a single project name by ID."""
-        if project_id is None:
-            return None
-        from sqlalchemy import select
-
-        from app.projects.models import Project
-
-        result = await self.db.execute(select(Project.name).where(Project.id == project_id))
-        row = result.scalar_one_or_none()
-        return str(row) if row else None
+        return await self._repo.get_project_name(project_id)
 
     async def _get_accessible_project_ids(self, user: User) -> list[int]:
         """Get IDs of projects the user can access."""
-        if user.role == "admin":
-            from sqlalchemy import select
-
-            from app.projects.models import Project
-
-            result = await self.db.execute(select(Project.id))
-            return [row[0] for row in result.all()]
-
-        from sqlalchemy import select
-
-        from app.projects.models import ProjectMember
-
-        result = await self.db.execute(
-            select(ProjectMember.project_id).where(ProjectMember.user_id == user.id)
-        )
-        return [row[0] for row in result.all()]
+        return await self._repo.get_accessible_project_ids(user.id, user.role)
 
 
 # ── Module-level helpers for 12.4 ──

@@ -277,7 +277,7 @@
 - 6 new API endpoints: GET structure, GET components, POST export-images, POST imports, GET import status, PATCH import brief
 **Security:** BOLA on all endpoints. Rate limit imports. Scaffolder sanitises output via nh3.
 **Verify:** Mock Figma API + mock Scaffolder → import completes with template. Brief edit → re-conversion works.
-- [ ] 12.5 AI-assisted conversion pipeline
+- [x] ~~12.5 AI-assisted conversion pipeline~~ DONE
 
 ### 12.6 Component Extraction
 **What:** Extract Figma components → Hub `Component` + `ComponentVersion` with auto-generated HTML.
@@ -303,7 +303,7 @@
 - i18n keys for all new UI text
 **Security:** authFetch for all API calls. No dangerouslySetInnerHTML.
 **Verify:** File browser renders mock tree. Import wizard completes all steps. Component extraction shows progress.
-- [ ] 12.7 Frontend file browser & import dialog
+- [x] ~~12.7 Frontend file browser & import dialog~~ DONE
 
 ### 12.8 Design Reference in Workspace
 **What:** "Design Reference" tab in workspace bottom panel showing the original Figma design alongside the editor.

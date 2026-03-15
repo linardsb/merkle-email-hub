@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 from auth import require_braze_auth
+from database import DatabaseManager
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from braze.schemas import (
@@ -18,7 +19,7 @@ from braze.schemas import (
 router = APIRouter(prefix="/braze", tags=["Braze"])
 
 
-def _get_db():
+def _get_db() -> DatabaseManager:
     from main import db
 
     return db

@@ -51,3 +51,135 @@ export interface DesignConnectionCreate {
   name: string;
   provider: DesignProvider;
 }
+
+// ── File tree (12.7) ──
+
+export interface DesignNode {
+  id: string;
+  name: string;
+  type: string;
+  children: DesignNode[];
+  width: number | null;
+  height: number | null;
+  x: number | null;
+  y: number | null;
+  text_content: string | null;
+}
+
+export interface DesignFileStructure {
+  connection_id: number;
+  file_name: string;
+  pages: DesignNode[];
+}
+
+// ── Components ──
+
+export interface DesignComponent {
+  component_id: string;
+  name: string;
+  description: string;
+  thumbnail_url: string | null;
+  containing_page: string | null;
+}
+
+export interface DesignComponentList {
+  connection_id: number;
+  components: DesignComponent[];
+  total: number;
+}
+
+// ── Image export ──
+
+export interface ExportedImage {
+  node_id: string;
+  url: string;
+  format: string;
+  expires_at: string | null;
+}
+
+export interface ImageExportResult {
+  connection_id: number;
+  images: ExportedImage[];
+  total: number;
+}
+
+// ── Design import ──
+
+export interface DesignImportAsset {
+  id: number;
+  node_id: string;
+  node_name: string;
+  file_path: string;
+  width: number | null;
+  height: number | null;
+  format: string;
+  usage: string | null;
+  created_at: string;
+}
+
+export type ImportStatus = "pending" | "extracting" | "converting" | "completed" | "failed" | "cancelled";
+
+export interface DesignImport {
+  id: number;
+  connection_id: number;
+  project_id: number;
+  status: ImportStatus;
+  selected_node_ids: string[];
+  structure_json: Record<string, unknown> | null;
+  generated_brief: string | null;
+  result_template_id: number | null;
+  error_message: string | null;
+  created_by_id: number;
+  assets: DesignImportAsset[];
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Brief generation ──
+
+export interface GeneratedBrief {
+  connection_id: number;
+  brief: string;
+  sections_detected: number;
+  layout_summary: string;
+}
+
+// ── Component extraction ──
+
+export interface ExtractComponentsResult {
+  import_id: number;
+  status: string;
+  total_components: number;
+}
+
+// ── Mutation arg types ──
+
+export interface ExportImagesArg {
+  connection_id: number;
+  node_ids: string[];
+  format?: string;
+  scale?: number;
+}
+
+export interface GenerateBriefArg {
+  connection_id: number;
+  selected_node_ids: string[];
+  include_tokens?: boolean;
+}
+
+export interface CreateImportArg {
+  connection_id: number;
+  brief: string;
+  selected_node_ids: string[];
+  template_name?: string;
+}
+
+export interface ConvertImportArg {
+  run_qa?: boolean;
+  output_mode?: string;
+}
+
+export interface ExtractComponentsArg {
+  component_ids?: string[];
+  generate_html?: boolean;
+}

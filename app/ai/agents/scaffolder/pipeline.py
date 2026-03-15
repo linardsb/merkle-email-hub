@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from app.projects.design_system import DesignSystem
@@ -475,4 +475,5 @@ def _extract_str_dict(raw: object) -> dict[str, str]:
     """Safely extract dict[str, str] from LLM JSON output."""
     if not isinstance(raw, dict):
         return {}
-    return {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}
+    d = cast(dict[str, Any], raw)
+    return {str(k): str(v) for k, v in d.items() if isinstance(v, str)}

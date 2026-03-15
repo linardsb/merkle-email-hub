@@ -17,6 +17,7 @@ from app.design_sync.schemas import (
     ConnectionDeleteRequest,
     ConnectionResponse,
     ConnectionSyncRequest,
+    ConvertImportRequest,
     DesignTokensResponse,
     DownloadAssetsRequest,
     DownloadAssetsResponse,
@@ -27,7 +28,10 @@ from app.design_sync.schemas import (
     GenerateBriefRequest,
     GenerateBriefResponse,
     ImageExportResponse,
+    ImportResponse,
     LayoutAnalysisResponse,
+    StartImportRequest,
+    UpdateImportBriefRequest,
 )
 from app.design_sync.service import DesignSyncService
 
@@ -302,4 +306,70 @@ async def extract_components(
         user=current_user,
         component_ids=body.component_ids,
         generate_html=body.generate_html,
+    )
+
+
+# ── Phase 12.5: Design Import & Conversion Pipeline ──
+
+
+@router.post("/imports", response_model=ImportResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
+async def create_import(
+    request: Request,
+    data: StartImportRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ImportResponse:
+    """Create a design import job with a brief for Scaffolder conversion."""
+    _ = request
+    return await service.create_design_import(data, current_user)
+
+
+@router.get("/imports/{import_id}", response_model=ImportResponse)
+@limiter.limit("30/minute")
+async def get_import(
+    import_id: int,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> ImportResponse:
+    """Get import status and result (poll this until completed/failed)."""
+    _ = request
+    return await service.get_design_import(import_id, current_user)
+
+
+@router.patch("/imports/{import_id}/brief", response_model=ImportResponse)
+@limiter.limit("10/minute")
+async def update_import_brief(
+    import_id: int,
+    request: Request,
+    data: UpdateImportBriefRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ImportResponse:
+    """Edit the brief before triggering conversion. Only works in 'pending' state."""
+    _ = request
+    return await service.update_import_brief(import_id, data.generated_brief, current_user)
+
+
+@router.post(
+    "/imports/{import_id}/convert",
+    response_model=ImportResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@limiter.limit("3/minute")
+async def convert_import(
+    import_id: int,
+    request: Request,
+    body: ConvertImportRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ImportResponse:
+    """Trigger the Scaffolder conversion pipeline. Returns immediately; poll GET /imports/{id}."""
+    _ = request
+    return await service.start_conversion(
+        import_id,
+        current_user,
+        run_qa=body.run_qa,
+        output_mode=body.output_mode,
     )

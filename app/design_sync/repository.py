@@ -243,10 +243,10 @@ class DesignSyncRepository:
                 node_id=str(a["node_id"]),
                 node_name=str(a["node_name"]),
                 file_path=str(a["file_path"]),
-                width=a.get("width"),  # type: ignore[arg-type]
-                height=a.get("height"),  # type: ignore[arg-type]
+                width=a.get("width"),
+                height=a.get("height"),
                 format=str(a.get("format", "png")),
-                usage=a.get("usage"),  # type: ignore[arg-type]
+                usage=a.get("usage"),
             )
             for a in assets
         ]
@@ -263,3 +263,30 @@ class DesignSyncRepository:
             .order_by(DesignImportAsset.id)
         )
         return list(result.scalars().all())
+
+    # ── Project lookups (used by service layer) ──
+
+    async def get_project_name(self, project_id: int | None) -> str | None:
+        """Fetch a single project name by ID."""
+        if project_id is None:
+            return None
+        from app.projects.models import Project
+
+        result = await self.db.execute(select(Project.name).where(Project.id == project_id))
+        row = result.scalar_one_or_none()
+        return str(row) if row else None
+
+    async def get_accessible_project_ids(self, user_id: int, role: str) -> list[int]:
+        """Get IDs of projects the user can access."""
+        if role == "admin":
+            from app.projects.models import Project
+
+            result = await self.db.execute(select(Project.id))
+            return [row[0] for row in result.all()]
+
+        from app.projects.models import ProjectMember
+
+        result = await self.db.execute(
+            select(ProjectMember.project_id).where(ProjectMember.user_id == user_id)
+        )
+        return [row[0] for row in result.all()]

@@ -1,7 +1,7 @@
 """Pydantic schemas for design sync."""
 
 import datetime
-from typing import cast
+from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -125,7 +125,7 @@ class DesignNodeResponse(BaseModel):
     id: str
     name: str
     type: str
-    children: list["DesignNodeResponse"] = Field(default_factory=list)
+    children: list["DesignNodeResponse"] = Field(default_factory=list["DesignNodeResponse"])
     width: float | None = None
     height: float | None = None
     x: float | None = None
@@ -277,7 +277,7 @@ class ImportResponse(BaseModel):
     result_template_id: int | None = None
     error_message: str | None = None
     created_by_id: int
-    assets: list[ImportAssetResponse] = Field(default_factory=list)
+    assets: list[ImportAssetResponse] = Field(default_factory=list[ImportAssetResponse])
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
@@ -398,3 +398,57 @@ class ExtractComponentsResponse(BaseModel):
     status: str  # "extracting"
     total_components: int
     message: str
+
+
+# ── Phase 12.5: AI-Assisted Conversion Pipeline ──
+
+
+class DesignContextSchema(BaseModel):
+    """Figma-specific context passed to the Scaffolder alongside the brief."""
+
+    image_urls: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping of node_id → locally stored asset URL",
+    )
+    layout_summary: str | None = Field(
+        default=None,
+        description="Detected layout summary (e.g. 'header, hero, 2-col content, cta, footer')",
+    )
+    sections: list[AnalyzedSectionResponse] = Field(
+        default_factory=list[AnalyzedSectionResponse],
+        description="Analyzed sections from layout analysis",
+    )
+    design_tokens: dict[str, object] | None = Field(
+        default=None,
+        description="Extracted design tokens (colors, typography, spacing)",
+    )
+    source_file: str | None = Field(
+        default=None,
+        description="Source Figma file name for provenance",
+    )
+
+
+class StartImportRequest(BaseModel):
+    """Request to create a design import with a brief for conversion."""
+
+    connection_id: int
+    brief: str = Field(
+        ..., min_length=10, max_length=50000, description="Campaign brief from ESP/CMS"
+    )
+    selected_node_ids: list[str] = Field(
+        default_factory=list,
+        max_length=500,
+        description="Figma node IDs to import (empty = all top-level frames)",
+    )
+    template_name: str | None = Field(
+        default=None,
+        max_length=200,
+        description="Override template name (auto-derived from brief if omitted)",
+    )
+
+
+class ConvertImportRequest(BaseModel):
+    """Request to trigger Scaffolder conversion on an existing import."""
+
+    run_qa: bool = Field(default=True, description="Run QA gate on generated HTML")
+    output_mode: Literal["html", "structured"] = Field(default="structured")

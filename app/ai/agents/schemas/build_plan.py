@@ -40,10 +40,10 @@ class DesignTokens:
     and nothing is locked.
     """
 
-    colors: dict[str, str] = field(default_factory=dict)
-    fonts: dict[str, str] = field(default_factory=dict)
-    font_sizes: dict[str, str] = field(default_factory=dict)
-    spacing: dict[str, str] = field(default_factory=dict)
+    colors: dict[str, str] = field(default_factory=dict[str, str])
+    fonts: dict[str, str] = field(default_factory=dict[str, str])
+    font_sizes: dict[str, str] = field(default_factory=dict[str, str])
+    spacing: dict[str, str] = field(default_factory=dict[str, str])
     button_style: Literal["filled", "outlined", "text"] = "filled"
     source: Literal["design_system", "llm_generated", "brief_extracted"] = "llm_generated"
     locked_roles: tuple[str, ...] = ()

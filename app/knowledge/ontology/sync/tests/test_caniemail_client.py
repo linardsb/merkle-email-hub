@@ -1,7 +1,7 @@
 """Tests for Can I Email GitHub client (mocked HTTP)."""
 
 from collections.abc import Generator
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -132,7 +132,7 @@ class TestListFeatureFiles:
 
         mock_response = AsyncMock(spec=httpx.Response)
         mock_response.json.return_value = tree_response
-        mock_response.raise_for_status = AsyncMock()
+        mock_response.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client_cls:
             mock_http = AsyncMock()
@@ -159,7 +159,7 @@ class TestGetLatestCommitSha:
         branch_response = {"commit": {"sha": "abc123def456"}}
         mock_response = AsyncMock(spec=httpx.Response)
         mock_response.json.return_value = branch_response
-        mock_response.raise_for_status = AsyncMock()
+        mock_response.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client_cls:
             mock_http = AsyncMock()

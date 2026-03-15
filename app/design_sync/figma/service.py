@@ -274,7 +274,11 @@ class FigmaDesignSyncService:
         max_depth = depth  # None means unlimited
         for page_data in document.get("children", []):
             if isinstance(page_data, dict):
-                pages.append(self._parse_node(page_data, current_depth=0, max_depth=max_depth))
+                pages.append(
+                    self._parse_node(
+                        cast(dict[str, Any], page_data), current_depth=0, max_depth=max_depth
+                    )
+                )
 
         logger.info(
             "design_sync.figma.file_structure_fetched",
@@ -321,7 +325,11 @@ class FigmaDesignSyncService:
         if max_depth is None or current_depth < max_depth:
             for child_data in node_data.get("children", []):
                 if isinstance(child_data, dict):
-                    children.append(self._parse_node(child_data, current_depth + 1, max_depth))
+                    children.append(
+                        self._parse_node(
+                            cast(dict[str, Any], child_data), current_depth + 1, max_depth
+                        )
+                    )
 
         return DesignNode(
             id=str(node_data.get("id", "")),
@@ -361,13 +369,20 @@ class FigmaDesignSyncService:
         for comp in raw_components:
             if not isinstance(comp, dict):
                 continue
+            comp_d = cast(dict[str, Any], comp)
+            containing_frame = comp_d.get("containing_frame")
+            containing_page: str | None = None
+            if isinstance(containing_frame, dict):
+                raw_page = cast(dict[str, Any], containing_frame).get("pageName")
+                containing_page = str(raw_page) if raw_page is not None else None
+            thumbnail = comp_d.get("thumbnail_url")
             components.append(
                 DesignComponent(
-                    component_id=str(comp.get("node_id", "")),
-                    name=str(comp.get("name", "")),
-                    description=str(comp.get("description", "")),
-                    thumbnail_url=comp.get("thumbnail_url"),
-                    containing_page=(comp.get("containing_frame") or {}).get("pageName"),
+                    component_id=str(comp_d.get("node_id", "")),
+                    name=str(comp_d.get("name", "")),
+                    description=str(comp_d.get("description", "")),
+                    thumbnail_url=str(thumbnail) if thumbnail is not None else None,
+                    containing_page=containing_page,
                 )
             )
 
@@ -434,7 +449,8 @@ class FigmaDesignSyncService:
             images_map = result.get("images", {})
             if not isinstance(images_map, dict):
                 continue
-            for nid, url in images_map.items():
+            images_map_d = cast(dict[str, Any], images_map)
+            for nid, url in images_map_d.items():
                 if url is not None:
                     all_images.append(
                         ExportedImage(

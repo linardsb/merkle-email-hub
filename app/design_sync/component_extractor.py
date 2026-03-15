@@ -315,12 +315,14 @@ class ComponentExtractor:
     async def _ensure_unique_slug(self, base_slug: str, *, max_attempts: int = 100) -> str:
         """Ensure slug is unique by appending -N suffix if needed."""
         slug = base_slug
+        last_counter = 2
         for counter in range(2, max_attempts + 2):
             existing = await self._component_repo.get_by_slug(slug)
             if existing is None:
                 return slug
+            last_counter = counter
             slug = f"{base_slug}-{counter}"[:100]
-        return f"{base_slug}-{counter}"[:100]
+        return f"{base_slug}-{last_counter}"[:100]
 
     async def _store_preview_asset(
         self,

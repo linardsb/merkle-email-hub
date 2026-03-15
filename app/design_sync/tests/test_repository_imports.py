@@ -150,7 +150,7 @@ class TestCreateImportAsset:
 class TestBulkCreateImportAssets:
     @pytest.mark.asyncio
     async def test_creates_multiple(self, repo: DesignSyncRepository, mock_db: AsyncMock) -> None:
-        assets_data = [
+        assets_data: list[dict[str, object]] = [
             {"node_id": "1:2", "node_name": "Hero", "file_path": "1_2.png", "usage": "hero"},
             {"node_id": "3:4", "node_name": "Logo", "file_path": "3_4.png", "usage": "logo"},
         ]

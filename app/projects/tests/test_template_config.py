@@ -90,11 +90,11 @@ class TestCustomSectionValidation:
 class TestDisabledTemplatesValidation:
     def test_empty_string_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            ProjectTemplateConfig(disabled_templates=[""])
+            ProjectTemplateConfig(disabled_templates=("",))
 
     def test_whitespace_only_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            ProjectTemplateConfig(disabled_templates=["  "])
+            ProjectTemplateConfig(disabled_templates=("  ",))
 
 
 # ── Registry methods ──

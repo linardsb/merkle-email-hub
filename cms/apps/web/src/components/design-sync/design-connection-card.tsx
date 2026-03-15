@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { FolderOpen, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { FolderOpen, RefreshCw, Trash2, Loader2, Download, Puzzle } from "lucide-react";
 import { DesignStatusBadge } from "./design-status-badge";
 import { ProviderIcon } from "./provider-icon";
 import type { DesignConnection } from "@/types/design-sync";
@@ -13,6 +13,8 @@ interface DesignConnectionCardProps {
   onSelect: () => void;
   onSync: () => void;
   onDelete: () => void;
+  onImport: () => void;
+  onExtractComponents: () => void;
 }
 
 export function DesignConnectionCard({
@@ -22,6 +24,8 @@ export function DesignConnectionCard({
   onSelect,
   onSync,
   onDelete,
+  onImport,
+  onExtractComponents,
 }: DesignConnectionCardProps) {
   const t = useTranslations("designSync");
 
@@ -112,6 +116,34 @@ export function DesignConnectionCard({
           <Trash2 className="h-3.5 w-3.5" />
           {t("remove")}
         </button>
+
+        {connection.status === "connected" && (
+          <>
+            <div className="mx-1 h-4 w-px bg-card-border" />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onImport();
+              }}
+              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {t("importDesign")}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExtractComponents();
+              }}
+              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+            >
+              <Puzzle className="h-3.5 w-3.5" />
+              {t("extractComponents")}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

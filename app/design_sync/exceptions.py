@@ -25,3 +25,7 @@ class AssetNotFoundError(NotFoundError):
 
 class ImportNotFoundError(NotFoundError):
     """Raised when a design import job is not found."""
+
+
+class ImportStateError(DomainValidationError):
+    """Raised when an import is in an invalid state for the requested operation."""

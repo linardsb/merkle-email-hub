@@ -11,7 +11,7 @@ db = DatabaseManager()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     await db.init_tables()
     await seed_all(db)
     yield

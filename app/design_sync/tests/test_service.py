@@ -320,7 +320,7 @@ class TestFigmaFileStructure:
         }
 
     def test_parse_node_basic(self, figma_service: FigmaDesignSyncService) -> None:
-        node_data = {
+        node_data: dict[str, Any] = {
             "id": "1:1",
             "type": "FRAME",
             "name": "Header",
@@ -335,7 +335,7 @@ class TestFigmaFileStructure:
         assert node.height == 100
 
     def test_parse_node_depth_limit(self, figma_service: FigmaDesignSyncService) -> None:
-        node_data = {
+        node_data: dict[str, Any] = {
             "id": "0:1",
             "type": "CANVAS",
             "name": "Page",
@@ -355,7 +355,7 @@ class TestFigmaFileStructure:
         assert node.children[0].children == []  # cut off at depth
 
     def test_parse_node_unlimited_depth(self, figma_service: FigmaDesignSyncService) -> None:
-        node_data = {
+        node_data: dict[str, Any] = {
             "id": "0:1",
             "type": "CANVAS",
             "name": "Page",
@@ -372,7 +372,12 @@ class TestFigmaFileStructure:
         assert node.children[0].children[0].name == "Deep"
 
     def test_unknown_node_type(self, figma_service: FigmaDesignSyncService) -> None:
-        node_data = {"id": "1:1", "type": "SOME_NEW_TYPE", "name": "New", "children": []}
+        node_data: dict[str, Any] = {
+            "id": "1:1",
+            "type": "SOME_NEW_TYPE",
+            "name": "New",
+            "children": [],
+        }
         node = figma_service._parse_node(node_data, current_depth=0, max_depth=2)
         assert node.type == DesignNodeType.OTHER
 

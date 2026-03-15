@@ -29,7 +29,9 @@ def make_entry(
 @pytest.fixture
 def db() -> AsyncMock:
     """Mock async database session."""
-    return AsyncMock()
+    mock = AsyncMock()
+    mock.add = MagicMock()
+    return mock
 
 
 @pytest.fixture
