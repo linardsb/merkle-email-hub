@@ -34,6 +34,9 @@ class DesignConnection(Base, TimestampMixin):
     snapshots: Mapped[list["DesignTokenSnapshot"]] = relationship(
         back_populates="connection", cascade="all, delete-orphan"
     )
+    imports: Mapped[list["DesignImport"]] = relationship(
+        back_populates="connection", cascade="all, delete-orphan"
+    )
 
 
 class DesignTokenSnapshot(Base, TimestampMixin):
@@ -52,3 +55,64 @@ class DesignTokenSnapshot(Base, TimestampMixin):
     extracted_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     connection: Mapped["DesignConnection"] = relationship(back_populates="snapshots")
+
+
+class DesignImport(Base, TimestampMixin):
+    """A design-to-email import job."""
+
+    __tablename__ = "design_imports"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    connection_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("design_connections.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    project_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("projects.id"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
+    selected_node_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    structure_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    generated_brief: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result_template_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("templates.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False, index=True
+    )
+
+    connection: Mapped["DesignConnection"] = relationship()
+    assets: Mapped[list["DesignImportAsset"]] = relationship(
+        back_populates="design_import", cascade="all, delete-orphan"
+    )
+
+
+class DesignImportAsset(Base, TimestampMixin):
+    """An image asset exported during a design import."""
+
+    __tablename__ = "design_import_assets"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    import_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("design_imports.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    node_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    node_name: Mapped[str] = mapped_column(String(300), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    format: Mapped[str] = mapped_column(String(10), nullable=False, default="png")
+    usage: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    design_import: Mapped["DesignImport"] = relationship(back_populates="assets")

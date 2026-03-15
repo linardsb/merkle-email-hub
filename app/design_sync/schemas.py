@@ -191,3 +191,98 @@ class ImageExportResponse(BaseModel):
     connection_id: int
     images: list[ExportedImageResponse]
     total: int
+
+
+# ── Asset Storage ──
+
+
+class DownloadAssetsRequest(BaseModel):
+    """Request to download and store exported images locally."""
+
+    connection_id: int
+    node_ids: list[str] = Field(
+        ..., min_length=1, max_length=500, description="Node IDs to download"
+    )
+    format: str = Field(default="png", pattern=r"^(png|jpg|svg|pdf)$")
+    scale: float = Field(default=2.0, ge=0.01, le=4.0)
+
+
+class StoredAssetResponse(BaseModel):
+    """A locally stored asset."""
+
+    node_id: str
+    filename: str
+
+
+class DownloadAssetsResponse(BaseModel):
+    """Result of downloading and storing assets."""
+
+    connection_id: int
+    assets: list[StoredAssetResponse]
+    total: int
+    skipped: int = Field(description="Count of failed downloads")
+
+
+# ── Design Imports ──
+
+IMPORT_STATUSES = {"pending", "extracting", "converting", "completed", "failed", "cancelled"}
+ASSET_USAGES = {"hero", "logo", "icon", "background", "content"}
+
+
+class CreateImportRequest(BaseModel):
+    """Request to create a design import job."""
+
+    connection_id: int
+    project_id: int
+    selected_node_ids: list[str] = Field(
+        ..., min_length=1, max_length=500, description="Figma node IDs to import"
+    )
+
+
+class UpdateImportBriefRequest(BaseModel):
+    """Request to update the generated brief before conversion."""
+
+    generated_brief: str = Field(..., min_length=1, max_length=50000)
+
+
+class ImportAssetResponse(BaseModel):
+    """A single import asset."""
+
+    id: int
+    node_id: str
+    node_name: str
+    file_path: str
+    width: int | None = None
+    height: int | None = None
+    format: str
+    usage: str | None = None
+    created_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ImportResponse(BaseModel):
+    """Design import job response."""
+
+    id: int
+    connection_id: int
+    project_id: int
+    status: str
+    selected_node_ids: list[str]
+    structure_json: dict[str, object] | None = None
+    generated_brief: str | None = None
+    result_template_id: int | None = None
+    error_message: str | None = None
+    created_by_id: int
+    assets: list[ImportAssetResponse] = Field(default_factory=list)
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ImportListResponse(BaseModel):
+    """List of design imports."""
+
+    imports: list[ImportResponse]
+    total: int

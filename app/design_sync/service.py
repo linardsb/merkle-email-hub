@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime
+from pathlib import Path
 from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.core.logging import get_logger
+from app.design_sync.assets import DesignAssetService
 from app.design_sync.canva.service import CanvaDesignSyncService
 from app.design_sync.crypto import decrypt_token, encrypt_token
 from app.design_sync.exceptions import (
@@ -30,9 +32,11 @@ from app.design_sync.schemas import (
     DesignSpacingResponse,
     DesignTokensResponse,
     DesignTypographyResponse,
+    DownloadAssetsResponse,
     ExportedImageResponse,
     FileStructureResponse,
     ImageExportResponse,
+    StoredAssetResponse,
 )
 from app.design_sync.sketch.service import SketchDesignSyncService
 from app.projects.service import ProjectService
@@ -143,6 +147,10 @@ class DesignSyncService:
             raise ConnectionNotFoundError(f"Connection {connection_id} not found")
         if conn.project_id is not None:
             await self._verify_access(conn.project_id, user)
+
+        # Delete stored assets
+        asset_service = DesignAssetService()
+        asset_service.delete_connection_assets(connection_id)
 
         logger.info("design_sync.connection_deleted", connection_id=connection_id)
         return await self._repo.delete_connection(connection_id)
@@ -332,6 +340,46 @@ class DesignSyncService:
             ],
             total=len(images),
         )
+
+    # ── Phase 12.2: Asset Storage ──
+
+    async def download_assets(
+        self,
+        connection_id: int,
+        user: User,
+        node_ids: list[str],
+        *,
+        format: str = "png",
+        scale: float = 2.0,
+    ) -> DownloadAssetsResponse:
+        """Export images from provider and download+store locally."""
+        # First export to get temporary URLs
+        export_result = await self.export_images(
+            connection_id, user, node_ids, format=format, scale=scale
+        )
+
+        # Download and store
+        asset_service = DesignAssetService()
+        images_to_download = [
+            {"node_id": img.node_id, "url": img.url} for img in export_result.images
+        ]
+        stored = await asset_service.download_and_store(
+            connection_id, images_to_download, fmt=format
+        )
+
+        return DownloadAssetsResponse(
+            connection_id=connection_id,
+            assets=[
+                StoredAssetResponse(node_id=s["node_id"], filename=s["filename"]) for s in stored
+            ],
+            total=len(stored),
+            skipped=len(node_ids) - len(stored),
+        )
+
+    def get_asset_path(self, connection_id: int, filename: str) -> Path:
+        """Get path to a stored asset (for serving)."""
+        asset_service = DesignAssetService()
+        return asset_service.get_stored_path(connection_id, filename)
 
     # ── Helpers ──
 

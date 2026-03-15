@@ -228,20 +228,20 @@
 - Sketch/Canva: stub implementations returning empty results
 **Security:** Uses existing Fernet-encrypted PAT storage. No new credential handling.
 **Verify:** Unit test Figma JSON parsing. Stub providers return empty defaults.
-- [ ] 12.1 Protocol extension + Figma API integration
+- [x] ~~12.1 Protocol extension + Figma API integration~~ DONE
 
 ### 12.2 Asset Storage Pipeline
 **What:** Download images from Figma's temporary URLs (expire ~14 days), store locally, serve via authenticated endpoint.
 **Files:** New `app/design_sync/assets.py`. Modify `app/core/config.py`, `app/design_sync/routes.py`.
 **Implementation:**
 - `DesignAssetService`: download via httpx, store at `data/design-assets/{connection_id}/{node_id}.{format}`
-- Resize if >600px wide (standard email max), optional Pillow compression
+- Resize if >1200px wide (2x retina for 600px email containers), optional Pillow compression
 - `GET /api/v1/design-sync/assets/{connection_id}/{filename}` — serve with BOLA check
 - Path traversal prevention in `get_stored_path()`
 - `asset_storage_path` config in `DesignSyncConfig`
 **Security:** BOLA check on connection access. Path traversal guard. No directory listing.
 **Verify:** Download mock URL → file stored → serve via endpoint returns correct bytes.
-- [ ] 12.2 Asset storage pipeline
+- [x] ~~12.2 Asset storage pipeline~~ DONE
 
 ### 12.3 Design Import Models & Migration
 **What:** Track import jobs (`DesignImport`) and their exported assets (`DesignImportAsset`).

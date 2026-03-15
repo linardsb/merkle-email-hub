@@ -3,6 +3,7 @@
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.requests import Request
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
@@ -16,6 +17,8 @@ from app.design_sync.schemas import (
     ConnectionResponse,
     ConnectionSyncRequest,
     DesignTokensResponse,
+    DownloadAssetsRequest,
+    DownloadAssetsResponse,
     ExportImageRequest,
     FileStructureResponse,
     ImageExportResponse,
@@ -162,4 +165,61 @@ async def export_images(
         data.node_ids,
         format=data.format,
         scale=data.scale,
+    )
+
+
+# ── Phase 12.2: Asset Storage ──
+
+
+@router.post(
+    "/connections/download-assets",
+    response_model=DownloadAssetsResponse,
+)
+@limiter.limit("5/minute")
+async def download_assets(
+    request: Request,
+    data: DownloadAssetsRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> DownloadAssetsResponse:
+    """Export and download design assets to local storage."""
+    _ = request
+    return await service.download_assets(
+        data.connection_id,
+        current_user,
+        data.node_ids,
+        format=data.format,
+        scale=data.scale,
+    )
+
+
+@router.get(
+    "/assets/{connection_id}/{filename}",
+)
+@limiter.limit("60/minute")
+async def serve_asset(
+    connection_id: int,
+    filename: str,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> FileResponse:
+    """Serve a stored design asset file."""
+    _ = request
+    # BOLA check: verify user can access this connection
+    await service.get_connection(connection_id, current_user)
+    # Get validated path
+    path = service.get_asset_path(connection_id, filename)
+    # Determine media type from extension
+    media_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".svg": "image/svg+xml",
+        ".pdf": "application/pdf",
+    }
+    media_type = media_types.get(path.suffix, "application/octet-stream")
+    return FileResponse(
+        path,
+        media_type=media_type,
+        headers={"Content-Security-Policy": "default-src 'none'"},
     )

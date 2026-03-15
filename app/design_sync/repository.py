@@ -7,7 +7,12 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.design_sync.models import DesignConnection, DesignTokenSnapshot
+from app.design_sync.models import (
+    DesignConnection,
+    DesignImport,
+    DesignImportAsset,
+    DesignTokenSnapshot,
+)
 
 
 class DesignSyncRepository:
@@ -121,3 +126,140 @@ class DesignSyncRepository:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+    # ── Design Imports ──
+
+    async def create_import(
+        self,
+        *,
+        connection_id: int,
+        project_id: int,
+        selected_node_ids: list[str],
+        created_by_id: int,
+    ) -> DesignImport:
+        design_import = DesignImport(
+            connection_id=connection_id,
+            project_id=project_id,
+            status="pending",
+            selected_node_ids=selected_node_ids,
+            created_by_id=created_by_id,
+        )
+        self.db.add(design_import)
+        await self.db.commit()
+        await self.db.refresh(design_import)
+        return design_import
+
+    async def get_import(self, import_id: int) -> DesignImport | None:
+        result = await self.db.execute(select(DesignImport).where(DesignImport.id == import_id))
+        return result.scalar_one_or_none()
+
+    async def get_import_with_assets(self, import_id: int) -> DesignImport | None:
+        """Get import with eagerly loaded assets."""
+        from sqlalchemy.orm import selectinload
+
+        result = await self.db.execute(
+            select(DesignImport)
+            .options(selectinload(DesignImport.assets))
+            .where(DesignImport.id == import_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_imports_for_project(self, project_id: int) -> list[DesignImport]:
+        result = await self.db.execute(
+            select(DesignImport)
+            .where(DesignImport.project_id == project_id)
+            .order_by(DesignImport.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def update_import_status(
+        self,
+        design_import: DesignImport,
+        status: str,
+        *,
+        error_message: str | None = None,
+        structure_json: dict[str, object] | None = None,
+        generated_brief: str | None = None,
+        result_template_id: int | None = None,
+    ) -> None:
+        design_import.status = status
+        if error_message is not None:
+            design_import.error_message = error_message
+        if structure_json is not None:
+            design_import.structure_json = structure_json
+        if generated_brief is not None:
+            design_import.generated_brief = generated_brief
+        if result_template_id is not None:
+            design_import.result_template_id = result_template_id
+        await self.db.commit()
+        await self.db.refresh(design_import)
+
+    async def cancel_import(self, design_import: DesignImport) -> None:
+        """Cancel an import if it's still in a cancellable state."""
+        if design_import.status in ("pending", "extracting"):
+            design_import.status = "cancelled"
+            await self.db.commit()
+            await self.db.refresh(design_import)
+
+    # ── Import Assets ──
+
+    async def create_import_asset(
+        self,
+        *,
+        import_id: int,
+        node_id: str,
+        node_name: str,
+        file_path: str,
+        width: int | None = None,
+        height: int | None = None,
+        format: str = "png",
+        usage: str | None = None,
+    ) -> DesignImportAsset:
+        asset = DesignImportAsset(
+            import_id=import_id,
+            node_id=node_id,
+            node_name=node_name,
+            file_path=file_path,
+            width=width,
+            height=height,
+            format=format,
+            usage=usage,
+        )
+        self.db.add(asset)
+        await self.db.commit()
+        await self.db.refresh(asset)
+        return asset
+
+    async def bulk_create_import_assets(
+        self,
+        import_id: int,
+        assets: list[dict[str, object]],
+    ) -> list[DesignImportAsset]:
+        """Create multiple assets in a single flush. Each dict must have
+        node_id, node_name, file_path; optional: width, height, format, usage."""
+        models = [
+            DesignImportAsset(
+                import_id=import_id,
+                node_id=str(a["node_id"]),
+                node_name=str(a["node_name"]),
+                file_path=str(a["file_path"]),
+                width=a.get("width"),  # type: ignore[arg-type]
+                height=a.get("height"),  # type: ignore[arg-type]
+                format=str(a.get("format", "png")),
+                usage=a.get("usage"),  # type: ignore[arg-type]
+            )
+            for a in assets
+        ]
+        self.db.add_all(models)
+        await self.db.commit()
+        for m in models:
+            await self.db.refresh(m)
+        return models
+
+    async def list_import_assets(self, import_id: int) -> list[DesignImportAsset]:
+        result = await self.db.execute(
+            select(DesignImportAsset)
+            .where(DesignImportAsset.import_id == import_id)
+            .order_by(DesignImportAsset.id)
+        )
+        return list(result.scalars().all())

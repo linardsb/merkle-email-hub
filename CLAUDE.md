@@ -38,7 +38,7 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 
 See `TODO.md` for details. Completed: phases 0-10, tasks 11.1-11.24 (including 11.22 template-first architecture — all 9 subtasks, 11.23 inline judges, 11.24 production trace sampling).
 
-**Completed:** **11.25** client design system & template customisation — all 5 subtasks done (11.25.1 design system model, 11.25.2 component→section bridge, 11.25.3 project-scoped template registry, 11.25.4 agent pipeline constraint injection — design system as generation constraints with role-based token mapping + locked fills + brand color sweep, 11.25.5 consistency enforcement — `BrandRepair` stage 8 in repair pipeline + e2e brand enforcement tests). **Next:** Phase 12 (Figma import), Phase 13 (ESP sync).
+**Completed:** **11.25** client design system & template customisation — all 5 subtasks done (11.25.1 design system model, 11.25.2 component→section bridge, 11.25.3 project-scoped template registry, 11.25.4 agent pipeline constraint injection — design system as generation constraints with role-based token mapping + locked fills + brand color sweep, 11.25.5 consistency enforcement — `BrandRepair` stage 8 in repair pipeline + e2e brand enforcement tests). **12.1** protocol extension + Figma API integration (file structure, components, image export — 3 new protocol methods + Figma implementation + schemas + routes). **12.2** asset storage pipeline (`DesignAssetService` — download, resize ≤1200px, local storage, authenticated serving with CSP headers, cascade delete on connection removal). **Next:** 12.3 (design import models), Phase 13 (ESP sync).
 
 ## Compact instructions
 

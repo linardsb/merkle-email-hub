@@ -156,6 +156,8 @@ class DesignSyncConfig(BaseModel):
     """Design tool sync settings."""
 
     encryption_key: str = ""  # If empty, derived from jwt_secret_key via PBKDF2
+    asset_storage_path: str = "data/design-assets"
+    asset_max_width: int = 1200  # Max width for email images; 1200 = 2x retina for 600px containers
 
 
 class BlueprintConfig(BaseModel):
