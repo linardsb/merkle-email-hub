@@ -30,6 +30,8 @@ import { PreviewPanel } from "@/components/workspace/preview-panel";
 import { BottomPanel } from "@/components/workspace/bottom-panel";
 import type { AgentMode } from "@/types/chat";
 import { QAResultsPanel } from "@/components/workspace/qa-results-panel";
+import { DesignReferencePanel } from "@/components/workspace/design-reference-panel";
+import { useEditorBridge } from "@/hooks/use-editor-bridge";
 import { ExportDialog } from "@/components/connectors/export-dialog";
 import { useExportHistory } from "@/hooks/use-export-history";
 import { useBrandConfig } from "@/hooks/use-brand";
@@ -135,6 +137,11 @@ export default function WorkspacePage() {
   const [briefDialogOpen, setBriefDialogOpen] = useState(false);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
   const { addRecord } = useExportHistory();
+
+  // ── Design Reference Panel ──
+  const [designRefOpen, setDesignRefOpen] = useState(false);
+  const [hasEditorSelection, setHasEditorSelection] = useState(false);
+  const editorBridge = useEditorBridge();
 
   // ── Brand Config ──
   const orgId = project?.client_org_id ?? null;
@@ -431,7 +438,17 @@ export default function WorkspacePage() {
         onRunQA={handleRunQA}
         isRunningQA={isRunningQA}
         qaResult={qaResultData}
-        onToggleQAPanel={() => setQaPanelOpen((v) => !v)}
+        onToggleQAPanel={() => {
+          setQaPanelOpen((v) => {
+            if (!v) setDesignRefOpen(false);
+            return !v;
+          });
+        }}
+        designRefOpen={designRefOpen}
+        onDesignRefToggle={(open) => {
+          setDesignRefOpen(open);
+          if (open) setQaPanelOpen(false);
+        }}
         onExport={handleExport}
         brandViolations={brandViolations}
         onGenerateImage={() => setImageGenOpen(true)}
@@ -449,6 +466,7 @@ export default function WorkspacePage() {
             <Group orientation="horizontal">
               <Panel defaultSize={50} minSize={25}>
                 <EditorPanel
+                  ref={editorBridge.editorRef}
                   value={editorContent}
                   onChange={handleEditorChange}
                   onSave={handleSave}
@@ -456,6 +474,7 @@ export default function WorkspacePage() {
                   brandConfig={brandConfig}
                   onBrandViolationsChange={setBrandViolations}
                   onCursorOffsetChange={(offset) => { cursorOffsetRef.current = offset; }}
+                  onSelectionChange={setHasEditorSelection}
                 />
               </Panel>
 
@@ -509,6 +528,18 @@ export default function WorkspacePage() {
             result={qaResultData}
             onClose={() => setQaPanelOpen(false)}
             onOverrideSuccess={handleQAOverrideSuccess}
+          />
+        )}
+
+        {/* Design Reference Panel (right sidebar) */}
+        {designRefOpen && (
+          <DesignReferencePanel
+            projectId={projectId}
+            templateId={activeTemplateId}
+            editor={editorBridge}
+            editorContent={editorContent}
+            hasEditorSelection={hasEditorSelection}
+            onClose={() => setDesignRefOpen(false)}
           />
         )}
       </div>

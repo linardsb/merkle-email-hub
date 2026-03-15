@@ -164,6 +164,26 @@ class DesignSyncRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_import_by_template_id(
+        self, template_id: int, project_id: int
+    ) -> DesignImport | None:
+        """Get the completed design import that produced a given template."""
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(DesignImport)
+            .options(selectinload(DesignImport.assets))
+            .where(
+                DesignImport.result_template_id == template_id,
+                DesignImport.project_id == project_id,
+                DesignImport.status == "completed",
+            )
+            .order_by(DesignImport.created_at.desc())
+            .limit(1)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def list_imports_for_project(self, project_id: int) -> list[DesignImport]:
         result = await self.db.execute(
             select(DesignImport)

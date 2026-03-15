@@ -315,7 +315,7 @@
 - Link back to Figma file
 **Security:** Images served via authenticated asset endpoint.
 **Verify:** Panel shows design image + tokens. Copy-to-clipboard works.
-- [ ] 12.8 Design reference in workspace
+- [x] ~~12.8 Design reference in workspace~~ DONE
 
 ### 12.9 SDK Regeneration & Tests
 **What:** Regenerate SDK for all new endpoints. Backend tests for all new modules.

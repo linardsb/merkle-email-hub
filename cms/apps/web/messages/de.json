@@ -126,6 +126,35 @@
     "close": "Close",
     "importSelected": "Import Selected Frames"
   },
+  "workspace": {
+    "designRefButton": "Design-Ref.",
+    "designReference": {
+      "title": "Design-Referenz",
+      "openInFigma": "In Figma \u00f6ffnen",
+      "autoDetected": "Aus Design: {name}",
+      "selectConnection": "Designquelle",
+      "selectConnectionPlaceholder": "Verbindung ausw\u00e4hlen\u2026",
+      "designAssets": "Design-Assets",
+      "colors": "Farben",
+      "typography": "Typografie",
+      "spacing": "Abst\u00e4nde",
+      "noAssets": "Keine exportierten Assets gefunden",
+      "noTokens": "Noch keine Tokens extrahiert",
+      "emptyTitle": "Kein Design verkn\u00fcpft",
+      "emptyDescription": "Dieses Template wurde nicht aus einem Figma-Import erstellt. W\u00e4hlen Sie oben eine Designverbindung, um Tokens anzuzeigen.",
+      "findInCode": "Im Code suchen",
+      "insertedAtCursor": "An Cursorposition eingef\u00fcgt",
+      "replacedInSelection": "In Auswahl ersetzt",
+      "offBrandColors": "Markenfremde Farben",
+      "clickToCorrect": "Klicken, um zur n\u00e4chsten Markenfarbe zu korrigieren",
+      "correctedColor": "{from} \u2192 {to} ersetzt",
+      "generateCssVars": "CSS-Variablen generieren",
+      "cssVarsInserted": "CSS-Variablen in <style> eingef\u00fcgt",
+      "copyFormats": {
+        "copied": "{format} in Zwischenablage kopiert"
+      }
+    }
+  },
   "errors": {
     "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
   }

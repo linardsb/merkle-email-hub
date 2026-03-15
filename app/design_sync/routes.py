@@ -325,6 +325,20 @@ async def create_import(
     return await service.create_design_import(data, current_user)
 
 
+@router.get("/imports/by-template/{template_id}", response_model=ImportResponse | None)
+@limiter.limit("30/minute")
+async def get_import_by_template(
+    template_id: int,
+    request: Request,
+    project_id: int = Query(..., description="Project ID for BOLA check"),
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> ImportResponse | None:
+    """Get the design import that produced a template (for design reference panel)."""
+    _ = request
+    return await service.get_import_by_template(template_id, project_id, current_user)
+
+
 @router.get("/imports/{import_id}", response_model=ImportResponse)
 @limiter.limit("30/minute")
 async def get_import(

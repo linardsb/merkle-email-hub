@@ -277,6 +277,33 @@
       "failureWarningsActive": "Failure warnings active — criteria below 85% pass rate",
       "componentContext": "Component Context",
       "noComponentsDetected": "No component references detected in current template."
+    },
+    "designRefButton": "Design Ref",
+    "designReference": {
+      "title": "Design Reference",
+      "openInFigma": "Open in Figma",
+      "autoDetected": "From design: {name}",
+      "selectConnection": "Design source",
+      "selectConnectionPlaceholder": "Select a connection\u2026",
+      "designAssets": "Design Assets",
+      "colors": "Colors",
+      "typography": "Typography",
+      "spacing": "Spacing",
+      "noAssets": "No exported assets found",
+      "noTokens": "No tokens extracted yet",
+      "emptyTitle": "No design linked",
+      "emptyDescription": "This template wasn\u2019t created from a Figma import. Select a design connection above to view tokens.",
+      "findInCode": "Find in code",
+      "insertedAtCursor": "Inserted at cursor",
+      "replacedInSelection": "Replaced in selection",
+      "offBrandColors": "Off-brand colors",
+      "clickToCorrect": "Click to auto-correct to nearest brand color",
+      "correctedColor": "Replaced {from} \u2192 {to}",
+      "generateCssVars": "Generate CSS Variables",
+      "cssVarsInserted": "CSS variables inserted into <style>",
+      "copyFormats": {
+        "copied": "{format} copied to clipboard"
+      }
     }
   },
   "compatibilityBrief": {

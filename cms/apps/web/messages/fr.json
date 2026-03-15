@@ -127,6 +127,35 @@
     "close": "Close",
     "importSelected": "Import Selected Frames"
   },
+  "workspace": {
+    "designRefButton": "R\u00e9f. design",
+    "designReference": {
+      "title": "R\u00e9f\u00e9rence de design",
+      "openInFigma": "Ouvrir dans Figma",
+      "autoDetected": "Depuis le design\u00a0: {name}",
+      "selectConnection": "Source de design",
+      "selectConnectionPlaceholder": "S\u00e9lectionner une connexion\u2026",
+      "designAssets": "Ressources de design",
+      "colors": "Couleurs",
+      "typography": "Typographie",
+      "spacing": "Espacement",
+      "noAssets": "Aucune ressource export\u00e9e trouv\u00e9e",
+      "noTokens": "Aucun token extrait pour le moment",
+      "emptyTitle": "Aucun design li\u00e9",
+      "emptyDescription": "Ce template n\u2019a pas \u00e9t\u00e9 cr\u00e9\u00e9 \u00e0 partir d\u2019un import Figma. S\u00e9lectionnez une connexion de design ci-dessus pour afficher les tokens.",
+      "findInCode": "Rechercher dans le code",
+      "insertedAtCursor": "Ins\u00e9r\u00e9 au curseur",
+      "replacedInSelection": "Remplac\u00e9 dans la s\u00e9lection",
+      "offBrandColors": "Couleurs hors charte",
+      "clickToCorrect": "Cliquer pour corriger vers la couleur de marque la plus proche",
+      "correctedColor": "{from} \u2192 {to} remplac\u00e9",
+      "generateCssVars": "G\u00e9n\u00e9rer les variables CSS",
+      "cssVarsInserted": "Variables CSS ins\u00e9r\u00e9es dans <style>",
+      "copyFormats": {
+        "copied": "{format} copi\u00e9 dans le presse-papiers"
+      }
+    }
+  },
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez r\u00e9essayer."
   }

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.design_sync.crypto import decrypt_token, encrypt_token
+from app.design_sync.models import DesignImport
 from app.design_sync.exceptions import (
     SyncFailedError,
     UnsupportedProviderError,
@@ -598,3 +599,82 @@ class TestNewSchemas:
 
         with pytest.raises(ValidationError):
             ExportImageRequest(connection_id=1, node_ids=[], format="png")  # min_length=1
+
+
+# ── Repository: get_import_by_template_id ──
+
+
+class TestGetImportByTemplate:
+    @pytest.fixture
+    def mock_db(self) -> AsyncMock:
+        return AsyncMock(spec=AsyncSession)
+
+    @pytest.fixture
+    def repo(self, mock_db: AsyncMock) -> "DesignSyncRepository":
+        from app.design_sync.repository import DesignSyncRepository
+
+        return DesignSyncRepository(mock_db)
+
+    def _make_import(
+        self,
+        *,
+        id: int = 1,
+        connection_id: int = 10,
+        project_id: int = 100,
+        status: str = "completed",
+        result_template_id: int | None = 42,
+    ) -> MagicMock:
+        imp = MagicMock(spec=DesignImport)
+        imp.id = id
+        imp.connection_id = connection_id
+        imp.project_id = project_id
+        imp.status = status
+        imp.selected_node_ids = ["0:1"]
+        imp.result_template_id = result_template_id
+        imp.created_by_id = 1
+        return imp
+
+    @pytest.mark.asyncio
+    async def test_get_import_by_template_returns_completed_import(
+        self, repo: "DesignSyncRepository", mock_db: AsyncMock
+    ) -> None:
+        """Repository returns a completed import matching result_template_id."""
+        expected = self._make_import(result_template_id=42, status="completed")
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = expected
+        mock_db.execute.return_value = mock_result
+
+        result = await repo.get_import_by_template_id(template_id=42, project_id=100)
+
+        assert result is expected
+        assert result.status == "completed"
+        assert result.result_template_id == 42
+        mock_db.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_get_import_by_template_returns_none_when_no_import(
+        self, repo: "DesignSyncRepository", mock_db: AsyncMock
+    ) -> None:
+        """Returns None when no import exists for the given template."""
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = mock_result
+
+        result = await repo.get_import_by_template_id(template_id=999, project_id=100)
+
+        assert result is None
+        mock_db.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_get_import_by_template_returns_none_for_non_completed(
+        self, repo: "DesignSyncRepository", mock_db: AsyncMock
+    ) -> None:
+        """Returns None for non-completed imports (query filters status='completed')."""
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = mock_result
+
+        result = await repo.get_import_by_template_id(template_id=42, project_id=100)
+
+        assert result is None
+        mock_db.execute.assert_awaited_once()

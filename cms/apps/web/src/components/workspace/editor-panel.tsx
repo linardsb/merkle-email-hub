@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
+import type { CodeEditorHandle } from "@/hooks/use-editor-bridge";
 import type { SaveStatus } from "./save-indicator";
 import type { BrandConfig } from "@/types/brand";
 
@@ -52,9 +53,10 @@ interface EditorPanelProps {
   brandConfig?: BrandConfig | null;
   onBrandViolationsChange?: (count: number) => void;
   onCursorOffsetChange?: (offset: number) => void;
+  onSelectionChange?: (hasSelection: boolean) => void;
 }
 
-export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange }: EditorPanelProps) {
+export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange, onSelectionChange }: EditorPanelProps, ref) {
   const t = useTranslations("workspace");
   const [activeTab, setActiveTab] = useState<EditorTab>("code");
 
@@ -90,6 +92,7 @@ export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, bra
       <div className="flex-1 overflow-hidden">
         {activeTab === "code" ? (
           <CodeEditor
+            ref={ref}
             value={value}
             onChange={onChange}
             onSave={onSave}
@@ -98,6 +101,7 @@ export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, bra
             brandConfig={brandConfig}
             onBrandViolationsChange={onBrandViolationsChange}
             onCursorOffsetChange={onCursorOffsetChange}
+            onSelectionChange={onSelectionChange}
           />
         ) : (
           <LiquidBuilderPanel code={value} onCodeChange={onChange} />
@@ -105,4 +109,4 @@ export function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, bra
       </div>
     </div>
   );
-}
+});

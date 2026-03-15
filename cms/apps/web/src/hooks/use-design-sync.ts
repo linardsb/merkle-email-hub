@@ -64,6 +64,17 @@ export function useSyncDesignConnection() {
   );
 }
 
+// ── 12.8: Design reference panel hooks ──
+
+export function useDesignImportByTemplate(templateId: number | null, projectId: number) {
+  return useSWR<DesignImport | null>(
+    templateId
+      ? `/api/v1/design-sync/imports/by-template/${templateId}?project_id=${projectId}`
+      : null,
+    fetcher,
+  );
+}
+
 // ── 12.7: File browser & import hooks ──
 
 export function useDesignFileStructure(connectionId: number | null, depth?: number) {

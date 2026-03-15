@@ -670,6 +670,16 @@ class DesignSyncService:
 
         return self._import_to_response(design_import)
 
+    async def get_import_by_template(
+        self, template_id: int, project_id: int, user: User
+    ) -> ImportResponse | None:
+        """Get the completed design import for a template, if any."""
+        await self._verify_access(project_id, user)
+        design_import = await self._repo.get_import_by_template_id(template_id, project_id)
+        if design_import is None:
+            return None
+        return self._import_to_response(design_import)
+
     def _import_to_response(self, design_import: object) -> ImportResponse:
         """Convert DesignImport model to response schema."""
         return ImportResponse.model_validate(design_import, from_attributes=True)

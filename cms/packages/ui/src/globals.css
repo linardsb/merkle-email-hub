@@ -18,3 +18,13 @@
   }
 }
 
+/* CodeMirror token highlight decorations (design reference panel) */
+.cm-token-highlight {
+  background-color: oklch(0.85 0.15 85 / 0.4);
+  outline: 1px solid oklch(0.7 0.15 85);
+}
+
+.cm-token-spotlight {
+  background-color: oklch(0.85 0.15 250 / 0.3);
+}
+

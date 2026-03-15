@@ -40,6 +40,8 @@ interface WorkspaceToolbarProps {
   targetClients?: string[] | null;
   onViewBrief?: () => void;
   onRunBlueprint?: () => void;
+  designRefOpen?: boolean;
+  onDesignRefToggle?: (open: boolean) => void;
 }
 
 export function WorkspaceToolbar({
@@ -67,6 +69,8 @@ export function WorkspaceToolbar({
   targetClients,
   onViewBrief,
   onRunBlueprint,
+  designRefOpen,
+  onDesignRefToggle,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
@@ -225,6 +229,24 @@ export function WorkspaceToolbar({
             >
               <ImagePlus className="h-3.5 w-3.5" />
               {t("generateImage")}
+            </button>
+          </>
+        )}
+        {onDesignRefToggle && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={() => onDesignRefToggle(!designRefOpen)}
+              className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                designRefOpen
+                  ? "bg-interactive text-on-interactive"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+              title={t("designRefButton")}
+            >
+              <Palette className="h-3.5 w-3.5" />
+              {t("designRefButton")}
             </button>
           </>
         )}
