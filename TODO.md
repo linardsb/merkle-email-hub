@@ -99,7 +99,7 @@
   - Auth: `developer`+`admin` for PUT, `viewer`+ for GET
 **Security:** Template config is project-scoped, validated by Pydantic. Component version IDs validated against DB (must exist and be accessible to project). Disabled/preferred template names validated against registry (must exist). No arbitrary code paths.
 **Verify:** Configure project with `disabled_templates=["minimal_text"]`, `preferred_templates=["promotional_hero"]`, one section override, one custom section. Call `get_for_project()`. Verify: `minimal_text` excluded, `promotional_hero` first in list, section override swaps correctly, custom section available to composer. Unconfigured project returns full global list (backward compatible). `make test` passes.
-- [ ] 11.25.3 Project-scoped template registry
+- [x] ~~11.25.3 Project-scoped template registry~~ DONE
 
 #### 11.25.4 Agent Pipeline Constraint Injection — Design System as Generation Constraints
 **What:** Update the multi-pass pipeline to inject design system constraints into each pass. Pass 1 receives project-scoped template list. Pass 2 receives design system footer text as locked slot content. Pass 3 receives the design system palette as constraints — the LLM decides which palette color goes where but CANNOT invent new colors. Assembly enforces locked fields, overriding any LLM deviation.
@@ -121,7 +121,7 @@
   - Pass to pipeline
 **Security:** Design system values are project-owned, loaded from DB. Palette colors validated as hex. Font stacks are CSS strings (no injection). Locked field enforcement is deterministic string replacement. No new LLM prompt injection surface (design system is system-prompt-level context, not user input).
 **Verify:** Create project with design system (palette + footer + logo). Run scaffolder pipeline. Verify: Pass 1 uses project-scoped template list. Pass 2 pre-fills footer/logo slots. Pass 3 output uses only palette colors. Assembly enforces locked fields. Brand compliance check passes on first attempt (no retry needed). Compare: same brief without design system → LLM invents colors → may fail brand compliance. `make test` passes.
-- [ ] 11.25.4 Agent pipeline constraint injection
+- [x] ~~11.25.4 Agent pipeline constraint injection~~ DONE
 
 #### 11.25.5 Consistency Enforcement — Brand Repair Stage & End-to-End Validation
 **What:** Add a `brand` repair stage to the repair pipeline that auto-corrects off-palette colors and missing design system elements. Link brand compliance check to read from design system directly. Create end-to-end integration test covering the full flow: design system config → agent generation → repair → QA gate.
@@ -147,7 +147,7 @@
   - Compare: remove design system, run same brief — verify inconsistent output
 **Security:** Brand repair is deterministic color replacement via lxml/regex. No LLM calls. Nearest-color calculation is pure math. Footer/logo injection uses design system values (trusted, admin-configured). No user input in repair logic.
 **Verify:** Run repair pipeline on HTML with 3 off-palette colors → all corrected to nearest palette match. Run on HTML with wrong footer → footer replaced. Run on already-correct HTML → no-op (idempotent). End-to-end test passes for all 3 use cases (Nike, P&G multi-brand, Sephora holiday). `make test` passes. `make types` clean. `make check` green.
-- [ ] 11.25.5 Consistency enforcement
+- [x] ~~11.25.5 Consistency enforcement~~ DONE
 
 ### ~~11.23 Inline Eval Judges — Selective LLM Judge on Recovery Retries~~ DONE
 **What:** Wire eval judges (`JUDGE_REGISTRY`) into the blueprint engine as an inline quality signal, but ONLY on self-correction retries (`iteration > 0`). First-attempt agents rely on the fast QA gate (0 tokens, <200ms). When an agent has already failed QA and is retrying, invoke the LLM judge for that agent to get a nuanced verdict before deciding whether to retry again or escalate to human review.

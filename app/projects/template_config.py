@@ -57,12 +57,14 @@ class ProjectTemplateConfig(BaseModel):
 
     @field_validator("disabled_templates", "preferred_templates", mode="before")
     @classmethod
-    def validate_template_names(cls, v: object) -> object:
-        if isinstance(v, (list, tuple)):
-            for name in v:
-                if not isinstance(name, str) or not name.strip():
-                    msg = f"Template name must be a non-empty string, got: {name!r}"
-                    raise ValueError(msg)
+    def validate_template_names(
+        cls,
+        v: list[str] | tuple[str, ...],
+    ) -> list[str] | tuple[str, ...]:
+        for name in v:
+            if not name.strip():
+                msg = f"Template name must be a non-empty string, got: {name!r}"
+                raise ValueError(msg)
         return v
 
 

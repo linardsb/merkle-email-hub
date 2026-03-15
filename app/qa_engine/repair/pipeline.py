@@ -1,11 +1,14 @@
-"""Cascading auto-repair pipeline — 7 deterministic stages, zero LLM calls."""
+"""Cascading auto-repair pipeline — 8 deterministic stages, zero LLM calls."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from app.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from app.projects.design_system import DesignSystem
 
 logger = get_logger(__name__)
 
@@ -29,13 +32,17 @@ class RepairStage(Protocol):
 
 
 class RepairPipeline:
-    """Runs 7 repair stages in sequence. Each receives previous stage's output.
+    """Runs 8 repair stages in sequence. Each receives previous stage's output.
 
     Stage errors are caught, logged, and added to warnings — never crash the pipeline.
     """
 
-    def __init__(self, stages: list[RepairStage] | None = None) -> None:
-        self._stages = stages if stages is not None else self._default_stages()
+    def __init__(
+        self,
+        stages: list[RepairStage] | None = None,
+        design_system: DesignSystem | None = None,
+    ) -> None:
+        self._stages = stages if stages is not None else self._default_stages(design_system)
 
     def run(self, html: str) -> RepairResult:
         """Run all stages sequentially. Return final HTML + all repairs + warnings."""
@@ -71,8 +78,9 @@ class RepairPipeline:
         )
 
     @staticmethod
-    def _default_stages() -> list[RepairStage]:
+    def _default_stages(design_system: DesignSystem | None = None) -> list[RepairStage]:
         from app.qa_engine.repair.accessibility import AccessibilityRepair
+        from app.qa_engine.repair.brand import BrandRepair
         from app.qa_engine.repair.dark_mode import DarkModeRepair
         from app.qa_engine.repair.links import LinkRepair
         from app.qa_engine.repair.mso import MSORepair
@@ -88,4 +96,5 @@ class RepairPipeline:
             PersonalisationRepair(),
             SizeRepair(),
             LinkRepair(),
+            BrandRepair(design_system),  # Stage 8: last before QA gate
         ]

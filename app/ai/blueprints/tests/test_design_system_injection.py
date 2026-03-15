@@ -98,7 +98,8 @@ class TestDesignSystemInjection:
         assert "ds_color_map" not in node.captured_context.metadata
 
     @pytest.mark.anyio
-    async def test_deterministic_node_skips(self) -> None:
+    async def test_deterministic_node_receives_design_system(self) -> None:
+        """Deterministic nodes also receive design system (for brand repair)."""
         node = StubDeterministicNode()
         definition = BlueprintDefinition(
             name="test",
@@ -111,7 +112,8 @@ class TestDesignSystemInjection:
         await engine.run("test brief")
 
         assert node.captured_context is not None
-        assert "design_system" not in node.captured_context.metadata
+        assert node.captured_context.metadata["design_system"] is ds
+        assert "ds_color_map" in node.captured_context.metadata
 
     @pytest.mark.anyio
     async def test_multiple_agentic_nodes_all_receive(self) -> None:

@@ -29,13 +29,17 @@ Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `jud
 
 **Production trace sampling (11.24):** `app/ai/agents/evals/production_sampler.py` closes the eval feedback loop. Successful blueprint runs are probabilistically enqueued to Redis (`service.py` post-run hook), `ProductionJudgeWorker` (DataPoller) processes the queue with LLM judges, verdicts append to `traces/production_verdicts.jsonl`, `refresh_analysis()` merges with synthetic verdicts into `traces/analysis.json`. Existing `failure_warnings.py` reads merged analysis — agents learn from production failures. Config: `EVAL__PRODUCTION_SAMPLE_RATE` (default `0.0` = disabled). Command: `make eval-refresh`.
 
-## Design System (11.25.1)
+## Design System & Brand Pipeline (11.25)
 
-Per-project brand identity in `app/projects/design_system.py`. `DesignSystem` Pydantic model (frozen) with `BrandPalette`, `Typography`, `LogoConfig`, `FooterConfig`, `SocialLink`. Stored as JSON column on `Project`. API: GET/PUT/DELETE `/api/v1/projects/{id}/design-system`. `design_system_to_brand_rules()` bridges to brand compliance params. Brand compliance check auto-derives rules from design system via `_enrich_config_from_design_system()` when no explicit `qa_profile` brand rules exist (read-time, no stale data).
+**Design System (11.25.1):** Per-project brand identity in `app/projects/design_system.py`. `DesignSystem` frozen Pydantic with `BrandPalette`, `Typography`, `LogoConfig`, `FooterConfig`, `SocialLink` + dynamic token maps (`colors`, `fonts`, `font_sizes`, `spacing`). JSON column on `Project`. API: GET/PUT/DELETE `/api/v1/projects/{id}/design-system`. `resolve_color_map()` merges `BrandPalette` fields + explicit `colors` dict. `design_system_to_brand_rules()` bridges to brand compliance.
 
-## Component → Section Bridge (11.25.2)
+**Component → Section Bridge (11.25.2):** `app/components/section_adapter.py` converts `ComponentVersion` → `SectionBlock` via 5-stage pipeline. `ComponentVersionLike` Protocol. `get_cached_section()` caches by version ID. `slot_definitions` + `default_tokens` JSON columns on `ComponentVersion`.
 
-`app/components/section_adapter.py` bridges the component library into the agent pipeline. `SectionAdapter.adapt()` converts `ComponentVersion` records into `SectionBlock` instances via 5-stage pipeline: sanitize HTML → repair (MSO/dark mode/a11y) → inject `data-slot` markers via lxml → extract metadata → build `SectionBlock`. `ComponentVersionLike` Protocol for duck typing. `validate_for_composition()` enforces 0.8 QA score threshold (`AdaptationError` extends `DomainValidationError`). `get_cached_section()` caches by version ID (immutable). `SlotHintSchema` in `schemas.py` validates slot annotations (regex slot_id, bounded selector/max_chars). `slot_definitions` JSON column on `ComponentVersion`.
+**Project-Scoped Template Registry (11.25.3):** `app/projects/template_config.py` — `ProjectTemplateConfig` with `SectionOverride`, `CustomSection`, `disabled_templates`, `preferred_templates`. `get_for_project()` + `list_for_selection_scoped()` on `TemplateRegistry`.
+
+**Agent Pipeline Constraint Injection (11.25.4):** Design system as generation constraints. `DefaultTokens` on `GoldenTemplate` + `SectionBlock` declares per-template/component default hex values. `ScaffolderPipeline._design_pass_from_system()` builds `DesignTokens` deterministically (zero LLM). `_build_locked_fills()` locks footer/logo slots. `TemplateAssembler` applies role-based palette replacement (find default hex → replace with client hex), font replacement, logo dimension enforcement, social link injection, dark mode color replacement, brand color sweep safety net (Euclidean RGB nearest-match). LAYER 11 in `BlueprintEngine._build_node_context()` injects design system + resolved color/font maps + template_config into all node contexts. Pipeline layout pass uses `list_for_selection_scoped()` when template_config is set.
+
+**Consistency Enforcement (11.25.5):** `app/qa_engine/repair/brand.py` — `BrandRepair` stage 8 in repair pipeline. Deterministic off-palette color correction (Euclidean RGB distance), footer legal text injection, logo URL correction. `RepairPipeline` accepts `design_system`. E2e test: design system → pipeline → repair → QA validation.
 
 ## Maizzle Sidecar
 

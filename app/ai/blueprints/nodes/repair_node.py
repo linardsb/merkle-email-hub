@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 
 
 class RepairNode:
-    """Deterministic node: runs 7-stage repair pipeline on current HTML."""
+    """Deterministic node: runs 8-stage repair pipeline on current HTML."""
 
     @property
     def name(self) -> str:
@@ -23,7 +23,8 @@ class RepairNode:
         if not context.html:
             return NodeResult(status="success", details="no_html_to_repair")
 
-        pipeline = RepairPipeline()
+        design_system = context.metadata.get("design_system")
+        pipeline = RepairPipeline(design_system=design_system)  # type: ignore[arg-type]
         result = pipeline.run(context.html)
 
         repair_count = len(result.repairs_applied)

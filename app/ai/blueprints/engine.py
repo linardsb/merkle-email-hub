@@ -571,8 +571,8 @@ class BlueprintEngine:
                 if competitive_ctx:
                     context.metadata["competitive_context"] = competitive_ctx
 
-        # LAYER 11: Design system (ALL agentic nodes — brand identity)
-        if node.node_type == "agentic" and self._design_system is not None:
+        # LAYER 11: Design system (ALL nodes — agentic for prompt context, deterministic for brand repair)
+        if self._design_system is not None:
             from app.projects.design_system import (
                 design_system_to_brand_rules,
                 resolve_color_map,
