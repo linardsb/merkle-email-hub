@@ -254,7 +254,7 @@
 - Request/response Pydantic schemas for all new models
 **Security:** FKs enforce referential integrity. BOLA via project_id.
 **Verify:** Migration up/down clean. Repository CRUD unit tests pass.
-- [ ] 12.3 Design import models & migration
+- [x] ~~12.3 Design import models & migration~~ DONE
 
 ### 12.4 Layout Analyzer & Brief Generator
 **What:** Convert Figma document structure into a Scaffolder-compatible campaign brief.
@@ -264,7 +264,7 @@
 - `BriefGenerator`: transform layout + images into structured markdown brief. Image refs point to local asset URLs. Includes design token summary. User can edit before conversion.
 **Security:** Pure computation. No I/O, no user input in SQL or templates.
 **Verify:** Mock Figma JSON → expected section detection. Layout with 2 columns → correct brief format.
-- [ ] 12.4 Layout analyzer & brief generator
+- [x] ~~12.4 Layout analyzer & brief generator~~ DONE
 
 ### 12.5 AI-Assisted Conversion Pipeline
 **What:** Wire Figma import → Scaffolder agent → Template creation. Full orchestration service.
@@ -288,7 +288,7 @@
 - `POST /api/v1/design-sync/connections/{id}/extract-components` endpoint
 **Security:** BOLA check. Component HTML sanitised via nh3.
 **Verify:** Mock Figma components → Hub components created with correct categories and HTML.
-- [ ] 12.6 Component extraction
+- [x] ~~12.6 Component extraction~~ DONE
 
 ### 12.7 Frontend: File Browser & Import Dialog
 **What:** Tree view of Figma file structure + multi-step import wizard in the UI.

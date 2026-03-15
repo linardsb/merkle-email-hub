@@ -294,13 +294,27 @@ class FigmaDesignSyncService:
         raw_type = str(node_data.get("type", "UNKNOWN"))
         node_type = _FIGMA_NODE_TYPE_MAP.get(raw_type, DesignNodeType.OTHER)
 
-        # Extract dimensions from absoluteBoundingBox if present
+        # Extract dimensions and position from absoluteBoundingBox if present
         bbox = node_data.get("absoluteBoundingBox")
         width: float | None = None
         height: float | None = None
+        x: float | None = None
+        y: float | None = None
         if isinstance(bbox, dict):
-            width = bbox.get("width")
-            height = bbox.get("height")
+            bbox_d = cast(dict[str, Any], bbox)
+            raw_w, raw_h = bbox_d.get("width"), bbox_d.get("height")
+            raw_x, raw_y = bbox_d.get("x"), bbox_d.get("y")
+            width = float(raw_w) if isinstance(raw_w, (int, float)) else None
+            height = float(raw_h) if isinstance(raw_h, (int, float)) else None
+            x = float(raw_x) if isinstance(raw_x, (int, float)) else None
+            y = float(raw_y) if isinstance(raw_y, (int, float)) else None
+
+        # Extract text content from TEXT nodes
+        text_content: str | None = None
+        if node_type == DesignNodeType.TEXT:
+            raw_chars = node_data.get("characters")
+            if isinstance(raw_chars, str) and raw_chars.strip():
+                text_content = raw_chars.strip()
 
         children: list[DesignNode] = []
         # Only recurse if we haven't hit the depth limit
@@ -316,6 +330,9 @@ class FigmaDesignSyncService:
             children=children,
             width=width,
             height=height,
+            x=x,
+            y=y,
+            text_content=text_content,
         )
 
     async def list_components(self, file_ref: str, access_token: str) -> list[DesignComponent]:

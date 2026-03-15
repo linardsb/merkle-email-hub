@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.models import User
 from app.core.logging import get_logger
 from app.design_sync.assets import DesignAssetService
+from app.design_sync.brief_generator import generate_brief as generate_brief_text
 from app.design_sync.canva.service import CanvaDesignSyncService
 from app.design_sync.crypto import decrypt_token, encrypt_token
 from app.design_sync.exceptions import (
@@ -19,10 +21,23 @@ from app.design_sync.exceptions import (
     SyncFailedError,
     UnsupportedProviderError,
 )
+from app.design_sync.figma.layout_analyzer import (
+    DesignLayoutDescription,
+)
+from app.design_sync.figma.layout_analyzer import (
+    analyze_layout as run_layout_analysis,
+)
 from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
-from app.design_sync.protocol import DesignNode, DesignSyncProvider
+from app.design_sync.protocol import (
+    DesignFileStructure,
+    DesignNode,
+    DesignSyncProvider,
+    ExtractedTokens,
+)
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
+    AnalyzedSectionResponse,
+    ButtonElementResponse,
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionResponse,
@@ -34,9 +49,14 @@ from app.design_sync.schemas import (
     DesignTypographyResponse,
     DownloadAssetsResponse,
     ExportedImageResponse,
+    ExtractComponentsResponse,
     FileStructureResponse,
+    GenerateBriefResponse,
     ImageExportResponse,
+    ImagePlaceholderResponse,
+    LayoutAnalysisResponse,
     StoredAssetResponse,
+    TextBlockResponse,
 )
 from app.design_sync.sketch.service import SketchDesignSyncService
 from app.projects.service import ProjectService
@@ -276,6 +296,9 @@ class DesignSyncService:
             children=[self._node_to_response(c) for c in node.children],
             width=node.width,
             height=node.height,
+            x=node.x,
+            y=node.y,
+            text_content=node.text_content,
         )
 
     async def list_components(self, connection_id: int, user: User) -> ComponentListResponse:
@@ -381,6 +404,153 @@ class DesignSyncService:
         asset_service = DesignAssetService()
         return asset_service.get_stored_path(connection_id, filename)
 
+    # ── Phase 12.4: Layout Analysis & Brief Generation ──
+
+    async def analyze_layout(
+        self,
+        connection_id: int,
+        user: User,
+        *,
+        selected_node_ids: list[str] | None = None,
+        depth: int | None = 3,
+    ) -> LayoutAnalysisResponse:
+        """Analyze layout of a design file and return detected sections.
+
+        depth defaults to 3 (pages + frames + immediate children) to avoid
+        full-tree fetches on large Figma files.
+        """
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        structure = await provider.get_file_structure(conn.file_ref, access_token, depth=depth)
+
+        if selected_node_ids:
+            structure = _filter_structure(structure, selected_node_ids)
+
+        layout = run_layout_analysis(structure)
+        return _layout_to_response(connection_id, layout)
+
+    async def generate_brief(
+        self,
+        connection_id: int,
+        user: User,
+        *,
+        selected_node_ids: list[str] | None = None,
+        include_tokens: bool = True,
+    ) -> GenerateBriefResponse:
+        """Generate a Scaffolder-compatible brief from design analysis."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        structure = await provider.get_file_structure(conn.file_ref, access_token, depth=None)
+
+        if selected_node_ids:
+            structure = _filter_structure(structure, selected_node_ids)
+
+        layout = run_layout_analysis(structure)
+
+        tokens: ExtractedTokens | None = None
+        if include_tokens:
+            try:
+                tokens = await provider.sync_tokens(conn.file_ref, access_token)
+            except Exception:
+                logger.warning(
+                    "design_sync.brief_tokens_skipped",
+                    connection_id=connection_id,
+                    exc_info=True,
+                )
+
+        brief_text = generate_brief_text(
+            layout,
+            tokens=tokens,
+            asset_url_prefix=f"/api/v1/design-sync/assets/{connection_id}",
+            connection_id=connection_id,
+        )
+
+        sections_summary = ", ".join(s.section_type.value for s in layout.sections)
+
+        return GenerateBriefResponse(
+            connection_id=connection_id,
+            brief=brief_text,
+            sections_detected=len(layout.sections),
+            layout_summary=sections_summary or "no sections detected",
+        )
+
+    # ── Phase 12.6: Component Extraction ──
+
+    async def extract_components(
+        self,
+        connection_id: int,
+        user: User,
+        component_ids: list[str] | None = None,
+        generate_html: bool = True,
+    ) -> ExtractComponentsResponse:
+        """Kick off background component extraction from a design connection."""
+        from app.components.repository import ComponentRepository
+        from app.core.exceptions import DomainValidationError, NotFoundError
+        from app.design_sync.component_extractor import ComponentExtractor
+
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        # List components first (synchronous) to get count
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        components = await provider.list_components(conn.file_ref, access_token)
+        if component_ids:
+            components = [c for c in components if c.component_id in component_ids]
+
+        if not components:
+            raise NotFoundError("No components found in design file")
+
+        # Create DesignImport record to track progress
+        if conn.project_id is None:
+            raise DomainValidationError("Connection must be linked to a project for extraction")
+        design_import = await self._repo.create_import(
+            connection_id=connection_id,
+            project_id=conn.project_id,
+            selected_node_ids=[c.component_id for c in components],
+            created_by_id=user.id,
+        )
+
+        # Launch background extraction
+        extractor = ComponentExtractor(
+            provider=provider,
+            design_repo=self._repo,
+            component_repo=ComponentRepository(self.db),
+            db=self.db,
+        )
+        _task = asyncio.create_task(  # noqa: RUF006
+            extractor.extract(
+                import_id=design_import.id,
+                file_ref=conn.file_ref,
+                access_token=access_token,
+                user_id=user.id,
+                component_ids=component_ids,
+                generate_html=generate_html,
+            )
+        )
+
+        return ExtractComponentsResponse(
+            import_id=design_import.id,
+            status="extracting",
+            total_components=len(components),
+            message=f"Extracting {len(components)} components in the background",
+        )
+
     # ── Helpers ──
 
     async def _verify_access(self, project_id: int, user: User) -> None:
@@ -417,3 +587,98 @@ class DesignSyncService:
             select(ProjectMember.project_id).where(ProjectMember.user_id == user.id)
         )
         return [row[0] for row in result.all()]
+
+
+# ── Module-level helpers for 12.4 ──
+
+
+def _filter_structure(
+    structure: DesignFileStructure,
+    selected_ids: list[str],
+) -> DesignFileStructure:
+    """Filter a DesignFileStructure to only include nodes with matching IDs."""
+    id_set = set(selected_ids)
+
+    def _filter_node(node: DesignNode) -> DesignNode | None:
+        if node.id in id_set:
+            return node
+        filtered_children = [c for c in (_filter_node(ch) for ch in node.children) if c is not None]
+        if filtered_children:
+            return DesignNode(
+                id=node.id,
+                name=node.name,
+                type=node.type,
+                children=filtered_children,
+                width=node.width,
+                height=node.height,
+                x=node.x,
+                y=node.y,
+                text_content=node.text_content,
+            )
+        return None
+
+    filtered_pages: list[DesignNode] = []
+    for page in structure.pages:
+        filtered = _filter_node(page)
+        if filtered is not None:
+            filtered_pages.append(filtered)
+
+    return DesignFileStructure(file_name=structure.file_name, pages=filtered_pages)
+
+
+def _layout_to_response(
+    connection_id: int,
+    layout: DesignLayoutDescription,
+) -> LayoutAnalysisResponse:
+    """Convert DesignLayoutDescription to LayoutAnalysisResponse."""
+
+    sections = [
+        AnalyzedSectionResponse(
+            section_type=s.section_type.value,
+            node_id=s.node_id,
+            node_name=s.node_name,
+            y_position=s.y_position,
+            width=s.width,
+            height=s.height,
+            column_layout=s.column_layout.value,
+            column_count=s.column_count,
+            texts=[
+                TextBlockResponse(
+                    node_id=t.node_id,
+                    content=t.content,
+                    font_size=t.font_size,
+                    is_heading=t.is_heading,
+                )
+                for t in s.texts
+            ],
+            images=[
+                ImagePlaceholderResponse(
+                    node_id=img.node_id,
+                    node_name=img.node_name,
+                    width=img.width,
+                    height=img.height,
+                )
+                for img in s.images
+            ],
+            buttons=[
+                ButtonElementResponse(
+                    node_id=btn.node_id,
+                    text=btn.text,
+                    width=btn.width,
+                    height=btn.height,
+                )
+                for btn in s.buttons
+            ],
+            spacing_after=s.spacing_after,
+        )
+        for s in layout.sections
+    ]
+
+    return LayoutAnalysisResponse(
+        connection_id=connection_id,
+        file_name=layout.file_name,
+        overall_width=layout.overall_width,
+        sections=sections,
+        total_text_blocks=layout.total_text_blocks,
+        total_images=layout.total_images,
+    )

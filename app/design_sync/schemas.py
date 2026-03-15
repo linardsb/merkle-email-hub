@@ -128,6 +128,9 @@ class DesignNodeResponse(BaseModel):
     children: list["DesignNodeResponse"] = Field(default_factory=list)
     width: float | None = None
     height: float | None = None
+    x: float | None = None
+    y: float | None = None
+    text_content: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -286,3 +289,112 @@ class ImportListResponse(BaseModel):
 
     imports: list[ImportResponse]
     total: int
+
+
+# ── Layout Analysis (12.4) ──
+
+
+class TextBlockResponse(BaseModel):
+    """A text element from the design."""
+
+    node_id: str
+    content: str
+    font_size: float | None = None
+    is_heading: bool = False
+
+
+class ImagePlaceholderResponse(BaseModel):
+    """An image placeholder from the design."""
+
+    node_id: str
+    node_name: str
+    width: float | None = None
+    height: float | None = None
+
+
+class ButtonElementResponse(BaseModel):
+    """A CTA button from the design."""
+
+    node_id: str
+    text: str
+    width: float | None = None
+    height: float | None = None
+
+
+class AnalyzedSectionResponse(BaseModel):
+    """A detected email section."""
+
+    section_type: str
+    node_id: str
+    node_name: str
+    y_position: float | None = None
+    width: float | None = None
+    height: float | None = None
+    column_layout: str = "single"
+    column_count: int = 1
+    texts: list[TextBlockResponse] = Field(default_factory=list[TextBlockResponse])
+    images: list[ImagePlaceholderResponse] = Field(default_factory=list[ImagePlaceholderResponse])
+    buttons: list[ButtonElementResponse] = Field(default_factory=list[ButtonElementResponse])
+    spacing_after: float | None = None
+
+
+class LayoutAnalysisResponse(BaseModel):
+    """Layout analysis result for preview."""
+
+    connection_id: int
+    file_name: str
+    overall_width: float | None = None
+    sections: list[AnalyzedSectionResponse]
+    total_text_blocks: int
+    total_images: int
+
+
+class AnalyzeLayoutRequest(BaseModel):
+    """Request to analyze layout of selected nodes."""
+
+    connection_id: int
+    selected_node_ids: list[str] = Field(
+        default_factory=list,
+        max_length=500,
+        description="Node IDs to analyze (empty = all top-level frames)",
+    )
+
+
+class GenerateBriefRequest(BaseModel):
+    """Request to generate a campaign brief from design analysis."""
+
+    connection_id: int
+    selected_node_ids: list[str] = Field(
+        default_factory=list,
+        max_length=500,
+        description="Node IDs to include (empty = all top-level frames)",
+    )
+    include_tokens: bool = Field(default=True, description="Include design token summary")
+
+
+class GenerateBriefResponse(BaseModel):
+    """Generated campaign brief."""
+
+    connection_id: int
+    brief: str = Field(description="Structured markdown brief for the Scaffolder")
+    sections_detected: int
+    layout_summary: str
+
+
+# ── Component Extraction (12.6) ──
+
+
+class ExtractComponentsRequest(BaseModel):
+    """Request to extract components from a design connection."""
+
+    component_ids: list[str] | None = None  # None = extract all
+    generate_html: bool = True  # False = preview-only, skip Scaffolder
+
+
+class ExtractComponentsResponse(BaseModel):
+    """Response for component extraction kickoff."""
+
+    import_id: int
+    status: str  # "extracting"
+    total_components: int
+    message: str

@@ -89,7 +89,7 @@ class DesignImport(Base, TimestampMixin):
         Integer, ForeignKey("users.id"), nullable=False, index=True
     )
 
-    connection: Mapped["DesignConnection"] = relationship()
+    connection: Mapped["DesignConnection"] = relationship(back_populates="imports")
     assets: Mapped[list["DesignImportAsset"]] = relationship(
         back_populates="design_import", cascade="all, delete-orphan"
     )

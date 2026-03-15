@@ -69,6 +69,9 @@ class DesignNode:
     children: list[DesignNode] = field(default_factory=list)
     width: float | None = None
     height: float | None = None
+    x: float | None = None
+    y: float | None = None
+    text_content: str | None = None
 
 
 @dataclass(frozen=True)

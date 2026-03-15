@@ -11,6 +11,7 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.design_sync.schemas import (
+    AnalyzeLayoutRequest,
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionDeleteRequest,
@@ -20,8 +21,13 @@ from app.design_sync.schemas import (
     DownloadAssetsRequest,
     DownloadAssetsResponse,
     ExportImageRequest,
+    ExtractComponentsRequest,
+    ExtractComponentsResponse,
     FileStructureResponse,
+    GenerateBriefRequest,
+    GenerateBriefResponse,
     ImageExportResponse,
+    LayoutAnalysisResponse,
 )
 from app.design_sync.service import DesignSyncService
 
@@ -222,4 +228,78 @@ async def serve_asset(
         path,
         media_type=media_type,
         headers={"Content-Security-Policy": "default-src 'none'"},
+    )
+
+
+# ── Phase 12.4: Layout Analysis & Brief Generation ──
+
+
+@router.post(
+    "/connections/analyze-layout",
+    response_model=LayoutAnalysisResponse,
+)
+@limiter.limit("10/minute")
+async def analyze_layout(
+    request: Request,
+    data: AnalyzeLayoutRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> LayoutAnalysisResponse:
+    """Analyze design file layout and detect email sections (preview)."""
+    _ = request
+    return await service.analyze_layout(
+        data.connection_id,
+        current_user,
+        selected_node_ids=data.selected_node_ids or None,
+    )
+
+
+@router.post(
+    "/connections/generate-brief",
+    response_model=GenerateBriefResponse,
+)
+@limiter.limit("5/minute")
+async def generate_brief(
+    request: Request,
+    data: GenerateBriefRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> GenerateBriefResponse:
+    """Generate a Scaffolder-compatible campaign brief from design analysis."""
+    _ = request
+    return await service.generate_brief(
+        data.connection_id,
+        current_user,
+        selected_node_ids=data.selected_node_ids or None,
+        include_tokens=data.include_tokens,
+    )
+
+
+# ── Phase 12.6: Component Extraction ──
+
+
+@router.post(
+    "/connections/{connection_id}/extract-components",
+    response_model=ExtractComponentsResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@limiter.limit("5/minute")
+async def extract_components(
+    connection_id: int,
+    request: Request,
+    body: ExtractComponentsRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ExtractComponentsResponse:
+    """Extract Figma components into Hub components with AI-generated HTML.
+
+    Returns immediately with import_id for polling status via
+    GET /imports/{import_id}.
+    """
+    _ = request
+    return await service.extract_components(
+        connection_id=connection_id,
+        user=current_user,
+        component_ids=body.component_ids,
+        generate_html=body.generate_html,
     )
