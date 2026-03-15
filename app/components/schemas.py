@@ -4,6 +4,18 @@ import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.ai.templates.models import SlotType
+
+
+class SlotHintSchema(BaseModel):
+    """Slot annotation for a component version."""
+
+    slot_id: str = Field(..., min_length=1, max_length=100, pattern=r"^[a-z][a-z0-9_]*$")
+    slot_type: SlotType
+    selector: str = Field(..., min_length=1, max_length=200)
+    required: bool = True
+    max_chars: int | None = Field(None, ge=1, le=5000)
+
 
 class ComponentBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
@@ -62,6 +74,7 @@ class VersionCreate(BaseModel):
     css_source: str | None = None
     changelog: str | None = None
     compatibility: dict[str, str] | None = None
+    slot_definitions: list[SlotHintSchema] | None = None
 
 
 class VersionResponse(BaseModel):
@@ -72,6 +85,7 @@ class VersionResponse(BaseModel):
     css_source: str | None
     changelog: str | None
     compatibility: dict[str, str] | None = None
+    slot_definitions: list[SlotHintSchema] | None = None
     created_by_id: int
     created_at: datetime.datetime
 

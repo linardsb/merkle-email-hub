@@ -69,7 +69,7 @@
 - Cache adapted sections per component version ID (immutable once version is created)
 **Security:** Component HTML sanitised by existing `sanitize_component_html()` before adaptation. Repair pipeline is deterministic (no LLM). Slot hints validated by Pydantic. `data-slot` injection uses `lxml` DOM manipulation (no string interpolation).
 **Verify:** Create component with slot_definitions. Adapt via `SectionAdapter`. Verify: repair pipeline hardens HTML (adds MSO/dark mode/a11y). Slot markers injected correctly. QA score ≥ 0.8. Adapted `SectionBlock` works with `TemplateComposer.compose()`. Component with un-repairable HTML raises `AdaptationError`. `make test` passes.
-- [ ] 11.25.2 Component → section bridge
+- [x] ~~11.25.2 Component → section bridge~~ DONE
 
 #### 11.25.3 Project-Scoped Template Registry — Client-Specific Template Sets
 **What:** Extend `TemplateRegistry` with project awareness. Each project sees global golden templates (minus disabled ones) + project-specific custom templates (adapted from components) + section overrides (client components replacing default sections). Add `ProjectTemplateConfig` model stored as JSON on `Project`.

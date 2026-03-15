@@ -1,5 +1,7 @@
 """Database models for email component library."""
 
+from typing import Any
+
 from sqlalchemy import JSON, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,6 +47,9 @@ class ComponentVersion(Base, TimestampMixin):
     css_source: Mapped[str | None] = mapped_column(Text, nullable=True)
     changelog: Mapped[str | None] = mapped_column(Text, nullable=True)
     compatibility: Mapped[dict[str, str] | None] = mapped_column(JSON, nullable=True)
+    slot_definitions: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSON, nullable=True, default=None
+    )
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     component: Mapped[Component] = relationship(back_populates="versions")

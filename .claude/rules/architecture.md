@@ -33,6 +33,10 @@ Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `jud
 
 Per-project brand identity in `app/projects/design_system.py`. `DesignSystem` Pydantic model (frozen) with `BrandPalette`, `Typography`, `LogoConfig`, `FooterConfig`, `SocialLink`. Stored as JSON column on `Project`. API: GET/PUT/DELETE `/api/v1/projects/{id}/design-system`. `design_system_to_brand_rules()` bridges to brand compliance params. Brand compliance check auto-derives rules from design system via `_enrich_config_from_design_system()` when no explicit `qa_profile` brand rules exist (read-time, no stale data).
 
+## Component → Section Bridge (11.25.2)
+
+`app/components/section_adapter.py` bridges the component library into the agent pipeline. `SectionAdapter.adapt()` converts `ComponentVersion` records into `SectionBlock` instances via 5-stage pipeline: sanitize HTML → repair (MSO/dark mode/a11y) → inject `data-slot` markers via lxml → extract metadata → build `SectionBlock`. `ComponentVersionLike` Protocol for duck typing. `validate_for_composition()` enforces 0.8 QA score threshold (`AdaptationError` extends `DomainValidationError`). `get_cached_section()` caches by version ID (immutable). `SlotHintSchema` in `schemas.py` validates slot annotations (regex slot_id, bounded selector/max_chars). `slot_definitions` JSON column on `ComponentVersion`.
+
 ## Maizzle Sidecar
 
 `services/maizzle-builder/` — POST /build, POST /preview, GET /health.
