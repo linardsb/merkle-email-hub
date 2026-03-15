@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 
+if TYPE_CHECKING:
+    from app.projects.template_config import ProjectTemplateConfig
+
 from app.ai.templates.models import (
+    DefaultTokens,
     GoldenTemplate,
     LayoutType,
     TemplateMetadata,
@@ -51,11 +56,14 @@ class TemplateRegistry:
             if src_file.exists():
                 maizzle_src = src_file.read_text()
 
+            default_tokens = _parse_default_tokens(metadata_raw.get("default_tokens"))
+
             self._templates[name] = GoldenTemplate(
                 metadata=metadata,
                 html=html,
                 slots=slots,
                 maizzle_source=maizzle_src,
+                default_tokens=default_tokens,
             )
 
         self._loaded = True
@@ -114,6 +122,65 @@ class TemplateRegistry:
             else:
                 html = _fill_content_slot(html, slot.slot_id, fill_content)
         return html
+
+    def get_for_project(
+        self,
+        template_config: ProjectTemplateConfig | None,
+    ) -> list[GoldenTemplate]:
+        """Return templates filtered per project config.
+
+        1. Load global golden templates
+        2. Remove disabled_templates
+        3. Prepend preferred_templates (move to front)
+
+        Composition-time concerns (custom sections, section overrides, design
+        token application) are handled by 11.25.4 pipeline integration.
+        """
+        self._ensure_loaded()
+
+        if template_config is None:
+            return list(self._templates.values())
+
+        disabled = set(template_config.disabled_templates)
+        templates = {name: t for name, t in self._templates.items() if name not in disabled}
+
+        preferred = list(template_config.preferred_templates)
+        preferred_templates = [templates.pop(name) for name in preferred if name in templates]
+        remaining = list(templates.values())
+
+        return preferred_templates + remaining
+
+    def list_for_selection_scoped(
+        self,
+        template_config: ProjectTemplateConfig | None,
+    ) -> list[TemplateMetadata]:
+        """Return metadata list filtered per project config, with preferred templates marked.
+
+        Used to build the LLM's template selection prompt.
+        """
+        templates = self.get_for_project(template_config)
+        preferred_names = set(template_config.preferred_templates if template_config else ())
+
+        result: list[TemplateMetadata] = []
+        for t in templates:
+            if t.metadata.name in preferred_names:
+                result.append(
+                    TemplateMetadata(
+                        name=t.metadata.name,
+                        display_name=t.metadata.display_name,
+                        layout_type=t.metadata.layout_type,
+                        column_count=t.metadata.column_count,
+                        has_hero_image=t.metadata.has_hero_image,
+                        has_navigation=t.metadata.has_navigation,
+                        has_social_links=t.metadata.has_social_links,
+                        sections=t.metadata.sections,
+                        ideal_for=t.metadata.ideal_for,
+                        description=f"[RECOMMENDED] {t.metadata.description}",
+                    )
+                )
+            else:
+                result.append(t.metadata)
+        return result
 
     def names(self) -> list[str]:
         """Return all template names."""
@@ -177,6 +244,25 @@ def _parse_metadata(raw: dict[str, object]) -> TemplateMetadata:
         sections=tuple(raw.get("sections", [])),  # type: ignore[arg-type]
         ideal_for=tuple(raw.get("ideal_for", [])),  # type: ignore[arg-type]
         description=str(raw.get("description", "")),
+    )
+
+
+def _parse_default_tokens(raw: object) -> DefaultTokens | None:
+    """Parse default_tokens from YAML metadata."""
+    if not raw or not isinstance(raw, dict):
+        return None
+
+    def _str_dict(key: str) -> dict[str, str]:
+        val = raw.get(key, {})  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        if not isinstance(val, dict):
+            return {}
+        return {str(k): str(v) for k, v in val.items()}  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType,reportUnknownMemberType]
+
+    return DefaultTokens(
+        colors=_str_dict("colors"),
+        fonts=_str_dict("fonts"),
+        font_sizes=_str_dict("font_sizes"),
+        spacing=_str_dict("spacing"),
     )
 
 

@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden cli-setup cli-list cli-search cli
 
 # === Local Development ===
 
@@ -160,6 +160,23 @@ eval-golden: ## CI golden test — deterministic assembly regression (no LLM)
 
 eval-refresh: ## Refresh analysis.json from production + synthetic verdicts
 	uv run python -c "from app.ai.agents.evals.production_sampler import refresh_analysis; refresh_analysis()"
+
+# === CLI (mcp2cli) ===
+
+.cli-ensure: ## (internal) auto-bake mcp2cli config if missing
+	@bash scripts/setup-mcp2cli.sh --check || bash scripts/setup-mcp2cli.sh
+
+cli-setup: ## Bake mcp2cli config for the Email Hub API (re-run to refresh)
+	bash scripts/setup-mcp2cli.sh
+
+cli-list: .cli-ensure ## List all API endpoints as CLI commands
+	mcp2cli @emailhub --list
+
+cli-search: .cli-ensure ## Search API endpoints (usage: make cli-search s="project")
+	mcp2cli @emailhub --search "$(s)"
+
+cli: .cli-ensure ## Call an API endpoint via CLI (usage: make cli c="health")
+	mcp2cli @emailhub $(c)
 
 # === Security ===
 

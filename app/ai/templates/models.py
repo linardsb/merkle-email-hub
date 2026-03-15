@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 SlotType = Literal[
@@ -58,6 +58,16 @@ class TemplateMetadata:
 
 
 @dataclass(frozen=True)
+class DefaultTokens:
+    """A template's built-in default values, keyed by semantic role."""
+
+    colors: dict[str, str] = field(default_factory=dict)
+    fonts: dict[str, str] = field(default_factory=dict)
+    font_sizes: dict[str, str] = field(default_factory=dict)
+    spacing: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class GoldenTemplate:
     """A pre-validated email template skeleton."""
 
@@ -65,3 +75,4 @@ class GoldenTemplate:
     html: str
     slots: tuple[TemplateSlot, ...]
     maizzle_source: str = ""
+    default_tokens: DefaultTokens | None = None

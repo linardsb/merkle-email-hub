@@ -203,14 +203,13 @@ The assembly code will build HTML from your decisions.
     {"slot_id": "cta_url", "content": "https://example.com/newsletter", "is_personalisable": false}
   ],
   "design_tokens": {
-    "primary_color": "#0066cc",
-    "secondary_color": "#004499",
-    "background_color": "#ffffff",
-    "text_color": "#333333",
-    "font_family": "Arial, Helvetica, sans-serif",
-    "heading_font_family": "Georgia, 'Times New Roman', serif",
-    "border_radius": "4px",
-    "button_style": "filled"
+    "colors": {"primary": "#0066cc", "secondary": "#004499", "background": "#ffffff", "text": "#333333", "heading": "#333333", "cta": "#0066cc"},
+    "fonts": {"body": "Arial, Helvetica, sans-serif", "heading": "Georgia, 'Times New Roman', serif"},
+    "font_sizes": {"base": "16px"},
+    "spacing": {"border_radius": "4px"},
+    "button_style": "filled",
+    "source": "llm_generated",
+    "locked_roles": []
   },
   "sections": [
     {"section_name": "hero", "background_color": "#0066cc"},

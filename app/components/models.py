@@ -50,6 +50,12 @@ class ComponentVersion(Base, TimestampMixin):
     slot_definitions: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSON, nullable=True, default=None
     )
+    default_tokens: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        default=None,
+        comment="Design token defaults (colors, fonts — enables design-system-agnostic usage)",
+    )
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     component: Mapped[Component] = relationship(back_populates="versions")

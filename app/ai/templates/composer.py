@@ -11,7 +11,13 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.ai.templates.models import GoldenTemplate, SlotType, TemplateMetadata, TemplateSlot
+from app.ai.templates.models import (
+    DefaultTokens,
+    GoldenTemplate,
+    SlotType,
+    TemplateMetadata,
+    TemplateSlot,
+)
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -29,6 +35,7 @@ class SectionBlock:
     slot_definitions: tuple[TemplateSlot, ...]
     has_mso_wrapper: bool = False
     dark_mode_classes: tuple[str, ...] = ()
+    default_tokens: DefaultTokens | None = None
 
 
 class TemplateComposer:

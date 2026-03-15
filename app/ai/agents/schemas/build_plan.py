@@ -5,7 +5,7 @@ The LLM returns an EmailBuildPlan (JSON); deterministic code assembles HTML.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 
@@ -30,16 +30,23 @@ class SlotFill:
 
 @dataclass(frozen=True)
 class DesignTokens:
-    """Visual design decisions."""
+    """Visual design tokens — dynamic role-based map.
 
-    primary_color: str
-    secondary_color: str
-    background_color: str
-    text_color: str
-    font_family: str
-    heading_font_family: str
-    border_radius: str = "4px"
+    When source is "design_system", all values come from the client's
+    design system and locked_roles lists which roles the assembler
+    must enforce (overriding any LLM deviation).
+
+    When source is "llm_generated", the LLM produced these values
+    and nothing is locked.
+    """
+
+    colors: dict[str, str] = field(default_factory=dict)
+    fonts: dict[str, str] = field(default_factory=dict)
+    font_sizes: dict[str, str] = field(default_factory=dict)
+    spacing: dict[str, str] = field(default_factory=dict)
     button_style: Literal["filled", "outlined", "text"] = "filled"
+    source: Literal["design_system", "llm_generated", "brief_extracted"] = "llm_generated"
+    locked_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

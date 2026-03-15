@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
+from app.core.exceptions import DomainValidationError
 from app.core.logging import get_logger
 from app.projects.design_system import DesignSystem, load_design_system
 from app.projects.exceptions import (
@@ -22,6 +23,7 @@ from app.projects.schemas import (
     ProjectResponse,
     ProjectUpdate,
 )
+from app.projects.template_config import ProjectTemplateConfig, load_template_config
 from app.shared.schemas import PaginatedResponse, PaginationParams
 
 logger = get_logger(__name__)
@@ -177,6 +179,66 @@ class ProjectService:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         await self.projects.update_design_system(project, None)
         logger.info("projects.design_system_delete_completed", project_id=project_id)
+
+    # ── Template Config ──
+
+    async def get_template_config(
+        self, project_id: int, user: User
+    ) -> ProjectTemplateConfig | None:
+        """Get the template config for a project. Returns None if not configured."""
+        logger.info("projects.template_config_fetch_started", project_id=project_id)
+        project_response = await self.verify_project_access(project_id, user)
+        return load_template_config(project_response.template_config)
+
+    async def update_template_config(
+        self, project_id: int, config: ProjectTemplateConfig, user: User
+    ) -> ProjectTemplateConfig:
+        """Set or update the template config for a project."""
+        logger.info(
+            "projects.template_config_update_started",
+            project_id=project_id,
+            user_id=user.id,
+        )
+        await self.verify_project_access(project_id, user)
+        project = await self.projects.get(project_id)
+        if not project:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+
+        from app.ai.templates.registry import get_template_registry
+
+        registry = get_template_registry()
+        known_names = set(registry.names())
+
+        for name in config.disabled_templates:
+            if name not in known_names:
+                raise DomainValidationError(
+                    f"Unknown template name in disabled_templates: '{name}'. "
+                    f"Available: {sorted(known_names)}"
+                )
+        for name in config.preferred_templates:
+            if name not in known_names:
+                raise DomainValidationError(
+                    f"Unknown template name in preferred_templates: '{name}'. "
+                    f"Available: {sorted(known_names)}"
+                )
+
+        await self.projects.update_template_config(project, config.model_dump())
+        logger.info("projects.template_config_update_completed", project_id=project_id)
+        return config
+
+    async def delete_template_config(self, project_id: int, user: User) -> None:
+        """Remove the template config from a project."""
+        logger.info(
+            "projects.template_config_delete_started",
+            project_id=project_id,
+            user_id=user.id,
+        )
+        await self.verify_project_access(project_id, user)
+        project = await self.projects.get(project_id)
+        if not project:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+        await self.projects.update_template_config(project, None)
+        logger.info("projects.template_config_delete_completed", project_id=project_id)
 
     async def create_org(self, data: ClientOrgCreate) -> ClientOrgResponse:
         logger.info("orgs.create_started", name=data.name)

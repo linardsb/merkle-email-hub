@@ -170,10 +170,8 @@ class CodeReviewerNode:
             "template": plan.template.template_name,
             "slot_count": len(plan.slot_fills),
             "design_tokens": {
-                "primary_color": plan.design_tokens.primary_color,
-                "secondary_color": plan.design_tokens.secondary_color,
-                "background_color": plan.design_tokens.background_color,
-                "text_color": plan.design_tokens.text_color,
+                "colors": plan.design_tokens.colors,
+                "source": plan.design_tokens.source,
             },
             "dark_mode_strategy": plan.dark_mode_strategy,
             "personalisation_platform": plan.personalisation_platform,

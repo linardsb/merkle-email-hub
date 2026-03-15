@@ -94,6 +94,25 @@ class BlueprintService:
         except Exception:
             logger.debug("blueprint.graph_provider_init_skipped", exc_info=True)
 
+        # Load design system from project (single DB read)
+        from app.projects.design_system import DesignSystem, load_design_system
+
+        design_system: DesignSystem | None = None
+        if project_id is not None and db is not None:
+            try:
+                from app.projects.repository import ProjectRepository
+
+                repo = ProjectRepository(db)
+                project = await repo.get(project_id)
+                if project is not None:
+                    design_system = load_design_system(project.design_system)
+            except Exception:
+                logger.warning(
+                    "blueprint.design_system_load_failed",
+                    project_id=project_id,
+                    exc_info=True,
+                )
+
         engine = BlueprintEngine(
             definition,
             component_resolver=component_resolver,
@@ -102,6 +121,7 @@ class BlueprintService:
             graph_provider=graph_provider,
             audience_profile=audience_profile,
             judge_on_retry=settings.blueprint.judge_on_retry,
+            design_system=design_system,
         )
 
         logger.info(

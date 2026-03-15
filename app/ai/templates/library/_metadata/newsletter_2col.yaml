@@ -61,3 +61,23 @@ slots:
     required: false
     max_chars: 30
     placeholder: "Read More"
+
+default_tokens:
+  colors:
+    cta: "#e84e0f"
+    heading: "#1a1a1a"
+    body: "#444444"
+    subheadline: "#666666"
+    muted: "#999999"
+    background: "#ffffff"
+    cta_text: "#ffffff"
+    dark_background: "#1a1a2e"
+    dark_text: "#e5e5e5"
+  fonts:
+    body: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    mso: "\"Segoe UI\", sans-serif"
+  font_sizes:
+    base: "16px"
+    heading: "28px"
+  spacing:
+    border_radius: "4px"

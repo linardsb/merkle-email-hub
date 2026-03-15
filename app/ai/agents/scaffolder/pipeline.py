@@ -8,10 +8,15 @@ Pass 1 runs first (needs template name). Passes 2+3 run in parallel.
 Per-slot retry on content failures.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.projects.design_system import DesignSystem
 
 from app.ai.agents.schemas.build_plan import (
     DesignTokens,
@@ -44,11 +49,13 @@ class ScaffolderPipeline:
         model: str,
         registry: TemplateRegistry | None = None,
         max_tokens: int = 4096,
+        design_system: DesignSystem | None = None,
     ) -> None:
         self._provider = provider
         self._model = model
         self._registry = registry or get_template_registry()
         self._max_tokens = max_tokens
+        self._design_system = design_system
 
     async def execute(
         self,
@@ -87,6 +94,20 @@ class ScaffolderPipeline:
             self._content_pass(brief, template_selection, slot_details),
             self._design_pass(brief, brand_config),
         )
+
+        # Merge locked fills from design system (footer, logo override LLM fills)
+        if self._design_system is not None:
+            available_slots: set[str] = {s.slot_id for s in template.slots} if template else set()
+            locked = self._build_locked_fills(self._design_system, available_slots)
+            if locked:
+                fill_map = {sf.slot_id: sf for sf in slot_fills}
+                fill_map.update(locked)
+                slot_fills = tuple(fill_map.values())
+                logger.info(
+                    "scaffolder.locked_fills_applied",
+                    locked_count=len(locked),
+                    locked_slots=list(locked.keys()),
+                )
 
         plan = EmailBuildPlan(
             template=template_selection,
@@ -260,7 +281,49 @@ class ScaffolderPipeline:
         brief: str,
         brand_config: dict[str, object] | None = None,
     ) -> DesignTokens:
-        """Pick colours, fonts, spacing. Structured output."""
+        """Pick colours, fonts, spacing. Deterministic when design system exists."""
+        if self._design_system is not None:
+            return self._design_pass_from_system(self._design_system)
+        return await self._design_pass_llm(brief, brand_config)
+
+    @staticmethod
+    def _design_pass_from_system(ds: DesignSystem) -> DesignTokens:
+        """Build DesignTokens deterministically from client design system. Zero LLM calls."""
+        from app.projects.design_system import (
+            resolve_color_map,
+            resolve_font_map,
+            resolve_font_size_map,
+            resolve_spacing_map,
+        )
+
+        colors = resolve_color_map(ds)
+        fonts = resolve_font_map(ds)
+        font_sizes = resolve_font_size_map(ds)
+        spacing = resolve_spacing_map(ds)
+        locked_roles = tuple(colors.keys())
+
+        logger.info(
+            "scaffolder.design_pass_from_system",
+            color_roles=len(colors),
+            locked_roles=len(locked_roles),
+        )
+
+        return DesignTokens(
+            colors=colors,
+            fonts=fonts,
+            font_sizes=font_sizes,
+            spacing=spacing,
+            button_style=ds.button_style,
+            source="design_system",
+            locked_roles=locked_roles,
+        )
+
+    async def _design_pass_llm(
+        self,
+        brief: str,
+        brand_config: dict[str, object] | None = None,
+    ) -> DesignTokens:
+        """LLM-generated design tokens (no design system configured)."""
         brand_context = ""
         if brand_config:
             brand_context = f"\nBrand guidelines:\n{json.dumps(brand_config, default=str)}"
@@ -268,14 +331,10 @@ class ScaffolderPipeline:
         system = (
             "You are an email design architect. Choose design tokens for the email.\n\n"
             "Return a JSON object with:\n"
-            "- primary_color: hex color (e.g. '#e84e0f')\n"
-            "- secondary_color: hex color\n"
-            "- background_color: hex color\n"
-            "- text_color: hex color\n"
-            "- font_family: web-safe font stack\n"
-            "- heading_font_family: web-safe font stack\n"
-            "- border_radius: CSS value (e.g. '4px')\n"
-            "- button_style: 'filled' | 'outlined' | 'text'\n\n"
+            '- colors: object with keys like "primary", "secondary", "background", "text", '
+            '"heading", "body", "muted", "cta", "link" — all hex #RRGGBB values\n'
+            '- fonts: object with "heading" and "body" as web-safe font stacks\n'
+            '- button_style: "filled" | "outlined" | "text"\n\n'
             "Use web-safe hex colors. Font stacks must include system fallbacks."
             f"{brand_context}\n\n"
             "Respond ONLY with valid JSON, no markdown fences."
@@ -284,23 +343,16 @@ class ScaffolderPipeline:
 
         parsed = await self._call_json(system, user, max_tokens=1024)
 
-        tokens = DesignTokens(
-            primary_color=str(parsed.get("primary_color", "#e84e0f")),
-            secondary_color=str(parsed.get("secondary_color", "#0c2340")),
-            background_color=str(parsed.get("background_color", "#ffffff")),
-            text_color=str(parsed.get("text_color", "#333333")),
-            font_family=str(
-                parsed.get(
-                    "font_family", "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"
-                )
-            ),
-            heading_font_family=str(parsed.get("heading_font_family", "Georgia,serif")),
-            border_radius=str(parsed.get("border_radius", "4px")),
-            button_style=parsed.get("button_style", "filled"),
-        )
-
         logger.info("scaffolder.design_pass_completed")
-        return tokens
+
+        return DesignTokens(
+            colors=_extract_str_dict(parsed.get("colors", {})),
+            fonts=_extract_str_dict(parsed.get("fonts", {})),
+            font_sizes=_extract_str_dict(parsed.get("font_sizes", {})),
+            spacing=_extract_str_dict(parsed.get("spacing", {})),
+            button_style=parsed.get("button_style", "filled"),
+            source="llm_generated",
+        )
 
     # ── Helpers ──
 
@@ -345,6 +397,36 @@ class ScaffolderPipeline:
         )
 
     @staticmethod
+    def _build_locked_fills(
+        ds: DesignSystem,
+        available_slots: set[str],
+    ) -> dict[str, SlotFill]:
+        """Build locked fills from whatever the design system provides.
+
+        Client-agnostic: only locks slots that (a) exist in the template
+        and (b) the design system has a value for. Skips everything else.
+        """
+        locked: dict[str, SlotFill] = {}
+
+        def _lock(slot_id: str, content: str) -> None:
+            if slot_id in available_slots and content:
+                locked[slot_id] = SlotFill(
+                    slot_id=slot_id, content=content, is_personalisable=False
+                )
+
+        if ds.footer:
+            _lock("footer_company", ds.footer.company_name)
+            _lock("footer_legal", ds.footer.legal_text)
+            _lock("footer_address", ds.footer.address)
+            _lock("footer_unsubscribe", ds.footer.unsubscribe_text)
+
+        if ds.logo:
+            _lock("logo_url", ds.logo.url)
+            _lock("logo_alt", ds.logo.alt_text)
+
+        return locked
+
+    @staticmethod
     def _extract_preheader(fills: tuple[SlotFill, ...]) -> str:
         """Extract preheader from slot fills if present."""
         for fill in fills:
@@ -387,3 +469,10 @@ def _parse_json(content: str) -> dict[str, Any] | None:
             pass
 
     return None
+
+
+def _extract_str_dict(raw: object) -> dict[str, str]:
+    """Safely extract dict[str, str] from LLM JSON output."""
+    if not isinstance(raw, dict):
+        return {}
+    return {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}

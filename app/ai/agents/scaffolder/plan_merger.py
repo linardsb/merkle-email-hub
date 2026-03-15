@@ -41,26 +41,16 @@ def merge_dark_mode(
     # Build a mapping of token_name → dark_value from overrides
     override_map: dict[str, str] = {o.token_name: o.dark_value for o in decisions.color_overrides}
 
-    # Apply overrides to design tokens where the token name matches a field
+    # Apply overrides to design tokens colors dict
     tokens = plan.design_tokens
-    token_updates: dict[str, str] = {}
-    for field_name in (
-        "primary_color",
-        "secondary_color",
-        "background_color",
-        "text_color",
-    ):
-        if field_name in override_map:
-            token_updates[field_name] = override_map[field_name]
+    color_updates: dict[str, str] = {}
+    for token_name, dark_value in override_map.items():
+        if token_name in tokens.colors:
+            color_updates[token_name] = dark_value
 
-    if token_updates:
-        tokens = replace(
-            tokens,
-            primary_color=token_updates.get("primary_color", tokens.primary_color),
-            secondary_color=token_updates.get("secondary_color", tokens.secondary_color),
-            background_color=token_updates.get("background_color", tokens.background_color),
-            text_color=token_updates.get("text_color", tokens.text_color),
-        )
+    if color_updates:
+        merged_colors = {**tokens.colors, **color_updates}
+        tokens = replace(tokens, colors=merged_colors)
 
     strategy = "custom" if decisions.color_overrides else plan.dark_mode_strategy
 

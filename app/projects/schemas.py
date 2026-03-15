@@ -56,6 +56,7 @@ class ProjectResponse(ProjectBase):
     is_active: bool
     target_clients: list[str] | None = None
     design_system: dict[str, Any] | None = None
+    template_config: dict[str, Any] | None = None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 

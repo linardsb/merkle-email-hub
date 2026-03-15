@@ -124,6 +124,14 @@ class ProjectRepository:
         await self.db.refresh(project)
         return project
 
+    async def update_template_config(
+        self, project: Project, template_config: dict[str, Any] | None
+    ) -> Project:
+        project.template_config = template_config
+        await self.db.commit()
+        await self.db.refresh(project)
+        return project
+
     async def delete(self, project: Project) -> None:
         project.deleted_at = utcnow()
         await self.db.commit()

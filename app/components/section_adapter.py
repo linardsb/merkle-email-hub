@@ -15,7 +15,7 @@ from lxml import html as lxml_html
 from lxml.etree import LxmlError
 
 from app.ai.templates.composer import SectionBlock
-from app.ai.templates.models import SlotType, TemplateSlot
+from app.ai.templates.models import DefaultTokens, SlotType, TemplateSlot
 from app.components.sanitize import sanitize_component_html
 from app.core.exceptions import DomainValidationError
 from app.core.logging import get_logger
@@ -124,6 +124,17 @@ class SectionAdapter:
 
         block_id = f"component_{version.component_id}_v{version.version_number}"
 
+        # Extract default_tokens from component metadata if available
+        component_tokens: DefaultTokens | None = None
+        raw_tokens: dict[str, object] | None = getattr(version, "default_tokens", None)
+        if raw_tokens:
+            component_tokens = DefaultTokens(
+                colors=dict(raw_tokens.get("colors", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
+                fonts=dict(raw_tokens.get("fonts", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
+                font_sizes=dict(raw_tokens.get("font_sizes", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
+                spacing=dict(raw_tokens.get("spacing", {})),  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
+            )
+
         logger.info(
             "section_adapter.adapted",
             block_id=block_id,
@@ -139,6 +150,7 @@ class SectionAdapter:
             slot_definitions=template_slots,
             has_mso_wrapper=has_mso,
             dark_mode_classes=dark_mode_classes,
+            default_tokens=component_tokens,
         )
 
     def validate_for_composition(

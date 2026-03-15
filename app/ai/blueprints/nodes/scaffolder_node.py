@@ -127,7 +127,13 @@ class ScaffolderNode:
         from app.ai.agents.scaffolder.assembler import TemplateAssembler
         from app.ai.agents.scaffolder.pipeline import ScaffolderPipeline
 
-        pipeline = ScaffolderPipeline(provider, model)
+        design_system = context.metadata.get("design_system")
+
+        pipeline = ScaffolderPipeline(
+            provider,
+            model,
+            design_system=design_system,  # type: ignore[arg-type]
+        )
         try:
             plan = await pipeline.execute(context.brief)
         except Exception as exc:
@@ -137,7 +143,7 @@ class ScaffolderNode:
         # Store plan in context for downstream agents
         context.build_plan = plan
 
-        assembler = TemplateAssembler()
+        assembler = TemplateAssembler(design_system=design_system)  # type: ignore[arg-type]
         try:
             html = assembler.assemble(plan)
         except Exception as exc:
@@ -152,7 +158,8 @@ class ScaffolderNode:
             decisions=(
                 f"Template: {plan.template.template_name}",
                 f"Slots filled: {len(plan.slot_fills)}",
-                f"Reasoning: {plan.template.reasoning}",
+                f"Design: {plan.design_tokens.source} ({len(plan.design_tokens.colors)} colors)",
+                f"Locked: {len(plan.design_tokens.locked_roles)} roles",
             ),
             warnings=(),
             component_refs=tuple(detect_component_refs(html)),

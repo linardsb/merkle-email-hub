@@ -128,6 +128,7 @@ class DesignSystem(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
+    # Structured fields (existing — backward compat for API/frontend)
     palette: BrandPalette
     typography: Typography = Field(default_factory=Typography)
     logo: LogoConfig | None = None
@@ -135,6 +136,27 @@ class DesignSystem(BaseModel):
     social_links: tuple[SocialLink, ...] = ()
     button_border_radius: str = Field(default="4px", pattern=r"^\d+px$")
     button_style: Literal["filled", "outlined", "text"] = "filled"
+
+    # Dynamic token maps (pipeline reads these)
+    # When populated, these are authoritative. When empty, derived from structured fields.
+    colors: dict[str, str] = Field(default_factory=dict)
+    fonts: dict[str, str] = Field(default_factory=dict)
+    font_sizes: dict[str, str] = Field(default_factory=dict)
+    spacing: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("colors", mode="before")
+    @classmethod
+    def validate_color_values(cls, v: object) -> object:  # pyright: ignore[reportUnknownParameterType]
+        if not isinstance(v, dict):
+            return v
+        raw: dict[str, str] = {}
+        for key, color in v.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+            if not isinstance(color, str):
+                msg = f"Color value for role '{key}' must be a string, got {type(color).__name__}"
+                raise ValueError(msg)
+            _validate_hex_color(color)
+            raw[str(key)] = color.lower()  # pyright: ignore[reportUnknownArgumentType]
+        return raw
 
 
 def load_design_system(raw: dict[str, Any] | None) -> DesignSystem | None:
@@ -147,29 +169,74 @@ def load_design_system(raw: dict[str, Any] | None) -> DesignSystem | None:
     return DesignSystem.model_validate(raw)
 
 
+def resolve_color_map(ds: DesignSystem) -> dict[str, str]:
+    """Build the complete role->hex color map for pipeline use.
+
+    Merges BrandPalette fields (as base roles) with explicit colors dict
+    (which can override or add roles). Works for any client:
+    - Simple client: only BrandPalette filled -> auto-derived roles
+    - Advanced client: colors dict with custom roles
+    - Figma import: colors dict populated directly from design tool tokens
+    """
+    base: dict[str, str] = {}
+    for field_name in BrandPalette.model_fields:
+        val = getattr(ds.palette, field_name)
+        if val is not None:
+            base[field_name] = val
+
+    # Auto-derive common aliases from BrandPalette
+    if "primary" in base:
+        base.setdefault("cta", base["primary"])
+    if "text" in base:
+        base.setdefault("heading", base["text"])
+    if "accent" in base:
+        base.setdefault("cta", base["accent"])
+
+    # Merge explicit colors dict (overrides base)
+    base.update(ds.colors)
+    return base
+
+
+def resolve_font_map(ds: DesignSystem) -> dict[str, str]:
+    """Build role->font-stack map."""
+    base: dict[str, str] = {
+        "heading": ds.typography.heading_font,
+        "body": ds.typography.body_font,
+    }
+    base.update(ds.fonts)
+    return base
+
+
+def resolve_font_size_map(ds: DesignSystem) -> dict[str, str]:
+    """Build role->font-size map."""
+    base: dict[str, str] = {"base": ds.typography.base_size}
+    base.update(ds.font_sizes)
+    return base
+
+
+def resolve_spacing_map(ds: DesignSystem) -> dict[str, str]:
+    """Build role->spacing map."""
+    base: dict[str, str] = {"border_radius": ds.button_border_radius}
+    base.update(ds.spacing)
+    return base
+
+
 def design_system_to_brand_rules(ds: DesignSystem) -> dict[str, Any]:
     """Convert a DesignSystem to brand_compliance params format.
 
     Returns dict with keys matching BrandComplianceCheck config params:
     allowed_colors, required_fonts, required_elements.
     """
-    # Collect all non-None palette colors, deduplicate preserving order
-    seen: set[str] = set()
-    unique_colors: list[str] = []
-    for field_name in BrandPalette.model_fields:
-        val = getattr(ds.palette, field_name)
-        if val is not None and val not in seen:
-            seen.add(val)
-            unique_colors.append(val)
+    all_colors = resolve_color_map(ds)
+    unique_colors = list(dict.fromkeys(all_colors.values()))
 
-    # Extract primary font from CSS font stack (first entry before comma)
+    font_map = resolve_font_map(ds)
     fonts: list[str] = []
-    for font_stack in [ds.typography.heading_font, ds.typography.body_font]:
-        primary = font_stack.split(",")[0].strip().strip("'\"")
+    for stack in font_map.values():
+        primary = stack.split(",")[0].strip().strip("'\"")
         if primary and primary not in fonts:
             fonts.append(primary)
 
-    # Required elements from footer/logo presence
     required_elements: list[str] = []
     if ds.footer:
         required_elements.append("footer")

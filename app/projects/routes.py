@@ -26,6 +26,7 @@ from app.projects.schemas import (
     UnsupportedPropertySchema,
 )
 from app.projects.service import ProjectService
+from app.projects.template_config import ProjectTemplateConfig
 from app.shared.schemas import PaginatedResponse, PaginationParams
 
 router = APIRouter(prefix="/api/v1", tags=["projects"])
@@ -266,6 +267,56 @@ async def delete_design_system(
     """Remove the design system from a project."""
     _ = request
     await service.delete_design_system(project_id, current_user)
+
+
+# ── Template Config ──
+
+
+@router.get("/projects/{project_id}/template-config")
+@limiter.limit("30/minute")
+async def get_template_config(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> dict[str, Any]:
+    """Get the template configuration for a project."""
+    _ = request
+    config = await service.get_template_config(project_id, current_user)
+    if config is None:
+        return {}
+    return config.model_dump()
+
+
+@router.put("/projects/{project_id}/template-config")
+@limiter.limit("10/minute")
+async def update_template_config(
+    request: Request,
+    project_id: int,
+    data: ProjectTemplateConfig,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> dict[str, Any]:
+    """Set or update the template configuration for a project."""
+    _ = request
+    config = await service.update_template_config(project_id, data, current_user)
+    return config.model_dump()
+
+
+@router.delete(
+    "/projects/{project_id}/template-config",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("10/minute")
+async def delete_template_config(
+    request: Request,
+    project_id: int,
+    service: ProjectService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> None:
+    """Remove the template configuration from a project."""
+    _ = request
+    await service.delete_template_config(project_id, current_user)
 
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -100,12 +100,13 @@ class TestTemplateAssembler:
                 SlotFill(slot_id="body_text", content="Hello world"),
             ),
             design_tokens=DesignTokens(
-                primary_color="#ff0000",
-                secondary_color="#00ff00",
-                background_color="#ffffff",
-                text_color="#333333",
-                font_family="Arial,sans-serif",
-                heading_font_family="Georgia,serif",
+                colors={
+                    "primary": "#ff0000",
+                    "secondary": "#00ff00",
+                    "background": "#ffffff",
+                    "text": "#333333",
+                },
+                fonts={"body": "Arial,sans-serif", "heading": "Georgia,serif"},
             ),
         )
 
@@ -121,12 +122,13 @@ class TestTemplateAssembler:
             template=TemplateSelection(template_name="nonexistent", reasoning="test"),
             slot_fills=(),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
         )
         with pytest.raises(AssemblyError, match="not found"):
@@ -146,12 +148,13 @@ class TestTemplateAssembler:
             ),
             slot_fills=(SlotFill(slot_id="headline", content="Fallback!"),),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
         )
 
@@ -168,12 +171,13 @@ class TestTemplateAssembler:
             template=TemplateSelection(template_name="test_template", reasoning="test"),
             slot_fills=(),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
             sections=(SectionDecision(section_name="header", hidden=True),),
         )
@@ -192,12 +196,13 @@ class TestTemplateAssembler:
             template=TemplateSelection(template_name="test_template", reasoning="test"),
             slot_fills=(),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
             preheader_text="Check out our sale!",
         )
@@ -222,12 +227,13 @@ class TestTemplateAssembler:
                 SlotFill(slot_id="content_1col_body", content="Body text here"),
             ),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
         )
 
@@ -252,12 +258,13 @@ class TestTemplateAssembler:
             ),
             slot_fills=(SlotFill(slot_id="headline", content="Fallback!"),),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
         )
 
@@ -276,12 +283,13 @@ class TestTemplateAssembler:
             ),
             slot_fills=(),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
         )
 
@@ -299,12 +307,13 @@ class TestTemplateAssembler:
             template=TemplateSelection(template_name="test_template", reasoning="test"),
             slot_fills=(SlotFill(slot_id="headline", content="Save $100 today!"),),
             design_tokens=DesignTokens(
-                primary_color="#000",
-                secondary_color="#000",
-                background_color="#fff",
-                text_color="#333",
-                font_family="Arial",
-                heading_font_family="Georgia",
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
             ),
         )
 
@@ -347,12 +356,13 @@ class TestScaffolderPipeline:
         )
         design_response = json.dumps(
             {
-                "primary_color": "#e84e0f",
-                "secondary_color": "#0c2340",
-                "background_color": "#ffffff",
-                "text_color": "#333333",
-                "font_family": "Arial,sans-serif",
-                "heading_font_family": "Georgia,serif",
+                "colors": {
+                    "primary": "#e84e0f",
+                    "secondary": "#0c2340",
+                    "background": "#ffffff",
+                    "text": "#333333",
+                },
+                "fonts": {"body": "Arial,sans-serif", "heading": "Georgia,serif"},
                 "border_radius": "4px",
                 "button_style": "filled",
             }
@@ -409,7 +419,7 @@ class TestScaffolderPipeline:
 
         assert plan.template.template_name == "newsletter_1col"
         assert len(plan.slot_fills) == 2
-        assert plan.design_tokens.primary_color == "#e84e0f"
+        assert plan.design_tokens.colors.get("primary") == "#e84e0f"
         assert mock_provider.complete.call_count == 3
 
     @pytest.mark.asyncio()
@@ -438,12 +448,13 @@ class TestScaffolderPipeline:
             CompletionResponse(
                 content=json.dumps(
                     {
-                        "primary_color": "#000",
-                        "secondary_color": "#000",
-                        "background_color": "#fff",
-                        "text_color": "#333",
-                        "font_family": "Arial",
-                        "heading_font_family": "Georgia",
+                        "colors": {
+                            "primary": "#000",
+                            "secondary": "#000",
+                            "background": "#fff",
+                            "text": "#333",
+                        },
+                        "fonts": {"body": "Arial", "heading": "Georgia"},
                     }
                 ),
                 model="test",

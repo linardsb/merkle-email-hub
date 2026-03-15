@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
     from app.knowledge.graph.protocols import GraphSearchResult
+    from app.projects.design_system import DesignSystem
 
 from app.ai.agents.context_budget import (
     ECONOMY_MODE_THRESHOLD,
@@ -124,6 +125,7 @@ class BlueprintEngine:
         graph_provider: GraphContextProvider | None = None,
         audience_profile: "AudienceProfile | None" = None,
         judge_on_retry: bool = False,
+        design_system: "DesignSystem | None" = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
@@ -132,6 +134,7 @@ class BlueprintEngine:
         self._graph_provider = graph_provider
         self._audience_profile = audience_profile
         self._judge_on_retry = judge_on_retry
+        self._design_system = design_system
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -567,6 +570,21 @@ class BlueprintEngine:
 
                 if competitive_ctx:
                     context.metadata["competitive_context"] = competitive_ctx
+
+        # LAYER 11: Design system (ALL agentic nodes — brand identity)
+        if node.node_type == "agentic" and self._design_system is not None:
+            from app.projects.design_system import (
+                design_system_to_brand_rules,
+                resolve_color_map,
+                resolve_font_map,
+            )
+
+            context.metadata["design_system"] = self._design_system
+            context.metadata["design_system_brand_rules"] = design_system_to_brand_rules(
+                self._design_system
+            )
+            context.metadata["ds_color_map"] = resolve_color_map(self._design_system)
+            context.metadata["ds_font_map"] = resolve_font_map(self._design_system)
 
         return context
 

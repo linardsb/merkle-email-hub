@@ -1,6 +1,7 @@
 """Pydantic schemas for email component library."""
 
 import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -75,6 +76,7 @@ class VersionCreate(BaseModel):
     changelog: str | None = None
     compatibility: dict[str, str] | None = None
     slot_definitions: list[SlotHintSchema] | None = None
+    default_tokens: dict[str, Any] | None = None
 
 
 class VersionResponse(BaseModel):
@@ -86,6 +88,7 @@ class VersionResponse(BaseModel):
     changelog: str | None
     compatibility: dict[str, str] | None = None
     slot_definitions: list[SlotHintSchema] | None = None
+    default_tokens: dict[str, Any] | None = None
     created_by_id: int
     created_at: datetime.datetime
 
