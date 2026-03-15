@@ -1,7 +1,7 @@
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 """REST API routes for design sync."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,11 +10,15 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.design_sync.schemas import (
+    ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionDeleteRequest,
     ConnectionResponse,
     ConnectionSyncRequest,
     DesignTokensResponse,
+    ExportImageRequest,
+    FileStructureResponse,
+    ImageExportResponse,
 )
 from app.design_sync.service import DesignSyncService
 
@@ -101,3 +105,61 @@ async def sync_connection(
     """Trigger a design token sync."""
     _ = request
     return await service.sync_connection(data.id, current_user)
+
+
+# ── Phase 12.1: File Structure, Components, Image Export ──
+
+
+@router.get(
+    "/connections/{connection_id}/file-structure",
+    response_model=FileStructureResponse,
+)
+@limiter.limit("15/minute")
+async def get_file_structure(
+    connection_id: int,
+    request: Request,
+    depth: int | None = Query(default=2, ge=1, description="Max tree depth (None = unlimited)"),
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> FileStructureResponse:
+    """Get the hierarchical file structure of a design file."""
+    _ = request
+    return await service.get_file_structure(connection_id, current_user, depth=depth)
+
+
+@router.get(
+    "/connections/{connection_id}/components",
+    response_model=ComponentListResponse,
+)
+@limiter.limit("20/minute")
+async def list_components(
+    connection_id: int,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> ComponentListResponse:
+    """List reusable components defined in the design file."""
+    _ = request
+    return await service.list_components(connection_id, current_user)
+
+
+@router.post(
+    "/connections/export-images",
+    response_model=ImageExportResponse,
+)
+@limiter.limit("5/minute")
+async def export_images(
+    request: Request,
+    data: ExportImageRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ImageExportResponse:
+    """Export design nodes as images."""
+    _ = request
+    return await service.export_images(
+        data.connection_id,
+        current_user,
+        data.node_ids,
+        format=data.format,
+        scale=data.scale,
+    )

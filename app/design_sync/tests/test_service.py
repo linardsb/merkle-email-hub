@@ -1,8 +1,11 @@
 """Tests for design sync module."""
 
+from datetime import UTC
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.design_sync.crypto import decrypt_token, encrypt_token
@@ -12,7 +15,12 @@ from app.design_sync.exceptions import (
 )
 from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
 from app.design_sync.protocol import (
+    DesignComponent,
+    DesignFileStructure,
+    DesignNode,
+    DesignNodeType,
     DesignSyncProvider,
+    ExportedImage,
     ExtractedColor,
     ExtractedSpacing,
     ExtractedTokens,
@@ -193,3 +201,395 @@ class TestStubProviders:
         svc = CanvaDesignSyncService()
         tokens = await svc.sync_tokens("ref", "token")
         assert tokens == ExtractedTokens()
+
+
+# ── New Protocol Dataclass Tests ──
+
+
+class TestDesignNodeType:
+    def test_figma_type_mapping(self) -> None:
+        from app.design_sync.figma.service import _FIGMA_NODE_TYPE_MAP
+
+        assert _FIGMA_NODE_TYPE_MAP["CANVAS"] == DesignNodeType.PAGE
+        assert _FIGMA_NODE_TYPE_MAP["FRAME"] == DesignNodeType.FRAME
+        assert _FIGMA_NODE_TYPE_MAP["TEXT"] == DesignNodeType.TEXT
+
+    def test_unknown_type_defaults_to_other(self) -> None:
+        from app.design_sync.figma.service import _FIGMA_NODE_TYPE_MAP
+
+        assert (
+            _FIGMA_NODE_TYPE_MAP.get("UNKNOWN_FANCY_TYPE", DesignNodeType.OTHER)
+            == DesignNodeType.OTHER
+        )
+
+
+class TestDesignFileStructure:
+    def test_empty_structure(self) -> None:
+        structure = DesignFileStructure(file_name="Test")
+        assert structure.file_name == "Test"
+        assert structure.pages == []
+
+    def test_with_pages(self) -> None:
+        page = DesignNode(id="0:1", name="Page 1", type=DesignNodeType.PAGE)
+        structure = DesignFileStructure(file_name="Test", pages=[page])
+        assert len(structure.pages) == 1
+        assert structure.pages[0].name == "Page 1"
+
+
+class TestDesignComponent:
+    def test_defaults(self) -> None:
+        comp = DesignComponent(component_id="1:2", name="Button")
+        assert comp.description == ""
+        assert comp.thumbnail_url is None
+        assert comp.containing_page is None
+
+
+class TestExportedImage:
+    def test_with_expiry(self) -> None:
+        from datetime import datetime
+
+        now = datetime.now(tz=UTC)
+        img = ExportedImage(
+            node_id="1:2", url="https://cdn.figma.com/img", format="png", expires_at=now
+        )
+        assert img.expires_at == now
+
+    def test_without_expiry(self) -> None:
+        img = ExportedImage(node_id="1:2", url="https://cdn.figma.com/img", format="png")
+        assert img.expires_at is None
+
+
+# ── Figma Provider: File Structure Parsing ──
+
+
+class TestFigmaFileStructure:
+    """Test Figma JSON -> DesignFileStructure parsing."""
+
+    @pytest.fixture
+    def figma_service(self) -> FigmaDesignSyncService:
+        return FigmaDesignSyncService()
+
+    @pytest.fixture
+    def sample_figma_document(self) -> dict[str, Any]:
+        return {
+            "name": "My Design File",
+            "document": {
+                "id": "0:0",
+                "type": "DOCUMENT",
+                "children": [
+                    {
+                        "id": "0:1",
+                        "type": "CANVAS",
+                        "name": "Page 1",
+                        "children": [
+                            {
+                                "id": "1:1",
+                                "type": "FRAME",
+                                "name": "Header",
+                                "absoluteBoundingBox": {
+                                    "x": 0,
+                                    "y": 0,
+                                    "width": 600,
+                                    "height": 100,
+                                },
+                                "children": [
+                                    {
+                                        "id": "1:2",
+                                        "type": "TEXT",
+                                        "name": "Title",
+                                        "absoluteBoundingBox": {
+                                            "x": 0,
+                                            "y": 0,
+                                            "width": 200,
+                                            "height": 40,
+                                        },
+                                        "children": [],
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    {
+                        "id": "0:2",
+                        "type": "CANVAS",
+                        "name": "Page 2",
+                        "children": [],
+                    },
+                ],
+            },
+        }
+
+    def test_parse_node_basic(self, figma_service: FigmaDesignSyncService) -> None:
+        node_data = {
+            "id": "1:1",
+            "type": "FRAME",
+            "name": "Header",
+            "absoluteBoundingBox": {"x": 0, "y": 0, "width": 600, "height": 100},
+            "children": [],
+        }
+        node = figma_service._parse_node(node_data, current_depth=0, max_depth=2)
+        assert node.id == "1:1"
+        assert node.name == "Header"
+        assert node.type == DesignNodeType.FRAME
+        assert node.width == 600
+        assert node.height == 100
+
+    def test_parse_node_depth_limit(self, figma_service: FigmaDesignSyncService) -> None:
+        node_data = {
+            "id": "0:1",
+            "type": "CANVAS",
+            "name": "Page",
+            "children": [
+                {
+                    "id": "1:1",
+                    "type": "FRAME",
+                    "name": "Frame",
+                    "children": [{"id": "2:1", "type": "TEXT", "name": "Deep"}],
+                }
+            ],
+        }
+        # depth 1: should include Frame but not Deep
+        node = figma_service._parse_node(node_data, current_depth=0, max_depth=1)
+        assert len(node.children) == 1
+        assert node.children[0].name == "Frame"
+        assert node.children[0].children == []  # cut off at depth
+
+    def test_parse_node_unlimited_depth(self, figma_service: FigmaDesignSyncService) -> None:
+        node_data = {
+            "id": "0:1",
+            "type": "CANVAS",
+            "name": "Page",
+            "children": [
+                {
+                    "id": "1:1",
+                    "type": "FRAME",
+                    "name": "Frame",
+                    "children": [{"id": "2:1", "type": "TEXT", "name": "Deep", "children": []}],
+                }
+            ],
+        }
+        node = figma_service._parse_node(node_data, current_depth=0, max_depth=None)
+        assert node.children[0].children[0].name == "Deep"
+
+    def test_unknown_node_type(self, figma_service: FigmaDesignSyncService) -> None:
+        node_data = {"id": "1:1", "type": "SOME_NEW_TYPE", "name": "New", "children": []}
+        node = figma_service._parse_node(node_data, current_depth=0, max_depth=2)
+        assert node.type == DesignNodeType.OTHER
+
+    @pytest.mark.asyncio
+    async def test_get_file_structure_api_call(
+        self, figma_service: FigmaDesignSyncService, sample_figma_document: dict[str, Any]
+    ) -> None:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = sample_figma_document
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            structure = await figma_service.get_file_structure("abc123", "token")
+
+        assert structure.file_name == "My Design File"
+        assert len(structure.pages) == 2
+        assert structure.pages[0].name == "Page 1"
+        assert structure.pages[0].type == DesignNodeType.PAGE
+
+
+# ── Figma Provider: Components ──
+
+
+class TestFigmaComponents:
+    @pytest.mark.asyncio
+    async def test_list_components(self) -> None:
+        service = FigmaDesignSyncService()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "meta": {
+                "components": [
+                    {
+                        "node_id": "1:1",
+                        "name": "Button/Primary",
+                        "description": "Primary action button",
+                        "thumbnail_url": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/thumb.png",
+                        "containing_frame": {"pageName": "Components"},
+                    },
+                    {
+                        "node_id": "2:1",
+                        "name": "Card/Default",
+                        "description": "",
+                        "containing_frame": {"pageName": "Components"},
+                    },
+                ]
+            }
+        }
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            components = await service.list_components("abc123", "token")
+
+        assert len(components) == 2
+        assert components[0].name == "Button/Primary"
+        assert components[0].thumbnail_url is not None
+        assert components[1].thumbnail_url is None
+        assert components[0].containing_page == "Components"
+
+
+# ── Figma Provider: Image Export ──
+
+
+class TestFigmaImageExport:
+    @pytest.mark.asyncio
+    async def test_export_images_basic(self) -> None:
+        service = FigmaDesignSyncService()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "images": {
+                "1:1": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/1.png",
+                "1:2": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/2.png",
+            }
+        }
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            images = await service.export_images("abc123", "token", ["1:1", "1:2"])
+
+        assert len(images) == 2
+        assert images[0].format == "png"
+        assert images[0].expires_at is not None
+
+    @pytest.mark.asyncio
+    async def test_export_images_empty_list(self) -> None:
+        service = FigmaDesignSyncService()
+        images = await service.export_images("abc123", "token", [])
+        assert images == []
+
+    @pytest.mark.asyncio
+    async def test_export_images_invalid_format(self) -> None:
+        service = FigmaDesignSyncService()
+        with pytest.raises(SyncFailedError, match="Invalid export format"):
+            await service.export_images("abc123", "token", ["1:1"], format="bmp")
+
+    @pytest.mark.asyncio
+    async def test_export_images_null_url_skipped(self) -> None:
+        """Figma returns null URLs for nodes it can't render."""
+        service = FigmaDesignSyncService()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "images": {
+                "1:1": "https://cdn.figma.com/img/1.png",
+                "1:2": None,  # Failed to render
+            }
+        }
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            images = await service.export_images("abc123", "token", ["1:1", "1:2"])
+
+        assert len(images) == 1  # null URL skipped
+        assert images[0].node_id == "1:1"
+
+
+# ── Updated Stub Tests ──
+
+
+class TestStubProvidersNewMethods:
+    @pytest.mark.asyncio
+    async def test_sketch_file_structure(self) -> None:
+        from app.design_sync.sketch.service import SketchDesignSyncService
+
+        svc = SketchDesignSyncService()
+        structure = await svc.get_file_structure("ref", "token")
+        assert structure.file_name == ""
+        assert structure.pages == []
+
+    @pytest.mark.asyncio
+    async def test_sketch_list_components(self) -> None:
+        from app.design_sync.sketch.service import SketchDesignSyncService
+
+        svc = SketchDesignSyncService()
+        assert await svc.list_components("ref", "token") == []
+
+    @pytest.mark.asyncio
+    async def test_sketch_export_images(self) -> None:
+        from app.design_sync.sketch.service import SketchDesignSyncService
+
+        svc = SketchDesignSyncService()
+        assert await svc.export_images("ref", "token", ["1:1"]) == []
+
+    @pytest.mark.asyncio
+    async def test_canva_file_structure(self) -> None:
+        from app.design_sync.canva.service import CanvaDesignSyncService
+
+        svc = CanvaDesignSyncService()
+        structure = await svc.get_file_structure("ref", "token")
+        assert structure.file_name == ""
+        assert structure.pages == []
+
+    @pytest.mark.asyncio
+    async def test_canva_list_components(self) -> None:
+        from app.design_sync.canva.service import CanvaDesignSyncService
+
+        svc = CanvaDesignSyncService()
+        assert await svc.list_components("ref", "token") == []
+
+    @pytest.mark.asyncio
+    async def test_canva_export_images(self) -> None:
+        from app.design_sync.canva.service import CanvaDesignSyncService
+
+        svc = CanvaDesignSyncService()
+        assert await svc.export_images("ref", "token", ["1:1"]) == []
+
+
+# ── Schema Tests for New Responses ──
+
+
+class TestNewSchemas:
+    def test_design_node_response_recursive(self) -> None:
+        from app.design_sync.schemas import DesignNodeResponse
+
+        node = DesignNodeResponse(
+            id="1:1",
+            name="Frame",
+            type="FRAME",
+            children=[
+                DesignNodeResponse(id="2:1", name="Text", type="TEXT", children=[]),
+            ],
+            width=600,
+            height=100,
+        )
+        assert len(node.children) == 1
+        assert node.children[0].name == "Text"
+
+    def test_export_image_request_validation(self) -> None:
+        from app.design_sync.schemas import ExportImageRequest
+
+        req = ExportImageRequest(connection_id=1, node_ids=["1:1"], format="svg", scale=1.0)
+        assert req.format == "svg"
+
+        with pytest.raises(ValidationError):
+            ExportImageRequest(connection_id=1, node_ids=["1:1"], format="bmp")
+
+        with pytest.raises(ValidationError):
+            ExportImageRequest(connection_id=1, node_ids=[], format="png")  # min_length=1

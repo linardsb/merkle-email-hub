@@ -114,3 +114,80 @@ class DesignTokensResponse(BaseModel):
     typography: list[DesignTypographyResponse]
     spacing: list[DesignSpacingResponse]
     extracted_at: datetime.datetime
+
+
+# ── File Structure Responses ──
+
+
+class DesignNodeResponse(BaseModel):
+    """A node in the design file tree."""
+
+    id: str
+    name: str
+    type: str
+    children: list["DesignNodeResponse"] = Field(default_factory=list)
+    width: float | None = None
+    height: float | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+DesignNodeResponse.model_rebuild()
+
+
+class FileStructureResponse(BaseModel):
+    """Design file structure response."""
+
+    connection_id: int
+    file_name: str
+    pages: list[DesignNodeResponse]
+
+
+# ── Component Responses ──
+
+
+class DesignComponentResponse(BaseModel):
+    """A reusable design component."""
+
+    component_id: str
+    name: str
+    description: str = ""
+    thumbnail_url: str | None = None
+    containing_page: str | None = None
+
+
+class ComponentListResponse(BaseModel):
+    """List of design components."""
+
+    connection_id: int
+    components: list[DesignComponentResponse]
+    total: int
+
+
+# ── Image Export ──
+
+
+class ExportImageRequest(BaseModel):
+    """Request to export design nodes as images."""
+
+    connection_id: int
+    node_ids: list[str] = Field(..., min_length=1, max_length=500, description="Node IDs to export")
+    format: str = Field(default="png", pattern=r"^(png|jpg|svg|pdf)$")
+    scale: float = Field(default=2.0, ge=0.01, le=4.0)
+
+
+class ExportedImageResponse(BaseModel):
+    """An exported image."""
+
+    node_id: str
+    url: str
+    format: str
+    expires_at: datetime.datetime | None = None
+
+
+class ImageExportResponse(BaseModel):
+    """Image export result."""
+
+    connection_id: int
+    images: list[ExportedImageResponse]
+    total: int

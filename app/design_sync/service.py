@@ -18,15 +18,21 @@ from app.design_sync.exceptions import (
     UnsupportedProviderError,
 )
 from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
-from app.design_sync.protocol import DesignSyncProvider
+from app.design_sync.protocol import DesignNode, DesignSyncProvider
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
+    ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionResponse,
     DesignColorResponse,
+    DesignComponentResponse,
+    DesignNodeResponse,
     DesignSpacingResponse,
     DesignTokensResponse,
     DesignTypographyResponse,
+    ExportedImageResponse,
+    FileStructureResponse,
+    ImageExportResponse,
 )
 from app.design_sync.sketch.service import SketchDesignSyncService
 from app.projects.service import ProjectService
@@ -229,6 +235,102 @@ class DesignSyncService:
                 for s in spacing_list
             ],
             extracted_at=snapshot.extracted_at,
+        )
+
+    # ── Phase 12.1: File Structure, Components, Image Export ──
+
+    async def get_file_structure(
+        self, connection_id: int, user: User, *, depth: int | None = 2
+    ) -> FileStructureResponse:
+        """Get the file structure for a connection."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        structure = await provider.get_file_structure(conn.file_ref, access_token, depth=depth)
+
+        return FileStructureResponse(
+            connection_id=connection_id,
+            file_name=structure.file_name,
+            pages=[self._node_to_response(p) for p in structure.pages],
+        )
+
+    def _node_to_response(self, node: DesignNode) -> DesignNodeResponse:
+        """Recursively convert protocol DesignNode to response schema."""
+        return DesignNodeResponse(
+            id=node.id,
+            name=node.name,
+            type=str(node.type),
+            children=[self._node_to_response(c) for c in node.children],
+            width=node.width,
+            height=node.height,
+        )
+
+    async def list_components(self, connection_id: int, user: User) -> ComponentListResponse:
+        """List components for a connection."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        components = await provider.list_components(conn.file_ref, access_token)
+
+        return ComponentListResponse(
+            connection_id=connection_id,
+            components=[
+                DesignComponentResponse(
+                    component_id=c.component_id,
+                    name=c.name,
+                    description=c.description,
+                    thumbnail_url=c.thumbnail_url,
+                    containing_page=c.containing_page,
+                )
+                for c in components
+            ],
+            total=len(components),
+        )
+
+    async def export_images(
+        self,
+        connection_id: int,
+        user: User,
+        node_ids: list[str],
+        *,
+        format: str = "png",
+        scale: float = 2.0,
+    ) -> ImageExportResponse:
+        """Export images for nodes in a connection."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        images = await provider.export_images(
+            conn.file_ref, access_token, node_ids, format=format, scale=scale
+        )
+
+        return ImageExportResponse(
+            connection_id=connection_id,
+            images=[
+                ExportedImageResponse(
+                    node_id=img.node_id,
+                    url=img.url,
+                    format=img.format,
+                    expires_at=img.expires_at,
+                )
+                for img in images
+            ],
+            total=len(images),
         )
 
     # ── Helpers ──

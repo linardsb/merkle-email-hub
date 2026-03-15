@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 import httpx
@@ -10,6 +12,11 @@ import httpx
 from app.core.logging import get_logger
 from app.design_sync.exceptions import SyncFailedError
 from app.design_sync.protocol import (
+    DesignComponent,
+    DesignFileStructure,
+    DesignNode,
+    DesignNodeType,
+    ExportedImage,
     ExtractedColor,
     ExtractedSpacing,
     ExtractedTokens,
@@ -21,6 +28,24 @@ logger = get_logger(__name__)
 _FIGMA_FILE_KEY_RE = re.compile(r"figma\.com/(?:design|file)/([a-zA-Z0-9]+)")
 _FIGMA_API = "https://api.figma.com"
 _TIMEOUT = 30.0
+
+_FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
+    "DOCUMENT": DesignNodeType.OTHER,
+    "CANVAS": DesignNodeType.PAGE,
+    "FRAME": DesignNodeType.FRAME,
+    "GROUP": DesignNodeType.GROUP,
+    "COMPONENT": DesignNodeType.COMPONENT,
+    "COMPONENT_SET": DesignNodeType.COMPONENT,
+    "INSTANCE": DesignNodeType.INSTANCE,
+    "TEXT": DesignNodeType.TEXT,
+    "RECTANGLE": DesignNodeType.VECTOR,
+    "ELLIPSE": DesignNodeType.VECTOR,
+    "LINE": DesignNodeType.VECTOR,
+    "VECTOR": DesignNodeType.VECTOR,
+    "BOOLEAN_OPERATION": DesignNodeType.VECTOR,
+    "STAR": DesignNodeType.VECTOR,
+    "REGULAR_POLYGON": DesignNodeType.VECTOR,
+}
 
 
 def extract_file_key(url: str) -> str:
@@ -215,3 +240,200 @@ class FigmaDesignSyncService:
             if results:
                 return results
         return results
+
+    # ── Phase 12.1: File Structure, Components, Image Export ──
+
+    async def get_file_structure(
+        self, file_ref: str, access_token: str, *, depth: int | None = 2
+    ) -> DesignFileStructure:
+        """Fetch and parse Figma file structure into a normalised tree."""
+        params: dict[str, Any] = {}
+        if depth is not None:
+            # Figma depth param: 1=pages only, 2=pages+frames, etc.
+            # We add 1 because Figma counts from the DOCUMENT root
+            params["depth"] = depth + 1
+
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(
+                f"{_FIGMA_API}/v1/files/{file_ref}",
+                headers={"X-Figma-Token": access_token},
+                params=params,
+            )
+        if resp.status_code == 403:
+            raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
+        if resp.status_code == 404:
+            raise SyncFailedError("Figma file not found. Check the file URL.")
+        if resp.status_code != 200:
+            raise SyncFailedError(f"Figma API returned status {resp.status_code}")
+
+        data: dict[str, Any] = resp.json()
+        file_name = str(data.get("name", "Untitled"))
+        document = data.get("document", {})
+        pages: list[DesignNode] = []
+
+        max_depth = depth  # None means unlimited
+        for page_data in document.get("children", []):
+            if isinstance(page_data, dict):
+                pages.append(self._parse_node(page_data, current_depth=0, max_depth=max_depth))
+
+        logger.info(
+            "design_sync.figma.file_structure_fetched",
+            file_ref=file_ref,
+            pages=len(pages),
+        )
+
+        return DesignFileStructure(file_name=file_name, pages=pages)
+
+    def _parse_node(
+        self,
+        node_data: dict[str, Any],
+        current_depth: int,
+        max_depth: int | None,
+    ) -> DesignNode:
+        """Recursively parse a Figma node into a DesignNode."""
+        raw_type = str(node_data.get("type", "UNKNOWN"))
+        node_type = _FIGMA_NODE_TYPE_MAP.get(raw_type, DesignNodeType.OTHER)
+
+        # Extract dimensions from absoluteBoundingBox if present
+        bbox = node_data.get("absoluteBoundingBox")
+        width: float | None = None
+        height: float | None = None
+        if isinstance(bbox, dict):
+            width = bbox.get("width")
+            height = bbox.get("height")
+
+        children: list[DesignNode] = []
+        # Only recurse if we haven't hit the depth limit
+        if max_depth is None or current_depth < max_depth:
+            for child_data in node_data.get("children", []):
+                if isinstance(child_data, dict):
+                    children.append(self._parse_node(child_data, current_depth + 1, max_depth))
+
+        return DesignNode(
+            id=str(node_data.get("id", "")),
+            name=str(node_data.get("name", "")),
+            type=node_type,
+            children=children,
+            width=width,
+            height=height,
+        )
+
+    async def list_components(self, file_ref: str, access_token: str) -> list[DesignComponent]:
+        """Fetch published components from a Figma file."""
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(
+                f"{_FIGMA_API}/v1/files/{file_ref}/components",
+                headers={"X-Figma-Token": access_token},
+            )
+        if resp.status_code == 403:
+            raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
+        if resp.status_code == 404:
+            raise SyncFailedError("Figma file not found. Check the file URL.")
+        if resp.status_code != 200:
+            raise SyncFailedError(f"Figma components API returned {resp.status_code}")
+
+        data: dict[str, Any] = resp.json()
+        error = data.get("error")
+        if error:
+            raise SyncFailedError(f"Figma API error: {error}")
+
+        components: list[DesignComponent] = []
+        meta = data.get("meta", {})
+        raw_components = meta.get("components", [])
+
+        for comp in raw_components:
+            if not isinstance(comp, dict):
+                continue
+            components.append(
+                DesignComponent(
+                    component_id=str(comp.get("node_id", "")),
+                    name=str(comp.get("name", "")),
+                    description=str(comp.get("description", "")),
+                    thumbnail_url=comp.get("thumbnail_url"),
+                    containing_page=(comp.get("containing_frame") or {}).get("pageName"),
+                )
+            )
+
+        logger.info(
+            "design_sync.figma.components_listed",
+            file_ref=file_ref,
+            count=len(components),
+        )
+
+        return components
+
+    async def export_images(
+        self,
+        file_ref: str,
+        access_token: str,
+        node_ids: list[str],
+        *,
+        format: str = "png",
+        scale: float = 2.0,
+    ) -> list[ExportedImage]:
+        """Export Figma nodes as images, auto-batching in groups of 100."""
+        if not node_ids:
+            return []
+
+        # Validate format
+        valid_formats = {"png", "jpg", "svg", "pdf"}
+        if format not in valid_formats:
+            raise SyncFailedError(
+                f"Invalid export format '{format}'. Valid: {', '.join(sorted(valid_formats))}"
+            )
+
+        # Clamp scale to Figma's supported range
+        scale = max(0.01, min(scale, 4.0))
+
+        # Batch into groups of 100 (Figma API limit)
+        batches: list[list[str]] = [node_ids[i : i + 100] for i in range(0, len(node_ids), 100)]
+
+        headers = {"X-Figma-Token": access_token}
+        expires_at = datetime.now(tz=UTC) + timedelta(days=14)
+        all_images: list[ExportedImage] = []
+
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+
+            async def _fetch_batch(batch: list[str]) -> dict[str, Any]:
+                resp = await client.get(
+                    f"{_FIGMA_API}/v1/images/{file_ref}",
+                    headers=headers,
+                    params={
+                        "ids": ",".join(batch),
+                        "format": format,
+                        "scale": str(scale),
+                    },
+                )
+                if resp.status_code == 403:
+                    raise SyncFailedError("Figma access denied.")
+                if resp.status_code != 200:
+                    raise SyncFailedError(f"Figma images API returned {resp.status_code}")
+                result: dict[str, Any] = resp.json()
+                return result
+
+            results = await asyncio.gather(*[_fetch_batch(b) for b in batches])
+
+        for result in results:
+            images_map = result.get("images", {})
+            if not isinstance(images_map, dict):
+                continue
+            for nid, url in images_map.items():
+                if url is not None:
+                    all_images.append(
+                        ExportedImage(
+                            node_id=str(nid),
+                            url=str(url),
+                            format=format,
+                            expires_at=expires_at,
+                        )
+                    )
+
+        logger.info(
+            "design_sync.figma.images_exported",
+            file_ref=file_ref,
+            requested=len(node_ids),
+            exported=len(all_images),
+            format=format,
+        )
+
+        return all_images
