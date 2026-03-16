@@ -116,6 +116,11 @@ class AgentHandoff:
             confidence=self.confidence,
         )
 
+    def summary(self) -> str:
+        """Return a single-line summary string for decayed handoff history."""
+        conf = f" conf={self.confidence:.2f}" if self.confidence is not None else ""
+        return f"{self.agent_name}: {self.status.value}{conf}"
+
 
 @dataclass(frozen=True)
 class StructuredFailure:

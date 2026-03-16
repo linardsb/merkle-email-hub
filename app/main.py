@@ -133,9 +133,25 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("eval.production_judge_worker_start_failed", exc_info=True)
 
+    # Start checkpoint cleanup poller (daily, deletes old/completed checkpoints)
+    checkpoint_poller = None
+    if settings.blueprint.checkpoints_enabled:
+        try:
+            from app.ai.blueprints.checkpoint_cleanup import CheckpointCleanupPoller
+
+            checkpoint_poller = CheckpointCleanupPoller()
+            await checkpoint_poller.start()
+            logger.info("blueprint.checkpoint_cleanup_poller_started")
+        except Exception:
+            logger.warning("blueprint.checkpoint_cleanup_poller_start_failed", exc_info=True)
+
     yield
 
     # Shutdown
+
+    if checkpoint_poller is not None:
+        await checkpoint_poller.stop()
+        logger.info("blueprint.checkpoint_cleanup_poller_stopped")
 
     if judge_worker is not None:
         await judge_worker.stop()

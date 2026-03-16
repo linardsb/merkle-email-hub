@@ -5,6 +5,7 @@
 import json
 from typing import Any
 
+from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.outlook_fixer.mso_repair import repair_mso_issues
 from app.ai.agents.outlook_fixer.prompt import (
     build_system_prompt,
@@ -70,8 +71,9 @@ class OutlookFixerNode:
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
 
+        cache_hint = {"type": "ephemeral"} if context.iteration > 0 else None
         messages = [
-            Message(role="system", content=system_prompt),
+            Message(role="system", content=system_prompt, cache_control=cache_hint),
             Message(role="user", content=sanitized),
         ]
 
@@ -156,7 +158,7 @@ class OutlookFixerNode:
         user_message = (
             "Analyze this assembled email HTML for MSO/Outlook compatibility issues. "
             "Report issues but do NOT fix — golden templates handle MSO.\n\n"
-            f"HTML (first 8000 chars):\n{context.html[:8000]}\n\n"
+            f"HTML:\n{prepare_html_context(context.html)}\n\n"
             "Return JSON with: issues (array of {{issue_type, severity, location, recommendation}}), "
             "template_bug, composition_bug, overall_mso_safe, confidence, reasoning"
         )
@@ -249,7 +251,7 @@ class OutlookFixerNode:
         """Build user prompt from existing HTML with optional retry context."""
         parts = [
             "Fix the following email HTML for Outlook desktop compatibility:\n\n"
-            + context.html[:12000]
+            + prepare_html_context(context.html)
         ]
 
         if context.iteration > 0:

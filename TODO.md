@@ -457,16 +457,16 @@
 **Security:** All API calls via `authFetch`. No credentials displayed beyond hint. Sandboxed iframe preview (`sandbox=""`). Credential inputs use `type="password"` + `autocomplete="off"`.
 **Verify:** Create connection → browse remote templates → import one → verify in local templates. Push local template back → verify in mock ESP.
 
-### 13.11 Tests, SDK & Docker Integration
+### ~~13.11 Tests, SDK & Docker Integration~~ DONE
 **What:** Backend tests, SDK regeneration, Docker compose integration, and Makefile target.
 **Implementation:**
-- `app/connectors/tests/test_sync_service.py` — connection CRUD, encryption, template ops, BOLA, errors
-- `app/connectors/tests/test_sync_protocol.py` — Protocol conformance for all 4 providers
-- `app/connectors/tests/test_sync_routes.py` — route-level tests with auth/rate-limit
-- `docker-compose.yml` — add `mock-esp` service (port 3002, healthcheck, resource limits)
-- `Makefile` — add `dev-mock-esp` target
-- SDK regeneration (`make sdk`) to include new sync endpoints
-**Verify:** `make check` passes (lint + types + tests + security). `docker compose up` starts mock-esp healthy. SDK includes sync types.
+- `app/connectors/tests/test_sync_service.py` — connection CRUD, encryption, template ops, BOLA, errors (26 tests)
+- `app/connectors/tests/test_sync_protocol.py` — Protocol conformance for all 4 providers + Braze provider unit tests (41 tests)
+- `app/connectors/tests/test_sync_routes.py` — route-level tests with auth/rate-limit for all 8 endpoints (26 tests)
+- `docker-compose.yml` — `mock-esp` service already added in 13.1 (port 3002, healthcheck, resource limits)
+- `Makefile` — `dev-mock-esp` target already added in 13.1
+- SDK regenerated (`make sdk-local`) — includes `EspConnectionCreate`, `EspConnectionResponse`, `EspTemplate`, `EspTemplateList` types
+**Verify:** 93 new tests passing. `make check-fe` green. SDK includes sync types. 111 total connectors tests.
 
 ---
 
@@ -494,7 +494,7 @@
 - Alembic migration for `blueprint_checkpoints` table
 **Security:** `state_json` contains generated HTML and brief text (already in memory during execution). No credentials stored. JSONB column validated by Pydantic before write. RLS scoped by project (via join through future `project_id` column if needed).
 **Verify:** Unit tests: `serialize_run` → `restore_run` round-trips correctly. `save` + `load_latest` returns most recent checkpoint. `list_checkpoints` returns ordered history. `delete_run` removes all checkpoints for a run. `make test` passes. `make types` clean.
-- [ ] 14.1 Checkpoint storage layer
+- [x] ~~14.1 Checkpoint storage layer~~ DONE — `CheckpointStore` protocol + `PostgresCheckpointStore`, `CheckpointData` frozen dataclass, `serialize_run`/`restore_run` round-trip, `BlueprintCheckpoint` SQLAlchemy model with JSONB + composite index, Alembic migration, `checkpoints_enabled` config flag, 9 unit tests
 
 ### 14.2 Engine Integration — Save Checkpoints After Each Node
 **What:** Update `BlueprintEngine.run()` to optionally save a checkpoint after each successful node completion. The checkpoint captures the full `BlueprintRun` state at that point, enabling resume from any node boundary.
@@ -523,7 +523,7 @@
 - Add `checkpoints_enabled: bool = False` to `BlueprintConfig` in `app/core/config.py`
 **Security:** No new endpoints. Checkpoint writes use existing DB session. No user input in checkpoint data.
 **Verify:** Enable checkpoints, run a blueprint end-to-end. Verify: checkpoint row created for each successful node. Disable checkpoints — no rows created (backward compatible). Checkpoint write failure doesn't crash the run. `make test` passes.
-- [ ] 14.2 Engine integration — save checkpoints
+- [x] ~~14.2 Engine integration — save checkpoints~~ DONE — `checkpoint_store` param on `BlueprintEngine.__init__`, `_save_checkpoint()` fire-and-forget helper (exceptions logged, never crash pipeline), called after each node in `run()`, `BlueprintService` conditionally creates `PostgresCheckpointStore` when `settings.blueprint.checkpoints_enabled`, checkpoint count in response, 4 engine integration tests (13 total checkpoint tests)
 
 ### 14.3 Engine Integration — Resume From Checkpoint
 **What:** Add `BlueprintEngine.resume(run_id: str)` method that loads the latest checkpoint and continues execution from the next node in the graph.
@@ -585,7 +585,7 @@
 - Update `BlueprintRunResponse` — add `resumed_from: str | None = None` field (node name if this was a resumed run)
 **Security:** Cleanup runs on the server, not user-triggered (except via explicit API call). Checkpoint listing is read-only. No new write paths.
 **Verify:** Create 10 blueprint runs with checkpoints. Run cleanup with `max_age_days=0`. Verify all deleted. Run cleanup with `max_age_days=30`. Verify none deleted. Completed run cleanup removes only completed runs. `make test` passes. `make types` clean.
-- [ ] 14.5 Checkpoint cleanup & observability
+- [x] ~~14.5 Checkpoint cleanup & observability~~ DONE — `checkpoint_cleanup.py` with `cleanup_old_checkpoints()` + `cleanup_completed_runs()` + `CheckpointCleanupPoller` (24h DataPoller), structured logging with `size_bytes`/`duration_ms`/`age_seconds`, `GET /runs/{run_id}/checkpoints` endpoint (admin/developer auth + rate limiting), `CheckpointResponse`/`CheckpointListResponse` schemas, `checkpoint_count` + `resumed_from` fields on `BlueprintRunResponse`, poller registered in `main.py` startup/shutdown, 13 new tests
 
 ### 14.6 Frontend — Run History & Resume UI
 **What:** Frontend components for viewing blueprint run history, inspecting checkpoints, and resuming failed runs.

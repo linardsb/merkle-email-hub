@@ -174,6 +174,8 @@ class BlueprintConfig(BaseModel):
 
     daily_token_cap: int = 500_000  # Max tokens per user per day across all blueprint runs
     judge_on_retry: bool = False  # When True, run LLM judge on recovery retries (iteration > 0)
+    checkpoints_enabled: bool = False  # Opt-in checkpoint persistence (backward compatible)
+    checkpoint_retention_days: int = 7  # Auto-cleanup age limit for old checkpoints
 
 
 class EvalConfig(BaseModel):

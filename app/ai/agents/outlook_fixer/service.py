@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from app.ai.agents.base import CONFIDENCE_INSTRUCTION, BaseAgentService
+from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.outlook_fixer.mso_repair import (
     format_validation_errors,
     repair_mso_issues,
@@ -256,11 +257,12 @@ class OutlookFixerService(BaseAgentService):
         error_context = format_validation_errors(mso_result)
         retry_message = (
             f"Your previous output has MSO validation errors. Fix them in this HTML:\n\n"
-            f"{current_html[:12000]}\n\n{error_context}"
+            f"{prepare_html_context(current_html)}\n\n{error_context}"
         )
 
+        # Retry path — mark system prompt for caching
         messages = [
-            Message(role="system", content=system_prompt),
+            Message(role="system", content=system_prompt, cache_control={"type": "ephemeral"}),
             Message(role="user", content=sanitize_prompt(retry_message)),
         ]
 

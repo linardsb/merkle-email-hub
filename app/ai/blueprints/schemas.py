@@ -66,6 +66,24 @@ class InlineJudgeVerdictResponse(BaseModel):
     criteria_results: list[InlineJudgeCriterionResponse]
 
 
+class CheckpointResponse(BaseModel):
+    """A single checkpoint entry for a blueprint run."""
+
+    node_name: str
+    node_index: int
+    status: str
+    html_hash: str
+    created_at: datetime
+
+
+class CheckpointListResponse(BaseModel):
+    """List of checkpoints for a blueprint run."""
+
+    run_id: str
+    checkpoints: list[CheckpointResponse]
+    count: int
+
+
 class BlueprintRunResponse(BaseModel):
     """Response from a completed blueprint run."""
 
@@ -84,6 +102,8 @@ class BlueprintRunResponse(BaseModel):
         default_factory=lambda: list[RoutingDecisionResponse]()
     )
     judge_verdict: InlineJudgeVerdictResponse | None = None
+    checkpoint_count: int = 0
+    resumed_from: str | None = None
 
 
 class FailurePatternResponse(BaseModel):

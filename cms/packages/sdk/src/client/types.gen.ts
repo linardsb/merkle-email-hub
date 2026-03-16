@@ -759,6 +759,77 @@ export type DownloadAssetsResponse = {
 };
 
 /**
+ * Request to create an ESP connection.
+ */
+export type EspConnectionCreate = {
+    esp_type: string;
+    name: string;
+    project_id: number;
+    /**
+     * ESP-specific credentials (encrypted at rest)
+     */
+    credentials: {
+        [key: string]: string;
+    };
+};
+
+/**
+ * Response for an ESP connection.
+ */
+export type EspConnectionResponse = {
+    id: number;
+    esp_type: string;
+    name: string;
+    status: string;
+    credentials_hint: string;
+    project_id: number;
+    project_name?: string | null;
+    last_synced_at?: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Request to import a template from an ESP into Hub.
+ */
+export type EspImportRequest = {
+    /**
+     * Remote ESP template ID
+     */
+    template_id: string;
+};
+
+/**
+ * Request to push a local Hub template to an ESP.
+ */
+export type EspPushRequest = {
+    /**
+     * Local Hub template ID
+     */
+    template_id: number;
+};
+
+/**
+ * A template stored in an external ESP.
+ */
+export type EspTemplate = {
+    id: string;
+    name: string;
+    html: string;
+    esp_type: string;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Paginated list of ESP templates.
+ */
+export type EspTemplateList = {
+    templates: Array<EspTemplate>;
+    count: number;
+};
+
+/**
  * Public email client metadata from ontology.
  */
 export type EmailClientResponse = {
@@ -3793,6 +3864,212 @@ export type ExportEmailApiV1ConnectorsExportPostResponses = {
 };
 
 export type ExportEmailApiV1ConnectorsExportPostResponse = ExportEmailApiV1ConnectorsExportPostResponses[keyof ExportEmailApiV1ConnectorsExportPostResponses];
+
+export type ListConnectionsApiV1ConnectorsSyncConnectionsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connectors/sync/connections';
+};
+
+export type ListConnectionsApiV1ConnectorsSyncConnectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<EspConnectionResponse>;
+};
+
+export type ListConnectionsApiV1ConnectorsSyncConnectionsGetResponse = ListConnectionsApiV1ConnectorsSyncConnectionsGetResponses[keyof ListConnectionsApiV1ConnectorsSyncConnectionsGetResponses];
+
+export type CreateConnectionApiV1ConnectorsSyncConnectionsPostData = {
+    body: EspConnectionCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connectors/sync/connections';
+};
+
+export type CreateConnectionApiV1ConnectorsSyncConnectionsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateConnectionApiV1ConnectorsSyncConnectionsPostError = CreateConnectionApiV1ConnectorsSyncConnectionsPostErrors[keyof CreateConnectionApiV1ConnectorsSyncConnectionsPostErrors];
+
+export type CreateConnectionApiV1ConnectorsSyncConnectionsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: EspConnectionResponse;
+};
+
+export type CreateConnectionApiV1ConnectorsSyncConnectionsPostResponse = CreateConnectionApiV1ConnectorsSyncConnectionsPostResponses[keyof CreateConnectionApiV1ConnectorsSyncConnectionsPostResponses];
+
+export type DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/connectors/sync/connections/{connection_id}';
+};
+
+export type DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteError = DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteErrors[keyof DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteErrors];
+
+export type DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteResponse = DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteResponses[keyof DeleteConnectionApiV1ConnectorsSyncConnectionsConnectionIdDeleteResponses];
+
+export type GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/connectors/sync/connections/{connection_id}';
+};
+
+export type GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetError = GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetErrors[keyof GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetErrors];
+
+export type GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: EspConnectionResponse;
+};
+
+export type GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetResponse = GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetResponses[keyof GetConnectionApiV1ConnectorsSyncConnectionsConnectionIdGetResponses];
+
+export type ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/connectors/sync/connections/{connection_id}/templates';
+};
+
+export type ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetError = ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetErrors[keyof ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetErrors];
+
+export type ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: EspTemplateList;
+};
+
+export type ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetResponse = ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetResponses[keyof ListRemoteTemplatesApiV1ConnectorsSyncConnectionsConnectionIdTemplatesGetResponses];
+
+export type GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+        template_id: string;
+    };
+    query?: never;
+    url: '/api/v1/connectors/sync/connections/{connection_id}/templates/{template_id}';
+};
+
+export type GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetError = GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetErrors[keyof GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetErrors];
+
+export type GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: EspTemplate;
+};
+
+export type GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetResponse = GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetResponses[keyof GetRemoteTemplateApiV1ConnectorsSyncConnectionsConnectionIdTemplatesTemplateIdGetResponses];
+
+export type ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostData = {
+    body: EspImportRequest;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/connectors/sync/connections/{connection_id}/import';
+};
+
+export type ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostError = ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostErrors[keyof ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostErrors];
+
+export type ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: {
+        [key: string]: number;
+    };
+};
+
+export type ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostResponse = ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostResponses[keyof ImportTemplateApiV1ConnectorsSyncConnectionsConnectionIdImportPostResponses];
+
+export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostData = {
+    body: EspPushRequest;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/connectors/sync/connections/{connection_id}/push';
+};
+
+export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostError = PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostErrors[keyof PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostErrors];
+
+export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: EspTemplate;
+};
+
+export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponse = PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponses[keyof PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponses];
 
 export type ListConnectionsApiV1DesignSyncConnectionsGetData = {
     body?: never;

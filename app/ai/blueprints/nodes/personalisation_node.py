@@ -5,6 +5,7 @@
 import json
 from typing import Any
 
+from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.personalisation.prompt import (
     build_system_prompt,
     detect_relevant_skills,
@@ -78,8 +79,9 @@ class PersonalisationNode:
         user_content = self._build_user_message(context, platform, requirements)
         sanitized = sanitize_prompt(user_content)
 
+        cache_hint = {"type": "ephemeral"} if context.iteration > 0 else None
         messages = [
-            Message(role="system", content=system_prompt),
+            Message(role="system", content=system_prompt, cache_control=cache_hint),
             Message(role="user", content=sanitized),
         ]
 
@@ -144,7 +146,7 @@ class PersonalisationNode:
         """Build user prompt from existing HTML with optional retry context."""
         parts = [
             f"Add {platform} personalisation to the following email HTML:\n\n"
-            + context.html[:12000]
+            + prepare_html_context(context.html)
         ]
 
         if requirements:

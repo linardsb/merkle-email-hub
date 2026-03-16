@@ -113,6 +113,13 @@ class BlueprintService:
                     exc_info=True,
                 )
 
+        # Wire checkpoint store (opt-in via config)
+        from app.ai.blueprints.checkpoint import CheckpointStore, PostgresCheckpointStore
+
+        checkpoint_store: CheckpointStore | None = None
+        if settings.blueprint.checkpoints_enabled and db is not None:
+            checkpoint_store = PostgresCheckpointStore(db)
+
         engine = BlueprintEngine(
             definition,
             component_resolver=component_resolver,
@@ -122,6 +129,7 @@ class BlueprintService:
             audience_profile=audience_profile,
             judge_on_retry=settings.blueprint.judge_on_retry,
             design_system=design_system,
+            checkpoint_store=checkpoint_store,
         )
 
         logger.info(
@@ -174,6 +182,25 @@ class BlueprintService:
                     run_id=bp_run.run_id,
                     exc_info=True,
                 )
+
+        # Count checkpoints for this run (non-blocking)
+        checkpoint_count = 0
+        if settings.blueprint.checkpoints_enabled and db is not None:
+            try:
+                from sqlalchemy import func as sa_func
+                from sqlalchemy import select as sa_select
+
+                from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
+
+                count_stmt = (
+                    sa_select(sa_func.count())
+                    .select_from(BlueprintCheckpoint)
+                    .where(BlueprintCheckpoint.run_id == bp_run.run_id)
+                )
+                count_result = await db.execute(count_stmt)
+                checkpoint_count = count_result.scalar_one()
+            except Exception:
+                logger.debug("blueprint.checkpoint_count_failed", extra={"run_id": bp_run.run_id})
 
         def _to_summary(h: AgentHandoff) -> HandoffSummary:
             return HandoffSummary(
@@ -240,6 +267,7 @@ class BlueprintService:
                 for d in bp_run.routing_decisions
             ],
             judge_verdict=judge_verdict_response,
+            checkpoint_count=checkpoint_count,
         )
 
 

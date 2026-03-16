@@ -16,8 +16,16 @@ import re
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
+    from app.ai.agents.scaffolder.pipeline_checkpoint import (
+        PassName,
+        PipelineCheckpointCallback,
+    )
     from app.projects.design_system import DesignSystem
 
+from app.ai.agents.scaffolder.pipeline_checkpoint import (
+    serialize_content_design_pass,
+    serialize_layout_pass,
+)
 from app.ai.agents.schemas.build_plan import (
     DesignTokens,
     EmailBuildPlan,
@@ -50,53 +58,121 @@ class ScaffolderPipeline:
         registry: TemplateRegistry | None = None,
         max_tokens: int = 4096,
         design_system: DesignSystem | None = None,
+        checkpoint_callback: PipelineCheckpointCallback | None = None,
+        run_id: str = "",
     ) -> None:
         self._provider = provider
         self._model = model
         self._registry = registry or get_template_registry()
         self._max_tokens = max_tokens
         self._design_system = design_system
+        self._checkpoint_cb = checkpoint_callback
+        self._run_id = run_id
 
     async def execute(
         self,
         brief: str,
         brand_config: dict[str, object] | None = None,
+        resume: bool = False,
     ) -> EmailBuildPlan:
         """Execute 3-pass pipeline. Returns complete EmailBuildPlan.
 
         Pass 1 (layout) must complete first — it determines which template
         and slots to fill. Passes 2 (content) and 3 (design) then run
         in parallel since they're independent.
+
+        When ``resume=True``, loads existing pass checkpoints and skips
+        completed passes (avoids re-running expensive LLM calls on retry).
         """
         brief = sanitize_prompt(brief)
 
-        # Pass 1: Layout selection (must complete first)
-        template_selection, section_decisions = await self._layout_pass(brief)
+        # Load existing checkpoints if resuming
+        cached_passes: dict[str, dict[str, Any]] = {}
+        if resume and self._checkpoint_cb is not None:
+            cached_passes = await self._load_pass_checkpoints()
 
-        # Resolve slot IDs from selected template
-        template = self._resolve_template_for_slots(template_selection)
-        slot_details: list[dict[str, object]] = (
-            [
-                {
-                    "slot_id": s.slot_id,
-                    "slot_type": s.slot_type,
-                    "max_chars": s.max_chars,
-                    "required": s.required,
-                }
-                for s in template.slots
-            ]
-            if template
-            else []
-        )
+        # Pass 1: Layout selection (must complete first)
+        if "layout" in cached_passes:
+            layout_data = cached_passes["layout"]
+            template_selection = TemplateSelection(
+                template_name=layout_data["template_name"],
+                reasoning=layout_data["reasoning"],
+                section_order=tuple(layout_data.get("section_order", ())),
+                fallback_template=layout_data.get("fallback_template"),
+            )
+            section_decisions = tuple(
+                SectionDecision(**sd) for sd in layout_data.get("section_decisions", [])
+            )
+            slot_details: list[dict[str, object]] = layout_data.get("slot_details", [])
+            logger.info("scaffolder.layout_pass_resumed", template=template_selection.template_name)
+        else:
+            template_selection, section_decisions = await self._layout_pass(brief)
+
+            # Resolve slot IDs from selected template
+            template = self._resolve_template_for_slots(template_selection)
+            slot_details = (
+                [
+                    {
+                        "slot_id": s.slot_id,
+                        "slot_type": s.slot_type,
+                        "max_chars": s.max_chars,
+                        "required": s.required,
+                    }
+                    for s in template.slots
+                ]
+                if template
+                else []
+            )
+            # Checkpoint after layout pass
+            await self._save_pass_checkpoint(
+                "layout",
+                0,
+                serialize_layout_pass(
+                    template_selection.template_name,
+                    template_selection.reasoning,
+                    template_selection.section_order,
+                    template_selection.fallback_template,
+                    section_decisions,
+                    slot_details,
+                ),
+            )
 
         # Pass 2 + 3 in parallel (independent of each other)
-        slot_fills, design_tokens = await asyncio.gather(
-            self._content_pass(brief, template_selection, slot_details),
-            self._design_pass(brief, brand_config),
-        )
+        if "content_design" in cached_passes:
+            cd_data = cached_passes["content_design"]
+            slot_fills: tuple[SlotFill, ...] = tuple(SlotFill(**sf) for sf in cd_data["slot_fills"])
+            design_tokens = DesignTokens(**cd_data["design_tokens"])
+            logger.info("scaffolder.content_design_pass_resumed")
+        else:
+            # Re-resolve template if layout was resumed from checkpoint
+            if "layout" in cached_passes:
+                template = self._resolve_template_for_slots(template_selection)
+                if not slot_details and template:
+                    slot_details = [
+                        {
+                            "slot_id": s.slot_id,
+                            "slot_type": s.slot_type,
+                            "max_chars": s.max_chars,
+                            "required": s.required,
+                        }
+                        for s in template.slots
+                    ]
+
+            slot_fills, design_tokens = await asyncio.gather(
+                self._content_pass(brief, template_selection, slot_details),
+                self._design_pass(brief, brand_config),
+            )
+            # Checkpoint after content+design pass
+            await self._save_pass_checkpoint(
+                "content_design",
+                1,
+                serialize_content_design_pass(slot_fills, design_tokens),
+            )
 
         # Merge locked fills from design system (footer, logo override LLM fills)
         if self._design_system is not None:
+            # Resolve template for slot IDs (may already be resolved above)
+            template = self._resolve_template_for_slots(template_selection)
             available_slots: set[str] = {s.slot_id for s in template.slots} if template else set()
             locked = self._build_locked_fills(self._design_system, available_slots)
             if locked:
@@ -127,6 +203,53 @@ class ScaffolderPipeline:
             passes=3,
         )
         return plan
+
+    async def _save_pass_checkpoint(
+        self,
+        pass_name: PassName,
+        pass_index: int,
+        data: dict[str, Any],
+    ) -> None:
+        """Fire-and-forget checkpoint save after a completed pass."""
+        if self._checkpoint_cb is None:
+            return
+        try:
+            from app.ai.agents.scaffolder.pipeline_checkpoint import PipelineCheckpoint
+
+            checkpoint = PipelineCheckpoint(
+                run_id=self._run_id,
+                pass_name=pass_name,
+                pass_index=pass_index,
+                data=data,
+            )
+            await self._checkpoint_cb.save_pass(checkpoint)
+            logger.info(
+                "scaffolder.pass_checkpoint_saved",
+                pass_name=pass_name,
+                run_id=self._run_id,
+            )
+        except Exception:
+            logger.warning(
+                "scaffolder.pass_checkpoint_failed",
+                pass_name=pass_name,
+                run_id=self._run_id,
+                exc_info=True,
+            )
+
+    async def _load_pass_checkpoints(self) -> dict[str, dict[str, Any]]:
+        """Load existing pass checkpoints for resume. Returns {pass_name: data}."""
+        if self._checkpoint_cb is None or not self._run_id:
+            return {}
+        try:
+            checkpoints = await self._checkpoint_cb.load_passes(self._run_id)
+            return {cp.pass_name: cp.data for cp in checkpoints}
+        except Exception:
+            logger.warning(
+                "scaffolder.pass_checkpoint_load_failed",
+                run_id=self._run_id,
+                exc_info=True,
+            )
+            return {}
 
     def _resolve_template_for_slots(self, selection: TemplateSelection) -> GoldenTemplate | None:
         """Resolve template to extract slot definitions for Pass 2.

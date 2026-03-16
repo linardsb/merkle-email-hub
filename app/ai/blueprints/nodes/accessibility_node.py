@@ -10,6 +10,7 @@ from app.ai.agents.accessibility.prompt import (
     build_system_prompt,
     detect_relevant_skills,
 )
+from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.scaffolder.plan_merger import merge_accessibility
 from app.ai.agents.schemas.accessibility_decisions import (
     AccessibilityDecisions,
@@ -74,8 +75,9 @@ class AccessibilityNode:
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
 
+        cache_hint = {"type": "ephemeral"} if context.iteration > 0 else None
         messages = [
-            Message(role="system", content=system_prompt),
+            Message(role="system", content=system_prompt, cache_control=cache_hint),
             Message(role="user", content=sanitized),
         ]
 
@@ -131,7 +133,7 @@ class AccessibilityNode:
         """Build user prompt from existing HTML with optional retry context."""
         parts = [
             "Audit and fix the following email HTML for WCAG 2.1 AA accessibility:\n\n"
-            + context.html[:12000]
+            + prepare_html_context(context.html)
         ]
 
         if context.iteration > 0:

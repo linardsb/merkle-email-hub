@@ -129,13 +129,23 @@ class ScaffolderNode:
 
         design_system = context.metadata.get("design_system")
 
+        # Wire pipeline checkpoint callback from engine context
+        checkpoint_cb = context.metadata.get("pipeline_checkpoint_cb")
+        run_id = context.metadata.get("run_id", "")
+
         pipeline = ScaffolderPipeline(
             provider,
             model,
             design_system=design_system,  # type: ignore[arg-type]
+            checkpoint_callback=checkpoint_cb,  # type: ignore[arg-type]
+            run_id=run_id,  # type: ignore[arg-type]
         )
+
+        # Resume from checkpoint on retry iterations
+        resume = context.iteration > 0 and checkpoint_cb is not None
+
         try:
-            plan = await pipeline.execute(context.brief)
+            plan = await pipeline.execute(context.brief, resume=resume)
         except Exception as exc:
             logger.error("blueprint.scaffolder_node.pipeline_failed", error=str(exc))
             return NodeResult(status="failed", error=f"Pipeline failed: {exc}")

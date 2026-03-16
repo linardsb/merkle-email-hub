@@ -79,11 +79,16 @@ class AnthropicProvider:
         import anthropic
 
         # Anthropic requires system message separate from messages
-        system_text = ""
-        chat_messages: list[dict[str, str]] = []
+        system_parts: list[dict[str, Any]] = []
+        has_cache_control = False
+        chat_messages: list[dict[str, Any]] = []
         for m in messages:
             if m.role == "system":
-                system_text += m.content + "\n"
+                block: dict[str, Any] = {"type": "text", "text": m.content}
+                if m.cache_control:
+                    block["cache_control"] = m.cache_control
+                    has_cache_control = True
+                system_parts.append(block)
             else:
                 chat_messages.append({"role": m.role, "content": m.content})
 
@@ -94,8 +99,13 @@ class AnthropicProvider:
             "messages": chat_messages,
             "max_tokens": int(str(kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS))),
         }
-        if system_text.strip():
-            api_kwargs["system"] = system_text.strip()
+        if system_parts:
+            if has_cache_control:
+                # Structured content blocks for cache control
+                api_kwargs["system"] = system_parts
+            else:
+                # Plain string for backward compatibility
+                api_kwargs["system"] = "\n".join(p["text"] for p in system_parts).strip()
 
         for key in ("temperature", "top_p", "stop_sequences"):
             if key in kwargs:
@@ -143,11 +153,20 @@ class AnthropicProvider:
             "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
         }
 
+        # Track cache metrics when available
+        cache_creation = getattr(response.usage, "cache_creation_input_tokens", 0) or 0
+        cache_read = getattr(response.usage, "cache_read_input_tokens", 0) or 0
+        if cache_creation or cache_read:
+            usage["cache_creation_input_tokens"] = cache_creation
+            usage["cache_read_input_tokens"] = cache_read
+
         logger.info(
             "ai.provider.completion_completed",
             model=response.model,
             content_length=len(content),
             usage=usage,
+            cache_read=cache_read,
+            cache_creation=cache_creation,
         )
 
         return CompletionResponse(
@@ -172,11 +191,16 @@ class AnthropicProvider:
         """
         import anthropic
 
-        system_text = ""
-        chat_messages: list[dict[str, str]] = []
+        system_parts_s: list[dict[str, Any]] = []
+        has_cache_s = False
+        chat_messages: list[dict[str, Any]] = []
         for m in messages:
             if m.role == "system":
-                system_text += m.content + "\n"
+                block_s: dict[str, Any] = {"type": "text", "text": m.content}
+                if m.cache_control:
+                    block_s["cache_control"] = m.cache_control
+                    has_cache_s = True
+                system_parts_s.append(block_s)
             else:
                 chat_messages.append({"role": m.role, "content": m.content})
 
@@ -186,8 +210,11 @@ class AnthropicProvider:
             "messages": chat_messages,
             "max_tokens": int(str(kwargs.get("max_tokens", _DEFAULT_MAX_TOKENS))),
         }
-        if system_text.strip():
-            api_kwargs["system"] = system_text.strip()
+        if system_parts_s:
+            if has_cache_s:
+                api_kwargs["system"] = system_parts_s
+            else:
+                api_kwargs["system"] = "\n".join(p["text"] for p in system_parts_s).strip()
 
         for key in ("temperature", "top_p", "stop_sequences"):
             if key in kwargs:

@@ -11,6 +11,7 @@ from app.ai.agents.code_reviewer.prompt import (
     detect_relevant_skills,
 )
 from app.ai.agents.code_reviewer.schemas import CodeReviewIssue, ReviewFocus
+from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.schemas.code_review_decisions import CodeReviewDecisions, PlanQualityIssue
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
@@ -79,8 +80,9 @@ class CodeReviewerNode:
         user_content = self._build_user_message(context, focus)
         sanitized = sanitize_prompt(user_content)
 
+        cache_hint = {"type": "ephemeral"} if context.iteration > 0 else None
         messages = [
-            Message(role="system", content=system_prompt),
+            Message(role="system", content=system_prompt, cache_control=cache_hint),
             Message(role="user", content=sanitized),
         ]
 
@@ -275,7 +277,8 @@ class CodeReviewerNode:
         """Build user prompt from existing HTML with optional retry context."""
         focus_label = "all areas" if focus == "all" else focus
         parts = [
-            f"Review the following email HTML. Focus on: {focus_label}.\n\n" + context.html[:12000]
+            f"Review the following email HTML. Focus on: {focus_label}.\n\n"
+            + prepare_html_context(context.html)
         ]
 
         if context.iteration > 0:

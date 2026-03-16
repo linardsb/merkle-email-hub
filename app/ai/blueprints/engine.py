@@ -8,12 +8,14 @@ from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
+    from app.ai.blueprints.checkpoint import CheckpointStore
     from app.knowledge.graph.protocols import GraphSearchResult
     from app.projects.design_system import DesignSystem
 
 from app.ai.agents.context_budget import (
     ECONOMY_MODE_THRESHOLD,
     compact_handoff_history,
+    get_budget,
     summarize_trajectory,
 )
 from app.ai.agents.evals.judges.schemas import JudgeVerdict
@@ -126,6 +128,7 @@ class BlueprintEngine:
         audience_profile: "AudienceProfile | None" = None,
         judge_on_retry: bool = False,
         design_system: "DesignSystem | None" = None,
+        checkpoint_store: "CheckpointStore | None" = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
@@ -135,6 +138,7 @@ class BlueprintEngine:
         self._audience_profile = audience_profile
         self._judge_on_retry = judge_on_retry
         self._design_system = design_system
+        self._checkpoint_store = checkpoint_store
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -383,6 +387,9 @@ class BlueprintEngine:
                 duration_ms=round(duration_ms, 1),
             )
 
+            # Fire-and-forget checkpoint after successful node
+            await self._save_checkpoint(run, current_node_name, len(run.progress) - 1)
+
             current_node_name = self._resolve_next_node(current_node_name, result)
 
         if run.status == "running":
@@ -395,6 +402,28 @@ class BlueprintEngine:
             qa_passed=run.qa_passed,
         )
         return run
+
+    async def _save_checkpoint(self, run: BlueprintRun, node_name: str, node_index: int) -> None:
+        """Fire-and-forget checkpoint save after a successful node."""
+        if self._checkpoint_store is None:
+            return
+        try:
+            from app.ai.blueprints.checkpoint import serialize_run
+
+            data = serialize_run(
+                run,
+                node_name=node_name,
+                node_index=node_index,
+                blueprint_name=self._definition.name,
+            )
+            await self._checkpoint_store.save(data)
+        except Exception:
+            logger.warning(
+                "blueprint.checkpoint_save_failed",
+                node=node_name,
+                run_id=run.run_id,
+                exc_info=True,
+            )
 
     def _resolve_next_node(self, current: str, result: NodeResult) -> str | None:
         """Determine the next node based on edges and result metadata."""
@@ -442,8 +471,12 @@ class BlueprintEngine:
             qa_failures=list(run.qa_failures),
         )
 
-        # Context budget: determine economy mode
+        # Context budget: determine economy mode + per-agent budget
         economy = run.remaining_budget < ECONOMY_MODE_THRESHOLD
+        agent_name = node.name.removesuffix("_node")
+        agent_budget = get_budget(agent_name)
+        context.metadata["agent_name"] = agent_name
+        context.metadata["agent_budget"] = agent_budget
 
         # Inject upstream handoff for agentic nodes (compact in economy mode)
         if run._last_handoff is not None:
@@ -451,8 +484,10 @@ class BlueprintEngine:
                 run._last_handoff.compact() if economy else run._last_handoff
             )
         if run._handoff_history:
+            # Enable decay tiers when history is long enough (Phase 3)
+            use_decay = len(run._handoff_history) >= 4
             context.metadata["handoff_history"] = compact_handoff_history(
-                run._handoff_history, economy=economy
+                run._handoff_history, economy=economy, decay_tiers=use_decay
             )
 
         # Inject structured QA failure details (compact in economy mode)
@@ -701,3 +736,59 @@ def _skip_summary(node_name: str, plan: RoutingPlan) -> str:
         if d.node_name == node_name and d.action.value == "skip":
             return f"Skipped: {d.reason}"
     return "Skipped: not relevant for target audience"
+
+
+def _make_pipeline_checkpoint_adapter(
+    store: "CheckpointStore",
+    blueprint_name: str,
+) -> object:
+    """Adapt blueprint CheckpointStore to PipelineCheckpointCallback interface.
+
+    Stores pipeline pass checkpoints in the same ``blueprint_checkpoints`` table
+    using compound node names (``scaffolder:<pass_name>``) and a +100 node_index
+    offset to avoid collision with node-level checkpoints.
+    """
+    import hashlib
+
+    from sqlalchemy import select
+
+    from app.ai.agents.scaffolder.pipeline_checkpoint import PipelineCheckpoint
+    from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
+
+    class _Adapter:
+        async def save_pass(self, checkpoint: PipelineCheckpoint) -> None:
+            data_dict = {"pipeline_pass": checkpoint.pass_name, "pipeline_data": checkpoint.data}
+            row = BlueprintCheckpoint(
+                run_id=checkpoint.run_id,
+                blueprint_name=blueprint_name,
+                node_name=f"scaffolder:{checkpoint.pass_name}",
+                node_index=checkpoint.pass_index + 100,
+                state_json=data_dict,
+                html_hash=hashlib.sha256(b"").hexdigest(),
+            )
+            store._db.add(row)  # type: ignore[attr-defined]
+            await store._db.commit()  # type: ignore[attr-defined]
+
+        async def load_passes(self, run_id: str) -> list[PipelineCheckpoint]:
+            stmt = (
+                select(BlueprintCheckpoint)
+                .where(
+                    BlueprintCheckpoint.run_id == run_id,
+                    BlueprintCheckpoint.node_name.like("scaffolder:%"),
+                    BlueprintCheckpoint.node_index >= 100,
+                )
+                .order_by(BlueprintCheckpoint.node_index.asc())
+            )
+            result = await store._db.execute(stmt)  # type: ignore[attr-defined]
+            rows = result.scalars().all()
+            return [
+                PipelineCheckpoint(
+                    run_id=run_id,
+                    pass_name=row.state_json["pipeline_pass"],
+                    pass_index=row.node_index - 100,
+                    data=row.state_json["pipeline_data"],
+                )
+                for row in rows
+            ]
+
+    return _Adapter()

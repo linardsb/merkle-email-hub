@@ -10,9 +10,12 @@ from sqlalchemy.dialects.postgresql import JSONB as JSONB_TYPE
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
+from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
 from app.ai.blueprints.schemas import (
     BlueprintRunRequest,
     BlueprintRunResponse,
+    CheckpointListResponse,
+    CheckpointResponse,
     FailurePatternListResponse,
     FailurePatternResponse,
     FailurePatternStats,
@@ -224,3 +227,47 @@ async def list_failure_patterns(
     )
 
     return FailurePatternListResponse(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.get(
+    "/runs/{run_id}/checkpoints",
+    response_model=CheckpointListResponse,
+    dependencies=[Depends(require_role("admin", "developer"))],
+)
+@limiter.limit("30/minute")
+async def list_run_checkpoints(
+    request: Request,  # noqa: ARG001
+    run_id: str,
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> CheckpointListResponse:
+    """List all checkpoints for a blueprint run, ordered by node_index."""
+    stmt = (
+        select(BlueprintCheckpoint)
+        .where(BlueprintCheckpoint.run_id == run_id)
+        .order_by(BlueprintCheckpoint.node_index.asc())
+    )
+    result = await db.execute(stmt)
+    rows = list(result.scalars().all())
+
+    items = [
+        CheckpointResponse(
+            node_name=row.node_name,
+            node_index=row.node_index,
+            status=row.state_json.get("status", "unknown"),
+            html_hash=row.html_hash,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
+
+    logger.info(
+        "blueprints.checkpoints_listed",
+        extra={"run_id": run_id, "count": len(items)},
+    )
+
+    return CheckpointListResponse(
+        run_id=run_id,
+        checkpoints=items,
+        count=len(items),
+    )

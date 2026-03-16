@@ -8,7 +8,7 @@ from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
 from app.ai.agents.personalisation.schemas import ESPPlatform
-from app.ai.agents.skill_loader import extract_skill_for_mode
+from app.ai.agents.skill_loader import extract_skill_for_mode, parse_skill_meta, should_load_skill
 from app.ai.agents.skill_override import get_override
 
 _SKILL_DIR = Path(__file__).parent
@@ -51,12 +51,18 @@ def _base_system_prompt(output_mode: str = "html") -> str:
     return f"{_PROMPT_PREFIX}\n{skill}"
 
 
-def build_system_prompt(relevant_skills: list[str], output_mode: str = "html") -> str:
+def build_system_prompt(
+    relevant_skills: list[str],
+    output_mode: str = "html",
+    *,
+    remaining_budget: int | None = None,
+) -> str:
     """Build system prompt with progressive disclosure of L3 reference files.
 
     Args:
         relevant_skills: List of skill keys to load.
         output_mode: "html" or "structured" — controls which output format section is included.
+        remaining_budget: Optional token budget for skill docs.
 
     Returns:
         Complete system prompt with relevant L3 files appended.
@@ -68,12 +74,19 @@ def build_system_prompt(relevant_skills: list[str], output_mode: str = "html") -
     if failure_warnings:
         parts.append(f"\n\n{failure_warnings}")
 
+    cumulative_cost = 0
     for skill_key in relevant_skills:
         filename = SKILL_FILES.get(skill_key)
         if filename:
-            content = _load_skill_file(filename)
-            if content:
-                parts.append(f"\n\n--- REFERENCE: {skill_key} ---\n\n{content}")
+            raw_content = _load_skill_file(filename)
+            if raw_content:
+                meta, body = parse_skill_meta(raw_content)
+                if remaining_budget is not None and not should_load_skill(
+                    meta, cumulative_cost, remaining_budget, remaining_budget
+                ):
+                    continue
+                cumulative_cost += meta.token_cost
+                parts.append(f"\n\n--- REFERENCE: {skill_key} ---\n\n{body}")
 
     return "\n".join(parts)
 

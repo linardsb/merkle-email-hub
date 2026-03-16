@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from app.ai.agents.dark_mode.prompt import build_system_prompt, detect_relevant_skills
+from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.scaffolder.plan_merger import merge_dark_mode
 from app.ai.agents.schemas.dark_mode_decisions import DarkColorOverride, DarkModeDecisions
 from app.ai.blueprints.component_context import detect_component_refs
@@ -64,8 +65,10 @@ class DarkModeNode:
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
 
+        # On retries, mark system prompt for caching to reduce cost
+        cache_hint = {"type": "ephemeral"} if context.iteration > 0 else None
         messages = [
-            Message(role="system", content=system_prompt),
+            Message(role="system", content=system_prompt, cache_control=cache_hint),
             Message(role="user", content=sanitized),
         ]
 
@@ -113,7 +116,8 @@ class DarkModeNode:
     def _build_user_message(self, context: NodeContext) -> str:
         """Build user prompt from existing HTML with optional retry context."""
         parts = [
-            "Enhance the following email HTML with dark mode support:\n\n" + context.html[:12000]
+            "Enhance the following email HTML with dark mode support:\n\n"
+            + prepare_html_context(context.html)
         ]
 
         if context.iteration > 0:

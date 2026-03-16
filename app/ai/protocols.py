@@ -26,10 +26,13 @@ class Message:
     Attributes:
         role: The role of the message sender ("user", "assistant", "system").
         content: The text content of the message.
+        cache_control: Optional cache control hint for providers that support it
+            (e.g. Anthropic ephemeral caching). Ignored by providers that don't support it.
     """
 
     role: str  # "user", "assistant", "system"
     content: str
+    cache_control: dict[str, str] | None = None
 
 
 @dataclass

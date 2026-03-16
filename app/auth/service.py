@@ -350,9 +350,7 @@ class AuthService:
 
         password = settings.auth.demo_user_password
         demo_users = [
-            ("admin@example.com", password, "Admin User", "admin"),
-            ("developer@example.com", password, "Developer User", "developer"),
-            ("viewer@example.com", password, "Viewer User", "viewer"),
+            ("linardsberzins@gmail.com", password, "Linards Berzins", "admin"),
         ]
 
         created: list[User] = []
