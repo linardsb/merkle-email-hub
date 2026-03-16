@@ -1,11 +1,12 @@
 """Taxi for Email API routes."""
 
+import math
 import uuid
 from datetime import UTC, datetime
 
 from auth import require_taxi_auth
 from database import DatabaseManager
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from taxi.schemas import (
     TemplateCreate,
@@ -28,9 +29,18 @@ def _get_db() -> DatabaseManager:
     response_model=TemplateListResponse,
     dependencies=[Depends(require_taxi_auth)],
 )
-async def list_templates() -> TemplateListResponse:
+async def list_templates(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+) -> TemplateListResponse:
     db = _get_db()
-    rows = await db.fetchall("SELECT * FROM taxi_templates ORDER BY created_at DESC")
+    count_row = await db.fetchone("SELECT COUNT(*) as total FROM taxi_templates")
+    total = count_row["total"] if count_row else 0
+    offset = (page - 1) * per_page
+    rows = await db.fetchall(
+        "SELECT * FROM taxi_templates ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (per_page, offset),
+    )
     items = [
         TemplateResponse(
             id=r["id"],
@@ -42,7 +52,10 @@ async def list_templates() -> TemplateListResponse:
         )
         for r in rows
     ]
-    return TemplateListResponse(count=len(items), templates=items)
+    total_pages = max(1, math.ceil(total / per_page))
+    return TemplateListResponse(
+        count=total, page=page, per_page=per_page, total_pages=total_pages, templates=items
+    )
 
 
 @router.get(
@@ -73,6 +86,14 @@ async def get_template(template_id: str) -> TemplateResponse:
 )
 async def create_template(body: TemplateCreate) -> TemplateResponse:
     db = _get_db()
+    existing = await db.fetchone("SELECT id FROM taxi_templates WHERE name = ?", (body.name,))
+    if existing:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=409,
+            content={"error": "Template with this name already exists", "code": "TAXI-409"},
+        )
     template_id = str(uuid.uuid4())
     now = datetime.now(UTC).isoformat()
 

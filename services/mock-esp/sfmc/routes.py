@@ -3,9 +3,9 @@
 import uuid
 from datetime import UTC, datetime
 
-from auth import issue_token, require_sfmc_auth
+from auth import get_token_ttl, issue_token, require_sfmc_auth
 from database import DatabaseManager
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from sfmc.schemas import (
     AssetCreate,
@@ -34,7 +34,7 @@ async def token_exchange(body: TokenRequest) -> TokenResponse:
             status_code=400, detail={"message": "Missing client_id or client_secret"}
         )
     access_token = issue_token(body.client_id)
-    return TokenResponse(access_token=access_token)
+    return TokenResponse(access_token=access_token, expires_in=get_token_ttl())
 
 
 @router.get(
@@ -42,9 +42,18 @@ async def token_exchange(body: TokenRequest) -> TokenResponse:
     response_model=AssetListResponse,
     dependencies=[Depends(require_sfmc_auth)],
 )
-async def list_assets() -> AssetListResponse:
+async def list_assets(
+    page: int = Query(1, alias="$page", ge=1),
+    page_size: int = Query(10, alias="$pageSize", ge=1, le=100),
+) -> AssetListResponse:
     db = _get_db()
-    rows = await db.fetchall("SELECT * FROM sfmc_assets ORDER BY created_at DESC")
+    count_row = await db.fetchone("SELECT COUNT(*) as total FROM sfmc_assets")
+    total = count_row["total"] if count_row else 0
+    offset = (page - 1) * page_size
+    rows = await db.fetchall(
+        "SELECT * FROM sfmc_assets ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (page_size, offset),
+    )
     items = [
         AssetResponse(
             id=r["id"],
@@ -57,7 +66,7 @@ async def list_assets() -> AssetListResponse:
         )
         for r in rows
     ]
-    return AssetListResponse(count=len(items), items=items)
+    return AssetListResponse(count=total, page=page, pageSize=page_size, items=items)
 
 
 @router.get(

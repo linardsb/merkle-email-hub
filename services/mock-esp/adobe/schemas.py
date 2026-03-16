@@ -35,3 +35,4 @@ class DeliveryResponse(BaseModel):
 class DeliveryListResponse(BaseModel):
     count: int
     content: list[DeliveryResponse]
+    next: dict[str, int] | None = None

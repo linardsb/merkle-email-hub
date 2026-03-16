@@ -5,7 +5,14 @@ from contextlib import asynccontextmanager
 
 from database import DatabaseManager
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from middleware import (
+    esp_validation_error_handler,
+    latency_simulation_middleware,
+    rate_limiter_middleware,
+)
 from seed import seed_all
+from starlette.middleware.base import BaseHTTPMiddleware
 
 db = DatabaseManager()
 
@@ -19,6 +26,13 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="Mock ESP Server", version="1.0.0", lifespan=lifespan)
+
+# Middleware: outermost runs first — latency wraps rate limiter
+app.add_middleware(BaseHTTPMiddleware, dispatch=latency_simulation_middleware)
+app.add_middleware(BaseHTTPMiddleware, dispatch=rate_limiter_middleware)
+
+# ESP-specific validation error formatting
+app.add_exception_handler(RequestValidationError, esp_validation_error_handler)  # type: ignore[arg-type]
 
 from adobe.routes import router as adobe_router  # noqa: E402
 from braze.routes import router as braze_router  # noqa: E402

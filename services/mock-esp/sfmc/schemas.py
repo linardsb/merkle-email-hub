@@ -40,4 +40,6 @@ class AssetResponse(BaseModel):
 
 class AssetListResponse(BaseModel):
     count: int
+    page: int = 1
+    pageSize: int = 10
     items: list[AssetResponse]

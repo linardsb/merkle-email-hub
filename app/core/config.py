@@ -160,6 +160,15 @@ class DesignSyncConfig(BaseModel):
     asset_max_width: int = 1200  # Max width for email images; 1200 = 2x retina for 600px containers
 
 
+class ESPSyncConfig(BaseModel):
+    """ESP bidirectional sync settings — base URLs for mock or production ESPs."""
+
+    braze_base_url: str = "http://mock-esp:3002/braze"
+    sfmc_base_url: str = "http://mock-esp:3002/sfmc"
+    adobe_base_url: str = "http://mock-esp:3002/adobe"
+    taxi_base_url: str = "http://mock-esp:3002/taxi"
+
+
 class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
@@ -229,6 +238,7 @@ class Settings(BaseSettings):
     rendering: RenderingConfig = RenderingConfig()
     ontology_sync: OntologySyncConfig = OntologySyncConfig()
     design_sync: DesignSyncConfig = DesignSyncConfig()
+    esp_sync: ESPSyncConfig = ESPSyncConfig()
     eval: EvalConfig = EvalConfig()
 
     # Service URLs

@@ -26,4 +26,7 @@ class TemplateResponse(BaseModel):
 
 class TemplateListResponse(BaseModel):
     count: int
+    page: int = 1
+    per_page: int = 10
+    total_pages: int = 1
     templates: list[TemplateResponse]

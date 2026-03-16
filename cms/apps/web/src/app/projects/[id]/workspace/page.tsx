@@ -39,6 +39,7 @@ import { useCollaboration } from "@/hooks/use-collaboration";
 import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialog";
 import { CompatibilityBriefDialog } from "@/components/workspace/compatibility-brief-dialog";
 import { BlueprintRunDialog } from "@/components/workspace/blueprint-run-dialog";
+import { PushToESPDialog } from "@/components/connectors/push-to-esp-dialog";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
@@ -137,6 +138,9 @@ export default function WorkspacePage() {
   const [briefDialogOpen, setBriefDialogOpen] = useState(false);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
   const { addRecord } = useExportHistory();
+
+  // ── Push to ESP State ──
+  const [pushDialogOpen, setPushDialogOpen] = useState(false);
 
   // ── Design Reference Panel ──
   const [designRefOpen, setDesignRefOpen] = useState(false);
@@ -383,6 +387,15 @@ export default function WorkspacePage() {
     setExportDialogOpen(true);
   }, [compiledHtml, t]);
 
+  // ── Push to ESP Handler ──
+  const handlePushToESP = useCallback(() => {
+    if (!compiledHtml?.trim()) {
+      toast.error(t("pushToESPNoHtml"));
+      return;
+    }
+    setPushDialogOpen(true);
+  }, [compiledHtml, t]);
+
   // ── Image Gen Handler ──
   const handleInsertImage = useCallback(
     (url: string, width: number, height: number, alt: string) => {
@@ -450,6 +463,7 @@ export default function WorkspacePage() {
           if (open) setQaPanelOpen(false);
         }}
         onExport={handleExport}
+        onPushToESP={handlePushToESP}
         brandViolations={brandViolations}
         onGenerateImage={() => setImageGenOpen(true)}
         collaborators={collaborators}
@@ -574,6 +588,14 @@ export default function WorkspacePage() {
         projectId={projectId}
         currentHtml={editorContent}
         onApplyResult={handleApplyBlueprintResult}
+      />
+
+      <PushToESPDialog
+        open={pushDialogOpen}
+        onOpenChange={setPushDialogOpen}
+        templateId={activeTemplate?.id ?? 0}
+        templateName={activeTemplate?.name ?? "email"}
+        projectId={projectId}
       />
 
       {chatCollapsed && (

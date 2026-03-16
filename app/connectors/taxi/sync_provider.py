@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import httpx
 
+from app.connectors.http_resilience import resilient_request
 from app.connectors.sync_schemas import ESPTemplate
 from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
@@ -23,7 +24,7 @@ class TaxiSyncProvider:
 
     def __init__(self, settings: Settings | None = None) -> None:
         _settings = settings or get_settings()
-        self._base_url = _settings.esp_sync.taxi_base_url  # type: ignore[attr-defined]
+        self._base_url = _settings.esp_sync.taxi_base_url
 
     def _headers(self, credentials: dict[str, str]) -> dict[str, str]:
         return {"X-API-Key": credentials["api_key"]}
@@ -36,9 +37,12 @@ class TaxiSyncProvider:
         """Validate by listing templates (lightweight call)."""
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(
+                resp = await resilient_request(
+                    client,
+                    "GET",
                     f"{self._base_url}/api/v1/templates",
                     headers=self._headers(credentials),
+                    params={"per_page": 1},
                 )
                 return resp.status_code == 200
         except httpx.HTTPError:
@@ -48,9 +52,12 @@ class TaxiSyncProvider:
     async def list_templates(self, credentials: dict[str, str]) -> list[ESPTemplate]:
         """List all Taxi templates."""
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(
+            resp = await resilient_request(
+                client,
+                "GET",
                 f"{self._base_url}/api/v1/templates",
                 headers=self._headers(credentials),
+                params={"per_page": 1000, "page": 1},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -69,7 +76,9 @@ class TaxiSyncProvider:
     async def get_template(self, template_id: str, credentials: dict[str, str]) -> ESPTemplate:
         """Get a single Taxi template."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(
+            resp = await resilient_request(
+                client,
+                "GET",
                 f"{self._base_url}/api/v1/templates/{template_id}",
                 headers=self._headers(credentials),
             )
@@ -89,7 +98,9 @@ class TaxiSyncProvider:
     ) -> ESPTemplate:
         """Create a new template in Taxi."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(
+            resp = await resilient_request(
+                client,
+                "POST",
                 f"{self._base_url}/api/v1/templates",
                 json={"name": name, "content": html},
                 headers=self._headers(credentials),
@@ -110,7 +121,9 @@ class TaxiSyncProvider:
     ) -> ESPTemplate:
         """Update a Taxi template's content."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.put(
+            resp = await resilient_request(
+                client,
+                "PUT",
                 f"{self._base_url}/api/v1/templates/{template_id}",
                 json={"content": html},
                 headers=self._headers(credentials),
@@ -129,7 +142,9 @@ class TaxiSyncProvider:
     async def delete_template(self, template_id: str, credentials: dict[str, str]) -> bool:
         """Delete a Taxi template."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.delete(
+            resp = await resilient_request(
+                client,
+                "DELETE",
                 f"{self._base_url}/api/v1/templates/{template_id}",
                 headers=self._headers(credentials),
             )

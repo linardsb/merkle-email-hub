@@ -30,6 +30,7 @@ from app.approval.routes import router as approval_router
 from app.auth.routes import router as auth_router
 from app.components.routes import router as components_router
 from app.connectors.routes import router as connectors_router
+from app.connectors.sync_routes import router as connector_sync_router
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.exceptions import setup_exception_handlers
@@ -203,6 +204,7 @@ app.include_router(email_engine_router)
 app.include_router(components_router)
 app.include_router(qa_router)
 app.include_router(connectors_router)
+app.include_router(connector_sync_router)
 app.include_router(design_sync_router)
 app.include_router(approval_router)
 app.include_router(personas_router)

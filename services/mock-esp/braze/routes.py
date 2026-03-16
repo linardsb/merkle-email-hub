@@ -32,6 +32,14 @@ def _get_db() -> DatabaseManager:
 )
 async def create_content_block(body: ContentBlockCreate) -> ContentBlockResponse:
     db = _get_db()
+    existing = await db.fetchone("SELECT id FROM braze_content_blocks WHERE name = ?", (body.name,))
+    if existing:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=409,
+            content={"errors": [{"message": "Content block with this name already exists"}]},
+        )
     block_id = str(uuid.uuid4())
     now = datetime.now(UTC).isoformat()
     tags_json = json.dumps(body.tags)
@@ -57,9 +65,17 @@ async def create_content_block(body: ContentBlockCreate) -> ContentBlockResponse
     response_model=ContentBlockListResponse,
     dependencies=[Depends(require_braze_auth)],
 )
-async def list_content_blocks() -> ContentBlockListResponse:
+async def list_content_blocks(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+) -> ContentBlockListResponse:
     db = _get_db()
-    rows = await db.fetchall("SELECT * FROM braze_content_blocks ORDER BY created_at DESC")
+    count_row = await db.fetchone("SELECT COUNT(*) as total FROM braze_content_blocks")
+    total = count_row["total"] if count_row else 0
+    rows = await db.fetchall(
+        "SELECT * FROM braze_content_blocks ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (limit, offset),
+    )
     blocks = [
         ContentBlockSummary(
             content_block_id=r["id"],
@@ -70,7 +86,7 @@ async def list_content_blocks() -> ContentBlockListResponse:
         )
         for r in rows
     ]
-    return ContentBlockListResponse(content_blocks=blocks, count=len(blocks))
+    return ContentBlockListResponse(content_blocks=blocks, count=total)
 
 
 @router.get(

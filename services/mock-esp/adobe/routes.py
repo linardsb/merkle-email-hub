@@ -3,9 +3,9 @@
 import uuid
 from datetime import UTC, datetime
 
-from auth import issue_token, require_adobe_auth
+from auth import get_token_ttl, issue_token, require_adobe_auth
 from database import DatabaseManager
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Query
 
 from adobe.schemas import (
     DeliveryCreate,
@@ -33,7 +33,7 @@ async def ims_token_exchange(
     if grant_type != "client_credentials":
         raise HTTPException(status_code=400, detail={"message": "Unsupported grant_type"})
     access_token = issue_token(client_id)
-    return TokenResponse(access_token=access_token)
+    return TokenResponse(access_token=access_token, expires_in=get_token_ttl())
 
 
 @router.get(
@@ -41,9 +41,17 @@ async def ims_token_exchange(
     response_model=DeliveryListResponse,
     dependencies=[Depends(require_adobe_auth)],
 )
-async def list_deliveries() -> DeliveryListResponse:
+async def list_deliveries(
+    line_start: int = Query(0, alias="_lineStart", ge=0),
+    line_count: int = Query(10, alias="_lineCount", ge=1, le=100),
+) -> DeliveryListResponse:
     db = _get_db()
-    rows = await db.fetchall("SELECT * FROM adobe_deliveries ORDER BY created_at DESC")
+    count_row = await db.fetchone("SELECT COUNT(*) as total FROM adobe_deliveries")
+    total = count_row["total"] if count_row else 0
+    rows = await db.fetchall(
+        "SELECT * FROM adobe_deliveries ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (line_count, line_start),
+    )
     items = [
         DeliveryResponse(
             PKey=r["id"],
@@ -56,7 +64,9 @@ async def list_deliveries() -> DeliveryListResponse:
         )
         for r in rows
     ]
-    return DeliveryListResponse(count=len(items), content=items)
+    next_start = line_start + line_count
+    next_hint = {"_lineStart": next_start, "_lineCount": line_count} if next_start < total else None
+    return DeliveryListResponse(count=total, content=items, next=next_hint)
 
 
 @router.get(
@@ -88,6 +98,18 @@ async def get_delivery(pkey: str) -> DeliveryResponse:
 )
 async def create_delivery(body: DeliveryCreate) -> DeliveryResponse:
     db = _get_db()
+    existing = await db.fetchone("SELECT id FROM adobe_deliveries WHERE name = ?", (body.name,))
+    if existing:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=409,
+            content={
+                "error_code": "DUP-100",
+                "title": "Duplicate delivery",
+                "detail": f"A delivery with name '{body.name}' already exists",
+            },
+        )
     delivery_id = str(uuid.uuid4())
     now = datetime.now(UTC).isoformat()
 

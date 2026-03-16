@@ -1,6 +1,6 @@
 """Feature-specific exceptions for connectors."""
 
-from app.core.exceptions import AppError, DomainValidationError, NotFoundError
+from app.core.exceptions import AppError, ConflictError, DomainValidationError, NotFoundError
 
 
 class ExportFailedError(AppError):
@@ -21,3 +21,7 @@ class ESPSyncFailedError(AppError):
 
 class InvalidESPCredentialsError(DomainValidationError):
     """Raised when ESP credentials are invalid."""
+
+
+class ESPConflictError(ConflictError):
+    """Raised when an ESP returns 409 for a duplicate resource."""

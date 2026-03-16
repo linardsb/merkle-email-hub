@@ -1,0 +1,95 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@email-hub/ui/components/ui/dialog";
+import { Download, Loader2 } from "lucide-react";
+import type { ESPTemplate } from "@/types/esp-sync";
+
+interface ESPTemplatePreviewDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  template: ESPTemplate | null;
+  onImport: (templateId: string) => void;
+  importing: boolean;
+}
+
+const ESP_LABELS: Record<string, { label: string; color: string }> = {
+  braze: { label: "Braze", color: "bg-status-info/10 text-status-info" },
+  sfmc: { label: "SFMC", color: "bg-status-warning/10 text-status-warning" },
+  adobe_campaign: { label: "Adobe", color: "bg-status-danger/10 text-status-danger" },
+  taxi: { label: "Taxi", color: "bg-status-success/10 text-status-success" },
+};
+
+export function ESPTemplatePreviewDialog({
+  open,
+  onOpenChange,
+  template,
+  onImport,
+  importing,
+}: ESPTemplatePreviewDialogProps) {
+  const t = useTranslations("espSync");
+
+  if (!template) return null;
+
+  const espInfo = ESP_LABELS[template.esp_type] ?? {
+    label: template.esp_type,
+    color: "bg-surface-muted text-foreground-muted",
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[48rem]">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{template.name}</DialogTitle>
+            <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${espInfo.color}`}>
+              {espInfo.label}
+            </span>
+          </div>
+        </DialogHeader>
+
+        {/* Sandboxed preview iframe */}
+        <iframe
+          sandbox=""
+          srcDoc={template.html}
+          className="h-[32rem] w-full rounded-md border border-border bg-white"
+          title={t("previewTitle")}
+        />
+
+        {/* Footer actions */}
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+          >
+            {t("createCancel")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onImport(template.id)}
+            disabled={importing}
+            className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+          >
+            {importing ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("previewImporting")}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <Download className="h-4 w-4" />
+                {t("previewImport")}
+              </span>
+            )}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

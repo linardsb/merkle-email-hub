@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import httpx
 
+from app.connectors.http_resilience import resilient_request
 from app.connectors.sync_schemas import ESPTemplate
 from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
@@ -21,7 +22,7 @@ class BrazeSyncProvider:
 
     def __init__(self, settings: Settings | None = None) -> None:
         _settings = settings or get_settings()
-        self._base_url = _settings.esp_sync.braze_base_url  # type: ignore[attr-defined]
+        self._base_url = _settings.esp_sync.braze_base_url
 
     def _headers(self, credentials: dict[str, str]) -> dict[str, str]:
         return {"Authorization": f"Bearer {credentials['api_key']}"}
@@ -34,9 +35,12 @@ class BrazeSyncProvider:
         """Validate by listing content blocks (lightweight call)."""
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(
+                resp = await resilient_request(
+                    client,
+                    "GET",
                     f"{self._base_url}/content_blocks/list",
                     headers=self._headers(credentials),
+                    params={"limit": 1},
                 )
                 return resp.status_code == 200
         except httpx.HTTPError:
@@ -46,9 +50,12 @@ class BrazeSyncProvider:
     async def list_templates(self, credentials: dict[str, str]) -> list[ESPTemplate]:
         """List all Braze content blocks."""
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(
+            resp = await resilient_request(
+                client,
+                "GET",
                 f"{self._base_url}/content_blocks/list",
                 headers=self._headers(credentials),
+                params={"limit": 1000, "offset": 0},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -67,7 +74,9 @@ class BrazeSyncProvider:
     async def get_template(self, template_id: str, credentials: dict[str, str]) -> ESPTemplate:
         """Get a single content block by ID."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.get(
+            resp = await resilient_request(
+                client,
+                "GET",
                 f"{self._base_url}/content_blocks/info",
                 params={"content_block_id": template_id},
                 headers=self._headers(credentials),
@@ -88,7 +97,9 @@ class BrazeSyncProvider:
     ) -> ESPTemplate:
         """Create a new content block in Braze."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(
+            resp = await resilient_request(
+                client,
+                "POST",
                 f"{self._base_url}/content_blocks/create",
                 json={"name": name, "content": html, "tags": ["email-hub"]},
                 headers=self._headers(credentials),
@@ -109,7 +120,9 @@ class BrazeSyncProvider:
     ) -> ESPTemplate:
         """Update a content block's HTML."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(
+            resp = await resilient_request(
+                client,
+                "POST",
                 f"{self._base_url}/content_blocks/update",
                 json={"content_block_id": template_id, "content": html},
                 headers=self._headers(credentials),
@@ -128,7 +141,9 @@ class BrazeSyncProvider:
     async def delete_template(self, template_id: str, credentials: dict[str, str]) -> bool:
         """Delete a content block."""
         async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.delete(
+            resp = await resilient_request(
+                client,
+                "DELETE",
                 f"{self._base_url}/content_blocks/{template_id}",
                 headers=self._headers(credentials),
             )

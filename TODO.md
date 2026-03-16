@@ -340,7 +340,7 @@
 **Why:** Currently connectors only export via fake IDs — no template browsing, no round-trip editing, no credential validation. This phase makes the connector pipeline usable end-to-end for demos and development.
 **Dependencies:** Phase 0-3 foundation (auth, projects, templates, connectors export). Reuses Fernet encryption from `app/design_sync/crypto.py`, connection model pattern from `app/design_sync/models.py`, BOLA pattern from `app/projects/service.py`.
 
-### 13.1 Mock ESP Server — Core Infrastructure
+### ~~13.1 Mock ESP Server — Core Infrastructure~~ DONE
 **What:** Create `services/mock-esp/` — a standalone FastAPI app (port 3002) with SQLite persistence, auto-seeding on startup, and per-ESP auth patterns (Bearer for Braze/Taxi, OAuth token exchange for SFMC/Adobe).
 **Why:** Real ESP APIs require paid accounts and complex setup. A local mock server lets developers test the full sync workflow offline with realistic data.
 **Implementation:**
@@ -354,35 +354,35 @@
 **Security:** Mock server is dev-only. Auth accepts any non-empty token (Braze/Taxi) or issues mock OAuth tokens (SFMC/Adobe). No real credentials stored.
 **Verify:** `uvicorn main:app --port 3002` starts clean. `GET /health` returns `{"status": "healthy"}`.
 
-### 13.2 Mock ESP — Braze Content Blocks API
+### ~~13.2 Mock ESP — Braze Content Blocks API~~ DONE
 **What:** Braze API routes at `/braze/content_blocks/` — create, list, info, update, delete. Auth via Bearer token.
 **Implementation:**
 - `services/mock-esp/braze/routes.py` — 5 endpoints matching Braze REST API surface
 - `services/mock-esp/braze/schemas.py` — ContentBlockCreate, ContentBlockResponse, etc.
 **Verify:** `curl -H "Authorization: Bearer test" http://localhost:3002/braze/content_blocks/list` returns seeded templates.
 
-### 13.3 Mock ESP — SFMC Content Builder API
+### ~~13.3 Mock ESP — SFMC Content Builder API~~ DONE
 **What:** SFMC API routes — OAuth token exchange at `/sfmc/v2/token`, CRUD at `/sfmc/asset/v1/content/assets`. Auth via client_credentials flow.
 **Implementation:**
 - `services/mock-esp/sfmc/routes.py` — token endpoint + 5 CRUD endpoints
 - `services/mock-esp/sfmc/schemas.py` — TokenRequest, AssetResponse, etc.
 **Verify:** Token exchange returns access_token. CRUD with Bearer works.
 
-### 13.4 Mock ESP — Adobe Campaign Delivery API
+### ~~13.4 Mock ESP — Adobe Campaign Delivery API~~ DONE
 **What:** Adobe API routes — IMS token at `/adobe/ims/token/v3`, CRUD at `/adobe/profileAndServicesExt/delivery`. Auth via IMS OAuth.
 **Implementation:**
 - `services/mock-esp/adobe/routes.py` — IMS token + 5 CRUD endpoints
 - `services/mock-esp/adobe/schemas.py` — IMSTokenRequest, DeliveryResponse, etc.
 **Verify:** IMS token exchange works. Delivery CRUD with Bearer works.
 
-### 13.5 Mock ESP — Taxi for Email API
+### ~~13.5 Mock ESP — Taxi for Email API~~ DONE
 **What:** Taxi API routes at `/taxi/api/v1/templates` — standard REST CRUD. Auth via `X-API-Key` header.
 **Implementation:**
 - `services/mock-esp/taxi/routes.py` — 5 REST endpoints
 - `services/mock-esp/taxi/schemas.py` — TemplateCreate, TemplateResponse, etc.
 **Verify:** `curl -H "X-API-Key: test" http://localhost:3002/taxi/api/v1/templates` returns seeded templates.
 
-### 13.6 Mock ESP — Seed Data (44 Templates)
+### ~~13.6 Mock ESP — Seed Data (44 Templates)~~ DONE
 **What:** Pre-loaded realistic email templates with ESP-specific personalization tags — 12 Braze (Liquid), 12 SFMC (AMPscript), 10 Adobe (expressions), 10 Taxi (Taxi Syntax). Full HTML with DOCTYPE, dark mode, MSO conditionals, fluid hybrid 600px layout.
 **Implementation:**
 - `services/mock-esp/seed/braze.json` — 12 templates with `{{first_name}}`, `{% if %}`, `{{content_blocks.${}}}` etc.
@@ -391,7 +391,7 @@
 - `services/mock-esp/seed/taxi.json` — 10 templates with `<!-- taxi:editable -->` regions
 **Verify:** After startup, each ESP table has its full seed data. Templates render correctly in a browser.
 
-### 13.7 Backend — ESP Sync Protocol, Model & Migration
+### ~~13.7 Backend — ESP Sync Protocol, Model & Migration~~ DONE
 **What:** New `ESPSyncProvider` Protocol, `ESPConnection` model, Pydantic schemas, repository, and Alembic migration for the `esp_connections` table. Reuses Fernet encryption from design_sync and BOLA pattern from projects.
 **Implementation:**
 - `app/connectors/sync_protocol.py` — `ESPSyncProvider` Protocol (runtime_checkable) with 6 methods: validate_credentials, list/get/create/update/delete templates
@@ -406,7 +406,7 @@
 **Security:** Credentials encrypted at rest via Fernet (same PBKDF2 key as design_sync). Only `credentials_hint` (last 4 chars) exposed in responses. BOLA via `verify_project_access()`.
 **Verify:** `make db-migrate` applies cleanly. `ESPConnection` CRUD works in tests. Protocol type-checks with mypy.
 
-### 13.8 Backend — Per-ESP Sync Providers
+### ~~13.8 Backend — Per-ESP Sync Providers~~ DONE
 **What:** Four sync provider implementations — one per ESP — each using `httpx.AsyncClient` to call the mock (or real) ESP API. Implements `ESPSyncProvider` Protocol.
 **Implementation:**
 - `app/connectors/braze/sync_provider.py` — `BrazeSyncProvider` (Bearer auth, Content Blocks API)
@@ -417,7 +417,7 @@
 **Security:** Credentials decrypted in-memory only for API calls, never logged. httpx timeout enforced (10-30s).
 **Verify:** Each provider conforms to `ESPSyncProvider` Protocol (isinstance check). Integration test with mock-esp server.
 
-### 13.9 Backend — Sync Service & Routes
+### ~~13.9 Backend — Sync Service & Routes~~ DONE
 **What:** `ConnectorSyncService` orchestrating connections and template operations, plus REST API routes at `/api/v1/connectors/sync/`.
 **Implementation:**
 - `app/connectors/sync_service.py` — `ConnectorSyncService(db)` with:
@@ -440,18 +440,21 @@
 **Security:** All endpoints authenticated + role-checked. BOLA on every operation. Rate limited. Credentials never in responses.
 **Verify:** Full connection lifecycle: create → list → browse remote → import → push. BOLA denies cross-project access.
 
-### 13.10 Frontend — ESP Sync UI
-**What:** Frontend components for managing ESP connections, browsing remote templates, and import/push workflows. Adds tabs to the existing connectors page.
+### ~~13.10 Frontend — ESP Sync UI~~ DONE
+**What:** Frontend components for managing ESP connections, browsing remote templates, and import/push workflows. Two-tab connectors page with inline template browser.
 **Implementation:**
-- `cms/apps/web/src/hooks/use-esp-connections.ts` — SWR hooks for connection CRUD
-- `cms/apps/web/src/hooks/use-esp-templates.ts` — SWR hooks for remote template list/get
-- `cms/apps/web/src/components/connectors/esp-connection-card.tsx` — status, provider icon, last synced
-- `cms/apps/web/src/components/connectors/create-esp-connection-dialog.tsx` — provider-specific credential fields
-- `cms/apps/web/src/components/connectors/esp-template-browser.tsx` — template list with search, import button
-- `cms/apps/web/src/components/connectors/esp-template-preview-dialog.tsx` — HTML preview + import/push
-- Modify `connectors/page.tsx` — add 3 tabs: Export History | ESP Connections | Remote Templates
-- `cms/apps/web/messages/en.json` — i18n keys for espSync namespace
-**Security:** All API calls via `authFetch`. No credentials displayed beyond hint. Token stored server-side only.
+- `cms/apps/web/src/types/esp-sync.ts` — TypeScript types matching backend schemas
+- `cms/apps/web/src/hooks/use-esp-sync.ts` — 8 SWR hooks for all sync endpoints
+- `cms/apps/web/src/components/connectors/esp-connection-card.tsx` — status badge, credentials hint, delete
+- `cms/apps/web/src/components/connectors/create-esp-connection-dialog.tsx` — dynamic provider-specific credential fields
+- `cms/apps/web/src/components/connectors/esp-template-browser.tsx` — template list with search, preview, import
+- `cms/apps/web/src/components/connectors/esp-template-preview-dialog.tsx` — sandboxed iframe preview + import
+- `cms/apps/web/src/components/connectors/push-to-esp-dialog.tsx` — push dialog for workspace toolbar
+- Modified `connectors/page.tsx` — 2-tab layout: Export History | ESP Sync with inline template browser
+- Modified `workspace-toolbar.tsx` — "Push to ESP" button (CloudUpload icon)
+- Modified `workspace/page.tsx` — PushToESPDialog mounted with state + handler
+- `cms/apps/web/messages/*.json` — 65 i18n keys in `espSync` namespace across 6 locales
+**Security:** All API calls via `authFetch`. No credentials displayed beyond hint. Sandboxed iframe preview (`sandbox=""`). Credential inputs use `type="password"` + `autocomplete="off"`.
 **Verify:** Create connection → browse remote templates → import one → verify in local templates. Push local template back → verify in mock ESP.
 
 ### 13.11 Tests, SDK & Docker Integration
