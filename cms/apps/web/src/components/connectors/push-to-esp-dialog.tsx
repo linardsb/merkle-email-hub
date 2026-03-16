@@ -12,6 +12,7 @@ import {
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useESPConnections, usePushToESP } from "@/hooks/use-esp-sync";
+import { ESP_LABELS } from "@/types/esp-sync";
 
 interface PushToESPDialogProps {
   open: boolean;
@@ -20,13 +21,6 @@ interface PushToESPDialogProps {
   templateName: string;
   projectId: number;
 }
-
-const ESP_LABELS: Record<string, { label: string; color: string }> = {
-  braze: { label: "Braze", color: "bg-status-info/10 text-status-info" },
-  sfmc: { label: "SFMC", color: "bg-status-warning/10 text-status-warning" },
-  adobe_campaign: { label: "Adobe", color: "bg-status-danger/10 text-status-danger" },
-  taxi: { label: "Taxi", color: "bg-status-success/10 text-status-success" },
-};
 
 export function PushToESPDialog({
   open,

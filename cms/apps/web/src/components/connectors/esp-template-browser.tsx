@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Download, Eye, Loader2, RefreshCw, Search } from "lucide-react";
 import { useESPTemplates } from "@/hooks/use-esp-sync";
+import { ESP_LABELS } from "@/types/esp-sync";
 import type { ESPTemplate } from "@/types/esp-sync";
 
 interface ESPTemplateBrowserProps {
@@ -13,13 +14,6 @@ interface ESPTemplateBrowserProps {
   onImport: (templateId: string) => void;
   importing: string | null; // template ID currently importing, or null
 }
-
-const ESP_LABELS: Record<string, { label: string; color: string }> = {
-  braze: { label: "Braze", color: "bg-status-info/10 text-status-info" },
-  sfmc: { label: "SFMC", color: "bg-status-warning/10 text-status-warning" },
-  adobe_campaign: { label: "Adobe", color: "bg-status-danger/10 text-status-danger" },
-  taxi: { label: "Taxi", color: "bg-status-success/10 text-status-success" },
-};
 
 export function ESPTemplateBrowser({
   connectionId,

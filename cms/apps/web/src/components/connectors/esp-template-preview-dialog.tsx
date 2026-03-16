@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
 import { Download, Loader2 } from "lucide-react";
+import { ESP_LABELS } from "@/types/esp-sync";
 import type { ESPTemplate } from "@/types/esp-sync";
 
 interface ESPTemplatePreviewDialogProps {
@@ -17,13 +18,6 @@ interface ESPTemplatePreviewDialogProps {
   onImport: (templateId: string) => void;
   importing: boolean;
 }
-
-const ESP_LABELS: Record<string, { label: string; color: string }> = {
-  braze: { label: "Braze", color: "bg-status-info/10 text-status-info" },
-  sfmc: { label: "SFMC", color: "bg-status-warning/10 text-status-warning" },
-  adobe_campaign: { label: "Adobe", color: "bg-status-danger/10 text-status-danger" },
-  taxi: { label: "Taxi", color: "bg-status-success/10 text-status-success" },
-};
 
 export function ESPTemplatePreviewDialog({
   open,
