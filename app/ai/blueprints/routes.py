@@ -274,7 +274,7 @@ async def list_run_checkpoints(
             node_index=row.node_index,
             status=row.state_json.get("status", "unknown"),
             html_hash=row.html_hash,
-            created_at=row.created_at,
+            created_at=row.created_at,  # pyright: ignore[reportArgumentType]
         )
         for row in rows
     ]

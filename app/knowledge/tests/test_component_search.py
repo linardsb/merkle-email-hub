@@ -170,7 +170,7 @@ class TestSearchComponentsRouting:
         class FakeClassified:
             intent: str = "template"
             confidence: float = 0.9
-            extracted_entities: list[FakeEntity] = field(default_factory=list)
+            extracted_entities: list[FakeEntity] = field(default_factory=lambda: [])
 
         ents = [FakeEntity(t, r, o) for t, r, o in (entities or [])]
         return FakeClassified(extracted_entities=ents)
@@ -226,7 +226,7 @@ class TestSearchComponentsRouting:
                 ),
             ),
         ):
-            request = SearchRequest(query="CTA button", limit=10)
+            request = SearchRequest(query="CTA button", domain=None, language=None, limit=10)
             response = await service._search_components(request, classified)  # type: ignore[arg-type]
 
         assert len(response.results) == 2
@@ -258,7 +258,7 @@ class TestSearchComponentsRouting:
                 ),
             ),
         ):
-            request = SearchRequest(query="button for Outlook", limit=10)
+            request = SearchRequest(query="button for Outlook", domain=None, language=None, limit=10)
             await service._search_components(request, classified)  # type: ignore[arg-type]
 
         mock_search.assert_called_once()
@@ -288,7 +288,7 @@ class TestSearchComponentsRouting:
                 ),
             ),
         ):
-            request = SearchRequest(query="CTA button", limit=10)
+            request = SearchRequest(query="CTA button", domain=None, language=None, limit=10)
             await service._search_components(request, classified)  # type: ignore[arg-type]
 
         mock_search.assert_called_once()
@@ -334,7 +334,7 @@ class TestSearchComponentsRouting:
                 ),
             ),
         ):
-            request = SearchRequest(query="some query", limit=10)
+            request = SearchRequest(query="some query", domain=None, language=None, limit=10)
             response = await service._search_components(request, classified)  # type: ignore[arg-type]
 
         assert len(response.results) == 1
@@ -376,7 +376,7 @@ class TestSearchComponentsRouting:
                 ),
             ),
         ):
-            request = SearchRequest(query="hero block", limit=10)
+            request = SearchRequest(query="hero block", domain=None, language=None, limit=10)
             response = await service._search_components(request, classified)  # type: ignore[arg-type]
 
         assert len(response.results) == 1

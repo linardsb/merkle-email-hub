@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.core.config import get_settings
 from app.core.database import get_db_context
 from app.core.logging import get_logger
@@ -34,16 +36,16 @@ async def judge_functional_equivalence(memory_a: str, memory_b: str) -> bool:
         from app.ai.utils import resolve_model  # type: ignore[import-not-found]
 
         ai_settings = get_settings()
-        registry = get_registry()
-        provider = registry.get_llm(ai_settings.ai.provider)
-        model = resolve_model("lightweight")
+        registry: Any = get_registry()  # pyright: ignore[reportUnknownVariableType]
+        provider: Any = registry.get_llm(ai_settings.ai.provider)  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        model: Any = resolve_model("lightweight")  # pyright: ignore[reportUnknownVariableType]
 
-        response = await provider.complete(
+        response: Any = await provider.complete(  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
             [Message(role="user", content=prompt)],
             temperature=0.0,
             model=model,
         )
-        answer: str = response.content.strip().upper()
+        answer: str = str(response.content).strip().upper()  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
         return bool(answer.startswith("YES"))
     except Exception:
         logger.warning(

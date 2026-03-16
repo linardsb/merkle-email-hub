@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.ai.sanitize import sanitize_prompt, validate_output
 from app.ai.shared import extract_html, sanitize_html_xss
 from app.core.config import get_settings
@@ -66,8 +68,8 @@ class CRAGMixin:
             prop_name = str(issue["property_name"])
             value = issue.get("value", "")
             raw_clients = issue.get("unsupported_clients", [])
-            clients = raw_clients if isinstance(raw_clients, list) else []
-            clients_str = ", ".join(str(c) for c in clients)
+            clients_list: list[Any] = raw_clients if isinstance(raw_clients, list) else []  # pyright: ignore[reportUnknownVariableType]
+            clients_str = ", ".join(str(c) for c in clients_list)
             fallbacks = onto.fallbacks_for(prop_id)
 
             if fallbacks:

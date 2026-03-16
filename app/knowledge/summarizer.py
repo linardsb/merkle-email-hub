@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import re
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 
@@ -155,11 +156,11 @@ class ChunkSummarizer:
     async def _llm_summarize(
         client: httpx.AsyncClient,
         html: str,
-        settings: object,
+        settings: Any,
     ) -> str | None:
         """Call LLM to summarize a single HTML section. Best-effort."""
         truncated = html[:4000]  # Cap input to avoid token overflow
-        knowledge = settings.knowledge  # type: ignore[attr-defined]
+        knowledge = settings.knowledge
 
         try:
             response = await client.post(

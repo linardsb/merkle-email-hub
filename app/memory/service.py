@@ -1,7 +1,8 @@
 """Business logic for agent memory operations."""
 
 import time
-from typing import Any
+from datetime import datetime
+from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -203,7 +204,11 @@ class MemoryService:
                     continue
                 is_equivalent = await judge_functional_equivalence(entry.content, candidate.content)
                 if is_equivalent:
-                    older = candidate if entry.created_at >= candidate.created_at else entry
+                    older = (
+                        candidate
+                        if cast(datetime, entry.created_at) >= cast(datetime, candidate.created_at)
+                        else entry
+                    )
                     newer = entry if older is candidate else candidate
                     await self.repo.delete(older.id)
                     processed_ids.add(older.id)

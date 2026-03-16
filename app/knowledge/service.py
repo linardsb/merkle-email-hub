@@ -9,7 +9,7 @@ from __future__ import annotations
 import shutil
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -507,7 +507,7 @@ class KnowledgeService:
         ]
 
         # Try structured query for each property
-        all_result_dicts: list[dict[str, object]] = []
+        all_result_dicts: list[dict[str, Any]] = []
         for prop_id in property_ids:
             answer = engine.query_property_support(
                 prop_id,

@@ -81,6 +81,7 @@ class BlueprintRun:
     run_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     status: str = "running"
     html: str = ""
+    brief_text: str = ""
     progress: list[BlueprintProgress] = field(default_factory=lambda: list[BlueprintProgress]())
     iteration_counts: dict[str, int] = field(default_factory=lambda: dict[str, int]())
     qa_failures: list[str] = field(default_factory=lambda: list[str]())
@@ -152,7 +153,7 @@ class BlueprintEngine:
         """Execute the blueprint graph from entry to terminal node."""
         from app.core.quota import BlueprintCostTracker
 
-        run = BlueprintRun(html=initial_html)
+        run = BlueprintRun(html=initial_html, brief_text=brief)
 
         # Build routing plan before main loop (deterministic, no I/O)
         routing_plan = build_routing_plan(
@@ -972,8 +973,8 @@ def _make_pipeline_checkpoint_adapter(
                 )
                 .order_by(BlueprintCheckpoint.node_index.asc())
             )
-            result = await store._db.execute(stmt)  # type: ignore[attr-defined]
-            rows = result.scalars().all()
+            raw_result: Any = await store._db.execute(stmt)  # type: ignore[attr-defined]
+            rows: list[BlueprintCheckpoint] = list(raw_result.scalars().all())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             return [
                 PipelineCheckpoint(
                     run_id=run_id,

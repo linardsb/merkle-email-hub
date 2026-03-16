@@ -1,6 +1,8 @@
 # pyright: reportReturnType=false, reportArgumentType=false
 """Tests for typed handoff schemas (15.1)."""
 
+from typing import cast
+
 import pytest
 
 from app.ai.blueprints.handoff import (
@@ -164,9 +166,14 @@ class TestEngineTypedHandoffFlow:
                 captured_contexts.append(context)
                 return NodeResult(status="success", html=context.html)
 
+        from app.ai.blueprints.protocols import BlueprintNode
+
         defn = BlueprintDefinition(
             name="test",
-            nodes={"scaffolder": TypedScaffolder(), "dark_mode": CapturingNode()},
+            nodes=cast(
+                "dict[str, BlueprintNode]",
+                {"scaffolder": TypedScaffolder(), "dark_mode": CapturingNode()},
+            ),
             edges=[Edge(from_node="scaffolder", to_node="dark_mode", condition="always")],
             entry_node="scaffolder",
         )
@@ -217,9 +224,14 @@ class TestEngineTypedHandoffFlow:
                 captured.append(context)
                 return NodeResult(status="success", html=context.html)
 
+        from app.ai.blueprints.protocols import BlueprintNode
+
         defn = BlueprintDefinition(
             name="test",
-            nodes={"scaffolder": PlainNode(), "dark_mode": Receiver()},
+            nodes=cast(
+                "dict[str, BlueprintNode]",
+                {"scaffolder": PlainNode(), "dark_mode": Receiver()},
+            ),
             edges=[Edge(from_node="scaffolder", to_node="dark_mode", condition="always")],
             entry_node="scaffolder",
         )

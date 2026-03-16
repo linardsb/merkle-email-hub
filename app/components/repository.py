@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -143,9 +144,9 @@ class ComponentRepository:
         *,
         search: str | None = None,
         category: str | None = None,
-        compatible_with: list[str] | None = None,
+        compatible_with: builtins.list[str] | None = None,
         limit: int = 5,
-    ) -> list[tuple[Component, ComponentVersion]]:
+    ) -> builtins.list[tuple[Component, ComponentVersion]]:
         """Search components with latest version, filtering by compatibility.
 
         Returns components whose latest version does NOT have "none" support
@@ -200,10 +201,10 @@ class ComponentRepository:
 
     async def search_by_embedding(
         self,
-        embedding: list[float],
+        embedding: builtins.list[float],
         *,
         limit: int = 5,
-    ) -> list[tuple[Component, float]]:
+    ) -> builtins.list[tuple[Component, float]]:
         """Search components by vector similarity (cosine distance)."""
         distance = Component.search_embedding.cosine_distance(embedding).label("distance")
         query = (

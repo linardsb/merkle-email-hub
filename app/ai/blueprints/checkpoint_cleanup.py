@@ -23,7 +23,7 @@ async def cleanup_old_checkpoints(db: AsyncSession, max_age_days: int = 7) -> in
     stmt = delete(BlueprintCheckpoint).where(BlueprintCheckpoint.created_at < cutoff)
     result = await db.execute(stmt)
     await db.commit()
-    count: int = result.rowcount  # type: ignore[attr-defined]
+    count: int = int(result.rowcount)  # type: ignore[attr-defined]
     logger.info(
         "blueprint.checkpoint_cleanup",
         extra={"deleted_count": count, "max_age_days": max_age_days},
@@ -60,7 +60,7 @@ async def cleanup_completed_runs(db: AsyncSession) -> int:
     stmt = delete(BlueprintCheckpoint).where(BlueprintCheckpoint.run_id.in_(completed_runs))
     result = await db.execute(stmt)
     await db.commit()
-    count: int = result.rowcount  # type: ignore[attr-defined]
+    count: int = int(result.rowcount)  # type: ignore[attr-defined]
     logger.info(
         "blueprint.checkpoint_cleanup_completed_runs",
         extra={"deleted_count": count},

@@ -264,7 +264,7 @@ class TestSearchRouted:
             )
             from app.knowledge.schemas import SearchRequest
 
-            result = await service.search_routed(SearchRequest(query="test"))
+            result = await service.search_routed(SearchRequest(query="test", domain=None, language=None))
             service.search.assert_called_once()
             assert result.intent is None
 
@@ -286,7 +286,7 @@ class TestSearchRouted:
                 )
             )
             result = await service.search_routed(
-                SearchRequest(query="How to create responsive email?")
+                SearchRequest(query="How to create responsive email?", domain=None, language=None)
             )
             assert result.intent is not None
 
@@ -318,7 +318,7 @@ class TestSearchRouted:
             client = ontology.clients[0]
             query = f"Does {client.name} support {prop.property_name}?"
 
-            result = await service.search_routed(SearchRequest(query=query))
+            result = await service.search_routed(SearchRequest(query=query, domain=None, language=None))
             assert result.intent == "compatibility"
             # Structured results should be returned without calling search()
             if result.results:
@@ -344,7 +344,7 @@ class TestSearchRouted:
             )
             # Query that matches compatibility but has no resolvable entities
             result = await service.search_routed(
-                SearchRequest(query="Is this compatible with everything?")
+                SearchRequest(query="Is this compatible with everything?", domain=None, language=None)
             )
             # Should fall back to vector search
             if result.intent == "compatibility":

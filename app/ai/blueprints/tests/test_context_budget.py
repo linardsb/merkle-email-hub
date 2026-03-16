@@ -139,7 +139,7 @@ class TestCompactHandoffHistory:
 
     def test_single_item_normal_mode(self) -> None:
         h = AgentHandoff(agent_name="scaffolder", artifact="<p>big</p>")
-        result = compact_handoff_history([h])
+        result = cast("list[AgentHandoff]", compact_handoff_history([h]))
         assert len(result) == 1
         assert result[0].artifact == "<p>big</p>"  # preserved
 
@@ -147,7 +147,7 @@ class TestCompactHandoffHistory:
         h1 = AgentHandoff(agent_name="scaffolder", artifact="<p>first</p>")
         h2 = AgentHandoff(agent_name="dark_mode", artifact="<p>second</p>")
         h3 = AgentHandoff(agent_name="content", artifact="<p>third</p>")
-        result = compact_handoff_history([h1, h2, h3])
+        result = cast("list[AgentHandoff]", compact_handoff_history([h1, h2, h3]))
         assert len(result) == 3
         assert result[0].artifact == ""  # compacted
         assert result[1].artifact == ""  # compacted
@@ -156,7 +156,7 @@ class TestCompactHandoffHistory:
     def test_economy_mode_compacts_all(self) -> None:
         h1 = AgentHandoff(agent_name="scaffolder", artifact="<p>first</p>")
         h2 = AgentHandoff(agent_name="dark_mode", artifact="<p>second</p>")
-        result = compact_handoff_history([h1, h2], economy=True)
+        result = cast("list[AgentHandoff]", compact_handoff_history([h1, h2], economy=True))
         assert len(result) == 2
         assert result[0].artifact == ""
         assert result[1].artifact == ""

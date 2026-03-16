@@ -18,6 +18,9 @@ class BlueprintRunRequest(BaseModel):
         default_factory=lambda: list[int](),
         description="Target audience persona IDs — agents will adapt output for these clients",
     )
+    template_id: int | None = Field(
+        default=None, description="Existing template to save output as a new version"
+    )
 
 
 class BlueprintResumeRequest(BaseModel):
@@ -99,8 +102,10 @@ class BlueprintRunResponse(BaseModel):
     blueprint_name: str
     status: str
     html: str
+    brief_text: str = ""
     progress: list[BlueprintProgress]
     qa_passed: bool | None = None
+    template_version_id: int | None = None
     model_usage: dict[str, int] = Field(default_factory=dict)
     final_handoff: HandoffSummary | None = None
     handoff_history: list[HandoffSummary] = Field(default_factory=lambda: list[HandoffSummary]())

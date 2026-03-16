@@ -171,7 +171,7 @@ class ScaffolderNode:
 
         typed = ScaffolderHandoff(
             template_name=plan.template.template_name,
-            slots_filled=tuple(plan.slot_fills.keys()) if hasattr(plan.slot_fills, "keys") else (),
+            slots_filled=tuple(sf.slot_id for sf in plan.slot_fills),
             design_token_source=plan.design_tokens.source,
             colors_applied=dict(plan.design_tokens.colors) if plan.design_tokens.colors else {},
             locked_roles=tuple(plan.design_tokens.locked_roles)

@@ -137,7 +137,7 @@ class PostgresCheckpointStore:
         stmt = delete(BlueprintCheckpoint).where(BlueprintCheckpoint.run_id == run_id)
         result = await self._db.execute(stmt)
         await self._db.commit()
-        count: int = result.rowcount  # type: ignore[attr-defined]
+        count: int = int(result.rowcount)  # type: ignore[attr-defined]
         logger.info(
             "checkpoint.delete_completed",
             extra={"run_id": run_id, "deleted_count": count},

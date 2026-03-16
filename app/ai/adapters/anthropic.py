@@ -144,8 +144,9 @@ class AnthropicProvider:
         # Extract text content from response
         content = ""
         for block in response.content:
-            if block.type == "text":
-                content += block.text
+            block_any: Any = block
+            if block_any.type == "text":
+                content += block_any.text
 
         usage: dict[str, int] = {
             "prompt_tokens": response.usage.input_tokens,

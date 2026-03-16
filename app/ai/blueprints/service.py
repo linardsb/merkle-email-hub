@@ -149,6 +149,7 @@ class BlueprintService:
         definition: BlueprintDefinition,
         audience_profile: AudienceProfile | None,
         checkpoint_count: int = 0,
+        template_version_id: int | None = None,
     ) -> BlueprintRunResponse:
         """Build API response from a completed BlueprintRun."""
         from app.ai.blueprints.audience_context import format_audience_context
@@ -190,6 +191,7 @@ class BlueprintService:
             blueprint_name=definition.name,
             status=bp_run.status,
             html=bp_run.html,
+            brief_text=bp_run.brief_text,
             progress=[
                 BlueprintProgress(
                     node_name=p.node_name,
@@ -220,6 +222,7 @@ class BlueprintService:
             judge_verdict=judge_verdict_response,
             checkpoint_count=checkpoint_count,
             resumed_from=bp_run.resumed_from,
+            template_version_id=template_version_id,
         )
 
     async def _count_checkpoints(self, run_id: str, db: AsyncSession | None) -> int:
@@ -293,6 +296,72 @@ class BlueprintService:
                     exc_info=True,
                 )
 
+    async def _auto_save_template_version(
+        self,
+        bp_run: BlueprintRun,
+        request: BlueprintRunRequest,
+        project_id: int | None,
+        user_id: int | None,
+        db: AsyncSession | None,
+    ) -> int | None:
+        """Auto-save blueprint output as a TemplateVersion (fire-and-forget).
+
+        Returns the new version ID, or None if saving was skipped or failed.
+        """
+        if bp_run.status != "completed" or not bp_run.html or db is None or user_id is None:
+            return None
+
+        try:
+            from app.templates.repository import TemplateRepository
+            from app.templates.schemas import TemplateCreate, VersionCreate
+
+            repo = TemplateRepository(db)
+
+            if request.template_id is not None:
+                # Add version to existing template
+                version = await repo.create_version(
+                    request.template_id,
+                    VersionCreate(
+                        html_source=bp_run.html,
+                        changelog=f"Blueprint run {bp_run.run_id}",
+                    ),
+                    user_id,
+                )
+                logger.info(
+                    "blueprint.auto_save.version_created",
+                    template_id=request.template_id,
+                    version_id=version.id,
+                    run_id=bp_run.run_id,
+                )
+                return version.id
+
+            if project_id is not None:
+                # Create new template with initial version
+                brief_name = bp_run.brief_text[:80] if bp_run.brief_text else "Blueprint output"
+                template = await repo.create(
+                    project_id,
+                    TemplateCreate(name=brief_name, html_source=bp_run.html, subject_line=None, preheader_text=None),
+                    user_id,
+                )
+                # create() auto-creates v1 — get its ID
+                versions = await repo.get_versions(template.id)
+                version_id = versions[0].id if versions else None
+                logger.info(
+                    "blueprint.auto_save.template_created",
+                    template_id=template.id,
+                    version_id=version_id,
+                    run_id=bp_run.run_id,
+                )
+                return version_id
+
+        except Exception:
+            logger.warning(
+                "blueprint.auto_save_failed",
+                run_id=bp_run.run_id,
+                exc_info=True,
+            )
+        return None
+
     async def run(
         self,
         request: BlueprintRunRequest,
@@ -314,8 +383,13 @@ class BlueprintService:
 
         await self._post_run_hooks(bp_run, definition, project_id, audience_profile, request.brief)
         checkpoint_count = await self._count_checkpoints(bp_run.run_id, db)
+        template_version_id = await self._auto_save_template_version(
+            bp_run, request, project_id, user_id, db
+        )
 
-        return self._build_response(bp_run, definition, audience_profile, checkpoint_count)
+        return self._build_response(
+            bp_run, definition, audience_profile, checkpoint_count, template_version_id
+        )
 
     async def resume(
         self,

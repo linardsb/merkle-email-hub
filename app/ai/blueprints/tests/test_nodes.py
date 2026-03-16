@@ -123,14 +123,13 @@ class TestExportNode:
     """Tests for the deterministic export node."""
 
     @pytest.mark.asyncio()
-    async def test_wraps_html_in_braze_block(self) -> None:
+    async def test_passes_through_raw_html(self) -> None:
         node = ExportNode()
         context = NodeContext(html="<p>email content</p>")
         result = await node.execute(context)
 
         assert result.status == "success"
-        assert "content_block" in result.html
-        assert "<p>email content</p>" in result.html
+        assert result.html == "<p>email content</p>"
 
     @pytest.mark.asyncio()
     async def test_fails_with_no_html(self) -> None:

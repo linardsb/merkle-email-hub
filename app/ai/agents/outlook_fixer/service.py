@@ -26,7 +26,7 @@ from app.ai.agents.schemas.outlook_diagnostic import MSOIssue, OutlookDiagnostic
 from app.ai.agents.validation_loop import CRAGMixin
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
-from app.ai.routing import resolve_model
+from app.ai.routing import TaskTier, resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
 from app.ai.shared import extract_confidence, sanitize_html_xss
 from app.core.config import get_settings
@@ -46,7 +46,7 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
     """
 
     agent_name = "outlook_fixer"
-    model_tier = "standard"
+    model_tier: TaskTier = "standard"
     stream_prefix = "outlook-fix"
     _output_mode_supported: bool = True
 
