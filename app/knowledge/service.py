@@ -9,8 +9,12 @@ from __future__ import annotations
 import shutil
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+if TYPE_CHECKING:
+    from app.knowledge.router import ClassifiedQuery
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -402,6 +406,120 @@ class KnowledgeService:
             total_candidates=total_candidates,
             reranked=is_reranked,
         )
+
+    async def search_routed(self, request: SearchRequest) -> SearchResponse:
+        """Intent-routed search: classifies query, then routes to optimal path.
+
+        When router_enabled=False, delegates directly to search() (zero-cost bypass).
+        """
+        settings = get_settings()
+        if not settings.knowledge.router_enabled:
+            return await self.search(request)
+
+        from app.knowledge.router import QueryIntent, get_query_router
+
+        router = get_query_router()
+        classified = await router.classify_with_fallback(request.query)
+
+        logger.info(
+            "knowledge.search_routed.classified",
+            intent=classified.intent.value,
+            confidence=classified.confidence,
+            entity_count=len(classified.extracted_entities),
+        )
+
+        response: SearchResponse
+        if classified.intent == QueryIntent.COMPATIBILITY:
+            response = await self._search_compatibility(request, classified)
+        elif classified.intent == QueryIntent.DEBUG:
+            response = await self._search_debug(request, classified)
+        elif classified.intent == QueryIntent.TEMPLATE:
+            response = await self._search_components(request, classified)
+        else:
+            response = await self.search(request)
+
+        response.intent = classified.intent.value
+        return response
+
+    async def _search_compatibility(
+        self, request: SearchRequest, classified: ClassifiedQuery
+    ) -> SearchResponse:
+        """Compatibility-optimized search: ontology lookup + hybrid search."""
+        from app.knowledge.ontology.registry import load_ontology
+
+        ontology = load_ontology()
+        ontology_context_parts: list[str] = []
+
+        client_ids = [
+            e.ontology_id for e in classified.extracted_entities if e.entity_type == "client"
+        ]
+        property_ids = [
+            e.ontology_id for e in classified.extracted_entities if e.entity_type == "property"
+        ]
+
+        for prop_id in property_ids:
+            prop = ontology.get_property(prop_id)
+            if prop is None:
+                continue
+            for client_id in client_ids:
+                support = ontology.get_support(prop_id, client_id)
+                client = ontology.get_client(client_id)
+                client_name = client.name if client else client_id
+                ontology_context_parts.append(
+                    f"{prop.property_name}: {support.value} in {client_name}"
+                )
+            fallbacks = ontology.fallbacks_for(prop_id)
+            if fallbacks:
+                fb_strs = [f.target_property_id for f in fallbacks]
+                ontology_context_parts.append(
+                    f"Fallbacks for {prop.property_name}: {', '.join(fb_strs)}"
+                )
+
+        response = await self.search(request)
+
+        if ontology_context_parts:
+            ontology_result = SearchResult(
+                chunk_content="[Ontology] " + "; ".join(ontology_context_parts),
+                document_id=0,
+                document_filename="ontology",
+                domain="css_support",
+                language="en",
+                chunk_index=0,
+                score=1.0,
+                metadata_json=None,
+            )
+            response.results.insert(0, ontology_result)
+
+        return response
+
+    async def _search_debug(
+        self, request: SearchRequest, _classified: ClassifiedQuery
+    ) -> SearchResponse:
+        """Debug-optimized search: prioritize client_quirks domain."""
+        debug_request = SearchRequest(
+            query=request.query,
+            domain="client_quirks",
+            language=request.language,
+            limit=request.limit,
+        )
+        quirks_response = await self.search(debug_request)
+
+        if quirks_response.results and quirks_response.results[0].score > 0.3:
+            return quirks_response
+
+        return await self.search(request)
+
+    async def _search_components(
+        self, request: SearchRequest, _classified: ClassifiedQuery
+    ) -> SearchResponse:
+        """Template/component-optimized search: search component domain."""
+        component_request = SearchRequest(
+            query=request.query,
+            domain="best_practices",
+            language=request.language,
+            limit=request.limit,
+        )
+        return await self.search(component_request)
 
     async def get_document(self, document_id: int) -> DocumentResponse:
         """Get a document by ID.

@@ -642,7 +642,7 @@
 - Backward-compatible: if an agent returns raw string, engine wraps it in `AgentHandoff(output=raw, confidence=1.0)` with empty metadata
 **Security:** Handoff schemas are internal data structures. No user input reaches handoff construction directly.
 **Verify:** Run a multi-agent blueprint (Scaffolder → Dark Mode → QA). Verify Dark Mode agent receives component list and constraints from Scaffolder. Compare token usage before/after. `make test` passes. `make eval-run` shows no regression.
-- [ ] 15.1 Typed handoff schemas between blueprint agents
+- [x] ~~15.1 Typed handoff schemas between blueprint agents~~ DONE — `AgentHandoff` base + typed per-agent payloads (`ScaffolderHandoff`, `DarkModeHandoff`, etc.) in `app/ai/blueprints/handoff.py`, `uncertainties` field, `format_upstream_constraints()` prompt injection, engine wraps raw strings for backward compat, 8 agent nodes updated, `protocols.py` typed, 15 tests
 
 ### 15.2 Phase-Aware Memory Decay Rates
 **What:** Replace the fixed 30-day half-life with project-phase-aware decay. Active projects retain memories longer; shipped/dormant projects decay faster. Add intent-aware compaction that merges functionally redundant memories even when textually different.
@@ -655,7 +655,7 @@
 - Migration: add `phase` column to `projects` table, default `"active"`
 **Security:** Phase field is enum-validated. LLM judge call for compaction uses sanitized memory content (no PII). No user-facing API changes.
 **Verify:** Create project in each phase. Store memories. Run decay cycle. Verify active memories persist longer, archived memories decay faster. Run compaction on two semantically equivalent but textually different memories — verify they merge. `make test` passes.
-- [ ] 15.2 Phase-aware memory decay rates
+- [x] ~~15.2 Phase-aware memory decay rates~~ DONE — `phase` column on `Project` model (active/maintenance/archived), per-phase decay config (`decay_active_days=60`, `decay_maintenance_days=14`, `decay_archived_days=3`), `apply_phase_aware_decay()` SQL with project JOIN + global fallback, `judge_functional_equivalence()` lightweight LLM intent judge (failure-safe), `_run_intent_merging()` in service, `intent_similarity_threshold=0.85` config, `intent_merged_count` on `CompactionStats`, Alembic migration, 9 new tests (15 total memory service tests)
 
 ### 15.3 Adaptive Model Tier Routing
 **What:** Track per-agent, per-client success rates and auto-downgrade model tier when confidence is high. If the Content agent consistently produces accepted output on lightweight models for client X, don't use standard tier just because the blueprint default says "standard."
@@ -668,7 +668,7 @@
 - Fallback: if adaptive routing produces a rejection, auto-retry on one tier higher (single retry, not loop)
 **Security:** Routing history is internal analytics data. No PII. Rate decisions are server-side only; clients cannot influence tier selection.
 **Verify:** Seed 20 successful lightweight runs for Content agent + client X. Next run should auto-select lightweight instead of default standard. Seed 15 runs with 50% failure rate — should auto-upgrade. `AI__ADAPTIVE_ROUTING_ENABLED=false` bypasses all adaptive logic. `make test` passes.
-- [ ] 15.3 Adaptive model tier routing
+- [x] ~~15.3 Adaptive model tier routing~~ DONE — `RoutingHistoryEntry` model + `RoutingHistoryRepository` in `app/ai/routing_history.py`, `resolve_adaptive_tier()` with MIN_SAMPLES=10/DOWNGRADE_THRESHOLD=0.9/UPGRADE_THRESHOLD=0.7, `resolve_model_adaptive()` in `app/ai/routing.py`, `routing_history_repo` on `BlueprintEngine` with fire-and-forget recording after agentic nodes, LAYER 12 effective tier injection into node context, `BaseAgentService.process()` checks `request.effective_tier`, `AI__ADAPTIVE_ROUTING_ENABLED` config flag (default off), Alembic migration, 16 tests
 
 ### 15.4 Auto-Surfacing Prompt Amendments from Eval Failures
 **What:** Close the eval feedback loop. When `make eval-judge` identifies recurring failure patterns, automatically generate suggested SKILL.md amendments and surface them for developer review — not auto-applied, but ready to merge.
@@ -694,7 +694,7 @@
 - Cache prefetch results in Redis (5-min TTL) to avoid repeated graph queries within a blueprint run
 **Security:** Prefetch results are filtered by `client_org_id` — agents only see outcomes from the same organization. No cross-tenant data leakage. Redis cache key includes org_id.
 **Verify:** Run Scaffolder for client X with a brief similar to a past completed task. Verify prefetch returns the prior outcome. Verify the generated template shows influence from the baseline (not identical, but structurally similar). Run for client Y — verify no cross-tenant results. `COGNEE__PREFETCH_ENABLED=false` skips prefetch entirely. `make test` passes.
-- [ ] 15.5 Bidirectional knowledge graph — agent pre-query
+- [x] ~~15.5 Bidirectional knowledge graph — agent pre-query~~ DONE
 
 ---
 

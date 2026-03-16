@@ -52,7 +52,7 @@ class KnowledgeAgentService:
             language=None,
             limit=10,
         )
-        search_response: SearchResponse = await rag_service.search(search_request)
+        search_response: SearchResponse = await rag_service.search_routed(search_request)
 
         # 2. Build sources list
         sources = [

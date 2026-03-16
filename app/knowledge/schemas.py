@@ -168,6 +168,7 @@ class SearchResponse(BaseModel):
     query: str
     total_candidates: int
     reranked: bool
+    intent: str | None = None  # Query intent classification (16.1)
 
 
 # ---------------------------------------------------------------------------

@@ -121,6 +121,13 @@ class BlueprintService:
         if settings.blueprint.checkpoints_enabled and db is not None:
             checkpoint_store = PostgresCheckpointStore(db)
 
+        # Wire routing history repo (opt-in via config)
+        routing_history_repo = None
+        if settings.ai.adaptive_routing_enabled and db is not None:
+            from app.ai.routing_history import RoutingHistoryRepository
+
+            routing_history_repo = RoutingHistoryRepository(db)
+
         engine = BlueprintEngine(
             definition,
             component_resolver=component_resolver,
@@ -131,6 +138,7 @@ class BlueprintService:
             judge_on_retry=settings.blueprint.judge_on_retry,
             design_system=design_system,
             checkpoint_store=checkpoint_store,
+            routing_history_repo=routing_history_repo,
         )
 
         return engine, definition, project_id, audience_profile

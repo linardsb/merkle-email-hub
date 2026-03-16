@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden cli-setup cli-list cli-search cli
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli
 
 # === Local Development ===
 
@@ -133,6 +133,9 @@ eval-dry-run: ## Full eval pipeline dry-run (no LLM needed)
 	uv run python -m app.ai.agents.evals.regression --current traces/analysis.json --baseline traces/baseline.json
 	@echo "\n=== Dry-run pipeline complete ==="
 
+eval-suggest: ## Generate SKILL.md amendment suggestions from eval failures
+	uv run python -m app.ai.agents.evals.amendment_suggester --analysis traces/analysis.json --output traces/suggestions
+
 eval-full: ## Full eval pipeline (requires LLM provider)
 	$(MAKE) eval-run
 	$(MAKE) eval-judge
@@ -140,6 +143,7 @@ eval-full: ## Full eval pipeline (requires LLM provider)
 	$(MAKE) eval-analysis
 	$(MAKE) eval-blueprint
 	$(MAKE) eval-regression
+	$(MAKE) eval-suggest
 	@echo "\n=== Full eval pipeline complete ==="
 
 eval-skill-test: eval-verify ## A/B test a SKILL.md change (AGENT=scaffolder PROPOSED=path/to/SKILL.md)

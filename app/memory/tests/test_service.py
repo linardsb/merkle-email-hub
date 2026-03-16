@@ -1,5 +1,6 @@
 """Unit tests for MemoryService."""
 
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -7,7 +8,7 @@ import pytest
 
 from app.memory.exceptions import MemoryLimitExceededError, MemoryNotFoundError
 from app.memory.models import MemoryEntry
-from app.memory.schemas import MemoryCreate, MemoryPromote
+from app.memory.schemas import CompactionStats, MemoryCreate, MemoryPromote
 from app.memory.service import MemoryService
 
 
@@ -152,3 +153,146 @@ def _set_id(entry: Any, id: int) -> Any:
     """Helper to set ID on entry (simulates DB insert)."""
     entry.id = id
     return entry
+
+
+# --- Phase-aware decay tests ---
+
+
+def test_get_decay_rate_active() -> None:
+    """Active phase returns 60 days half-life."""
+    assert MemoryService.get_decay_rate("active") == 60
+
+
+def test_get_decay_rate_maintenance() -> None:
+    """Maintenance phase returns 14 days half-life."""
+    assert MemoryService.get_decay_rate("maintenance") == 14
+
+
+def test_get_decay_rate_archived() -> None:
+    """Archived phase returns 3 days half-life."""
+    assert MemoryService.get_decay_rate("archived") == 3
+
+
+def test_get_decay_rate_unknown_phase() -> None:
+    """Unknown phase returns default (30) half-life."""
+    assert MemoryService.get_decay_rate("unknown") == 30
+
+
+@pytest.mark.asyncio
+async def test_run_compaction_calls_phase_aware_decay(
+    service: MemoryService, db: AsyncMock
+) -> None:
+    """Compaction uses phase-aware decay with correct config values."""
+    with (
+        patch.object(
+            service.repo, "apply_phase_aware_decay", new_callable=AsyncMock, return_value=5
+        ) as mock_decay,
+        patch.object(service.repo, "count_by_project", return_value=100),
+        patch.object(service.repo, "get_non_evergreen_with_embeddings", return_value=[]),
+    ):
+        stats = await service.run_compaction()
+
+    mock_decay.assert_awaited_once_with(
+        active_half_life=60,
+        maintenance_half_life=14,
+        archived_half_life=3,
+        default_half_life=30,
+    )
+    assert stats.remaining_count == 100
+    assert isinstance(stats, CompactionStats)
+
+
+@pytest.mark.asyncio
+async def test_intent_merging_equivalent_memories(service: MemoryService, db: AsyncMock) -> None:
+    """Two memories judged equivalent are merged (older deleted)."""
+    older = make_entry(id=1, content="Use inline styles for Samsung Mail")
+    older.created_at = datetime(2026, 1, 1, tzinfo=UTC)
+    older.is_evergreen = False
+    older.embedding = [0.1] * 1024
+
+    newer = make_entry(id=2, content="Samsung Mail requires inline CSS")
+    newer.created_at = datetime(2026, 3, 1, tzinfo=UTC)
+    newer.is_evergreen = False
+    newer.embedding = [0.1] * 1024
+
+    mock_delete = AsyncMock(return_value=True)
+    with (
+        patch.object(
+            service.repo, "apply_phase_aware_decay", new_callable=AsyncMock, return_value=0
+        ),
+        patch.object(
+            service.repo, "get_non_evergreen_with_embeddings", return_value=[newer, older]
+        ),
+        patch.object(service.repo, "find_similar_for_compaction", return_value=[older]),
+        patch.object(service.repo, "delete", mock_delete),
+        patch.object(service.repo, "count_by_project", return_value=99),
+        patch(
+            "app.memory.compaction.judge_functional_equivalence",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_judge,
+    ):
+        stats = await service.run_compaction()
+
+    mock_judge.assert_awaited_once()
+    mock_delete.assert_awaited_once_with(older.id)
+    assert stats.intent_merged_count == 1
+
+
+@pytest.mark.asyncio
+async def test_intent_merging_different_memories(service: MemoryService, db: AsyncMock) -> None:
+    """Two memories judged different are NOT merged."""
+    entry_a = make_entry(id=1, content="Use inline styles")
+    entry_a.created_at = datetime(2026, 1, 1, tzinfo=UTC)
+    entry_a.is_evergreen = False
+    entry_a.embedding = [0.1] * 1024
+
+    entry_b = make_entry(id=2, content="Dark mode needs prefers-color-scheme")
+    entry_b.created_at = datetime(2026, 3, 1, tzinfo=UTC)
+    entry_b.is_evergreen = False
+    entry_b.embedding = [0.1] * 1024
+
+    mock_delete = AsyncMock(return_value=True)
+    with (
+        patch.object(
+            service.repo, "apply_phase_aware_decay", new_callable=AsyncMock, return_value=0
+        ),
+        patch.object(
+            service.repo, "get_non_evergreen_with_embeddings", return_value=[entry_b, entry_a]
+        ),
+        patch.object(service.repo, "find_similar_for_compaction", return_value=[entry_a]),
+        patch.object(service.repo, "delete", mock_delete),
+        patch.object(service.repo, "count_by_project", return_value=100),
+        patch(
+            "app.memory.compaction.judge_functional_equivalence",
+            new_callable=AsyncMock,
+            return_value=False,
+        ),
+    ):
+        stats = await service.run_compaction()
+
+    mock_delete.assert_not_awaited()
+    assert stats.intent_merged_count == 0
+
+
+@pytest.mark.asyncio
+async def test_intent_judge_failure_safe() -> None:
+    """LLM judge failure returns False (no merge on uncertainty)."""
+    from app.memory.compaction import judge_functional_equivalence
+
+    # The function catches all exceptions including ImportError.
+    # In test env, app.ai.providers may not be importable — this exercises
+    # the failure-safe path directly.
+    result = await judge_functional_equivalence("memory A", "memory B")
+    assert result is False
+
+
+def test_compaction_stats_includes_intent_merged() -> None:
+    """CompactionStats has intent_merged_count field with default 0."""
+    stats = CompactionStats(merged_count=0, remaining_count=50, duration_ms=100)
+    assert stats.intent_merged_count == 0
+
+    stats_with = CompactionStats(
+        merged_count=0, intent_merged_count=3, remaining_count=47, duration_ms=150
+    )
+    assert stats_with.intent_merged_count == 3

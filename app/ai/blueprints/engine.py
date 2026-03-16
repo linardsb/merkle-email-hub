@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
     from app.ai.blueprints.checkpoint import CheckpointStore
+    from app.ai.routing import TaskTier
+    from app.ai.routing_history import RoutingHistoryRepository
     from app.core.quota import BlueprintCostTracker
     from app.knowledge.graph.protocols import GraphSearchResult
     from app.projects.design_system import DesignSystem
@@ -131,6 +133,7 @@ class BlueprintEngine:
         judge_on_retry: bool = False,
         design_system: "DesignSystem | None" = None,
         checkpoint_store: "CheckpointStore | None" = None,
+        routing_history_repo: "RoutingHistoryRepository | None" = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
@@ -141,6 +144,7 @@ class BlueprintEngine:
         self._judge_on_retry = judge_on_retry
         self._design_system = design_system
         self._checkpoint_store = checkpoint_store
+        self._routing_history_repo = routing_history_repo
 
     async def run(
         self, brief: str, initial_html: str = "", user_id: int | None = None
@@ -490,6 +494,25 @@ class BlueprintEngine:
                 run, current_node_name, len(run.progress) - 1, next_node_name=next_node
             )
 
+            # Fire-and-forget routing history entry
+            if self._routing_history_repo is not None and node.node_type == "agentic":
+                try:
+                    accepted = result.status == "success"
+                    agent_tier: TaskTier = getattr(node, "model_tier", "standard")
+                    await self._routing_history_repo.record(
+                        agent_name=current_node_name,
+                        project_id=self._project_id,
+                        tier_used=agent_tier,
+                        accepted=accepted,
+                    )
+                except Exception:
+                    logger.debug(
+                        "blueprint.routing_history_record_failed",
+                        node=current_node_name,
+                        run_id=run.run_id,
+                        exc_info=True,
+                    )
+
             current_node_name = next_node
 
         if run.status == "running":
@@ -721,6 +744,60 @@ class BlueprintEngine:
 
                 if competitive_ctx:
                     context.metadata["competitive_context"] = competitive_ctx
+
+        # LAYER 12: Adaptive model tier (agentic only — inject effective tier for model selection)
+        if self._routing_history_repo is not None and node.node_type == "agentic":
+            from app.ai.routing_history import resolve_adaptive_tier
+
+            try:
+                default_tier: TaskTier = getattr(node, "model_tier", "standard")
+                effective_tier = await resolve_adaptive_tier(
+                    default_tier,
+                    node.name,
+                    self._project_id,
+                    self._routing_history_repo,
+                )
+                context.metadata["effective_tier"] = effective_tier
+                context.metadata["default_tier"] = default_tier
+            except Exception:
+                logger.debug("blueprint.adaptive_tier_failed", node=node.name, exc_info=True)
+
+        # LAYER 13: Knowledge prefetch (agentic + graph available + prefetch enabled)
+        if (
+            node.node_type == "agentic"
+            and self._graph_provider is not None
+            and self._project_id is not None
+        ):
+            from app.core.config import get_settings as _get_settings
+
+            _settings = _get_settings()
+            if _settings.cognee.prefetch_enabled:
+                from app.ai.agents.knowledge_prefetch import (
+                    format_prefetch_context,
+                    prefetch_prior_outcomes,
+                )
+
+                try:
+                    prefetch_results = await prefetch_prior_outcomes(
+                        agent_name=agent_name,
+                        brief=brief,
+                        project_id=self._project_id,
+                        graph_provider=self._graph_provider,
+                        top_k=_settings.cognee.prefetch_top_k,
+                        min_score=_settings.cognee.prefetch_min_score,
+                        cache_ttl=_settings.cognee.prefetch_ttl_seconds,
+                    )
+                    if prefetch_results:
+                        context.metadata["knowledge_prefetch"] = format_prefetch_context(
+                            prefetch_results
+                        )
+                except Exception:
+                    logger.debug(
+                        "blueprint.knowledge_prefetch_failed",
+                        node=node.name,
+                        project_id=self._project_id,
+                        exc_info=True,
+                    )
 
         # LAYER 11: Design system (ALL nodes — agentic for prompt context, deterministic for brand repair)
         if self._design_system is not None:

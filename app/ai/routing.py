@@ -4,10 +4,15 @@ Maps task complexity tiers to specific model identifiers.
 Agents specify their required tier; the router resolves to a concrete model.
 """
 
-from typing import Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from app.ai.routing_history import RoutingHistoryRepository
 
 logger = get_logger(__name__)
 
@@ -49,3 +54,23 @@ def resolve_model(tier: TaskTier | None = None) -> str:
         )
 
     return model
+
+
+async def resolve_model_adaptive(
+    tier: TaskTier,
+    agent_name: str,
+    project_id: int | None,
+    routing_repo: RoutingHistoryRepository | None,
+) -> tuple[str, TaskTier]:
+    """Resolve model with adaptive tier adjustment.
+
+    Returns (model_id, effective_tier) so callers can record which tier was used.
+    """
+    effective_tier = tier
+    if routing_repo is not None:
+        from app.ai.routing_history import resolve_adaptive_tier
+
+        effective_tier = await resolve_adaptive_tier(tier, agent_name, project_id, routing_repo)
+
+    model = resolve_model(effective_tier)
+    return model, effective_tier

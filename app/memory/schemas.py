@@ -62,5 +62,6 @@ class CompactionStats(BaseModel):
     """Result of a compaction run."""
 
     merged_count: int
+    intent_merged_count: int = 0
     remaining_count: int
     duration_ms: int

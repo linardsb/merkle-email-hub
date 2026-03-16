@@ -111,6 +111,99 @@ class MemoryRepository:
         result = await self.db.execute(stmt, {"half_life": half_life_days})
         return int(getattr(result, "rowcount", 0))
 
+    async def apply_phase_aware_decay(
+        self,
+        *,
+        active_half_life: int,
+        maintenance_half_life: int,
+        archived_half_life: int,
+        default_half_life: int,
+    ) -> int:
+        """Apply temporal decay with per-project-phase half-lives.
+
+        Memories without a project_id use default_half_life.
+        """
+        # Project-scoped memories: join projects table for phase
+        project_stmt = text("""
+            UPDATE memory_entries me
+            SET decay_weight = POWER(
+                2.0,
+                -EXTRACT(EPOCH FROM (NOW() - me.created_at)) / 86400.0 / (
+                    CASE
+                        WHEN p.phase = 'maintenance' THEN :maintenance_hl
+                        WHEN p.phase = 'archived' THEN :archived_hl
+                        WHEN p.phase = 'active' THEN :active_hl
+                        ELSE :default_hl
+                    END
+                )
+            )
+            FROM projects p
+            WHERE me.project_id = p.id
+              AND me.is_evergreen = false
+              AND ABS(
+                  me.decay_weight - POWER(
+                      2.0,
+                      -EXTRACT(EPOCH FROM (NOW() - me.created_at)) / 86400.0 / (
+                          CASE
+                              WHEN p.phase = 'maintenance' THEN :maintenance_hl
+                              WHEN p.phase = 'archived' THEN :archived_hl
+                              WHEN p.phase = 'active' THEN :active_hl
+                              ELSE :default_hl
+                          END
+                      )
+                  )
+              ) > 0.01
+        """)
+        project_result = await self.db.execute(
+            project_stmt,
+            {
+                "active_hl": active_half_life,
+                "maintenance_hl": maintenance_half_life,
+                "archived_hl": archived_half_life,
+                "default_hl": default_half_life,
+            },
+        )
+        project_count = int(getattr(project_result, "rowcount", 0))
+
+        # Global memories (no project) use default half-life
+        global_stmt = text("""
+            UPDATE memory_entries
+            SET decay_weight = POWER(
+                2.0,
+                -EXTRACT(EPOCH FROM (NOW() - created_at)) / 86400.0 / :half_life
+            )
+            WHERE is_evergreen = false
+              AND project_id IS NULL
+              AND ABS(
+                  decay_weight - POWER(
+                      2.0,
+                      -EXTRACT(EPOCH FROM (NOW() - created_at)) / 86400.0 / :half_life
+                  )
+              ) > 0.01
+        """)
+        global_result = await self.db.execute(global_stmt, {"half_life": default_half_life})
+        global_count = int(getattr(global_result, "rowcount", 0))
+
+        return project_count + global_count
+
+    async def get_non_evergreen_with_embeddings(
+        self,
+        limit: int = 200,
+    ) -> list[MemoryEntry]:
+        """Get non-evergreen memories that have embeddings, newest first."""
+        query = (
+            select(MemoryEntry)
+            .where(
+                MemoryEntry.is_evergreen == False,  # noqa: E712
+                MemoryEntry.embedding.is_not(None),
+                MemoryEntry.decay_weight > 0.1,  # Skip nearly-dead memories
+            )
+            .order_by(MemoryEntry.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
     async def delete(self, memory_id: int) -> bool:
         """Delete a memory entry. Returns True if deleted."""
         entry = await self.get_by_id(memory_id)

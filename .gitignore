@@ -63,3 +63,4 @@ pricing.md
 traces/*.jsonl
 traces/*.json
 !traces/baseline.json
+traces/suggestions/*.md

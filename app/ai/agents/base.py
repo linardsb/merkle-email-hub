@@ -175,7 +175,9 @@ class BaseAgentService:
 
         settings = get_settings()
         provider_name = settings.ai.provider
-        model = resolve_model(self._get_model_tier(request))
+        base_tier = self._get_model_tier(request)
+        effective_tier = getattr(request, "effective_tier", None) or base_tier
+        model = resolve_model(effective_tier)
         model_id = f"{provider_name}:{model}"
 
         # Progressive disclosure — load only relevant skill files

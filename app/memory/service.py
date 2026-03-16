@@ -132,12 +132,34 @@ class MemoryService:
             raise MemoryNotFoundError(f"Memory entry {memory_id} not found")
         await self.db.commit()
 
+    @staticmethod
+    def get_decay_rate(phase: str) -> int:
+        """Return half-life days for a project phase."""
+        s = get_settings()
+        rates: dict[str, int] = {
+            "active": s.memory.decay_active_days,
+            "maintenance": s.memory.decay_maintenance_days,
+            "archived": s.memory.decay_archived_days,
+        }
+        return rates.get(phase, s.memory.default_decay_half_life_days)
+
     async def run_compaction(self) -> CompactionStats:
-        """Apply temporal decay weights to non-evergreen memories."""
+        """Apply phase-aware decay and intent-aware merging."""
         start = time.monotonic()
 
-        await self.repo.apply_decay(settings.memory.default_decay_half_life_days)
+        # Phase 1: Phase-aware decay
+        await self.repo.apply_phase_aware_decay(
+            active_half_life=settings.memory.decay_active_days,
+            maintenance_half_life=settings.memory.decay_maintenance_days,
+            archived_half_life=settings.memory.decay_archived_days,
+            default_half_life=settings.memory.default_decay_half_life_days,
+        )
         await self.db.commit()
+
+        # Phase 2: Intent-aware merging
+        intent_merged = await self._run_intent_merging()
+        if intent_merged > 0:
+            await self.db.commit()
 
         duration_ms = int((time.monotonic() - start) * 1000)
         remaining = await self.repo.count_by_project(None)
@@ -145,12 +167,52 @@ class MemoryService:
         logger.info(
             "memory.compaction_completed",
             merged_count=0,
+            intent_merged_count=intent_merged,
             remaining_count=remaining,
             duration_ms=duration_ms,
         )
 
         return CompactionStats(
             merged_count=0,
+            intent_merged_count=intent_merged,
             remaining_count=remaining,
             duration_ms=duration_ms,
         )
+
+    async def _run_intent_merging(self) -> int:
+        """Merge functionally equivalent memories using embedding + LLM judge.
+
+        For each non-evergreen memory, find candidates with cosine > intent_threshold.
+        Run lightweight LLM judge to confirm functional equivalence before merging.
+        Keep the newer memory, delete the older one.
+        """
+        from app.memory.compaction import judge_functional_equivalence
+
+        threshold = settings.memory.intent_similarity_threshold
+        merged = 0
+        processed_ids: set[int] = set()
+
+        entries = await self.repo.get_non_evergreen_with_embeddings()
+
+        for entry in entries:
+            if entry.id in processed_ids:
+                continue
+            candidates = await self.repo.find_similar_for_compaction(entry, threshold)
+            for candidate in candidates:
+                if candidate.id in processed_ids:
+                    continue
+                is_equivalent = await judge_functional_equivalence(entry.content, candidate.content)
+                if is_equivalent:
+                    older = candidate if entry.created_at >= candidate.created_at else entry
+                    newer = entry if older is candidate else candidate
+                    await self.repo.delete(older.id)
+                    processed_ids.add(older.id)
+                    merged += 1
+                    logger.info(
+                        "memory.intent_merge_completed",
+                        kept_id=newer.id,
+                        deleted_id=older.id,
+                    )
+                    break  # Move to next entry after first merge
+
+        return merged

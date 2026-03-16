@@ -59,6 +59,9 @@ class AIConfig(BaseModel):
     model_standard: str = ""  # Empty = use default model
     model_lightweight: str = ""  # Empty = use default model
 
+    # Adaptive model tier routing — tracks per-agent success rates and auto-adjusts tier
+    adaptive_routing_enabled: bool = False  # AI__ADAPTIVE_ROUTING_ENABLED
+
     # AI-specific rate limits
     rate_limit_chat: str = "20/minute"
     rate_limit_generation: str = "5/minute"
@@ -94,6 +97,10 @@ class KnowledgeConfig(BaseModel):
     auto_tag_model: str = "gpt-4o-mini"
     auto_tag_api_base_url: str = "https://api.openai.com/v1"
     auto_tag_api_key: str = ""
+    # Query router (Phase 16.1)
+    router_enabled: bool = False
+    router_llm_fallback: bool = False
+    router_llm_model: str = "gpt-4o-mini"
 
 
 class RenderingConfig(BaseModel):
@@ -114,8 +121,12 @@ class MemoryConfig(BaseModel):
     enabled: bool = True
     embedding_dimension: int = 1024
     default_decay_half_life_days: int = 30
+    decay_active_days: int = 60
+    decay_maintenance_days: int = 14
+    decay_archived_days: int = 3
     compaction_interval_hours: int = 24
     compaction_similarity_threshold: float = 0.92
+    intent_similarity_threshold: float = 0.85
     max_memories_per_project: int = 5000
     context_injection_limit: int = 10
     dcg_promotion_min_frequency: int = 3
@@ -138,6 +149,10 @@ class CogneeConfig(BaseModel):
     data_directory: str = "data/cognee"
     system_directory: str = "data/cognee/system"
     background_cognify: bool = True
+    prefetch_enabled: bool = False  # Enable knowledge graph pre-query for agents
+    prefetch_ttl_seconds: int = 300  # Redis cache TTL (5 min)
+    prefetch_top_k: int = 3  # Max similar outcomes to return
+    prefetch_min_score: float = 0.3  # Minimum similarity score to include
 
 
 class OntologySyncConfig(BaseModel):

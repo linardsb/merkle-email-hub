@@ -348,6 +348,19 @@ async def search_knowledge(
     return await service.search(body)
 
 
+@router.post("/search/routed", response_model=SearchResponse)
+@limiter.limit("30/minute")
+async def search_knowledge_routed(
+    request: Request,
+    body: SearchRequest,
+    service: KnowledgeService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> SearchResponse:
+    """Search with intent-based query routing."""
+    _ = request
+    return await service.search_routed(body)
+
+
 # ---------------------------------------------------------------------------
 # Graph knowledge search
 # ---------------------------------------------------------------------------
