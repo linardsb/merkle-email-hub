@@ -444,11 +444,15 @@ class KnowledgeService:
     async def _search_compatibility(
         self, request: SearchRequest, classified: ClassifiedQuery
     ) -> SearchResponse:
-        """Compatibility-optimized search: ontology lookup + hybrid search."""
-        from app.knowledge.ontology.registry import load_ontology
+        """Compatibility search: structured ontology query, vector fallback.
 
-        ontology = load_ontology()
-        ontology_context_parts: list[str] = []
+        When extracted entities resolve to ontology objects, returns structured
+        answers without hitting embedding/reranking. Falls back to vector
+        search when entities don't resolve.
+        """
+        from app.knowledge.ontology.structured_query import OntologyQueryEngine
+
+        engine = OntologyQueryEngine()
 
         client_ids = [
             e.ontology_id for e in classified.extracted_entities if e.entity_type == "client"
@@ -457,40 +461,65 @@ class KnowledgeService:
             e.ontology_id for e in classified.extracted_entities if e.entity_type == "property"
         ]
 
+        # Try structured query for each property
+        all_result_dicts: list[dict[str, object]] = []
         for prop_id in property_ids:
-            prop = ontology.get_property(prop_id)
-            if prop is None:
-                continue
-            for client_id in client_ids:
-                support = ontology.get_support(prop_id, client_id)
-                client = ontology.get_client(client_id)
-                client_name = client.name if client else client_id
-                ontology_context_parts.append(
-                    f"{prop.property_name}: {support.value} in {client_name}"
-                )
-            fallbacks = ontology.fallbacks_for(prop_id)
-            if fallbacks:
-                fb_strs = [f.target_property_id for f in fallbacks]
-                ontology_context_parts.append(
-                    f"Fallbacks for {prop.property_name}: {', '.join(fb_strs)}"
-                )
-
-        response = await self.search(request)
-
-        if ontology_context_parts:
-            ontology_result = SearchResult(
-                chunk_content="[Ontology] " + "; ".join(ontology_context_parts),
-                document_id=0,
-                document_filename="ontology",
-                domain="css_support",
-                language="en",
-                chunk_index=0,
-                score=1.0,
-                metadata_json=None,
+            answer = engine.query_property_support(
+                prop_id,
+                client_ids=client_ids or None,
             )
-            response.results.insert(0, ontology_result)
+            if answer is not None:
+                all_result_dicts.extend(engine.format_as_search_results(answer))
 
-        return response
+        # Client limitations query (e.g. "what doesn't work in Outlook?")
+        if not property_ids and client_ids:
+            for cid in client_ids[:1]:  # Limit to first client
+                unsupported = engine.query_client_limitations(cid)
+                if unsupported:
+                    client = engine.get_client(cid)
+                    client_name = client.name if client else cid
+                    lines = [f"- `{p.property_name}`" for p in unsupported[:20]]
+                    content = (
+                        f"## Unsupported CSS in {client_name}\n\n"
+                        f"{len(unsupported)} properties not supported:\n\n" + "\n".join(lines)
+                    )
+                    if len(unsupported) > 20:
+                        content += f"\n\n... and {len(unsupported) - 20} more"
+                    all_result_dicts.append(
+                        {
+                            "chunk_content": content,
+                            "document_id": 0,
+                            "document_filename": "ontology",
+                            "domain": "css_support",
+                            "language": "en",
+                            "chunk_index": 0,
+                            "score": 1.0,
+                            "metadata_json": None,
+                        }
+                    )
+
+        # If structured results found, return them without vector search
+        if all_result_dicts:
+            results = [SearchResult(**d) for d in all_result_dicts]
+            logger.info(
+                "knowledge.search_compatibility.structured",
+                result_count=len(results),
+                property_count=len(property_ids),
+                client_count=len(client_ids),
+            )
+            return SearchResponse(
+                results=results,
+                query=request.query,
+                total_candidates=len(results),
+                reranked=False,
+            )
+
+        # No ontology match — fall back to vector search
+        logger.info(
+            "knowledge.search_compatibility.fallback",
+            reason="no_ontology_match",
+        )
+        return await self.search(request)
 
     async def _search_debug(
         self, request: SearchRequest, _classified: ClassifiedQuery

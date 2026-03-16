@@ -18,7 +18,16 @@ Read the user's description. Classify:
 
 ### 2. Reproduce / Locate
 
-- For bugs: find the failing code path. Read relevant files (routes → service → repository).
+**Use jCodeMunch for cross-file tracing** (repo: `local/merkle-email-hub-0ddab3c4`):
+- `search_symbols(query, kind="function")` to find related functions without reading entire files
+- `find_references(symbol)` to trace callers/callees across the codebase
+- `get_file_outline(file)` to understand file structure before deciding what to read
+- `get_symbol(name)` to read just the specific function you need
+
+Only `Read` the full file when you need to edit it.
+
+**Direct diagnosis:**
+- For bugs: find the failing code path. Trace routes → service → repository using jCodeMunch.
 - For test failures: run the failing test, read the traceback.
 - For type errors: run `uv run pyright {file}` or `uv run mypy {file}` to get the exact error.
 - For lint errors: run `uv run ruff check {file}` to see violations.

@@ -8,13 +8,6 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #20733 | 2:33 PM | 🔵 | Skill File Format Uses ZIP Archive Structure | ~406 |
-
-### Mar 14, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #23187 | 3:45 PM | 🔵 | BaseAgentService architecture verified - structured output and handoff hooks already implemented | ~684 |
-| #23178 | 3:39 PM | 🔵 | Project file audit completed - 15/16 critical files exist, ontology registry missing | ~408 |
 </claude-mem-context>
 
 # AI Agents

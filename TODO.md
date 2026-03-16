@@ -681,7 +681,7 @@
 - Suggestions are review-only: developer approves/rejects via PR or manual edit. No auto-application.
 **Security:** Suggestions are generated from eval traces (already sanitized). Output is local markdown files, not applied to production prompts.
 **Verify:** Run `make eval-full` on a dataset with known recurring failures. Verify suggestion files are generated with actionable SKILL.md diffs. Apply a suggestion manually, re-run eval — verify the failure cluster shrinks. `make test` passes.
-- [ ] 15.4 Auto-surfacing prompt amendments from eval failures
+- [x] ~~15.4 Auto-surfacing prompt amendments from eval failures~~ DONE
 
 ### 15.5 Bidirectional Knowledge Graph — Agent Pre-Query
 **What:** Before generating from scratch, agents query the Cognee knowledge graph for similar past outcomes. If a similar template was built for this client before, the agent starts from that baseline instead of zero.
@@ -718,7 +718,7 @@
 - Config (`app/core/config.py` → `KnowledgeConfig`): `router_enabled: bool = False`, `router_llm_fallback: bool = False`, `router_llm_model: str = "gpt-4o-mini"`. When `router_enabled=False`, `search_routed()` delegates directly to `search()` (zero-cost bypass)
 **Security:** Router input is the `query` field from `SearchRequest` (Pydantic-validated, max 1000 chars). LLM fallback (when enabled) passes query through `sanitize_prompt()` from `app/ai/sanitize.py`. New endpoint uses same auth + rate limit pattern as existing `/search`. No new credential handling — LLM fallback uses provider registry (`get_registry().get_llm()`).
 **Verify:** Test 10+ cases per intent — compatibility queries ("Does Gmail support flexbox?", "flexbox support") classified correctly, how-to queries fall through to existing search, template queries route to component search, debug queries include ontology context. Entity extraction resolves common aliases ("Gmail" → `gmail_web`, "Outlook desktop" → `outlook_2019_win`). Confidence gating works (low-confidence → fallback to general). `search_routed()` with `router_enabled=False` produces identical results to `search()`. `make test` passes.
-- [ ] 16.1 Query router — intent classification & entity extraction
+- [x] ~~16.1 Query router — intent classification & entity extraction~~ DONE
 
 ### 16.2 Structured Compatibility Queries via Ontology
 **What:** For `compatibility` intent, bypass vector search and query `OntologyRegistry` directly for exact, structured answers. Returns property support levels per client, known workarounds, and safe alternatives — formatted as backward-compatible `SearchResult` objects.
@@ -736,7 +736,7 @@
 - Modify `app/knowledge/service.py` — implement `async _search_compatibility(classified: ClassifiedQuery) -> SearchResponse` using `OntologyQueryEngine`. When structured answer found → format as `SearchResult` list with `intent="compatibility"`. When no ontology match (extracted entities don't resolve) → fall back to `search()` with note in first result
 **Security:** Ontology queries are read-only lookups against the in-memory `OntologyRegistry` (frozen dataclasses, `__slots__`, `lru_cache`). No SQL, no external API calls, no user input reaches any mutable state. Input entities already validated by router's regex + Pydantic.
 **Verify:** "Does Gmail support flexbox?" → structured answer: `display_flex` + `gmail_web` → `SupportLevel.FULL` (Gmail supports flexbox). "Does Outlook support flexbox?" → `SupportLevel.NONE` + table fallback from `fallbacks.yaml`. "What CSS properties don't work in Outlook?" → `properties_unsupported_by("outlook_2019_win")` list. Unknown property ("does Gmail support container queries?") → graceful fallback to vector search. `make test` passes.
-- [ ] 16.2 Structured compatibility queries via ontology
+- [x] ~~16.2 Structured compatibility queries via ontology~~ DONE
 
 ### 16.3 Code-Aware HTML Chunking
 **What:** Replace generic text splitter with HTML/CSS-aware chunker that respects structural boundaries. `<style>` blocks become standalone chunks, MSO conditional blocks (`<!--[if mso]>`) are preserved whole, and `<body>` is split by major structural elements (first-level `<table>` or `<div>`). Sections exceeding chunk_size are split at nested level (rows → cells). Parse failures fall back to existing `chunk_text()`.

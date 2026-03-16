@@ -109,6 +109,57 @@ class OntologyRegistry:
     def properties_by_category(self, category: CSSCategory) -> list[CSSProperty]:
         return [p for p in self.properties if p.category == category]
 
+    def find_property_by_name(self, css_name: str, value: str | None = None) -> CSSProperty | None:
+        """Fuzzy property lookup: exact ID → case-insensitive name → prefix match."""
+        from app.knowledge.ontology.query import _property_id_from_css
+
+        # Try exact ID first
+        prop_id = _property_id_from_css(css_name, value)
+        exact = self._property_by_id.get(prop_id)
+        if exact is not None:
+            return exact
+
+        # Case-insensitive property_name match
+        name_lower = css_name.strip().lower()
+        for prop in self.properties:
+            if prop.property_name.lower() == name_lower:
+                return prop
+
+        # Prefix match (e.g. "flex" matches "flex-direction", "flex-wrap", etc.)
+        # Return first match only — caller should use exact names for precision
+        for prop in self.properties:
+            if prop.property_name.lower().startswith(name_lower):
+                return prop
+
+        return None
+
+    def find_client_by_name(self, name: str) -> EmailClient | None:
+        """Fuzzy client lookup: exact name → family → substring. Highest market share on ambiguity."""
+        name_lower = name.strip().lower()
+
+        # Exact name match
+        for client in self.clients:
+            if client.name.lower() == name_lower:
+                return client
+
+        # Family match (e.g. "outlook" matches Outlook 2019, Outlook 365, etc.)
+        family_matches: list[EmailClient] = []
+        for client in self.clients:
+            if client.family.lower() == name_lower:
+                family_matches.append(client)
+        if family_matches:
+            return max(family_matches, key=lambda c: c.market_share)
+
+        # Substring match
+        substring_matches: list[EmailClient] = []
+        for client in self.clients:
+            if name_lower in client.name.lower() or name_lower in client.family.lower():
+                substring_matches.append(client)
+        if substring_matches:
+            return max(substring_matches, key=lambda c: c.market_share)
+
+        return None
+
 
 def _parse_clients(data: dict[str, Any]) -> tuple[EmailClient, ...]:
     """Parse clients.yaml into EmailClient tuples."""

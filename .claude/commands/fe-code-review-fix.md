@@ -19,7 +19,16 @@ Read the user's description. Classify:
 
 ### 2. Reproduce / Locate
 
-- For bugs: find the component or page. Read: page → components → hooks → types.
+**Use jCodeMunch for cross-file tracing** (repo: `local/merkle-email-hub-0ddab3c4`):
+- `search_symbols(query, kind="function")` to find related components/hooks without reading entire files
+- `find_references(symbol)` to trace where a component or hook is used
+- `get_file_outline(file)` to understand file structure before deciding what to read
+- `get_symbol(name)` to read just the specific component or function you need
+
+Only `Read` the full file when you need to edit it.
+
+**Direct diagnosis:**
+- For bugs: find the component or page. Trace page → components → hooks → types using jCodeMunch.
 - For test failures: run `cd cms && pnpm --filter web test` and read output.
 - For type errors: run `cd cms && pnpm --filter @merkle-email-hub/web exec tsc --noEmit`.
 - For design issues: grep for primitive Tailwind colors or hardcoded strings.

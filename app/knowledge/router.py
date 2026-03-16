@@ -13,6 +13,9 @@ from app.knowledge.ontology.registry import load_ontology
 
 logger = get_logger(__name__)
 
+# Pre-compiled pattern for CSS property:value mentions (e.g. "display: flex")
+_CSS_VALUE_PATTERN = re.compile(r"([\w-]+)\s*:\s*([\w-]+)")
+
 
 class QueryIntent(Enum):
     """Classified intent of a knowledge query."""
@@ -119,32 +122,35 @@ class QueryRouter:
                     r"\b(?:does|do|can|will|is)\b.*\b(?:support|render|display|show)\b",
                     re.IGNORECASE,
                 ),
-                re.compile(r"\b(?:support(?:ed)?|compatibility|compat)\b", re.IGNORECASE),
+                re.compile(r"\b(?:supported|compatibility|compat)\b", re.IGNORECASE),
                 re.compile(r"\bcan\s+i\s+(?:use|email)\b", re.IGNORECASE),
                 re.compile(
                     r"\b(?:fallback|workaround|alternative)\b.*\b(?:for|to)\b", re.IGNORECASE
                 ),
             ],
             QueryIntent.TEMPLATE: [
-                re.compile(r"\b(?:template|layout|section|component|block)\b", re.IGNORECASE),
+                re.compile(r"\b(?:template|section|component|block)\b", re.IGNORECASE),
                 re.compile(
                     r"\b(?:hero|header|footer|cta|banner|card)\b.*\b(?:section|block|template)\b",
                     re.IGNORECASE,
                 ),
             ],
             QueryIntent.DEBUG: [
-                re.compile(r"\b(?:broken|bug|issue|problem|error|fix|wrong)\b", re.IGNORECASE),
+                re.compile(r"\b(?:broken|bug|issue|problem|error|wrong)\b", re.IGNORECASE),
+                re.compile(r"\b(?:fix|fixing)\b", re.IGNORECASE),
                 re.compile(
                     r"\b(?:why|how come)\b.*\b(?:not|doesn'?t|isn'?t|won'?t)\b", re.IGNORECASE
                 ),
                 re.compile(
-                    r"\b(?:render(?:ing)?)\b.*\b(?:wrong|incorrect|broken|weird)\b",
+                    r"\b(?:render(?:ing)?)\b.*\b(?:wrong|incorrect(?:ly)?|broken|weird)\b",
                     re.IGNORECASE,
                 ),
+                re.compile(r"\bincorrect(?:ly)?\b", re.IGNORECASE),
             ],
             QueryIntent.HOW_TO: [
                 re.compile(
-                    r"\b(?:how\s+(?:to|do|can|should)|best\s+(?:way|practice))\b", re.IGNORECASE
+                    r"\b(?:how\s+(?:to|do|can|should)|best\s+(?:way|practices?))\b",
+                    re.IGNORECASE,
                 ),
                 re.compile(
                     r"\b(?:guide|tutorial|example|implement|create|build|make)\b", re.IGNORECASE
@@ -153,6 +159,7 @@ class QueryRouter:
                     r"\b(?:what(?:'s|\s+is)\s+the\s+(?:best|recommended|correct))\b",
                     re.IGNORECASE,
                 ),
+                re.compile(r"\bhow\s+do\s+i\b", re.IGNORECASE),
             ],
         }
 
@@ -226,8 +233,7 @@ class QueryRouter:
                 )
 
         # Also try _property_id_from_css for CSS-like mentions
-        css_pattern = re.compile(r"([\w-]+)\s*:\s*([\w-]+)")
-        for m in css_pattern.finditer(query):
+        for m in _CSS_VALUE_PATTERN.finditer(query):
             prop_name, prop_value = m.group(1), m.group(2)
             prop_id = _property_id_from_css(prop_name, prop_value)
             if not any(e.ontology_id == prop_id for e in entities):
@@ -256,12 +262,24 @@ class QueryRouter:
                 if pattern.search(query):
                     scores[intent] += 1.0
 
+        # Cross-intent suppression: DEBUG keywords override TEMPLATE
+        if scores[QueryIntent.DEBUG] > 0 and scores[QueryIntent.TEMPLATE] > 0:
+            scores[QueryIntent.TEMPLATE] *= 0.5
+
+        # HOW_TO suppresses COMPATIBILITY when both match (question form)
+        if scores[QueryIntent.HOW_TO] > 0 and scores[QueryIntent.COMPATIBILITY] > 0:
+            scores[QueryIntent.COMPATIBILITY] *= 0.5
+
         # Entity-based boosting
         has_client = any(e.entity_type == "client" for e in entities)
         has_property = any(e.entity_type == "property" for e in entities)
 
         if has_client and has_property:
-            scores[QueryIntent.COMPATIBILITY] += 2.0
+            # Entity boost is weaker when DEBUG keywords are present
+            if scores[QueryIntent.DEBUG] > 0:
+                scores[QueryIntent.DEBUG] += 1.0
+            else:
+                scores[QueryIntent.COMPATIBILITY] += 2.0
         elif has_property and scores[QueryIntent.COMPATIBILITY] > 0:
             scores[QueryIntent.COMPATIBILITY] += 1.0
 
