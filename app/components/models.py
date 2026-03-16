@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,6 +23,9 @@ class Component(Base, TimestampMixin, SoftDeleteMixin):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False, default="general")
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    search_embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(1024), nullable=True, default=None
+    )
 
     versions: Mapped[list["ComponentVersion"]] = relationship(
         back_populates="component",

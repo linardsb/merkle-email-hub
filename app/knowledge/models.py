@@ -82,3 +82,5 @@ class DocumentChunk(Base, TimestampMixin):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     embedding = mapped_column(Vector(1024))
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    section_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)

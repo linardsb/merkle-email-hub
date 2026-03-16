@@ -231,6 +231,19 @@ class BaseAgentService:
             usage=result.usage,
         )
 
+        # CRAG validation loop (if mixin present and enabled)
+        from app.ai.agents.validation_loop import CRAGMixin
+
+        if isinstance(self, CRAGMixin) and settings.knowledge.crag_enabled:
+            html, crag_corrections = await self._crag_validate_and_correct(
+                html, system_prompt, model
+            )
+            if crag_corrections:
+                logger.info(
+                    f"agents.{self.agent_name}.crag_applied",
+                    corrections=crag_corrections,
+                )
+
         # Optional QA checks
         qa_results: list[QACheckResult] | None = None
         qa_passed: bool | None = None

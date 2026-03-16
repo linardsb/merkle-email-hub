@@ -118,6 +118,7 @@ class DocumentChunkResponse(BaseModel):
 
     chunk_index: int
     content: str
+    section_type: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -27,11 +27,4 @@ First agent built using the eval-first + skills workflow (Task 4.1 Priority 1).
 |----|------|---|-------|------|
 | #20754 | 2:40 PM | 🔵 | Existing Outlook Fixer Skill Structure Without Hooks | ~774 |
 | #20746 | 2:37 PM | 🔵 | OutlookFixerService Progressive Skill Loading Pattern | ~718 |
-
-### Mar 14, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #23189 | 3:45 PM | 🔵 | OutlookFixerService implements validation-repair-retry loop - blueprint for Phase 16.5 CRAG pattern | ~718 |
-| #23178 | 3:39 PM | 🔵 | Project file audit completed - 15/16 critical files exist, ontology registry missing | ~408 |
 </claude-mem-context>

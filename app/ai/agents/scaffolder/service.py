@@ -18,6 +18,7 @@ from app.ai.agents.scaffolder.prompt import (
 )
 from app.ai.agents.scaffolder.schemas import ScaffolderRequest, ScaffolderResponse
 from app.ai.agents.schemas.build_plan import EmailBuildPlan
+from app.ai.agents.validation_loop import CRAG_SYSTEM_PROMPT, CRAGMixin
 from app.ai.exceptions import AIExecutionError
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -35,7 +36,7 @@ _mso_warnings_var: contextvars.ContextVar[list[str] | None] = contextvars.Contex
 )
 
 
-class ScaffolderService(BaseAgentService):
+class ScaffolderService(CRAGMixin, BaseAgentService):
     """Orchestrates the scaffolder agent pipeline.
 
     Pipeline: build messages → LLM call → validate output →
@@ -150,6 +151,14 @@ class ScaffolderService(BaseAgentService):
 
         # Phase 3: XSS sanitize (template HTML is trusted, but slot fills are not)
         html = sanitize_html_xss(html)
+
+        # Phase 3.5: CRAG validation loop
+        if settings.knowledge.crag_enabled:
+            html, _crag_corrections = await self._crag_validate_and_correct(
+                html,
+                system_prompt=CRAG_SYSTEM_PROMPT,
+                model=model,
+            )
 
         # Phase 4: QA gate
         qa_results: list[QACheckResult] | None = None

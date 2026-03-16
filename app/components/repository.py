@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+import sqlalchemy as sa
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -136,6 +137,84 @@ class ComponentRepository:
             )
         )
         return result.scalar_one_or_none()
+
+    async def search_with_compatibility(
+        self,
+        *,
+        search: str | None = None,
+        category: str | None = None,
+        compatible_with: list[str] | None = None,
+        limit: int = 5,
+    ) -> list[tuple[Component, ComponentVersion]]:
+        """Search components with latest version, filtering by compatibility.
+
+        Returns components whose latest version does NOT have "none" support
+        for the specified clients. Components with NULL compatibility pass
+        (no QA data = don't exclude).
+        """
+        latest_version_sq = (
+            select(
+                ComponentVersion.component_id,
+                func.max(ComponentVersion.version_number).label("max_version"),
+            )
+            .group_by(ComponentVersion.component_id)
+            .subquery()
+        )
+        query = (
+            select(Component, ComponentVersion)
+            .join(latest_version_sq, Component.id == latest_version_sq.c.component_id)
+            .join(
+                ComponentVersion,
+                sa.and_(
+                    ComponentVersion.component_id == Component.id,
+                    ComponentVersion.version_number == latest_version_sq.c.max_version,
+                ),
+            )
+            .where(Component.deleted_at.is_(None))
+        )
+
+        if search:
+            pattern = f"%{escape_like(search)}%"
+            query = query.where(
+                sa.or_(
+                    Component.name.ilike(pattern),
+                    Component.description.ilike(pattern),
+                )
+            )
+        if category:
+            query = query.where(Component.category == category)
+        if compatible_with is not None:
+            for client in compatible_with:
+                # Exclude components where latest version has "none" for this client.
+                # NULL compatibility passes (no QA data = don't exclude).
+                query = query.where(
+                    sa.or_(
+                        ComponentVersion.compatibility.is_(None),
+                        ComponentVersion.compatibility[client].as_string() != "none",
+                    )
+                )
+
+        query = query.order_by(Component.name).limit(limit)
+        result = await self.db.execute(query)
+        return list(result.tuples().all())
+
+    async def search_by_embedding(
+        self,
+        embedding: list[float],
+        *,
+        limit: int = 5,
+    ) -> list[tuple[Component, float]]:
+        """Search components by vector similarity (cosine distance)."""
+        distance = Component.search_embedding.cosine_distance(embedding).label("distance")
+        query = (
+            select(Component, distance)
+            .where(Component.deleted_at.is_(None))
+            .where(Component.search_embedding.is_not(None))
+            .order_by(distance)
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        return list(result.tuples().all())
 
     async def get_latest_compatibility(self, component_id: int) -> dict[str, str] | None:
         """Get compatibility from the latest version that has QA results."""

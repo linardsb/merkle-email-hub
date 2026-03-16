@@ -82,6 +82,18 @@ class TestQueryRouterClassify:
         result = self.router.classify(query)
         assert result.intent == QueryIntent.TEMPLATE, f"Expected TEMPLATE for: {query}"
 
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "Show me a CTA button component",
+            "Find a hero block template",
+            "Email header component",
+        ],
+    )
+    def test_template_queries_component_variants(self, query: str) -> None:
+        result = self.router.classify(query)
+        assert result.intent == QueryIntent.TEMPLATE, f"Expected TEMPLATE for: {query}"
+
     # --- Debug intent ---
 
     @pytest.mark.parametrize(

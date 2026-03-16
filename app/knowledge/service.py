@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.knowledge import chunking, processing
+from app.knowledge import chunking, chunking_html, processing
 from app.knowledge.embedding import EmbeddingProvider, get_embedding_provider
 from app.knowledge.exceptions import (
     DocumentNotFoundError,
@@ -156,36 +156,81 @@ class KnowledgeService:
                 file_path=str(stored_path),
             )
 
-            # Chunk
-            chunks = chunking.chunk_text(
-                text,
-                chunk_size=settings.knowledge.chunk_size,
-                chunk_overlap=settings.knowledge.chunk_overlap,
-            )
-
-            if not chunks:
-                await self.repository.update_document_status(doc.id, "completed", None, 0)
-                return await self.get_document(doc.id)
-
-            # Embed
-            texts = [c.content for c in chunks]
-            embeddings = await _get_embedding().embed(texts)
-
-            # Build chunk objects
-            chunk_objects = [
-                DocumentChunk(
-                    document_id=doc.id,
-                    content=chunks[i].content,
-                    chunk_index=chunks[i].chunk_index,
-                    embedding=embeddings[i],
-                    metadata_json=None,
+            # Chunk — use HTML-aware chunker for HTML content
+            if settings.knowledge.html_chunking_enabled and chunking_html.is_html_content(text):
+                logger.info("knowledge.ingest.html_chunking", document_id=doc.id)
+                html_results = chunking_html.chunk_html(
+                    text,
+                    chunk_size=settings.knowledge.html_chunk_size,
+                    chunk_overlap=settings.knowledge.html_chunk_overlap,
                 )
-                for i in range(len(chunks))
-            ]
+                if not html_results:
+                    await self.repository.update_document_status(doc.id, "completed", None, 0)
+                    return await self.get_document(doc.id)
+
+                # Multi-rep: generate summaries and embed summaries instead of raw content
+                if settings.knowledge.multi_rep_enabled:
+                    from app.knowledge.summarizer import ChunkSummarizer
+
+                    summarizer = ChunkSummarizer()
+                    chunk_summaries = await summarizer.summarize(
+                        [(c.chunk_index, c.content, c.section_type) for c in html_results]
+                    )
+                    # Merge: prefer new summary over 16.3 basic summary
+                    summaries: list[str | None] = [
+                        cs.summary if cs.summary else html_results[i].summary
+                        for i, cs in enumerate(chunk_summaries)
+                    ]
+                    # Embed summaries when available, otherwise raw content
+                    texts_to_embed: list[str] = [
+                        summaries[i] or html_results[i].content for i in range(len(html_results))
+                    ]
+                else:
+                    summaries = [c.summary for c in html_results]
+                    texts_to_embed = [c.content for c in html_results]
+
+                embeddings = await _get_embedding().embed(texts_to_embed)
+                chunk_objects = [
+                    DocumentChunk(
+                        document_id=doc.id,
+                        content=html_results[i].content,
+                        chunk_index=html_results[i].chunk_index,
+                        embedding=embeddings[i],
+                        metadata_json=None,
+                        section_type=html_results[i].section_type,
+                        summary=summaries[i],
+                    )
+                    for i in range(len(html_results))
+                ]
+                chunk_count = len(html_results)
+            else:
+                chunks_text = chunking.chunk_text(
+                    text,
+                    chunk_size=settings.knowledge.chunk_size,
+                    chunk_overlap=settings.knowledge.chunk_overlap,
+                )
+
+                if not chunks_text:
+                    await self.repository.update_document_status(doc.id, "completed", None, 0)
+                    return await self.get_document(doc.id)
+
+                texts_to_embed = [c.content for c in chunks_text]
+                embeddings = await _get_embedding().embed(texts_to_embed)
+                chunk_objects = [
+                    DocumentChunk(
+                        document_id=doc.id,
+                        content=chunks_text[i].content,
+                        chunk_index=chunks_text[i].chunk_index,
+                        embedding=embeddings[i],
+                        metadata_json=None,
+                    )
+                    for i in range(len(chunks_text))
+                ]
+                chunk_count = len(chunks_text)
 
             # Store
             await self.repository.bulk_create_chunks(chunk_objects)
-            await self.repository.update_document_status(doc.id, "completed", None, len(chunks))
+            await self.repository.update_document_status(doc.id, "completed", None, chunk_count)
 
             # Update OCR status if OCR was applied
             if ocr_applied:
@@ -226,7 +271,7 @@ class KnowledgeService:
         logger.info(
             "knowledge.ingest.completed",
             document_id=doc.id,
-            chunk_count=len(chunks),
+            chunk_count=chunk_count,
             duration_ms=duration_ms,
         )
 
@@ -539,16 +584,59 @@ class KnowledgeService:
         return await self.search(request)
 
     async def _search_components(
-        self, request: SearchRequest, _classified: ClassifiedQuery
+        self, request: SearchRequest, classified: ClassifiedQuery
     ) -> SearchResponse:
-        """Template/component-optimized search: search component domain."""
-        component_request = SearchRequest(
+        """Template/component search: search Component table, merge with knowledge results."""
+        from app.knowledge.component_search import ComponentSearchService
+
+        component_service = ComponentSearchService(self.db)
+
+        # Extract category hint from entities if available
+        category: str | None = None
+        for entity in classified.extracted_entities:
+            if entity.entity_type == "category":
+                category = entity.raw_text
+                break
+
+        # Extract client names for compatibility filtering
+        compatible_with: list[str] | None = None
+        client_entities = [
+            e.ontology_id for e in classified.extracted_entities if e.entity_type == "client"
+        ]
+        if client_entities:
+            compatible_with = client_entities
+
+        component_results = await component_service.search_components(
+            request.query,
+            category=category,
+            compatible_with=compatible_with,
+            limit=5,
+        )
+
+        # Supplement with top-3 knowledge base results
+        knowledge_request = SearchRequest(
             query=request.query,
             domain="best_practices",
             language=request.language,
-            limit=request.limit,
+            limit=3,
         )
-        return await self.search(component_request)
+        knowledge_response = await self.search(knowledge_request)
+
+        # Component results first, then knowledge supplement
+        all_results = component_results + knowledge_response.results
+
+        logger.info(
+            "knowledge.search_components.completed",
+            component_count=len(component_results),
+            knowledge_count=len(knowledge_response.results),
+        )
+
+        return SearchResponse(
+            results=all_results,
+            query=request.query,
+            total_candidates=len(all_results),
+            reranked=False,
+        )
 
     async def get_document(self, document_id: int) -> DocumentResponse:
         """Get a document by ID.

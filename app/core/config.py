@@ -97,10 +97,23 @@ class KnowledgeConfig(BaseModel):
     auto_tag_model: str = "gpt-4o-mini"
     auto_tag_api_base_url: str = "https://api.openai.com/v1"
     auto_tag_api_key: str = ""
+    # HTML chunking (Phase 16.3)
+    html_chunk_size: int = 1024
+    html_chunk_overlap: int = 100
+    html_chunking_enabled: bool = True
+    # CRAG validation loop (Phase 16.5)
+    crag_enabled: bool = False
+    crag_min_severity: str = "error"
     # Query router (Phase 16.1)
     router_enabled: bool = False
     router_llm_fallback: bool = False
     router_llm_model: str = "gpt-4o-mini"
+    # Multi-representation indexing (Phase 16.6)
+    multi_rep_enabled: bool = False
+    multi_rep_model: str = "gpt-4o-mini"
+    multi_rep_api_base_url: str = "https://api.openai.com/v1"
+    multi_rep_api_key: str = ""
+    multi_rep_max_concurrency: int = 5
 
 
 class RenderingConfig(BaseModel):

@@ -23,6 +23,7 @@ from app.ai.agents.outlook_fixer.schemas import (
     OutlookFixerResponse,
 )
 from app.ai.agents.schemas.outlook_diagnostic import MSOIssue, OutlookDiagnostic
+from app.ai.agents.validation_loop import CRAGMixin
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
 from app.ai.routing import resolve_model
@@ -36,7 +37,7 @@ from app.qa_engine.schemas import QACheckResult
 logger = get_logger(__name__)
 
 
-class OutlookFixerService(BaseAgentService):
+class OutlookFixerService(CRAGMixin, BaseAgentService):
     """Orchestrates the Outlook Fixer agent pipeline.
 
     Pipeline: detect skills → build prompt → LLM call → validate output →

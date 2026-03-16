@@ -762,7 +762,7 @@
 - Migration: `add_chunk_section_type_and_summary` — two nullable columns with no defaults (instant `ALTER TABLE` in PostgreSQL, no table rewrite)
 **Security:** Parser input is document content already extracted by `processing.extract_text()` and stored in the knowledge base. `lxml.html.document_fromstring()` is lenient by design (handles malformed HTML without raising). No external fetches. Feature flag `html_chunking_enabled` allows instant rollback.
 **Verify:** Valid HTML email → chunks respect `<style>` boundaries (never split mid-rule), MSO conditionals preserved whole (opener through closer), structural elements intact. `chunk_html()` on malformed HTML → falls back to `chunk_text()` (no exception). Plain-text markdown document → `chunk_text()` used (unchanged behavior). Re-ingest existing seed HTML doc → verify new chunk boundaries vs old. Migration up/down clean (`alembic upgrade head && alembic downgrade -1`). `make test` passes.
-- [ ] 16.3 Code-aware HTML chunking
+- [x] ~~16.3 Code-aware HTML chunking~~ DONE
 
 ### 16.4 Template/Component Retrieval
 **What:** For `template` intent, search the `Component` table for reusable code artifacts. Extends the existing `ComponentRepository.list(search=..., category=...)` pattern with compatibility-aware filtering via `ComponentQAResult.compatibility` JSON column. Results formatted as backward-compatible `SearchResult` objects alongside top-3 knowledge base results.
@@ -782,7 +782,7 @@
 - Migration: `add_component_search_embedding` — one nullable `vector(1024)` column on `components` table (no default, instant in PostgreSQL)
 **Security:** Text search uses `escape_like()` utility (prevents LIKE injection, same pattern as existing `ComponentRepository.list()`). All queries use SQLAlchemy ORM parameterisation. Components are not project-scoped (all authenticated users can search), matching existing `ComponentRepository` access pattern. No new credential handling. Soft-deleted components excluded via `deleted_at.is_(None)` filter (existing pattern).
 **Verify:** "CTA button" → returns matching components with `html_source` from latest `ComponentVersion`. Category filter ("cta") narrows results. Compatibility filter (`compatible_with=["outlook_2019_win"]`) excludes components with `"none"` support for that client. Empty component results → falls back to knowledge search only. Soft-deleted components excluded. Migration up/down clean. `make test` passes.
-- [ ] 16.4 Template/component retrieval
+- [x] ~~16.4 Template/component retrieval~~ DONE
 
 ### 16.5 CRAG Validation Loop
 **What:** After HTML generation, validate against the compatibility matrix. If incompatible CSS is detected, retrieve fallbacks from ontology and re-generate. Implemented as a `CRAGMixin` class providing `_crag_validate_and_correct()`. Capped at 1 correction round to avoid loops.
@@ -806,7 +806,7 @@
 - Config (`app/core/config.py` → `KnowledgeConfig`): `crag_enabled: bool = False`, `crag_max_rounds: int = 1`, `crag_min_severity: str = "error"` (matches severity levels from `_compute_severity()` in `query.py`: `"error"` >20% market share, `"warning"` >5%, `"info"` rest)
 **Security:** CRAG correction prompt contains only ontology data (CSS property names, fallback code examples from `fallbacks.yaml`) — no user PII. Prompt sanitised via `sanitize_prompt()`. Output sanitised via `sanitize_html_xss()` (nh3 allowlist). LLM call uses same `get_registry().get_llm()` with circuit breaker protection (`_ResilientLLMProvider`). Cost capped: `max_rounds=1` (single retry), `crag_min_severity="error"` (only fires on high-impact issues), global `crag_enabled=False` default. Output validated via `validate_output()` (null byte stripping, 100K char truncation).
 **Verify:** Generate HTML with `display:flex` via Scaffolder → CRAG detects (`unsupported_css_in_html` returns severity="error" for Outlook's ~8% market share × multiple Outlook clients), retrieves `flex_to_table` fallback with MSO conditional code example, re-generates with table layout. Generate compatible HTML (only properties with FULL support) → CRAG passes through unchanged (no LLM call, verified by checking no `complete()` call in logs). `crag_enabled=False` skips entirely (verified). OutlookFixerService: CRAG runs before MSO repair loop (verified by log ordering). ScaffolderService structured mode: CRAG runs after `TemplateAssembler.assemble()`. `make test` passes. `make eval-run` shows no regression (CRAG corrections counted in eval metrics).
-- [ ] 16.5 CRAG validation loop
+- [x] ~~16.5 CRAG validation loop~~ DONE
 
 ### 16.6 Multi-Representation Indexing
 **What:** Store summaries for retrieval (better embedding match) but return full code for generation. Summaries are embedded instead of raw content; `search_vector()` returns the original full chunk. CSS blocks get deterministic summaries (list properties/values). HTML sections get deterministic summaries (tag structure, classes, styles). Optional LLM-generated summaries for complex content.
@@ -829,4 +829,4 @@
 - Migration: None (uses 16.3's `summary` column)
 **Security:** Summaries are generated from document content already in the knowledge base. LLM summarization uses `httpx.AsyncClient` with the same pattern as `_auto_tag_document()` (API key from config, timeout, best-effort error handling). No user PII in summaries (document content is knowledge base articles, not user data). `multi_rep_api_key` stored in config alongside existing `auto_tag_api_key` — same security posture.
 **Verify:** Ingest HTML document with `multi_rep_enabled=True` → chunks have deterministic summaries (CSS blocks list properties, HTML sections list structure). Search "responsive layout" → returns full `<table>` markup (not summary), but ranking improved because summary embedding matches better. Ingest plain-text document → LLM-generated summaries for prose chunks. `multi_rep_enabled=False` → existing behavior unchanged (content embedded directly, no summaries). Chunks without summaries still searchable (embedding from content as before). `make test` passes.
-- [ ] 16.6 Multi-representation indexing
+- [x] ~~16.6 Multi-representation indexing~~ DONE

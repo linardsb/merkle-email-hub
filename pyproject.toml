@@ -87,9 +87,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106"]
-"test_*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106"]
-"**/tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106"]
+"tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108"]
+"test_*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108"]
+"**/tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108"]
 "__init__.py" = ["F401"]
 "scripts/**/*.py" = ["T201"]
 "app/core/health.py" = ["B008", "ARG001"]
