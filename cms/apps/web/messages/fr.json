@@ -156,7 +156,9 @@
       }
     },
     "pushToESP": "Envoyer \u00e0 l'ESP",
-    "pushToESPNoHtml": "Compilez d'abord le template avant de l'envoyer \u00e0 l'ESP"
+    "pushToESPNoHtml": "Compilez d'abord le template avant de l'envoyer \u00e0 l'ESP",
+    "resuming": "Reprise depuis le checkpoint...",
+    "resumeError": "\u00c9chec de la reprise. Veuillez r\u00e9essayer."
   },
   "espSync": {
     "title": "ESP Sync",
@@ -225,5 +227,22 @@
   },
   "errors": {
     "generic": "Une erreur s'est produite. Veuillez r\u00e9essayer."
+  },
+  "blueprintRun": {
+    "resumeRun": "Reprendre depuis le checkpoint",
+    "resuming": "Reprise depuis le checkpoint...",
+    "checkpointsToggle": "Points de contr\u00f4le",
+    "checkpointsEmpty": "Aucun checkpoint disponible",
+    "resumePoint": "Point de reprise",
+    "resumedFrom": "Repris depuis {runId}",
+    "status": {
+      "failed": "\u00c9chou\u00e9"
+    }
+  },
+  "blueprintRuns": {
+    "filterFailed": "\u00c9chou\u00e9",
+    "resume": "Reprendre",
+    "resumedBadge": "Repris",
+    "resumedFrom": "Repris depuis {runId}"
   }
 }

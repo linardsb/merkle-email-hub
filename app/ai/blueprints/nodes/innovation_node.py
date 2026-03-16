@@ -6,6 +6,7 @@ Not part of the QA → recovery router loop.
 """
 
 from app.ai.agents.innovation.prompt import build_system_prompt, detect_relevant_skills
+from app.ai.blueprints.handoff import InnovationHandoff
 from app.ai.blueprints.protocols import (
     AgentHandoff,
     HandoffStatus,
@@ -91,6 +92,11 @@ class InnovationNode:
         confidence = extract_confidence(raw_output)
         clean_output = strip_confidence_comment(raw_output)
 
+        typed = InnovationHandoff(
+            technique=str(technique)[:100],
+            feasibility_score=confidence or 0.0,
+        )
+
         handoff = AgentHandoff(
             status=HandoffStatus.OK,
             agent_name="innovation",
@@ -99,6 +105,7 @@ class InnovationNode:
             warnings=(),
             component_refs=(),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         return NodeResult(

@@ -44,6 +44,7 @@ export const STATUS_STYLES: Record<string, string> = {
   completed_with_warnings: "bg-accent text-accent-foreground border-border",
   needs_review: "bg-accent text-accent-foreground border-border",
   cost_cap_exceeded: "bg-destructive/10 text-destructive border-destructive/20",
+  failed: "bg-destructive/10 text-destructive border-destructive/20",
   running: "bg-muted text-muted-foreground border-border",
 };
 

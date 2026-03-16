@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Zap } from "lucide-react";
+import { Zap, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   CollapsibleHandoffs,
   formatNodeName,
 } from "./shared";
+import { RunCheckpoints } from "./run-checkpoints";
 import type { BlueprintRunRecord } from "@/types/blueprint-runs";
 
 interface RunDetailDialogProps {
@@ -25,6 +26,7 @@ interface RunDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onApplyResult?: (html: string) => void;
+  onResumeRun?: (run: BlueprintRunRecord) => void;
 }
 
 export function RunDetailDialog({
@@ -32,6 +34,7 @@ export function RunDetailDialog({
   open,
   onOpenChange,
   onApplyResult,
+  onResumeRun,
 }: RunDetailDialogProps) {
   const t = useTranslations("blueprintRuns");
   const tRun = useTranslations("blueprintRun");
@@ -40,6 +43,7 @@ export function RunDetailDialog({
 
   const runData = run.run_data;
   const formattedDate = new Date(run.created_at).toLocaleString();
+  const isResumable = (run.status === "failed" || run.status === "cost_cap_exceeded") && run.checkpoint_count > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -62,6 +66,14 @@ export function RunDetailDialog({
             <span>{t("durationLabel", { value: (run.duration_ms / 1000).toFixed(1) })}</span>
             <span>·</span>
             <span>{t("tokenCount", { count: run.total_tokens.toLocaleString() })}</span>
+            {run.resumed_from && (
+              <>
+                <span>·</span>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
+                  {t("resumedFrom", { runId: run.resumed_from.slice(0, 8) })}
+                </Badge>
+              </>
+            )}
           </div>
 
           {runData ? (
@@ -95,6 +107,13 @@ export function RunDetailDialog({
               )}
 
               <CollapsibleHandoffs handoffs={runData.handoff_history ?? []} />
+
+              {(run.checkpoint_count > 0 || (runData.checkpoint_count ?? 0) > 0) && (
+                <RunCheckpoints
+                  runId={runData.run_id}
+                  resumedFromNode={runData.resumed_from}
+                />
+              )}
             </>
           ) : (
             <p className="text-sm text-muted-foreground">{t("noRunData")}</p>
@@ -105,6 +124,15 @@ export function RunDetailDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tRun("close")}
           </Button>
+          {isResumable && onResumeRun && (
+            <Button
+              variant="outline"
+              onClick={() => { onResumeRun(run); onOpenChange(false); }}
+            >
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+              {tRun("resumeRun")}
+            </Button>
+          )}
           {runData?.html && onApplyResult && (
             <Button onClick={() => { onApplyResult(runData.html); onOpenChange(false); }}>
               {tRun("applyResult")}

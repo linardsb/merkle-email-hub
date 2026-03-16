@@ -13,6 +13,7 @@ from app.ai.agents.outlook_fixer.prompt import (
 )
 from app.ai.agents.schemas.outlook_diagnostic import MSOIssue, OutlookDiagnostic
 from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.handoff import OutlookFixerHandoff
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -115,6 +116,11 @@ class OutlookFixerNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = OutlookFixerHandoff(
+            issues_found=len(mso_result.issues),
+            mso_conditionals_added=len(mso_warnings),
+        )
+
         handoff = AgentHandoff(
             agent_name="outlook_fixer",
             artifact=html,
@@ -125,6 +131,7 @@ class OutlookFixerNode:
             warnings=mso_warnings,
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         logger.info(
@@ -182,6 +189,11 @@ class OutlookFixerNode:
             f"MSO [{i.severity}] {i.issue_type}: {i.recommendation}" for i in diagnostic.issues
         )
 
+        typed = OutlookFixerHandoff(
+            issues_found=len(diagnostic.issues),
+            severity_counts={},
+        )
+
         handoff = AgentHandoff(
             agent_name="outlook_fixer",
             artifact=context.html,  # Pass through unchanged
@@ -191,6 +203,7 @@ class OutlookFixerNode:
             ),
             warnings=warnings,
             confidence=diagnostic.confidence,
+            typed_payload=typed,
         )
 
         logger.info(

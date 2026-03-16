@@ -309,3 +309,144 @@ class TestResumeRoute:
             app.dependency_overrides.pop(get_current_user, None)
             app.dependency_overrides.pop(get_db, None)
             limiter.enabled = True
+
+    @pytest.mark.asyncio
+    async def test_resume_route_valid_resume(self) -> None:
+        """Admin/developer can successfully resume a run."""
+        from unittest.mock import MagicMock, patch
+
+        from httpx import ASGITransport, AsyncClient
+
+        from app.auth.dependencies import get_current_user
+        from app.core.database import get_db
+        from app.core.rate_limit import limiter
+        from app.main import app
+
+        limiter.enabled = False
+
+        mock_user = MagicMock()
+        mock_user.id = 1
+        mock_user.role = "developer"
+
+        mock_db = AsyncMock()
+
+        from app.ai.blueprints.schemas import BlueprintRunResponse
+
+        mock_response = BlueprintRunResponse(
+            run_id="run123",
+            blueprint_name="campaign",
+            status="completed",
+            html="<p>resumed</p>",
+            progress=[],
+            checkpoint_count=2,
+            resumed_from="scaffolder",
+        )
+
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_db] = lambda: mock_db
+
+        try:
+            with patch("app.ai.blueprints.routes.get_blueprint_service") as mock_get_svc:
+                mock_svc = AsyncMock()
+                mock_svc.resume = AsyncMock(return_value=mock_response)
+                mock_get_svc.return_value = mock_svc
+
+                async with AsyncClient(
+                    transport=ASGITransport(app=app),
+                    base_url="http://test",
+                ) as client:
+                    resp = await client.post(
+                        "/api/v1/blueprints/resume",
+                        json={
+                            "run_id": "run123",
+                            "blueprint_name": "campaign",
+                            "brief": "test brief",
+                        },
+                    )
+
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["run_id"] == "run123"
+            assert data["resumed_from"] == "scaffolder"
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+            app.dependency_overrides.pop(get_db, None)
+            limiter.enabled = True
+
+    @pytest.mark.asyncio
+    async def test_resume_route_invalid_run_id(self) -> None:
+        """Resume with unknown run_id returns error from service."""
+        from unittest.mock import MagicMock, patch
+
+        from httpx import ASGITransport, AsyncClient
+
+        from app.auth.dependencies import get_current_user
+        from app.core.database import get_db
+        from app.core.rate_limit import limiter
+        from app.main import app
+
+        limiter.enabled = False
+
+        mock_user = MagicMock()
+        mock_user.id = 1
+        mock_user.role = "admin"
+
+        mock_db = AsyncMock()
+
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_db] = lambda: mock_db
+
+        try:
+            with patch("app.ai.blueprints.routes.get_blueprint_service") as mock_get_svc:
+                mock_svc = AsyncMock()
+                mock_svc.resume = AsyncMock(
+                    side_effect=BlueprintError("No checkpoint found for run unknown")
+                )
+                mock_get_svc.return_value = mock_svc
+
+                async with AsyncClient(
+                    transport=ASGITransport(app=app),
+                    base_url="http://test",
+                ) as client:
+                    resp = await client.post(
+                        "/api/v1/blueprints/resume",
+                        json={
+                            "run_id": "unknown",
+                            "blueprint_name": "campaign",
+                            "brief": "test",
+                        },
+                    )
+
+            assert resp.status_code in (400, 422, 500)
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+            app.dependency_overrides.pop(get_db, None)
+            limiter.enabled = True
+
+    @pytest.mark.asyncio
+    async def test_resume_route_unauthenticated(self) -> None:
+        """Unauthenticated request returns 401/403."""
+        from httpx import ASGITransport, AsyncClient
+
+        from app.core.rate_limit import limiter
+        from app.main import app
+
+        limiter.enabled = False
+
+        try:
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as client:
+                resp = await client.post(
+                    "/api/v1/blueprints/resume",
+                    json={
+                        "run_id": "run123",
+                        "blueprint_name": "campaign",
+                        "brief": "test",
+                    },
+                )
+
+            assert resp.status_code in (401, 403)
+        finally:
+            limiter.enabled = True

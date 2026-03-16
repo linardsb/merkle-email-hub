@@ -103,6 +103,8 @@ class AgentHandoff:
     warnings: tuple[str, ...] = ()
     component_refs: tuple[str, ...] = ()
     confidence: float | None = None
+    uncertainties: tuple[str, ...] = ()
+    typed_payload: object | None = None  # HandoffPayload at runtime, object for protocol decoupling
 
     def compact(self) -> AgentHandoff:
         """Return a copy with large fields stripped (artifact cleared)."""
@@ -114,12 +116,15 @@ class AgentHandoff:
             warnings=self.warnings,
             component_refs=self.component_refs,
             confidence=self.confidence,
+            uncertainties=self.uncertainties,
+            typed_payload=self.typed_payload,
         )
 
     def summary(self) -> str:
         """Return a single-line summary string for decayed handoff history."""
         conf = f" conf={self.confidence:.2f}" if self.confidence is not None else ""
-        return f"{self.agent_name}: {self.status.value}{conf}"
+        unc = f" unc={len(self.uncertainties)}" if self.uncertainties else ""
+        return f"{self.agent_name}: {self.status.value}{conf}{unc}"
 
 
 @dataclass(frozen=True)

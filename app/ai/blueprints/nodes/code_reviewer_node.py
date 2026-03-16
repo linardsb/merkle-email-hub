@@ -14,6 +14,7 @@ from app.ai.agents.code_reviewer.schemas import CodeReviewIssue, ReviewFocus
 from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.schemas.code_review_decisions import CodeReviewDecisions, PlanQualityIssue
 from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.handoff import CodeReviewHandoff
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -123,6 +124,10 @@ class CodeReviewerNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = CodeReviewHandoff(
+            issues_found=len(issues_as_warnings),
+        )
+
         # Code reviewer passes HTML through unchanged; issues go into warnings
         handoff = AgentHandoff(
             agent_name="code_reviewer",
@@ -135,6 +140,7 @@ class CodeReviewerNode:
             warnings=issues_as_warnings,
             component_refs=tuple(detect_component_refs(context.html)),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         logger.info(
@@ -208,6 +214,11 @@ class CodeReviewerNode:
             f"plan_review: [{i.severity}] {i.field}: {i.issue}" for i in decisions.issues
         )
 
+        typed = CodeReviewHandoff(
+            quality_score=decisions.slot_quality_score,
+            issues_found=len(decisions.issues),
+        )
+
         handoff = AgentHandoff(
             agent_name="code_reviewer",
             artifact=context.html,
@@ -216,6 +227,7 @@ class CodeReviewerNode:
             ),
             warnings=issue_warnings,
             confidence=decisions.confidence,
+            typed_payload=typed,
         )
 
         logger.info(

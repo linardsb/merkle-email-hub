@@ -18,6 +18,10 @@ export interface BlueprintRunRecord {
   created_at: string;
   /** Full run response data (loaded on detail view) */
   run_data: BlueprintRunResponse | null;
+  /** Number of checkpoints saved for this run */
+  checkpoint_count: number;
+  /** If this run was resumed, the original run ID */
+  resumed_from: string | null;
 }
 
 export type BlueprintRunsFilter = "all" | BlueprintRunStatus;

@@ -263,6 +263,8 @@
     "brief": "Brief",
     "viewCompatibilityBrief": "View Compatibility Brief",
     "contextTabLabel": "Context",
+    "resuming": "Resuming from checkpoint...",
+    "resumeError": "Failed to resume run. Please try again.",
     "contextPanel": {
       "loading": "Loading...",
       "audienceProfile": "Audience Profile",
@@ -1133,7 +1135,8 @@
       "completed": "Completed",
       "completed_with_warnings": "Completed with Warnings",
       "cost_cap_exceeded": "Cost Cap Exceeded",
-      "needs_review": "Needs Review"
+      "needs_review": "Needs Review",
+      "failed": "Failed"
     },
     "nodeType": {
       "agentic": "AI Agent",
@@ -1165,9 +1168,16 @@
       "campaign": "Full Campaign",
       "campaignDescription": "Generate a complete email from brief — scaffold, QA, fix, build, export"
     },
+    "resumeRun": "Resume from Checkpoint",
+    "resuming": "Resuming from checkpoint...",
+    "checkpointsToggle": "Checkpoints",
+    "checkpointsEmpty": "No checkpoints available",
+    "resumePoint": "Resume Point",
+    "resumedFrom": "Resumed from {runId}",
     "errors": {
       "runFailed": "Blueprint run failed. Please try again.",
-      "invalidBrief": "Please enter a campaign brief."
+      "invalidBrief": "Please enter a campaign brief.",
+      "resumeFailed": "Failed to resume run. Please try again."
     }
   },
   "blueprintRuns": {
@@ -1175,6 +1185,7 @@
     "filterCompleted": "Completed",
     "filterWarnings": "Warnings",
     "filterNeedsReview": "Needs Review",
+    "filterFailed": "Failed",
     "filterCostCap": "Cost Cap",
     "empty": "No blueprint runs yet. Run a pipeline to see history here.",
     "detailTitle": "Blueprint Run Details",
@@ -1182,6 +1193,9 @@
     "tokenCount": "{count} tokens",
     "qaBadgePass": "QA Pass",
     "qaBadgeFail": "QA Fail",
+    "resume": "Resume",
+    "resumedBadge": "Resumed",
+    "resumedFrom": "Resumed from {runId}",
     "justNow": "just now",
     "minutesAgo": "{count}m ago",
     "hoursAgo": "{count}h ago",

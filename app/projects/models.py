@@ -33,6 +33,12 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    phase: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="active",
+        comment="Lifecycle phase: active, maintenance, archived",
+    )
     client_org_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("client_orgs.id"), nullable=False, index=True
     )

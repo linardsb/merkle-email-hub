@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { fetcher } from "@/lib/swr-fetcher";
 import type { BlueprintRunRecord } from "@/types/blueprint-runs";
+import type { CheckpointListResponse } from "@email-hub/sdk";
 
 interface BlueprintRunsResponse {
   items: BlueprintRunRecord[];
@@ -34,6 +35,17 @@ export function useBlueprintRuns(projectId: number | null, status?: string) {
 export function useBlueprintRunDetail(runId: number | null) {
   const key = runId ? `/api/v1/blueprint-runs/${runId}` : null;
   return useSWR<BlueprintRunRecord>(key, fetcher, {
+    revalidateOnFocus: false,
+  });
+}
+
+/**
+ * Fetch checkpoints for a specific blueprint run.
+ * Pass null runId to skip fetching (lazy load on expand).
+ */
+export function useRunCheckpoints(runId: string | null) {
+  const key = runId ? `/api/v1/blueprints/runs/${runId}/checkpoints` : null;
+  return useSWR<CheckpointListResponse>(key, fetcher, {
     revalidateOnFocus: false,
   });
 }

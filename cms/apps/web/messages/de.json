@@ -155,7 +155,9 @@
       }
     },
     "pushToESP": "An ESP senden",
-    "pushToESPNoHtml": "Bitte kompilieren Sie das Template zuerst, bevor Sie es an den ESP senden"
+    "pushToESPNoHtml": "Bitte kompilieren Sie das Template zuerst, bevor Sie es an den ESP senden",
+    "resuming": "Wird von Checkpoint fortgesetzt...",
+    "resumeError": "Fortsetzen fehlgeschlagen. Bitte erneut versuchen."
   },
   "espSync": {
     "title": "ESP Sync",
@@ -224,5 +226,22 @@
   },
   "errors": {
     "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
+  },
+  "blueprintRun": {
+    "resumeRun": "Von Checkpoint fortsetzen",
+    "resuming": "Wird von Checkpoint fortgesetzt...",
+    "checkpointsToggle": "Checkpoints",
+    "checkpointsEmpty": "Keine Checkpoints verf\u00fcgbar",
+    "resumePoint": "Fortsetzungspunkt",
+    "resumedFrom": "Fortgesetzt von {runId}",
+    "status": {
+      "failed": "Fehlgeschlagen"
+    }
+  },
+  "blueprintRuns": {
+    "filterFailed": "Fehlgeschlagen",
+    "resume": "Fortsetzen",
+    "resumedBadge": "Fortgesetzt",
+    "resumedFrom": "Fortgesetzt von {runId}"
   }
 }

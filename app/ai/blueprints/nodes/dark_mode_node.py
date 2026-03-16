@@ -10,6 +10,7 @@ from app.ai.agents.html_summarizer import prepare_html_context
 from app.ai.agents.scaffolder.plan_merger import merge_dark_mode
 from app.ai.agents.schemas.dark_mode_decisions import DarkColorOverride, DarkModeDecisions
 from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.handoff import DarkModeHandoff
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -89,6 +90,8 @@ class DarkModeNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = DarkModeHandoff(strategy="auto")
+
         handoff = AgentHandoff(
             agent_name="dark_mode",
             artifact=html,
@@ -96,6 +99,7 @@ class DarkModeNode:
             warnings=(),
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         logger.info(
@@ -225,6 +229,14 @@ class DarkModeNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = DarkModeHandoff(
+            overrides_count=len(decisions.color_overrides),
+            strategy="custom" if decisions.color_overrides else "auto",
+            background_dark=decisions.background_dark,
+            text_dark=decisions.text_dark,
+            prefers_color_scheme=decisions.enable_prefers_color_scheme,
+        )
+
         handoff = AgentHandoff(
             agent_name="dark_mode",
             artifact="",  # No HTML artifact in structured mode
@@ -234,6 +246,7 @@ class DarkModeNode:
             ),
             warnings=(),
             confidence=decisions.confidence,
+            typed_payload=typed,
         )
 
         logger.info(

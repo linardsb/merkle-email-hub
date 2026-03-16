@@ -590,6 +590,15 @@ class BlueprintEngine:
             context.metadata["upstream_handoff"] = (
                 run._last_handoff.compact() if economy else run._last_handoff
             )
+
+            # Inject formatted upstream constraints for agentic nodes
+            if node.node_type == "agentic":
+                from app.ai.blueprints.handoff import format_upstream_constraints
+
+                upstream_constraints = format_upstream_constraints(run._last_handoff)
+                if upstream_constraints:
+                    context.metadata["upstream_constraints"] = upstream_constraints
+
         if run._handoff_history:
             # Enable decay tiers when history is long enough (Phase 3)
             use_decay = len(run._handoff_history) >= 4

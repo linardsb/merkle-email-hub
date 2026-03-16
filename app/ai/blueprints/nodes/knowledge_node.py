@@ -7,6 +7,7 @@ Not part of the QA → recovery router loop.
 
 from app.ai.agents.knowledge.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.agents.knowledge.schemas import KnowledgeSource
+from app.ai.blueprints.handoff import KnowledgeHandoff
 from app.ai.blueprints.protocols import (
     AgentHandoff,
     HandoffStatus,
@@ -118,6 +119,12 @@ class KnowledgeNode:
 
         # Pack answer and sources into handoff for downstream nodes
         source_refs = tuple(s.filename for s in sources[:5])
+        typed = KnowledgeHandoff(
+            sources_consulted=len(sources),
+            facts_injected=len(source_refs),
+            relevance_score=confidence or 0.0,
+        )
+
         handoff = AgentHandoff(
             status=HandoffStatus.OK,
             agent_name="knowledge",
@@ -126,6 +133,7 @@ class KnowledgeNode:
             warnings=() if sources else ("knowledge: no sources found for query",),
             component_refs=source_refs,
             confidence=confidence,
+            typed_payload=typed,
         )
 
         return NodeResult(

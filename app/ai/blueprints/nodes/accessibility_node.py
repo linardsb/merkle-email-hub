@@ -18,6 +18,7 @@ from app.ai.agents.schemas.accessibility_decisions import (
     HeadingDecision,
 )
 from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.handoff import AccessibilityHandoff
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -100,6 +101,11 @@ class AccessibilityNode:
 
         alt_warnings = format_alt_text_warnings(html)
 
+        typed = AccessibilityHandoff(
+            skills_loaded=tuple(relevant_skills),
+            alt_text_warnings=tuple(alt_warnings),
+        )
+
         handoff = AgentHandoff(
             agent_name="accessibility",
             artifact=html,
@@ -110,6 +116,7 @@ class AccessibilityNode:
             warnings=tuple(alt_warnings),
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         logger.info(
@@ -254,6 +261,10 @@ class AccessibilityNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = AccessibilityHandoff(
+            issues_fixed=len(decisions.alt_texts) + len(decisions.heading_fixes),
+        )
+
         handoff = AgentHandoff(
             agent_name="accessibility",
             artifact="",
@@ -262,6 +273,7 @@ class AccessibilityNode:
             ),
             warnings=(),
             confidence=decisions.confidence,
+            typed_payload=typed,
         )
 
         logger.info(

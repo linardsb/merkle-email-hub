@@ -156,7 +156,9 @@
       }
     },
     "pushToESP": "Enviar al ESP",
-    "pushToESPNoHtml": "Compile la plantilla primero antes de enviarla al ESP"
+    "pushToESPNoHtml": "Compile la plantilla primero antes de enviarla al ESP",
+    "resuming": "Reanudando desde checkpoint...",
+    "resumeError": "Error al reanudar. Int\u00e9ntelo de nuevo."
   },
   "espSync": {
     "title": "ESP Sync",
@@ -225,5 +227,22 @@
   },
   "errors": {
     "generic": "Algo sali\u00f3 mal. Por favor, int\u00e9ntelo de nuevo."
+  },
+  "blueprintRun": {
+    "resumeRun": "Reanudar desde checkpoint",
+    "resuming": "Reanudando desde checkpoint...",
+    "checkpointsToggle": "Checkpoints",
+    "checkpointsEmpty": "No hay checkpoints disponibles",
+    "resumePoint": "Punto de reanudaci\u00f3n",
+    "resumedFrom": "Reanudado desde {runId}",
+    "status": {
+      "failed": "Fallido"
+    }
+  },
+  "blueprintRuns": {
+    "filterFailed": "Fallido",
+    "resume": "Reanudar",
+    "resumedBadge": "Reanudado",
+    "resumedFrom": "Reanudado desde {runId}"
   }
 }

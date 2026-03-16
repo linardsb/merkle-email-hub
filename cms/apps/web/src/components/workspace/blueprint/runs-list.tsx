@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Clock,
   Ban,
+  RotateCcw,
 } from "lucide-react";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { Button } from "@email-hub/ui/components/ui/button";
@@ -22,6 +23,7 @@ const FILTER_OPTIONS: { value: BlueprintRunsFilter; labelKey: string }[] = [
   { value: "completed", labelKey: "filterCompleted" },
   { value: "completed_with_warnings", labelKey: "filterWarnings" },
   { value: "needs_review", labelKey: "filterNeedsReview" },
+  { value: "failed", labelKey: "filterFailed" },
   { value: "cost_cap_exceeded", labelKey: "filterCostCap" },
 ];
 
@@ -30,6 +32,7 @@ const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> =
   completed_with_warnings: AlertTriangle,
   needs_review: Clock,
   cost_cap_exceeded: Ban,
+  failed: XCircle,
   running: Clock,
 };
 
@@ -38,15 +41,17 @@ const STATUS_COLOR: Record<string, string> = {
   completed_with_warnings: "text-accent-foreground",
   needs_review: "text-accent-foreground",
   cost_cap_exceeded: "text-destructive",
+  failed: "text-destructive",
   running: "text-muted-foreground",
 };
 
 interface BlueprintRunsListProps {
   projectId: number;
   onApplyResult?: (html: string) => void;
+  onResumeRun?: (run: BlueprintRunRecord) => void;
 }
 
-export function BlueprintRunsList({ projectId, onApplyResult }: BlueprintRunsListProps) {
+export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: BlueprintRunsListProps) {
   const t = useTranslations("blueprintRuns");
   const [filter, setFilter] = useState<BlueprintRunsFilter>("all");
   const [selectedRun, setSelectedRun] = useState<BlueprintRunRecord | null>(null);
@@ -101,6 +106,7 @@ export function BlueprintRunsList({ projectId, onApplyResult }: BlueprintRunsLis
               const colorClass = STATUS_COLOR[run.status] ?? "text-muted-foreground";
               const date = new Date(run.created_at);
               const timeAgo = formatRelativeTime(date, t);
+              const isResumable = (run.status === "failed" || run.status === "cost_cap_exceeded") && run.checkpoint_count > 0;
 
               return (
                 <button
@@ -130,8 +136,27 @@ export function BlueprintRunsList({ projectId, onApplyResult }: BlueprintRunsLis
                           {t("qaBadgeFail")}
                         </Badge>
                       )}
+                      {run.resumed_from && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
+                          {t("resumedBadge")}
+                        </Badge>
+                      )}
                     </div>
                   </div>
+                  {isResumable && onResumeRun && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 shrink-0 px-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onResumeRun(run);
+                      }}
+                    >
+                      <RotateCcw className="mr-1 h-3 w-3" />
+                      {t("resume")}
+                    </Button>
+                  )}
                 </button>
               );
             })}
@@ -144,6 +169,7 @@ export function BlueprintRunsList({ projectId, onApplyResult }: BlueprintRunsLis
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onApplyResult={onApplyResult}
+        onResumeRun={onResumeRun}
       />
     </div>
   );

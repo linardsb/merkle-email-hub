@@ -605,7 +605,7 @@
 - i18n keys for resume UI text
 **Security:** Resume action requires `developer` role (same as run). UI shows no checkpoint content (only metadata).
 **Verify:** Run a blueprint that fails. See "Resume" button in UI. Click resume → run continues from checkpoint. Checkpoint timeline shows progression. Completed runs don't show resume button.
-- [ ] 14.6 Frontend — run history & resume UI
+- [x] ~~14.6 Frontend — run history & resume UI~~ DONE — Resume button on failed/interrupted runs in `runs-list.tsx`, `resumed_from` badge, `run-checkpoints.tsx` expandable checkpoint timeline, resume logic in `use-blueprint-run.ts` hook calling `POST /api/v1/blueprints/resume`, `checkpoint_count`/`resumed_from` fields on `BlueprintRunRecord` type, `run-detail-dialog.tsx` checkpoint section, i18n keys across 6 locales
 
 ### 14.7 Tests & Documentation
 **What:** Comprehensive tests for the checkpoint system + architecture documentation.
@@ -621,7 +621,7 @@
 - Update `docs/ARCHITECTURE.md` — add Checkpoint & Recovery section explaining the two-level checkpoint model (blueprint node + pipeline pass)
 - SDK regeneration (`make sdk`) for new endpoints
 **Verify:** `make test -k test_checkpoint` — all tests pass. `make test -k test_resume` — route tests pass. `make check` — full suite green. `make types` clean.
-- [ ] 14.7 Tests & documentation
+- [x] ~~14.7 Tests & documentation~~ DONE — 47 checkpoint-specific tests across 4 test files (`test_checkpoint.py` 11 tests, `test_checkpoint_cleanup.py` 13 tests, `test_resume.py` 15 tests including 4 route tests, `test_pipeline_checkpoint.py` 8 tests), ADR-006 Checkpoint & Recovery in `docs/ARCHITECTURE.md`, SDK regenerated
 
 ---
 

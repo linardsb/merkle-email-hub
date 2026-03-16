@@ -2,6 +2,7 @@
 
 from app.ai.agents.scaffolder.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.handoff import ScaffolderHandoff
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -93,6 +94,11 @@ class ScaffolderNode:
                 issue_count=len(mso_warnings),
             )
 
+        typed = ScaffolderHandoff(
+            template_name="generated",
+            design_token_source="brief",  # noqa: S106
+        )
+
         handoff = AgentHandoff(
             agent_name="scaffolder",
             artifact=html,
@@ -100,6 +106,7 @@ class ScaffolderNode:
             warnings=mso_warnings,
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         logger.info(
@@ -162,6 +169,17 @@ class ScaffolderNode:
 
         html = sanitize_html_xss(html)
 
+        typed = ScaffolderHandoff(
+            template_name=plan.template.template_name,
+            slots_filled=tuple(plan.slot_fills.keys()) if hasattr(plan.slot_fills, "keys") else (),
+            design_token_source=plan.design_tokens.source,
+            colors_applied=dict(plan.design_tokens.colors) if plan.design_tokens.colors else {},
+            locked_roles=tuple(plan.design_tokens.locked_roles)
+            if plan.design_tokens.locked_roles
+            else (),
+            dark_mode_strategy=plan.dark_mode_strategy or "",
+        )
+
         handoff = AgentHandoff(
             agent_name="scaffolder",
             artifact=html,
@@ -174,6 +192,7 @@ class ScaffolderNode:
             warnings=(),
             component_refs=tuple(detect_component_refs(html)),
             confidence=plan.confidence,
+            typed_payload=typed,
         )
 
         return NodeResult(

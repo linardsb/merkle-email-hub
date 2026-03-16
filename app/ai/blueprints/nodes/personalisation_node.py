@@ -18,6 +18,7 @@ from app.ai.agents.schemas.personalisation_decisions import (
     VariablePlacement,
 )
 from app.ai.blueprints.component_context import detect_component_refs
+from app.ai.blueprints.handoff import PersonalisationHandoff
 from app.ai.blueprints.nodes.recovery_router_node import SCOPE_PROMPTS
 from app.ai.blueprints.protocols import (
     AgentHandoff,
@@ -111,6 +112,8 @@ class PersonalisationNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = PersonalisationHandoff(platform=platform)
+
         handoff = AgentHandoff(
             agent_name="personalisation",
             artifact=html,
@@ -121,6 +124,7 @@ class PersonalisationNode:
             warnings=tuple(syntax_warnings),
             component_refs=tuple(detect_component_refs(html)),
             confidence=confidence,
+            typed_payload=typed,
         )
 
         logger.info(
@@ -269,6 +273,12 @@ class PersonalisationNode:
 
         usage = dict(response.usage) if response.usage else None
 
+        typed = PersonalisationHandoff(
+            platform=platform,
+            merge_tags_added=len(decisions.variables),
+            conditional_blocks=len(decisions.conditional_blocks),
+        )
+
         handoff = AgentHandoff(
             agent_name="personalisation",
             artifact="",
@@ -277,6 +287,7 @@ class PersonalisationNode:
             ),
             warnings=(),
             confidence=decisions.confidence,
+            typed_payload=typed,
         )
 
         logger.info(

@@ -348,6 +348,29 @@ export function resolveDemo(urlStr: string): unknown | null {
     return DEMO_BLUEPRINT_RUN;
   }
 
+  // ── Blueprint Resume (POST) ──
+  if (p === "/api/v1/blueprints/resume") {
+    return {
+      ...DEMO_BLUEPRINT_RUN,
+      run_id: "g7b8c9d0e1f2",
+      resumed_from: "f6a7b8c9d0e1",
+      checkpoint_count: 5,
+    };
+  }
+
+  // ── Blueprint Run Checkpoints ──
+  if (p.match(/^\/api\/v1\/blueprints\/runs\/[^/]+\/checkpoints$/)) {
+    return {
+      run_id: "a1b2c3d4e5f6",
+      count: 3,
+      checkpoints: [
+        { node_name: "scaffolder", node_index: 0, status: "success", html_hash: "abc123", created_at: "2026-03-11T13:45:01Z" },
+        { node_name: "qa_gate", node_index: 1, status: "success", html_hash: "def456", created_at: "2026-03-11T13:45:04Z" },
+        { node_name: "dark_mode", node_index: 2, status: "failed", html_hash: "ghi789", created_at: "2026-03-11T13:45:08Z" },
+      ],
+    };
+  }
+
   // ── Failure Patterns ──
   if (p === "/api/v1/blueprints/failure-patterns/stats") {
     return DEMO_FAILURE_PATTERN_STATS;

@@ -125,6 +125,37 @@ export type BlueprintRunResponse = {
     skipped_nodes?: Array<string>;
     routing_decisions?: Array<RoutingDecisionResponse>;
     judge_verdict?: InlineJudgeVerdictResponse | null;
+    checkpoint_count?: number;
+    resumed_from?: string | null;
+};
+
+export type BlueprintResumeRequest = {
+    /**
+     * ID of the run to resume
+     */
+    run_id: string;
+    /**
+     * Blueprint name (must match checkpoint)
+     */
+    blueprint_name: string;
+    /**
+     * Campaign brief (re-supplied for remaining nodes)
+     */
+    brief: string;
+};
+
+export type CheckpointResponse = {
+    node_name: string;
+    node_index: number;
+    status: string;
+    html_hash: string;
+    created_at: string;
+};
+
+export type CheckpointListResponse = {
+    run_id: string;
+    checkpoints: Array<CheckpointResponse>;
+    count: number;
 };
 
 export type BodyUploadDocumentApiV1KnowledgeDocumentsPost = {

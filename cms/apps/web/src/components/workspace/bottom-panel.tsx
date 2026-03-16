@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { MessageSquare, Zap, Layers } from "lucide-react";
 import { ChatPanel } from "./chat-panel";
 import { BlueprintRunsList } from "./blueprint/runs-list";
 import { AgentContextPanel } from "./agent-context-panel";
+import { useBlueprintRun } from "@/hooks/use-blueprint-run";
 import type { AgentMode } from "@/types/chat";
+import type { BlueprintRunRecord } from "@/types/blueprint-runs";
 
 type BottomPanelTab = "chat" | "runs" | "context";
 
@@ -27,6 +29,24 @@ export function BottomPanel({
 }: BottomPanelProps) {
   const t = useTranslations("workspace");
   const [activeTab, setActiveTab] = useState<BottomPanelTab>("chat");
+  const { resume, isRunning, error } = useBlueprintRun({ projectId: projectIdNum });
+  const [resumingRun, setResumingRun] = useState<BlueprintRunRecord | null>(null);
+
+  const handleResumeRun = useCallback(async (run: BlueprintRunRecord) => {
+    setResumingRun(run);
+    const res = await resume({
+      run_id: run.run_data?.run_id ?? String(run.id),
+      blueprint_name: run.blueprint_name,
+      brief: run.brief_excerpt,
+    });
+    if (res?.html && onApplyToEditor) {
+      onApplyToEditor(res.html);
+    }
+    // Only clear resumingRun on success so the error banner stays visible on failure
+    if (res) {
+      setResumingRun(null);
+    }
+  }, [resume, onApplyToEditor]);
 
   return (
     <div className="flex h-full flex-col">
@@ -76,6 +96,20 @@ export function BottomPanel({
         </button>
       </div>
 
+      {/* Resume status banner */}
+      {isRunning && resumingRun && (
+        <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-3 py-2">
+          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          <span className="text-xs text-muted-foreground">{t("resuming")}</span>
+        </div>
+      )}
+
+      {error && resumingRun && (
+        <div className="border-b border-destructive/20 bg-destructive/5 px-3 py-2">
+          <span className="text-xs text-destructive">{t("resumeError")}</span>
+        </div>
+      )}
+
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "chat" ? (
@@ -89,6 +123,7 @@ export function BottomPanel({
           <BlueprintRunsList
             projectId={projectIdNum}
             onApplyResult={onApplyToEditor}
+            onResumeRun={handleResumeRun}
           />
         ) : (
           <AgentContextPanel
