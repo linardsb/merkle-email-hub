@@ -12,6 +12,7 @@ from sqlalchemy.sql import Select
 
 from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
 from app.ai.blueprints.schemas import (
+    BlueprintResumeRequest,
     BlueprintRunRequest,
     BlueprintRunResponse,
     CheckpointListResponse,
@@ -51,6 +52,23 @@ async def run_blueprint(
     """
     service = get_blueprint_service()
     return await service.run(body, user_id=current_user.id, db=db)
+
+
+@router.post(
+    "/resume",
+    response_model=BlueprintRunResponse,
+    dependencies=[Depends(require_role("admin", "developer"))],
+)
+@limiter.limit("3/minute")
+async def resume_blueprint(
+    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    body: BlueprintResumeRequest,
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> BlueprintRunResponse:
+    """Resume a blueprint run from its latest checkpoint."""
+    service = get_blueprint_service()
+    return await service.resume(body, user_id=current_user.id, db=db)
 
 
 def _build_failure_pattern_query(

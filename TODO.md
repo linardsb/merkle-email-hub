@@ -548,7 +548,7 @@
 - Update `BlueprintService` with `resume()` method
 **Security:** Resume loads only checkpoints from `blueprint_checkpoints` table (no user-controlled paths). `run_id` is a server-generated UUID hex — not guessable. Future: add `user_id` to checkpoint for BOLA (ensure user can only resume their own runs).
 **Verify:** Run a blueprint with checkpoints enabled. Kill the process mid-run (or mock a node failure). Call resume with the `run_id`. Verify: run continues from the last successful node, not from the start. Final output matches a full run. Progress log shows resumed nodes. `make test` passes.
-- [ ] 14.3 Engine integration — resume from checkpoint
+- [x] ~~14.3 Engine integration — resume from checkpoint~~ DONE
 
 ### 14.4 Multi-Pass Pipeline Checkpoints
 **What:** Extend checkpoint support into the 11.22.3 scaffolder `MultiPassPipeline` (3-pass: layout → content → design). Each pass is a natural checkpoint boundary — if Pass 2 (content generation) fails, resume from Pass 2 with the Pass 1 result (template selection) intact.
@@ -562,7 +562,7 @@
 - The blueprint-level checkpoint (14.2) stores which node was executing; the pipeline-level checkpoint stores which pass within that node was executing — two levels of granularity
 **Security:** Pipeline checkpoints contain pass-specific JSON (template selection, slot fills, design tokens). No credentials. Same JSONB storage as blueprint checkpoints.
 **Verify:** Run scaffolder with 3-pass pipeline. Mock Pass 2 failure. Resume → Pass 1 skipped (cached), Pass 2 re-runs, Pass 3 runs. Token usage shows savings (~60% reduction vs full rerun). `make test` passes.
-- [ ] 14.4 Multi-pass pipeline checkpoints
+- [x] ~~14.4 Multi-pass pipeline checkpoints~~ DONE
 
 ### 14.5 Checkpoint Cleanup & Observability
 **What:** Automatic cleanup of old checkpoints + observability integration for checkpoint-related events.

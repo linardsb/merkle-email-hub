@@ -39,6 +39,7 @@ class CheckpointData:
     skipped_nodes: list[str]
     routing_decisions: list[dict[str, Any]]
     handoff_history: list[dict[str, Any]]
+    next_node_name: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -152,6 +153,7 @@ def serialize_run(
     node_name: str,
     node_index: int,
     blueprint_name: str,
+    next_node_name: str | None = None,
 ) -> CheckpointData:
     """Snapshot current BlueprintRun state into a CheckpointData.
 
@@ -204,6 +206,7 @@ def serialize_run(
             }
             for h in run._handoff_history
         ],
+        next_node_name=next_node_name,
     )
 
 

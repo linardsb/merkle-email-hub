@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.blueprints.definitions.campaign import build_campaign_blueprint
-from app.ai.blueprints.engine import BlueprintDefinition, BlueprintEngine
+from app.ai.blueprints.engine import BlueprintDefinition, BlueprintEngine, BlueprintRun
 from app.ai.blueprints.exceptions import BlueprintError
+
+if TYPE_CHECKING:
+    from app.ai.blueprints.audience_context import AudienceProfile
 from app.ai.blueprints.protocols import AgentHandoff, ComponentResolver, GraphContextProvider
 from app.ai.blueprints.schemas import (
     BlueprintProgress,
+    BlueprintResumeRequest,
     BlueprintRunRequest,
     BlueprintRunResponse,
     HandoffSummary,
@@ -32,48 +37,50 @@ BLUEPRINT_REGISTRY: dict[str, Callable[[], BlueprintDefinition]] = {
 class BlueprintService:
     """Resolves blueprint by name and runs the engine."""
 
-    async def run(
+    async def _build_engine(
         self,
-        request: BlueprintRunRequest,
-        user_id: int | None = None,
-        db: AsyncSession | None = None,
-    ) -> BlueprintRunResponse:
-        """Execute a named blueprint and return structured response."""
-        factory = BLUEPRINT_REGISTRY.get(request.blueprint_name)
+        blueprint_name: str,
+        options: dict[str, object] | None,
+        persona_ids: list[int] | None,
+        db: AsyncSession | None,
+    ) -> tuple[
+        BlueprintEngine,
+        BlueprintDefinition,
+        int | None,
+        AudienceProfile | None,
+    ]:
+        """Wire up all engine dependencies. Shared by run() and resume()."""
+        from app.ai.blueprints.audience_context import (
+            build_audience_profile,
+        )
+        from app.ai.blueprints.checkpoint import CheckpointStore, PostgresCheckpointStore
+        from app.ai.blueprints.handoff_memory import persist_handoff_to_memory
+        from app.ai.blueprints.resolvers import DbComponentResolver
+        from app.core.config import get_settings
+        from app.projects.design_system import DesignSystem, load_design_system
+
+        factory = BLUEPRINT_REGISTRY.get(blueprint_name)
         if factory is None:
             available = ", ".join(sorted(BLUEPRINT_REGISTRY.keys()))
-            raise BlueprintError(
-                f"Unknown blueprint '{request.blueprint_name}'. Available: {available}"
-            )
+            raise BlueprintError(f"Unknown blueprint '{blueprint_name}'. Available: {available}")
 
         definition = factory()
 
         component_resolver: ComponentResolver | None = None
         if db is not None:
-            from app.ai.blueprints.resolvers import DbComponentResolver
-
             component_resolver = DbComponentResolver(db)
 
-        # Wire handoff → memory persistence callback
-        from app.ai.blueprints.handoff_memory import persist_handoff_to_memory
-
-        raw_project_id = request.options.get("project_id") if request.options else None
+        raw_project_id = options.get("project_id") if options else None
         project_id: int | None = int(str(raw_project_id)) if raw_project_id is not None else None
 
         # Resolve target audience personas
-        from app.ai.blueprints.audience_context import (
-            AudienceProfile,
-            build_audience_profile,
-            format_audience_context,
-        )
-
         audience_profile: AudienceProfile | None = None
-        if request.persona_ids and db is not None:
+        if persona_ids and db is not None:
             from app.personas.service import PersonaService
 
             persona_svc = PersonaService(db)
             personas: list[PersonaResponse] = []
-            for pid in request.persona_ids:
+            for pid in persona_ids:
                 try:
                     personas.append(await persona_svc.get_persona(pid))
                 except Exception:
@@ -82,8 +89,6 @@ class BlueprintService:
                 audience_profile = build_audience_profile(personas)
 
         # Wire graph knowledge provider (optional — only if Cognee enabled)
-        from app.core.config import get_settings
-
         settings = get_settings()
         graph_provider: GraphContextProvider | None = None
         try:
@@ -95,8 +100,6 @@ class BlueprintService:
             logger.debug("blueprint.graph_provider_init_skipped", exc_info=True)
 
         # Load design system from project (single DB read)
-        from app.projects.design_system import DesignSystem, load_design_system
-
         design_system: DesignSystem | None = None
         if project_id is not None and db is not None:
             try:
@@ -114,8 +117,6 @@ class BlueprintService:
                 )
 
         # Wire checkpoint store (opt-in via config)
-        from app.ai.blueprints.checkpoint import CheckpointStore, PostgresCheckpointStore
-
         checkpoint_store: CheckpointStore | None = None
         if settings.blueprint.checkpoints_enabled and db is not None:
             checkpoint_store = PostgresCheckpointStore(db)
@@ -132,75 +133,17 @@ class BlueprintService:
             checkpoint_store=checkpoint_store,
         )
 
-        logger.info(
-            "blueprint.service.run_started",
-            blueprint=request.blueprint_name,
-        )
+        return engine, definition, project_id, audience_profile
 
-        bp_run = await engine.run(
-            brief=request.brief,
-            initial_html=request.initial_html,
-            user_id=user_id,
-        )
-
-        # Post-run: log outcome to graph queue + memory (fire-and-forget)
-        try:
-            from app.ai.blueprints.outcome_logger import (
-                extract_and_store_failure_patterns,
-                persist_outcome_to_memory,
-                queue_outcome_for_graph,
-            )
-
-            await queue_outcome_for_graph(bp_run, definition.name, project_id)
-            await persist_outcome_to_memory(bp_run, definition.name, project_id)
-            await extract_and_store_failure_patterns(
-                bp_run, definition.name, project_id, audience_profile
-            )
-        except Exception:
-            logger.warning(
-                "blueprint.outcome_logging_failed",
-                run_id=bp_run.run_id,
-                exc_info=True,
-            )
-
-        # Post-run: enqueue for production judge sampling (fire-and-forget)
-        if bp_run.status == "completed" and bp_run.qa_passed:
-            try:
-                from app.ai.agents.evals.production_sampler import enqueue_for_judging
-
-                agents_executed = [p.node_name for p in bp_run.progress if p.node_type == "agentic"]
-                await enqueue_for_judging(
-                    run_id=bp_run.run_id,
-                    blueprint_name=definition.name,
-                    brief=request.brief,
-                    html=bp_run.html,
-                    agents_executed=agents_executed,
-                )
-            except Exception:
-                logger.warning(
-                    "blueprint.production_sampling_failed",
-                    run_id=bp_run.run_id,
-                    exc_info=True,
-                )
-
-        # Count checkpoints for this run (non-blocking)
-        checkpoint_count = 0
-        if settings.blueprint.checkpoints_enabled and db is not None:
-            try:
-                from sqlalchemy import func as sa_func
-                from sqlalchemy import select as sa_select
-
-                from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
-
-                count_stmt = (
-                    sa_select(sa_func.count())
-                    .select_from(BlueprintCheckpoint)
-                    .where(BlueprintCheckpoint.run_id == bp_run.run_id)
-                )
-                count_result = await db.execute(count_stmt)
-                checkpoint_count = count_result.scalar_one()
-            except Exception:
-                logger.debug("blueprint.checkpoint_count_failed", extra={"run_id": bp_run.run_id})
+    def _build_response(
+        self,
+        bp_run: BlueprintRun,
+        definition: BlueprintDefinition,
+        audience_profile: AudienceProfile | None,
+        checkpoint_count: int = 0,
+    ) -> BlueprintRunResponse:
+        """Build API response from a completed BlueprintRun."""
+        from app.ai.blueprints.audience_context import format_audience_context
 
         def _to_summary(h: AgentHandoff) -> HandoffSummary:
             return HandoffSummary(
@@ -268,7 +211,130 @@ class BlueprintService:
             ],
             judge_verdict=judge_verdict_response,
             checkpoint_count=checkpoint_count,
+            resumed_from=bp_run.resumed_from,
         )
+
+    async def _count_checkpoints(self, run_id: str, db: AsyncSession | None) -> int:
+        """Count checkpoints for a run (non-blocking, failure-safe)."""
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        if not settings.blueprint.checkpoints_enabled or db is None:
+            return 0
+        try:
+            from sqlalchemy import func as sa_func
+            from sqlalchemy import select as sa_select
+
+            from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
+
+            count_stmt = (
+                sa_select(sa_func.count())
+                .select_from(BlueprintCheckpoint)
+                .where(BlueprintCheckpoint.run_id == run_id)
+            )
+            count_result = await db.execute(count_stmt)
+            return count_result.scalar_one()
+        except Exception:
+            logger.debug("blueprint.checkpoint_count_failed", extra={"run_id": run_id})
+            return 0
+
+    async def _post_run_hooks(
+        self,
+        bp_run: BlueprintRun,
+        definition: BlueprintDefinition,
+        project_id: int | None,
+        audience_profile: AudienceProfile | None,
+        brief: str,
+    ) -> None:
+        """Post-run outcome logging and production sampling (fire-and-forget)."""
+        try:
+            from app.ai.blueprints.outcome_logger import (
+                extract_and_store_failure_patterns,
+                persist_outcome_to_memory,
+                queue_outcome_for_graph,
+            )
+
+            await queue_outcome_for_graph(bp_run, definition.name, project_id)
+            await persist_outcome_to_memory(bp_run, definition.name, project_id)
+            await extract_and_store_failure_patterns(
+                bp_run, definition.name, project_id, audience_profile
+            )
+        except Exception:
+            logger.warning(
+                "blueprint.outcome_logging_failed",
+                run_id=bp_run.run_id,
+                exc_info=True,
+            )
+
+        if bp_run.status == "completed" and bp_run.qa_passed:
+            try:
+                from app.ai.agents.evals.production_sampler import enqueue_for_judging
+
+                agents_executed = [p.node_name for p in bp_run.progress if p.node_type == "agentic"]
+                await enqueue_for_judging(
+                    run_id=bp_run.run_id,
+                    blueprint_name=definition.name,
+                    brief=brief,
+                    html=bp_run.html,
+                    agents_executed=agents_executed,
+                )
+            except Exception:
+                logger.warning(
+                    "blueprint.production_sampling_failed",
+                    run_id=bp_run.run_id,
+                    exc_info=True,
+                )
+
+    async def run(
+        self,
+        request: BlueprintRunRequest,
+        user_id: int | None = None,
+        db: AsyncSession | None = None,
+    ) -> BlueprintRunResponse:
+        """Execute a named blueprint and return structured response."""
+        engine, definition, project_id, audience_profile = await self._build_engine(
+            request.blueprint_name, request.options, request.persona_ids, db
+        )
+
+        logger.info("blueprint.service.run_started", blueprint=request.blueprint_name)
+
+        bp_run = await engine.run(
+            brief=request.brief,
+            initial_html=request.initial_html,
+            user_id=user_id,
+        )
+
+        await self._post_run_hooks(bp_run, definition, project_id, audience_profile, request.brief)
+        checkpoint_count = await self._count_checkpoints(bp_run.run_id, db)
+
+        return self._build_response(bp_run, definition, audience_profile, checkpoint_count)
+
+    async def resume(
+        self,
+        request: BlueprintResumeRequest,
+        user_id: int | None = None,
+        db: AsyncSession | None = None,
+    ) -> BlueprintRunResponse:
+        """Resume a blueprint run from its latest checkpoint."""
+        if db is None:
+            raise BlueprintError("Database session required for resume")
+
+        engine, definition, project_id, audience_profile = await self._build_engine(
+            request.blueprint_name, None, None, db
+        )
+
+        logger.info("blueprint.service.resume_started", run_id=request.run_id)
+
+        bp_run = await engine.resume(
+            run_id=request.run_id,
+            brief=request.brief,
+            user_id=user_id,
+        )
+
+        await self._post_run_hooks(bp_run, definition, project_id, audience_profile, request.brief)
+        checkpoint_count = await self._count_checkpoints(bp_run.run_id, db)
+
+        return self._build_response(bp_run, definition, audience_profile, checkpoint_count)
 
 
 _service: BlueprintService | None = None

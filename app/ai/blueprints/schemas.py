@@ -20,6 +20,14 @@ class BlueprintRunRequest(BaseModel):
     )
 
 
+class BlueprintResumeRequest(BaseModel):
+    """Request to resume a failed/interrupted blueprint run from its last checkpoint."""
+
+    run_id: str = Field(description="ID of the run to resume")
+    blueprint_name: str = Field(description="Blueprint name (must match checkpoint)")
+    brief: str = Field(description="Campaign brief (re-supplied for remaining nodes)")
+
+
 class BlueprintProgress(BaseModel):
     """Progress entry for a single node execution within a blueprint run."""
 

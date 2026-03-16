@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
     from app.ai.blueprints.checkpoint import CheckpointStore
+    from app.core.quota import BlueprintCostTracker
     from app.knowledge.graph.protocols import GraphSearchResult
     from app.projects.design_system import DesignSystem
 
@@ -19,7 +20,7 @@ from app.ai.agents.context_budget import (
     summarize_trajectory,
 )
 from app.ai.agents.evals.judges.schemas import JudgeVerdict
-from app.ai.blueprints.exceptions import BlueprintEscalatedError, BlueprintNodeError
+from app.ai.blueprints.exceptions import BlueprintError, BlueprintEscalatedError, BlueprintNodeError
 from app.ai.blueprints.protocols import (
     AgentHandoff,
     BlueprintNode,
@@ -99,6 +100,7 @@ class BlueprintRun:
     _handoff_history: list[AgentHandoff] = field(
         default_factory=lambda: list[AgentHandoff](), repr=False
     )
+    resumed_from: str | None = None
     token_budget: int = 500_000
 
     @property
@@ -147,8 +149,6 @@ class BlueprintEngine:
         from app.core.quota import BlueprintCostTracker
 
         run = BlueprintRun(html=initial_html)
-        current_node_name: str | None = self._definition.entry_node
-        steps = 0
 
         # Build routing plan before main loop (deterministic, no I/O)
         routing_plan = build_routing_plan(
@@ -172,6 +172,101 @@ class BlueprintEngine:
             blueprint=self._definition.name,
             run_id=run.run_id,
         )
+
+        return await self._execute_from(
+            run, self._definition.entry_node, brief, routing_plan, cost_tracker, user_id
+        )
+
+    async def resume(self, run_id: str, brief: str, user_id: int | None = None) -> BlueprintRun:
+        """Resume a blueprint run from its latest checkpoint.
+
+        Loads the latest checkpoint, validates the blueprint definition hasn't
+        changed incompatibly, and continues execution from the next unfinished node.
+        """
+        if self._checkpoint_store is None:
+            raise BlueprintError("Checkpoints are not enabled — cannot resume")
+
+        from app.ai.blueprints.checkpoint import restore_run
+
+        data = await self._checkpoint_store.load_latest(run_id)
+        if data is None:
+            raise BlueprintError(f"No checkpoint found for run {run_id}")
+
+        # Validate blueprint name matches
+        if data.blueprint_name != self._definition.name:
+            raise BlueprintError(
+                f"Blueprint mismatch: checkpoint is for '{data.blueprint_name}', "
+                f"but engine has '{self._definition.name}'"
+            )
+
+        # Validate next node exists in current definition
+        next_node = data.next_node_name
+        if next_node is not None and next_node not in self._definition.nodes:
+            raise BlueprintError(
+                f"Blueprint definition changed: node '{next_node}' no longer exists"
+            )
+
+        run = restore_run(data)
+        run.resumed_from = data.node_name
+
+        # Terminal checkpoint — nothing left to execute
+        if next_node is None:
+            if run.status == "running":
+                run.status = (
+                    "completed" if run.qa_passed is not False else "completed_with_warnings"
+                )
+            logger.info(
+                "blueprint.resume_terminal",
+                run_id=run_id,
+                node_name=data.node_name,
+            )
+            return run
+
+        # Build routing plan for remaining nodes
+        routing_plan = build_routing_plan(
+            node_names=list(self._definition.nodes.keys()),
+            audience_profile=self._audience_profile,
+            html=run.html,
+            brief=brief,
+        )
+        run.routing_decisions = routing_plan.decisions
+
+        # Set up cost tracking
+        from app.core.quota import BlueprintCostTracker
+
+        cost_tracker: BlueprintCostTracker | None = None
+        if user_id is not None:
+            from app.core.config import get_settings as _get_settings
+
+            _settings = _get_settings()
+            cost_tracker = BlueprintCostTracker(daily_cap=_settings.blueprint.daily_token_cap)
+
+        logger.info(
+            "blueprint.run_resumed",
+            run_id=run_id,
+            checkpoint_node=data.node_name,
+            next_node=next_node,
+            blueprint=self._definition.name,
+        )
+
+        return await self._execute_from(run, next_node, brief, routing_plan, cost_tracker, user_id)
+
+    async def _execute_from(
+        self,
+        run: BlueprintRun,
+        start_node: str | None,
+        brief: str,
+        routing_plan: RoutingPlan,
+        cost_tracker: "BlueprintCostTracker | None" = None,
+        user_id: int | None = None,
+    ) -> BlueprintRun:
+        """Execute the blueprint graph starting from ``start_node``.
+
+        Shared by :meth:`run` (from entry) and :meth:`resume` (from checkpoint).
+        """
+
+        current_node_name = start_node
+        steps = 0
 
         while current_node_name is not None and steps < MAX_TOTAL_STEPS:
             steps += 1
@@ -387,10 +482,15 @@ class BlueprintEngine:
                 duration_ms=round(duration_ms, 1),
             )
 
-            # Fire-and-forget checkpoint after successful node
-            await self._save_checkpoint(run, current_node_name, len(run.progress) - 1)
+            # Resolve next node BEFORE checkpoint so checkpoint records where to resume
+            next_node = self._resolve_next_node(current_node_name, result)
 
-            current_node_name = self._resolve_next_node(current_node_name, result)
+            # Fire-and-forget checkpoint after successful node
+            await self._save_checkpoint(
+                run, current_node_name, len(run.progress) - 1, next_node_name=next_node
+            )
+
+            current_node_name = next_node
 
         if run.status == "running":
             run.status = "completed" if run.qa_passed is not False else "completed_with_warnings"
@@ -403,7 +503,13 @@ class BlueprintEngine:
         )
         return run
 
-    async def _save_checkpoint(self, run: BlueprintRun, node_name: str, node_index: int) -> None:
+    async def _save_checkpoint(
+        self,
+        run: BlueprintRun,
+        node_name: str,
+        node_index: int,
+        next_node_name: str | None = None,
+    ) -> None:
         """Fire-and-forget checkpoint save after a successful node."""
         if self._checkpoint_store is None:
             return
@@ -415,6 +521,7 @@ class BlueprintEngine:
                 node_name=node_name,
                 node_index=node_index,
                 blueprint_name=self._definition.name,
+                next_node_name=next_node_name,
             )
             await self._checkpoint_store.save(data)
         except Exception:
