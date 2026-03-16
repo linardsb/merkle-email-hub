@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Moon, Sun, Copy, Check, Plus } from "lucide-react";
+import { Moon, Sun, Copy, Check, Plus, Camera } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,11 +23,13 @@ import {
   CommandGroup,
   CommandItem,
 } from "@email-hub/ui/components/ui/command";
+import { useSession } from "next-auth/react";
 import { useComponent, useComponentVersions } from "@/hooks/use-components";
 import { useProjects } from "@/hooks/use-projects";
 import { ComponentPreview } from "./component-preview";
 import { CompatibilityBadge } from "./compatibility-badge";
 import { CompatibilityMatrix } from "./compatibility-matrix";
+import { VisualQADialog } from "@/components/visual-qa/visual-qa-dialog";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 
 interface ComponentDetailDialogProps {
@@ -50,6 +52,10 @@ export function ComponentDetailDialog({
   const [copied, setCopied] = useState(false);
   const [campaignOpen, setCampaignOpen] = useState(false);
   const [campaignSearch, setCampaignSearch] = useState("");
+  const [visualQaOpen, setVisualQaOpen] = useState(false);
+  const session = useSession();
+  const userRole = session.data?.user?.role;
+  const canVisualQa = userRole === "admin" || userRole === "developer";
 
   const { data: component } = useComponent(componentId);
   const { data: versions } = useComponentVersions(componentId);
@@ -249,8 +255,18 @@ export function ComponentDetailDialog({
           )}
         </div>
 
-        {/* Add to Campaign CTA */}
-        <div className="flex justify-end border-t border-border pt-4">
+        {/* Footer actions */}
+        <div className="flex justify-end gap-2 border-t border-border pt-4">
+          {canVisualQa && latestVersion?.html_source && latestVersion?.id && (
+            <button
+              type="button"
+              onClick={() => setVisualQaOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+            >
+              <Camera className="h-4 w-4" />
+              {t("visualQa")}
+            </button>
+          )}
           <Popover open={campaignOpen} onOpenChange={setCampaignOpen}>
             <PopoverTrigger asChild>
               <button
@@ -294,6 +310,16 @@ export function ComponentDetailDialog({
           </Popover>
         </div>
       </DialogContent>
+
+      {canVisualQa && latestVersion?.id && latestVersion?.html_source && (
+        <VisualQADialog
+          open={visualQaOpen}
+          onClose={() => setVisualQaOpen(false)}
+          html={latestVersion.html_source}
+          entityType="component_version"
+          entityId={latestVersion.id}
+        />
+      )}
     </Dialog>
   );
 }

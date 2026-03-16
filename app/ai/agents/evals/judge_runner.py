@@ -32,6 +32,7 @@ from app.ai.agents.evals.judges.outlook_fixer import OutlookFixerJudge
 from app.ai.agents.evals.judges.personalisation import PersonalisationJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
 from app.ai.agents.evals.judges.schemas import CriterionResult, JudgeInput, JudgeVerdict
+from app.ai.agents.evals.judges.visual_qa import VisualQAJudge
 from app.ai.protocols import CompletionResponse, LLMProvider, Message
 from app.ai.registry import get_registry
 from app.core.config import get_settings
@@ -71,7 +72,8 @@ async def judge_trace(
     | PersonalisationJudge
     | CodeReviewerJudge
     | KnowledgeJudge
-    | InnovationJudge,
+    | InnovationJudge
+    | VisualQAJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,
@@ -111,7 +113,8 @@ async def judge_trace_hybrid(
     | PersonalisationJudge
     | CodeReviewerJudge
     | KnowledgeJudge
-    | InnovationJudge,
+    | InnovationJudge
+    | VisualQAJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,

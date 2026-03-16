@@ -87,12 +87,13 @@ class TestEoARenderingService:
 class TestRenderingServiceDispatch:
     """Tests for the RenderingService provider dispatch."""
 
-    def test_supported_providers_has_both(self) -> None:
+    def test_supported_providers_has_all(self) -> None:
         from app.rendering.service import SUPPORTED_PROVIDERS
 
         assert "litmus" in SUPPORTED_PROVIDERS
         assert "eoa" in SUPPORTED_PROVIDERS
-        assert len(SUPPORTED_PROVIDERS) == 2
+        assert "local" in SUPPORTED_PROVIDERS
+        assert len(SUPPORTED_PROVIDERS) == 3
 
     def test_unsupported_provider_raises(self) -> None:
         from app.rendering.service import RenderingService

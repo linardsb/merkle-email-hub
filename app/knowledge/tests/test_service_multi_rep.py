@@ -123,7 +123,9 @@ class TestIngestHtmlMultiRepEnabled:
 
             await service.ingest_document(
                 file_path="/tmp/test.html",
-                upload=DocumentUpload(domain="test", metadata_json=None, title=None, description=None),
+                upload=DocumentUpload(
+                    domain="test", metadata_json=None, title=None, description=None
+                ),
                 filename="test.html",
                 source_type="text",
                 file_size=100,
@@ -203,7 +205,9 @@ class TestIngestHtmlMultiRepDisabled:
 
             await service.ingest_document(
                 file_path="/tmp/test.html",
-                upload=DocumentUpload(domain="test", metadata_json=None, title=None, description=None),
+                upload=DocumentUpload(
+                    domain="test", metadata_json=None, title=None, description=None
+                ),
                 filename="test.html",
                 source_type="text",
                 file_size=100,
@@ -269,7 +273,9 @@ class TestIngestTextMultiRepEnabled:
 
             await service.ingest_document(
                 file_path="/tmp/test.txt",
-                upload=DocumentUpload(domain="test", metadata_json=None, title=None, description=None),
+                upload=DocumentUpload(
+                    domain="test", metadata_json=None, title=None, description=None
+                ),
                 filename="test.txt",
                 source_type="text",
                 file_size=100,

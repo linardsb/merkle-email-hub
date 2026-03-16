@@ -10,11 +10,10 @@ from __future__ import annotations
 import asyncio
 import re
 from dataclasses import dataclass
-from typing import Any
 
 import httpx
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -156,7 +155,7 @@ class ChunkSummarizer:
     async def _llm_summarize(
         client: httpx.AsyncClient,
         html: str,
-        settings: Any,
+        settings: Settings,
     ) -> str | None:
         """Call LLM to summarize a single HTML section. Best-effort."""
         truncated = html[:4000]  # Cap input to avoid token overflow

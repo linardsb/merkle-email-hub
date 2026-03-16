@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,17 +22,29 @@ from app.rendering.exceptions import (
     RenderingTestNotFoundError,
 )
 from app.rendering.litmus.service import LitmusRenderingService
+from app.rendering.local.service import LocalRenderingProvider
 from app.rendering.models import RenderingTest
 from app.rendering.protocol import RenderingProvider
-from app.rendering.repository import RenderingRepository
+from app.rendering.repository import RenderingRepository, ScreenshotBaselineRepository
 from app.rendering.schemas import (
+    VALID_ENTITY_TYPES,
+    BaselineListResponse,
+    BaselineResponse,
+    BaselineUpdateRequest,
+    Region,
     RenderingComparisonRequest,
     RenderingComparisonResponse,
     RenderingDiff,
     RenderingTestRequest,
     RenderingTestResponse,
+    ScreenshotClientResult,
+    ScreenshotRequest,
+    ScreenshotResponse,
     ScreenshotResult,
+    VisualDiffRequest,
+    VisualDiffResponse,
 )
+from app.rendering.visual_diff import compare_images
 from app.shared.schemas import PaginatedResponse, PaginationParams
 
 logger = get_logger(__name__)
@@ -37,6 +53,7 @@ settings = get_settings()
 SUPPORTED_PROVIDERS: dict[str, type[RenderingProvider]] = {
     "litmus": LitmusRenderingService,
     "eoa": EoARenderingService,
+    "local": LocalRenderingProvider,
 }
 
 _breaker = CircuitBreaker(name="rendering-api", failure_threshold=3, reset_timeout=60.0)
@@ -48,6 +65,7 @@ class RenderingService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.repository = RenderingRepository(db)
+        self.baseline_repo = ScreenshotBaselineRepository(db)
         self._providers: dict[str, RenderingProvider] = {}
 
     def _get_provider(self, provider_name: str | None = None) -> RenderingProvider:
@@ -189,6 +207,137 @@ class RenderingService:
             total_clients=len(common_clients),
             regressions_found=regressions,
             diffs=diffs,
+        )
+
+    async def render_screenshots(self, data: ScreenshotRequest) -> ScreenshotResponse:
+        """Render email HTML locally across simulated email clients."""
+        if not settings.rendering.screenshots_enabled:
+            raise RenderingProviderError("Local screenshot rendering is disabled")
+
+        provider = LocalRenderingProvider()
+        raw_results = await provider.render_screenshots(data.html, data.clients)
+
+        screenshots = [
+            ScreenshotClientResult(
+                client_name=str(r["client_name"]),
+                image_base64=base64.b64encode(
+                    r["image_bytes"]  # type: ignore[arg-type]
+                ).decode("ascii"),
+                viewport=str(r["viewport"]),
+                browser=str(r["browser"]),
+            )
+            for r in raw_results
+        ]
+
+        return ScreenshotResponse(
+            screenshots=screenshots,
+            clients_rendered=len(screenshots),
+            clients_failed=len(data.clients) - len(screenshots),
+        )
+
+    async def visual_diff(self, data: VisualDiffRequest) -> VisualDiffResponse:
+        """Compare two base64 images using ODiff."""
+        if not settings.rendering.visual_diff_enabled:
+            raise RenderingProviderError("Visual diff is disabled")
+
+        try:
+            baseline_bytes = base64.b64decode(data.baseline_image)
+            current_bytes = base64.b64decode(data.current_image)
+        except binascii.Error as exc:
+            raise RenderingProviderError(f"Invalid base64 image data: {exc}") from exc
+
+        result = await compare_images(baseline_bytes, current_bytes, threshold=data.threshold)
+
+        diff_b64 = (
+            base64.b64encode(result.diff_image).decode("ascii") if result.diff_image else None
+        )
+        threshold_used = (
+            data.threshold
+            if data.threshold is not None
+            else settings.rendering.visual_diff_threshold
+        )
+
+        return VisualDiffResponse(
+            identical=result.identical,
+            diff_percentage=result.diff_percentage,
+            diff_image=diff_b64,
+            pixel_count=result.pixel_count,
+            changed_regions=[
+                Region(x=r[0], y=r[1], width=r[2], height=r[3]) for r in result.changed_regions
+            ],
+            threshold_used=threshold_used,
+        )
+
+    async def list_baselines(self, entity_type: str, entity_id: int) -> BaselineListResponse:
+        """List all baselines for a given entity."""
+        if entity_type not in VALID_ENTITY_TYPES:
+            raise RenderingProviderError(
+                f"Invalid entity_type '{entity_type}'. "
+                f"Must be one of: {', '.join(sorted(VALID_ENTITY_TYPES))}"
+            )
+        baselines = await self.baseline_repo.list_by_entity(entity_type, entity_id)
+        return BaselineListResponse(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            baselines=[
+                BaselineResponse(
+                    id=b.id,
+                    entity_type=b.entity_type,
+                    entity_id=b.entity_id,
+                    client_name=b.client_name,
+                    image_hash=b.image_hash,
+                    created_at=b.created_at,  # pyright: ignore[reportArgumentType]
+                    updated_at=b.updated_at,  # pyright: ignore[reportArgumentType]
+                )
+                for b in baselines
+            ],
+        )
+
+    async def update_baseline(
+        self,
+        entity_type: str,
+        entity_id: int,
+        data: BaselineUpdateRequest,
+        user_id: int,
+    ) -> BaselineResponse:
+        """Create or update a baseline screenshot for an entity + client."""
+        if entity_type not in VALID_ENTITY_TYPES:
+            raise RenderingProviderError(
+                f"Invalid entity_type '{entity_type}'. "
+                f"Must be one of: {', '.join(sorted(VALID_ENTITY_TYPES))}"
+            )
+
+        try:
+            image_bytes = base64.b64decode(data.image_base64)
+        except binascii.Error as exc:
+            raise RenderingProviderError(f"Invalid base64 image data: {exc}") from exc
+        image_hash = hashlib.sha256(image_bytes).hexdigest()
+
+        baseline = await self.baseline_repo.upsert(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            client_name=data.client_name,
+            image_data=image_bytes,
+            image_hash=image_hash,
+            created_by_id=user_id,
+        )
+
+        logger.info(
+            "baseline.updated",
+            entity_type=entity_type,
+            entity_id=entity_id,
+            client_name=data.client_name,
+            image_hash=image_hash,
+        )
+
+        return BaselineResponse(
+            id=baseline.id,
+            entity_type=baseline.entity_type,
+            entity_id=baseline.entity_id,
+            client_name=baseline.client_name,
+            image_hash=baseline.image_hash,
+            created_at=baseline.created_at,  # pyright: ignore[reportArgumentType]
+            updated_at=baseline.updated_at,  # pyright: ignore[reportArgumentType]
         )
 
     def _to_response(self, test: RenderingTest) -> RenderingTestResponse:

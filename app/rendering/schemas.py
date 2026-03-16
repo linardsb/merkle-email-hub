@@ -91,3 +91,101 @@ class RenderingComparisonResponse(BaseModel):
     total_clients: int
     regressions_found: int
     diffs: list[RenderingDiff] = []
+
+
+class ScreenshotRequest(BaseModel):
+    """Request for local email screenshot rendering."""
+
+    html: str = Field(..., min_length=1, max_length=500_000)
+    clients: list[str] = Field(
+        default_factory=lambda: [
+            "gmail_web",
+            "outlook_2019",
+            "apple_mail",
+            "outlook_dark",
+            "mobile_ios",
+        ]
+    )
+
+
+class ScreenshotClientResult(BaseModel):
+    """Single client screenshot result with base64 image."""
+
+    client_name: str
+    image_base64: str
+    viewport: str
+    browser: str
+
+
+class ScreenshotResponse(BaseModel):
+    """Response with rendered screenshots."""
+
+    screenshots: list[ScreenshotClientResult]
+    clients_rendered: int
+    clients_failed: int = 0
+
+
+# ── Visual Diff & Baselines (Phase 17.2) ──
+
+VALID_ENTITY_TYPES = {"component_version", "golden_template"}
+
+
+class VisualDiffRequest(BaseModel):
+    """Request for visual diff between two images."""
+
+    baseline_image: str = Field(
+        ..., max_length=14_000_000, description="Base64-encoded PNG baseline"
+    )
+    current_image: str = Field(..., max_length=14_000_000, description="Base64-encoded PNG current")
+    threshold: float | None = Field(None, ge=0.0, le=1.0, description="Override default threshold")
+
+
+class Region(BaseModel):
+    """A rectangular region of pixel changes."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class VisualDiffResponse(BaseModel):
+    """Result of visual diff comparison."""
+
+    identical: bool
+    diff_percentage: float = Field(ge=0.0, le=100.0)
+    diff_image: str | None = None
+    pixel_count: int = 0
+    changed_regions: list[Region] = []
+    threshold_used: float
+
+
+class BaselineResponse(BaseModel):
+    """Response for a stored baseline."""
+
+    id: int
+    entity_type: str
+    entity_id: int
+    client_name: str
+    image_hash: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BaselineListResponse(BaseModel):
+    """List of baselines for an entity."""
+
+    entity_type: str
+    entity_id: int
+    baselines: list[BaselineResponse]
+
+
+class BaselineUpdateRequest(BaseModel):
+    """Request to update/create a baseline."""
+
+    client_name: str = Field(..., max_length=100)
+    image_base64: str = Field(
+        ..., min_length=1, max_length=14_000_000, description="Base64-encoded PNG image"
+    )

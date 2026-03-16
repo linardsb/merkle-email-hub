@@ -17,3 +17,19 @@ class RenderingPollTimeoutError(AppError):
 
 class RenderingProviderError(DomainValidationError):
     """Raised for unsupported rendering provider."""
+
+
+class ScreenshotRenderError(ServiceUnavailableError):
+    """Raised when local screenshot rendering fails."""
+
+
+class ScreenshotTimeoutError(AppError):
+    """Raised when screenshot rendering exceeds timeout."""
+
+
+class VisualDiffError(ServiceUnavailableError):
+    """Raised when ODiff binary fails or is unavailable."""
+
+
+class BaselineNotFoundError(AppError):
+    """Raised when a screenshot baseline is not found."""

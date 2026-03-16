@@ -6,177 +6,636 @@
 
 ---
 
-> **Completed phases (0–10):** See [docs/TODO-completed.md](docs/TODO-completed.md)
-
-## Phase 11 — QA Engine Hardening & Agent Quality Improvements ✅
-
-> **Tasks 11.1-11.24 COMPLETE.** Detailed descriptions: [docs/TODO-completed.md](docs/TODO-completed.md)
+> **Completed phases (0–16):** See [docs/TODO-completed.md](docs/TODO-completed.md)
 >
-> Summary: 11 QA checks upgraded to DOM-parsed validation (11.1-11.12), 8 agent skills hardened (11.13-11.21), template-first hybrid architecture (11.22, all 9 subtasks — golden templates + structured output + cascading repair + SKILL.md rewrites + eval-driven iteration), inline eval judges on retries (11.23), production trace sampling (11.24).
+> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing).
 
-### 11.25 Client Design System & Template Customisation
+---
 
-**What:** Bridge the gap between the global golden template library (`app/ai/templates/`) and the user-managed component library (`app/components/`) by adding per-project design systems, component-to-section adapters, project-scoped template registries, and constraint injection into the agent pipeline. Currently these two HTML stores are completely disconnected — golden templates are global with no client scoping, `DesignTokens` are invented by the LLM from scratch every request, and user-created components never enter the agent composition pipeline.
+## Phase 17 — Visual Regression Agent & VLM-Powered QA
 
-**Why:** Without client-level customisation, every project gets identical template choices and the LLM guesses brand colors/fonts each time, producing inconsistent output that fails brand compliance. A Pampers email could end up with Nike's typography. A client's custom branded footer sits unused in the component library while the agent generates a generic one. The brand compliance check catches violations AFTER generation (reactive), triggering retry loops — instead of preventing them at generation time (proactive). This task makes design systems the single source of truth used for generation (Pass 3 constraints), repair (brand repair stage), and validation (brand compliance check).
+**What:** Add a 10th AI agent that uses vision-language models to screenshot rendered emails across simulated clients, detect rendering discrepancies by comparing screenshots, and generate targeted CSS fixes. Integrates Playwright for headless rendering, ODiff for perceptual image diffing, and a VLM (Claude vision / GPT-4o vision) for semantic analysis of visual defects. Includes a component baseline screenshot system for regression detection across builds.
+**Why:** Every email platform (Litmus, Email on Acid, Parcel) relies on server-side rendering farms or manual screenshot review. No platform uses AI to _understand_ what went wrong visually and auto-fix it. The hub already has 9 agents, a blueprint engine, and a self-correcting CRAG loop — a Visual QA agent is the natural 10th agent that closes the "render → detect → fix" loop entirely within the platform. The ScreenCoder (2025) multi-agent decomposition pattern (grounding → planning → generation) maps directly to the blueprint engine's node architecture. This single feature makes the hub irreplaceable because it eliminates the $500+/month Litmus dependency and delivers faster, smarter results.
+**Dependencies:** Phase 11 (QA engine + agent architecture), Phase 14 (checkpoint for long-running visual pipelines), Phase 16 (CRAG mixin pattern for auto-correction).
+**Design principle:** Each sub-task is independently shippable behind feature flags. Visual regression can run as QA check #12 without the VLM fix agent. VLM agent can run standalone without ODiff baselines. Screenshots stored alongside `ComponentVersion` baselines — no new storage infrastructure required.
 
-**Dependencies:** 11.22.1 (golden templates), 11.22.3 (multi-pass pipeline), 11.22.4 (repair pipeline), 11.22.7 (composer/sections). Phase 2 (component library). 11.22.8 (agent role redefinition — Phase A is a prerequisite for meaningful agent constraint injection).
-
-**Architecture pattern:** One source of truth (design system) → three uses: generative constraints (Pass 3 locked tokens), deterministic repair (brand repair stage), validation (brand compliance check). Component → Section bridge uses existing repair pipeline to harden user HTML before it enters the composition system.
-
-**Use cases:**
-1. **Single-brand onboarding (Nike):** Admin configures design system (palette, fonts, logo, footer text) + pins branded header/footer components as section overrides. Every agent-generated email inherits Nike's exact identity. Pass 3 locks colors to the palette. Assembly swaps footer section with Nike's component. Brand compliance validates the same data used for generation — zero drift.
-2. **Multi-brand portfolio (P&G — Tide + Pampers):** Same ClientOrg, two Projects with distinct design systems. Tide gets bold orange palette + Impact headings + sharp CTAs + `promotional_grid` preference. Pampers gets soft teal/pink + Georgia serif + rounded CTAs + `newsletter_1col` preference. Same agent pipeline, radically different outputs driven by project config. Zero cross-contamination.
-3. **Campaign-specific template iteration (Sephora Holiday):** Developer creates `holiday-gift-grid` component, annotates slots, QA bridge validates (0.87 → repair hardens to 0.94), promotes to project section block. Composer uses it for December campaigns. January: unpinned, component stays in library but exits the composition pipeline. Temporary customisation without permanent architecture changes.
-
-#### 11.25.1 Client Design System Model — Per-Project Brand Identity Store
-**What:** Create a `DesignSystem` Pydantic model storing brand palette, typography, logo, footer config, button style, and social links. Persist as a JSON column on the `Project` model. Expose via API endpoints. Link to brand compliance so validation and generation use identical data.
-**Why:** Highest-impact change — eliminates LLM color/font guessing entirely. Currently `DesignTokens` are generated from scratch every request. With a design system, Pass 3 receives the client's exact palette as constraints, not suggestions.
+### 17.1 Playwright Email Rendering Service `[Backend]`
+**What:** A rendering service that takes compiled email HTML and produces screenshots across simulated email client viewports. Uses Playwright with pre-configured viewport sizes and CSS injection to simulate client-specific rendering behaviors (Gmail style stripping, Outlook word-engine quirks, Apple Mail full CSS support). Outputs PNG screenshots with metadata (viewport, simulated client, timestamp).
+**Why:** The hub currently has no way to see what an email looks like in different clients without external services. Playwright is already a dev dependency (used in e2e tests). Reusing it for email rendering avoids new infrastructure. Client simulation via CSS injection and style stripping is 90% accurate for layout validation without needing actual email client access.
 **Implementation:**
-- Create `app/projects/design_system.py`:
-  - `BrandPalette` frozen dataclass: `primary`, `secondary`, `accent`, `background`, `text`, `link` (hex strings), optional `dark_background`, `dark_text` for dark mode variants
-  - `Typography` frozen dataclass: `heading_font`, `body_font` (CSS font stacks), `base_size` (default `"16px"`)
-  - `LogoConfig` frozen dataclass: `url`, `alt_text`, `width: int`, `height: int`
-  - `FooterConfig` frozen dataclass: `company_name`, `legal_text`, `address`, `unsubscribe_text`
-  - `SocialLink` frozen dataclass: `platform` (Literal), `url`, `icon_url`
-  - `DesignSystem` frozen dataclass: `palette`, `typography`, `logo: LogoConfig | None`, `footer: FooterConfig | None`, `social_links: tuple[SocialLink, ...]`, `button_border_radius`, `button_style: Literal["filled", "outlined", "text"]`
-  - `load_design_system(raw: dict) -> DesignSystem` — parse JSON from DB column
-  - `design_system_to_brand_rules(ds: DesignSystem) -> dict` — convert to `brand_compliance` params format (`allowed_colors`, `required_fonts`, `required_elements`)
-- Add `design_system: Mapped[dict[str, Any] | None]` JSON column to `Project` model
-- Alembic migration: `add_design_system_to_project`
-- Add API endpoints to `app/projects/routes.py`:
-  - `GET /api/v1/projects/{id}/design-system` — returns `DesignSystem` or empty default
-  - `PUT /api/v1/projects/{id}/design-system` — validates via Pydantic, stores JSON
-  - Auth: `developer`+`admin` for PUT, `viewer`+ for GET
-- When `design_system` is set and `qa_profile.brand_compliance.params` is empty, auto-populate brand compliance params from design system via `design_system_to_brand_rules()` — one source of truth, no manual duplication
-**Security:** Design system is project-scoped, validated by Pydantic. Hex color values validated by regex (`^#[0-9a-fA-F]{6}$`). Font stacks are strings (no code execution). Logo URL validated as HTTPS. No raw user input reaches SQL.
-**Verify:** Create project with design system via API. Verify JSON stored correctly. Verify `design_system_to_brand_rules()` produces valid brand compliance params. Run brand compliance check — uses design system colors. `make test` passes. `make types` clean.
-- [x] ~~11.25.1 Client design system model~~ DONE
+- Create `app/rendering/screenshot.py` — `EmailScreenshotService` class:
+  - `async render_screenshots(html: str, clients: list[str] | None = None) -> list[ScreenshotResult]` — renders HTML in Playwright, returns list of `ScreenshotResult(client_name: str, viewport: tuple[int, int], image_bytes: bytes, css_modifications: list[str])`
+  - Pre-configured client profiles in `RENDERING_PROFILES: dict[str, RenderingProfile]`: `gmail_web` (strip `<style>` blocks, max-width 680px), `outlook_2019` (inject Word engine CSS constraints: no flexbox, no grid, table-only layout enforcement), `apple_mail` (full CSS, 600px), `outlook_dark` (dark mode color inversion), `mobile_ios` (375px viewport)
+  - Each profile: `RenderingProfile(name: str, viewport_width: int, viewport_height: int, css_injections: list[str], style_strip_patterns: list[re.Pattern], dark_mode: bool)`
+  - Uses `async with async_playwright() as p: browser = await p.chromium.launch(headless=True)` — single browser instance, new context per render
+  - Screenshot via `page.screenshot(type="png", full_page=True, clip={"x": 0, "y": 0, "width": viewport_width, "height": min(page_height, 4096)})` — cap at 4096px to prevent memory issues
+  - Images stored as bytes in memory (not disk) — caller decides storage
+- Create `app/rendering/schemas.py` — `ScreenshotResult`, `RenderingProfile`, `ScreenshotRequest`, `ScreenshotResponse` (base64 encoded images for API transport)
+- Modify `app/rendering/routes.py` — add `POST /api/v1/rendering/screenshots` with auth + rate limiting (`5/minute` — rendering is expensive). Accepts `{html: str, clients: list[str]}`, returns `{screenshots: list[{client: str, image_base64: str}]}`
+- Config (`app/core/config.py` → `RenderingConfig`): `screenshots_enabled: bool = False`, `screenshot_max_clients: int = 5`, `screenshot_timeout_ms: int = 15000`
+**Security:** HTML rendered in Playwright's sandboxed Chromium — no network access (`context.route("**/*", lambda route: route.abort())` blocks all external requests). Screenshot output is a PNG image — no executable content. Rate limited to prevent abuse. HTML input validated via existing `validate_output()` before rendering.
+**Verify:** Render a known email HTML with `gmail_web` profile → `<style>` blocks stripped from rendered output, width constrained to 680px. Render same HTML with `apple_mail` → styles preserved. Render with `outlook_2019` → flexbox/grid properties have no visual effect (simulated). Screenshot dimensions match configured viewport. `screenshots_enabled=False` returns 501. `make test` passes. Rendering completes within timeout.
+- [x] ~~17.1 Playwright email rendering service~~ DONE
 
-#### 11.25.2 Component → Section Bridge — Adapter for Agent Pipeline
-**What:** Create a `SectionAdapter` that converts a QA-validated `ComponentVersion` into a `SectionBlock` compatible with the `TemplateComposer`. Users annotate content slots when uploading components. The adapter hardens HTML via the repair pipeline before it enters the composition system.
-**Why:** User-created components (branded headers, footers, CTAs, product cards) currently sit in the component library with no path into the agent pipeline. This bridge lets users' best components become building blocks that the composer and agents can use, while the repair pipeline ensures they meet golden template quality standards.
+### 17.2 ODiff Visual Regression Baseline System `[Backend]`
+**What:** Perceptual image diffing system using ODiff (Zig/SIMD, handles anti-aliasing noise) that compares rendered screenshots against stored baselines. Creates and manages baseline screenshots per `ComponentVersion` and per `GoldenTemplate`. Outputs diff images highlighting pixel regions that changed, with a configurable similarity threshold. Diff images attachable to the approval portal.
+**Why:** Manual "does this look right?" screenshot review is the #1 bottleneck in email QA. ODiff (from game QA / visual regression domain) distinguishes real layout changes from anti-aliasing noise — something pixel-exact diff tools can't do. Storing baselines per `ComponentVersion` means every component update automatically gets regression-tested against its last known-good state. This is proven technology repurposed for email.
 **Implementation:**
-- Create `app/components/section_adapter.py`:
-  - `SlotHint` dataclass: `slot_id`, `slot_type: SlotType`, `selector: str`, `required: bool`, `max_chars: int | None`
-  - `SectionAdapter` class:
-    - `adapt(version: ComponentVersion, slot_hints: list[SlotHint]) -> SectionBlock` — takes component HTML, runs through `RepairPipeline.run()` to harden (MSO, dark mode, a11y), injects `data-slot` markers from slot_hints, validates QA score ≥ 0.8, returns `SectionBlock`
-    - `validate_for_composition(block: SectionBlock) -> list[QACheckResult]` — runs QA checks, returns results
-  - `AdaptationError` exception — raised if QA score < 0.8 after repair
-- Extend `ComponentVersion` model: add `slot_definitions: Mapped[list[dict[str, Any]] | None]` JSON column
-- Extend `VersionCreate` schema: add optional `slot_definitions: list[SlotHint] | None`
-- Alembic migration: `add_slot_definitions_to_component_versions`
-- Cache adapted sections per component version ID (immutable once version is created)
-**Security:** Component HTML sanitised by existing `sanitize_component_html()` before adaptation. Repair pipeline is deterministic (no LLM). Slot hints validated by Pydantic. `data-slot` injection uses `lxml` DOM manipulation (no string interpolation).
-**Verify:** Create component with slot_definitions. Adapt via `SectionAdapter`. Verify: repair pipeline hardens HTML (adds MSO/dark mode/a11y). Slot markers injected correctly. QA score ≥ 0.8. Adapted `SectionBlock` works with `TemplateComposer.compose()`. Component with un-repairable HTML raises `AdaptationError`. `make test` passes.
-- [x] ~~11.25.2 Component → section bridge~~ DONE
+- Install `odiff` as a binary dependency (Zig-compiled, ~2MB, available via npm or direct binary). Python wrapper via subprocess call
+- Create `app/rendering/visual_diff.py` — `VisualDiffService` class:
+  - `async compare(baseline: bytes, current: bytes, threshold: float = 0.01) -> DiffResult` — returns `DiffResult(identical: bool, diff_percentage: float, diff_image: bytes | None, pixel_count: int, changed_regions: list[Region])`
+  - `async update_baseline(entity_type: str, entity_id: int, client: str, image: bytes) -> None` — stores baseline screenshot. Entity types: `component_version`, `golden_template`
+  - `async get_baseline(entity_type: str, entity_id: int, client: str) -> bytes | None` — retrieves stored baseline
+  - Region detection: parse ODiff output regions into `Region(x: int, y: int, width: int, height: int)` for highlighting in UI
+- Create `app/rendering/models.py` — `ScreenshotBaseline` SQLAlchemy model: `id`, `entity_type` (varchar), `entity_id` (int), `client_name` (varchar), `image_data` (LargeBinary), `image_hash` (varchar, SHA-256), `created_at`, `updated_at`. Unique constraint on `(entity_type, entity_id, client_name)`
+- Alembic migration for `screenshot_baselines` table
+- Create `app/rendering/repository.py` — `ScreenshotBaselineRepository` with CRUD + `get_by_entity(entity_type, entity_id, client_name)` + `list_by_entity(entity_type, entity_id)`
+- Modify `app/rendering/routes.py` — add `POST /api/v1/rendering/visual-diff` (accepts two base64 images, returns diff), `GET /api/v1/rendering/baselines/{entity_type}/{entity_id}` (list baselines), `POST /api/v1/rendering/baselines/{entity_type}/{entity_id}/update` (update baseline from current screenshot)
+- Config: `visual_diff_enabled: bool = False`, `visual_diff_threshold: float = 0.01` (1% pixel difference triggers alert)
+**Security:** Baseline images stored in DB (not filesystem) — BOLA-safe via entity ownership validation. ODiff subprocess called with fixed arguments only — no user input in command. Diff images are PNG output only. All endpoints require auth + developer/admin role.
+**Verify:** Upload baseline for a golden template → modify template CSS → re-render → diff detects changes with diff_percentage > threshold. Identical screenshots → `identical=True`, `diff_percentage=0.0`. Anti-aliasing-only changes (sub-pixel rendering differences) → below threshold. Baseline CRUD works. `make test` passes.
+- [x] ~~17.2 ODiff visual regression baseline system~~ DONE
 
-#### 11.25.3 Project-Scoped Template Registry — Client-Specific Template Sets
-**What:** Extend `TemplateRegistry` with project awareness. Each project sees global golden templates (minus disabled ones) + project-specific custom templates (adapted from components) + section overrides (client components replacing default sections). Add `ProjectTemplateConfig` model stored as JSON on `Project`.
-**Why:** Without project scoping, all projects see identical templates. A client that only sends transactional emails still sees promotional templates in the LLM's selection list (noise). A client with custom branded sections can't inject them into the composition pipeline.
+### 17.3 VLM Visual Analysis Agent `[Backend]`
+**What:** A new AI agent (`VisualQAAgent`) that consumes rendered screenshots and uses a vision-language model to identify rendering defects with semantic understanding — not just pixel diffs but "the CTA button is cut off in Outlook", "the two-column layout collapsed to single column in Gmail", "dark mode inverted the logo but not the background". Produces structured `VisualDefect` reports with suggested CSS fixes.
+**Why:** ODiff tells you _where_ pixels changed. A VLM tells you _what went wrong_ and _how to fix it_. This is the ScreenCoder pattern applied to email: grounding (identify the defect region), planning (determine the CSS cause), generation (produce the fix). No email platform does this — it's the single most differentiated capability the hub can offer.
 **Implementation:**
-- Create `app/projects/template_config.py`:
-  - `SectionOverride` dataclass: `section_block_id: str`, `component_version_id: int`
-  - `CustomSection` dataclass: `component_version_id: int`, `block_id: str`
-  - `ProjectTemplateConfig` dataclass:
-    - `section_overrides: tuple[SectionOverride, ...]` — e.g., `("footer_standard", 42)` → "always use component v42 as footer"
-    - `custom_sections: tuple[CustomSection, ...]` — component versions promoted to section blocks
-    - `disabled_templates: tuple[str, ...]` — golden template names to exclude
-    - `preferred_templates: tuple[str, ...]` — golden template names to prioritise in selection
-- Add `template_config: Mapped[dict[str, Any] | None]` JSON column to `Project` model
-- Alembic migration: `add_template_config_to_project`
-- Extend `TemplateRegistry`:
-  - `get_for_project(project_id: int, template_config: ProjectTemplateConfig, db: AsyncSession) -> list[GoldenTemplate]` — returns merged template list:
-    1. Load global golden templates
-    2. Remove `disabled_templates`
-    3. Adapt `custom_sections` via `SectionAdapter` (Phase B) and add to composer's available sections
-    4. Apply `section_overrides` — when composing, swap default sections with client's components
-    5. Tag `preferred_templates` for LLM selection prompt (listed first with "recommended" marker)
-  - `list_for_selection_scoped(project_id, template_config) -> list[TemplateMetadata]` — project-aware version of `list_for_selection()`
-- Add API endpoints to `app/projects/routes.py`:
-  - `GET /api/v1/projects/{id}/template-config` — returns `ProjectTemplateConfig` or empty default
-  - `PUT /api/v1/projects/{id}/template-config` — validates, stores JSON
-  - Auth: `developer`+`admin` for PUT, `viewer`+ for GET
-**Security:** Template config is project-scoped, validated by Pydantic. Component version IDs validated against DB (must exist and be accessible to project). Disabled/preferred template names validated against registry (must exist). No arbitrary code paths.
-**Verify:** Configure project with `disabled_templates=["minimal_text"]`, `preferred_templates=["promotional_hero"]`, one section override, one custom section. Call `get_for_project()`. Verify: `minimal_text` excluded, `promotional_hero` first in list, section override swaps correctly, custom section available to composer. Unconfigured project returns full global list (backward compatible). `make test` passes.
-- [x] ~~11.25.3 Project-scoped template registry~~ DONE
+- Create `app/ai/agents/visual_qa/` package:
+  - `schemas.py` — `VisualDefect(region: Region, description: str, severity: str, affected_clients: list[str], suggested_fix: str, css_property: str | None)`, `VisualQAResult(defects: list[VisualDefect], summary: str, auto_fixable: bool)`
+  - `service.py` — `VisualQAAgentService(BaseAgentService)`:
+    - Override `process()` to accept multimodal input: rendered screenshots + original HTML
+    - Build VLM prompt: "Compare these email screenshots rendered in {clients}. Identify rendering defects — layout breaks, missing elements, color inversions, text overflow, image sizing issues. For each defect, specify the CSS property causing it and suggest a fix."
+    - Parse VLM response into structured `VisualDefect` objects via `response_format` (structured output)
+    - Cross-reference detected CSS properties against ontology (`load_ontology()`) for known compatibility issues
+    - Generate fix suggestions that reference specific ontology fallbacks when available
+  - `SKILL.md` — agent skill file following existing pattern (5 evaluation criteria: defect_detection_accuracy, fix_correctness, false_positive_rate, client_coverage, severity_calibration)
+- Create `app/ai/agents/visual_qa/decisions.py` — `VisualQADecisions` structured output schema (following 11.22.8 pattern): `defects: tuple[VisualDefect, ...]`, `overall_rendering_score: float`, `critical_clients: list[str]`
+- Modify `app/ai/blueprints/nodes/` — add `visual_qa_node.py` following existing node pattern (`VisualQANode(BlueprintNode)`). Runs after export node as optional validation step. Integrates with checkpoint system (Phase 14)
+- Modify `app/ai/blueprints/handoff.py` — add `VisualQAHandoff(AgentHandoff)` with `screenshots: dict[str, str]` (client → base64), `baseline_diffs: list[DiffSummary]`
+- Config: `AI__VISUAL_QA_ENABLED: bool = False`, `AI__VISUAL_QA_MODEL: str = "claude-sonnet-4-5-20250514"` (vision-capable model required), `AI__VISUAL_QA_CLIENTS: list[str] = ["gmail_web", "outlook_2019", "apple_mail"]`
+**Security:** Screenshots are generated internally (17.1) — no user-uploaded images in VLM prompts. VLM prompt contains only screenshot images + HTML structure — no PII. Response parsed via structured output (no raw HTML injection). Model selection restricted to vision-capable models via capability check. Output CSS fixes validated via `sanitize_html_xss()` before application.
+**Verify:** Generate email with known Outlook incompatibility (flexbox layout) → VLM detects "layout collapsed in Outlook", suggests table-based alternative. Generate fully compatible email → VLM reports zero defects. Cross-reference: VLM-detected CSS issue matches ontology known incompatibility. False positive rate < 10% on golden template test suite. `visual_qa_enabled=False` skips entirely. `make test` passes.
+- [x] ~~17.3 VLM visual analysis agent~~ DONE
 
-#### 11.25.4 Agent Pipeline Constraint Injection — Design System as Generation Constraints
-**What:** Update the multi-pass pipeline to inject design system constraints into each pass. Pass 1 receives project-scoped template list. Pass 2 receives design system footer text as locked slot content. Pass 3 receives the design system palette as constraints — the LLM decides which palette color goes where but CANNOT invent new colors. Assembly enforces locked fields, overriding any LLM deviation.
-**Why:** Without constraint injection, the design system is validation-only (brand compliance catches violations after generation). Constraint injection makes it generative — the LLM works within the client's brand identity from the start, eliminating retry loops caused by brand violations.
+### 17.4 Auto-Fix Pipeline Integration `[Backend]`
+**What:** Connect the VLM Visual QA agent's defect reports back into the CRAG correction loop to automatically fix detected visual issues. When `VisualQAAgent` identifies fixable defects, feed the defect descriptions + suggested fixes back to the Scaffolder/OutlookFixer agent as correction instructions. Creates a render → detect → fix → re-render verification cycle.
+**Why:** Detection without correction is just a report. The hub's CRAG mixin (16.5) already handles the "detect CSS issue → retrieve fallback → regenerate" pattern. This extends it to visual defects detected by the VLM, creating a fully autonomous visual QA loop that no human needs to review for common rendering issues.
 **Implementation:**
-- Extend `DesignTokens` in `app/ai/agents/schemas/build_plan.py`:
-  - Add `source: Literal["design_system", "llm_generated", "brief_extracted"] = "llm_generated"`
-  - Add `locked_fields: tuple[str, ...] = ()` — field names from design system that assembly should enforce
-- Update `app/ai/agents/scaffolder/pipeline.py` (multi-pass pipeline):
-  - Accept `design_system: DesignSystem | None` and `template_config: ProjectTemplateConfig | None` parameters
-  - **Pass 1 (Layout):** inject project-scoped template list via `list_for_selection_scoped()`. If `preferred_templates` set, include "RECOMMENDED" marker in prompt
-  - **Pass 2 (Content):** if `design_system.footer` exists, pre-fill footer slot content as locked (LLM cannot override). If `design_system.logo` exists, pre-fill logo image slot
-  - **Pass 3 (Design):** inject `design_system.palette` as "You MUST use ONLY these colors: {palette}. Assign each color to a role (primary_color, background_color, etc.)." Set `locked_fields` on output `DesignTokens`
-- Update `app/ai/agents/scaffolder/assembler.py`:
-  - After assembly, enforce locked fields: if `design_tokens.source == "design_system"`, replace any LLM-deviated values with design system originals
-  - Apply section overrides: swap sections per `template_config.section_overrides`
-- Update `app/ai/blueprints/nodes/scaffolder_node.py`:
-  - Load project's `design_system` and `template_config` from `NodeContext.metadata` (injected by blueprint engine from project config)
-  - Pass to pipeline
-**Security:** Design system values are project-owned, loaded from DB. Palette colors validated as hex. Font stacks are CSS strings (no injection). Locked field enforcement is deterministic string replacement. No new LLM prompt injection surface (design system is system-prompt-level context, not user input).
-**Verify:** Create project with design system (palette + footer + logo). Run scaffolder pipeline. Verify: Pass 1 uses project-scoped template list. Pass 2 pre-fills footer/logo slots. Pass 3 output uses only palette colors. Assembly enforces locked fields. Brand compliance check passes on first attempt (no retry needed). Compare: same brief without design system → LLM invents colors → may fail brand compliance. `make test` passes.
-- [x] ~~11.25.4 Agent pipeline constraint injection~~ DONE
+- Create `app/ai/agents/visual_qa/correction.py` — `VisualCorrectionService`:
+  - `async correct_visual_defects(html: str, defects: list[VisualDefect], model: str) -> tuple[str, list[str]]` — takes original HTML + detected defects, generates corrected HTML
+  - For each defect with `css_property` set: look up ontology fallback via `load_ontology().fallbacks_for()` (reusing CRAG pattern)
+  - For defects without known CSS property: include VLM's `suggested_fix` in the correction prompt
+  - Correction prompt: "Fix the following rendering issues in this HTML email: {defect_descriptions}. Use these known fallbacks: {ontology_fallbacks}. Preserve all existing functionality."
+  - Output validated via `validate_output()` → `extract_html()` → `sanitize_html_xss()`
+  - Capped at 1 correction round (same as CRAG) — avoids infinite loops
+- Modify `app/ai/blueprints/nodes/visual_qa_node.py` — after VLM analysis, if `auto_fixable=True` and `defects` exist: call `VisualCorrectionService.correct_visual_defects()`, then re-render screenshots for verification. If re-render shows improvement (lower diff percentage), accept the fix. If regression, keep original
+- Modify `app/ai/agents/validation_loop.py` — add `VisualCRAGMixin` extending `CRAGMixin` with visual correction capability. `_visual_crag_validate(html, screenshots, model)` chains: screenshot → VLM analysis → correction → re-screenshot → verify
+- Config: `AI__VISUAL_QA_AUTO_FIX: bool = False` (separate from detection — detection can run without auto-fix), `AI__VISUAL_QA_MAX_CORRECTION_ROUNDS: int = 1`
+**Security:** Correction prompt contains only defect descriptions (generated by VLM, not user input) + ontology fallback code (trusted data). Output sanitised via `sanitize_html_xss()`. Re-render verification prevents regression — if fix makes things worse, original HTML preserved. Cost capped at 1 round.
+**Verify:** Email with flexbox layout → VLM detects Outlook break → auto-fix replaces with table layout → re-render confirms fix. Email with no defects → no correction attempted (zero LLM cost). Auto-fix that causes regression → original preserved. `auto_fix=False` runs detection only. `make test` passes.
+- [x] ~~17.4 Auto-fix pipeline integration~~ DONE
 
-#### 11.25.5 Consistency Enforcement — Brand Repair Stage & End-to-End Validation
-**What:** Add a `brand` repair stage to the repair pipeline that auto-corrects off-palette colors and missing design system elements. Link brand compliance check to read from design system directly. Create end-to-end integration test covering the full flow: design system config → agent generation → repair → QA gate.
-**Why:** Defense in depth. Even with constraint injection (11.25.4), edge cases can produce off-brand output (LLM hallucinating a color despite constraints, slot content from user input containing off-brand styles). The brand repair stage is the last deterministic safety net before QA validation.
+### 17.5 Frontend Visual QA Dashboard `[Frontend]`
+**What:** Frontend UI for visual regression results: side-by-side screenshot comparison across clients, diff overlay toggle, defect annotations with severity badges, baseline management, and "Accept Fix" / "Reject Fix" actions for VLM-suggested corrections. Integrated into the workspace as a new tab alongside the existing QA results panel.
+**Why:** The visual QA data is only useful if developers can see and act on it. Side-by-side client comparison replaces the Litmus screenshot review workflow entirely within the hub. Baseline management lets teams track visual regressions across template versions.
 **Implementation:**
-- Create `app/qa_engine/repair/brand.py` — `BrandRepair(RepairStage)`:
-  - If project has design system, scan assembled HTML for inline CSS colors
-  - Replace off-palette colors with nearest palette match (Euclidean distance in RGB space)
-  - If footer text doesn't match `design_system.footer.legal_text`, inject correct footer
-  - If logo `src` doesn't match `design_system.logo.url`, correct it
-  - Log all corrections as `repair_warnings`
-- Register `BrandRepair` as Stage 8 in `RepairPipeline` (after existing Stage 7 links.py)
-- Update `app/qa_engine/checks/brand_compliance.py`:
-  - If `QACheckConfig.params` is empty but project has `design_system`, auto-populate params from `design_system_to_brand_rules()` at check time
-  - This ensures brand compliance uses the same data regardless of whether params were manually configured or derived from design system
-- Create `app/ai/templates/tests/test_design_system_e2e.py` — end-to-end integration test:
-  - Set up project with design system (Nike use case)
-  - Set up section overrides (custom footer component)
-  - Run scaffolder pipeline with design system constraints
-  - Verify: output HTML uses only palette colors, correct fonts, Nike footer, Nike logo
-  - Run repair pipeline — verify no-op (constraints already correct)
-  - Run QA gate — verify brand compliance passes
-  - Compare: remove design system, run same brief — verify inconsistent output
-**Security:** Brand repair is deterministic color replacement via lxml/regex. No LLM calls. Nearest-color calculation is pure math. Footer/logo injection uses design system values (trusted, admin-configured). No user input in repair logic.
-**Verify:** Run repair pipeline on HTML with 3 off-palette colors → all corrected to nearest palette match. Run on HTML with wrong footer → footer replaced. Run on already-correct HTML → no-op (idempotent). End-to-end test passes for all 3 use cases (Nike, P&G multi-brand, Sephora holiday). `make test` passes. `make types` clean. `make check` green.
-- [x] ~~11.25.5 Consistency enforcement~~ DONE
+- Create `cms/apps/web/src/components/visual-qa/` — `VisualQAPanel.tsx` (main container), `ClientComparisonGrid.tsx` (side-by-side screenshots), `DiffOverlay.tsx` (toggle diff image over screenshot), `DefectAnnotation.tsx` (clickable defect regions with description tooltip), `BaselineManager.tsx` (view/update baselines)
+- Create `cms/apps/web/src/hooks/use-visual-qa.ts` — SWR hooks: `useScreenshots(templateId)`, `useVisualDiff(templateId)`, `useBaselines(entityType, entityId)`, `useUpdateBaseline()`
+- Modify workspace layout — add "Visual QA" tab in the QA results section (alongside existing HTML validation, CSS support, etc.)
+- Add i18n keys across 6 locales (en, de, fr, es, it, nl) — ~30 keys for labels, tooltips, status messages
+- SDK regeneration for new rendering endpoints
+**Security:** Screenshots displayed via `<img src="data:image/png;base64,...">` — no external URLs. Diff overlay uses canvas API — no innerHTML. Baseline update requires developer/admin role.
+**Verify:** Render screenshots → display in grid → toggle diff overlay → annotations appear at correct regions. Baseline update flow works end-to-end. Responsive layout at all viewport sizes. `make check-fe` passes. i18n keys present in all 6 locales.
+- [x] ~~17.5 Frontend visual QA dashboard~~ DONE
 
-### ~~11.23 Inline Eval Judges — Selective LLM Judge on Recovery Retries~~ DONE
-**What:** Wire eval judges (`JUDGE_REGISTRY`) into the blueprint engine as an inline quality signal, but ONLY on self-correction retries (`iteration > 0`). First-attempt agents rely on the fast QA gate (0 tokens, <200ms). When an agent has already failed QA and is retrying, invoke the LLM judge for that agent to get a nuanced verdict before deciding whether to retry again or escalate to human review.
-**Why:** The 10-point QA gate catches structural issues but misses semantic quality (brief fidelity, tone accuracy, colour coherence). Eval judges check 5 nuanced criteria per agent but cost ~3,200 tokens per call. Running judges on every handoff is cost-prohibitive (+67% per run). Running them only on retries bounds the cost (max 2 retries × 1 judge = 6,400 extra tokens) and targets the moment where the signal is most valuable — the agent already failed once and extra context prevents wasted retry loops. After 11.22 (template-first), retries are rare (~5% of runs), making the cost negligible.
+### 17.6 Tests & SDK Integration `[Full-Stack]`
+**What:** Comprehensive test suite for visual regression pipeline: screenshot rendering tests, ODiff integration tests, VLM agent unit tests (with mocked vision responses), correction pipeline tests, baseline CRUD tests, route tests with auth/rate limiting. SDK regeneration covering all new rendering endpoints.
+**Why:** Visual QA involves multiple async services (Playwright, ODiff, VLM) that must be tested in isolation and integration. The rendering service especially needs reliability testing — browser crashes, timeouts, and memory limits must be handled gracefully.
 **Implementation:**
-- Create `app/ai/blueprints/inline_judge.py` — adapter between `JUDGE_REGISTRY` judges and `NodeContext`. Builds `JudgeInput` from live context (brief, HTML output, QA failures, handoff history). Calls judge via provider registry with `temperature=0.0` and `AI__MODEL_LIGHTWEIGHT` tier.
-- Update `app/ai/blueprints/engine.py` — after agentic node execution when `iteration > 0` and `self._judge_enabled`, call `run_inline_judge()`. If `verdict.overall_pass` is False, set `run.status = "needs_review"` and break (don't retry again). If True, proceed to QA gate normally.
-- Add `judge_verdict: JudgeVerdict | None` field to `BlueprintRun` dataclass in `protocols.py`
-- Expose `judge_verdict` in `BlueprintRunResponse` schema (criterion results + reasoning visible in API)
-- Engine config: `judge_on_retry: bool` (default `False`, opt-in per blueprint definition)
-- Use lightweight model to keep cost low (~1,500 tokens with Haiku-tier vs ~3,200 with Sonnet)
-**Security:** Judge prompts contain only generated HTML + brief (already in agent context). No new user input paths. Judge response parsed as structured JSON, validated against `JudgeVerdict` schema.
-**Verify:** Blueprint test with intentionally flawed HTML: first attempt → QA fail → recovery → fixer retry triggers judge → judge verdict surfaces in API response. Compare: run with judge enabled escalates bad retries faster (fewer wasted loops) vs run without judge retries blindly. Cost delta measurable via `run.model_usage`.
+- Create `app/rendering/tests/` — `test_screenshot.py` (rendering profiles, viewport simulation, timeout handling), `test_visual_diff.py` (ODiff integration, threshold logic, baseline CRUD), `test_routes.py` (auth, rate limiting, error handling for all new endpoints)
+- Create `app/ai/agents/visual_qa/tests/` — `test_visual_qa_agent.py` (VLM response parsing, defect detection, structured output), `test_correction.py` (auto-fix pipeline, regression prevention, ontology integration)
+- SDK regeneration via `@hey-api/openapi-ts`
+- Target: 40+ tests covering all paths
+**Security:** Tests verify auth requirements on all endpoints. Rate limiting verified. Baseline BOLA protection tested.
+**Verify:** `make test` passes with all new tests. `make check` all green. SDK types match API responses. No regression in existing test suite.
+- [x] ~~17.6 Tests & SDK integration~~ DONE
 
-### ~~11.24 Production Trace Sampling for Offline Judge Feedback Loop~~ DONE
-**What:** Sample a configurable percentage of successful production blueprint runs and judge them asynchronously in a background worker. Results feed back into `traces/analysis.json`, which `failure_warnings.py` reads to inject updated failure patterns into agent system prompts. This closes the eval feedback loop — agents continuously learn from production data, not just synthetic test cases.
-**Why:** Current eval data is synthetic (12-14 cases per agent). Real production briefs have different distributions of complexity, client requirements, and edge cases. Without production sampling, `failure_warnings.py` only reflects synthetic test failures. With sampling, agents get warnings based on actual production quality — the feedback loop becomes self-improving.
+---
+
+## Phase 18 — Rendering Resilience & Property-Based Testing
+
+**What:** Build a chaos testing engine that deliberately degrades email HTML to simulate real-world email client behaviors, and a property-based testing framework that generates hundreds of random email configurations to verify invariants hold. Adds "resilience score" to the QA pipeline alongside the existing 11 checks.
+**Why:** Current QA tests emails in ideal conditions — clean HTML, all styles applied, images loaded. Real inboxes are hostile: Gmail strips `<style>` blocks, Outlook ignores modern CSS, corporate firewalls block images, dark mode inverts colors unexpectedly. Chaos engineering (borrowed from distributed systems / Google's 2025 framework) applied to email rendering reveals fragility that golden template tests miss. Property-based testing (borrowed from formal verification / QuickCheck) covers the combinatorial space — the hub currently tests 7 golden templates, but there are thousands of possible section/client/dark-mode/locale combinations.
+**Dependencies:** Phase 11 (QA engine checks), Phase 16 (CRAG for auto-correction of discovered issues), Phase 17 (screenshot rendering for visual verification).
+**Design principle:** Chaos profiles are composable — test one degradation at a time or stack multiples. Property generators are seeded for reproducibility. Both integrate as optional QA checks — existing pipeline unchanged when disabled. Results feed back into knowledge base as RAG documents.
+
+### 18.1 Email Chaos Engine `[Backend]`
+**What:** A testing engine that applies controlled degradations to email HTML, simulating real-world email client behaviors. Each degradation is a composable `ChaosProfile` — strip all `<style>` blocks (Gmail), remove media queries (many mobile clients), block all images (corporate firewalls / image-off settings), inject dark mode color inversion (Outlook/Apple Mail), remove MSO conditional comments, convert all `<div>` to `<span>` (some webmail), limit HTML to 102KB (Gmail clipping), strip `class` attributes. Runs the degraded HTML through the existing QA engine to measure resilience.
+**Why:** An email that passes QA with all styles intact but breaks when Gmail strips styles is a false positive. Chaos testing reveals these fragilities before they reach real inboxes. Google's chaos engineering framework (2025) showed systems with ongoing resilience validation recovered 32% faster — the same principle applies to email templates. No email platform offers this; competitors test "does it render correctly?" while this tests "does it survive the real world?"
 **Implementation:**
-- ~~Create `app/ai/agents/evals/production_sampler.py`:~~
-  - ~~`enqueue_for_judging(trace: BlueprintTrace, sample_rate: float)` — probabilistic Redis enqueue~~
-  - ~~`ProductionJudgeWorker` — pulls from Redis queue, runs agent-specific judge, appends verdict to `traces/production_verdicts.jsonl`~~
-  - ~~`refresh_analysis()` — merges production verdicts with synthetic verdicts, regenerates `traces/analysis.json`~~
-- ~~Update `app/ai/blueprints/service.py` — on successful blueprint completion (`status == "completed"` and `qa_passed`), call `enqueue_for_judging()` with configured sample rate~~
-- ~~Add config: `EVAL__PRODUCTION_SAMPLE_RATE` (default `0.0` — disabled until opted in), `EVAL__PRODUCTION_QUEUE_KEY` (Redis key)~~
-- ~~`failure_warnings.py` already reads from `traces/analysis.json` — no changes needed (production verdicts merged via `refresh_analysis()`)~~
-- ~~Add `make eval-refresh` command to manually trigger analysis refresh from production verdicts~~
-- ~~Worker runs via `DataPoller` pattern (same as `OutcomeGraphPoller`, `CanIEmailSyncPoller`), registered in `app/main.py` lifecycle~~
-**Security:** Production traces contain generated HTML + briefs (no raw user credentials). Sampling rate configurable to control LLM cost. Redis queue uses same auth as existing Redis config. Verdicts stored locally in `traces/` (not exposed via API).
-**Verify:** ~~Set sample rate to 1.0 (100%) in test. Run 5 blueprints → verify 5 traces enqueued → worker processes all 5 → `production_verdicts.jsonl` has 5 entries → `refresh_analysis()` produces updated `analysis.json` with production data merged. Agent prompt includes warnings derived from production failures.~~ 15/15 tests pass, mypy + pyright clean.
+- Create `app/qa_engine/chaos/` package:
+  - `profiles.py` — `ChaosProfile(name: str, description: str, transformations: list[Callable[[str], str]])` and pre-built profiles:
+    - `GMAIL_STYLE_STRIP`: remove all `<style>` and `<link rel="stylesheet">` elements via BeautifulSoup
+    - `IMAGE_BLOCKED`: replace all `<img>` `src` with transparent 1x1 GIF, verify alt text visibility
+    - `DARK_MODE_INVERSION`: inject `filter: invert(1) hue-rotate(180deg)` on `<body>`, simulate `[data-ogsc]` and `[data-ogsb]` attribute addition
+    - `OUTLOOK_WORD_ENGINE`: strip flexbox/grid properties, convert `<div>` containers to `<table>` wrappers, remove CSS custom properties
+    - `GMAIL_CLIPPING`: truncate HTML at 102,400 bytes, verify "View entire message" doesn't cut mid-tag
+    - `MOBILE_NARROW`: inject `max-width: 375px` on body, verify no horizontal scroll (content overflow)
+    - `CLASS_STRIP`: remove all `class` attributes (some security-focused email clients)
+    - `MEDIA_QUERY_STRIP`: remove all `@media` rules from inline and block styles
+  - `engine.py` — `ChaosEngine` class:
+    - `async run_chaos_test(html: str, profiles: list[str] | None = None) -> ChaosTestResult` — applies each profile, runs QA checks on degraded HTML, returns per-profile results
+    - `ChaosTestResult(original_score: float, degraded_scores: dict[str, float], resilience_score: float, critical_failures: list[ChaosFailure])` — `resilience_score` = weighted average of degraded scores / original score
+    - `ChaosFailure(profile: str, check_name: str, severity: str, description: str)` — specific QA check failures introduced by degradation
+  - `composable.py` — `compose_profiles(*profiles) -> ChaosProfile` — stack multiple degradations for worst-case testing
+- Modify `app/qa_engine/service.py` — add `async run_chaos_test(template_id: int, html: str) -> ChaosTestResult` calling `ChaosEngine`. Optional — only runs when `chaos_testing_enabled=True`
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/chaos-test` with auth + rate limiting (`3/minute`)
+- Modify `app/qa_engine/schemas.py` — add `ChaosTestResult`, `ChaosFailure`, `ChaosTestRequest` response schemas. Add optional `resilience_score: float | None` to existing `QARunResponse`
+- Config: `QA__CHAOS_TESTING_ENABLED: bool = False`, `QA__CHAOS_DEFAULT_PROFILES: list[str] = ["gmail_style_strip", "image_blocked", "dark_mode_inversion", "gmail_clipping"]`
+**Security:** Chaos transformations are deterministic pure functions — no LLM calls, no external network. HTML mutations use BeautifulSoup (parser, not eval). Degraded HTML is temporary (never persisted). Rate limited to prevent CPU abuse from expensive transformations.
+**Verify:** Apply `GMAIL_STYLE_STRIP` to email with inline styles → QA score unchanged. Apply to email relying on `<style>` block → QA score drops, specific CSS failures reported. Stack `GMAIL_STYLE_STRIP` + `IMAGE_BLOCKED` → compound failures detected. `resilience_score` correctly reflects degradation impact. 102KB Gmail clipping correctly truncates. `chaos_testing_enabled=False` skips entirely. `make test` passes.
+- [ ] 18.1 Email chaos engine
+
+### 18.2 Property-Based Email Testing Framework `[Backend]`
+**What:** Define email invariants (properties that must always hold regardless of content) and a generator that produces hundreds of random email configurations to verify these invariants. Borrows from QuickCheck/Hypothesis — generates random section combinations, content lengths, image counts, nesting depths, and client targets, then asserts invariants hold across all generated cases. Failing cases are automatically minimised to find the simplest reproduction.
+**Why:** The hub tests 7 golden templates — a tiny fraction of the possible configuration space. Property-based testing covers combinations that no human would think to test: a 12-section email with RTL text, 3 nested tables, and Outlook dark mode. This catches edge cases that manifest in production but never appear in curated test suites. Agentic property-based testing (2025) found genuine bugs in NumPy and other mature libraries.
+**Implementation:**
+- Create `app/qa_engine/property_testing/` package:
+  - `invariants.py` — `EmailInvariant` Protocol with `check(html: str) -> InvariantResult`, pre-built invariants:
+    - `ContrastRatio`: all text has WCAG AA contrast ratio >= 4.5:1 against background
+    - `ImageWidth`: no `<img>` wider than 600px (email max width standard)
+    - `LinkIntegrity`: every `<a>` has non-empty `href`, no `javascript:` URIs
+    - `SizeLimit`: total HTML < 102KB (Gmail clipping threshold)
+    - `AltTextPresence`: every `<img>` has non-empty `alt` attribute
+    - `TableNestingDepth`: table nesting depth <= 8 (Outlook rendering limit)
+    - `ViewportFit`: content renders within 600px width without horizontal scroll
+    - `EncodingValid`: all characters are valid UTF-8, no null bytes
+    - `MSOBalance`: every `<!--[if mso]>` has matching `<![endif]-->`
+    - `DarkModeReady`: if `prefers-color-scheme` used, both light and dark values specified
+  - `generators.py` — `EmailGenerator` class using `hypothesis` library:
+    - `generate_section_config() -> SectionConfig` — random section count (1-15), types from `SectionBlock` categories, content lengths (10-2000 chars)
+    - `generate_style_config() -> StyleConfig` — random font stacks, color palettes (including near-threshold contrast), spacing values
+    - `generate_client_target() -> str` — weighted random client selection matching real-world market share distribution
+    - `generate_email(config: EmailConfig) -> str` — uses `TemplateAssembler` to build valid HTML from random config
+  - `runner.py` — `PropertyTestRunner`:
+    - `async run(invariants: list[str], num_cases: int = 100, seed: int | None = None) -> PropertyTestReport` — generates N random emails, checks all invariants, returns failures with minimal reproduction
+    - `PropertyTestReport(total_cases: int, passed: int, failed: int, failures: list[PropertyFailure], seed: int)` — `PropertyFailure` includes the minimised config that triggers the invariant violation
+    - Hypothesis `@given` integration for automatic shrinking of failing cases
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/property-test` with auth + rate limiting (`1/minute` — computationally expensive)
+- Config: `QA__PROPERTY_TESTING_ENABLED: bool = False`, `QA__PROPERTY_TEST_CASES: int = 100`, `QA__PROPERTY_TEST_SEED: int | None = None` (fixed seed for CI reproducibility)
+- Add `make test-properties` command — runs property tests with fixed seed for CI
+**Security:** Generators produce synthetic HTML only — no user data. Hypothesis library is well-established (no security concerns). Rate limited aggressively due to CPU cost. Generated emails never persisted — temporary in-memory only.
+**Verify:** Run 100 property tests → at least some invariant violations found (proves the generator covers edge cases). Fix a known invariant violation → re-run with same seed → violation no longer appears. `SizeLimit` invariant catches oversized emails. `ContrastRatio` catches near-threshold color combinations. `make test-properties` completes within 60 seconds. `make test` passes.
+- [ ] 18.2 Property-based email testing framework
+
+### 18.3 Resilience Score Integration & Knowledge Feedback `[Backend]`
+**What:** Integrate chaos test results and property test findings into the existing QA pipeline as optional check #12 ("rendering resilience"). Auto-generate knowledge base documents from discovered failures — each new chaos failure becomes a RAG-retrievable document describing the failure pattern, affected clients, and recommended fix. This creates a self-improving knowledge base that grows from every test run.
+**Why:** Chaos and property testing produce insights that should compound across projects. A Gmail clipping issue found on Project A should inform email generation on Project B. The hub's knowledge base (Phase 8-9) + RAG pipeline (Phase 16) can surface these learnings at generation time — "this section pattern caused Gmail clipping for 3 previous projects."
+**Implementation:**
+- Create `app/qa_engine/checks/rendering_resilience.py` — `RenderingResilienceCheck(QACheck)`:
+  - `async run(html: str, config: QAConfig) -> QACheckResult` — runs chaos engine with default profiles, returns pass/fail based on `resilience_score >= threshold`
+  - Threshold: `QA__RESILIENCE_THRESHOLD: float = 0.7` (email must retain 70% of its QA score under degradation)
+- Modify `app/qa_engine/service.py` — register `RenderingResilienceCheck` as check #12 (optional, behind feature flag)
+- Create `app/qa_engine/chaos/knowledge_writer.py` — `ChaosKnowledgeWriter`:
+  - `async write_failure_documents(failures: list[ChaosFailure], project_id: int) -> list[int]` — creates `Document` entries in knowledge base for each unique failure pattern
+  - Document format: title = "{profile} failure: {check_name}", content = markdown description with affected clients, failure details, recommended fix, HTML snippet showing the problematic pattern
+  - Deduplication: check for existing document with same title + project before creating new one
+  - Tags: `domain="chaos_findings"`, `section_type="failure_pattern"`
+- Modify `app/knowledge/service.py` — `search()` considers chaos_findings domain when query matches rendering/resilience patterns
+- Config: `QA__CHAOS_AUTO_DOCUMENT: bool = False` (auto-generate knowledge docs from failures), `QA__RESILIENCE_CHECK_ENABLED: bool = False`
+**Security:** Knowledge documents contain only structural HTML patterns (no PII). Document creation uses existing `KnowledgeService.ingest_document()` with tenant isolation via project_id.
+**Verify:** Run chaos test → failures found → knowledge documents auto-created → subsequent RAG search for same pattern returns the chaos finding. Resilience check passes for well-structured email (score > 0.7). Resilience check fails for fragile email (single-column layout breaks under style stripping). `make test` passes.
+- [ ] 18.3 Resilience score integration & knowledge feedback
+
+### 18.4 Frontend Chaos & Property Testing UI `[Frontend]`
+**What:** Frontend components for chaos test results (per-profile score breakdown, failure details, "Fix This" action dispatching to CRAG) and property test reports (pass/fail summary, failing case inspector with minimised config display). Integrated into the QA dashboard.
+**Why:** Chaos and property test data must be actionable — developers need to see which degradations break their email and drill into specific failures. The "Fix This" action connecting to CRAG creates a one-click fix workflow.
+**Implementation:**
+- Create `cms/apps/web/src/components/qa/ChaosTestPanel.tsx` — profile score radar chart, failure list with severity, "Run Chaos Test" action button
+- Create `cms/apps/web/src/components/qa/PropertyTestPanel.tsx` — pass/fail gauge, failing invariant list, expandable case detail with minimised config
+- Create `cms/apps/web/src/hooks/use-chaos-test.ts`, `use-property-test.ts` — SWR hooks for new endpoints
+- Add i18n keys across 6 locales — ~25 keys
+- SDK regeneration for chaos/property endpoints
+**Security:** No raw HTML displayed in UI — all results are structured data. "Fix This" action uses existing CRAG endpoint with auth.
+**Verify:** Run chaos test → results display in panel → per-profile scores shown → failure details expandable. Property test → pass/fail summary → failing cases inspectable. `make check-fe` passes.
+- [ ] 18.4 Frontend chaos & property testing UI
+
+### 18.5 Tests & Documentation `[Full-Stack]`
+**What:** Full test suite for chaos engine (profile application correctness, composability, QA integration), property testing (invariant checks, generator coverage, seed reproducibility), resilience check (#12), knowledge feedback writer. ADR documenting the resilience testing architecture.
+**Implementation:**
+- Create `app/qa_engine/chaos/tests/` — `test_chaos_engine.py` (profile transformations, composability, resilience scoring), `test_knowledge_writer.py` (document creation, deduplication)
+- Create `app/qa_engine/property_testing/tests/` — `test_invariants.py` (each invariant against known pass/fail HTML), `test_generators.py` (output validity, seed reproducibility), `test_runner.py` (end-to-end with shrinking)
+- Route tests for new endpoints (auth, rate limiting)
+- Target: 35+ tests
+- ADR-007 in `docs/ARCHITECTURE.md` — Rendering Resilience Testing
+**Verify:** `make test` passes. `make check` all green. No regression in existing tests.
+- [ ] 18.5 Tests & documentation
+
+---
+
+## Phase 19 — Outlook Transition Advisor & Email CSS Compiler
+
+**What:** Two capabilities that address the most urgent industry event (Microsoft ending Word-based Outlook rendering, October 2026) and the most impactful technical optimization (an email-specific CSS compiler using Lightning CSS). The Outlook Transition Advisor analyzes templates for Word-engine dependencies and generates migration plans. The CSS compiler performs AST-level optimization targeting "email client VMs" — removing unsupported properties, auto-converting modern CSS to table equivalents, and inlining optimally.
+**Why:** October 2026 is the biggest rendering engine change in email history. Every enterprise with Outlook-targeted templates needs a migration plan. No platform offers automated analysis of Word-engine dependencies or a clear modernization path. The CSS compiler goes beyond Juice (string-level inlining) to AST-level optimization using the hub's own ontology data — producing smaller, faster, more compatible output than any existing tool.
+**Dependencies:** Phase 11 (QA engine + existing Outlook Fixer agent), Phase 16 (ontology data for CSS compatibility), Phase 8-9 (knowledge graph for workaround patterns).
+**Design principle:** Advisor is non-destructive — analyzes and reports without modifying templates. Compiler optimizations are opt-in per property class. Both use the hub's ontology as the single source of truth for CSS compatibility.
+
+### 19.1 Outlook Word-Engine Dependency Analyzer `[Backend]`
+**What:** Static analyzer that scans email HTML for Word rendering engine dependencies: VML shapes (`v:*` elements), ghost tables (tables used purely for layout in MSO conditionals), MSO conditional comments (`<!--[if mso]>`), Word-specific CSS (`mso-*` properties), DPI-dependent image sizing, and `.ExternalClass` hacks. Produces a dependency report with severity ratings and modernization suggestions.
+**Why:** Developers have accumulated years of Outlook workarounds — ghost tables, VML buttons, mso-line-height-rule hacks. After October 2026, these are dead code that bloats HTML and adds maintenance burden. The analyzer tells you exactly which workarounds can be safely removed based on your audience's Outlook version distribution.
+**Implementation:**
+- Create `app/qa_engine/outlook_analyzer/` package:
+  - `detector.py` — `OutlookDependencyDetector`:
+    - `analyze(html: str) -> OutlookAnalysis` — parses HTML via BeautifulSoup, returns structured dependency report
+    - Detection rules (all regex/AST — no LLM):
+      - `VML_SHAPES`: find `<v:roundrect>`, `<v:rect>`, `<v:oval>`, `<v:shape>` elements
+      - `GHOST_TABLES`: `<table>` elements inside `<!--[if mso]>` conditionals with no visible content
+      - `MSO_CONDITIONALS`: all `<!--[if mso]>` / `<!--[if !mso]>` blocks with content categorization
+      - `MSO_CSS_PROPERTIES`: `mso-line-height-rule`, `mso-table-lspace`, `mso-padding-alt`, etc.
+      - `DPI_IMAGES`: images with explicit `width`/`height` attributes that differ from CSS dimensions (DPI compensation)
+      - `EXTERNAL_CLASS`: `.ExternalClass` CSS rules
+      - `WORD_WRAP_HACKS`: `word-wrap`, `word-break` with mso-specific values
+    - `OutlookAnalysis(dependencies: list[OutlookDependency], total_count: int, removable_count: int, byte_savings: int, modernization_plan: list[ModernizationStep])`
+    - `OutlookDependency(type: str, location: str, line_number: int, code_snippet: str, severity: str, removable: bool, modern_replacement: str | None)`
+  - `modernizer.py` — `OutlookModernizer`:
+    - `modernize(html: str, analysis: OutlookAnalysis, target: str = "new_outlook") -> str` — applies safe modernizations:
+      - Replace VML buttons with CSS `border-radius` + `background-color` (New Outlook = Chromium)
+      - Remove ghost tables, unwrap content
+      - Remove `mso-*` CSS properties (or keep inside `<!--[if mso]>` for dual-support period)
+      - Replace `.ExternalClass` hacks with standard CSS
+    - `target` parameter: `"new_outlook"` (aggressive — remove all Word hacks), `"dual_support"` (keep hacks inside conditionals for transition period), `"audit_only"` (report but don't modify)
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/outlook-analysis` (analyze), `POST /api/v1/qa/outlook-modernize` (apply modernizations) with auth + rate limiting
+- Config: `QA__OUTLOOK_ANALYZER_ENABLED: bool = False`, `QA__OUTLOOK_DEFAULT_TARGET: str = "dual_support"`
+**Security:** Analyzer is read-only — parses HTML via BeautifulSoup (no eval). Modernizer applies deterministic transformations only. No external calls. Output sanitized via `sanitize_html_xss()`.
+**Verify:** Analyze email with VML buttons → all VML elements detected, modern CSS replacement suggested. Analyze clean modern email → zero dependencies. Modernize with `new_outlook` → VML replaced with CSS, ghost tables removed, byte size reduced. Modernize with `dual_support` → hacks wrapped in conditionals but functional in both engines. `make test` passes.
+- [ ] 19.1 Outlook Word-engine dependency analyzer
+
+### 19.2 Audience-Aware Outlook Migration Planner `[Backend]`
+**What:** A migration planning service that combines the dependency analysis (19.1) with audience data (Outlook version distribution from ESP analytics or manual input) to produce a phased migration plan. Shows which workarounds are safe to remove now (< 5% of audience on old Outlook), which need the dual-support period, and projects a timeline for full modernization.
+**Why:** "Remove all Outlook hacks" is too aggressive for most enterprises — they need to know which hacks are safe to remove based on their actual audience. A financial services client with 40% Outlook 2016 users has a different migration timeline than a tech company with 90% Gmail. This audience-aware planning is what makes the tool consultancy-grade.
+**Implementation:**
+- Create `app/qa_engine/outlook_analyzer/planner.py` — `MigrationPlanner`:
+  - `plan(analysis: OutlookAnalysis, audience: AudienceProfile) -> MigrationPlan` — produces phased plan
+  - `AudienceProfile(client_distribution: dict[str, float])` — e.g., `{"outlook_2016": 0.15, "outlook_2019": 0.20, "new_outlook": 0.10, "gmail_web": 0.35, ...}`
+  - `MigrationPlan(phases: list[MigrationPhase], total_savings_bytes: int, estimated_completion: str, risk_assessment: str)`
+  - `MigrationPhase(name: str, dependencies_to_remove: list[OutlookDependency], audience_impact: float, safe_when: str)` — `safe_when` = "now" / "when old_outlook < 10%" / "after october 2026"
+  - Phase ordering: safest removals first (audience_impact < 1%), riskier removals later
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/outlook-migration-plan` accepting analysis + audience profile
+- Modify `app/connectors/service.py` — add `async get_audience_profile(connection_id: int) -> AudienceProfile | None` — pull client distribution from ESP analytics API (Braze/SFMC provide this). Returns `None` if ESP doesn't support analytics
+**Security:** Audience data is aggregate statistics (percentages per client) — no PII. ESP analytics API calls use existing encrypted credentials from `ESPConnection`. Migration plan contains only code patterns and percentages.
+**Verify:** Plan with 40% old Outlook → conservative phased approach, most hacks kept. Plan with 5% old Outlook → aggressive modernization recommended. Plan with no audience data → generic timeline based on industry averages. ESP audience pull works for Braze (mock server). `make test` passes.
+- [ ] 19.2 Audience-aware Outlook migration planner
+
+### 19.3 Lightning CSS Email Compiler `[Backend]`
+**What:** An email-specific CSS compiler built on Lightning CSS (Rust, 100x faster than JS parsers) that performs AST-level optimization for email clients. Unlike Juice (which does string-level CSS inlining), this compiler understands the email rendering landscape: removes CSS properties unsupported by target clients (driven by ontology data), auto-converts modern CSS to email-safe equivalents, merges redundant declarations, removes dead selectors, and produces optimal inlined output.
+**Why:** Current CSS processing in the Maizzle pipeline uses Juice for inlining — a brute-force approach that doesn't understand email client constraints. The compiler produces smaller HTML (often 15-25% reduction) by eliminating properties that would be ignored anyway, and converts modern CSS to compatible equivalents (e.g., `gap` → `margin` on child elements for Outlook). Lightning CSS's Python bindings make this a drop-in enhancement.
+**Implementation:**
+- Install `lightningcss` Python bindings (via `pip install lightningcss`) or use Rust binary via subprocess
+- Create `app/email_engine/css_compiler/` package:
+  - `compiler.py` — `EmailCSSCompiler`:
+    - `compile(html: str, target_clients: list[str] | None = None) -> CompilationResult` — full compilation pipeline
+    - `CompilationResult(html: str, original_size: int, compiled_size: int, removed_properties: list[str], conversions: list[CSSConversion], warnings: list[str])`
+    - Pipeline stages:
+      1. **Parse**: extract all CSS (inline styles + `<style>` blocks) via Lightning CSS parser
+      2. **Analyze**: cross-reference each property against ontology support matrix for target clients
+      3. **Transform**: apply conversions for unsupported properties (ontology `Fallback` objects provide alternatives)
+      4. **Eliminate**: remove properties with zero support across all target clients (dead CSS)
+      5. **Optimize**: Lightning CSS minification — merge longhands into shorthands, reduce `calc()`, remove redundant declarations
+      6. **Inline**: inject optimized styles as inline `style` attributes (replacing Juice)
+      7. **Output**: final HTML with optimized CSS
+  - `conversions.py` — `CSSConversion` rules driven by ontology fallbacks:
+    - `flexbox_to_table`: convert `display:flex` containers to `<table>` equivalents
+    - `grid_to_table`: convert `display:grid` layouts to table-based
+    - `gap_to_margin`: convert `gap` property to `margin` on child elements
+    - `custom_properties_to_values`: resolve `var(--x)` references to computed values
+    - `modern_to_outlook`: generate MSO conditional blocks for properties that need dual-path
+  - `integration.py` — `MaizzleCompilerPlugin` — hook into Maizzle sidecar build pipeline (replace Juice step)
+- Modify `services/maizzle-builder/` — add optional CSS compiler step via POST /compile-css endpoint (alternative to Juice inlining)
+- Modify `app/email_engine/routes.py` — add `POST /api/v1/email/compile-css` for standalone CSS compilation
+- Config: `EMAIL_ENGINE__CSS_COMPILER_ENABLED: bool = False`, `EMAIL_ENGINE__CSS_COMPILER_TARGET_CLIENTS: list[str] = ["gmail_web", "outlook_2019", "apple_mail", "yahoo_mail"]`
+**Security:** CSS parsing via Lightning CSS (Rust, memory-safe). No eval/exec of CSS content. Ontology data is read-only. Output validated via `sanitize_html_xss()`. No external network calls.
+**Verify:** Compile email with `display:flex` targeting `[outlook_2019]` → flexbox converted to table layout. Compile targeting `[gmail_web, apple_mail]` only → flexbox preserved (both support it). Size reduction measured: compiled output < original for all golden templates. Juice-replaced output renders identically to Juice output in golden template screenshots. `make test` passes.
+- [ ] 19.3 Lightning CSS email compiler
+
+### 19.4 Frontend Outlook Advisor & Compiler Dashboard `[Frontend]`
+**What:** Frontend UI for Outlook migration analysis (dependency heatmap, migration timeline, "Modernize" action), audience profile input/ESP import, and CSS compilation results (size before/after, removed properties, conversion list). Integrated into workspace toolbar and QA panel.
+**Implementation:**
+- Create `cms/apps/web/src/components/outlook/` — `OutlookAdvisorPanel.tsx` (dependency list with severity), `MigrationTimeline.tsx` (phased plan visualization), `AudienceProfileInput.tsx` (manual entry or ESP import)
+- Create `cms/apps/web/src/components/email-engine/CSSCompilerPanel.tsx` — before/after size comparison, property removal list, conversion details
+- SWR hooks: `useOutlookAnalysis()`, `useMigrationPlan()`, `useCSSCompile()`
+- i18n: ~30 keys across 6 locales
+- SDK regeneration
+**Verify:** Full Outlook analysis → migration plan displayed → "Modernize" applies changes → re-analysis shows reduction. CSS compiler → size reduction shown. `make check-fe` passes.
+- [ ] 19.4 Frontend Outlook advisor & compiler dashboard
+
+### 19.5 Tests & Documentation `[Full-Stack]`
+**What:** Tests for Outlook analyzer (detection of all 7 dependency types), modernizer (safe transformations, dual-support mode), migration planner (audience-weighted phasing), CSS compiler (all conversion rules, size reduction, ontology integration). 45+ tests. ADR-008.
+**Implementation:**
+- Create `app/qa_engine/outlook_analyzer/tests/` — `test_detector.py`, `test_modernizer.py`, `test_planner.py` — 25+ tests
+- Create `app/email_engine/css_compiler/tests/` — `test_compiler.py`, `test_conversions.py` — 20+ tests
+- Route tests for all new endpoints
+- ADR-008 in `docs/ARCHITECTURE.md` — Outlook Transition & CSS Compilation
+**Verify:** `make test` passes. `make check` all green.
+- [ ] 19.5 Tests & documentation
+
+---
+
+## Phase 20 — Gmail AI Intelligence & Deliverability
+
+**What:** Three capabilities targeting the Gmail ecosystem: (1) predict how Gmail's Gemini AI will summarize an email, (2) auto-inject schema.org structured data based on email intent, (3) pre-send deliverability scoring. Plus BIMI readiness verification.
+**Why:** Gmail's AI filtering (launched early 2026) creates a new layer between sender and recipient — emails are now summarized, categorized, and filtered by AI before users see them. No email platform addresses this. Schema.org markup directly impacts Gmail Promotions tab visibility (deal annotations, product carousels). BIMI is mandatory for enterprise trust signals in 2026. Deliverability scoring closes the "looks good but never reaches inbox" gap.
+**Dependencies:** Phase 11 (QA engine for deliverability checks), Phase 16 (query router intent classification — reusable for email intent classification).
+**Design principle:** Gmail AI prediction is best-effort (no one has access to Gemini's actual summarization model) — we use a local LLM to approximate. Schema.org injection is deterministic (rule-based, not LLM). Deliverability scoring is heuristic-based with optional LLM enhancement.
+
+### 20.1 Gmail AI Summary Predictor `[Backend]`
+**What:** A service that estimates how Gmail's Gemini-powered summarization will present an email to the recipient. Generates a predicted "summary card" — the 1-2 sentence preview that appears in Gmail's inbox view, the categorization (Primary/Promotions/Updates/Social), and the likely "key action" extraction. Uses an LLM to simulate Gemini's summarization behavior based on the email's subject line, preview text, and body content.
+**Why:** Gmail's AI summarization means the email you send is not the email users see. If Gemini summarizes a promotional email as "Company wants you to buy X at Y% off", that summary IS the email for most users. Optimizing the email to produce favorable AI summaries is an entirely new discipline — and no one offers tooling for it. This is greenfield competitive advantage.
+**Implementation:**
+- Create `app/qa_engine/gmail_intelligence/` package:
+  - `predictor.py` — `GmailSummaryPredictor`:
+    - `async predict(html: str, subject: str, from_name: str) -> GmailPrediction` — extracts text content from HTML, feeds to LLM with Gmail-specific summarization prompt
+    - `GmailPrediction(summary_text: str, predicted_category: str, key_actions: list[str], promotion_signals: list[str], improvement_suggestions: list[str])`
+    - Summarization prompt engineered to mimic Gemini's known behaviors: focus on CTAs, pricing, urgency signals, sender reputation heuristics
+    - Category prediction based on: sender domain, subject line patterns, CTA density, unsubscribe link presence, schema.org markup presence
+    - `improvement_suggestions`: specific changes to subject/preview text/content that would improve the summary
+  - `optimizer.py` — `PreviewTextOptimizer`:
+    - `async optimize(html: str, subject: str, target_summary: str | None = None) -> OptimizedPreview` — suggests preview text and subject line variations that produce better AI summaries
+    - `OptimizedPreview(original_subject: str, suggested_subjects: list[str], original_preview: str, suggested_previews: list[str], reasoning: str)`
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/gmail-predict` (prediction), `POST /api/v1/qa/gmail-optimize` (suggestions)
+- Config: `QA__GMAIL_PREDICTOR_ENABLED: bool = False`, `QA__GMAIL_PREDICTOR_MODEL: str = "gpt-4o-mini"` (cost-efficient for summarization)
+**Security:** Email content passed to LLM for summarization — same security model as existing agents (no PII expected in template HTML). Prompt sanitized via `sanitize_prompt()`. LLM response is text-only — no code execution. Rate limited.
+**Verify:** Promotional email with pricing → predicted category = "Promotions", summary includes price/discount. Transactional email (order confirmation) → predicted category = "Updates", summary includes order details. Subject line optimization → suggestions differ from original and are coherent. `gmail_predictor_enabled=False` skips entirely. `make test` passes.
+- [ ] 20.1 Gmail AI summary predictor
+
+### 20.2 Schema.org Auto-Markup Injection `[Backend]`
+**What:** Automatically inject appropriate schema.org JSON-LD structured data into email HTML based on classified email intent. Supports Gmail Actions (ConfirmAction, ViewAction, TrackAction), Deal Annotations (promotions tab product cards with price/discount/expiry), Event markup (RSVP actions), and Order tracking (ViewOrderAction with status). Intent classification reuses the hub's QueryRouter pattern (16.1).
+**Why:** Schema.org markup directly impacts Gmail inbox experience: Deal Annotations surface product images and prices in the Promotions tab, Action buttons appear in the inbox list view without opening the email, and Event markup enables RSVP from the inbox. Most email platforms ignore this entirely — markup is added manually by developers who happen to know about it. Auto-injection based on detected intent makes it effortless.
+**Implementation:**
+- Create `app/email_engine/schema_markup/` package:
+  - `classifier.py` — `EmailIntentClassifier`:
+    - `classify(html: str, subject: str) -> EmailIntent` — regex-first classification (reusing 16.1 pattern):
+      - `promotional`: pricing patterns (`$`, `£`, `%`, "sale", "discount", "offer"), CTA patterns ("Shop now", "Buy", "Order")
+      - `transactional`: order number patterns, shipping/tracking keywords, receipt indicators
+      - `event`: date/time patterns with RSVP/register/attend keywords
+      - `newsletter`: "unsubscribe" + regular content without commercial CTAs
+      - `notification`: status update patterns, account activity keywords
+    - `EmailIntent(type: str, confidence: float, extracted_entities: dict)` — entities include detected prices, dates, order numbers, product names
+  - `injector.py` — `SchemaMarkupInjector`:
+    - `inject(html: str, intent: EmailIntent) -> str` — injects JSON-LD `<script type="application/ld+json">` in `<head>`
+    - Intent → markup mapping:
+      - `promotional` → `Product` + `Offer` with `price`, `priceCurrency`, `availabilityEnds` (if detected), `DealAnnotation` for Gmail Promotions tab
+      - `transactional` → `Order` + `OrderStatus` with `orderNumber`, `TrackAction` with tracking URL
+      - `event` → `Event` with `startDate`, `location`, `RsvpAction` or `ViewAction`
+      - `notification` → `ViewAction` linking to relevant dashboard/page
+    - Validates generated JSON-LD against schema.org vocabulary before injection
+  - `validator.py` — `SchemaValidator` — validates JSON-LD structure, required properties per type, Gmail-specific requirements (sender verification, HTTPS action URLs)
+- Modify `app/email_engine/service.py` — add optional schema injection step in email build pipeline (after HTML compilation, before export)
+- Modify `app/email_engine/routes.py` — add `POST /api/v1/email/inject-schema` for standalone schema injection
+- Config: `EMAIL_ENGINE__SCHEMA_INJECTION_ENABLED: bool = False`, `EMAIL_ENGINE__SCHEMA_TYPES: list[str] = ["promotional", "transactional", "event"]`
+**Security:** JSON-LD is structured data — no executable code. Action URLs validated as HTTPS only (Gmail requirement). No user-provided URLs in generated markup — only URLs extracted from the email HTML itself. Injection point is `<head>` only — no body modification.
+**Verify:** Email with "$50 off, expires March 30" → `DealAnnotation` injected with price=$50, discount, expiry date. Order confirmation email → `Order` + `TrackAction` injected. Event invitation → `Event` + `RsvpAction` injected. Newsletter → no markup injected (intentional — newsletters don't benefit). JSON-LD validates against schema.org. `make test` passes.
+- [ ] 20.2 Schema.org auto-markup injection
+
+### 20.3 Deliverability Prediction Score `[Backend]`
+**What:** Pre-send deliverability scoring that analyzes email HTML for spam trigger patterns, image-to-text ratio, link density, authentication readiness (SPF/DKIM/DMARC/BIMI), and content quality signals. Produces a 0-100 deliverability score with specific improvement recommendations. Integrates as QA check #13.
+**Why:** An email that renders perfectly but lands in spam is worse than one with rendering issues that reaches the inbox. The global average inbox placement rate is 83.1% — meaning ~17% of emails never reach the recipient. Current QA checks validate rendering and accessibility but ignore deliverability entirely. This closes the gap.
+**Implementation:**
+- Create `app/qa_engine/checks/deliverability.py` — `DeliverabilityCheck(QACheck)`:
+  - `async run(html: str, config: QAConfig) -> QACheckResult` — scoring across dimensions:
+    - **Content quality** (0-25): text-to-image ratio (>60% text = good), link density (<1 link per 50 words), no URL shorteners, no excessive capitalization, no spam trigger words ("FREE!!!", "Act now", "Limited time")
+    - **HTML hygiene** (0-25): valid `DOCTYPE`, character encoding declared, reasonable HTML size (<102KB), no hidden text (same color as background), no single-image emails
+    - **Authentication readiness** (0-25): checks for DKIM alignment hints in headers (if available), DMARC-friendly sender patterns, List-Unsubscribe header presence, unsubscribe link in body
+    - **Engagement signals** (0-25): preview text present and distinct from subject, personalization tokens detected, clear primary CTA, reasonable content length
+  - Each dimension produces sub-scores + specific `DeliverabilityIssue(dimension: str, severity: str, description: str, fix: str)`
+  - Overall score = sum of dimension scores. Pass threshold: `QA__DELIVERABILITY_THRESHOLD: int = 70`
+- Modify `app/qa_engine/service.py` — register as optional check #13
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/deliverability-score` for standalone scoring
+- Config: `QA__DELIVERABILITY_CHECK_ENABLED: bool = False`, `QA__DELIVERABILITY_THRESHOLD: int = 70`
+**Security:** All analysis is local — no external API calls. Spam trigger word list is static (no dynamic loading). No PII in scoring output.
+**Verify:** Clean transactional email → score > 85. Spam-like promotional email (ALL CAPS subject, image-heavy, many links) → score < 50. Adding List-Unsubscribe → score increases. Adding preview text → score increases. Single-image email → HTML hygiene score penalized. `make test` passes.
+- [ ] 20.3 Deliverability prediction score
+
+### 20.4 BIMI Readiness Check `[Backend]`
+**What:** Verify BIMI (Brand Indicators for Message Identification) compliance: check sending domain's DMARC policy (must be quarantine or reject), validate BIMI DNS record format, verify SVG logo meets Gmail's Tiny PS format requirements, and check CMC (Common Mark Certificate) status. Generates the BIMI TXT record as part of deployment checklist.
+**Why:** BIMI displays the sender's verified logo in the inbox — directly impacting open rates (up to 10% increase per industry data). Google dropped the trademark requirement in 2025 (CMC now sufficient), making BIMI accessible to all brands. But setup is complex (DMARC + DNS + SVG format + certificate) — automating the readiness check removes the barrier.
+**Implementation:**
+- Create `app/qa_engine/checks/bimi.py` — `BIMIReadinessCheck`:
+  - `async check_domain(domain: str) -> BIMIStatus` — DNS lookups for DMARC record, BIMI record, SVG validation
+  - `BIMIStatus(dmarc_ready: bool, dmarc_policy: str, bimi_record_exists: bool, bimi_record: str | None, svg_valid: bool | None, cmc_status: str, generated_record: str, issues: list[str])`
+  - DMARC check: DNS TXT lookup for `_dmarc.{domain}`, parse `p=` policy (must be `quarantine` or `reject`)
+  - BIMI check: DNS TXT lookup for `default._bimi.{domain}`, parse `v=BIMI1; l={svg_url}; a={pem_url}`
+  - SVG validation: if BIMI record exists, fetch SVG URL, validate Tiny PS profile (square, no external references, specific element restrictions)
+  - Record generator: produce the TXT record string for the domain based on provided SVG/certificate URLs
+- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/bimi-check` accepting `{domain: str}` with auth + rate limiting
+- Config: `QA__BIMI_CHECK_ENABLED: bool = False`
+**Security:** DNS lookups are read-only. SVG fetch uses `httpx` with timeout + size limit (max 32KB). No execution of SVG content. Domain input validated (must be valid domain format). Rate limited to prevent DNS abuse.
+**Verify:** Domain with full BIMI setup → all checks pass, record validated. Domain with DMARC `p=none` → `dmarc_ready=False`, specific guidance to change policy. Domain without BIMI record → `bimi_record_exists=False`, generated record template provided. Invalid SVG (non-square, external references) → `svg_valid=False`. `make test` passes.
+- [ ] 20.4 BIMI readiness check
+
+### 20.5 Frontend Gmail Intelligence Panel & Tests `[Frontend]`
+**What:** Frontend UI for Gmail prediction (predicted summary card preview, category badge, optimization suggestions), deliverability score gauge, BIMI status indicator, and schema.org markup preview. Plus full test suite (30+ tests) and SDK regeneration.
+**Implementation:**
+- Create `cms/apps/web/src/components/gmail/` — `GmailPredictionPanel.tsx`, `SummaryCardPreview.tsx` (renders predicted summary card), `DeliverabilityGauge.tsx`, `BIMIStatusBadge.tsx`, `SchemaPreview.tsx` (shows injected JSON-LD)
+- SWR hooks: `useGmailPrediction()`, `useDeliverabilityScore()`, `useBIMICheck()`, `useSchemaInject()`
+- i18n: ~35 keys across 6 locales
+- Tests: `test_gmail_predictor.py` (8 tests), `test_schema_markup.py` (10 tests), `test_deliverability.py` (8 tests), `test_bimi.py` (6 tests), route tests
+- SDK regeneration
+**Verify:** `make test` passes. `make check-fe` passes. `make check` all green.
+- [ ] 20.5 Frontend Gmail intelligence panel & tests
+
+---
+
+## Phase 21 — Real-Time Ontology Sync & Competitive Intelligence
+
+**What:** Auto-sync the email compatibility ontology from the caniemail open-source dataset, track email client rendering changes over time, and build a competitive intelligence layer that monitors how email client updates affect existing templates.
+**Why:** The ontology (335+ CSS properties × 25+ clients) is the hub's single source of truth for compatibility — but it's manually maintained. The caniemail dataset updates weekly with community-contributed data. Auto-syncing keeps the hub current without manual effort. Client rendering change detection creates a proprietary dataset that goes beyond what caniemail offers — real-time awareness of when a client changes behavior.
+**Dependencies:** Phase 8-9 (ontology + knowledge graph), Phase 16 (structured queries use ontology data), Phase 17 (screenshot baselines for change detection).
+**Design principle:** Ontology sync is additive-only by default — new data merges, existing data never deleted without manual approval. Change detection is non-blocking — findings are advisory, surfaced in UI, not gates.
+
+### 21.1 caniemail Auto-Sync Pipeline `[Backend]`
+**What:** A scheduled pipeline that fetches the latest caniemail dataset from GitHub, diffs against the current ontology, and merges new/updated support data. Runs daily via the existing `DataPoller` infrastructure. Produces a changelog of what changed for developer review.
+**Why:** caniemail is the industry standard for CSS email support data — open source, community-maintained, updated weekly. Currently the hub's ontology was seeded once; keeping it current requires manual effort. Auto-sync ensures every CSS support query returns current data. The @jsx-email/doiuse-email npm package proves this data is machine-readable.
+**Implementation:**
+- Create `app/knowledge/ontology/caniemail_sync.py` — `CanIEmailSyncService`:
+  - `async sync(dry_run: bool = False) -> SyncReport` — fetch, diff, merge pipeline
+  - Fetch: `httpx.AsyncClient.get("https://raw.githubusercontent.com/hteumeuleu/caniemail/master/data/...")` — individual feature JSON files
+  - Parse: convert caniemail format (feature name, stats per client, notes, links) to ontology `CSSProperty` + `SupportLevel` format
+  - Diff: compare fetched data against current ontology — identify new properties, updated support levels, new client versions
+  - Merge: apply updates to ontology (additive by default). New properties added. Support levels updated only if they improve precision (partial → supported/unsupported)
+  - `SyncReport(new_properties: int, updated_levels: int, new_clients: int, changelog: list[ChangelogEntry], errors: list[str])`
+  - `ChangelogEntry(property_id: str, client_id: str, old_level: str | None, new_level: str, source: str)`
+- Create `app/knowledge/ontology/caniemail_poller.py` — `CanIEmailPoller(DataPoller)`:
+  - Runs every 24 hours (configurable)
+  - Calls `CanIEmailSyncService.sync(dry_run=False)`
+  - Logs sync report via structured logging
+  - Stores last sync timestamp + report in Redis for dashboard display
+- Modify `app/main.py` — register `CanIEmailPoller` (same pattern as `CheckpointCleanupPoller`)
+- Modify `app/knowledge/routes.py` — add `POST /api/v1/knowledge/ontology/sync` (manual trigger, admin only), `GET /api/v1/knowledge/ontology/sync-status` (last sync time + report)
+- Config: `KNOWLEDGE__CANIEMAIL_SYNC_ENABLED: bool = False`, `KNOWLEDGE__CANIEMAIL_SYNC_INTERVAL_HOURS: int = 24`, `KNOWLEDGE__CANIEMAIL_DRY_RUN: bool = True` (dry run by default until manually verified)
+**Security:** Fetches from a known GitHub URL only — no user-provided URLs. Data is CSS property support information — no executable content. Sync is additive-only by default. Admin-only manual trigger. GitHub rate limiting handled via conditional requests (If-Modified-Since).
+**Verify:** Run sync → new properties added that weren't in original ontology seed. Run sync again immediately → no changes (idempotent). Run dry_run → report generated but no data modified. Invalid GitHub response → graceful failure, no data corruption. Ontology queries return updated data after sync. `make test` passes.
+- [ ] 21.1 caniemail auto-sync pipeline
+
+### 21.2 Email Client Rendering Change Detector `[Backend]`
+**What:** A scheduled service that renders a suite of CSS feature-detection email templates through the Playwright rendering service (17.1), compares screenshots against stored baselines, and flags when a client's rendering behavior changes. Creates a proprietary, real-time email client behavior changelog.
+**Why:** caniemail tells you what CSS _should_ work in email clients. This tells you what CSS _actually_ works right now — and when it changes. Email clients update silently (Gmail's CSS support has expanded significantly over the years without announcement). Detecting these changes creates proprietary intelligence that goes beyond any public dataset.
+**Implementation:**
+- Create `app/knowledge/ontology/change_detector.py` — `RenderingChangeDetector`:
+  - `async detect_changes() -> list[RenderingChange]` — renders feature detection templates, compares against baselines
+  - Feature detection templates: one per critical CSS property, each tests a single property with visual indicator (e.g., `display:flex` with visible layout difference between flex and fallback)
+  - `RenderingChange(property_id: str, client_id: str, previous_behavior: str, current_behavior: str, screenshot_diff: bytes, detected_at: datetime)`
+  - Uses 17.1 `EmailScreenshotService` for rendering, 17.2 `VisualDiffService` for comparison
+  - Stores detected changes in knowledge base as documents (domain="rendering_changes")
+- Create feature detection templates in `app/knowledge/ontology/feature_templates/` — 20-30 HTML files testing critical CSS properties (flexbox, grid, custom properties, `gap`, `aspect-ratio`, `clamp()`, etc.)
+- Create `app/knowledge/ontology/change_poller.py` — `RenderingChangePoller(DataPoller)` — runs weekly
+- Config: `KNOWLEDGE__CHANGE_DETECTION_ENABLED: bool = False`, `KNOWLEDGE__CHANGE_DETECTION_INTERVAL_HOURS: int = 168` (weekly)
+**Security:** Feature detection templates are static HTML (no dynamic content). Rendering uses sandboxed Playwright (17.1 security model). Changes stored as structured data + screenshot diffs — no executable content.
+**Verify:** Modify a rendering profile to simulate a client change (e.g., enable flexbox in outlook_2019 profile) → change detector flags the difference. No profile changes → no changes detected. Detected change creates knowledge base document. `make test` passes.
+- [ ] 21.2 Email client rendering change detector
+
+### 21.3 Competitive Intelligence Dashboard & Tests `[Frontend]`
+**What:** Frontend dashboard showing ontology sync status, rendering change timeline, support matrix diff viewer (what changed since last sync), and email client trend analysis. Plus full test suite and SDK regeneration.
+**Implementation:**
+- Create `cms/apps/web/src/components/knowledge/OntologySyncPanel.tsx` — last sync status, changelog viewer, manual sync trigger (admin only)
+- Create `cms/apps/web/src/components/knowledge/RenderingChangelog.tsx` — timeline of detected rendering changes with screenshot diffs
+- SWR hooks: `useOntologySyncStatus()`, `useRenderingChanges()`
+- i18n: ~20 keys across 6 locales
+- Tests: `test_caniemail_sync.py` (10 tests — fetch, parse, diff, merge, idempotency), `test_change_detector.py` (8 tests), route tests
+- SDK regeneration
+- Target: 25+ tests
+**Verify:** `make test` passes. `make check-fe` passes. `make check` all green.
+- [ ] 21.3 Competitive intelligence dashboard & tests
+
+---
+
+## Phase 22 — AI Evolution Infrastructure
+
+**What:** Close the "identified gaps" from the pitch's AI Evolution section: model capability registry with capability-based routing, prompt template store with A/B testing, token budget manager, fallback chains for provider resilience, and cost governor with per-model budget caps and circuit breakers.
+**Why:** The hub currently treats models as interchangeable text boxes (hardcoded model names per tier). When a new model launches, model deprecates, or provider has an outage, manual intervention is needed. These five capabilities make every AI improvement a zero-downtime, zero-code operation — the pitch's stated goal for V1 competitive advantage.
+**Dependencies:** Phase 15 (adaptive routing foundation), all agent phases (consumers of the new infrastructure).
+**Design principle:** Each capability is independently deployable. Existing `LLMProvider` protocol and `get_registry()` patterns preserved — new capabilities wrap the existing interface rather than replacing it.
+
+### 22.1 Model Capability Registry `[Backend]`
+**What:** Each model declares capabilities (vision, tool_use, structured_output, extended_thinking), constraints (context_window, max_output_tokens, cost_per_token), and metadata (provider, local_vs_cloud, deprecation_date). The router matches task requirements to model capabilities rather than just tier names.
+**Implementation:**
+- Create `app/ai/capability_registry.py` — `ModelCapability` enum, `ModelSpec` frozen dataclass, `CapabilityRegistry` singleton with `register(model_id, spec)`, `find_models(requirements: set[ModelCapability], min_context: int) -> list[ModelSpec]`
+- Modify `app/ai/routing.py` — `resolve_model()` checks capability requirements when provided, falls back to tier-based routing
+- Config: model specs in `AI__MODEL_SPECS` YAML/JSON config
+- [ ] 22.1 Model capability registry
+
+### 22.2 Prompt Template Store `[Backend]`
+**What:** Move agent system prompts from Python files to a versioned database store with A/B variant support. Agents load prompts at runtime via `PromptStore.get(agent_id, variant)`. Versions tracked with rollback.
+**Implementation:**
+- Create `app/ai/prompt_store.py` — `PromptTemplate` model (id, agent_id, version, variant, content, active), `PromptStore` with CRUD + `get_active(agent_id, variant)`, migration to seed from existing SKILL.md files
+- Modify `app/ai/agents/base.py` — `_build_system_prompt()` checks `PromptStore` first, falls back to SKILL.md
+- Config: `AI__PROMPT_STORE_ENABLED: bool = False`
+- [ ] 22.2 Prompt template store
+
+### 22.3 Token Budget Manager `[Backend]`
+**What:** Count tokens before sending to LLM. Truncate or summarize conversation history to stay within context window. Adaptive strategy: recent messages preserved, older messages summarized.
+**Implementation:**
+- Create `app/ai/token_budget.py` — `TokenBudgetManager` with `estimate_tokens(messages)` (tiktoken for OpenAI, approximation for others), `trim_to_budget(messages, max_tokens)` with summarization strategy
+- Modify `app/ai/adapters/` — all adapters call `trim_to_budget()` before API call
+- Config: `AI__TOKEN_BUDGET_ENABLED: bool = False`, `AI__TOKEN_BUDGET_RESERVE: int = 4096` (reserve for response)
+- [ ] 22.3 Token budget manager
+
+### 22.4 Fallback Chains & Provider Resilience `[Backend]`
+**What:** Ordered model fallbacks per tier. Primary model failure auto-cascades to next. Example: `complex: [claude-opus-4-6 → gpt-4o → local-qwen-72b]`. Every fallback event logged.
+**Implementation:**
+- Create `app/ai/fallback.py` — `FallbackChain` with `async call_with_fallback(messages, tier) -> Response` — tries each model in order, catches timeout/rate-limit/deprecation errors, logs fallback events
+- Modify `app/ai/routing.py` — `resolve_model()` returns `FallbackChain` instead of single model when fallback config present
+- Config: `AI__FALLBACK_CHAINS` YAML config per tier
+- [ ] 22.4 Fallback chains & provider resilience
+
+### 22.5 Cost Governor `[Backend]`
+**What:** Real-time token and cost tracking per model, per agent, per project. Configurable budget caps with circuit breakers — auto-route to cheaper models or local fallbacks when spend approaches threshold.
+**Implementation:**
+- Create `app/ai/cost_governor.py` — `CostGovernor` with `track(model, tokens_in, tokens_out, agent, project)` (Redis-backed counters), `check_budget(agent, project) -> BudgetStatus`, circuit breaker integration
+- Modify `app/ai/adapters/` — all adapters report usage to `CostGovernor` after each call
+- Dashboard endpoint: `GET /api/v1/ai/cost-report` (admin only)
+- Config: `AI__COST_GOVERNOR_ENABLED: bool = False`, `AI__MONTHLY_BUDGET_GBP: float = 600.0`, `AI__BUDGET_WARNING_THRESHOLD: float = 0.8`
+- [ ] 22.5 Cost governor
+
+### 22.6 Tests & Documentation `[Full-Stack]`
+**What:** Tests for all 5 capabilities (30+ tests). ADR-009 AI Evolution Infrastructure.
+- [ ] 22.6 Tests & documentation
+
+---
+
+## Phase 23 — Multimodal Protocol & MCP Agent Interface
+
+**What:** Extend the message protocol to support mixed content (text, image, audio, structured data) and wrap every Hub service as a Model Context Protocol tool — decoupling the agent layer from the service layer entirely.
+**Why:** Vision models can now process design screenshots directly, voice briefs are emerging as input, and structured output guarantees JSON for QA results. MCP compatibility means any MCP-compatible LLM becomes a drop-in agent backbone.
+**Dependencies:** Phase 17 (VLM agent already uses vision — formalizes the protocol), Phase 22 (capability registry identifies vision-capable models).
+
+### 23.1 Multimodal Message Protocol `[Backend]`
+**What:** Extend `LLMProvider.complete()` to accept `list[ContentBlock]` instead of `str`. `ContentBlock` union: `TextBlock`, `ImageBlock(data: bytes, media_type: str)`, `AudioBlock`, `StructuredOutputBlock(schema: dict)`. Adapters serialize per-provider (Anthropic content blocks, OpenAI multi-part messages).
+- [ ] 23.1 Multimodal message protocol
+
+### 23.2 MCP Tool Server `[Backend]`
+**What:** Expose Hub services (QA engine, knowledge search, rendering, components, templates) as MCP tools. Any MCP-compatible client (Claude Desktop, Cursor, custom agents) can call Hub services directly.
+- [ ] 23.2 MCP tool server
+
+### 23.3 Voice Brief Input `[Full-Stack]`
+**What:** Accept audio file uploads as email briefs. Transcribe via Whisper (local) or cloud STT, extract structured brief (topic, sections, tone, CTA) via LLM, feed to Scaffolder agent.
+- [ ] 23.3 Voice brief input
+
+### 23.4 Tests & Documentation `[Full-Stack]`
+- [ ] 23.4 Tests & documentation
+
+---
+
+## Phase 24 — Real-Time Collaboration & Visual Builder
+
+**What:** Google Docs-style simultaneous editing with OT/CRDT conflict resolution for the Monaco editor, plus a drag-and-drop visual email builder for non-technical users alongside the code editor.
+**Why:** The pitch identifies these as key "Future Vision" features. Real-time collaboration enables team workflows (developer + copywriter editing simultaneously). Visual builder opens the hub to non-developers — the largest untapped user base.
+**Dependencies:** Phase 11 (component library for builder blocks), Phase 12 (Figma import for design-to-builder), all frontend phases.
+
+### 24.1 CRDT Collaborative Editing Engine `[Full-Stack]`
+**What:** Real-time collaborative editing using Yjs CRDT library. WebSocket sync server, cursor awareness, and conflict-free merging for HTML editing.
+- [ ] 24.1 CRDT collaborative editing engine
+
+### 24.2 Drag-and-Drop Visual Email Builder `[Frontend]`
+**What:** Component-based visual builder using the existing component library. Drag sections from library, configure via property panels, switch between visual and code view. Output is standard template HTML.
+- [ ] 24.2 Drag-and-drop visual email builder
+
+### 24.3 Builder ↔ Code Bidirectional Sync `[Full-Stack]`
+**What:** Changes in visual builder reflect in code editor and vice versa. AST-level mapping between visual components and HTML source.
+- [ ] 24.3 Builder ↔ code bidirectional sync
+
+### 24.4 Tests & Documentation `[Full-Stack]`
+- [ ] 24.4 Tests & documentation
+
+---
+
+## Phase 25 — Platform Ecosystem & Advanced Integrations
+
+**What:** Plugin architecture for community-contributed components, Tolgee integration for multilingual campaigns, Kestra workflow orchestration, Penpot design-to-code pipeline, and Typst for programmatic QA report generation.
+**Why:** These extend the hub from a tool into a platform. Each integration compounds with existing capabilities — Tolgee + Maizzle enables per-locale builds, Kestra replaces ad-hoc pipeline orchestration, Penpot offers a self-hosted Figma alternative.
+**Dependencies:** All previous phases.
+
+### 25.1 Plugin Architecture `[Backend]`
+**What:** Extensible plugin system for custom QA checks, agent skills, export connectors, and component packages. Plugin manifest format, discovery, loading, and sandboxed execution.
+- [ ] 25.1 Plugin architecture
+
+### 25.2 Tolgee Multilingual Campaign Support `[Full-Stack]`
+**What:** Self-hosted TMS integration for multilingual email campaigns. In-context translation, translation memory, per-locale Maizzle builds.
+- [ ] 25.2 Tolgee multilingual campaign support
+
+### 25.3 Kestra Workflow Orchestration `[Backend]`
+**What:** Declarative YAML email build pipeline with retry logic, parallelism, conditional branching, and full audit trail. Replaces the blueprint engine's ad-hoc orchestration with a production-grade workflow engine.
+- [ ] 25.3 Kestra workflow orchestration
+
+### 25.4 Penpot Design-to-Email Pipeline `[Backend]`
+**What:** Self-hosted, API-driven design-to-email pipeline using Penpot's CSS-native primitives. Zero-cost Figma alternative with full programmatic access.
+- [ ] 25.4 Penpot design-to-email pipeline
+
+### 25.5 Typst QA Report Generator `[Backend]`
+**What:** Programmatic PDF generation for QA reports and client approval packages using Typst (Rust, <100ms). Data-driven documents auto-generated from Hub QA results.
+- [ ] 25.5 Typst QA report generator
+
+### 25.6 Tests & Documentation `[Full-Stack]`
+- [ ] 25.6 Tests & documentation
 
 ---
 
@@ -198,635 +657,18 @@
 
 ---
 
-## Success Criteria (Plan Section 14.2)
+## Success Criteria (Updated)
 
-| Metric | Target (3 months) | Target (6 months) |
-|--------|-------------------|-------------------|
-| Campaign build time | 1-2 days (from 3-5) | Under 1 day |
-| Cross-client rendering defects | Caught before export | Near-zero reaching client |
-| Component reuse rate | 30-40% | 60%+ |
-| AI agent adoption | Team actively using 3 agents | Agents embedded in daily workflow |
-| Knowledge base entries | 200+ indexed | 500+, team contributing |
-| Cloud AI API spend | Under £600/month | Under £600/month |
-
----
-
-## Phase 12 — Design-to-Email Import Pipeline
-
-**What:** Pull actual design files from Figma, convert them to editable Maizzle email templates via AI-assisted conversion, extract components, and import images — all through the Hub UI. Extends the existing `design_sync` module beyond token extraction.
-**Approach:** AI-assisted conversion — extract layout structure + images from Figma, generate a structured brief, feed to the Scaffolder agent to produce Maizzle HTML. User can review/edit the brief before conversion.
-**Scope:** Figma only (real API). Sketch/Canva stubs remain unchanged.
-**Dependencies:** Phase 2 (Scaffolder agent), Phase 4.3 (design_sync module), Phase 0.3 (SDK).
-
-### 12.1 Extend Protocol & Figma API Integration
-**What:** Add 3 new methods to `DesignSyncProvider` protocol + implement in Figma provider. New dataclasses: `DesignNode`, `DesignFileStructure`, `DesignComponent`, `ExportedImage`.
-**Files:** `app/design_sync/protocol.py`, `app/design_sync/figma/service.py`, `app/design_sync/sketch/service.py`, `app/design_sync/canva/service.py`
-**Implementation:**
-- `get_file_structure(file_ref, access_token)` → parse Figma `GET /v1/files/{key}` into `DesignNode` tree
-- `list_components(file_ref, access_token)` → `GET /v1/files/{key}/components` → `list[DesignComponent]`
-- `export_images(file_ref, access_token, node_ids, format, scale)` → `GET /v1/images/{key}` → `list[ExportedImage]` (batch max 100 IDs)
-- Sketch/Canva: stub implementations returning empty results
-**Security:** Uses existing Fernet-encrypted PAT storage. No new credential handling.
-**Verify:** Unit test Figma JSON parsing. Stub providers return empty defaults.
-- [x] ~~12.1 Protocol extension + Figma API integration~~ DONE
-
-### 12.2 Asset Storage Pipeline
-**What:** Download images from Figma's temporary URLs (expire ~14 days), store locally, serve via authenticated endpoint.
-**Files:** New `app/design_sync/assets.py`. Modify `app/core/config.py`, `app/design_sync/routes.py`.
-**Implementation:**
-- `DesignAssetService`: download via httpx, store at `data/design-assets/{connection_id}/{node_id}.{format}`
-- Resize if >1200px wide (2x retina for 600px email containers), optional Pillow compression
-- `GET /api/v1/design-sync/assets/{connection_id}/{filename}` — serve with BOLA check
-- Path traversal prevention in `get_stored_path()`
-- `asset_storage_path` config in `DesignSyncConfig`
-**Security:** BOLA check on connection access. Path traversal guard. No directory listing.
-**Verify:** Download mock URL → file stored → serve via endpoint returns correct bytes.
-- [x] ~~12.2 Asset storage pipeline~~ DONE
-
-### 12.3 Design Import Models & Migration
-**What:** Track import jobs (`DesignImport`) and their exported assets (`DesignImportAsset`).
-**Files:** `app/design_sync/models.py`, `alembic/versions/`, `app/design_sync/repository.py`, `app/design_sync/schemas.py`
-**Implementation:**
-- `DesignImport`: id, connection_id, project_id, status (pending|extracting|converting|completed|failed), selected_node_ids (JSON), structure_json, generated_brief, template_id (FK), error_message, created_by_id
-- `DesignImportAsset`: id, import_id (CASCADE), node_id, node_name, file_path, width, height, format, usage (hero|logo|icon|background|content)
-- Alembic migration for both tables with indexes
-- Repository CRUD: create_import, get_import, update_import_status, create_import_asset, list_import_assets
-- Request/response Pydantic schemas for all new models
-**Security:** FKs enforce referential integrity. BOLA via project_id.
-**Verify:** Migration up/down clean. Repository CRUD unit tests pass.
-- [x] ~~12.3 Design import models & migration~~ DONE
-
-### 12.4 Layout Analyzer & Brief Generator
-**What:** Convert Figma document structure into a Scaffolder-compatible campaign brief.
-**Files:** New `app/design_sync/figma/layout_analyzer.py`, `app/design_sync/brief_generator.py`
-**Implementation:**
-- `LayoutAnalyzer`: pure function, no I/O. Input: `DesignFileStructure` (selected nodes). Detect email sections (header, hero, content, CTA, footer) by name conventions + position. Detect column layouts from sibling frames. Extract text from TEXT nodes. Identify image placeholders. Output: `DesignLayoutDescription` with typed `EmailSection` list.
-- `BriefGenerator`: transform layout + images into structured markdown brief. Image refs point to local asset URLs. Includes design token summary. User can edit before conversion.
-**Security:** Pure computation. No I/O, no user input in SQL or templates.
-**Verify:** Mock Figma JSON → expected section detection. Layout with 2 columns → correct brief format.
-- [x] ~~12.4 Layout analyzer & brief generator~~ DONE
-
-### 12.5 AI-Assisted Conversion Pipeline
-**What:** Wire Figma import → Scaffolder agent → Template creation. Full orchestration service.
-**Files:** New `app/design_sync/import_service.py`. Modify `app/design_sync/routes.py`, `app/design_sync/schemas.py`, `app/ai/agents/scaffolder/schemas.py`, `app/ai/agents/scaffolder/prompt.py`, `app/ai/agents/scaffolder/service.py`
-**Implementation:**
-- `DesignImportService` orchestrator: fetch structure → export images → analyze layout → generate brief → call Scaffolder → create Template + TemplateVersion → update import status
-- Status polling: frontend polls `GET /imports/{id}` until completed/failed
-- `DesignContext` schema for Scaffolder: image_urls, design_tokens, source
-- Scaffolder prompt enhancement: when design_context present, use image URLs as `<img src>`, apply design tokens as inline styles
-- 6 new API endpoints: GET structure, GET components, POST export-images, POST imports, GET import status, PATCH import brief
-**Security:** BOLA on all endpoints. Rate limit imports. Scaffolder sanitises output via nh3.
-**Verify:** Mock Figma API + mock Scaffolder → import completes with template. Brief edit → re-conversion works.
-- [x] ~~12.5 AI-assisted conversion pipeline~~ DONE
-
-### 12.6 Component Extraction
-**What:** Extract Figma components → Hub `Component` + `ComponentVersion` with auto-generated HTML.
-**Files:** New `app/design_sync/component_extractor.py`. Modify `app/design_sync/routes.py`, `app/design_sync/schemas.py`
-**Implementation:**
-- `ComponentExtractor`: list components from Figma, export PNG previews, detect category (button→cta, header→header, footer→footer, hero→hero, card→content, default→general), generate mini-brief per component → Scaffolder → create Component + ComponentVersion
-- Store Figma origin reference in ComponentVersion metadata JSON
-- `POST /api/v1/design-sync/connections/{id}/extract-components` endpoint
-**Security:** BOLA check. Component HTML sanitised via nh3.
-**Verify:** Mock Figma components → Hub components created with correct categories and HTML.
-- [x] ~~12.6 Component extraction~~ DONE
-
-### 12.7 Frontend: File Browser & Import Dialog
-**What:** Tree view of Figma file structure + multi-step import wizard in the UI.
-**Files:** New `design-file-browser.tsx`, `design-import-dialog.tsx`, `design-components-panel.tsx`. Modify `design-connection-card.tsx`, design-sync page, hooks, types, i18n.
-**Implementation:**
-- File browser: pages → frames → components tree, thumbnails, checkbox selection, node type icons
-- Import dialog wizard: Select Frames → Review Brief (editable textarea) → Converting (progress) → Result (preview + "Open in Workspace")
-- Component extraction panel: thumbnail previews, batch checkbox selection, progress, results link to Hub components
-- Connection card: "Import Design" and "Extract Components" buttons
-- Hooks: useDesignFileStructure, useDesignComponents, useExportImages, useCreateDesignImport, useDesignImport (polling), useUpdateImportBrief, useExtractComponents
-- Types: DesignNode, DesignFileStructure, DesignComponent, ExportedImage, DesignImport, DesignImportAsset
-- i18n keys for all new UI text
-**Security:** authFetch for all API calls. No dangerouslySetInnerHTML.
-**Verify:** File browser renders mock tree. Import wizard completes all steps. Component extraction shows progress.
-- [x] ~~12.7 Frontend file browser & import dialog~~ DONE
-
-### 12.8 Design Reference in Workspace
-**What:** "Design Reference" tab in workspace bottom panel showing the original Figma design alongside the editor.
-**Files:** New `design-reference-panel.tsx`. Modify workspace bottom panel registration.
-**Implementation:**
-- Show exported Figma frame image alongside editor
-- Display design tokens (colors, typography, spacing) for quick reference
-- Click-to-copy hex values and font specs
-- Link back to Figma file
-**Security:** Images served via authenticated asset endpoint.
-**Verify:** Panel shows design image + tokens. Copy-to-clipboard works.
-- [x] ~~12.8 Design reference in workspace~~ DONE
-
-### 12.9 SDK Regeneration & Tests
-**What:** Regenerate SDK for all new endpoints. Backend tests for all new modules.
-**Files:** `app/design_sync/tests/` (extend + new files)
-**Implementation:**
-- Layout analyzer unit tests (mock Figma JSON → expected sections)
-- Brief generator unit tests (structured layout → expected brief text)
-- Asset service tests (download, store, serve)
-- Import orchestrator tests (mock Figma API + mock scaffolder)
-- Component extractor tests
-- New endpoint route tests
-- `make sdk` to cover all new endpoints
-- Update frontend type imports
-**Verify:** `make test` — all design_sync tests pass. `make types` — clean. `make lint` — clean. `make check-fe` — clean.
-- [x] ~~12.9 SDK regeneration & tests~~ DONE
-
----
-
-## Phase 13 — ESP Bidirectional Sync & Mock Servers
-
-**What:** Transform the Hub's 4 ESP connectors (Braze, SFMC, Adobe Campaign, Taxi) from export-only mock stubs into fully bidirectional sync with real API surface. Adds local mock ESP servers with pre-loaded realistic email templates, encrypted credential management, and pull/push template workflows.
-**Why:** Currently connectors only export via fake IDs — no template browsing, no round-trip editing, no credential validation. This phase makes the connector pipeline usable end-to-end for demos and development.
-**Dependencies:** Phase 0-3 foundation (auth, projects, templates, connectors export). Reuses Fernet encryption from `app/design_sync/crypto.py`, connection model pattern from `app/design_sync/models.py`, BOLA pattern from `app/projects/service.py`.
-
-### ~~13.1 Mock ESP Server — Core Infrastructure~~ DONE
-**What:** Create `services/mock-esp/` — a standalone FastAPI app (port 3002) with SQLite persistence, auto-seeding on startup, and per-ESP auth patterns (Bearer for Braze/Taxi, OAuth token exchange for SFMC/Adobe).
-**Why:** Real ESP APIs require paid accounts and complex setup. A local mock server lets developers test the full sync workflow offline with realistic data.
-**Implementation:**
-- `services/mock-esp/main.py` — FastAPI app with lifespan (init DB + seed)
-- `services/mock-esp/database.py` — aiosqlite manager, DDL for 4 ESP tables
-- `services/mock-esp/auth.py` — per-ESP auth dependencies (Bearer validation, OAuth token issuance)
-- `services/mock-esp/seed.py` — loads JSON seed data into SQLite on startup
-- `services/mock-esp/Dockerfile` — python:3.12-slim, port 3002
-- `services/mock-esp/requirements.txt` — fastapi, uvicorn, pydantic, aiosqlite
-- `GET /health` endpoint for Docker healthcheck
-**Security:** Mock server is dev-only. Auth accepts any non-empty token (Braze/Taxi) or issues mock OAuth tokens (SFMC/Adobe). No real credentials stored.
-**Verify:** `uvicorn main:app --port 3002` starts clean. `GET /health` returns `{"status": "healthy"}`.
-
-### ~~13.2 Mock ESP — Braze Content Blocks API~~ DONE
-**What:** Braze API routes at `/braze/content_blocks/` — create, list, info, update, delete. Auth via Bearer token.
-**Implementation:**
-- `services/mock-esp/braze/routes.py` — 5 endpoints matching Braze REST API surface
-- `services/mock-esp/braze/schemas.py` — ContentBlockCreate, ContentBlockResponse, etc.
-**Verify:** `curl -H "Authorization: Bearer test" http://localhost:3002/braze/content_blocks/list` returns seeded templates.
-
-### ~~13.3 Mock ESP — SFMC Content Builder API~~ DONE
-**What:** SFMC API routes — OAuth token exchange at `/sfmc/v2/token`, CRUD at `/sfmc/asset/v1/content/assets`. Auth via client_credentials flow.
-**Implementation:**
-- `services/mock-esp/sfmc/routes.py` — token endpoint + 5 CRUD endpoints
-- `services/mock-esp/sfmc/schemas.py` — TokenRequest, AssetResponse, etc.
-**Verify:** Token exchange returns access_token. CRUD with Bearer works.
-
-### ~~13.4 Mock ESP — Adobe Campaign Delivery API~~ DONE
-**What:** Adobe API routes — IMS token at `/adobe/ims/token/v3`, CRUD at `/adobe/profileAndServicesExt/delivery`. Auth via IMS OAuth.
-**Implementation:**
-- `services/mock-esp/adobe/routes.py` — IMS token + 5 CRUD endpoints
-- `services/mock-esp/adobe/schemas.py` — IMSTokenRequest, DeliveryResponse, etc.
-**Verify:** IMS token exchange works. Delivery CRUD with Bearer works.
-
-### ~~13.5 Mock ESP — Taxi for Email API~~ DONE
-**What:** Taxi API routes at `/taxi/api/v1/templates` — standard REST CRUD. Auth via `X-API-Key` header.
-**Implementation:**
-- `services/mock-esp/taxi/routes.py` — 5 REST endpoints
-- `services/mock-esp/taxi/schemas.py` — TemplateCreate, TemplateResponse, etc.
-**Verify:** `curl -H "X-API-Key: test" http://localhost:3002/taxi/api/v1/templates` returns seeded templates.
-
-### ~~13.6 Mock ESP — Seed Data (44 Templates)~~ DONE
-**What:** Pre-loaded realistic email templates with ESP-specific personalization tags — 12 Braze (Liquid), 12 SFMC (AMPscript), 10 Adobe (expressions), 10 Taxi (Taxi Syntax). Full HTML with DOCTYPE, dark mode, MSO conditionals, fluid hybrid 600px layout.
-**Implementation:**
-- `services/mock-esp/seed/braze.json` — 12 templates with `{{first_name}}`, `{% if %}`, `{{content_blocks.${}}}` etc.
-- `services/mock-esp/seed/sfmc.json` — 12 templates with `%%=v(@firstName)=%%`, `%%[SET ...]%%` etc.
-- `services/mock-esp/seed/adobe.json` — 10 templates with `<%= recipient.firstName %>` etc.
-- `services/mock-esp/seed/taxi.json` — 10 templates with `<!-- taxi:editable -->` regions
-**Verify:** After startup, each ESP table has its full seed data. Templates render correctly in a browser.
-
-### ~~13.7 Backend — ESP Sync Protocol, Model & Migration~~ DONE
-**What:** New `ESPSyncProvider` Protocol, `ESPConnection` model, Pydantic schemas, repository, and Alembic migration for the `esp_connections` table. Reuses Fernet encryption from design_sync and BOLA pattern from projects.
-**Implementation:**
-- `app/connectors/sync_protocol.py` — `ESPSyncProvider` Protocol (runtime_checkable) with 6 methods: validate_credentials, list/get/create/update/delete templates
-- `app/connectors/sync_schemas.py` — `ESPTemplate`, `ESPTemplateList`, `ESPConnectionCreate`, `ESPConnectionResponse`, `ESPImportRequest`, `ESPPushRequest`
-- `app/connectors/sync_models.py` — `ESPConnection(Base, TimestampMixin)` with encrypted_credentials, project FK, status tracking
-- `app/connectors/sync_repository.py` — `ESPSyncRepository` with BOLA-safe list (user-owned + accessible projects)
-- `app/connectors/sync_config.py` — `ESPSyncConfig` with per-ESP base URLs (default to mock-esp:3002)
-- `app/connectors/exceptions.py` — add `ESPConnectionNotFoundError`, `ESPSyncFailedError`, `InvalidESPCredentialsError`
-- `app/core/config.py` — add `esp_sync: ESPSyncConfig` to Settings
-- `alembic/versions/d8e9f0a1b2c3_add_esp_connections.py` — migration
-- `alembic/env.py` — import sync_models
-**Security:** Credentials encrypted at rest via Fernet (same PBKDF2 key as design_sync). Only `credentials_hint` (last 4 chars) exposed in responses. BOLA via `verify_project_access()`.
-**Verify:** `make db-migrate` applies cleanly. `ESPConnection` CRUD works in tests. Protocol type-checks with mypy.
-
-### ~~13.8 Backend — Per-ESP Sync Providers~~ DONE
-**What:** Four sync provider implementations — one per ESP — each using `httpx.AsyncClient` to call the mock (or real) ESP API. Implements `ESPSyncProvider` Protocol.
-**Implementation:**
-- `app/connectors/braze/sync_provider.py` — `BrazeSyncProvider` (Bearer auth, Content Blocks API)
-- `app/connectors/sfmc/sync_provider.py` — `SFMCSyncProvider` (OAuth token exchange + Asset API)
-- `app/connectors/adobe/sync_provider.py` — `AdobeSyncProvider` (IMS OAuth + Delivery API)
-- `app/connectors/taxi/sync_provider.py` — `TaxiSyncProvider` (X-API-Key + Templates API)
-- Provider registry dict in sync service (Step 13.9)
-**Security:** Credentials decrypted in-memory only for API calls, never logged. httpx timeout enforced (10-30s).
-**Verify:** Each provider conforms to `ESPSyncProvider` Protocol (isinstance check). Integration test with mock-esp server.
-
-### ~~13.9 Backend — Sync Service & Routes~~ DONE
-**What:** `ConnectorSyncService` orchestrating connections and template operations, plus REST API routes at `/api/v1/connectors/sync/`.
-**Implementation:**
-- `app/connectors/sync_service.py` — `ConnectorSyncService(db)` with:
-  - `create_connection()` — validate via provider, encrypt creds, save
-  - `list_connections()` — BOLA-scoped via accessible project IDs
-  - `delete_connection()` — BOLA check
-  - `list_remote_templates()` / `get_remote_template()` — decrypt creds, call provider
-  - `import_template()` — pull from ESP, create local template via `TemplateService`
-  - `push_template()` — read local template, push to ESP via provider
-- `app/connectors/sync_routes.py` — Router at `/api/v1/connectors/sync` with 8 endpoints:
-  - `POST /connections` (developer, 10/min) — create connection
-  - `GET /connections` (viewer, 30/min) — list connections
-  - `GET /connections/{id}` (viewer, 30/min) — get connection
-  - `DELETE /connections/{id}` (developer, 10/min) — delete connection
-  - `GET /connections/{id}/templates` (developer, 20/min) — list remote templates
-  - `GET /connections/{id}/templates/{template_id}` (developer, 20/min) — get remote template
-  - `POST /connections/{id}/import` (developer, 10/min) — import remote → local
-  - `POST /connections/{id}/push` (developer, 10/min) — push local → remote
-- `app/main.py` — register sync_routes router
-**Security:** All endpoints authenticated + role-checked. BOLA on every operation. Rate limited. Credentials never in responses.
-**Verify:** Full connection lifecycle: create → list → browse remote → import → push. BOLA denies cross-project access.
-
-### ~~13.10 Frontend — ESP Sync UI~~ DONE
-**What:** Frontend components for managing ESP connections, browsing remote templates, and import/push workflows. Two-tab connectors page with inline template browser.
-**Implementation:**
-- `cms/apps/web/src/types/esp-sync.ts` — TypeScript types matching backend schemas
-- `cms/apps/web/src/hooks/use-esp-sync.ts` — 8 SWR hooks for all sync endpoints
-- `cms/apps/web/src/components/connectors/esp-connection-card.tsx` — status badge, credentials hint, delete
-- `cms/apps/web/src/components/connectors/create-esp-connection-dialog.tsx` — dynamic provider-specific credential fields
-- `cms/apps/web/src/components/connectors/esp-template-browser.tsx` — template list with search, preview, import
-- `cms/apps/web/src/components/connectors/esp-template-preview-dialog.tsx` — sandboxed iframe preview + import
-- `cms/apps/web/src/components/connectors/push-to-esp-dialog.tsx` — push dialog for workspace toolbar
-- Modified `connectors/page.tsx` — 2-tab layout: Export History | ESP Sync with inline template browser
-- Modified `workspace-toolbar.tsx` — "Push to ESP" button (CloudUpload icon)
-- Modified `workspace/page.tsx` — PushToESPDialog mounted with state + handler
-- `cms/apps/web/messages/*.json` — 65 i18n keys in `espSync` namespace across 6 locales
-**Security:** All API calls via `authFetch`. No credentials displayed beyond hint. Sandboxed iframe preview (`sandbox=""`). Credential inputs use `type="password"` + `autocomplete="off"`.
-**Verify:** Create connection → browse remote templates → import one → verify in local templates. Push local template back → verify in mock ESP.
-
-### ~~13.11 Tests, SDK & Docker Integration~~ DONE
-**What:** Backend tests, SDK regeneration, Docker compose integration, and Makefile target.
-**Implementation:**
-- `app/connectors/tests/test_sync_service.py` — connection CRUD, encryption, template ops, BOLA, errors (26 tests)
-- `app/connectors/tests/test_sync_protocol.py` — Protocol conformance for all 4 providers + Braze provider unit tests (41 tests)
-- `app/connectors/tests/test_sync_routes.py` — route-level tests with auth/rate-limit for all 8 endpoints (26 tests)
-- `docker-compose.yml` — `mock-esp` service already added in 13.1 (port 3002, healthcheck, resource limits)
-- `Makefile` — `dev-mock-esp` target already added in 13.1
-- SDK regenerated (`make sdk-local`) — includes `EspConnectionCreate`, `EspConnectionResponse`, `EspTemplate`, `EspTemplateList` types
-**Verify:** 93 new tests passing. `make check-fe` green. SDK includes sync types. 111 total connectors tests.
-
----
-
-## Phase 14 — Blueprint Checkpoint & Recovery
-
-**What:** Add per-node checkpoint persistence to the blueprint engine so that failed or interrupted runs can resume from the last successful node instead of restarting from scratch. Inspired by LangGraph's checkpoint-based execution model (Deep Agents SDK).
-**Why:** Currently `BlueprintEngine.run()` holds all state in an in-memory `BlueprintRun` dataclass. If the Maizzle sidecar times out, a container restarts mid-pipeline, or the 11.22.3 multi-pass pipeline fails at Pass 2, the entire run restarts from the entry node — wasting tokens, time, and API budget. With checkpointing, a 5-node blueprint that fails at node 4 resumes from node 4 (saving ~80% of the rerun cost). This also enables long-running blueprints to survive process restarts and provides a full audit trail of per-node state for debugging.
-**Dependencies:** Phase 11.22 (blueprint engine, multi-pass pipeline, repair pipeline). Phase 0.3 (PostgreSQL, Redis).
-**Design principle:** Checkpoints are opt-in (disabled by default for backward compatibility). The engine serialises `BlueprintRun` state after each successful node completion. Resume loads the latest checkpoint and continues from the next node in the graph. Checkpoint storage uses PostgreSQL (durable) with Redis as optional write-ahead cache for latency.
-
-### 14.1 Checkpoint Storage Layer
-**What:** Create `app/ai/blueprints/checkpoint.py` — `CheckpointStore` protocol + PostgreSQL implementation. Each checkpoint captures the full `BlueprintRun` state (HTML, progress, iteration counts, handoff history, QA results, model usage) after a node completes successfully.
-**Why:** The storage layer must be durable (survive process restarts), fast (< 50ms write), and queryable (list runs, find latest checkpoint for a run). PostgreSQL provides durability; optional Redis write-ahead provides speed.
-**Implementation:**
-- Create `app/ai/blueprints/checkpoint.py`:
-  - `CheckpointData` frozen dataclass: `run_id: str`, `blueprint_name: str`, `node_name: str`, `node_index: int`, `status: str`, `html: str`, `progress: list[dict]`, `iteration_counts: dict[str, int]`, `qa_failures: list[str]`, `qa_failure_details: list[dict]`, `qa_passed: bool | None`, `model_usage: dict[str, int]`, `skipped_nodes: list[str]`, `routing_decisions: list[dict]`, `handoff_history: list[dict]`, `created_at: datetime`
-  - `CheckpointStore` Protocol (runtime_checkable): `save(data: CheckpointData) -> None`, `load_latest(run_id: str) -> CheckpointData | None`, `list_checkpoints(run_id: str) -> list[CheckpointData]`, `delete_run(run_id: str) -> int`
-  - `PostgresCheckpointStore(db: AsyncSession)` — implements protocol using `blueprint_checkpoints` table
-  - `serialize_run(run: BlueprintRun, node_name: str, node_index: int, blueprint_name: str) -> CheckpointData` — snapshot current run state
-  - `restore_run(data: CheckpointData) -> BlueprintRun` — reconstruct run state from checkpoint
-- Create `app/ai/blueprints/checkpoint_models.py`:
-  - `BlueprintCheckpoint(Base, TimestampMixin)` SQLAlchemy model: `id` (PK), `run_id` (indexed), `blueprint_name`, `node_name`, `node_index`, `state_json` (JSONB — serialised `CheckpointData`), `html_hash` (SHA-256 of HTML for deduplication), `created_at`
-  - Composite index on `(run_id, node_index)` for fast latest-checkpoint lookup
-  - `run_id` index for listing checkpoints per run
-- Alembic migration for `blueprint_checkpoints` table
-**Security:** `state_json` contains generated HTML and brief text (already in memory during execution). No credentials stored. JSONB column validated by Pydantic before write. RLS scoped by project (via join through future `project_id` column if needed).
-**Verify:** Unit tests: `serialize_run` → `restore_run` round-trips correctly. `save` + `load_latest` returns most recent checkpoint. `list_checkpoints` returns ordered history. `delete_run` removes all checkpoints for a run. `make test` passes. `make types` clean.
-- [x] ~~14.1 Checkpoint storage layer~~ DONE — `CheckpointStore` protocol + `PostgresCheckpointStore`, `CheckpointData` frozen dataclass, `serialize_run`/`restore_run` round-trip, `BlueprintCheckpoint` SQLAlchemy model with JSONB + composite index, Alembic migration, `checkpoints_enabled` config flag, 9 unit tests
-
-### 14.2 Engine Integration — Save Checkpoints After Each Node
-**What:** Update `BlueprintEngine.run()` to optionally save a checkpoint after each successful node completion. The checkpoint captures the full `BlueprintRun` state at that point, enabling resume from any node boundary.
-**Why:** This is the core integration — the engine must checkpoint without impacting the hot path performance. Checkpoint writes are fire-and-forget (logged warning on failure, never crash the run).
-**Implementation:**
-- Update `BlueprintEngine.__init__()` — add `checkpoint_store: CheckpointStore | None = None` parameter
-- In `BlueprintEngine.run()`, after updating run state and before resolving the next node:
-  ```python
-  # Checkpoint after successful node completion (fire-and-forget)
-  if self._checkpoint_store is not None and result.status in ("success", "skipped"):
-      try:
-          data = serialize_run(run, current_node_name, steps, self._definition.name)
-          await self._checkpoint_store.save(data)
-      except Exception:
-          logger.warning(
-              "blueprint.checkpoint_save_failed",
-              node=current_node_name,
-              run_id=run.run_id,
-              exc_info=True,
-          )
-  ```
-- Do NOT checkpoint on failed nodes (the retry loop handles those)
-- Do NOT checkpoint on `qa_gate` failures (they trigger recovery routing, not resume)
-- Checkpoint on `qa_gate` success (marks a clean resumption point)
-- Update `BlueprintService.run()` — instantiate `PostgresCheckpointStore(db)` if `settings.blueprint.checkpoints_enabled` is True, pass to engine
-- Add `checkpoints_enabled: bool = False` to `BlueprintConfig` in `app/core/config.py`
-**Security:** No new endpoints. Checkpoint writes use existing DB session. No user input in checkpoint data.
-**Verify:** Enable checkpoints, run a blueprint end-to-end. Verify: checkpoint row created for each successful node. Disable checkpoints — no rows created (backward compatible). Checkpoint write failure doesn't crash the run. `make test` passes.
-- [x] ~~14.2 Engine integration — save checkpoints~~ DONE — `checkpoint_store` param on `BlueprintEngine.__init__`, `_save_checkpoint()` fire-and-forget helper (exceptions logged, never crash pipeline), called after each node in `run()`, `BlueprintService` conditionally creates `PostgresCheckpointStore` when `settings.blueprint.checkpoints_enabled`, checkpoint count in response, 4 engine integration tests (13 total checkpoint tests)
-
-### 14.3 Engine Integration — Resume From Checkpoint
-**What:** Add `BlueprintEngine.resume(run_id: str)` method that loads the latest checkpoint and continues execution from the next node in the graph.
-**Why:** This is the payoff — a failed run can be retried without re-running completed nodes, saving tokens, API cost, and latency.
-**Implementation:**
-- Add `BlueprintEngine.resume(run_id: str, brief: str) -> BlueprintRun`:
-  - Load latest checkpoint via `self._checkpoint_store.load_latest(run_id)`
-  - If no checkpoint found, raise `BlueprintError("No checkpoint found for run {run_id}")`
-  - Call `restore_run(data)` to reconstruct `BlueprintRun` state
-  - Determine next node: use `_resolve_next_node()` with a synthetic success `NodeResult` from the checkpointed node, OR store `next_node_name` in `CheckpointData` (simpler)
-  - Update `CheckpointData` to include `next_node_name: str | None` — the node that should execute next
-  - Continue the `while` loop from `next_node_name` with restored state
-  - Log `blueprint.run_resumed` with run_id, checkpoint node, next node
-- Handle edge cases:
-  - If `next_node_name` is None (checkpoint was at terminal node), return the restored run as-is (status = completed)
-  - If the blueprint definition has changed since the checkpoint (node removed/renamed), raise `BlueprintError` with details
-  - Validate blueprint name matches between checkpoint and current definition
-- Add resume endpoint to routes:
-  - `POST /api/v1/blueprints/resume` — `BlueprintResumeRequest(run_id: str, brief: str)` → `BlueprintRunResponse`
-  - Auth: `admin`, `developer` roles. Rate limit: `3/minute` (same as run)
-- Add `BlueprintResumeRequest` schema to `schemas.py`
-- Update `BlueprintService` with `resume()` method
-**Security:** Resume loads only checkpoints from `blueprint_checkpoints` table (no user-controlled paths). `run_id` is a server-generated UUID hex — not guessable. Future: add `user_id` to checkpoint for BOLA (ensure user can only resume their own runs).
-**Verify:** Run a blueprint with checkpoints enabled. Kill the process mid-run (or mock a node failure). Call resume with the `run_id`. Verify: run continues from the last successful node, not from the start. Final output matches a full run. Progress log shows resumed nodes. `make test` passes.
-- [x] ~~14.3 Engine integration — resume from checkpoint~~ DONE
-
-### 14.4 Multi-Pass Pipeline Checkpoints
-**What:** Extend checkpoint support into the 11.22.3 scaffolder `MultiPassPipeline` (3-pass: layout → content → design). Each pass is a natural checkpoint boundary — if Pass 2 (content generation) fails, resume from Pass 2 with the Pass 1 result (template selection) intact.
-**Why:** The multi-pass pipeline is the most token-expensive component (~5,000 tokens total). Without per-pass checkpointing, a failure in Pass 3 (design tokens, ~500 tokens) wastes the Pass 1 + Pass 2 results (~3,500 tokens). With checkpointing, only the failed pass is re-run.
-**Implementation:**
-- Create `PipelineCheckpoint` dataclass in `app/ai/agents/scaffolder/pipeline.py`:
-  - `run_id: str`, `pass_number: int`, `pass_name: str`, `result: dict` (serialised pass output), `accumulated_plan: dict` (partial `EmailBuildPlan` so far)
-- Add `checkpoint_store: CheckpointStore | None` parameter to pipeline's execution method
-- After each successful pass, save a `PipelineCheckpoint`
-- On resume: load latest pipeline checkpoint for the run, skip completed passes, continue from the next pass with accumulated context
-- The blueprint-level checkpoint (14.2) stores which node was executing; the pipeline-level checkpoint stores which pass within that node was executing — two levels of granularity
-**Security:** Pipeline checkpoints contain pass-specific JSON (template selection, slot fills, design tokens). No credentials. Same JSONB storage as blueprint checkpoints.
-**Verify:** Run scaffolder with 3-pass pipeline. Mock Pass 2 failure. Resume → Pass 1 skipped (cached), Pass 2 re-runs, Pass 3 runs. Token usage shows savings (~60% reduction vs full rerun). `make test` passes.
-- [x] ~~14.4 Multi-pass pipeline checkpoints~~ DONE
-
-### 14.5 Checkpoint Cleanup & Observability
-**What:** Automatic cleanup of old checkpoints + observability integration for checkpoint-related events.
-**Why:** Without cleanup, the `blueprint_checkpoints` table grows unbounded. Without observability, operators can't monitor checkpoint health or debug resume failures.
-**Implementation:**
-- Create `app/ai/blueprints/checkpoint_cleanup.py`:
-  - `cleanup_old_checkpoints(db, max_age_days: int = 7) -> int` — delete checkpoints older than `max_age_days`, return count deleted
-  - `cleanup_completed_runs(db) -> int` — delete all checkpoints for runs with status `completed` (no resume needed)
-  - Wire into existing `DataPoller` pattern (same as `MemoryCompactionPoller`) — run daily
-- Add `BLUEPRINT__CHECKPOINT_RETENTION_DAYS` config (default 7)
-- Add structured logging events:
-  - `blueprint.checkpoint_saved` — node, run_id, size_bytes, duration_ms
-  - `blueprint.checkpoint_loaded` — run_id, node, age_seconds
-  - `blueprint.checkpoint_cleanup` — deleted_count, retained_count
-- Add `GET /api/v1/blueprints/runs/{run_id}/checkpoints` endpoint:
-  - Returns list of checkpoints with node names, timestamps, sizes
-  - Auth: `admin`, `developer` roles
-  - Useful for debugging failed runs
-- Update `BlueprintRunResponse` — add `checkpoint_count: int = 0` field (how many checkpoints exist for this run)
-- Update `BlueprintRunResponse` — add `resumed_from: str | None = None` field (node name if this was a resumed run)
-**Security:** Cleanup runs on the server, not user-triggered (except via explicit API call). Checkpoint listing is read-only. No new write paths.
-**Verify:** Create 10 blueprint runs with checkpoints. Run cleanup with `max_age_days=0`. Verify all deleted. Run cleanup with `max_age_days=30`. Verify none deleted. Completed run cleanup removes only completed runs. `make test` passes. `make types` clean.
-- [x] ~~14.5 Checkpoint cleanup & observability~~ DONE — `checkpoint_cleanup.py` with `cleanup_old_checkpoints()` + `cleanup_completed_runs()` + `CheckpointCleanupPoller` (24h DataPoller), structured logging with `size_bytes`/`duration_ms`/`age_seconds`, `GET /runs/{run_id}/checkpoints` endpoint (admin/developer auth + rate limiting), `CheckpointResponse`/`CheckpointListResponse` schemas, `checkpoint_count` + `resumed_from` fields on `BlueprintRunResponse`, poller registered in `main.py` startup/shutdown, 13 new tests
-
-### 14.6 Frontend — Run History & Resume UI
-**What:** Frontend components for viewing blueprint run history, inspecting checkpoints, and resuming failed runs.
-**Why:** Without UI, resume is API-only. Developers need to see which runs failed, where they failed, and trigger a resume with one click.
-**Implementation:**
-- Update `cms/apps/web/src/components/workspace/blueprint/runs-list.tsx`:
-  - Add "Resume" button on failed/interrupted runs (visible only when checkpoints exist)
-  - Show `resumed_from` badge on resumed runs
-- Create `cms/apps/web/src/components/workspace/blueprint/run-checkpoints.tsx`:
-  - Expandable checkpoint timeline within run detail view
-  - Shows node name, timestamp, status for each checkpoint
-  - Highlights the resume point
-- Add `useResumeBlueprint` hook in `cms/apps/web/src/hooks/`:
-  - Calls `POST /api/v1/blueprints/resume` with run_id
-  - Handles loading state, error display
-- Update `cms/apps/web/src/types/blueprint-runs.ts` — add `checkpoint_count`, `resumed_from` fields
-- i18n keys for resume UI text
-**Security:** Resume action requires `developer` role (same as run). UI shows no checkpoint content (only metadata).
-**Verify:** Run a blueprint that fails. See "Resume" button in UI. Click resume → run continues from checkpoint. Checkpoint timeline shows progression. Completed runs don't show resume button.
-- [x] ~~14.6 Frontend — run history & resume UI~~ DONE — Resume button on failed/interrupted runs in `runs-list.tsx`, `resumed_from` badge, `run-checkpoints.tsx` expandable checkpoint timeline, resume logic in `use-blueprint-run.ts` hook calling `POST /api/v1/blueprints/resume`, `checkpoint_count`/`resumed_from` fields on `BlueprintRunRecord` type, `run-detail-dialog.tsx` checkpoint section, i18n keys across 6 locales
-
-### 14.7 Tests & Documentation
-**What:** Comprehensive tests for the checkpoint system + architecture documentation.
-**Implementation:**
-- `app/ai/blueprints/tests/test_checkpoint.py`:
-  - `TestCheckpointStore` — CRUD operations, round-trip serialisation, edge cases (empty run, max checkpoints)
-  - `TestEngineCheckpoints` — engine saves checkpoints at correct points, skips on failure, fire-and-forget on error
-  - `TestEngineResume` — resume from checkpoint, validate state restoration, handle missing checkpoint, handle stale blueprint
-  - `TestPipelineCheckpoints` — multi-pass pipeline per-pass checkpointing and resume
-  - `TestCheckpointCleanup` — age-based cleanup, completed-run cleanup, retention config
-- `app/ai/blueprints/tests/test_resume_route.py`:
-  - Route-level tests: auth, rate limiting, valid resume, invalid run_id, no checkpoints
-- Update `docs/ARCHITECTURE.md` — add Checkpoint & Recovery section explaining the two-level checkpoint model (blueprint node + pipeline pass)
-- SDK regeneration (`make sdk`) for new endpoints
-**Verify:** `make test -k test_checkpoint` — all tests pass. `make test -k test_resume` — route tests pass. `make check` — full suite green. `make types` clean.
-- [x] ~~14.7 Tests & documentation~~ DONE — 47 checkpoint-specific tests across 4 test files (`test_checkpoint.py` 11 tests, `test_checkpoint_cleanup.py` 13 tests, `test_resume.py` 15 tests including 4 route tests, `test_pipeline_checkpoint.py` 8 tests), ADR-006 Checkpoint & Recovery in `docs/ARCHITECTURE.md`, SDK regenerated
-
----
-
-## Phase 15 — Agent Communication & Efficiency Refinements
-
-**What:** Five incremental improvements to existing agent orchestration, memory, routing, evaluation, and knowledge graph systems. No architectural changes — these refine what's already built to improve token efficiency, context quality, cost, agent quality, and reduce redundant work.
-**Dependencies:** Phase 11 (QA engine + agent deterministic architecture), Phase 14 (blueprint checkpoints), Phase 8-9 (knowledge graph).
-**Design principle:** Each task is independently shippable. No task blocks another. All changes are backward-compatible with existing APIs and schemas.
-
-### 15.1 Typed Handoff Schemas Between Blueprint Agents
-**What:** Replace raw HTML/text handoffs between DAG nodes with structured, typed contracts. When agent A passes output to agent B, the handoff includes metadata: components used, client constraints, confidence scores, and uncertainty flags.
-**Why:** Currently downstream agents re-infer context from raw output. The Scaffolder generates HTML but the Dark Mode agent doesn't know which components were used, what the Scaffolder was uncertain about, or what client constraints apply. This causes redundant LLM inference and occasional hallucinated assumptions.
-**Implementation:**
-- Create `app/ai/blueprints/handoff.py` — `AgentHandoff` Pydantic model with fields: `output: str`, `components_used: list[str]`, `constraints: dict[str, Any]`, `confidence: float`, `uncertainties: list[str]`, `metadata: dict[str, Any]`
-- Update `app/ai/blueprints/nodes/agent_node.py` — agent nodes produce `AgentHandoff` instead of raw string output
-- Update `app/ai/blueprints/engine.py` — engine passes `AgentHandoff` to downstream nodes, each agent's system prompt includes relevant handoff context
-- Each agent's SKILL.md updated to instruct structured JSON output that maps to `AgentHandoff` fields
-- Backward-compatible: if an agent returns raw string, engine wraps it in `AgentHandoff(output=raw, confidence=1.0)` with empty metadata
-**Security:** Handoff schemas are internal data structures. No user input reaches handoff construction directly.
-**Verify:** Run a multi-agent blueprint (Scaffolder → Dark Mode → QA). Verify Dark Mode agent receives component list and constraints from Scaffolder. Compare token usage before/after. `make test` passes. `make eval-run` shows no regression.
-- [x] ~~15.1 Typed handoff schemas between blueprint agents~~ DONE — `AgentHandoff` base + typed per-agent payloads (`ScaffolderHandoff`, `DarkModeHandoff`, etc.) in `app/ai/blueprints/handoff.py`, `uncertainties` field, `format_upstream_constraints()` prompt injection, engine wraps raw strings for backward compat, 8 agent nodes updated, `protocols.py` typed, 15 tests
-
-### 15.2 Phase-Aware Memory Decay Rates
-**What:** Replace the fixed 30-day half-life with project-phase-aware decay. Active projects retain memories longer; shipped/dormant projects decay faster. Add intent-aware compaction that merges functionally redundant memories even when textually different.
-**Why:** A fixed decay rate is a compromise. During active client development, 30 days is too aggressive — useful context fades before the project ships. After a project goes to maintenance, 30 days is too slow — stale assumptions linger. Additionally, compaction by text similarity misses semantic duplicates (e.g., "client X prefers blue CTAs" and "brand guide says primary action color is #0066CC" are functionally identical).
-**Implementation:**
-- Add `phase: Literal["active", "maintenance", "archived"]` field to `Project` model (default: `"active"`)
-- Update `app/memory/service.py` — `MemoryService.get_decay_rate()` returns half-life based on project phase: active=60 days, maintenance=14 days, archived=3 days
-- Update `app/memory/compaction.py` — add intent-aware merging step: before similarity check, run lightweight embedding comparison (cosine > 0.85) + LLM judge call (lightweight tier) to confirm functional equivalence before merging
-- Add `MEMORY__DECAY_ACTIVE_DAYS`, `MEMORY__DECAY_MAINTENANCE_DAYS`, `MEMORY__DECAY_ARCHIVED_DAYS` config options
-- Migration: add `phase` column to `projects` table, default `"active"`
-**Security:** Phase field is enum-validated. LLM judge call for compaction uses sanitized memory content (no PII). No user-facing API changes.
-**Verify:** Create project in each phase. Store memories. Run decay cycle. Verify active memories persist longer, archived memories decay faster. Run compaction on two semantically equivalent but textually different memories — verify they merge. `make test` passes.
-- [x] ~~15.2 Phase-aware memory decay rates~~ DONE — `phase` column on `Project` model (active/maintenance/archived), per-phase decay config (`decay_active_days=60`, `decay_maintenance_days=14`, `decay_archived_days=3`), `apply_phase_aware_decay()` SQL with project JOIN + global fallback, `judge_functional_equivalence()` lightweight LLM intent judge (failure-safe), `_run_intent_merging()` in service, `intent_similarity_threshold=0.85` config, `intent_merged_count` on `CompactionStats`, Alembic migration, 9 new tests (15 total memory service tests)
-
-### 15.3 Adaptive Model Tier Routing
-**What:** Track per-agent, per-client success rates and auto-downgrade model tier when confidence is high. If the Content agent consistently produces accepted output on lightweight models for client X, don't use standard tier just because the blueprint default says "standard."
-**Why:** The current tier mapping is static: task complexity → model. But complexity varies by client and agent. Simple brand voices need lightweight models; complex personalisation needs standard+. Static routing wastes budget on easy tasks and under-serves hard ones. This directly reduces the £60-150/month API spend.
-**Implementation:**
-- Create `app/ai/routing_history.py` — `RoutingHistory` model: `agent_id`, `client_org_id`, `tier_used`, `accepted: bool`, `created_at`
-- Update `app/ai/routing.py` — before selecting tier, query last 20 runs for this agent+client. If acceptance rate > 90% on a lower tier, downgrade. If acceptance rate < 70% on current tier, upgrade. Minimum 10 runs before adaptive routing kicks in.
-- Add `AI__ADAPTIVE_ROUTING_ENABLED=true` config flag (default off, opt-in)
-- Dashboard metric: show current effective tier per agent per client in admin panel
-- Fallback: if adaptive routing produces a rejection, auto-retry on one tier higher (single retry, not loop)
-**Security:** Routing history is internal analytics data. No PII. Rate decisions are server-side only; clients cannot influence tier selection.
-**Verify:** Seed 20 successful lightweight runs for Content agent + client X. Next run should auto-select lightweight instead of default standard. Seed 15 runs with 50% failure rate — should auto-upgrade. `AI__ADAPTIVE_ROUTING_ENABLED=false` bypasses all adaptive logic. `make test` passes.
-- [x] ~~15.3 Adaptive model tier routing~~ DONE — `RoutingHistoryEntry` model + `RoutingHistoryRepository` in `app/ai/routing_history.py`, `resolve_adaptive_tier()` with MIN_SAMPLES=10/DOWNGRADE_THRESHOLD=0.9/UPGRADE_THRESHOLD=0.7, `resolve_model_adaptive()` in `app/ai/routing.py`, `routing_history_repo` on `BlueprintEngine` with fire-and-forget recording after agentic nodes, LAYER 12 effective tier injection into node context, `BaseAgentService.process()` checks `request.effective_tier`, `AI__ADAPTIVE_ROUTING_ENABLED` config flag (default off), Alembic migration, 16 tests
-
-### 15.4 Auto-Surfacing Prompt Amendments from Eval Failures
-**What:** Close the eval feedback loop. When `make eval-judge` identifies recurring failure patterns, automatically generate suggested SKILL.md amendments and surface them for developer review — not auto-applied, but ready to merge.
-**Why:** The eval pipeline currently produces reports, but translating failure taxonomy into prompt improvements is a manual process. Recurring patterns (e.g., "Outlook Fixer misses VML backgrounds in 2-column layouts") sit in reports until someone reads them and manually edits SKILL.md. This delays quality improvements.
-**Implementation:**
-- Create `app/ai/evals/amendment_suggester.py` — after `make eval-judge`, group failures by agent + failure category. For clusters with 3+ occurrences, generate a suggested SKILL.md patch using the complex-tier LLM with the failure examples as context
-- Output: `evals/suggestions/{agent_name}_{date}.md` — each file contains: failure pattern description, example traces, suggested SKILL.md diff, confidence score
-- Add `make eval-suggest` command that runs the suggester after `make eval-judge`
-- Update `make eval-full` pipeline to include suggestion step
-- Suggestions are review-only: developer approves/rejects via PR or manual edit. No auto-application.
-**Security:** Suggestions are generated from eval traces (already sanitized). Output is local markdown files, not applied to production prompts.
-**Verify:** Run `make eval-full` on a dataset with known recurring failures. Verify suggestion files are generated with actionable SKILL.md diffs. Apply a suggestion manually, re-run eval — verify the failure cluster shrinks. `make test` passes.
-- [x] ~~15.4 Auto-surfacing prompt amendments from eval failures~~ DONE
-
-### 15.5 Bidirectional Knowledge Graph — Agent Pre-Query
-**What:** Before generating from scratch, agents query the Cognee knowledge graph for similar past outcomes. If a similar template was built for this client before, the agent starts from that baseline instead of zero.
-**Why:** The outcome poller already feeds agent results into the knowledge graph, but it's write-only. Agents never read from it before starting work. This means the Scaffolder rebuilds similar templates from scratch every time, even when a proven baseline exists. Bidirectional flow turns the knowledge graph from an archive into an active asset.
-**Implementation:**
-- Create `app/ai/agents/knowledge_prefetch.py` — `KnowledgePrefetch` service: takes agent type + task description + client_org_id, queries Cognee for top-3 similar past outcomes (by embedding similarity + client match)
-- Update `app/ai/agents/base.py` — `BaseAgent.execute()` calls `KnowledgePrefetch` before LLM invocation. If relevant prior work found, inject into system prompt as "Reference: a similar task was completed previously with this approach: {summary}"
-- Add `COGNEE__PREFETCH_ENABLED=true` config flag (default off when Cognee disabled)
-- Prefetch is advisory only: agents can ignore prior work if the task differs meaningfully
-- Cache prefetch results in Redis (5-min TTL) to avoid repeated graph queries within a blueprint run
-**Security:** Prefetch results are filtered by `client_org_id` — agents only see outcomes from the same organization. No cross-tenant data leakage. Redis cache key includes org_id.
-**Verify:** Run Scaffolder for client X with a brief similar to a past completed task. Verify prefetch returns the prior outcome. Verify the generated template shows influence from the baseline (not identical, but structurally similar). Run for client Y — verify no cross-tenant results. `COGNEE__PREFETCH_ENABLED=false` skips prefetch entirely. `make test` passes.
-- [x] ~~15.5 Bidirectional knowledge graph — agent pre-query~~ DONE
-
----
-
-## Phase 16 — Domain-Specific RAG Architecture
-
-**What:** Transform the knowledge RAG pipeline from generic document retrieval into a multi-path, domain-aware retrieval system with post-generation validation. Add a query router that classifies intent and routes to the optimal retrieval path (structured ontology lookup, component search, or existing hybrid search), code-aware HTML chunking, multi-representation indexing, and a CRAG validation loop that catches incompatible CSS before it ships.
-**Why:** The current RAG embeds everything as text chunks and runs cosine similarity — losing the relational precision of the ontology (335+ CSS properties × 25+ clients × support levels) and the structural integrity of HTML code. Email development is a constraint satisfaction problem (does property X work in client Y?), not a document retrieval problem. Developers asking "Does Gmail support flexbox?" get text chunks instead of a definitive structured answer. Code chunks split mid-tag, MSO conditionals get fragmented, and agents generate CSS that looks correct but breaks in major clients.
-**Dependencies:** Phase 8-9 (ontology + graph operational), Phase 11 (QA engine + agent deterministic architecture), Phase 4 (components table exists).
-**Design principle:** Each sub-phase is independently shippable behind feature flags. New `/search/routed` endpoint sits alongside existing `/search` — no breaking changes. All schema additions are nullable. Specialized retrieval paths fall back to existing `search()` when they return empty results.
-
-### 16.1 Query Router — Intent Classification & Entity Extraction
-**What:** Classify incoming knowledge queries by intent (compatibility, how_to, template, debug, general) and route to the optimal retrieval path. Two-tier classification: fast regex patterns (pre-compiled from ontology client/property IDs) with optional LLM fallback for ambiguous queries. Entity extraction resolves fuzzy names to ontology IDs ("Gmail" → `gmail_web`, "flexbox" → `display_flex`).
-**Why:** Currently all queries go through the same hybrid search pipeline. A factual question like "Does Gmail support flexbox?" gets the same treatment as "Email best practices?" — cosine similarity over text chunks. The router enables each query type to use its strongest retrieval path without changing the existing pipeline for queries that work well today.
-**Implementation:**
-- Create `app/knowledge/router.py` — `QueryIntent` enum (compatibility, how_to, template, debug, general), `ClassifiedQuery` dataclass (intent, original_query, extracted_entities, confidence), `QueryRouter` class with regex-first + optional LLM fallback classification
-- Entity extraction: build regex patterns from `OntologyRegistry.client_ids()` and `OntologyRegistry.property_ids()`. Reuse `_property_id_from_css()` from `app/knowledge/ontology/query.py` for CSS name → property_id resolution. Resolve fuzzy client names by matching against `EmailClient.name` and `EmailClient.family` fields
-- Modify `app/knowledge/service.py` (`KnowledgeService`) — add `async search_routed(request: SearchRequest) -> SearchResponse` that classifies via `QueryRouter`, then routes to `_search_compatibility()`, `_search_components()`, `_search_debug()`, or falls back to existing `search()`. Constructor unchanged (`__init__(self, db, graph_provider)`)
-- Modify `app/knowledge/schemas.py` — add `intent: str | None = None` to `SearchResponse` (alongside existing `results`, `query`, `total_candidates`, `reranked` fields)
-- Modify `app/knowledge/routes.py` — add `POST /api/v1/knowledge/search/routed` with `@limiter.limit("30/minute")` and auth dependency (matching existing `search_knowledge` endpoint pattern). Existing `/search` endpoint unchanged
-- Modify `app/ai/agents/knowledge/service.py` (`KnowledgeAgentService`) — update `process(request, rag_service)` to call `rag_service.search_routed(search_request)` instead of `rag_service.search(search_request)`. Note: `KnowledgeAgentService` is standalone (not a `BaseAgentService` subclass), receives `rag_service: RAGService` as a parameter
-- Config (`app/core/config.py` → `KnowledgeConfig`): `router_enabled: bool = False`, `router_llm_fallback: bool = False`, `router_llm_model: str = "gpt-4o-mini"`. When `router_enabled=False`, `search_routed()` delegates directly to `search()` (zero-cost bypass)
-**Security:** Router input is the `query` field from `SearchRequest` (Pydantic-validated, max 1000 chars). LLM fallback (when enabled) passes query through `sanitize_prompt()` from `app/ai/sanitize.py`. New endpoint uses same auth + rate limit pattern as existing `/search`. No new credential handling — LLM fallback uses provider registry (`get_registry().get_llm()`).
-**Verify:** Test 10+ cases per intent — compatibility queries ("Does Gmail support flexbox?", "flexbox support") classified correctly, how-to queries fall through to existing search, template queries route to component search, debug queries include ontology context. Entity extraction resolves common aliases ("Gmail" → `gmail_web`, "Outlook desktop" → `outlook_2019_win`). Confidence gating works (low-confidence → fallback to general). `search_routed()` with `router_enabled=False` produces identical results to `search()`. `make test` passes.
-- [x] ~~16.1 Query router — intent classification & entity extraction~~ DONE
-
-### 16.2 Structured Compatibility Queries via Ontology
-**What:** For `compatibility` intent, bypass vector search and query `OntologyRegistry` directly for exact, structured answers. Returns property support levels per client, known workarounds, and safe alternatives — formatted as backward-compatible `SearchResult` objects.
-**Why:** The ontology already has 335+ CSS properties × 25+ clients with support levels, fallbacks, and workarounds. Embedding this data as text chunks and doing cosine similarity loses relational precision. "Does Gmail support flexbox?" should return a definitive yes/no with fallback, not a text snippet that might mention it. The existing `lookup_support()` in `query.py` already does name+value → support level lookup but isn't wired into the RAG pipeline.
-**Dependencies:** 16.1 (router classifies query as `compatibility`)
-**Implementation:**
-- Create `app/knowledge/ontology/structured_query.py` — `CompatibilityAnswer` frozen dataclass (property: `CSSProperty`, client_results: `tuple[ClientSupportResult, ...]`, fallbacks: `tuple[Fallback, ...]`, summary: `str`), `ClientSupportResult` frozen dataclass (client: `EmailClient`, level: `SupportLevel`, notes: `str`, workaround: `str`), `OntologyQueryEngine` class (stateless, receives `OntologyRegistry` via `load_ontology()`):
-  - `query_property_support(property_id, client_ids: list[str] | None) -> CompatibilityAnswer` — uses `registry.get_support_entry()` for each client, collects into structured answer
-  - `query_client_limitations(client_id) -> list[CSSProperty]` — delegates to `registry.properties_unsupported_by(client_id)`
-  - `find_safe_alternatives(property_id, target_clients) -> list[Fallback]` — delegates to `registry.fallbacks_for(property_id)`, filters by `target_clients ∩ fallback.client_ids`
-  - `format_as_search_results(answer) -> list[SearchResult]` — renders structured answer as `SearchResult` objects (backward-compatible with `SearchResponse.results`)
-- Modify `app/knowledge/ontology/registry.py` — add two fuzzy lookup methods to `OntologyRegistry`:
-  - `find_property_by_name(css_name: str, value: str | None = None) -> CSSProperty | None` — tries exact `_property_id_from_css(css_name, value)` lookup first, falls back to case-insensitive scan of `property_name` field, then prefix match. Reuses ID construction logic from `app/knowledge/ontology/query.py._property_id_from_css()`
-  - `find_client_by_name(name: str) -> EmailClient | None` — case-insensitive match against `EmailClient.name`, then `EmailClient.family`, then substring match. Returns highest-market-share match on ambiguity
-- Modify `app/knowledge/service.py` — implement `async _search_compatibility(classified: ClassifiedQuery) -> SearchResponse` using `OntologyQueryEngine`. When structured answer found → format as `SearchResult` list with `intent="compatibility"`. When no ontology match (extracted entities don't resolve) → fall back to `search()` with note in first result
-**Security:** Ontology queries are read-only lookups against the in-memory `OntologyRegistry` (frozen dataclasses, `__slots__`, `lru_cache`). No SQL, no external API calls, no user input reaches any mutable state. Input entities already validated by router's regex + Pydantic.
-**Verify:** "Does Gmail support flexbox?" → structured answer: `display_flex` + `gmail_web` → `SupportLevel.FULL` (Gmail supports flexbox). "Does Outlook support flexbox?" → `SupportLevel.NONE` + table fallback from `fallbacks.yaml`. "What CSS properties don't work in Outlook?" → `properties_unsupported_by("outlook_2019_win")` list. Unknown property ("does Gmail support container queries?") → graceful fallback to vector search. `make test` passes.
-- [x] ~~16.2 Structured compatibility queries via ontology~~ DONE
-
-### 16.3 Code-Aware HTML Chunking
-**What:** Replace generic text splitter with HTML/CSS-aware chunker that respects structural boundaries. `<style>` blocks become standalone chunks, MSO conditional blocks (`<!--[if mso]>`) are preserved whole, and `<body>` is split by major structural elements (first-level `<table>` or `<div>`). Sections exceeding chunk_size are split at nested level (rows → cells). Parse failures fall back to existing `chunk_text()`.
-**Why:** The current `chunk_text()` in `app/knowledge/chunking.py` splits on character count (default 512 chars, 50-char overlap) using separator hierarchy (`\n\n`, `\n`, `. `, ` `). This fragments code mid-tag, splits MSO conditionals, and separates CSS properties from their selectors. Retrieval returns broken code that agents must guess how to reassemble.
-**Independent:** Can run in parallel with 16.1-16.2.
-**Implementation:**
-- Create `app/knowledge/chunking_html.py`:
-  - `HTMLChunkStrategy` enum (section, component, style_block, mso_conditional, table, text_fallback)
-  - `HTMLChunkResult` dataclass — extends pattern of existing `ChunkResult` from `chunking.py` (content, chunk_index, metadata dict) but adds `section_type: str | None` and `summary: str | None`. Must remain convertible to `DocumentChunk` model in `ingest_document()`
-  - `chunk_html(html: str, chunk_size: int = 1024, overlap: int = 100) -> list[HTMLChunkResult]` — main entry point:
-    1. Detect if content is HTML (check for `<!DOCTYPE`, `<html`, `<table` — reuse pattern from `app/qa_engine/checks/html_validation.py`)
-    2. Parse with `lxml.html.document_fromstring()` (already a dependency, used by rule engine in `app/qa_engine/rule_engine.py`)
-    3. Extract `<style>` blocks as standalone chunks (metadata: `section_type="style"`)
-    4. Extract MSO conditional blocks using regex patterns from `app/qa_engine/mso_parser.py` (`MSOConditionalPattern` constants) as standalone chunks (metadata: `section_type="mso_conditional"`)
-    5. Split `<body>` content by first-level structural elements (`<table>`, `<div>`, `<section>`)
-    6. If any section exceeds `chunk_size`, recurse into nested elements (table rows → cells)
-    7. Wrap in try/except → fall back to `chunk_text()` from `app/knowledge/chunking.py` on any parse error
-- Modify `app/knowledge/service.py` → `ingest_document()` — after text extraction via `processing.extract_text()`, detect HTML content type. If HTML and `html_chunking_enabled`: call `chunk_html()` instead of `chunk_text()`. Convert `HTMLChunkResult` objects to `DocumentChunk` model instances (same pattern as existing `ChunkResult` → `DocumentChunk` conversion, but populate new `section_type` and `summary` columns)
-- Modify `app/knowledge/models.py` → `DocumentChunk` — add two nullable columns:
-  - `section_type: Mapped[str | None] = mapped_column(String(50), nullable=True)` — chunk content type
-  - `summary: Mapped[str | None] = mapped_column(Text, nullable=True)` — human-readable summary (used by 16.6)
-- Config (`app/core/config.py` → `KnowledgeConfig`): `html_chunk_size: int = 1024`, `html_chunk_overlap: int = 100`, `html_chunking_enabled: bool = True`
-- Migration: `add_chunk_section_type_and_summary` — two nullable columns with no defaults (instant `ALTER TABLE` in PostgreSQL, no table rewrite)
-**Security:** Parser input is document content already extracted by `processing.extract_text()` and stored in the knowledge base. `lxml.html.document_fromstring()` is lenient by design (handles malformed HTML without raising). No external fetches. Feature flag `html_chunking_enabled` allows instant rollback.
-**Verify:** Valid HTML email → chunks respect `<style>` boundaries (never split mid-rule), MSO conditionals preserved whole (opener through closer), structural elements intact. `chunk_html()` on malformed HTML → falls back to `chunk_text()` (no exception). Plain-text markdown document → `chunk_text()` used (unchanged behavior). Re-ingest existing seed HTML doc → verify new chunk boundaries vs old. Migration up/down clean (`alembic upgrade head && alembic downgrade -1`). `make test` passes.
-- [x] ~~16.3 Code-aware HTML chunking~~ DONE
-
-### 16.4 Template/Component Retrieval
-**What:** For `template` intent, search the `Component` table for reusable code artifacts. Extends the existing `ComponentRepository.list(search=..., category=...)` pattern with compatibility-aware filtering via `ComponentQAResult.compatibility` JSON column. Results formatted as backward-compatible `SearchResult` objects alongside top-3 knowledge base results.
-**Why:** When an agent asks "Show me a CTA button component," the current pipeline searches text chunks of knowledge documents. But tested, QA'd components already exist in the `components` table with `ComponentVersion.html_source`, `ComponentVersion.css_source`, and per-client compatibility data via `ComponentQAResult`. This connects the retrieval pipeline to the existing component library.
-**Dependencies:** 16.1 (router classifies query as `template`)
-**Implementation:**
-- Create `app/knowledge/component_search.py` — `ComponentSearchService` class (receives `AsyncSession`):
-  - `async search_components(query: str, *, category: str | None = None, compatible_with: list[str] | None = None, limit: int = 5) -> list[SearchResult]` — orchestrates text search + optional compatibility filter + result formatting
-  - `format_as_search_results(components: list[Component], versions: dict[int, ComponentVersion]) -> list[SearchResult]` — converts component + latest version HTML to `SearchResult` objects (backward-compatible with `SearchResponse.results`)
-  - Optional embedding search: if `Component.search_embedding` is populated, combine text ILIKE score with pgvector cosine distance (same operator pattern as `KnowledgeRepository.search_vector()`)
-- Modify `app/knowledge/service.py` — implement `async _search_components(classified: ClassifiedQuery) -> SearchResponse`: instantiate `ComponentSearchService(self.db)`, call `search_components()`, merge with top-3 results from existing `search()` for supplementary knowledge context
-- Modify `app/components/repository.py` — add two methods:
-  - `async search_with_compatibility(search: str | None, category: str | None, compatible_with: list[str] | None, limit: int) -> list[tuple[Component, ComponentVersion]]` — extends existing `list()` pattern: ILIKE on `Component.name` using `escape_like()` from `app/shared/utils`, join to latest `ComponentVersion`, optional join to `ComponentQAResult` filtering where `compatibility->>client_id != 'none'` for each client in `compatible_with`. Uses parameterised queries throughout
-  - `async search_by_embedding(embedding: list[float], limit: int) -> list[tuple[Component, float]]` — pgvector cosine distance on `Component.search_embedding`, same pattern as `KnowledgeRepository.search_vector()` (`.cosine_distance().label("distance")`)
-- Modify `app/components/models.py` — add to `Component`:
-  - `search_embedding = mapped_column(Vector(1024), nullable=True)` — matches `DocumentChunk.embedding` dimension. Import `Vector` from `pgvector.sqlalchemy` (already imported in `app/knowledge/models.py`)
-- Migration: `add_component_search_embedding` — one nullable `vector(1024)` column on `components` table (no default, instant in PostgreSQL)
-**Security:** Text search uses `escape_like()` utility (prevents LIKE injection, same pattern as existing `ComponentRepository.list()`). All queries use SQLAlchemy ORM parameterisation. Components are not project-scoped (all authenticated users can search), matching existing `ComponentRepository` access pattern. No new credential handling. Soft-deleted components excluded via `deleted_at.is_(None)` filter (existing pattern).
-**Verify:** "CTA button" → returns matching components with `html_source` from latest `ComponentVersion`. Category filter ("cta") narrows results. Compatibility filter (`compatible_with=["outlook_2019_win"]`) excludes components with `"none"` support for that client. Empty component results → falls back to knowledge search only. Soft-deleted components excluded. Migration up/down clean. `make test` passes.
-- [x] ~~16.4 Template/component retrieval~~ DONE
-
-### 16.5 CRAG Validation Loop
-**What:** After HTML generation, validate against the compatibility matrix. If incompatible CSS is detected, retrieve fallbacks from ontology and re-generate. Implemented as a `CRAGMixin` class providing `_crag_validate_and_correct()`. Capped at 1 correction round to avoid loops.
-**Why:** Agents generate CSS that passes QA string checks but breaks in major clients. The ontology knows `display:flex` doesn't work in Outlook, but that knowledge isn't in the generation loop — only in post-hoc QA reports the user reads after the fact. The existing `CssSupportCheck` in QA engine calls `unsupported_css_in_html()` but only reports issues — it never corrects them. CRAG closes the loop: detect → retrieve fallback → correct → ship.
-**Independent:** Benefits from 16.2's `OntologyQueryEngine` but can use ontology directly via `load_ontology()`.
-**Implementation:**
-- Create `app/ai/agents/validation_loop.py` — `CRAGMixin` class (no `__init__`, stateless):
-  - `async _crag_validate_and_correct(html: str, system_prompt: str, model: str) -> tuple[str, list[str]]` — returns `(corrected_html, corrections_applied)`. Flow:
-    1. Call `unsupported_css_in_html(html)` from `app/knowledge/ontology/query.py` (same function used by `CssSupportCheck`)
-    2. Filter to issues with severity ≥ `crag_min_severity` (default: `"error"` = >20% market share affected)
-    3. If no qualifying issues → return `(html, [])` (no LLM call, zero cost)
-    4. For each issue: call `load_ontology().fallbacks_for(issue["property_id"])` to get `Fallback` objects with `code_example` and `technique`
-    5. Build correction prompt: list each issue + its fallback code example. Pass through `sanitize_prompt()` from `app/ai/sanitize.py`
-    6. Call LLM via `get_registry().get_llm(provider_name).complete()` (same pattern as `BaseAgentService.process()`)
-    7. Validate output: `validate_output()` → `extract_html()` → `sanitize_html_xss()` (same pipeline as `BaseAgentService._post_process()`)
-    8. Return `(corrected_html, [issue["property_id"] for issue in qualifying_issues])`
-  - Settings access via `get_settings()` singleton (same as all agents)
-- Modify `app/ai/agents/base.py` → `process()` — insert CRAG step between `_post_process()` (step 14) and QA gate (step 15): `if hasattr(self, '_crag_validate_and_correct') and settings.knowledge.crag_enabled: html, corrections = await self._crag_validate_and_correct(html, system_prompt, model)`. This hooks CRAG into all `BaseAgentService` subclasses that mix in `CRAGMixin`
-- Modify `app/ai/agents/scaffolder/service.py` — add `CRAGMixin` to class inheritance: `class ScaffolderService(CRAGMixin, BaseAgentService)`. For structured mode (`_process_structured()`), add explicit CRAG call after `TemplateAssembler.assemble()` and `sanitize_html_xss()` but before QA gate
-- Modify `app/ai/agents/outlook_fixer/service.py` — add `CRAGMixin` to class inheritance: `class OutlookFixerService(CRAGMixin, BaseAgentService)`. Integration note: OutlookFixerService overrides `process()` with its own MSO repair loop (programmatic `repair_mso_issues()` + LLM retry via `_retry_with_mso_errors()`). CRAG should run BEFORE the MSO repair loop — CSS compatibility first (semantic), then MSO syntax (structural). Insert `_crag_validate_and_correct()` call after `super().process()` returns but before `validate_mso_conditionals()` check
-- Config (`app/core/config.py` → `KnowledgeConfig`): `crag_enabled: bool = False`, `crag_max_rounds: int = 1`, `crag_min_severity: str = "error"` (matches severity levels from `_compute_severity()` in `query.py`: `"error"` >20% market share, `"warning"` >5%, `"info"` rest)
-**Security:** CRAG correction prompt contains only ontology data (CSS property names, fallback code examples from `fallbacks.yaml`) — no user PII. Prompt sanitised via `sanitize_prompt()`. Output sanitised via `sanitize_html_xss()` (nh3 allowlist). LLM call uses same `get_registry().get_llm()` with circuit breaker protection (`_ResilientLLMProvider`). Cost capped: `max_rounds=1` (single retry), `crag_min_severity="error"` (only fires on high-impact issues), global `crag_enabled=False` default. Output validated via `validate_output()` (null byte stripping, 100K char truncation).
-**Verify:** Generate HTML with `display:flex` via Scaffolder → CRAG detects (`unsupported_css_in_html` returns severity="error" for Outlook's ~8% market share × multiple Outlook clients), retrieves `flex_to_table` fallback with MSO conditional code example, re-generates with table layout. Generate compatible HTML (only properties with FULL support) → CRAG passes through unchanged (no LLM call, verified by checking no `complete()` call in logs). `crag_enabled=False` skips entirely (verified). OutlookFixerService: CRAG runs before MSO repair loop (verified by log ordering). ScaffolderService structured mode: CRAG runs after `TemplateAssembler.assemble()`. `make test` passes. `make eval-run` shows no regression (CRAG corrections counted in eval metrics).
-- [x] ~~16.5 CRAG validation loop~~ DONE
-
-### 16.6 Multi-Representation Indexing
-**What:** Store summaries for retrieval (better embedding match) but return full code for generation. Summaries are embedded instead of raw content; `search_vector()` returns the original full chunk. CSS blocks get deterministic summaries (list properties/values). HTML sections get deterministic summaries (tag structure, classes, styles). Optional LLM-generated summaries for complex content.
-**Why:** Raw HTML/CSS code embeds poorly — angle brackets, property names, and hex values don't capture semantic meaning. A summary like "responsive 2-column layout using media queries with mobile-first stacking" embeds much better for the query "how to make a responsive email layout" than the raw `<table>` markup it describes.
-**Dependencies:** 16.3 (uses `summary` column on `DocumentChunk`)
-**Implementation:**
-- Create `app/knowledge/summarizer.py` — `ChunkSummarizer` class (stateless):
-  - `summarize_css_block(css: str) -> str` — deterministic: parse CSS text, list selectors + property names + values (no LLM, pure string processing)
-  - `summarize_html_section(html: str) -> str` — deterministic: parse with `lxml.html`, list tag structure, class names, inline style properties (no LLM, uses `lxml.html.document_fromstring()`)
-  - `async summarize_batch(chunks: list[DocumentChunk]) -> list[str]` — for chunks where deterministic summary is insufficient (e.g., prose mixed with code): call LLM via `httpx.AsyncClient` (same pattern as `KnowledgeService._auto_tag_document()` — uses `settings.knowledge.multi_rep_model` and `settings.knowledge.multi_rep_api_base_url`). Best-effort: on failure, fall back to first 200 chars of content
-  - Route by `section_type`: `"style"` → `summarize_css_block()`, `"mso_conditional"` → deterministic MSO description, HTML sections → `summarize_html_section()`, `None`/text → `summarize_batch()` LLM call
-- Modify `app/knowledge/service.py` → `ingest_document()` — after chunking, if `settings.knowledge.multi_rep_enabled`:
-  1. Generate summaries via `ChunkSummarizer` (deterministic where possible, LLM for remainder)
-  2. Store summaries in `DocumentChunk.summary` column
-  3. Embed summaries (not raw content) via module-level `_get_embedding()` provider
-  4. Store embeddings in `DocumentChunk.embedding` column as usual
-  5. `DocumentChunk.content` retains full original code (unchanged)
-- `app/knowledge/repository.py` → `search_vector()` — NO CHANGE needed. Already returns `chunk.content` (full code) alongside the distance score. The embedding was built from summary, but the returned content is always the full chunk
-- Config (`app/core/config.py` → `KnowledgeConfig`): `multi_rep_enabled: bool = False`, `multi_rep_model: str = "gpt-4o-mini"`, `multi_rep_api_base_url: str = "https://api.openai.com/v1"`, `multi_rep_api_key: str = ""` (follows same pattern as existing `auto_tag_*` config fields)
-- Migration: None (uses 16.3's `summary` column)
-**Security:** Summaries are generated from document content already in the knowledge base. LLM summarization uses `httpx.AsyncClient` with the same pattern as `_auto_tag_document()` (API key from config, timeout, best-effort error handling). No user PII in summaries (document content is knowledge base articles, not user data). `multi_rep_api_key` stored in config alongside existing `auto_tag_api_key` — same security posture.
-**Verify:** Ingest HTML document with `multi_rep_enabled=True` → chunks have deterministic summaries (CSS blocks list properties, HTML sections list structure). Search "responsive layout" → returns full `<table>` markup (not summary), but ranking improved because summary embedding matches better. Ingest plain-text document → LLM-generated summaries for prose chunks. `multi_rep_enabled=False` → existing behavior unchanged (content embedded directly, no summaries). Chunks without summaries still searchable (embedding from content as before). `make test` passes.
-- [x] ~~16.6 Multi-representation indexing~~ DONE
+| Metric | Current (Phase 16) | Target (Phase 21) | Target (Phase 25) |
+|--------|--------------------|--------------------|---------------------|
+| Campaign build time | 1-2 days | Under 4 hours | Under 1 hour |
+| Cross-client rendering defects | Caught at QA gate | Auto-fixed by VLM agent | Near-zero (property-tested) |
+| Component reuse rate | 30-40% | 60%+ | 80%+ (plugin ecosystem) |
+| AI agent count | 9 agents | 10 (Visual QA) | 12+ (plugin agents) |
+| QA checks | 11 automated | 14 (resilience, deliverability, BIMI) | 16+ (plugin checks) |
+| Ontology freshness | Manual seed | Auto-synced daily | Real-time change detection |
+| Outlook migration readiness | Manual analysis | Automated advisor | Audience-aware phased plans |
+| Gmail AI optimization | Not addressed | Summary prediction + schema.org | Full AI inbox optimization |
+| Cloud AI API spend | Under £600/month | Under £600/month (cost governor) | Under £600/month (budget caps) |
+| Email CSS output size | Juice baseline | 15-25% smaller (CSS compiler) | Optimal per-client bundles |
+| Knowledge base entries | 500+ | 1000+ (auto-synced) | Self-growing (chaos findings) |

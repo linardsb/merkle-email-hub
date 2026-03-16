@@ -9,7 +9,7 @@ from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.rendering.models import RenderingScreenshot, RenderingTest
+from app.rendering.models import RenderingScreenshot, RenderingTest, ScreenshotBaseline
 
 
 def _build_filters(
@@ -185,3 +185,80 @@ class RenderingRepository:
             .options(selectinload(RenderingTest.screenshots))
         )
         return result.scalar_one_or_none()
+
+
+class ScreenshotBaselineRepository:
+    """Database operations for screenshot baselines."""
+
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def get_by_entity(
+        self, entity_type: str, entity_id: int, client_name: str
+    ) -> ScreenshotBaseline | None:
+        result = await self.db.execute(
+            select(ScreenshotBaseline).where(
+                ScreenshotBaseline.entity_type == entity_type,
+                ScreenshotBaseline.entity_id == entity_id,
+                ScreenshotBaseline.client_name == client_name,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_by_entity(
+        self, entity_type: str, entity_id: int
+    ) -> Sequence[ScreenshotBaseline]:
+        result = await self.db.execute(
+            select(ScreenshotBaseline)
+            .where(
+                ScreenshotBaseline.entity_type == entity_type,
+                ScreenshotBaseline.entity_id == entity_id,
+            )
+            .order_by(ScreenshotBaseline.client_name)
+        )
+        return list(result.scalars().all())
+
+    async def upsert(
+        self,
+        *,
+        entity_type: str,
+        entity_id: int,
+        client_name: str,
+        image_data: bytes,
+        image_hash: str,
+        created_by_id: int,
+    ) -> ScreenshotBaseline:
+        existing = await self.get_by_entity(entity_type, entity_id, client_name)
+        if existing:
+            existing.image_data = image_data
+            existing.image_hash = image_hash
+            await self.db.commit()
+            await self.db.refresh(existing)
+            return existing
+        baseline = ScreenshotBaseline(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            client_name=client_name,
+            image_data=image_data,
+            image_hash=image_hash,
+            created_by_id=created_by_id,
+        )
+        self.db.add(baseline)
+        await self.db.commit()
+        await self.db.refresh(baseline)
+        return baseline
+
+    async def delete_by_entity(self, entity_type: str, entity_id: int) -> int:
+        """Delete all baselines for an entity. Returns count deleted."""
+        from sqlalchemy import delete
+
+        result = await self.db.execute(
+            delete(ScreenshotBaseline).where(
+                ScreenshotBaseline.entity_type == entity_type,
+                ScreenshotBaseline.entity_id == entity_id,
+            )
+        )
+        count: int = result.rowcount  # type: ignore[attr-defined]
+        if count:
+            await self.db.commit()
+        return count

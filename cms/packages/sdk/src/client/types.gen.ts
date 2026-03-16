@@ -67,6 +67,39 @@ export type AuditResponse = {
 };
 
 /**
+ * List of baselines for an entity.
+ */
+export type BaselineListResponse = {
+    entity_type: string;
+    entity_id: number;
+    baselines: Array<BaselineResponse>;
+};
+
+/**
+ * Response for a stored baseline.
+ */
+export type BaselineResponse = {
+    id: number;
+    entity_type: string;
+    entity_id: number;
+    client_name: string;
+    image_hash: string;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Request to update/create a baseline.
+ */
+export type BaselineUpdateRequest = {
+    client_name: string;
+    /**
+     * Base64-encoded PNG image
+     */
+    image_base64: string;
+};
+
+/**
  * Progress entry for a single node execution within a blueprint run.
  */
 export type BlueprintProgress = {
@@ -76,6 +109,24 @@ export type BlueprintProgress = {
     iteration: number;
     summary: string;
     duration_ms: number;
+};
+
+/**
+ * Request to resume a failed/interrupted blueprint run from its last checkpoint.
+ */
+export type BlueprintResumeRequest = {
+    /**
+     * ID of the run to resume
+     */
+    run_id: string;
+    /**
+     * Blueprint name (must match checkpoint)
+     */
+    blueprint_name: string;
+    /**
+     * Campaign brief (re-supplied for remaining nodes)
+     */
+    brief: string;
 };
 
 /**
@@ -104,6 +155,10 @@ export type BlueprintRunRequest = {
      * Target audience persona IDs — agents will adapt output for these clients
      */
     persona_ids?: Array<number>;
+    /**
+     * Existing template to save output as a new version
+     */
+    template_id?: number | null;
 };
 
 /**
@@ -114,8 +169,10 @@ export type BlueprintRunResponse = {
     blueprint_name: string;
     status: string;
     html: string;
+    brief_text?: string;
     progress: Array<BlueprintProgress>;
     qa_passed?: boolean | null;
+    template_version_id?: number | null;
     model_usage?: {
         [key: string]: number;
     };
@@ -127,35 +184,6 @@ export type BlueprintRunResponse = {
     judge_verdict?: InlineJudgeVerdictResponse | null;
     checkpoint_count?: number;
     resumed_from?: string | null;
-};
-
-export type BlueprintResumeRequest = {
-    /**
-     * ID of the run to resume
-     */
-    run_id: string;
-    /**
-     * Blueprint name (must match checkpoint)
-     */
-    blueprint_name: string;
-    /**
-     * Campaign brief (re-supplied for remaining nodes)
-     */
-    brief: string;
-};
-
-export type CheckpointResponse = {
-    node_name: string;
-    node_index: number;
-    status: string;
-    html_hash: string;
-    created_at: string;
-};
-
-export type CheckpointListResponse = {
-    run_id: string;
-    checkpoints: Array<CheckpointResponse>;
-    count: number;
 };
 
 export type BodyUploadDocumentApiV1KnowledgeDocumentsPost = {
@@ -269,6 +297,26 @@ export type ChatCompletionRequest = {
 export type ChatMessage = {
     role: 'user' | 'assistant' | 'system';
     content: string;
+};
+
+/**
+ * List of checkpoints for a blueprint run.
+ */
+export type CheckpointListResponse = {
+    run_id: string;
+    checkpoints: Array<CheckpointResponse>;
+    count: number;
+};
+
+/**
+ * A single checkpoint entry for a blueprint run.
+ */
+export type CheckpointResponse = {
+    node_name: string;
+    node_index: number;
+    status: string;
+    html_hash: string;
+    created_at: string;
 };
 
 /**
@@ -674,6 +722,7 @@ export type DesignTypographyResponse = {
 export type DocumentChunkResponse = {
     chunk_index: number;
     content: string;
+    section_type?: string | null;
 };
 
 /**
@@ -892,20 +941,25 @@ export type ExportRequest = {
     /**
      * Email build ID to export
      */
-    build_id: number;
+    build_id?: number | null;
+    /**
+     * Template version ID to export (alternative to build_id)
+     */
+    template_version_id?: number | null;
     connector_type?: string;
     /**
      * Name for the ESP content block
      */
-    content_block_name: string;
+    content_block_name?: string;
 };
 
 /**
  * Response from an export operation.
  */
 export type ExportResponse = {
-    id: number;
-    build_id: number;
+    id?: number | null;
+    build_id?: number | null;
+    template_version_id?: number | null;
     connector_type: string;
     status: string;
     external_id?: string | null;
@@ -1617,6 +1671,16 @@ export type RefreshResponse = {
 };
 
 /**
+ * A rectangular region of pixel changes.
+ */
+export type Region = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+/**
  * Request to compare two rendering test results.
  */
 export type RenderingComparisonRequest = {
@@ -1735,6 +1799,33 @@ export type ScaffolderRequest = {
 };
 
 /**
+ * Single client screenshot result with base64 image.
+ */
+export type ScreenshotClientResult = {
+    client_name: string;
+    image_base64: string;
+    viewport: string;
+    browser: string;
+};
+
+/**
+ * Request for local email screenshot rendering.
+ */
+export type ScreenshotRequest = {
+    html: string;
+    clients?: Array<string>;
+};
+
+/**
+ * Response with rendered screenshots.
+ */
+export type ScreenshotResponse = {
+    screenshots: Array<ScreenshotClientResult>;
+    clients_rendered: number;
+    clients_failed?: number;
+};
+
+/**
  * A single client rendering screenshot.
  */
 export type ScreenshotResult = {
@@ -1775,6 +1866,7 @@ export type SearchResponse = {
     query: string;
     total_candidates: number;
     reranked: boolean;
+    intent?: string | null;
 };
 
 /**
@@ -1987,6 +2079,36 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * Request for visual diff between two images.
+ */
+export type VisualDiffRequest = {
+    /**
+     * Base64-encoded PNG baseline
+     */
+    baseline_image: string;
+    /**
+     * Base64-encoded PNG current
+     */
+    current_image: string;
+    /**
+     * Override default threshold
+     */
+    threshold?: number | null;
+};
+
+/**
+ * Result of visual diff comparison.
+ */
+export type VisualDiffResponse = {
+    identical: boolean;
+    diff_percentage: number;
+    diff_image?: string | null;
+    pixel_count?: number;
+    changed_regions?: Array<Region>;
+    threshold_used: number;
 };
 
 export type AppComponentsSchemasVersionCreate = {
@@ -2883,6 +3005,31 @@ export type SearchKnowledgeApiV1KnowledgeSearchPostResponses = {
 };
 
 export type SearchKnowledgeApiV1KnowledgeSearchPostResponse = SearchKnowledgeApiV1KnowledgeSearchPostResponses[keyof SearchKnowledgeApiV1KnowledgeSearchPostResponses];
+
+export type SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostData = {
+    body: SearchRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/knowledge/search/routed';
+};
+
+export type SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostError = SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostErrors[keyof SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostErrors];
+
+export type SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SearchResponse;
+};
+
+export type SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostResponse = SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostResponses[keyof SearchKnowledgeRoutedApiV1KnowledgeSearchRoutedPostResponses];
 
 export type SearchGraphApiV1KnowledgeGraphSearchPostData = {
     body: GraphSearchRequest;
@@ -5212,6 +5359,112 @@ export type CompareRenderingTestsApiV1RenderingComparePostResponses = {
 
 export type CompareRenderingTestsApiV1RenderingComparePostResponse = CompareRenderingTestsApiV1RenderingComparePostResponses[keyof CompareRenderingTestsApiV1RenderingComparePostResponses];
 
+export type RenderScreenshotsApiV1RenderingScreenshotsPostData = {
+    body: ScreenshotRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/screenshots';
+};
+
+export type RenderScreenshotsApiV1RenderingScreenshotsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RenderScreenshotsApiV1RenderingScreenshotsPostError = RenderScreenshotsApiV1RenderingScreenshotsPostErrors[keyof RenderScreenshotsApiV1RenderingScreenshotsPostErrors];
+
+export type RenderScreenshotsApiV1RenderingScreenshotsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScreenshotResponse;
+};
+
+export type RenderScreenshotsApiV1RenderingScreenshotsPostResponse = RenderScreenshotsApiV1RenderingScreenshotsPostResponses[keyof RenderScreenshotsApiV1RenderingScreenshotsPostResponses];
+
+export type VisualDiffApiV1RenderingVisualDiffPostData = {
+    body: VisualDiffRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/visual-diff';
+};
+
+export type VisualDiffApiV1RenderingVisualDiffPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type VisualDiffApiV1RenderingVisualDiffPostError = VisualDiffApiV1RenderingVisualDiffPostErrors[keyof VisualDiffApiV1RenderingVisualDiffPostErrors];
+
+export type VisualDiffApiV1RenderingVisualDiffPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: VisualDiffResponse;
+};
+
+export type VisualDiffApiV1RenderingVisualDiffPostResponse = VisualDiffApiV1RenderingVisualDiffPostResponses[keyof VisualDiffApiV1RenderingVisualDiffPostResponses];
+
+export type ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetData = {
+    body?: never;
+    path: {
+        entity_type: string;
+        entity_id: number;
+    };
+    query?: never;
+    url: '/api/v1/rendering/baselines/{entity_type}/{entity_id}';
+};
+
+export type ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetError = ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetErrors[keyof ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetErrors];
+
+export type ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BaselineListResponse;
+};
+
+export type ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetResponse = ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetResponses[keyof ListBaselinesApiV1RenderingBaselinesEntityTypeEntityIdGetResponses];
+
+export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutData = {
+    body: BaselineUpdateRequest;
+    path: {
+        entity_type: string;
+        entity_id: number;
+    };
+    query?: never;
+    url: '/api/v1/rendering/baselines/{entity_type}/{entity_id}';
+};
+
+export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutError = UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutErrors[keyof UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutErrors];
+
+export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: BaselineResponse;
+};
+
+export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponse = UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponses[keyof UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponses];
+
 export type StoreMemoryMemoryPostData = {
     body: MemoryCreate;
     path?: never;
@@ -5435,6 +5688,31 @@ export type RunBlueprintApiV1BlueprintsRunPostResponses = {
 
 export type RunBlueprintApiV1BlueprintsRunPostResponse = RunBlueprintApiV1BlueprintsRunPostResponses[keyof RunBlueprintApiV1BlueprintsRunPostResponses];
 
+export type ResumeBlueprintApiV1BlueprintsResumePostData = {
+    body: BlueprintResumeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/blueprints/resume';
+};
+
+export type ResumeBlueprintApiV1BlueprintsResumePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ResumeBlueprintApiV1BlueprintsResumePostError = ResumeBlueprintApiV1BlueprintsResumePostErrors[keyof ResumeBlueprintApiV1BlueprintsResumePostErrors];
+
+export type ResumeBlueprintApiV1BlueprintsResumePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: BlueprintRunResponse;
+};
+
+export type ResumeBlueprintApiV1BlueprintsResumePostResponse = ResumeBlueprintApiV1BlueprintsResumePostResponses[keyof ResumeBlueprintApiV1BlueprintsResumePostResponses];
+
 export type GetFailurePatternStatsApiV1BlueprintsFailurePatternsStatsGetData = {
     body?: never;
     path?: never;
@@ -5496,6 +5774,33 @@ export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponses = {
 };
 
 export type ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponse = ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponses[keyof ListFailurePatternsApiV1BlueprintsFailurePatternsGetResponses];
+
+export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/blueprints/runs/{run_id}/checkpoints';
+};
+
+export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetError = ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetErrors[keyof ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetErrors];
+
+export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CheckpointListResponse;
+};
+
+export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponse = ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponses[keyof ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponses];
 
 export type ListAgentSkillsApiV1AgentsSkillsGetData = {
     body?: never;

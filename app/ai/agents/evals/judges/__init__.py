@@ -15,6 +15,7 @@ from app.ai.agents.evals.judges.schemas import (
     JudgeInput,
     JudgeVerdict,
 )
+from app.ai.agents.evals.judges.visual_qa import VisualQAJudge
 
 JUDGE_REGISTRY: dict[
     str,
@@ -28,6 +29,7 @@ JUDGE_REGISTRY: dict[
         | CodeReviewerJudge
         | KnowledgeJudge
         | InnovationJudge
+        | VisualQAJudge
     ],
 ] = {
     "scaffolder": ScaffolderJudge,
@@ -39,6 +41,7 @@ JUDGE_REGISTRY: dict[
     "code_reviewer": CodeReviewerJudge,
     "knowledge": KnowledgeJudge,
     "innovation": InnovationJudge,
+    "visual_qa": VisualQAJudge,
 }
 
 __all__ = [
@@ -56,4 +59,5 @@ __all__ = [
     "OutlookFixerJudge",
     "PersonalisationJudge",
     "ScaffolderJudge",
+    "VisualQAJudge",
 ]

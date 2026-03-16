@@ -87,6 +87,19 @@ class InnovationHandoff:
     client_compat: tuple[str, ...] = ()  # compatible client IDs
 
 
+@dataclass(frozen=True)
+class VisualQAHandoff:
+    """Structured output metadata from the Visual QA agent."""
+
+    defects_found: int = 0
+    overall_score: float = 1.0
+    critical_clients: tuple[str, ...] = ()
+    auto_fixable: bool = False
+    screenshotted_clients: tuple[str, ...] = ()
+    corrections_applied: tuple[str, ...] = ()  # Phase 17.4: auto-fix corrections
+    pre_fix_score: float | None = None  # Phase 17.4: score before auto-fix
+
+
 # Union type for typed dispatch
 HandoffPayload = (
     ScaffolderHandoff
@@ -97,6 +110,7 @@ HandoffPayload = (
     | CodeReviewHandoff
     | KnowledgeHandoff
     | InnovationHandoff
+    | VisualQAHandoff
 )
 
 # Registry for runtime type lookup by agent name
@@ -109,6 +123,7 @@ HANDOFF_PAYLOAD_TYPES: dict[str, type[HandoffPayload]] = {
     "code_reviewer": CodeReviewHandoff,
     "knowledge": KnowledgeHandoff,
     "innovation": InnovationHandoff,
+    "visual_qa": VisualQAHandoff,
 }
 
 
@@ -160,6 +175,16 @@ def format_upstream_constraints(handoff: object) -> str:
     elif isinstance(payload, InnovationHandoff):
         lines.append(f"- Technique: {payload.technique}")
         lines.append(f"- Feasibility: {payload.feasibility_score:.2f}")
+    elif isinstance(payload, VisualQAHandoff):
+        lines.append(f"- Defects found: {payload.defects_found}")
+        lines.append(f"- Rendering score: {payload.overall_score:.2f}")
+        if payload.critical_clients:
+            lines.append(f"- Critical clients: {', '.join(payload.critical_clients)}")
+        lines.append(f"- Auto-fixable: {payload.auto_fixable}")
+        if payload.corrections_applied:
+            lines.append(f"- Auto-fixes applied: {', '.join(payload.corrections_applied)}")
+            if payload.pre_fix_score is not None:
+                lines.append(f"- Pre-fix score: {payload.pre_fix_score:.2f}")
 
     # Add uncertainties from parent handoff
     if handoff.uncertainties:

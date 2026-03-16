@@ -1,6 +1,6 @@
 """Database models for rendering tests."""
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -48,3 +48,22 @@ class RenderingScreenshot(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
 
     rendering_test: Mapped["RenderingTest"] = relationship(back_populates="screenshots")
+
+
+class ScreenshotBaseline(Base, TimestampMixin):
+    """Stored baseline screenshot for visual regression comparison."""
+
+    __tablename__ = "screenshot_baselines"
+    __table_args__ = (
+        UniqueConstraint(
+            "entity_type", "entity_id", "client_name", name="uq_baseline_entity_client"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    entity_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    client_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    image_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    image_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)

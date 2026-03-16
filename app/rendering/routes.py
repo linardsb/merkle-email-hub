@@ -10,10 +10,17 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.rendering.schemas import (
+    BaselineListResponse,
+    BaselineResponse,
+    BaselineUpdateRequest,
     RenderingComparisonRequest,
     RenderingComparisonResponse,
     RenderingTestRequest,
     RenderingTestResponse,
+    ScreenshotRequest,
+    ScreenshotResponse,
+    VisualDiffRequest,
+    VisualDiffResponse,
 )
 from app.rendering.service import RenderingService
 from app.shared.schemas import PaginatedResponse, PaginationParams
@@ -83,3 +90,58 @@ async def compare_rendering_tests(
     """Compare two rendering tests for visual regression detection."""
     _ = request
     return await service.compare_tests(data, current_user)
+
+
+@router.post("/screenshots", response_model=ScreenshotResponse)
+@limiter.limit("5/minute")
+async def render_screenshots(
+    request: Request,
+    data: ScreenshotRequest,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> ScreenshotResponse:
+    """Render email HTML across simulated email client viewports."""
+    _ = request
+    return await service.render_screenshots(data)
+
+
+@router.post("/visual-diff", response_model=VisualDiffResponse)
+@limiter.limit("10/minute")
+async def visual_diff(
+    request: Request,
+    data: VisualDiffRequest,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> VisualDiffResponse:
+    """Compare two images for visual differences using ODiff."""
+    _ = request
+    return await service.visual_diff(data)
+
+
+@router.get("/baselines/{entity_type}/{entity_id}", response_model=BaselineListResponse)
+@limiter.limit("30/minute")
+async def list_baselines(
+    request: Request,
+    entity_type: str,
+    entity_id: int,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> BaselineListResponse:
+    """List all stored baselines for a given entity."""
+    _ = request
+    return await service.list_baselines(entity_type, entity_id)
+
+
+@router.put("/baselines/{entity_type}/{entity_id}", response_model=BaselineResponse)
+@limiter.limit("10/minute")
+async def update_baseline(
+    request: Request,
+    entity_type: str,
+    entity_id: int,
+    data: BaselineUpdateRequest,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> BaselineResponse:
+    """Create or update a baseline screenshot for an entity + client combination."""
+    _ = request
+    return await service.update_baseline(entity_type, entity_id, data, current_user.id)

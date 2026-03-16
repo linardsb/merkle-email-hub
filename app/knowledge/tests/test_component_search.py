@@ -258,7 +258,9 @@ class TestSearchComponentsRouting:
                 ),
             ),
         ):
-            request = SearchRequest(query="button for Outlook", domain=None, language=None, limit=10)
+            request = SearchRequest(
+                query="button for Outlook", domain=None, language=None, limit=10
+            )
             await service._search_components(request, classified)  # type: ignore[arg-type]
 
         mock_search.assert_called_once()

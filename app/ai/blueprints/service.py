@@ -340,7 +340,12 @@ class BlueprintService:
                 brief_name = bp_run.brief_text[:80] if bp_run.brief_text else "Blueprint output"
                 template = await repo.create(
                     project_id,
-                    TemplateCreate(name=brief_name, html_source=bp_run.html, subject_line=None, preheader_text=None),
+                    TemplateCreate(
+                        name=brief_name,
+                        html_source=bp_run.html,
+                        subject_line=None,
+                        preheader_text=None,
+                    ),
                     user_id,
                 )
                 # create() auto-creates v1 — get its ID

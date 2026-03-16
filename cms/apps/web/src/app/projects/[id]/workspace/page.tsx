@@ -542,6 +542,9 @@ export default function WorkspacePage() {
             result={qaResultData}
             onClose={() => setQaPanelOpen(false)}
             onOverrideSuccess={handleQAOverrideSuccess}
+            html={editorContent}
+            entityType="golden_template"
+            entityId={latestVersion?.id ?? 0}
           />
         )}
 

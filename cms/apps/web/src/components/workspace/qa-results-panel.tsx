@@ -12,18 +12,26 @@ import {
 } from "lucide-react";
 import { QACheckItem } from "./qa-check-item";
 import { QAOverrideDialog } from "./qa-override-dialog";
+import { VisualQAPanelTab } from "@/components/visual-qa/visual-qa-panel-tab";
 import type { QAResultResponse } from "@/types/qa";
+import type { VisualQAEntityType } from "@/types/rendering";
 
 interface QAResultsPanelProps {
   result: QAResultResponse;
   onClose: () => void;
   onOverrideSuccess: () => void;
+  html?: string;
+  entityType?: VisualQAEntityType;
+  entityId?: number;
 }
 
 export function QAResultsPanel({
   result,
   onClose,
   onOverrideSuccess,
+  html,
+  entityType,
+  entityId,
 }: QAResultsPanelProps) {
   const t = useTranslations("qa");
   const session = useSession();
@@ -156,6 +164,17 @@ export function QAResultsPanel({
           </div>
         )}
       </div>
+
+      {/* Visual QA section */}
+      {html && entityType && entityId ? (
+        <div className="border-t border-border px-4 py-3">
+          <VisualQAPanelTab
+            html={html}
+            entityType={entityType}
+            entityId={entityId}
+          />
+        </div>
+      ) : null}
 
       {/* Override button (developer+ only, failing results only) */}
       {canOverride && (

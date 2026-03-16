@@ -1,0 +1,268 @@
+"use client";
+
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import { X, Camera, GitCompareArrows, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useCaptureScreenshots, useVisualDiff, useBaselines } from "@/hooks/use-visual-qa";
+import { ClientComparisonGrid } from "./client-comparison-grid";
+import { DiffOverlay } from "./diff-overlay";
+import { BaselineManager } from "./baseline-manager";
+import type {
+  ClientScreenshot,
+  VisualDiffResponse,
+  VisualQAEntityType,
+} from "@/types/rendering";
+
+type Tab = "screenshots" | "diff" | "baselines";
+
+interface VisualQADialogProps {
+  open: boolean;
+  onClose: () => void;
+  html: string;
+  entityType: VisualQAEntityType;
+  entityId: number;
+}
+
+export function VisualQADialog({
+  open,
+  onClose,
+  html,
+  entityType,
+  entityId,
+}: VisualQADialogProps) {
+  const t = useTranslations("visualQa");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  const [activeTab, setActiveTab] = useState<Tab>("screenshots");
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [showDiff, setShowDiff] = useState(false);
+  const [screenshots, setScreenshots] = useState<ClientScreenshot[]>([]);
+  const [diffResult, setDiffResult] = useState<VisualDiffResponse | null>(null);
+
+  const { trigger: captureScreenshots, isMutating: isCapturing } =
+    useCaptureScreenshots();
+  const { trigger: runVisualDiff, isMutating: isDiffing } = useVisualDiff();
+  const { data: baselinesData } = useBaselines(
+    entityId > 0 ? entityType : null,
+    entityId > 0 ? entityId : null,
+  );
+
+  // Dialog open/close sync
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) {
+      dialog.showModal();
+    } else if (!open && dialog.open) {
+      dialog.close();
+    }
+  }, [open]);
+
+  const handleCapture = useCallback(async () => {
+    try {
+      const result = await captureScreenshots({ html });
+      setScreenshots(result.screenshots);
+      if (result.clients_failed > 0) {
+        toast.warning(
+          t("capturePartial", { failed: result.clients_failed }),
+        );
+      }
+    } catch {
+      toast.error(t("captureError"));
+    }
+  }, [captureScreenshots, html, t]);
+
+  // Auto-capture on first open if no screenshots
+  useEffect(() => {
+    if (open && screenshots.length === 0 && html.length > 0) {
+      handleCapture();
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRunDiff = useCallback(
+    async (clientName: string) => {
+      const screenshot = screenshots.find(
+        (s) => s.client_name === clientName,
+      );
+      const baseline = baselinesData?.baselines.find(
+        (b) => b.client_name === clientName,
+      );
+
+      if (!screenshot || !baseline) {
+        setDiffResult(null);
+        return;
+      }
+
+      // We need the baseline image — but the API only stores hash, not image.
+      // The visual-diff endpoint takes two base64 images, so we need the baseline image.
+      // For now, we'll show "no baseline" state since getting baseline image data
+      // requires the entity to have stored the actual image bytes.
+      // The API returns BaselineResponse with hash only, not image data.
+      // TODO: When baseline GET returns image_base64, wire this up.
+      toast.info(t("noBaselineSet"));
+      setDiffResult(null);
+    },
+    [screenshots, baselinesData, t],
+  );
+
+  // Run diff when switching to diff tab with a selected client
+  useEffect(() => {
+    if (activeTab === "diff" && selectedClient) {
+      handleRunDiff(selectedClient);
+    }
+  }, [activeTab, selectedClient]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRunDiffAll = useCallback(async () => {
+    if (selectedClient) {
+      await handleRunDiff(selectedClient);
+    } else if (screenshots.length > 0 && screenshots[0]) {
+      setSelectedClient(screenshots[0].client_name);
+      setActiveTab("diff");
+    }
+  }, [selectedClient, screenshots, handleRunDiff]);
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "screenshots", label: t("tabScreenshots") },
+    { key: "diff", label: t("tabDiff") },
+    { key: "baselines", label: t("tabBaselines") },
+  ];
+
+  const selectedScreenshot = screenshots.find(
+    (s) => s.client_name === selectedClient,
+  );
+
+  return (
+    <dialog
+      ref={dialogRef}
+      onClose={onClose}
+      className="max-w-[56rem] rounded-xl border border-border bg-card p-0 shadow-2xl backdrop:bg-black/50"
+    >
+      <div className="flex h-[80vh] max-h-[48rem] flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-foreground">
+            {t("dialogTitle")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded p-1 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-1 border-b border-border px-6" role="tablist">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "border-b-2 border-interactive text-foreground"
+                  : "text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {activeTab === "screenshots" && (
+            <ClientComparisonGrid
+              screenshots={screenshots}
+              onSelectClient={(client) => {
+                setSelectedClient(client);
+                setActiveTab("diff");
+              }}
+              selectedClient={selectedClient}
+            />
+          )}
+
+          {activeTab === "diff" && (
+            <div>
+              {!selectedScreenshot ? (
+                <p className="py-12 text-center text-sm text-foreground-muted">
+                  {t("selectClientForDiff")}
+                </p>
+              ) : diffResult ? (
+                <DiffOverlay
+                  originalBase64={selectedScreenshot.image_base64}
+                  diffBase64={diffResult.diff_image}
+                  diffPercentage={diffResult.diff_percentage}
+                  changedRegions={diffResult.changed_regions}
+                  showDiff={showDiff}
+                  onToggleDiff={() => setShowDiff((v) => !v)}
+                />
+              ) : isDiffing ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-foreground-muted">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">{t("runningDiff")}</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-foreground-muted">
+                    {t("noBaselineSet")}
+                  </p>
+                  {/* Show the screenshot even without diff */}
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    <img
+                      src={`data:image/png;base64,${selectedScreenshot.image_base64}`}
+                      alt={selectedClient ?? ""}
+                      className="h-auto max-h-[32rem] w-full object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "baselines" && (
+            <BaselineManager
+              entityType={entityType}
+              entityId={entityId}
+              currentScreenshots={screenshots}
+            />
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-3">
+          <button
+            type="button"
+            onClick={handleCapture}
+            disabled={isCapturing}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+          >
+            {isCapturing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4" />
+            )}
+            {t("captureScreenshots")}
+          </button>
+          <button
+            type="button"
+            onClick={handleRunDiffAll}
+            disabled={isDiffing || screenshots.length === 0}
+            className="inline-flex items-center gap-2 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover disabled:opacity-50"
+          >
+            {isDiffing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <GitCompareArrows className="h-4 w-4" />
+            )}
+            {t("runDiffAll")}
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}

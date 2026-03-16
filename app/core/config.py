@@ -62,6 +62,19 @@ class AIConfig(BaseModel):
     # Adaptive model tier routing — tracks per-agent success rates and auto-adjusts tier
     adaptive_routing_enabled: bool = False  # AI__ADAPTIVE_ROUTING_ENABLED
 
+    # Visual QA agent (Phase 17.3)
+    visual_qa_enabled: bool = False  # AI__VISUAL_QA_ENABLED
+    visual_qa_model: str = ""  # AI__VISUAL_QA_MODEL — empty = use default model routing
+    visual_qa_clients: list[str] = [
+        "gmail_web",
+        "outlook_2019",
+        "apple_mail",
+    ]  # AI__VISUAL_QA_CLIENTS
+
+    # Visual QA auto-fix (Phase 17.4)
+    visual_qa_autofix_enabled: bool = False  # AI__VISUAL_QA_AUTOFIX_ENABLED
+    visual_qa_autofix_max_rounds: int = 1  # AI__VISUAL_QA_AUTOFIX_MAX_ROUNDS
+
     # AI-specific rate limits
     rate_limit_chat: str = "20/minute"
     rate_limit_generation: str = "5/minute"
@@ -126,6 +139,12 @@ class RenderingConfig(BaseModel):
     poll_timeout_seconds: int = 300
     max_concurrent_tests: int = 5
     screenshot_storage_path: str = "data/screenshots"
+    screenshots_enabled: bool = False
+    screenshot_max_clients: int = 5
+    screenshot_timeout_ms: int = 15000
+    screenshot_npx_path: str = "npx"
+    visual_diff_enabled: bool = False
+    visual_diff_threshold: float = 0.01  # 1% pixel diff triggers regression
 
 
 class MemoryConfig(BaseModel):
