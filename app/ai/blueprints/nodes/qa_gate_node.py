@@ -3,6 +3,7 @@
 from app.ai.blueprints.nodes.recovery_router_node import CHECK_PRIORITY, CHECK_TO_AGENT
 from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType, StructuredFailure
 from app.core.logging import get_logger
+from app.qa_engine.check_config import load_defaults
 from app.qa_engine.checks import ALL_CHECKS
 
 logger = get_logger(__name__)
@@ -36,8 +37,13 @@ class QAGateNode:
         structured_failures: list[StructuredFailure] = []
         passed_count = 0
 
+        profile = load_defaults()
         for check in ALL_CHECKS:
-            result = await check.run(context.html)
+            check_config = profile.get_check_config(check.name)
+            if check_config and not check_config.enabled:
+                passed_count += 1
+                continue
+            result = await check.run(context.html, check_config)
             if result.passed:
                 passed_count += 1
             else:

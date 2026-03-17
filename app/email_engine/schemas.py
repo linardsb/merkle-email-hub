@@ -42,3 +42,95 @@ class PreviewResponse(BaseModel):
 
     compiled_html: str
     build_time_ms: float
+
+
+class CSSCompileRequest(BaseModel):
+    """Request to compile/optimize CSS in email HTML."""
+
+    html: str = Field(..., min_length=1, max_length=5_000_000, description="Email HTML to compile")
+    target_clients: list[str] | None = Field(
+        None,
+        description="Target email client IDs. Uses config defaults if omitted.",
+    )
+    css_variables: dict[str, str] | None = Field(
+        None,
+        description="CSS custom property values to resolve var() references.",
+    )
+
+
+class CSSConversionSchema(BaseModel):
+    """A CSS conversion applied during compilation."""
+
+    original_property: str
+    original_value: str
+    replacement_property: str
+    replacement_value: str
+    reason: str
+    affected_clients: list[str]
+
+
+class CSSCompileResponse(BaseModel):
+    """Response from CSS compilation."""
+
+    html: str
+    original_size: int
+    compiled_size: int
+    reduction_pct: float
+    removed_properties: list[str]
+    conversions: list[CSSConversionSchema]
+    warnings: list[str]
+    compile_time_ms: float
+
+
+# ── Schema.org Auto-Markup ──
+
+
+class DetectedIntentSchema(BaseModel):
+    """Detected email intent."""
+
+    intent_type: str = Field(
+        description="Classified intent: promotional, transactional, event, newsletter, notification"
+    )
+    confidence: float = Field(description="Classification confidence (0.0-1.0)")
+    entity_count: int = Field(description="Number of extracted entities")
+
+
+class ExtractedEntitySchema(BaseModel):
+    """An entity extracted from email content."""
+
+    entity_type: str = Field(
+        description="Entity type: price, date, order_number, product_name, url"
+    )
+    value: str = Field(description="Extracted value")
+
+
+class SchemaMarkupSchema(BaseModel):
+    """Generated schema.org markup details."""
+
+    schema_types: list[str] = Field(description="Schema.org types in generated JSON-LD")
+    json_ld: str = Field(description="Generated JSON-LD markup")
+
+
+class SchemaInjectRequest(BaseModel):
+    """Request to inject schema.org markup into email HTML."""
+
+    html: str = Field(min_length=1, max_length=5_000_000, description="Email HTML content")
+    subject: str = Field(
+        default="",
+        max_length=500,
+        description="Email subject line (improves classification accuracy)",
+    )
+
+
+class SchemaInjectResponse(BaseModel):
+    """Response from schema.org markup injection."""
+
+    html: str = Field(
+        description="Email HTML with injected JSON-LD (unchanged if no markup injected)"
+    )
+    injected: bool = Field(description="Whether markup was actually injected")
+    intent: DetectedIntentSchema = Field(description="Detected email intent")
+    entities: list[ExtractedEntitySchema] = Field(description="Extracted entities used for markup")
+    schema_types: list[str] = Field(description="Schema.org types in injected markup")
+    validation_errors: list[str] = Field(description="Validation errors (if injection was skipped)")
+    inject_time_ms: float = Field(description="Processing time in milliseconds")

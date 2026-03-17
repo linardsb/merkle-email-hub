@@ -182,4 +182,3 @@ class TestPropertyTestRoute:
                 json={"invariants": ["bogus"], "num_cases": 5},
             )
         assert resp.status_code == 422
-

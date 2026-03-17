@@ -7,9 +7,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
+from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.exceptions import ForbiddenError
 from app.core.rate_limit import limiter
-from app.email_engine.schemas import BuildRequest, BuildResponse, PreviewRequest, PreviewResponse
+from app.email_engine.schemas import (
+    BuildRequest,
+    BuildResponse,
+    CSSCompileRequest,
+    CSSCompileResponse,
+    PreviewRequest,
+    PreviewResponse,
+    SchemaInjectRequest,
+    SchemaInjectResponse,
+)
 from app.email_engine.service import EmailEngineService
 
 router = APIRouter(prefix="/api/v1/email", tags=["email-engine"])
@@ -56,3 +67,39 @@ async def preview_email(
     """Preview-build an email template (not persisted)."""
     _ = request
     return await service.preview(data)
+
+
+@router.post("/compile-css", response_model=CSSCompileResponse)
+@limiter.limit("30/minute")
+async def compile_css(
+    request: Request,
+    data: CSSCompileRequest,
+    service: EmailEngineService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> CSSCompileResponse:
+    """Compile and optimize CSS for email clients."""
+    _ = request
+    settings = get_settings()
+    if not settings.email_engine.css_compiler_enabled:
+        raise ForbiddenError("CSS compiler is not enabled")
+    return service.compile_css(
+        html=data.html,
+        target_clients=data.target_clients,
+        css_variables=data.css_variables,
+    )
+
+
+@router.post("/inject-schema", response_model=SchemaInjectResponse)
+@limiter.limit("30/minute")
+async def inject_schema(
+    request: Request,
+    data: SchemaInjectRequest,
+    service: EmailEngineService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> SchemaInjectResponse:
+    """Inject schema.org JSON-LD markup into email HTML based on detected intent."""
+    _ = request
+    settings = get_settings()
+    if not settings.email_engine.schema_injection_enabled:
+        raise ForbiddenError("Schema.org markup injection is not enabled")
+    return service.inject_schema(data.html, data.subject)

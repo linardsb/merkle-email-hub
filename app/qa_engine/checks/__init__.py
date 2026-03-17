@@ -7,6 +7,7 @@ from app.qa_engine.checks.accessibility import AccessibilityCheck
 from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
 from app.qa_engine.checks.css_support import CssSupportCheck
 from app.qa_engine.checks.dark_mode import DarkModeCheck
+from app.qa_engine.checks.deliverability import DeliverabilityCheck
 from app.qa_engine.checks.fallback import FallbackCheck
 from app.qa_engine.checks.file_size import FileSizeCheck
 from app.qa_engine.checks.html_validation import HtmlValidationCheck
@@ -37,6 +38,7 @@ ALL_CHECKS: list[QACheckProtocol] = [
     ImageOptimizationCheck(),
     BrandComplianceCheck(),
     PersonalisationSyntaxCheck(),
+    DeliverabilityCheck(),
 ]
 
 __all__ = ["ALL_CHECKS"]

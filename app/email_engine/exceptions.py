@@ -9,3 +9,11 @@ class BuildFailedError(AppError):
 
 class BuildServiceUnavailableError(ServiceUnavailableError):
     """Raised when the Maizzle builder sidecar is unreachable."""
+
+
+class CSSCompilationError(AppError):
+    """Raised when CSS compilation fails."""
+
+
+class SchemaInjectionError(AppError):
+    """Raised when schema.org markup injection fails."""

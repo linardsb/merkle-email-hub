@@ -284,7 +284,7 @@
 - Modify `app/connectors/service.py` — add `async get_audience_profile(connection_id: int) -> AudienceProfile | None` — pull client distribution from ESP analytics API (Braze/SFMC provide this). Returns `None` if ESP doesn't support analytics
 **Security:** Audience data is aggregate statistics (percentages per client) — no PII. ESP analytics API calls use existing encrypted credentials from `ESPConnection`. Migration plan contains only code patterns and percentages.
 **Verify:** Plan with 40% old Outlook → conservative phased approach, most hacks kept. Plan with 5% old Outlook → aggressive modernization recommended. Plan with no audience data → generic timeline based on industry averages. ESP audience pull works for Braze (mock server). `make test` passes.
-- [ ] 19.2 Audience-aware Outlook migration planner
+- [x] ~~19.2 Audience-aware Outlook migration planner~~ DONE
 
 ### 19.3 Lightning CSS Email Compiler `[Backend]`
 **What:** An email-specific CSS compiler built on Lightning CSS (Rust, 100x faster than JS parsers) that performs AST-level optimization for email clients. Unlike Juice (which does string-level CSS inlining), this compiler understands the email rendering landscape: removes CSS properties unsupported by target clients (driven by ontology data), auto-converts modern CSS to email-safe equivalents, merges redundant declarations, removes dead selectors, and produces optimal inlined output.
@@ -326,7 +326,7 @@
 - i18n: ~30 keys across 6 locales
 - SDK regeneration
 **Verify:** Full Outlook analysis → migration plan displayed → "Modernize" applies changes → re-analysis shows reduction. CSS compiler → size reduction shown. `make check-fe` passes.
-- [ ] 19.4 Frontend Outlook advisor & compiler dashboard
+- [x] ~~19.4 Frontend Outlook advisor & compiler dashboard~~ DONE
 
 ### 19.5 Tests & Documentation `[Full-Stack]`
 **What:** Tests for Outlook analyzer (detection of all 7 dependency types), modernizer (safe transformations, dual-support mode), migration planner (audience-weighted phasing), CSS compiler (all conversion rules, size reduction, ontology integration). 45+ tests. ADR-008.
@@ -336,7 +336,7 @@
 - Route tests for all new endpoints
 - ADR-008 in `docs/ARCHITECTURE.md` — Outlook Transition & CSS Compilation
 **Verify:** `make test` passes. `make check` all green.
-- [ ] 19.5 Tests & documentation
+- [x] ~~19.5 Tests & documentation~~ DONE
 
 ---
 
@@ -365,7 +365,7 @@
 - Config: `QA__GMAIL_PREDICTOR_ENABLED: bool = False`, `QA__GMAIL_PREDICTOR_MODEL: str = "gpt-4o-mini"` (cost-efficient for summarization)
 **Security:** Email content passed to LLM for summarization — same security model as existing agents (no PII expected in template HTML). Prompt sanitized via `sanitize_prompt()`. LLM response is text-only — no code execution. Rate limited.
 **Verify:** Promotional email with pricing → predicted category = "Promotions", summary includes price/discount. Transactional email (order confirmation) → predicted category = "Updates", summary includes order details. Subject line optimization → suggestions differ from original and are coherent. `gmail_predictor_enabled=False` skips entirely. `make test` passes.
-- [ ] 20.1 Gmail AI summary predictor
+- [x] ~~20.1 Gmail AI summary predictor~~ DONE
 
 ### 20.2 Schema.org Auto-Markup Injection `[Backend]`
 **What:** Automatically inject appropriate schema.org JSON-LD structured data into email HTML based on classified email intent. Supports Gmail Actions (ConfirmAction, ViewAction, TrackAction), Deal Annotations (promotions tab product cards with price/discount/expiry), Event markup (RSVP actions), and Order tracking (ViewOrderAction with status). Intent classification reuses the hub's QueryRouter pattern (16.1).
@@ -394,7 +394,7 @@
 - Config: `EMAIL_ENGINE__SCHEMA_INJECTION_ENABLED: bool = False`, `EMAIL_ENGINE__SCHEMA_TYPES: list[str] = ["promotional", "transactional", "event"]`
 **Security:** JSON-LD is structured data — no executable code. Action URLs validated as HTTPS only (Gmail requirement). No user-provided URLs in generated markup — only URLs extracted from the email HTML itself. Injection point is `<head>` only — no body modification.
 **Verify:** Email with "$50 off, expires March 30" → `DealAnnotation` injected with price=$50, discount, expiry date. Order confirmation email → `Order` + `TrackAction` injected. Event invitation → `Event` + `RsvpAction` injected. Newsletter → no markup injected (intentional — newsletters don't benefit). JSON-LD validates against schema.org. `make test` passes.
-- [ ] 20.2 Schema.org auto-markup injection
+- [x] ~~20.2 Schema.org auto-markup injection~~ DONE
 
 ### 20.3 Deliverability Prediction Score `[Backend]`
 **What:** Pre-send deliverability scoring that analyzes email HTML for spam trigger patterns, image-to-text ratio, link density, authentication readiness (SPF/DKIM/DMARC/BIMI), and content quality signals. Produces a 0-100 deliverability score with specific improvement recommendations. Integrates as QA check #13.
@@ -413,7 +413,7 @@
 - Config: `QA__DELIVERABILITY_CHECK_ENABLED: bool = False`, `QA__DELIVERABILITY_THRESHOLD: int = 70`
 **Security:** All analysis is local — no external API calls. Spam trigger word list is static (no dynamic loading). No PII in scoring output.
 **Verify:** Clean transactional email → score > 85. Spam-like promotional email (ALL CAPS subject, image-heavy, many links) → score < 50. Adding List-Unsubscribe → score increases. Adding preview text → score increases. Single-image email → HTML hygiene score penalized. `make test` passes.
-- [ ] 20.3 Deliverability prediction score
+- [x] ~~20.3 Deliverability prediction score~~ DONE
 
 ### 20.4 BIMI Readiness Check `[Backend]`
 **What:** Verify BIMI (Brand Indicators for Message Identification) compliance: check sending domain's DMARC policy (must be quarantine or reject), validate BIMI DNS record format, verify SVG logo meets Gmail's Tiny PS format requirements, and check CMC (Common Mark Certificate) status. Generates the BIMI TXT record as part of deployment checklist.
@@ -430,7 +430,7 @@
 - Config: `QA__BIMI_CHECK_ENABLED: bool = False`
 **Security:** DNS lookups are read-only. SVG fetch uses `httpx` with timeout + size limit (max 32KB). No execution of SVG content. Domain input validated (must be valid domain format). Rate limited to prevent DNS abuse.
 **Verify:** Domain with full BIMI setup → all checks pass, record validated. Domain with DMARC `p=none` → `dmarc_ready=False`, specific guidance to change policy. Domain without BIMI record → `bimi_record_exists=False`, generated record template provided. Invalid SVG (non-square, external references) → `svg_valid=False`. `make test` passes.
-- [ ] 20.4 BIMI readiness check
+- [x] ~~20.4 BIMI readiness check~~ DONE
 
 ### 20.5 Frontend Gmail Intelligence Panel & Tests `[Frontend]`
 **What:** Frontend UI for Gmail prediction (predicted summary card preview, category badge, optimization suggestions), deliverability score gauge, BIMI status indicator, and schema.org markup preview. Plus full test suite (30+ tests) and SDK regeneration.
@@ -441,7 +441,7 @@
 - Tests: `test_gmail_predictor.py` (8 tests), `test_schema_markup.py` (10 tests), `test_deliverability.py` (8 tests), `test_bimi.py` (6 tests), route tests
 - SDK regeneration
 **Verify:** `make test` passes. `make check-fe` passes. `make check` all green.
-- [ ] 20.5 Frontend Gmail intelligence panel & tests
+- [x] ~~20.5 Frontend Gmail intelligence panel & tests~~ DONE
 
 ---
 

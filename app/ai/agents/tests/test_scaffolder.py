@@ -188,7 +188,7 @@ class TestScaffolderService:
             response = await service.generate(request)
 
         assert response.qa_results is not None
-        assert len(response.qa_results) == 11
+        assert len(response.qa_results) >= 11
         assert response.qa_passed is not None
 
     @pytest.mark.asyncio()

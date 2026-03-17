@@ -17,7 +17,17 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.email_engine.exceptions import BuildFailedError, BuildServiceUnavailableError
 from app.email_engine.models import EmailBuild
-from app.email_engine.schemas import BuildRequest, BuildResponse, PreviewRequest, PreviewResponse
+from app.email_engine.schemas import (
+    BuildRequest,
+    BuildResponse,
+    CSSCompileResponse,
+    CSSConversionSchema,
+    DetectedIntentSchema,
+    ExtractedEntitySchema,
+    PreviewRequest,
+    PreviewResponse,
+    SchemaInjectResponse,
+)
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -102,6 +112,86 @@ class EmailEngineService:
         elapsed = (time.monotonic() - start) * 1000
         logger.info("email_engine.preview_completed", build_time_ms=elapsed)
         return PreviewResponse(compiled_html=compiled, build_time_ms=round(elapsed, 2))
+
+    def compile_css(
+        self,
+        html: str,
+        target_clients: list[str] | None = None,
+        css_variables: dict[str, str] | None = None,
+    ) -> CSSCompileResponse:
+        """Compile and optimize CSS for email clients.
+
+        Synchronous — no DB access, pure CPU transformation.
+        """
+        from app.email_engine.css_compiler.compiler import CompilationResult, EmailCSSCompiler
+
+        compiler = EmailCSSCompiler(
+            target_clients=target_clients,
+            css_variables=css_variables,
+        )
+        result: CompilationResult = compiler.compile(html)
+
+        reduction_pct = (
+            round((1 - result.compiled_size / result.original_size) * 100, 1)
+            if result.original_size > 0
+            else 0.0
+        )
+
+        return CSSCompileResponse(
+            html=result.html,
+            original_size=result.original_size,
+            compiled_size=result.compiled_size,
+            reduction_pct=reduction_pct,
+            removed_properties=result.removed_properties,
+            conversions=[
+                CSSConversionSchema(
+                    original_property=c.original_property,
+                    original_value=c.original_value,
+                    replacement_property=c.replacement_property,
+                    replacement_value=c.replacement_value,
+                    reason=c.reason,
+                    affected_clients=list(c.affected_clients),
+                )
+                for c in result.conversions
+            ],
+            warnings=result.warnings,
+            compile_time_ms=result.compile_time_ms,
+        )
+
+    def inject_schema(
+        self,
+        html: str,
+        subject: str = "",
+    ) -> SchemaInjectResponse:
+        """Inject schema.org JSON-LD markup into email HTML.
+
+        Synchronous — no DB access, pure CPU transformation.
+        """
+        from app.email_engine.schema_markup.classifier import EmailIntentClassifier
+        from app.email_engine.schema_markup.injector import SchemaMarkupInjector
+
+        classifier = EmailIntentClassifier()
+        intent = classifier.classify(html, subject)
+
+        injector = SchemaMarkupInjector()
+        result = injector.inject(html, intent)
+
+        return SchemaInjectResponse(
+            html=result.html,
+            injected=result.injected,
+            intent=DetectedIntentSchema(
+                intent_type=result.intent_type,
+                confidence=result.confidence,
+                entity_count=len(intent.extracted_entities),
+            ),
+            entities=[
+                ExtractedEntitySchema(entity_type=e.entity_type, value=e.value)
+                for e in intent.extracted_entities
+            ],
+            schema_types=result.schema_types,
+            validation_errors=list(result.validation_errors),
+            inject_time_ms=result.inject_time_ms,
+        )
 
     async def _call_builder(
         self, source_html: str, config_overrides: dict[str, object] | None, is_production: bool

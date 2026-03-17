@@ -86,3 +86,21 @@
 **Knowledge feedback loop** (`chaos/knowledge_writer.py`): Critical chaos failures auto-generate knowledge base documents (when enabled + project context provided). Title-based deduplication prevents duplicates. Per-profile fix hints guide remediation. Non-blocking — write failures never break test responses. BOLA-protected via `verify_project_access()`.
 
 **Consequence:** Teams get actionable resilience scores without deploying to real email clients. The property testing layer catches edge cases (oversized images, unbalanced MSO conditionals, low-contrast text) that targeted checks miss. All three layers are pure-CPU with no LLM or database dependency (except knowledge writer), enabling fast CI integration. Each layer is independently feature-flagged (`qa_chaos.enabled`, `qa_property_testing.enabled`, `qa_chaos.resilience_check_enabled`).
+
+## ADR-008: Outlook Transition & CSS Compilation
+
+**Decision:** Two complementary tools — an Outlook dependency analyzer with audience-aware migration planning and an ontology-driven CSS compiler — enable systematic modernization of legacy email HTML without breaking backward compatibility.
+
+**Context:** Email HTML has accumulated decades of Outlook Word-engine workarounds (VML shapes, ghost tables, MSO conditionals, DPI hacks). With New Outlook migrating to Chromium, these dependencies are becoming dead weight. However, removing them blindly risks breaking rendering for organizations where Word-engine Outlook is still prevalent. Separately, email CSS must be compiled to inline styles with client-incompatible properties either converted or removed — decisions that should be driven by the ontology's compatibility matrix, not hardcoded rules.
+
+**Solution:** Two pipelines in `app/qa_engine/outlook_analyzer/` and `app/email_engine/css_compiler/`:
+
+1. **Outlook Dependency Analyzer** (`detector.py`): 7 regex/DOM detection rules identify VML shapes, ghost tables, MSO conditionals, MSO CSS properties, DPI-compensated images, ExternalClass rules, and word-wrap hacks. Each dependency tagged with severity (high/medium/low), removability flag, and modern CSS replacement suggestion. Pure CPU — no LLM, no database.
+
+2. **Outlook Modernizer** (`modernizer.py`): 3 target modes — `new_outlook` (aggressive removal of all Word-engine code), `dual_support` (preserve MSO conditionals while cleaning external hacks), `audit_only` (analysis without modification). Output sanitized via `sanitize_html_xss()`.
+
+3. **Migration Planner** (`planner.py`): Combines dependency analysis with audience client distribution to produce phased migration plans. Risk-tiered phasing (low→medium→high) with safe-when thresholds based on Word-engine audience share. Three recommendation levels: aggressive (<2% Word-engine), moderate (2-10%), conservative (>10%). Industry-default audience fallback when no ESP data available.
+
+4. **Lightning CSS Compiler** (`css_compiler/`): 7-stage pipeline — parse → analyze → transform → eliminate → optimize → inline → sanitize. Ontology-driven decisions: `get_conversions_for_property()` finds fallbacks, `should_remove_property()` eliminates unsupported properties only when no fallback exists. Lightning CSS minification with graceful failure. CSS variable resolution. MSO conditional preservation throughout pipeline.
+
+**Consequence:** Teams can assess Outlook dependency debt quantitatively, get audience-appropriate migration timelines, and compile CSS with ontology-backed safety guarantees. All four components are pure CPU with no LLM dependency, enabling fast CI integration. Feature-flagged independently (`qa_outlook_analyzer.enabled`, `email_engine.css_compiler_enabled`).

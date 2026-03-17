@@ -39,6 +39,7 @@ class QAProfileConfig(BaseModel):
     image_optimization: QACheckConfig = Field(default_factory=QACheckConfig)
     brand_compliance: QACheckConfig = Field(default_factory=QACheckConfig)
     personalisation_syntax: QACheckConfig = Field(default_factory=QACheckConfig)
+    deliverability: QACheckConfig = Field(default_factory=lambda: QACheckConfig(enabled=False))
 
     def get_check_config(self, check_name: str) -> QACheckConfig | None:
         """Get config for a check by name. Returns None if check name is unknown."""

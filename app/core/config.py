@@ -152,6 +152,20 @@ class QAPropertyTestingConfig(BaseModel):
     seed: int | None = None  # QA_PROPERTY_TESTING__SEED (fixed seed for CI)
 
 
+class QAOutlookAnalyzerConfig(BaseModel):
+    """Outlook Word-engine dependency analyzer configuration."""
+
+    enabled: bool = False  # QA_OUTLOOK_ANALYZER__ENABLED
+    default_target: str = "dual_support"  # new_outlook | dual_support | audit_only
+
+
+class QADeliverabilityConfig(BaseModel):
+    """Deliverability prediction scoring. Env prefix: QA_DELIVERABILITY__"""
+
+    enabled: bool = False
+    threshold: int = 70  # 0-100 score, pass if >= threshold
+
+
 class RenderingConfig(BaseModel):
     """Cross-client rendering test settings."""
 
@@ -239,6 +253,44 @@ class ESPSyncConfig(BaseModel):
     taxi_base_url: str = "http://mock-esp:3002/taxi"
 
 
+class QAGmailPredictorConfig(BaseModel):
+    """Gmail AI summary prediction configuration."""
+
+    enabled: bool = False
+    model: str = "gpt-4o-mini"
+    api_base_url: str = "https://api.openai.com/v1"
+    api_key: str = ""
+    max_html_chars: int = 8000
+    timeout_seconds: float = 30.0
+
+
+class QABIMIConfig(BaseModel):
+    """BIMI readiness check configuration."""
+
+    enabled: bool = False  # QA_BIMI__ENABLED
+    svg_fetch_timeout_seconds: float = 10.0  # QA_BIMI__SVG_FETCH_TIMEOUT_SECONDS
+    svg_max_size_bytes: int = 32_768  # QA_BIMI__SVG_MAX_SIZE_BYTES (32KB)
+    dns_timeout_seconds: float = 5.0  # QA_BIMI__DNS_TIMEOUT_SECONDS
+
+
+class EmailEngineConfig(BaseModel):
+    """Email engine settings."""
+
+    css_compiler_enabled: bool = False  # EMAIL_ENGINE__CSS_COMPILER_ENABLED
+    css_compiler_target_clients: list[str] = [
+        "gmail_web",
+        "outlook_2019",
+        "apple_mail",
+        "yahoo_mail",
+    ]  # EMAIL_ENGINE__CSS_COMPILER_TARGET_CLIENTS
+    schema_injection_enabled: bool = False  # EMAIL_ENGINE__SCHEMA_INJECTION_ENABLED
+    schema_injection_types: list[str] = [  # EMAIL_ENGINE__SCHEMA_INJECTION_TYPES
+        "promotional",
+        "transactional",
+        "event",
+    ]
+
+
 class BlueprintConfig(BaseModel):
     """Blueprint execution settings."""
 
@@ -314,6 +366,11 @@ class Settings(BaseSettings):
     eval: EvalConfig = EvalConfig()
     qa_chaos: QAChaosConfig = QAChaosConfig()
     qa_property_testing: QAPropertyTestingConfig = QAPropertyTestingConfig()
+    qa_outlook_analyzer: QAOutlookAnalyzerConfig = QAOutlookAnalyzerConfig()
+    qa_deliverability: QADeliverabilityConfig = QADeliverabilityConfig()
+    email_engine: EmailEngineConfig = EmailEngineConfig()
+    qa_gmail_predictor: QAGmailPredictorConfig = QAGmailPredictorConfig()
+    qa_bimi: QABIMIConfig = QABIMIConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,8 +19,27 @@ from app.qa_engine.exceptions import QAOverrideNotAllowedError, QAResultNotFound
 from app.qa_engine.models import QAOverride, QAResult
 from app.qa_engine.repository import QARepository
 from app.qa_engine.schemas import (
+    BIMICheckRequest,
+    BIMICheckResponse,
     ChaosTestRequest,
     ChaosTestResponse,
+    DeliverabilityDimension,
+    DeliverabilityIssue,
+    DeliverabilityScoreRequest,
+    DeliverabilityScoreResponse,
+    GmailOptimizeRequest,
+    GmailOptimizeResponse,
+    GmailPredictRequest,
+    GmailPredictResponse,
+    MigrationPhaseSchema,
+    MigrationPlanRequest,
+    MigrationPlanResponse,
+    ModernizationStepSchema,
+    OutlookAnalysisRequest,
+    OutlookAnalysisResponse,
+    OutlookDependencySchema,
+    OutlookModernizeRequest,
+    OutlookModernizeResponse,
     PropertyFailureSchema,
     PropertyTestRequest,
     PropertyTestResponse,
@@ -29,6 +50,9 @@ from app.qa_engine.schemas import (
     QARunRequest,
 )
 from app.shared.schemas import PaginatedResponse, PaginationParams
+
+if TYPE_CHECKING:
+    from app.qa_engine.outlook_analyzer.types import OutlookAnalysis
 
 logger = get_logger(__name__)
 
@@ -228,6 +252,328 @@ class QAEngineService:
             failures=failures,
             seed=result.seed,
             invariants_tested=data.invariants or list(ALL_INVARIANTS.keys()),
+        )
+
+    async def predict_gmail_summary(
+        self,
+        data: GmailPredictRequest,
+    ) -> GmailPredictResponse:
+        """Predict Gmail's AI summary for an email."""
+        settings = get_settings()
+        if not settings.qa_gmail_predictor.enabled:
+            raise ForbiddenError("Gmail AI prediction is not enabled")
+
+        logger.info(
+            "qa_engine.gmail_predict_started",
+            subject_length=len(data.subject),
+            html_length=len(data.html),
+        )
+
+        from app.qa_engine.gmail_intelligence.predictor import GmailSummaryPredictor
+
+        predictor = GmailSummaryPredictor()
+        prediction = await predictor.predict(
+            html=data.html,
+            subject=data.subject,
+            from_name=data.from_name,
+        )
+
+        logger.info(
+            "qa_engine.gmail_predict_completed",
+            predicted_category=prediction.predicted_category,
+            confidence=prediction.confidence,
+        )
+
+        return GmailPredictResponse(
+            summary_text=prediction.summary_text,
+            predicted_category=prediction.predicted_category,
+            key_actions=list(prediction.key_actions),
+            promotion_signals=list(prediction.promotion_signals),
+            improvement_suggestions=list(prediction.improvement_suggestions),
+            confidence=prediction.confidence,
+        )
+
+    async def optimize_gmail_preview(
+        self,
+        data: GmailOptimizeRequest,
+    ) -> GmailOptimizeResponse:
+        """Suggest optimized subject/preview text for better AI summaries."""
+        settings = get_settings()
+        if not settings.qa_gmail_predictor.enabled:
+            raise ForbiddenError("Gmail AI prediction is not enabled")
+
+        logger.info(
+            "qa_engine.gmail_optimize_started",
+            subject_length=len(data.subject),
+            html_length=len(data.html),
+        )
+
+        from app.qa_engine.gmail_intelligence.optimizer import PreviewTextOptimizer
+
+        optimizer = PreviewTextOptimizer()
+        result = await optimizer.optimize(
+            html=data.html,
+            subject=data.subject,
+            from_name=data.from_name,
+            target_summary=data.target_summary,
+        )
+
+        logger.info("qa_engine.gmail_optimize_completed")
+
+        return GmailOptimizeResponse(
+            original_subject=result.original_subject,
+            suggested_subjects=list(result.suggested_subjects),
+            original_preview=result.original_preview,
+            suggested_previews=list(result.suggested_previews),
+            reasoning=result.reasoning,
+        )
+
+    async def run_outlook_analysis(self, data: OutlookAnalysisRequest) -> OutlookAnalysisResponse:
+        """Analyze HTML for Word-engine dependencies."""
+        settings = get_settings()
+        if not settings.qa_outlook_analyzer.enabled:
+            raise ForbiddenError("Outlook dependency analyzer is not enabled")
+
+        from app.qa_engine.outlook_analyzer import OutlookDependencyDetector
+
+        detector = OutlookDependencyDetector()
+        analysis = detector.analyze(data.html)
+
+        logger.info(
+            "qa_engine.outlook_analysis_completed",
+            total=analysis.total_count,
+            removable=analysis.removable_count,
+            byte_savings=analysis.byte_savings,
+        )
+
+        return self._analysis_to_response(analysis)
+
+    async def run_outlook_modernize(
+        self, data: OutlookModernizeRequest
+    ) -> OutlookModernizeResponse:
+        """Analyze and modernize HTML by removing Word-engine dependencies."""
+        settings = get_settings()
+        if not settings.qa_outlook_analyzer.enabled:
+            raise ForbiddenError("Outlook dependency analyzer is not enabled")
+
+        from app.qa_engine.outlook_analyzer import (
+            OutlookDependencyDetector,
+            OutlookModernizer,
+        )
+
+        detector = OutlookDependencyDetector()
+        analysis = detector.analyze(data.html)
+
+        target = data.target or settings.qa_outlook_analyzer.default_target
+
+        modernizer = OutlookModernizer()
+        result = modernizer.modernize(data.html, analysis, target=target)
+
+        logger.info(
+            "qa_engine.outlook_modernize_completed",
+            target=target,
+            changes=result.changes_applied,
+            bytes_saved=result.bytes_before - result.bytes_after,
+        )
+
+        return OutlookModernizeResponse(
+            html=result.html,
+            changes_applied=result.changes_applied,
+            bytes_before=result.bytes_before,
+            bytes_after=result.bytes_after,
+            bytes_saved=result.bytes_before - result.bytes_after,
+            target=result.target,
+            analysis=self._analysis_to_response(analysis),
+        )
+
+    async def run_migration_plan(self, data: MigrationPlanRequest) -> MigrationPlanResponse:
+        """Generate audience-aware migration plan."""
+        settings = get_settings()
+        if not settings.qa_outlook_analyzer.enabled:
+            raise ForbiddenError("Outlook dependency analyzer is not enabled")
+
+        from app.qa_engine.outlook_analyzer import (
+            AudienceProfile,
+            MigrationPlanner,
+            OutlookDependencyDetector,
+        )
+
+        detector = OutlookDependencyDetector()
+        analysis = detector.analyze(data.html)
+
+        audience: AudienceProfile | None = None
+        if data.audience is not None:
+            audience = AudienceProfile(
+                client_distribution=data.audience.client_distribution,
+            )
+
+        planner = MigrationPlanner()
+        plan = planner.plan(analysis, audience)
+
+        analysis_response = self._analysis_to_response(analysis)
+
+        logger.info(
+            "qa_engine.migration_plan_completed",
+            phases=len(plan.phases),
+            recommendation=plan.recommendation,
+            word_engine_share=round(plan.word_engine_audience, 4),
+        )
+
+        return MigrationPlanResponse(
+            phases=[
+                MigrationPhaseSchema(
+                    name=p.name,
+                    description=p.description,
+                    dependency_types=p.dependency_types,
+                    dependency_count=len(p.dependencies_to_remove),
+                    audience_impact=p.audience_impact,
+                    safe_when=p.safe_when,
+                    risk_level=p.risk_level,
+                    estimated_byte_savings=p.estimated_byte_savings,
+                )
+                for p in plan.phases
+            ],
+            total_dependencies=plan.total_dependencies,
+            total_removable=plan.total_removable,
+            total_savings_bytes=plan.total_savings_bytes,
+            word_engine_audience=plan.word_engine_audience,
+            risk_assessment=plan.risk_assessment,
+            recommendation=plan.recommendation,
+            analysis=analysis_response,
+        )
+
+    async def run_deliverability_score(
+        self, data: DeliverabilityScoreRequest
+    ) -> DeliverabilityScoreResponse:
+        """Run standalone deliverability prediction scoring."""
+        settings = get_settings()
+        if not settings.qa_deliverability.enabled:
+            raise ForbiddenError("Deliverability scoring is not enabled")
+
+        from app.qa_engine.checks.deliverability import get_detailed_result
+
+        threshold = settings.qa_deliverability.threshold
+        total_score, passed, dimensions = get_detailed_result(data.html, threshold)
+
+        response_dimensions: list[DeliverabilityDimension] = []
+        all_issues: list[DeliverabilityIssue] = []
+        for dim in dimensions:
+            dim_issues = [
+                DeliverabilityIssue(
+                    dimension=issue.dimension,
+                    severity=issue.severity,
+                    description=issue.description,
+                    fix=issue.fix,
+                )
+                for issue in dim.issues
+            ]
+            response_dimensions.append(
+                DeliverabilityDimension(
+                    name=dim.name,
+                    score=dim.score,
+                )
+            )
+            all_issues.extend(dim_issues)
+
+        # Summary
+        if total_score >= 85:
+            summary = "Excellent deliverability. Email is well-optimized for inbox placement."
+        elif total_score >= threshold:
+            summary = "Good deliverability. Minor improvements possible."
+        elif total_score >= 50:
+            summary = "Fair deliverability. Several issues should be addressed before sending."
+        else:
+            summary = (
+                "Poor deliverability. Significant issues detected that may cause spam filtering."
+            )
+
+        logger.info(
+            "qa_engine.deliverability_score_completed",
+            score=total_score,
+            passed=passed,
+            threshold=threshold,
+        )
+
+        return DeliverabilityScoreResponse(
+            score=total_score,
+            passed=passed,
+            threshold=threshold,
+            dimensions=response_dimensions,
+            issues=all_issues,
+            summary=summary,
+        )
+
+    async def run_bimi_check(self, data: BIMICheckRequest) -> BIMICheckResponse:
+        """Check BIMI readiness for a sending domain."""
+        settings = get_settings()
+        if not settings.qa_bimi.enabled:
+            raise ForbiddenError("BIMI readiness check is not enabled")
+
+        from app.qa_engine.bimi import BIMIReadinessChecker
+
+        checker = BIMIReadinessChecker()
+        status = await checker.check_domain(data.domain)
+
+        logger.info(
+            "qa_engine.bimi_check_completed",
+            domain=data.domain,
+            ready=status.ready,
+            dmarc_ready=status.dmarc_ready,
+            bimi_exists=status.bimi_record_exists,
+            issue_count=len(status.issues),
+        )
+
+        return BIMICheckResponse(
+            domain=status.domain,
+            ready=status.ready,
+            dmarc_ready=status.dmarc_ready,
+            dmarc_policy=status.dmarc_policy,
+            dmarc_record=status.dmarc_record,
+            bimi_record_exists=status.bimi_record_exists,
+            bimi_record=status.bimi_record,
+            bimi_svg_url=status.bimi_svg_url,
+            bimi_authority_url=status.bimi_authority_url,
+            svg_valid=status.svg_valid,
+            cmc_status=status.cmc_status,
+            generated_record=status.generated_record,
+            issues=status.issues,
+        )
+
+    def _analysis_to_response(self, analysis: OutlookAnalysis) -> OutlookAnalysisResponse:
+        """Convert OutlookAnalysis dataclass to response schema."""
+
+        return OutlookAnalysisResponse(
+            dependencies=[
+                OutlookDependencySchema(
+                    type=d.type,
+                    location=d.location,
+                    line_number=d.line_number,
+                    code_snippet=d.code_snippet,
+                    severity=d.severity,
+                    removable=d.removable,
+                    modern_replacement=d.modern_replacement,
+                )
+                for d in analysis.dependencies
+            ],
+            total_count=analysis.total_count,
+            removable_count=analysis.removable_count,
+            byte_savings=analysis.byte_savings,
+            modernization_plan=[
+                ModernizationStepSchema(
+                    description=s.description,
+                    dependency_type=s.dependency_type,
+                    removals=s.removals,
+                    byte_savings=s.byte_savings,
+                )
+                for s in analysis.modernization_plan
+            ],
+            vml_count=analysis.vml_count,
+            ghost_table_count=analysis.ghost_table_count,
+            mso_conditional_count=analysis.mso_conditional_count,
+            mso_css_count=analysis.mso_css_count,
+            dpi_image_count=analysis.dpi_image_count,
+            external_class_count=analysis.external_class_count,
+            word_wrap_count=analysis.word_wrap_count,
         )
 
     async def get_result(self, result_id: int) -> QAResultResponse:

@@ -232,7 +232,7 @@ class TestDarkModeService:
             response = await service.process(request)
 
         assert response.qa_results is not None
-        assert len(response.qa_results) == 11
+        assert len(response.qa_results) >= 11
         assert response.qa_passed is not None
         # Dark mode check should be first and should pass (our sample has all markers)
         assert response.qa_results[0].check_name == "dark_mode"

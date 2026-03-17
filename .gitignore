@@ -64,3 +64,6 @@ traces/*.jsonl
 traces/*.json
 !traces/baseline.json
 traces/suggestions/*.md
+
+# Session handoff (transient, not committed)
+HANDOFF.md

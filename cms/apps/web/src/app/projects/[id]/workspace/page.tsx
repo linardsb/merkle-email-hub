@@ -545,6 +545,7 @@ export default function WorkspacePage() {
             html={editorContent}
             entityType="golden_template"
             entityId={latestVersion?.id ?? 0}
+            onHtmlUpdate={setEditorContent}
           />
         )}
 

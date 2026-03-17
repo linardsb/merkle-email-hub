@@ -10,8 +10,22 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.qa_engine.schemas import (
+    BIMICheckRequest,
+    BIMICheckResponse,
     ChaosTestRequest,
     ChaosTestResponse,
+    DeliverabilityScoreRequest,
+    DeliverabilityScoreResponse,
+    GmailOptimizeRequest,
+    GmailOptimizeResponse,
+    GmailPredictRequest,
+    GmailPredictResponse,
+    MigrationPlanRequest,
+    MigrationPlanResponse,
+    OutlookAnalysisRequest,
+    OutlookAnalysisResponse,
+    OutlookModernizeRequest,
+    OutlookModernizeResponse,
     PropertyTestRequest,
     PropertyTestResponse,
     QAOverrideRequest,
@@ -63,6 +77,136 @@ async def run_chaos_test(
     """Apply controlled email client degradations and measure QA resilience."""
     _ = request
     return await service.run_chaos_test(data, user=current_user)
+
+
+@router.post(
+    "/outlook-analysis",
+    response_model=OutlookAnalysisResponse,
+    status_code=200,
+    summary="Analyze HTML for Outlook Word-engine dependencies",
+)
+@limiter.limit("10/minute")
+async def run_outlook_analysis(
+    request: Request,
+    data: OutlookAnalysisRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> OutlookAnalysisResponse:
+    """Scan email HTML for VML shapes, ghost tables, MSO conditionals, and other Word-engine dependencies."""
+    _ = request
+    return await service.run_outlook_analysis(data)
+
+
+@router.post(
+    "/outlook-modernize",
+    response_model=OutlookModernizeResponse,
+    status_code=200,
+    summary="Modernize HTML by removing Word-engine dependencies",
+)
+@limiter.limit("5/minute")
+async def run_outlook_modernize(
+    request: Request,
+    data: OutlookModernizeRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> OutlookModernizeResponse:
+    """Apply safe modernizations to remove Outlook Word-engine hacks based on target mode."""
+    _ = request
+    return await service.run_outlook_modernize(data)
+
+
+@router.post(
+    "/outlook-migration-plan",
+    response_model=MigrationPlanResponse,
+    status_code=200,
+    summary="Generate audience-aware migration plan",
+    description=(
+        "Combine Outlook dependency analysis with audience data to produce "
+        "a phased migration plan. Omit audience data for industry-average estimates."
+    ),
+)
+@limiter.limit("5/minute")
+async def outlook_migration_plan(
+    request: Request,
+    data: MigrationPlanRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> MigrationPlanResponse:
+    """Generate audience-aware Outlook migration plan."""
+    _ = request
+    return await service.run_migration_plan(data)
+
+
+@router.post(
+    "/deliverability-score",
+    response_model=DeliverabilityScoreResponse,
+    status_code=200,
+    summary="Pre-send deliverability prediction scoring",
+)
+@limiter.limit("10/minute")
+async def run_deliverability_score(
+    request: Request,
+    data: DeliverabilityScoreRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> DeliverabilityScoreResponse:
+    """Score email deliverability across 4 dimensions (content, hygiene, auth, engagement)."""
+    _ = request
+    return await service.run_deliverability_score(data)
+
+
+@router.post(
+    "/gmail-predict",
+    response_model=GmailPredictResponse,
+    status_code=200,
+    summary="Predict Gmail AI summary",
+)
+@limiter.limit("5/minute")
+async def gmail_predict(
+    request: Request,
+    data: GmailPredictRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> GmailPredictResponse:
+    """Predict how Gmail's AI will summarize this email."""
+    _ = request
+    return await service.predict_gmail_summary(data)
+
+
+@router.post(
+    "/gmail-optimize",
+    response_model=GmailOptimizeResponse,
+    status_code=200,
+    summary="Optimize email for Gmail AI summary",
+)
+@limiter.limit("5/minute")
+async def gmail_optimize(
+    request: Request,
+    data: GmailOptimizeRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> GmailOptimizeResponse:
+    """Suggest subject/preview text optimizations for better AI summaries."""
+    _ = request
+    return await service.optimize_gmail_preview(data)
+
+
+@router.post(
+    "/bimi-check",
+    response_model=BIMICheckResponse,
+    status_code=200,
+    summary="Check BIMI readiness for a sending domain",
+)
+@limiter.limit("5/minute")
+async def run_bimi_check(
+    request: Request,
+    data: BIMICheckRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> BIMICheckResponse:
+    """Check DMARC policy, BIMI DNS record, SVG logo format, and CMC status."""
+    _ = request
+    return await service.run_bimi_check(data)
 
 
 @router.post("/run", response_model=QAResultResponse, status_code=status.HTTP_201_CREATED)

@@ -15,6 +15,9 @@ import { QAOverrideDialog } from "./qa-override-dialog";
 import { VisualQAPanelTab } from "@/components/visual-qa/visual-qa-panel-tab";
 import { ChaosTestPanel } from "@/components/qa/ChaosTestPanel";
 import { PropertyTestPanel } from "@/components/qa/PropertyTestPanel";
+import { OutlookAdvisorPanel } from "@/components/outlook/OutlookAdvisorPanel";
+import { CSSCompilerPanel } from "@/components/email-engine/CSSCompilerPanel";
+import { GmailPredictionPanel } from "@/components/gmail/GmailPredictionPanel";
 import type { QAResultResponse } from "@/types/qa";
 import type { VisualQAEntityType } from "@/types/rendering";
 
@@ -25,6 +28,7 @@ interface QAResultsPanelProps {
   html?: string;
   entityType?: VisualQAEntityType;
   entityId?: number;
+  onHtmlUpdate?: (html: string) => void;
 }
 
 export function QAResultsPanel({
@@ -34,6 +38,7 @@ export function QAResultsPanel({
   html,
   entityType,
   entityId,
+  onHtmlUpdate,
 }: QAResultsPanelProps) {
   const t = useTranslations("qa");
   const session = useSession();
@@ -189,6 +194,27 @@ export function QAResultsPanel({
       <div className="border-t border-border px-4 py-3">
         <PropertyTestPanel />
       </div>
+
+      {/* Outlook Advisor section */}
+      {html ? (
+        <div className="border-t border-border px-4 py-3">
+          <OutlookAdvisorPanel html={html} onHtmlUpdate={onHtmlUpdate} />
+        </div>
+      ) : null}
+
+      {/* CSS Compiler section */}
+      {html ? (
+        <div className="border-t border-border px-4 py-3">
+          <CSSCompilerPanel html={html} onHtmlUpdate={onHtmlUpdate} />
+        </div>
+      ) : null}
+
+      {/* Gmail Intelligence section */}
+      {html ? (
+        <div className="border-t border-border px-4 py-3">
+          <GmailPredictionPanel html={html} onHtmlUpdate={onHtmlUpdate} />
+        </div>
+      ) : null}
 
       {/* Override button (developer+ only, failing results only) */}
       {canOverride && (
