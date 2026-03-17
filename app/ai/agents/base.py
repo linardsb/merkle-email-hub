@@ -19,9 +19,10 @@ from typing import Any
 
 from app.ai.blueprints.protocols import AgentHandoff, HandoffStatus
 from app.ai.exceptions import AIExecutionError
+from app.ai.fallback import call_with_fallback
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
-from app.ai.routing import TaskTier, resolve_model
+from app.ai.routing import TaskTier, get_fallback_chain, resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
 from app.ai.shared import extract_confidence, extract_html, sanitize_html_xss
 from app.core.config import get_settings
@@ -199,14 +200,20 @@ class BaseAgentService:
             skills_loaded=relevant_skills,
         )
 
-        # Call LLM
+        # Call LLM (with fallback chain if configured)
         registry = get_registry()
-        provider = registry.get_llm(provider_name)
+        chain = get_fallback_chain(effective_tier)
 
         try:
-            result = await provider.complete(
-                messages, model_override=model, max_tokens=self.max_tokens
-            )
+            if chain and chain.has_fallbacks:
+                result = await call_with_fallback(
+                    chain, registry, messages, max_tokens=self.max_tokens
+                )
+            else:
+                provider = registry.get_llm(provider_name)
+                result = await provider.complete(
+                    messages, model_override=model, max_tokens=self.max_tokens
+                )
         except Exception as e:
             logger.error(
                 f"agents.{self.agent_name}.process_failed",

@@ -13,9 +13,10 @@ import uuid
 from collections.abc import AsyncIterator
 
 from app.ai.exceptions import AIExecutionError
+from app.ai.fallback import call_with_fallback
 from app.ai.protocols import Message
 from app.ai.registry import get_registry
-from app.ai.routing import resolve_model
+from app.ai.routing import get_fallback_chain, resolve_model
 from app.ai.sanitize import sanitize_prompt, validate_output
 from app.ai.schemas import (
     ChatCompletionChoice,
@@ -75,10 +76,16 @@ class ChatService:
 
         # Resolve provider from registry
         registry = get_registry()
-        provider = registry.get_llm(provider_name)
+
+        # Try fallback chain if configured for this tier
+        chain = get_fallback_chain(request.task_tier) if request.task_tier else None
 
         try:
-            result = await provider.complete(messages, model_override=model)
+            if chain and chain.has_fallbacks:
+                result = await call_with_fallback(chain, registry, messages)
+            else:
+                provider = registry.get_llm(provider_name)
+                result = await provider.complete(messages, model_override=model)
         except Exception as e:
             logger.error(
                 "ai.chat_failed",

@@ -4,6 +4,7 @@ Exception hierarchy:
 - AIError (base)
   - AIConfigurationError (invalid provider config, missing API key) -> 500
   - AIExecutionError (LLM call failed, timeout, rate limit) -> 502
+  - BudgetExceededError (monthly AI budget exceeded) -> 429
 """
 
 from typing import Any, cast
@@ -34,6 +35,12 @@ class AIExecutionError(AIError):
     pass
 
 
+class BudgetExceededError(AIError):
+    """Monthly AI budget exceeded (429)."""
+
+    pass
+
+
 async def ai_exception_handler(request: Request, exc: AIError) -> JSONResponse:
     """Handle AI exceptions globally.
 
@@ -56,7 +63,9 @@ async def ai_exception_handler(request: Request, exc: AIError) -> JSONResponse:
     )
 
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    if isinstance(exc, AIExecutionError):
+    if isinstance(exc, BudgetExceededError):
+        status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    elif isinstance(exc, AIExecutionError):
         status_code = status.HTTP_502_BAD_GATEWAY
 
     from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
@@ -81,3 +90,4 @@ def setup_ai_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AIError, handler)
     app.add_exception_handler(AIConfigurationError, handler)
     app.add_exception_handler(AIExecutionError, handler)
+    app.add_exception_handler(BudgetExceededError, handler)

@@ -24,7 +24,9 @@ from app.ai.agents.dark_mode.routes import router as dark_mode_router
 from app.ai.agents.scaffolder.routes import router as scaffolder_router
 from app.ai.agents.skills_routes import router as skills_router
 from app.ai.blueprints.routes import router as blueprint_router
+from app.ai.cost_governor_routes import router as cost_governor_router
 from app.ai.exceptions import setup_ai_exception_handlers
+from app.ai.prompt_store_routes import router as prompt_store_router
 from app.ai.routes import router as ai_router
 from app.approval.routes import router as approval_router
 from app.auth.routes import router as auth_router
@@ -96,6 +98,20 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             "streaming.ws.subscriber_skipped",
             detail="Redis unavailable, WebSocket streaming disabled",
         )
+
+    # Load model capability registry from config (Phase 22.1)
+    if settings.ai.model_specs:
+        from app.ai.capability_registry import load_model_specs_from_config
+
+        load_model_specs_from_config(settings.ai.model_specs)
+
+    # Preload prompt store cache (Phase 22.2)
+    if settings.ai.prompt_store_enabled:
+        from app.ai.prompt_store import preload_prompt_store_cache
+        from app.core.database import get_db_context
+
+        async with get_db_context() as db:
+            await preload_prompt_store_cache(db)
 
     # Start outcome graph poller (feeds blueprint outcomes into Cognee)
     outcome_poller = None
@@ -251,6 +267,8 @@ app.include_router(content_router)
 app.include_router(blueprint_router)
 
 app.include_router(skills_router)
+app.include_router(prompt_store_router)
+app.include_router(cost_governor_router)
 
 
 @app.get("/")

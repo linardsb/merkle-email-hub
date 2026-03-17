@@ -521,7 +521,7 @@
 - Create `app/ai/capability_registry.py` — `ModelCapability` enum, `ModelSpec` frozen dataclass, `CapabilityRegistry` singleton with `register(model_id, spec)`, `find_models(requirements: set[ModelCapability], min_context: int) -> list[ModelSpec]`
 - Modify `app/ai/routing.py` — `resolve_model()` checks capability requirements when provided, falls back to tier-based routing
 - Config: model specs in `AI__MODEL_SPECS` YAML/JSON config
-- [ ] 22.1 Model capability registry
+- [x] 22.1 Model capability registry ~~DONE~~
 
 ### 22.2 Prompt Template Store `[Backend]`
 **What:** Move agent system prompts from Python files to a versioned database store with A/B variant support. Agents load prompts at runtime via `PromptStore.get(agent_id, variant)`. Versions tracked with rollback.
@@ -529,7 +529,7 @@
 - Create `app/ai/prompt_store.py` — `PromptTemplate` model (id, agent_id, version, variant, content, active), `PromptStore` with CRUD + `get_active(agent_id, variant)`, migration to seed from existing SKILL.md files
 - Modify `app/ai/agents/base.py` — `_build_system_prompt()` checks `PromptStore` first, falls back to SKILL.md
 - Config: `AI__PROMPT_STORE_ENABLED: bool = False`
-- [ ] 22.2 Prompt template store
+- [x] 22.2 Prompt template store ~~DONE~~
 
 ### 22.3 Token Budget Manager `[Backend]`
 **What:** Count tokens before sending to LLM. Truncate or summarize conversation history to stay within context window. Adaptive strategy: recent messages preserved, older messages summarized.
@@ -537,7 +537,7 @@
 - Create `app/ai/token_budget.py` — `TokenBudgetManager` with `estimate_tokens(messages)` (tiktoken for OpenAI, approximation for others), `trim_to_budget(messages, max_tokens)` with summarization strategy
 - Modify `app/ai/adapters/` — all adapters call `trim_to_budget()` before API call
 - Config: `AI__TOKEN_BUDGET_ENABLED: bool = False`, `AI__TOKEN_BUDGET_RESERVE: int = 4096` (reserve for response)
-- [ ] 22.3 Token budget manager
+- [x] 22.3 Token budget manager ~~DONE~~
 
 ### 22.4 Fallback Chains & Provider Resilience `[Backend]`
 **What:** Ordered model fallbacks per tier. Primary model failure auto-cascades to next. Example: `complex: [claude-opus-4-6 → gpt-4o → local-qwen-72b]`. Every fallback event logged.
@@ -545,7 +545,7 @@
 - Create `app/ai/fallback.py` — `FallbackChain` with `async call_with_fallback(messages, tier) -> Response` — tries each model in order, catches timeout/rate-limit/deprecation errors, logs fallback events
 - Modify `app/ai/routing.py` — `resolve_model()` returns `FallbackChain` instead of single model when fallback config present
 - Config: `AI__FALLBACK_CHAINS` YAML config per tier
-- [ ] 22.4 Fallback chains & provider resilience
+- [x] ~~22.4 Fallback chains & provider resilience~~ DONE
 
 ### 22.5 Cost Governor `[Backend]`
 **What:** Real-time token and cost tracking per model, per agent, per project. Configurable budget caps with circuit breakers — auto-route to cheaper models or local fallbacks when spend approaches threshold.
@@ -554,11 +554,11 @@
 - Modify `app/ai/adapters/` — all adapters report usage to `CostGovernor` after each call
 - Dashboard endpoint: `GET /api/v1/ai/cost-report` (admin only)
 - Config: `AI__COST_GOVERNOR_ENABLED: bool = False`, `AI__MONTHLY_BUDGET_GBP: float = 600.0`, `AI__BUDGET_WARNING_THRESHOLD: float = 0.8`
-- [ ] 22.5 Cost governor
+- [x] ~~22.5 Cost governor~~ DONE
 
 ### 22.6 Tests & Documentation `[Full-Stack]`
 **What:** Tests for all 5 capabilities (30+ tests). ADR-009 AI Evolution Infrastructure.
-- [ ] 22.6 Tests & documentation
+- [x] ~~22.6 Tests & documentation~~ DONE
 
 ---
 

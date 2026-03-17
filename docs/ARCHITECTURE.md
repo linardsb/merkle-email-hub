@@ -104,3 +104,25 @@
 4. **Lightning CSS Compiler** (`css_compiler/`): 7-stage pipeline — parse → analyze → transform → eliminate → optimize → inline → sanitize. Ontology-driven decisions: `get_conversions_for_property()` finds fallbacks, `should_remove_property()` eliminates unsupported properties only when no fallback exists. Lightning CSS minification with graceful failure. CSS variable resolution. MSO conditional preservation throughout pipeline.
 
 **Consequence:** Teams can assess Outlook dependency debt quantitatively, get audience-appropriate migration timelines, and compile CSS with ontology-backed safety guarantees. All four components are pure CPU with no LLM dependency, enabling fast CI integration. Feature-flagged independently (`qa_outlook_analyzer.enabled`, `email_engine.css_compiler_enabled`).
+
+## ADR-009: AI Evolution Infrastructure
+
+**Decision:** Five modular infrastructure capabilities — capability registry, prompt template store, token budget manager, fallback chains, and cost governor — provide the operational foundation for safely scaling AI model usage across providers and tiers.
+
+**Context:** The platform's AI layer started with direct provider calls and tier-based routing. As the number of agents, models, and providers grew, several operational gaps emerged: no structured way to track which models support which capabilities (vision, tool use, structured output); no versioned prompt management beyond static SKILL.md files; no protection against context window overflow; no resilience when a provider experiences downtime; and no visibility into token costs or ability to enforce budget limits. These five capabilities address these gaps as internal infrastructure — no new user-facing features, but critical operational scaffolding.
+
+**Solution:** Five independent modules in `app/ai/`, each feature-flagged and backward-compatible:
+
+1. **Capability Registry** (`capability_registry.py`): `ModelSpec` frozen dataclasses with capability sets, context window sizes, cost-per-token, and deprecation dates. `CapabilityRegistry` singleton with `find_models()` returning cheapest-first matches. Integrated into `routing.py` via `resolve_model_by_capabilities()` as an optional layer above tier-based routing. Config: `AI__MODEL_SPECS` JSON array.
+
+2. **Prompt Template Store** (`prompt_store.py`): `PromptTemplate` SQLAlchemy model with agent/version/variant/content fields. Auto-versioning on create, `activate()`/`rollback()` for safe prompt iteration. `PromptStoreService.seed_from_skill_files()` bootstraps from existing SKILL.md files. Integrated into `skill_override.py` as highest-priority prompt source (store > A/B override > disk). 7 REST endpoints at `/api/v1/prompts`. Config: `AI__PROMPT_STORE_ENABLED`.
+
+3. **Token Budget Manager** (`token_budget.py`): `TokenBudgetManager` with tiktoken estimation (char approximation fallback), auto-detected context windows for 13 models, and adaptive trimming — system message preserved, last user message preserved, middle messages dropped oldest-first. Integrated into both `OpenAICompatProvider` and `AnthropicProvider` adapters, called before every `complete()` and `stream()`. Config: `AI__TOKEN_BUDGET_ENABLED`, `AI__TOKEN_BUDGET_RESERVE`, `AI__TOKEN_BUDGET_MAX`.
+
+4. **Fallback Chains** (`fallback.py`): `FallbackChain` of `FallbackEntry` (provider:model pairs) with `_is_retryable()` error classification (timeout, circuit open, rate limit, server errors across httpx/Anthropic/OpenAI SDKs). `call_with_fallback()` async cascade. Integrated at both call sites: `ChatService.chat()` and `BaseAgentService.process()`. Config: `AI__FALLBACK_CHAINS` JSON dict per tier.
+
+5. **Cost Governor** (`cost_governor.py`): `CostGovernor` singleton with per-model pricing (input/output token rates), monthly budget tracking via Redis, dimension breakdowns (by model, agent, project), and three budget states (OK/WARNING/EXCEEDED). `BudgetExceededError` mapped to HTTP 429. Integrated into both adapters: budget check before completion, cost recording after. 2 REST endpoints at `/api/v1/ai/cost`. Config: `AI__COST_GOVERNOR_ENABLED`, `AI__MONTHLY_BUDGET_GBP`, `AI__BUDGET_WARNING_THRESHOLD`.
+
+**Adapter integration order:** For every `complete()` call, the adapter pipeline runs: (1) token budget trimming → (2) cost budget check → (3) API call → (4) cost recording. Fallback chains wrap this entire sequence, retrying with the next provider:model on retryable failures.
+
+**Consequence:** All five capabilities ship disabled by default, ensuring zero impact on existing deployments. Each can be enabled independently. The adapter-level integration means every AI call — chat, agent, blueprint node — automatically benefits from trimming, budgeting, and fallback without caller changes. 190+ tests across 8 test files validate each capability in isolation and the full cross-module pipeline.

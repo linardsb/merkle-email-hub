@@ -84,6 +84,58 @@ class OpenAICompatProvider:
             base_url=self._base_url,
         )
 
+    def _apply_token_budget(
+        self, messages: list[Message], kwargs: dict[str, object]
+    ) -> list[Message]:
+        """Trim messages to fit token budget if enabled."""
+        settings = get_settings()
+        if not settings.ai.token_budget_enabled:
+            return messages
+        from app.ai.token_budget import TokenBudgetManager
+
+        model = str(kwargs.get("model_override", self._model))
+        budget_mgr = TokenBudgetManager(
+            model=model,
+            reserve_tokens=settings.ai.token_budget_reserve,
+            max_context_tokens=settings.ai.token_budget_max,
+        )
+        return budget_mgr.trim_to_budget(messages)
+
+    async def _check_cost_budget(self) -> None:
+        """Check budget before making an API call. Raises BudgetExceededError if over budget."""
+        settings = get_settings()
+        if not settings.ai.cost_governor_enabled:
+            return
+        from app.ai.cost_governor import BudgetStatus, get_cost_governor
+
+        governor = get_cost_governor()
+        status = await governor.check_budget()
+        if status == BudgetStatus.EXCEEDED:
+            from app.ai.exceptions import BudgetExceededError
+
+            raise BudgetExceededError("Monthly AI budget exceeded")
+
+    async def _report_cost(
+        self, model: str, usage: dict[str, int] | None, kwargs: dict[str, object]
+    ) -> None:
+        """Report token usage to cost governor if enabled. Fire-and-forget."""
+        settings = get_settings()
+        if not settings.ai.cost_governor_enabled or usage is None:
+            return
+        try:
+            from app.ai.cost_governor import get_cost_governor
+
+            governor = get_cost_governor()
+            await governor.record(
+                model=model,
+                input_tokens=usage.get("prompt_tokens", 0),
+                output_tokens=usage.get("completion_tokens", 0),
+                agent=str(kwargs.get("agent_name", "")),
+                project_id=str(kwargs.get("project_id", "")),
+            )
+        except Exception:
+            logger.debug("cost_governor.report_failed", model=model)
+
     async def complete(self, messages: list[Message], **kwargs: object) -> CompletionResponse:
         """Send a chat completion request to the OpenAI-compatible API.
 
@@ -98,6 +150,12 @@ class OpenAICompatProvider:
         Raises:
             AIExecutionError: If the API call fails or returns an error.
         """
+        # Token budget trimming (Phase 22.3)
+        messages = self._apply_token_budget(messages, dict(kwargs))
+
+        # Cost budget check (Phase 22.5)
+        await self._check_cost_budget()
+
         payload: dict[str, Any] = {
             "model": kwargs.get("model_override", self._model),
             "messages": [{"role": m.role, "content": m.content} for m in messages],
@@ -172,6 +230,9 @@ class OpenAICompatProvider:
             usage=usage,
         )
 
+        # Cost tracking (Phase 22.5)
+        await self._report_cost(model_name, usage, dict(kwargs))
+
         return CompletionResponse(content=content, model=model_name, usage=usage)
 
     async def stream(self, messages: list[Message], **kwargs: object) -> AsyncIterator[str]:
@@ -190,6 +251,9 @@ class OpenAICompatProvider:
         Raises:
             AIExecutionError: If the API call fails.
         """
+        # Token budget trimming (Phase 22.3)
+        messages = self._apply_token_budget(messages, dict(kwargs))
+
         payload: dict[str, Any] = {
             "model": kwargs.get("model_override", self._model),
             "messages": [{"role": m.role, "content": m.content} for m in messages],

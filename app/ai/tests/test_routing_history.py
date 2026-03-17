@@ -236,3 +236,23 @@ async def test_engine_no_routing_history_when_disabled() -> None:
     engine = BlueprintEngine(definition, project_id=1)
     run = await engine.run(brief="test brief")
     assert run.status == "completed"
+
+
+# ── Capability-aware routing tests ──
+
+
+def test_resolve_model_by_capabilities_no_match() -> None:
+    """No match returns None, caller falls back to tier-based."""
+    import app.ai.capability_registry as mod
+    from app.ai.capability_registry import CapabilityRegistry, ModelCapability
+    from app.ai.routing import resolve_model_by_capabilities
+
+    old = mod._registry
+    mod._registry = CapabilityRegistry()
+    try:
+        result = resolve_model_by_capabilities(
+            requirements={ModelCapability.EXTENDED_THINKING},
+        )
+        assert result is None
+    finally:
+        mod._registry = old

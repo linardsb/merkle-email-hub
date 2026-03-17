@@ -220,9 +220,7 @@ class TestSyncIdempotency:
         assert report2.updated_levels == 0
 
     @pytest.mark.anyio()
-    async def test_multiple_errors_collected(
-        self, service: CanIEmailSyncService
-    ) -> None:
+    async def test_multiple_errors_collected(self, service: CanIEmailSyncService) -> None:
         """Multiple failures during sync are all collected in errors list."""
         service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
         service._client.fetch_all_features = AsyncMock(

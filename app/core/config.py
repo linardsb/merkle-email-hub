@@ -5,6 +5,7 @@ Environment variables use double-underscore nesting: DATABASE__URL, AUTH__JWT_SE
 """
 
 from functools import lru_cache
+from typing import Any
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -78,6 +79,26 @@ class AIConfig(BaseModel):
     # AI-specific rate limits
     rate_limit_chat: str = "20/minute"
     rate_limit_generation: str = "5/minute"
+
+    # Token budget management (Phase 22.3)
+    token_budget_enabled: bool = False  # AI__TOKEN_BUDGET_ENABLED
+    token_budget_reserve: int = 4096  # AI__TOKEN_BUDGET_RESERVE — tokens reserved for response
+    token_budget_max: int = 0  # AI__TOKEN_BUDGET_MAX — 0 = auto-detect from model name
+
+    # Prompt template store (Phase 22.2)
+    prompt_store_enabled: bool = False  # AI__PROMPT_STORE_ENABLED
+
+    # Model capability registry (Phase 22.1)
+    model_specs: list[dict[str, Any]] = []  # AI__MODEL_SPECS — JSON array of model specs
+
+    # Fallback chains — ordered model fallbacks per tier (Phase 22.4)
+    # JSON: {"complex": ["anthropic:claude-opus-4-6", "openai:gpt-4o"], ...}
+    fallback_chains: dict[str, list[str]] = {}  # AI__FALLBACK_CHAINS
+
+    # Cost governor (Phase 22.5)
+    cost_governor_enabled: bool = False  # AI__COST_GOVERNOR_ENABLED
+    monthly_budget_gbp: float = 600.0  # AI__MONTHLY_BUDGET_GBP — 0 = unlimited
+    budget_warning_threshold: float = 0.8  # AI__BUDGET_WARNING_THRESHOLD — warn at 80%
 
 
 class EmbeddingConfig(BaseModel):
