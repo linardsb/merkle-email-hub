@@ -6,636 +6,728 @@
 
 ---
 
-> **Completed phases (0–16):** See [docs/TODO-completed.md](docs/TODO-completed.md)
+> **Completed phases (0–23):** See [docs/TODO-completed.md](docs/TODO-completed.md)
 >
-> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing).
-
----
-
-## Phase 17 — Visual Regression Agent & VLM-Powered QA
-
-**What:** Add a 10th AI agent that uses vision-language models to screenshot rendered emails across simulated clients, detect rendering discrepancies by comparing screenshots, and generate targeted CSS fixes. Integrates Playwright for headless rendering, ODiff for perceptual image diffing, and a VLM (Claude vision / GPT-4o vision) for semantic analysis of visual defects. Includes a component baseline screenshot system for regression detection across builds.
-**Why:** Every email platform (Litmus, Email on Acid, Parcel) relies on server-side rendering farms or manual screenshot review. No platform uses AI to _understand_ what went wrong visually and auto-fix it. The hub already has 9 agents, a blueprint engine, and a self-correcting CRAG loop — a Visual QA agent is the natural 10th agent that closes the "render → detect → fix" loop entirely within the platform. The ScreenCoder (2025) multi-agent decomposition pattern (grounding → planning → generation) maps directly to the blueprint engine's node architecture. This single feature makes the hub irreplaceable because it eliminates the $500+/month Litmus dependency and delivers faster, smarter results.
-**Dependencies:** Phase 11 (QA engine + agent architecture), Phase 14 (checkpoint for long-running visual pipelines), Phase 16 (CRAG mixin pattern for auto-correction).
-**Design principle:** Each sub-task is independently shippable behind feature flags. Visual regression can run as QA check #12 without the VLM fix agent. VLM agent can run standalone without ODiff baselines. Screenshots stored alongside `ComponentVersion` baselines — no new storage infrastructure required.
-
-### 17.1 Playwright Email Rendering Service `[Backend]`
-**What:** A rendering service that takes compiled email HTML and produces screenshots across simulated email client viewports. Uses Playwright with pre-configured viewport sizes and CSS injection to simulate client-specific rendering behaviors (Gmail style stripping, Outlook word-engine quirks, Apple Mail full CSS support). Outputs PNG screenshots with metadata (viewport, simulated client, timestamp).
-**Why:** The hub currently has no way to see what an email looks like in different clients without external services. Playwright is already a dev dependency (used in e2e tests). Reusing it for email rendering avoids new infrastructure. Client simulation via CSS injection and style stripping is 90% accurate for layout validation without needing actual email client access.
-**Implementation:**
-- Create `app/rendering/screenshot.py` — `EmailScreenshotService` class:
-  - `async render_screenshots(html: str, clients: list[str] | None = None) -> list[ScreenshotResult]` — renders HTML in Playwright, returns list of `ScreenshotResult(client_name: str, viewport: tuple[int, int], image_bytes: bytes, css_modifications: list[str])`
-  - Pre-configured client profiles in `RENDERING_PROFILES: dict[str, RenderingProfile]`: `gmail_web` (strip `<style>` blocks, max-width 680px), `outlook_2019` (inject Word engine CSS constraints: no flexbox, no grid, table-only layout enforcement), `apple_mail` (full CSS, 600px), `outlook_dark` (dark mode color inversion), `mobile_ios` (375px viewport)
-  - Each profile: `RenderingProfile(name: str, viewport_width: int, viewport_height: int, css_injections: list[str], style_strip_patterns: list[re.Pattern], dark_mode: bool)`
-  - Uses `async with async_playwright() as p: browser = await p.chromium.launch(headless=True)` — single browser instance, new context per render
-  - Screenshot via `page.screenshot(type="png", full_page=True, clip={"x": 0, "y": 0, "width": viewport_width, "height": min(page_height, 4096)})` — cap at 4096px to prevent memory issues
-  - Images stored as bytes in memory (not disk) — caller decides storage
-- Create `app/rendering/schemas.py` — `ScreenshotResult`, `RenderingProfile`, `ScreenshotRequest`, `ScreenshotResponse` (base64 encoded images for API transport)
-- Modify `app/rendering/routes.py` — add `POST /api/v1/rendering/screenshots` with auth + rate limiting (`5/minute` — rendering is expensive). Accepts `{html: str, clients: list[str]}`, returns `{screenshots: list[{client: str, image_base64: str}]}`
-- Config (`app/core/config.py` → `RenderingConfig`): `screenshots_enabled: bool = False`, `screenshot_max_clients: int = 5`, `screenshot_timeout_ms: int = 15000`
-**Security:** HTML rendered in Playwright's sandboxed Chromium — no network access (`context.route("**/*", lambda route: route.abort())` blocks all external requests). Screenshot output is a PNG image — no executable content. Rate limited to prevent abuse. HTML input validated via existing `validate_output()` before rendering.
-**Verify:** Render a known email HTML with `gmail_web` profile → `<style>` blocks stripped from rendered output, width constrained to 680px. Render same HTML with `apple_mail` → styles preserved. Render with `outlook_2019` → flexbox/grid properties have no visual effect (simulated). Screenshot dimensions match configured viewport. `screenshots_enabled=False` returns 501. `make test` passes. Rendering completes within timeout.
-- [x] ~~17.1 Playwright email rendering service~~ DONE
-
-### 17.2 ODiff Visual Regression Baseline System `[Backend]`
-**What:** Perceptual image diffing system using ODiff (Zig/SIMD, handles anti-aliasing noise) that compares rendered screenshots against stored baselines. Creates and manages baseline screenshots per `ComponentVersion` and per `GoldenTemplate`. Outputs diff images highlighting pixel regions that changed, with a configurable similarity threshold. Diff images attachable to the approval portal.
-**Why:** Manual "does this look right?" screenshot review is the #1 bottleneck in email QA. ODiff (from game QA / visual regression domain) distinguishes real layout changes from anti-aliasing noise — something pixel-exact diff tools can't do. Storing baselines per `ComponentVersion` means every component update automatically gets regression-tested against its last known-good state. This is proven technology repurposed for email.
-**Implementation:**
-- Install `odiff` as a binary dependency (Zig-compiled, ~2MB, available via npm or direct binary). Python wrapper via subprocess call
-- Create `app/rendering/visual_diff.py` — `VisualDiffService` class:
-  - `async compare(baseline: bytes, current: bytes, threshold: float = 0.01) -> DiffResult` — returns `DiffResult(identical: bool, diff_percentage: float, diff_image: bytes | None, pixel_count: int, changed_regions: list[Region])`
-  - `async update_baseline(entity_type: str, entity_id: int, client: str, image: bytes) -> None` — stores baseline screenshot. Entity types: `component_version`, `golden_template`
-  - `async get_baseline(entity_type: str, entity_id: int, client: str) -> bytes | None` — retrieves stored baseline
-  - Region detection: parse ODiff output regions into `Region(x: int, y: int, width: int, height: int)` for highlighting in UI
-- Create `app/rendering/models.py` — `ScreenshotBaseline` SQLAlchemy model: `id`, `entity_type` (varchar), `entity_id` (int), `client_name` (varchar), `image_data` (LargeBinary), `image_hash` (varchar, SHA-256), `created_at`, `updated_at`. Unique constraint on `(entity_type, entity_id, client_name)`
-- Alembic migration for `screenshot_baselines` table
-- Create `app/rendering/repository.py` — `ScreenshotBaselineRepository` with CRUD + `get_by_entity(entity_type, entity_id, client_name)` + `list_by_entity(entity_type, entity_id)`
-- Modify `app/rendering/routes.py` — add `POST /api/v1/rendering/visual-diff` (accepts two base64 images, returns diff), `GET /api/v1/rendering/baselines/{entity_type}/{entity_id}` (list baselines), `POST /api/v1/rendering/baselines/{entity_type}/{entity_id}/update` (update baseline from current screenshot)
-- Config: `visual_diff_enabled: bool = False`, `visual_diff_threshold: float = 0.01` (1% pixel difference triggers alert)
-**Security:** Baseline images stored in DB (not filesystem) — BOLA-safe via entity ownership validation. ODiff subprocess called with fixed arguments only — no user input in command. Diff images are PNG output only. All endpoints require auth + developer/admin role.
-**Verify:** Upload baseline for a golden template → modify template CSS → re-render → diff detects changes with diff_percentage > threshold. Identical screenshots → `identical=True`, `diff_percentage=0.0`. Anti-aliasing-only changes (sub-pixel rendering differences) → below threshold. Baseline CRUD works. `make test` passes.
-- [x] ~~17.2 ODiff visual regression baseline system~~ DONE
-
-### 17.3 VLM Visual Analysis Agent `[Backend]`
-**What:** A new AI agent (`VisualQAAgent`) that consumes rendered screenshots and uses a vision-language model to identify rendering defects with semantic understanding — not just pixel diffs but "the CTA button is cut off in Outlook", "the two-column layout collapsed to single column in Gmail", "dark mode inverted the logo but not the background". Produces structured `VisualDefect` reports with suggested CSS fixes.
-**Why:** ODiff tells you _where_ pixels changed. A VLM tells you _what went wrong_ and _how to fix it_. This is the ScreenCoder pattern applied to email: grounding (identify the defect region), planning (determine the CSS cause), generation (produce the fix). No email platform does this — it's the single most differentiated capability the hub can offer.
-**Implementation:**
-- Create `app/ai/agents/visual_qa/` package:
-  - `schemas.py` — `VisualDefect(region: Region, description: str, severity: str, affected_clients: list[str], suggested_fix: str, css_property: str | None)`, `VisualQAResult(defects: list[VisualDefect], summary: str, auto_fixable: bool)`
-  - `service.py` — `VisualQAAgentService(BaseAgentService)`:
-    - Override `process()` to accept multimodal input: rendered screenshots + original HTML
-    - Build VLM prompt: "Compare these email screenshots rendered in {clients}. Identify rendering defects — layout breaks, missing elements, color inversions, text overflow, image sizing issues. For each defect, specify the CSS property causing it and suggest a fix."
-    - Parse VLM response into structured `VisualDefect` objects via `response_format` (structured output)
-    - Cross-reference detected CSS properties against ontology (`load_ontology()`) for known compatibility issues
-    - Generate fix suggestions that reference specific ontology fallbacks when available
-  - `SKILL.md` — agent skill file following existing pattern (5 evaluation criteria: defect_detection_accuracy, fix_correctness, false_positive_rate, client_coverage, severity_calibration)
-- Create `app/ai/agents/visual_qa/decisions.py` — `VisualQADecisions` structured output schema (following 11.22.8 pattern): `defects: tuple[VisualDefect, ...]`, `overall_rendering_score: float`, `critical_clients: list[str]`
-- Modify `app/ai/blueprints/nodes/` — add `visual_qa_node.py` following existing node pattern (`VisualQANode(BlueprintNode)`). Runs after export node as optional validation step. Integrates with checkpoint system (Phase 14)
-- Modify `app/ai/blueprints/handoff.py` — add `VisualQAHandoff(AgentHandoff)` with `screenshots: dict[str, str]` (client → base64), `baseline_diffs: list[DiffSummary]`
-- Config: `AI__VISUAL_QA_ENABLED: bool = False`, `AI__VISUAL_QA_MODEL: str = "claude-sonnet-4-5-20250514"` (vision-capable model required), `AI__VISUAL_QA_CLIENTS: list[str] = ["gmail_web", "outlook_2019", "apple_mail"]`
-**Security:** Screenshots are generated internally (17.1) — no user-uploaded images in VLM prompts. VLM prompt contains only screenshot images + HTML structure — no PII. Response parsed via structured output (no raw HTML injection). Model selection restricted to vision-capable models via capability check. Output CSS fixes validated via `sanitize_html_xss()` before application.
-**Verify:** Generate email with known Outlook incompatibility (flexbox layout) → VLM detects "layout collapsed in Outlook", suggests table-based alternative. Generate fully compatible email → VLM reports zero defects. Cross-reference: VLM-detected CSS issue matches ontology known incompatibility. False positive rate < 10% on golden template test suite. `visual_qa_enabled=False` skips entirely. `make test` passes.
-- [x] ~~17.3 VLM visual analysis agent~~ DONE
-
-### 17.4 Auto-Fix Pipeline Integration `[Backend]`
-**What:** Connect the VLM Visual QA agent's defect reports back into the CRAG correction loop to automatically fix detected visual issues. When `VisualQAAgent` identifies fixable defects, feed the defect descriptions + suggested fixes back to the Scaffolder/OutlookFixer agent as correction instructions. Creates a render → detect → fix → re-render verification cycle.
-**Why:** Detection without correction is just a report. The hub's CRAG mixin (16.5) already handles the "detect CSS issue → retrieve fallback → regenerate" pattern. This extends it to visual defects detected by the VLM, creating a fully autonomous visual QA loop that no human needs to review for common rendering issues.
-**Implementation:**
-- Create `app/ai/agents/visual_qa/correction.py` — `VisualCorrectionService`:
-  - `async correct_visual_defects(html: str, defects: list[VisualDefect], model: str) -> tuple[str, list[str]]` — takes original HTML + detected defects, generates corrected HTML
-  - For each defect with `css_property` set: look up ontology fallback via `load_ontology().fallbacks_for()` (reusing CRAG pattern)
-  - For defects without known CSS property: include VLM's `suggested_fix` in the correction prompt
-  - Correction prompt: "Fix the following rendering issues in this HTML email: {defect_descriptions}. Use these known fallbacks: {ontology_fallbacks}. Preserve all existing functionality."
-  - Output validated via `validate_output()` → `extract_html()` → `sanitize_html_xss()`
-  - Capped at 1 correction round (same as CRAG) — avoids infinite loops
-- Modify `app/ai/blueprints/nodes/visual_qa_node.py` — after VLM analysis, if `auto_fixable=True` and `defects` exist: call `VisualCorrectionService.correct_visual_defects()`, then re-render screenshots for verification. If re-render shows improvement (lower diff percentage), accept the fix. If regression, keep original
-- Modify `app/ai/agents/validation_loop.py` — add `VisualCRAGMixin` extending `CRAGMixin` with visual correction capability. `_visual_crag_validate(html, screenshots, model)` chains: screenshot → VLM analysis → correction → re-screenshot → verify
-- Config: `AI__VISUAL_QA_AUTO_FIX: bool = False` (separate from detection — detection can run without auto-fix), `AI__VISUAL_QA_MAX_CORRECTION_ROUNDS: int = 1`
-**Security:** Correction prompt contains only defect descriptions (generated by VLM, not user input) + ontology fallback code (trusted data). Output sanitised via `sanitize_html_xss()`. Re-render verification prevents regression — if fix makes things worse, original HTML preserved. Cost capped at 1 round.
-**Verify:** Email with flexbox layout → VLM detects Outlook break → auto-fix replaces with table layout → re-render confirms fix. Email with no defects → no correction attempted (zero LLM cost). Auto-fix that causes regression → original preserved. `auto_fix=False` runs detection only. `make test` passes.
-- [x] ~~17.4 Auto-fix pipeline integration~~ DONE
-
-### 17.5 Frontend Visual QA Dashboard `[Frontend]`
-**What:** Frontend UI for visual regression results: side-by-side screenshot comparison across clients, diff overlay toggle, defect annotations with severity badges, baseline management, and "Accept Fix" / "Reject Fix" actions for VLM-suggested corrections. Integrated into the workspace as a new tab alongside the existing QA results panel.
-**Why:** The visual QA data is only useful if developers can see and act on it. Side-by-side client comparison replaces the Litmus screenshot review workflow entirely within the hub. Baseline management lets teams track visual regressions across template versions.
-**Implementation:**
-- Create `cms/apps/web/src/components/visual-qa/` — `VisualQAPanel.tsx` (main container), `ClientComparisonGrid.tsx` (side-by-side screenshots), `DiffOverlay.tsx` (toggle diff image over screenshot), `DefectAnnotation.tsx` (clickable defect regions with description tooltip), `BaselineManager.tsx` (view/update baselines)
-- Create `cms/apps/web/src/hooks/use-visual-qa.ts` — SWR hooks: `useScreenshots(templateId)`, `useVisualDiff(templateId)`, `useBaselines(entityType, entityId)`, `useUpdateBaseline()`
-- Modify workspace layout — add "Visual QA" tab in the QA results section (alongside existing HTML validation, CSS support, etc.)
-- Add i18n keys across 6 locales (en, de, fr, es, it, nl) — ~30 keys for labels, tooltips, status messages
-- SDK regeneration for new rendering endpoints
-**Security:** Screenshots displayed via `<img src="data:image/png;base64,...">` — no external URLs. Diff overlay uses canvas API — no innerHTML. Baseline update requires developer/admin role.
-**Verify:** Render screenshots → display in grid → toggle diff overlay → annotations appear at correct regions. Baseline update flow works end-to-end. Responsive layout at all viewport sizes. `make check-fe` passes. i18n keys present in all 6 locales.
-- [x] ~~17.5 Frontend visual QA dashboard~~ DONE
-
-### 17.6 Tests & SDK Integration `[Full-Stack]`
-**What:** Comprehensive test suite for visual regression pipeline: screenshot rendering tests, ODiff integration tests, VLM agent unit tests (with mocked vision responses), correction pipeline tests, baseline CRUD tests, route tests with auth/rate limiting. SDK regeneration covering all new rendering endpoints.
-**Why:** Visual QA involves multiple async services (Playwright, ODiff, VLM) that must be tested in isolation and integration. The rendering service especially needs reliability testing — browser crashes, timeouts, and memory limits must be handled gracefully.
-**Implementation:**
-- Create `app/rendering/tests/` — `test_screenshot.py` (rendering profiles, viewport simulation, timeout handling), `test_visual_diff.py` (ODiff integration, threshold logic, baseline CRUD), `test_routes.py` (auth, rate limiting, error handling for all new endpoints)
-- Create `app/ai/agents/visual_qa/tests/` — `test_visual_qa_agent.py` (VLM response parsing, defect detection, structured output), `test_correction.py` (auto-fix pipeline, regression prevention, ontology integration)
-- SDK regeneration via `@hey-api/openapi-ts`
-- Target: 40+ tests covering all paths
-**Security:** Tests verify auth requirements on all endpoints. Rate limiting verified. Baseline BOLA protection tested.
-**Verify:** `make test` passes with all new tests. `make check` all green. SDK types match API responses. No regression in existing test suite.
-- [x] ~~17.6 Tests & SDK integration~~ DONE
-
----
-
-## Phase 18 — Rendering Resilience & Property-Based Testing
-
-**What:** Build a chaos testing engine that deliberately degrades email HTML to simulate real-world email client behaviors, and a property-based testing framework that generates hundreds of random email configurations to verify invariants hold. Adds "resilience score" to the QA pipeline alongside the existing 11 checks.
-**Why:** Current QA tests emails in ideal conditions — clean HTML, all styles applied, images loaded. Real inboxes are hostile: Gmail strips `<style>` blocks, Outlook ignores modern CSS, corporate firewalls block images, dark mode inverts colors unexpectedly. Chaos engineering (borrowed from distributed systems / Google's 2025 framework) applied to email rendering reveals fragility that golden template tests miss. Property-based testing (borrowed from formal verification / QuickCheck) covers the combinatorial space — the hub currently tests 7 golden templates, but there are thousands of possible section/client/dark-mode/locale combinations.
-**Dependencies:** Phase 11 (QA engine checks), Phase 16 (CRAG for auto-correction of discovered issues), Phase 17 (screenshot rendering for visual verification).
-**Design principle:** Chaos profiles are composable — test one degradation at a time or stack multiples. Property generators are seeded for reproducibility. Both integrate as optional QA checks — existing pipeline unchanged when disabled. Results feed back into knowledge base as RAG documents.
-
-### 18.1 Email Chaos Engine `[Backend]`
-**What:** A testing engine that applies controlled degradations to email HTML, simulating real-world email client behaviors. Each degradation is a composable `ChaosProfile` — strip all `<style>` blocks (Gmail), remove media queries (many mobile clients), block all images (corporate firewalls / image-off settings), inject dark mode color inversion (Outlook/Apple Mail), remove MSO conditional comments, convert all `<div>` to `<span>` (some webmail), limit HTML to 102KB (Gmail clipping), strip `class` attributes. Runs the degraded HTML through the existing QA engine to measure resilience.
-**Why:** An email that passes QA with all styles intact but breaks when Gmail strips styles is a false positive. Chaos testing reveals these fragilities before they reach real inboxes. Google's chaos engineering framework (2025) showed systems with ongoing resilience validation recovered 32% faster — the same principle applies to email templates. No email platform offers this; competitors test "does it render correctly?" while this tests "does it survive the real world?"
-**Implementation:**
-- Create `app/qa_engine/chaos/` package:
-  - `profiles.py` — `ChaosProfile(name: str, description: str, transformations: list[Callable[[str], str]])` and pre-built profiles:
-    - `GMAIL_STYLE_STRIP`: remove all `<style>` and `<link rel="stylesheet">` elements via BeautifulSoup
-    - `IMAGE_BLOCKED`: replace all `<img>` `src` with transparent 1x1 GIF, verify alt text visibility
-    - `DARK_MODE_INVERSION`: inject `filter: invert(1) hue-rotate(180deg)` on `<body>`, simulate `[data-ogsc]` and `[data-ogsb]` attribute addition
-    - `OUTLOOK_WORD_ENGINE`: strip flexbox/grid properties, convert `<div>` containers to `<table>` wrappers, remove CSS custom properties
-    - `GMAIL_CLIPPING`: truncate HTML at 102,400 bytes, verify "View entire message" doesn't cut mid-tag
-    - `MOBILE_NARROW`: inject `max-width: 375px` on body, verify no horizontal scroll (content overflow)
-    - `CLASS_STRIP`: remove all `class` attributes (some security-focused email clients)
-    - `MEDIA_QUERY_STRIP`: remove all `@media` rules from inline and block styles
-  - `engine.py` — `ChaosEngine` class:
-    - `async run_chaos_test(html: str, profiles: list[str] | None = None) -> ChaosTestResult` — applies each profile, runs QA checks on degraded HTML, returns per-profile results
-    - `ChaosTestResult(original_score: float, degraded_scores: dict[str, float], resilience_score: float, critical_failures: list[ChaosFailure])` — `resilience_score` = weighted average of degraded scores / original score
-    - `ChaosFailure(profile: str, check_name: str, severity: str, description: str)` — specific QA check failures introduced by degradation
-  - `composable.py` — `compose_profiles(*profiles) -> ChaosProfile` — stack multiple degradations for worst-case testing
-- Modify `app/qa_engine/service.py` — add `async run_chaos_test(template_id: int, html: str) -> ChaosTestResult` calling `ChaosEngine`. Optional — only runs when `chaos_testing_enabled=True`
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/chaos-test` with auth + rate limiting (`3/minute`)
-- Modify `app/qa_engine/schemas.py` — add `ChaosTestResult`, `ChaosFailure`, `ChaosTestRequest` response schemas. Add optional `resilience_score: float | None` to existing `QARunResponse`
-- Config: `QA__CHAOS_TESTING_ENABLED: bool = False`, `QA__CHAOS_DEFAULT_PROFILES: list[str] = ["gmail_style_strip", "image_blocked", "dark_mode_inversion", "gmail_clipping"]`
-**Security:** Chaos transformations are deterministic pure functions — no LLM calls, no external network. HTML mutations use BeautifulSoup (parser, not eval). Degraded HTML is temporary (never persisted). Rate limited to prevent CPU abuse from expensive transformations.
-**Verify:** Apply `GMAIL_STYLE_STRIP` to email with inline styles → QA score unchanged. Apply to email relying on `<style>` block → QA score drops, specific CSS failures reported. Stack `GMAIL_STYLE_STRIP` + `IMAGE_BLOCKED` → compound failures detected. `resilience_score` correctly reflects degradation impact. 102KB Gmail clipping correctly truncates. `chaos_testing_enabled=False` skips entirely. `make test` passes.
-- [x] ~~18.1 Email chaos engine~~ DONE
-
-### 18.2 Property-Based Email Testing Framework `[Backend]`
-**What:** Define email invariants (properties that must always hold regardless of content) and a generator that produces hundreds of random email configurations to verify these invariants. Borrows from QuickCheck/Hypothesis — generates random section combinations, content lengths, image counts, nesting depths, and client targets, then asserts invariants hold across all generated cases. Failing cases are automatically minimised to find the simplest reproduction.
-**Why:** The hub tests 7 golden templates — a tiny fraction of the possible configuration space. Property-based testing covers combinations that no human would think to test: a 12-section email with RTL text, 3 nested tables, and Outlook dark mode. This catches edge cases that manifest in production but never appear in curated test suites. Agentic property-based testing (2025) found genuine bugs in NumPy and other mature libraries.
-**Implementation:**
-- Create `app/qa_engine/property_testing/` package:
-  - `invariants.py` — `EmailInvariant` Protocol with `check(html: str) -> InvariantResult`, pre-built invariants:
-    - `ContrastRatio`: all text has WCAG AA contrast ratio >= 4.5:1 against background
-    - `ImageWidth`: no `<img>` wider than 600px (email max width standard)
-    - `LinkIntegrity`: every `<a>` has non-empty `href`, no `javascript:` URIs
-    - `SizeLimit`: total HTML < 102KB (Gmail clipping threshold)
-    - `AltTextPresence`: every `<img>` has non-empty `alt` attribute
-    - `TableNestingDepth`: table nesting depth <= 8 (Outlook rendering limit)
-    - `ViewportFit`: content renders within 600px width without horizontal scroll
-    - `EncodingValid`: all characters are valid UTF-8, no null bytes
-    - `MSOBalance`: every `<!--[if mso]>` has matching `<![endif]-->`
-    - `DarkModeReady`: if `prefers-color-scheme` used, both light and dark values specified
-  - `generators.py` — `EmailGenerator` class using `hypothesis` library:
-    - `generate_section_config() -> SectionConfig` — random section count (1-15), types from `SectionBlock` categories, content lengths (10-2000 chars)
-    - `generate_style_config() -> StyleConfig` — random font stacks, color palettes (including near-threshold contrast), spacing values
-    - `generate_client_target() -> str` — weighted random client selection matching real-world market share distribution
-    - `generate_email(config: EmailConfig) -> str` — uses `TemplateAssembler` to build valid HTML from random config
-  - `runner.py` — `PropertyTestRunner`:
-    - `async run(invariants: list[str], num_cases: int = 100, seed: int | None = None) -> PropertyTestReport` — generates N random emails, checks all invariants, returns failures with minimal reproduction
-    - `PropertyTestReport(total_cases: int, passed: int, failed: int, failures: list[PropertyFailure], seed: int)` — `PropertyFailure` includes the minimised config that triggers the invariant violation
-    - Hypothesis `@given` integration for automatic shrinking of failing cases
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/property-test` with auth + rate limiting (`1/minute` — computationally expensive)
-- Config: `QA__PROPERTY_TESTING_ENABLED: bool = False`, `QA__PROPERTY_TEST_CASES: int = 100`, `QA__PROPERTY_TEST_SEED: int | None = None` (fixed seed for CI reproducibility)
-- Add `make test-properties` command — runs property tests with fixed seed for CI
-**Security:** Generators produce synthetic HTML only — no user data. Hypothesis library is well-established (no security concerns). Rate limited aggressively due to CPU cost. Generated emails never persisted — temporary in-memory only.
-**Verify:** Run 100 property tests → at least some invariant violations found (proves the generator covers edge cases). Fix a known invariant violation → re-run with same seed → violation no longer appears. `SizeLimit` invariant catches oversized emails. `ContrastRatio` catches near-threshold color combinations. `make test-properties` completes within 60 seconds. `make test` passes.
-- [x] ~~18.2 Property-based email testing framework~~ DONE
-
-### 18.3 Resilience Score Integration & Knowledge Feedback `[Backend]`
-**What:** Integrate chaos test results and property test findings into the existing QA pipeline as optional check #12 ("rendering resilience"). Auto-generate knowledge base documents from discovered failures — each new chaos failure becomes a RAG-retrievable document describing the failure pattern, affected clients, and recommended fix. This creates a self-improving knowledge base that grows from every test run.
-**Why:** Chaos and property testing produce insights that should compound across projects. A Gmail clipping issue found on Project A should inform email generation on Project B. The hub's knowledge base (Phase 8-9) + RAG pipeline (Phase 16) can surface these learnings at generation time — "this section pattern caused Gmail clipping for 3 previous projects."
-**Implementation:**
-- Create `app/qa_engine/checks/rendering_resilience.py` — `RenderingResilienceCheck(QACheck)`:
-  - `async run(html: str, config: QAConfig) -> QACheckResult` — runs chaos engine with default profiles, returns pass/fail based on `resilience_score >= threshold`
-  - Threshold: `QA__RESILIENCE_THRESHOLD: float = 0.7` (email must retain 70% of its QA score under degradation)
-- Modify `app/qa_engine/service.py` — register `RenderingResilienceCheck` as check #12 (optional, behind feature flag)
-- Create `app/qa_engine/chaos/knowledge_writer.py` — `ChaosKnowledgeWriter`:
-  - `async write_failure_documents(failures: list[ChaosFailure], project_id: int) -> list[int]` — creates `Document` entries in knowledge base for each unique failure pattern
-  - Document format: title = "{profile} failure: {check_name}", content = markdown description with affected clients, failure details, recommended fix, HTML snippet showing the problematic pattern
-  - Deduplication: check for existing document with same title + project before creating new one
-  - Tags: `domain="chaos_findings"`, `section_type="failure_pattern"`
-- Modify `app/knowledge/service.py` — `search()` considers chaos_findings domain when query matches rendering/resilience patterns
-- Config: `QA__CHAOS_AUTO_DOCUMENT: bool = False` (auto-generate knowledge docs from failures), `QA__RESILIENCE_CHECK_ENABLED: bool = False`
-**Security:** Knowledge documents contain only structural HTML patterns (no PII). Document creation uses existing `KnowledgeService.ingest_document()` with tenant isolation via project_id.
-**Verify:** Run chaos test → failures found → knowledge documents auto-created → subsequent RAG search for same pattern returns the chaos finding. Resilience check passes for well-structured email (score > 0.7). Resilience check fails for fragile email (single-column layout breaks under style stripping). `make test` passes.
-- [x] ~~18.3 Resilience score integration & knowledge feedback~~ DONE
-
-### 18.4 Frontend Chaos & Property Testing UI `[Frontend]`
-**What:** Frontend components for chaos test results (per-profile score breakdown, failure details, "Fix This" action dispatching to CRAG) and property test reports (pass/fail summary, failing case inspector with minimised config display). Integrated into the QA dashboard.
-**Why:** Chaos and property test data must be actionable — developers need to see which degradations break their email and drill into specific failures. The "Fix This" action connecting to CRAG creates a one-click fix workflow.
-**Implementation:**
-- Create `cms/apps/web/src/components/qa/ChaosTestPanel.tsx` — profile score radar chart, failure list with severity, "Run Chaos Test" action button
-- Create `cms/apps/web/src/components/qa/PropertyTestPanel.tsx` — pass/fail gauge, failing invariant list, expandable case detail with minimised config
-- Create `cms/apps/web/src/hooks/use-chaos-test.ts`, `use-property-test.ts` — SWR hooks for new endpoints
-- Add i18n keys across 6 locales — ~25 keys
-- SDK regeneration for chaos/property endpoints
-**Security:** No raw HTML displayed in UI — all results are structured data. "Fix This" action uses existing CRAG endpoint with auth.
-**Verify:** Run chaos test → results display in panel → per-profile scores shown → failure details expandable. Property test → pass/fail summary → failing cases inspectable. `make check-fe` passes.
-- [x] ~~18.4 Frontend chaos & property testing UI~~ DONE
-
-### 18.5 Tests & Documentation `[Full-Stack]`
-**What:** Full test suite for chaos engine (profile application correctness, composability, QA integration), property testing (invariant checks, generator coverage, seed reproducibility), resilience check (#12), knowledge feedback writer. ADR documenting the resilience testing architecture.
-**Implementation:**
-- Create `app/qa_engine/chaos/tests/` — `test_chaos_engine.py` (profile transformations, composability, resilience scoring), `test_knowledge_writer.py` (document creation, deduplication)
-- Create `app/qa_engine/property_testing/tests/` — `test_invariants.py` (each invariant against known pass/fail HTML), `test_generators.py` (output validity, seed reproducibility), `test_runner.py` (end-to-end with shrinking)
-- Route tests for new endpoints (auth, rate limiting)
-- Target: 35+ tests
-- ADR-007 in `docs/ARCHITECTURE.md` — Rendering Resilience Testing
-**Verify:** `make test` passes. `make check` all green. No regression in existing tests.
-- [x] ~~18.5 Tests & documentation~~ DONE — 37 new tests across 8 files (test_service_chaos.py, test_chaos_engine.py, test_chaos_profiles.py, test_knowledge_writer.py, test_resilience_check.py, test_generators.py, test_invariants.py, test_runner.py); ADR-007 Rendering Resilience Testing in docs/ARCHITECTURE.md; 2768 total backend tests
-
----
-
-## Phase 19 — Outlook Transition Advisor & Email CSS Compiler
-
-**What:** Two capabilities that address the most urgent industry event (Microsoft ending Word-based Outlook rendering, October 2026) and the most impactful technical optimization (an email-specific CSS compiler using Lightning CSS). The Outlook Transition Advisor analyzes templates for Word-engine dependencies and generates migration plans. The CSS compiler performs AST-level optimization targeting "email client VMs" — removing unsupported properties, auto-converting modern CSS to table equivalents, and inlining optimally.
-**Why:** October 2026 is the biggest rendering engine change in email history. Every enterprise with Outlook-targeted templates needs a migration plan. No platform offers automated analysis of Word-engine dependencies or a clear modernization path. The CSS compiler goes beyond Juice (string-level inlining) to AST-level optimization using the hub's own ontology data — producing smaller, faster, more compatible output than any existing tool.
-**Dependencies:** Phase 11 (QA engine + existing Outlook Fixer agent), Phase 16 (ontology data for CSS compatibility), Phase 8-9 (knowledge graph for workaround patterns).
-**Design principle:** Advisor is non-destructive — analyzes and reports without modifying templates. Compiler optimizations are opt-in per property class. Both use the hub's ontology as the single source of truth for CSS compatibility.
-
-### 19.1 Outlook Word-Engine Dependency Analyzer `[Backend]`
-**What:** Static analyzer that scans email HTML for Word rendering engine dependencies: VML shapes (`v:*` elements), ghost tables (tables used purely for layout in MSO conditionals), MSO conditional comments (`<!--[if mso]>`), Word-specific CSS (`mso-*` properties), DPI-dependent image sizing, and `.ExternalClass` hacks. Produces a dependency report with severity ratings and modernization suggestions.
-**Why:** Developers have accumulated years of Outlook workarounds — ghost tables, VML buttons, mso-line-height-rule hacks. After October 2026, these are dead code that bloats HTML and adds maintenance burden. The analyzer tells you exactly which workarounds can be safely removed based on your audience's Outlook version distribution.
-**Implementation:**
-- Create `app/qa_engine/outlook_analyzer/` package:
-  - `detector.py` — `OutlookDependencyDetector`:
-    - `analyze(html: str) -> OutlookAnalysis` — parses HTML via BeautifulSoup, returns structured dependency report
-    - Detection rules (all regex/AST — no LLM):
-      - `VML_SHAPES`: find `<v:roundrect>`, `<v:rect>`, `<v:oval>`, `<v:shape>` elements
-      - `GHOST_TABLES`: `<table>` elements inside `<!--[if mso]>` conditionals with no visible content
-      - `MSO_CONDITIONALS`: all `<!--[if mso]>` / `<!--[if !mso]>` blocks with content categorization
-      - `MSO_CSS_PROPERTIES`: `mso-line-height-rule`, `mso-table-lspace`, `mso-padding-alt`, etc.
-      - `DPI_IMAGES`: images with explicit `width`/`height` attributes that differ from CSS dimensions (DPI compensation)
-      - `EXTERNAL_CLASS`: `.ExternalClass` CSS rules
-      - `WORD_WRAP_HACKS`: `word-wrap`, `word-break` with mso-specific values
-    - `OutlookAnalysis(dependencies: list[OutlookDependency], total_count: int, removable_count: int, byte_savings: int, modernization_plan: list[ModernizationStep])`
-    - `OutlookDependency(type: str, location: str, line_number: int, code_snippet: str, severity: str, removable: bool, modern_replacement: str | None)`
-  - `modernizer.py` — `OutlookModernizer`:
-    - `modernize(html: str, analysis: OutlookAnalysis, target: str = "new_outlook") -> str` — applies safe modernizations:
-      - Replace VML buttons with CSS `border-radius` + `background-color` (New Outlook = Chromium)
-      - Remove ghost tables, unwrap content
-      - Remove `mso-*` CSS properties (or keep inside `<!--[if mso]>` for dual-support period)
-      - Replace `.ExternalClass` hacks with standard CSS
-    - `target` parameter: `"new_outlook"` (aggressive — remove all Word hacks), `"dual_support"` (keep hacks inside conditionals for transition period), `"audit_only"` (report but don't modify)
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/outlook-analysis` (analyze), `POST /api/v1/qa/outlook-modernize` (apply modernizations) with auth + rate limiting
-- Config: `QA__OUTLOOK_ANALYZER_ENABLED: bool = False`, `QA__OUTLOOK_DEFAULT_TARGET: str = "dual_support"`
-**Security:** Analyzer is read-only — parses HTML via BeautifulSoup (no eval). Modernizer applies deterministic transformations only. No external calls. Output sanitized via `sanitize_html_xss()`.
-**Verify:** Analyze email with VML buttons → all VML elements detected, modern CSS replacement suggested. Analyze clean modern email → zero dependencies. Modernize with `new_outlook` → VML replaced with CSS, ghost tables removed, byte size reduced. Modernize with `dual_support` → hacks wrapped in conditionals but functional in both engines. `make test` passes.
-- [x] ~~19.1 Outlook Word-engine dependency analyzer~~ DONE
-
-### 19.2 Audience-Aware Outlook Migration Planner `[Backend]`
-**What:** A migration planning service that combines the dependency analysis (19.1) with audience data (Outlook version distribution from ESP analytics or manual input) to produce a phased migration plan. Shows which workarounds are safe to remove now (< 5% of audience on old Outlook), which need the dual-support period, and projects a timeline for full modernization.
-**Why:** "Remove all Outlook hacks" is too aggressive for most enterprises — they need to know which hacks are safe to remove based on their actual audience. A financial services client with 40% Outlook 2016 users has a different migration timeline than a tech company with 90% Gmail. This audience-aware planning is what makes the tool consultancy-grade.
-**Implementation:**
-- Create `app/qa_engine/outlook_analyzer/planner.py` — `MigrationPlanner`:
-  - `plan(analysis: OutlookAnalysis, audience: AudienceProfile) -> MigrationPlan` — produces phased plan
-  - `AudienceProfile(client_distribution: dict[str, float])` — e.g., `{"outlook_2016": 0.15, "outlook_2019": 0.20, "new_outlook": 0.10, "gmail_web": 0.35, ...}`
-  - `MigrationPlan(phases: list[MigrationPhase], total_savings_bytes: int, estimated_completion: str, risk_assessment: str)`
-  - `MigrationPhase(name: str, dependencies_to_remove: list[OutlookDependency], audience_impact: float, safe_when: str)` — `safe_when` = "now" / "when old_outlook < 10%" / "after october 2026"
-  - Phase ordering: safest removals first (audience_impact < 1%), riskier removals later
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/outlook-migration-plan` accepting analysis + audience profile
-- Modify `app/connectors/service.py` — add `async get_audience_profile(connection_id: int) -> AudienceProfile | None` — pull client distribution from ESP analytics API (Braze/SFMC provide this). Returns `None` if ESP doesn't support analytics
-**Security:** Audience data is aggregate statistics (percentages per client) — no PII. ESP analytics API calls use existing encrypted credentials from `ESPConnection`. Migration plan contains only code patterns and percentages.
-**Verify:** Plan with 40% old Outlook → conservative phased approach, most hacks kept. Plan with 5% old Outlook → aggressive modernization recommended. Plan with no audience data → generic timeline based on industry averages. ESP audience pull works for Braze (mock server). `make test` passes.
-- [x] ~~19.2 Audience-aware Outlook migration planner~~ DONE
-
-### 19.3 Lightning CSS Email Compiler `[Backend]`
-**What:** An email-specific CSS compiler built on Lightning CSS (Rust, 100x faster than JS parsers) that performs AST-level optimization for email clients. Unlike Juice (which does string-level CSS inlining), this compiler understands the email rendering landscape: removes CSS properties unsupported by target clients (driven by ontology data), auto-converts modern CSS to email-safe equivalents, merges redundant declarations, removes dead selectors, and produces optimal inlined output.
-**Why:** Current CSS processing in the Maizzle pipeline uses Juice for inlining — a brute-force approach that doesn't understand email client constraints. The compiler produces smaller HTML (often 15-25% reduction) by eliminating properties that would be ignored anyway, and converts modern CSS to compatible equivalents (e.g., `gap` → `margin` on child elements for Outlook). Lightning CSS's Python bindings make this a drop-in enhancement.
-**Implementation:**
-- Install `lightningcss` Python bindings (via `pip install lightningcss`) or use Rust binary via subprocess
-- Create `app/email_engine/css_compiler/` package:
-  - `compiler.py` — `EmailCSSCompiler`:
-    - `compile(html: str, target_clients: list[str] | None = None) -> CompilationResult` — full compilation pipeline
-    - `CompilationResult(html: str, original_size: int, compiled_size: int, removed_properties: list[str], conversions: list[CSSConversion], warnings: list[str])`
-    - Pipeline stages:
-      1. **Parse**: extract all CSS (inline styles + `<style>` blocks) via Lightning CSS parser
-      2. **Analyze**: cross-reference each property against ontology support matrix for target clients
-      3. **Transform**: apply conversions for unsupported properties (ontology `Fallback` objects provide alternatives)
-      4. **Eliminate**: remove properties with zero support across all target clients (dead CSS)
-      5. **Optimize**: Lightning CSS minification — merge longhands into shorthands, reduce `calc()`, remove redundant declarations
-      6. **Inline**: inject optimized styles as inline `style` attributes (replacing Juice)
-      7. **Output**: final HTML with optimized CSS
-  - `conversions.py` — `CSSConversion` rules driven by ontology fallbacks:
-    - `flexbox_to_table`: convert `display:flex` containers to `<table>` equivalents
-    - `grid_to_table`: convert `display:grid` layouts to table-based
-    - `gap_to_margin`: convert `gap` property to `margin` on child elements
-    - `custom_properties_to_values`: resolve `var(--x)` references to computed values
-    - `modern_to_outlook`: generate MSO conditional blocks for properties that need dual-path
-  - `integration.py` — `MaizzleCompilerPlugin` — hook into Maizzle sidecar build pipeline (replace Juice step)
-- Modify `services/maizzle-builder/` — add optional CSS compiler step via POST /compile-css endpoint (alternative to Juice inlining)
-- Modify `app/email_engine/routes.py` — add `POST /api/v1/email/compile-css` for standalone CSS compilation
-- Config: `EMAIL_ENGINE__CSS_COMPILER_ENABLED: bool = False`, `EMAIL_ENGINE__CSS_COMPILER_TARGET_CLIENTS: list[str] = ["gmail_web", "outlook_2019", "apple_mail", "yahoo_mail"]`
-**Security:** CSS parsing via Lightning CSS (Rust, memory-safe). No eval/exec of CSS content. Ontology data is read-only. Output validated via `sanitize_html_xss()`. No external network calls.
-**Verify:** Compile email with `display:flex` targeting `[outlook_2019]` → flexbox converted to table layout. Compile targeting `[gmail_web, apple_mail]` only → flexbox preserved (both support it). Size reduction measured: compiled output < original for all golden templates. Juice-replaced output renders identically to Juice output in golden template screenshots. `make test` passes.
-- [x] ~~19.3 Lightning CSS email compiler~~ DONE
-
-### 19.4 Frontend Outlook Advisor & Compiler Dashboard `[Frontend]`
-**What:** Frontend UI for Outlook migration analysis (dependency heatmap, migration timeline, "Modernize" action), audience profile input/ESP import, and CSS compilation results (size before/after, removed properties, conversion list). Integrated into workspace toolbar and QA panel.
-**Implementation:**
-- Create `cms/apps/web/src/components/outlook/` — `OutlookAdvisorPanel.tsx` (dependency list with severity), `MigrationTimeline.tsx` (phased plan visualization), `AudienceProfileInput.tsx` (manual entry or ESP import)
-- Create `cms/apps/web/src/components/email-engine/CSSCompilerPanel.tsx` — before/after size comparison, property removal list, conversion details
-- SWR hooks: `useOutlookAnalysis()`, `useMigrationPlan()`, `useCSSCompile()`
-- i18n: ~30 keys across 6 locales
-- SDK regeneration
-**Verify:** Full Outlook analysis → migration plan displayed → "Modernize" applies changes → re-analysis shows reduction. CSS compiler → size reduction shown. `make check-fe` passes.
-- [x] ~~19.4 Frontend Outlook advisor & compiler dashboard~~ DONE
-
-### 19.5 Tests & Documentation `[Full-Stack]`
-**What:** Tests for Outlook analyzer (detection of all 7 dependency types), modernizer (safe transformations, dual-support mode), migration planner (audience-weighted phasing), CSS compiler (all conversion rules, size reduction, ontology integration). 45+ tests. ADR-008.
-**Implementation:**
-- Create `app/qa_engine/outlook_analyzer/tests/` — `test_detector.py`, `test_modernizer.py`, `test_planner.py` — 25+ tests
-- Create `app/email_engine/css_compiler/tests/` — `test_compiler.py`, `test_conversions.py` — 20+ tests
-- Route tests for all new endpoints
-- ADR-008 in `docs/ARCHITECTURE.md` — Outlook Transition & CSS Compilation
-**Verify:** `make test` passes. `make check` all green.
-- [x] ~~19.5 Tests & documentation~~ DONE
-
----
-
-## Phase 20 — Gmail AI Intelligence & Deliverability
-
-**What:** Three capabilities targeting the Gmail ecosystem: (1) predict how Gmail's Gemini AI will summarize an email, (2) auto-inject schema.org structured data based on email intent, (3) pre-send deliverability scoring. Plus BIMI readiness verification.
-**Why:** Gmail's AI filtering (launched early 2026) creates a new layer between sender and recipient — emails are now summarized, categorized, and filtered by AI before users see them. No email platform addresses this. Schema.org markup directly impacts Gmail Promotions tab visibility (deal annotations, product carousels). BIMI is mandatory for enterprise trust signals in 2026. Deliverability scoring closes the "looks good but never reaches inbox" gap.
-**Dependencies:** Phase 11 (QA engine for deliverability checks), Phase 16 (query router intent classification — reusable for email intent classification).
-**Design principle:** Gmail AI prediction is best-effort (no one has access to Gemini's actual summarization model) — we use a local LLM to approximate. Schema.org injection is deterministic (rule-based, not LLM). Deliverability scoring is heuristic-based with optional LLM enhancement.
-
-### 20.1 Gmail AI Summary Predictor `[Backend]`
-**What:** A service that estimates how Gmail's Gemini-powered summarization will present an email to the recipient. Generates a predicted "summary card" — the 1-2 sentence preview that appears in Gmail's inbox view, the categorization (Primary/Promotions/Updates/Social), and the likely "key action" extraction. Uses an LLM to simulate Gemini's summarization behavior based on the email's subject line, preview text, and body content.
-**Why:** Gmail's AI summarization means the email you send is not the email users see. If Gemini summarizes a promotional email as "Company wants you to buy X at Y% off", that summary IS the email for most users. Optimizing the email to produce favorable AI summaries is an entirely new discipline — and no one offers tooling for it. This is greenfield competitive advantage.
-**Implementation:**
-- Create `app/qa_engine/gmail_intelligence/` package:
-  - `predictor.py` — `GmailSummaryPredictor`:
-    - `async predict(html: str, subject: str, from_name: str) -> GmailPrediction` — extracts text content from HTML, feeds to LLM with Gmail-specific summarization prompt
-    - `GmailPrediction(summary_text: str, predicted_category: str, key_actions: list[str], promotion_signals: list[str], improvement_suggestions: list[str])`
-    - Summarization prompt engineered to mimic Gemini's known behaviors: focus on CTAs, pricing, urgency signals, sender reputation heuristics
-    - Category prediction based on: sender domain, subject line patterns, CTA density, unsubscribe link presence, schema.org markup presence
-    - `improvement_suggestions`: specific changes to subject/preview text/content that would improve the summary
-  - `optimizer.py` — `PreviewTextOptimizer`:
-    - `async optimize(html: str, subject: str, target_summary: str | None = None) -> OptimizedPreview` — suggests preview text and subject line variations that produce better AI summaries
-    - `OptimizedPreview(original_subject: str, suggested_subjects: list[str], original_preview: str, suggested_previews: list[str], reasoning: str)`
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/gmail-predict` (prediction), `POST /api/v1/qa/gmail-optimize` (suggestions)
-- Config: `QA__GMAIL_PREDICTOR_ENABLED: bool = False`, `QA__GMAIL_PREDICTOR_MODEL: str = "gpt-4o-mini"` (cost-efficient for summarization)
-**Security:** Email content passed to LLM for summarization — same security model as existing agents (no PII expected in template HTML). Prompt sanitized via `sanitize_prompt()`. LLM response is text-only — no code execution. Rate limited.
-**Verify:** Promotional email with pricing → predicted category = "Promotions", summary includes price/discount. Transactional email (order confirmation) → predicted category = "Updates", summary includes order details. Subject line optimization → suggestions differ from original and are coherent. `gmail_predictor_enabled=False` skips entirely. `make test` passes.
-- [x] ~~20.1 Gmail AI summary predictor~~ DONE
-
-### 20.2 Schema.org Auto-Markup Injection `[Backend]`
-**What:** Automatically inject appropriate schema.org JSON-LD structured data into email HTML based on classified email intent. Supports Gmail Actions (ConfirmAction, ViewAction, TrackAction), Deal Annotations (promotions tab product cards with price/discount/expiry), Event markup (RSVP actions), and Order tracking (ViewOrderAction with status). Intent classification reuses the hub's QueryRouter pattern (16.1).
-**Why:** Schema.org markup directly impacts Gmail inbox experience: Deal Annotations surface product images and prices in the Promotions tab, Action buttons appear in the inbox list view without opening the email, and Event markup enables RSVP from the inbox. Most email platforms ignore this entirely — markup is added manually by developers who happen to know about it. Auto-injection based on detected intent makes it effortless.
-**Implementation:**
-- Create `app/email_engine/schema_markup/` package:
-  - `classifier.py` — `EmailIntentClassifier`:
-    - `classify(html: str, subject: str) -> EmailIntent` — regex-first classification (reusing 16.1 pattern):
-      - `promotional`: pricing patterns (`$`, `£`, `%`, "sale", "discount", "offer"), CTA patterns ("Shop now", "Buy", "Order")
-      - `transactional`: order number patterns, shipping/tracking keywords, receipt indicators
-      - `event`: date/time patterns with RSVP/register/attend keywords
-      - `newsletter`: "unsubscribe" + regular content without commercial CTAs
-      - `notification`: status update patterns, account activity keywords
-    - `EmailIntent(type: str, confidence: float, extracted_entities: dict)` — entities include detected prices, dates, order numbers, product names
-  - `injector.py` — `SchemaMarkupInjector`:
-    - `inject(html: str, intent: EmailIntent) -> str` — injects JSON-LD `<script type="application/ld+json">` in `<head>`
-    - Intent → markup mapping:
-      - `promotional` → `Product` + `Offer` with `price`, `priceCurrency`, `availabilityEnds` (if detected), `DealAnnotation` for Gmail Promotions tab
-      - `transactional` → `Order` + `OrderStatus` with `orderNumber`, `TrackAction` with tracking URL
-      - `event` → `Event` with `startDate`, `location`, `RsvpAction` or `ViewAction`
-      - `notification` → `ViewAction` linking to relevant dashboard/page
-    - Validates generated JSON-LD against schema.org vocabulary before injection
-  - `validator.py` — `SchemaValidator` — validates JSON-LD structure, required properties per type, Gmail-specific requirements (sender verification, HTTPS action URLs)
-- Modify `app/email_engine/service.py` — add optional schema injection step in email build pipeline (after HTML compilation, before export)
-- Modify `app/email_engine/routes.py` — add `POST /api/v1/email/inject-schema` for standalone schema injection
-- Config: `EMAIL_ENGINE__SCHEMA_INJECTION_ENABLED: bool = False`, `EMAIL_ENGINE__SCHEMA_TYPES: list[str] = ["promotional", "transactional", "event"]`
-**Security:** JSON-LD is structured data — no executable code. Action URLs validated as HTTPS only (Gmail requirement). No user-provided URLs in generated markup — only URLs extracted from the email HTML itself. Injection point is `<head>` only — no body modification.
-**Verify:** Email with "$50 off, expires March 30" → `DealAnnotation` injected with price=$50, discount, expiry date. Order confirmation email → `Order` + `TrackAction` injected. Event invitation → `Event` + `RsvpAction` injected. Newsletter → no markup injected (intentional — newsletters don't benefit). JSON-LD validates against schema.org. `make test` passes.
-- [x] ~~20.2 Schema.org auto-markup injection~~ DONE
-
-### 20.3 Deliverability Prediction Score `[Backend]`
-**What:** Pre-send deliverability scoring that analyzes email HTML for spam trigger patterns, image-to-text ratio, link density, authentication readiness (SPF/DKIM/DMARC/BIMI), and content quality signals. Produces a 0-100 deliverability score with specific improvement recommendations. Integrates as QA check #13.
-**Why:** An email that renders perfectly but lands in spam is worse than one with rendering issues that reaches the inbox. The global average inbox placement rate is 83.1% — meaning ~17% of emails never reach the recipient. Current QA checks validate rendering and accessibility but ignore deliverability entirely. This closes the gap.
-**Implementation:**
-- Create `app/qa_engine/checks/deliverability.py` — `DeliverabilityCheck(QACheck)`:
-  - `async run(html: str, config: QAConfig) -> QACheckResult` — scoring across dimensions:
-    - **Content quality** (0-25): text-to-image ratio (>60% text = good), link density (<1 link per 50 words), no URL shorteners, no excessive capitalization, no spam trigger words ("FREE!!!", "Act now", "Limited time")
-    - **HTML hygiene** (0-25): valid `DOCTYPE`, character encoding declared, reasonable HTML size (<102KB), no hidden text (same color as background), no single-image emails
-    - **Authentication readiness** (0-25): checks for DKIM alignment hints in headers (if available), DMARC-friendly sender patterns, List-Unsubscribe header presence, unsubscribe link in body
-    - **Engagement signals** (0-25): preview text present and distinct from subject, personalization tokens detected, clear primary CTA, reasonable content length
-  - Each dimension produces sub-scores + specific `DeliverabilityIssue(dimension: str, severity: str, description: str, fix: str)`
-  - Overall score = sum of dimension scores. Pass threshold: `QA__DELIVERABILITY_THRESHOLD: int = 70`
-- Modify `app/qa_engine/service.py` — register as optional check #13
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/deliverability-score` for standalone scoring
-- Config: `QA__DELIVERABILITY_CHECK_ENABLED: bool = False`, `QA__DELIVERABILITY_THRESHOLD: int = 70`
-**Security:** All analysis is local — no external API calls. Spam trigger word list is static (no dynamic loading). No PII in scoring output.
-**Verify:** Clean transactional email → score > 85. Spam-like promotional email (ALL CAPS subject, image-heavy, many links) → score < 50. Adding List-Unsubscribe → score increases. Adding preview text → score increases. Single-image email → HTML hygiene score penalized. `make test` passes.
-- [x] ~~20.3 Deliverability prediction score~~ DONE
-
-### 20.4 BIMI Readiness Check `[Backend]`
-**What:** Verify BIMI (Brand Indicators for Message Identification) compliance: check sending domain's DMARC policy (must be quarantine or reject), validate BIMI DNS record format, verify SVG logo meets Gmail's Tiny PS format requirements, and check CMC (Common Mark Certificate) status. Generates the BIMI TXT record as part of deployment checklist.
-**Why:** BIMI displays the sender's verified logo in the inbox — directly impacting open rates (up to 10% increase per industry data). Google dropped the trademark requirement in 2025 (CMC now sufficient), making BIMI accessible to all brands. But setup is complex (DMARC + DNS + SVG format + certificate) — automating the readiness check removes the barrier.
-**Implementation:**
-- Create `app/qa_engine/checks/bimi.py` — `BIMIReadinessCheck`:
-  - `async check_domain(domain: str) -> BIMIStatus` — DNS lookups for DMARC record, BIMI record, SVG validation
-  - `BIMIStatus(dmarc_ready: bool, dmarc_policy: str, bimi_record_exists: bool, bimi_record: str | None, svg_valid: bool | None, cmc_status: str, generated_record: str, issues: list[str])`
-  - DMARC check: DNS TXT lookup for `_dmarc.{domain}`, parse `p=` policy (must be `quarantine` or `reject`)
-  - BIMI check: DNS TXT lookup for `default._bimi.{domain}`, parse `v=BIMI1; l={svg_url}; a={pem_url}`
-  - SVG validation: if BIMI record exists, fetch SVG URL, validate Tiny PS profile (square, no external references, specific element restrictions)
-  - Record generator: produce the TXT record string for the domain based on provided SVG/certificate URLs
-- Modify `app/qa_engine/routes.py` — add `POST /api/v1/qa/bimi-check` accepting `{domain: str}` with auth + rate limiting
-- Config: `QA__BIMI_CHECK_ENABLED: bool = False`
-**Security:** DNS lookups are read-only. SVG fetch uses `httpx` with timeout + size limit (max 32KB). No execution of SVG content. Domain input validated (must be valid domain format). Rate limited to prevent DNS abuse.
-**Verify:** Domain with full BIMI setup → all checks pass, record validated. Domain with DMARC `p=none` → `dmarc_ready=False`, specific guidance to change policy. Domain without BIMI record → `bimi_record_exists=False`, generated record template provided. Invalid SVG (non-square, external references) → `svg_valid=False`. `make test` passes.
-- [x] ~~20.4 BIMI readiness check~~ DONE
-
-### 20.5 Frontend Gmail Intelligence Panel & Tests `[Frontend]`
-**What:** Frontend UI for Gmail prediction (predicted summary card preview, category badge, optimization suggestions), deliverability score gauge, BIMI status indicator, and schema.org markup preview. Plus full test suite (30+ tests) and SDK regeneration.
-**Implementation:**
-- Create `cms/apps/web/src/components/gmail/` — `GmailPredictionPanel.tsx`, `SummaryCardPreview.tsx` (renders predicted summary card), `DeliverabilityGauge.tsx`, `BIMIStatusBadge.tsx`, `SchemaPreview.tsx` (shows injected JSON-LD)
-- SWR hooks: `useGmailPrediction()`, `useDeliverabilityScore()`, `useBIMICheck()`, `useSchemaInject()`
-- i18n: ~35 keys across 6 locales
-- Tests: `test_gmail_predictor.py` (8 tests), `test_schema_markup.py` (10 tests), `test_deliverability.py` (8 tests), `test_bimi.py` (6 tests), route tests
-- SDK regeneration
-**Verify:** `make test` passes. `make check-fe` passes. `make check` all green.
-- [x] ~~20.5 Frontend Gmail intelligence panel & tests~~ DONE
-
----
-
-## Phase 21 — Real-Time Ontology Sync & Competitive Intelligence
-
-**What:** Auto-sync the email compatibility ontology from the caniemail open-source dataset, track email client rendering changes over time, and build a competitive intelligence layer that monitors how email client updates affect existing templates.
-**Why:** The ontology (335+ CSS properties × 25+ clients) is the hub's single source of truth for compatibility — but it's manually maintained. The caniemail dataset updates weekly with community-contributed data. Auto-syncing keeps the hub current without manual effort. Client rendering change detection creates a proprietary dataset that goes beyond what caniemail offers — real-time awareness of when a client changes behavior.
-**Dependencies:** Phase 8-9 (ontology + knowledge graph), Phase 16 (structured queries use ontology data), Phase 17 (screenshot baselines for change detection).
-**Design principle:** Ontology sync is additive-only by default — new data merges, existing data never deleted without manual approval. Change detection is non-blocking — findings are advisory, surfaced in UI, not gates.
-
-### 21.1 caniemail Auto-Sync Pipeline `[Backend]`
-**What:** A scheduled pipeline that fetches the latest caniemail dataset from GitHub, diffs against the current ontology, and merges new/updated support data. Runs daily via the existing `DataPoller` infrastructure. Produces a changelog of what changed for developer review.
-**Why:** caniemail is the industry standard for CSS email support data — open source, community-maintained, updated weekly. Currently the hub's ontology was seeded once; keeping it current requires manual effort. Auto-sync ensures every CSS support query returns current data. The @jsx-email/doiuse-email npm package proves this data is machine-readable.
-**Implementation:**
-- Create `app/knowledge/ontology/caniemail_sync.py` — `CanIEmailSyncService`:
-  - `async sync(dry_run: bool = False) -> SyncReport` — fetch, diff, merge pipeline
-  - Fetch: `httpx.AsyncClient.get("https://raw.githubusercontent.com/hteumeuleu/caniemail/master/data/...")` — individual feature JSON files
-  - Parse: convert caniemail format (feature name, stats per client, notes, links) to ontology `CSSProperty` + `SupportLevel` format
-  - Diff: compare fetched data against current ontology — identify new properties, updated support levels, new client versions
-  - Merge: apply updates to ontology (additive by default). New properties added. Support levels updated only if they improve precision (partial → supported/unsupported)
-  - `SyncReport(new_properties: int, updated_levels: int, new_clients: int, changelog: list[ChangelogEntry], errors: list[str])`
-  - `ChangelogEntry(property_id: str, client_id: str, old_level: str | None, new_level: str, source: str)`
-- Create `app/knowledge/ontology/caniemail_poller.py` — `CanIEmailPoller(DataPoller)`:
-  - Runs every 24 hours (configurable)
-  - Calls `CanIEmailSyncService.sync(dry_run=False)`
-  - Logs sync report via structured logging
-  - Stores last sync timestamp + report in Redis for dashboard display
-- Modify `app/main.py` — register `CanIEmailPoller` (same pattern as `CheckpointCleanupPoller`)
-- Modify `app/knowledge/routes.py` — add `POST /api/v1/knowledge/ontology/sync` (manual trigger, admin only), `GET /api/v1/knowledge/ontology/sync-status` (last sync time + report)
-- Config: `KNOWLEDGE__CANIEMAIL_SYNC_ENABLED: bool = False`, `KNOWLEDGE__CANIEMAIL_SYNC_INTERVAL_HOURS: int = 24`, `KNOWLEDGE__CANIEMAIL_DRY_RUN: bool = True` (dry run by default until manually verified)
-**Security:** Fetches from a known GitHub URL only — no user-provided URLs. Data is CSS property support information — no executable content. Sync is additive-only by default. Admin-only manual trigger. GitHub rate limiting handled via conditional requests (If-Modified-Since).
-**Verify:** Run sync → new properties added that weren't in original ontology seed. Run sync again immediately → no changes (idempotent). Run dry_run → report generated but no data modified. Invalid GitHub response → graceful failure, no data corruption. Ontology queries return updated data after sync. `make test` passes.
-- [x] ~~21.1 caniemail auto-sync pipeline~~ DONE
-
-### 21.2 Email Client Rendering Change Detector `[Backend]`
-**What:** A scheduled service that renders a suite of CSS feature-detection email templates through the Playwright rendering service (17.1), compares screenshots against stored baselines, and flags when a client's rendering behavior changes. Creates a proprietary, real-time email client behavior changelog.
-**Why:** caniemail tells you what CSS _should_ work in email clients. This tells you what CSS _actually_ works right now — and when it changes. Email clients update silently (Gmail's CSS support has expanded significantly over the years without announcement). Detecting these changes creates proprietary intelligence that goes beyond any public dataset.
-**Implementation:**
-- Create `app/knowledge/ontology/change_detector.py` — `RenderingChangeDetector`:
-  - `async detect_changes() -> list[RenderingChange]` — renders feature detection templates, compares against baselines
-  - Feature detection templates: one per critical CSS property, each tests a single property with visual indicator (e.g., `display:flex` with visible layout difference between flex and fallback)
-  - `RenderingChange(property_id: str, client_id: str, previous_behavior: str, current_behavior: str, screenshot_diff: bytes, detected_at: datetime)`
-  - Uses 17.1 `EmailScreenshotService` for rendering, 17.2 `VisualDiffService` for comparison
-  - Stores detected changes in knowledge base as documents (domain="rendering_changes")
-- Create feature detection templates in `app/knowledge/ontology/feature_templates/` — 20-30 HTML files testing critical CSS properties (flexbox, grid, custom properties, `gap`, `aspect-ratio`, `clamp()`, etc.)
-- Create `app/knowledge/ontology/change_poller.py` — `RenderingChangePoller(DataPoller)` — runs weekly
-- Config: `KNOWLEDGE__CHANGE_DETECTION_ENABLED: bool = False`, `KNOWLEDGE__CHANGE_DETECTION_INTERVAL_HOURS: int = 168` (weekly)
-**Security:** Feature detection templates are static HTML (no dynamic content). Rendering uses sandboxed Playwright (17.1 security model). Changes stored as structured data + screenshot diffs — no executable content.
-**Verify:** Modify a rendering profile to simulate a client change (e.g., enable flexbox in outlook_2019 profile) → change detector flags the difference. No profile changes → no changes detected. Detected change creates knowledge base document. `make test` passes.
-- [x] ~~21.2 Email client rendering change detector~~ DONE
-
-### 21.3 Competitive Intelligence Dashboard & Tests `[Frontend]`
-**What:** Frontend dashboard showing ontology sync status, rendering change timeline, support matrix diff viewer (what changed since last sync), and email client trend analysis. Plus full test suite and SDK regeneration.
-**Implementation:**
-- Create `cms/apps/web/src/components/knowledge/OntologySyncPanel.tsx` — last sync status, changelog viewer, manual sync trigger (admin only)
-- Create `cms/apps/web/src/components/knowledge/RenderingChangelog.tsx` — timeline of detected rendering changes with screenshot diffs
-- SWR hooks: `useOntologySyncStatus()`, `useRenderingChanges()`
-- i18n: ~20 keys across 6 locales
-- Tests: `test_caniemail_sync.py` (10 tests — fetch, parse, diff, merge, idempotency), `test_change_detector.py` (8 tests), route tests
-- SDK regeneration
-- Target: 25+ tests
-**Verify:** `make test` passes. `make check-fe` passes. `make check` all green.
-- [x] ~~21.3 Competitive intelligence dashboard & tests~~ DONE
-
----
-
-## Phase 22 — AI Evolution Infrastructure
-
-**What:** Close the "identified gaps" from the pitch's AI Evolution section: model capability registry with capability-based routing, prompt template store with A/B testing, token budget manager, fallback chains for provider resilience, and cost governor with per-model budget caps and circuit breakers.
-**Why:** The hub currently treats models as interchangeable text boxes (hardcoded model names per tier). When a new model launches, model deprecates, or provider has an outage, manual intervention is needed. These five capabilities make every AI improvement a zero-downtime, zero-code operation — the pitch's stated goal for V1 competitive advantage.
-**Dependencies:** Phase 15 (adaptive routing foundation), all agent phases (consumers of the new infrastructure).
-**Design principle:** Each capability is independently deployable. Existing `LLMProvider` protocol and `get_registry()` patterns preserved — new capabilities wrap the existing interface rather than replacing it.
-
-### 22.1 Model Capability Registry `[Backend]`
-**What:** Each model declares capabilities (vision, tool_use, structured_output, extended_thinking), constraints (context_window, max_output_tokens, cost_per_token), and metadata (provider, local_vs_cloud, deprecation_date). The router matches task requirements to model capabilities rather than just tier names.
-**Implementation:**
-- Create `app/ai/capability_registry.py` — `ModelCapability` enum, `ModelSpec` frozen dataclass, `CapabilityRegistry` singleton with `register(model_id, spec)`, `find_models(requirements: set[ModelCapability], min_context: int) -> list[ModelSpec]`
-- Modify `app/ai/routing.py` — `resolve_model()` checks capability requirements when provided, falls back to tier-based routing
-- Config: model specs in `AI__MODEL_SPECS` YAML/JSON config
-- [x] 22.1 Model capability registry ~~DONE~~
-
-### 22.2 Prompt Template Store `[Backend]`
-**What:** Move agent system prompts from Python files to a versioned database store with A/B variant support. Agents load prompts at runtime via `PromptStore.get(agent_id, variant)`. Versions tracked with rollback.
-**Implementation:**
-- Create `app/ai/prompt_store.py` — `PromptTemplate` model (id, agent_id, version, variant, content, active), `PromptStore` with CRUD + `get_active(agent_id, variant)`, migration to seed from existing SKILL.md files
-- Modify `app/ai/agents/base.py` — `_build_system_prompt()` checks `PromptStore` first, falls back to SKILL.md
-- Config: `AI__PROMPT_STORE_ENABLED: bool = False`
-- [x] 22.2 Prompt template store ~~DONE~~
-
-### 22.3 Token Budget Manager `[Backend]`
-**What:** Count tokens before sending to LLM. Truncate or summarize conversation history to stay within context window. Adaptive strategy: recent messages preserved, older messages summarized.
-**Implementation:**
-- Create `app/ai/token_budget.py` — `TokenBudgetManager` with `estimate_tokens(messages)` (tiktoken for OpenAI, approximation for others), `trim_to_budget(messages, max_tokens)` with summarization strategy
-- Modify `app/ai/adapters/` — all adapters call `trim_to_budget()` before API call
-- Config: `AI__TOKEN_BUDGET_ENABLED: bool = False`, `AI__TOKEN_BUDGET_RESERVE: int = 4096` (reserve for response)
-- [x] 22.3 Token budget manager ~~DONE~~
-
-### 22.4 Fallback Chains & Provider Resilience `[Backend]`
-**What:** Ordered model fallbacks per tier. Primary model failure auto-cascades to next. Example: `complex: [claude-opus-4-6 → gpt-4o → local-qwen-72b]`. Every fallback event logged.
-**Implementation:**
-- Create `app/ai/fallback.py` — `FallbackChain` with `async call_with_fallback(messages, tier) -> Response` — tries each model in order, catches timeout/rate-limit/deprecation errors, logs fallback events
-- Modify `app/ai/routing.py` — `resolve_model()` returns `FallbackChain` instead of single model when fallback config present
-- Config: `AI__FALLBACK_CHAINS` YAML config per tier
-- [x] ~~22.4 Fallback chains & provider resilience~~ DONE
-
-### 22.5 Cost Governor `[Backend]`
-**What:** Real-time token and cost tracking per model, per agent, per project. Configurable budget caps with circuit breakers — auto-route to cheaper models or local fallbacks when spend approaches threshold.
-**Implementation:**
-- Create `app/ai/cost_governor.py` — `CostGovernor` with `track(model, tokens_in, tokens_out, agent, project)` (Redis-backed counters), `check_budget(agent, project) -> BudgetStatus`, circuit breaker integration
-- Modify `app/ai/adapters/` — all adapters report usage to `CostGovernor` after each call
-- Dashboard endpoint: `GET /api/v1/ai/cost-report` (admin only)
-- Config: `AI__COST_GOVERNOR_ENABLED: bool = False`, `AI__MONTHLY_BUDGET_GBP: float = 600.0`, `AI__BUDGET_WARNING_THRESHOLD: float = 0.8`
-- [x] ~~22.5 Cost governor~~ DONE
-
-### 22.6 Tests & Documentation `[Full-Stack]`
-**What:** Tests for all 5 capabilities (30+ tests). ADR-009 AI Evolution Infrastructure.
-- [x] ~~22.6 Tests & documentation~~ DONE
-
----
-
-## Phase 23 — Multimodal Protocol & MCP Agent Interface
-
-**What:** Extend the message protocol to support mixed content (text, image, audio, structured data) and wrap every Hub service as a Model Context Protocol tool — decoupling the agent layer from the service layer entirely.
-**Why:** Vision models can now process design screenshots directly, voice briefs are emerging as input, and structured output guarantees JSON for QA results. MCP compatibility means any MCP-compatible LLM becomes a drop-in agent backbone.
-**Dependencies:** Phase 17 (VLM agent already uses vision — formalizes the protocol), Phase 22 (capability registry identifies vision-capable models).
-
-### 23.1 Multimodal Message Protocol `[Backend]`
-**What:** Extend `LLMProvider.complete()` to accept `list[ContentBlock]` instead of `str`. `ContentBlock` union: `TextBlock`, `ImageBlock(data: bytes, media_type: str)`, `AudioBlock`, `StructuredOutputBlock(schema: dict)`. Adapters serialize per-provider (Anthropic content blocks, OpenAI multi-part messages).
-- [ ] 23.1 Multimodal message protocol
-
-### 23.2 MCP Tool Server `[Backend]`
-**What:** Expose Hub services (QA engine, knowledge search, rendering, components, templates) as MCP tools. Any MCP-compatible client (Claude Desktop, Cursor, custom agents) can call Hub services directly.
-- [ ] 23.2 MCP tool server
-
-### 23.3 Voice Brief Input `[Full-Stack]`
-**What:** Accept audio file uploads as email briefs. Transcribe via Whisper (local) or cloud STT, extract structured brief (topic, sections, tone, CTA) via LLM, feed to Scaffolder agent.
-- [ ] 23.3 Voice brief input
-
-### 23.4 Tests & Documentation `[Full-Stack]`
-- [ ] 23.4 Tests & documentation
+> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA — Playwright rendering, ODiff baselines, VLM analysis agent #10, auto-fix pipeline, visual QA dashboard). Phase 18 (rendering resilience & property-based testing — chaos engine with 8 profiles, Hypothesis-based property testing with 10 invariants, resilience score integration, knowledge feedback loop). Phase 19 (Outlook transition advisor & email CSS compiler — Word-engine dependency analyzer, audience-aware migration planner, Lightning CSS 7-stage compiler with ontology-driven conversions). Phase 20 (Gmail AI intelligence & deliverability — Gemini summary predictor, schema.org auto-injection, deliverability scoring, BIMI readiness check). Phase 21 (real-time ontology sync & competitive intelligence — caniemail auto-sync, rendering change detector with 25 feature templates, competitive intelligence dashboard). Phase 22 (AI evolution infrastructure — capability registry, prompt template store, token budget manager, fallback chains, cost governor, cross-module integration tests + ADR-009). Phase 23 (multimodal protocol & MCP agent interface — 7 subtasks: content block protocol, adapter serialization, agent integration, MCP tool server with 17 tools, voice brief pipeline, frontend multimodal UI, tests & ADR-010; 197 tests).
 
 ---
 
 ## Phase 24 — Real-Time Collaboration & Visual Builder
 
-**What:** Google Docs-style simultaneous editing with OT/CRDT conflict resolution for the Monaco editor, plus a drag-and-drop visual email builder for non-technical users alongside the code editor.
-**Why:** The pitch identifies these as key "Future Vision" features. Real-time collaboration enables team workflows (developer + copywriter editing simultaneously). Visual builder opens the hub to non-developers — the largest untapped user base.
-**Dependencies:** Phase 11 (component library for builder blocks), Phase 12 (Figma import for design-to-builder), all frontend phases.
+**What:** Google Docs-style simultaneous editing with CRDT conflict resolution for the code editor, real-time cursor and presence awareness, plus a drag-and-drop visual email builder for non-technical users alongside the code editor. Changes in either view sync bidirectionally via AST-level mapping.
+**Why:** The pitch identifies these as key "Future Vision" features that separate a platform from a tool. Real-time collaboration enables team workflows — developer and copywriter editing simultaneously without merge conflicts. The visual builder opens the Hub to the largest untapped user base: marketers and designers who can't write HTML but need to build emails daily. Combined, they make the Hub the only email platform where technical and non-technical users share a single workspace.
+**Dependencies:** Phase 11 (component library for builder blocks), Phase 12 (Figma import for design-to-builder), Phase 23 (multimodal protocol for design reference images), all frontend phases.
+**Design principle:** Yjs CRDT provides conflict-free merging — no operational transform complexity. The visual builder operates on the same component/section model as the code editor — it's a different view, not a different system. WebSocket connections are authenticated and tenant-isolated. Offline edits reconcile automatically on reconnect.
 
-### 24.1 CRDT Collaborative Editing Engine `[Full-Stack]`
-**What:** Real-time collaborative editing using Yjs CRDT library. WebSocket sync server, cursor awareness, and conflict-free merging for HTML editing.
-- [ ] 24.1 CRDT collaborative editing engine
+### 24.1 WebSocket Infrastructure & Authentication `[Backend]`
+**What:** WebSocket server infrastructure for real-time communication. Handles connection management, authentication, room-based message routing (one room per template/document), heartbeat/keepalive, and graceful reconnection. Built on FastAPI's WebSocket support with Redis pub/sub for multi-instance scaling.
+**Why:** Real-time collaboration requires persistent bidirectional connections — HTTP polling can't deliver sub-100ms latency for cursor movements and keystroke propagation. Redis pub/sub ensures WebSocket messages reach all instances in a multi-server deployment. Room-based routing isolates template editing sessions.
+**Implementation:**
+- Create `app/streaming/websocket/` package:
+  - `manager.py` — `WebSocketManager`:
+    - `ConnectionPool` — tracks active WebSocket connections per room: `dict[str, set[WebSocket]]`
+    - `async connect(websocket: WebSocket, room_id: str, user_id: int) -> None` — authenticate, join room, notify peers
+    - `async disconnect(websocket: WebSocket, room_id: str) -> None` — leave room, notify peers, cleanup
+    - `async broadcast(room_id: str, message: bytes, exclude: WebSocket | None = None) -> None` — send to all connections in room except sender
+    - `async send_to_user(room_id: str, user_id: int, message: bytes) -> None` — targeted message delivery
+    - Heartbeat: server sends ping every 30s, client must pong within 10s or connection dropped
+    - Connection metadata: `ConnectionInfo(user_id: int, room_id: str, connected_at: datetime, last_activity: datetime, client_info: str)`
+  - `auth.py` — `WebSocketAuthenticator`:
+    - `async authenticate(websocket: WebSocket) -> User` — extract JWT from query param `?token=` (WebSocket doesn't support headers in browser)
+    - Token validation reuses existing `decode_access_token()` from `app/auth/`
+    - Role-based access: viewer can observe but not edit, developer/admin can edit
+    - BOLA protection: verify user has access to the project owning the template being edited
+  - `redis_pubsub.py` — `RedisPubSubBridge`:
+    - `async publish(room_id: str, message: bytes) -> None` — publish to Redis channel `ws:room:{room_id}`
+    - `async subscribe(room_id: str, callback: Callable) -> None` — subscribe to room channel
+    - Enables multi-instance WebSocket: message published on instance A → delivered to connections on instance B
+    - Graceful fallback: if Redis unavailable, single-instance broadcast only (logged warning)
+  - `routes.py` — WebSocket endpoint:
+    - `@app.websocket("/ws/collab/{room_id}")` — main collaboration WebSocket
+    - Protocol: binary messages (Yjs update encoding) for document sync, JSON messages for awareness (cursors, presence)
+    - Connection lifecycle: authenticate → join room → sync document state → enter edit loop → disconnect
+- Modify `app/main.py` — register WebSocket route, initialize `WebSocketManager`
+- Config: `STREAMING__WS_ENABLED: bool = False`, `STREAMING__WS_MAX_CONNECTIONS_PER_ROOM: int = 20`, `STREAMING__WS_HEARTBEAT_INTERVAL_S: int = 30`, `STREAMING__WS_AUTH_TIMEOUT_S: int = 10`
+**Security:** JWT authentication required before any message exchange. Token passed via query parameter (standard WebSocket auth pattern) — HTTPS encrypts in transit. Room isolation: users can only join rooms for templates in their project. Message size limit: 1MB per WebSocket message (prevents memory abuse). Connection count limited per room and per user. Redis pub/sub channels use room ID only — no user data in channel names. WebSocket upgrade restricted to `websocket` protocol only (no HTTP hijacking).
+**Verify:** Two browser tabs connect to same room → both authenticated → messages broadcast between them. Invalid JWT → connection rejected. User without project access → connection rejected. Redis pub/sub: message sent from instance A → received on instance B (docker-compose test). Connection drops → peer notified → reconnection re-syncs state. Max connections reached → new connection rejected with 429. `make test` passes.
+- [ ] 24.1 WebSocket infrastructure & authentication
 
-### 24.2 Drag-and-Drop Visual Email Builder `[Frontend]`
-**What:** Component-based visual builder using the existing component library. Drag sections from library, configure via property panels, switch between visual and code view. Output is standard template HTML.
-- [ ] 24.2 Drag-and-drop visual email builder
+### 24.2 Yjs CRDT Document Engine `[Backend + Frontend]`
+**What:** Integrate Yjs CRDT library for conflict-free collaborative editing of email HTML. Server-side Yjs document persistence, client-side binding to CodeMirror editor, and WebSocket sync provider. Multiple users can edit the same template simultaneously with automatic conflict resolution — no merge dialogs, no lost changes.
+**Why:** CRDT (Conflict-free Replicated Data Type) is the modern approach to collaborative editing — used by Figma, Linear, and Notion. Unlike Operational Transform (Google Docs), CRDTs guarantee convergence without a central server ordering operations. Yjs is the most mature JavaScript CRDT library (2M+ weekly npm downloads), with ready-made bindings for CodeMirror, Monaco, and ProseMirror.
+**Implementation:**
+- Backend — `app/streaming/crdt/` package:
+  - `document_store.py` — `YjsDocumentStore`:
+    - `async get_or_create(room_id: str) -> bytes` — load Yjs document state from PostgreSQL, or create empty document
+    - `async save(room_id: str, update: bytes) -> None` — persist incremental Yjs update
+    - `async get_snapshot(room_id: str) -> bytes` — full document state for new connections
+    - Storage: `CollaborativeDocument` SQLAlchemy model with `room_id` (unique), `state_vector` (LargeBinary), `updates` (LargeBinary — compacted Yjs updates), `last_modified`, `participant_count`
+    - Compaction: merge accumulated updates into single state every 100 updates or 5 minutes (prevents unbounded update log growth)
+  - `sync_handler.py` — `YjsSyncHandler`:
+    - Implements Yjs sync protocol (y-protocols/sync):
+      - Step 1: new client sends `SyncStep1` (state vector) → server responds with `SyncStep2` (missing updates)
+      - Step 2: client sends `SyncStep2` (its missing updates to server)
+      - Ongoing: each edit → `Update` message broadcast to all peers
+    - `async handle_message(room_id: str, client_id: str, message: bytes) -> list[tuple[str, bytes]]` — process incoming sync message, return messages to send
+    - Server-side merge: Yjs `Y.applyUpdate()` via `ypy` (Python Yjs bindings) — server maintains authoritative document state
+  - Alembic migration for `collaborative_documents` table
+- Frontend — `cms/apps/web/src/lib/collaboration/`:
+  - `yjs-provider.ts` — `HubWebSocketProvider`:
+    - Extends `y-websocket` provider with Hub authentication (JWT in query param)
+    - Automatic reconnection with exponential backoff (1s, 2s, 4s, 8s, max 30s)
+    - Offline queue: edits made while disconnected stored locally, replayed on reconnect
+    - Connection status events: `connected`, `disconnected`, `synced`, `error`
+  - `editor-binding.ts` — `YjsCodeMirrorBinding`:
+    - Binds `Y.Text` to CodeMirror 6 editor via `y-codemirror.next`
+    - Preserves existing CodeMirror extensions (syntax highlighting, linting, `highlightField` from 12.8)
+    - Undo/redo manager: `Y.UndoManager` replaces CodeMirror's built-in undo (collaborative undo tracks per-user operations)
+  - `awareness.ts` — collaborative awareness (cursors, selection, presence):
+    - Each user's cursor position + selection range shared via Yjs Awareness protocol
+    - User metadata: `{name: string, color: string, role: string}` — color assigned from palette, consistent per session
+- Install: `yjs`, `y-websocket`, `y-codemirror.next`, `y-protocols` (frontend), `ypy-websocket`, `y-py` (backend)
+- Config: `STREAMING__CRDT_ENABLED: bool = False`, `STREAMING__CRDT_COMPACTION_INTERVAL_S: int = 300`, `STREAMING__CRDT_COMPACTION_THRESHOLD: int = 100`, `STREAMING__CRDT_MAX_DOCUMENT_SIZE_MB: int = 5`
+**Security:** Document state encrypted at rest (existing PostgreSQL encryption). Yjs updates are binary-encoded operations — no executable content. Document size capped at 5MB (prevents memory abuse via large pastes). Per-room access control enforced at WebSocket connection (24.1). Yjs Awareness protocol shares only cursor position + user display name — no sensitive data. Offline queue stored in browser `IndexedDB` — cleared on logout.
+**Verify:** Two users open same template → both see each other's edits in real-time (<100ms latency on LAN). User A types in line 5, User B types in line 20 → no conflicts, both changes merge. User disconnects → reconnects → missed edits sync automatically. Server restart → document state restored from PostgreSQL. Compaction: 200 updates → compacted to single state → new client syncs quickly. `make test` passes. `make check-fe` passes.
+- [ ] 24.2 Yjs CRDT document engine
 
-### 24.3 Builder ↔ Code Bidirectional Sync `[Full-Stack]`
-**What:** Changes in visual builder reflect in code editor and vice versa. AST-level mapping between visual components and HTML source.
-- [ ] 24.3 Builder ↔ code bidirectional sync
+### 24.3 Collaborative Cursor & Presence Awareness `[Frontend]`
+**What:** Visual indicators for real-time collaboration: colored cursors showing each user's position, selection highlights, user presence list (who's currently editing), and activity indicators (typing, idle, viewing). Integrated into the CodeMirror editor and workspace sidebar.
+**Why:** Collaboration without presence awareness is confusing — users need to see where others are editing to avoid stepping on each other's work. Google Docs proved that colored cursors + user avatars are the minimum viable UX for real-time editing. The presence list adds team context — "Sarah from copy is editing the CTA section."
+**Implementation:**
+- Create `cms/apps/web/src/components/collaboration/` package:
+  - `RemoteCursors.tsx` — CodeMirror decoration plugin:
+    - Renders colored cursor lines at each remote user's position via CodeMirror `Decoration.widget`
+    - Cursor label: small tooltip showing user name on hover, auto-hides after 3s of inactivity
+    - Selection highlight: remote user's text selection shown as semi-transparent colored background
+    - Color palette: 8 distinct colors assigned round-robin per session, consistent across reconnects
+    - Smooth cursor animation: CSS transitions for position changes (avoids jarring jumps)
+  - `PresencePanel.tsx` — sidebar panel showing connected collaborators:
+    - User list: avatar/initials + name + role badge (developer/viewer) + activity indicator
+    - Activity states: `editing` (green pulse), `idle` (gray, >60s no activity), `viewing` (blue, read-only mode)
+    - "Follow" mode: click a user → editor scrolls to their cursor position in real-time
+    - Collapsed view: avatar stack in toolbar (click to expand panel)
+  - `CollaborationBanner.tsx` — top bar notification:
+    - "3 people editing" indicator with avatar stack
+    - Connection status: green dot (connected), yellow (reconnecting), red (disconnected)
+    - "View-only mode" indicator when user has viewer role
+  - `ConflictResolver.tsx` — edge case handler:
+    - When CRDT merges produce unexpected HTML (e.g., broken tags from simultaneous edits in same element), show inline warning with "Accept" / "Revert to mine" options
+    - Runs QA HTML validation on merged output — if invalid, highlight the merge point
+- Modify `cms/apps/web/src/components/workspace/code-editor.tsx`:
+  - Integrate `RemoteCursors` CodeMirror extension
+  - Pass Yjs awareness state to cursor renderer
+  - Add presence panel toggle to editor toolbar
+- Add i18n keys across 6 locales — ~30 keys for presence, cursors, collaboration status
+**Security:** User display names sourced from authenticated session only (not from Yjs awareness — verified server-side). "Follow" mode transmits only cursor position — no editor content. Viewer role enforced: read-only users see cursors but their edits are rejected by server.
+**Verify:** 3 users in same document → 3 colored cursors visible to each user. User selects text → selection visible to peers. User goes idle (60s) → status changes to idle for peers. "Follow" mode → editor scrolls to followed user's position. Viewer opens document → sees cursors but cannot edit. `make check-fe` passes.
+- [ ] 24.3 Collaborative cursor & presence awareness
 
-### 24.4 Tests & Documentation `[Full-Stack]`
-- [ ] 24.4 Tests & documentation
+### 24.4 Visual Email Builder — Component Palette & Canvas `[Frontend]`
+**What:** A drag-and-drop visual email builder where users construct emails by dragging section components from a palette onto a canvas. The canvas renders a live preview of the email using the same component library that the code editor uses. Sections snap to email-width constraints (600px max), stack vertically, and show placeholder content that's editable inline.
+**Why:** 70% of email creation at agencies is done by non-developers who rely on drag-and-drop tools (Mailchimp, Klaviyo builder, Stripo). The Hub currently requires HTML knowledge. A visual builder using the existing component library means every component built for the code editor is automatically available in the visual builder — no duplicate work. This is the single biggest user-base expansion feature.
+**Implementation:**
+- Create `cms/apps/web/src/components/builder/` package:
+  - `BuilderCanvas.tsx` — main canvas area:
+    - Rendered email preview in constrained 600px-wide iframe (sandboxed, same origin)
+    - Drop zones between sections — highlighted on drag-over with insertion indicator
+    - Section ordering via drag handle (grip icon on left edge)
+    - Click section → select → show property panel (24.5)
+    - Double-click text content → inline editing (contenteditable with sanitization)
+    - Canvas background: email client preview frame (inbox chrome around the email body)
+    - Zoom controls: 50%, 75%, 100%, 125% — CSS transform on canvas container
+    - Undo/redo: integrated with Yjs undo manager (if collaboration enabled) or local history stack
+  - `ComponentPalette.tsx` — left sidebar component library:
+    - Categories: Header, Hero, Content, Product, CTA, Social, Footer, Divider, Custom
+    - Each component shown as thumbnail preview with name
+    - Drag from palette → drop on canvas → inserts section with default content
+    - Search/filter by component name or category
+    - "Custom" category: user-uploaded components from the component library (Phase 11)
+    - Component data sourced from `ComponentVersion` via `GET /api/v1/components` with latest version
+  - `SectionWrapper.tsx` — wrapper for each section on canvas:
+    - Selection state: click → blue border + drag handle + delete button + duplicate button
+    - Hover state: subtle highlight border
+    - Drag handle: reorder sections via drag-and-drop (using `@dnd-kit/core` for accessible DnD)
+    - Section label: component name shown above section on hover
+    - Responsive indicator: icon showing if section has responsive variants
+  - `BuilderPreview.tsx` — sandboxed iframe rendering:
+    - Takes section list → assembles HTML via client-side template assembly
+    - Uses `srcdoc` attribute for iframe content (no server round-trip for preview)
+    - CSS reset inside iframe to match email rendering (no inherited page styles)
+    - Auto-refreshes on any section change (debounced 200ms)
+  - `DragDropContext.tsx` — DnD infrastructure:
+    - `@dnd-kit/core` with `@dnd-kit/sortable` for section reordering
+    - Custom `DragOverlay` showing component preview during drag
+    - Accessibility: keyboard DnD support (arrow keys + space to grab/drop)
+    - Drop validation: prevent invalid nesting (e.g., no header inside footer)
+- Create `cms/apps/web/src/hooks/use-builder.ts`:
+  - `useBuilderState()` — manages section list, selection, undo history
+  - `useSectionOperations()` — add, remove, duplicate, reorder section operations
+  - `useBuilderPreview()` — debounced HTML assembly from section list
+  - `useComponentLibrary()` — fetches available components with caching
+- Install: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
+- Add i18n keys across 6 locales — ~45 keys for builder labels, tooltips, section types
+**Security:** Builder canvas uses sandboxed iframe (`sandbox="allow-same-origin"`) — no script execution in preview. Inline text editing sanitized via DOMPurify before committing to section data. Component HTML from API is pre-sanitized (existing pipeline). Drag-and-drop uses library with built-in XSS prevention (no innerHTML). User-uploaded components validated through existing component ingestion pipeline.
+**Verify:** Drag hero component from palette → drops on canvas → preview shows hero section. Reorder sections via drag → preview updates. Click section → property panel opens (24.5). Delete section → removed from canvas. Undo → section restored. Inline text edit → preview reflects change. 10 sections on canvas → smooth drag performance. Keyboard DnD works. `make check-fe` passes.
+- [ ] 24.4 Visual email builder — component palette & canvas
+
+### 24.5 Visual Builder — Property Panels & Section Configuration `[Frontend]`
+**What:** Right sidebar property panels that appear when a section is selected in the visual builder. Each panel exposes section-specific configuration: content editing (text, images, links), style controls (colors from design system palette, spacing, alignment), responsive behavior toggles, and slot configuration (for template slots from 11.25). Non-technical users configure sections visually — no CSS knowledge required.
+**Why:** Drag-and-drop gets sections onto the canvas, but property panels make them useful. Every visual email builder (Mailchimp, Stripo, Chamaileon) has property panels — they're table stakes. The Hub's advantage: property panels are driven by `slot_definitions` and `default_tokens` from `ComponentVersion` (11.25.2), so they automatically reflect the component's configuration surface without manual panel building.
+**Implementation:**
+- Create `cms/apps/web/src/components/builder/panels/` package:
+  - `PropertyPanel.tsx` — main panel container:
+    - Appears on section selection (right sidebar, 320px wide)
+    - Tab structure: Content | Style | Responsive | Advanced
+    - Panel content dynamically generated from `slot_definitions` of selected component
+    - "Apply" button with live preview (changes reflected in canvas immediately)
+  - `ContentTab.tsx` — content editing controls:
+    - Text slots: rich text editor (bold, italic, link, list) — Tiptap or Plate.js embedded
+    - Image slots: image picker (upload, URL, or asset library from design sync)
+    - Link slots: URL input with "Open in new tab" toggle
+    - CTA slots: button text + URL + button style selector
+    - Dynamic slots: auto-generated from `slot_definitions` JSON — `{name, type, label, placeholder, validation}`
+  - `StyleTab.tsx` — visual style controls:
+    - Color picker: limited to design system palette (11.25.1) — shows brand colors as swatches, prevents off-brand choices
+    - Spacing: margin/padding controls with visual box model diagram
+    - Alignment: left/center/right buttons for text and images
+    - Font: dropdown limited to design system typography (font family, size, weight)
+    - Background: color or image with opacity slider
+    - All values map to design tokens — output uses CSS custom properties or inline styles per component
+  - `ResponsiveTab.tsx` — responsive behavior:
+    - Toggle: "Stack on mobile" (multi-column → single column below 480px)
+    - Image behavior: "Full width on mobile" toggle
+    - Font size: mobile override (e.g., 14px body on mobile vs 16px desktop)
+    - Preview: inline mobile/desktop toggle showing how section responds
+    - Values stored as responsive tokens in section configuration
+  - `AdvancedTab.tsx` — power user controls:
+    - Custom CSS class input (validated against design system classes)
+    - MSO conditional toggle: "Include Outlook fallback" checkbox (adds `<!--[if mso]>` wrapper)
+    - Dark mode: explicit dark mode color overrides per element
+    - HTML attribute editor: key-value pairs for custom attributes
+    - "View Source" button: shows section HTML in read-only code viewer
+  - `SlotEditor.tsx` — generic slot editor component:
+    - Renders appropriate input control based on `slot_definitions` type: `text`, `rich_text`, `image`, `url`, `color`, `select`, `number`, `boolean`
+    - Validation rules from slot definition (required, min/max length, pattern)
+    - Default value from `default_tokens`
+- Modify `cms/apps/web/src/components/builder/BuilderCanvas.tsx` — emit `onSectionSelect(sectionId)` → triggers property panel render
+- Add i18n keys across 6 locales — ~60 keys for property panel labels, tab names, input placeholders
+**Security:** Color picker restricted to design system palette — prevents arbitrary CSS injection via color values. Custom CSS class input validated against allowlist of design system classes. HTML attribute editor: `on*` event handlers blocked, `href` validated (no `javascript:` URIs), `style` attribute goes through sanitization. Rich text editor output sanitized via DOMPurify.
+**Verify:** Select hero section → property panel shows Content tab with text + image + CTA slots. Edit text → canvas preview updates live. Change color from design system palette → section color updates. Responsive toggle → mobile preview shows stacked layout. Advanced: add MSO conditional → section HTML includes `<!--[if mso]>`. Slot types match `slot_definitions` from component. `make check-fe` passes.
+- [ ] 24.5 Visual builder — property panels & section configuration
+
+### 24.6 Builder ↔ Code Bidirectional Sync `[Full-Stack]`
+**What:** Changes in the visual builder reflect in the code editor and vice versa. AST-level mapping between builder section model and HTML source. Editing HTML directly updates the builder canvas; dragging a section in the builder inserts corresponding HTML at the correct position. A single source of truth (Yjs document or local state) drives both views.
+**Why:** Professional email developers use both views — visual for layout, code for fine-tuning. Unidirectional sync (builder → code only) forces a choice. Bidirectional sync means a developer can drag sections in the builder, then switch to code to tweak MSO conditionals, then switch back — everything stays consistent. This is what Webflow does for web development; no email platform achieves it.
+**Implementation:**
+- Create `cms/apps/web/src/lib/builder-sync/` package:
+  - `ast-mapper.ts` — `BuilderASTMapper`:
+    - `htmlToSections(html: string) -> SectionNode[]` — parse HTML into section tree:
+      - Identifies section boundaries via `data-section-id` attributes (added by TemplateAssembler)
+      - Falls back to heuristic detection: `<table>` with `role="presentation"` as section wrapper, `<!--section:type-->` comments
+      - Each `SectionNode`: `{id, componentId, slotValues, styleOverrides, responsiveConfig, htmlFragment}`
+    - `sectionsToHtml(sections: SectionNode[], template: string) -> string` — serialize section tree back to HTML:
+      - Preserves non-section HTML (head, doctype, wrapper table)
+      - Inserts section HTML in order with `data-section-id` attributes
+      - Merges slot values into component template HTML
+    - `diffSections(prev: SectionNode[], next: SectionNode[]) -> SectionDiff[]` — minimal diff for incremental updates
+    - Error recovery: if HTML parse fails (user broke structure in code editor), show warning banner with "Revert to last valid state" option instead of crashing builder
+  - `sync-engine.ts` — `BuilderSyncEngine`:
+    - Maintains single source of truth: `Y.Map` (if CRDT enabled) or React state
+    - `onCodeChange(html: string)` — code editor changed → parse → update builder sections
+    - `onBuilderChange(sections: SectionNode[])` — builder changed → serialize → update code editor
+    - Debounced sync: code → builder syncs on 500ms idle (parsing is expensive), builder → code syncs on 200ms idle
+    - Conflict detection: if both views change simultaneously, builder change wins (last-write-wins with user notification)
+    - Parse error mode: if HTML is unparseable, builder shows "Code has unsupported structure" overlay — code editor remains functional
+  - `section-markers.ts` — HTML annotation utilities:
+    - `annotateHtml(html: string) -> string` — add `data-section-id`, `data-slot-name` attributes for roundtrip fidelity
+    - `stripAnnotations(html: string) -> string` — remove builder annotations for export/render
+    - Annotations are invisible in rendered output (data attributes don't affect rendering)
+- Modify `app/ai/agents/scaffolder/` — `TemplateAssembler`:
+  - Add `data-section-id="{section.id}"` attributes to assembled HTML output
+  - Add `data-slot-name="{slot.name}"` on slot content containers
+  - Attributes preserved through QA pipeline and repair pipeline
+- Modify `cms/apps/web/src/components/workspace/` — workspace layout:
+  - View switcher: "Code" | "Visual" | "Split" toggle in toolbar
+  - Split view: code editor left (50%), builder canvas right (50%), synced
+  - View state persisted in localStorage per template
+- Create `cms/apps/web/src/hooks/use-builder-sync.ts`:
+  - `useBuilderSync(editorRef, builderState)` — manages bidirectional sync lifecycle
+  - `useSyncStatus()` — returns sync state: `synced`, `syncing`, `parse_error`, `conflict`
+**Security:** HTML parsing uses DOMParser (browser built-in, safe) — no eval. `data-*` attributes cannot execute code. Section annotations stripped before export to prevent data leakage. Conflict resolution does not silently discard changes — user always notified.
+**Verify:** Type HTML in code editor → builder canvas updates to show sections. Drag section in builder → code editor shows corresponding HTML insertion. Edit text in builder → code editor text updates. Edit same text in code editor → builder preview updates. Break HTML structure in code editor → builder shows parse error overlay, code editor still functional. Split view: changes in either side reflected in the other. Export: `data-section-id` attributes stripped from output. `make check-fe` passes.
+- [ ] 24.6 Builder ↔ code bidirectional sync
+
+### 24.7 Frontend Builder Integration & Workspace `[Frontend]`
+**What:** Integrate the visual builder, collaboration features, and property panels into the existing workspace layout. Add builder-specific toolbar actions (preview modes, device simulation, export), onboarding flow for non-technical users, and builder keyboard shortcuts. Ensure all workspace features (QA panel, AI agents, design reference) work in both code and builder views.
+**Why:** The builder must feel native to the workspace — not a separate app. QA checks should run on builder output the same way they run on code editor output. AI agent suggestions should appear in both views. The onboarding flow is critical: non-technical users need guidance on their first builder session.
+**Implementation:**
+- Modify `cms/apps/web/src/components/workspace/` — workspace enhancements:
+  - `BuilderToolbar.tsx` — builder-specific toolbar actions:
+    - Device preview: Desktop (600px), Tablet (480px), Mobile (375px) — resizes canvas
+    - Client preview: "View as Gmail" / "View as Outlook" — applies rendering profiles from chaos engine (18.1)
+    - "Run QA" button — runs QA checks on assembled builder HTML (same pipeline as code editor)
+    - "AI Suggest" button — feeds current builder structure to Scaffolder for content suggestions
+    - Export: "Copy HTML", "Download .html", "Push to ESP" (Phase 13 integration)
+  - `ViewSwitcher.tsx` — code/visual/split toggle:
+    - Animated transition between views (fade/slide, 200ms)
+    - Last view preference saved to localStorage per template
+    - Keyboard shortcut: `Ctrl+Shift+V` toggles between code and visual
+  - `BuilderOnboarding.tsx` — first-time user guide:
+    - Step 1: "Drag a section from the palette" — highlight palette with pulsing border
+    - Step 2: "Click to configure" — highlight section after first drop
+    - Step 3: "Preview your email" — highlight device preview buttons
+    - Step 4: "Run quality checks" — highlight QA button
+    - 4 steps total, skippable, completion saved to user preferences
+    - Only shown when user.role !== "developer" (developers likely don't need it)
+- Modify `cms/apps/web/src/components/workspace/qa-results-panel.tsx`:
+  - QA panel works identically in builder view — HTML assembled from sections → sent to QA endpoint
+  - QA issues linkable to specific sections: click issue → section highlighted in builder canvas
+- Modify `cms/apps/web/src/components/workspace/toolbar.tsx`:
+  - Conditionally render builder-specific or code-specific actions based on active view
+  - Voice brief (23.6) and design reference (23.6) buttons visible in both views
+- Builder keyboard shortcuts:
+  - `Delete` / `Backspace` — delete selected section
+  - `Ctrl+D` — duplicate selected section
+  - `Ctrl+Z` / `Ctrl+Shift+Z` — undo/redo
+  - `Ctrl+Shift+V` — toggle code/visual view
+  - `Arrow Up/Down` — move section up/down in order
+  - `Escape` — deselect section
+- Add i18n keys across 6 locales — ~40 keys for toolbar, onboarding, keyboard shortcuts
+**Security:** Builder-assembled HTML passes through same `sanitize_html_xss()` pipeline as code editor output. Export actions validate HTML before sending to ESP. Client preview rendering uses same sandboxed Playwright approach as Phase 17.
+**Verify:** Full builder workflow: open template → switch to visual view → drag 5 sections → configure via property panels → preview on mobile → run QA → all checks pass → export HTML. Split view: edit in code → see change in builder → edit in builder → see change in code. Onboarding: new viewer user → onboarding flow appears → complete 4 steps → not shown again. Keyboard shortcuts work in builder view. QA issue click → corresponding section highlighted. `make check-fe` passes.
+- [ ] 24.7 Frontend builder integration & workspace
+
+### 24.8 Tests & Documentation `[Full-Stack]`
+**What:** Comprehensive test suite for WebSocket infrastructure (connection, auth, broadcast, Redis pub/sub), CRDT engine (merge correctness, compaction, persistence), collaboration UI (cursors, presence, follow mode), visual builder (DnD, property panels, section operations), bidirectional sync (code→builder, builder→code, parse errors), and workspace integration. ADR-011 documenting real-time collaboration architecture.
+**Implementation:**
+- Create `app/streaming/tests/test_websocket.py` — 20+ tests:
+  - Connection lifecycle (connect, authenticate, join room, disconnect)
+  - Auth rejection (invalid JWT, expired token, wrong project)
+  - Room broadcast (message reaches all peers, not sender)
+  - Redis pub/sub bridge (cross-instance message delivery)
+  - Connection limits (max per room, max per user)
+  - Heartbeat timeout (connection dropped after missed pongs)
+- Create `app/streaming/tests/test_crdt.py` — 15+ tests:
+  - Document create, load, save round-trip
+  - Concurrent update merge (two updates applied, both preserved)
+  - Update compaction (100 updates → single state)
+  - Document size limit enforcement
+  - State vector sync protocol (SyncStep1 → SyncStep2)
+- Frontend tests (Vitest + Testing Library):
+  - `builder-canvas.test.tsx` — section drag-and-drop, selection, inline editing
+  - `property-panel.test.tsx` — slot rendering, value changes, design system constraints
+  - `builder-sync.test.tsx` — HTML parse, section serialize, bidirectional sync
+  - `collaboration.test.tsx` — cursor rendering, presence panel, follow mode
+- Route tests for WebSocket endpoint (auth, message handling)
+- ADR-011 in `docs/ARCHITECTURE.md` — Real-Time Collaboration & Visual Builder
+- SDK regeneration for collaboration + builder types
+- Target: 80+ tests
+**Verify:** `make test` passes. `make check-fe` passes. `make check` all green. No regression in existing test suite.
+- [ ] 24.8 Tests & documentation
 
 ---
 
 ## Phase 25 — Platform Ecosystem & Advanced Integrations
 
-**What:** Plugin architecture for community-contributed components, Tolgee integration for multilingual campaigns, Kestra workflow orchestration, Penpot design-to-code pipeline, and Typst for programmatic QA report generation.
-**Why:** These extend the hub from a tool into a platform. Each integration compounds with existing capabilities — Tolgee + Maizzle enables per-locale builds, Kestra replaces ad-hoc pipeline orchestration, Penpot offers a self-hosted Figma alternative.
-**Dependencies:** All previous phases.
+**What:** Plugin architecture for community-contributed components, Tolgee integration for multilingual campaigns, Kestra workflow orchestration replacing ad-hoc blueprint scheduling, Penpot as a self-hosted Figma alternative, and Typst for programmatic QA report generation. Each integration compounds with existing capabilities — Tolgee + Maizzle enables per-locale builds, Kestra replaces ad-hoc pipeline orchestration, Penpot offers FOSS design import.
+**Why:** These extend the Hub from a tool into a platform. A plugin architecture means the community can add QA checks, agent skills, export connectors, and component packages without core changes. Tolgee solves the "same email in 12 languages" problem that enterprises face daily. Kestra provides production-grade workflow orchestration (retry, parallelism, scheduling, audit) that the blueprint engine lacks. Penpot is the self-hosted alternative to Figma (no per-seat licensing). Typst generates beautiful PDF reports from QA data in <100ms.
+**Dependencies:** All previous phases — plugins extend every subsystem, Tolgee hooks into Maizzle, Kestra wraps the blueprint engine, Penpot reuses the design sync protocol (Phase 12), Typst consumes QA engine data.
+**Design principle:** Plugins are sandboxed — they can read Hub data and contribute capabilities but cannot modify core behavior. External integrations are protocol-based — swap Tolgee for another TMS, swap Kestra for Temporal, swap Penpot for any design tool that speaks the protocol. Every integration ships behind a feature flag.
 
-### 25.1 Plugin Architecture `[Backend]`
-**What:** Extensible plugin system for custom QA checks, agent skills, export connectors, and component packages. Plugin manifest format, discovery, loading, and sandboxed execution.
-- [ ] 25.1 Plugin architecture
+### 25.1 Plugin Architecture — Manifest, Discovery & Registry `[Backend]`
+**What:** Define the plugin manifest format, discovery mechanism, and central registry. Plugins declare their type (QA check, agent skill, export connector, component package, theme), required Hub API version, permissions, and entry points. The registry discovers plugins from a configurable directory, validates manifests, and registers capabilities with the appropriate subsystem.
+**Why:** Without a formal plugin architecture, every new capability requires core code changes. A plugin system lets the community contribute: custom QA checks for specific industries (finance compliance, healthcare HIPAA), agent skills for niche use cases (AMP email generation, interactive email), ESP connectors for less common providers (Mailtrap, Postmark), and component packages (holiday themes, industry-specific templates).
+**Implementation:**
+- Create `app/plugins/` package:
+  - `manifest.py` — `PluginManifest` Pydantic model:
+    - `name: str` — unique plugin identifier (reverse domain: `com.example.my-plugin`)
+    - `version: str` — semver (validated)
+    - `hub_api_version: str` — minimum Hub API version required (e.g., `">=1.0"`)
+    - `plugin_type: PluginType` — enum: `qa_check`, `agent_skill`, `export_connector`, `component_package`, `theme`, `workflow_step`
+    - `entry_point: str` — Python module path for plugin entry (e.g., `my_plugin.main`)
+    - `permissions: list[PluginPermission]` — enum: `read_templates`, `read_components`, `read_qa_results`, `write_qa_results`, `call_llm`, `network_access`, `file_read`
+    - `config_schema: dict | None` — JSON Schema for plugin-specific configuration
+    - `metadata: PluginMetadata` — `author`, `description`, `homepage`, `license`, `tags`
+    - Loaded from `plugin.yaml` or `plugin.json` in plugin directory
+  - `discovery.py` — `PluginDiscovery`:
+    - `discover(plugin_dir: Path) -> list[PluginManifest]` — scans directory for plugin manifests
+    - Plugin directory structure: `plugins/{plugin-name}/plugin.yaml` + Python package
+    - Validation: manifest schema check, version compatibility check, dependency resolution
+    - Hot reload support: `watch(plugin_dir)` using `watchdog` — detects new/modified plugins without restart
+    - Conflict detection: two plugins registering same QA check name → error logged, second rejected
+  - `registry.py` — `PluginRegistry` singleton:
+    - `register(manifest: PluginManifest, module: ModuleType) -> None` — registers plugin with appropriate subsystem:
+      - `qa_check` → registers with `QAEngineService` as additional check
+      - `agent_skill` → registers with `SkillOverrideManager` as SKILL.md override
+      - `export_connector` → registers with `ConnectorSyncService` as new provider
+      - `component_package` → bulk imports components via `ComponentService`
+      - `theme` → registers design system theme with `DesignSystemService`
+      - `workflow_step` → registers with Kestra workflow (25.5) as custom step
+    - `unregister(plugin_name: str) -> None` — cleanly removes plugin
+    - `list_plugins() -> list[PluginInfo]` — returns all registered plugins with status
+    - `get_plugin(name: str) -> PluginInstance` — returns loaded plugin instance
+    - `PluginInfo(manifest: PluginManifest, status: str, loaded_at: datetime, error: str | None)`
+  - `loader.py` — `PluginLoader`:
+    - `load(manifest: PluginManifest) -> ModuleType` — `importlib` dynamic import of entry point module
+    - Plugin entry point must export `setup(hub: HubPluginAPI) -> None` function
+    - Module loaded in isolated namespace (no access to `app.core` internals)
+    - Import timeout: 10s (prevents hanging plugins from blocking startup)
+- Create `app/plugins/api.py` — `HubPluginAPI`:
+  - Sandboxed API surface exposed to plugins:
+    - `api.qa.register_check(name, check_fn)` — register QA check
+    - `api.knowledge.search(query)` — read-only knowledge search
+    - `api.components.list(category)` — list components
+    - `api.templates.get(template_id)` — get template HTML
+    - `api.llm.complete(messages, model_tier)` — call LLM (only if `call_llm` permission)
+    - `api.config.get(key)` — read plugin-specific config
+  - Permission enforcement: each API method checks `manifest.permissions` before executing
+- Modify `app/main.py` — on startup: discover plugins → validate → load → register
+- Modify `app/plugins/routes.py` — admin endpoints:
+  - `GET /api/v1/plugins` — list all plugins with status
+  - `POST /api/v1/plugins/{name}/enable` — enable a discovered plugin
+  - `POST /api/v1/plugins/{name}/disable` — disable without removing
+  - `DELETE /api/v1/plugins/{name}` — unregister and remove
+  - `GET /api/v1/plugins/{name}/config` — get plugin config
+  - `PUT /api/v1/plugins/{name}/config` — update plugin config
+- Config: `PLUGINS__ENABLED: bool = False`, `PLUGINS__DIRECTORY: str = "plugins/"`, `PLUGINS__HOT_RELOAD: bool = False`, `PLUGINS__MAX_LOAD_TIME_S: int = 10`
+**Security:** Plugins run in-process but with a restricted API surface — no direct database access, no file system writes, no network access (unless `network_access` permission granted). Plugin code is not sandboxed at the OS level (Python limitation) — this is a trust-based system suitable for enterprise self-hosted deployments where plugins are vetted. Admin-only plugin management endpoints. Plugin errors are caught and logged — a crashing plugin never takes down the Hub. Plugin config stored in database — not in plugin directory (prevents tampering).
+**Verify:** Create sample QA check plugin (`plugin.yaml` + Python module) → place in plugins directory → Hub discovers on startup → plugin appears in `GET /plugins` → run QA → custom check included in results. Disable plugin → QA runs without it. Plugin requesting `call_llm` without permission → API call rejected. Hot reload: add new plugin to directory → registered without restart (when enabled). `make test` passes.
+- [ ] 25.1 Plugin architecture — manifest, discovery & registry
 
-### 25.2 Tolgee Multilingual Campaign Support `[Full-Stack]`
-**What:** Self-hosted TMS integration for multilingual email campaigns. In-context translation, translation memory, per-locale Maizzle builds.
-- [ ] 25.2 Tolgee multilingual campaign support
+### 25.2 Plugin Sandboxed Execution & Lifecycle `[Backend]`
+**What:** Execution sandbox for plugins with resource limits, error isolation, and lifecycle hooks. Plugins get CPU/memory budgets, structured logging, health checks, and graceful shutdown. The sandbox ensures a misbehaving plugin cannot degrade Hub performance or crash the service.
+**Why:** Plugins run third-party code in the Hub process. Without resource controls, a single plugin with an infinite loop or memory leak brings down the entire platform. Enterprise deployments need guarantees that plugin failures are isolated. Lifecycle hooks (startup, shutdown, health check) enable monitoring and graceful degradation.
+**Implementation:**
+- Create `app/plugins/sandbox.py` — `PluginSandbox`:
+  - `execute(plugin: PluginInstance, fn: str, *args, timeout_s: float = 30) -> Any` — run plugin function with:
+    - Timeout: `asyncio.wait_for()` with configurable per-plugin timeout
+    - Error isolation: all exceptions caught, logged with plugin context, returned as `PluginError`
+    - Resource tracking: wall-clock time measured, logged in structured format
+  - `PluginExecutionContext` — passed to every plugin function:
+    - `context.logger` — structured logger prefixed with plugin name
+    - `context.config` — plugin-specific configuration (read-only)
+    - `context.metrics` — counter/gauge registration for plugin metrics
+  - `async health_check(plugin: PluginInstance) -> PluginHealth` — calls plugin's `health()` function if defined, times out after 5s
+  - `PluginHealth(status: str, message: str | None, latency_ms: float)` — status: `healthy`, `degraded`, `unhealthy`
+- Create `app/plugins/lifecycle.py` — `PluginLifecycleManager`:
+  - `async startup(plugin: PluginInstance) -> None` — calls plugin `setup()`, validates return, marks as active
+  - `async shutdown(plugin: PluginInstance) -> None` — calls plugin `teardown()` if defined, waits up to 10s, marks as inactive
+  - `async restart(plugin: PluginInstance) -> None` — shutdown → load → startup (for hot reload)
+  - Periodic health checks: every 60s, check all active plugins, disable unhealthy plugins after 3 consecutive failures
+  - Startup ordering: plugins loaded in dependency order (if plugin A depends on plugin B, B loads first)
+- Modify `app/plugins/registry.py` — integrate sandbox execution:
+  - QA check plugins: `sandbox.execute(plugin, "run_check", html, config)` with 30s timeout
+  - Agent skill plugins: `sandbox.execute(plugin, "process", request)` with 60s timeout
+  - Export connector plugins: `sandbox.execute(plugin, "push", template, connection)` with 120s timeout
+- Modify `app/plugins/routes.py` — add:
+  - `GET /api/v1/plugins/{name}/health` — plugin health status
+  - `POST /api/v1/plugins/{name}/restart` — restart plugin (admin only)
+  - `GET /api/v1/plugins/health` — all plugins health summary
+- Config: `PLUGINS__DEFAULT_TIMEOUT_S: int = 30`, `PLUGINS__HEALTH_CHECK_INTERVAL_S: int = 60`, `PLUGINS__MAX_CONSECUTIVE_FAILURES: int = 3`
+**Security:** Timeout enforcement prevents infinite loops. Error isolation prevents plugin exceptions from propagating to request handlers. Plugin functions cannot catch `asyncio.CancelledError` (timeout is non-negotiable). Structured logging with plugin name prefix enables security audit of plugin actions. Health checks run with minimal permissions.
+**Verify:** Plugin with `time.sleep(60)` → timeout after 30s → error logged → Hub continues serving. Plugin raising exception → caught, logged, result indicates error → Hub unaffected. Health check on healthy plugin → `healthy` status. Plugin failing health check 3 times → auto-disabled. Restart disabled plugin → re-enabled if health check passes. `make test` passes.
+- [ ] 25.2 Plugin sandboxed execution & lifecycle
 
-### 25.3 Kestra Workflow Orchestration `[Backend]`
-**What:** Declarative YAML email build pipeline with retry logic, parallelism, conditional branching, and full audit trail. Replaces the blueprint engine's ad-hoc orchestration with a production-grade workflow engine.
-- [ ] 25.3 Kestra workflow orchestration
+### 25.3 Tolgee Multilingual Campaign Support `[Backend]`
+**What:** Integrate Tolgee (self-hosted translation management system) for multilingual email campaigns. Sync email content keys to Tolgee for translation, pull translations back, and trigger per-locale Maizzle builds. Supports ICU message format for pluralization and gender-aware content. Translation memory and machine translation suggestions speed up the translation workflow.
+**Why:** Enterprise email campaigns routinely deploy in 5-20 languages. Currently, translations are managed in spreadsheets or external TMS with manual copy-paste into templates. Tolgee integration automates the full loop: extract translatable strings → translate → build per-locale email → QA each locale. The Hub's Maizzle sidecar already supports per-locale builds — Tolgee provides the translation data.
+**Implementation:**
+- Create `app/connectors/tolgee/` package:
+  - `client.py` — `TolgeeClient(httpx.AsyncClient)`:
+    - `async list_projects() -> list[TolgeeProject]` — list Tolgee projects
+    - `async get_translations(project_id: int, language: str, namespace: str | None) -> dict[str, str]` — fetch translations for a language
+    - `async push_keys(project_id: int, keys: list[TranslationKey]) -> PushResult` — create/update translation keys with source text
+    - `async get_languages(project_id: int) -> list[TolgeeLanguage]` — list project languages
+    - `async import_translations(project_id: int, format: str, data: bytes) -> ImportResult` — bulk import translations
+    - `async export_translations(project_id: int, format: str, languages: list[str]) -> bytes` — bulk export
+    - Authentication: Tolgee PAT (Personal Access Token) stored encrypted in `ESPConnection` model (reusing connector infrastructure)
+    - Base URL: configurable for self-hosted instances
+  - `extractor.py` — `TranslationKeyExtractor`:
+    - `extract_keys(html: str, template_id: int) -> list[TranslationKey]` — scan email HTML for translatable content:
+      - Text content in `<td>`, `<p>`, `<h1>`-`<h6>`, `<a>`, `<span>` elements
+      - `alt` attributes on `<img>` elements
+      - `title` attributes
+      - Subject line and preview text (from template metadata)
+    - `TranslationKey(key: str, source_text: str, context: str | None, namespace: str)` — key format: `template_{id}.section_{name}.{element}` (e.g., `template_42.hero.heading`)
+    - ICU format detection: content with `{count, plural, ...}` or `{gender, select, ...}` preserved as-is
+    - Skips non-translatable content: URLs, email addresses, code snippets, tracking parameters
+  - `builder.py` — `LocaleEmailBuilder`:
+    - `async build_locale(template_html: str, translations: dict[str, str], locale: str) -> str` — inject translations into template:
+      - Replace source text with translations at each key location
+      - Adjust RTL/LTR direction for Arabic, Hebrew, Farsi, Urdu locales
+      - Handle text expansion: German/Finnish text is ~30% longer than English — validate no Gmail clipping after translation
+    - `async build_all_locales(template_id: int, locales: list[str]) -> dict[str, str]` — parallel build for all target locales
+    - Integration with Maizzle sidecar: `POST /build` with `locale` parameter for locale-specific Tailwind config
+  - `schemas.py` — `TolgeeConnectionRequest`, `TranslationSyncRequest`, `LocaleBuildRequest`, `LocaleBuildResponse`, `TranslationKeySchema`
+- Modify `app/connectors/routes.py` — add endpoints:
+  - `POST /api/v1/connectors/tolgee/connect` — create Tolgee connection (encrypted credentials)
+  - `POST /api/v1/connectors/tolgee/sync-keys` — push translatable keys to Tolgee with auth + `5/minute`
+  - `POST /api/v1/connectors/tolgee/pull` — pull translations from Tolgee with auth + `10/minute`
+  - `POST /api/v1/connectors/tolgee/build-locales` — build email in multiple locales with auth + `3/minute`
+  - `GET /api/v1/connectors/tolgee/languages` — list available languages
+- Config: `TOLGEE__ENABLED: bool = False`, `TOLGEE__BASE_URL: str = "http://localhost:25432"`, `TOLGEE__DEFAULT_LOCALE: str = "en"`, `TOLGEE__MAX_LOCALES_PER_BUILD: int = 20`
+**Security:** Tolgee PAT stored encrypted (Fernet) in `ESPConnection` — same security model as ESP credentials (Phase 13). Translation content is text-only — no HTML injection possible (translations injected as text nodes, not raw HTML). RTL direction changes applied via `dir` attribute only — no CSS injection. Tolgee API calls use HTTPS. Rate limited to prevent API abuse.
+**Verify:** Connect to Tolgee → extract 15 keys from template → push to Tolgee → verify keys appear in Tolgee UI. Add German translations in Tolgee → pull → build German locale → German text present in output. RTL locale (Arabic) → `dir="rtl"` applied. Long German text → Gmail clipping warning. ICU pluralization → preserved in translation. `make test` passes.
+- [ ] 25.3 Tolgee multilingual campaign support
 
-### 25.4 Penpot Design-to-Email Pipeline `[Backend]`
-**What:** Self-hosted, API-driven design-to-email pipeline using Penpot's CSS-native primitives. Zero-cost Figma alternative with full programmatic access.
-- [ ] 25.4 Penpot design-to-email pipeline
+### 25.4 Tolgee Frontend & Per-Locale Maizzle Builds `[Frontend]`
+**What:** Frontend UI for Tolgee integration: translation key viewer/editor, locale build dashboard with per-locale QA results, side-by-side locale preview, and in-context translation overlay. Non-translators can see which text is translatable and what the email looks like in each language.
+**Why:** Translation workflows fail when the translator can't see the email context. Tolgee's in-context translation pattern lets translators click on text in the email preview and translate it directly — no switching between spreadsheet and email. Per-locale QA results catch locale-specific issues (text overflow in German, RTL layout breaks in Arabic) that english-only QA misses.
+**Implementation:**
+- Create `cms/apps/web/src/components/tolgee/` package:
+  - `TranslationPanel.tsx` — main translation management panel:
+    - Key list with source text, translation status per locale (translated, untranslated, machine-translated)
+    - Inline translation editing for quick fixes
+    - "Sync to Tolgee" button to push local edits
+    - Translation progress bar per locale
+    - Filter: by status (untranslated first), by section, by key
+  - `LocalePreview.tsx` — side-by-side locale comparison:
+    - Locale selector dropdown (flags + language names)
+    - Split view: source locale left, target locale right
+    - Rendered email preview per locale (using iframe)
+    - "Build All" button → triggers per-locale Maizzle builds
+  - `LocaleQAResults.tsx` — per-locale QA summary:
+    - Matrix view: locales × QA checks with pass/fail indicators
+    - Locale-specific issues highlighted (e.g., "German: Gmail clipping threshold exceeded by 3KB")
+    - "Run QA for All Locales" batch action
+  - `InContextOverlay.tsx` — translation overlay on email preview:
+    - Hover over text in preview → tooltip showing translation key + current translation
+    - Click → inline edit field → save → preview updates
+    - Highlight untranslated strings with yellow background
+    - Toggle overlay on/off via toolbar button
+  - `TolgeeConnectionDialog.tsx` — connection setup dialog:
+    - Tolgee URL input + PAT input
+    - Test connection button
+    - Project selector after successful connection
+    - Language configuration (which locales to enable)
+- Create `cms/apps/web/src/hooks/use-tolgee.ts` — SWR hooks:
+  - `useTolgeeConnection()` — connection status
+  - `useTranslationKeys(templateId)` — translatable keys for template
+  - `useTranslations(templateId, locale)` — translations for a locale
+  - `useLocaleBuild(templateId, locales)` — trigger locale builds
+  - `useLocaleQA(templateId, locale)` — QA results for locale
+- Add i18n keys across 6 locales — ~50 keys for translation UI labels
+- SDK regeneration for Tolgee endpoints
+**Security:** Tolgee PAT displayed as masked value in connection dialog. Translation edits go through text sanitization. In-context overlay is read-only unless user has developer/admin role. Locale preview iframe sandboxed.
+**Verify:** Connect to Tolgee → translation keys extracted → view in panel → translate German → preview shows German text → QA checks pass. In-context overlay: hover → key shown → edit → translation saved. Side-by-side: English left, German right, layout intact. `make check-fe` passes.
+- [ ] 25.4 Tolgee frontend & per-locale Maizzle builds
 
-### 25.5 Typst QA Report Generator `[Backend]`
-**What:** Programmatic PDF generation for QA reports and client approval packages using Typst (Rust, <100ms). Data-driven documents auto-generated from Hub QA results.
-- [ ] 25.5 Typst QA report generator
+### 25.5 Kestra Workflow Orchestration `[Backend]`
+**What:** Integrate Kestra (open-source workflow orchestration engine) to replace the blueprint engine's ad-hoc pipeline scheduling with declarative YAML workflows. Each email build becomes a Kestra flow with typed inputs, conditional branching (skip Visual QA if no screenshots enabled), parallel task execution (run QA checks concurrently), automatic retry with backoff, and a full audit trail. Blueprint engine remains the node execution logic; Kestra handles scheduling, retries, and cross-workflow coordination.
+**Why:** The blueprint engine (Phase 14) handles single-run orchestration well, but lacks: (1) scheduled recurring builds (weekly newsletter pipeline), (2) cross-workflow dependencies (design import → build → QA → approve → push to ESP), (3) production-grade retry with dead-letter queues, (4) workflow versioning and rollback. Kestra provides all of these as a self-hosted service with a web UI. The Hub becomes a set of Kestra tasks that Kestra orchestrates — separation of concerns.
+**Implementation:**
+- Create `app/workflows/` package:
+  - `kestra_client.py` — `KestraClient(httpx.AsyncClient)`:
+    - `async create_flow(namespace: str, flow_id: str, definition: dict) -> Flow` — register a workflow
+    - `async trigger_execution(namespace: str, flow_id: str, inputs: dict) -> Execution` — start workflow execution
+    - `async get_execution(execution_id: str) -> Execution` — poll execution status
+    - `async list_executions(namespace: str, flow_id: str) -> list[Execution]` — execution history
+    - `async get_logs(execution_id: str) -> list[LogEntry]` — execution logs
+    - `Execution(id: str, status: str, started: datetime, ended: datetime | None, inputs: dict, outputs: dict, task_runs: list[TaskRun])`
+    - Authentication: Kestra API token stored in settings (not per-user)
+  - `tasks/` — Hub-specific Kestra task definitions:
+    - `blueprint_run.py` — `BlueprintRunTask` — wraps `BlueprintService.create_run()` as Kestra task:
+      - Input: brief text, project_id, template preferences
+      - Output: blueprint run ID, generated HTML, QA score
+      - Retry policy: 3 attempts with 30s backoff on LLM timeout/rate-limit
+    - `qa_check.py` — `QACheckTask` — wraps `QAEngineService.run_checks()`:
+      - Input: HTML, config overrides
+      - Output: QA results, pass/fail, score
+      - Conditional: skip if HTML is None (previous task failed)
+    - `chaos_test.py` — `ChaosTestTask` — wraps chaos engine:
+      - Input: HTML, profiles
+      - Output: resilience score, failures
+    - `esp_push.py` — `ESPPushTask` — wraps ESP sync:
+      - Input: HTML, connection_id, template_name
+      - Output: push result, remote template ID
+    - `locale_build.py` — `LocaleBuildTask` — wraps Tolgee locale builder (25.3):
+      - Input: template_id, locales
+      - Output: per-locale HTML map
+    - `approval_gate.py` — `ApprovalGateTask` — creates approval request and waits:
+      - Input: template_id, approver_role
+      - Output: approval status (blocks workflow until approved/rejected)
+      - Implements Kestra's `pause` task type for human-in-the-loop
+  - `flow_templates/` — pre-built YAML workflow templates:
+    - `email_build_and_qa.yaml` — standard flow: blueprint run → QA → chaos test (parallel) → visual QA → result
+    - `multilingual_campaign.yaml` — extract keys → await translations → parallel locale builds → per-locale QA → approval gate → ESP push per locale
+    - `weekly_newsletter.yaml` — scheduled trigger (cron) → content pull → blueprint run → QA → approval → ESP push
+    - `design_import_pipeline.yaml` — design sync → layout analysis → brief generation → blueprint run → visual comparison → approval
+  - `schemas.py` — `WorkflowTriggerRequest`, `WorkflowStatusResponse`, `WorkflowListResponse`
+- Modify `app/workflows/routes.py` — workflow endpoints:
+  - `GET /api/v1/workflows` — list available workflow templates + custom workflows
+  - `POST /api/v1/workflows/trigger` — trigger workflow execution with inputs, auth + `5/minute`
+  - `GET /api/v1/workflows/{execution_id}` — execution status + task run details
+  - `GET /api/v1/workflows/{execution_id}/logs` — execution logs
+  - `POST /api/v1/workflows/flows` — create custom workflow from YAML (admin only)
+  - `GET /api/v1/workflows/flows/{flow_id}` — get workflow definition
+- Modify `app/main.py` — register Kestra task definitions on startup, sync flow templates to Kestra
+- Config: `KESTRA__ENABLED: bool = False`, `KESTRA__API_URL: str = "http://localhost:8080"`, `KESTRA__API_TOKEN: str = ""`, `KESTRA__NAMESPACE: str = "merkle-email-hub"`, `KESTRA__DEFAULT_RETRY_ATTEMPTS: int = 3`, `KESTRA__DEFAULT_RETRY_BACKOFF_S: int = 30`
+**Security:** Kestra API token stored in settings (not in database — single instance token). Workflow inputs validated via Pydantic schemas before passing to Kestra. Custom workflow YAML validated against allowlist of Hub task types — no arbitrary script execution. Approval gate tasks enforce RBAC. Kestra runs as a separate Docker service — network-isolated from public internet (accessible only from Hub backend). Workflow logs may contain template content — same data classification as blueprint run logs.
+**Verify:** Trigger `email_build_and_qa` flow → blueprint runs → QA checks run → results returned via status endpoint. Flow with LLM timeout → retries 3 times → succeeds on retry 2. `multilingual_campaign` flow → locale builds run in parallel → per-locale QA → approval gate pauses workflow → approve → ESP push completes. Scheduled `weekly_newsletter` → executes on cron schedule. Custom workflow YAML with invalid task type → rejected. `make test` passes.
+- [ ] 25.5 Kestra workflow orchestration
 
-### 25.6 Tests & Documentation `[Full-Stack]`
-- [ ] 25.6 Tests & documentation
+### 25.6 Penpot Design-to-Email Pipeline `[Backend]`
+**What:** Self-hosted, API-driven design-to-email pipeline using Penpot's CSS-native design primitives. Replaces or supplements Figma import (Phase 12) with a zero-cost, self-hosted alternative. Uses Penpot's API to extract components, layouts, typography, and colors — converting them to Hub components and design system tokens. Leverages Penpot's native CSS output (unlike Figma which requires translation from proprietary format).
+**Why:** Figma charges per-editor ($15-75/month/seat) and restricts API access on lower tiers. Penpot is open-source, self-hosted, and outputs native CSS — making the design-to-email conversion more accurate (no Figma-to-CSS translation layer). For enterprises already using Penpot (growing in EU due to GDPR/data sovereignty), this is the natural design import path. The Hub's existing design sync protocol (Phase 12) provides the abstraction layer — Penpot becomes a second implementation alongside Figma.
+**Implementation:**
+- Create `app/design_sync/penpot/` package:
+  - `client.py` — `PenpotClient(httpx.AsyncClient)`:
+    - `async list_projects() -> list[PenpotProject]` — list Penpot projects via API
+    - `async get_file(file_id: str) -> PenpotFile` — get file with pages, components, colors
+    - `async get_components(file_id: str) -> list[PenpotComponent]` — extract component library
+    - `async export_svg(file_id: str, object_id: str) -> bytes` — export node as SVG
+    - `async export_css(file_id: str, object_id: str) -> str` — get CSS for a design element (Penpot native feature)
+    - `async get_colors(file_id: str) -> list[PenpotColor]` — shared color library
+    - `async get_typography(file_id: str) -> list[PenpotTypography]` — typography styles
+    - Authentication: Penpot access token stored encrypted in `DesignConnection` (reusing Phase 12 model)
+    - Base URL: configurable for self-hosted instances
+  - `converter.py` — `PenpotToEmailConverter`:
+    - `convert_component(component: PenpotComponent) -> ComponentVersion` — convert Penpot component to Hub component:
+      - Extract CSS from Penpot's native CSS output (no Figma translation needed)
+      - Convert CSS layout to email-safe HTML: flexbox → table (using CSS compiler from 19.3), grid → table
+      - Map Penpot layers to HTML elements: frame → `<table>`, text → `<td>`, image → `<img>`, rectangle → `<div>` with background
+      - Preserve Penpot component variants as Hub `ComponentVersion` compatibility configurations
+    - `convert_colors(colors: list[PenpotColor]) -> BrandPalette` — map to design system colors (11.25.1)
+    - `convert_typography(typography: list[PenpotTypography]) -> Typography` — map to design system fonts
+    - `convert_layout(page: PenpotPage) -> LayoutAnalysis` — reuse layout analyzer (12.4) with Penpot-specific section detection
+  - `sync_provider.py` — `PenpotSyncProvider` implementing `DesignSyncProtocol` (Phase 12 protocol):
+    - `async list_files(connection_id: int) -> list[DesignFile]` — Penpot files as `DesignFile`
+    - `async import_design(file_id: str, connection_id: int) -> DesignImport` — full import pipeline
+    - `async extract_components(file_id: str, connection_id: int) -> list[Component]` — component extraction
+    - Reuses existing `DesignImportService` workflow (create import → analyze layout → generate brief → convert)
+  - `schemas.py` — Penpot-specific request/response schemas
+- Modify `app/design_sync/routes.py` — add Penpot connection type:
+  - `POST /api/v1/design-sync/connections` — already supports `provider` field, add `"penpot"` option
+  - Penpot connections use same endpoints as Figma: file browser, import, component extraction
+- Modify `app/design_sync/service.py` — register `PenpotSyncProvider` alongside `FigmaSyncProvider`
+- Config: `DESIGN_SYNC__PENPOT_ENABLED: bool = False`, `DESIGN_SYNC__PENPOT_BASE_URL: str = "http://localhost:9001"`
+**Security:** Penpot access token stored encrypted (Fernet). Penpot API calls use HTTPS (or internal network for self-hosted). CSS output from Penpot validated and sanitized before use in email HTML. SVG exports validated (no scripts, no external references — same validation as BIMI SVG in 20.4). BOLA protection on design connections.
+**Verify:** Connect to self-hosted Penpot → list projects → browse files → import design → layout analyzed → brief generated → Scaffolder produces email matching design. Component extraction: Penpot components → Hub components with valid HTML. Color extraction: Penpot shared colors → design system palette. Typography: Penpot text styles → design system fonts. CSS conversion: Penpot flexbox → email table layout. `make test` passes.
+- [ ] 25.6 Penpot design-to-email pipeline
+
+### 25.7 Typst QA Report Generator `[Backend]`
+**What:** Programmatic PDF generation for QA reports and client approval packages using Typst (Rust-based typesetting system, <100ms per document). Auto-generates branded PDF reports from Hub QA results, including visual regression screenshots, chaos test summaries, deliverability scores, and agent decision traces. Output suitable for client presentations and compliance archives.
+**Why:** Clients and compliance teams need PDF reports — not dashboard links. Currently, QA results exist only in the Hub UI. Typst replaces LaTeX/wkhtmltopdf with a modern, fast, programmable alternative. A single QA report PDF containing all check results, screenshots, and recommendations is the deliverable that justifies the Hub's value to stakeholders who never log into the platform.
+**Implementation:**
+- Create `app/reporting/` package:
+  - `typst_renderer.py` — `TypstRenderer`:
+    - `async render(template_name: str, data: dict) -> bytes` — compile Typst template with data to PDF
+    - Uses `typst` CLI via subprocess: `typst compile input.typ output.pdf --font-path fonts/`
+    - Template + data merged: Typst templates use `#import "data.json"` for dynamic content
+    - Temporary files: write `.typ` + `data.json` to temp directory, compile, read PDF, cleanup
+    - Font embedding: Hub brand fonts bundled in `app/reporting/fonts/` for consistent rendering
+    - Compilation timeout: 10s (Typst compiles ~100 pages in <1s — 10s is generous safety margin)
+  - `templates/` — Typst report templates:
+    - `qa_report.typ` — full QA report:
+      - Cover page: project name, template name, date, Hub logo
+      - Executive summary: overall pass/fail, score, top 3 issues
+      - Check-by-check results: table with check name, status, score, details
+      - Visual regression section: screenshot comparison grid (if available)
+      - Chaos test results: resilience score bar chart, per-profile breakdown
+      - Deliverability section: score gauge, dimension breakdown
+      - Agent decisions: which agents contributed, key decisions made
+      - Recommendations: prioritized fix list with estimated effort
+    - `approval_package.typ` — client approval document:
+      - Email preview renders (desktop, mobile, Outlook)
+      - QA summary (pass/fail only — no technical details)
+      - Brand compliance confirmation
+      - Signature/approval section
+    - `regression_report.typ` — visual regression comparison:
+      - Baseline vs current screenshots side-by-side
+      - Diff highlights
+      - Changed regions annotated
+  - `report_builder.py` — `ReportBuilder`:
+    - `async build_qa_report(qa_run_id: int) -> bytes` — fetch QA results, screenshots, chaos data → compile PDF
+    - `async build_approval_package(template_id: int, qa_run_id: int) -> bytes` — fetch template + QA → compile PDF
+    - `async build_regression_report(entity_type: str, entity_id: int) -> bytes` — fetch baselines + current → compile PDF
+    - Data assembly: queries QA engine, rendering service, blueprint service for all report data
+    - Image embedding: screenshots base64-decoded and embedded in Typst as inline images
+  - `schemas.py` — `ReportRequest(report_type: str, qa_run_id: int | None, template_id: int | None)`, `ReportResponse(pdf_base64: str, filename: str, size_bytes: int, generated_at: datetime)`
+- Create `app/reporting/routes.py` — report endpoints:
+  - `POST /api/v1/reports/qa` — generate QA report PDF with auth + `5/minute`
+  - `POST /api/v1/reports/approval` — generate approval package PDF with auth + `5/minute`
+  - `POST /api/v1/reports/regression` — generate regression report PDF with auth + `5/minute`
+  - `GET /api/v1/reports/{report_id}` — retrieve previously generated report (cached in Redis for 24h)
+- Modify `app/main.py` — register reporting routes
+- Config: `REPORTING__ENABLED: bool = False`, `REPORTING__TYPST_BINARY: str = "typst"`, `REPORTING__CACHE_TTL_H: int = 24`, `REPORTING__MAX_REPORT_SIZE_MB: int = 50`
+**Security:** Typst CLI runs as subprocess with fixed arguments — no user input in command. Report data sourced from authenticated API calls — BOLA enforced on all data fetches. PDF output is a binary document — no executable content. Temporary files written to OS temp directory with restricted permissions, deleted after compilation. Report cache uses Redis with TTL — auto-expiry prevents stale data. Rate limited to prevent CPU abuse.
+**Verify:** Generate QA report for a template with 11 checks → PDF output with all sections populated. Generate approval package → client-friendly PDF without technical jargon. Report with screenshots → images embedded correctly. Report with no visual regression data → section gracefully omitted. Typst compilation completes in <1s for standard report. Cached report retrieved without recompilation. `make test` passes.
+- [ ] 25.7 Typst QA report generator
+
+### 25.8 Frontend Ecosystem Dashboard `[Frontend]`
+**What:** Unified frontend dashboard for plugin management, Tolgee translations, Kestra workflows, Penpot design sync, and report generation. Extends the workspace with ecosystem-level views that surface cross-cutting information: active workflow executions, translation progress, plugin health, and generated reports.
+**Why:** Each integration (plugins, Tolgee, Kestra, Penpot, Typst) adds backend capabilities — the frontend must surface them in a unified experience. A fragmented UI with separate pages per integration creates cognitive overhead. The ecosystem dashboard provides a single view of "what's happening across all integrations" with drill-down into specifics.
+**Implementation:**
+- Create `cms/apps/web/src/components/ecosystem/` package:
+  - `EcosystemDashboard.tsx` — main dashboard page:
+    - Four-quadrant layout: Plugins (top-left), Workflows (top-right), Translations (bottom-left), Reports (bottom-right)
+    - Each quadrant shows summary stats + 3 most recent items + "View All" link
+    - Real-time updates via SWR polling (30s interval for workflows, 60s for others)
+  - `PluginManagerPanel.tsx` — plugin administration:
+    - Plugin list: name, type, status (active/disabled/error), version, health indicator
+    - Enable/disable toggle per plugin
+    - Plugin config editor (JSON form generated from `config_schema`)
+    - "Install Plugin" dialog: upload plugin zip or enter Git URL
+    - Health dashboard: per-plugin health history graph
+    - Admin-only access
+  - `WorkflowPanel.tsx` — Kestra workflow management:
+    - Active executions: list with status, progress, elapsed time
+    - Workflow templates: available flows with "Trigger" button
+    - Execution detail: task run timeline (Gantt-style), logs viewer, input/output inspector
+    - Scheduled workflows: cron expression display, next run time, enable/disable
+  - `ReportPanel.tsx` — report generation and history:
+    - "Generate Report" dialog: select report type, template, QA run
+    - Report history: list with type, date, size, download button
+    - PDF preview: embedded `<iframe>` with PDF viewer
+    - Batch generation: "Generate reports for all templates in project"
+  - `PenpotPanel.tsx` — Penpot connection management:
+    - Connection status + project browser (reuses `DesignFileBrowser` from 12.7)
+    - Quick import actions: "Import Design" → triggers design import pipeline
+    - Component sync status: last sync time, component count
+- Create SWR hooks: `use-plugins.ts`, `use-workflows.ts`, `use-reports.ts`, `use-penpot.ts`
+- Add navigation: "Ecosystem" entry in main sidebar navigation (below existing entries)
+- Add i18n keys across 6 locales — ~70 keys
+- SDK regeneration for all new endpoints
+**Security:** Plugin management requires admin role. Workflow triggers require developer/admin role. Report downloads validated for ownership (BOLA). PDF preview uses sandboxed iframe.
+**Verify:** Ecosystem dashboard loads with all four quadrants populated. Plugin manager: install → enable → health check passes → disable. Workflow panel: trigger flow → execution appears → progress updates → completion. Report panel: generate QA report → PDF appears in history → download works → preview renders. Penpot panel: connect → browse files → import design. `make check-fe` passes.
+- [ ] 25.8 Frontend ecosystem dashboard
+
+### 25.9 Tests & Documentation `[Full-Stack]`
+**What:** Comprehensive test suite for plugin architecture (manifest validation, discovery, sandbox execution, lifecycle, registry integration), Tolgee (client, key extraction, locale builds, RTL handling), Kestra (client, task execution, flow templates, retry logic), Penpot (client, CSS conversion, component extraction, design sync protocol compliance), Typst (template compilation, data assembly, report correctness), and ecosystem dashboard. ADR-012 documenting platform ecosystem architecture.
+**Implementation:**
+- Create `app/plugins/tests/` — 30+ tests:
+  - `test_manifest.py` — manifest parsing, validation, version compatibility
+  - `test_discovery.py` — directory scanning, conflict detection, hot reload
+  - `test_registry.py` — plugin registration per type, unregister, list
+  - `test_sandbox.py` — timeout enforcement, error isolation, resource tracking
+  - `test_lifecycle.py` — startup ordering, health checks, auto-disable
+  - `test_api.py` — permission enforcement, API surface correctness
+  - Sample plugin: `tests/fixtures/sample_qa_plugin/` with `plugin.yaml` + Python module
+- Create `app/connectors/tolgee/tests/` — 20+ tests:
+  - `test_client.py` — API calls (mocked httpx), auth, error handling
+  - `test_extractor.py` — key extraction from HTML, ICU format preservation, skip rules
+  - `test_builder.py` — locale builds, RTL handling, text expansion detection
+  - Route tests for all Tolgee endpoints
+- Create `app/workflows/tests/` — 20+ tests:
+  - `test_kestra_client.py` — API calls (mocked httpx), flow CRUD, execution polling
+  - `test_tasks.py` — each task type with mocked service calls, retry logic
+  - `test_flow_templates.py` — YAML validation, task type allowlist enforcement
+  - Route tests for workflow endpoints
+- Create `app/design_sync/penpot/tests/` — 15+ tests:
+  - `test_client.py` — API calls, auth, file listing
+  - `test_converter.py` — CSS conversion, component mapping, layout analysis
+  - `test_sync_provider.py` — protocol compliance with `DesignSyncProtocol`
+- Create `app/reporting/tests/` — 15+ tests:
+  - `test_typst_renderer.py` — compilation, timeout, temp file cleanup
+  - `test_report_builder.py` — data assembly, image embedding, section omission
+  - Route tests for report endpoints
+- Frontend tests (Vitest + Testing Library):
+  - `ecosystem-dashboard.test.tsx`, `plugin-manager.test.tsx`, `workflow-panel.test.tsx`, `report-panel.test.tsx`
+- ADR-012 in `docs/ARCHITECTURE.md` — Platform Ecosystem Architecture
+- SDK regeneration with all new types
+- Target: 110+ tests
+**Verify:** `make test` passes with all new tests. `make check-fe` passes. `make check` all green. No regression in existing test suite. SDK types match API responses.
+- [ ] 25.9 Tests & documentation
 
 ---
 
@@ -659,16 +751,23 @@
 
 ## Success Criteria (Updated)
 
-| Metric | Current (Phase 16) | Target (Phase 21) | Target (Phase 25) |
-|--------|--------------------|--------------------|---------------------|
-| Campaign build time | 1-2 days | Under 4 hours | Under 1 hour |
-| Cross-client rendering defects | Caught at QA gate | Auto-fixed by VLM agent | Near-zero (property-tested) |
-| Component reuse rate | 30-40% | 60%+ | 80%+ (plugin ecosystem) |
-| AI agent count | 9 agents | 10 (Visual QA) | 12+ (plugin agents) |
-| QA checks | 11 automated | 14 (resilience, deliverability, BIMI) | 16+ (plugin checks) |
-| Ontology freshness | Manual seed | Auto-synced daily | Real-time change detection |
-| Outlook migration readiness | Manual analysis | Automated advisor | Audience-aware phased plans |
-| Gmail AI optimization | Not addressed | Summary prediction + schema.org | Full AI inbox optimization |
-| Cloud AI API spend | Under £600/month | Under £600/month (cost governor) | Under £600/month (budget caps) |
-| Email CSS output size | Juice baseline | 15-25% smaller (CSS compiler) | Optimal per-client bundles |
-| Knowledge base entries | 500+ | 1000+ (auto-synced) | Self-growing (chaos findings) |
+| Metric | Phase 22 (Current) | Target (Phase 25) |
+|--------|--------------------|--------------------|
+| Campaign build time | Under 4 hours | Under 1 hour (Kestra parallel pipelines) |
+| Cross-client rendering defects | Auto-fixed by VLM agent | Near-zero (property-tested + plugin checks) |
+| Component reuse rate | 60%+ | 80%+ (plugin component packages) |
+| AI agent count | 10 (Visual QA) | 12+ (plugin agents) |
+| QA checks | 14 (resilience, deliverability, BIMI) | 16+ (plugin checks) |
+| Ontology freshness | Auto-synced daily | Real-time change detection + plugin extensions |
+| Outlook migration readiness | Automated advisor | Audience-aware phased plans |
+| Gmail AI optimization | Summary prediction + schema.org | Full AI inbox optimization |
+| Cloud AI API spend | Under £600/month (cost governor) | Under £600/month (budget caps + plugin cost tracking) |
+| Email CSS output size | 15-25% smaller (CSS compiler) | Optimal per-client bundles |
+| Knowledge base entries | 1000+ (auto-synced) | Self-growing (chaos findings + plugin contributions) |
+| Multilingual campaigns | Manual per-locale builds | Automated via Tolgee (20+ locales) |
+| Workflow orchestration | Single blueprint runs | Declarative YAML workflows (Kestra) |
+| Design import sources | Figma only | Figma + Penpot (zero-cost self-hosted) |
+| QA report delivery | Dashboard only | PDF reports (Typst, <100ms generation) |
+| External tool integration | REST API only | MCP server (IDE-native, any MCP client) |
+| Collaboration | Single-user editing | Real-time multi-user CRDT (visual + code) |
+| Non-developer access | Code editor only | Visual drag-and-drop builder |

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from app.ai.agents.schemas.build_plan import EmailBuildPlan
+    from app.ai.multimodal import ContentBlock
     from app.knowledge.graph.protocols import GraphSearchResult
 
 __all__ = [
@@ -65,6 +66,7 @@ class NodeContext:
     iteration: int = 0
     metadata: dict[str, object] = field(default_factory=lambda: dict[str, object]())
     build_plan: EmailBuildPlan | None = None
+    multimodal_context: list[ContentBlock] | None = None
 
 
 @dataclass

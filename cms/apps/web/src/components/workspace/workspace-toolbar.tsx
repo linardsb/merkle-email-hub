@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ClipboardCheck, CloudUpload, Download, FileText, ImagePlus, Palette, Save, ShieldCheck, Users, Zap } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, CloudUpload, Download, FileText, ImagePlus, Mic, Palette, Save, ShieldCheck, Users, Zap } from "lucide-react";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
@@ -43,6 +43,8 @@ interface WorkspaceToolbarProps {
   onPushToESP?: () => void;
   designRefOpen?: boolean;
   onDesignRefToggle?: (open: boolean) => void;
+  voiceBriefCount?: number;
+  onToggleVoiceBriefs?: () => void;
 }
 
 export function WorkspaceToolbar({
@@ -73,6 +75,8 @@ export function WorkspaceToolbar({
   onPushToESP,
   designRefOpen,
   onDesignRefToggle,
+  voiceBriefCount,
+  onToggleVoiceBriefs,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
@@ -151,6 +155,26 @@ export function WorkspaceToolbar({
             >
               <Zap className="h-3.5 w-3.5" />
               {t("generateBlueprint")}
+            </button>
+          </>
+        )}
+        {/* Voice Briefs */}
+        {onToggleVoiceBriefs && (
+          <>
+            <div className="h-4 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onToggleVoiceBriefs}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={t("voiceBriefs")}
+            >
+              <Mic className="h-3.5 w-3.5" />
+              {t("voiceBriefs")}
+              {voiceBriefCount != null && voiceBriefCount > 0 && (
+                <span className="rounded-full bg-badge-success-bg px-1.5 py-0.5 text-[10px] font-medium text-badge-success-text">
+                  {voiceBriefCount}
+                </span>
+              )}
             </button>
           </>
         )}

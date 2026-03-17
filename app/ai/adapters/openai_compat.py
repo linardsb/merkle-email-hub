@@ -18,6 +18,16 @@ from typing import Any
 import httpx
 
 from app.ai.exceptions import AIConfigurationError, AIExecutionError
+from app.ai.multimodal import (
+    AudioBlock,
+    ContentBlock,
+    ImageBlock,
+    StructuredOutputBlock,
+    TextBlock,
+    ToolResultBlock,
+    normalize_content,
+    validate_content_blocks,
+)
 from app.ai.protocols import CompletionResponse, Message
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -136,6 +146,57 @@ class OpenAICompatProvider:
         except Exception:
             logger.debug("cost_governor.report_failed", model=model)
 
+    @staticmethod
+    def _extract_structured_output(
+        messages: list[Message],
+    ) -> StructuredOutputBlock | None:
+        """Extract StructuredOutputBlock from the last message, if present."""
+        if not messages:
+            return None
+        last = messages[-1]
+        if isinstance(last.content, list):
+            for block in last.content:
+                if isinstance(block, StructuredOutputBlock):
+                    return block
+        return None
+
+    def _check_vision_capability(self, model: str) -> bool:
+        """Check if the model supports vision via capability registry."""
+        try:
+            from app.ai.capability_registry import ModelCapability, get_capability_registry
+
+            registry = get_capability_registry()
+            spec = registry.get(model)
+            if spec is None:
+                return True  # Unknown model — assume capable (fail at API level)
+            return ModelCapability.VISION in spec.capabilities
+        except Exception:
+            return True  # Registry unavailable — don't block
+
+    def _build_messages_payload(
+        self,
+        messages: list[Message],
+        model: str,
+    ) -> list[dict[str, Any]]:
+        """Build OpenAI messages payload with vision capability check."""
+        has_vision = self._check_vision_capability(model)
+
+        result: list[dict[str, Any]] = []
+        for m in messages:
+            blocks = normalize_content(m.content)
+            validate_content_blocks(blocks)
+            if not has_vision:
+                # Replace images with text descriptions for non-vision models
+                blocks = [
+                    TextBlock(text=f"[Image: {b.media_type}, {len(b.data)} bytes]")
+                    if isinstance(b, ImageBlock)
+                    else b
+                    for b in blocks
+                ]
+            content = self._serialize_content_blocks(blocks)
+            result.append({"role": m.role, "content": content})
+        return result
+
     async def complete(self, messages: list[Message], **kwargs: object) -> CompletionResponse:
         """Send a chat completion request to the OpenAI-compatible API.
 
@@ -156,10 +217,24 @@ class OpenAICompatProvider:
         # Cost budget check (Phase 22.5)
         await self._check_cost_budget()
 
+        model = str(kwargs.get("model_override", self._model))
+
         payload: dict[str, Any] = {
-            "model": kwargs.get("model_override", self._model),
-            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "model": model,
+            "messages": self._build_messages_payload(messages, model),
         }
+
+        # Structured output via response_format (Phase 23.2)
+        structured_block = self._extract_structured_output(messages)
+        if structured_block:
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": structured_block.name,
+                    "schema": structured_block.schema,
+                    "strict": structured_block.strict,
+                },
+            }
 
         # Pass through supported kwargs
         for key in (
@@ -175,7 +250,7 @@ class OpenAICompatProvider:
 
         logger.debug(
             "ai.provider.completion_started",
-            model=self._model,
+            model=model,
             message_count=len(messages),
         )
 
@@ -223,6 +298,16 @@ class OpenAICompatProvider:
                 "total_tokens": int(usage_data.get("total_tokens", 0)),
             }
 
+        # Parse structured output if present
+        parsed: dict[str, object] | None = None
+        if structured_block and content:
+            try:
+                import json
+
+                parsed = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
+                logger.debug("ai.provider.structured_output_parse_failed", model=model_name)
+
         logger.info(
             "ai.provider.completion_completed",
             model=model_name,
@@ -233,7 +318,12 @@ class OpenAICompatProvider:
         # Cost tracking (Phase 22.5)
         await self._report_cost(model_name, usage, dict(kwargs))
 
-        return CompletionResponse(content=content, model=model_name, usage=usage)
+        return CompletionResponse(
+            content=content,
+            model=model_name,
+            usage=usage,
+            parsed=parsed,
+        )
 
     async def stream(self, messages: list[Message], **kwargs: object) -> AsyncIterator[str]:
         """Stream completion tokens from the OpenAI-compatible API.
@@ -254,9 +344,11 @@ class OpenAICompatProvider:
         # Token budget trimming (Phase 22.3)
         messages = self._apply_token_budget(messages, dict(kwargs))
 
+        model = str(kwargs.get("model_override", self._model))
+
         payload: dict[str, Any] = {
-            "model": kwargs.get("model_override", self._model),
-            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "model": model,
+            "messages": self._build_messages_payload(messages, model),
             "stream": True,
         }
 
@@ -307,6 +399,60 @@ class OpenAICompatProvider:
             raise AIExecutionError(msg) from e
 
         logger.debug("ai.provider.stream_completed", model=self._model)
+
+    @staticmethod
+    def _serialize_content_blocks(
+        blocks: list[ContentBlock],
+    ) -> str | list[dict[str, Any]]:
+        """Serialize content blocks to OpenAI API format."""
+        import base64 as b64mod
+
+        # Fast path: single text block → plain string
+        if len(blocks) == 1 and isinstance(blocks[0], TextBlock):
+            return blocks[0].text
+
+        result: list[dict[str, Any]] = []
+        for b in blocks:
+            if isinstance(b, TextBlock):
+                result.append({"type": "text", "text": b.text})
+            elif isinstance(b, ImageBlock):
+                if b.source == "base64":
+                    data_uri = (
+                        f"data:{b.media_type};base64,{b64mod.b64encode(b.data).decode('ascii')}"
+                    )
+                    result.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": data_uri},
+                        }
+                    )
+                elif b.source == "url":
+                    result.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": b.url},
+                        }
+                    )
+            elif isinstance(b, AudioBlock):
+                # OpenAI doesn't support audio in chat completions — placeholder
+                result.append(
+                    {
+                        "type": "text",
+                        "text": f"[Audio: {b.media_type}, {len(b.data)} bytes]",
+                    }
+                )
+            elif isinstance(b, ToolResultBlock):
+                # OpenAI tool results go in a separate message with role=tool
+                nested = OpenAICompatProvider._serialize_content_blocks(b.content)
+                text = (
+                    nested
+                    if isinstance(nested, str)
+                    else " ".join(p.get("text", "") for p in nested if p.get("type") == "text")
+                )
+                result.append({"type": "text", "text": text})
+            elif isinstance(b, StructuredOutputBlock):
+                pass  # Handled via response_format, not content blocks
+        return result
 
     async def close(self) -> None:
         """Close the underlying HTTP client.

@@ -62,8 +62,14 @@ async def ai_exception_handler(request: Request, exc: AIError) -> JSONResponse:
         exc_info=True,
     )
 
+    from app.ai.voice.exceptions import AudioValidationError, VoiceDisabledError
+
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    if isinstance(exc, BudgetExceededError):
+    if isinstance(exc, VoiceDisabledError):
+        status_code = status.HTTP_501_NOT_IMPLEMENTED
+    elif isinstance(exc, AudioValidationError):
+        status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    elif isinstance(exc, BudgetExceededError):
         status_code = status.HTTP_429_TOO_MANY_REQUESTS
     elif isinstance(exc, AIExecutionError):
         status_code = status.HTTP_502_BAD_GATEWAY
@@ -87,7 +93,20 @@ def setup_ai_exception_handlers(app: FastAPI) -> None:
     """
     handler: Any = cast(Any, ai_exception_handler)
 
+    from app.ai.voice.exceptions import (
+        AudioValidationError,
+        BriefExtractionError,
+        TranscriptionError,
+        VoiceDisabledError,
+        VoiceError,
+    )
+
     app.add_exception_handler(AIError, handler)
     app.add_exception_handler(AIConfigurationError, handler)
     app.add_exception_handler(AIExecutionError, handler)
     app.add_exception_handler(BudgetExceededError, handler)
+    app.add_exception_handler(VoiceError, handler)
+    app.add_exception_handler(VoiceDisabledError, handler)
+    app.add_exception_handler(AudioValidationError, handler)
+    app.add_exception_handler(TranscriptionError, handler)
+    app.add_exception_handler(BriefExtractionError, handler)

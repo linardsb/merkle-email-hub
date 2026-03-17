@@ -800,6 +800,64 @@ class BlueprintEngine:
                         exc_info=True,
                     )
 
+        # LAYER 14: Multimodal context (feature-gated, agentic nodes only)
+        from app.core.config import get_settings as _get_settings_l14
+
+        _settings_l14 = _get_settings_l14()
+        if _settings_l14.ai.multimodal_context_enabled and node.node_type == "agentic":
+            from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
+
+            multimodal_blocks: list[ContentBlock] = []
+
+            # Scaffolder: inject design import screenshots (Phase 12 assets)
+            if node.name == "scaffolder":
+                design_import_assets: list[dict[str, object]] = context.metadata.get(  # type: ignore[assignment]
+                    "design_import_assets", []
+                )
+                for asset in design_import_assets:
+                    image_data: bytes | None = asset.get("image_bytes")  # type: ignore[assignment]
+                    if image_data and isinstance(image_data, bytes):
+                        multimodal_blocks.append(
+                            ImageBlock(
+                                data=image_data,
+                                media_type=str(asset.get("media_type", "image/png")),
+                                source="base64",
+                            )
+                        )
+
+            # Visual QA: convert metadata screenshots to ImageBlocks
+            if node.name == "visual_qa":
+                import base64 as _b64
+
+                screenshots_dict: dict[str, str] = context.metadata.get("screenshots", {})  # type: ignore[assignment]
+                for client_name, b64_data in screenshots_dict.items():
+                    try:
+                        image_bytes = _b64.b64decode(b64_data)
+                        multimodal_blocks.append(
+                            ImageBlock(data=image_bytes, media_type="image/png", source="base64")
+                        )
+                        multimodal_blocks.append(TextBlock(text=f"[Screenshot: {client_name}]"))
+                    except Exception:
+                        logger.warning(
+                            "blueprint.multimodal_context.invalid_screenshot",
+                            client=client_name,
+                            exc_info=True,
+                        )
+
+            if multimodal_blocks:
+                from app.ai.multimodal import validate_content_blocks
+
+                try:
+                    validate_content_blocks(multimodal_blocks)
+                    context.multimodal_context = multimodal_blocks
+                except Exception:
+                    logger.warning(
+                        "blueprint.multimodal_context.validation_failed",
+                        node=node.name,
+                        block_count=len(multimodal_blocks),
+                        exc_info=True,
+                    )
+
         # LAYER 11: Design system (ALL nodes — agentic for prompt context, deterministic for brand repair)
         if self._design_system is not None:
             from app.projects.design_system import (

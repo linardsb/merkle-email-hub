@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import base64
-from typing import Any
 
 from app.ai.agents.visual_qa.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.agents.visual_qa.service import (
@@ -62,7 +61,9 @@ class VisualQANode:
                 details="Visual QA disabled via config",
             )
 
-        # Get screenshots from context metadata
+        # Get screenshots from context metadata (primary source)
+        # LAYER 14 multimodal_context also available but screenshots dict
+        # needed for auto-fix re-render path, so metadata remains canonical
         screenshots: dict[str, str] = context.metadata.get("screenshots", {})  # type: ignore[assignment]
         if not screenshots:
             logger.info("blueprint.visual_qa_node.skipped", reason="no_screenshots")
@@ -93,30 +94,24 @@ class VisualQANode:
         # Build multimodal message
         text_content = self._build_user_message(context, screenshots)
 
-        content_blocks: list[dict[str, Any]] = [
-            {"type": "text", "text": sanitize_prompt(text_content)},
+        from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
+
+        blocks: list[ContentBlock] = [
+            TextBlock(text=sanitize_prompt(text_content)),
         ]
         for client_name, b64_data in screenshots.items():
-            content_blocks.append(
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/png",
-                        "data": b64_data,
-                    },
-                }
+            blocks.append(
+                ImageBlock(
+                    data=base64.b64decode(b64_data),
+                    media_type="image/png",
+                    source="base64",
+                )
             )
-            content_blocks.append(
-                {
-                    "type": "text",
-                    "text": f"[Screenshot: {client_name}]",
-                }
-            )
+            blocks.append(TextBlock(text=f"[Screenshot: {client_name}]"))
 
         messages = [
             Message(role="system", content=system_prompt),
-            Message(role="user", content=content_blocks),  # type: ignore[arg-type]
+            Message(role="user", content=blocks),
         ]
 
         registry = get_registry()
@@ -259,33 +254,31 @@ class VisualQANode:
                 return None
 
             # Re-analyze with VLM (lightweight — just get the score)
-            content_blocks: list[dict[str, Any]] = [
-                {
-                    "type": "text",
-                    "text": sanitize_prompt(
+            from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
+
+            verify_blocks: list[ContentBlock] = [
+                TextBlock(
+                    text=sanitize_prompt(
                         f"Re-analyze these {len(new_screenshots)} screenshots after auto-fix. "
                         "Focus on whether the previous defects have been resolved. "
                         "Return JSON with: defects, overall_rendering_score, "
                         "critical_clients, summary, confidence, auto_fixable"
-                    ),
-                },
+                    )
+                ),
             ]
             for client_name, b64_data in new_screenshots.items():
-                content_blocks.append(
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/png",
-                            "data": b64_data,
-                        },
-                    }
+                verify_blocks.append(
+                    ImageBlock(
+                        data=base64.b64decode(b64_data),
+                        media_type="image/png",
+                        source="base64",
+                    )
                 )
-                content_blocks.append({"type": "text", "text": f"[Screenshot: {client_name}]"})
+                verify_blocks.append(TextBlock(text=f"[Screenshot: {client_name}]"))
 
             messages = [
                 Message(role="system", content=system_prompt),
-                Message(role="user", content=content_blocks),  # type: ignore[arg-type]
+                Message(role="user", content=verify_blocks),
             ]
 
             vlm_response = await provider.complete(messages, model_override=model, max_tokens=4096)

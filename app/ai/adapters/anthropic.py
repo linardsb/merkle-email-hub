@@ -9,6 +9,16 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from app.ai.exceptions import AIConfigurationError, AIExecutionError
+from app.ai.multimodal import (
+    AudioBlock,
+    ContentBlock,
+    ImageBlock,
+    StructuredOutputBlock,
+    TextBlock,
+    ToolResultBlock,
+    normalize_content,
+    validate_content_blocks,
+)
 from app.ai.protocols import CompletionResponse, Message
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -113,6 +123,74 @@ class AnthropicProvider:
         except Exception:
             logger.debug("cost_governor.report_failed", model=model)
 
+    @staticmethod
+    def _extract_structured_output(
+        messages: list[Message],
+    ) -> StructuredOutputBlock | None:
+        """Extract StructuredOutputBlock from the last message, if present."""
+        if not messages:
+            return None
+        last = messages[-1]
+        if isinstance(last.content, list):
+            for block in last.content:
+                if isinstance(block, StructuredOutputBlock):
+                    return block
+        return None
+
+    def _check_vision_capability(self, model: str) -> bool:
+        """Check if the model supports vision via capability registry."""
+        try:
+            from app.ai.capability_registry import ModelCapability, get_capability_registry
+
+            registry = get_capability_registry()
+            spec = registry.get(model)
+            if spec is None:
+                return True  # Unknown model — assume capable
+            return ModelCapability.VISION in spec.capabilities
+        except Exception:
+            return True  # Registry unavailable — don't block
+
+    def _build_messages_payload(
+        self,
+        messages: list[Message],
+        model: str,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+        """Build Anthropic messages payload with vision capability check.
+
+        Returns:
+            Tuple of (system_parts, chat_messages, has_cache_control).
+        """
+        has_vision = self._check_vision_capability(model)
+
+        system_parts: list[dict[str, Any]] = []
+        has_cache_control = False
+        chat_messages: list[dict[str, Any]] = []
+        for m in messages:
+            if m.role == "system":
+                blocks = normalize_content(m.content)
+                validate_content_blocks(blocks)
+                for b in blocks:
+                    if isinstance(b, TextBlock):
+                        block: dict[str, Any] = {"type": "text", "text": b.text}
+                        if m.cache_control:
+                            block["cache_control"] = m.cache_control
+                            has_cache_control = True
+                        system_parts.append(block)
+            else:
+                blocks = normalize_content(m.content)
+                validate_content_blocks(blocks)
+                if not has_vision:
+                    blocks = [
+                        TextBlock(text=f"[Image: {b.media_type}, {len(b.data)} bytes]")
+                        if isinstance(b, ImageBlock)
+                        else b
+                        for b in blocks
+                    ]
+                serialized = self._serialize_content_blocks(blocks)
+                chat_messages.append({"role": m.role, "content": serialized})
+
+        return system_parts, chat_messages, has_cache_control
+
     async def complete(self, messages: list[Message], **kwargs: object) -> CompletionResponse:
         """Send a chat completion request via Anthropic SDK.
 
@@ -136,22 +214,13 @@ class AnthropicProvider:
         # Cost budget check (Phase 22.5)
         await self._check_cost_budget()
 
-        # Anthropic requires system message separate from messages
-        system_parts: list[dict[str, Any]] = []
-        has_cache_control = False
-        chat_messages: list[dict[str, Any]] = []
-        for m in messages:
-            if m.role == "system":
-                block: dict[str, Any] = {"type": "text", "text": m.content}
-                if m.cache_control:
-                    block["cache_control"] = m.cache_control
-                    has_cache_control = True
-                system_parts.append(block)
-            else:
-                chat_messages.append({"role": m.role, "content": m.content})
+        model = str(kwargs.get("model_override", self._model))
+        system_parts, chat_messages, has_cache_control = self._build_messages_payload(
+            messages,
+            model,
+        )
 
         # Build kwargs for Anthropic API
-        model = str(kwargs.get("model_override", self._model))
         api_kwargs: dict[str, Any] = {
             "model": model,
             "messages": chat_messages,
@@ -159,11 +228,23 @@ class AnthropicProvider:
         }
         if system_parts:
             if has_cache_control:
-                # Structured content blocks for cache control
                 api_kwargs["system"] = system_parts
             else:
-                # Plain string for backward compatibility
                 api_kwargs["system"] = "\n".join(p["text"] for p in system_parts).strip()
+
+        # Structured output via tool_use pattern (Phase 23.2)
+        structured_block = self._extract_structured_output(messages)
+        if structured_block:
+            api_kwargs["tools"] = [
+                {
+                    "name": structured_block.name,
+                    "description": (
+                        f"Return structured output matching the {structured_block.name} schema"
+                    ),
+                    "input_schema": structured_block.schema,
+                },
+            ]
+            api_kwargs["tool_choice"] = {"type": "tool", "name": structured_block.name}
 
         for key in ("temperature", "top_p", "stop_sequences"):
             if key in kwargs:
@@ -199,12 +280,19 @@ class AnthropicProvider:
             )
             raise AIExecutionError(msg) from e
 
-        # Extract text content from response
+        # Extract content — handle both text and tool_use blocks
         content = ""
+        parsed: dict[str, object] | None = None
         for block in response.content:
             block_any: Any = block
             if block_any.type == "text":
                 content += block_any.text
+            elif block_any.type == "tool_use" and structured_block:
+                import json
+
+                tool_input = block_any.input
+                content = json.dumps(tool_input)
+                parsed = dict(tool_input) if isinstance(tool_input, dict) else None
 
         usage: dict[str, int] = {
             "prompt_tokens": response.usage.input_tokens,
@@ -235,6 +323,7 @@ class AnthropicProvider:
             content=content,
             model=response.model,
             usage=usage,
+            parsed=parsed,
         )
 
     async def stream(self, messages: list[Message], **kwargs: object) -> AsyncIterator[str]:
@@ -256,20 +345,12 @@ class AnthropicProvider:
         # Token budget trimming (Phase 22.3)
         messages = self._apply_token_budget(messages, dict(kwargs))
 
-        system_parts_s: list[dict[str, Any]] = []
-        has_cache_s = False
-        chat_messages: list[dict[str, Any]] = []
-        for m in messages:
-            if m.role == "system":
-                block_s: dict[str, Any] = {"type": "text", "text": m.content}
-                if m.cache_control:
-                    block_s["cache_control"] = m.cache_control
-                    has_cache_s = True
-                system_parts_s.append(block_s)
-            else:
-                chat_messages.append({"role": m.role, "content": m.content})
-
         model = str(kwargs.get("model_override", self._model))
+        system_parts_s, chat_messages, has_cache_s = self._build_messages_payload(
+            messages,
+            model,
+        )
+
         api_kwargs: dict[str, Any] = {
             "model": model,
             "messages": chat_messages,
@@ -305,6 +386,69 @@ class AnthropicProvider:
             raise AIExecutionError(msg) from e
 
         logger.debug("ai.provider.stream_completed", model=model)
+
+    @staticmethod
+    def _serialize_content_blocks(
+        blocks: list[ContentBlock],
+    ) -> str | list[dict[str, Any]]:
+        """Serialize content blocks to Anthropic API format.
+
+        Returns a plain string if all blocks are text (for backward compat),
+        otherwise returns Anthropic content block dicts.
+        """
+        import base64 as b64mod
+
+        # Fast path: single text block → plain string
+        if len(blocks) == 1 and isinstance(blocks[0], TextBlock):
+            return blocks[0].text
+
+        result: list[dict[str, Any]] = []
+        for b in blocks:
+            if isinstance(b, TextBlock):
+                result.append({"type": "text", "text": b.text})
+            elif isinstance(b, ImageBlock):
+                if b.source == "base64":
+                    result.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": b.media_type,
+                                "data": b64mod.b64encode(b.data).decode("ascii"),
+                            },
+                        }
+                    )
+                elif b.source == "url":
+                    result.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "url",
+                                "url": b.url,
+                            },
+                        }
+                    )
+            elif isinstance(b, AudioBlock):
+                # Anthropic doesn't support audio blocks natively yet — encode as text placeholder
+                result.append(
+                    {
+                        "type": "text",
+                        "text": f"[Audio: {b.media_type}, {len(b.data)} bytes]",
+                    }
+                )
+            elif isinstance(b, ToolResultBlock):
+                nested = AnthropicProvider._serialize_content_blocks(b.content)
+                content = nested if isinstance(nested, list) else [{"type": "text", "text": nested}]
+                result.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": b.tool_use_id,
+                        "content": content,
+                    }
+                )
+            elif isinstance(b, StructuredOutputBlock):
+                pass  # Handled via tool_use, not content blocks
+        return result
 
     async def close(self) -> None:
         """Close the underlying HTTP client.

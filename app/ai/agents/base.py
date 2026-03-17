@@ -11,11 +11,16 @@ Uses ``Any`` for request/response types because each agent has its own
 Pydantic schema.  Concrete subclasses narrow the types in their overrides.
 """
 
+from __future__ import annotations
+
 import json
 import time
 import uuid
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock, ImageBlock, TextBlock
 
 from app.ai.blueprints.protocols import AgentHandoff, HandoffStatus
 from app.ai.exceptions import AIExecutionError
@@ -146,6 +151,54 @@ class BaseAgentService:
         """
         return bool(getattr(request, "run_qa", self.run_qa_default))
 
+    # ── Multimodal helpers ──
+
+    @staticmethod
+    def _text_block(text: str) -> TextBlock:
+        """Create a TextBlock (convenience for subclasses)."""
+        from app.ai.multimodal import TextBlock
+
+        return TextBlock(text=text)
+
+    @staticmethod
+    def _image_block(data: bytes, media_type: str = "image/png") -> ImageBlock:
+        """Create a validated ImageBlock (convenience for subclasses)."""
+        from app.ai.multimodal import ImageBlock, validate_content_block
+
+        block = ImageBlock(data=data, media_type=media_type, source="base64")
+        validate_content_block(block)
+        return block
+
+    def _build_multimodal_messages(
+        self,
+        *,
+        system_prompt: str,
+        user_text: str,
+        context_blocks: list[ContentBlock] | None = None,
+    ) -> list[Message]:
+        """Build message list with optional multimodal content blocks.
+
+        When context_blocks is provided, the user message content is a list
+        of ContentBlock (text + images/audio). Otherwise, falls back to
+        plain string content for backward compatibility.
+        """
+        from app.ai.multimodal import TextBlock, validate_content_blocks
+
+        sanitized_text = sanitize_prompt(user_text)
+
+        if context_blocks:
+            validate_content_blocks(context_blocks)
+            blocks: list[ContentBlock] = [TextBlock(text=sanitized_text)]
+            blocks.extend(context_blocks)
+            user_content: str | list[ContentBlock] = blocks
+        else:
+            user_content = sanitized_text
+
+        return [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_content),
+        ]
+
     # ── Shared pipeline ──
 
     async def _process_structured(self, request: Any) -> Any:
@@ -155,10 +208,19 @@ class BaseAgentService:
         """
         raise NotImplementedError(f"{self.agent_name} does not support structured output mode")
 
-    async def process(self, request: Any) -> Any:
+    async def process(
+        self,
+        request: Any,
+        context_blocks: list[ContentBlock] | None = None,
+    ) -> Any:
         """Execute the full agent pipeline (non-streaming).
 
         Routes to structured pipeline when output_mode="structured" and supported.
+
+        Args:
+            request: Agent-specific request object.
+            context_blocks: Optional multimodal content blocks (images, audio)
+                to include alongside the text user message.
 
         Steps:
         1. Resolve model from tier
@@ -186,12 +248,13 @@ class BaseAgentService:
         system_prompt = self.build_system_prompt(relevant_skills, output_mode=output_mode)
         system_prompt += CONFIDENCE_INSTRUCTION
 
-        # Build messages
+        # Build messages (multimodal-aware)
         user_message = self._build_user_message(request)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitize_prompt(user_message)),
-        ]
+        messages = self._build_multimodal_messages(
+            system_prompt=system_prompt,
+            user_text=user_message,
+            context_blocks=context_blocks,
+        )
 
         logger.info(
             f"agents.{self.agent_name}.process_started",
@@ -278,7 +341,11 @@ class BaseAgentService:
             raw_content=raw_content,
         )
 
-    async def stream_process(self, request: Any) -> AsyncIterator[str]:
+    async def stream_process(
+        self,
+        request: Any,
+        context_blocks: list[ContentBlock] | None = None,
+    ) -> AsyncIterator[str]:
         """Stream agent output as SSE-formatted chunks.
 
         QA is skipped in streaming mode (requires complete output).
@@ -295,10 +362,11 @@ class BaseAgentService:
         system_prompt += CONFIDENCE_INSTRUCTION
 
         user_message = self._build_user_message(request)
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitize_prompt(user_message)),
-        ]
+        messages = self._build_multimodal_messages(
+            system_prompt=system_prompt,
+            user_text=user_message,
+            context_blocks=context_blocks,
+        )
 
         logger.info(
             f"agents.{self.agent_name}.stream_started",

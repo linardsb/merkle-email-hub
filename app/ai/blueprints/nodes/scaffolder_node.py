@@ -1,5 +1,9 @@
 """Scaffolder agentic node — generates Maizzle HTML from campaign briefs."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from app.ai.agents.scaffolder.prompt import build_system_prompt, detect_relevant_skills
 from app.ai.blueprints.component_context import detect_component_refs
 from app.ai.blueprints.handoff import ScaffolderHandoff
@@ -24,6 +28,9 @@ from app.ai.shared import (
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.qa_engine.mso_parser import validate_mso_conditionals
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 logger = get_logger(__name__)
 
@@ -60,10 +67,42 @@ class ScaffolderNode:
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
 
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=sanitized),
-        ]
+        # Check for design reference images (Phase 23.3)
+        design_ref_blocks: list[ContentBlock] | None = None
+        if context.multimodal_context:
+            from app.ai.capability_registry import ModelCapability, get_capability_registry
+            from app.ai.multimodal import ImageBlock, TextBlock, validate_content_blocks
+
+            cap_registry = get_capability_registry()
+            vision_models = cap_registry.find_models(requirements={ModelCapability.VISION})
+            model_has_vision = (
+                any(s.model_id == model for s in vision_models) if vision_models else True
+            )
+
+            if model_has_vision:
+                image_blocks = [b for b in context.multimodal_context if isinstance(b, ImageBlock)]
+                if image_blocks:
+                    design_ref_blocks = [
+                        TextBlock(
+                            text="Generate HTML that matches this design reference as closely as possible:"
+                        ),
+                        *image_blocks,
+                    ]
+                    validate_content_blocks(design_ref_blocks)
+
+        # Build messages (multimodal-aware when design reference available)
+        if design_ref_blocks:
+            all_blocks: list[ContentBlock] = [TextBlock(text=sanitized)]
+            all_blocks.extend(design_ref_blocks)
+            messages = [
+                Message(role="system", content=system_prompt),
+                Message(role="user", content=all_blocks),
+            ]
+        else:
+            messages = [
+                Message(role="system", content=system_prompt),
+                Message(role="user", content=sanitized),
+            ]
 
         try:
             response = await provider.complete(messages, model=model)

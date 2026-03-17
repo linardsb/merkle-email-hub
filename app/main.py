@@ -28,6 +28,7 @@ from app.ai.cost_governor_routes import router as cost_governor_router
 from app.ai.exceptions import setup_ai_exception_handlers
 from app.ai.prompt_store_routes import router as prompt_store_router
 from app.ai.routes import router as ai_router
+from app.ai.voice.routes import router as voice_router
 from app.approval.routes import router as approval_router
 from app.auth.routes import router as auth_router
 from app.components.routes import router as components_router
@@ -173,6 +174,16 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("blueprint.checkpoint_cleanup_poller_start_failed", exc_info=True)
 
+    # Mount MCP server session manager (Phase 23.4)
+    if settings.mcp.enabled:
+        try:
+            from app.mcp.server import get_mcp_server
+
+            get_mcp_server()  # Pre-create singleton during startup
+            logger.info("mcp.mounted", transport="streamable-http", path="/mcp")
+        except Exception:
+            logger.warning("mcp.mount_failed", exc_info=True)
+
     yield
 
     # Shutdown
@@ -269,6 +280,19 @@ app.include_router(blueprint_router)
 app.include_router(skills_router)
 app.include_router(prompt_store_router)
 app.include_router(cost_governor_router)
+
+# Voice brief input pipeline (Phase 23.5)
+app.include_router(voice_router, prefix="/api")
+
+# Mount MCP streamable HTTP transport (Phase 23.4)
+if settings.mcp.enabled:
+    from starlette.routing import Mount as StarletteMount
+
+    from app.mcp.server import get_mcp_server
+
+    _mcp = get_mcp_server()
+    _mcp.settings.streamable_http_path = "/"
+    app.routes.append(StarletteMount("/mcp", app=_mcp.streamable_http_app()))
 
 
 @app.get("/")

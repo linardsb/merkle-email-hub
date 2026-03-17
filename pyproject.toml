@@ -36,6 +36,8 @@ dependencies = [
     "hypothesis>=6.100",
     "lightningcss>=0.3.0",
     "dnspython>=2.6.0",
+    "mcp>=1.12.0",
+    "pydub>=0.25.1",
 ]
 
 [project.optional-dependencies]
@@ -105,6 +107,10 @@ ignore = [
 "app/knowledge/routes.py" = ["ARG001"]
 "app/design_sync/routes.py" = ["B008", "ARG001"]
 "app/design_sync/figma/service.py" = ["ANN401"]
+# MCP tool modules: ctx is required by FastMCP convention, unused args are part of public tool API
+"app/mcp/tools/**/*.py" = ["ARG001"]
+"app/mcp/formatting.py" = ["ANN401"]
+"app/mcp/resources.py" = ["ANN401"]
 
 "app/core/rate_limit.py" = ["B008"]
 
@@ -193,6 +199,13 @@ ignore_missing_imports = true
 module = "hypothesis.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "mcp.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.mcp.tools.*"
+disable_error_code = ["type-arg"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

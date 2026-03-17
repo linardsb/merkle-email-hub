@@ -156,8 +156,18 @@ class TokenBudgetManager:
         )
 
     def _count_message_tokens(self, msg: Message) -> int:
-        """Count tokens for a single message including overhead."""
-        content_tokens = self._count_text_tokens(msg.content)
+        """Count tokens for a single message including overhead.
+
+        Handles both string content and multimodal ContentBlock lists.
+        """
+        if isinstance(msg.content, str):
+            content_tokens = self._count_text_tokens(msg.content)
+        elif isinstance(msg.content, list):
+            from app.ai.multimodal import estimate_blocks_tokens
+
+            content_tokens = estimate_blocks_tokens(msg.content)
+        else:
+            content_tokens = self._count_text_tokens(str(msg.content))
         role_tokens = self._count_text_tokens(msg.role)
         return content_tokens + role_tokens + _MESSAGE_OVERHEAD_TOKENS
 
@@ -250,6 +260,13 @@ class TokenBudgetManager:
             return messages[1:]
 
         system_content = messages[0].content
+        # Only truncate text content; multimodal messages can't be trimmed
+        if not isinstance(system_content, str):
+            logger.warning(
+                "ai.token_budget.multimodal_system_skip",
+                msg="Cannot truncate multimodal system message",
+            )
+            return messages
         truncated = self._truncate_text_to_tokens(system_content, available_for_system)
 
         if truncated == system_content:

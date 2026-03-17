@@ -4,8 +4,12 @@
 
 from __future__ import annotations
 
+import base64
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 from app.ai.agents.base import BaseAgentService
 from app.ai.agents.visual_qa.decisions import DetectedDefect, VisualQADecisions
@@ -73,29 +77,54 @@ class VisualQAService(BaseAgentService):
         )
         return "\n".join(parts)
 
-    async def process(self, request: Any) -> VisualQAResponse:
+    def _screenshots_to_blocks(
+        self, screenshots: dict[str, str]
+    ) -> list[ContentBlock] | VisualQAResponse:
+        """Convert base64 screenshot dict to validated ImageBlock list.
+
+        Returns list[ContentBlock] on success, or VisualQAResponse on error.
+        """
+        from app.ai.multimodal import TextBlock
+
+        blocks: list[ContentBlock] = []
+        for client_name, b64_data in screenshots.items():
+            if len(b64_data) > _MAX_SCREENSHOT_B64_LEN:
+                logger.warning("agents.visual_qa.screenshot_too_large", client=client_name)
+                return VisualQAResponse(
+                    summary=f"Screenshot for {client_name} exceeds size limit",
+                    model="",
+                )
+            try:
+                image_bytes = base64.b64decode(b64_data)
+            except Exception:
+                logger.warning("agents.visual_qa.invalid_base64", client=client_name, exc_info=True)
+                return VisualQAResponse(
+                    summary=f"Invalid base64 data for screenshot {client_name}",
+                    model="",
+                )
+            blocks.append(self._image_block(image_bytes, "image/png"))
+            blocks.append(TextBlock(text=f"[Screenshot: {client_name}]"))
+        return blocks
+
+    async def process(
+        self, request: Any, context_blocks: list[ContentBlock] | None = None
+    ) -> VisualQAResponse:
         """Execute VLM analysis with multimodal input (screenshots + text).
 
         Overrides base process() because we need to send images as content blocks,
         not just text — the standard pipeline only handles text messages.
         """
-        from app.ai.protocols import Message
         from app.ai.registry import get_registry
         from app.ai.routing import resolve_model
-        from app.ai.sanitize import sanitize_prompt
         from app.core.config import get_settings
 
         req: VisualQARequest = request
         settings = get_settings()
 
-        # Validate screenshots
-        for client, b64 in req.screenshots.items():
-            if len(b64) > _MAX_SCREENSHOT_B64_LEN:
-                logger.warning("agents.visual_qa.screenshot_too_large", client=client)
-                return VisualQAResponse(
-                    summary=f"Screenshot for {client} exceeds size limit",
-                    model="",
-                )
+        # Validate and convert screenshots to ImageBlocks
+        image_blocks = self._screenshots_to_blocks(req.screenshots)
+        if isinstance(image_blocks, VisualQAResponse):
+            return image_blocks  # Error response
 
         # Resolve VLM model (uses visual_qa-specific model if configured)
         visual_qa_model = settings.ai.visual_qa_model
@@ -109,36 +138,13 @@ class VisualQAService(BaseAgentService):
         relevant_skills = self._detect_skills_from_request(request)
         system_prompt = self.build_system_prompt(relevant_skills)
 
-        # Build multimodal user message with screenshot images
-        text_content = sanitize_prompt(self._build_user_message(request))
-
-        # Build content blocks: text + images
-        content_blocks: list[dict[str, Any]] = [
-            {"type": "text", "text": text_content},
-        ]
-        for client_name, b64_data in req.screenshots.items():
-            content_blocks.append(
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/png",
-                        "data": b64_data,
-                    },
-                }
-            )
-            # Add client label after each image
-            content_blocks.append(
-                {
-                    "type": "text",
-                    "text": f"[Screenshot: {client_name}]",
-                }
-            )
-
-        messages = [
-            Message(role="system", content=system_prompt),
-            Message(role="user", content=content_blocks),  # type: ignore[arg-type]
-        ]
+        # Build multimodal messages using base class helper
+        user_text = self._build_user_message(request)
+        messages = self._build_multimodal_messages(
+            system_prompt=system_prompt,
+            user_text=user_text,
+            context_blocks=image_blocks,
+        )
 
         registry = get_registry()
         provider = registry.get_llm(provider_name)

@@ -265,6 +265,7 @@
     "contextTabLabel": "Context",
     "resuming": "Resuming from checkpoint...",
     "resumeError": "Failed to resume run. Please try again.",
+    "voiceBriefs": "Voice Briefs",
     "contextPanel": {
       "loading": "Loading...",
       "audienceProfile": "Audience Profile",
@@ -965,7 +966,8 @@
     "languageDescription": "Choose your preferred display language. The page will reload when you change languages.",
     "preferencesTitle": "Preferences",
     "preferencesDescription": "Additional settings and preferences will be available here.",
-    "comingSoon": "More preferences coming soon."
+    "comingSoon": "More preferences coming soon.",
+    "mcpConfiguration": "MCP Server"
   },
   "translations": {
     "title": "Translation Management",
@@ -1501,5 +1503,65 @@
     "filterByClients": "Filter by audience…",
     "totalCapabilities": "{count} capabilities analyzed",
     "renderingChangelogPlaceholder": "Rendering change detection — coming soon"
+  },
+  "voiceBriefs": {
+    "incomingBriefs": "Voice Briefs",
+    "ready": "ready",
+    "processing": "processing",
+    "noBriefs": "No voice briefs yet",
+    "noBriefsHint": "Briefs will appear here when clients submit them",
+    "untitledBrief": "Untitled Brief",
+    "statusPending": "Processing",
+    "statusTranscribed": "Transcribed",
+    "statusReady": "Ready",
+    "statusFailed": "Failed",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "voiceBrief": "Voice Brief",
+    "playAudio": "Play",
+    "pause": "Pause",
+    "transcript": "Transcript",
+    "extractedBrief": "Extracted Brief",
+    "briefTopic": "Topic",
+    "briefTone": "Tone",
+    "briefCta": "CTA",
+    "briefAudience": "Audience",
+    "briefSections": "Sections",
+    "briefConstraints": "Constraints",
+    "confidence": "Confidence",
+    "generateEmail": "Generate Email",
+    "generating": "Generating...",
+    "generateStarted": "Email generation started",
+    "dismiss": "Dismiss",
+    "briefDismissed": "Brief dismissed",
+    "close": "Close"
+  },
+  "designReference": {
+    "designReference": "Design Reference",
+    "dropzoneLabel": "Drop a design screenshot or click to upload",
+    "acceptedFormats": "PNG, JPEG, or WebP — max 10MB",
+    "referenceAttached": "Design reference attached",
+    "invalidFormat": "Invalid format. Use PNG, JPEG, or WebP.",
+    "fileTooLarge": "File too large. Maximum size is 10MB."
+  },
+  "mcp": {
+    "mcpConfiguration": "MCP Server Configuration",
+    "serverStatus": "Server Status",
+    "running": "Running",
+    "stopped": "Stopped",
+    "toolsAvailable": "tools available",
+    "toolAllowlist": "Tool Allowlist",
+    "connectionLog": "Connection Log",
+    "clientId": "Client ID",
+    "connectedAt": "Connected",
+    "toolCalls": "Tool Calls",
+    "lastCall": "Last Call",
+    "noConnections": "No recent connections",
+    "apiKeys": "API Keys",
+    "generateKey": "Generate Key",
+    "apiKeyGenerated": "API key generated",
+    "noApiKeys": "No API keys created"
   }
 }

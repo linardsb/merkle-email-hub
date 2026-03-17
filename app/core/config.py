@@ -100,6 +100,19 @@ class AIConfig(BaseModel):
     monthly_budget_gbp: float = 600.0  # AI__MONTHLY_BUDGET_GBP — 0 = unlimited
     budget_warning_threshold: float = 0.8  # AI__BUDGET_WARNING_THRESHOLD — warn at 80%
 
+    # Multimodal protocol (Phase 23.1)
+    max_image_size_mb: int = 20  # AI__MAX_IMAGE_SIZE_MB
+    max_audio_duration_s: int = 300  # AI__MAX_AUDIO_DURATION_S
+    supported_image_types: list[str] = [
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "image/webp",
+    ]  # AI__SUPPORTED_IMAGE_TYPES
+
+    # Multimodal agent context (Phase 23.3)
+    multimodal_context_enabled: bool = False  # AI__MULTIMODAL_CONTEXT_ENABLED
+
 
 class EmbeddingConfig(BaseModel):
     """Embedding provider settings."""
@@ -310,6 +323,34 @@ class QABIMIConfig(BaseModel):
     dns_timeout_seconds: float = 5.0  # QA_BIMI__DNS_TIMEOUT_SECONDS
 
 
+class VoiceConfig(BaseModel):
+    """Voice brief input pipeline settings."""
+
+    enabled: bool = False  # VOICE__ENABLED — master toggle
+    transcriber: str = "whisper_api"  # VOICE__TRANSCRIBER — "whisper_api" or "whisper_local"
+    whisper_model: str = "whisper-1"  # VOICE__WHISPER_MODEL — API model name
+    whisper_local_model: str = "base"  # VOICE__WHISPER_LOCAL_MODEL — local model size
+    extraction_model: str = ""  # VOICE__EXTRACTION_MODEL — empty = use default AI model
+    max_duration_s: int = 300  # VOICE__MAX_DURATION_S — 5 min max
+    max_file_size_mb: int = 25  # VOICE__MAX_FILE_SIZE_MB
+    confidence_threshold: float = 0.7  # VOICE__CONFIDENCE_THRESHOLD — below = raw transcript
+    rate_limit_transcribe: str = "5/minute"  # VOICE__RATE_LIMIT_TRANSCRIBE
+    rate_limit_brief: str = "3/minute"  # VOICE__RATE_LIMIT_BRIEF
+    rate_limit_run: str = "2/minute"  # VOICE__RATE_LIMIT_RUN
+
+
+class MCPConfig(BaseModel):
+    """MCP (Model Context Protocol) server settings."""
+
+    enabled: bool = False  # MCP__ENABLED
+    max_response_tokens: int = 4000  # MCP__MAX_RESPONSE_TOKENS — truncate responses beyond this
+    tool_timeout_s: int = 120  # MCP__TOOL_TIMEOUT_S
+    audit_log_enabled: bool = True  # MCP__AUDIT_LOG_ENABLED
+    # Tool allowlist — empty means all tools exposed
+    # Operators can restrict to e.g. ["qa_*", "knowledge_*"]
+    tool_allowlist: list[str] = []  # MCP__TOOL_ALLOWLIST
+
+
 class EmailEngineConfig(BaseModel):
     """Email engine settings."""
 
@@ -406,9 +447,11 @@ class Settings(BaseSettings):
     qa_property_testing: QAPropertyTestingConfig = QAPropertyTestingConfig()
     qa_outlook_analyzer: QAOutlookAnalyzerConfig = QAOutlookAnalyzerConfig()
     qa_deliverability: QADeliverabilityConfig = QADeliverabilityConfig()
+    mcp: MCPConfig = MCPConfig()
     email_engine: EmailEngineConfig = EmailEngineConfig()
     qa_gmail_predictor: QAGmailPredictorConfig = QAGmailPredictorConfig()
     qa_bimi: QABIMIConfig = QABIMIConfig()
+    voice: VoiceConfig = VoiceConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

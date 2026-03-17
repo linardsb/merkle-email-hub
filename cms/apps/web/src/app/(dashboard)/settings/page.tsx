@@ -1,10 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import { LocaleSelector } from "@/components/ui/locale-selector";
+import { MCPConfigPanel } from "@/components/settings/MCPConfigPanel";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -21,6 +25,14 @@ export default function SettingsPage() {
           <LocaleSelector />
         </div>
       </section>
+
+      {/* MCP Configuration (admin-only) */}
+      {isAdmin && (
+        <section className="rounded-lg border border-default bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">{t("mcpConfiguration")}</h2>
+          <MCPConfigPanel />
+        </section>
+      )}
 
       {/* Placeholder for future settings sections */}
       <section className="rounded-lg border border-default bg-card p-6">

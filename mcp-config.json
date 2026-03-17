@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "merkle-email-hub": {
+      "command": "python",
+      "args": ["-m", "app.mcp"],
+      "env": {
+        "HUB_API_KEY": "${HUB_API_KEY}"
+      }
+    }
+  }
+}

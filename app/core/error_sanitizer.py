@@ -44,6 +44,12 @@ _SAFE_MESSAGES: dict[str, str] = {
     "QAOverrideNotFoundError": "QA result not found",
     # Knowledge
     "DuplicateTagError": "Tag already exists",
+    # Voice pipeline
+    "VoiceError": "Voice processing failed",
+    "VoiceDisabledError": "Voice input is not enabled",
+    "AudioValidationError": "Invalid audio file",
+    "TranscriptionError": "Audio transcription failed",
+    "BriefExtractionError": "Brief extraction failed",
 }
 
 # Error types where the original message is safe to return

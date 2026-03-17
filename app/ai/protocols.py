@@ -14,9 +14,14 @@ Example usage:
     assert isinstance(MyCustomLLM(), LLMProvider)  # True at runtime
 """
 
+from __future__ import annotations
+
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 
 @dataclass
@@ -25,13 +30,14 @@ class Message:
 
     Attributes:
         role: The role of the message sender ("user", "assistant", "system").
-        content: The text content of the message.
+        content: Text content (str) or typed content blocks (list[ContentBlock]).
+            String content is auto-normalized to [TextBlock(text=content)] by adapters.
         cache_control: Optional cache control hint for providers that support it
             (e.g. Anthropic ephemeral caching). Ignored by providers that don't support it.
     """
 
     role: str  # "user", "assistant", "system"
-    content: str
+    content: str | list[ContentBlock]
     cache_control: dict[str, str] | None = None
 
 
