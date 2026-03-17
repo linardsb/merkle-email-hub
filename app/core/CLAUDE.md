@@ -11,4 +11,10 @@
 | #18080 | 9:20 AM | 🔵 | Exception Hierarchy with Automatic HTTP Status Mapping | ~422 |
 | #18079 | " | 🔵 | Async SQLAlchemy Database Layer with Dual Session Providers | ~373 |
 | #18077 | 9:19 AM | 🔵 | Configuration Architecture with Multi-Provider Support | ~467 |
+
+### Mar 17, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #24830 | 8:21 PM | 🔴 | Middleware now requires Content-Length header for POST/PUT/PATCH requests | ~301 |
 </claude-mem-context>

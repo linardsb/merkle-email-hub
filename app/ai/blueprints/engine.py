@@ -412,6 +412,7 @@ class BlueprintEngine:
             if cost_tracker is not None and user_id is not None and result.usage:
                 node_tokens = result.usage.get("total_tokens", 0)
                 if node_tokens > 0:
+                    await cost_tracker.record_usage(user_id, node_tokens)
                     remaining = await cost_tracker.check_budget(user_id)
                     if remaining <= 0:
                         run.status = "cost_cap_exceeded"
@@ -422,7 +423,6 @@ class BlueprintEngine:
                             total_tokens=run.model_usage["total_tokens"],
                         )
                         break
-                    await cost_tracker.record_usage(user_id, node_tokens)
 
             # Track QA results
             if current_node_name == "qa_gate":

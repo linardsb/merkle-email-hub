@@ -99,6 +99,7 @@ export function useDeleteVoiceBrief(projectId: number | null) {
   return useSWRMutation<void, Error, string | null, { brief_id: number }>(
     projectId ? `/api/v1/projects/${projectId}/voice-briefs/delete` : null,
     async (url: string, { arg }: { arg: { brief_id: number } }) => {
+      if (!projectId) return;
       const { authFetch } = await import("@/lib/auth-fetch");
       const res = await authFetch(
         `/api/v1/projects/${projectId}/voice-briefs/${arg.brief_id}`,

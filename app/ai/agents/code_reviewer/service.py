@@ -5,7 +5,10 @@
 import contextvars
 import json
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 from app.ai.agents.base import BaseAgentService
 from app.ai.agents.code_reviewer.actionability import (
@@ -266,14 +269,16 @@ class CodeReviewService(BaseAgentService):
         """Code reviewer suppresses QA in base pipeline — runs it on input HTML instead."""
         return False
 
-    async def process(self, request: Any) -> CodeReviewResponse:
+    async def process(
+        self, request: Any, context_blocks: list[ContentBlock] | None = None
+    ) -> CodeReviewResponse:
         """Execute pipeline with post-generation actionability validation.
 
         Flow: LLM call -> extract issues -> validate actionability ->
         (optional) selective retry for non-actionable -> agent tagging ->
         (optional) QA cross-check -> response.
         """
-        response: CodeReviewResponse = await super().process(request)
+        response: CodeReviewResponse = await super().process(request, context_blocks)
 
         # Step 1: Validate and enrich issues (agent tagging + actionability check)
         enriched_issues, act_warnings = validate_and_enrich_issues(response.issues)
@@ -406,8 +411,10 @@ class CodeReviewService(BaseAgentService):
                 merged.append(issue)
         return merged
 
-    async def stream_process(self, request: Any) -> AsyncIterator[str]:
-        async for chunk in super().stream_process(request):
+    async def stream_process(
+        self, request: Any, context_blocks: list[ContentBlock] | None = None
+    ) -> AsyncIterator[str]:
+        async for chunk in super().stream_process(request, context_blocks):
             yield chunk
 
 

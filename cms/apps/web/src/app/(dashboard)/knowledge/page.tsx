@@ -25,12 +25,6 @@ import type { SearchMode } from "@/types/graph-search";
 
 const PAGE_SIZE = 12;
 
-const DOMAIN_LABELS: Record<string, string> = {
-  css_support: "CSS Support",
-  best_practices: "Best Practices",
-  client_quirks: "Client Quirks",
-};
-
 export default function KnowledgePage() {
   const t = useTranslations("knowledge");
 
@@ -242,7 +236,7 @@ export default function KnowledgePage() {
                 : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
             }`}
           >
-            {DOMAIN_LABELS[domain] ?? domain}
+            {t(`domainLabels.${domain}`, { defaultValue: domain })}
           </button>
         ))}
       </div>

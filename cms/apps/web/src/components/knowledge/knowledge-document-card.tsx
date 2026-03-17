@@ -4,12 +4,6 @@ import { FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { KnowledgeDocument } from "@/types/knowledge";
 
-const DOMAIN_LABELS: Record<string, string> = {
-  css_support: "CSS Support",
-  best_practices: "Best Practices",
-  client_quirks: "Client Quirks",
-};
-
 interface Props {
   document: KnowledgeDocument;
   onClick: () => void;
@@ -54,7 +48,7 @@ export function KnowledgeDocumentCard({ document, onClick }: Props) {
 
       {/* Footer */}
       <div className="mt-3 flex items-center justify-between text-xs text-foreground-muted">
-        <span>{DOMAIN_LABELS[document.domain] ?? document.domain}</span>
+        <span>{t(`domainLabels.${document.domain}`, { defaultValue: document.domain })}</span>
         <span>{t("chunks", { count: document.chunk_count })}</span>
       </div>
     </button>

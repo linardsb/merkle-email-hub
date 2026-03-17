@@ -50,6 +50,7 @@ export function useBlueprintRun({ projectId }: UseBlueprintRunOptions) {
             ...params,
             options: { project_id: projectId },
           }),
+          timeoutMs: LONG_TIMEOUT_MS,
         });
 
         if (!res.ok) {

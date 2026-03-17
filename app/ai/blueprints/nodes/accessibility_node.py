@@ -83,7 +83,7 @@ class AccessibilityNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.accessibility_node.llm_failed", error=str(exc))
             return NodeResult(
@@ -251,7 +251,7 @@ class AccessibilityNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.accessibility_node.structured_failed", error=str(exc))
             return NodeResult(status="failed", error=f"Structured accessibility failed: {exc}")

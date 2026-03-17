@@ -87,7 +87,7 @@ class PersonalisationNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.personalisation_node.llm_failed", error=str(exc))
             return NodeResult(
@@ -263,7 +263,7 @@ class PersonalisationNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.personalisation_node.structured_failed", error=str(exc))
             return NodeResult(status="failed", error=f"Structured personalisation failed: {exc}")

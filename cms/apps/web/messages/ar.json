@@ -346,5 +346,15 @@
     "generateKey": "إنشاء مفتاح",
     "apiKeyGenerated": "تم إنشاء مفتاح API",
     "noApiKeys": "لم يتم إنشاء مفاتيح API"
+  },
+  "knowledge": {
+    "domainLabels": {
+      "css_support": "دعم CSS",
+      "best_practices": "أفضل الممارسات",
+      "client_quirks": "خصائص العملاء"
+    }
+  },
+  "approvals": {
+    "buildNumber": "بناء #{id}"
   }
 }

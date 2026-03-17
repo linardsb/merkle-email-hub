@@ -5,7 +5,10 @@
 import contextvars
 import json
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 from app.ai.agents.base import BaseAgentService
 from app.ai.agents.dark_mode.meta_injector import inject_missing_meta_tags
@@ -208,8 +211,10 @@ class DarkModeService(BaseAgentService):
             reasoning=str(data.get("reasoning", "")),
         )
 
-    async def stream_process(self, request: Any) -> AsyncIterator[str]:
-        async for chunk in super().stream_process(request):
+    async def stream_process(
+        self, request: Any, context_blocks: list[ContentBlock] | None = None
+    ) -> AsyncIterator[str]:
+        async for chunk in super().stream_process(request, context_blocks):
             yield chunk
 
 

@@ -4,12 +4,6 @@ import { FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { KnowledgeSearchResult } from "@/types/knowledge";
 
-const DOMAIN_LABELS: Record<string, string> = {
-  css_support: "CSS Support",
-  best_practices: "Best Practices",
-  client_quirks: "Client Quirks",
-};
-
 interface Props {
   result: KnowledgeSearchResult;
   onViewDocument: (documentId: number) => void;
@@ -31,7 +25,7 @@ export function KnowledgeSearchResultCard({
           {result.document_filename}
         </span>
         <span className="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-xs text-foreground-muted">
-          {DOMAIN_LABELS[result.domain] ?? result.domain}
+          {t(`domainLabels.${result.domain}`, { defaultValue: result.domain })}
         </span>
       </div>
 

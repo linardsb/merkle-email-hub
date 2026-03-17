@@ -64,6 +64,7 @@ class CircuitBreaker:
         """Current circuit state, accounting for timeout transitions."""
         if self._state == CircuitState.OPEN:
             if time.monotonic() - self._last_failure_time >= self.reset_timeout:
+                self._state = CircuitState.HALF_OPEN
                 return CircuitState.HALF_OPEN
         return self._state
 

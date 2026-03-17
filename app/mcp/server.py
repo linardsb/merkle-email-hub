@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.logging import get_logger
+from app.mcp.auth import verify_mcp_token
 from app.mcp.config import is_tool_allowed
 from app.mcp.resources import register_resources
 from app.mcp.tools.ai import register_ai_tools
@@ -15,6 +18,29 @@ from app.mcp.tools.rendering import register_rendering_tools
 from app.mcp.tools.templates import register_template_tools
 
 logger = get_logger(__name__)
+
+
+class MCPAuthMiddleware:
+    """ASGI middleware that enforces bearer-token authentication on MCP requests."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            headers = dict(scope.get("headers", []))
+            auth = headers.get(b"authorization", b"").decode()
+            if not auth.startswith("Bearer "):
+                response = JSONResponse({"detail": "Missing authentication"}, status_code=401)
+                await response(scope, receive, send)
+                return
+            token = auth.removeprefix("Bearer ")
+            result = await verify_mcp_token(token)
+            if result is None:
+                response = JSONResponse({"detail": "Invalid token"}, status_code=401)
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
 
 def create_mcp_server() -> FastMCP:
@@ -75,3 +101,10 @@ def get_mcp_server() -> FastMCP:
     if _mcp_server is None:
         _mcp_server = create_mcp_server()
     return _mcp_server
+
+
+def get_mcp_asgi_app() -> ASGIApp:
+    """Return the MCP streamable-HTTP ASGI app wrapped with auth middleware."""
+    mcp = get_mcp_server()
+    mcp.settings.streamable_http_path = "/"
+    return MCPAuthMiddleware(mcp.streamable_http_app())

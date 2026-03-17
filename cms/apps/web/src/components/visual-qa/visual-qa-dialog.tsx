@@ -78,7 +78,7 @@ export function VisualQADialog({
     if (open && screenshots.length === 0 && html.length > 0) {
       handleCapture();
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, handleCapture]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRunDiff = useCallback(
     async (clientName: string) => {

@@ -396,6 +396,17 @@ class WebSocketConfig(BaseModel):
     max_connections_per_user: int = 5
 
 
+class CollabWebSocketConfig(BaseModel):
+    """Collaboration WebSocket settings."""
+
+    enabled: bool = False
+    max_connections_per_room: int = 20
+    max_rooms_per_user: int = 10
+    heartbeat_interval_seconds: int = 30
+    auth_timeout_seconds: int = 10
+    max_message_bytes: int = 1_048_576  # 1 MB
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -452,6 +463,7 @@ class Settings(BaseSettings):
     qa_gmail_predictor: QAGmailPredictorConfig = QAGmailPredictorConfig()
     qa_bimi: QABIMIConfig = QABIMIConfig()
     voice: VoiceConfig = VoiceConfig()
+    collab_ws: CollabWebSocketConfig = CollabWebSocketConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

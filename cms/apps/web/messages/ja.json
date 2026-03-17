@@ -346,5 +346,15 @@
     "generateKey": "キーを生成",
     "apiKeyGenerated": "APIキーが生成されました",
     "noApiKeys": "APIキーは作成されていません"
+  },
+  "knowledge": {
+    "domainLabels": {
+      "css_support": "CSSサポート",
+      "best_practices": "ベストプラクティス",
+      "client_quirks": "クライアントの癖"
+    }
+  },
+  "approvals": {
+    "buildNumber": "ビルド #{id}"
   }
 }

@@ -88,7 +88,7 @@ class CodeReviewerNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.code_reviewer_node.llm_failed", error=str(exc))
             return NodeResult(
@@ -201,7 +201,7 @@ class CodeReviewerNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.code_reviewer_node.structured_failed", error=str(exc))
             return NodeResult(status="failed", error=f"Structured code review failed: {exc}")

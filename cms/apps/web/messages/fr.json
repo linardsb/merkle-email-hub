@@ -393,5 +393,15 @@
     "generateKey": "Générer une clé",
     "apiKeyGenerated": "Clé API générée",
     "noApiKeys": "Aucune clé API créée"
+  },
+  "knowledge": {
+    "domainLabels": {
+      "css_support": "Support CSS",
+      "best_practices": "Bonnes pratiques",
+      "client_quirks": "Particularités des clients"
+    }
+  },
+  "approvals": {
+    "buildNumber": "Build n°{id}"
   }
 }

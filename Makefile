@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e e2e-all install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh help
 
 # === Local Development ===
 
@@ -54,9 +54,6 @@ check-fe: ## Run frontend checks (type-check + tests)
 check: lint types test check-fe security-check ## Run all checks (backend + frontend + security)
 
 e2e: ## Run all e2e tests
-	cd cms && pnpm --filter web e2e
-
-e2e-all: ## Run ALL e2e tests
 	cd cms && pnpm --filter web e2e
 
 e2e-ui: ## Open Playwright UI mode

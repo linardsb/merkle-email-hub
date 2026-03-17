@@ -496,7 +496,7 @@ def _mock_db() -> Generator[AsyncMock]:
 
     db.flush = AsyncMock(side_effect=_flush_side_effect)
 
-    async def override_get_db():  # type: ignore[no-untyped-def]
+    async def override_get_db():
         yield db
 
     app.dependency_overrides[get_db] = override_get_db

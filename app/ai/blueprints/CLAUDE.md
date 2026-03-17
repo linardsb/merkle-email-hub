@@ -8,6 +8,12 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #20738 | 2:35 PM | 🔵 | Blueprint State Machine Protocol Architecture | ~643 |
+
+### Mar 17, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #24839 | 8:22 PM | 🔴 | Fixed double-counting of token costs in blueprint execution | ~284 |
 </claude-mem-context>
 
 # Blueprint Engine (`app/ai/blueprints/`)

@@ -79,7 +79,7 @@ class OutlookFixerNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.outlook_fixer_node.llm_failed", error=str(exc))
             return NodeResult(
@@ -176,7 +176,7 @@ class OutlookFixerNode:
         ]
 
         try:
-            response = await provider.complete(messages, model=model)
+            response = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("blueprint.outlook_fixer_node.diagnostic_failed", error=str(exc))
             return NodeResult(status="failed", error=f"Outlook diagnostic failed: {exc}")

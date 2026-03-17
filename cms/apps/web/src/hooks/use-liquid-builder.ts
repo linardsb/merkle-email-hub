@@ -5,12 +5,8 @@ import type { BlockTree, LiquidBlock } from "@/types/liquid-builder";
 import { parseLiquid } from "@/lib/liquid/parser";
 import { serializeLiquid } from "@/lib/liquid/serializer";
 
-let blockIdCounter = 1000;
-function newBlockId(): string {
-  return `block-${++blockIdCounter}`;
-}
-
 export function useLiquidBuilder(initialCode?: string) {
+  const blockIdCounter = useRef(1000);
   const [blocks, setBlocks] = useState<BlockTree>(() =>
     initialCode ? parseLiquid(initialCode) : []
   );
@@ -39,9 +35,9 @@ export function useLiquidBuilder(initialCode?: string) {
 
   /** Add a new block at the end. */
   const addBlock = useCallback((type: LiquidBlock["type"]) => {
-    const block = createEmptyBlock(type);
+    const block = createEmptyBlock(type, blockIdCounter);
     setBlocks((prev) => [...prev, block]);
-  }, []);
+  }, [blockIdCounter]);
 
   /** Reorder blocks via drag-and-drop. */
   const moveBlock = useCallback((activeId: string, overId: string) => {
@@ -69,8 +65,8 @@ export function useLiquidBuilder(initialCode?: string) {
   };
 }
 
-function createEmptyBlock(type: LiquidBlock["type"]): LiquidBlock {
-  const id = newBlockId();
+function createEmptyBlock(type: LiquidBlock["type"], counter: { current: number }): LiquidBlock {
+  const id = `block-${++counter.current}`;
   switch (type) {
     case "if":
       return { id, type: "if", condition: "true", children: [], elseChildren: [] };

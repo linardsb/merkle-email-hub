@@ -29,7 +29,7 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
     """
 
     # Paths that allow larger uploads (50MB)
-    UPLOAD_PATHS: tuple[str, ...] = ("/api/v1/knowledge",)
+    UPLOAD_PATHS: tuple[str, ...] = ("/api/v1/knowledge", "/api/v1/ai/voice", "/mcp")
 
     def __init__(self, app: ASGIApp, max_body_size: int = 102_400) -> None:
         super().__init__(app)
@@ -57,6 +57,12 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
                 return JSONResponse(
                     status_code=413,
                     content={"error": "Request body too large", "max_bytes": max_size},
+                )
+        elif content_length is None and not any(path.startswith(p) for p in self.UPLOAD_PATHS):
+            if request.method in ("POST", "PUT", "PATCH"):
+                return JSONResponse(
+                    status_code=411,
+                    content={"detail": "Content-Length required"},
                 )
         return await call_next(request)
 

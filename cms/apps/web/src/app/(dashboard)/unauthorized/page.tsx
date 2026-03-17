@@ -13,7 +13,7 @@ export default function UnauthorizedPage() {
       </h1>
       <p className="mt-2 text-foreground-muted">{t("description")}</p>
       <Link
-        href="/dashboard"
+        href="/"
         className="mt-6 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
       >
         {t("backToDashboard")}

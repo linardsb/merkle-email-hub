@@ -56,6 +56,12 @@ from app.qa_engine.routes import router as qa_router
 from app.rendering.routes import router as rendering_router
 from app.streaming.routes import close_ws_manager, get_ws_manager, ws_router
 from app.streaming.subscriber import start_ws_subscriber, stop_ws_subscriber
+from app.streaming.websocket.routes import (
+    close_collab_manager,
+    collab_router,
+    set_collab_manager,
+    set_redis_bridge,
+)
 from app.templates.routes import router as templates_router
 
 settings = get_settings()
@@ -99,6 +105,23 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             "streaming.ws.subscriber_skipped",
             detail="Redis unavailable, WebSocket streaming disabled",
         )
+
+    # Start collaboration WebSocket manager + Redis bridge (Phase 24.1)
+    collab_bridge = None
+    if settings.collab_ws.enabled:
+        from app.streaming.websocket.manager import CollabConnectionManager
+        from app.streaming.websocket.redis_bridge import RedisPubSubBridge
+
+        collab_mgr = CollabConnectionManager(
+            max_per_room=settings.collab_ws.max_connections_per_room,
+            max_rooms_per_user=settings.collab_ws.max_rooms_per_user,
+        )
+        set_collab_manager(collab_mgr)
+
+        collab_bridge = RedisPubSubBridge(collab_mgr)
+        set_redis_bridge(collab_bridge)
+        await collab_bridge.start()
+        logger.info("collab.ws.manager_started")
 
     # Load model capability registry from config (Phase 22.1)
     if settings.ai.model_specs:
@@ -208,6 +231,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         await outcome_poller.stop()
         logger.info("blueprint.outcome_poller_stopped")
 
+    if collab_bridge is not None:
+        await collab_bridge.stop()
+        close_collab_manager()
+        logger.info("collab.ws.manager_stopped")
+
     await stop_ws_subscriber()
     close_ws_manager()
     logger.info("streaming.ws.lifecycle_stopped")
@@ -256,6 +284,7 @@ app.include_router(ontology_router)
 
 
 app.include_router(ws_router)
+app.include_router(collab_router)
 
 # Email Hub routers
 app.include_router(projects_router)
@@ -288,11 +317,9 @@ app.include_router(voice_router, prefix="/api")
 if settings.mcp.enabled:
     from starlette.routing import Mount as StarletteMount
 
-    from app.mcp.server import get_mcp_server
+    from app.mcp.server import get_mcp_asgi_app
 
-    _mcp = get_mcp_server()
-    _mcp.settings.streamable_http_path = "/"
-    app.routes.append(StarletteMount("/mcp", app=_mcp.streamable_http_app()))
+    app.routes.append(StarletteMount("/mcp", app=get_mcp_asgi_app()))
 
 
 @app.get("/")

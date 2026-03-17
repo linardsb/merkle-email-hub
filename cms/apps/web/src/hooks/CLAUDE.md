@@ -17,4 +17,10 @@
 | #21785 | 3:09 PM | 🔴 | Demo mode support added for email clients selector | ~599 |
 | #21783 | 3:01 PM | 🟣 | Phase 10.1 Project Target Clients Selector committed | ~635 |
 | #21782 | 3:00 PM | 🟣 | Phase 10.1 Project Target Clients Selector implemented and committed | ~856 |
+
+### Mar 17, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #24835 | 8:21 PM | 🔴 | Demo mode streaming now respects abort signal | ~256 |
 </claude-mem-context>

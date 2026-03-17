@@ -110,6 +110,7 @@ export function useChat(projectId?: string): UseChatReturn {
           let accumulated = "";
 
           for (let i = 0; i < words.length; i++) {
+            if (controller.signal.aborted) break;
             accumulated += words[i];
             const snapshot = accumulated;
             setMessages((prev) =>

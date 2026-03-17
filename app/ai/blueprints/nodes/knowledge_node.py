@@ -104,7 +104,7 @@ class KnowledgeNode:
         ]
 
         try:
-            response: CompletionResponse = await provider.complete(messages, model=model)
+            response: CompletionResponse = await provider.complete(messages, model_override=model)
         except Exception as exc:
             logger.error("agents.knowledge.node_failed", error=str(exc))
             return NodeResult(

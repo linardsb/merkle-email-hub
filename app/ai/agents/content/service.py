@@ -6,7 +6,10 @@ import contextvars
 import json
 import re
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 from app.ai.agents.base import CONFIDENCE_INSTRUCTION, BaseAgentService
 from app.ai.agents.content.length_guardrail import (
@@ -277,7 +280,7 @@ class ContentService(BaseAgentService):
             reasoning=str(data.get("reasoning", "")),
         )
 
-    async def process(self, request: Any) -> Any:
+    async def process(self, request: Any, context_blocks: list[ContentBlock] | None = None) -> Any:
         """Execute pipeline with post-generation length validation.
 
         Flow: LLM call → extract → spam check → length validate →
@@ -285,7 +288,7 @@ class ContentService(BaseAgentService):
         Max 1 retry for length violations.
         """
         _length_warnings_var.set(None)
-        response: ContentResponse = await super().process(request)
+        response: ContentResponse = await super().process(request, context_blocks)
         req: ContentRequest = request
 
         # Validate lengths of all alternatives

@@ -37,9 +37,11 @@ def service() -> CanIEmailSyncService:
 
 class TestSync:
     @pytest.mark.anyio()
-    async def test_dry_run_does_not_write(self, service: CanIEmailSyncService) -> None:
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(return_value=[_make_feature()])
+    async def test_dry_run_does_not_write(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(return_value=[_make_feature()]))
 
         with (
             patch("app.knowledge.ontology.sync.service.load_ontology") as mock_load,
@@ -48,20 +50,24 @@ class TestSync:
         ):
             mock_load.return_value = MagicMock()
             mock_diff.return_value = SyncDiff(new_properties=["display_flex"])
-            service._save_state = AsyncMock()  # type: ignore[method-assign]
-            service._save_report = AsyncMock()  # type: ignore[method-assign]
+            mock_save_state = AsyncMock()
+            mock_save_report = AsyncMock()
+            monkeypatch.setattr(service, "_save_state", mock_save_state)
+            monkeypatch.setattr(service, "_save_report", mock_save_report)
 
             report = await service.sync(dry_run=True)
 
         assert report.dry_run is True
         assert report.new_properties == 1
         mock_apply.assert_not_called()
-        service._save_state.assert_not_awaited()
+        mock_save_state.assert_not_awaited()
 
     @pytest.mark.anyio()
-    async def test_real_sync_applies_changes(self, service: CanIEmailSyncService) -> None:
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(return_value=[_make_feature()])
+    async def test_real_sync_applies_changes(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(return_value=[_make_feature()]))
 
         with (
             patch("app.knowledge.ontology.sync.service.load_ontology") as mock_load,
@@ -73,8 +79,9 @@ class TestSync:
                 updated_support=[("display_flex", "gmail_web", "none", "full")],
             )
             mock_diff.return_value = diff
-            service._save_state = AsyncMock()  # type: ignore[method-assign]
-            service._save_report = AsyncMock()  # type: ignore[method-assign]
+            mock_save_state = AsyncMock()
+            monkeypatch.setattr(service, "_save_state", mock_save_state)
+            monkeypatch.setattr(service, "_save_report", AsyncMock())
 
             report = await service.sync(dry_run=False)
 
@@ -84,12 +91,14 @@ class TestSync:
         assert report.changelog[0].old_level == "none"
         assert report.changelog[0].new_level == "full"
         mock_apply.assert_called_once()
-        service._save_state.assert_awaited_once()
+        mock_save_state.assert_awaited_once()
 
     @pytest.mark.anyio()
-    async def test_fetch_sha_failure_returns_error(self, service: CanIEmailSyncService) -> None:
-        service._client.get_latest_commit_sha = AsyncMock(side_effect=Exception("Network error"))
-        service._save_report = AsyncMock()  # type: ignore[method-assign]
+    async def test_fetch_sha_failure_returns_error(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(side_effect=Exception("Network error")))
+        monkeypatch.setattr(service, "_save_report", AsyncMock())
 
         report = await service.sync(dry_run=False)
 
@@ -98,11 +107,11 @@ class TestSync:
 
     @pytest.mark.anyio()
     async def test_fetch_features_failure_returns_error(
-        self, service: CanIEmailSyncService
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(side_effect=Exception("Timeout"))
-        service._save_report = AsyncMock()  # type: ignore[method-assign]
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(side_effect=Exception("Timeout")))
+        monkeypatch.setattr(service, "_save_report", AsyncMock())
 
         report = await service.sync(dry_run=False)
 
@@ -110,9 +119,11 @@ class TestSync:
         assert "features" in report.errors[0]
 
     @pytest.mark.anyio()
-    async def test_no_changes_report(self, service: CanIEmailSyncService) -> None:
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(return_value=[])
+    async def test_no_changes_report(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(return_value=[]))
 
         with (
             patch("app.knowledge.ontology.sync.service.load_ontology") as mock_load,
@@ -121,8 +132,8 @@ class TestSync:
         ):
             mock_load.return_value = MagicMock()
             mock_diff.return_value = SyncDiff()  # No changes
-            service._save_state = AsyncMock()  # type: ignore[method-assign]
-            service._save_report = AsyncMock()  # type: ignore[method-assign]
+            monkeypatch.setattr(service, "_save_state", AsyncMock())
+            monkeypatch.setattr(service, "_save_report", AsyncMock())
 
             report = await service.sync(dry_run=False)
 
@@ -132,9 +143,11 @@ class TestSync:
         mock_apply.assert_not_called()
 
     @pytest.mark.anyio()
-    async def test_new_support_entries_in_changelog(self, service: CanIEmailSyncService) -> None:
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(return_value=[_make_feature()])
+    async def test_new_support_entries_in_changelog(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(return_value=[_make_feature()]))
 
         with (
             patch("app.knowledge.ontology.sync.service.load_ontology") as mock_load,
@@ -146,8 +159,8 @@ class TestSync:
                 new_support=[("display_flex", "gmail_web", "full")],
             )
             mock_diff.return_value = diff
-            service._save_state = AsyncMock()  # type: ignore[method-assign]
-            service._save_report = AsyncMock()  # type: ignore[method-assign]
+            monkeypatch.setattr(service, "_save_state", AsyncMock())
+            monkeypatch.setattr(service, "_save_report", AsyncMock())
 
             report = await service.sync(dry_run=True)
 
@@ -158,7 +171,9 @@ class TestSync:
 
 class TestGetStatus:
     @pytest.mark.anyio()
-    async def test_returns_status(self, service: CanIEmailSyncService) -> None:
+    async def test_returns_status(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         from datetime import UTC, datetime
 
         state = SyncState(
@@ -166,8 +181,8 @@ class TestGetStatus:
             last_commit_sha="abc123",
             features_synced=100,
         )
-        service._load_state = AsyncMock(return_value=state)  # type: ignore[method-assign]
-        service._load_report = AsyncMock(return_value={"new_properties": 5})  # type: ignore[method-assign]
+        monkeypatch.setattr(service, "_load_state", AsyncMock(return_value=state))
+        monkeypatch.setattr(service, "_load_report", AsyncMock(return_value={"new_properties": 5}))
 
         status = await service.get_status()
 
@@ -176,9 +191,11 @@ class TestGetStatus:
         assert status.last_report == {"new_properties": 5}
 
     @pytest.mark.anyio()
-    async def test_returns_empty_status(self, service: CanIEmailSyncService) -> None:
-        service._load_state = AsyncMock(return_value=SyncState())  # type: ignore[method-assign]
-        service._load_report = AsyncMock(return_value=None)  # type: ignore[method-assign]
+    async def test_returns_empty_status(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(service, "_load_state", AsyncMock(return_value=SyncState()))
+        monkeypatch.setattr(service, "_load_report", AsyncMock(return_value=None))
 
         status = await service.get_status()
 
@@ -190,11 +207,11 @@ class TestGetStatus:
 class TestSyncIdempotency:
     @pytest.mark.anyio()
     async def test_second_sync_same_data_empty_changelog(
-        self, service: CanIEmailSyncService
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Running sync twice with identical data returns empty changelog the second time."""
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(return_value=[_make_feature()])
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(return_value=[_make_feature()]))
 
         with (
             patch("app.knowledge.ontology.sync.service.load_ontology") as mock_load,
@@ -206,8 +223,8 @@ class TestSyncIdempotency:
             mock_diff.return_value = SyncDiff(
                 new_support=[("display_flex", "gmail_web", "full")],
             )
-            service._save_state = AsyncMock()  # type: ignore[method-assign]
-            service._save_report = AsyncMock()  # type: ignore[method-assign]
+            monkeypatch.setattr(service, "_save_state", AsyncMock())
+            monkeypatch.setattr(service, "_save_report", AsyncMock())
             report1 = await service.sync(dry_run=False)
 
             # Second sync with same data — no changes
@@ -220,13 +237,13 @@ class TestSyncIdempotency:
         assert report2.updated_levels == 0
 
     @pytest.mark.anyio()
-    async def test_multiple_errors_collected(self, service: CanIEmailSyncService) -> None:
+    async def test_multiple_errors_collected(
+        self, service: CanIEmailSyncService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Multiple failures during sync are all collected in errors list."""
-        service._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        service._client.fetch_all_features = AsyncMock(
-            side_effect=Exception("Feature fetch failed")
-        )
-        service._save_report = AsyncMock()  # type: ignore[method-assign]
+        monkeypatch.setattr(service._client, "get_latest_commit_sha", AsyncMock(return_value="abc123"))
+        monkeypatch.setattr(service._client, "fetch_all_features", AsyncMock(side_effect=Exception("Feature fetch failed")))
+        monkeypatch.setattr(service, "_save_report", AsyncMock())
 
         report = await service.sync(dry_run=False)
 

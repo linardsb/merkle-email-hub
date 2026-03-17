@@ -116,6 +116,9 @@ export function ExportDialog({
   const { trigger: triggerBuild } = useEmailBuild();
   const { trigger: triggerExport } = useExport();
 
+  const espStatesRef = useRef(espStates);
+  espStatesRef.current = espStates;
+
   const getEspState = (id: string): EspState => espStates[id] ?? initialEspState;
 
   const updateEspState = useCallback((id: string, patch: Partial<EspState>) => {
@@ -185,7 +188,7 @@ export function ExportDialog({
 
   const handleEspExport = useCallback(
     async (cfg: ConnectorConfig) => {
-      const state = getEspState(cfg.id);
+      const state = espStatesRef.current[cfg.id] ?? initialEspState;
       if (!state.name.trim() || state.dialogState === "building" || state.dialogState === "exporting") return;
 
       const localId = crypto.randomUUID();
@@ -257,7 +260,7 @@ export function ExportDialog({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [espStates, projectId, templateName, sourceHtml, triggerBuild, triggerExport, t, onExportComplete, updateEspState]
+    [projectId, templateName, sourceHtml, triggerBuild, triggerExport, t, onExportComplete, updateEspState]
   );
 
   if (!open) return null;

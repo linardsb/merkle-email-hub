@@ -34,7 +34,7 @@ export default function DashboardError({
           {t("retry")}
         </button>
         <Link
-          href="/dashboard"
+          href="/"
           className="rounded-md border border-card-border bg-card-bg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
         >
           {t("backToDashboard")}

@@ -25,14 +25,18 @@ export async function authFetch(
   }
 
   const timeoutMs = init?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  const combinedSignal = init?.signal
+    ? AbortSignal.any([init.signal, timeoutController.signal])
+    : timeoutController.signal;
 
   try {
     return await fetch(input, {
       ...init,
       headers,
-      signal: init?.signal ?? controller.signal,
+      signal: combinedSignal,
     });
   } finally {
     clearTimeout(timeoutId);

@@ -4,7 +4,10 @@
 
 import json
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.ai.multimodal import ContentBlock
 
 from app.ai.agents.base import CONFIDENCE_INSTRUCTION, BaseAgentService
 from app.ai.agents.html_summarizer import prepare_html_context
@@ -185,13 +188,13 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
             reasoning=str(data.get("reasoning", "")),
         )
 
-    async def process(self, request: Any) -> Any:
+    async def process(self, request: Any, context_blocks: list[ContentBlock] | None = None) -> Any:
         """Execute pipeline with post-generation MSO validation and repair.
 
         Flow: LLM call → MSO validate → programmatic repair → (optional) LLM retry → QA.
         Max 1 retry to avoid loops.
         """
-        response: OutlookFixerResponse = await super().process(request)
+        response: OutlookFixerResponse = await super().process(request, context_blocks)
 
         # Validate MSO structure
         mso_result = validate_mso_conditionals(response.html)
@@ -319,8 +322,10 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
             else ["MSO: All issues resolved after retry"],
         )
 
-    async def stream_process(self, request: Any) -> AsyncIterator[str]:
-        async for chunk in super().stream_process(request):
+    async def stream_process(
+        self, request: Any, context_blocks: list[ContentBlock] | None = None
+    ) -> AsyncIterator[str]:
+        async for chunk in super().stream_process(request, context_blocks):
             yield chunk
 
 

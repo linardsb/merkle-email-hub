@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Y from "yjs";
 import type { Awareness } from "y-protocols/awareness";
 import type {
@@ -22,6 +22,7 @@ export function useCollaboration(projectId: number, templateId: number | null) {
   const cleanupRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<CollaborationStatus>("disconnected");
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [yText, setYText] = useState<Y.Text | null>(null);
 
   // Create stable room name
   const roomName = useMemo(
@@ -34,58 +35,63 @@ export function useCollaboration(projectId: number, templateId: number | null) {
 
     const doc = new Y.Doc();
     docRef.current = doc;
+    setYText(doc.getText("content"));
 
     if (IS_DEMO) {
       // Demo mode: no WebSocket, use in-memory doc
       setStatus("connected");
 
-      // Set local awareness state
-      const awareness = new (require("y-protocols/awareness").Awareness)(doc) as Awareness;
+      let awarenessInstance: Awareness | null = null;
 
-      awareness.setLocalState({
-        name: "You",
-        color: pickColor(doc.clientID),
-      });
+      // Set local awareness state (async IIFE for dynamic import)
+      (async () => {
+        const { Awareness } = await import("y-protocols/awareness");
+        const awareness = new Awareness(doc);
+        awarenessInstance = awareness;
 
-      // Start demo collaborator simulation
-      import("@/lib/collaboration/demo-provider").then(({ startDemoCollaborator }) => {
+        awareness.setLocalState({
+          name: "You",
+          color: pickColor(doc.clientID),
+        });
+
+        // Start demo collaborator simulation
+        const { startDemoCollaborator } = await import("@/lib/collaboration/demo-provider");
         cleanupRef.current = startDemoCollaborator(awareness);
-      });
 
-      // Listen for awareness changes
-      const updateCollaborators = () => {
-        const states = awareness.getStates();
-        const collabs: Collaborator[] = [];
+        // Listen for awareness changes
+        const updateCollaborators = () => {
+          const states = awareness.getStates();
+          const collabs: Collaborator[] = [];
 
-        states.forEach((state, clientId) => {
-          if (clientId === doc.clientID) return; // Skip self
+          states.forEach((state, clientId) => {
+            if (clientId === doc.clientID) return; // Skip self
 
-          // Check for demo collaborators embedded in local state
-          const demoCollabs = state?.demoCollaborators as Collaborator[] | undefined;
+            // Check for demo collaborators embedded in local state
+            const demoCollabs = state?.demoCollaborators as Collaborator[] | undefined;
+            if (demoCollabs) {
+              collabs.push(...demoCollabs);
+            }
+          });
+
+          // Also check own state for demo collaborators
+          const localState = awareness.getLocalState();
+          const demoCollabs = localState?.demoCollaborators as Collaborator[] | undefined;
           if (demoCollabs) {
             collabs.push(...demoCollabs);
           }
-        });
 
-        // Also check own state for demo collaborators
-        const localState = awareness.getLocalState();
-        const demoCollabs = localState?.demoCollaborators as Collaborator[] | undefined;
-        if (demoCollabs) {
-          collabs.push(...demoCollabs);
-        }
+          setCollaborators(collabs);
+        };
 
-        setCollaborators(collabs);
-      };
-
-      awareness.on("change", updateCollaborators);
-      const awarenessRef = awareness;
+        awareness.on("change", updateCollaborators);
+      })();
 
       return () => {
         cleanupRef.current?.();
-        awarenessRef.off("change", updateCollaborators);
-        awarenessRef.destroy();
+        awarenessInstance?.destroy();
         doc.destroy();
         docRef.current = null;
+        setYText(null);
         setStatus("disconnected");
         setCollaborators([]);
       };
@@ -137,14 +143,11 @@ export function useCollaboration(projectId: number, templateId: number | null) {
       }
       doc.destroy();
       docRef.current = null;
+      setYText(null);
       setStatus("disconnected");
       setCollaborators([]);
     };
   }, [roomName]);
-
-  const yText = useMemo(() => {
-    return docRef.current?.getText("content") ?? null;
-  }, [roomName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { status, collaborators, yText, doc: docRef.current };
 }

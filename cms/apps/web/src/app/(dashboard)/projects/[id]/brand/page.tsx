@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { Palette, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -18,6 +18,9 @@ export default function BrandSettingsPage() {
   const t = useTranslations("brand");
   const params = useParams<{ id: string }>();
   const projectId = Number(params.id);
+  if (Number.isNaN(projectId)) {
+    notFound();
+  }
 
   const { data: project } = useProject(projectId);
   const orgId = project?.client_org_id ?? null;

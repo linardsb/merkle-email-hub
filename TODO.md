@@ -50,7 +50,7 @@
 - Config: `STREAMING__WS_ENABLED: bool = False`, `STREAMING__WS_MAX_CONNECTIONS_PER_ROOM: int = 20`, `STREAMING__WS_HEARTBEAT_INTERVAL_S: int = 30`, `STREAMING__WS_AUTH_TIMEOUT_S: int = 10`
 **Security:** JWT authentication required before any message exchange. Token passed via query parameter (standard WebSocket auth pattern) — HTTPS encrypts in transit. Room isolation: users can only join rooms for templates in their project. Message size limit: 1MB per WebSocket message (prevents memory abuse). Connection count limited per room and per user. Redis pub/sub channels use room ID only — no user data in channel names. WebSocket upgrade restricted to `websocket` protocol only (no HTTP hijacking).
 **Verify:** Two browser tabs connect to same room → both authenticated → messages broadcast between them. Invalid JWT → connection rejected. User without project access → connection rejected. Redis pub/sub: message sent from instance A → received on instance B (docker-compose test). Connection drops → peer notified → reconnection re-syncs state. Max connections reached → new connection rejected with 429. `make test` passes.
-- [ ] 24.1 WebSocket infrastructure & authentication
+- [x] ~~24.1 WebSocket infrastructure & authentication~~ DONE
 
 ### 24.2 Yjs CRDT Document Engine `[Backend + Frontend]`
 **What:** Integrate Yjs CRDT library for conflict-free collaborative editing of email HTML. Server-side Yjs document persistence, client-side binding to CodeMirror editor, and WebSocket sync provider. Multiple users can edit the same template simultaneously with automatic conflict resolution — no merge dialogs, no lost changes.

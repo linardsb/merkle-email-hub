@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -56,37 +57,37 @@ class TestDeliverabilityCheck:
     """Unit tests for DeliverabilityCheck.run()."""
 
     @pytest.fixture()
-    def check(self):
+    def check(self) -> Any:
         from app.qa_engine.checks.deliverability import DeliverabilityCheck
 
         return DeliverabilityCheck()
 
     @pytest.mark.asyncio()
-    async def test_clean_transactional_scores_high(self, check) -> None:
+    async def test_clean_transactional_scores_high(self, check: Any) -> None:
         result = await check.run(CLEAN_TRANSACTIONAL)
         assert result.score >= 0.85  # > 85/100
         assert result.passed is True
 
     @pytest.mark.asyncio()
-    async def test_spam_like_scores_low(self, check) -> None:
+    async def test_spam_like_scores_low(self, check: Any) -> None:
         result = await check.run(SPAM_LIKE_EMAIL)
         assert result.score < 0.50  # < 50/100
         assert result.passed is False
 
     @pytest.mark.asyncio()
-    async def test_missing_doctype_penalized(self, check) -> None:
+    async def test_missing_doctype_penalized(self, check: Any) -> None:
         html = "<html><body><p>Hello world, this is a test email with content.</p></body></html>"
         result = await check.run(html)
         assert "DOCTYPE" in (result.details or "")
 
     @pytest.mark.asyncio()
-    async def test_single_image_penalized(self, check) -> None:
+    async def test_single_image_penalized(self, check: Any) -> None:
         html = '<!DOCTYPE html><html><body><img src="banner.jpg" /></body></html>'
         result = await check.run(html)
         assert result.score < 0.50
 
     @pytest.mark.asyncio()
-    async def test_unsubscribe_link_improves_score(self, check) -> None:
+    async def test_unsubscribe_link_improves_score(self, check: Any) -> None:
         base = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><p>Content here with enough words for testing purposes and more text.</p></body></html>'
         with_unsub = base.replace("</body>", '<a href="/unsubscribe">Unsubscribe</a></body>')
         result_without = await check.run(base)
@@ -94,7 +95,7 @@ class TestDeliverabilityCheck:
         assert result_with.score >= result_without.score
 
     @pytest.mark.asyncio()
-    async def test_preview_text_improves_score(self, check) -> None:
+    async def test_preview_text_improves_score(self, check: Any) -> None:
         base = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><p>Content here</p><a href="/unsubscribe">Unsubscribe</a></body></html>'
         with_preview = base.replace(
             "<body>",
@@ -105,38 +106,38 @@ class TestDeliverabilityCheck:
         assert result_with.score >= result_without.score
 
     @pytest.mark.asyncio()
-    async def test_url_shortener_penalized(self, check) -> None:
+    async def test_url_shortener_penalized(self, check: Any) -> None:
         html = '<!DOCTYPE html><html><body><p>Check out <a href="https://bit.ly/abc">this link</a></p></body></html>'
         result = await check.run(html)
         assert "shortener" in (result.details or "").lower()
 
     @pytest.mark.asyncio()
-    async def test_invalid_html_returns_zero(self, check) -> None:
+    async def test_invalid_html_returns_zero(self, check: Any) -> None:
         result = await check.run("")
         assert result.score == 0.0
         assert result.passed is False
 
     @pytest.mark.asyncio()
-    async def test_hidden_text_penalized(self, check) -> None:
+    async def test_hidden_text_penalized(self, check: Any) -> None:
         html = '<!DOCTYPE html><html><body><p style="color:#ffffff;background-color:#ffffff">Hidden text</p></body></html>'
         result = await check.run(html)
         assert "hidden text" in (result.details or "").lower()
 
     @pytest.mark.asyncio()
-    async def test_personalization_detected(self, check) -> None:
+    async def test_personalization_detected(self, check: Any) -> None:
         html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><p>Hello {{name}}</p><a href="/unsub">Unsubscribe</a></body></html>'
         result = await check.run(html)
         # Personalization detected = no "personalization" issue in details
         assert "personalization" not in (result.details or "").lower() or result.score > 0.5
 
     @pytest.mark.asyncio()
-    async def test_score_normalized_to_unit(self, check) -> None:
+    async def test_score_normalized_to_unit(self, check: Any) -> None:
         """Score should be 0.0-1.0 (normalized from 0-100)."""
         result = await check.run(CLEAN_TRANSACTIONAL)
         assert 0.0 <= result.score <= 1.0
 
     @pytest.mark.asyncio()
-    async def test_threshold_from_config(self, check) -> None:
+    async def test_threshold_from_config(self, check: Any) -> None:
         from app.qa_engine.check_config import QACheckConfig
 
         config = QACheckConfig(params={"threshold": 95})
@@ -145,7 +146,7 @@ class TestDeliverabilityCheck:
         assert result.check_name == "deliverability"
 
     @pytest.mark.asyncio()
-    async def test_check_name_is_deliverability(self, check) -> None:
+    async def test_check_name_is_deliverability(self, check: Any) -> None:
         result = await check.run(CLEAN_TRANSACTIONAL)
         assert result.check_name == "deliverability"
 

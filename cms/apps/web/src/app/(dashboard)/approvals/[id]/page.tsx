@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { ArrowLeft, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
@@ -21,6 +21,9 @@ export default function ApprovalDetailPage() {
   const t = useTranslations("approvals");
   const params = useParams();
   const approvalId = Number(params.id);
+  if (Number.isNaN(approvalId)) {
+    notFound();
+  }
 
   const {
     data: approval,
@@ -99,7 +102,7 @@ export default function ApprovalDetailPage() {
           </Link>
           <span className="text-foreground-muted">/</span>
           <h1 className="text-sm font-semibold text-foreground">
-            Build #{approval.build_id}
+            {t("buildNumber", { id: approval.build_id })}
           </h1>
           <ApprovalStatusBadge status={approval.status} />
           {build && (

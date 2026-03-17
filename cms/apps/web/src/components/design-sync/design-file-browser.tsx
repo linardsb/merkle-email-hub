@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import {
   ChevronRight,
@@ -205,7 +205,7 @@ export function DesignFileBrowser({
   const selectedSet = new Set(selectedNodeIds);
 
   // Stable ref for use in callbacks (avoids recreating callback on every selection change)
-  const selectedNodeIdsRef = { current: selectedNodeIds };
+  const selectedNodeIdsRef = useRef(selectedNodeIds);
   selectedNodeIdsRef.current = selectedNodeIds;
 
   // Auto-expand pages on load
