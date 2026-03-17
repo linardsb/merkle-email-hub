@@ -129,6 +129,18 @@ class KnowledgeConfig(BaseModel):
     multi_rep_max_concurrency: int = 5
 
 
+class QAChaosConfig(BaseModel):
+    """Chaos testing configuration."""
+
+    enabled: bool = False  # QA_CHAOS__ENABLED
+    default_profiles: list[str] = [
+        "gmail_style_strip",
+        "image_blocked",
+        "dark_mode_inversion",
+        "gmail_clipping",
+    ]  # QA_CHAOS__DEFAULT_PROFILES
+
+
 class RenderingConfig(BaseModel):
     """Cross-client rendering test settings."""
 
@@ -289,6 +301,7 @@ class Settings(BaseSettings):
     design_sync: DesignSyncConfig = DesignSyncConfig()
     esp_sync: ESPSyncConfig = ESPSyncConfig()
     eval: EvalConfig = EvalConfig()
+    qa_chaos: QAChaosConfig = QAChaosConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

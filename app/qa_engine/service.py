@@ -6,6 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
+from app.core.config import get_settings
+from app.core.exceptions import ForbiddenError
 from app.core.logging import get_logger
 from app.projects.models import Project
 from app.projects.service import ProjectService
@@ -15,6 +17,8 @@ from app.qa_engine.exceptions import QAOverrideNotAllowedError, QAResultNotFound
 from app.qa_engine.models import QAOverride, QAResult
 from app.qa_engine.repository import QARepository
 from app.qa_engine.schemas import (
+    ChaosTestRequest,
+    ChaosTestResponse,
     QACheckResult,
     QAOverrideRequest,
     QAOverrideResponse,
@@ -108,6 +112,28 @@ class QAEngineService:
             checks=check_results,
             created_at=qa_result.created_at,  # pyright: ignore[reportArgumentType]
         )
+
+    async def run_chaos_test(self, data: ChaosTestRequest) -> ChaosTestResponse:
+        """Run chaos testing on HTML with controlled degradations."""
+        settings = get_settings()
+        if not settings.qa_chaos.enabled:
+            raise ForbiddenError("Chaos testing is not enabled")
+
+        from app.qa_engine.chaos.engine import ChaosEngine
+
+        engine = ChaosEngine()
+        result = await engine.run_chaos_test(
+            html=data.html,
+            profiles=data.profiles,
+            default_profiles=settings.qa_chaos.default_profiles,
+        )
+
+        logger.info(
+            "qa_engine.chaos_test_completed",
+            resilience_score=result.resilience_score,
+            profiles_tested=result.profiles_tested,
+        )
+        return result
 
     async def get_result(self, result_id: int) -> QAResultResponse:
         """Get a single QA result by ID, including checks and override."""

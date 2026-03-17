@@ -10,6 +10,8 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.qa_engine.schemas import (
+    ChaosTestRequest,
+    ChaosTestResponse,
     QAOverrideRequest,
     QAOverrideResponse,
     QAResultResponse,
@@ -23,6 +25,24 @@ router = APIRouter(prefix="/api/v1/qa", tags=["qa-engine"])
 
 def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:  # noqa: B008
     return QAEngineService(db)
+
+
+@router.post(
+    "/chaos-test",
+    response_model=ChaosTestResponse,
+    status_code=200,
+    summary="Run chaos resilience test",
+)
+@limiter.limit("3/minute")
+async def run_chaos_test(
+    request: Request,
+    data: ChaosTestRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> ChaosTestResponse:
+    """Apply controlled email client degradations and measure QA resilience."""
+    _ = request
+    return await service.run_chaos_test(data)
 
 
 @router.post("/run", response_model=QAResultResponse, status_code=status.HTTP_201_CREATED)

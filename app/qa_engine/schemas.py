@@ -64,6 +64,48 @@ class QAResultResponse(BaseModel):
     checks_total: int
     checks: list[QACheckResult] = []
     override: QAOverrideResponse | None = None
+    resilience_score: float | None = None
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChaosTestRequest(BaseModel):
+    """Request to run chaos testing on HTML."""
+
+    html: str = Field(..., min_length=1, max_length=500_000)
+    profiles: list[str] | None = Field(
+        None,
+        description="Profile names to test. None = use defaults from config.",
+    )
+
+
+class ChaosFailure(BaseModel):
+    """A specific QA check failure introduced by a chaos profile."""
+
+    profile: str
+    check_name: str
+    severity: str
+    description: str
+
+
+class ChaosProfileResult(BaseModel):
+    """QA results for a single chaos profile."""
+
+    profile: str
+    description: str
+    score: float = Field(ge=0.0, le=1.0)
+    passed: bool
+    checks_passed: int
+    checks_total: int
+    failures: list[ChaosFailure] = []
+
+
+class ChaosTestResponse(BaseModel):
+    """Complete chaos test results."""
+
+    original_score: float = Field(ge=0.0, le=1.0)
+    resilience_score: float = Field(ge=0.0, le=1.0)
+    profiles_tested: int
+    profile_results: list[ChaosProfileResult] = []
+    critical_failures: list[ChaosFailure] = []
