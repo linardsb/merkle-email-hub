@@ -33,6 +33,9 @@ docker-logs: ## Tail logs from all services
 test: ## Run backend unit tests
 	uv run pytest -v -m "not integration"
 
+test-properties: ## Run property-based email invariant tests
+	QA_PROPERTY_TESTING__ENABLED=true uv run pytest app/qa_engine/property_testing/tests/ -v
+
 test-fe: ## Run frontend unit tests
 	cd cms && pnpm --filter web test
 

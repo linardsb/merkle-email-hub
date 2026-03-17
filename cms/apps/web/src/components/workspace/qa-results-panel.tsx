@@ -13,6 +13,8 @@ import {
 import { QACheckItem } from "./qa-check-item";
 import { QAOverrideDialog } from "./qa-override-dialog";
 import { VisualQAPanelTab } from "@/components/visual-qa/visual-qa-panel-tab";
+import { ChaosTestPanel } from "@/components/qa/ChaosTestPanel";
+import { PropertyTestPanel } from "@/components/qa/PropertyTestPanel";
 import type { QAResultResponse } from "@/types/qa";
 import type { VisualQAEntityType } from "@/types/rendering";
 
@@ -175,6 +177,18 @@ export function QAResultsPanel({
           />
         </div>
       ) : null}
+
+      {/* Chaos testing section */}
+      {html ? (
+        <div className="border-t border-border px-4 py-3">
+          <ChaosTestPanel html={html} />
+        </div>
+      ) : null}
+
+      {/* Property testing section */}
+      <div className="border-t border-border px-4 py-3">
+        <PropertyTestPanel />
+      </div>
 
       {/* Override button (developer+ only, failing results only) */}
       {canOverride && (

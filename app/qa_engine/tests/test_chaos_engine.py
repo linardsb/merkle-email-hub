@@ -140,6 +140,61 @@ class TestChaosEngine:
         assert isinstance(score, float)
         assert len(checks) > 0
 
+    async def test_engine_profile_results_contain_check_counts(self):
+        engine = ChaosEngine()
+        result = await engine.run_chaos_test(
+            html=MINIMAL_HTML,
+            profiles=["gmail_style_strip", "image_blocked"],
+        )
+        for pr in result.profile_results:
+            assert pr.checks_passed + len(pr.failures) <= pr.checks_total
+            assert pr.checks_total > 0
+
+    async def test_engine_resilience_score_capped_at_one(self):
+        engine = ChaosEngine()
+        result = await engine.run_chaos_test(
+            html=INLINE_ONLY_HTML,
+            profiles=["gmail_style_strip"],
+        )
+        assert result.resilience_score <= 1.0
+
+    async def test_engine_profile_results_have_descriptions(self):
+        engine = ChaosEngine()
+        result = await engine.run_chaos_test(
+            html=MINIMAL_HTML,
+            profiles=["gmail_style_strip", "image_blocked"],
+        )
+        for pr in result.profile_results:
+            assert pr.description
+            assert len(pr.description) > 0
+
+    async def test_engine_single_profile(self):
+        engine = ChaosEngine()
+        result = await engine.run_chaos_test(
+            html=MINIMAL_HTML,
+            profiles=["dark_mode_inversion"],
+        )
+        assert result.profiles_tested == 1
+        assert 0.0 <= result.resilience_score <= 1.0
+
+    async def test_engine_all_known_profiles(self):
+        engine = ChaosEngine()
+        all_names = [
+            "gmail_style_strip",
+            "image_blocked",
+            "dark_mode_inversion",
+            "outlook_word_engine",
+            "gmail_clipping",
+            "mobile_narrow",
+            "class_strip",
+            "media_query_strip",
+        ]
+        result = await engine.run_chaos_test(
+            html=MINIMAL_HTML,
+            profiles=all_names,
+        )
+        assert result.profiles_tested == 8
+
 
 # ── Route Tests ──
 
@@ -201,3 +256,17 @@ class TestChaosRoute:
     def test_chaos_route_validates_html(self, client: TestClient) -> None:
         resp = client.post(f"{BASE}/chaos-test", json={"html": ""})
         assert resp.status_code == 422
+
+    @pytest.mark.usefixtures("_auth_developer")
+    def test_chaos_route_service_error_returns_500(self, client: TestClient) -> None:
+        with patch.object(
+            QAEngineService,
+            "run_chaos_test",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("Unexpected"),
+        ):
+            resp = client.post(
+                f"{BASE}/chaos-test",
+                json={"html": "<!DOCTYPE html><html><body>Hi</body></html>"},
+            )
+        assert resp.status_code == 500

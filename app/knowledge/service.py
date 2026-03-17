@@ -277,6 +277,83 @@ class KnowledgeService:
 
         return await self.get_document(doc.id)
 
+    async def ingest_text(
+        self,
+        *,
+        title: str,
+        content: str,
+        domain: str,
+        metadata_json: str | None = None,
+        language: str = "en",
+    ) -> int:
+        """Ingest a text string directly as a knowledge document (no file on disk).
+
+        Creates a Document, chunks the content, embeds, and stores.
+        Returns the document ID.
+        """
+        settings = get_settings()
+
+        doc = await self.repository.create_document(
+            filename=f"{title[:100]}.md",
+            domain=domain,
+            source_type="text",
+            language=language,
+            file_size_bytes=len(content.encode("utf-8")),
+            metadata_json=metadata_json,
+            title=title,
+            description=None,
+            status="processing",
+            ocr_applied=False,
+        )
+
+        try:
+            chunks = chunking.chunk_text(
+                content,
+                chunk_size=settings.knowledge.chunk_size,
+                chunk_overlap=settings.knowledge.chunk_overlap,
+            )
+
+            if not chunks:
+                await self.repository.update_document_status(doc.id, "completed", None, 0)
+                return doc.id
+
+            texts = [c.content for c in chunks]
+            embeddings = await _get_embedding().embed(texts)
+
+            chunk_objects = [
+                DocumentChunk(
+                    document_id=doc.id,
+                    content=chunks[i].content,
+                    chunk_index=chunks[i].chunk_index,
+                    embedding=embeddings[i],
+                    metadata_json=None,
+                )
+                for i in range(len(chunks))
+            ]
+
+            await self.repository.bulk_create_chunks(chunk_objects)
+            await self.repository.update_document_status(doc.id, "completed", None, len(chunks))
+
+        except Exception as e:
+            try:
+                await self.repository.update_document_status(doc.id, "failed", str(e), 0)
+            except Exception:
+                logger.error(
+                    "knowledge.ingest_text.status_update_failed",
+                    document_id=doc.id,
+                    exc_info=True,
+                )
+            raise
+
+        logger.info(
+            "knowledge.ingest_text.completed",
+            document_id=doc.id,
+            title=title,
+            domain=domain,
+            chunk_count=len(chunks),
+        )
+        return doc.id
+
     async def update_document(self, document_id: int, data: DocumentUpdate) -> DocumentResponse:
         """Update document metadata.
 

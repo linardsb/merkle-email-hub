@@ -186,3 +186,42 @@ def test_compose_profiles_stacks_all():
 def test_compose_profiles_empty_raises():
     with pytest.raises(ValueError, match="At least one profile"):
         compose_profiles()
+
+
+# ── Edge Case Tests ──
+
+
+def test_outlook_word_engine_strips_var_references():
+    html = _wrap('<div style="color: var(--brand); padding: 10px;">text</div>')
+    result = OUTLOOK_WORD_ENGINE.apply(html)
+    assert "var(" not in result
+    assert "padding: 10px" in result
+
+
+def test_gmail_clipping_exact_boundary():
+    """HTML exactly at 102,400 bytes should be unchanged."""
+    # Build HTML of exact size
+    target = 102_400
+    base = _wrap("")
+    base_size = len(base.encode("utf-8"))
+    pad_len = target - base_size - len("<p></p>")
+    html = _wrap(f"<p>{'x' * pad_len}</p>")
+    assert len(html.encode("utf-8")) == target
+    result = GMAIL_CLIPPING.apply(html)
+    assert result == html
+
+
+def test_image_blocked_no_images_unchanged():
+    html = _wrap("<p>No images here</p>")
+    result = IMAGE_BLOCKED.apply(html)
+    # BeautifulSoup may normalize whitespace, so compare content
+    assert "<p>No images here</p>" in result
+    assert "data:image/gif" not in result
+
+
+def test_class_strip_preserves_other_attributes():
+    html = _wrap('<div id="main" style="color: red;" class="wrapper">text</div>')
+    result = CLASS_STRIP.apply(html)
+    assert "class=" not in result
+    assert 'id="main"' in result
+    assert "color: red" in result

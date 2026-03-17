@@ -290,5 +290,47 @@
     "suggestedFix": "Voorgestelde correctie",
     "noScreenshots": "Nog geen screenshots vastgelegd",
     "captureFirst": "Leg screenshots vast om de Visual QA-beoordeling te starten"
+  },
+  "chaosTest": {
+    "title": "Chaos-test",
+    "runButton": "Chaos-test uitvoeren",
+    "running": "Veerkracht wordt getest…",
+    "resilienceScore": "Veerkrachtscore",
+    "originalScore": "Oorspronkelijke score",
+    "profilesPassed": "{passed} van {total} profielen geslaagd",
+    "criticalFailures": "Kritieke fouten",
+    "profileScore": "Score: {score}%",
+    "checksPassed": "{passed}/{total} controles",
+    "noResults": "Voer een chaos-test uit om de e-mailveerkracht bij client-degradaties te meten",
+    "failureSeverityError": "Fout",
+    "failureSeverityWarning": "Waarschuwing",
+    "failureSeverityInfo": "Info",
+    "fixButton": "Herstellen",
+    "fixRunning": "Wordt hersteld…",
+    "profileNames": {
+      "gmail_style_strip": "Gmail stijlverwijdering",
+      "image_blocked": "Afbeeldingen geblokkeerd",
+      "dark_mode_inversion": "Donkere modus",
+      "outlook_word_engine": "Outlook Word",
+      "gmail_clipping": "Gmail-afkapping",
+      "mobile_narrow": "Mobiel smal",
+      "class_strip": "Klassenverwijdering",
+      "media_query_strip": "Media query-verwijdering"
+    }
+  },
+  "propertyTest": {
+    "title": "Property-test",
+    "runButton": "Property-test uitvoeren",
+    "running": "{count} gevallen worden getest…",
+    "casesLabel": "Gevallen",
+    "passRate": "{passed} van {total} geslaagd ({percent}%)",
+    "seedLabel": "Seed: {seed}",
+    "invariantsTested": "Geteste invarianten",
+    "failures": "Fouten",
+    "violationCount": "{count} schendingen",
+    "showConfig": "Configuratie tonen",
+    "hideConfig": "Configuratie verbergen",
+    "noResults": "Voer property-tests uit om te controleren of e-mail-invarianten gelden bij willekeurige configuraties",
+    "allPassed": "Alle invarianten geslaagd"
   }
 }

@@ -973,6 +973,8 @@ dependencies = [
     { name = "fastapi" },
     { name = "gunicorn" },
     { name = "httpx" },
+    { name = "hypothesis" },
+    { name = "lightningcss" },
     { name = "lxml" },
     { name = "nh3" },
     { name = "openai" },
@@ -1024,6 +1026,8 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.120.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "hypothesis", specifier = ">=6.100" },
+    { name = "lightningcss", specifier = ">=0.3.0" },
     { name = "lxml", specifier = ">=5.0" },
     { name = "nh3", specifier = ">=0.3.3" },
     { name = "openai", specifier = ">=1.0.0" },
@@ -1574,6 +1578,18 @@ wheels = [
 ]
 
 [[package]]
+name = "hypothesis"
+version = "6.151.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sortedcontainers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/19/e1/ef365ff480903b929d28e057f57b76cae51a30375943e33374ec9a165d9c/hypothesis-6.151.9.tar.gz", hash = "sha256:2f284428dda6c3c48c580de0e18470ff9c7f5ef628a647ee8002f38c3f9097ca", size = 463534, upload-time = "2026-02-16T22:59:23.09Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/f7/5cc291d701094754a1d327b44d80a44971e13962881d9a400235726171da/hypothesis-6.151.9-py3-none-any.whl", hash = "sha256:7b7220585c67759b1b1ef839b1e6e9e3d82ed468cfc1ece43c67184848d7edd9", size = 529307, upload-time = "2026-02-16T22:59:20.443Z" },
+]
+
+[[package]]
 name = "idna"
 version = "3.11"
 source = { registry = "https://pypi.org/simple" }
@@ -1929,6 +1945,49 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/40/71/d89bb0e71b1415453980fd32315f2a037aad9f7f70f695c7cec7035feb13/license_expression-30.4.4.tar.gz", hash = "sha256:73448f0aacd8d0808895bdc4b2c8e01a8d67646e4188f887375398c761f340fd", size = 186402, upload-time = "2025-07-22T11:13:32.17Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/af/40/791891d4c0c4dab4c5e187c17261cedc26285fd41541577f900470a45a4d/license_expression-30.4.4-py3-none-any.whl", hash = "sha256:421788fdcadb41f049d2dc934ce666626265aeccefddd25e162a26f23bcbf8a4", size = 120615, upload-time = "2025-07-22T11:13:31.217Z" },
+]
+
+[[package]]
+name = "lightningcss"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/2e/26813ae1757d807850f77f5a6b8e06401005a5c2a6973f98273d662e2706/lightningcss-0.3.1.tar.gz", hash = "sha256:4e66214deeb61139c51e2ffcdaf869010f58d825a1367357d0ff116e6ee2edd1", size = 18834, upload-time = "2025-12-16T00:51:10.044Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/3c/55e1fa76ad06261e11f55c475c623ad499bdf420331af0254c3b22f4e6dd/lightningcss-0.3.1-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:44eeee30fdb6a35c1ceb9719779a3cfced31b11c5d5f4f9a9d1af0cf0c3c5f42", size = 3528413, upload-time = "2025-12-16T00:49:52.487Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/71/16be278fb3e9e993cf4eb5c9062b574869556f38406a01c78c09de905101/lightningcss-0.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6a540fa6e9e03fc8e1892b3ad9e1e9abb40589537a9d62f510b7959cb2934992", size = 3388022, upload-time = "2025-12-16T00:49:53.669Z" },
+    { url = "https://files.pythonhosted.org/packages/65/e0/87b01a74d9544fadf68ccaabfb3dcbd7280f93a5eabde06ec8f780279f64/lightningcss-0.3.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:619ba3f90d8d43bcf96960c91584202415b2c62c5fa0f9b3176ed49453e90f60", size = 3571858, upload-time = "2025-12-16T00:49:55.231Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/09/05c383b0b4b120997cd562a36afc8d2b3ac97924e1d8a455b44d40c2a81b/lightningcss-0.3.1-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:86f9d95babe5ffb880eb01c0760135c315b57915ed3393a34a8dd891693948d4", size = 3510785, upload-time = "2025-12-16T00:49:56.6Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/c0/862616fc61471754d014bce9a2b7c10795cdafeb2d0d49546ec49727e4a5/lightningcss-0.3.1-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e854a9154d2d49f63bf0bf6472e9ad1d0c1c5e1da456dd4a49074b89de728c76", size = 3864981, upload-time = "2025-12-16T00:49:57.725Z" },
+    { url = "https://files.pythonhosted.org/packages/26/42/d7d78a25ee49c7dc88a0fd85c5f1c3e1e41c8c3908175721997bfabebc5f/lightningcss-0.3.1-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:e47eddf51cfbce723812db737f4381faf32789add4d5f8ecc4d32ad98cdbc53a", size = 3950901, upload-time = "2025-12-16T00:49:59.336Z" },
+    { url = "https://files.pythonhosted.org/packages/71/f8/930e657fa311db1339453c3ad68913df7bdc34e3df443996085d0fc0048c/lightningcss-0.3.1-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e99a7749b98cbbd0c6040671b144f4c35728577c0822bcd32948922844f628de", size = 3705197, upload-time = "2025-12-16T00:50:00.858Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/dd/cd1140f637f09923997bfdbff659581b149966f15f568570a00afa526e8d/lightningcss-0.3.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:87808dd5fd3eeb6a427c8068d0a99e116f0a94532556a0101348556c869fac94", size = 3669600, upload-time = "2025-12-16T00:50:02.121Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/0a/013b69c9962f13996b0b5371071914947bc329ab137514dc7d455c05f5aa/lightningcss-0.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:6cbbff619560c82095c1329596f82a3d3141fc03bc9c0c75877e3476b46e3437", size = 3340257, upload-time = "2025-12-16T00:50:03.7Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/9c/3fd6f7337ab796c88ee0b3a94b5c548353177e89faeb42cb207eb4fa6ecb/lightningcss-0.3.1-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:9980a74d93afea29665c9790acd9e469df488cedaa788f270576186c64361e6b", size = 3527961, upload-time = "2025-12-16T00:50:05.229Z" },
+    { url = "https://files.pythonhosted.org/packages/da/75/da1e0715adcd0696a5007bdf64345a6996ff3dd42d7243079e88829dd793/lightningcss-0.3.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:56c8e150774f98d37b85306a1115626dd25ca62cab39125ac28183a7abb09756", size = 3387950, upload-time = "2025-12-16T00:50:06.904Z" },
+    { url = "https://files.pythonhosted.org/packages/99/8e/268fd7aa23402b7d7bddedd94f8331b86827df216c3728c09a7965ae1dac/lightningcss-0.3.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cda79bec78899a1f7eb93506c99fec725280bf8ce7574828c20df23425d68470", size = 3571594, upload-time = "2025-12-16T00:50:08.12Z" },
+    { url = "https://files.pythonhosted.org/packages/26/5a/5bc13931c07d9f93679a11961e07b1ae088d09d632551d237579897fb780/lightningcss-0.3.1-cp313-cp313-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0858304767daa0de8d718754552a34b1b317d675cf3c915326a78984eee695fe", size = 3509979, upload-time = "2025-12-16T00:50:09.273Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/86/b37ca682f2ac6595ed4a6b35f4a44ed962c5bad0ff6aad123324cb5cd243/lightningcss-0.3.1-cp313-cp313-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:dd1c7d452d40fa45cbd1f32c5c862ae675a017051d28b4ff003ca86a52280fc1", size = 3864779, upload-time = "2025-12-16T00:50:10.537Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/fc/b7f74ac0bc48ef10bddb603614f0fcd25f6d11db1f3941c5386a73e015b9/lightningcss-0.3.1-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:83bc8238a277f3b3fca35be8245ccbff69f740f74809528d24d92e5a1903318f", size = 3949733, upload-time = "2025-12-16T00:50:12.089Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/9e/acd0f2d05c1f56683824eb2e78cf51650b34f6fc011369ca7f6370529746/lightningcss-0.3.1-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:39d1fc74809a067c0c79eb0e02b254d773ca753ed7f11b22df7bb16c44f70783", size = 3704922, upload-time = "2025-12-16T00:50:13.324Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/a0/68eeb6902da9edbc3c295e5de32a35cb6e9903609fcf553488ba9a20fc1d/lightningcss-0.3.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3a6b368c92204eb2f1722ed6784e446aabe5fd9c129f5316072e10f5fbba8353", size = 3669323, upload-time = "2025-12-16T00:50:14.695Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/0d/0f130c9df8012532bad183bcd9ad33bb5bd7443f16f19a95811e48e08918/lightningcss-0.3.1-cp313-cp313-win_amd64.whl", hash = "sha256:7f46208cb58091b21efa41c00e952eb5a94a917fd3dd8d692b5950c8476640b5", size = 3340158, upload-time = "2025-12-16T00:50:16.247Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/0d/222989ad79e3e052277f6042ee26a597c2155950a309cd81c88c96f2b19f/lightningcss-0.3.1-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:acdef0f1709482cf066e971632693590a994cc4248913f099823972e132c3eb4", size = 3570000, upload-time = "2025-12-16T00:50:17.477Z" },
+    { url = "https://files.pythonhosted.org/packages/30/b8/f21a48fb7ef84b6717208b29ffcc181237b65b1e41d2e7a7308c7e8068cc/lightningcss-0.3.1-cp313-cp313t-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:30f0826ad40c2181936d4cdbf4acd149392331e84351cdc89ebc8206b59b7066", size = 3511479, upload-time = "2025-12-16T00:50:18.965Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/dd/3a5f282a61efd42291391e809c0314a7838f7ba123a76a3c41aaff6cd6dc/lightningcss-0.3.1-cp313-cp313t-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:836e28c16e9c40c988a3aa55d10764c712c88c572bd07b1c8c5878ff18639d74", size = 3952182, upload-time = "2025-12-16T00:50:20.131Z" },
+    { url = "https://files.pythonhosted.org/packages/62/07/1c9507e5f90000dada7c976596c66e95108cd1e03389f14f568f8b629c63/lightningcss-0.3.1-cp313-cp313t-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:0099f50816c752ccefc31e332bdcdd8403ad870fb90918fce33829bed8a9ed87", size = 3704124, upload-time = "2025-12-16T00:50:21.651Z" },
+    { url = "https://files.pythonhosted.org/packages/95/fc/2a9d84833aaf3dd1c0cdac22e7a71c528c660d63db2169c4f8765edb47d4/lightningcss-0.3.1-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:abb987a8d3533739ba8326f9b5136c04f5630a0b8721f4f12164842e9cc6d435", size = 3526690, upload-time = "2025-12-16T00:50:23.084Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/42/13a5cf392a2de9c51e005637838e14afba2b234b15494599083498bec018/lightningcss-0.3.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:a17aee80e2f844499b36240c52c602c27f446149c86398d4dcc1180423acca7c", size = 3388188, upload-time = "2025-12-16T00:50:24.289Z" },
+    { url = "https://files.pythonhosted.org/packages/02/bd/cd2db0235e532190413975a7771a8a4c0d00e6ec95fe6b41dde9f6f925a3/lightningcss-0.3.1-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c463f4489079dde436910885e17cf0019c08c6e4bca96747d8c2e54e62feddf6", size = 3571473, upload-time = "2025-12-16T00:50:25.614Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/06/18180c86767f49de1318d34cf7a098cc9c57f039e8dc1aa58d9376ba0368/lightningcss-0.3.1-cp314-cp314-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:e8fd791b15d633729e7e87b90a16a1e64fba74bb9942dd11d1ad6fd85ac6922b", size = 3510245, upload-time = "2025-12-16T00:50:26.891Z" },
+    { url = "https://files.pythonhosted.org/packages/65/53/17442cd33466c49921564d728c952b838b7c7511dbaf3b87be67c8d094ed/lightningcss-0.3.1-cp314-cp314-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a077bbee466f0533ad0b7caa89324658f012039725e6dde1c8b431998e95904f", size = 3864196, upload-time = "2025-12-16T00:50:28.116Z" },
+    { url = "https://files.pythonhosted.org/packages/09/1b/eb01c6e865f66852c0881b16279f54299edc13672681bc4ebe2bc1c2d0b9/lightningcss-0.3.1-cp314-cp314-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:da06bc2494f3f01f9a5c34b0c48eb79da08efca8947207860a13d69c13198ee2", size = 3949073, upload-time = "2025-12-16T00:50:29.377Z" },
+    { url = "https://files.pythonhosted.org/packages/40/c3/8984e0efa48319d918b5fb26c4cb7d61528f1c484d06349303f1e415449a/lightningcss-0.3.1-cp314-cp314-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:23375a899cdcfbf46061edf2c473527e3280eff7b558024f8e33c7abd8df36e2", size = 3704222, upload-time = "2025-12-16T00:50:30.939Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/ac/5519e6f00064d7ce12f43124d1882451d812cb05661d6554e03fb69a744a/lightningcss-0.3.1-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:87daf19d041638f24a64f676711f91e935dc7a298d71ab12840bd87dfb2f89f9", size = 3668740, upload-time = "2025-12-16T00:50:32.79Z" },
+    { url = "https://files.pythonhosted.org/packages/df/7e/a5fa7ebe1a8cd395d97cb6a0b0265da07e04d51fb188336dbed5f3ccfbc1/lightningcss-0.3.1-cp314-cp314-win_amd64.whl", hash = "sha256:c4bcb7593f808705e60512f54cdc3f2e555e25574a37f8ffede4308bec846181", size = 3337417, upload-time = "2025-12-16T00:50:34.033Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/a8/9705284c41687bd1c300b87d079de9672123eff4f0a0e09091dc58128afc/lightningcss-0.3.1-cp314-cp314t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b028fc78b71976cdb0fefaa65b6a62d8a8cbf4245b496fc5e64acdb86df1f36e", size = 3570337, upload-time = "2025-12-16T00:50:35.553Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/3b/a5b574af26cc7c93c8b0813823819b5eeaaa1a5ced2725c1e2af62dd9d9d/lightningcss-0.3.1-cp314-cp314t-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:2db9b2284b411f94742b12ff261466b8fa91d1589183cebd4843cbc1d81915f6", size = 3512229, upload-time = "2025-12-16T00:50:37.079Z" },
+    { url = "https://files.pythonhosted.org/packages/36/89/2b8051f8e951657c4c3d760d79efd079fc8c0a61ed09ae17067242f4fb37/lightningcss-0.3.1-cp314-cp314t-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:40a47aae9ea2cea47cf8ff22c683530ed5a5ed895193d4152192c7f3a9b60bf0", size = 3950867, upload-time = "2025-12-16T00:50:38.626Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/ea/a0cf40cf0c416176441e559dbf6edae7fc9e026c43501f23c0ab5b806360/lightningcss-0.3.1-cp314-cp314t-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:a7fc1edc38b85b2add92342e957b6a6a0a3e30b7cb62d1c8c5996336eb49e7a9", size = 3704801, upload-time = "2025-12-16T00:50:39.914Z" },
 ]
 
 [[package]]

@@ -139,6 +139,17 @@ class QAChaosConfig(BaseModel):
         "dark_mode_inversion",
         "gmail_clipping",
     ]  # QA_CHAOS__DEFAULT_PROFILES
+    resilience_check_enabled: bool = False  # QA_CHAOS__RESILIENCE_CHECK_ENABLED
+    resilience_threshold: float = 0.7  # QA_CHAOS__RESILIENCE_THRESHOLD
+    auto_document: bool = False  # QA_CHAOS__AUTO_DOCUMENT
+
+
+class QAPropertyTestingConfig(BaseModel):
+    """Property-based testing configuration."""
+
+    enabled: bool = False  # QA_PROPERTY_TESTING__ENABLED
+    default_cases: int = 100  # QA_PROPERTY_TESTING__DEFAULT_CASES
+    seed: int | None = None  # QA_PROPERTY_TESTING__SEED (fixed seed for CI)
 
 
 class RenderingConfig(BaseModel):
@@ -302,6 +313,7 @@ class Settings(BaseSettings):
     esp_sync: ESPSyncConfig = ESPSyncConfig()
     eval: EvalConfig = EvalConfig()
     qa_chaos: QAChaosConfig = QAChaosConfig()
+    qa_property_testing: QAPropertyTestingConfig = QAPropertyTestingConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

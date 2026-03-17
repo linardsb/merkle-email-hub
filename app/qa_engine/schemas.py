@@ -78,6 +78,10 @@ class ChaosTestRequest(BaseModel):
         None,
         description="Profile names to test. None = use defaults from config.",
     )
+    project_id: int | None = Field(
+        None,
+        description="Project ID for auto-documenting failures to knowledge base.",
+    )
 
 
 class ChaosFailure(BaseModel):
@@ -109,3 +113,38 @@ class ChaosTestResponse(BaseModel):
     profiles_tested: int
     profile_results: list[ChaosProfileResult] = []
     critical_failures: list[ChaosFailure] = []
+
+
+# --- Property-based testing schemas (Phase 18.2) ---
+
+
+class PropertyFailureSchema(BaseModel):
+    """A property test failure with the config that caused it."""
+
+    invariant_name: str
+    violations: list[str]
+    config: dict[str, object]
+
+
+class PropertyTestRequest(BaseModel):
+    """Request to run property-based tests."""
+
+    invariants: list[str] | None = Field(None, description="Invariant names to test. None = all.")
+    num_cases: int | None = Field(
+        None,
+        ge=1,
+        le=1000,
+        description="Number of random emails to generate. Defaults to config value.",
+    )
+    seed: int | None = Field(None, description="Fixed seed for reproducibility")
+
+
+class PropertyTestResponse(BaseModel):
+    """Complete property test results."""
+
+    total_cases: int
+    passed: int
+    failed: int
+    failures: list[PropertyFailureSchema] = []
+    seed: int
+    invariants_tested: list[str] = []

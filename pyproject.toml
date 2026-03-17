@@ -33,6 +33,8 @@ dependencies = [
     "cssutils>=2.9.0",
     "nh3>=0.3.3",
     "lxml>=5.0",
+    "hypothesis>=6.100",
+    "lightningcss>=0.3.0",
 ]
 
 [project.optional-dependencies]
@@ -184,6 +186,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "cssutils.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "hypothesis.*"
 ignore_missing_imports = true
 
 

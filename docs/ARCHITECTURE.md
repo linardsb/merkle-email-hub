@@ -68,3 +68,21 @@
 - **Resume API**: `POST /api/v1/blueprints/resume` with `BlueprintResumeRequest` (run_id, blueprint_name, brief). Auth + rate-limited (3/min).
 
 **Consequence:** Failed runs resume from the last successful node, saving LLM tokens and wall-clock time. The Scaffolder specifically avoids re-running expensive passes. The opt-in design (`checkpoints_enabled` config flag) means zero overhead for deployments that don't need it.
+
+## ADR-007: Rendering Resilience Testing
+
+**Decision:** Three-layer resilience testing — chaos profiles, property-based invariants, and an optional QA check — validates email HTML against real-world client degradation without requiring live rendering infrastructure.
+
+**Context:** Email clients apply destructive transformations to HTML (Gmail strips `<style>` blocks, Outlook removes flexbox, images get blocked). Traditional QA checks validate HTML structure but cannot predict how degraded HTML performs across clients. Property-based testing can find edge cases that hand-written tests miss, but needs domain-specific generators and invariants.
+
+**Solution:** Three complementary testing layers in `app/qa_engine/`:
+
+1. **Chaos Engine** (`chaos/`): 8 pre-built `ChaosProfile` degradation profiles simulate real client behavior (Gmail style strip, Outlook Word engine, image blocking, dark mode inversion, Gmail clipping, mobile narrow viewport, class stripping, media query removal). Each profile is a pure function pipeline — `apply(html) → degraded_html`. Profiles are composable via `compose_profiles()` for compound scenarios. The engine runs all 11 QA checks on both original and degraded HTML, computing a resilience score as `avg(degraded_scores) / original_score`. Critical failures (severity=error) are collected per profile.
+
+2. **Property-Based Testing** (`property_testing/`): 10 `EmailInvariant` checkers (size limit, image width, link integrity, alt text, table nesting, encoding, MSO balance, dark mode readiness, contrast ratio, viewport fit) validate universal email properties. `EmailConfig` frozen dataclass + `build_email()` generator produce synthetic HTML with configurable features. Deterministic seeded RNG enables CI reproducibility; Hypothesis strategies enable interactive exploration. `PropertyTestRunner` orchestrates N test cases with failure collection.
+
+3. **Resilience Check** (`checks/rendering_resilience.py`): Optional QA check #12 that wraps the chaos engine. NOT in `ALL_CHECKS` to prevent recursion — runs separately after the 11 core checks. Pass/fail based on configurable threshold (default 0.7). Severity escalation: <0.4 → error, 0.4–threshold → warning, ≥threshold → info.
+
+**Knowledge feedback loop** (`chaos/knowledge_writer.py`): Critical chaos failures auto-generate knowledge base documents (when enabled + project context provided). Title-based deduplication prevents duplicates. Per-profile fix hints guide remediation. Non-blocking — write failures never break test responses. BOLA-protected via `verify_project_access()`.
+
+**Consequence:** Teams get actionable resilience scores without deploying to real email clients. The property testing layer catches edge cases (oversized images, unbalanced MSO conditionals, low-contrast text) that targeted checks miss. All three layers are pure-CPU with no LLM or database dependency (except knowledge writer), enabling fast CI integration. Each layer is independently feature-flagged (`qa_chaos.enabled`, `qa_property_testing.enabled`, `qa_chaos.resilience_check_enabled`).

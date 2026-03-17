@@ -290,5 +290,47 @@
     "suggestedFix": "Correzione suggerita",
     "noScreenshots": "Nessuno screenshot catturato",
     "captureFirst": "Cattura screenshot per iniziare la revisione Visual QA"
+  },
+  "chaosTest": {
+    "title": "Test del caos",
+    "runButton": "Esegui test del caos",
+    "running": "Test di resilienza in corso…",
+    "resilienceScore": "Punteggio di resilienza",
+    "originalScore": "Punteggio originale",
+    "profilesPassed": "{passed} di {total} profili superati",
+    "criticalFailures": "Errori critici",
+    "profileScore": "Punteggio: {score}%",
+    "checksPassed": "{passed}/{total} verifiche",
+    "noResults": "Esegui un test del caos per misurare la resilienza delle e-mail alle degradazioni dei client",
+    "failureSeverityError": "Errore",
+    "failureSeverityWarning": "Avviso",
+    "failureSeverityInfo": "Info",
+    "fixButton": "Correggi",
+    "fixRunning": "Correzione in corso…",
+    "profileNames": {
+      "gmail_style_strip": "Rimozione stili Gmail",
+      "image_blocked": "Immagini bloccate",
+      "dark_mode_inversion": "Modalità scura",
+      "outlook_word_engine": "Outlook Word",
+      "gmail_clipping": "Troncamento Gmail",
+      "mobile_narrow": "Mobile stretto",
+      "class_strip": "Rimozione classi",
+      "media_query_strip": "Rimozione media query"
+    }
+  },
+  "propertyTest": {
+    "title": "Test delle proprietà",
+    "runButton": "Esegui test delle proprietà",
+    "running": "Test di {count} casi in corso…",
+    "casesLabel": "Casi",
+    "passRate": "{passed} di {total} superati ({percent}%)",
+    "seedLabel": "Seed: {seed}",
+    "invariantsTested": "Invarianti testati",
+    "failures": "Errori",
+    "violationCount": "{count} violazioni",
+    "showConfig": "Mostra configurazione",
+    "hideConfig": "Nascondi configurazione",
+    "noResults": "Esegui test delle proprietà per verificare che gli invarianti e-mail siano rispettati su configurazioni casuali",
+    "allPassed": "Tutti gli invarianti superati"
   }
 }

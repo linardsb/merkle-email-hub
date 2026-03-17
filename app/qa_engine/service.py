@@ -19,6 +19,9 @@ from app.qa_engine.repository import QARepository
 from app.qa_engine.schemas import (
     ChaosTestRequest,
     ChaosTestResponse,
+    PropertyFailureSchema,
+    PropertyTestRequest,
+    PropertyTestResponse,
     QACheckResult,
     QAOverrideRequest,
     QAOverrideResponse,
@@ -31,7 +34,7 @@ logger = get_logger(__name__)
 
 
 class QAEngineService:
-    """Orchestrates the 10-point QA gate."""
+    """Orchestrates the QA gate (11 core checks + optional resilience check)."""
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
@@ -71,6 +74,19 @@ class QAEngineService:
                 continue
             result = await check.run(data.html, check_config)
             check_results.append(result)
+
+        # Optionally run resilience check (separate from ALL_CHECKS to avoid recursion)
+        settings = get_settings()
+        if settings.qa_chaos.enabled and settings.qa_chaos.resilience_check_enabled:
+            from app.qa_engine.checks.rendering_resilience import RenderingResilienceCheck
+
+            resilience_check = RenderingResilienceCheck(
+                threshold=settings.qa_chaos.resilience_threshold,
+            )
+            res_config = profile.get_check_config(resilience_check.name)
+            if not res_config or res_config.enabled:
+                resilience_result = await resilience_check.run(data.html, res_config)
+                check_results.append(resilience_result)
 
         passed_count = sum(1 for c in check_results if c.passed)
         overall_score = (
@@ -113,7 +129,9 @@ class QAEngineService:
             created_at=qa_result.created_at,  # pyright: ignore[reportArgumentType]
         )
 
-    async def run_chaos_test(self, data: ChaosTestRequest) -> ChaosTestResponse:
+    async def run_chaos_test(
+        self, data: ChaosTestRequest, user: User | None = None
+    ) -> ChaosTestResponse:
         """Run chaos testing on HTML with controlled degradations."""
         settings = get_settings()
         if not settings.qa_chaos.enabled:
@@ -128,12 +146,89 @@ class QAEngineService:
             default_profiles=settings.qa_chaos.default_profiles,
         )
 
+        # Auto-document failures to knowledge base (requires project_id + user for BOLA)
+        if (
+            settings.qa_chaos.auto_document
+            and result.critical_failures
+            and data.project_id is not None
+            and user is not None
+        ):
+            try:
+                from app.qa_engine.chaos.knowledge_writer import ChaosKnowledgeWriter
+
+                project_service = ProjectService(self.db)
+                await project_service.verify_project_access(data.project_id, user)
+
+                writer = ChaosKnowledgeWriter(self.db)
+                doc_ids = await writer.write_failure_documents(
+                    failures=result.critical_failures,
+                    project_id=data.project_id,
+                )
+                if doc_ids:
+                    logger.info(
+                        "chaos.auto_document.created",
+                        document_count=len(doc_ids),
+                        document_ids=doc_ids,
+                    )
+            except Exception:
+                logger.warning("chaos.auto_document.failed", exc_info=True)
+
         logger.info(
             "qa_engine.chaos_test_completed",
             resilience_score=result.resilience_score,
             profiles_tested=result.profiles_tested,
         )
         return result
+
+    async def run_property_test(self, data: PropertyTestRequest) -> PropertyTestResponse:
+        """Run property-based testing on randomly generated emails."""
+        settings = get_settings()
+        if not settings.qa_property_testing.enabled:
+            raise ForbiddenError("Property testing is not enabled")
+
+        from dataclasses import asdict
+
+        from app.qa_engine.property_testing.invariants import ALL_INVARIANTS
+        from app.qa_engine.property_testing.runner import PropertyTestRunner
+
+        runner = PropertyTestRunner()
+        seed = data.seed if data.seed is not None else settings.qa_property_testing.seed
+        num_cases = (
+            data.num_cases
+            if data.num_cases is not None
+            else settings.qa_property_testing.default_cases
+        )
+        result = await runner.run(
+            invariant_names=data.invariants,
+            num_cases=num_cases,
+            seed=seed,
+        )
+
+        logger.info(
+            "qa_engine.property_test_completed",
+            total_cases=result.total_cases,
+            passed=result.passed,
+            failed=result.failed,
+            seed=result.seed,
+        )
+
+        failures = [
+            PropertyFailureSchema(
+                invariant_name=f.invariant_name,
+                violations=list(f.violations),
+                config=asdict(f.config),
+            )
+            for f in result.failures
+        ]
+
+        return PropertyTestResponse(
+            total_cases=result.total_cases,
+            passed=result.passed,
+            failed=result.failed,
+            failures=failures,
+            seed=result.seed,
+            invariants_tested=data.invariants or list(ALL_INVARIANTS.keys()),
+        )
 
     async def get_result(self, result_id: int) -> QAResultResponse:
         """Get a single QA result by ID, including checks and override."""

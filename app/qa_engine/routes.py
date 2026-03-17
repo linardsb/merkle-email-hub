@@ -12,6 +12,8 @@ from app.core.rate_limit import limiter
 from app.qa_engine.schemas import (
     ChaosTestRequest,
     ChaosTestResponse,
+    PropertyTestRequest,
+    PropertyTestResponse,
     QAOverrideRequest,
     QAOverrideResponse,
     QAResultResponse,
@@ -28,6 +30,24 @@ def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:  # noqa:
 
 
 @router.post(
+    "/property-test",
+    response_model=PropertyTestResponse,
+    status_code=200,
+    summary="Run property-based email testing",
+)
+@limiter.limit("1/minute")
+async def run_property_test(
+    request: Request,
+    data: PropertyTestRequest,
+    service: QAEngineService = Depends(get_service),  # noqa: B008
+    _user: User = Depends(get_current_user),  # noqa: B008
+) -> PropertyTestResponse:
+    """Generate random email configurations and verify invariants hold."""
+    _ = request
+    return await service.run_property_test(data)
+
+
+@router.post(
     "/chaos-test",
     response_model=ChaosTestResponse,
     status_code=200,
@@ -38,11 +58,11 @@ async def run_chaos_test(
     request: Request,
     data: ChaosTestRequest,
     service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> ChaosTestResponse:
     """Apply controlled email client degradations and measure QA resilience."""
     _ = request
-    return await service.run_chaos_test(data)
+    return await service.run_chaos_test(data, user=current_user)
 
 
 @router.post("/run", response_model=QAResultResponse, status_code=status.HTTP_201_CREATED)
