@@ -50,6 +50,20 @@ Optional: Run after feature implementation for pre-commit browser validation.
 ### Cross-cutting
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/commit` | Create conventional commit with safety checks | After validate passes |
+| `/commit` | Create conventional commit with safety checks + AI context tracking | After validate passes |
 | `/review` | Code review against 8 quality standards | Before committing, after feature work |
 | `/update-docs` | Sync TODO.md, CLAUDE.md, and PRD.md | After completing tasks |
+| `/handoff` | Write HANDOFF.md for session continuation | When session is long or switching contexts |
+
+## Session Continuity
+```
+... (any workflow) → /handoff
+```
+When a session runs long or you need to continue later, `/handoff` captures completed work, decisions, dead ends, and next steps into `HANDOFF.md`. Start the next session with: **"Read HANDOFF.md and continue"**
+
+## Reference Docs (`.claude/docs/`)
+Heavy reference documents with scout headers. Sub-agents check the header (`purpose`, `when-to-use`, `size`) before loading the full doc. Available:
+- `architecture-deep-dive.md` — VSA layout, agent pipeline, blueprint engine, eval system
+- `eval-system-guide.md` — judges, calibration, regression, production sampling, golden tests
+- `qa-engine-guide.md` — 11 checks, chaos testing, property testing, outlook analyzer, CSS compiler
+- `design-system-guide.md` — brand identity, token mapping, template assembly, brand repair

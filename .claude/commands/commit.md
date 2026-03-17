@@ -62,6 +62,8 @@ type(scope): short description
 
 [optional body with more detail]
 
+[optional Context: section — see below]
+
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
@@ -73,6 +75,24 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 - Subject line under 72 characters
 - Imperative mood ("add feature" not "added feature")
 - Body explains WHY, not WHAT (the diff shows what)
+
+### 4b. AI context tracking (if applicable)
+
+If this commit includes changes to ANY of these AI context files, add a `Context:` section after the body:
+- `.claude/commands/*.md` (slash commands)
+- `.claude/rules/*.md` (path-triggered rules)
+- `.claude/docs/*.md` (reference docs)
+- `CLAUDE.md` (project instructions)
+
+Format:
+```
+Context:
+- commands: added /handoff for session continuity
+- rules: updated testing.md with integration test patterns
+- docs: created eval-system-guide.md reference doc
+```
+
+Only include this section when AI context files are part of the commit. Skip it for pure code changes.
 
 ### 5. Commit
 
