@@ -26,7 +26,7 @@ import {
   PanelRight,
 } from "lucide-react";
 import {
-  CommandDialog,
+  Command,
   CommandInput,
   CommandList,
   CommandEmpty,
@@ -34,6 +34,10 @@ import {
   CommandItem,
   CommandShortcut,
 } from "@email-hub/ui/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+} from "@email-hub/ui/components/ui/dialog";
 import type { AgentMode } from "@/types/chat";
 
 interface CommandPaletteProps {
@@ -109,108 +113,118 @@ export function CommandPalette({
         <span className="font-medium">{t("commandPalette.hint")}</span>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder={t("commandPalette.placeholder")} />
-        <CommandList>
-          <CommandEmpty>{t("commandPalette.empty")}</CommandEmpty>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-[40rem] overflow-hidden p-0">
+          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
+            <CommandInput placeholder={t("commandPalette.placeholder")} />
+            <CommandList className="max-h-[min(60vh,28rem)]">
+              <CommandEmpty>{t("commandPalette.empty")}</CommandEmpty>
 
-          <CommandGroup heading={t("commandPalette.groupActions")}>
-            {onSave && (
-              <CommandItem onSelect={() => run(onSave)}>
-                <Save className="h-4 w-4" />
-                {t("saveTemplate")}
-                <CommandShortcut>⌘S</CommandShortcut>
-              </CommandItem>
-            )}
-            {onRunBlueprint && (
-              <CommandItem onSelect={() => run(onRunBlueprint)}>
-                <Zap className="h-4 w-4" />
-                {t("generateBlueprint")}
-                <CommandShortcut>⌘⇧G</CommandShortcut>
-              </CommandItem>
-            )}
-            {onRunQA && (
-              <CommandItem onSelect={() => run(onRunQA)}>
-                <ShieldCheck className="h-4 w-4" />
-                {t("runQA")}
-                <CommandShortcut>⌘⇧Q</CommandShortcut>
-              </CommandItem>
-            )}
-            {onExport && (
-              <CommandItem onSelect={() => run(onExport)}>
-                <Download className="h-4 w-4" />
-                {t("export")}
-                <CommandShortcut>⌘⇧E</CommandShortcut>
-              </CommandItem>
-            )}
-            {onPushToESP && (
-              <CommandItem onSelect={() => run(onPushToESP)}>
-                <CloudUpload className="h-4 w-4" />
-                {t("pushToESP")}
-              </CommandItem>
-            )}
-            {onSubmitForApproval && (
-              <CommandItem onSelect={() => run(onSubmitForApproval)}>
-                <ClipboardCheck className="h-4 w-4" />
-                {t("submitForApproval")}
-              </CommandItem>
-            )}
-            {onGenerateImage && (
-              <CommandItem onSelect={() => run(onGenerateImage)}>
-                <ImagePlus className="h-4 w-4" />
-                {t("generateImage")}
-              </CommandItem>
-            )}
-          </CommandGroup>
+              <CommandGroup heading={t("commandPalette.groupActions")}>
+                <div className="grid grid-cols-2 gap-1">
+                  {onSave && (
+                    <CommandItem onSelect={() => run(onSave)}>
+                      <Save className="h-4 w-4" />
+                      {t("saveTemplate")}
+                      <CommandShortcut>⌘S</CommandShortcut>
+                    </CommandItem>
+                  )}
+                  {onRunBlueprint && (
+                    <CommandItem onSelect={() => run(onRunBlueprint)}>
+                      <Zap className="h-4 w-4" />
+                      {t("generateBlueprint")}
+                      <CommandShortcut>⌘⇧G</CommandShortcut>
+                    </CommandItem>
+                  )}
+                  {onRunQA && (
+                    <CommandItem onSelect={() => run(onRunQA)}>
+                      <ShieldCheck className="h-4 w-4" />
+                      {t("runQA")}
+                      <CommandShortcut>⌘⇧Q</CommandShortcut>
+                    </CommandItem>
+                  )}
+                  {onExport && (
+                    <CommandItem onSelect={() => run(onExport)}>
+                      <Download className="h-4 w-4" />
+                      {t("export")}
+                      <CommandShortcut>⌘⇧E</CommandShortcut>
+                    </CommandItem>
+                  )}
+                  {onPushToESP && (
+                    <CommandItem onSelect={() => run(onPushToESP)}>
+                      <CloudUpload className="h-4 w-4" />
+                      {t("pushToESP")}
+                    </CommandItem>
+                  )}
+                  {onSubmitForApproval && (
+                    <CommandItem onSelect={() => run(onSubmitForApproval)}>
+                      <ClipboardCheck className="h-4 w-4" />
+                      {t("submitForApproval")}
+                    </CommandItem>
+                  )}
+                  {onGenerateImage && (
+                    <CommandItem onSelect={() => run(onGenerateImage)}>
+                      <ImagePlus className="h-4 w-4" />
+                      {t("generateImage")}
+                    </CommandItem>
+                  )}
+                </div>
+              </CommandGroup>
 
-          <CommandGroup heading={t("commandPalette.groupPanels")}>
-            {onToggleQAPanel && (
-              <CommandItem onSelect={() => run(onToggleQAPanel)}>
-                <PanelRight className="h-4 w-4" />
-                {t("commandPalette.toggleQASidebar")}
-                <CommandShortcut>⌘J</CommandShortcut>
-              </CommandItem>
-            )}
-            {onDesignRefToggle && (
-              <CommandItem onSelect={() => { setOpen(false); onDesignRefToggle(!designRefOpen); }}>
-                <Palette className="h-4 w-4" />
-                {t("designRefButton")}
-              </CommandItem>
-            )}
-            {onToggleChat && (
-              <CommandItem onSelect={() => run(onToggleChat)}>
-                <PanelBottom className="h-4 w-4" />
-                {t("commandPalette.toggleChat")}
-                <CommandShortcut>⌘B</CommandShortcut>
-              </CommandItem>
-            )}
-          </CommandGroup>
+              <CommandGroup heading={t("commandPalette.groupPanels")}>
+                <div className="grid grid-cols-2 gap-1">
+                  {onToggleQAPanel && (
+                    <CommandItem onSelect={() => run(onToggleQAPanel)}>
+                      <PanelRight className="h-4 w-4" />
+                      {t("commandPalette.toggleQASidebar")}
+                      <CommandShortcut>⌘J</CommandShortcut>
+                    </CommandItem>
+                  )}
+                  {onDesignRefToggle && (
+                    <CommandItem onSelect={() => { setOpen(false); onDesignRefToggle(!designRefOpen); }}>
+                      <Palette className="h-4 w-4" />
+                      {t("designRefButton")}
+                    </CommandItem>
+                  )}
+                  {onToggleChat && (
+                    <CommandItem onSelect={() => run(onToggleChat)}>
+                      <PanelBottom className="h-4 w-4" />
+                      {t("commandPalette.toggleChat")}
+                      <CommandShortcut>⌘B</CommandShortcut>
+                    </CommandItem>
+                  )}
+                </div>
+              </CommandGroup>
 
-          <CommandGroup heading={t("commandPalette.groupAgents")}>
-            {AGENT_ITEMS.map((a) => {
-              const Icon = a.icon;
-              return (
-                <CommandItem
-                  key={a.id}
-                  onSelect={() => { setOpen(false); onSelectAgent?.(a.id); }}
-                >
-                  <Icon className="h-4 w-4" />
-                  {t(a.labelKey)}
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
+              <CommandGroup heading={t("commandPalette.groupAgents")}>
+                <div className="grid grid-cols-2 gap-1">
+                  {AGENT_ITEMS.map((a) => {
+                    const Icon = a.icon;
+                    return (
+                      <CommandItem
+                        key={a.id}
+                        onSelect={() => { setOpen(false); onSelectAgent?.(a.id); }}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {t(a.labelKey)}
+                      </CommandItem>
+                    );
+                  })}
+                </div>
+              </CommandGroup>
 
-          <CommandGroup heading={t("commandPalette.groupNavigation")}>
-            {onNavigateBack && (
-              <CommandItem onSelect={() => run(onNavigateBack)}>
-                <ArrowLeft className="h-4 w-4" />
-                {t("backToDashboard")}
-              </CommandItem>
-            )}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+              <CommandGroup heading={t("commandPalette.groupNavigation")}>
+                {onNavigateBack && (
+                  <CommandItem onSelect={() => run(onNavigateBack)}>
+                    <ArrowLeft className="h-4 w-4" />
+                    {t("backToDashboard")}
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
