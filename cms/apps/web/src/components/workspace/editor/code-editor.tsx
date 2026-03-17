@@ -15,6 +15,9 @@ import { highlightField } from "@/hooks/use-editor-bridge";
 import type { CodeEditorHandle } from "@/hooks/use-editor-bridge";
 import type { SaveStatus } from "../save-indicator";
 import type { BrandConfig } from "@/types/brand";
+import type { Doc as YDoc } from "yjs";
+import type { Awareness } from "y-protocols/awareness";
+import { createCollabExtension } from "@/lib/collaboration/editor-binding";
 
 interface CodeEditorProps {
   value: string;
@@ -26,6 +29,13 @@ interface CodeEditorProps {
   onBrandViolationsChange?: (count: number) => void;
   onCursorOffsetChange?: (offset: number) => void;
   onSelectionChange?: (hasSelection: boolean) => void;
+  /** When set, enables collaborative editing via Yjs CRDT */
+  collaborative?: {
+    doc: YDoc;
+    awareness: Awareness;
+    user: { name: string; color: string; role: string };
+    fieldName?: string;
+  };
 }
 
 const wrapCompartment = new Compartment();
@@ -40,6 +50,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
   onBrandViolationsChange,
   onCursorOffsetChange,
   onSelectionChange,
+  collaborative,
 }: CodeEditorProps, ref) {
   const { resolvedTheme } = useTheme();
   const t = useTranslations("workspace");
@@ -71,11 +82,22 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
     onBrandViolationsChange?.(count);
   }, [onBrandViolationsChange]);
 
+  const collabExtension = useMemo(() => {
+    if (!collaborative) return null;
+    return createCollabExtension({
+      doc: collaborative.doc,
+      awareness: collaborative.awareness,
+      user: collaborative.user,
+      fieldName: collaborative.fieldName,
+    });
+  }, [collaborative]);
+
   const extensions = useMemo(
     () => [
       maizzleLanguage(),
       canIEmailLinter(handleDiagnosticsChange),
       ...(brandConfig ? [brandLinter(brandConfig, handleBrandDiagnosticsChange)] : []),
+      ...(collabExtension ? [collabExtension] : []),
       keymap.of([
         {
           key: "Mod-s",
@@ -128,7 +150,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
         },
       }),
     ],
-    [handleDiagnosticsChange, handleBrandDiagnosticsChange, wordWrapEnabled, brandConfig]
+    [handleDiagnosticsChange, handleBrandDiagnosticsChange, wordWrapEnabled, brandConfig, collabExtension]
   );
 
   const handleToggleWordWrap = useCallback(() => {
@@ -165,12 +187,14 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
         <div className="absolute inset-0 flex flex-col">
           <CodeMirror
             ref={editorRef}
-            value={value}
+            {...(collaborative
+              ? {} // Yjs manages content — no controlled value
+              : { value, onChange } // Standard controlled mode
+            )}
             height="100%"
             style={{ height: "100%", overflow: "hidden" }}
             theme={theme}
             extensions={extensions}
-            onChange={onChange}
             readOnly={readOnly}
             basicSetup={{
               lineNumbers: true,

@@ -19,6 +19,7 @@ from app.streaming.websocket.schemas import (
 )
 
 if TYPE_CHECKING:
+    from app.streaming.crdt.sync_handler import YjsSyncHandler
     from app.streaming.websocket.manager import CollabConnectionManager
     from app.streaming.websocket.redis_bridge import RedisPubSubBridge
 
@@ -56,11 +57,26 @@ def get_redis_bridge() -> RedisPubSubBridge | None:
     return _redis_bridge
 
 
+_sync_handler: YjsSyncHandler | None = None
+
+
+def set_sync_handler(handler: YjsSyncHandler) -> None:
+    """Set the global YjsSyncHandler instance."""
+    global _sync_handler
+    _sync_handler = handler
+
+
+def get_sync_handler() -> YjsSyncHandler | None:
+    """Get the global YjsSyncHandler instance."""
+    return _sync_handler
+
+
 def close_collab_manager() -> None:
     """Clear global collab singletons."""
-    global _collab_manager, _redis_bridge
+    global _collab_manager, _redis_bridge, _sync_handler
     _collab_manager = None
     _redis_bridge = None
+    _sync_handler = None
 
 
 async def _send_heartbeats(websocket: WebSocket, interval: int) -> None:
@@ -140,6 +156,15 @@ async def ws_collab(
     if bridge:
         await bridge.publish_json(room_id, join_event.model_dump(), user.id)
 
+    # Initialize CRDT document for this room (Phase 24.2)
+    sync = get_sync_handler()
+    if sync is not None and settings.collab_ws.crdt_enabled:
+        from app.core.database import AsyncSessionLocal
+
+        async with AsyncSessionLocal() as db:
+            await sync.init_room(db, room_id)
+            await db.commit()
+
     # Start heartbeat
     heartbeat_task = asyncio.create_task(
         _send_heartbeats(websocket, settings.collab_ws.heartbeat_interval_seconds)
@@ -165,16 +190,64 @@ async def ws_collab(
 
                 # Viewers cannot send document updates
                 if not can_edit:
+                    # Viewers can receive sync but not send updates
+                    sync = get_sync_handler()
+                    if sync is not None and settings.collab_ws.crdt_enabled:
+                        # Allow SyncStep1 (read-only sync request)
+                        if len(data) >= 2 and data[0] == 0 and data[1] == 0:
+                            from app.core.database import AsyncSessionLocal
+
+                            async with AsyncSessionLocal() as db:
+                                replies, _ = await sync.handle_sync_message(
+                                    db,
+                                    room_id,
+                                    str(user.id),
+                                    data,
+                                )
+                                # Don't commit -- viewer sync is read-only
+                            for reply in replies:
+                                await websocket.send_bytes(reply)
+                            continue
                     err = CollabError(code="read_only", message="Viewer role cannot edit")
                     await websocket.send_json(err.model_dump())
                     continue
 
-                # Broadcast to local peers
-                await manager.broadcast_bytes(room_id, data, exclude=websocket)
+                # CRDT sync protocol (Phase 24.2)
+                sync = get_sync_handler()
+                if sync is not None and settings.collab_ws.crdt_enabled:
+                    from app.core.database import AsyncSessionLocal
 
-                # Relay via Redis for multi-instance
-                if bridge:
-                    await bridge.publish(room_id, data, user.id)
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            replies, broadcasts = await sync.handle_sync_message(
+                                db,
+                                room_id,
+                                str(user.id),
+                                data,
+                            )
+                            await db.commit()
+
+                        # Send replies to this client only
+                        for reply in replies:
+                            await websocket.send_bytes(reply)
+
+                        # Broadcast to local peers
+                        for bcast in broadcasts:
+                            await manager.broadcast_bytes(room_id, bcast, exclude=websocket)
+                            if bridge:
+                                await bridge.publish(room_id, bcast, user.id)
+                    except Exception as exc:
+                        logger.warning(
+                            "crdt.sync.handler_error",
+                            room_id=room_id,
+                            error=str(exc),
+                            error_type=type(exc).__name__,
+                        )
+                else:
+                    # Passthrough mode (no CRDT -- raw relay as in 24.1)
+                    await manager.broadcast_bytes(room_id, data, exclude=websocket)
+                    if bridge:
+                        await bridge.publish(room_id, data, user.id)
 
             elif message.get("text"):
                 # JSON: awareness/presence updates
@@ -221,6 +294,12 @@ async def ws_collab(
     finally:
         heartbeat_task.cancel()
         left_info = await manager.disconnect(websocket, room_id)
+
+        # Evict CRDT doc from memory when room empties (Phase 24.2)
+        if not manager.get_peers(room_id):
+            sync = get_sync_handler()
+            if sync is not None:
+                sync.cleanup_room(room_id)
 
         # Notify peers of departure
         if left_info:

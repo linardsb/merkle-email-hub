@@ -32,18 +32,18 @@ make eval-qa-coverage # Deterministic micro-judges coverage
 
 ## Architecture
 
-Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + blueprints + evals + voice), `knowledge/`, `qa_engine/` (11 core checks + optional resilience check), `projects/`, `email_engine/`, `components/`, `connectors/`, `approval/`, `personas/`, `memory/`, `rendering/`, `design_sync/`, `streaming/` (data streaming + `websocket/` collab WS with room-based routing, Redis pub/sub bridge, JWT auth), `mcp/` (MCP tool server — 17 tools, streamable HTTP + stdio). Frontend: `cms/`. Sidecars: `services/maizzle-builder/`, `services/mock-esp/` (mock ESP APIs, port 3002). Migrations: `alembic/`.
+Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + blueprints + evals + voice), `knowledge/`, `qa_engine/` (11 core checks + optional resilience check), `projects/`, `email_engine/`, `components/`, `connectors/`, `approval/`, `personas/`, `memory/`, `rendering/`, `design_sync/`, `streaming/` (data streaming + `websocket/` collab WS with room-based routing, Redis pub/sub bridge, JWT auth + `crdt/` Yjs CRDT document engine with pycrdt persistence, sync protocol, inline compaction), `mcp/` (MCP tool server — 17 tools, streamable HTTP + stdio). Frontend: `cms/`. Sidecars: `services/maizzle-builder/`, `services/mock-esp/` (mock ESP APIs, port 3002). Migrations: `alembic/`.
 
 ## Roadmap
 
 See `TODO.md` for details on upcoming phases. See `docs/TODO-completed.md` for detailed completion records of phases 0-23.
 
 **Upcoming phases (priority order — highest differentiation first):**
-- **Phase 24** — Real-Time Collaboration & Visual Builder (24.1 WebSocket infra DONE; remaining: Yjs CRDT engine, collaborative cursors & presence, visual builder canvas & palette, property panels, bidirectional sync, workspace integration, tests & docs)
+- **Phase 24** — Real-Time Collaboration & Visual Builder (24.1 WebSocket infra DONE, 24.2 Yjs CRDT engine DONE; remaining: collaborative cursors & presence, visual builder canvas & palette, property panels, bidirectional sync, workspace integration, tests & docs)
 - **Phase 25** — Platform Ecosystem & Advanced Integrations (9 subtasks: plugin manifest & registry, plugin sandbox & lifecycle, Tolgee TMS, Tolgee frontend, Kestra workflows, Penpot design pipeline, Typst report generator, ecosystem dashboard, tests & docs)
 
 **Completed phases 11.25–23.7** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).
-**Next:** Phase 24.2 (Yjs CRDT Document Engine).
+**Next:** Phase 24.3 (Collaborative Cursor & Presence Awareness).
 
 ## Compact instructions
 

@@ -405,6 +405,11 @@ class CollabWebSocketConfig(BaseModel):
     heartbeat_interval_seconds: int = 30
     auth_timeout_seconds: int = 10
     max_message_bytes: int = 1_048_576  # 1 MB
+    # CRDT settings (Phase 24.2)
+    crdt_enabled: bool = False
+    crdt_compaction_threshold: int = 100  # compact after N updates
+    crdt_compaction_interval_s: int = 300  # or after N seconds
+    crdt_max_document_size_mb: int = 5  # reject updates beyond this
 
 
 class Settings(BaseSettings):

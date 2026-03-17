@@ -97,10 +97,12 @@ export function useCollaboration(projectId: number, templateId: number | null) {
       };
     }
 
-    // Production mode: WebSocket provider
+    // Production mode: Hub-authenticated WebSocket provider
     import("@/lib/collaboration/yjs-provider").then(
-      ({ createWebSocketProvider }) => {
-        const provider = createWebSocketProvider(roomName, doc);
+      ({ createHubProvider }) => {
+        // TODO(24.2): Retrieve JWT token from session for auth
+        const token = "";
+        const provider = createHubProvider(roomName, doc, { token });
         providerRef.current = provider;
 
         provider.on("status", ({ status: s }: { status: string }) => {
@@ -117,7 +119,7 @@ export function useCollaboration(projectId: number, templateId: number | null) {
         const updateCollaborators = () => {
           const states = provider.awareness.getStates();
           const collabs: Collaborator[] = [];
-          states.forEach((state, clientId) => {
+          states.forEach((state: Record<string, unknown>, clientId: number) => {
             if (clientId === doc.clientID) return;
             if (state?.name) {
               collabs.push({

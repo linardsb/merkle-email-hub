@@ -88,7 +88,7 @@
 - Config: `STREAMING__CRDT_ENABLED: bool = False`, `STREAMING__CRDT_COMPACTION_INTERVAL_S: int = 300`, `STREAMING__CRDT_COMPACTION_THRESHOLD: int = 100`, `STREAMING__CRDT_MAX_DOCUMENT_SIZE_MB: int = 5`
 **Security:** Document state encrypted at rest (existing PostgreSQL encryption). Yjs updates are binary-encoded operations — no executable content. Document size capped at 5MB (prevents memory abuse via large pastes). Per-room access control enforced at WebSocket connection (24.1). Yjs Awareness protocol shares only cursor position + user display name — no sensitive data. Offline queue stored in browser `IndexedDB` — cleared on logout.
 **Verify:** Two users open same template → both see each other's edits in real-time (<100ms latency on LAN). User A types in line 5, User B types in line 20 → no conflicts, both changes merge. User disconnects → reconnects → missed edits sync automatically. Server restart → document state restored from PostgreSQL. Compaction: 200 updates → compacted to single state → new client syncs quickly. `make test` passes. `make check-fe` passes.
-- [ ] 24.2 Yjs CRDT document engine
+- [x] ~~24.2 Yjs CRDT document engine~~ DONE
 
 ### 24.3 Collaborative Cursor & Presence Awareness `[Frontend]`
 **What:** Visual indicators for real-time collaboration: colored cursors showing each user's position, selection highlights, user presence list (who's currently editing), and activity indicators (typing, idle, viewing). Integrated into the CodeMirror editor and workspace sidebar.

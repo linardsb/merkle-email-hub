@@ -61,6 +61,7 @@ from app.streaming.websocket.routes import (
     collab_router,
     set_collab_manager,
     set_redis_bridge,
+    set_sync_handler,
 )
 from app.templates.routes import router as templates_router
 
@@ -121,6 +122,21 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         collab_bridge = RedisPubSubBridge(collab_mgr)
         set_redis_bridge(collab_bridge)
         await collab_bridge.start()
+
+        # CRDT layer (Phase 24.2)
+        if settings.collab_ws.crdt_enabled:
+            from app.streaming.crdt.document_store import YjsDocumentStore
+            from app.streaming.crdt.sync_handler import YjsSyncHandler
+
+            crdt_store = YjsDocumentStore(
+                compaction_threshold=settings.collab_ws.crdt_compaction_threshold,
+                compaction_interval_s=settings.collab_ws.crdt_compaction_interval_s,
+                max_document_size_mb=settings.collab_ws.crdt_max_document_size_mb,
+            )
+            crdt_sync = YjsSyncHandler(crdt_store)
+            set_sync_handler(crdt_sync)
+            logger.info("crdt.document_store_started")
+
         logger.info("collab.ws.manager_started")
 
     # Load model capability registry from config (Phase 22.1)
