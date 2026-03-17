@@ -186,7 +186,7 @@
 - Add `make test-properties` command — runs property tests with fixed seed for CI
 **Security:** Generators produce synthetic HTML only — no user data. Hypothesis library is well-established (no security concerns). Rate limited aggressively due to CPU cost. Generated emails never persisted — temporary in-memory only.
 **Verify:** Run 100 property tests → at least some invariant violations found (proves the generator covers edge cases). Fix a known invariant violation → re-run with same seed → violation no longer appears. `SizeLimit` invariant catches oversized emails. `ContrastRatio` catches near-threshold color combinations. `make test-properties` completes within 60 seconds. `make test` passes.
-- [ ] 18.2 Property-based email testing framework
+- [x] ~~18.2 Property-based email testing framework~~ DONE
 
 ### 18.3 Resilience Score Integration & Knowledge Feedback `[Backend]`
 **What:** Integrate chaos test results and property test findings into the existing QA pipeline as optional check #12 ("rendering resilience"). Auto-generate knowledge base documents from discovered failures — each new chaos failure becomes a RAG-retrievable document describing the failure pattern, affected clients, and recommended fix. This creates a self-improving knowledge base that grows from every test run.
@@ -205,7 +205,7 @@
 - Config: `QA__CHAOS_AUTO_DOCUMENT: bool = False` (auto-generate knowledge docs from failures), `QA__RESILIENCE_CHECK_ENABLED: bool = False`
 **Security:** Knowledge documents contain only structural HTML patterns (no PII). Document creation uses existing `KnowledgeService.ingest_document()` with tenant isolation via project_id.
 **Verify:** Run chaos test → failures found → knowledge documents auto-created → subsequent RAG search for same pattern returns the chaos finding. Resilience check passes for well-structured email (score > 0.7). Resilience check fails for fragile email (single-column layout breaks under style stripping). `make test` passes.
-- [ ] 18.3 Resilience score integration & knowledge feedback
+- [x] ~~18.3 Resilience score integration & knowledge feedback~~ DONE
 
 ### 18.4 Frontend Chaos & Property Testing UI `[Frontend]`
 **What:** Frontend components for chaos test results (per-profile score breakdown, failure details, "Fix This" action dispatching to CRAG) and property test reports (pass/fail summary, failing case inspector with minimised config display). Integrated into the QA dashboard.
@@ -218,7 +218,7 @@
 - SDK regeneration for chaos/property endpoints
 **Security:** No raw HTML displayed in UI — all results are structured data. "Fix This" action uses existing CRAG endpoint with auth.
 **Verify:** Run chaos test → results display in panel → per-profile scores shown → failure details expandable. Property test → pass/fail summary → failing cases inspectable. `make check-fe` passes.
-- [ ] 18.4 Frontend chaos & property testing UI
+- [x] ~~18.4 Frontend chaos & property testing UI~~ DONE
 
 ### 18.5 Tests & Documentation `[Full-Stack]`
 **What:** Full test suite for chaos engine (profile application correctness, composability, QA integration), property testing (invariant checks, generator coverage, seed reproducibility), resilience check (#12), knowledge feedback writer. ADR documenting the resilience testing architecture.
@@ -229,7 +229,7 @@
 - Target: 35+ tests
 - ADR-007 in `docs/ARCHITECTURE.md` — Rendering Resilience Testing
 **Verify:** `make test` passes. `make check` all green. No regression in existing tests.
-- [ ] 18.5 Tests & documentation
+- [x] ~~18.5 Tests & documentation~~ DONE — 37 new tests across 8 files (test_service_chaos.py, test_chaos_engine.py, test_chaos_profiles.py, test_knowledge_writer.py, test_resilience_check.py, test_generators.py, test_invariants.py, test_runner.py); ADR-007 Rendering Resilience Testing in docs/ARCHITECTURE.md; 2768 total backend tests
 
 ---
 
@@ -268,7 +268,7 @@
 - Config: `QA__OUTLOOK_ANALYZER_ENABLED: bool = False`, `QA__OUTLOOK_DEFAULT_TARGET: str = "dual_support"`
 **Security:** Analyzer is read-only — parses HTML via BeautifulSoup (no eval). Modernizer applies deterministic transformations only. No external calls. Output sanitized via `sanitize_html_xss()`.
 **Verify:** Analyze email with VML buttons → all VML elements detected, modern CSS replacement suggested. Analyze clean modern email → zero dependencies. Modernize with `new_outlook` → VML replaced with CSS, ghost tables removed, byte size reduced. Modernize with `dual_support` → hacks wrapped in conditionals but functional in both engines. `make test` passes.
-- [ ] 19.1 Outlook Word-engine dependency analyzer
+- [x] ~~19.1 Outlook Word-engine dependency analyzer~~ DONE
 
 ### 19.2 Audience-Aware Outlook Migration Planner `[Backend]`
 **What:** A migration planning service that combines the dependency analysis (19.1) with audience data (Outlook version distribution from ESP analytics or manual input) to produce a phased migration plan. Shows which workarounds are safe to remove now (< 5% of audience on old Outlook), which need the dual-support period, and projects a timeline for full modernization.
@@ -315,7 +315,7 @@
 - Config: `EMAIL_ENGINE__CSS_COMPILER_ENABLED: bool = False`, `EMAIL_ENGINE__CSS_COMPILER_TARGET_CLIENTS: list[str] = ["gmail_web", "outlook_2019", "apple_mail", "yahoo_mail"]`
 **Security:** CSS parsing via Lightning CSS (Rust, memory-safe). No eval/exec of CSS content. Ontology data is read-only. Output validated via `sanitize_html_xss()`. No external network calls.
 **Verify:** Compile email with `display:flex` targeting `[outlook_2019]` → flexbox converted to table layout. Compile targeting `[gmail_web, apple_mail]` only → flexbox preserved (both support it). Size reduction measured: compiled output < original for all golden templates. Juice-replaced output renders identically to Juice output in golden template screenshots. `make test` passes.
-- [ ] 19.3 Lightning CSS email compiler
+- [x] ~~19.3 Lightning CSS email compiler~~ DONE
 
 ### 19.4 Frontend Outlook Advisor & Compiler Dashboard `[Frontend]`
 **What:** Frontend UI for Outlook migration analysis (dependency heatmap, migration timeline, "Modernize" action), audience profile input/ESP import, and CSS compilation results (size before/after, removed properties, conversion list). Integrated into workspace toolbar and QA panel.
