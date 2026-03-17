@@ -114,113 +114,123 @@ export function CommandPalette({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[40rem] overflow-hidden p-0">
-          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
+        <DialogContent className="max-w-[52rem] overflow-hidden p-0">
+          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-3 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
             <CommandInput placeholder={t("commandPalette.placeholder")} />
-            <CommandList className="max-h-[min(60vh,28rem)]">
+            <CommandList className="max-h-[min(70vh,36rem)] p-2">
               <CommandEmpty>{t("commandPalette.empty")}</CommandEmpty>
 
-              <CommandGroup heading={t("commandPalette.groupActions")}>
-                <div className="grid grid-cols-2 gap-1">
-                  {onSave && (
-                    <CommandItem onSelect={() => run(onSave)}>
-                      <Save className="h-4 w-4" />
-                      {t("saveTemplate")}
-                      <CommandShortcut>⌘S</CommandShortcut>
-                    </CommandItem>
-                  )}
-                  {onRunBlueprint && (
-                    <CommandItem onSelect={() => run(onRunBlueprint)}>
-                      <Zap className="h-4 w-4" />
-                      {t("generateBlueprint")}
-                      <CommandShortcut>⌘⇧G</CommandShortcut>
-                    </CommandItem>
-                  )}
-                  {onRunQA && (
-                    <CommandItem onSelect={() => run(onRunQA)}>
-                      <ShieldCheck className="h-4 w-4" />
-                      {t("runQA")}
-                      <CommandShortcut>⌘⇧Q</CommandShortcut>
-                    </CommandItem>
-                  )}
-                  {onExport && (
-                    <CommandItem onSelect={() => run(onExport)}>
-                      <Download className="h-4 w-4" />
-                      {t("export")}
-                      <CommandShortcut>⌘⇧E</CommandShortcut>
-                    </CommandItem>
-                  )}
-                  {onPushToESP && (
-                    <CommandItem onSelect={() => run(onPushToESP)}>
-                      <CloudUpload className="h-4 w-4" />
-                      {t("pushToESP")}
-                    </CommandItem>
-                  )}
-                  {onSubmitForApproval && (
-                    <CommandItem onSelect={() => run(onSubmitForApproval)}>
-                      <ClipboardCheck className="h-4 w-4" />
-                      {t("submitForApproval")}
-                    </CommandItem>
-                  )}
-                  {onGenerateImage && (
-                    <CommandItem onSelect={() => run(onGenerateImage)}>
-                      <ImagePlus className="h-4 w-4" />
-                      {t("generateImage")}
-                    </CommandItem>
-                  )}
-                </div>
-              </CommandGroup>
-
-              <CommandGroup heading={t("commandPalette.groupPanels")}>
-                <div className="grid grid-cols-2 gap-1">
-                  {onToggleQAPanel && (
-                    <CommandItem onSelect={() => run(onToggleQAPanel)}>
-                      <PanelRight className="h-4 w-4" />
-                      {t("commandPalette.toggleQASidebar")}
-                      <CommandShortcut>⌘J</CommandShortcut>
-                    </CommandItem>
-                  )}
-                  {onDesignRefToggle && (
-                    <CommandItem onSelect={() => { setOpen(false); onDesignRefToggle(!designRefOpen); }}>
-                      <Palette className="h-4 w-4" />
-                      {t("designRefButton")}
-                    </CommandItem>
-                  )}
-                  {onToggleChat && (
-                    <CommandItem onSelect={() => run(onToggleChat)}>
-                      <PanelBottom className="h-4 w-4" />
-                      {t("commandPalette.toggleChat")}
-                      <CommandShortcut>⌘B</CommandShortcut>
-                    </CommandItem>
-                  )}
-                </div>
-              </CommandGroup>
-
-              <CommandGroup heading={t("commandPalette.groupAgents")}>
-                <div className="grid grid-cols-2 gap-1">
-                  {AGENT_ITEMS.map((a) => {
-                    const Icon = a.icon;
-                    return (
-                      <CommandItem
-                        key={a.id}
-                        onSelect={() => { setOpen(false); onSelectAgent?.(a.id); }}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {t(a.labelKey)}
+              {/* Actions & Panels side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-border p-2">
+                  <CommandGroup heading={t("commandPalette.groupActions")}>
+                    {onSave && (
+                      <CommandItem onSelect={() => run(onSave)}>
+                        <Save className="h-4 w-4" />
+                        {t("saveTemplate")}
+                        <CommandShortcut>⌘S</CommandShortcut>
                       </CommandItem>
-                    );
-                  })}
+                    )}
+                    {onRunBlueprint && (
+                      <CommandItem onSelect={() => run(onRunBlueprint)}>
+                        <Zap className="h-4 w-4" />
+                        {t("generateBlueprint")}
+                        <CommandShortcut>⌘⇧G</CommandShortcut>
+                      </CommandItem>
+                    )}
+                    {onRunQA && (
+                      <CommandItem onSelect={() => run(onRunQA)}>
+                        <ShieldCheck className="h-4 w-4" />
+                        {t("runQA")}
+                        <CommandShortcut>⌘⇧Q</CommandShortcut>
+                      </CommandItem>
+                    )}
+                    {onExport && (
+                      <CommandItem onSelect={() => run(onExport)}>
+                        <Download className="h-4 w-4" />
+                        {t("export")}
+                        <CommandShortcut>⌘⇧E</CommandShortcut>
+                      </CommandItem>
+                    )}
+                    {onPushToESP && (
+                      <CommandItem onSelect={() => run(onPushToESP)}>
+                        <CloudUpload className="h-4 w-4" />
+                        {t("pushToESP")}
+                      </CommandItem>
+                    )}
+                    {onSubmitForApproval && (
+                      <CommandItem onSelect={() => run(onSubmitForApproval)}>
+                        <ClipboardCheck className="h-4 w-4" />
+                        {t("submitForApproval")}
+                      </CommandItem>
+                    )}
+                    {onGenerateImage && (
+                      <CommandItem onSelect={() => run(onGenerateImage)}>
+                        <ImagePlus className="h-4 w-4" />
+                        {t("generateImage")}
+                      </CommandItem>
+                    )}
+                  </CommandGroup>
                 </div>
-              </CommandGroup>
 
-              <CommandGroup heading={t("commandPalette.groupNavigation")}>
-                {onNavigateBack && (
-                  <CommandItem onSelect={() => run(onNavigateBack)}>
-                    <ArrowLeft className="h-4 w-4" />
-                    {t("backToDashboard")}
-                  </CommandItem>
-                )}
-              </CommandGroup>
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-border p-2">
+                    <CommandGroup heading={t("commandPalette.groupPanels")}>
+                      {onToggleQAPanel && (
+                        <CommandItem onSelect={() => run(onToggleQAPanel)}>
+                          <PanelRight className="h-4 w-4" />
+                          {t("commandPalette.toggleQASidebar")}
+                          <CommandShortcut>⌘J</CommandShortcut>
+                        </CommandItem>
+                      )}
+                      {onDesignRefToggle && (
+                        <CommandItem onSelect={() => { setOpen(false); onDesignRefToggle(!designRefOpen); }}>
+                          <Palette className="h-4 w-4" />
+                          {t("designRefButton")}
+                        </CommandItem>
+                      )}
+                      {onToggleChat && (
+                        <CommandItem onSelect={() => run(onToggleChat)}>
+                          <PanelBottom className="h-4 w-4" />
+                          {t("commandPalette.toggleChat")}
+                          <CommandShortcut>⌘B</CommandShortcut>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </div>
+
+                  <div className="rounded-lg border border-border p-2">
+                    <CommandGroup heading={t("commandPalette.groupNavigation")}>
+                      {onNavigateBack && (
+                        <CommandItem onSelect={() => run(onNavigateBack)}>
+                          <ArrowLeft className="h-4 w-4" />
+                          {t("backToDashboard")}
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </div>
+                </div>
+              </div>
+
+              {/* Agents in its own bordered section, 2-col grid */}
+              <div className="mt-3 rounded-lg border border-border p-2">
+                <CommandGroup heading={t("commandPalette.groupAgents")}>
+                  <div className="grid grid-cols-2 gap-1">
+                    {AGENT_ITEMS.map((a) => {
+                      const Icon = a.icon;
+                      return (
+                        <CommandItem
+                          key={a.id}
+                          onSelect={() => { setOpen(false); onSelectAgent?.(a.id); }}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {t(a.labelKey)}
+                        </CommandItem>
+                      );
+                    })}
+                  </div>
+                </CommandGroup>
+              </div>
             </CommandList>
           </Command>
         </DialogContent>
