@@ -2,18 +2,25 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, ClipboardCheck, CloudUpload, Download, FileText, ImagePlus, Mic, Palette, Save, ShieldCheck, Users, Zap } from "lucide-react";
+import { ArrowLeft, Save, ShieldCheck, Zap, Palette } from "lucide-react";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@email-hub/ui/components/ui/tooltip";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
 import { CollaboratorAvatars } from "./collaboration/collaborator-avatars";
 import { ConnectionStatus } from "./collaboration/connection-status";
+import { DeliverMenu } from "./toolbar/deliver-menu";
+import { ToolsMenu } from "./toolbar/tools-menu";
 import type { TemplateResponse } from "@/types/templates";
 import type { Collaborator, CollaborationStatus } from "@/types/collaboration";
 
 interface WorkspaceToolbarProps {
   projectName: string;
-  memberCount?: number;
   templates: TemplateResponse[];
   activeTemplateId: number | null;
   onSelectTemplate: (template: TemplateResponse) => void;
@@ -30,26 +37,22 @@ interface WorkspaceToolbarProps {
   } | null;
   onToggleQAPanel?: () => void;
   onExport?: () => void;
-  isExporting?: boolean;
   onSubmitForApproval?: () => void;
-  isSubmittingApproval?: boolean;
   brandViolations?: number;
   onGenerateImage?: () => void;
   collaborators?: Collaborator[];
   collaborationStatus?: CollaborationStatus;
-  targetClients?: string[] | null;
   onViewBrief?: () => void;
   onRunBlueprint?: () => void;
   onPushToESP?: () => void;
   designRefOpen?: boolean;
   onDesignRefToggle?: (open: boolean) => void;
-  voiceBriefCount?: number;
   onToggleVoiceBriefs?: () => void;
+  commandPalette?: React.ReactNode;
 }
 
 export function WorkspaceToolbar({
   projectName,
-  memberCount,
   templates,
   activeTemplateId,
   onSelectTemplate,
@@ -62,66 +65,43 @@ export function WorkspaceToolbar({
   qaResult,
   onToggleQAPanel,
   onExport,
-  isExporting,
   onSubmitForApproval,
-  isSubmittingApproval,
   brandViolations,
   onGenerateImage,
   collaborators,
   collaborationStatus,
-  targetClients,
   onViewBrief,
   onRunBlueprint,
   onPushToESP,
   designRefOpen,
   onDesignRefToggle,
-  voiceBriefCount,
   onToggleVoiceBriefs,
+  commandPalette,
 }: WorkspaceToolbarProps) {
   const t = useTranslations("workspace");
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+      {/* Left zone: Navigation */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("backToDashboard")}
-        </Link>
-        <span className="text-muted-foreground">/</span>
-        <h1 className="text-sm font-semibold text-foreground">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/"
+                className="flex items-center text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {t("backToDashboard")}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <h1 className="max-w-32 truncate text-sm font-semibold text-foreground">
           {projectName}
         </h1>
-        {targetClients && targetClients.length > 0 && (
-          <div className="flex items-center gap-1">
-            {targetClients.slice(0, 3).map((cid) => (
-              <span
-                key={cid}
-                className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground"
-              >
-                {cid.replace(/_/g, " ")}
-              </span>
-            ))}
-            {targetClients.length > 3 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{targetClients.length - 3}
-              </span>
-            )}
-            {onViewBrief && (
-              <button
-                type="button"
-                onClick={onViewBrief}
-                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                title={t("viewCompatibilityBrief")}
-              >
-                <FileText className="h-3 w-3" />
-                {t("brief")}
-              </button>
-            )}
-          </div>
-        )}
         <span className="text-muted-foreground">/</span>
         <TemplateSelector
           templates={templates}
@@ -131,54 +111,43 @@ export function WorkspaceToolbar({
           isLoading={isLoadingTemplates}
         />
       </div>
-      <div className="flex items-center gap-3">
+
+      {/* Center zone: Primary workflow actions */}
+      <div className="flex items-center gap-2">
         <SaveIndicator status={saveStatus} />
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saveStatus === "saving" || saveStatus === "idle"}
-          className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-          title={`${t("saveTemplate")} (\u2318S)`}
-        >
-          <Save className="h-3.5 w-3.5" />
-          {t("saveTemplate")}
-        </button>
-        {/* Generate with Blueprint */}
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onSave}
+                disabled={saveStatus === "saving" || saveStatus === "idle"}
+                className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {t("saveTemplate")}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {t("saveTemplate")} (⌘S)
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         {onRunBlueprint && (
           <>
             <div className="h-4 w-px bg-border" />
             <button
               type="button"
               onClick={onRunBlueprint}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title={t("generateBlueprint")}
+              className="flex items-center gap-1.5 rounded bg-interactive px-3 py-1 text-xs font-medium text-on-interactive transition-colors hover:opacity-90"
             >
               <Zap className="h-3.5 w-3.5" />
               {t("generateBlueprint")}
             </button>
           </>
         )}
-        {/* Voice Briefs */}
-        {onToggleVoiceBriefs && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <button
-              type="button"
-              onClick={onToggleVoiceBriefs}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title={t("voiceBriefs")}
-            >
-              <Mic className="h-3.5 w-3.5" />
-              {t("voiceBriefs")}
-              {voiceBriefCount != null && voiceBriefCount > 0 && (
-                <span className="rounded-full bg-badge-success-bg px-1.5 py-0.5 text-[10px] font-medium text-badge-success-text">
-                  {voiceBriefCount}
-                </span>
-              )}
-            </button>
-          </>
-        )}
-        {/* QA Gate */}
+
         {onRunQA && (
           <>
             <div className="h-4 w-px bg-border" />
@@ -187,7 +156,6 @@ export function WorkspaceToolbar({
               onClick={onRunQA}
               disabled={isRunningQA || saveStatus === "saving"}
               className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-              title={t("runQA")}
             >
               <ShieldCheck
                 className={`h-3.5 w-3.5 ${isRunningQA ? "animate-pulse" : ""}`}
@@ -210,114 +178,48 @@ export function WorkspaceToolbar({
             {qaResult.checks_passed}/{qaResult.checks_total}
           </button>
         )}
-        {onExport && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <button
-              type="button"
-              onClick={onExport}
-              disabled={isExporting || saveStatus === "saving"}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-              title={t("export")}
-            >
-              <Download className={`h-3.5 w-3.5 ${isExporting ? "animate-pulse" : ""}`} />
-              {isExporting ? t("exporting") : t("export")}
-            </button>
-          </>
-        )}
-        {onPushToESP && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <button
-              type="button"
-              onClick={onPushToESP}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title={t("pushToESP")}
-            >
-              <CloudUpload className="h-3.5 w-3.5" />
-              {t("pushToESP")}
-            </button>
-          </>
-        )}
-        {onSubmitForApproval && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <button
-              type="button"
-              onClick={onSubmitForApproval}
-              disabled={isSubmittingApproval || saveStatus === "saving"}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-              title={t("submitForApproval")}
-            >
-              <ClipboardCheck
-                className={`h-3.5 w-3.5 ${isSubmittingApproval ? "animate-pulse" : ""}`}
-              />
-              {isSubmittingApproval
-                ? t("submittingApproval")
-                : t("submitForApproval")}
-            </button>
-          </>
-        )}
-        {onGenerateImage && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <button
-              type="button"
-              onClick={onGenerateImage}
-              className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title={t("generateImage")}
-            >
-              <ImagePlus className="h-3.5 w-3.5" />
-              {t("generateImage")}
-            </button>
-          </>
-        )}
-        {onDesignRefToggle && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <button
-              type="button"
-              onClick={() => onDesignRefToggle(!designRefOpen)}
-              className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                designRefOpen
-                  ? "bg-interactive text-on-interactive"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
-              title={t("designRefButton")}
-            >
-              <Palette className="h-3.5 w-3.5" />
-              {t("designRefButton")}
-            </button>
-          </>
-        )}
+      </div>
+
+      {/* Right zone: Grouped secondary */}
+      <div className="flex items-center gap-2">
+        <DeliverMenu
+          onExport={onExport}
+          onPushToESP={onPushToESP}
+          onSubmitForApproval={onSubmitForApproval}
+          disabled={saveStatus === "saving"}
+        />
+
+        <div className="h-4 w-px bg-border" />
+
+        <ToolsMenu
+          onGenerateImage={onGenerateImage}
+          onDesignRefToggle={onDesignRefToggle}
+          designRefOpen={designRefOpen}
+          onToggleVoiceBriefs={onToggleVoiceBriefs}
+          onViewBrief={onViewBrief}
+        />
+
+        <div className="h-4 w-px bg-border" />
+
+        {/* Status cluster */}
         {brandViolations !== undefined && brandViolations > 0 && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <span
-              className="flex items-center gap-1 rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text"
-              title={t("brandViolations", { count: brandViolations })}
-            >
-              <Palette className="h-3 w-3" />
-              {brandViolations}
-            </span>
-          </>
+          <span
+            className="flex items-center gap-1 rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text"
+            title={t("brandViolations", { count: brandViolations })}
+          >
+            <Palette className="h-3 w-3" />
+            {brandViolations}
+          </span>
         )}
         {collaborators && collaborators.length > 0 && (
-          <>
-            <div className="h-4 w-px bg-border" />
-            <CollaboratorAvatars collaborators={collaborators} />
-          </>
+          <CollaboratorAvatars collaborators={collaborators} />
         )}
         {collaborationStatus && (
           <ConnectionStatus status={collaborationStatus} />
         )}
-        {memberCount !== undefined && (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Users className="h-3.5 w-3.5" />
-            {memberCount} {t("members")}
-          </span>
-        )}
         <ThemeToggle />
+
+        {commandPalette}
       </div>
     </header>
   );

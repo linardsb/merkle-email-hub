@@ -266,6 +266,38 @@
     "resuming": "Resuming from checkpoint...",
     "resumeError": "Failed to resume run. Please try again.",
     "voiceBriefs": "Voice Briefs",
+    "deliverMenu": "Deliver",
+    "toolsMenu": "Tools",
+    "agentGroupBuild": "Build",
+    "agentGroupOptimize": "Optimize",
+    "agentGroupReview": "Review",
+    "sidebarTabs": {
+      "close": "Close sidebar",
+      "tabQA": "QA Gate",
+      "tabTesting": "Testing",
+      "tabClients": "Email Clients",
+      "tabIntelligence": "Intelligence",
+      "visualQA": "Visual QA",
+      "chaosTest": "Chaos Testing",
+      "propertyTest": "Property Testing",
+      "outlookAdvisor": "Outlook Advisor",
+      "cssCompiler": "CSS Compiler",
+      "gmailIntelligence": "Gmail Intelligence",
+      "ontologySync": "Ontology Sync",
+      "competitiveIntel": "Competitive Intelligence",
+      "compileFirst": "Compile the template first to use email client tools."
+    },
+    "commandPalette": {
+      "hint": "\u2318K",
+      "placeholder": "Type a command or search...",
+      "empty": "No results found.",
+      "groupActions": "Actions",
+      "groupPanels": "Panels",
+      "groupAgents": "Agents",
+      "groupNavigation": "Navigation",
+      "toggleQASidebar": "Toggle QA Sidebar",
+      "toggleChat": "Toggle Chat Panel"
+    },
     "contextPanel": {
       "loading": "Loading...",
       "audienceProfile": "Audience Profile",
@@ -531,7 +563,8 @@
     "compareNoChangelog": "No changelog",
     "compareCreated": "Created {date}",
     "compareNoVersions": "No version history available for this template",
-    "compareClose": "Close"
+    "compareClose": "Close",
+    "buildNumber": "Build #{id}"
   },
   "connectors": {
     "title": "Connectors & Exports",
@@ -693,6 +726,11 @@
     "retry": "Try again"
   },
   "knowledge": {
+    "domainLabels": {
+      "css_support": "CSS Support",
+      "best_practices": "Best Practices",
+      "client_quirks": "Client Quirks"
+    },
     "title": "Knowledge Base",
     "subtitle": "Search email development best practices, CSS support, and client quirks",
     "searchPlaceholder": "Search the knowledge base...",

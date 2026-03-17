@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaResponse } from "@email-hub/sdk";
 import { useTranslations } from "next-intl";
+import { notFound } from "next/navigation";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   Group,
@@ -29,7 +30,7 @@ import { EditorPanel } from "@/components/workspace/editor-panel";
 import { PreviewPanel } from "@/components/workspace/preview-panel";
 import { BottomPanel } from "@/components/workspace/bottom-panel";
 import type { AgentMode } from "@/types/chat";
-import { QAResultsPanel } from "@/components/workspace/qa-results-panel";
+import { ToolSidebar } from "@/components/workspace/sidebar/tool-sidebar";
 import { DesignReferencePanel } from "@/components/workspace/design-reference-panel";
 import { useEditorBridge } from "@/hooks/use-editor-bridge";
 import { ExportDialog } from "@/components/connectors/export-dialog";
@@ -40,6 +41,8 @@ import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialo
 import { CompatibilityBriefDialog } from "@/components/workspace/compatibility-brief-dialog";
 import { BlueprintRunDialog } from "@/components/workspace/blueprint-run-dialog";
 import { PushToESPDialog } from "@/components/connectors/push-to-esp-dialog";
+import { CommandPalette } from "@/components/workspace/command-palette";
+import { useWorkspaceShortcuts } from "@/hooks/use-workspace-shortcuts";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
@@ -64,6 +67,9 @@ export default function WorkspacePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projectId = Number(params.id);
+  if (Number.isNaN(projectId)) {
+    notFound();
+  }
 
   // ── Agent from query param (e.g., ?agent=scaffolder from project creation) ──
   const VALID_AGENTS: AgentMode[] = [
@@ -399,7 +405,9 @@ export default function WorkspacePage() {
   // ── Image Gen Handler ──
   const handleInsertImage = useCallback(
     (url: string, width: number, height: number, alt: string) => {
-      const imgTag = `<img src="${url}" alt="${alt}" width="${width}" height="${height}" style="max-width: 100%; height: auto;" />`;
+      const escapeAttr = (s: string): string =>
+        s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const imgTag = `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" width="${width}" height="${height}" style="max-width: 100%; height: auto;" />`;
       setEditorContent((prev) => {
         const offset = Math.min(cursorOffsetRef.current, prev.length);
         return prev.slice(0, offset) + imgTag + prev.slice(offset);
@@ -417,6 +425,31 @@ export default function WorkspacePage() {
   const handleChatResize = useCallback((size: PanelSize) => {
     setChatCollapsed(size.asPercentage === 0);
   }, []);
+
+  const handleToggleQAPanel = useCallback(() => {
+    setQaPanelOpen((v) => {
+      if (!v) setDesignRefOpen(false);
+      return !v;
+    });
+  }, []);
+
+  const handleToggleChat = useCallback(() => {
+    if (chatCollapsed) {
+      chatPanelRef.current?.expand();
+    } else {
+      chatPanelRef.current?.collapse();
+    }
+  }, [chatCollapsed, chatPanelRef]);
+
+  // ── Keyboard Shortcuts ──
+  useWorkspaceShortcuts({
+    onSave: handleSave,
+    onGenerate: () => setBlueprintOpen(true),
+    onRunQA: handleRunQA,
+    onExport: handleExport,
+    onToggleChat: handleToggleChat,
+    onToggleSidebar: handleToggleQAPanel,
+  });
 
   // ── Render ──
   if (projectLoading) {
@@ -451,12 +484,7 @@ export default function WorkspacePage() {
         onRunQA={handleRunQA}
         isRunningQA={isRunningQA}
         qaResult={qaResultData}
-        onToggleQAPanel={() => {
-          setQaPanelOpen((v) => {
-            if (!v) setDesignRefOpen(false);
-            return !v;
-          });
-        }}
+        onToggleQAPanel={handleToggleQAPanel}
         designRefOpen={designRefOpen}
         onDesignRefToggle={(open) => {
           setDesignRefOpen(open);
@@ -468,9 +496,26 @@ export default function WorkspacePage() {
         onGenerateImage={() => setImageGenOpen(true)}
         collaborators={collaborators}
         collaborationStatus={collabStatus}
-        targetClients={project.target_clients}
         onViewBrief={() => setBriefDialogOpen(true)}
         onRunBlueprint={() => setBlueprintOpen(true)}
+        commandPalette={
+          <CommandPalette
+            onSave={handleSave}
+            onRunBlueprint={() => setBlueprintOpen(true)}
+            onRunQA={handleRunQA}
+            onExport={handleExport}
+            onPushToESP={handlePushToESP}
+            onGenerateImage={() => setImageGenOpen(true)}
+            onToggleQAPanel={handleToggleQAPanel}
+            onDesignRefToggle={(open) => {
+              setDesignRefOpen(open);
+              if (open) setQaPanelOpen(false);
+            }}
+            designRefOpen={designRefOpen}
+            onToggleChat={handleToggleChat}
+            onNavigateBack={() => router.push("/")}
+          />
+        }
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -536,9 +581,9 @@ export default function WorkspacePage() {
           </Panel>
         </Group>
 
-        {/* QA Results Panel (right sidebar) */}
+        {/* Tool Sidebar (right — tabbed QA/Testing/Clients/Intelligence) */}
         {qaPanelOpen && qaResultData && (
-          <QAResultsPanel
+          <ToolSidebar
             result={qaResultData}
             onClose={() => setQaPanelOpen(false)}
             onOverrideSuccess={handleQAOverrideSuccess}

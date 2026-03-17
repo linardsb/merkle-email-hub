@@ -4,16 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   MessageSquare,
-  Wand2,
-  Moon,
-  PenTool,
   Trash2,
-  Wrench,
-  Eye,
-  Users,
-  FileSearch,
-  BookOpen,
-  Lightbulb,
   History,
   Zap,
   ToggleLeft,
@@ -27,28 +18,9 @@ import { useChatHistory } from "@/hooks/use-chat-history";
 import { MessageList } from "./chat/message-list";
 import { ChatInput } from "./chat/chat-input";
 import { HistoryPanel } from "./chat/history-panel";
+import { AgentSelectorDropdown } from "./chat/agent-selector-dropdown";
 import type { AgentMode } from "@/types/chat";
 import type { ChatPanelTab, ChatSession } from "@/types/chat-history";
-
-interface AgentOption {
-  id: AgentMode;
-  labelKey: string;
-  icon: React.ComponentType<{ className?: string }>;
-  enabled: boolean;
-}
-
-const AGENTS: AgentOption[] = [
-  { id: "chat", labelKey: "chatAgentChat", icon: MessageSquare, enabled: true },
-  { id: "scaffolder", labelKey: "chatAgentScaffolder", icon: Wand2, enabled: true },
-  { id: "dark_mode", labelKey: "chatAgentDarkMode", icon: Moon, enabled: true },
-  { id: "content", labelKey: "chatAgentContent", icon: PenTool, enabled: true },
-  { id: "outlook_fixer", labelKey: "chatAgentOutlookFixer", icon: Wrench, enabled: true },
-  { id: "accessibility", labelKey: "chatAgentAccessibility", icon: Eye, enabled: true },
-  { id: "personalisation", labelKey: "chatAgentPersonalisation", icon: Users, enabled: true },
-  { id: "code_reviewer", labelKey: "chatAgentCodeReviewer", icon: FileSearch, enabled: true },
-  { id: "knowledge", labelKey: "chatAgentKnowledge", icon: BookOpen, enabled: true },
-  { id: "innovation", labelKey: "chatAgentInnovation", icon: Lightbulb, enabled: true },
-];
 
 interface ChatPanelProps {
   projectId?: string;
@@ -211,25 +183,9 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
                 </label>
               </div>
             ) : (
-              /* Agent mode: existing scrollable agent buttons */
-              <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
-                {AGENTS.map((opt) => {
-                  const Icon = opt.icon;
-                  const isActive = agent === opt.id;
-                  return (
-                    <Button
-                      key={opt.id}
-                      variant="ghost"
-                      size="sm"
-                      disabled={!opt.enabled}
-                      className={`h-7 shrink-0 gap-1.5 px-2 text-xs ${isActive ? "bg-accent text-accent-foreground" : ""}`}
-                      onClick={() => setAgent(opt.id)}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {t(opt.labelKey)}
-                    </Button>
-                  );
-                })}
+              /* Agent mode: dropdown selector */
+              <div className="flex flex-1 items-center">
+                <AgentSelectorDropdown agent={agent} onSelect={setAgent} />
               </div>
             )}
 
