@@ -1,13 +1,12 @@
 """Tests for CanIEmailSyncPoller."""
 
 from collections.abc import Generator
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.knowledge.ontology.sync.poller import CanIEmailSyncPoller
-from app.knowledge.ontology.sync.schemas import SyncDiff, SyncState
+from app.knowledge.ontology.sync.schemas import SyncReport
 
 
 @pytest.fixture()
@@ -15,73 +14,77 @@ def poller() -> Generator[CanIEmailSyncPoller, None, None]:
     with patch("app.knowledge.ontology.sync.poller.get_settings") as mock_settings:
         settings = mock_settings.return_value
         settings.ontology_sync.interval_hours = 168
-        settings.ontology_sync.github_repo = "hteumeuleu/caniemail"
-        settings.ontology_sync.github_branch = "main"
-        settings.ontology_sync.request_timeout_seconds = 10
-        settings.ontology_sync.max_features_per_sync = 500
-        settings.ontology_sync.github_token = ""
+        settings.ontology_sync.dry_run = True
         settings.cognee.enabled = False
 
         with patch(
             "app.knowledge.ontology.sync.caniemail_client.get_settings",
             return_value=settings,
         ):
+            settings.ontology_sync.github_repo = "hteumeuleu/caniemail"
+            settings.ontology_sync.github_branch = "main"
+            settings.ontology_sync.request_timeout_seconds = 10
+            settings.ontology_sync.max_features_per_sync = 500
+            settings.ontology_sync.github_token = ""
             yield CanIEmailSyncPoller()
 
 
 class TestFetch:
     @pytest.mark.anyio()
-    async def test_skips_unchanged_sha(self, poller: CanIEmailSyncPoller) -> None:
-        poller._client = MagicMock()
-        poller._client.get_latest_commit_sha = AsyncMock(return_value="abc123")
-        poller._load_state = AsyncMock(  # type: ignore[method-assign]
-            return_value=SyncState(last_commit_sha="abc123"),
-        )
+    async def test_delegates_to_service(self, poller: CanIEmailSyncPoller) -> None:
+        expected_report = SyncReport(new_properties=3, dry_run=True, commit_sha="abc123")
+        poller._service.sync = AsyncMock(return_value=expected_report)  # type: ignore[method-assign]
 
         result = await poller.fetch()
-        assert result is None
+
+        assert result is expected_report
+        poller._service.sync.assert_awaited_once_with(dry_run=True)
 
     @pytest.mark.anyio()
-    async def test_fetches_on_new_sha(self, poller: CanIEmailSyncPoller) -> None:
-        poller._client = MagicMock()
-        poller._client.get_latest_commit_sha = AsyncMock(return_value="new_sha")
-        poller._client.fetch_all_features = AsyncMock(return_value=[])
-        poller._load_state = AsyncMock(  # type: ignore[method-assign]
-            return_value=SyncState(last_commit_sha="old_sha"),
-        )
+    async def test_passes_dry_run_from_config(self, poller: CanIEmailSyncPoller) -> None:
+        poller._dry_run = False
+        poller._service.sync = AsyncMock(return_value=SyncReport())  # type: ignore[method-assign]
 
-        result = await poller.fetch()
-        assert result is not None
-        assert result["sha"] == "new_sha"  # type: ignore[index]
+        await poller.fetch()
+
+        poller._service.sync.assert_awaited_once_with(dry_run=False)
+
+
+class TestEnrich:
+    @pytest.mark.anyio()
+    async def test_passthrough(self, poller: CanIEmailSyncPoller) -> None:
+        report = SyncReport(new_properties=1)
+        result = await poller.enrich(report)
+        assert result is report
 
 
 class TestStore:
     @pytest.mark.anyio()
-    async def test_applies_diff_when_changes(self, poller: CanIEmailSyncPoller) -> None:
-        diff = SyncDiff(new_properties=["display_flex"])
-        data: dict[str, Any] = {"sha": "abc123", "features": [], "diff": diff}
+    async def test_logs_and_refreshes_on_changes(self, poller: CanIEmailSyncPoller) -> None:
+        report = SyncReport(new_properties=3, updated_levels=2, dry_run=False)
+        poller._refresh_graph = AsyncMock()  # type: ignore[method-assign]
 
-        with (
-            patch("app.knowledge.ontology.sync.poller.apply_sync", return_value=1) as mock_apply,
-        ):
-            poller._save_state = AsyncMock()  # type: ignore[method-assign]
-            poller._refresh_graph = AsyncMock()  # type: ignore[method-assign]
-            await poller.store(data)
+        await poller.store(report)
 
-        mock_apply.assert_called_once()
         poller._refresh_graph.assert_awaited_once()
 
     @pytest.mark.anyio()
-    async def test_noop_when_no_changes(self, poller: CanIEmailSyncPoller) -> None:
-        diff = SyncDiff()
-        data: dict[str, Any] = {"sha": "abc123", "features": [], "diff": diff}
+    async def test_no_refresh_on_dry_run(self, poller: CanIEmailSyncPoller) -> None:
+        report = SyncReport(new_properties=3, dry_run=True)
+        poller._refresh_graph = AsyncMock()  # type: ignore[method-assign]
 
-        with patch("app.knowledge.ontology.sync.poller.apply_sync") as mock_apply:
-            poller._save_state = AsyncMock()  # type: ignore[method-assign]
-            poller._refresh_graph = AsyncMock()  # type: ignore[method-assign]
-            await poller.store(data)
+        await poller.store(report)
 
-        mock_apply.assert_not_called()
+        poller._refresh_graph.assert_not_awaited()
+
+    @pytest.mark.anyio()
+    async def test_no_refresh_when_no_changes(self, poller: CanIEmailSyncPoller) -> None:
+        report = SyncReport(dry_run=False)
+        poller._refresh_graph = AsyncMock()  # type: ignore[method-assign]
+
+        await poller.store(report)
+
+        poller._refresh_graph.assert_not_awaited()
 
     @pytest.mark.anyio()
     async def test_store_none_is_noop(self, poller: CanIEmailSyncPoller) -> None:

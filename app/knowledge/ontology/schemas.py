@@ -44,3 +44,35 @@ class CompetitiveReportTextResponse(BaseModel):
     """Formatted text competitive landscape report."""
 
     report: str
+
+
+class ChangelogEntryResponse(BaseModel):
+    """A single change from a sync operation."""
+
+    property_id: str
+    client_id: str
+    old_level: str | None
+    new_level: str
+    source: str
+
+
+class SyncReportResponse(BaseModel):
+    """Result of a sync operation."""
+
+    new_properties: int
+    updated_levels: int
+    new_clients: int
+    changelog: list[ChangelogEntryResponse]
+    errors: list[str]
+    dry_run: bool
+    commit_sha: str
+
+
+class SyncStatusResponse(BaseModel):
+    """Current sync state from Redis."""
+
+    last_sync_at: str | None
+    last_commit_sha: str | None
+    features_synced: int
+    error_count: int
+    last_report: dict[str, object] | None

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Test: display: grid</title>
+<style>
+body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+.pass { background: #00cc00; color: #fff; padding: 10px; }
+.fail { background: #cc0000; color: #fff; padding: 10px; }
+.test { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+</style></head>
+<body>
+<div class="test"><div class="pass">A</div><div class="pass">B</div></div>
+<!-- Fallback: Grid not supported: items stack -->
+</body></html>

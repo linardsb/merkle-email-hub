@@ -234,6 +234,22 @@ class OntologySyncConfig(BaseModel):
     github_token: str = ""  # Optional — increases rate limit from 60/hr to 5000/hr
     request_timeout_seconds: int = 30
     max_features_per_sync: int = 500  # Safety cap
+    dry_run: bool = True  # Dry run by default until manually verified
+
+
+class ChangeDetectionConfig(BaseModel):
+    """Email client rendering change detection settings."""
+
+    enabled: bool = False  # CHANGE_DETECTION__ENABLED
+    interval_hours: int = 168  # Weekly default — CHANGE_DETECTION__INTERVAL_HOURS
+    diff_threshold: float = 0.02  # 2% pixel diff = rendering change
+    clients: list[str] = [
+        "gmail_web",
+        "outlook_2019",
+        "apple_mail",
+        "outlook_dark",
+        "mobile_ios",
+    ]
 
 
 class DesignSyncConfig(BaseModel):
@@ -361,6 +377,7 @@ class Settings(BaseSettings):
     ws: WebSocketConfig = WebSocketConfig()
     rendering: RenderingConfig = RenderingConfig()
     ontology_sync: OntologySyncConfig = OntologySyncConfig()
+    change_detection: ChangeDetectionConfig = ChangeDetectionConfig()
     design_sync: DesignSyncConfig = DesignSyncConfig()
     esp_sync: ESPSyncConfig = ESPSyncConfig()
     eval: EvalConfig = EvalConfig()

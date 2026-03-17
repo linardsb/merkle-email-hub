@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Test: object-fit</title>
+<style>
+body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+.pass { background: #00cc00; color: #fff; padding: 10px; }
+.fail { background: #cc0000; color: #fff; padding: 10px; }
+.test { width: 100px; height: 100px; overflow: hidden; } .test img { width: 100%; height: 100%; object-fit: cover; }
+</style></head>
+<body>
+<div class="test"><div class="pass" style="width:100%;height:100%">IMG</div></div>
+<!-- Fallback: Without object-fit, image distorts -->
+</body></html>

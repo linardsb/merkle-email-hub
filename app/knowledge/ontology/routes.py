@@ -6,14 +6,18 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
+from app.core.config import get_settings
 from app.core.rate_limit import limiter
 from app.knowledge.ontology.schemas import (
     CapabilityFeasibilityResponse,
+    ChangelogEntryResponse,
     CompetitiveReportResponse,
     CompetitiveReportTextResponse,
     EmailClientResponse,
+    SyncReportResponse,
+    SyncStatusResponse,
 )
 
 if TYPE_CHECKING:
@@ -99,3 +103,65 @@ async def get_competitive_report_text(
     from app.ai.blueprints.competitor_context import format_full_competitive_report
 
     return CompetitiveReportTextResponse(report=format_full_competitive_report())
+
+
+@router.post("/sync", response_model=SyncReportResponse)
+@limiter.limit("2/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
+async def trigger_sync(
+    request: Request,  # noqa: ARG001
+    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    dry_run: bool = True,
+) -> SyncReportResponse:
+    """Manually trigger a Can I Email ontology sync.
+
+    Admin only. Defaults to dry_run=True for safety.
+    """
+    from app.core.exceptions import ForbiddenError
+    from app.knowledge.ontology.sync.service import CanIEmailSyncService
+
+    settings = get_settings()
+    if not settings.ontology_sync.enabled:
+        raise ForbiddenError("Ontology sync is disabled")
+
+    service = CanIEmailSyncService()
+    report = await service.sync(dry_run=dry_run)
+
+    return SyncReportResponse(
+        new_properties=report.new_properties,
+        updated_levels=report.updated_levels,
+        new_clients=report.new_clients,
+        changelog=[
+            ChangelogEntryResponse(
+                property_id=c.property_id,
+                client_id=c.client_id,
+                old_level=c.old_level,
+                new_level=c.new_level,
+                source=c.source,
+            )
+            for c in report.changelog
+        ],
+        errors=report.errors,
+        dry_run=report.dry_run,
+        commit_sha=report.commit_sha,
+    )
+
+
+@router.get("/sync-status", response_model=SyncStatusResponse)
+@limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
+async def get_sync_status(
+    request: Request,  # noqa: ARG001
+    _current_user: Annotated[User, Depends(get_current_user)],
+) -> SyncStatusResponse:
+    """Get the last sync status and report."""
+    from app.knowledge.ontology.sync.service import CanIEmailSyncService
+
+    service = CanIEmailSyncService()
+    status = await service.get_status()
+
+    return SyncStatusResponse(
+        last_sync_at=status.last_sync_at,
+        last_commit_sha=status.last_commit_sha,
+        features_synced=status.features_synced,
+        error_count=status.error_count,
+        last_report=status.last_report,
+    )

@@ -474,7 +474,7 @@
 - Config: `KNOWLEDGE__CANIEMAIL_SYNC_ENABLED: bool = False`, `KNOWLEDGE__CANIEMAIL_SYNC_INTERVAL_HOURS: int = 24`, `KNOWLEDGE__CANIEMAIL_DRY_RUN: bool = True` (dry run by default until manually verified)
 **Security:** Fetches from a known GitHub URL only — no user-provided URLs. Data is CSS property support information — no executable content. Sync is additive-only by default. Admin-only manual trigger. GitHub rate limiting handled via conditional requests (If-Modified-Since).
 **Verify:** Run sync → new properties added that weren't in original ontology seed. Run sync again immediately → no changes (idempotent). Run dry_run → report generated but no data modified. Invalid GitHub response → graceful failure, no data corruption. Ontology queries return updated data after sync. `make test` passes.
-- [ ] 21.1 caniemail auto-sync pipeline
+- [x] ~~21.1 caniemail auto-sync pipeline~~ DONE
 
 ### 21.2 Email Client Rendering Change Detector `[Backend]`
 **What:** A scheduled service that renders a suite of CSS feature-detection email templates through the Playwright rendering service (17.1), compares screenshots against stored baselines, and flags when a client's rendering behavior changes. Creates a proprietary, real-time email client behavior changelog.
@@ -491,7 +491,7 @@
 - Config: `KNOWLEDGE__CHANGE_DETECTION_ENABLED: bool = False`, `KNOWLEDGE__CHANGE_DETECTION_INTERVAL_HOURS: int = 168` (weekly)
 **Security:** Feature detection templates are static HTML (no dynamic content). Rendering uses sandboxed Playwright (17.1 security model). Changes stored as structured data + screenshot diffs — no executable content.
 **Verify:** Modify a rendering profile to simulate a client change (e.g., enable flexbox in outlook_2019 profile) → change detector flags the difference. No profile changes → no changes detected. Detected change creates knowledge base document. `make test` passes.
-- [ ] 21.2 Email client rendering change detector
+- [x] ~~21.2 Email client rendering change detector~~ DONE
 
 ### 21.3 Competitive Intelligence Dashboard & Tests `[Frontend]`
 **What:** Frontend dashboard showing ontology sync status, rendering change timeline, support matrix diff viewer (what changed since last sync), and email client trend analysis. Plus full test suite and SDK regeneration.
@@ -504,7 +504,7 @@
 - SDK regeneration
 - Target: 25+ tests
 **Verify:** `make test` passes. `make check-fe` passes. `make check` all green.
-- [ ] 21.3 Competitive intelligence dashboard & tests
+- [x] ~~21.3 Competitive intelligence dashboard & tests~~ DONE
 
 ---
 

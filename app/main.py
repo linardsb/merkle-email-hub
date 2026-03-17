@@ -121,6 +121,18 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("ontology.sync.poller_start_failed", exc_info=True)
 
+    # Start rendering change detection poller
+    change_detector_poller = None
+    if settings.change_detection.enabled:
+        try:
+            from app.knowledge.ontology.change_poller import RenderingChangePoller
+
+            change_detector_poller = RenderingChangePoller()
+            await change_detector_poller.start()
+            logger.info("change_detection.poller_started")
+        except Exception:
+            logger.warning("change_detection.poller_start_failed", exc_info=True)
+
     # Start production judge worker (samples successful runs for offline LLM judging)
     judge_worker = None
     if settings.eval.production_sample_rate > 0.0 and await redis_available():
@@ -156,6 +168,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if judge_worker is not None:
         await judge_worker.stop()
         logger.info("eval.production_judge_worker_stopped")
+
+    if change_detector_poller is not None:
+        await change_detector_poller.stop()
+        logger.info("change_detection.poller_stopped")
 
     if caniemail_poller is not None:
         await caniemail_poller.stop()

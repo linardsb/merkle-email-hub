@@ -18,6 +18,8 @@ import { PropertyTestPanel } from "@/components/qa/PropertyTestPanel";
 import { OutlookAdvisorPanel } from "@/components/outlook/OutlookAdvisorPanel";
 import { CSSCompilerPanel } from "@/components/email-engine/CSSCompilerPanel";
 import { GmailPredictionPanel } from "@/components/gmail/GmailPredictionPanel";
+import { OntologySyncPanel } from "@/components/knowledge/OntologySyncPanel";
+import { CompetitiveReportPanel } from "@/components/knowledge/CompetitiveReportPanel";
 import type { QAResultResponse } from "@/types/qa";
 import type { VisualQAEntityType } from "@/types/rendering";
 
@@ -215,6 +217,16 @@ export function QAResultsPanel({
           <GmailPredictionPanel html={html} onHtmlUpdate={onHtmlUpdate} />
         </div>
       ) : null}
+
+      {/* Ontology Sync section */}
+      <div className="border-t border-border px-4 py-3">
+        <OntologySyncPanel />
+      </div>
+
+      {/* Competitive Intelligence section */}
+      <div className="border-t border-border px-4 py-3">
+        <CompetitiveReportPanel />
+      </div>
 
       {/* Override button (developer+ only, failing results only) */}
       {canOverride && (

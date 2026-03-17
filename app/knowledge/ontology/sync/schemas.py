@@ -39,6 +39,30 @@ class SyncDiff:
         )
 
 
+@dataclass(frozen=True)
+class ChangelogEntry:
+    """A single change detected during sync."""
+
+    property_id: str
+    client_id: str
+    old_level: str | None  # None for new entries
+    new_level: str
+    source: str  # "caniemail"
+
+
+@dataclass
+class SyncReport:
+    """Result of a sync operation."""
+
+    new_properties: int = 0
+    updated_levels: int = 0
+    new_clients: int = 0
+    changelog: list[ChangelogEntry] = field(default_factory=lambda: list[ChangelogEntry]())
+    errors: list[str] = field(default_factory=lambda: list[str]())
+    dry_run: bool = False
+    commit_sha: str = ""
+
+
 @dataclass
 class SyncState:
     """Persisted in Redis — tracks last successful sync."""
@@ -47,3 +71,14 @@ class SyncState:
     last_commit_sha: str = ""
     features_synced: int = 0
     error_count: int = 0
+
+
+@dataclass
+class SyncStatus:
+    """Computed sync status for API responses."""
+
+    last_sync_at: str | None = None
+    last_commit_sha: str | None = None
+    features_synced: int = 0
+    error_count: int = 0
+    last_report: dict[str, object] | None = None
