@@ -136,9 +136,9 @@ export function VisualQADialog({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="max-w-[56rem] rounded-xl border border-border bg-card p-0 shadow-2xl backdrop:bg-black/50"
+      className="fixed inset-0 m-auto h-[90vh] w-[90vw] max-w-[96rem] rounded-xl border border-border bg-card p-0 shadow-2xl backdrop:bg-black/50"
     >
-      <div className="flex h-[80vh] max-h-[48rem] flex-col">
+      <div className="flex h-full flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
