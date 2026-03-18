@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaResponse } from "@email-hub/sdk";
-import { useTranslations } from "next-intl";
 import { notFound } from "next/navigation";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
@@ -21,6 +20,7 @@ import {
   useCreateTemplate,
 } from "@/hooks/use-templates";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { stripAnnotations } from "@/lib/builder-sync";
 import { useEmailPreview } from "@/hooks/use-email";
 import { useQARun } from "@/hooks/use-qa";
 import { usePersonas } from "@/hooks/use-personas";
@@ -37,6 +37,9 @@ import { ExportDialog } from "@/components/connectors/export-dialog";
 import { useExportHistory } from "@/hooks/use-export-history";
 import { useBrandConfig } from "@/hooks/use-brand";
 import { useCollaboration } from "@/hooks/use-collaboration";
+import { usePresence } from "@/hooks/use-presence";
+import { PresencePanel } from "@/components/collaboration";
+import { getCursorColor } from "@/lib/collaboration/awareness";
 import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialog";
 import { CompatibilityBriefDialog } from "@/components/workspace/compatibility-brief-dialog";
 import { BlueprintRunDialog } from "@/components/workspace/blueprint-run-dialog";
@@ -62,7 +65,6 @@ preheader: ""
 `;
 
 export default function WorkspacePage() {
-  const t = useTranslations("workspace");
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -159,7 +161,14 @@ export default function WorkspacePage() {
   const [brandViolations, setBrandViolations] = useState(0);
 
   // ── Collaboration ──
-  const { status: collabStatus, collaborators } = useCollaboration(projectId, activeTemplateId);
+  const { status: collabStatus, doc: collabDoc, awareness } = useCollaboration(projectId, activeTemplateId);
+  const {
+    collaborators,
+    followTarget,
+    startFollowing,
+    stopFollowing,
+  } = usePresence({ awareness, role: "developer" });
+  const [presencePanelOpen, setPresencePanelOpen] = useState(false);
 
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
@@ -188,7 +197,7 @@ export default function WorkspacePage() {
         !demoCompiledRef.current
       ) {
         demoCompiledRef.current = true;
-        const sanitized = sanitizeHtml(latestVersion.html_source);
+        const sanitized = sanitizeHtml(stripAnnotations(latestVersion.html_source));
         triggerPreview({ source_html: sanitized })
           .then((r) => {
             if (r) {
@@ -235,14 +244,14 @@ export default function WorkspacePage() {
 
     setSaveStatus("saving");
     try {
-      const sanitized = sanitizeHtml(editorContent);
+      const sanitized = sanitizeHtml(stripAnnotations(editorContent));
       const result = await saveVersion({ html_source: sanitized });
       if (result) {
         setSavedContent(editorContent);
         setSaveStatus("saved");
         mutateTemplates();
         toast.success(
-          t("templateSaved", { version: result.version_number })
+          `Changes saved as version \${result.version_number}`
         );
 
         // Auto-clear "saved" indicator after 3s
@@ -263,7 +272,7 @@ export default function WorkspacePage() {
       }
     } catch {
       setSaveStatus("error");
-      toast.error(t("saveError"));
+      toast.error("Failed to save");
     }
   }, [
     activeTemplateId,
@@ -273,22 +282,21 @@ export default function WorkspacePage() {
     saveVersion,
     mutateTemplates,
     triggerPreview,
-    t,
   ]);
 
   const handleCompile = useCallback(async () => {
     if (!editorContent.trim()) return;
     try {
-      const sanitized = sanitizeHtml(editorContent);
+      const sanitized = sanitizeHtml(stripAnnotations(editorContent));
       const result = await triggerPreview({ source_html: sanitized });
       if (result) {
         setCompiledHtml(result.compiled_html);
         setBuildTimeMs(result.build_time_ms);
       }
     } catch {
-      toast.error(t("previewCompileError"));
+      toast.error("Failed to compile preview");
     }
-  }, [editorContent, triggerPreview, t]);
+  }, [editorContent, triggerPreview]);
 
   const handleSelectTemplate = useCallback(
     (template: TemplateResponse) => {
@@ -309,7 +317,7 @@ export default function WorkspacePage() {
   const handleCreateTemplate = useCallback(async () => {
     try {
       const result = await createTemplate({
-        name: t("newTemplateName"),
+        name: "Untitled Template",
         html_source: DEFAULT_TEMPLATE,
       });
       if (result) {
@@ -318,20 +326,20 @@ export default function WorkspacePage() {
         setEditorContent(DEFAULT_TEMPLATE);
         setSavedContent(DEFAULT_TEMPLATE);
         setSaveStatus("idle");
-        toast.success(t("templateCreated"));
+        toast.success("Template created");
       }
     } catch {
-      toast.error(t("saveError"));
+      toast.error("Failed to save");
     }
-  }, [createTemplate, mutateTemplates, t]);
+  }, [createTemplate, mutateTemplates]);
 
   const handleApplyToEditor = useCallback(
     (html: string) => {
       setEditorContent(html);
       setSaveStatus("idle");
-      toast.success(t("chatApplied"));
+      toast.success("AI output applied to editor");
     },
-    [t]
+    []
   );
 
   const handleApplyBlueprintResult = useCallback(
@@ -339,17 +347,16 @@ export default function WorkspacePage() {
       setEditorContent(html);
       setSaveStatus("idle");
       setBlueprintOpen(false);
-      toast.success(t("chatApplied"));
+      toast.success("AI output applied to editor");
     },
-    [t],
+    [],
   );
 
   // ── QA Handlers ──
-  const tQA = useTranslations("qa");
 
   const handleRunQA = useCallback(async () => {
     if (!compiledHtml?.trim()) {
-      toast.error(tQA("qaNoCompiledHtml"));
+      toast.error("Compile the template first before running QA");
       return;
     }
     try {
@@ -358,19 +365,17 @@ export default function WorkspacePage() {
         setQaResultData(result);
         setQaPanelOpen(true);
         if (result.passed) {
-          toast.success(tQA("qaPassed"));
+          toast.success("All QA checks passed");
         } else {
           toast.warning(
-            tQA("qaFailed", {
-              failed: result.checks_total - result.checks_passed,
-            })
+            `${result.checks_total - result.checks_passed} QA check(s) failed`
           );
         }
       }
     } catch {
-      toast.error(tQA("qaError"));
+      toast.error("QA check failed");
     }
-  }, [compiledHtml, triggerQA, tQA]);
+  }, [compiledHtml, triggerQA]);
 
   const handleQAOverrideSuccess = useCallback(() => {
     if (qaResultData?.id) {
@@ -387,20 +392,20 @@ export default function WorkspacePage() {
   // ── Export Handler ──
   const handleExport = useCallback(() => {
     if (!compiledHtml?.trim()) {
-      toast.error(t("exportNoCompiledHtml"));
+      toast.error("Compile the template first before exporting");
       return;
     }
     setExportDialogOpen(true);
-  }, [compiledHtml, t]);
+  }, [compiledHtml]);
 
   // ── Push to ESP Handler ──
   const handlePushToESP = useCallback(() => {
     if (!compiledHtml?.trim()) {
-      toast.error(t("pushToESPNoHtml"));
+      toast.error("Compile the template first before pushing to ESP");
       return;
     }
     setPushDialogOpen(true);
-  }, [compiledHtml, t]);
+  }, [compiledHtml]);
 
   // ── Image Gen Handler ──
   const handleInsertImage = useCallback(
@@ -413,9 +418,9 @@ export default function WorkspacePage() {
         return prev.slice(0, offset) + imgTag + prev.slice(offset);
       });
       setSaveStatus("idle");
-      toast.success(t("chatApplied"));
+      toast.success("AI output applied to editor");
     },
-    [t],
+    [],
   );
 
   // ── Panel State ──
@@ -451,11 +456,38 @@ export default function WorkspacePage() {
     onToggleSidebar: handleToggleQAPanel,
   });
 
+  // ── Follow Mode: scroll editor to followed user's cursor ──
+  const lastFollowLineRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!followTarget) {
+      lastFollowLineRef.current = null;
+      return;
+    }
+    const target = collaborators.find((c) => c.clientId === followTarget.clientId);
+    if (!target?.cursor) return;
+
+    // Only scroll if the followed cursor actually moved to a different line
+    if (target.cursor.line === lastFollowLineRef.current) return;
+    lastFollowLineRef.current = target.cursor.line;
+
+    const view = editorBridge.editorRef.current?.getView?.();
+    if (!view) return;
+
+    const lineNum = Math.min(target.cursor.line, view.state.doc.lines);
+    const line = view.state.doc.line(lineNum);
+    // Dynamic import to avoid pulling @codemirror/view into page bundle
+    import("@codemirror/view").then(({ EditorView: EV }) => {
+      view.dispatch({
+        effects: EV.scrollIntoView(line.from, { y: "center" }),
+      });
+    });
+  }, [followTarget, collaborators, editorBridge.editorRef]);
+
   // ── Render ──
   if (projectLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">{t("loading")}</p>
+        <p className="text-sm text-muted-foreground">{"Loading workspace..."}</p>
       </div>
     );
   }
@@ -464,7 +496,7 @@ export default function WorkspacePage() {
     return (
       <div className="flex h-full items-center justify-center">
         <p className="text-sm text-destructive">
-          {projectError?.status === 403 ? t("noAccess") : t("notFound")}
+          {projectError?.status === 403 ? "You don't have access to this project" : "Project not found"}
         </p>
       </div>
     );
@@ -496,6 +528,7 @@ export default function WorkspacePage() {
         onGenerateImage={() => setImageGenOpen(true)}
         collaborators={collaborators}
         collaborationStatus={collabStatus}
+        onTogglePresencePanel={() => setPresencePanelOpen((v) => !v)}
         onViewBrief={() => setBriefDialogOpen(true)}
         onRunBlueprint={() => setBlueprintOpen(true)}
         commandPalette={
@@ -534,6 +567,12 @@ export default function WorkspacePage() {
                   onBrandViolationsChange={setBrandViolations}
                   onCursorOffsetChange={(offset) => { cursorOffsetRef.current = offset; }}
                   onSelectionChange={setHasEditorSelection}
+                  collaborative={collabDoc && awareness ? {
+                    doc: collabDoc,
+                    awareness,
+                    user: { name: "You", color: getCursorColor(collabDoc.clientID), role: "developer" },
+                  } : undefined}
+                  projectId={projectId}
                 />
               </Panel>
 
@@ -591,6 +630,17 @@ export default function WorkspacePage() {
             entityType="golden_template"
             entityId={latestVersion?.id ?? 0}
             onHtmlUpdate={setEditorContent}
+          />
+        )}
+
+        {/* Presence Panel (right sidebar) */}
+        {presencePanelOpen && (
+          <PresencePanel
+            collaborators={collaborators}
+            followTarget={followTarget}
+            onFollow={startFollowing}
+            onUnfollow={stopFollowing}
+            onClose={() => setPresencePanelOpen(false)}
           />
         )}
 
@@ -654,7 +704,7 @@ export default function WorkspacePage() {
           className="flex w-full items-center justify-center gap-2 border-t border-border bg-card py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <ChevronUp className="h-3.5 w-3.5" />
-          {t("expandChat")}
+          {"Expand AI Assistant"}
         </button>
       )}
     </>

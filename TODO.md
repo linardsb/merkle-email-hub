@@ -120,7 +120,7 @@
 - Add i18n keys across 6 locales — ~30 keys for presence, cursors, collaboration status
 **Security:** User display names sourced from authenticated session only (not from Yjs awareness — verified server-side). "Follow" mode transmits only cursor position — no editor content. Viewer role enforced: read-only users see cursors but their edits are rejected by server.
 **Verify:** 3 users in same document → 3 colored cursors visible to each user. User selects text → selection visible to peers. User goes idle (60s) → status changes to idle for peers. "Follow" mode → editor scrolls to followed user's position. Viewer opens document → sees cursors but cannot edit. `make check-fe` passes.
-- [ ] 24.3 Collaborative cursor & presence awareness
+- [x] ~~24.3 Collaborative cursor & presence awareness~~ DONE
 
 ### 24.4 Visual Email Builder — Component Palette & Canvas `[Frontend]`
 **What:** A drag-and-drop visual email builder where users construct emails by dragging section components from a palette onto a canvas. The canvas renders a live preview of the email using the same component library that the code editor uses. Sections snap to email-width constraints (600px max), stack vertically, and show placeholder content that's editable inline.
@@ -168,7 +168,7 @@
 - Add i18n keys across 6 locales — ~45 keys for builder labels, tooltips, section types
 **Security:** Builder canvas uses sandboxed iframe (`sandbox="allow-same-origin"`) — no script execution in preview. Inline text editing sanitized via DOMPurify before committing to section data. Component HTML from API is pre-sanitized (existing pipeline). Drag-and-drop uses library with built-in XSS prevention (no innerHTML). User-uploaded components validated through existing component ingestion pipeline.
 **Verify:** Drag hero component from palette → drops on canvas → preview shows hero section. Reorder sections via drag → preview updates. Click section → property panel opens (24.5). Delete section → removed from canvas. Undo → section restored. Inline text edit → preview reflects change. 10 sections on canvas → smooth drag performance. Keyboard DnD works. `make check-fe` passes.
-- [ ] 24.4 Visual email builder — component palette & canvas
+- [x] ~~24.4 Visual email builder — component palette & canvas~~ DONE
 
 ### 24.5 Visual Builder — Property Panels & Section Configuration `[Frontend]`
 **What:** Right sidebar property panels that appear when a section is selected in the visual builder. Each panel exposes section-specific configuration: content editing (text, images, links), style controls (colors from design system palette, spacing, alignment), responsive behavior toggles, and slot configuration (for template slots from 11.25). Non-technical users configure sections visually — no CSS knowledge required.
@@ -213,7 +213,7 @@
 - Add i18n keys across 6 locales — ~60 keys for property panel labels, tab names, input placeholders
 **Security:** Color picker restricted to design system palette — prevents arbitrary CSS injection via color values. Custom CSS class input validated against allowlist of design system classes. HTML attribute editor: `on*` event handlers blocked, `href` validated (no `javascript:` URIs), `style` attribute goes through sanitization. Rich text editor output sanitized via DOMPurify.
 **Verify:** Select hero section → property panel shows Content tab with text + image + CTA slots. Edit text → canvas preview updates live. Change color from design system palette → section color updates. Responsive toggle → mobile preview shows stacked layout. Advanced: add MSO conditional → section HTML includes `<!--[if mso]>`. Slot types match `slot_definitions` from component. `make check-fe` passes.
-- [ ] 24.5 Visual builder — property panels & section configuration
+- [x] ~~24.5 Visual builder — property panels & section configuration~~ DONE
 
 ### 24.6 Builder ↔ Code Bidirectional Sync `[Full-Stack]`
 **What:** Changes in the visual builder reflect in the code editor and vice versa. AST-level mapping between builder section model and HTML source. Editing HTML directly updates the builder canvas; dragging a section in the builder inserts corresponding HTML at the correct position. A single source of truth (Yjs document or local state) drives both views.
@@ -255,7 +255,7 @@
   - `useSyncStatus()` — returns sync state: `synced`, `syncing`, `parse_error`, `conflict`
 **Security:** HTML parsing uses DOMParser (browser built-in, safe) — no eval. `data-*` attributes cannot execute code. Section annotations stripped before export to prevent data leakage. Conflict resolution does not silently discard changes — user always notified.
 **Verify:** Type HTML in code editor → builder canvas updates to show sections. Drag section in builder → code editor shows corresponding HTML insertion. Edit text in builder → code editor text updates. Edit same text in code editor → builder preview updates. Break HTML structure in code editor → builder shows parse error overlay, code editor still functional. Split view: changes in either side reflected in the other. Export: `data-section-id` attributes stripped from output. `make check-fe` passes.
-- [ ] 24.6 Builder ↔ code bidirectional sync
+- [x] ~~24.6 Builder ↔ code bidirectional sync~~ DONE
 
 ### 24.7 Frontend Builder Integration & Workspace `[Frontend]`
 **What:** Integrate the visual builder, collaboration features, and property panels into the existing workspace layout. Add builder-specific toolbar actions (preview modes, device simulation, export), onboarding flow for non-technical users, and builder keyboard shortcuts. Ensure all workspace features (QA panel, AI agents, design reference) work in both code and builder views.
@@ -324,6 +324,95 @@
 - Target: 80+ tests
 **Verify:** `make test` passes. `make check-fe` passes. `make check` all green. No regression in existing test suite.
 - [ ] 24.8 Tests & documentation
+
+### 24.9 AI-Powered HTML Import & Section Annotation `[Full-Stack]`
+**What:** AI agent that takes arbitrary email HTML (imported from any ESP — Braze, SFMC, Klaviyo, Mailchimp, HubSpot, Adobe Campaign, Iterable) and automatically annotates it with `data-section-id` attributes, making it fully editable in the visual builder. Combines structural analysis with the Scaffolder agent's email layout understanding and the Personalisation agent's ESP token knowledge. User refinement UI (merge/split/group) lets developers fix what the AI got wrong. Once annotated, Strategy 1 (data-section-id) provides perfect roundtrip sync.
+**Why:** No existing email builder can import arbitrary client HTML and make it fully editable without manual annotation (Stripo requires `esd-*` classes, Mailchimp requires `mc:edit` attributes, Mosaico requires `data-ko-*` attributes, Beefree's HTML→JSON import strips merge tags). AI-powered auto-annotation is the key differentiator: the annotation step that competitors require manually, Hub automates. Email developers keep full granular HTML access via the code editor — annotations are just `data-*` attributes, nothing is abstracted or locked behind a schema.
+**Implementation:**
+- Create `app/ai/agents/import_annotator/` — new AI agent `[Backend]`:
+  - `prompt.py` — system prompt leveraging Scaffolder's email structure knowledge:
+    - Input: raw email HTML (any structure — table-based, div-based, hybrid, column layouts)
+    - Output: same HTML with `data-section-id` attributes on each logical section boundary
+    - Rules: identify header, hero, content blocks, column groups, CTA sections, footer
+    - Preserve ALL existing attributes, classes, IDs, inline styles — only ADD `data-section-id`
+    - Preserve ALL ESP tokens (Liquid `{% %}`, Handlebars `{{ }}`, AMPscript `%% %%`, ERB `<% %>`) — treat as opaque text, never parse or modify
+    - Detect column layouts and annotate the parent as a single section (not each column separately)
+    - Add `data-section-layout="columns"` on column group sections
+    - Add `data-component-name` with inferred name (Hero, Header, Footer, Content, CTA, Columns, Divider)
+  - `schemas.py` — structured output:
+    - `AnnotationDecision`: section_id, component_name, element_selector (CSS path to the element), layout_type (single/columns)
+    - `ImportAnnotationResult`: list of `AnnotationDecision`, warnings (ambiguous sections, nested layouts)
+  - `service.py` — `ImportAnnotatorService.annotate(html: str) -> str`:
+    - Calls AI to get `ImportAnnotationResult`
+    - Applies annotations to HTML via CSS selectors (no regex on arbitrary HTML)
+    - Returns annotated HTML — same content, just `data-section-id` attributes added
+    - Fallback: if AI fails, return original HTML unchanged (user can still use code editor)
+  - `SKILL.md` — progressive disclosure skill file:
+    - L1: email section anatomy (header/hero/content/cta/footer patterns)
+    - L2: column layout detection (2-col, 3-col, 4-col, hybrid)
+    - L3 files: `table_layouts.md` (nested table patterns), `div_layouts.md` (CSS-based layouts), `esp_tokens.md` (7 ESP syntaxes to preserve), `column_patterns.md` (Fab Four, calc-based, media query columns)
+- Create `app/ai/agents/import_annotator/evals/` — eval-first development `[Backend]`:
+  - `synthetic_data_import.py` — 15+ test cases:
+    - Classic table layout (bodyTable/emailContainer)
+    - Modern div-based layout
+    - 2/3/4 column layouts (table-based and CSS-based)
+    - Deeply nested tables (SFMC-style)
+    - Hybrid layout (tables + divs)
+    - Email with Liquid conditionals wrapping sections
+    - Email with AMPscript blocks
+    - Email with Handlebars partials
+    - Email with MSO conditionals
+    - Email with inline CSS + embedded `<style>`
+    - Minimal email (single-section)
+    - Complex email (10+ sections, mixed layouts)
+    - Already-annotated email (should not double-annotate)
+  - `judges/import_judge.py` — 5 evaluation criteria:
+    - Section boundary accuracy (did AI find the right boundaries?)
+    - Annotation completeness (every visual section has an ID?)
+    - HTML preservation (no content, attributes, or tokens modified?)
+    - ESP token integrity (all `{{ }}`, `{% %}`, `%% %%` tokens survive?)
+    - Column detection (column groups annotated as single section?)
+- Add API route `POST /api/v1/email/import-annotate` `[Backend]`:
+  - Input: `{ html: string, esp_platform?: string }`
+  - Output: `{ annotated_html: string, sections: AnnotationDecision[], warnings: string[] }`
+  - Auth: `Depends(get_current_user)`, rate limited
+  - The `esp_platform` hint helps the AI understand which token syntax to expect
+- Create builder import UI `[Frontend]`:
+  - `ImportDialog.tsx` — modal triggered from workspace toolbar:
+    - Paste HTML or upload .html file
+    - Optional: select ESP platform (Braze, SFMC, Klaviyo, etc.) for better token handling
+    - "Import" button calls `/api/v1/email/import-annotate`
+    - Shows progress: "Analyzing structure..." → "Annotating sections..." → "Done"
+    - Preview: shows detected sections highlighted before accepting
+    - "Accept" loads annotated HTML into code editor → builder renders sections
+  - `SectionRefinementToolbar.tsx` — builder toolbar for user refinement:
+    - **Merge**: select 2+ adjacent sections → combine into one section (removes inner `data-section-id`)
+    - **Split**: click inside a section → inserts a section boundary at that point (adds new `data-section-id`)
+    - **Group**: select multiple elements within a section → wrap in new sub-section
+    - **Unwrap**: remove a section boundary → children merge into parent section
+    - **Rename**: click section name → edit inline
+    - All operations modify `data-section-id` attributes in the HTML — no separate data model
+  - Section highlighting in builder canvas:
+    - Hover over section → subtle border highlight
+    - Click section → selection UI with merge/split/group/unwrap buttons
+    - Section name badge shown on hover (from `data-component-name`)
+- Integrate with ESP connectors `[Full-Stack]`:
+  - `app/connectors/service.py` — add `import_and_annotate()` method:
+    - Pull template HTML from ESP API (existing connector flow)
+    - Pass through import annotator agent
+    - Return annotated HTML ready for builder
+  - Workspace "Import from ESP" button:
+    - Select connected ESP → browse templates → select → auto-import + annotate
+    - ESP tokens preserved throughout (Liquid, AMPscript, etc.)
+- ESP token passthrough architecture `[Full-Stack]`:
+  - Tokens stay as-is in the HTML — no extraction/placeholder dance
+  - The AI annotates the HTML structure; it does not parse or modify content inside elements
+  - `stripAnnotations()` only removes `data-section-id`/`data-component-name` — ESP tokens untouched
+  - Export to ESP: same HTML minus annotations, all tokens intact
+  - Round-trip guarantee: import from Braze → edit in builder → export back to Braze → tokens identical
+**Security:** Import endpoint validates HTML size (<2MB). AI agent receives HTML as input but does not execute it. Annotations are `data-*` attributes only — cannot execute code. `stripAnnotations()` removes all builder metadata before export. ESP tokens treated as opaque strings — never evaluated, never modified. Import API rate-limited (10 req/min per user). Uploaded HTML files scanned for embedded scripts (rejected if found).
+**Verify:** Import classic Braze email with Liquid tokens → sections detected → tokens preserved → edit in builder → export → Liquid tokens identical to original. Import SFMC email with AMPscript → same flow. Import 4-column layout → detected as single "Columns" section. Import complex 10-section email → all sections detected with correct names. Merge two sections → `data-section-id` removed from inner boundary. Split a section → new `data-section-id` added. Import already-annotated email → no double annotations. `make check` passes. `make eval-golden` passes.
+- [ ] 24.9 AI-powered HTML import & section annotation
 
 ---
 

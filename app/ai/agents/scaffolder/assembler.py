@@ -100,6 +100,9 @@ class TemplateAssembler:
         if plan.preheader_text:
             html = self._set_preheader(html, plan.preheader_text)
 
+        # Step 10: Add builder annotations for roundtrip fidelity (last — after all content is set)
+        html = self._add_builder_annotations(html, plan)
+
         logger.info(
             "scaffolder.assembly_completed",
             template=plan.template.template_name,
@@ -356,6 +359,35 @@ class TemplateAssembler:
                 html,
                 count=1,
             )
+        return html
+
+    def _add_builder_annotations(self, html: str, plan: EmailBuildPlan) -> str:
+        """Add data-section-id and data-slot-name attributes for builder sync."""
+        # Add data-section-id to elements that have data-section attributes
+        for section in plan.sections:
+            section_name = section.section_name
+            if f'data-section-id="{section_name}"' in html:
+                continue  # Already annotated — skip to avoid duplicates
+            pattern = re.compile(
+                r"(<[^>]+\bdata-section=[\"'])" + re.escape(section_name) + r"([\"'])",
+            )
+            replacement = rf'\g<0> data-section-id="{section_name}"'
+            html = pattern.sub(replacement, html, count=1)
+
+        # Add data-slot-name to elements that have data-slot attributes
+        slot_pattern = re.compile(
+            r'(<[^>]+\bdata-slot=["\'])([^"\']+)(["\'])',
+        )
+
+        def _add_slot_name(m: re.Match[str]) -> str:
+            slot_name = m.group(2)
+            full_match = m.group(0)
+            if "data-slot-name=" not in full_match:
+                return full_match + f' data-slot-name="{slot_name}"'
+            return full_match
+
+        html = slot_pattern.sub(_add_slot_name, html)
+
         return html
 
     def _set_preheader(self, html: str, preheader: str) -> str:

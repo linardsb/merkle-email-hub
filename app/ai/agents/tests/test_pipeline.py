@@ -296,6 +296,61 @@ class TestTemplateAssembler:
         with pytest.raises(AssemblyError, match="non-empty section_order"):
             assembler.assemble(plan)
 
+    def test_assemble_adds_builder_annotations(
+        self, registry: TemplateRegistry, sample_template: GoldenTemplate
+    ) -> None:
+        """Assembled HTML includes data-slot-name for builder sync."""
+        registry._templates["test_template"] = sample_template
+        assembler = TemplateAssembler(registry=registry)
+
+        plan = EmailBuildPlan(
+            template=TemplateSelection(template_name="test_template", reasoning="test"),
+            slot_fills=(SlotFill(slot_id="headline", content="Hello!"),),
+            design_tokens=DesignTokens(
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
+            ),
+        )
+
+        html = assembler.assemble(plan)
+        # data-slot-name should mirror existing data-slot attributes
+        assert 'data-slot-name="headline"' in html
+        assert 'data-slot-name="body_text"' in html
+
+    def test_assemble_adds_section_id_annotations(
+        self, registry: TemplateRegistry, sample_template: GoldenTemplate
+    ) -> None:
+        """Assembled HTML includes data-section-id for builder sync."""
+        registry._templates["test_template"] = sample_template
+        assembler = TemplateAssembler(registry=registry)
+
+        plan = EmailBuildPlan(
+            template=TemplateSelection(template_name="test_template", reasoning="test"),
+            slot_fills=(),
+            design_tokens=DesignTokens(
+                colors={
+                    "primary": "#000",
+                    "secondary": "#000",
+                    "background": "#fff",
+                    "text": "#333",
+                },
+                fonts={"body": "Arial", "heading": "Georgia"},
+            ),
+            sections=(
+                SectionDecision(section_name="header", hidden=False),
+                SectionDecision(section_name="body", hidden=False),
+            ),
+        )
+
+        html = assembler.assemble(plan)
+        assert 'data-section-id="header"' in html
+        assert 'data-section-id="body"' in html
+
     def test_assemble_preserves_dollar_signs(
         self, registry: TemplateRegistry, sample_template: GoldenTemplate
     ) -> None:
