@@ -292,6 +292,10 @@ class DesignSyncConfig(BaseModel):
     encryption_key: str = ""  # If empty, derived from jwt_secret_key via PBKDF2
     asset_storage_path: str = "data/design-assets"
     asset_max_width: int = 1200  # Max width for email images; 1200 = 2x retina for 600px containers
+    # Penpot integration (self-hosted design tool)
+    penpot_enabled: bool = False
+    penpot_base_url: str = "http://localhost:9001"
+    penpot_request_timeout: float = 30.0
 
 
 class ESPSyncConfig(BaseModel):
@@ -412,6 +416,68 @@ class CollabWebSocketConfig(BaseModel):
     crdt_max_document_size_mb: int = 5  # reject updates beyond this
 
 
+class TolgeeConfig(BaseModel):
+    """Tolgee TMS integration settings."""
+
+    enabled: bool = False  # TOLGEE__ENABLED
+    base_url: str = "http://localhost:25432"  # TOLGEE__BASE_URL
+    default_locale: str = "en"  # TOLGEE__DEFAULT_LOCALE
+    max_locales_per_build: int = 20  # TOLGEE__MAX_LOCALES_PER_BUILD
+    request_timeout: float = 30.0  # TOLGEE__REQUEST_TIMEOUT
+
+
+class KestraConfig(BaseModel):
+    """Kestra workflow orchestration settings."""
+
+    enabled: bool = False  # KESTRA__ENABLED
+    api_url: str = "http://localhost:8080"  # KESTRA__API_URL
+    api_token: str = ""  # KESTRA__API_TOKEN
+    namespace: str = "merkle-email-hub"  # KESTRA__NAMESPACE
+    default_retry_attempts: int = 3  # KESTRA__DEFAULT_RETRY_ATTEMPTS
+    default_retry_backoff_s: int = 30  # KESTRA__DEFAULT_RETRY_BACKOFF_S
+    request_timeout_s: float = 30.0  # KESTRA__REQUEST_TIMEOUT_S
+
+
+class ReportingConfig(BaseModel):
+    """Typst PDF report generation settings."""
+
+    enabled: bool = False  # REPORTING__ENABLED
+    typst_binary: str = "typst"  # REPORTING__TYPST_BINARY
+    cache_ttl_h: int = 24  # REPORTING__CACHE_TTL_H
+    max_report_size_mb: int = 50  # REPORTING__MAX_REPORT_SIZE_MB
+    compilation_timeout_s: int = 10  # REPORTING__COMPILATION_TIMEOUT_S
+
+
+class PluginsConfig(BaseModel):
+    """Plugin architecture settings."""
+
+    enabled: bool = False  # PLUGINS__ENABLED
+    directory: str = "plugins/"  # PLUGINS__DIRECTORY
+    hot_reload: bool = False  # PLUGINS__HOT_RELOAD
+    default_timeout_s: int = 30  # PLUGINS__DEFAULT_TIMEOUT_S
+    health_check_interval_s: int = 60  # PLUGINS__HEALTH_CHECK_INTERVAL_S
+    max_consecutive_failures: int = 3  # PLUGINS__MAX_CONSECUTIVE_FAILURES
+
+
+class SkillExtractionConfig(BaseModel):
+    """Configuration for automatic skill extraction from templates."""
+
+    enabled: bool = False  # SKILL_EXTRACTION__ENABLED
+    min_confidence: float = 0.7  # Only extract patterns with >= this confidence
+    max_amendments_per_upload: int = 20  # Cap to prevent skill file spam
+    auto_eval_after_apply: bool = True  # Trigger eval run after amendment applied
+
+
+class TemplatesUploadConfig(BaseModel):
+    """Template upload pipeline settings."""
+
+    upload_enabled: bool = False  # TEMPLATES__UPLOAD_ENABLED
+    max_file_size_bytes: int = 2 * 1024 * 1024  # TEMPLATES__MAX_FILE_SIZE_BYTES (2MB)
+    max_uploads_per_hour: int = 5  # TEMPLATES__MAX_UPLOADS_PER_HOUR
+    auto_knowledge_inject: bool = True  # TEMPLATES__AUTO_KNOWLEDGE_INJECT
+    auto_eval_generate: bool = True  # TEMPLATES__AUTO_EVAL_GENERATE
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -469,6 +535,12 @@ class Settings(BaseSettings):
     qa_bimi: QABIMIConfig = QABIMIConfig()
     voice: VoiceConfig = VoiceConfig()
     collab_ws: CollabWebSocketConfig = CollabWebSocketConfig()
+    plugins: PluginsConfig = PluginsConfig()
+    skill_extraction: SkillExtractionConfig = SkillExtractionConfig()
+    templates: TemplatesUploadConfig = TemplatesUploadConfig()
+    tolgee: TolgeeConfig = TolgeeConfig()
+    kestra: KestraConfig = KestraConfig()
+    reporting: ReportingConfig = ReportingConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

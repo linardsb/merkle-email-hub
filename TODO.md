@@ -6,413 +6,16 @@
 
 ---
 
-> **Completed phases (0–23):** See [docs/TODO-completed.md](docs/TODO-completed.md)
+> **Completed phases (0–24):** See [docs/TODO-completed.md](docs/TODO-completed.md)
 >
-> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA — Playwright rendering, ODiff baselines, VLM analysis agent #10, auto-fix pipeline, visual QA dashboard). Phase 18 (rendering resilience & property-based testing — chaos engine with 8 profiles, Hypothesis-based property testing with 10 invariants, resilience score integration, knowledge feedback loop). Phase 19 (Outlook transition advisor & email CSS compiler — Word-engine dependency analyzer, audience-aware migration planner, Lightning CSS 7-stage compiler with ontology-driven conversions). Phase 20 (Gmail AI intelligence & deliverability — Gemini summary predictor, schema.org auto-injection, deliverability scoring, BIMI readiness check). Phase 21 (real-time ontology sync & competitive intelligence — caniemail auto-sync, rendering change detector with 25 feature templates, competitive intelligence dashboard). Phase 22 (AI evolution infrastructure — capability registry, prompt template store, token budget manager, fallback chains, cost governor, cross-module integration tests + ADR-009). Phase 23 (multimodal protocol & MCP agent interface — 7 subtasks: content block protocol, adapter serialization, agent integration, MCP tool server with 17 tools, voice brief pipeline, frontend multimodal UI, tests & ADR-010; 197 tests).
+> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA — Playwright rendering, ODiff baselines, VLM analysis agent #10, auto-fix pipeline, visual QA dashboard). Phase 18 (rendering resilience & property-based testing — chaos engine with 8 profiles, Hypothesis-based property testing with 10 invariants, resilience score integration, knowledge feedback loop). Phase 19 (Outlook transition advisor & email CSS compiler — Word-engine dependency analyzer, audience-aware migration planner, Lightning CSS 7-stage compiler with ontology-driven conversions). Phase 20 (Gmail AI intelligence & deliverability — Gemini summary predictor, schema.org auto-injection, deliverability scoring, BIMI readiness check). Phase 21 (real-time ontology sync & competitive intelligence — caniemail auto-sync, rendering change detector with 25 feature templates, competitive intelligence dashboard). Phase 22 (AI evolution infrastructure — capability registry, prompt template store, token budget manager, fallback chains, cost governor, cross-module integration tests + ADR-009). Phase 23 (multimodal protocol & MCP agent interface — 7 subtasks: content block protocol, adapter serialization, agent integration, MCP tool server with 17 tools, voice brief pipeline, frontend multimodal UI, tests & ADR-010; 197 tests). Phase 24 (real-time collaboration & visual builder — 9 subtasks: WebSocket infra, Yjs CRDT engine, collaborative cursor & presence, visual builder canvas & palette, property panels, bidirectional code↔builder sync, frontend integration, tests & docs, AI-powered HTML import with 10th agent).
 
 ---
 
-## Phase 24 — Real-Time Collaboration & Visual Builder
+## ~~Phase 24 — Real-Time Collaboration & Visual Builder~~ DONE
 
-**What:** Google Docs-style simultaneous editing with CRDT conflict resolution for the code editor, real-time cursor and presence awareness, plus a drag-and-drop visual email builder for non-technical users alongside the code editor. Changes in either view sync bidirectionally via AST-level mapping.
-**Why:** The pitch identifies these as key "Future Vision" features that separate a platform from a tool. Real-time collaboration enables team workflows — developer and copywriter editing simultaneously without merge conflicts. The visual builder opens the Hub to the largest untapped user base: marketers and designers who can't write HTML but need to build emails daily. Combined, they make the Hub the only email platform where technical and non-technical users share a single workspace.
-**Dependencies:** Phase 11 (component library for builder blocks), Phase 12 (Figma import for design-to-builder), Phase 23 (multimodal protocol for design reference images), all frontend phases.
-**Design principle:** Yjs CRDT provides conflict-free merging — no operational transform complexity. The visual builder operates on the same component/section model as the code editor — it's a different view, not a different system. WebSocket connections are authenticated and tenant-isolated. Offline edits reconcile automatically on reconnect.
-
-### 24.1 WebSocket Infrastructure & Authentication `[Backend]`
-**What:** WebSocket server infrastructure for real-time communication. Handles connection management, authentication, room-based message routing (one room per template/document), heartbeat/keepalive, and graceful reconnection. Built on FastAPI's WebSocket support with Redis pub/sub for multi-instance scaling.
-**Why:** Real-time collaboration requires persistent bidirectional connections — HTTP polling can't deliver sub-100ms latency for cursor movements and keystroke propagation. Redis pub/sub ensures WebSocket messages reach all instances in a multi-server deployment. Room-based routing isolates template editing sessions.
-**Implementation:**
-- Create `app/streaming/websocket/` package:
-  - `manager.py` — `WebSocketManager`:
-    - `ConnectionPool` — tracks active WebSocket connections per room: `dict[str, set[WebSocket]]`
-    - `async connect(websocket: WebSocket, room_id: str, user_id: int) -> None` — authenticate, join room, notify peers
-    - `async disconnect(websocket: WebSocket, room_id: str) -> None` — leave room, notify peers, cleanup
-    - `async broadcast(room_id: str, message: bytes, exclude: WebSocket | None = None) -> None` — send to all connections in room except sender
-    - `async send_to_user(room_id: str, user_id: int, message: bytes) -> None` — targeted message delivery
-    - Heartbeat: server sends ping every 30s, client must pong within 10s or connection dropped
-    - Connection metadata: `ConnectionInfo(user_id: int, room_id: str, connected_at: datetime, last_activity: datetime, client_info: str)`
-  - `auth.py` — `WebSocketAuthenticator`:
-    - `async authenticate(websocket: WebSocket) -> User` — extract JWT from query param `?token=` (WebSocket doesn't support headers in browser)
-    - Token validation reuses existing `decode_access_token()` from `app/auth/`
-    - Role-based access: viewer can observe but not edit, developer/admin can edit
-    - BOLA protection: verify user has access to the project owning the template being edited
-  - `redis_pubsub.py` — `RedisPubSubBridge`:
-    - `async publish(room_id: str, message: bytes) -> None` — publish to Redis channel `ws:room:{room_id}`
-    - `async subscribe(room_id: str, callback: Callable) -> None` — subscribe to room channel
-    - Enables multi-instance WebSocket: message published on instance A → delivered to connections on instance B
-    - Graceful fallback: if Redis unavailable, single-instance broadcast only (logged warning)
-  - `routes.py` — WebSocket endpoint:
-    - `@app.websocket("/ws/collab/{room_id}")` — main collaboration WebSocket
-    - Protocol: binary messages (Yjs update encoding) for document sync, JSON messages for awareness (cursors, presence)
-    - Connection lifecycle: authenticate → join room → sync document state → enter edit loop → disconnect
-- Modify `app/main.py` — register WebSocket route, initialize `WebSocketManager`
-- Config: `STREAMING__WS_ENABLED: bool = False`, `STREAMING__WS_MAX_CONNECTIONS_PER_ROOM: int = 20`, `STREAMING__WS_HEARTBEAT_INTERVAL_S: int = 30`, `STREAMING__WS_AUTH_TIMEOUT_S: int = 10`
-**Security:** JWT authentication required before any message exchange. Token passed via query parameter (standard WebSocket auth pattern) — HTTPS encrypts in transit. Room isolation: users can only join rooms for templates in their project. Message size limit: 1MB per WebSocket message (prevents memory abuse). Connection count limited per room and per user. Redis pub/sub channels use room ID only — no user data in channel names. WebSocket upgrade restricted to `websocket` protocol only (no HTTP hijacking).
-**Verify:** Two browser tabs connect to same room → both authenticated → messages broadcast between them. Invalid JWT → connection rejected. User without project access → connection rejected. Redis pub/sub: message sent from instance A → received on instance B (docker-compose test). Connection drops → peer notified → reconnection re-syncs state. Max connections reached → new connection rejected with 429. `make test` passes.
-- [x] ~~24.1 WebSocket infrastructure & authentication~~ DONE
-
-### 24.2 Yjs CRDT Document Engine `[Backend + Frontend]`
-**What:** Integrate Yjs CRDT library for conflict-free collaborative editing of email HTML. Server-side Yjs document persistence, client-side binding to CodeMirror editor, and WebSocket sync provider. Multiple users can edit the same template simultaneously with automatic conflict resolution — no merge dialogs, no lost changes.
-**Why:** CRDT (Conflict-free Replicated Data Type) is the modern approach to collaborative editing — used by Figma, Linear, and Notion. Unlike Operational Transform (Google Docs), CRDTs guarantee convergence without a central server ordering operations. Yjs is the most mature JavaScript CRDT library (2M+ weekly npm downloads), with ready-made bindings for CodeMirror, Monaco, and ProseMirror.
-**Implementation:**
-- Backend — `app/streaming/crdt/` package:
-  - `document_store.py` — `YjsDocumentStore`:
-    - `async get_or_create(room_id: str) -> bytes` — load Yjs document state from PostgreSQL, or create empty document
-    - `async save(room_id: str, update: bytes) -> None` — persist incremental Yjs update
-    - `async get_snapshot(room_id: str) -> bytes` — full document state for new connections
-    - Storage: `CollaborativeDocument` SQLAlchemy model with `room_id` (unique), `state_vector` (LargeBinary), `updates` (LargeBinary — compacted Yjs updates), `last_modified`, `participant_count`
-    - Compaction: merge accumulated updates into single state every 100 updates or 5 minutes (prevents unbounded update log growth)
-  - `sync_handler.py` — `YjsSyncHandler`:
-    - Implements Yjs sync protocol (y-protocols/sync):
-      - Step 1: new client sends `SyncStep1` (state vector) → server responds with `SyncStep2` (missing updates)
-      - Step 2: client sends `SyncStep2` (its missing updates to server)
-      - Ongoing: each edit → `Update` message broadcast to all peers
-    - `async handle_message(room_id: str, client_id: str, message: bytes) -> list[tuple[str, bytes]]` — process incoming sync message, return messages to send
-    - Server-side merge: Yjs `Y.applyUpdate()` via `ypy` (Python Yjs bindings) — server maintains authoritative document state
-  - Alembic migration for `collaborative_documents` table
-- Frontend — `cms/apps/web/src/lib/collaboration/`:
-  - `yjs-provider.ts` — `HubWebSocketProvider`:
-    - Extends `y-websocket` provider with Hub authentication (JWT in query param)
-    - Automatic reconnection with exponential backoff (1s, 2s, 4s, 8s, max 30s)
-    - Offline queue: edits made while disconnected stored locally, replayed on reconnect
-    - Connection status events: `connected`, `disconnected`, `synced`, `error`
-  - `editor-binding.ts` — `YjsCodeMirrorBinding`:
-    - Binds `Y.Text` to CodeMirror 6 editor via `y-codemirror.next`
-    - Preserves existing CodeMirror extensions (syntax highlighting, linting, `highlightField` from 12.8)
-    - Undo/redo manager: `Y.UndoManager` replaces CodeMirror's built-in undo (collaborative undo tracks per-user operations)
-  - `awareness.ts` — collaborative awareness (cursors, selection, presence):
-    - Each user's cursor position + selection range shared via Yjs Awareness protocol
-    - User metadata: `{name: string, color: string, role: string}` — color assigned from palette, consistent per session
-- Install: `yjs`, `y-websocket`, `y-codemirror.next`, `y-protocols` (frontend), `ypy-websocket`, `y-py` (backend)
-- Config: `STREAMING__CRDT_ENABLED: bool = False`, `STREAMING__CRDT_COMPACTION_INTERVAL_S: int = 300`, `STREAMING__CRDT_COMPACTION_THRESHOLD: int = 100`, `STREAMING__CRDT_MAX_DOCUMENT_SIZE_MB: int = 5`
-**Security:** Document state encrypted at rest (existing PostgreSQL encryption). Yjs updates are binary-encoded operations — no executable content. Document size capped at 5MB (prevents memory abuse via large pastes). Per-room access control enforced at WebSocket connection (24.1). Yjs Awareness protocol shares only cursor position + user display name — no sensitive data. Offline queue stored in browser `IndexedDB` — cleared on logout.
-**Verify:** Two users open same template → both see each other's edits in real-time (<100ms latency on LAN). User A types in line 5, User B types in line 20 → no conflicts, both changes merge. User disconnects → reconnects → missed edits sync automatically. Server restart → document state restored from PostgreSQL. Compaction: 200 updates → compacted to single state → new client syncs quickly. `make test` passes. `make check-fe` passes.
-- [x] ~~24.2 Yjs CRDT document engine~~ DONE
-
-### 24.3 Collaborative Cursor & Presence Awareness `[Frontend]`
-**What:** Visual indicators for real-time collaboration: colored cursors showing each user's position, selection highlights, user presence list (who's currently editing), and activity indicators (typing, idle, viewing). Integrated into the CodeMirror editor and workspace sidebar.
-**Why:** Collaboration without presence awareness is confusing — users need to see where others are editing to avoid stepping on each other's work. Google Docs proved that colored cursors + user avatars are the minimum viable UX for real-time editing. The presence list adds team context — "Sarah from copy is editing the CTA section."
-**Implementation:**
-- Create `cms/apps/web/src/components/collaboration/` package:
-  - `RemoteCursors.tsx` — CodeMirror decoration plugin:
-    - Renders colored cursor lines at each remote user's position via CodeMirror `Decoration.widget`
-    - Cursor label: small tooltip showing user name on hover, auto-hides after 3s of inactivity
-    - Selection highlight: remote user's text selection shown as semi-transparent colored background
-    - Color palette: 8 distinct colors assigned round-robin per session, consistent across reconnects
-    - Smooth cursor animation: CSS transitions for position changes (avoids jarring jumps)
-  - `PresencePanel.tsx` — sidebar panel showing connected collaborators:
-    - User list: avatar/initials + name + role badge (developer/viewer) + activity indicator
-    - Activity states: `editing` (green pulse), `idle` (gray, >60s no activity), `viewing` (blue, read-only mode)
-    - "Follow" mode: click a user → editor scrolls to their cursor position in real-time
-    - Collapsed view: avatar stack in toolbar (click to expand panel)
-  - `CollaborationBanner.tsx` — top bar notification:
-    - "3 people editing" indicator with avatar stack
-    - Connection status: green dot (connected), yellow (reconnecting), red (disconnected)
-    - "View-only mode" indicator when user has viewer role
-  - `ConflictResolver.tsx` — edge case handler:
-    - When CRDT merges produce unexpected HTML (e.g., broken tags from simultaneous edits in same element), show inline warning with "Accept" / "Revert to mine" options
-    - Runs QA HTML validation on merged output — if invalid, highlight the merge point
-- Modify `cms/apps/web/src/components/workspace/code-editor.tsx`:
-  - Integrate `RemoteCursors` CodeMirror extension
-  - Pass Yjs awareness state to cursor renderer
-  - Add presence panel toggle to editor toolbar
-- Add i18n keys across 6 locales — ~30 keys for presence, cursors, collaboration status
-**Security:** User display names sourced from authenticated session only (not from Yjs awareness — verified server-side). "Follow" mode transmits only cursor position — no editor content. Viewer role enforced: read-only users see cursors but their edits are rejected by server.
-**Verify:** 3 users in same document → 3 colored cursors visible to each user. User selects text → selection visible to peers. User goes idle (60s) → status changes to idle for peers. "Follow" mode → editor scrolls to followed user's position. Viewer opens document → sees cursors but cannot edit. `make check-fe` passes.
-- [x] ~~24.3 Collaborative cursor & presence awareness~~ DONE
-
-### 24.4 Visual Email Builder — Component Palette & Canvas `[Frontend]`
-**What:** A drag-and-drop visual email builder where users construct emails by dragging section components from a palette onto a canvas. The canvas renders a live preview of the email using the same component library that the code editor uses. Sections snap to email-width constraints (600px max), stack vertically, and show placeholder content that's editable inline.
-**Why:** 70% of email creation at agencies is done by non-developers who rely on drag-and-drop tools (Mailchimp, Klaviyo builder, Stripo). The Hub currently requires HTML knowledge. A visual builder using the existing component library means every component built for the code editor is automatically available in the visual builder — no duplicate work. This is the single biggest user-base expansion feature.
-**Implementation:**
-- Create `cms/apps/web/src/components/builder/` package:
-  - `BuilderCanvas.tsx` — main canvas area:
-    - Rendered email preview in constrained 600px-wide iframe (sandboxed, same origin)
-    - Drop zones between sections — highlighted on drag-over with insertion indicator
-    - Section ordering via drag handle (grip icon on left edge)
-    - Click section → select → show property panel (24.5)
-    - Double-click text content → inline editing (contenteditable with sanitization)
-    - Canvas background: email client preview frame (inbox chrome around the email body)
-    - Zoom controls: 50%, 75%, 100%, 125% — CSS transform on canvas container
-    - Undo/redo: integrated with Yjs undo manager (if collaboration enabled) or local history stack
-  - `ComponentPalette.tsx` — left sidebar component library:
-    - Categories: Header, Hero, Content, Product, CTA, Social, Footer, Divider, Custom
-    - Each component shown as thumbnail preview with name
-    - Drag from palette → drop on canvas → inserts section with default content
-    - Search/filter by component name or category
-    - "Custom" category: user-uploaded components from the component library (Phase 11)
-    - Component data sourced from `ComponentVersion` via `GET /api/v1/components` with latest version
-  - `SectionWrapper.tsx` — wrapper for each section on canvas:
-    - Selection state: click → blue border + drag handle + delete button + duplicate button
-    - Hover state: subtle highlight border
-    - Drag handle: reorder sections via drag-and-drop (using `@dnd-kit/core` for accessible DnD)
-    - Section label: component name shown above section on hover
-    - Responsive indicator: icon showing if section has responsive variants
-  - `BuilderPreview.tsx` — sandboxed iframe rendering:
-    - Takes section list → assembles HTML via client-side template assembly
-    - Uses `srcdoc` attribute for iframe content (no server round-trip for preview)
-    - CSS reset inside iframe to match email rendering (no inherited page styles)
-    - Auto-refreshes on any section change (debounced 200ms)
-  - `DragDropContext.tsx` — DnD infrastructure:
-    - `@dnd-kit/core` with `@dnd-kit/sortable` for section reordering
-    - Custom `DragOverlay` showing component preview during drag
-    - Accessibility: keyboard DnD support (arrow keys + space to grab/drop)
-    - Drop validation: prevent invalid nesting (e.g., no header inside footer)
-- Create `cms/apps/web/src/hooks/use-builder.ts`:
-  - `useBuilderState()` — manages section list, selection, undo history
-  - `useSectionOperations()` — add, remove, duplicate, reorder section operations
-  - `useBuilderPreview()` — debounced HTML assembly from section list
-  - `useComponentLibrary()` — fetches available components with caching
-- Install: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
-- Add i18n keys across 6 locales — ~45 keys for builder labels, tooltips, section types
-**Security:** Builder canvas uses sandboxed iframe (`sandbox="allow-same-origin"`) — no script execution in preview. Inline text editing sanitized via DOMPurify before committing to section data. Component HTML from API is pre-sanitized (existing pipeline). Drag-and-drop uses library with built-in XSS prevention (no innerHTML). User-uploaded components validated through existing component ingestion pipeline.
-**Verify:** Drag hero component from palette → drops on canvas → preview shows hero section. Reorder sections via drag → preview updates. Click section → property panel opens (24.5). Delete section → removed from canvas. Undo → section restored. Inline text edit → preview reflects change. 10 sections on canvas → smooth drag performance. Keyboard DnD works. `make check-fe` passes.
-- [x] ~~24.4 Visual email builder — component palette & canvas~~ DONE
-
-### 24.5 Visual Builder — Property Panels & Section Configuration `[Frontend]`
-**What:** Right sidebar property panels that appear when a section is selected in the visual builder. Each panel exposes section-specific configuration: content editing (text, images, links), style controls (colors from design system palette, spacing, alignment), responsive behavior toggles, and slot configuration (for template slots from 11.25). Non-technical users configure sections visually — no CSS knowledge required.
-**Why:** Drag-and-drop gets sections onto the canvas, but property panels make them useful. Every visual email builder (Mailchimp, Stripo, Chamaileon) has property panels — they're table stakes. The Hub's advantage: property panels are driven by `slot_definitions` and `default_tokens` from `ComponentVersion` (11.25.2), so they automatically reflect the component's configuration surface without manual panel building.
-**Implementation:**
-- Create `cms/apps/web/src/components/builder/panels/` package:
-  - `PropertyPanel.tsx` — main panel container:
-    - Appears on section selection (right sidebar, 320px wide)
-    - Tab structure: Content | Style | Responsive | Advanced
-    - Panel content dynamically generated from `slot_definitions` of selected component
-    - "Apply" button with live preview (changes reflected in canvas immediately)
-  - `ContentTab.tsx` — content editing controls:
-    - Text slots: rich text editor (bold, italic, link, list) — Tiptap or Plate.js embedded
-    - Image slots: image picker (upload, URL, or asset library from design sync)
-    - Link slots: URL input with "Open in new tab" toggle
-    - CTA slots: button text + URL + button style selector
-    - Dynamic slots: auto-generated from `slot_definitions` JSON — `{name, type, label, placeholder, validation}`
-  - `StyleTab.tsx` — visual style controls:
-    - Color picker: limited to design system palette (11.25.1) — shows brand colors as swatches, prevents off-brand choices
-    - Spacing: margin/padding controls with visual box model diagram
-    - Alignment: left/center/right buttons for text and images
-    - Font: dropdown limited to design system typography (font family, size, weight)
-    - Background: color or image with opacity slider
-    - All values map to design tokens — output uses CSS custom properties or inline styles per component
-  - `ResponsiveTab.tsx` — responsive behavior:
-    - Toggle: "Stack on mobile" (multi-column → single column below 480px)
-    - Image behavior: "Full width on mobile" toggle
-    - Font size: mobile override (e.g., 14px body on mobile vs 16px desktop)
-    - Preview: inline mobile/desktop toggle showing how section responds
-    - Values stored as responsive tokens in section configuration
-  - `AdvancedTab.tsx` — power user controls:
-    - Custom CSS class input (validated against design system classes)
-    - MSO conditional toggle: "Include Outlook fallback" checkbox (adds `<!--[if mso]>` wrapper)
-    - Dark mode: explicit dark mode color overrides per element
-    - HTML attribute editor: key-value pairs for custom attributes
-    - "View Source" button: shows section HTML in read-only code viewer
-  - `SlotEditor.tsx` — generic slot editor component:
-    - Renders appropriate input control based on `slot_definitions` type: `text`, `rich_text`, `image`, `url`, `color`, `select`, `number`, `boolean`
-    - Validation rules from slot definition (required, min/max length, pattern)
-    - Default value from `default_tokens`
-- Modify `cms/apps/web/src/components/builder/BuilderCanvas.tsx` — emit `onSectionSelect(sectionId)` → triggers property panel render
-- Add i18n keys across 6 locales — ~60 keys for property panel labels, tab names, input placeholders
-**Security:** Color picker restricted to design system palette — prevents arbitrary CSS injection via color values. Custom CSS class input validated against allowlist of design system classes. HTML attribute editor: `on*` event handlers blocked, `href` validated (no `javascript:` URIs), `style` attribute goes through sanitization. Rich text editor output sanitized via DOMPurify.
-**Verify:** Select hero section → property panel shows Content tab with text + image + CTA slots. Edit text → canvas preview updates live. Change color from design system palette → section color updates. Responsive toggle → mobile preview shows stacked layout. Advanced: add MSO conditional → section HTML includes `<!--[if mso]>`. Slot types match `slot_definitions` from component. `make check-fe` passes.
-- [x] ~~24.5 Visual builder — property panels & section configuration~~ DONE
-
-### 24.6 Builder ↔ Code Bidirectional Sync `[Full-Stack]`
-**What:** Changes in the visual builder reflect in the code editor and vice versa. AST-level mapping between builder section model and HTML source. Editing HTML directly updates the builder canvas; dragging a section in the builder inserts corresponding HTML at the correct position. A single source of truth (Yjs document or local state) drives both views.
-**Why:** Professional email developers use both views — visual for layout, code for fine-tuning. Unidirectional sync (builder → code only) forces a choice. Bidirectional sync means a developer can drag sections in the builder, then switch to code to tweak MSO conditionals, then switch back — everything stays consistent. This is what Webflow does for web development; no email platform achieves it.
-**Implementation:**
-- Create `cms/apps/web/src/lib/builder-sync/` package:
-  - `ast-mapper.ts` — `BuilderASTMapper`:
-    - `htmlToSections(html: string) -> SectionNode[]` — parse HTML into section tree:
-      - Identifies section boundaries via `data-section-id` attributes (added by TemplateAssembler)
-      - Falls back to heuristic detection: `<table>` with `role="presentation"` as section wrapper, `<!--section:type-->` comments
-      - Each `SectionNode`: `{id, componentId, slotValues, styleOverrides, responsiveConfig, htmlFragment}`
-    - `sectionsToHtml(sections: SectionNode[], template: string) -> string` — serialize section tree back to HTML:
-      - Preserves non-section HTML (head, doctype, wrapper table)
-      - Inserts section HTML in order with `data-section-id` attributes
-      - Merges slot values into component template HTML
-    - `diffSections(prev: SectionNode[], next: SectionNode[]) -> SectionDiff[]` — minimal diff for incremental updates
-    - Error recovery: if HTML parse fails (user broke structure in code editor), show warning banner with "Revert to last valid state" option instead of crashing builder
-  - `sync-engine.ts` — `BuilderSyncEngine`:
-    - Maintains single source of truth: `Y.Map` (if CRDT enabled) or React state
-    - `onCodeChange(html: string)` — code editor changed → parse → update builder sections
-    - `onBuilderChange(sections: SectionNode[])` — builder changed → serialize → update code editor
-    - Debounced sync: code → builder syncs on 500ms idle (parsing is expensive), builder → code syncs on 200ms idle
-    - Conflict detection: if both views change simultaneously, builder change wins (last-write-wins with user notification)
-    - Parse error mode: if HTML is unparseable, builder shows "Code has unsupported structure" overlay — code editor remains functional
-  - `section-markers.ts` — HTML annotation utilities:
-    - `annotateHtml(html: string) -> string` — add `data-section-id`, `data-slot-name` attributes for roundtrip fidelity
-    - `stripAnnotations(html: string) -> string` — remove builder annotations for export/render
-    - Annotations are invisible in rendered output (data attributes don't affect rendering)
-- Modify `app/ai/agents/scaffolder/` — `TemplateAssembler`:
-  - Add `data-section-id="{section.id}"` attributes to assembled HTML output
-  - Add `data-slot-name="{slot.name}"` on slot content containers
-  - Attributes preserved through QA pipeline and repair pipeline
-- Modify `cms/apps/web/src/components/workspace/` — workspace layout:
-  - View switcher: "Code" | "Visual" | "Split" toggle in toolbar
-  - Split view: code editor left (50%), builder canvas right (50%), synced
-  - View state persisted in localStorage per template
-- Create `cms/apps/web/src/hooks/use-builder-sync.ts`:
-  - `useBuilderSync(editorRef, builderState)` — manages bidirectional sync lifecycle
-  - `useSyncStatus()` — returns sync state: `synced`, `syncing`, `parse_error`, `conflict`
-**Security:** HTML parsing uses DOMParser (browser built-in, safe) — no eval. `data-*` attributes cannot execute code. Section annotations stripped before export to prevent data leakage. Conflict resolution does not silently discard changes — user always notified.
-**Verify:** Type HTML in code editor → builder canvas updates to show sections. Drag section in builder → code editor shows corresponding HTML insertion. Edit text in builder → code editor text updates. Edit same text in code editor → builder preview updates. Break HTML structure in code editor → builder shows parse error overlay, code editor still functional. Split view: changes in either side reflected in the other. Export: `data-section-id` attributes stripped from output. `make check-fe` passes.
-- [x] ~~24.6 Builder ↔ code bidirectional sync~~ DONE
-
-### 24.7 Frontend Builder Integration & Workspace `[Frontend]`
-**What:** Integrate the visual builder, collaboration features, and property panels into the existing workspace layout. Add builder-specific toolbar actions (preview modes, device simulation, export), onboarding flow for non-technical users, and builder keyboard shortcuts. Ensure all workspace features (QA panel, AI agents, design reference) work in both code and builder views.
-**Why:** The builder must feel native to the workspace — not a separate app. QA checks should run on builder output the same way they run on code editor output. AI agent suggestions should appear in both views. The onboarding flow is critical: non-technical users need guidance on their first builder session.
-**Implementation:**
-- Modify `cms/apps/web/src/components/workspace/` — workspace enhancements:
-  - `BuilderToolbar.tsx` — builder-specific toolbar actions:
-    - Device preview: Desktop (600px), Tablet (480px), Mobile (375px) — resizes canvas
-    - Client preview: "View as Gmail" / "View as Outlook" — applies rendering profiles from chaos engine (18.1)
-    - "Run QA" button — runs QA checks on assembled builder HTML (same pipeline as code editor)
-    - "AI Suggest" button — feeds current builder structure to Scaffolder for content suggestions
-    - Export: "Copy HTML", "Download .html", "Push to ESP" (Phase 13 integration)
-  - `ViewSwitcher.tsx` — code/visual/split toggle:
-    - Animated transition between views (fade/slide, 200ms)
-    - Last view preference saved to localStorage per template
-    - Keyboard shortcut: `Ctrl+Shift+V` toggles between code and visual
-  - `BuilderOnboarding.tsx` — first-time user guide:
-    - Step 1: "Drag a section from the palette" — highlight palette with pulsing border
-    - Step 2: "Click to configure" — highlight section after first drop
-    - Step 3: "Preview your email" — highlight device preview buttons
-    - Step 4: "Run quality checks" — highlight QA button
-    - 4 steps total, skippable, completion saved to user preferences
-    - Only shown when user.role !== "developer" (developers likely don't need it)
-- Modify `cms/apps/web/src/components/workspace/qa-results-panel.tsx`:
-  - QA panel works identically in builder view — HTML assembled from sections → sent to QA endpoint
-  - QA issues linkable to specific sections: click issue → section highlighted in builder canvas
-- Modify `cms/apps/web/src/components/workspace/toolbar.tsx`:
-  - Conditionally render builder-specific or code-specific actions based on active view
-  - Voice brief (23.6) and design reference (23.6) buttons visible in both views
-- Builder keyboard shortcuts:
-  - `Delete` / `Backspace` — delete selected section
-  - `Ctrl+D` — duplicate selected section
-  - `Ctrl+Z` / `Ctrl+Shift+Z` — undo/redo
-  - `Ctrl+Shift+V` — toggle code/visual view
-  - `Arrow Up/Down` — move section up/down in order
-  - `Escape` — deselect section
-- Add i18n keys across 6 locales — ~40 keys for toolbar, onboarding, keyboard shortcuts
-**Security:** Builder-assembled HTML passes through same `sanitize_html_xss()` pipeline as code editor output. Export actions validate HTML before sending to ESP. Client preview rendering uses same sandboxed Playwright approach as Phase 17.
-**Verify:** Full builder workflow: open template → switch to visual view → drag 5 sections → configure via property panels → preview on mobile → run QA → all checks pass → export HTML. Split view: edit in code → see change in builder → edit in builder → see change in code. Onboarding: new viewer user → onboarding flow appears → complete 4 steps → not shown again. Keyboard shortcuts work in builder view. QA issue click → corresponding section highlighted. `make check-fe` passes.
-- [ ] 24.7 Frontend builder integration & workspace
-
-### 24.8 Tests & Documentation `[Full-Stack]`
-**What:** Comprehensive test suite for WebSocket infrastructure (connection, auth, broadcast, Redis pub/sub), CRDT engine (merge correctness, compaction, persistence), collaboration UI (cursors, presence, follow mode), visual builder (DnD, property panels, section operations), bidirectional sync (code→builder, builder→code, parse errors), and workspace integration. ADR-011 documenting real-time collaboration architecture.
-**Implementation:**
-- Create `app/streaming/tests/test_websocket.py` — 20+ tests:
-  - Connection lifecycle (connect, authenticate, join room, disconnect)
-  - Auth rejection (invalid JWT, expired token, wrong project)
-  - Room broadcast (message reaches all peers, not sender)
-  - Redis pub/sub bridge (cross-instance message delivery)
-  - Connection limits (max per room, max per user)
-  - Heartbeat timeout (connection dropped after missed pongs)
-- Create `app/streaming/tests/test_crdt.py` — 15+ tests:
-  - Document create, load, save round-trip
-  - Concurrent update merge (two updates applied, both preserved)
-  - Update compaction (100 updates → single state)
-  - Document size limit enforcement
-  - State vector sync protocol (SyncStep1 → SyncStep2)
-- Frontend tests (Vitest + Testing Library):
-  - `builder-canvas.test.tsx` — section drag-and-drop, selection, inline editing
-  - `property-panel.test.tsx` — slot rendering, value changes, design system constraints
-  - `builder-sync.test.tsx` — HTML parse, section serialize, bidirectional sync
-  - `collaboration.test.tsx` — cursor rendering, presence panel, follow mode
-- Route tests for WebSocket endpoint (auth, message handling)
-- ADR-011 in `docs/ARCHITECTURE.md` — Real-Time Collaboration & Visual Builder
-- SDK regeneration for collaboration + builder types
-- Target: 80+ tests
-**Verify:** `make test` passes. `make check-fe` passes. `make check` all green. No regression in existing test suite.
-- [x] ~~24.8 Tests & documentation~~ DONE
-
-### 24.9 AI-Powered HTML Import & Section Annotation `[Full-Stack]`
-**What:** AI agent that takes arbitrary email HTML (imported from any ESP — Braze, SFMC, Klaviyo, Mailchimp, HubSpot, Adobe Campaign, Iterable) and automatically annotates it with `data-section-id` attributes, making it fully editable in the visual builder. Combines structural analysis with the Scaffolder agent's email layout understanding and the Personalisation agent's ESP token knowledge. User refinement UI (merge/split/group) lets developers fix what the AI got wrong. Once annotated, Strategy 1 (data-section-id) provides perfect roundtrip sync.
-**Why:** No existing email builder can import arbitrary client HTML and make it fully editable without manual annotation (Stripo requires `esd-*` classes, Mailchimp requires `mc:edit` attributes, Mosaico requires `data-ko-*` attributes, Beefree's HTML→JSON import strips merge tags). AI-powered auto-annotation is the key differentiator: the annotation step that competitors require manually, Hub automates. Email developers keep full granular HTML access via the code editor — annotations are just `data-*` attributes, nothing is abstracted or locked behind a schema.
-**Implementation:**
-- Create `app/ai/agents/import_annotator/` — new AI agent `[Backend]`:
-  - `prompt.py` — system prompt leveraging Scaffolder's email structure knowledge:
-    - Input: raw email HTML (any structure — table-based, div-based, hybrid, column layouts)
-    - Output: same HTML with `data-section-id` attributes on each logical section boundary
-    - Rules: identify header, hero, content blocks, column groups, CTA sections, footer
-    - Preserve ALL existing attributes, classes, IDs, inline styles — only ADD `data-section-id`
-    - Preserve ALL ESP tokens (Liquid `{% %}`, Handlebars `{{ }}`, AMPscript `%% %%`, ERB `<% %>`) — treat as opaque text, never parse or modify
-    - Detect column layouts and annotate the parent as a single section (not each column separately)
-    - Add `data-section-layout="columns"` on column group sections
-    - Add `data-component-name` with inferred name (Hero, Header, Footer, Content, CTA, Columns, Divider)
-  - `schemas.py` — structured output:
-    - `AnnotationDecision`: section_id, component_name, element_selector (CSS path to the element), layout_type (single/columns)
-    - `ImportAnnotationResult`: list of `AnnotationDecision`, warnings (ambiguous sections, nested layouts)
-  - `service.py` — `ImportAnnotatorService.annotate(html: str) -> str`:
-    - Calls AI to get `ImportAnnotationResult`
-    - Applies annotations to HTML via CSS selectors (no regex on arbitrary HTML)
-    - Returns annotated HTML — same content, just `data-section-id` attributes added
-    - Fallback: if AI fails, return original HTML unchanged (user can still use code editor)
-  - `SKILL.md` — progressive disclosure skill file:
-    - L1: email section anatomy (header/hero/content/cta/footer patterns)
-    - L2: column layout detection (2-col, 3-col, 4-col, hybrid)
-    - L3 files: `table_layouts.md` (nested table patterns), `div_layouts.md` (CSS-based layouts), `esp_tokens.md` (7 ESP syntaxes to preserve), `column_patterns.md` (Fab Four, calc-based, media query columns)
-- Create `app/ai/agents/import_annotator/evals/` — eval-first development `[Backend]`:
-  - `synthetic_data_import.py` — 15+ test cases:
-    - Classic table layout (bodyTable/emailContainer)
-    - Modern div-based layout
-    - 2/3/4 column layouts (table-based and CSS-based)
-    - Deeply nested tables (SFMC-style)
-    - Hybrid layout (tables + divs)
-    - Email with Liquid conditionals wrapping sections
-    - Email with AMPscript blocks
-    - Email with Handlebars partials
-    - Email with MSO conditionals
-    - Email with inline CSS + embedded `<style>`
-    - Minimal email (single-section)
-    - Complex email (10+ sections, mixed layouts)
-    - Already-annotated email (should not double-annotate)
-  - `judges/import_judge.py` — 5 evaluation criteria:
-    - Section boundary accuracy (did AI find the right boundaries?)
-    - Annotation completeness (every visual section has an ID?)
-    - HTML preservation (no content, attributes, or tokens modified?)
-    - ESP token integrity (all `{{ }}`, `{% %}`, `%% %%` tokens survive?)
-    - Column detection (column groups annotated as single section?)
-- Add API route `POST /api/v1/email/import-annotate` `[Backend]`:
-  - Input: `{ html: string, esp_platform?: string }`
-  - Output: `{ annotated_html: string, sections: AnnotationDecision[], warnings: string[] }`
-  - Auth: `Depends(get_current_user)`, rate limited
-  - The `esp_platform` hint helps the AI understand which token syntax to expect
-- Create builder import UI `[Frontend]`:
-  - `ImportDialog.tsx` — modal triggered from workspace toolbar:
-    - Paste HTML or upload .html file
-    - Optional: select ESP platform (Braze, SFMC, Klaviyo, etc.) for better token handling
-    - "Import" button calls `/api/v1/email/import-annotate`
-    - Shows progress: "Analyzing structure..." → "Annotating sections..." → "Done"
-    - Preview: shows detected sections highlighted before accepting
-    - "Accept" loads annotated HTML into code editor → builder renders sections
-  - `SectionRefinementToolbar.tsx` — builder toolbar for user refinement:
-    - **Merge**: select 2+ adjacent sections → combine into one section (removes inner `data-section-id`)
-    - **Split**: click inside a section → inserts a section boundary at that point (adds new `data-section-id`)
-    - **Group**: select multiple elements within a section → wrap in new sub-section
-    - **Unwrap**: remove a section boundary → children merge into parent section
-    - **Rename**: click section name → edit inline
-    - All operations modify `data-section-id` attributes in the HTML — no separate data model
-  - Section highlighting in builder canvas:
-    - Hover over section → subtle border highlight
-    - Click section → selection UI with merge/split/group/unwrap buttons
-    - Section name badge shown on hover (from `data-component-name`)
-- Integrate with ESP connectors `[Full-Stack]`:
-  - `app/connectors/service.py` — add `import_and_annotate()` method:
-    - Pull template HTML from ESP API (existing connector flow)
-    - Pass through import annotator agent
-    - Return annotated HTML ready for builder
-  - Workspace "Import from ESP" button:
-    - Select connected ESP → browse templates → select → auto-import + annotate
-    - ESP tokens preserved throughout (Liquid, AMPscript, etc.)
-- ESP token passthrough architecture `[Full-Stack]`:
-  - Tokens stay as-is in the HTML — no extraction/placeholder dance
-  - The AI annotates the HTML structure; it does not parse or modify content inside elements
-  - `stripAnnotations()` only removes `data-section-id`/`data-component-name` — ESP tokens untouched
-  - Export to ESP: same HTML minus annotations, all tokens intact
-  - Round-trip guarantee: import from Braze → edit in builder → export back to Braze → tokens identical
-**Security:** Import endpoint validates HTML size (<2MB). AI agent receives HTML as input but does not execute it. Annotations are `data-*` attributes only — cannot execute code. `stripAnnotations()` removes all builder metadata before export. ESP tokens treated as opaque strings — never evaluated, never modified. Import API rate-limited (10 req/min per user). Uploaded HTML files scanned for embedded scripts (rejected if found).
-**Verify:** Import classic Braze email with Liquid tokens → sections detected → tokens preserved → edit in builder → export → Liquid tokens identical to original. Import SFMC email with AMPscript → same flow. Import 4-column layout → detected as single "Columns" section. Import complex 10-section email → all sections detected with correct names. Merge two sections → `data-section-id` removed from inner boundary. Split a section → new `data-section-id` added. Import already-annotated email → no double annotations. `make check` passes. `make eval-golden` passes.
-- [x] ~~24.9 AI-powered HTML import & section annotation~~ DONE
+> All 9 subtasks complete. See [docs/TODO-completed.md](docs/TODO-completed.md) for detailed completion records.
+> 24.1 WebSocket infra, 24.2 Yjs CRDT, 24.3 Presence, 24.4 Visual builder canvas, 24.5 Property panels, 24.6 Bidirectional sync, 24.7 Frontend integration, 24.8 Tests & docs, 24.9 AI-powered HTML import.
 
 ---
 
@@ -481,7 +84,7 @@
 - Config: `PLUGINS__ENABLED: bool = False`, `PLUGINS__DIRECTORY: str = "plugins/"`, `PLUGINS__HOT_RELOAD: bool = False`, `PLUGINS__MAX_LOAD_TIME_S: int = 10`
 **Security:** Plugins run in-process but with a restricted API surface — no direct database access, no file system writes, no network access (unless `network_access` permission granted). Plugin code is not sandboxed at the OS level (Python limitation) — this is a trust-based system suitable for enterprise self-hosted deployments where plugins are vetted. Admin-only plugin management endpoints. Plugin errors are caught and logged — a crashing plugin never takes down the Hub. Plugin config stored in database — not in plugin directory (prevents tampering).
 **Verify:** Create sample QA check plugin (`plugin.yaml` + Python module) → place in plugins directory → Hub discovers on startup → plugin appears in `GET /plugins` → run QA → custom check included in results. Disable plugin → QA runs without it. Plugin requesting `call_llm` without permission → API call rejected. Hot reload: add new plugin to directory → registered without restart (when enabled). `make test` passes.
-- [ ] 25.1 Plugin architecture — manifest, discovery & registry
+- [x] ~~25.1 Plugin architecture — manifest, discovery & registry~~ DONE
 
 ### 25.2 Plugin Sandboxed Execution & Lifecycle `[Backend]`
 **What:** Execution sandbox for plugins with resource limits, error isolation, and lifecycle hooks. Plugins get CPU/memory budgets, structured logging, health checks, and graceful shutdown. The sandbox ensures a misbehaving plugin cannot degrade Hub performance or crash the service.
@@ -515,7 +118,7 @@
 - Config: `PLUGINS__DEFAULT_TIMEOUT_S: int = 30`, `PLUGINS__HEALTH_CHECK_INTERVAL_S: int = 60`, `PLUGINS__MAX_CONSECUTIVE_FAILURES: int = 3`
 **Security:** Timeout enforcement prevents infinite loops. Error isolation prevents plugin exceptions from propagating to request handlers. Plugin functions cannot catch `asyncio.CancelledError` (timeout is non-negotiable). Structured logging with plugin name prefix enables security audit of plugin actions. Health checks run with minimal permissions.
 **Verify:** Plugin with `time.sleep(60)` → timeout after 30s → error logged → Hub continues serving. Plugin raising exception → caught, logged, result indicates error → Hub unaffected. Health check on healthy plugin → `healthy` status. Plugin failing health check 3 times → auto-disabled. Restart disabled plugin → re-enabled if health check passes. `make test` passes.
-- [ ] 25.2 Plugin sandboxed execution & lifecycle
+- [x] ~~25.2 Plugin sandboxed execution & lifecycle~~ DONE
 
 ### 25.3 Tolgee Multilingual Campaign Support `[Backend]`
 **What:** Integrate Tolgee (self-hosted translation management system) for multilingual email campaigns. Sync email content keys to Tolgee for translation, pull translations back, and trigger per-locale Maizzle builds. Supports ICU message format for pluralization and gender-aware content. Translation memory and machine translation suggestions speed up the translation workflow.
@@ -557,7 +160,7 @@
 - Config: `TOLGEE__ENABLED: bool = False`, `TOLGEE__BASE_URL: str = "http://localhost:25432"`, `TOLGEE__DEFAULT_LOCALE: str = "en"`, `TOLGEE__MAX_LOCALES_PER_BUILD: int = 20`
 **Security:** Tolgee PAT stored encrypted (Fernet) in `ESPConnection` — same security model as ESP credentials (Phase 13). Translation content is text-only — no HTML injection possible (translations injected as text nodes, not raw HTML). RTL direction changes applied via `dir` attribute only — no CSS injection. Tolgee API calls use HTTPS. Rate limited to prevent API abuse.
 **Verify:** Connect to Tolgee → extract 15 keys from template → push to Tolgee → verify keys appear in Tolgee UI. Add German translations in Tolgee → pull → build German locale → German text present in output. RTL locale (Arabic) → `dir="rtl"` applied. Long German text → Gmail clipping warning. ICU pluralization → preserved in translation. `make test` passes.
-- [ ] 25.3 Tolgee multilingual campaign support
+- [x] ~~25.3 Tolgee multilingual campaign support~~ DONE
 
 ### 25.4 Tolgee Frontend & Per-Locale Maizzle Builds `[Frontend]`
 **What:** Frontend UI for Tolgee integration: translation key viewer/editor, locale build dashboard with per-locale QA results, side-by-side locale preview, and in-context translation overlay. Non-translators can see which text is translatable and what the email looks like in each language.
@@ -599,7 +202,7 @@
 - SDK regeneration for Tolgee endpoints
 **Security:** Tolgee PAT displayed as masked value in connection dialog. Translation edits go through text sanitization. In-context overlay is read-only unless user has developer/admin role. Locale preview iframe sandboxed.
 **Verify:** Connect to Tolgee → translation keys extracted → view in panel → translate German → preview shows German text → QA checks pass. In-context overlay: hover → key shown → edit → translation saved. Side-by-side: English left, German right, layout intact. `make check-fe` passes.
-- [ ] 25.4 Tolgee frontend & per-locale Maizzle builds
+- [x] ~~25.4 Tolgee frontend & per-locale Maizzle builds~~ DONE
 
 ### 25.5 Kestra Workflow Orchestration `[Backend]`
 **What:** Integrate Kestra (open-source workflow orchestration engine) to replace the blueprint engine's ad-hoc pipeline scheduling with declarative YAML workflows. Each email build becomes a Kestra flow with typed inputs, conditional branching (skip Visual QA if no screenshots enabled), parallel task execution (run QA checks concurrently), automatic retry with backoff, and a full audit trail. Blueprint engine remains the node execution logic; Kestra handles scheduling, retries, and cross-workflow coordination.
@@ -653,7 +256,7 @@
 - Config: `KESTRA__ENABLED: bool = False`, `KESTRA__API_URL: str = "http://localhost:8080"`, `KESTRA__API_TOKEN: str = ""`, `KESTRA__NAMESPACE: str = "merkle-email-hub"`, `KESTRA__DEFAULT_RETRY_ATTEMPTS: int = 3`, `KESTRA__DEFAULT_RETRY_BACKOFF_S: int = 30`
 **Security:** Kestra API token stored in settings (not in database — single instance token). Workflow inputs validated via Pydantic schemas before passing to Kestra. Custom workflow YAML validated against allowlist of Hub task types — no arbitrary script execution. Approval gate tasks enforce RBAC. Kestra runs as a separate Docker service — network-isolated from public internet (accessible only from Hub backend). Workflow logs may contain template content — same data classification as blueprint run logs.
 **Verify:** Trigger `email_build_and_qa` flow → blueprint runs → QA checks run → results returned via status endpoint. Flow with LLM timeout → retries 3 times → succeeds on retry 2. `multilingual_campaign` flow → locale builds run in parallel → per-locale QA → approval gate pauses workflow → approve → ESP push completes. Scheduled `weekly_newsletter` → executes on cron schedule. Custom workflow YAML with invalid task type → rejected. `make test` passes.
-- [ ] 25.5 Kestra workflow orchestration
+- [x] ~~25.5 Kestra workflow orchestration~~ DONE
 
 ### 25.6 Penpot Design-to-Email Pipeline `[Backend]`
 **What:** Self-hosted, API-driven design-to-email pipeline using Penpot's CSS-native design primitives. Replaces or supplements Figma import (Phase 12) with a zero-cost, self-hosted alternative. Uses Penpot's API to extract components, layouts, typography, and colors — converting them to Hub components and design system tokens. Leverages Penpot's native CSS output (unlike Figma which requires translation from proprietary format).
@@ -692,7 +295,7 @@
 - Config: `DESIGN_SYNC__PENPOT_ENABLED: bool = False`, `DESIGN_SYNC__PENPOT_BASE_URL: str = "http://localhost:9001"`
 **Security:** Penpot access token stored encrypted (Fernet). Penpot API calls use HTTPS (or internal network for self-hosted). CSS output from Penpot validated and sanitized before use in email HTML. SVG exports validated (no scripts, no external references — same validation as BIMI SVG in 20.4). BOLA protection on design connections.
 **Verify:** Connect to self-hosted Penpot → list projects → browse files → import design → layout analyzed → brief generated → Scaffolder produces email matching design. Component extraction: Penpot components → Hub components with valid HTML. Color extraction: Penpot shared colors → design system palette. Typography: Penpot text styles → design system fonts. CSS conversion: Penpot flexbox → email table layout. `make test` passes.
-- [ ] 25.6 Penpot design-to-email pipeline
+- [x] ~~25.6 Penpot design-to-email pipeline~~ DONE
 
 ### 25.7 Typst QA Report Generator `[Backend]`
 **What:** Programmatic PDF generation for QA reports and client approval packages using Typst (Rust-based typesetting system, <100ms per document). Auto-generates branded PDF reports from Hub QA results, including visual regression screenshots, chaos test summaries, deliverability scores, and agent decision traces. Output suitable for client presentations and compliance archives.
@@ -741,7 +344,7 @@
 - Config: `REPORTING__ENABLED: bool = False`, `REPORTING__TYPST_BINARY: str = "typst"`, `REPORTING__CACHE_TTL_H: int = 24`, `REPORTING__MAX_REPORT_SIZE_MB: int = 50`
 **Security:** Typst CLI runs as subprocess with fixed arguments — no user input in command. Report data sourced from authenticated API calls — BOLA enforced on all data fetches. PDF output is a binary document — no executable content. Temporary files written to OS temp directory with restricted permissions, deleted after compilation. Report cache uses Redis with TTL — auto-expiry prevents stale data. Rate limited to prevent CPU abuse.
 **Verify:** Generate QA report for a template with 11 checks → PDF output with all sections populated. Generate approval package → client-friendly PDF without technical jargon. Report with screenshots → images embedded correctly. Report with no visual regression data → section gracefully omitted. Typst compilation completes in <1s for standard report. Cached report retrieved without recompilation. `make test` passes.
-- [ ] 25.7 Typst QA report generator
+- [x] ~~25.7 Typst QA report generator~~ DONE
 
 ### 25.8 Frontend Ecosystem Dashboard `[Frontend]`
 **What:** Unified frontend dashboard for plugin management, Tolgee translations, Kestra workflows, Penpot design sync, and report generation. Extends the workspace with ecosystem-level views that surface cross-cutting information: active workflow executions, translation progress, plugin health, and generated reports.
@@ -779,7 +382,7 @@
 - SDK regeneration for all new endpoints
 **Security:** Plugin management requires admin role. Workflow triggers require developer/admin role. Report downloads validated for ownership (BOLA). PDF preview uses sandboxed iframe.
 **Verify:** Ecosystem dashboard loads with all four quadrants populated. Plugin manager: install → enable → health check passes → disable. Workflow panel: trigger flow → execution appears → progress updates → completion. Report panel: generate QA report → PDF appears in history → download works → preview renders. Penpot panel: connect → browse files → import design. `make check-fe` passes.
-- [ ] 25.8 Frontend ecosystem dashboard
+- [x] ~~25.8 Frontend ecosystem dashboard~~ **DONE**
 
 ### 25.9 Tests & Documentation `[Full-Stack]`
 **What:** Comprehensive test suite for plugin architecture (manifest validation, discovery, sandbox execution, lifecycle, registry integration), Tolgee (client, key extraction, locale builds, RTL handling), Kestra (client, task execution, flow templates, retry logic), Penpot (client, CSS conversion, component extraction, design sync protocol compliance), Typst (template compilation, data assembly, report correctness), and ecosystem dashboard. ADR-012 documenting platform ecosystem architecture.
@@ -850,7 +453,7 @@
   - Weight uploaded templates lower initially, increase weight as eval pass rate improves (earned trust)
 **Security:** Uploaded HTML is sanitized with nh3 before analysis (XSS prevention). Template content is analyzed but never executed. Eval test cases use synthetic data only. Knowledge base entries are text summaries, not raw HTML. File size capped at 2MB. Rate limited (5 uploads/hour per user). Admin approval required for global promotion.
 **Verify:** Upload a Braze newsletter template → system detects 5 sections, 12 slots, Liquid platform, 6-color palette → developer confirms → template appears in scaffolder selection → scaffolder can select it for matching briefs → CRAG retrieval surfaces template patterns when agents process similar emails. Upload a Mailchimp promotional template → different slot structure detected → eval cases generated → `make eval-golden` includes new template.
-- [ ] 25.10 Template learning pipeline
+- [x] ~~25.10 Template learning pipeline (backend)~~ **DONE**
 
 ### 25.11 Automatic Skill Extraction from Templates `[Backend]`
 **What:** When a template is uploaded (25.10), automatically analyze its HTML patterns and generate agent skill file amendments. Detected patterns like "VML bulletproof buttons", "CSS grid with table fallback", or "Gmail-safe responsive images" become learnable knowledge that updates agent SKILL.md files.
@@ -889,7 +492,7 @@
   - Record amendment impact in `traces/improvement_log.jsonl`
 **Security:** Pattern extraction is static analysis only — no code execution. Amendments are staged, never auto-applied to production without review. Skill files are version-controlled — git revert available for any bad amendment. Rate limited to prevent skill file spam.
 **Verify:** Upload template with VML bulletproof button → system extracts `vml_bulletproof_button` pattern → generates skill amendment for `outlook_fixer/skills/vml_reference.md` → developer approves → next eval run shows outlook_fixer handles similar patterns better. Upload template with CSS grid + table fallback → `progressive_enhancement` pattern extracted → scaffolder skill updated → eval confirms improved progressive tier generation.
-- [ ] 25.11 Automatic skill extraction from templates
+- [x] ~~25.11 Automatic skill extraction from templates~~ **DONE**
 
 ### 25.12 Template-to-Eval Pipeline `[Backend]`
 **What:** Automatically generate eval test cases from uploaded templates. Each uploaded template becomes a regression test ensuring the scaffolder can select it, fill its slots correctly, and assemble valid HTML that passes QA.
@@ -953,7 +556,7 @@
 - Register as enhancement to existing `deliverability` check (currently disabled by default — this makes it useful)
 **Security:** Analysis is static HTML parsing only. No network calls to ISPs. ISP profiles are developer-maintained YAML. No sender reputation data stored (that's infrastructure-level, not content-level).
 **Verify:** Email with 80% images → flags "image-to-text ratio 80% exceeds Gmail threshold 60%". Email with 5 bit.ly links → flags "URL shorteners detected — major deliverability risk". Email with white-on-white hidden text → flags specific element. Clean email with balanced content → "deliverability risk: low" with no flags. `make test` passes.
-- [ ] 25.13 Email deliverability intelligence
+- [x] ~~25.13 Email deliverability intelligence~~ **DONE**
 
 ### 25.14 Multi-Variant Campaign Assembly `[Backend]`
 **What:** Generate A/B/n email variants from a single brief, with systematic variation of subject lines, CTAs, hero images, content length, and layout. Each variant includes predicted engagement differentiators and QA results. Integrates with the scaffolder pipeline to produce 2-5 variants in a single pipeline run.

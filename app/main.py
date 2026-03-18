@@ -213,6 +213,45 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("blueprint.checkpoint_cleanup_poller_start_failed", exc_info=True)
 
+    # Load plugins (Phase 25.1) + lifecycle (Phase 25.2)
+    _lifecycle_manager = None
+    if settings.plugins.enabled:
+        try:
+            from pathlib import Path
+
+            from app.plugins.lifecycle import PluginLifecycleManager
+            from app.plugins.registry import get_plugin_registry
+
+            plugin_registry = get_plugin_registry()
+            plugin_dir = Path(settings.plugins.directory)
+            loaded = plugin_registry.discover_and_load(plugin_dir)
+            logger.info("plugins.startup_complete", loaded_count=len(loaded), plugins=loaded)
+
+            # Start lifecycle health monitor
+            _lifecycle_manager = PluginLifecycleManager(
+                registry=plugin_registry,
+                sandbox=plugin_registry.sandbox,
+                health_check_interval_s=settings.plugins.health_check_interval_s,
+                max_consecutive_failures=settings.plugins.max_consecutive_failures,
+            )
+            _lifecycle_manager.start_health_monitor()
+        except Exception:
+            logger.warning("plugins.startup_failed", exc_info=True)
+
+    # Sync Kestra flow templates (Phase 25.5)
+    if settings.kestra.enabled:
+        try:
+            from app.workflows.service import get_workflow_service
+
+            wf_service = get_workflow_service()
+            if await wf_service.health_check():
+                synced = await wf_service.sync_flow_templates()
+                logger.info("kestra.templates_synced", count=synced)
+            else:
+                logger.warning("kestra.unavailable_at_startup")
+        except Exception:
+            logger.warning("kestra.startup_sync_failed", exc_info=True)
+
     # Mount MCP server session manager (Phase 23.4)
     if settings.mcp.enabled:
         try:
@@ -226,6 +265,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
 
     # Shutdown
+
+    if _lifecycle_manager is not None:
+        await _lifecycle_manager.shutdown_all()
+        logger.info("plugins.lifecycle_manager_stopped")
 
     if checkpoint_poller is not None:
         await checkpoint_poller.stop()
@@ -328,6 +371,42 @@ app.include_router(cost_governor_router)
 
 # Voice brief input pipeline (Phase 23.5)
 app.include_router(voice_router, prefix="/api")
+
+# Tolgee TMS endpoints (Phase 25.3) — optional feature toggle
+if settings.tolgee.enabled:
+    from app.connectors.tolgee.routes import router as tolgee_router
+
+    app.include_router(tolgee_router)
+
+# Plugin admin endpoints (Phase 25.1)
+if settings.plugins.enabled:
+    from app.plugins.routes import router as plugins_router
+
+    app.include_router(plugins_router)
+
+# Workflow orchestration endpoints (Phase 25.5)
+if settings.kestra.enabled:
+    from app.workflows.routes import router as workflows_router
+
+    app.include_router(workflows_router)
+
+# Typst QA report generation (Phase 25.7)
+if settings.reporting.enabled:
+    from app.reporting.routes import router as reporting_router
+
+    app.include_router(reporting_router)
+
+# Template upload pipeline (Phase 25.10)
+if settings.templates.upload_enabled:
+    from app.templates.upload.routes import router as template_upload_router
+
+    app.include_router(template_upload_router)
+
+# Skill extraction endpoints (Phase 25.11)
+if settings.skill_extraction.enabled:
+    from app.ai.skills.routes import router as skill_extraction_router
+
+    app.include_router(skill_extraction_router)
 
 # Mount MCP streamable HTTP transport (Phase 23.4)
 if settings.mcp.enabled:
