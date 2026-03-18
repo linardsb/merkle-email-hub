@@ -3,6 +3,7 @@
  * Manages cursor positions, selections, and user presence via Yjs Awareness.
  */
 import type { Awareness } from "y-protocols/awareness";
+import type { ActivityState, Collaborator } from "@/types/collaboration";
 
 /** Cursor palette — 12 distinct colors for peer differentiation */
 const CURSOR_COLORS = [
@@ -16,6 +17,8 @@ export interface CollabUser {
   color: string;
   role: string;
 }
+
+const IDLE_TIMEOUT_MS = 60_000;
 
 /**
  * Set the local user's awareness state.
@@ -36,7 +39,67 @@ export function getCursorColor(clientId: number): string {
 }
 
 /**
- * Get all remote collaborators from awareness state.
+ * Update local activity state + timestamp in awareness.
+ */
+export function setLocalActivity(awareness: Awareness, activity: ActivityState): void {
+  awareness.setLocalStateField("activity", activity);
+  awareness.setLocalStateField("lastActiveAt", Date.now());
+}
+
+/**
+ * Update local cursor/selection in awareness and mark as editing.
+ */
+export function setLocalCursorState(
+  awareness: Awareness,
+  cursor: { line: number; col: number } | null,
+  selection: { anchor: number; head: number } | null,
+): void {
+  awareness.setLocalStateField("cursor", cursor);
+  awareness.setLocalStateField("selection", selection);
+  setLocalActivity(awareness, "editing");
+}
+
+/**
+ * Derive activity from awareness state based on role and last active time.
+ */
+export function computeActivity(state: { role?: string; lastActiveAt?: number }): ActivityState {
+  if (state.role === "viewer") return "viewing";
+  if (!state.lastActiveAt) return "idle";
+  return Date.now() - state.lastActiveAt > IDLE_TIMEOUT_MS ? "idle" : "editing";
+}
+
+/**
+ * Get all remote collaborators from awareness state with enriched activity data.
+ */
+export function getEnrichedCollaborators(awareness: Awareness): Collaborator[] {
+  const states = awareness.getStates();
+  const localId = awareness.clientID;
+  const collaborators: Collaborator[] = [];
+
+  states.forEach((state, clientId) => {
+    if (clientId !== localId && state.user) {
+      const user = state.user as CollabUser;
+      collaborators.push({
+        clientId,
+        name: user.name,
+        color: user.color || getCursorColor(clientId),
+        role: user.role || "developer",
+        cursor: (state.cursor as Collaborator["cursor"]) ?? null,
+        selection: (state.selection as Collaborator["selection"]) ?? null,
+        activity: computeActivity({
+          role: user.role,
+          lastActiveAt: state.lastActiveAt as number | undefined,
+        }),
+        lastActiveAt: (state.lastActiveAt as number) ?? 0,
+      });
+    }
+  });
+
+  return collaborators;
+}
+
+/**
+ * Get all remote collaborators from awareness state (basic version).
  */
 export function getCollaborators(awareness: Awareness): Array<CollabUser & { clientId: number }> {
   const states = awareness.getStates();

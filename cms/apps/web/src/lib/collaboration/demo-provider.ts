@@ -43,7 +43,11 @@ export function startDemoCollaborator(
           clientId: fakeClientId,
           name: DEMO_USER.name,
           color: DEMO_USER.color,
+          role: "developer",
           cursor: { line: cursorLine, col: Math.floor(Math.random() * 40) + 1 },
+          selection: null,
+          activity: "editing" as const,
+          lastActiveAt: Date.now(),
         },
       ],
     });

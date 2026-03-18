@@ -18,6 +18,7 @@ function pickColor(clientId: number): string {
 
 export function useCollaboration(projectId: number, templateId: number | null) {
   const docRef = useRef<Y.Doc | null>(null);
+  const awarenessRef = useRef<Awareness | null>(null);
   const providerRef = useRef<unknown>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<CollaborationStatus>("disconnected");
@@ -48,6 +49,7 @@ export function useCollaboration(projectId: number, templateId: number | null) {
         const { Awareness } = await import("y-protocols/awareness");
         const awareness = new Awareness(doc);
         awarenessInstance = awareness;
+        awarenessRef.current = awareness;
 
         awareness.setLocalState({
           name: "You",
@@ -89,6 +91,7 @@ export function useCollaboration(projectId: number, templateId: number | null) {
       return () => {
         cleanupRef.current?.();
         awarenessInstance?.destroy();
+        awarenessRef.current = null;
         doc.destroy();
         docRef.current = null;
         setYText(null);
@@ -111,6 +114,8 @@ export function useCollaboration(projectId: number, templateId: number | null) {
           else setStatus("disconnected");
         });
 
+        awarenessRef.current = provider.awareness;
+
         provider.awareness.setLocalState({
           name: "You",
           color: pickColor(doc.clientID),
@@ -126,7 +131,11 @@ export function useCollaboration(projectId: number, templateId: number | null) {
                 clientId,
                 name: state.name as string,
                 color: (state.color as string) ?? pickColor(clientId),
+                role: (state.role as string) ?? "developer",
                 cursor: state.cursor as Collaborator["cursor"],
+                selection: state.selection as Collaborator["selection"] ?? null,
+                activity: (state.activity as Collaborator["activity"]) ?? "editing",
+                lastActiveAt: (state.lastActiveAt as number) ?? Date.now(),
               });
             }
           });
@@ -139,6 +148,7 @@ export function useCollaboration(projectId: number, templateId: number | null) {
 
     return () => {
       cleanupRef.current?.();
+      awarenessRef.current = null;
       if (providerRef.current) {
         (providerRef.current as { destroy(): void }).destroy();
         providerRef.current = null;
@@ -151,5 +161,5 @@ export function useCollaboration(projectId: number, templateId: number | null) {
     };
   }, [roomName]);
 
-  return { status, collaborators, yText, doc: docRef.current };
+  return { status, collaborators, yText, doc: docRef.current, awareness: awarenessRef.current };
 }
