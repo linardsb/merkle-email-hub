@@ -255,7 +255,7 @@ export default function WorkspacePage() {
         setSaveStatus("saved");
         mutateTemplates();
         toast.success(
-          `Changes saved as version \${result.version_number}`
+          `Changes saved as version ${result.version_number}`
         );
 
         // Auto-clear "saved" indicator after 3s

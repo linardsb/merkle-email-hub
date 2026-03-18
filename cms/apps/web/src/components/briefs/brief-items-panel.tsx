@@ -39,7 +39,7 @@ export function BriefItemsPanel({ connection }: BriefItemsPanelProps) {
     <>
       <div className="space-y-2">
         <h3 className="text-sm font-medium text-foreground">
-          {`Briefs from \${connection.name}`}
+          {`Briefs from ${connection.name}`}
         </h3>
         {items.map((item) => (
           <BriefItemCard

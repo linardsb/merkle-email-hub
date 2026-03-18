@@ -51,7 +51,7 @@ export function TopFailurePatternsCard() {
         </Link>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        {`\${totalPatterns} total patterns tracked across agents`}
+        {`${totalPatterns} total patterns tracked across agents`}
       </p>
 
       <div className="mt-4 space-y-2">

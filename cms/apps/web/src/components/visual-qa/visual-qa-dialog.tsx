@@ -63,7 +63,7 @@ export function VisualQADialog({
       setScreenshots(result.screenshots);
       if (result.clients_failed > 0) {
         toast.warning(
-          `\${result.clients_failed} client(s) failed to render`,
+          `${result.clients_failed} client(s) failed to render`,
         );
       }
     } catch {

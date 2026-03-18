@@ -211,8 +211,8 @@ function ImportDesignWizard({
       {step === "review-brief" && briefData && (
         <div className="space-y-4">
           <div className="flex items-center gap-4 text-sm text-foreground-muted">
-            <span>{`Layout: \${briefData.layout_summary}`}</span>
-            <span>{`\${briefData.sections_detected} sections detected`}</span>
+            <span>{`Layout: ${briefData.layout_summary}`}</span>
+            <span>{`${briefData.sections_detected} sections detected`}</span>
           </div>
           <div>
             <label htmlFor="import-brief" className="mb-1.5 block text-sm font-medium text-foreground">
@@ -317,7 +317,7 @@ function ImportDesignWizard({
             <>
               <AlertCircle className="h-10 w-10 text-status-danger" />
               <p className="text-sm font-medium text-foreground">
-                {`Conversion failed: \${importResult.error_message ?? "Unknown error"}`}
+                {`Conversion failed: ${importResult.error_message ?? "Unknown error"}`}
               </p>
               <button
                 type="button"
@@ -441,7 +441,7 @@ function ExtractComponentsWizard({
                 {comp.thumbnail_url ? (
                   <img
                     src={comp.thumbnail_url}
-                    alt={`Thumbnail for \${comp.name}`}
+                    alt={`Thumbnail for ${comp.name}`}
                     className="h-16 w-full rounded border border-card-border object-contain"
                   />
                 ) : (
@@ -470,7 +470,7 @@ function ExtractComponentsWizard({
             {isExtracting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : null}
-            {`Extract Selected (\${selectedIds.length})`}
+            {`Extract Selected (${selectedIds.length})`}
           </button>
         </div>
       </div>
@@ -495,7 +495,7 @@ function ExtractComponentsWizard({
         <>
           <AlertCircle className="h-10 w-10 text-status-danger" />
           <p className="text-sm font-medium text-foreground">
-            {`Conversion failed: \${polledImport.error_message ?? "Unknown error"}`}
+            {`Conversion failed: ${polledImport.error_message ?? "Unknown error"}`}
           </p>
           <button
             type="button"
@@ -512,7 +512,7 @@ function ExtractComponentsWizard({
         <>
           <CheckCircle2 className="h-10 w-10 text-status-success" />
           <p className="text-sm font-medium text-foreground">
-            {`\${totalComponents} components extracted successfully!`}
+            {`${totalComponents} components extracted successfully!`}
           </p>
           <button
             type="button"
@@ -553,7 +553,7 @@ export function DesignImportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[48rem]">
         <DialogHeader>
-          <DialogTitle>{`Import from \${connectionName}`}</DialogTitle>
+          <DialogTitle>{`Import from ${connectionName}`}</DialogTitle>
           <DialogDescription className="sr-only">
             {"Import Design"}
           </DialogDescription>

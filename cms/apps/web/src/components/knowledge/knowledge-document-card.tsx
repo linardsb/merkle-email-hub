@@ -52,7 +52,7 @@ export function KnowledgeDocumentCard({ document, onClick }: Props) {
       {/* Footer */}
       <div className="mt-3 flex items-center justify-between text-xs text-foreground-muted">
         <span>{DOMAIN_LABELS[document.domain] ?? document.domain}</span>
-        <span>{`\${document.chunk_count} chunks`}</span>
+        <span>{`${document.chunk_count} chunks`}</span>
       </div>
     </button>
   );

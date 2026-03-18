@@ -313,7 +313,7 @@ export function BlueprintRunDialog({
             {/* Token usage */}
             {totalTokens > 0 && (
               <p className="text-xs text-muted-foreground">
-                {`\${totalTokens.toLocaleString()} tokens`}
+                {`${totalTokens.toLocaleString()} tokens`}
               </p>
             )}
           </div>

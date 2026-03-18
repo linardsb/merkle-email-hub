@@ -146,7 +146,7 @@ export default function ComponentsPage() {
       {data && totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-foreground-muted">
-            {`Showing \${(page - 1) * PAGE_SIZE + 1}-\${Math.min(page * PAGE_SIZE} of \${data.total}`}
+            {`Showing ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, data.total)} of ${data.total}`}
           </p>
           <div className="flex gap-2">
             <button

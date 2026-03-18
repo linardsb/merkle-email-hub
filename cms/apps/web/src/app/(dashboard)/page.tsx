@@ -248,7 +248,7 @@ export default function DashboardPage() {
                         {"QA Run"}
                       </span>
                       <span className="text-xs text-foreground-muted">
-                        {`Score: \${Math.round(result.overall_score * 100)}%`}
+                        {`Score: ${Math.round(result.overall_score * 100)}%`}
                       </span>
                     </div>
                     <span className="text-xs text-foreground-muted">

@@ -131,7 +131,7 @@ export function QAOverrideDialog({
             className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
           />
           <p className="text-xs text-foreground-muted">
-            {`Minimum \${10} characters required`}
+            {`Minimum ${10} characters required`}
           </p>
         </div>
 

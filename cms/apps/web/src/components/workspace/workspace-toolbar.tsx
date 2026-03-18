@@ -205,7 +205,7 @@ export function WorkspaceToolbar({
         {brandViolations !== undefined && brandViolations > 0 && (
           <span
             className="flex items-center gap-1 rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text"
-            title={`\${brandViolations} brand violations`}
+            title={`${brandViolations} brand violations`}
           >
             <Palette className="h-3 w-3" />
             {brandViolations}

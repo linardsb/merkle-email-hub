@@ -123,7 +123,7 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
                       <span>·</span>
                       <span>{formatDuration(run.duration_ms)}</span>
                       <span>·</span>
-                      <span>{`\${run.total_tokens.toLocaleString()} tokens`}</span>
+                      <span>{`${run.total_tokens.toLocaleString()} tokens`}</span>
                       {run.qa_passed === true && (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                           {"QA Pass"}
@@ -181,8 +181,8 @@ function formatRelativeTime(date: Date): string {
   const diffDay = Math.floor(diffMs / 86400000);
 
   if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `\${diffMin}m ago`;
-  if (diffHr < 24) return `\${diffHr}h ago`;
-  if (diffDay < 7) return `\${diffDay}d ago`;
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
   return date.toLocaleDateString();
 }

@@ -70,7 +70,7 @@ export function BriefConnectionCard({
               {connection.name}
             </p>
             <p className="text-xs text-foreground-muted">
-              {PLATFORM_LABELS[connection.platform]} &middot; {`Key ····\${connection.credential_last4}`}
+              {PLATFORM_LABELS[connection.platform]} &middot; {`Key ····${connection.credential_last4}`}
             </p>
           </div>
         </div>
@@ -86,10 +86,10 @@ export function BriefConnectionCard({
           </span>
         )}
         {connection.items_count > 0 && (
-          <span>{`\${connection.items_count} briefs`}</span>
+          <span>{`${connection.items_count} briefs`}</span>
         )}
         {lastSynced && (
-          <span>{`Synced \${lastSynced}`}</span>
+          <span>{`Synced ${lastSynced}`}</span>
         )}
       </div>
 

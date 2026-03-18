@@ -114,7 +114,7 @@ export function QAResultsPanel({
           </span>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {`\${result.checks_passed} of \${result.checks_total} checks passed`}
+          {`${result.checks_passed} of ${result.checks_total} checks passed`}
         </p>
 
         {/* Override info */}
@@ -134,7 +134,7 @@ export function QAResultsPanel({
         {failedChecks.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-xs font-medium uppercase tracking-wider text-destructive">
-              {`\${failedChecks.length} Failed`}
+              {`${failedChecks.length} Failed`}
             </h3>
             {failedChecks.map((check) => (
               <QACheckItem
@@ -155,7 +155,7 @@ export function QAResultsPanel({
               onClick={() => setShowPassing((v) => !v)}
               className="flex w-full items-center justify-between text-xs font-medium uppercase tracking-wider text-status-success"
             >
-              {`\${passedChecks.length} Passed`}
+              {`${passedChecks.length} Passed`}
               {showPassing ? (
                 <ChevronUp className="h-3.5 w-3.5" />
               ) : (

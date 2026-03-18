@@ -98,7 +98,7 @@ export function ApprovalAuditTimeline({
                 {config.label}
               </p>
               <p className="text-xs text-foreground-muted">
-                {`Requested by User #\${entry.actor_id}`} &middot;{" "}
+                {`Requested by User #${entry.actor_id}`} &middot;{" "}
                 {new Date(entry.created_at as string).toLocaleString()}
               </p>
               {entry.details && (

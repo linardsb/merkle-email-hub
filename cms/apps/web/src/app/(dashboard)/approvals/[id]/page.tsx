@@ -100,7 +100,7 @@ export default function ApprovalDetailPage() {
           </Link>
           <span className="text-foreground-muted">/</span>
           <h1 className="text-sm font-semibold text-foreground">
-            {`Build #\${approval.build_id}`}
+            {`Build #${approval.build_id}`}
           </h1>
           <ApprovalStatusBadge status={approval.status} />
           {build && (
@@ -116,7 +116,7 @@ export default function ApprovalDetailPage() {
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground-muted">
           <span>
-            {`Requested by User #\${approval.requested_by_id}`}
+            {`Requested by User #${approval.requested_by_id}`}
           </span>
           <span>&middot;</span>
           <span>

@@ -155,7 +155,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
             {polledTest ? (
               <>
                 <p className="text-sm text-foreground-muted">
-                  {`\${polledTest.clients_completed ?? 0}/\${polledTest.clients_requested} clients complete`}
+                  {`${polledTest.clients_completed ?? 0}/${polledTest.clients_requested} clients complete`}
                 </p>
                 <div className="h-2 w-48 overflow-hidden rounded-full bg-surface-muted">
                   <div

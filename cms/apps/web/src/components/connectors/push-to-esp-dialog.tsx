@@ -53,7 +53,7 @@ export function PushToESPDialog({
     try {
       await trigger({ template_id: templateId });
       const espLabel = ESP_LABELS[selectedConnection.esp_type]?.label ?? selectedConnection.esp_type;
-      toast.success(`Template pushed to \${espLabel}`);
+      toast.success(`Template pushed to ${espLabel}`);
       onOpenChange(false);
     } catch {
       toast.error("Failed to push template");

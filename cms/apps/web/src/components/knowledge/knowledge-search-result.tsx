@@ -48,7 +48,7 @@ export function KnowledgeSearchResultCard({
             />
           </div>
           <span className="text-xs text-foreground-muted">
-            {`\${scorePercent}% match`}
+            {`${scorePercent}% match`}
           </span>
         </div>
         <button

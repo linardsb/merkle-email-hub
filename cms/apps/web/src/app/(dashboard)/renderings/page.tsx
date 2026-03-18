@@ -212,7 +212,7 @@ export default function RenderingsPage() {
                     {"Previous"}
                   </button>
                   <span className="text-sm text-foreground-muted">
-                    {`Page \${page} of \${totalPages}`}
+                    {`Page ${page} of ${totalPages}`}
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

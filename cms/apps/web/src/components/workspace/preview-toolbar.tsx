@@ -103,7 +103,7 @@ export function PreviewToolbar({
       <div className="flex items-center gap-2">
         {buildTimeMs !== null && (
           <span className="text-muted-foreground">
-            {`Built in \${buildTimeMs}ms`}
+            {`Built in ${buildTimeMs}ms`}
           </span>
         )}
 
@@ -122,7 +122,7 @@ export function PreviewToolbar({
             className="min-w-[3rem] text-center transition-colors hover:text-foreground"
             title={"Reset zoom"}
           >
-            {`\${zoom}%`}
+            {`${zoom}%`}
           </button>
           <button
             type="button"

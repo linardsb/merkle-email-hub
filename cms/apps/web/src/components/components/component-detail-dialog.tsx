@@ -216,14 +216,14 @@ export function ComponentDetailDialog({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">
-                            {`v\${v.version_number}`}
+                            {`v${v.version_number}`}
                           </span>
                           <span className="text-xs text-foreground-muted">
                             {new Date(v.created_at).toLocaleDateString()}
                           </span>
                         </div>
                         <p className="mt-1 text-xs text-foreground-muted">
-                          {`by User #\${v.created_by_id}`}
+                          {`by User #${v.created_by_id}`}
                         </p>
                         {v.changelog ? (
                           <p className="mt-2 text-xs text-foreground">

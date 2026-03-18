@@ -25,7 +25,7 @@ export function ConfidenceIndicator({ confidence, showReviewBadge = true }: Conf
   return (
     <div className="mt-1.5 flex items-center gap-1.5">
       <span className={`text-[10px] font-medium ${colorClass}`}>
-        {`Confidence: \${pct}%`}
+        {`Confidence: ${pct}%`}
       </span>
       {needsReview && showReviewBadge && (
         <Badge variant="destructive" className="gap-1 px-1.5 py-0 text-[10px]">

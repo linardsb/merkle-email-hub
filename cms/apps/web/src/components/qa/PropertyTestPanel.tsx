@@ -38,7 +38,7 @@ function FailureRow({ failure }: { failure: PropertyFailureSchema }) {
             {failure.invariant_name}
           </span>
           <span className="rounded-full bg-badge-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-badge-danger-text">
-            {`\${failure.violations.length} violations`}
+            {`${failure.violations.length} violations`}
           </span>
         </div>
         {expanded ? (
@@ -124,7 +124,7 @@ export function PropertyTestPanel() {
             {isMutating ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
-                {`Testing \${numCases} cases…`}
+                {`Testing ${numCases} cases…`}
               </>
             ) : (
               "Run Property Test"
@@ -144,7 +144,7 @@ export function PropertyTestPanel() {
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-muted">{"Cases"}</span>
               <span className="font-medium text-foreground">
-                {`\${data.passed} of \${data.total_cases} passed (\${Math.round((data.passed / data.total_cases) * 100)}%)`}
+                {`${data.passed} of ${data.total_cases} passed (${Math.round((data.passed / data.total_cases) * 100)}%)`}
               </span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -158,7 +158,7 @@ export function PropertyTestPanel() {
               />
             </div>
             <p className="mt-1 font-mono text-[10px] text-foreground-muted">
-              {`Seed: \${data.seed}`}
+              {`Seed: ${data.seed}`}
             </p>
           </div>
 

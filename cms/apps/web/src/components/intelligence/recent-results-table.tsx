@@ -116,7 +116,7 @@ export function RecentResultsTable() {
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-foreground-muted">
-            {`Page \${page} of \${totalPages}`}
+            {`Page ${page} of ${totalPages}`}
           </p>
           <div className="flex gap-2">
             <button

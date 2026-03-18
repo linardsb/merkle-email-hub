@@ -58,7 +58,7 @@ export function ClientComparisonGrid({
             <div className="overflow-hidden rounded-md border border-border bg-surface-muted">
               <img
                 src={`data:image/png;base64,${screenshot.image_base64}`}
-                alt={`\${displayName} screenshot`}
+                alt={`${displayName} screenshot`}
                 className="h-auto max-h-96 w-full object-contain"
                 loading="lazy"
               />

@@ -104,7 +104,7 @@ function AudienceSection({ projectId }: { projectId: number }) {
         {brief.total_risky_properties > 0 && (
           <span className="flex items-center gap-1">
             <Shield className="h-3 w-3" />
-            {`\${brief.total_risky_properties} risky CSS properties`}
+            {`${brief.total_risky_properties} risky CSS properties`}
           </span>
         )}
       </div>
@@ -156,10 +156,10 @@ function FailurePatternsSection({ projectId }: { projectId: number }) {
       {/* Summary */}
       <div className="flex gap-3 text-[10px] text-muted-foreground">
         {stats.top_agent && (
-          <span>{`Top agent: \${stats.top_agent}`}</span>
+          <span>{`Top agent: ${stats.top_agent}`}</span>
         )}
         {stats.top_check && (
-          <span>{`Top check: \${stats.top_check}`}</span>
+          <span>{`Top check: ${stats.top_check}`}</span>
         )}
       </div>
     </div>

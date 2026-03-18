@@ -26,7 +26,7 @@ export function ApprovalCard({ approval, onClick }: ApprovalCardProps) {
               Build #{approval.build_id}
             </p>
             <p className="text-xs text-foreground-muted">
-              {`Requested by User #\${approval.requested_by_id}`}
+              {`Requested by User #${approval.requested_by_id}`}
             </p>
           </div>
         </div>

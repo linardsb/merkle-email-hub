@@ -146,7 +146,7 @@ function VersionPane({
         >
           {versions.map((v) => (
             <option key={v.version_number} value={v.version_number}>
-              {`v\${v.version_number}`}
+              {`v${v.version_number}`}
             </option>
           ))}
         </select>
@@ -156,7 +156,7 @@ function VersionPane({
       {versionData && (
         <div className="border-b border-border px-3 py-1.5 text-xs text-foreground-muted">
           <span>
-            {`Created \${new Date(versionData.created_at).toLocaleDateString()}`}
+            {`Created ${new Date(versionData.created_at).toLocaleDateString()}`}
           </span>
           {versionData.changelog ? (
             <span className="ml-2">&middot; {versionData.changelog}</span>

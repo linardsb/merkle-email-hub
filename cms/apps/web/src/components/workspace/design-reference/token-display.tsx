@@ -204,7 +204,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                       onClick={() => {
                         editor.replaceAll(obc.hex, obc.closestHex);
                         toast.success(
-                          `Replaced \${obc.hex} → \${obc.closestHex}`,
+                          `Replaced ${obc.hex} → ${obc.closestHex}`,
                         );
                       }}
                     >

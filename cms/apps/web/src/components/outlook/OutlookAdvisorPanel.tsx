@@ -69,7 +69,7 @@ function DependencyRow({ dep }: { dep: OutlookDependencySchema }) {
             {typeLabel}
           </span>
           <span className="text-foreground-muted">
-            {`Line \${dep.line_number}`}
+            {`Line ${dep.line_number}`}
           </span>
         </div>
         {expanded ? (
@@ -87,7 +87,7 @@ function DependencyRow({ dep }: { dep: OutlookDependencySchema }) {
           <p className="text-[10px] text-foreground-muted">{dep.location}</p>
           {dep.modern_replacement && (
             <p className="text-[10px] text-status-success">
-              {`Modern alternative: \${dep.modern_replacement}`}
+              {`Modern alternative: ${dep.modern_replacement}`}
             </p>
           )}
         </div>
@@ -143,14 +143,14 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           {/* Summary stats */}
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-              {`\${data.total_count} dependencies found`}
+              {`${data.total_count} dependencies found`}
             </span>
             <span className="rounded-full bg-card px-2 py-0.5 text-foreground-muted">
-              {`\${data.removable_count} removable`}
+              {`${data.removable_count} removable`}
             </span>
             {data.byte_savings > 0 && (
               <span className="rounded-full bg-badge-success-bg px-2 py-0.5 text-badge-success-text">
-                {`\${formatKB(data.byte_savings)} KB potential savings`}
+                {`${formatKB(data.byte_savings)} KB potential savings`}
               </span>
             )}
           </div>
@@ -184,7 +184,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
                 className="flex w-full items-center justify-between text-xs font-medium text-foreground-muted"
               >
                 <span>
-                  {`\${data.dependencies.length} dependencies found`}
+                  {`${data.dependencies.length} dependencies found`}
                 </span>
                 {showDeps ? (
                   <ChevronUp className="h-3.5 w-3.5" />
@@ -257,11 +257,11 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           {modernizeData && (
             <div className="rounded border border-status-success/30 bg-badge-success-bg p-2.5 space-y-1.5">
               <p className="text-xs font-medium text-badge-success-text">
-                {`\${modernizeData.changes_applied} changes applied · \${formatKB(modernizeData.bytes_saved)} KB saved`}
+                {`${modernizeData.changes_applied} changes applied · ${formatKB(modernizeData.bytes_saved)} KB saved`}
               </p>
               <div className="flex gap-3 text-[10px] text-foreground-muted">
-                <span>{`Before: \${formatKB(modernizeData.bytes_before)} KB`}</span>
-                <span>{`After: \${formatKB(modernizeData.bytes_after)} KB`}</span>
+                <span>{`Before: ${formatKB(modernizeData.bytes_before)} KB`}</span>
+                <span>{`After: ${formatKB(modernizeData.bytes_after)} KB`}</span>
               </div>
               {onHtmlUpdate && modernizeData.changes_applied > 0 && (
                 <button

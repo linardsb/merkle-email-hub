@@ -62,7 +62,7 @@ export function PreviewIframe({
           <>
             <Eye className="h-12 w-12 text-muted-foreground" />
             <p className="mt-4 text-sm text-muted-foreground">
-              {`Press \${"Ctrl+S"} to compile your template`}
+              {`Press ${"Ctrl+S"} to compile your template`}
             </p>
           </>
         )}

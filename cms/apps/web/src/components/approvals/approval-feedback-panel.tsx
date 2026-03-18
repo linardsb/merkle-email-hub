@@ -67,7 +67,7 @@ export function ApprovalFeedbackPanel({
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground">
-                  {`Requested by User #\${fb.author_id}`}
+                  {`Requested by User #${fb.author_id}`}
                 </span>
                 <span className="text-xs text-foreground-muted">
                   {new Date(fb.created_at as string).toLocaleString()}

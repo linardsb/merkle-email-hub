@@ -147,7 +147,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
                 <p className="text-sm text-foreground">{result.content}</p>
                 {(result.score ?? 0) > 0 && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {`\${Math.round((result.score ?? 0) * 100)}% relevance`}
+                    {`${Math.round((result.score ?? 0) * 100)}% relevance`}
                   </p>
                 )}
               </div>

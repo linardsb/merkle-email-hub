@@ -30,7 +30,7 @@ export function BlockFor({ block, onUpdate }: BlockForProps) {
       </div>
       {block.children.length > 0 && (
         <div className="border-l-2 border-interactive/30 pl-3">
-          <p className="text-xs text-muted-foreground">{`\${block.children.length} blocks`}</p>
+          <p className="text-xs text-muted-foreground">{`${block.children.length} blocks`}</p>
         </div>
       )}
     </div>

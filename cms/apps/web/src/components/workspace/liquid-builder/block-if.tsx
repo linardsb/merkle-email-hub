@@ -23,13 +23,13 @@ export function BlockIf({ block, onUpdate }: BlockIfProps) {
       {block.children.length > 0 && (
         <div className="border-l-2 border-success/30 pl-3">
           <span className="text-[10px] uppercase tracking-wider text-success">{"Then"}</span>
-          <p className="mt-1 text-xs text-muted-foreground">{`\${block.children.length} blocks`}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{`${block.children.length} blocks`}</p>
         </div>
       )}
       {block.elseChildren.length > 0 && (
         <div className="border-l-2 border-warning/30 pl-3">
           <span className="text-[10px] uppercase tracking-wider text-warning">{"Else"}</span>
-          <p className="mt-1 text-xs text-muted-foreground">{`\${block.elseChildren.length} blocks`}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{`${block.elseChildren.length} blocks`}</p>
         </div>
       )}
     </div>

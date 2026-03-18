@@ -19,7 +19,7 @@ interface ColorContextMenuProps {
 export function ColorContextMenu({ hex, name, children }: ColorContextMenuProps) {
   const copyAndNotify = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value);
-    toast.success(`\${label} copied to clipboard`);
+    toast.success(`${label} copied to clipboard`);
   };
 
   const varName = `--${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
@@ -72,7 +72,7 @@ export function FontContextMenu({
 }: FontContextMenuProps) {
   const copyAndNotify = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value);
-    toast.success(`\${label} copied to clipboard`);
+    toast.success(`${label} copied to clipboard`);
   };
 
   const cssShorthand = `font: ${weight} ${size}px/${lineHeight}px '${family}'`;

@@ -74,10 +74,10 @@ export function ESPConnectionCard({
 
       {/* Meta row */}
       <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
-        <span>{`Credentials: ****\${connection.credentials_hint}`}</span>
+        <span>{`Credentials: ****${connection.credentials_hint}`}</span>
         <span>
           {lastSynced
-            ? `Last synced \${lastSynced}`
+            ? `Last synced ${lastSynced}`
             : "Never synced"}
         </span>
       </div>

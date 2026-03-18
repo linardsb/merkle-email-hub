@@ -80,12 +80,12 @@ function ProfileRow({
                 : "bg-badge-danger-bg text-badge-danger-text"
             }`}
           >
-            {`Score: \${Math.round(result.score * 100)}%`}
+            {`Score: ${Math.round(result.score * 100)}%`}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-foreground-muted">
-            {`\${result.checks_passed}/\${result.checks_total} checks`}
+            {`${result.checks_passed}/${result.checks_total} checks`}
           </span>
           {expanded ? (
             <ChevronUp className="h-3 w-3 text-foreground-muted" />
@@ -210,9 +210,9 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
             </div>
 
             <p className="text-xs text-foreground-muted">
-              {`\${data.profile_results.filter(
+              {`${data.profile_results.filter(
                   (r: ChaosProfileResult) => r.passed
-                ).length} of \${data.profiles_tested} profiles passed`}
+                ).length} of ${data.profiles_tested} profiles passed`}
             </p>
           </div>
 

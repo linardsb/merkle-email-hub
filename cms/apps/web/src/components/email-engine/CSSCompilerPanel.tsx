@@ -49,11 +49,11 @@ function ConversionRow({ conv }: { conv: CSSConversionSchema }) {
       {expanded && (
         <div className="border-t border-border px-2.5 py-2 space-y-1">
           <p className="text-[10px] text-foreground-muted">
-            {`Reason: \${conv.reason}`}
+            {`Reason: ${conv.reason}`}
           </p>
           {conv.affected_clients.length > 0 && (
             <p className="text-[10px] text-foreground-muted">
-              {`Affects: \${conv.affected_clients.join("}`}
+              {`Affects: ${conv.affected_clients.join(", ")}`}
             </p>
           )}
         </div>
@@ -104,10 +104,10 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-muted">
-                {`Original: \${formatKB(data.original_size)} KB`}
+                {`Original: ${formatKB(data.original_size)} KB`}
               </span>
               <span className="rounded-full bg-badge-success-bg px-2 py-0.5 text-[10px] font-medium text-badge-success-text">
-                {`-\${data.reduction_pct.toFixed(1)}%`}
+                {`-${data.reduction_pct.toFixed(1)}%`}
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -115,10 +115,10 @@ export function CSSCompilerPanel({ html, onHtmlUpdate }: CSSCompilerPanelProps) 
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-muted">
-                {`Compiled: \${formatKB(data.compiled_size)} KB`}
+                {`Compiled: ${formatKB(data.compiled_size)} KB`}
               </span>
               <span className="text-[10px] text-foreground-muted">
-                {`Compiled in \${data.compile_time_ms.toFixed(0)}ms`}
+                {`Compiled in ${data.compile_time_ms.toFixed(0)}ms`}
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">

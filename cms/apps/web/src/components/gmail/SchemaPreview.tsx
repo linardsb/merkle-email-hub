@@ -119,7 +119,7 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
 
       {/* Processing time */}
       <p className="text-[10px] text-foreground-muted">
-        {`Processed in \${result.inject_time_ms.toFixed(0)}ms`}
+        {`Processed in ${result.inject_time_ms.toFixed(0)}ms`}
       </p>
 
       {/* Apply button */}

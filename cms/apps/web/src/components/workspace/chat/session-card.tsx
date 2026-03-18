@@ -56,7 +56,7 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
           </p>
 
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {`\${session.messageCount} messages`}
+            {`${session.messageCount} messages`}
           </p>
         </div>
 

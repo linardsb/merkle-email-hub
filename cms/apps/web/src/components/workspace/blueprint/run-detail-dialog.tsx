@@ -59,14 +59,14 @@ export function RunDetailDialog({
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>{formattedDate}</span>
             <span>·</span>
-            <span>{`\${(run.duration_ms / 1000).toFixed(1)}s`}</span>
+            <span>{`${(run.duration_ms / 1000).toFixed(1)}s`}</span>
             <span>·</span>
-            <span>{`\${run.total_tokens.toLocaleString()} tokens`}</span>
+            <span>{`${run.total_tokens.toLocaleString()} tokens`}</span>
             {run.resumed_from && (
               <>
                 <span>·</span>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
-                  {`Resumed from \${run.resumed_from.slice(0}`}
+                  {`Resumed from ${run.resumed_from.slice(0, 8)}`}
                 </Badge>
               </>
             )}

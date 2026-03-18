@@ -87,7 +87,7 @@ export function DesignReferencePanel({
             <Skeleton className="h-8 w-full" />
           ) : hasAutoDetect ? (
             <p className="text-xs text-foreground-muted">
-              {`From design: \${activeConnection?.name ?? ""}`}
+              {`From design: ${activeConnection?.name ?? ""}`}
             </p>
           ) : (
             <div>

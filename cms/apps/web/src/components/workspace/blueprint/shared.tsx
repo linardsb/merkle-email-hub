@@ -127,7 +127,7 @@ export function PipelineTimeline({ progress, handoffHistory }: { progress: Bluep
                 )}
                 {node.iteration > 0 && (
                   <span className="text-[10px] text-muted-foreground">
-                    {`Attempt \${node.iteration + 1}`}
+                    {`Attempt ${node.iteration + 1}`}
                   </span>
                 )}
               </div>

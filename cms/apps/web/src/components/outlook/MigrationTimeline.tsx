@@ -44,7 +44,7 @@ export function MigrationTimeline({ plan }: MigrationTimelineProps) {
                   {depKey}
                 </span>
                 <span className="text-[10px] text-foreground-muted">
-                  {`\${step.removals} removals · \${step.byte_savings} bytes saved`}
+                  {`${step.removals} removals · ${step.byte_savings} bytes saved`}
                 </span>
               </div>
             </div>

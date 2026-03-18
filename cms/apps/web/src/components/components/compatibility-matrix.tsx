@@ -55,24 +55,24 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
         <div className="flex items-center gap-1.5">
           <CheckCircle2 className="h-4 w-4 text-status-success" />
           <span className="text-sm text-foreground">
-            {`\${data.full_count} full`}
+            {`${data.full_count} full`}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <AlertTriangle className="h-4 w-4 text-status-warning" />
           <span className="text-sm text-foreground">
-            {`\${data.partial_count} partial`}
+            {`${data.partial_count} partial`}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <XCircle className="h-4 w-4 text-status-danger" />
           <span className="text-sm text-foreground">
-            {`\${data.none_count} unsupported`}
+            {`${data.none_count} unsupported`}
           </span>
         </div>
         {data.qa_score != null && (
           <span className="ml-auto text-sm text-foreground-muted">
-            {`QA Score: \${Math.round(data.qa_score * 100)}%`}
+            {`QA Score: ${Math.round(data.qa_score * 100)}%`}
           </span>
         )}
       </div>
@@ -113,7 +113,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
 
       {data.last_checked && (
         <p className="text-xs text-foreground-muted">
-          {`Last checked: \${new Date(data.last_checked).toLocaleDateString()}`}
+          {`Last checked: ${new Date(data.last_checked).toLocaleDateString()}`}
         </p>
       )}
     </div>

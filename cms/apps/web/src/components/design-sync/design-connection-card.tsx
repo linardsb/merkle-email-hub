@@ -70,7 +70,7 @@ export function DesignConnectionCard({
             <p className="text-xs text-foreground-muted">
               {PROVIDER_LABELS[connection.provider] ?? connection.provider}
               {" · "}
-              {`Token ····\${connection.access_token_last4}`}
+              {`Token ····${connection.access_token_last4}`}
             </p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export function DesignConnectionCard({
           </span>
         )}
         {lastSynced && (
-          <span>{`Synced \${lastSynced}`}</span>
+          <span>{`Synced ${lastSynced}`}</span>
         )}
       </div>
 

@@ -59,7 +59,7 @@ export function ComponentCoverageCard() {
         </Link>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        {`\${coverage.total} components in library`}
+        {`${coverage.total} components in library`}
       </p>
 
       {/* Stacked bar */}

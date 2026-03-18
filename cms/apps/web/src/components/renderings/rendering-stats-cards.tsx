@@ -13,7 +13,7 @@ export function RenderingStatsCards({ tests }: Props) {
     const days = Math.floor(diff / 86400000);
     if (days === 0) return "Today";
     if (days === 1) return "Yesterday";
-    return `\${days}d ago`;
+    return `${days}d ago`;
   }
 
   const totalTests = tests.length;

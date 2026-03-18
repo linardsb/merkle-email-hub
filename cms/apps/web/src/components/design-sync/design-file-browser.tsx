@@ -144,7 +144,7 @@ function TreeNode({
         {thumbnail ? (
           <img
             src={thumbnail}
-            alt={`Thumbnail for \${node.name}`}
+            alt={`Thumbnail for ${node.name}`}
             className="h-8 w-8 shrink-0 rounded border border-card-border object-cover"
           />
         ) : (
@@ -304,7 +304,7 @@ export function DesignFileBrowser({
         <h3 className="text-sm font-medium text-foreground">{"File Structure"}</h3>
         {selectedNodeIds.length > 0 && (
           <span className="text-xs text-foreground-muted">
-            {`\${selectedNodeIds.length} frames selected`}
+            {`${selectedNodeIds.length} frames selected`}
           </span>
         )}
       </div>

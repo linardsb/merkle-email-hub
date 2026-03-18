@@ -113,7 +113,7 @@ export function RenderingTestList({ tests, onScreenshotClick, compareIds, onComp
                 <span className="font-medium text-foreground">{completionRate(test)}%</span>
                 <span className="text-foreground-muted">{test.clients_requested}</span>
                 <span className="truncate text-xs text-foreground-muted">
-                  {`Test #\${test.id}`}
+                  {`Test #${test.id}`}
                 </span>
                 <span className="text-foreground-muted">{formatDate(test.created_at)}</span>
               </div>

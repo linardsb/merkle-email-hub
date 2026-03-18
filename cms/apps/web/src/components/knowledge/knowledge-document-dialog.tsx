@@ -61,7 +61,7 @@ export function KnowledgeDocumentDialog({
             <span className="rounded-full bg-surface-muted px-2 py-0.5">
               {doc.domain.replace(/_/g, " ")}
             </span>
-            <span>{`\${doc.chunk_count} chunks`}</span>
+            <span>{`${doc.chunk_count} chunks`}</span>
             <span>{formatDate(doc.created_at)}</span>
           </div>
         )}
@@ -112,7 +112,7 @@ export function KnowledgeDocumentDialog({
                       className="rounded-md bg-surface-muted p-3"
                     >
                       <p className="mb-1 text-xs font-medium text-foreground-muted">
-                        {`Chunk \${chunk.chunk_index + 1}`}
+                        {`Chunk ${chunk.chunk_index + 1}`}
                       </p>
                       <p className="whitespace-pre-wrap text-sm text-foreground">
                         {chunk.content}

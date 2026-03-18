@@ -177,7 +177,7 @@ export function BriefsOverview() {
       ) : (
         <>
           <p className="text-sm text-foreground-muted">
-            {`\${filteredItems.length} briefs`}
+            {`${filteredItems.length} briefs`}
           </p>
           <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => (

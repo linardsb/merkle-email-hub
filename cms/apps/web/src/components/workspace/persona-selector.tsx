@@ -67,7 +67,7 @@ export function PersonaSelector({
                   {persona.dark_mode && <Moon className="h-3 w-3" />}
                   <DeviceIcon className="h-3 w-3" />
                   <span className="text-[0.65rem]">
-                    {`\${persona.viewport_width ?? 600}px`}
+                    {`${persona.viewport_width ?? 600}px`}
                   </span>
                 </span>
               </DropdownMenuItem>

@@ -64,7 +64,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
               {detail.priority && (
                 <span className="flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  {`Priority: \${detail.priority}`}
+                  {`Priority: ${detail.priority}`}
                 </span>
               )}
               {detail.assignees.length > 0 && (

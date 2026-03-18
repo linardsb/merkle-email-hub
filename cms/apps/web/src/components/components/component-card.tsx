@@ -52,7 +52,7 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
           <CompatibilityBadge badge={component.compatibility_badge} />
           <span className="text-xs text-foreground-muted">
             {component.latest_version
-              ? `v\${component.latest_version}`
+              ? `v${component.latest_version}`
               : "No versions"}
           </span>
         </div>

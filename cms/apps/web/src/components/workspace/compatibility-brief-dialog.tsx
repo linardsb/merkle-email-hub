@@ -57,7 +57,7 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
           <EngineBadge engine={client.engine} />
           <span className="text-muted-foreground">
             {client.unsupported_count > 0
-              ? `\${client.unsupported_count} unsupported CSS properties`
+              ? `${client.unsupported_count} unsupported CSS properties`
               : "Full CSS support"}
           </span>
         </div>
@@ -155,7 +155,7 @@ export function CompatibilityBriefDialog({
           <DialogTitle>{"Compatibility Brief"}</DialogTitle>
           {brief && (
             <DialogDescription>
-              {`\${brief.client_count} email clients · \${brief.total_risky_properties} risky CSS properties`}
+              {`${brief.client_count} email clients · ${brief.total_risky_properties} risky CSS properties`}
             </DialogDescription>
           )}
         </DialogHeader>
@@ -181,10 +181,10 @@ export function CompatibilityBriefDialog({
               <h3 className="text-sm font-semibold text-foreground">{"Summary"}</h3>
               <div className="flex gap-3">
                 <Badge variant="secondary">
-                  {`\${brief.client_count} email clients`}
+                  {`${brief.client_count} email clients`}
                 </Badge>
                 <Badge variant="secondary">
-                  {`\${brief.total_risky_properties} risky CSS properties`}
+                  {`${brief.total_risky_properties} risky CSS properties`}
                 </Badge>
               </div>
 

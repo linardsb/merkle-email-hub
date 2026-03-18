@@ -272,7 +272,7 @@ export default function KnowledgePage() {
             <>
               {searchData && !searchLoading && (
                 <p className="text-sm text-muted-foreground">
-                  {`\${searchData.results.length} results from \${searchData.total_candidates} candidates`}
+                  {`${searchData.results.length} results from ${searchData.total_candidates} candidates`}
                 </p>
               )}
               {searchLoading ? (
@@ -389,7 +389,7 @@ export default function KnowledgePage() {
         <>
           {documentsData && !docsLoading && (
             <p className="text-sm text-foreground-muted">
-              {`\${documentsData.total} documents`}
+              {`${documentsData.total} documents`}
             </p>
           )}
 
@@ -427,7 +427,7 @@ export default function KnowledgePage() {
           {documentsData && totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-foreground-muted">
-                {`Showing \${(page - 1) * PAGE_SIZE + 1}-\${Math.min(page * PAGE_SIZE} of \${documentsData.total}`}
+                {`Showing ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, documentsData.total)} of ${documentsData.total}`}
               </p>
               <div className="flex gap-2">
                 <button

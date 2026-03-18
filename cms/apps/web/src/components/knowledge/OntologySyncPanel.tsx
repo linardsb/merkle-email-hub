@@ -71,13 +71,13 @@ function SyncResults({ report }: { report: SyncReportResponse }) {
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-          {`\${report.new_properties} new properties`}
+          {`${report.new_properties} new properties`}
         </span>
         <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-          {`\${report.updated_levels} updated levels`}
+          {`${report.updated_levels} updated levels`}
         </span>
         <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-          {`\${report.new_clients} new clients`}
+          {`${report.new_clients} new clients`}
         </span>
       </div>
 
@@ -135,7 +135,7 @@ export function OntologySyncPanel() {
   const { trigger: syncTrigger, data: syncReport, isMutating: isSyncing } = useOntologySync();
 
   const lastSyncText = status?.last_sync_at
-    ? `Last synced \${formatTimeAgo(status.last_sync_at)}`
+    ? `Last synced ${formatTimeAgo(status.last_sync_at)}`
     : "Never synced";
 
   return (
@@ -182,18 +182,18 @@ export function OntologySyncPanel() {
               {lastSyncText}
             </span>
             <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-              {`\${status.features_synced} features synced`}
+              {`${status.features_synced} features synced`}
             </span>
             {status.error_count > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-badge-danger-bg px-2 py-0.5 text-badge-danger-text">
                 <AlertTriangle className="h-3 w-3" />
-                {`\${status.error_count} errors`}
+                {`${status.error_count} errors`}
               </span>
             )}
           </div>
           {status.last_commit_sha && (
             <p className="font-mono text-[10px] text-foreground-muted">
-              {`Commit: \${status.last_commit_sha.slice(0}`}
+              {`Commit: ${status.last_commit_sha.slice(0, 8)}`}
             </p>
           )}
         </div>

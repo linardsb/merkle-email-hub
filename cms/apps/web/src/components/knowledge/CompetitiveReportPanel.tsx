@@ -24,7 +24,7 @@ function CapabilityRow({ cap }: { cap: CapabilityFeasibility }) {
         </div>
         {cap.hub_supports && cap.hub_agent && (
           <span className="rounded bg-badge-success-bg px-1.5 py-0.5 text-[10px] font-medium text-badge-success-text">
-            {`Agent: \${cap.hub_agent}`}
+            {`Agent: ${cap.hub_agent}`}
           </span>
         )}
       </div>
@@ -36,12 +36,12 @@ function CapabilityRow({ cap }: { cap: CapabilityFeasibility }) {
           />
         </div>
         <span className="text-[10px] text-foreground-muted">
-          {`\${coveragePercent}% audience coverage`}
+          {`${coveragePercent}% audience coverage`}
         </span>
       </div>
       {cap.blocking_clients.length > 0 && (
         <p className="mt-1 text-[10px] text-foreground-muted">
-          {`Blocked by: \${cap.blocking_clients.join("}`}
+          {`Blocked by: ${cap.blocking_clients.join(", ")}`}
         </p>
       )}
     </div>
@@ -170,7 +170,7 @@ export function CompetitiveReportPanel() {
       {report && (
         <div className="space-y-3">
           <p className="text-xs text-foreground-muted">
-            {`\${report.total_capabilities} capabilities analyzed`}
+            {`${report.total_capabilities} capabilities analyzed`}
           </p>
 
           <CapabilitySection

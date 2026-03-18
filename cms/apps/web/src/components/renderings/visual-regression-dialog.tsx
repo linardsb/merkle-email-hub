@@ -78,7 +78,7 @@ export function VisualRegressionDialog({ open, onOpenChange, baselineTestId, cur
               )}
               <span className="text-sm text-foreground">
                 {data.regressions_found > 0
-                  ? `\${data.regressions_found} regressions found across \${data.total_clients} clients`
+                  ? `${data.regressions_found} regressions found across ${data.total_clients} clients`
                   : "No regressions detected"}
               </span>
             </div>
