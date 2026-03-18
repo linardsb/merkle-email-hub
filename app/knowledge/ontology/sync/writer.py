@@ -47,14 +47,8 @@ def apply_sync(
         diff = SyncDiff(
             new_clients=diff.new_clients,
             new_properties=diff.new_properties,
-            updated_support=[
-                u for u in diff.updated_support
-                if (u[0], u[1]) not in override_keys
-            ],
-            new_support=[
-                s for s in diff.new_support
-                if (s[0], s[1]) not in override_keys
-            ],
+            updated_support=[u for u in diff.updated_support if (u[0], u[1]) not in override_keys],
+            new_support=[s for s in diff.new_support if (s[0], s[1]) not in override_keys],
         )
         if not diff.has_changes:
             return 0

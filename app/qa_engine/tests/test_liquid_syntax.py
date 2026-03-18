@@ -97,9 +97,9 @@ class TestLiquidSyntaxCheck:
         </body></html>
         """
         result = await check.run(html)
-        assert "nesting" in (result.details or "").lower() or "depth" in (
-            result.details or ""
-        ).lower()
+        assert (
+            "nesting" in (result.details or "").lower() or "depth" in (result.details or "").lower()
+        )
 
     @pytest.mark.asyncio
     async def test_raw_block_preserved(self, check: LiquidSyntaxCheck) -> None:

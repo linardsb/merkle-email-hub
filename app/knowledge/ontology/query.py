@@ -6,7 +6,6 @@ import re
 
 from app.knowledge.ontology.registry import load_ontology
 from app.knowledge.ontology.types import (
-    ClientEngine,
     EmailClient,
     SupportLevel,
 )
@@ -116,22 +115,35 @@ def unsupported_engines_in_html(html: str) -> list[dict[str, object]]:
         engine_details: list[dict[str, object]] = []
         for engine in unsupported_engines:
             share = onto.engine_market_share(engine)
-            engine_details.append({
-                "engine": engine.value,
-                "market_share": round(share, 1),
-                "clients": [c.name for c in onto.clients_by_engine(engine)
-                            if onto.get_support(prop.id, c.id) == SupportLevel.NONE],
-            })
+            engine_details.append(
+                {
+                    "engine": engine.value,
+                    "market_share": round(share, 1),
+                    "clients": [
+                        c.name
+                        for c in onto.clients_by_engine(engine)
+                        if onto.get_support(prop.id, c.id) == SupportLevel.NONE
+                    ],
+                }
+            )
 
-        total_engine_share = sum(d["market_share"] for d in engine_details)  # type: ignore[arg-type]
-        issues.append({
-            "property_id": prop.id,
-            "property_name": prop.property_name,
-            "value": prop.value,
-            "unsupported_engines": engine_details,
-            "total_engine_share": round(total_engine_share, 1),
-            "severity": "error" if total_engine_share > 20.0 else "warning" if total_engine_share > 5.0 else "info",
-        })
+        total_engine_share: float = 0.0
+        for ed in engine_details:
+            total_engine_share += float(ed["market_share"])  # type: ignore[arg-type]
+        issues.append(
+            {
+                "property_id": prop.id,
+                "property_name": prop.property_name,
+                "value": prop.value,
+                "unsupported_engines": engine_details,
+                "total_engine_share": round(total_engine_share, 1),
+                "severity": "error"
+                if total_engine_share > 20.0
+                else "warning"
+                if total_engine_share > 5.0
+                else "info",
+            }
+        )
 
     return issues
 

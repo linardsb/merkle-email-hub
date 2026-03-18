@@ -103,6 +103,9 @@ class TemplateAssembler:
         # Step 10: Add builder annotations for roundtrip fidelity (last — after all content is set)
         html = self._add_builder_annotations(html, plan)
 
+        # Step 11: Apply tier strategy (progressive enhancement for MSO)
+        html = self._apply_tier_strategy(html, plan)
+
         logger.info(
             "scaffolder.assembly_completed",
             template=plan.template.template_name,
@@ -399,6 +402,104 @@ class TemplateAssembler:
             re.DOTALL,
         )
         return pattern.sub(lambda m: m.group(1) + preheader + m.group(4), html, count=1)
+
+    # ── Tier strategy (24B.3 Progressive Enhancement Assembly) ──
+
+    def _apply_tier_strategy(self, html: str, plan: EmailBuildPlan) -> str:
+        """Apply progressive enhancement tier strategy.
+
+        'universal' = no-op (current behavior preserved).
+        'progressive' = detect modern CSS sections, wrap in MSO conditionals
+        with table-based fallback for Word engine.
+        """
+        if plan.tier_strategy != "progressive":
+            return html
+
+        # Detect sections with modern CSS (flexbox, grid, border-radius on structural elements)
+        modern_css_re = re.compile(
+            r'style="[^"]*(?:display\s*:\s*(?:flex|grid|inline-flex|inline-grid)|'
+            r'border-radius\s*:\s*(?!0))[^"]*"',
+            re.IGNORECASE,
+        )
+
+        # Find sections that use modern CSS
+        section_re = re.compile(
+            r'(<(?:tr|td|div)\b[^>]*\bdata-section=["\'][^"\']+["\'][^>]*>)(.*?)(</(?:tr|td|div)>)',
+            re.DOTALL | re.IGNORECASE,
+        )
+
+        def _wrap_section(m: re.Match[str]) -> str:
+            open_tag = m.group(1)
+            content = m.group(2)
+            close_tag = m.group(3)
+            full_section = open_tag + content + close_tag
+
+            if not modern_css_re.search(full_section):
+                return full_section
+
+            fallback = self._generate_word_fallback(full_section)
+            return self._wrap_mso_conditional(full_section, fallback)
+
+        return section_re.sub(_wrap_section, html)
+
+    @staticmethod
+    def _generate_word_fallback(section_html: str) -> str:
+        """Generate a Word-engine-compatible fallback for a section.
+
+        Strips flexbox/grid -> display:block, strips border-radius on td/table,
+        wraps background images in VML v:rect pattern.
+        """
+        fallback = section_html
+
+        # Strip flexbox/grid -> replace with display: block
+        fallback = re.sub(
+            r"display\s*:\s*(?:flex|grid|inline-flex|inline-grid)",
+            "display: block",
+            fallback,
+            flags=re.IGNORECASE,
+        )
+
+        # Strip border-radius on structural elements (td, table, th)
+        fallback = re.sub(
+            r"(border-radius\s*:\s*)[^;]+;?",
+            "",
+            fallback,
+            flags=re.IGNORECASE,
+        )
+
+        # Wrap background images in VML v:rect
+        bg_image_re = re.compile(
+            r'(<(?:td|table|div)\b[^>]*?)style="([^"]*background-image\s*:\s*url\([\'"]?([^)\'"]+)[\'"]?\)[^"]*)"',
+            re.IGNORECASE,
+        )
+
+        def _vml_wrap(m: re.Match[str]) -> str:
+            tag_start = m.group(1)
+            style = m.group(2)
+            image_url = m.group(3)
+            # Remove background-image from inline style
+            clean_style = re.sub(r"background-image\s*:\s*url\([^)]+\)\s*;?\s*", "", style)
+            return f'{tag_start}style="{clean_style}" background="{image_url}"'
+
+        fallback = bg_image_re.sub(_vml_wrap, fallback)
+
+        return fallback
+
+    @staticmethod
+    def _wrap_mso_conditional(enhanced: str, fallback: str) -> str:
+        """Wrap enhanced HTML with MSO conditional comments.
+
+        Non-MSO clients get the enhanced version.
+        MSO (Outlook Word engine) gets the fallback.
+        """
+        return (
+            "<!--[if !mso]><!-->\n"
+            f"{enhanced}\n"
+            "<!--<![endif]-->\n"
+            "<!--[if mso]>\n"
+            f"{fallback}\n"
+            "<![endif]-->"
+        )
 
 
 # ── Module-level helpers ──

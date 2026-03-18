@@ -47,6 +47,8 @@ class EmailClientEmulator:
 _STYLE_TAG_RE = re.compile(r"<style[^>]*>.*?</style>", re.DOTALL | re.IGNORECASE)
 _LINK_TAG_RE = re.compile(r"<link\b[^>]*rel=[\"']stylesheet[\"'][^>]*/?>", re.IGNORECASE)
 _CLASS_ATTR_RE = re.compile(r'\bclass\s*=\s*"([^"]*)"', re.IGNORECASE)
+# Note: Regex-based HTML stripping is an approximation for preview fidelity,
+# NOT a security boundary. Use nh3 for actual XSS sanitization.
 _FORM_ELEMENTS_RE = re.compile(
     r"<(?:form|input|button|select|textarea|svg|math)\b[^>]*>.*?</(?:form|input|button|select|textarea|svg|math)>|"
     r"<(?:form|input|button|select|textarea|svg|math)\b[^>]*/?>",
@@ -72,7 +74,7 @@ def _gmail_strip_link_tags(html: str) -> str:
 
 def _gmail_rewrite_classes(html: str) -> str:
     """Prefix class names with random ID (Gmail behavior: .foo -> .m_123_foo)."""
-    prefix = "m_" + hashlib.md5(html[:200].encode()).hexdigest()[:6] + "_"
+    prefix = "m_" + hashlib.md5(html[:200].encode(), usedforsecurity=False).hexdigest()[:6] + "_"
 
     def _rewrite(m: re.Match[str]) -> str:
         classes = m.group(1)
@@ -110,20 +112,20 @@ def _gmail_enforce_body_max_width(html: str) -> str:
         if 'style="' in tag.lower():
             # Append to existing style
             html = body_re.sub(
-                lambda m: re.sub(
-                    r'(style\s*=\s*")',
-                    r'\1max-width:680px;margin:0 auto;',
-                    m.group(1),
-                    flags=re.IGNORECASE,
-                )
-                + m.group(2),
+                lambda m: (
+                    re.sub(
+                        r'(style\s*=\s*")',
+                        r"\1max-width:680px;margin:0 auto;",
+                        m.group(1),
+                        flags=re.IGNORECASE,
+                    )
+                    + m.group(2)
+                ),
                 html,
                 count=1,
             )
         else:
-            html = body_re.sub(
-                r'\1 style="max-width:680px;margin:0 auto;"\2', html, count=1
-            )
+            html = body_re.sub(r'\1 style="max-width:680px;margin:0 auto;"\2', html, count=1)
     return html
 
 
@@ -168,10 +170,7 @@ def _expand_shorthand(match: re.Match[str], prop: str) -> str:
     right = match.group(2) or top
     bottom = match.group(3) or top
     left = match.group(4) or right
-    return (
-        f"{prop}-top:{top};{prop}-right:{right};"
-        f"{prop}-bottom:{bottom};{prop}-left:{left};"
-    )
+    return f"{prop}-top:{top};{prop}-right:{right};{prop}-bottom:{bottom};{prop}-left:{left};"
 
 
 def _outlook_rewrite_shorthand(html: str) -> str:
@@ -195,7 +194,7 @@ def _outlook_inject_dark_mode_attrs(html: str) -> str:
     body_re = re.compile(r"(<body\b[^>]*)(>)", re.IGNORECASE)
     match = body_re.search(html)
     if match:
-        html = body_re.sub(r'\1 data-ogsc data-ogsb\2', html, count=1)
+        html = body_re.sub(r"\1 data-ogsc data-ogsb\2", html, count=1)
     return html
 
 
@@ -208,7 +207,9 @@ _EMULATORS: dict[str, EmailClientEmulator] = {
             EmulatorRule(name="strip_style_blocks", transform=_gmail_strip_style_blocks),
             EmulatorRule(name="strip_link_tags", transform=_gmail_strip_link_tags),
             EmulatorRule(name="rewrite_classes", transform=_gmail_rewrite_classes),
-            EmulatorRule(name="strip_unsupported_inline_css", transform=_gmail_strip_unsupported_inline_css),
+            EmulatorRule(
+                name="strip_unsupported_inline_css", transform=_gmail_strip_unsupported_inline_css
+            ),
             EmulatorRule(name="strip_form_elements", transform=_gmail_strip_form_elements),
             EmulatorRule(name="enforce_body_max_width", transform=_gmail_enforce_body_max_width),
         ],

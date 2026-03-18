@@ -199,12 +199,27 @@ PROFILES: dict[str, SanitizationProfile] = {
         allowed_tags=_BASE_ALLOWED_TAGS,
         allowed_attributes={
             **_BASE_ALLOWED_ATTRIBUTES,
-            "*": _BASE_ALLOWED_ATTRIBUTES.get("*", set()) | {
-                "aria-live", "aria-atomic", "aria-relevant", "aria-busy",
-                "aria-owns", "aria-controls", "aria-expanded", "aria-selected",
-                "aria-pressed", "aria-checked", "aria-disabled", "aria-invalid",
-                "aria-required", "aria-placeholder", "aria-roledescription",
-                "aria-current", "aria-sort", "aria-colcount", "aria-rowcount",
+            "*": _BASE_ALLOWED_ATTRIBUTES.get("*", set())
+            | {
+                "aria-live",
+                "aria-atomic",
+                "aria-relevant",
+                "aria-busy",
+                "aria-owns",
+                "aria-controls",
+                "aria-expanded",
+                "aria-selected",
+                "aria-pressed",
+                "aria-checked",
+                "aria-disabled",
+                "aria-invalid",
+                "aria-required",
+                "aria-placeholder",
+                "aria-roledescription",
+                "aria-current",
+                "aria-sort",
+                "aria-colcount",
+                "aria-rowcount",
                 "tabindex",
             },
         },
@@ -230,7 +245,8 @@ PROFILES: dict[str, SanitizationProfile] = {
     ),
     "innovation": SanitizationProfile(
         name="innovation",
-        allowed_tags=_BASE_ALLOWED_TAGS | {"form", "input", "button", "select", "option", "textarea", "label"},
+        allowed_tags=_BASE_ALLOWED_TAGS
+        | {"form", "input", "button", "select", "option", "textarea", "label"},
         allowed_attributes={
             **_BASE_ALLOWED_ATTRIBUTES,
             "input": {"type", "name", "value", "placeholder", "checked", "disabled", "required"},
@@ -343,9 +359,11 @@ def sanitize_html_xss(html: str, profile: str = "default") -> str:
     """
     p = PROFILES.get(profile, PROFILES["default"])
 
-    # VML extraction for outlook_fixer profile
+    # VML extraction — profiles with full email tags may contain MSO conditionals
+    # that nh3 would mangle (VML namespace tags like v:rect, v:roundrect)
+    _VML_PROFILES = {"outlook_fixer", "scaffolder", "dark_mode", "default", "personalisation"}
     vml_blocks: list[str] = []
-    if profile == "outlook_fixer":
+    if profile in _VML_PROFILES:
         html, vml_blocks = _extract_vml_blocks(html)
 
     # nh3 is a fragment sanitizer — it strips <!DOCTYPE>, <html>, <head>, <body>.

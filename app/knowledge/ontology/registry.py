@@ -344,19 +344,26 @@ def load_ontology() -> OntologyRegistry:
         overrides = (overrides_data or {}).get("overrides", [])
 
     if overrides:
+        property_ids = {p.id for p in properties}
+        client_ids = {c.id for c in clients}
         support_list = list(support_entries)
         override_keys = {(o["property_id"], o["client_id"]) for o in overrides}
         # Remove entries that have overrides
         support_list = [
-            e for e in support_list
-            if (e.property_id, e.client_id) not in override_keys
+            e for e in support_list if (e.property_id, e.client_id) not in override_keys
         ]
         # Add override entries
         for o in overrides:
+            prop_id = str(o["property_id"])
+            cli_id = str(o["client_id"])
+            if prop_id not in property_ids:
+                logger.warning("ontology.override_unknown_property", property_id=prop_id)
+            if cli_id not in client_ids:
+                logger.warning("ontology.override_unknown_client", client_id=cli_id)
             support_list.append(
                 SupportEntry(
-                    property_id=str(o["property_id"]),
-                    client_id=str(o["client_id"]),
+                    property_id=prop_id,
+                    client_id=cli_id,
                     level=SupportLevel(str(o["level"])),
                     notes=str(o.get("notes", "manual override")),
                 )

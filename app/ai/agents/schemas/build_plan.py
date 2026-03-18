@@ -70,6 +70,7 @@ class EmailBuildPlan:
     preheader_text: str = ""
     subject_line: str = ""
     dark_mode_strategy: Literal["auto", "custom", "none"] = "auto"
+    tier_strategy: Literal["universal", "progressive"] = "universal"
     personalisation_platform: str | None = None
     personalisation_slots: tuple[str, ...] = ()
     confidence: float = 0.0

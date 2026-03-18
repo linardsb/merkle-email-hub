@@ -40,7 +40,9 @@ class TestGmailStyleStrip:
     def test_strips_style_tags(self) -> None:
         emulator = get_emulator("gmail_web")
         assert emulator is not None
-        html = '<html><head><style>.foo { color: red; }</style></head><body><p>Hello</p></body></html>'
+        html = (
+            "<html><head><style>.foo { color: red; }</style></head><body><p>Hello</p></body></html>"
+        )
         result = emulator.transform(html)
         assert "<style>" not in result
         assert "color: red" not in result
@@ -141,6 +143,7 @@ class TestTransformOrdering:
             def transform(html: str) -> str:
                 order.append(name)
                 return html
+
             return EmulatorRule(name=name, transform=transform)
 
         emulator = EmailClientEmulator(

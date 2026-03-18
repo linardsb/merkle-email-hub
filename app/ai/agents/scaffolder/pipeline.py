@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     from app.ai.agents.scaffolder.pipeline_checkpoint import (
@@ -185,6 +185,9 @@ class ScaffolderPipeline:
                     locked_slots=list(locked.keys()),
                 )
 
+        # Auto-detect tier strategy based on template modern CSS usage
+        tier_strategy = self._detect_tier_strategy(template_selection)
+
         plan = EmailBuildPlan(
             template=template_selection,
             slot_fills=slot_fills,
@@ -192,6 +195,7 @@ class ScaffolderPipeline:
             sections=section_decisions,
             preheader_text=self._extract_preheader(slot_fills),
             subject_line=self._extract_subject(slot_fills),
+            tier_strategy=tier_strategy,
             confidence=0.85,
             reasoning=template_selection.reasoning,
         )
@@ -564,6 +568,33 @@ class ScaffolderPipeline:
             if fill.slot_id == "subject_line":
                 return fill.content
         return ""
+
+    def _detect_tier_strategy(
+        self, selection: TemplateSelection
+    ) -> Literal["universal", "progressive"]:
+        """Detect if the template uses modern CSS requiring progressive enhancement.
+
+        Scans template HTML for flexbox/grid in inline styles or <style> blocks.
+        If found, recommends progressive tier strategy for MSO compatibility.
+        """
+        template = self._resolve_template_for_slots(selection)
+        if template is None:
+            return "universal"
+
+        template_html = template.html
+        modern_css_re = re.compile(
+            r"display\s*:\s*(?:flex|grid|inline-flex|inline-grid)",
+            re.IGNORECASE,
+        )
+        if modern_css_re.search(template_html):
+            logger.info(
+                "scaffolder.tier_strategy_detected",
+                strategy="progressive",
+                template=selection.template_name,
+            )
+            return "progressive"
+
+        return "universal"
 
 
 def _parse_json(content: str) -> dict[str, Any] | None:

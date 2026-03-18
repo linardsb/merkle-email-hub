@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from app.ai.shared import (
     PROFILES,
     _extract_vml_blocks,
@@ -33,7 +31,7 @@ class TestContentProfile:
     """Content profile strips structural tags."""
 
     def test_strips_table_tags(self) -> None:
-        html = '<table><tr><td><p>Hello <strong>world</strong></p></td></tr></table>'
+        html = "<table><tr><td><p>Hello <strong>world</strong></p></td></tr></table>"
         result = sanitize_html_xss(html, profile="content")
         assert "<table>" not in result
         assert "<p>" in result
@@ -50,7 +48,9 @@ class TestAccessibilityProfile:
     """Accessibility profile preserves ARIA attributes."""
 
     def test_preserves_aria_attributes(self) -> None:
-        html = '<div role="navigation" aria-live="polite" aria-expanded="true" tabindex="0">Nav</div>'
+        html = (
+            '<div role="navigation" aria-live="polite" aria-expanded="true" tabindex="0">Nav</div>'
+        )
         result = sanitize_html_xss(html, profile="accessibility")
         assert 'aria-live="polite"' in result
         assert 'aria-expanded="true"' in result

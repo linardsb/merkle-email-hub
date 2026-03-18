@@ -75,22 +75,29 @@ class TestPrepareHtml:
         assert result.startswith("<style>body { color: red; }</style>")
 
     def test_strip_then_inject(self) -> None:
-        """Gmail profile: strips style tags then injects its own CSS."""
+        """Gmail profile: strips style tags then applies emulator transforms."""
         html = "<html><head><style>.old{}</style></head><body></body></html>"
         profile = CLIENT_PROFILES["gmail_web"]
         result = _prepare_html(html, profile)
         assert ".old{}" not in result
-        assert "max-width: 680px" in result
+        assert "max-width" in result  # Injected via emulator or CSS injection
 
 
 # ── Client profiles ──
 
 
 class TestClientProfiles:
-    """Verify all 5 profiles have required fields."""
+    """Verify all 6 profiles have required fields."""
 
     def test_all_profiles_present(self) -> None:
-        expected = {"gmail_web", "outlook_2019", "apple_mail", "outlook_dark", "mobile_ios"}
+        expected = {
+            "gmail_web",
+            "outlook_2019",
+            "apple_mail",
+            "outlook_dark",
+            "mobile_ios",
+            "outlook_web",
+        }
         assert set(CLIENT_PROFILES.keys()) == expected
 
     def test_all_profiles_have_required_fields(self) -> None:

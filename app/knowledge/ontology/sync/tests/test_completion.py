@@ -48,7 +48,9 @@ class TestFreshness:
             last_commit_sha="abc123",
             features_synced=100,
         )
-        with patch.object(service, "_load_state", new_callable=AsyncMock, return_value=recent_state):
+        with patch.object(
+            service, "_load_state", new_callable=AsyncMock, return_value=recent_state
+        ):
             is_fresh, msg = await service.check_freshness(max_age_days=90)
         assert is_fresh is True
         assert "30 days old" in msg
@@ -87,13 +89,11 @@ class TestOverrides:
         overrides_path = Path(__file__).resolve().parent.parent.parent / "data" / "overrides.yaml"
         assert overrides_path.parent.exists(), "Data directory must exist"
 
-        # Load current overrides
+        # Verify overrides file is loadable
         if overrides_path.exists():
             with overrides_path.open() as f:
                 data = yaml.safe_load(f)
-            overrides = (data or {}).get("overrides", [])
-        else:
-            overrides = []
+            assert isinstance((data or {}).get("overrides", []), list)
 
         # Empty overrides file should not break loading
         registry = load_ontology()
@@ -114,8 +114,6 @@ class TestOverrides:
 
         # Simulate override_keys filtering (same logic as in writer)
         override_keys = {("display_flex", "outlook_2019")}
-        filtered_updated = [
-            u for u in diff.updated_support if (u[0], u[1]) not in override_keys
-        ]
+        filtered_updated = [u for u in diff.updated_support if (u[0], u[1]) not in override_keys]
         assert len(filtered_updated) == 1
         assert filtered_updated[0][0] == "border_radius"

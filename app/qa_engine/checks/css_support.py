@@ -9,7 +9,6 @@ from lxml.html import HtmlElement
 
 from app.knowledge.ontology.query import unsupported_css_in_html
 from app.knowledge.ontology.registry import load_ontology
-from app.knowledge.ontology.types import ClientEngine
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.rule_engine import RuleEngine, load_rules
 from app.qa_engine.schemas import QACheckResult
@@ -83,7 +82,9 @@ class CssSupportCheck:
             unsupported_engines = registry.engines_not_supporting(prop_id)
             for engine in unsupported_engines:
                 share = registry.engine_market_share(engine)
-                engine_warnings.add(f"Engine: {engine.value.title()} ({share:.1f}% share) — no support for {issue['property_name']}")
+                engine_warnings.add(
+                    f"Engine: {engine.value.title()} ({share:.1f}% share) — no support for {issue['property_name']}"
+                )
 
         for warning in sorted(engine_warnings)[:5]:
             detail_parts.append(warning)

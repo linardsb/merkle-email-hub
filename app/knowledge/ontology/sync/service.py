@@ -136,7 +136,10 @@ class CanIEmailSyncService:
         age_days = age.days
 
         if age_days <= max_age_days:
-            return True, f"Ontology data is {age_days} days old (synced {state.last_sync_at.date()})"
+            return (
+                True,
+                f"Ontology data is {age_days} days old (synced {state.last_sync_at.date()})",
+            )
         return False, (
             f"Ontology data is {age_days} days old (max {max_age_days}). "
             f"Last sync: {state.last_sync_at.date()}. Run `make ontology-sync` to refresh."

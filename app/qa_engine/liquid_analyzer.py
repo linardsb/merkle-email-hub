@@ -4,16 +4,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from functools import lru_cache
 
 _LIQUID_TAG_RE = re.compile(r"\{%[-~]?\s*(.*?)\s*[-~]?%\}", re.DOTALL)
 _LIQUID_OUTPUT_RE = re.compile(r"\{\{[-~]?\s*(.*?)\s*[-~]?\}\}", re.DOTALL)
 _LIQUID_COMMENT_RE = re.compile(
     r"\{%[-~]?\s*comment\s*[-~]?%\}.*?\{%[-~]?\s*endcomment\s*[-~]?%\}", re.DOTALL
 )
-_LIQUID_RAW_RE = re.compile(
-    r"\{%[-~]?\s*raw\s*[-~]?%\}.*?\{%[-~]?\s*endraw\s*[-~]?%\}", re.DOTALL
-)
+_LIQUID_RAW_RE = re.compile(r"\{%[-~]?\s*raw\s*[-~]?%\}.*?\{%[-~]?\s*endraw\s*[-~]?%\}", re.DOTALL)
 
 # Braze-specific patterns
 _BRAZE_CONNECTED_CONTENT_RE = re.compile(r"\{%\s*connected_content\b", re.IGNORECASE)
@@ -117,15 +114,9 @@ def _extract_variable(expression: str) -> str:
 def analyze_liquid(html: str) -> LiquidAnalysis:
     """Analyze Liquid template syntax in HTML.
 
-    Returns a cached structural analysis of Liquid tags, filters, variables,
+    Returns structural analysis of Liquid tags, filters, variables,
     nesting depth, and Braze-specific features.
     """
-    return _analyze_liquid_impl(html)
-
-
-@lru_cache(maxsize=32)
-def _analyze_liquid_impl(html: str) -> LiquidAnalysis:
-    """Implementation of Liquid analysis (cached)."""
     analysis = LiquidAnalysis()
 
     # Detect Braze-specific extensions
@@ -163,8 +154,7 @@ def _analyze_liquid_impl(html: str) -> LiquidAnalysis:
                 tag_stack.pop()
             elif tag_stack:
                 analysis.parse_errors.append(
-                    f"Mismatched end tag: {{% {tag_name} %}} "
-                    f"(expected end{tag_stack[-1]})"
+                    f"Mismatched end tag: {{% {tag_name} %}} (expected end{tag_stack[-1]})"
                 )
                 # Try to pop anyway to recover
                 tag_stack.pop()
@@ -202,5 +192,4 @@ def _analyze_liquid_impl(html: str) -> LiquidAnalysis:
 
 
 def clear_liquid_cache() -> None:
-    """Clear the Liquid analysis cache."""
-    _analyze_liquid_impl.cache_clear()
+    """No-op kept for API compatibility. Analysis is no longer cached."""

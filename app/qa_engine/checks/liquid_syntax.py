@@ -13,14 +13,18 @@ from __future__ import annotations
 
 import re
 
+from app.core.logging import get_logger
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.liquid_analyzer import (
+    _LIQUID_OUTPUT_RE,
     KNOWN_FILTERS,
     LiquidAnalysis,
     analyze_liquid,
     clear_liquid_cache,
 )
 from app.qa_engine.schemas import QACheckResult
+
+logger = get_logger(__name__)
 
 _LIQUID_TAG_RE = re.compile(r"\{[%{]", re.DOTALL)
 
@@ -40,9 +44,7 @@ class LiquidSyntaxCheck:
 
     name = "liquid_syntax"
 
-    async def run(
-        self, html: str, config: QACheckConfig | None = None
-    ) -> QACheckResult:
+    async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
         """Run the Liquid syntax validation check."""
         if config and not config.enabled:
             return QACheckResult(
@@ -84,9 +86,7 @@ class LiquidSyntaxCheck:
             total_deduction += _ERROR_DEDUCTION
 
         # ── Pass 2: python-liquid parse validation ──
-        parse_issues, parse_deduction = self._validate_with_python_liquid(
-            html, analysis
-        )
+        parse_issues, parse_deduction = self._validate_with_python_liquid(html, analysis)
         issues.extend(parse_issues)
         total_deduction += parse_deduction
 
@@ -102,9 +102,7 @@ class LiquidSyntaxCheck:
         # ── Pass 4: Nesting depth ──
         max_nesting = config.params.get("max_nesting_depth", 5) if config else 5
         if analysis.nesting_depth > max_nesting:
-            issues.append(
-                f"Nesting: depth {analysis.nesting_depth} exceeds max {max_nesting}"
-            )
+            issues.append(f"Nesting: depth {analysis.nesting_depth} exceeds max {max_nesting}")
             total_deduction += _WARNING_DEDUCTION
 
         # ── Summary ──
@@ -140,8 +138,8 @@ class LiquidSyntaxCheck:
             return issues, deduction
 
         try:
-            from liquid import Environment  # type: ignore[import-untyped]
-            from liquid.exceptions import LiquidSyntaxError  # type: ignore[import-untyped]
+            from liquid import Environment
+            from liquid.exceptions import LiquidSyntaxError
 
             env = Environment()
             # Parse the full HTML as a Liquid template
@@ -153,15 +151,12 @@ class LiquidSyntaxCheck:
         except ImportError:
             # python-liquid not installed — skip this pass
             pass
-        except Exception:  # noqa: BLE001
-            # Don't let parse failures break the check
-            pass
+        except Exception:
+            logger.debug("liquid_syntax.parse_error", exc_info=True)
 
         return issues, deduction
 
-    def _validate_filters(
-        self, analysis: LiquidAnalysis
-    ) -> tuple[list[str], float]:
+    def _validate_filters(self, analysis: LiquidAnalysis) -> tuple[list[str], float]:
         """Validate that filters used are known."""
         issues: list[str] = []
         deduction = 0.0
@@ -173,16 +168,13 @@ class LiquidSyntaxCheck:
 
         return issues, deduction
 
-    def _validate_variables(
-        self, html: str, analysis: LiquidAnalysis
-    ) -> tuple[list[str], float]:
+    def _validate_variables(self, html: str, analysis: LiquidAnalysis) -> tuple[list[str], float]:
         """Check for variables without default filters."""
         issues: list[str] = []
         deduction = 0.0
 
         # Check for variables used without default filter
-        output_re = re.compile(r"\{\{[-~]?\s*(.*?)\s*[-~]?\}\}", re.DOTALL)
-        for match in output_re.finditer(html):
+        for match in _LIQUID_OUTPUT_RE.finditer(html):
             expression = match.group(1).strip()
             if not expression:
                 continue
@@ -191,16 +183,13 @@ class LiquidSyntaxCheck:
                 continue
             # Skip Braze content blocks
             if analysis.is_braze and (
-                "content_blocks" in expression
-                or "connected_content" in expression
+                "content_blocks" in expression or "connected_content" in expression
             ):
                 continue
             # Check for bare variables (no filters at all) in personalization contexts
             if "|" not in expression and "." in expression:
                 # Deep property access without a default — potential undefined
-                issues.append(
-                    f"Variable: '{expression}' used without | default filter"
-                )
+                issues.append(f"Variable: '{expression}' used without | default filter")
                 deduction += _WARNING_DEDUCTION
                 if len(issues) >= 5:
                     break
