@@ -131,3 +131,78 @@ async def test_cleanup_room(handler: YjsSyncHandler, store: YjsDocumentStore) ->
 
     handler.cleanup_room(ROOM)
     assert ROOM not in store._docs
+
+
+# --- Phase 24.8 new tests ---
+
+
+@pytest.mark.anyio
+async def test_step2_applies_and_broadcasts(
+    handler: YjsSyncHandler, store: YjsDocumentStore
+) -> None:
+    """SyncStep2 message applies update and broadcasts to peers."""
+    db = AsyncMock()
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = None
+    row = MagicMock()
+    row.room_id = ROOM
+    row.state = b""
+    row.pending_updates = b""
+    row.pending_update_count = 0
+    row.last_compacted_at = datetime.now(UTC)
+    row.document_size_bytes = 0
+    result_existing = MagicMock()
+    result_existing.scalar_one.return_value = row
+
+    db.execute.side_effect = [result_mock, result_existing]
+
+    await handler.init_room(db, ROOM)
+
+    update = _create_update("step2 content")
+    msg = bytes([MessageType.SYNC, SyncMessageType.STEP2]) + update
+
+    replies, broadcasts = await handler.handle_sync_message(db, ROOM, "1", msg)
+
+    assert replies == []
+    assert len(broadcasts) == 1
+    assert broadcasts[0][0] == MessageType.SYNC
+    assert broadcasts[0][1] == SyncMessageType.UPDATE
+
+
+@pytest.mark.anyio
+async def test_step2_rejected_no_broadcast(handler: YjsSyncHandler) -> None:
+    """Rejected SyncStep2 (size limit) produces no broadcast."""
+    db = AsyncMock()
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = None
+    db.execute.return_value = result_mock
+
+    # Init with a very small size limit to force rejection
+    handler._store._max_size_bytes = 10
+    await handler.init_room(db, ROOM)
+
+    update = _create_update("too big for tiny limit")
+    msg = bytes([MessageType.SYNC, SyncMessageType.STEP2]) + update
+
+    replies, broadcasts = await handler.handle_sync_message(db, ROOM, "1", msg)
+    assert replies == []
+    assert broadcasts == []
+
+
+@pytest.mark.anyio
+async def test_single_byte_message_ignored(handler: YjsSyncHandler) -> None:
+    """Single-byte message (too short) is silently ignored."""
+    db = AsyncMock()
+    replies, broadcasts = await handler.handle_sync_message(db, ROOM, "1", b"\x00")
+    assert replies == []
+    assert broadcasts == []
+
+
+@pytest.mark.anyio
+async def test_unknown_sync_subtype_ignored(handler: YjsSyncHandler) -> None:
+    """Unknown sync sub-type (e.g. 99) is logged and ignored."""
+    db = AsyncMock()
+    msg = bytes([MessageType.SYNC, 99]) + b"payload"
+    replies, broadcasts = await handler.handle_sync_message(db, ROOM, "1", msg)
+    assert replies == []
+    assert broadcasts == []

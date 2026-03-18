@@ -168,3 +168,108 @@ async def test_get_full_state(store: YjsDocumentStore) -> None:
 
     state = await store.get_full_state(ROOM)
     assert isinstance(state, bytes)
+
+
+# --- Phase 24.8 new tests ---
+
+
+@pytest.mark.anyio
+async def test_concurrent_updates_both_preserved(store: YjsDocumentStore) -> None:
+    """Two sequential updates are both reflected in final state."""
+    db = AsyncMock()
+    # get_or_create: no existing row
+    result_new = MagicMock()
+    result_new.scalar_one_or_none.return_value = None
+    # apply_update calls
+    row = _make_db_row(ROOM)
+    result_existing = MagicMock()
+    result_existing.scalar_one.return_value = row
+
+    db.execute.side_effect = [result_new, result_existing, result_existing]
+
+    await store.get_or_create(db, ROOM)
+
+    update1 = _make_update()
+    update2 = _make_update()
+
+    result1 = await store.apply_update(db, ROOM, update1)
+    result2 = await store.apply_update(db, ROOM, update2)
+
+    assert result1 is True
+    assert result2 is True
+    assert row.pending_update_count == 2
+
+
+@pytest.mark.anyio
+async def test_compaction_by_time_threshold() -> None:
+    """Compaction triggers when time interval exceeded."""
+    store = YjsDocumentStore(
+        compaction_threshold=1000,  # High count threshold
+        compaction_interval_s=0,  # Zero seconds = always compact by time
+    )
+    db = AsyncMock()
+    row = _make_db_row(ROOM)
+    row.last_compacted_at = datetime(2020, 1, 1, tzinfo=UTC)  # Long ago
+    row.pending_update_count = 0
+
+    result_new = MagicMock()
+    result_new.scalar_one_or_none.return_value = None
+    result_existing = MagicMock()
+    result_existing.scalar_one.return_value = row
+
+    db.execute.side_effect = [result_new, result_existing]
+
+    await store.get_or_create(db, ROOM)
+
+    update = _make_update()
+    await store.apply_update(db, ROOM, update)
+
+    # Should have compacted due to time threshold
+    assert row.pending_update_count == 0
+    assert row.pending_updates == b""
+
+
+@pytest.mark.anyio
+async def test_corrupted_state_creates_fresh_doc() -> None:
+    """Corrupted state in DB results in fresh empty document."""
+    store = YjsDocumentStore()
+    db = AsyncMock()
+    row = _make_db_row(ROOM)
+    row.state = b"\xff\xff\xff\xff"  # Invalid Yjs state
+    row.pending_updates = b""
+
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = row
+    db.execute.return_value = result_mock
+
+    doc = await store.get_or_create(db, ROOM)
+    assert doc is not None
+    assert isinstance(doc, pycrdt.Doc)
+
+
+@pytest.mark.anyio
+async def test_get_state_vector_unloaded_room() -> None:
+    """get_state_vector returns empty bytes for unloaded room."""
+    store = YjsDocumentStore()
+    sv = await store.get_state_vector("nonexistent")
+    assert sv == b""
+
+
+@pytest.mark.anyio
+async def test_get_update_for_peer_empty_sv(store: YjsDocumentStore) -> None:
+    """Empty state vector returns full document state (new client)."""
+    db = AsyncMock()
+    result_new = MagicMock()
+    result_new.scalar_one_or_none.return_value = None
+    row = _make_db_row(ROOM)
+    result_existing = MagicMock()
+    result_existing.scalar_one.return_value = row
+
+    db.execute.side_effect = [result_new, result_existing]
+
+    await store.get_or_create(db, ROOM)
+    update = _make_update()
+    await store.apply_update(db, ROOM, update)
+
+    full_state = await store.get_update_for_peer(ROOM, b"")
+    assert len(full_state) > 0

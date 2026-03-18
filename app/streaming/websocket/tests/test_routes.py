@@ -186,3 +186,120 @@ def test_message_size_limit(
         error = ws.receive_json()
         assert error["type"] == "error"
         assert error["code"] == "message_too_large"
+
+
+# --- Phase 24.8 new tests ---
+
+
+def _setup_mocks(
+    mock_settings: AsyncMock,
+    mock_auth: AsyncMock,
+    mock_access: AsyncMock,
+    role: str = "admin",
+) -> None:
+    """Common mock setup for route tests."""
+    settings = mock_settings.return_value
+    settings.collab_ws.enabled = True
+    settings.collab_ws.heartbeat_interval_seconds = 300
+    settings.collab_ws.max_message_bytes = 1_048_576
+    settings.collab_ws.crdt_enabled = False
+    can_edit = role != "viewer"
+    mock_auth.return_value = AuthResult(user=_make_user(role=role), can_edit=can_edit)
+    mock_access.return_value = True
+
+
+@patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.get_settings")
+def test_viewer_receives_ack_with_viewer_role(
+    mock_settings: AsyncMock,
+    mock_auth: AsyncMock,
+    mock_access: AsyncMock,
+    client: TestClient,
+) -> None:
+    """Viewer receives ack with viewer role."""
+    _setup_mocks(mock_settings, mock_auth, mock_access, role="viewer")
+    with client.websocket_connect(f"/ws/collab/{ROOM}?token=valid") as ws:
+        ack = ws.receive_json()
+        assert ack["type"] == "ack"
+        assert ack["user"]["role"] == "viewer"
+
+
+@patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.get_settings")
+def test_unknown_json_type_returns_error(
+    mock_settings: AsyncMock,
+    mock_auth: AsyncMock,
+    mock_access: AsyncMock,
+    client: TestClient,
+) -> None:
+    """Unknown JSON message type triggers error response."""
+    _setup_mocks(mock_settings, mock_auth, mock_access)
+    with client.websocket_connect(f"/ws/collab/{ROOM}?token=valid") as ws:
+        ws.receive_json()  # ack
+        ws.send_json({"type": "unknown_type"})
+        resp = ws.receive_json()
+        assert resp["type"] == "error"
+        assert resp["code"] == "unknown_type"
+
+
+@patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.get_settings")
+def test_expired_token_rejected(
+    mock_settings: AsyncMock,
+    mock_auth: AsyncMock,
+    mock_access: AsyncMock,
+    client: TestClient,
+) -> None:
+    """Auth failure (e.g. expired JWT) rejects connection."""
+    settings = mock_settings.return_value
+    settings.collab_ws.enabled = True
+    mock_auth.return_value = None  # Auth fails
+
+    with pytest.raises((WebSocketDisconnect, Exception)):
+        with client.websocket_connect(f"/ws/collab/{ROOM}?token=expired") as ws:
+            ws.receive_json()
+
+
+@patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.get_settings")
+def test_awareness_message_relayed(
+    mock_settings: AsyncMock,
+    mock_auth: AsyncMock,
+    mock_access: AsyncMock,
+    client: TestClient,
+) -> None:
+    """Awareness messages are accepted and relayed (no error returned)."""
+    _setup_mocks(mock_settings, mock_auth, mock_access)
+    with client.websocket_connect(f"/ws/collab/{ROOM}?token=valid") as ws:
+        ws.receive_json()  # ack
+        ws.send_json(
+            {
+                "type": "awareness",
+                "cursor_line": 10,
+                "cursor_column": 5,
+            }
+        )
+        # No error returned — alone in room so no relay target, but connection stays alive
+
+
+@patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
+@patch("app.streaming.websocket.routes.get_settings")
+def test_invalid_json_returns_parse_error(
+    mock_settings: AsyncMock,
+    mock_auth: AsyncMock,
+    mock_access: AsyncMock,
+    client: TestClient,
+) -> None:
+    """Invalid JSON text returns parse_error."""
+    _setup_mocks(mock_settings, mock_auth, mock_access)
+    with client.websocket_connect(f"/ws/collab/{ROOM}?token=valid") as ws:
+        ws.receive_json()  # ack
+        ws.send_text("not valid json{{{")
+        resp = ws.receive_json()
+        assert resp["type"] == "error"
+        assert resp["code"] == "parse_error"

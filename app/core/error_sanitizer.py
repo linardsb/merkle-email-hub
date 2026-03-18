@@ -44,6 +44,8 @@ _SAFE_MESSAGES: dict[str, str] = {
     "QAOverrideNotFoundError": "QA result not found",
     # Knowledge
     "DuplicateTagError": "Tag already exists",
+    # Import annotator
+    "ImportAnnotationError": "Failed to annotate imported HTML",
     # Voice pipeline
     "VoiceError": "Voice processing failed",
     "VoiceDisabledError": "Voice input is not enabled",
@@ -59,6 +61,7 @@ _PASSTHROUGH_TYPES: set[str] = {
     "UnsupportedConnectorError",
     "RenderingProviderError",
     "DuplicateTagError",
+    "ImportAnnotationError",
 }
 
 

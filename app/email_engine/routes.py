@@ -16,6 +16,8 @@ from app.email_engine.schemas import (
     BuildResponse,
     CSSCompileRequest,
     CSSCompileResponse,
+    ImportAnnotateRequest,
+    ImportAnnotateResponse,
     PreviewRequest,
     PreviewResponse,
     SchemaInjectRequest,
@@ -103,3 +105,23 @@ async def inject_schema(
     if not settings.email_engine.schema_injection_enabled:
         raise ForbiddenError("Schema.org markup injection is not enabled")
     return service.inject_schema(data.html, data.subject)
+
+
+@router.post(
+    "/import-annotate",
+    response_model=ImportAnnotateResponse,
+    status_code=status.HTTP_200_OK,
+)
+@limiter.limit("10/minute")
+async def import_annotate(
+    request: Request,
+    data: ImportAnnotateRequest,
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> ImportAnnotateResponse:
+    """Annotate imported email HTML with section boundaries for the visual builder."""
+    _ = request
+    from app.ai.agents.import_annotator.service import get_import_annotator_service
+
+    service = get_import_annotator_service()
+    result = await service.annotate(html=data.html, esp_platform=data.esp_platform)
+    return ImportAnnotateResponse(**result)

@@ -243,6 +243,20 @@ PROFILES: dict[str, SanitizationProfile] = {
         allowed_attributes={},
         allowed_url_schemes=set(),
     ),
+    "import_annotator": SanitizationProfile(
+        name="import_annotator",
+        allowed_tags=_BASE_ALLOWED_TAGS,
+        allowed_attributes={
+            **_BASE_ALLOWED_ATTRIBUTES,
+            "*": _BASE_ALLOWED_ATTRIBUTES.get("*", set())
+            | {
+                "data-section-id",
+                "data-component-name",
+                "data-section-layout",
+            },
+        },
+        allowed_url_schemes=_BASE_ALLOWED_URL_SCHEMES,
+    ),
     "innovation": SanitizationProfile(
         name="innovation",
         allowed_tags=_BASE_ALLOWED_TAGS
@@ -361,7 +375,14 @@ def sanitize_html_xss(html: str, profile: str = "default") -> str:
 
     # VML extraction — profiles with full email tags may contain MSO conditionals
     # that nh3 would mangle (VML namespace tags like v:rect, v:roundrect)
-    _VML_PROFILES = {"outlook_fixer", "scaffolder", "dark_mode", "default", "personalisation"}
+    _VML_PROFILES = {
+        "outlook_fixer",
+        "scaffolder",
+        "dark_mode",
+        "default",
+        "personalisation",
+        "import_annotator",
+    }
     vml_blocks: list[str] = []
     if profile in _VML_PROFILES:
         html, vml_blocks = _extract_vml_blocks(html)

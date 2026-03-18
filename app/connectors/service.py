@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from typing import cast
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -168,3 +169,30 @@ class ConnectorService:
             error_message=record.error_message,
             created_at=record.created_at,  # pyright: ignore[reportArgumentType]
         )
+
+    async def import_and_annotate(
+        self,
+        connector_type: str,
+        template_id: str,
+        user: User,  # noqa: ARG002
+    ) -> dict[str, object]:
+        """Pull template HTML from an ESP connector and annotate for the builder."""
+        provider = self._get_provider(connector_type)
+
+        if not hasattr(provider, "get_template_html"):
+            raise UnsupportedConnectorError(
+                f"Connector '{connector_type}' does not support template import"
+            )
+
+        html = cast(str, await provider.get_template_html(template_id))  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue]
+
+        logger.info(
+            "connectors.import_annotate_started",
+            connector=connector_type,
+            template_id=template_id,
+        )
+
+        from app.ai.agents.import_annotator.service import get_import_annotator_service
+
+        annotator = get_import_annotator_service()
+        return await annotator.annotate(html=html, esp_platform=connector_type)

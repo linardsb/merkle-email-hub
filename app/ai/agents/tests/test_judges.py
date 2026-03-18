@@ -336,7 +336,8 @@ class TestJudgeRegistry:
         assert "knowledge" in JUDGE_REGISTRY
         assert "innovation" in JUDGE_REGISTRY
         assert "visual_qa" in JUDGE_REGISTRY
-        assert len(JUDGE_REGISTRY) == 10
+        assert "import_annotator" in JUDGE_REGISTRY
+        assert len(JUDGE_REGISTRY) == 11
 
     def test_registry_instantiation(self) -> None:
         for name, cls in JUDGE_REGISTRY.items():

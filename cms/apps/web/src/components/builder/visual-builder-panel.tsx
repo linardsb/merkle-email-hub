@@ -19,6 +19,7 @@ import type {
 } from "@email-hub/sdk";
 import { BuilderToolbar, DEVICE_WIDTHS, type DevicePreview, type ClientPreview } from "@/components/workspace/builder-toolbar";
 import { BuilderOnboarding } from "@/components/workspace/builder-onboarding";
+import { ImportDialog } from "./import-dialog";
 
 /** Convert a parsed SectionNode to a BuilderSection with sensible defaults */
 function sectionNodeToBuilderSection(node: SectionNode): BuilderSection {
@@ -88,6 +89,7 @@ export function VisualBuilderPanel({
   } = useBuilderState();
 
   const [zoom, setZoom] = useState(100);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [designSystem, setDesignSystem] = useState<DesignSystemConfig | null>(null);
   const [devicePreview, setDevicePreview] = useState<DevicePreview>("desktop");
   const [clientPreview, setClientPreview] = useState<ClientPreview>("none");
@@ -241,6 +243,14 @@ export function VisualBuilderPanel({
   // Stable close callback for PropertyPanel (avoids Escape effect churn)
   const handlePanelClose = useCallback(() => selectSection(null), [selectSection]);
 
+  // Import dialog: accept annotated HTML from import
+  const handleImportAccept = useCallback(
+    (annotatedHtml: string) => {
+      onCodeChange(annotatedHtml);
+    },
+    [onCodeChange]
+  );
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -309,6 +319,15 @@ export function VisualBuilderPanel({
         onExternalDrop={handleExternalDrop}
       >
         {/* Builder toolbar */}
+        <div className="flex items-center border-b border-border">
+          <button
+            onClick={() => setImportDialogOpen(true)}
+            className="ml-2 rounded-md border border-input px-2 py-1 text-[10px] font-medium text-foreground hover:bg-accent"
+            title="Import HTML email"
+          >
+            Import HTML
+          </button>
+        </div>
         <BuilderToolbar
           devicePreview={devicePreview}
           onDevicePreviewChange={setDevicePreview}
@@ -393,6 +412,13 @@ export function VisualBuilderPanel({
 
       {/* Onboarding overlay */}
       <BuilderOnboarding />
+
+      {/* Import dialog */}
+      <ImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onAccept={handleImportAccept}
+      />
     </div>
   );
 }

@@ -166,3 +166,69 @@ async def test_color_assignment(manager: CollabConnectionManager) -> None:
 
     # All 3 peers should get distinct colors
     assert len(colors) == 3
+
+
+# --- Phase 24.8 new tests ---
+
+
+@pytest.mark.anyio
+async def test_disconnect_nonexistent_peer(manager: CollabConnectionManager) -> None:
+    """Disconnecting unknown WebSocket returns None."""
+    ws = _make_ws()
+    result = await manager.disconnect(ws, ROOM)
+    assert result is None
+
+
+@pytest.mark.anyio
+async def test_broadcast_to_empty_room(manager: CollabConnectionManager) -> None:
+    """Broadcasting to empty room is a no-op."""
+    await manager.broadcast_bytes(ROOM, b"\x01")
+    await manager.broadcast_json(ROOM, {"type": "test"})
+    # No error raised
+
+
+@pytest.mark.anyio
+async def test_send_to_user_not_in_room(manager: CollabConnectionManager) -> None:
+    """send_to_user returns False for unknown user."""
+    result = await manager.send_to_user(ROOM, 9999, b"\x01")
+    assert result is False
+
+
+@pytest.mark.anyio
+async def test_multiple_rooms_same_user() -> None:
+    """User can join multiple rooms up to max_rooms_per_user."""
+    mgr = CollabConnectionManager(max_per_room=10, max_rooms_per_user=3)
+    user = _make_user(1)
+    for i in range(3):
+        ws = _make_ws()
+        info = await mgr.connect(ws, f"room:{i}", user, can_edit=True)
+        assert info is not None
+    # Next room should fail
+    ws = _make_ws()
+    info = await mgr.connect(ws, "room:overflow", user, can_edit=True)
+    assert info is None
+
+
+@pytest.mark.anyio
+async def test_active_rooms_count(manager: CollabConnectionManager) -> None:
+    """active_rooms property reflects connected rooms."""
+    assert manager.active_rooms == 0
+    ws = _make_ws()
+    await manager.connect(ws, ROOM, _make_user(1), can_edit=True)
+    assert manager.active_rooms == 1
+    await manager.disconnect(ws, ROOM)
+    assert manager.active_rooms == 0
+
+
+@pytest.mark.anyio
+async def test_color_assignment_wraps() -> None:
+    """Colors cycle when more peers than available colors."""
+    mgr = CollabConnectionManager(max_per_room=20)
+    colors: list[str] = []
+    for i in range(13):
+        ws = _make_ws()
+        info = await mgr.connect(ws, ROOM, _make_user(i + 1, f"U{i}"), can_edit=True)
+        assert info is not None
+        colors.append(info.color)
+    # 13th color should wrap to first
+    assert colors[12] == colors[0]

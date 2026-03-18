@@ -13,7 +13,9 @@ export function stripAnnotations(html: string): string {
     .replace(/\s+data-component-id="[^"]*"/g, "")
     .replace(/\s+data-component-id='[^']*'/g, "")
     .replace(/\s+data-component-name="[^"]*"/g, "")
-    .replace(/\s+data-component-name='[^']*'/g, "");
+    .replace(/\s+data-component-name='[^']*'/g, "")
+    .replace(/\s+data-section-layout="[^"]*"/g, "")
+    .replace(/\s+data-section-layout='[^']*'/g, "");
 }
 
 /** Check if HTML has builder section annotations */

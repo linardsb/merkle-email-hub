@@ -16,6 +16,7 @@ from app.ai.agents.evals.judges.schemas import (
     JudgeVerdict,
 )
 from app.ai.agents.evals.judges.visual_qa import VisualQAJudge
+from app.ai.agents.import_annotator.evals.judges.import_judge import ImportAnnotatorJudge
 
 JUDGE_REGISTRY: dict[
     str,
@@ -30,6 +31,7 @@ JUDGE_REGISTRY: dict[
         | KnowledgeJudge
         | InnovationJudge
         | VisualQAJudge
+        | ImportAnnotatorJudge
     ],
 ] = {
     "scaffolder": ScaffolderJudge,
@@ -42,6 +44,7 @@ JUDGE_REGISTRY: dict[
     "knowledge": KnowledgeJudge,
     "innovation": InnovationJudge,
     "visual_qa": VisualQAJudge,
+    "import_annotator": ImportAnnotatorJudge,
 }
 
 __all__ = [
@@ -51,6 +54,7 @@ __all__ = [
     "ContentJudge",
     "CriterionResult",
     "DarkModeJudge",
+    "ImportAnnotatorJudge",
     "InnovationJudge",
     "JudgeCriteria",
     "JudgeInput",

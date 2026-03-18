@@ -142,3 +142,25 @@
 3. **Voice Brief Input Pipeline** (`app/ai/voice/`): Pluggable transcription via `VoiceTranscriber` Protocol (WhisperAPI and WhisperLocal implementations). `VoiceBriefExtractor` uses LLM to parse transcripts into structured `EmailBrief` (topic, sections with type/description/hints, tone, CTA, audience, constraints). Confidence threshold (default 0.7) — below threshold, raw transcript passed through without structured extraction. Full pipeline: audio → transcribe → validate duration → extract brief → format as natural language → trigger blueprint run. Three rate-limited endpoints at `/api/v1/ai/voice/`.
 
 **Consequence:** Existing text-only agents work unchanged (string content auto-normalized to `[TextBlock]`). New capabilities (visual QA screenshots, design references, voice briefs) flow through the same `Message` and adapter pipeline. MCP clients get full platform access without custom integration code — any MCP-compatible agent can run QA checks, search knowledge, compile CSS, or trigger renders. All three systems are feature-flagged (`AI__MULTIMODAL_ENABLED`, `MCP__ENABLED`, `VOICE__ENABLED`) and ship disabled by default.
+
+## ADR-011: Real-Time Collaboration & Visual Builder
+
+**Status:** Accepted
+**Date:** 2026-03-18
+
+**Context:** Email templates need concurrent editing by multiple team members with live presence and conflict-free merging.
+
+**Decision:**
+- **Transport:** WebSocket at `/ws/collab/{room_id}` with JWT auth via query param, room-based connection management (`CollabConnectionManager`), and Redis pub/sub for multi-instance broadcasting.
+- **CRDT Engine:** Yjs (via pycrdt) for conflict-free concurrent edits. Server-side `YjsDocumentStore` persists compacted state + pending updates in PostgreSQL. Inline compaction at configurable thresholds (count or time).
+- **Sync Protocol:** Standard Yjs wire protocol (SyncStep1/SyncStep2/Update). Server acts as central authority — applies updates, persists, and rebroadcasts. Viewers restricted to read-only SyncStep1.
+- **Visual Builder:** Component-based email construction with drag-and-drop (dnd-kit). Sections have slot fills, token overrides, and responsive config. Property panels drive all section configuration.
+- **Bidirectional Sync:** `BuilderSyncEngine` syncs visual builder ↔ code editor. HTML→sections via `ast-mapper.ts` (supports ESP token preservation). Builder-wins conflict resolution with debounced sync (500ms parse, 200ms serialize).
+- **Presence:** Awareness protocol over WebSocket for cursor positions, selections, and activity state. 12-color palette, follow mode, idle detection (15s).
+
+**Consequence:**
+- PostgreSQL stores CRDT state — no additional infrastructure needed beyond Redis (already used).
+- Compaction prevents unbounded growth of update history.
+- ESP token preservation enables round-trip editing of production templates.
+- Room-based architecture scales horizontally via Redis pub/sub bridge.
+- Viewer role enforced at protocol level — cannot send updates, only sync state vectors.

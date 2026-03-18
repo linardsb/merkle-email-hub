@@ -2426,3 +2426,138 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - [x] ~~23.7 Tests & documentation~~ DONE
 
 ---
+
+## Phase 24B — Email Client Rendering Accuracy & Liquid Validation
+
+**What:** Upgrade the email client rendering pipeline from static YAML-maintained CSS support data to an auto-synced industry data source, restructure targeting around rendering engines instead of individual clients, add Liquid template dry-run validation, replace crude Playwright simulation profiles with accurate client sanitizer emulation, and adopt progressive enhancement HTML generation (engine-tier assembly) instead of generate-then-fix.
+
+### 24B.1 Can I Email Data Sync `[Backend]`
+- CLI entrypoint: `app/knowledge/ontology/sync/cli.py` with `--dry-run` flag
+- `make ontology-sync` / `make ontology-sync-dry` Makefile targets
+- `check_freshness(max_age_days=90)` method on `CanIEmailSyncService` — reads Redis sync state
+- Override file: `app/knowledge/ontology/data/overrides.yaml` — manual entries take priority over sync data
+- `load_ontology()` merges overrides into support matrix with validation warnings for unknown IDs
+- `apply_sync()` skips entries that have manual overrides
+- 7 tests in `app/knowledge/ontology/sync/tests/test_completion.py`
+- [x] ~~24B.1 Can I Email data sync~~ DONE
+
+### 24B.2 Rendering Engine Taxonomy `[Backend]`
+- 4 new methods on `OntologyRegistry`: `clients_by_engine()`, `engine_support()` (worst-case per engine), `engines_not_supporting()`, `engine_market_share()`
+- `unsupported_engines_in_html()` query function — engine-grouped CSS issues with market share and severity
+- `CssSupportCheck` now includes engine-level summary (e.g., "Engine: Word (23.8% share) — no support for display: flex")
+- 8 tests in `app/knowledge/ontology/tests/test_engine_taxonomy.py`
+- [x] ~~24B.2 Rendering engine taxonomy~~ DONE
+
+### 24B.3 Progressive Enhancement Assembly `[Backend]`
+- `tier_strategy: Literal["universal", "progressive"]` field on `EmailBuildPlan`
+- `TemplateAssembler` Step 11: `_apply_tier_strategy()` — scans sections for modern CSS (flex/grid/border-radius), wraps in MSO conditionals
+- `_generate_word_fallback()` — strips flex/grid → `display: block`, removes border-radius, converts background-image to background attribute
+- `_wrap_mso_conditional()` — standard `<!--[if !mso]><!-->` / `<!--[if mso]>` wrapping
+- `ScaffolderPipeline._detect_tier_strategy()` — auto-detects modern CSS in template HTML
+- 7 tests in `app/ai/agents/scaffolder/tests/test_tier_strategy.py`
+- [x] ~~24B.3 Progressive enhancement assembly~~ DONE
+
+### 24B.4 Gmail & Outlook.com Sanitizer Emulation `[Backend]`
+- `app/rendering/local/emulators.py` — `EmulatorRule` + `EmailClientEmulator` rule-chain framework
+- Gmail emulator (6 rules): strip `<style>` blocks, strip `<link>` tags, rewrite class names with `m_` prefix, strip unsupported inline CSS (position/float/flex/grid), strip form elements, enforce body max-width 680px
+- Outlook.com emulator (3 rules): strip unsupported CSS (background-image/box-shadow/text-shadow/border-radius), expand margin/padding shorthand to longhand, inject `data-ogsc`/`data-ogsb` dark mode attributes
+- `RenderingProfile.emulator_id` field + `outlook_web` profile added to `CLIENT_PROFILES`
+- `_prepare_html()` in runner.py applies emulator transforms when profile has an `emulator_id`
+- 12 tests in `app/rendering/local/tests/test_emulators.py`
+- [x] ~~24B.4 Gmail & Outlook.com sanitizer emulation~~ DONE
+
+### 24B.5 Liquid Template Dry-Run Validation `[Backend]`
+- `python-liquid>=1.12` dependency added
+- `app/qa_engine/liquid_analyzer.py` — structural analysis: tag nesting, filter extraction, variable detection, Braze-specific pattern recognition (connected_content, content_blocks, abort_message)
+- `app/qa_engine/checks/liquid_syntax.py` — QA check #13 with 3-pass validation:
+  1. Structural analysis — detect unclosed blocks, mismatched end tags
+  2. python-liquid parse — catch syntax errors (Braze templates skipped)
+  3. Filter & variable validation — unknown filters, missing `| default` on deep property access
+- Braze passthrough: `connected_content`, `content_blocks`, `abort_message` not flagged as errors
+- Nesting depth limit (configurable, default 5)
+- Registered as check #13 in `ALL_CHECKS`
+- 10 tests in `app/qa_engine/tests/test_liquid_syntax.py`
+- [x] ~~24B.5 Liquid template dry-run validation~~ DONE
+
+### 24B.6 Per-Agent nh3 Allowlists `[Backend]`
+- `SanitizationProfile` frozen dataclass + `PROFILES` dict with 9 profiles in `app/ai/shared.py`:
+  - `default`/`scaffolder`/`dark_mode`/`personalisation` — full 46-tag set
+  - `content` — 11 inline/text tags only (no tables, no structural)
+  - `accessibility` — full + 18 extra ARIA attributes + `tabindex`
+  - `outlook_fixer` — full + VML block extraction/restoration
+  - `code_reviewer` — empty tags (catches any HTML leakage from JSON agent)
+  - `innovation` — full + form/input/button/select/textarea/label tags
+- `sanitize_html_xss(html, profile="default")` — profile-aware sanitization
+- VML block extraction (`_extract_vml_blocks`/`_restore_vml_blocks`) for scaffolder, dark_mode, default, personalisation, and outlook_fixer profiles
+- `BaseAgentService.sanitization_profile` class attribute wired into `_post_process()`
+- All 7 agent services set their profile: scaffolder, dark_mode, content, accessibility, personalisation, outlook_fixer, code_reviewer
+- 11 tests in `app/ai/tests/test_sanitization_profiles.py`
+- [x] ~~24B.6 Per-agent nh3 allowlists~~ DONE
+
+### 24B.7 Tests & Integration `[Full-Stack]`
+- `app/tests/test_24b_integration.py` — 9 cross-cutting integration tests:
+  - Engine-aware QA (flexbox reports Word engine risk)
+  - Tiered assembly + Gmail emulator integration
+  - Per-agent sanitization pipeline (content strips tables, scaffolder preserves, innovation allows forms, outlook preserves VML)
+  - Liquid check fires on templates, clean HTML passes
+- CLAUDE.md updated: 13 checks, engine taxonomy, per-agent sanitization, emulators, progressive enhancement
+- 64 new tests total across all subtasks, 3511 total backend tests passing
+- Golden cases 7/7 passing (no regression)
+- `make check` all green
+- [x] ~~24B.7 Tests & integration~~ DONE
+
+---
+
+## Phase 24.8 — Tests & Documentation `[Full-Stack]`
+
+### 24.8 Tests & Documentation
+- **Backend tests** (25 new, 76 total streaming tests):
+  - `test_manager.py` +6 tests: disconnect nonexistent, broadcast empty room, send to unknown user, multi-room limit, active rooms count, color wrap
+  - `test_routes.py` +5 tests: viewer ack, unknown JSON type, expired token, awareness relay, invalid JSON parse error
+  - `test_document_store.py` +5 tests: concurrent updates, time-based compaction, corrupted state recovery, unloaded state vector, empty SV peer update
+  - `test_sync_handler.py` +4 tests: step2 broadcast, step2 rejected, single byte ignored, unknown sync subtype
+  - `test_websocket_integration.py` — 7 new cross-module tests (CRDT init, sync step1, viewer sync, viewer update rejected, room cleanup eviction, passthrough mode, pong handling)
+  - `test_crdt_integration.py` — 8 new end-to-end tests (full sync flow, concurrent edits, compaction preservation, sync after compaction, document growth, evict/reload, init idempotent, cleanup idempotent)
+- **Frontend tests** (78 new, 187 total frontend tests):
+  - `builder-canvas.test.tsx` — 15 tests (empty state, section rendering, selection, deselection, toolbar actions, keyboard nav, aria attributes)
+  - `property-panel.test.tsx` — 12 tests (header, tabs, close, Escape, custom props)
+  - `collaboration.test.tsx` — 21 tests (PresencePanel: 8, CollaborationBanner: 7, ConflictResolver: 6)
+  - `use-builder.test.ts` — 20 tests (all reducer actions, undo/redo, history, edge cases)
+  - `use-presence.test.ts` — 10 tests (collaborators, follow/unfollow, cursor, activity, cleanup)
+- **ADR-011** appended to `docs/ARCHITECTURE.md` — Real-Time Collaboration & Visual Builder architecture
+- 3562 backend tests passing, 187 frontend tests passing
+- `make check-fe` all green, `make lint` all green, `make types` no new errors
+- [x] ~~24.8 Tests & documentation~~ DONE
+
+---
+
+## Phase 24.9 — AI-Powered HTML Import & Section Annotation `[Full-Stack]`
+
+### 24.9 AI-Powered HTML Import & Section Annotation
+- **Import Annotator Agent** (`app/ai/agents/import_annotator/`):
+  - `schemas.py` — `AnnotationDecision` + `ImportAnnotationResult` frozen dataclasses
+  - `exceptions.py` — `ImportAnnotationError(AppError)` with 422 status
+  - `prompt.py` — System prompt builder with L3 skill detection (table layouts, div layouts, ESP tokens, column patterns)
+  - `service.py` — `ImportAnnotatorService(BaseAgentService)` with `annotate()`, JSON structured output parsing, lxml CSS selector annotation with selector validation
+  - `SKILL.md` — L1+L2 progressive disclosure skill file
+  - `skills/` — 4 L3 skill files: `table_layouts.md`, `div_layouts.md`, `esp_tokens.md`, `column_patterns.md`
+- **Eval suite** (`app/ai/agents/import_annotator/evals/`):
+  - `synthetic_data_import.py` — 15 test cases (table, div, hybrid, 2/3/4-col, deeply nested SFMC, Liquid/AMPscript/Handlebars/MSO, minimal, complex 10+ section, already-annotated)
+  - `judges/import_judge.py` — 5-criteria judge (section_boundary_accuracy, annotation_completeness, html_preservation, esp_token_integrity, column_detection)
+  - Registered in `JUDGE_REGISTRY` (11 judges total)
+- **API route** — `POST /api/v1/email/import-annotate` with `require_role("developer")` auth + `10/minute` rate limit
+- **Schemas** — `ImportAnnotateRequest` (html + esp_platform), `ImportAnnotateResponse` (annotated_html + sections + warnings)
+- **Sanitization profile** — `import_annotator` profile with `data-section-id/component-name/section-layout` allowed + VML extraction
+- **Error sanitizer** — `ImportAnnotationError` registered in safe messages + passthrough types
+- **Connector integration** — `ConnectorService.import_and_annotate()` method for ESP template import + annotation
+- **Frontend**:
+  - `annotation-utils.ts` — `mergeSections()`, `splitSection()`, `unwrapSection()`, `renameSection()` DOM manipulation helpers
+  - `import-dialog.tsx` — Import modal with HTML paste/upload, ESP platform selector, progress states, section preview
+  - `section-refinement-toolbar.tsx` — Merge/Split/Unwrap/Rename toolbar for section editing
+  - `visual-builder-panel.tsx` — Import HTML button + dialog integration
+  - `section-markers.ts` — Added `data-section-layout` to `stripAnnotations()`
+- **Tests**: 18 unit tests (service, parsing, annotations, ESP token preservation, fallback, skill detection, schemas), all passing
+- **Security**: CSS selector validation (length + safe chars), generic error messages (no internal leaks), input size validation (2MB)
+- [x] ~~24.9 AI-powered HTML import & section annotation~~ DONE
+
+---

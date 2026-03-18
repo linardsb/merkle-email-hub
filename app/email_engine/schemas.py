@@ -134,3 +134,33 @@ class SchemaInjectResponse(BaseModel):
     schema_types: list[str] = Field(description="Schema.org types in injected markup")
     validation_errors: list[str] = Field(description="Validation errors (if injection was skipped)")
     inject_time_ms: float = Field(description="Processing time in milliseconds")
+
+
+# ── Import Annotation ──
+
+
+class AnnotationDecisionSchema(BaseModel):
+    """A detected section annotation."""
+
+    section_id: str
+    component_name: str
+    element_selector: str
+    layout_type: str
+
+
+class ImportAnnotateRequest(BaseModel):
+    """Request to annotate imported email HTML."""
+
+    html: str = Field(..., min_length=10, max_length=2_097_152)  # 2MB
+    esp_platform: str | None = Field(
+        None,
+        pattern=r"^(braze|sfmc|klaviyo|mailchimp|hubspot|adobe_campaign|iterable)$",
+    )
+
+
+class ImportAnnotateResponse(BaseModel):
+    """Response from import annotation."""
+
+    annotated_html: str
+    sections: list[AnnotationDecisionSchema]
+    warnings: list[str]

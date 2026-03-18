@@ -323,7 +323,7 @@
 - SDK regeneration for collaboration + builder types
 - Target: 80+ tests
 **Verify:** `make test` passes. `make check-fe` passes. `make check` all green. No regression in existing test suite.
-- [ ] 24.8 Tests & documentation
+- [x] ~~24.8 Tests & documentation~~ DONE
 
 ### 24.9 AI-Powered HTML Import & Section Annotation `[Full-Stack]`
 **What:** AI agent that takes arbitrary email HTML (imported from any ESP — Braze, SFMC, Klaviyo, Mailchimp, HubSpot, Adobe Campaign, Iterable) and automatically annotates it with `data-section-id` attributes, making it fully editable in the visual builder. Combines structural analysis with the Scaffolder agent's email layout understanding and the Personalisation agent's ESP token knowledge. User refinement UI (merge/split/group) lets developers fix what the AI got wrong. Once annotated, Strategy 1 (data-section-id) provides perfect roundtrip sync.
@@ -412,160 +412,14 @@
   - Round-trip guarantee: import from Braze → edit in builder → export back to Braze → tokens identical
 **Security:** Import endpoint validates HTML size (<2MB). AI agent receives HTML as input but does not execute it. Annotations are `data-*` attributes only — cannot execute code. `stripAnnotations()` removes all builder metadata before export. ESP tokens treated as opaque strings — never evaluated, never modified. Import API rate-limited (10 req/min per user). Uploaded HTML files scanned for embedded scripts (rejected if found).
 **Verify:** Import classic Braze email with Liquid tokens → sections detected → tokens preserved → edit in builder → export → Liquid tokens identical to original. Import SFMC email with AMPscript → same flow. Import 4-column layout → detected as single "Columns" section. Import complex 10-section email → all sections detected with correct names. Merge two sections → `data-section-id` removed from inner boundary. Split a section → new `data-section-id` added. Import already-annotated email → no double annotations. `make check` passes. `make eval-golden` passes.
-- [ ] 24.9 AI-powered HTML import & section annotation
-
----
-
-## Phase 24B — Email Client Rendering Accuracy & Liquid Validation
-
-**What:** Upgrade the email client rendering pipeline from static YAML-maintained CSS support data to an auto-synced industry data source, restructure targeting around rendering engines instead of individual clients, add Liquid template dry-run validation, replace crude Playwright simulation profiles with accurate client sanitizer emulation, and adopt progressive enhancement HTML generation (engine-tier assembly) instead of generate-then-fix.
-**Why:** The current ontology-based approach is architecturally sound but has three weaknesses: (1) the 95KB `support_matrix.yaml` drifts as clients update CSS support 2-3× per year, (2) local rendering profiles (strip `<style>` for Gmail, inject `display:block` for Outlook) give false confidence — they don't replicate actual client behavior, (3) the pipeline generates HTML then checks if clients support it, when it should generate correct HTML per engine tier from the start. Liquid template validation catches broken conditionals and undefined variables that the current regex-only `personalisation_syntax` check misses entirely.
-**Dependencies:** Phase 24 (visual builder uses assembled HTML), Phase 11.25 (design system), QA engine (checks pipeline).
-**Design principle:** Engine-first targeting. Five rendering engines (Word/VML, WebKit, Blink, Gmail sanitizer, Outlook.com sanitizer) replace 25+ individual client entries. Progressive enhancement generates correct HTML per tier rather than patching unsupported CSS after the fact. Can I Email data syncs replace manual YAML maintenance. Liquid dry-run catches logic errors without needing a full sandbox.
-
-### 24B.1 Can I Email Data Sync `[Backend]`
-**What:** Replace hand-maintained `support_matrix.yaml` with automated sync from Can I Email's open dataset. Keep the ontology query interface (`onto.clients_not_supporting()`) unchanged — only the data source changes.
-**Why:** 365+ CSS properties × 25+ clients = 9,125 entries that rot without updates. Can I Email is community-maintained, updated when clients change, and the data is open on GitHub. Syncing eliminates manual maintenance and improves accuracy.
-**Implementation:**
-- Create `app/knowledge/ontology/sync/caniemail.py` — sync adapter:
-  - Fetch Can I Email data from GitHub repo (JSON/YAML format)
-  - Map their feature IDs to our `CSSProperty` IDs (build mapping table)
-  - Map their client IDs to our `EmailClient` IDs
-  - Convert their support levels (y/n/a/u) to our `SupportLevel` enum (full/partial/none/unknown)
-  - Extract fallback recommendations where available
-  - Write to `support_matrix.yaml` or a parallel `support_matrix_caniemail.yaml`
-- Create `scripts/sync-caniemail.sh` — CLI command for manual sync
-- Add `make sync-caniemail` target
-- Merge strategy: Can I Email data is primary, custom overrides in `support_matrix_overrides.yaml` for any corrections or additions not in their dataset
-- Add sync freshness check: warn if data is >90 days old
-- Keep existing `support_matrix.yaml` as fallback if sync fails
-**Security:** Sync fetches from a known GitHub repo only. No user input involved. Override file is developer-maintained.
-**Verify:** Sync runs successfully. `onto.clients_not_supporting("display_flex")` returns same or better results. QA checks produce equivalent or improved results on existing test emails. `make test` passes.
-- [ ] 24B.1 Can I Email data sync
-
-### 24B.2 Rendering Engine Taxonomy `[Backend]`
-**What:** Restructure client targeting around 5 rendering engines instead of 25+ individual clients. Each client maps to an engine; CSS support queries can target engine-level or client-level.
-**Why:** Outlook 2016 and Outlook 2019 on Windows both use the Word engine — they have nearly identical CSS support. Tracking them separately creates redundant entries. Engine-level targeting reduces the matrix ~5× and is more accurate (a new Outlook version on Word still behaves like Word).
-**Implementation:**
-- Add `RenderingEngine` enum to `app/knowledge/ontology/types.py`:
-  - `WORD` — Outlook 2013–2021, 365 Windows
-  - `WEBKIT` — Apple Mail, Outlook Mac, iOS Mail
-  - `BLINK` — Gmail Android, Samsung Mail, Outlook Android
-  - `GMAIL_SANITIZER` — Gmail web, Gmail app, Google Workspace (strips `<style>`, rewrites classes)
-  - `OUTLOOK_COM_SANITIZER` — Outlook.com, O365 web (`[data-ogsc]`/`[data-ogsb]` dark mode)
-- Add `engine` field to `EmailClient` in `clients.yaml`
-- Add engine-level query: `onto.engine_support(engine, property_id) -> SupportLevel`
-  - Returns the **worst** support level across all clients in that engine
-- Update `css_support.py` check to report engine-level issues alongside client-level
-- Market share aggregated per engine for severity weighting
-**Verify:** `onto.engine_support(WORD, "display_flex")` returns `NONE`. Engine-level CSS check produces cleaner, grouped output. `make test` passes.
-- [ ] 24B.2 Rendering engine taxonomy
-
-### 24B.3 Progressive Enhancement Assembly `[Backend]`
-**What:** Modify `TemplateAssembler` to generate HTML in engine tiers with graceful degradation, instead of generating one HTML and then checking/fixing client support issues.
-**Why:** Current flow: generate HTML → QA flags unsupported CSS → Outlook Fixer agent patches it → re-check. This is reactive. Progressive enhancement is proactive: the assembler generates correct HTML for each engine tier from the start, wrapped in MSO conditionals and media queries.
-**Implementation:**
-- Add engine tier strategy to `app/ai/agents/scaffolder/assembler.py`:
-  - **Base tier (Word-safe)**: Table-based layout, inline styles only, VML for backgrounds, no CSS3. This is the MSO conditional path — already partially generated.
-  - **Enhanced tier (WebKit/Blink)**: CSS Grid/Flexbox where templates use it, `<style>` block, media queries. This is the `<!--[if !mso]><!--` path.
-  - Assembler decides per-section: if template uses only table layout, no tier split needed. If template uses modern CSS, generate both tiers with MSO conditional wrapping.
-- Add `TierStrategy` to `EmailBuildPlan`:
-  - `UNIVERSAL` — template is table-based, works everywhere (no tier split)
-  - `PROGRESSIVE` — template uses modern CSS, needs Word fallback tier
-  - Auto-detected from template structure during layout pass
-- Modify brand color sweep to run per-tier (dark mode tier may have different colors)
-- Existing Outlook Fixer agent becomes a **validation** agent rather than a **repair** agent — it checks that the Word tier is correct, not that it needs to be created
-**Verify:** Template with Flexbox layout → assembler generates MSO conditional with table fallback + non-MSO block with Flexbox. Template with table-only layout → single universal output (no unnecessary conditionals). QA `css_support` check passes without needing Outlook Fixer repair loop. `make test` passes. `make eval-golden` passes.
-- [ ] 24B.3 Progressive enhancement assembly
-
-### 24B.4 Gmail & Outlook.com Sanitizer Emulation `[Backend]`
-**What:** Build accurate sanitizer emulators for Gmail and Outlook.com webmail — the two most impactful webmail rendering environments. Replace the current crude Playwright profiles (`strip_style_tags=True` for Gmail) with emulators that replicate actual client behavior.
-**Why:** Gmail doesn't just strip `<style>` — it rewrites class names, strips `<svg>`, removes `position`, has a specific attribute blocklist, and mangles certain selectors. The current `strip_style_tags=True` profile misses all of this. Gmail and Outlook.com together cover ~30% of email opens — accurate emulation here gives 60% of real-client-testing value at 10% of the cost.
-**Implementation:**
-- Create `app/rendering/emulators/gmail.py` — Gmail sanitizer emulator:
-  - Strip `<style>` and `<link>` tags (existing behavior)
-  - Rewrite class names with `m_` prefix (Gmail behavior)
-  - Strip forbidden attributes: `id`, `class` (after inlining), `position`, `float`
-  - Strip forbidden elements: `<svg>`, `<math>`, `<form>`, `<input>`
-  - Convert `margin: 0 auto` to supported centering (Gmail quirk)
-  - Supported CSS properties allowlist (Gmail publishes this)
-  - Strip unsupported CSS properties from inline styles
-- Create `app/rendering/emulators/outlook_com.py` — Outlook.com sanitizer emulator:
-  - Inject `[data-ogsc]` attribute wrappers for dark mode
-  - Inject `[data-ogsb]` for background overrides
-  - Strip forbidden CSS properties
-  - Rewrite certain selectors
-- Create `app/rendering/emulators/base.py` — shared emulator interface:
-  - `emulate(html: str) -> EmulationResult` with `html`, `warnings`, `stripped_properties`
-- Update `app/rendering/local/profiles.py`:
-  - Gmail profile uses `gmail.py` emulator instead of `strip_style_tags`
-  - Outlook.com profile uses `outlook_com.py` emulator
-  - Word profile remains Playwright-based (Word engine can't be emulated in browser)
-  - WebKit/Blink profiles remain Playwright-based (close enough)
-- Add `make render-emulate` command for standalone emulation testing
-**Security:** Emulators process HTML strings only. No network access, no code execution. Input size capped at 2MB.
-**Verify:** Send known Gmail-breaking email through emulator → same issues flagged as real Gmail rendering. Send email with `<style>` block → classes rewritten, styles inlined or stripped. Outlook.com dark mode email → `[data-ogsc]` attributes applied. Compare emulator output to real Gmail screenshots for 5 reference emails. `make test` passes.
-- [ ] 24B.4 Gmail & Outlook.com sanitizer emulation
-
-### 24B.5 Liquid Template Dry-Run Validation `[Backend]`
-**What:** Execute Liquid templates with synthetic test data to validate personalization logic before accepting agent output. Catches broken conditionals, undefined variables, and type errors that the current regex-only `personalisation_syntax` check misses.
-**Why:** The `personalisation_syntax` QA check validates syntax (matching `{% %}` / `{{ }}` delimiters) but not logic. An agent can generate `{% if subscriber.teir == "premium" %}` — valid syntax, misspelled variable, silent failure in production. Dry-run catches this class of error. No user PII is involved — Hub works with Liquid templates and synthetic placeholder data only.
-**Implementation:**
-- Create `app/qa_engine/checks/liquid_dryrun.py` — new QA check (check #12):
-  - Uses `liquidpy` or `python-liquid` library to parse and execute Liquid templates
-  - Synthetic test context: `{ subscriber: { first_name: "Alex", last_name: "Test", email: "alex@example.com", tier: "premium" }, company: { name: "Acme Corp" }, ... }`
-  - Configurable per-project: custom variable schemas via `PersonalisationConfig` on project
-  - Catches: `UndefinedVariable`, `LiquidSyntaxError`, `TypeError`, infinite loop (timeout 500ms)
-  - Returns: `QACheckResult` with specific variable names and line numbers
-  - Does NOT catch Handlebars/AMPscript/ERB — only Liquid (most common in Braze, Shopify, Jekyll)
-- Add Handlebars support as a follow-up (separate library, same pattern)
-- Add synthetic context builder: `app/qa_engine/checks/liquid_context.py`
-  - Default context covers common ESP variables (subscriber, company, content, urls)
-  - Project-level overrides for custom variable schemas
-  - Context is synthetic only — never contains real subscriber data
-- Register as check #12 in QA pipeline
-- Add to `personalisation_syntax` check as complementary (syntax check + dry-run = full coverage)
-**Security:** Liquid execution runs with timeout (500ms), no file system access, no network access. Synthetic data only — no user PII. Library sandboxed via `liquidpy` restricted mode if available.
-**Verify:** Template with `{{ subscriber.first_name }}` → passes. Template with `{{ subscriber.frist_name }}` → warning: undefined variable. Template with unclosed `{% if %}` → error: syntax. Template with `{% for i in (1..99999) %}` → timeout. `make test` passes. Existing `personalisation_syntax` check still runs (complementary).
-- [ ] 24B.5 Liquid template dry-run validation
-
-### 24B.6 Per-Agent nh3 Allowlists `[Backend]`
-**What:** Narrow the nh3 sanitization allowlist per agent role. Currently all agents share the same 70-tag allowlist. A Dark Mode agent should never produce `<a>` or `<img>` tags — its allowlist should be tighter.
-**Why:** Defense-in-depth via capability restriction. If an agent is compromised or hallucinates, the narrower allowlist limits the damage. Zero performance cost — just different nh3 config dicts.
-**Implementation:**
-- Create `app/ai/agents/sanitization.py` — per-agent allowlist configs:
-  - `SCAFFOLDER_ALLOWLIST` — full allowlist (it generates complete emails)
-  - `DARK_MODE_ALLOWLIST` — `<style>`, `<meta>`, CSS-only tags (no structural HTML)
-  - `ACCESSIBILITY_ALLOWLIST` — text content tags, ARIA attributes, `<img>` (for alt text)
-  - `CONTENT_ALLOWLIST` — text/inline tags only (no tables, no structural)
-  - `OUTLOOK_FIXER_ALLOWLIST` — full allowlist + VML tags (it fixes structure)
-  - `PERSONALISATION_ALLOWLIST` — text tags + ESP token passthrough
-- Modify `BaseAgentService._post_process()` to use agent-specific allowlist
-- Structured decision mode agents (returning JSON) get the strictest allowlist (they shouldn't produce HTML at all — catch any leakage)
-**Verify:** Dark Mode agent output with injected `<script>` tag → stripped. Dark Mode agent output with `<a>` tag → stripped (shouldn't be producing links). Scaffolder output with full HTML → preserved. `make test` passes.
-- [ ] 24B.6 Per-agent nh3 allowlists
-
-### 24B.7 Tests & Integration `[Full-Stack]`
-**What:** Test suite for all 24B subtasks. Integration tests verifying the upgraded rendering pipeline end-to-end.
-**Implementation:**
-- `app/knowledge/ontology/sync/tests/test_caniemail.py` — sync adapter tests (10+)
-- `app/knowledge/ontology/tests/test_engine_taxonomy.py` — engine query tests (10+)
-- `app/ai/agents/scaffolder/tests/test_progressive_assembly.py` — tier generation tests (15+)
-- `app/rendering/emulators/tests/test_gmail.py` — Gmail emulator accuracy tests (15+)
-- `app/rendering/emulators/tests/test_outlook_com.py` — Outlook.com emulator tests (10+)
-- `app/qa_engine/checks/tests/test_liquid_dryrun.py` — Liquid validation tests (15+)
-- `app/ai/agents/tests/test_per_agent_sanitization.py` — allowlist restriction tests (10+)
-- Integration test: brief → pipeline → progressive assembly → emulator check → QA pass (5+)
-- Target: 90+ tests
-**Verify:** `make test` passes. `make check` all green. `make eval-golden` passes (no regression in existing golden cases).
-- [ ] 24B.7 Tests & integration
+- [x] ~~24.9 AI-powered HTML import & section annotation~~ DONE
 
 ---
 
 ## Phase 25 — Platform Ecosystem & Advanced Integrations
 
-**What:** Plugin architecture for community-contributed components, Tolgee integration for multilingual campaigns, Kestra workflow orchestration replacing ad-hoc blueprint scheduling, Penpot as a self-hosted Figma alternative, and Typst for programmatic QA report generation. Each integration compounds with existing capabilities — Tolgee + Maizzle enables per-locale builds, Kestra replaces ad-hoc pipeline orchestration, Penpot offers FOSS design import.
-**Why:** These extend the Hub from a tool into a platform. A plugin architecture means the community can add QA checks, agent skills, export connectors, and component packages without core changes. Tolgee solves the "same email in 12 languages" problem that enterprises face daily. Kestra provides production-grade workflow orchestration (retry, parallelism, scheduling, audit) that the blueprint engine lacks. Penpot is the self-hosted alternative to Figma (no per-seat licensing). Typst generates beautiful PDF reports from QA data in <100ms.
+**What:** Plugin architecture for community-contributed components, Tolgee integration for multilingual campaigns, Kestra workflow orchestration replacing ad-hoc blueprint scheduling, Penpot as a self-hosted Figma alternative, Typst for programmatic QA report generation, self-serve template learning pipeline with automatic skill extraction, template-to-eval generation, deliverability intelligence, and multi-variant campaign assembly. Each integration compounds with existing capabilities — Tolgee + Maizzle enables per-locale builds, uploaded templates train agents automatically, variant generation turns one brief into A/B-testable campaigns.
+**Why:** These extend the Hub from a tool into a platform. A plugin architecture means the community can add QA checks, agent skills, export connectors, and component packages without core changes. The template learning pipeline (25.10-25.12) creates a flywheel: developers upload production templates → system extracts patterns → agents learn → output quality improves → developers upload more. Deliverability intelligence (25.13) catches inbox placement risks that no other build-time tool addresses. Multi-variant assembly (25.14) automates the most tedious part of email marketing — A/B test creation.
 **Dependencies:** All previous phases — plugins extend every subsystem, Tolgee hooks into Maizzle, Kestra wraps the blueprint engine, Penpot reuses the design sync protocol (Phase 12), Typst consumes QA engine data.
 **Design principle:** Plugins are sandboxed — they can read Hub data and contribute capabilities but cannot modify core behavior. External integrations are protocol-based — swap Tolgee for another TMS, swap Kestra for Temporal, swap Penpot for any design tool that speaks the protocol. Every integration ships behind a feature flag.
 
@@ -963,6 +817,207 @@
 - Target: 110+ tests
 **Verify:** `make test` passes with all new tests. `make check-fe` passes. `make check` all green. No regression in existing test suite. SDK types match API responses.
 - [ ] 25.9 Tests & documentation
+
+### 25.10 Template Learning Pipeline — Self-Serve HTML Upload `[Full-Stack]`
+**What:** Allow email developers to upload production HTML templates via UI or API. The system automatically extracts patterns, registers them as golden templates with slot definitions, generates eval test cases, and propagates knowledge to agent skills and CRAG retrieval.
+**Why:** Currently, adding a new template requires code changes: hand-write slot definitions, add to `TemplateRegistry`, create eval cases. This bottleneck means the system only learns from templates that engineers explicitly add. In practice, email teams have hundreds of battle-tested templates from years of production sends — each encoding hard-won knowledge about client quirks, layout patterns, and ESP-specific tricks. Self-serve upload turns every production template into agent training data. The competitive moat is that the system gets smarter with use — every uploaded template improves scaffolder selection, CRAG knowledge retrieval, and QA accuracy.
+**Dependencies:** Phase 24B (HTML import annotation from 24.9), Phase 11.25 (design system extraction), Knowledge base (RAG embeddings).
+**Design principle:** Upload is one click. Everything else is automatic. Developer can review and adjust extracted metadata, but the defaults should be 90% correct. Templates are never executed — only analyzed statically.
+**Implementation:**
+- Create `app/templates/upload/` — template upload pipeline:
+  - `analyzer.py` — static HTML analysis: detect sections (reuse 24.9 section annotator), extract slot positions from content blocks, infer slot types (text, image, CTA, URL) from tag context + aria roles + content patterns, detect design tokens (colors, fonts, spacing from inline styles), detect ESP platform from personalisation syntax, measure structural complexity (column count, nesting depth, MSO conditional presence)
+  - `slot_extractor.py` — convert detected content regions into `SlotDefinition` objects: identify repeating patterns (e.g., product cards → slot with `max_items`), detect required vs optional slots (hero image = required, social links = optional), extract `max_chars` from container width heuristics
+  - `token_extractor.py` — extract `DefaultTokens` from inline styles: build color palette from all hex values with role inference (most-used bg color → `background`, button bg → `cta`, link color → `link`), extract font stacks, spacing values. Reuse `resolve_color_map()` pattern from design system
+  - `template_builder.py` — assemble `GoldenTemplate` from analysis: generate unique template name from subject line or content heuristic, set `layout_type` (newsletter, promotional, transactional, retention) from structural signals, set `column_count` from detected layout, generate `display_name` and `description`
+  - `eval_generator.py` — auto-generate eval test cases from uploaded template: create 3-5 synthetic briefs that would plausibly select this template, extract expected slot fills from existing content, generate golden assembly output for regression testing, append to `app/ai/agents/evals/synthetic_data_scaffolder.py`
+  - `knowledge_injector.py` — create knowledge base entry: extract email-development-relevant patterns (e.g., "uses VML background images for Outlook", "CSS grid with table fallback", "Braze connected_content for dynamic pricing"), chunk into knowledge documents with embeddings, tag with relevant categories (`css_support`, `client_quirks`, `best_practices`), make available to CRAG retrieval for all agents
+- Create `app/templates/upload/routes.py` — REST API:
+  - `POST /api/v1/templates/upload` — accept HTML file (max 2MB), return analysis preview
+  - `POST /api/v1/templates/upload/{id}/confirm` — confirm and register template after developer review
+  - `GET /api/v1/templates/upload/{id}/preview` — preview extracted metadata before confirmation
+  - `DELETE /api/v1/templates/upload/{id}` — reject and discard
+- Create `cms/apps/web/src/components/templates/upload/` — frontend:
+  - `TemplateUploadDialog.tsx` — drag-and-drop HTML file upload with live preview
+  - `TemplateAnalysisPreview.tsx` — shows detected sections, slots, tokens, ESP platform; developer can adjust before confirming
+  - `TemplateSlotEditor.tsx` — inline editor for slot definitions (rename, change type, set required/optional, set max_chars)
+  - `TemplatePalettePreview.tsx` — visual color swatch display of extracted palette with role assignments
+- Modify `app/ai/templates/__init__.py` — `TemplateRegistry`:
+  - Add `register_uploaded(template: GoldenTemplate, source: str) -> None` — registers template from upload pipeline
+  - Add `source` metadata field to `GoldenTemplate` — `"builtin"` vs `"uploaded"` for provenance tracking
+  - Uploaded templates are project-scoped by default (not global) unless admin promotes
+- Modify `app/ai/agents/scaffolder/pipeline.py`:
+  - `_layout_pass` includes uploaded templates in selection (with `[uploaded]` tag in the prompt so LLM knows provenance)
+  - Weight uploaded templates lower initially, increase weight as eval pass rate improves (earned trust)
+**Security:** Uploaded HTML is sanitized with nh3 before analysis (XSS prevention). Template content is analyzed but never executed. Eval test cases use synthetic data only. Knowledge base entries are text summaries, not raw HTML. File size capped at 2MB. Rate limited (5 uploads/hour per user). Admin approval required for global promotion.
+**Verify:** Upload a Braze newsletter template → system detects 5 sections, 12 slots, Liquid platform, 6-color palette → developer confirms → template appears in scaffolder selection → scaffolder can select it for matching briefs → CRAG retrieval surfaces template patterns when agents process similar emails. Upload a Mailchimp promotional template → different slot structure detected → eval cases generated → `make eval-golden` includes new template.
+- [ ] 25.10 Template learning pipeline
+
+### 25.11 Automatic Skill Extraction from Templates `[Backend]`
+**What:** When a template is uploaded (25.10), automatically analyze its HTML patterns and generate agent skill file amendments. Detected patterns like "VML bulletproof buttons", "CSS grid with table fallback", or "Gmail-safe responsive images" become learnable knowledge that updates agent SKILL.md files.
+**Why:** Agent skills are currently hand-written by engineers who read email client documentation and encode patterns into SKILL.md files. This is slow, incomplete, and doesn't capture production-tested techniques. Every uploaded template embodies real-world email development knowledge — the system should learn from it automatically. This closes the feedback loop: developers build templates → upload to Hub → Hub agents learn the patterns → agents produce better output → developers upload more. The competitive advantage is compounding: each template makes the system smarter.
+**Dependencies:** Phase 25.10 (template upload), Agent skills infrastructure (SKILL.md files + L3 skill files), Eval system (amendment suggester).
+**Design principle:** Extract patterns with high confidence only — it's better to miss a pattern than to add an incorrect skill entry. All extracted skills are staged for developer review before applying. Skills are attributed to source template for traceability.
+**Implementation:**
+- Create `app/ai/skills/extractor.py` — pattern extraction engine:
+  - `extract_patterns(html: str, analysis: TemplateAnalysis) -> list[SkillPattern]`
+  - `SkillPattern` dataclass: `pattern_name`, `category` (outlook_fix, dark_mode, responsive, accessibility, performance), `description`, `html_example`, `confidence`, `source_template_id`, `applicable_agents` (list of agent names)
+  - Pattern detectors (each is a function that scans HTML):
+    - `detect_vml_patterns()` — VML shapes (`v:roundrect`, `v:rect`, `v:oval`), VML fills, VML textboxes → skill entries for `outlook_fixer`
+    - `detect_mso_conditionals()` — MSO version targeting (`<!--[if gte mso 9]>`), ghost tables, DPI scaling → skill entries for `outlook_fixer`, `scaffolder`
+    - `detect_dark_mode_patterns()` — `prefers-color-scheme` media queries, `[data-ogsc]`/`[data-ogsb]` Outlook selectors, `color-scheme` meta, image swap patterns, inverted logo handling → skill entries for `dark_mode`
+    - `detect_responsive_patterns()` — fluid width tables, `max-width` on containers, media queries for breakpoints, stacking column patterns, font-size clamp patterns → skill entries for `scaffolder`
+    - `detect_accessibility_patterns()` — `role="presentation"` on layout tables, `aria-label` on links, `lang` attributes, heading hierarchy, scope attributes → skill entries for `accessibility`
+    - `detect_esp_patterns()` — Liquid control flow patterns (if/for/case), AMPscript patterns, merge tag patterns, conditional content blocks, dynamic image URLs → skill entries for `personalisation`
+    - `detect_performance_patterns()` — image lazy loading, CSS minification, unused CSS removal, Gmail-safe class naming conventions, `display:none` for preheader → skill entries for `code_reviewer`
+    - `detect_progressive_enhancement()` — flexbox with table fallback, grid with block fallback, border-radius with VML, background-image with VML rect → skill entries for `scaffolder`, `outlook_fixer`
+- Create `app/ai/skills/amendment.py` — skill file amendment pipeline:
+  - `generate_amendments(patterns: list[SkillPattern]) -> list[SkillAmendment]`
+  - `SkillAmendment` dataclass: `agent_name`, `skill_file` (SKILL.md or L3 file path), `section`, `content` (markdown to append), `confidence`, `source_pattern_id`
+  - Deduplication: check existing skill content for similar patterns (semantic similarity via embeddings) — don't add duplicate entries
+  - Conflict detection: flag if new pattern contradicts existing skill guidance
+  - `apply_amendments(amendments: list[SkillAmendment], dry_run: bool = True) -> AmendmentReport`
+  - Dry-run mode (default): generates diff preview without modifying files
+  - Apply mode: appends pattern sections to skill files with `<!-- auto-extracted from template: {name} -->` attribution comments
+- Create `app/ai/skills/routes.py` — API for skill amendment review:
+  - `GET /api/v1/skills/amendments/pending` — list pending amendments from recent uploads
+  - `POST /api/v1/skills/amendments/{id}/approve` — apply amendment to skill file
+  - `POST /api/v1/skills/amendments/{id}/reject` — discard with reason
+  - `POST /api/v1/skills/amendments/batch` — approve/reject multiple
+- Integrate with eval system:
+  - After skill amendments are applied, trigger targeted eval runs for affected agents
+  - Compare pass rates before/after amendment — auto-revert if pass rate drops (eval-gated skill updates)
+  - Record amendment impact in `traces/improvement_log.jsonl`
+**Security:** Pattern extraction is static analysis only — no code execution. Amendments are staged, never auto-applied to production without review. Skill files are version-controlled — git revert available for any bad amendment. Rate limited to prevent skill file spam.
+**Verify:** Upload template with VML bulletproof button → system extracts `vml_bulletproof_button` pattern → generates skill amendment for `outlook_fixer/skills/vml_reference.md` → developer approves → next eval run shows outlook_fixer handles similar patterns better. Upload template with CSS grid + table fallback → `progressive_enhancement` pattern extracted → scaffolder skill updated → eval confirms improved progressive tier generation.
+- [ ] 25.11 Automatic skill extraction from templates
+
+### 25.12 Template-to-Eval Pipeline `[Backend]`
+**What:** Automatically generate eval test cases from uploaded templates. Each uploaded template becomes a regression test ensuring the scaffolder can select it, fill its slots correctly, and assemble valid HTML that passes QA.
+**Why:** The eval system currently has 10-14 synthetic test cases per agent, hand-written with artificial scenarios. Real production templates test dimensions that synthetic cases miss: actual slot configurations, real-world color palettes, production ESP syntax, battle-tested responsive patterns. Every uploaded template is a free, high-quality eval case. Over time, the eval suite grows proportionally with template diversity — 100 uploaded templates = 300-500 eval test cases covering real-world edge cases.
+**Dependencies:** Phase 25.10 (template upload analysis), Eval system (`runner.py`, `judge_runner.py`, `golden_cases.py`).
+**Design principle:** Generated test cases must be deterministic (no LLM calls during eval generation). Each test case validates a specific capability: template selection accuracy, slot fill quality, design token extraction, or assembly correctness. Cases are tagged with source template for traceability.
+**Implementation:**
+- Create `app/ai/agents/evals/template_eval_generator.py`:
+  - `generate_eval_cases(template: GoldenTemplate, analysis: TemplateAnalysis) -> list[EvalCase]`
+  - **Template selection cases** (1-2 per template):
+    - Generate synthetic brief that should select this template (based on template's layout_type, column_count, sections)
+    - Expected: scaffolder's layout pass returns this template name
+    - Negative case: generate brief that should NOT select this template — verify it doesn't
+  - **Slot fill cases** (1-2 per template):
+    - Provide brief + template → verify all required slots are filled, slot content matches type constraints, personalisable slots are marked correctly
+    - Validate slot content length vs `max_chars`
+  - **Assembly cases** (1 per template — becomes a golden case):
+    - Pre-built `EmailBuildPlan` with known fills + design tokens → assemble → verify output HTML structure matches expected (DOCTYPE, section count, slot content present, colors replaced)
+    - This extends `golden_cases.py` — each uploaded template adds 1 golden case
+  - **QA pass-through cases** (1 per template):
+    - Assembled HTML from template → run all 13 QA checks → verify no unexpected failures
+    - Captures the template's baseline QA profile (some templates may intentionally score lower on certain checks)
+- Modify `app/ai/agents/evals/golden_cases.py`:
+  - `load_golden_cases()` now also loads auto-generated cases from uploaded templates
+  - Auto-generated cases stored in `app/ai/agents/evals/data/uploaded_golden/` as JSON files (one per template)
+  - `make eval-golden` runs both built-in and uploaded golden cases
+- Modify `app/ai/agents/evals/runner.py`:
+  - `--include-uploaded` flag to include uploaded template cases in full eval runs
+  - Template-sourced cases tagged with `source: "uploaded:{template_name}"` in traces
+- Create `app/ai/agents/evals/template_eval_routes.py` — API:
+  - `GET /api/v1/evals/templates` — list all template-sourced eval cases
+  - `GET /api/v1/evals/templates/{template_id}/cases` — cases for a specific template
+  - `DELETE /api/v1/evals/templates/{template_id}/cases` — remove cases (e.g., when template is deleted)
+**Security:** Eval cases use synthetic data only — template HTML is analyzed but subscriber data is never included. Generated briefs are deterministic strings, not LLM output. Cases stored as JSON in the repo — version controlled.
+**Verify:** Upload newsletter template → 5 eval cases auto-generated (2 selection, 1 fill, 1 golden, 1 QA) → `make eval-golden` includes the new golden case → passes. Upload 10 templates → 50 cases generated → eval suite coverage increases measurably. Delete a template → associated eval cases removed.
+- [ ] 25.12 Template-to-eval pipeline
+
+### 25.13 Email Deliverability Intelligence `[Backend]`
+**What:** Real-time deliverability risk scoring integrated into the QA pipeline. Analyzes email HTML for patterns that trigger spam filters, damage sender reputation, or cause inbox placement issues across major ISPs (Gmail, Microsoft, Yahoo/AOL). Goes beyond the existing `spam_score` check by incorporating structural analysis, authentication readiness, and ISP-specific heuristics.
+**Why:** The current `spam_score` check uses 59 keyword triggers — it catches "FREE!!!" but misses structural deliverability risks: image-to-text ratio >60%, hidden text (white-on-white), excessive link density, missing List-Unsubscribe header prep, URL shortener usage, and Gmail Promotions tab triggers. These structural factors account for more inbox placement failures than keyword triggers. No existing tool combines HTML structural analysis with ISP-specific heuristics in the email build pipeline — most deliverability tools operate at the send/infrastructure level, not the content level.
+**Dependencies:** Phase 24B (QA engine with 13 checks), Knowledge base (ISP behavior data).
+**Design principle:** Actionable scoring with specific remediation. Don't just say "deliverability risk: medium" — say "image-to-text ratio is 72% (Gmail threshold: 60%). Add 3+ lines of text to body section." Every flag includes the specific ISP affected, the threshold violated, and a concrete fix.
+**Implementation:**
+- Create `app/qa_engine/checks/deliverability_intel.py` — enhanced deliverability check:
+  - **Image-to-text ratio analysis**: calculate ratio from HTML structure (img tags area vs text content length), flag per ISP threshold (Gmail <60%, Microsoft <40% for new senders)
+  - **Link density scoring**: count links per 100 words, flag if >3 (spam trigger for Yahoo/AOL), detect URL shorteners (bit.ly, tinyurl — major red flag), detect excessive tracking parameters
+  - **Hidden content detection**: white-on-white text (color matches bg within 10% brightness), `font-size: 0`, `display: none` on content divs (vs legitimate preheader technique), `visibility: hidden`
+  - **Authentication readiness**: detect if template includes DKIM-alignment-friendly structures, check for SPF-breaking patterns (embedded images from different domains), verify List-Unsubscribe-Post header placeholder present
+  - **ISP-specific heuristics**:
+    - Gmail: Promotions tab triggers (coupon codes, "shop now" CTAs, price displays >3 instances), engagement signals (personalization, interactive elements), structured data markup opportunities
+    - Microsoft: SmartScreen patterns (new domain sensitivity, link count thresholds, attachment indicators)
+    - Yahoo/AOL: sender reputation signals in HTML (consistent footer, physical address presence, unsubscribe link prominence)
+  - **Structural red flags**: single large image email ("image-only email"), no plain-text fallback indicator, excessive HTML weight (>102KB Gmail clipping risk — already in file_size check, but now with Gmail-specific context), broken responsive design (no media queries + wide tables = mobile spam trigger)
+- Create `app/qa_engine/deliverability_analyzer.py` — cached analysis:
+  - `DeliverabilityAnalysis` dataclass: `image_text_ratio`, `link_density`, `hidden_content_count`, `auth_readiness_score`, `isp_risks` (dict per ISP), `structural_flags`, `overall_risk` (low/medium/high/critical)
+  - ISP risk profiles loaded from `app/qa_engine/data/isp_profiles.yaml`
+- Create `app/qa_engine/data/isp_profiles.yaml` — ISP-specific thresholds:
+  - Gmail: image_ratio_max, link_density_max, promo_tab_triggers, clipping_threshold
+  - Microsoft: smartscreen_link_max, new_sender_strictness, attachment_indicator_words
+  - Yahoo: footer_requirements, unsubscribe_prominence_min, sender_reputation_signals
+- Register as enhancement to existing `deliverability` check (currently disabled by default — this makes it useful)
+**Security:** Analysis is static HTML parsing only. No network calls to ISPs. ISP profiles are developer-maintained YAML. No sender reputation data stored (that's infrastructure-level, not content-level).
+**Verify:** Email with 80% images → flags "image-to-text ratio 80% exceeds Gmail threshold 60%". Email with 5 bit.ly links → flags "URL shorteners detected — major deliverability risk". Email with white-on-white hidden text → flags specific element. Clean email with balanced content → "deliverability risk: low" with no flags. `make test` passes.
+- [ ] 25.13 Email deliverability intelligence
+
+### 25.14 Multi-Variant Campaign Assembly `[Backend]`
+**What:** Generate A/B/n email variants from a single brief, with systematic variation of subject lines, CTAs, hero images, content length, and layout. Each variant includes predicted engagement differentiators and QA results. Integrates with the scaffolder pipeline to produce 2-5 variants in a single pipeline run.
+**Why:** A/B testing is the most requested feature in email marketing, but creating variants is tedious: manually duplicate the email, change one element, re-QA, re-preview. The Hub can automate this because it already has structured plans (EmailBuildPlan), slot-level content generation, and deterministic assembly. Generating variants is just running the content pass multiple times with different strategies and assembling each. No other tool generates pre-QA'd, pre-rendered email variants from a single brief.
+**Dependencies:** Phase 11.22 (structured output + EmailBuildPlan), Scaffolder pipeline, QA engine, Rendering profiles.
+**Design principle:** Each variant must differ in a measurable, testable way. Not "slightly different wording" but "Variant A: urgency-driven CTA + short copy vs Variant B: benefit-driven CTA + long copy." The system explains WHY each variant exists and WHAT hypothesis it tests. Variants share the same design tokens and template — only content strategy varies.
+**Implementation:**
+- Create `app/ai/agents/scaffolder/variant_generator.py`:
+  - `generate_variants(brief: str, plan: EmailBuildPlan, count: int = 3) -> list[VariantPlan]`
+  - `VariantPlan` dataclass: `variant_id` (A/B/C/...), `strategy_name` (e.g., "urgency_driven", "benefit_focused", "social_proof"), `hypothesis` (testable statement), `slot_overrides` (dict of slot_id → alternate content), `subject_line`, `preheader`, `predicted_differentiator` (what makes this variant distinct)
+  - Variant strategies (each is a prompt modifier for the content pass):
+    - `urgency_driven` — time-limited language, scarcity cues, action-oriented CTAs
+    - `benefit_focused` — outcome-oriented, feature→benefit transformation, longer explanatory copy
+    - `social_proof` — testimonials, user counts, trust badges, case study references
+    - `curiosity_gap` — question-based subject lines, partial reveals, "find out" CTAs
+    - `personalization_heavy` — maximum use of personalisation slots, dynamic content blocks, conditional sections
+    - `minimal` — short copy, single CTA, clean layout, mobile-optimized for quick scanning
+  - Strategy selection: LLM picks top N strategies most relevant to the brief (e.g., a sale brief → urgency + social_proof + benefit)
+- Create `app/ai/agents/scaffolder/schemas/variant.py`:
+  - `VariantPlan` — as above
+  - `VariantResult` — `variant_id`, `html`, `build_plan`, `qa_results`, `qa_passed`, `strategy_name`, `hypothesis`
+  - `CampaignVariantSet` — `brief`, `base_plan`, `variants: list[VariantResult]`, `comparison_matrix` (side-by-side differences)
+- Modify `app/ai/agents/scaffolder/pipeline.py`:
+  - Add `execute_variants(brief, count=3) -> CampaignVariantSet`:
+    - Run layout pass once (all variants share template + sections)
+    - Run design pass once (all variants share design tokens)
+    - Run content pass N times with different strategy prompts (parallelized)
+    - Assemble N variants
+    - QA all N variants in parallel
+    - Generate comparison matrix (which slots differ, subject line differences, predicted A/B test outcomes)
+  - Reuse pipeline checkpointing — if variant 3 fails, variants 1-2 are preserved
+- Create `app/ai/agents/scaffolder/routes.py` additions:
+  - `POST /api/v1/email/generate-variants` — brief + variant_count → CampaignVariantSet
+  - `GET /api/v1/email/variants/{set_id}` — retrieve variant set
+  - `GET /api/v1/email/variants/{set_id}/{variant_id}/preview` — render specific variant
+- Create `cms/apps/web/src/components/variants/` — frontend:
+  - `VariantComparisonView.tsx` — side-by-side preview of all variants with diff highlighting
+  - `VariantStrategyCard.tsx` — shows strategy name, hypothesis, predicted differentiator
+  - `VariantSelector.tsx` — pick which variants to export/send
+**Security:** Variant generation uses the same sanitization pipeline as single-email generation. No additional attack surface. Variant count capped at 5 to prevent resource abuse. Rate limited (3 variant sets/hour per user).
+**Verify:** Brief "Summer sale for premium subscribers" → 3 variants generated: urgency (countdown CTA), benefit (savings calculator), social proof (customer testimonials) → all 3 pass QA → side-by-side preview shows measurable differences in subject line, hero copy, CTA text. Single-template brief → all variants use same layout, only content differs. `make test` passes. `make eval-golden` passes.
+- [ ] 25.14 Multi-variant campaign assembly
+
+### 25.15 Tests & Documentation for 25.10–25.14 `[Full-Stack]`
+**What:** Test suite for template learning pipeline, skill extraction, template-to-eval, deliverability intelligence, and multi-variant assembly.
+**Implementation:**
+- `app/templates/upload/tests/` — 25+ tests:
+  - `test_analyzer.py` — section detection, slot extraction, token extraction, ESP detection
+  - `test_template_builder.py` — GoldenTemplate assembly, layout type inference, naming
+  - `test_knowledge_injector.py` — knowledge document creation, embedding, CRAG retrieval
+  - Route tests for upload API
+- `app/ai/skills/tests/` — 15+ tests:
+  - `test_extractor.py` — each pattern detector (VML, MSO, dark mode, responsive, accessibility, ESP, performance, progressive enhancement)
+  - `test_amendment.py` — skill file amendment generation, deduplication, conflict detection
+- `app/ai/agents/evals/tests/test_template_eval_generator.py` — 10+ tests:
+  - Selection case generation, slot fill case generation, golden case generation, QA pass-through case generation
+  - Case deletion on template removal
+- `app/qa_engine/tests/test_deliverability_intel.py` — 15+ tests:
+  - Image-to-text ratio calculation, link density scoring, hidden content detection, ISP-specific heuristics, auth readiness
+- `app/ai/agents/scaffolder/tests/test_variant_generator.py` — 15+ tests:
+  - Strategy selection, variant plan generation, parallel content pass, comparison matrix, QA per variant
+- Target: 80+ tests
+**Verify:** `make test` passes. `make check` all green. `make eval-golden` passes (no regression).
+- [ ] 25.15 Tests & documentation for 25.10–25.14
 
 ---
 
