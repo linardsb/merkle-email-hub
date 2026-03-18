@@ -69,6 +69,11 @@ export default async function DashboardLayout({
       icon: <Image src="/icons/brand/briefs.svg" alt="" width={20} height={20} className="h-5 w-5" />,
     },
     {
+      href: "/ecosystem",
+      label: "Ecosystem",
+      icon: <Image src="/icons/brand/ecosystem.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+    },
+    {
       href: "/settings",
       label: "Settings",
       icon: <Image src="/icons/brand/settings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
@@ -82,10 +87,12 @@ export default async function DashboardLayout({
       <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside className="hidden w-60 flex-col bg-sidebar-bg text-sidebar-text md:flex">
-        <div className="flex h-14 items-center border-b border-sidebar-border px-3">
+        <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-3">
           <span className="text-sm font-semibold text-sidebar-text">Email Hub</span>
         </div>
-        <SidebarNav items={navItems} />
+        <div className="flex-1 overflow-y-auto">
+          <SidebarNav items={navItems} />
+        </div>
         <div className="border-t border-sidebar-border p-2">
           <div className="flex items-center justify-between px-3 py-2">
             <Link
