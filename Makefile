@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh help
 
 # === Local Development ===
 
@@ -83,6 +83,12 @@ db-revision: ## Create a new migration (usage: make db-revision m="description")
 
 seed-knowledge: ## Seed knowledge base with email dev content (requires DB + embedding provider)
 	uv run python -m app.knowledge.seed
+
+ontology-sync: ## Sync ontology from Can I Email
+	uv run python -m app.knowledge.ontology.sync.cli
+
+ontology-sync-dry: ## Sync ontology (dry run — show diff without writing)
+	uv run python -m app.knowledge.ontology.sync.cli --dry-run
 
 # === Eval Pipeline ===
 

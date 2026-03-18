@@ -44,6 +44,7 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
     """
 
     agent_name = "scaffolder"
+    sanitization_profile = "scaffolder"
     model_tier = "complex"
     stream_prefix = "scaffold"
     _output_mode_supported = True
@@ -67,7 +68,7 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
     def _post_process(self, raw_content: str) -> str:
         """Extract HTML, sanitize XSS, then run MSO validation."""
         html = extract_html(raw_content)
-        html = sanitize_html_xss(html)
+        html = sanitize_html_xss(html, profile=self.sanitization_profile)
 
         # MSO-first: validate generated HTML for Outlook issues
         mso_result = validate_mso_conditionals(html)
@@ -150,7 +151,7 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
             raise AIExecutionError("scaffolder template assembly failed") from e
 
         # Phase 3: XSS sanitize (template HTML is trusted, but slot fills are not)
-        html = sanitize_html_xss(html)
+        html = sanitize_html_xss(html, profile=self.sanitization_profile)
 
         # Phase 3.5: CRAG validation loop
         if settings.knowledge.crag_enabled:

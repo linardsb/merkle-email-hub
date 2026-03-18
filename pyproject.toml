@@ -39,6 +39,7 @@ dependencies = [
     "pycrdt>=0.12",
     "pycrdt-websocket>=0.15",
     "pyyaml>=6.0",
+    "python-liquid>=1.12",
 ]
 
 [project.optional-dependencies]
@@ -182,6 +183,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "yaml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "liquid.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

@@ -30,6 +30,14 @@ def _prepare_html(html: str, profile: RenderingProfile) -> str:
             modified = modified[:idx] + injection + modified[idx:]
         else:
             modified = injection + modified
+    # Apply emulator transforms if profile has one
+    if profile.emulator_id:
+        from app.rendering.local.emulators import get_emulator
+
+        emulator = get_emulator(profile.emulator_id)
+        if emulator:
+            modified = emulator.transform(modified)
+
     return modified
 
 

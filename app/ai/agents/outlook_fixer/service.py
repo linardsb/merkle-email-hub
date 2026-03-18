@@ -49,6 +49,7 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
     """
 
     agent_name = "outlook_fixer"
+    sanitization_profile = "outlook_fixer"
     model_tier: TaskTier = "standard"
     stream_prefix = "outlook-fix"
     _output_mode_supported: bool = True
@@ -310,7 +311,7 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
             qa_results = qa_results_list
 
         return OutlookFixerResponse(
-            html=sanitize_html_xss(retry_html),
+            html=sanitize_html_xss(retry_html, profile=self.sanitization_profile),
             fixes_applied=relevant_skills,
             qa_results=qa_results,
             qa_passed=qa_passed,

@@ -8,6 +8,8 @@ from lxml import html as lxml_html
 from lxml.html import HtmlElement
 
 from app.knowledge.ontology.query import unsupported_css_in_html
+from app.knowledge.ontology.registry import load_ontology
+from app.knowledge.ontology.types import ClientEngine
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.rule_engine import RuleEngine, load_rules
 from app.qa_engine.schemas import QACheckResult
@@ -72,6 +74,19 @@ class CssSupportCheck:
 
         if len(actionable) > max_details:
             detail_parts.append(f"... and {len(actionable) - max_details} more")
+
+        # Engine-level summary
+        registry = load_ontology()
+        engine_warnings: set[str] = set()
+        for issue in actionable:
+            prop_id = str(issue["property_id"])
+            unsupported_engines = registry.engines_not_supporting(prop_id)
+            for engine in unsupported_engines:
+                share = registry.engine_market_share(engine)
+                engine_warnings.add(f"Engine: {engine.value.title()} ({share:.1f}% share) — no support for {issue['property_name']}")
+
+        for warning in sorted(engine_warnings)[:5]:
+            detail_parts.append(warning)
 
         ontology_score_loss = len(errors) * error_deduction + len(warnings) * warning_deduction
 

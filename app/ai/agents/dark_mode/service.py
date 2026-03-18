@@ -41,6 +41,7 @@ class DarkModeService(BaseAgentService):
     """
 
     agent_name = "dark_mode"
+    sanitization_profile = "dark_mode"
     model_tier = "standard"
     stream_prefix = "darkmode"
     _output_mode_supported: bool = True

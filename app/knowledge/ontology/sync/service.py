@@ -119,6 +119,29 @@ class CanIEmailSyncService:
             last_report=report_data,
         )
 
+    async def check_freshness(self, max_age_days: int = 90) -> tuple[bool, str]:
+        """Check if the ontology data is still fresh.
+
+        Args:
+            max_age_days: Maximum age in days before data is considered stale.
+
+        Returns:
+            Tuple of (is_fresh, message).
+        """
+        state = await self._load_state()
+        if state.last_sync_at is None:
+            return False, "Ontology has never been synced"
+
+        age = datetime.now(UTC) - state.last_sync_at
+        age_days = age.days
+
+        if age_days <= max_age_days:
+            return True, f"Ontology data is {age_days} days old (synced {state.last_sync_at.date()})"
+        return False, (
+            f"Ontology data is {age_days} days old (max {max_age_days}). "
+            f"Last sync: {state.last_sync_at.date()}. Run `make ontology-sync` to refresh."
+        )
+
     async def _load_state(self) -> SyncState:
         """Load sync state from Redis."""
         try:

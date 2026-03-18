@@ -46,6 +46,7 @@ class AccessibilityService(BaseAgentService):
     """
 
     agent_name = "accessibility"
+    sanitization_profile = "accessibility"
     model_tier = "standard"
     stream_prefix = "a11y-fix"
     _output_mode_supported: bool = True

@@ -110,6 +110,7 @@ class CodeReviewService(BaseAgentService):
     """
 
     agent_name = "code_reviewer"
+    sanitization_profile = "code_reviewer"
     model_tier = "standard"
     stream_prefix = "review"
     _output_mode_supported: bool = True

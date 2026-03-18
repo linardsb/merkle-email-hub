@@ -416,6 +416,152 @@
 
 ---
 
+## Phase 24B — Email Client Rendering Accuracy & Liquid Validation
+
+**What:** Upgrade the email client rendering pipeline from static YAML-maintained CSS support data to an auto-synced industry data source, restructure targeting around rendering engines instead of individual clients, add Liquid template dry-run validation, replace crude Playwright simulation profiles with accurate client sanitizer emulation, and adopt progressive enhancement HTML generation (engine-tier assembly) instead of generate-then-fix.
+**Why:** The current ontology-based approach is architecturally sound but has three weaknesses: (1) the 95KB `support_matrix.yaml` drifts as clients update CSS support 2-3× per year, (2) local rendering profiles (strip `<style>` for Gmail, inject `display:block` for Outlook) give false confidence — they don't replicate actual client behavior, (3) the pipeline generates HTML then checks if clients support it, when it should generate correct HTML per engine tier from the start. Liquid template validation catches broken conditionals and undefined variables that the current regex-only `personalisation_syntax` check misses entirely.
+**Dependencies:** Phase 24 (visual builder uses assembled HTML), Phase 11.25 (design system), QA engine (checks pipeline).
+**Design principle:** Engine-first targeting. Five rendering engines (Word/VML, WebKit, Blink, Gmail sanitizer, Outlook.com sanitizer) replace 25+ individual client entries. Progressive enhancement generates correct HTML per tier rather than patching unsupported CSS after the fact. Can I Email data syncs replace manual YAML maintenance. Liquid dry-run catches logic errors without needing a full sandbox.
+
+### 24B.1 Can I Email Data Sync `[Backend]`
+**What:** Replace hand-maintained `support_matrix.yaml` with automated sync from Can I Email's open dataset. Keep the ontology query interface (`onto.clients_not_supporting()`) unchanged — only the data source changes.
+**Why:** 365+ CSS properties × 25+ clients = 9,125 entries that rot without updates. Can I Email is community-maintained, updated when clients change, and the data is open on GitHub. Syncing eliminates manual maintenance and improves accuracy.
+**Implementation:**
+- Create `app/knowledge/ontology/sync/caniemail.py` — sync adapter:
+  - Fetch Can I Email data from GitHub repo (JSON/YAML format)
+  - Map their feature IDs to our `CSSProperty` IDs (build mapping table)
+  - Map their client IDs to our `EmailClient` IDs
+  - Convert their support levels (y/n/a/u) to our `SupportLevel` enum (full/partial/none/unknown)
+  - Extract fallback recommendations where available
+  - Write to `support_matrix.yaml` or a parallel `support_matrix_caniemail.yaml`
+- Create `scripts/sync-caniemail.sh` — CLI command for manual sync
+- Add `make sync-caniemail` target
+- Merge strategy: Can I Email data is primary, custom overrides in `support_matrix_overrides.yaml` for any corrections or additions not in their dataset
+- Add sync freshness check: warn if data is >90 days old
+- Keep existing `support_matrix.yaml` as fallback if sync fails
+**Security:** Sync fetches from a known GitHub repo only. No user input involved. Override file is developer-maintained.
+**Verify:** Sync runs successfully. `onto.clients_not_supporting("display_flex")` returns same or better results. QA checks produce equivalent or improved results on existing test emails. `make test` passes.
+- [ ] 24B.1 Can I Email data sync
+
+### 24B.2 Rendering Engine Taxonomy `[Backend]`
+**What:** Restructure client targeting around 5 rendering engines instead of 25+ individual clients. Each client maps to an engine; CSS support queries can target engine-level or client-level.
+**Why:** Outlook 2016 and Outlook 2019 on Windows both use the Word engine — they have nearly identical CSS support. Tracking them separately creates redundant entries. Engine-level targeting reduces the matrix ~5× and is more accurate (a new Outlook version on Word still behaves like Word).
+**Implementation:**
+- Add `RenderingEngine` enum to `app/knowledge/ontology/types.py`:
+  - `WORD` — Outlook 2013–2021, 365 Windows
+  - `WEBKIT` — Apple Mail, Outlook Mac, iOS Mail
+  - `BLINK` — Gmail Android, Samsung Mail, Outlook Android
+  - `GMAIL_SANITIZER` — Gmail web, Gmail app, Google Workspace (strips `<style>`, rewrites classes)
+  - `OUTLOOK_COM_SANITIZER` — Outlook.com, O365 web (`[data-ogsc]`/`[data-ogsb]` dark mode)
+- Add `engine` field to `EmailClient` in `clients.yaml`
+- Add engine-level query: `onto.engine_support(engine, property_id) -> SupportLevel`
+  - Returns the **worst** support level across all clients in that engine
+- Update `css_support.py` check to report engine-level issues alongside client-level
+- Market share aggregated per engine for severity weighting
+**Verify:** `onto.engine_support(WORD, "display_flex")` returns `NONE`. Engine-level CSS check produces cleaner, grouped output. `make test` passes.
+- [ ] 24B.2 Rendering engine taxonomy
+
+### 24B.3 Progressive Enhancement Assembly `[Backend]`
+**What:** Modify `TemplateAssembler` to generate HTML in engine tiers with graceful degradation, instead of generating one HTML and then checking/fixing client support issues.
+**Why:** Current flow: generate HTML → QA flags unsupported CSS → Outlook Fixer agent patches it → re-check. This is reactive. Progressive enhancement is proactive: the assembler generates correct HTML for each engine tier from the start, wrapped in MSO conditionals and media queries.
+**Implementation:**
+- Add engine tier strategy to `app/ai/agents/scaffolder/assembler.py`:
+  - **Base tier (Word-safe)**: Table-based layout, inline styles only, VML for backgrounds, no CSS3. This is the MSO conditional path — already partially generated.
+  - **Enhanced tier (WebKit/Blink)**: CSS Grid/Flexbox where templates use it, `<style>` block, media queries. This is the `<!--[if !mso]><!--` path.
+  - Assembler decides per-section: if template uses only table layout, no tier split needed. If template uses modern CSS, generate both tiers with MSO conditional wrapping.
+- Add `TierStrategy` to `EmailBuildPlan`:
+  - `UNIVERSAL` — template is table-based, works everywhere (no tier split)
+  - `PROGRESSIVE` — template uses modern CSS, needs Word fallback tier
+  - Auto-detected from template structure during layout pass
+- Modify brand color sweep to run per-tier (dark mode tier may have different colors)
+- Existing Outlook Fixer agent becomes a **validation** agent rather than a **repair** agent — it checks that the Word tier is correct, not that it needs to be created
+**Verify:** Template with Flexbox layout → assembler generates MSO conditional with table fallback + non-MSO block with Flexbox. Template with table-only layout → single universal output (no unnecessary conditionals). QA `css_support` check passes without needing Outlook Fixer repair loop. `make test` passes. `make eval-golden` passes.
+- [ ] 24B.3 Progressive enhancement assembly
+
+### 24B.4 Gmail & Outlook.com Sanitizer Emulation `[Backend]`
+**What:** Build accurate sanitizer emulators for Gmail and Outlook.com webmail — the two most impactful webmail rendering environments. Replace the current crude Playwright profiles (`strip_style_tags=True` for Gmail) with emulators that replicate actual client behavior.
+**Why:** Gmail doesn't just strip `<style>` — it rewrites class names, strips `<svg>`, removes `position`, has a specific attribute blocklist, and mangles certain selectors. The current `strip_style_tags=True` profile misses all of this. Gmail and Outlook.com together cover ~30% of email opens — accurate emulation here gives 60% of real-client-testing value at 10% of the cost.
+**Implementation:**
+- Create `app/rendering/emulators/gmail.py` — Gmail sanitizer emulator:
+  - Strip `<style>` and `<link>` tags (existing behavior)
+  - Rewrite class names with `m_` prefix (Gmail behavior)
+  - Strip forbidden attributes: `id`, `class` (after inlining), `position`, `float`
+  - Strip forbidden elements: `<svg>`, `<math>`, `<form>`, `<input>`
+  - Convert `margin: 0 auto` to supported centering (Gmail quirk)
+  - Supported CSS properties allowlist (Gmail publishes this)
+  - Strip unsupported CSS properties from inline styles
+- Create `app/rendering/emulators/outlook_com.py` — Outlook.com sanitizer emulator:
+  - Inject `[data-ogsc]` attribute wrappers for dark mode
+  - Inject `[data-ogsb]` for background overrides
+  - Strip forbidden CSS properties
+  - Rewrite certain selectors
+- Create `app/rendering/emulators/base.py` — shared emulator interface:
+  - `emulate(html: str) -> EmulationResult` with `html`, `warnings`, `stripped_properties`
+- Update `app/rendering/local/profiles.py`:
+  - Gmail profile uses `gmail.py` emulator instead of `strip_style_tags`
+  - Outlook.com profile uses `outlook_com.py` emulator
+  - Word profile remains Playwright-based (Word engine can't be emulated in browser)
+  - WebKit/Blink profiles remain Playwright-based (close enough)
+- Add `make render-emulate` command for standalone emulation testing
+**Security:** Emulators process HTML strings only. No network access, no code execution. Input size capped at 2MB.
+**Verify:** Send known Gmail-breaking email through emulator → same issues flagged as real Gmail rendering. Send email with `<style>` block → classes rewritten, styles inlined or stripped. Outlook.com dark mode email → `[data-ogsc]` attributes applied. Compare emulator output to real Gmail screenshots for 5 reference emails. `make test` passes.
+- [ ] 24B.4 Gmail & Outlook.com sanitizer emulation
+
+### 24B.5 Liquid Template Dry-Run Validation `[Backend]`
+**What:** Execute Liquid templates with synthetic test data to validate personalization logic before accepting agent output. Catches broken conditionals, undefined variables, and type errors that the current regex-only `personalisation_syntax` check misses.
+**Why:** The `personalisation_syntax` QA check validates syntax (matching `{% %}` / `{{ }}` delimiters) but not logic. An agent can generate `{% if subscriber.teir == "premium" %}` — valid syntax, misspelled variable, silent failure in production. Dry-run catches this class of error. No user PII is involved — Hub works with Liquid templates and synthetic placeholder data only.
+**Implementation:**
+- Create `app/qa_engine/checks/liquid_dryrun.py` — new QA check (check #12):
+  - Uses `liquidpy` or `python-liquid` library to parse and execute Liquid templates
+  - Synthetic test context: `{ subscriber: { first_name: "Alex", last_name: "Test", email: "alex@example.com", tier: "premium" }, company: { name: "Acme Corp" }, ... }`
+  - Configurable per-project: custom variable schemas via `PersonalisationConfig` on project
+  - Catches: `UndefinedVariable`, `LiquidSyntaxError`, `TypeError`, infinite loop (timeout 500ms)
+  - Returns: `QACheckResult` with specific variable names and line numbers
+  - Does NOT catch Handlebars/AMPscript/ERB — only Liquid (most common in Braze, Shopify, Jekyll)
+- Add Handlebars support as a follow-up (separate library, same pattern)
+- Add synthetic context builder: `app/qa_engine/checks/liquid_context.py`
+  - Default context covers common ESP variables (subscriber, company, content, urls)
+  - Project-level overrides for custom variable schemas
+  - Context is synthetic only — never contains real subscriber data
+- Register as check #12 in QA pipeline
+- Add to `personalisation_syntax` check as complementary (syntax check + dry-run = full coverage)
+**Security:** Liquid execution runs with timeout (500ms), no file system access, no network access. Synthetic data only — no user PII. Library sandboxed via `liquidpy` restricted mode if available.
+**Verify:** Template with `{{ subscriber.first_name }}` → passes. Template with `{{ subscriber.frist_name }}` → warning: undefined variable. Template with unclosed `{% if %}` → error: syntax. Template with `{% for i in (1..99999) %}` → timeout. `make test` passes. Existing `personalisation_syntax` check still runs (complementary).
+- [ ] 24B.5 Liquid template dry-run validation
+
+### 24B.6 Per-Agent nh3 Allowlists `[Backend]`
+**What:** Narrow the nh3 sanitization allowlist per agent role. Currently all agents share the same 70-tag allowlist. A Dark Mode agent should never produce `<a>` or `<img>` tags — its allowlist should be tighter.
+**Why:** Defense-in-depth via capability restriction. If an agent is compromised or hallucinates, the narrower allowlist limits the damage. Zero performance cost — just different nh3 config dicts.
+**Implementation:**
+- Create `app/ai/agents/sanitization.py` — per-agent allowlist configs:
+  - `SCAFFOLDER_ALLOWLIST` — full allowlist (it generates complete emails)
+  - `DARK_MODE_ALLOWLIST` — `<style>`, `<meta>`, CSS-only tags (no structural HTML)
+  - `ACCESSIBILITY_ALLOWLIST` — text content tags, ARIA attributes, `<img>` (for alt text)
+  - `CONTENT_ALLOWLIST` — text/inline tags only (no tables, no structural)
+  - `OUTLOOK_FIXER_ALLOWLIST` — full allowlist + VML tags (it fixes structure)
+  - `PERSONALISATION_ALLOWLIST` — text tags + ESP token passthrough
+- Modify `BaseAgentService._post_process()` to use agent-specific allowlist
+- Structured decision mode agents (returning JSON) get the strictest allowlist (they shouldn't produce HTML at all — catch any leakage)
+**Verify:** Dark Mode agent output with injected `<script>` tag → stripped. Dark Mode agent output with `<a>` tag → stripped (shouldn't be producing links). Scaffolder output with full HTML → preserved. `make test` passes.
+- [ ] 24B.6 Per-agent nh3 allowlists
+
+### 24B.7 Tests & Integration `[Full-Stack]`
+**What:** Test suite for all 24B subtasks. Integration tests verifying the upgraded rendering pipeline end-to-end.
+**Implementation:**
+- `app/knowledge/ontology/sync/tests/test_caniemail.py` — sync adapter tests (10+)
+- `app/knowledge/ontology/tests/test_engine_taxonomy.py` — engine query tests (10+)
+- `app/ai/agents/scaffolder/tests/test_progressive_assembly.py` — tier generation tests (15+)
+- `app/rendering/emulators/tests/test_gmail.py` — Gmail emulator accuracy tests (15+)
+- `app/rendering/emulators/tests/test_outlook_com.py` — Outlook.com emulator tests (10+)
+- `app/qa_engine/checks/tests/test_liquid_dryrun.py` — Liquid validation tests (15+)
+- `app/ai/agents/tests/test_per_agent_sanitization.py` — allowlist restriction tests (10+)
+- Integration test: brief → pipeline → progressive assembly → emulator check → QA pass (5+)
+- Target: 90+ tests
+**Verify:** `make test` passes. `make check` all green. `make eval-golden` passes (no regression in existing golden cases).
+- [ ] 24B.7 Tests & integration
+
+---
+
 ## Phase 25 — Platform Ecosystem & Advanced Integrations
 
 **What:** Plugin architecture for community-contributed components, Tolgee integration for multilingual campaigns, Kestra workflow orchestration replacing ad-hoc blueprint scheduling, Penpot as a self-hosted Figma alternative, and Typst for programmatic QA report generation. Each integration compounds with existing capabilities — Tolgee + Maizzle enables per-locale builds, Kestra replaces ad-hoc pipeline orchestration, Penpot offers FOSS design import.

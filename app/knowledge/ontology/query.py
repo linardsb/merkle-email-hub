@@ -6,6 +6,7 @@ import re
 
 from app.knowledge.ontology.registry import load_ontology
 from app.knowledge.ontology.types import (
+    ClientEngine,
     EmailClient,
     SupportLevel,
 )
@@ -81,6 +82,56 @@ def unsupported_css_in_html(html: str) -> list[dict[str, object]]:
                 "severity": _compute_severity(unsupported_clients),
             }
         )
+
+    return issues
+
+
+def unsupported_engines_in_html(html: str) -> list[dict[str, object]]:
+    """Scan HTML for CSS properties with engine-level poor support.
+
+    Returns list of dicts grouping issues by rendering engine.
+    Complements unsupported_css_in_html() with engine-level aggregation.
+    """
+    onto = load_ontology()
+    css_content = _extract_css_content(html)
+    if not css_content:
+        return []
+    issues: list[dict[str, object]] = []
+
+    for prop in onto.properties:
+        prop_escaped = re.escape(prop.property_name)
+        if prop.value:
+            val_escaped = re.escape(prop.value)
+            pattern = rf"(?<![a-z\-]){prop_escaped}\s*:\s*{val_escaped}"
+        else:
+            pattern = rf"(?<![a-z\-]){prop_escaped}\s*:"
+
+        if not re.search(pattern, css_content):
+            continue
+
+        unsupported_engines = onto.engines_not_supporting(prop.id)
+        if not unsupported_engines:
+            continue
+
+        engine_details: list[dict[str, object]] = []
+        for engine in unsupported_engines:
+            share = onto.engine_market_share(engine)
+            engine_details.append({
+                "engine": engine.value,
+                "market_share": round(share, 1),
+                "clients": [c.name for c in onto.clients_by_engine(engine)
+                            if onto.get_support(prop.id, c.id) == SupportLevel.NONE],
+            })
+
+        total_engine_share = sum(d["market_share"] for d in engine_details)  # type: ignore[arg-type]
+        issues.append({
+            "property_id": prop.id,
+            "property_name": prop.property_name,
+            "value": prop.value,
+            "unsupported_engines": engine_details,
+            "total_engine_share": round(total_engine_share, 1),
+            "severity": "error" if total_engine_share > 20.0 else "warning" if total_engine_share > 5.0 else "info",
+        })
 
     return issues
 

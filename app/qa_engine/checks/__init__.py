@@ -1,4 +1,4 @@
-"""QA check implementations for the 11-point quality gate."""
+"""QA check implementations for the 13-point quality gate."""
 
 from typing import Protocol
 
@@ -13,6 +13,7 @@ from app.qa_engine.checks.file_size import FileSizeCheck
 from app.qa_engine.checks.html_validation import HtmlValidationCheck
 from app.qa_engine.checks.image_optimization import ImageOptimizationCheck
 from app.qa_engine.checks.link_validation import LinkValidationCheck
+from app.qa_engine.checks.liquid_syntax import LiquidSyntaxCheck
 from app.qa_engine.checks.personalisation_syntax import PersonalisationSyntaxCheck
 from app.qa_engine.checks.spam_score import SpamScoreCheck
 from app.qa_engine.schemas import QACheckResult
@@ -39,6 +40,7 @@ ALL_CHECKS: list[QACheckProtocol] = [
     BrandComplianceCheck(),
     PersonalisationSyntaxCheck(),
     DeliverabilityCheck(),
+    LiquidSyntaxCheck(),
 ]
 
 __all__ = ["ALL_CHECKS"]

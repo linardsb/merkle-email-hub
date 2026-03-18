@@ -64,6 +64,7 @@ class PersonalisationService(BaseAgentService):
     """
 
     agent_name = "personalisation"
+    sanitization_profile = "personalisation"
     model_tier = "standard"
     stream_prefix = "personalise"
     _output_mode_supported: bool = True

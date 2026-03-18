@@ -34,6 +34,31 @@ def apply_sync(
 
     changes = 0
 
+    # Load overrides — skip any entries that have manual overrides
+    overrides_path = _DATA_DIR / "overrides.yaml"
+    override_keys: set[tuple[str, str]] = set()
+    if overrides_path.exists():
+        with overrides_path.open(encoding="utf-8") as f:
+            overrides_data = yaml.safe_load(f)
+        for o in (overrides_data or {}).get("overrides", []):
+            override_keys.add((str(o["property_id"]), str(o["client_id"])))
+
+    if override_keys:
+        diff = SyncDiff(
+            new_clients=diff.new_clients,
+            new_properties=diff.new_properties,
+            updated_support=[
+                u for u in diff.updated_support
+                if (u[0], u[1]) not in override_keys
+            ],
+            new_support=[
+                s for s in diff.new_support
+                if (s[0], s[1]) not in override_keys
+            ],
+        )
+        if not diff.has_changes:
+            return 0
+
     if diff.new_properties:
         changes += _append_properties(features, diff.new_properties)
 

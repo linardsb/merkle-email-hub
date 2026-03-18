@@ -18,6 +18,7 @@ class RenderingProfile:
     css_injections: list[str] = field(default_factory=lambda: [])
     strip_style_tags: bool = False
     max_screenshot_height: int = 4096
+    emulator_id: str | None = None
 
 
 CLIENT_PROFILES: dict[str, RenderingProfile] = {
@@ -28,6 +29,7 @@ CLIENT_PROFILES: dict[str, RenderingProfile] = {
         browser="cr",
         strip_style_tags=True,
         css_injections=["body { max-width: 680px; margin: 0 auto; }"],
+        emulator_id="gmail_web",
     ),
     "outlook_2019": RenderingProfile(
         name="outlook_2019",
@@ -64,5 +66,12 @@ CLIENT_PROFILES: dict[str, RenderingProfile] = {
         viewport_height=812,
         browser="wk",
         device="iPhone 13",
+    ),
+    "outlook_web": RenderingProfile(
+        name="outlook_web",
+        viewport_width=680,
+        viewport_height=900,
+        browser="cr",
+        emulator_id="outlook_web",
     ),
 }

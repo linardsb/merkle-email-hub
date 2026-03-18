@@ -1,0 +1,11 @@
+# Manual overrides for the support matrix.
+# These take priority over CanIEmail sync data.
+# Use when CanIEmail data is outdated or incorrect for our use case.
+#
+# Schema:
+#   overrides:
+#     - property_id: <str>       # CSS property ID from css_properties.yaml
+#       client_id: <str>         # Email client ID from clients.yaml
+#       level: <full|partial|none>
+#       notes: <str>             # Reason for override
+overrides: []

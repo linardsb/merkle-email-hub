@@ -2,6 +2,8 @@
 # ruff: noqa: ANN401, ARG002
 """Content agent service — orchestrates LLM → extract → spam check → length validate."""
 
+from __future__ import annotations
+
 import contextvars
 import json
 import re
@@ -107,6 +109,7 @@ class ContentService(BaseAgentService):
     """
 
     agent_name = "content"
+    sanitization_profile = "content"
     model_tier = "standard"
     max_tokens = 2048
     run_qa_default = False

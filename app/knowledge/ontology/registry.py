@@ -160,6 +160,42 @@ class OntologyRegistry:
 
         return None
 
+    def clients_by_engine(self, engine: ClientEngine) -> list[EmailClient]:
+        """All clients using a specific rendering engine."""
+        return [c for c in self.clients if c.engine == engine]
+
+    def engine_support(self, property_id: str) -> dict[ClientEngine, SupportLevel]:
+        """Worst-case support level per engine for a property.
+
+        If any client in an engine has NONE support, the engine is NONE.
+        If any has PARTIAL (and none NONE), the engine is PARTIAL.
+        Otherwise FULL.
+        """
+        result: dict[ClientEngine, SupportLevel] = {}
+        for engine in ClientEngine:
+            engine_clients = self.clients_by_engine(engine)
+            if not engine_clients:
+                continue
+            worst = SupportLevel.FULL
+            for client in engine_clients:
+                level = self.get_support(property_id, client.id)
+                if level == SupportLevel.NONE:
+                    worst = SupportLevel.NONE
+                    break
+                if level == SupportLevel.PARTIAL and worst != SupportLevel.NONE:
+                    worst = SupportLevel.PARTIAL
+            result[engine] = worst
+        return result
+
+    def engines_not_supporting(self, property_id: str) -> list[ClientEngine]:
+        """Engines with NONE support for a property (worst-case across clients)."""
+        engine_levels = self.engine_support(property_id)
+        return [e for e, level in engine_levels.items() if level == SupportLevel.NONE]
+
+    def engine_market_share(self, engine: ClientEngine) -> float:
+        """Total market share for all clients using a given engine."""
+        return sum(c.market_share for c in self.clients if c.engine == engine)
+
 
 def _parse_clients(data: dict[str, Any]) -> tuple[EmailClient, ...]:
     """Parse clients.yaml into EmailClient tuples."""
@@ -298,6 +334,34 @@ def load_ontology() -> OntologyRegistry:
     properties = _parse_properties(props_data)
     support_entries = _parse_support(support_data)
     fallbacks = _parse_fallbacks(fallbacks_data)
+
+    # Load manual overrides (take priority over sync data)
+    overrides_path = _DATA_DIR / "overrides.yaml"
+    overrides: list[dict[str, str]] = []
+    if overrides_path.exists():
+        with overrides_path.open(encoding="utf-8") as f:
+            overrides_data = yaml.safe_load(f)
+        overrides = (overrides_data or {}).get("overrides", [])
+
+    if overrides:
+        support_list = list(support_entries)
+        override_keys = {(o["property_id"], o["client_id"]) for o in overrides}
+        # Remove entries that have overrides
+        support_list = [
+            e for e in support_list
+            if (e.property_id, e.client_id) not in override_keys
+        ]
+        # Add override entries
+        for o in overrides:
+            support_list.append(
+                SupportEntry(
+                    property_id=str(o["property_id"]),
+                    client_id=str(o["client_id"]),
+                    level=SupportLevel(str(o["level"])),
+                    notes=str(o.get("notes", "manual override")),
+                )
+            )
+        support_entries = tuple(support_list)
 
     registry = _build_registry(clients, properties, support_entries, fallbacks)
 

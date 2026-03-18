@@ -40,6 +40,7 @@ See `TODO.md` for details on upcoming phases. See `docs/TODO-completed.md` for d
 
 **Upcoming phases (priority order — highest differentiation first):**
 - **Phase 24** — Real-Time Collaboration & Visual Builder (24.1 WebSocket infra DONE, 24.2 Yjs CRDT engine DONE, 24.3 Collaborative cursor & presence DONE, 24.4 Visual builder canvas & palette DONE, 24.5 Property panels & section configuration DONE, 24.6 Builder ↔ code bidirectional sync DONE; remaining: 24.7 frontend integration, 24.8 tests & docs, 24.9 AI-powered HTML import)
+- **Phase 24B** — Email Client Rendering Accuracy & Liquid Validation (7 subtasks: Can I Email data sync, rendering engine taxonomy, progressive enhancement assembly, Gmail/Outlook.com sanitizer emulation, Liquid template dry-run, per-agent nh3 allowlists, tests)
 - **Phase 25** — Platform Ecosystem & Advanced Integrations (9 subtasks: plugin manifest & registry, plugin sandbox & lifecycle, Tolgee TMS, Tolgee frontend, Kestra workflows, Penpot design pipeline, Typst report generator, ecosystem dashboard, tests & docs)
 
 **Completed phases 11.25–23.7** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).

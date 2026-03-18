@@ -60,6 +60,7 @@ class BaseAgentService:
     stream_prefix: str = "agent"
     output_mode_default: str = "html"
     _output_mode_supported: bool = False
+    sanitization_profile: str = "default"
 
     # ── Output mode ──
 
@@ -100,7 +101,7 @@ class BaseAgentService:
         Override for non-HTML agents (e.g., content → extract_content).
         """
         html = extract_html(raw_content)
-        return sanitize_html_xss(html)
+        return sanitize_html_xss(html, profile=self.sanitization_profile)
 
     async def _run_qa(self, html: str) -> tuple[list[QACheckResult], bool]:
         """Run QA checks on the output.
