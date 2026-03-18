@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
-
 from app.rendering.local.emulators import (
     EmailClientEmulator,
     EmulatorRule,
     get_emulator,
 )
 from app.rendering.local.profiles import CLIENT_PROFILES
-from app.rendering.local.runner import _prepare_html
 
 
 class TestGmailClassRewrite:
