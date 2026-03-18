@@ -17,6 +17,8 @@ import type {
   AppComponentsSchemasVersionResponse as VersionResponse,
   ComponentResponse,
 } from "@email-hub/sdk";
+import { BuilderToolbar, DEVICE_WIDTHS, type DevicePreview, type ClientPreview } from "@/components/workspace/builder-toolbar";
+import { BuilderOnboarding } from "@/components/workspace/builder-onboarding";
 
 /** Convert a parsed SectionNode to a BuilderSection with sensible defaults */
 function sectionNodeToBuilderSection(node: SectionNode): BuilderSection {
@@ -45,6 +47,15 @@ interface VisualBuilderPanelProps {
   syncedSections?: SectionNode[];
   /** Original template shell from ESP import / sync engine */
   templateShell?: string;
+  /** Builder toolbar callbacks */
+  onRunQA?: () => void;
+  isRunningQA?: boolean;
+  onAISuggest?: () => void;
+  onCopyHtml?: () => void;
+  onDownloadHtml?: () => void;
+  onPushToESP?: () => void;
+  /** QA section highlighting */
+  onHighlightSection?: (sectionId: string) => void;
 }
 
 export function VisualBuilderPanel({
@@ -53,6 +64,12 @@ export function VisualBuilderPanel({
   projectId,
   syncedSections,
   templateShell,
+  onRunQA,
+  isRunningQA,
+  onAISuggest,
+  onCopyHtml,
+  onDownloadHtml,
+  onPushToESP,
 }: VisualBuilderPanelProps) {
   const {
     sections,
@@ -72,7 +89,10 @@ export function VisualBuilderPanel({
 
   const [zoom, setZoom] = useState(100);
   const [designSystem, setDesignSystem] = useState<DesignSystemConfig | null>(null);
-  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
+  const [devicePreview, setDevicePreview] = useState<DevicePreview>("desktop");
+  const [clientPreview, setClientPreview] = useState<ClientPreview>("none");
+  // Map device preview to legacy previewMode for property panel
+  const previewMode = devicePreview === "mobile" ? "mobile" : "desktop";
   const htmlCacheRef = useRef<Map<number, VersionResponse>>(new Map());
   const lastEmittedHtmlRef = useRef<string | null>(null);
 
@@ -246,6 +266,14 @@ export function VisualBuilderPanel({
       } else if (isCtrlOrMeta && e.key === "d" && selectedSectionId) {
         e.preventDefault();
         duplicateSection(selectedSectionId);
+      } else if (e.key === "ArrowUp" && selectedSectionId && isCtrlOrMeta) {
+        e.preventDefault();
+        const idx = sections.findIndex((s) => s.id === selectedSectionId);
+        if (idx > 0) moveSection(idx, idx - 1);
+      } else if (e.key === "ArrowDown" && selectedSectionId && isCtrlOrMeta) {
+        e.preventDefault();
+        const idx = sections.findIndex((s) => s.id === selectedSectionId);
+        if (idx < sections.length - 1) moveSection(idx, idx + 1);
       } else if (e.key === "Escape") {
         selectSection(null);
       }
@@ -262,14 +290,16 @@ export function VisualBuilderPanel({
     removeSection,
     duplicateSection,
     selectSection,
+    sections,
+    moveSection,
   ]);
 
   const selectedSection = selectedSectionId
     ? sections.find((s) => s.id === selectedSectionId) ?? null
     : null;
 
-  // Preview width based on mode
-  const previewMaxWidth = previewMode === "mobile" ? "375px" : undefined;
+  // Preview width based on device mode
+  const previewMaxWidth = DEVICE_WIDTHS[devicePreview];
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -278,9 +308,23 @@ export function VisualBuilderPanel({
         onReorder={handleReorder}
         onExternalDrop={handleExternalDrop}
       >
+        {/* Builder toolbar */}
+        <BuilderToolbar
+          devicePreview={devicePreview}
+          onDevicePreviewChange={setDevicePreview}
+          clientPreview={clientPreview}
+          onClientPreviewChange={setClientPreview}
+          onRunQA={onRunQA}
+          isRunningQA={isRunningQA}
+          onAISuggest={onAISuggest}
+          onCopyHtml={onCopyHtml}
+          onDownloadHtml={onDownloadHtml}
+          onPushToESP={onPushToESP}
+        />
+
         <div className="flex flex-1 overflow-hidden">
           {/* Palette sidebar */}
-          <div className="w-56 flex-shrink-0 border-r border-border bg-card overflow-hidden">
+          <div className="w-56 flex-shrink-0 border-r border-border bg-card overflow-hidden" data-builder-palette>
             <ComponentPalette />
           </div>
 
@@ -289,7 +333,7 @@ export function VisualBuilderPanel({
             {sections.length > 0 ? (
               <>
                 {/* Canvas */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden" data-builder-canvas>
                   <BuilderCanvas
                     sections={sections}
                     selectedSectionId={selectedSectionId}
@@ -311,7 +355,7 @@ export function VisualBuilderPanel({
                     <div className="flex-1 overflow-hidden">
                       <div
                         className="mx-auto h-full transition-all"
-                        style={previewMaxWidth ? { maxWidth: previewMaxWidth } : undefined}
+                        style={{ maxWidth: previewMaxWidth }}
                       >
                         <BuilderPreview
                           assembledHtml={assembledHtml}
@@ -341,11 +385,14 @@ export function VisualBuilderPanel({
               designSystem={designSystem}
               onClose={handlePanelClose}
               previewMode={previewMode}
-              onPreviewModeChange={setPreviewMode}
+              onPreviewModeChange={(mode) => setDevicePreview(mode === "mobile" ? "mobile" : "desktop")}
             />
           )}
         </div>
       </DragDropContext>
+
+      {/* Onboarding overlay */}
+      <BuilderOnboarding />
     </div>
   );
 }
