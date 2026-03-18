@@ -22,7 +22,7 @@ import { DEMO_DESIGN_CONNECTIONS, DEMO_DESIGN_TOKENS } from "./data/design-sync"
 import { DEMO_BRIEF_CONNECTIONS, DEMO_BRIEF_ITEMS, DEMO_BRIEF_DETAILS } from "./data/briefs";
 import { DEMO_BRAND_CONFIG } from "./data/brand";
 import { DEMO_GENERATED_IMAGES } from "./data/image-gen";
-import { DEMO_TRANSLATIONS, DEMO_LOCALES } from "./data/locales";
+
 import {
   DEMO_RENDERING_TESTS,
   DEMO_RENDERING_COMPARISON,
@@ -308,15 +308,6 @@ export function resolveDemo(urlStr: string): unknown | null {
     return DEMO_RENDERING_TESTS.find((t) => t.id === matchId(m!, 1)) ?? null;
   }
 
-  // ── Translations ──
-  if (p === "/api/v1/translations") {
-    return DEMO_TRANSLATIONS;
-  }
-
-  // ── Locales ──
-  if (p === "/api/v1/locales") {
-    return DEMO_LOCALES;
-  }
 
   // ── Ontology: Email Clients ──
   if (p === "/api/v1/ontology/clients") {
