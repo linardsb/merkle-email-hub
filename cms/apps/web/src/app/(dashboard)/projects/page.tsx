@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { FolderOpen, Plus } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
 import { ErrorState } from "@/components/ui/error-state";
@@ -10,7 +9,6 @@ import { SkeletonCard } from "@/components/ui/skeletons";
 import { CreateProjectDialog } from "@/components/dashboard/create-project-dialog";
 
 export default function ProjectsPage() {
-  const t = useTranslations("dashboard");
   const { data: projects, isLoading, error, mutate } = useProjects();
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -20,7 +18,7 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-3">
           <FolderOpen className="h-8 w-8 text-foreground-accent" />
           <h1 className="text-2xl font-semibold text-foreground">
-            {t("projects")}
+            {"Projects"}
           </h1>
         </div>
         <button
@@ -29,12 +27,12 @@ export default function ProjectsPage() {
           className="flex items-center gap-2 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
         >
           <Plus className="h-4 w-4" />
-          {t("createProject")}
+          {"New Project"}
         </button>
       </div>
 
       {error ? (
-        <ErrorState message={t("error")} onRetry={() => mutate()} retryLabel={t("retry")} />
+        <ErrorState message={"Failed to load dashboard data"} onRetry={() => mutate()} retryLabel={"Try again"} />
       ) : isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -85,10 +83,10 @@ export default function ProjectsPage() {
         <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
           <FolderOpen className="mx-auto h-12 w-12 text-foreground-muted" />
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            {t("noProjects")}
+            {"No projects yet"}
           </h3>
           <p className="mt-2 text-sm text-foreground-muted">
-            {t("noProjectsDescription")}
+            {"Create your first project to get started with email development."}
           </p>
         </div>
       )}

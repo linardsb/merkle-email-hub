@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Users,
   AlertTriangle,
@@ -70,16 +69,15 @@ function Section({
 
 // ── Audience Section ──
 function AudienceSection({ projectId }: { projectId: number }) {
-  const t = useTranslations("workspace.contextPanel");
   const { data: brief, isLoading } = useCompatibilityBrief(projectId);
 
   if (isLoading) {
-    return <p className="text-xs text-muted-foreground">{t("loading")}</p>;
+    return <p className="text-xs text-muted-foreground">{"Loading..."}</p>;
   }
 
   if (!brief || !brief.clients || brief.clients.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">{t("audienceEmpty")}</p>
+      <p className="text-xs text-muted-foreground">{"No priority clients set. All 25 email clients are weighted equally."}</p>
     );
   }
 
@@ -100,13 +98,13 @@ function AudienceSection({ projectId }: { projectId: number }) {
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         {brief.dark_mode_warning && (
           <span className="flex items-center gap-1">
-            <Moon className="h-3 w-3" /> {t("darkModeRequired")}
+            <Moon className="h-3 w-3" /> {"Dark mode required"}
           </span>
         )}
         {brief.total_risky_properties > 0 && (
           <span className="flex items-center gap-1">
             <Shield className="h-3 w-3" />
-            {t("cssConstraints", { count: brief.total_risky_properties })}
+            {`\${brief.total_risky_properties} risky CSS properties`}
           </span>
         )}
       </div>
@@ -116,7 +114,6 @@ function AudienceSection({ projectId }: { projectId: number }) {
 
 // ── Failure Patterns Section ──
 function FailurePatternsSection({ projectId }: { projectId: number }) {
-  const t = useTranslations("workspace.contextPanel");
   const { data: stats, isLoading } = useFailurePatternStats(projectId);
   const { data: patterns } = useFailurePatterns({
     projectId,
@@ -124,13 +121,13 @@ function FailurePatternsSection({ projectId }: { projectId: number }) {
   });
 
   if (isLoading) {
-    return <p className="text-xs text-muted-foreground">{t("loading")}</p>;
+    return <p className="text-xs text-muted-foreground">{"Loading..."}</p>;
   }
 
   if (!stats || stats.total_patterns === 0) {
     return (
       <p className="text-xs text-muted-foreground">
-        {t("noFailurePatterns")}
+        {"No failure patterns recorded for this project."}
       </p>
     );
   }
@@ -159,10 +156,10 @@ function FailurePatternsSection({ projectId }: { projectId: number }) {
       {/* Summary */}
       <div className="flex gap-3 text-[10px] text-muted-foreground">
         {stats.top_agent && (
-          <span>{t("topAgent", { agent: stats.top_agent })}</span>
+          <span>{`Top agent: \${stats.top_agent}`}</span>
         )}
         {stats.top_check && (
-          <span>{t("topCheck", { check: stats.top_check })}</span>
+          <span>{`Top check: \${stats.top_check}`}</span>
         )}
       </div>
     </div>
@@ -171,16 +168,15 @@ function FailurePatternsSection({ projectId }: { projectId: number }) {
 
 // ── Agent Skills Section ──
 function AgentSkillsSection() {
-  const t = useTranslations("workspace.contextPanel");
   const { data, isLoading } = useAgentSkills();
 
   if (isLoading) {
-    return <p className="text-xs text-muted-foreground">{t("loading")}</p>;
+    return <p className="text-xs text-muted-foreground">{"Loading..."}</p>;
   }
 
   if (!data || data.agents.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">{t("noSkillData")}</p>
+      <p className="text-xs text-muted-foreground">{"No agent skill data available."}</p>
     );
   }
 
@@ -199,13 +195,13 @@ function AgentSkillsSection() {
             </span>
           ) : (
             <span className="text-muted-foreground italic">
-              {t("noSkill")}
+              {"no SKILL.md"}
             </span>
           )}
           {agent.has_failure_warnings && (
             <AlertTriangle
               className="h-3 w-3 text-destructive"
-              aria-label={t("failureWarningsActive")}
+              aria-label={"Failure warnings active — criteria below 85% pass rate"}
             />
           )}
         </div>
@@ -220,7 +216,6 @@ function ComponentContextSection({
 }: {
   editorContent: string;
 }) {
-  const t = useTranslations("workspace.contextPanel");
   const refs = useMemo(
     () => detectComponentRefs(editorContent),
     [editorContent]
@@ -229,7 +224,7 @@ function ComponentContextSection({
   if (refs.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
-        {t("noComponentsDetected")}
+        {"No component references detected in current template."}
       </p>
     );
   }
@@ -253,19 +248,18 @@ export function AgentContextPanel({
   projectId,
   editorContent,
 }: AgentContextPanelProps) {
-  const t = useTranslations("workspace.contextPanel");
   const { data: stats } = useFailurePatternStats(projectId);
 
   return (
     <ScrollArea className="h-full">
       <div className="divide-y divide-border">
-        <Section icon={Users} title={t("audienceProfile")} defaultOpen={true}>
+        <Section icon={Users} title={"Audience Profile"} defaultOpen={true}>
           <AudienceSection projectId={projectId} />
         </Section>
 
         <Section
           icon={AlertTriangle}
-          title={t("failurePatterns")}
+          title={"Failure Patterns"}
           badge={
             stats?.total_patterns ? String(stats.total_patterns) : undefined
           }
@@ -276,7 +270,7 @@ export function AgentContextPanel({
 
         <Section
           icon={BookOpen}
-          title={t("agentSkills")}
+          title={"Agent Skills"}
           defaultOpen={false}
         >
           <AgentSkillsSection />
@@ -284,7 +278,7 @@ export function AgentContextPanel({
 
         <Section
           icon={Puzzle}
-          title={t("componentContext")}
+          title={"Component Context"}
           defaultOpen={true}
         >
           <ComponentContextSection editorContent={editorContent} />

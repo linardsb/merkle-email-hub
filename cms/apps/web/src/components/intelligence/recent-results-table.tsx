@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQAResults } from "@/hooks/use-qa";
 
@@ -10,35 +9,32 @@ const PAGE_SIZE = 10;
 function StatusBadge({
   passed,
   hasOverride,
-  t,
 }: {
   passed: boolean;
   hasOverride: boolean;
-  t: (key: string) => string;
 }) {
   if (hasOverride) {
     return (
       <span className="rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text">
-        {t("overridden")}
+        {"Overridden"}
       </span>
     );
   }
   if (passed) {
     return (
       <span className="rounded-full bg-badge-success-bg px-2 py-0.5 text-xs font-medium text-badge-success-text">
-        {t("passed")}
+        {"Passed"}
       </span>
     );
   }
   return (
     <span className="rounded-full bg-badge-danger-bg px-2 py-0.5 text-xs font-medium text-badge-danger-text">
-      {t("failed")}
+      {"Failed"}
     </span>
   );
 }
 
 export function RecentResultsTable() {
-  const t = useTranslations("intelligence");
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQAResults({ page, pageSize: PAGE_SIZE });
 
@@ -60,7 +56,7 @@ export function RecentResultsTable() {
   if (!data || data.items.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-foreground-muted">
-        {t("noResultsDescription")}
+        {"Run QA checks on your templates to see intelligence data here."}
       </p>
     );
   }
@@ -72,16 +68,16 @@ export function RecentResultsTable() {
           <thead>
             <tr className="border-b border-border bg-surface-muted">
               <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-                {t("status")}
+                {"Status"}
               </th>
               <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-                {t("score")}
+                {"Score"}
               </th>
               <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-                {t("checks")}
+                {"Checks"}
               </th>
               <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-                {t("date")}
+                {"Date"}
               </th>
             </tr>
           </thead>
@@ -95,7 +91,6 @@ export function RecentResultsTable() {
                   <StatusBadge
                     passed={result.passed}
                     hasOverride={!!result.override}
-                    t={t}
                   />
                 </td>
                 <td className="px-4 py-3 font-medium text-foreground">
@@ -121,7 +116,7 @@ export function RecentResultsTable() {
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-foreground-muted">
-            {t("page", { current: page, total: totalPages })}
+            {`Page \${page} of \${totalPages}`}
           </p>
           <div className="flex gap-2">
             <button
@@ -131,7 +126,7 @@ export function RecentResultsTable() {
               className="flex items-center gap-1 rounded-md border border-card-border bg-card-bg px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
-              {t("previous")}
+              {"Previous"}
             </button>
             <button
               type="button"
@@ -139,7 +134,7 @@ export function RecentResultsTable() {
               onClick={() => setPage((p) => p + 1)}
               className="flex items-center gap-1 rounded-md border border-card-border bg-card-bg px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {t("next")}
+              {"Next"}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

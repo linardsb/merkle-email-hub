@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import type { RenderingTest } from "@/types/rendering";
 
 interface Props {
@@ -29,8 +28,6 @@ interface DerivedClient {
 }
 
 export function ClientCompatibilityMatrix({ tests }: Props) {
-  const t = useTranslations("renderings");
-
   const recentTests = tests.slice(0, 5);
 
   // Derive unique clients from screenshot data across all tests
@@ -47,10 +44,10 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
   }, [tests]);
 
   const categories = [
-    { key: "desktop", label: t("desktop") },
-    { key: "web", label: t("webmail") },
-    { key: "mobile", label: t("mobile") },
-    { key: "dark_mode", label: t("darkMode") },
+    { key: "desktop", label: "Desktop" },
+    { key: "web", label: "Webmail" },
+    { key: "mobile", label: "Mobile" },
+    { key: "dark_mode", label: "Dark Mode" },
   ];
 
   function getScreenshotStatus(test: RenderingTest, clientName: string): string {
@@ -60,14 +57,14 @@ export function ClientCompatibilityMatrix({ tests }: Props) {
 
   return (
     <div className="rounded-lg border border-card-border bg-card-bg p-6">
-      <h2 className="text-lg font-semibold text-foreground">{t("compatibilityMatrix")}</h2>
-      <p className="mt-1 text-sm text-foreground-muted">{t("compatibilityMatrixDescription")}</p>
+      <h2 className="text-lg font-semibold text-foreground">{"Compatibility Matrix"}</h2>
+      <p className="mt-1 text-sm text-foreground-muted">{"Pass/warn/fail status per email client across recent test runs"}</p>
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-card-border">
-              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{t("client")}</th>
+              <th className="pb-2 pr-4 text-left font-medium text-foreground-muted">{"Client"}</th>
               {recentTests.map((test) => (
                 <th key={test.id} className="px-2 pb-2 text-center font-medium text-foreground-muted">
                   {formatShortDate(test.created_at)}

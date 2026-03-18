@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { BrandLogoRule } from "@/types/brand";
 
 interface BrandLogoRulesProps {
@@ -10,8 +9,6 @@ interface BrandLogoRulesProps {
 }
 
 export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProps) {
-  const t = useTranslations("brand");
-
   const current: BrandLogoRule = rules ?? {
     minWidth: 120,
     minHeight: 40,
@@ -24,13 +21,13 @@ export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProp
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{t("logoTitle")}</h3>
+      <h3 className="text-sm font-medium text-foreground">{"Logo Rules"}</h3>
 
       <div className="rounded-md border border-card-border bg-card-bg p-3 space-y-2">
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="mb-1 block text-xs text-foreground-muted">
-              {t("logoMinWidth")}
+              {"Min Width (px)"}
             </label>
             <input
               type="number"
@@ -45,7 +42,7 @@ export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProp
           </div>
           <div>
             <label className="mb-1 block text-xs text-foreground-muted">
-              {t("logoMinHeight")}
+              {"Min Height (px)"}
             </label>
             <input
               type="number"
@@ -60,7 +57,7 @@ export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProp
           </div>
           <div>
             <label className="mb-1 block text-xs text-foreground-muted">
-              {t("logoClearSpace")}
+              {"Clear Space (px)"}
             </label>
             <input
               type="number"
@@ -76,7 +73,7 @@ export function BrandLogoRules({ rules, onChange, disabled }: BrandLogoRulesProp
         </div>
         <div>
           <label className="mb-1 block text-xs text-foreground-muted">
-            {t("logoFormats")}
+            {"Allowed Formats"}
           </label>
           <input
             type="text"

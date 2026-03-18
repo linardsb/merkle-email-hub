@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,6 @@ export function ImageGenDialog({
   projectId,
   onInsertImage,
 }: ImageGenDialogProps) {
-  const t = useTranslations("imageGen");
   const { trigger, isMutating } = useGenerateImage();
   const { data: gallery, isLoading: galleryLoading } = useProjectImages(open ? projectId : null);
   const { mutate } = useSWRConfig();
@@ -57,7 +55,7 @@ export function ImageGenDialog({
         project_id: projectId,
       });
       if (result?.image) {
-        toast.success(t("generateSuccess"));
+        toast.success("Image generated successfully");
         setActiveTab("gallery");
         await mutate(
           (key: unknown) => typeof key === "string" && key.includes("/images"),
@@ -66,7 +64,7 @@ export function ImageGenDialog({
         );
       }
     } catch {
-      toast.error(t("generateError"));
+      toast.error("Failed to generate image");
     }
   };
 
@@ -82,7 +80,7 @@ export function ImageGenDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[40rem]">
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogTitle>{"AI Image Generation"}</DialogTitle>
         </DialogHeader>
 
         {/* Tabs */}
@@ -96,7 +94,7 @@ export function ImageGenDialog({
                 : "text-foreground-muted hover:text-foreground"
             }`}
           >
-            {t("tabGenerate")}
+            {"Generate"}
           </button>
           <button
             type="button"
@@ -107,7 +105,7 @@ export function ImageGenDialog({
                 : "text-foreground-muted hover:text-foreground"
             }`}
           >
-            {t("tabGallery")}
+            {"Gallery"}
           </button>
         </div>
 
@@ -116,13 +114,13 @@ export function ImageGenDialog({
             {/* Prompt */}
             <div>
               <label htmlFor="img-prompt" className="mb-1.5 block text-sm font-medium text-foreground">
-                {t("promptLabel")}
+                {"Describe the image"}
               </label>
               <textarea
                 id="img-prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={t("promptPlaceholder")}
+                placeholder={"e.g., Professional hero banner with spring flowers and soft lighting"}
                 rows={3}
                 disabled={isMutating}
                 className={inputClass}
@@ -131,7 +129,7 @@ export function ImageGenDialog({
 
             {/* Style Presets */}
             <div>
-              <p className="mb-1.5 text-sm font-medium text-foreground">{t("styleLabel")}</p>
+              <p className="mb-1.5 text-sm font-medium text-foreground">{"Style"}</p>
               <StylePresetGrid selected={style} onSelect={setStyle} />
             </div>
 
@@ -146,10 +144,10 @@ export function ImageGenDialog({
                 {isMutating ? (
                   <span className="flex items-center gap-1.5">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("generating")}
+                    {"Generating…"}
                   </span>
                 ) : (
-                  t("generate")
+                  "Generate Image"
                 )}
               </button>
             </div>

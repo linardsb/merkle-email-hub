@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
 import { Download, Eye, Loader2, RefreshCw, Search } from "lucide-react";
 import { useESPTemplates } from "@/hooks/use-esp-sync";
 import { ESP_LABELS } from "@/types/esp-sync";
@@ -22,7 +21,6 @@ export function ESPTemplateBrowser({
   onImport,
   importing,
 }: ESPTemplateBrowserProps) {
-  const t = useTranslations("espSync");
   const { data, error, isLoading, mutate } = useESPTemplates(connectionId);
   const [search, setSearch] = useState("");
 
@@ -42,7 +40,7 @@ export function ESPTemplateBrowser({
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-foreground-muted">
         <Loader2 className="h-4 w-4 animate-spin" />
-        {t("templatesLoading")}
+        {"Loading remote templates…"}
       </div>
     );
   }
@@ -50,14 +48,14 @@ export function ESPTemplateBrowser({
   if (error) {
     return (
       <div className="flex items-center gap-3 py-8">
-        <p className="text-sm text-status-danger">{t("templatesError")}</p>
+        <p className="text-sm text-status-danger">{"Failed to load templates"}</p>
         <button
           type="button"
           onClick={() => mutate()}
           className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          {t("templatesRetry")}
+          {"Retry"}
         </button>
       </div>
     );
@@ -66,7 +64,7 @@ export function ESPTemplateBrowser({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground">{t("templatesTitle")}</h3>
+        <h3 className="text-sm font-medium text-foreground">{"Remote Templates"}</h3>
       </div>
 
       {/* Search */}
@@ -76,7 +74,7 @@ export function ESPTemplateBrowser({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t("templateSearch")}
+          placeholder={"Search templates…"}
           className="w-full rounded-md border border-input-border bg-input-bg py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
         />
       </div>
@@ -84,7 +82,7 @@ export function ESPTemplateBrowser({
       {/* Template list */}
       {filtered.length === 0 ? (
         <p className="py-4 text-center text-sm text-foreground-muted">
-          {t("templatesEmpty")}
+          {"No templates found on this ESP"}
         </p>
       ) : (
         <div className="space-y-2">
@@ -114,7 +112,7 @@ export function ESPTemplateBrowser({
                   className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
                 >
                   <Eye className="h-3.5 w-3.5" />
-                  {t("previewTitle")}
+                  {"Template Preview"}
                 </button>
                 <button
                   type="button"
@@ -127,7 +125,7 @@ export function ESPTemplateBrowser({
                   ) : (
                     <Download className="h-3.5 w-3.5" />
                   )}
-                  {t("importTemplate")}
+                  {"Import"}
                 </button>
               </div>
             </div>

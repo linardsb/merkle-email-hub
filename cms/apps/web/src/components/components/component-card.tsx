@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useComponentVersions } from "@/hooks/use-components";
 import { ComponentPreview } from "./component-preview";
 import { CompatibilityBadge } from "./compatibility-badge";
@@ -12,7 +11,6 @@ interface ComponentCardProps {
 }
 
 export function ComponentCard({ component, onClick }: ComponentCardProps) {
-  const t = useTranslations("components");
   const { data: versions } = useComponentVersions(component.id);
   const latestHtml = versions?.[0]?.html_source ?? null;
 
@@ -54,8 +52,8 @@ export function ComponentCard({ component, onClick }: ComponentCardProps) {
           <CompatibilityBadge badge={component.compatibility_badge} />
           <span className="text-xs text-foreground-muted">
             {component.latest_version
-              ? t("version", { version: component.latest_version })
-              : t("noVersions")}
+              ? `v\${component.latest_version}`
+              : "No versions"}
           </span>
         </div>
       </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { ImagePreviewCard } from "./image-preview-card";
 import type { GeneratedImage } from "@/types/image-gen";
@@ -12,8 +11,6 @@ interface ImageGalleryProps {
 }
 
 export function ImageGallery({ images, isLoading, onInsert }: ImageGalleryProps) {
-  const t = useTranslations("imageGen");
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -25,7 +22,7 @@ export function ImageGallery({ images, isLoading, onInsert }: ImageGalleryProps)
   if (!images || images.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-foreground-muted">
-        {t("galleryEmpty")}
+        {"No generated images yet. Generate your first image above."}
       </p>
     );
   }

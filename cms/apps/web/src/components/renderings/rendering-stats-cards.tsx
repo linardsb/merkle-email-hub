@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Activity, Target, AlertTriangle, Clock } from "lucide-react";
 import type { RenderingTest } from "@/types/rendering";
 
@@ -9,14 +8,12 @@ interface Props {
 }
 
 export function RenderingStatsCards({ tests }: Props) {
-  const t = useTranslations("renderings");
-
   function formatRelativeDate(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime();
     const days = Math.floor(diff / 86400000);
-    if (days === 0) return t("today");
-    if (days === 1) return t("yesterday");
-    return t("daysAgo", { count: days });
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    return `\${days}d ago`;
   }
 
   const totalTests = tests.length;
@@ -67,7 +64,7 @@ export function RenderingStatsCards({ tests }: Props) {
       <div className="rounded-lg border border-card-border bg-card-bg p-4">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{t("totalTests")}</span>
+          <span className="text-sm text-foreground-muted">{"Total Tests"}</span>
         </div>
         <p className="mt-2 text-2xl font-semibold text-foreground">{totalTests}</p>
       </div>
@@ -75,7 +72,7 @@ export function RenderingStatsCards({ tests }: Props) {
       <div className="rounded-lg border border-card-border bg-card-bg p-4">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{t("completionRate")}</span>
+          <span className="text-sm text-foreground-muted">{"Completion Rate"}</span>
         </div>
         <p className={`mt-2 text-2xl font-semibold ${completionColor}`}>{avgCompletion}%</p>
       </div>
@@ -83,18 +80,18 @@ export function RenderingStatsCards({ tests }: Props) {
       <div className="rounded-lg border border-card-border bg-card-bg p-4">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{t("mostProblematic")}</span>
+          <span className="text-sm text-foreground-muted">{"Most Problematic"}</span>
         </div>
         <p className="mt-2 text-lg font-semibold text-foreground">{worstName}</p>
         {worstRate > 0 && (
-          <p className="text-xs text-status-danger">{worstRate}% {t("failRate")}</p>
+          <p className="text-xs text-status-danger">{worstRate}% {"fail rate"}</p>
         )}
       </div>
 
       <div className="rounded-lg border border-card-border bg-card-bg p-4">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-foreground-muted" />
-          <span className="text-sm text-foreground-muted">{t("lastTestDate")}</span>
+          <span className="text-sm text-foreground-muted">{"Last Test"}</span>
         </div>
         <p className="mt-2 text-2xl font-semibold text-foreground">{lastDate}</p>
       </div>

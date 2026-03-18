@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, ImageOff } from "lucide-react";
 import type { RenderingTest, ScreenshotResult } from "@/types/rendering";
 
@@ -12,16 +11,22 @@ interface Props {
   onCompareToggle: (testId: number) => void;
 }
 
-function statusBadge(status: string, t: (key: string) => string) {
+function statusBadge(status: string) {
   const styles: Record<string, string> = {
     complete: "bg-badge-success-bg text-badge-success-text",
     failed: "bg-badge-danger-bg text-badge-danger-text",
     processing: "bg-badge-warning-bg text-badge-warning-text",
     pending: "bg-badge-neutral-bg text-badge-neutral-text",
   };
+  const labels: Record<string, string> = {
+    complete: "Complete",
+    failed: "Failed",
+    processing: "Processing",
+    pending: "Pending",
+  };
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? styles.pending}`}>
-      {t(status)}
+      {labels[status] ?? status}
     </span>
   );
 }
@@ -52,24 +57,23 @@ function completionRate(test: RenderingTest): number {
 const GRID_COLS = "grid-cols-[2rem_2rem_6rem_1fr_7rem_5.5rem_3rem_9rem]";
 
 export function RenderingTestList({ tests, onScreenshotClick, compareIds, onCompareToggle }: Props) {
-  const t = useTranslations("renderings");
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
     <div className="rounded-lg border border-card-border bg-card-bg p-6">
-      <h2 className="text-lg font-semibold text-foreground">{t("recentTests")}</h2>
+      <h2 className="text-lg font-semibold text-foreground">{"Recent Tests"}</h2>
 
       <div className="mt-4 overflow-x-auto">
         {/* Header */}
         <div className={`grid ${GRID_COLS} items-center gap-x-2 border-b border-card-border pb-2 text-sm`}>
           <div />
           <div />
-          <div className="font-medium text-foreground-muted">{t("status")}</div>
-          <div className="font-medium text-foreground-muted">{t("provider")}</div>
-          <div className="font-medium text-foreground-muted">{t("completionRate")}</div>
-          <div className="font-medium text-foreground-muted">{t("clients")}</div>
+          <div className="font-medium text-foreground-muted">{"Status"}</div>
+          <div className="font-medium text-foreground-muted">{"Provider"}</div>
+          <div className="font-medium text-foreground-muted">{"Completion Rate"}</div>
+          <div className="font-medium text-foreground-muted">{"Clients"}</div>
           <div />
-          <div className="font-medium text-foreground-muted">{t("date")}</div>
+          <div className="font-medium text-foreground-muted">{"Date"}</div>
         </div>
 
         {/* Rows */}
@@ -88,7 +92,7 @@ export function RenderingTestList({ tests, onScreenshotClick, compareIds, onComp
                     checked={isCompareSelected}
                     onChange={() => onCompareToggle(test.id)}
                     className="rounded border-card-border"
-                    title={t("compareTests")}
+                    title={"Compare"}
                   />
                 </span>
                 {/* Expand toggle */}
@@ -102,14 +106,14 @@ export function RenderingTestList({ tests, onScreenshotClick, compareIds, onComp
                     <ChevronRight className="h-4 w-4 text-foreground-muted" />
                   )}
                 </button>
-                <span className={isProcessing ? "animate-pulse" : ""}>{statusBadge(test.status, t)}</span>
+                <span className={isProcessing ? "animate-pulse" : ""}>{statusBadge(test.status)}</span>
                 <span className="capitalize text-foreground-muted">
-                  {test.provider === "email_on_acid" ? t("emailOnAcid") : t("litmus")}
+                  {test.provider === "email_on_acid" ? "Email on Acid" : "Litmus"}
                 </span>
                 <span className="font-medium text-foreground">{completionRate(test)}%</span>
                 <span className="text-foreground-muted">{test.clients_requested}</span>
                 <span className="truncate text-xs text-foreground-muted">
-                  {t("testId", { id: test.id })}
+                  {`Test #\${test.id}`}
                 </span>
                 <span className="text-foreground-muted">{formatDate(test.created_at)}</span>
               </div>

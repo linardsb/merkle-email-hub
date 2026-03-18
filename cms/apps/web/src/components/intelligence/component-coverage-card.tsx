@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { Puzzle } from "lucide-react";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useComponentCoverage } from "@/hooks/use-intelligence-stats";
@@ -14,7 +13,6 @@ const BADGE_COLORS: Record<string, string> = {
 };
 
 export function ComponentCoverageCard() {
-  const t = useTranslations("intelligence");
   const { coverage, isLoading } = useComponentCoverage();
 
   if (isLoading) {
@@ -27,21 +25,21 @@ export function ComponentCoverageCard() {
         <div className="flex items-center gap-2">
           <Puzzle className="h-5 w-5 text-foreground-muted" />
           <h2 className="text-lg font-semibold text-foreground">
-            {t("componentCoverage")}
+            {"Component Coverage"}
           </h2>
         </div>
         <p className="mt-2 text-sm text-foreground-muted">
-          {t("noComponents")}
+          {"No components in library yet."}
         </p>
       </div>
     );
   }
 
   const segments = [
-    { key: "full", count: coverage.full, label: t("coverageFull") },
-    { key: "partial", count: coverage.partial, label: t("coveragePartial") },
-    { key: "issues", count: coverage.issues, label: t("coverageIssues") },
-    { key: "untested", count: coverage.untested, label: t("coverageUntested") },
+    { key: "full", count: coverage.full, label: "Full support" },
+    { key: "partial", count: coverage.partial, label: "Partial" },
+    { key: "issues", count: coverage.issues, label: "Issues" },
+    { key: "untested", count: coverage.untested, label: "Untested" },
   ];
 
   return (
@@ -50,18 +48,18 @@ export function ComponentCoverageCard() {
         <div className="flex items-center gap-2">
           <Puzzle className="h-5 w-5 text-foreground-muted" />
           <h2 className="text-lg font-semibold text-foreground">
-            {t("componentCoverage")}
+            {"Component Coverage"}
           </h2>
         </div>
         <Link
           href="/components"
           className="text-sm text-foreground-accent hover:underline"
         >
-          {t("viewComponents")}
+          {"View components"}
         </Link>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        {t("componentCoverageDescription", { total: coverage.total })}
+        {`\${coverage.total} components in library`}
       </p>
 
       {/* Stacked bar */}

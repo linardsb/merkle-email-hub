@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useTranslations } from "next-intl";
 import { Bot, Check, Copy, Loader2, User } from "lucide-react";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatMessage } from "@/types/chat";
@@ -19,7 +18,6 @@ interface CodeBlockProps {
 }
 
 function CodeBlock({ language, code, onApply, showApply }: CodeBlockProps) {
-  const t = useTranslations("workspace");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -46,7 +44,7 @@ function CodeBlock({ language, code, onApply, showApply }: CodeBlockProps) {
             ) : (
               <Copy className="mr-1 h-3 w-3" />
             )}
-            {t("chatCopyCode")}
+            {"Copy"}
           </Button>
           {showApply && onApply && (
             <Button
@@ -55,7 +53,7 @@ function CodeBlock({ language, code, onApply, showApply }: CodeBlockProps) {
               className="h-6 px-2 text-xs text-primary"
               onClick={onApply}
             >
-              {t("chatApplyToEditor")}
+              {"Apply"}
             </Button>
           )}
         </div>
@@ -109,8 +107,6 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
-  const t = useTranslations("workspace");
-
   if (message.role === "user") {
     return (
       <div className="flex justify-end gap-2">
@@ -133,7 +129,7 @@ export function MessageBubble({ message, onApplyHtml }: MessageBubbleProps) {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          {t("chatThinking")}
+          {"Thinking..."}
         </div>
       </div>
     );

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useParams, notFound } from "next/navigation";
 import { Palette, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,7 +14,6 @@ import { BrandForbiddenPatterns } from "@/components/brand/brand-forbidden-patte
 import type { BrandColor, BrandTypography, BrandLogoRule, ForbiddenPattern } from "@/types/brand";
 
 export default function BrandSettingsPage() {
-  const t = useTranslations("brand");
   const params = useParams<{ id: string }>();
   const projectId = Number(params.id);
   if (Number.isNaN(projectId)) {
@@ -54,11 +52,11 @@ export default function BrandSettingsPage() {
         undefined,
         { revalidate: true },
       );
-      toast.success(t("saveSuccess"));
+      toast.success("Brand configuration saved");
     } catch {
-      toast.error(t("saveError"));
+      toast.error("Failed to save brand configuration");
     }
-  }, [orgId, effectiveColors, effectiveTypography, effectiveLogoRules, effectiveForbidden, updateBrand, mutate, t]);
+  }, [orgId, effectiveColors, effectiveTypography, effectiveLogoRules, effectiveForbidden, updateBrand, mutate]);
 
   if (isLoading) {
     return (
@@ -71,9 +69,9 @@ export default function BrandSettingsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{"Brand Guardrails"}</h1>
         <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
-          <p className="text-sm text-foreground-muted">{t("error")}</p>
+          <p className="text-sm text-foreground-muted">{"Failed to load brand configuration"}</p>
         </div>
       </div>
     );
@@ -86,8 +84,8 @@ export default function BrandSettingsPage() {
         <div className="flex items-center gap-3">
           <Palette className="h-6 w-6 text-foreground" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
-            <p className="text-sm text-foreground-muted">{t("subtitle")}</p>
+            <h1 className="text-2xl font-bold text-foreground">{"Brand Guardrails"}</h1>
+            <p className="text-sm text-foreground-muted">{"Define brand colors, typography, logo rules, and forbidden patterns"}</p>
           </div>
         </div>
         <button
@@ -99,10 +97,10 @@ export default function BrandSettingsPage() {
           {isMutating ? (
             <span className="flex items-center gap-1.5">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {t("saving")}
+              {"Saving…"}
             </span>
           ) : (
-            t("save")
+            "Save Changes"
           )}
         </button>
       </div>

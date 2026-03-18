@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useTranslations } from "next-intl";
 import { Blocks, Search } from "lucide-react";
 import { useComponents } from "@/hooks/use-components";
 import { ErrorState } from "@/components/ui/error-state";
@@ -13,8 +12,6 @@ import { ComponentDetailDialog } from "@/components/components/component-detail-
 const PAGE_SIZE = 12;
 
 export default function ComponentsPage() {
-  const t = useTranslations("components");
-
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -70,7 +67,7 @@ export default function ComponentsPage() {
       <div className="flex items-center gap-3">
         <Blocks className="h-8 w-8 text-foreground-accent" />
         <h1 className="text-2xl font-semibold text-foreground">
-          {t("title")}
+          {"Component Library"}
         </h1>
       </div>
 
@@ -81,9 +78,9 @@ export default function ComponentsPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t("searchPlaceholder")}
+          placeholder={"Search components..."}
           className="w-full rounded-md border border-input-border bg-input-bg py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
-          aria-label={t("searchPlaceholder")}
+          aria-label={"Search components..."}
         />
       </div>
 
@@ -99,7 +96,7 @@ export default function ComponentsPage() {
                 : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
             }`}
           >
-            {t("allCategories")}
+            {"All Categories"}
           </button>
           {categories.map((cat) => (
             <button
@@ -126,12 +123,12 @@ export default function ComponentsPage() {
           ))}
         </div>
       ) : error ? (
-        <ErrorState message={t("error")} onRetry={() => mutate()} retryLabel={t("retry")} />
+        <ErrorState message={"Failed to load components"} onRetry={() => mutate()} retryLabel={"Try again"} />
       ) : data?.items.length === 0 ? (
         <EmptyState
           icon={Blocks}
-          title={t("noComponents")}
-          description={t("noComponentsDescription")}
+          title={"No components found"}
+          description={"Email components will appear here once they are created."}
         />
       ) : (
         <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -149,11 +146,7 @@ export default function ComponentsPage() {
       {data && totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-foreground-muted">
-            {t("showing", {
-              from: (page - 1) * PAGE_SIZE + 1,
-              to: Math.min(page * PAGE_SIZE, data.total),
-              total: data.total,
-            })}
+            {`Showing \${(page - 1) * PAGE_SIZE + 1}-\${Math.min(page * PAGE_SIZE} of \${data.total}`}
           </p>
           <div className="flex gap-2">
             <button
@@ -162,7 +155,7 @@ export default function ComponentsPage() {
               disabled={page === 1}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {t("previous")}
+              {"Previous"}
             </button>
             <button
               type="button"
@@ -170,7 +163,7 @@ export default function ComponentsPage() {
               disabled={page === totalPages}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {t("next")}
+              {"Next"}
             </button>
           </div>
         </div>

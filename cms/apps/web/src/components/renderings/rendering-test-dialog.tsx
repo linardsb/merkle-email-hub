@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
 import { X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useRequestRendering, useRenderingTestPolling } from "@/hooks/use-renderings";
 import type { RenderingTest } from "@/types/rendering";
@@ -16,7 +15,6 @@ interface Props {
 type DialogState = "idle" | "testing" | "completed" | "error";
 
 export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html: htmlProp }: Props) {
-  const t = useTranslations("renderings");
   const ref = useRef<HTMLDialogElement>(null);
   const { trigger } = useRequestRendering();
 
@@ -39,7 +37,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
       onTestSubmitted?.(polledTest);
     } else if (polledTest.status === "failed") {
       setState("error");
-      setErrorMessage(t("testFailed"));
+      setErrorMessage("Test Failed");
     }
   }, [polledTest?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -76,7 +74,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
       }
     } catch {
       setState("error");
-      setErrorMessage(t("error"));
+      setErrorMessage("Failed to load rendering data");
     }
   };
 
@@ -92,7 +90,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-card-border p-4">
-        <h2 className="text-lg font-semibold text-foreground">{t("requestTest")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{"Request Rendering Test"}</h2>
         <button
           onClick={() => onOpenChange(false)}
           className="rounded p-1 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
@@ -107,17 +105,17 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
             {/* HTML input */}
             {htmlProp ? (
               <p className="mb-4 rounded border border-card-border bg-surface-muted p-3 text-sm text-foreground-muted">
-                {t("htmlFromWorkspace")}
+                {"HTML from current workspace build"}
               </p>
             ) : (
               <div className="mb-4">
                 <label className="mb-1 block text-sm font-medium text-foreground">
-                  {t("htmlInput")}
+                  {"Email HTML"}
                 </label>
                 <textarea
                   value={htmlInput}
                   onChange={(e) => setHtmlInput(e.target.value)}
-                  placeholder={t("htmlInputPlaceholder")}
+                  placeholder={"Paste compiled email HTML here..."}
                   rows={6}
                   className="w-full rounded border border-card-border bg-surface p-2 font-mono text-sm text-foreground placeholder:text-foreground-muted/50 focus:border-foreground-accent focus:outline-none"
                 />
@@ -127,13 +125,13 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
             {/* Subject line */}
             <div className="mb-4">
               <label className="mb-1 block text-sm font-medium text-foreground">
-                {t("subjectLine")}
+                {"Subject Line"}
               </label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder={t("subjectLinePlaceholder")}
+                placeholder={"e.g., Your Weekly Newsletter"}
                 className="w-full rounded border border-card-border bg-surface p-2 text-sm text-foreground placeholder:text-foreground-muted/50 focus:border-foreground-accent focus:outline-none"
               />
             </div>
@@ -145,7 +143,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
                 disabled={!(htmlProp || htmlInput.trim())}
                 className="rounded bg-foreground-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
-                {t("runTest")}
+                {"Run Test"}
               </button>
             </div>
           </>
@@ -157,10 +155,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
             {polledTest ? (
               <>
                 <p className="text-sm text-foreground-muted">
-                  {t("testProgress", {
-                    completed: polledTest.clients_completed ?? 0,
-                    total: polledTest.clients_requested,
-                  })}
+                  {`\${polledTest.clients_completed ?? 0}/\${polledTest.clients_requested} clients complete`}
                 </p>
                 <div className="h-2 w-48 overflow-hidden rounded-full bg-surface-muted">
                   <div
@@ -170,7 +165,7 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
                 </div>
               </>
             ) : (
-              <p className="text-sm text-foreground-muted">{t("processing")}</p>
+              <p className="text-sm text-foreground-muted">{"Processing"}</p>
             )}
           </div>
         )}
@@ -178,16 +173,16 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
         {state === "completed" && polledTest && (
           <div className="flex flex-col items-center gap-4 py-8">
             <CheckCircle className="h-8 w-8 text-status-success" />
-            <p className="text-sm font-medium text-foreground">{t("testCompleted")}</p>
+            <p className="text-sm font-medium text-foreground">{"Test Completed"}</p>
             <p className="text-foreground-muted">
-              {polledTest.clients_completed}/{polledTest.clients_requested} {t("clients")}
+              {polledTest.clients_completed}/{polledTest.clients_requested} {"Clients"}
             </p>
             <div className="mt-2 flex justify-end">
               <button
                 onClick={() => onOpenChange(false)}
                 className="rounded px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground"
               >
-                {t("close")}
+                {"Close"}
               </button>
             </div>
           </div>
@@ -196,12 +191,12 @@ export function RenderingTestDialog({ open, onOpenChange, onTestSubmitted, html:
         {state === "error" && (
           <div className="flex flex-col items-center gap-4 py-12">
             <AlertCircle className="h-8 w-8 text-status-danger" />
-            <p className="text-sm text-foreground">{errorMessage || t("error")}</p>
+            <p className="text-sm text-foreground">{errorMessage || "Failed to load rendering data"}</p>
             <button
               onClick={handleSubmit}
               className="rounded px-4 py-2 text-sm font-medium text-foreground-accent hover:opacity-80"
             >
-              {t("retry")}
+              {"Try again"}
             </button>
           </div>
         )}

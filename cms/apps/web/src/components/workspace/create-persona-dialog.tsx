@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -57,7 +56,6 @@ export function CreatePersonaDialog({
   onOpenChange,
   onCreated,
 }: CreatePersonaDialogProps) {
-  const t = useTranslations("workspace");
   const { trigger, isMutating } = useCreatePersona();
   const { mutate } = useSWRConfig();
 
@@ -100,11 +98,11 @@ export function CreatePersonaDialog({
         os_name: osName,
       });
       await mutate("/api/v1/personas");
-      toast.success(t("personaCreateSuccess"));
+      toast.success("Custom persona created");
       onOpenChange(false);
       if (persona) onCreated?.(persona);
     } catch {
-      toast.error(t("personaCreateError"));
+      toast.error("Failed to create persona");
     }
   };
 
@@ -118,9 +116,9 @@ export function CreatePersonaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[28rem]">
         <DialogHeader>
-          <DialogTitle>{t("personaCreateTitle")}</DialogTitle>
+          <DialogTitle>{"Create Custom Persona"}</DialogTitle>
           <DialogDescription>
-            {t("personaCreateDescription")}
+            {"Define a custom email client profile for preview testing."}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,14 +129,14 @@ export function CreatePersonaDialog({
               htmlFor="persona-name"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              {t("personaFieldName")}
+              {"Name"}
             </label>
             <input
               id="persona-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("personaFieldNamePlaceholder")}
+              placeholder={"e.g. Outlook Dark Mobile"}
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -151,14 +149,14 @@ export function CreatePersonaDialog({
               htmlFor="persona-description"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              {t("personaFieldDescription")}
+              {"Description"}
             </label>
             <input
               id="persona-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("personaFieldDescriptionPlaceholder")}
+              placeholder={"Optional description"}
               disabled={isMutating}
               className={inputClass}
             />
@@ -171,7 +169,7 @@ export function CreatePersonaDialog({
                 htmlFor="persona-email-client"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("personaFieldEmailClient")}
+                {"Email client"}
               </label>
               <select
                 id="persona-email-client"
@@ -193,7 +191,7 @@ export function CreatePersonaDialog({
                 htmlFor="persona-device-type"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("personaFieldDeviceType")}
+                {"Device type"}
               </label>
               <select
                 id="persona-device-type"
@@ -218,7 +216,7 @@ export function CreatePersonaDialog({
                 htmlFor="persona-viewport"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("personaFieldViewportWidth")}
+                {"Viewport width"}
               </label>
               <input
                 id="persona-viewport"
@@ -241,7 +239,7 @@ export function CreatePersonaDialog({
                 htmlFor="persona-os"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("personaFieldOs")}
+                {"Operating system"}
               </label>
               <select
                 id="persona-os"
@@ -269,7 +267,7 @@ export function CreatePersonaDialog({
               className="accent-interactive"
             />
             <span className="text-foreground">
-              {t("personaFieldDarkMode")}
+              {"Dark mode enabled"}
             </span>
           </label>
         </div>
@@ -281,7 +279,7 @@ export function CreatePersonaDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("personaCreateCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -292,10 +290,10 @@ export function CreatePersonaDialog({
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("personaCreateSubmitting")}
+                {"Creating…"}
               </span>
             ) : (
-              t("personaCreateSubmit")
+              "Create Persona"
             )}
           </button>
         </div>

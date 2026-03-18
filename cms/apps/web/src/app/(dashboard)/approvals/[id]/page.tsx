@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useParams, notFound } from "next/navigation";
 import { ArrowLeft, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +17,6 @@ import { VersionCompareDialog } from "@/components/approvals/version-compare-dia
 type Tab = "feedback" | "audit";
 
 export default function ApprovalDetailPage() {
-  const t = useTranslations("approvals");
   const params = useParams();
   const approvalId = Number(params.id);
   if (Number.isNaN(approvalId)) {
@@ -67,16 +65,16 @@ export default function ApprovalDetailPage() {
     return (
       <div className="space-y-4 p-6">
         <ErrorState
-          message={t("error")}
+          message={"Failed to load approvals"}
           onRetry={() => mutate()}
-          retryLabel={t("retry")}
+          retryLabel={"Try again"}
         />
         <div className="text-center">
           <Link
             href={`/approvals`}
             className="text-sm text-interactive hover:underline"
           >
-            {t("back")}
+            {"Back to Approvals"}
           </Link>
         </div>
       </div>
@@ -84,8 +82,8 @@ export default function ApprovalDetailPage() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "feedback", label: t("feedbackTab") },
-    { key: "audit", label: t("auditTab") },
+    { key: "feedback", label: "Feedback" },
+    { key: "audit", label: "Audit Trail" },
   ];
 
   return (
@@ -98,11 +96,11 @@ export default function ApprovalDetailPage() {
             className="flex items-center gap-1 text-sm text-foreground-muted transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            {t("back")}
+            {"Back to Approvals"}
           </Link>
           <span className="text-foreground-muted">/</span>
           <h1 className="text-sm font-semibold text-foreground">
-            {t("buildNumber", { id: approval.build_id })}
+            {`Build #\${approval.build_id}`}
           </h1>
           <ApprovalStatusBadge status={approval.status} />
           {build && (
@@ -112,13 +110,13 @@ export default function ApprovalDetailPage() {
               className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
             >
               <GitCompareArrows className="h-3.5 w-3.5" />
-              {t("compareVersions")}
+              {"Compare Versions"}
             </button>
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground-muted">
           <span>
-            {t("requestedBy", { userId: approval.requested_by_id })}
+            {`Requested by User #\${approval.requested_by_id}`}
           </span>
           <span>&middot;</span>
           <span>

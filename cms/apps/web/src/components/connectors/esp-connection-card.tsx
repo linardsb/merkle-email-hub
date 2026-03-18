@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 import { ESP_LABELS } from "@/types/esp-sync";
 import type { ESPConnectionResponse } from "@/types/esp-sync";
@@ -18,8 +17,6 @@ export function ESPConnectionCard({
   onSelect,
   onDelete,
 }: ESPConnectionCardProps) {
-  const t = useTranslations("espSync");
-
   const lastSynced = connection.last_synced_at
     ? new Date(connection.last_synced_at).toLocaleDateString("en-US", {
         month: "short",
@@ -70,18 +67,18 @@ export function ESPConnectionCard({
           }`}
         >
           {connection.status === "connected"
-            ? t("statusConnected")
-            : t("statusError")}
+            ? "Connected"
+            : "Error"}
         </span>
       </div>
 
       {/* Meta row */}
       <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
-        <span>{t("credentialsHint", { hint: connection.credentials_hint })}</span>
+        <span>{`Credentials: ****\${connection.credentials_hint}`}</span>
         <span>
           {lastSynced
-            ? t("lastSynced", { date: lastSynced })
-            : t("neverSynced")}
+            ? `Last synced \${lastSynced}`
+            : "Never synced"}
         </span>
       </div>
 
@@ -96,7 +93,7 @@ export function ESPConnectionCard({
           className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          {t("deleteConnection")}
+          {"Delete"}
         </button>
       </div>
     </div>

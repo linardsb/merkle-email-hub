@@ -13,7 +13,6 @@ export default function GlobalError({
     console.error("Global error:", error);
   }, [error]);
 
-  // Cannot use useTranslations() — providers may have crashed
   return (
     <html lang="en">
       <body className="bg-surface text-foreground antialiased">

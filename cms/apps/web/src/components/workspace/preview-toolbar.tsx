@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Monitor,
   Tablet,
@@ -36,9 +35,9 @@ interface PreviewToolbarProps {
 }
 
 const viewportButtons = [
-  { value: "desktop" as const, icon: Monitor, labelKey: "previewDesktop" },
-  { value: "tablet" as const, icon: Tablet, labelKey: "previewTablet" },
-  { value: "mobile" as const, icon: Smartphone, labelKey: "previewMobile" },
+  { value: "desktop" as const, icon: Monitor, label: "Desktop" },
+  { value: "tablet" as const, icon: Tablet, label: "Tablet" },
+  { value: "mobile" as const, icon: Smartphone, label: "Mobile" },
 ];
 
 export function PreviewToolbar({
@@ -59,20 +58,18 @@ export function PreviewToolbar({
   onPersonaSelect,
   isLoadingPersonas,
 }: PreviewToolbarProps) {
-  const t = useTranslations("workspace");
-
   return (
     <div className="flex h-8 items-center justify-between border-b border-border bg-card px-3 text-xs text-muted-foreground">
       {/* Left: Viewport + Dark mode */}
       <div className="flex items-center gap-2">
         <div className="flex items-center rounded border border-border">
-          {viewportButtons.map(({ value, icon: Icon, labelKey }) => (
+          {viewportButtons.map(({ value, icon: Icon, label }) => (
             <button
               key={value}
               type="button"
               onClick={() => onViewportChange(value)}
               className={`rounded p-1 transition-colors hover:bg-accent ${viewport === value ? "bg-accent text-foreground" : ""}`}
-              title={t(labelKey)}
+              title={label}
             >
               <Icon className="h-3.5 w-3.5" />
             </button>
@@ -83,7 +80,7 @@ export function PreviewToolbar({
           type="button"
           onClick={onDarkModeToggle}
           className={`rounded p-1 transition-colors hover:bg-accent ${darkMode ? "text-foreground" : ""}`}
-          title={t("previewDarkMode")}
+          title={"Toggle dark mode"}
         >
           {darkMode ? (
             <Sun className="h-3.5 w-3.5" />
@@ -106,7 +103,7 @@ export function PreviewToolbar({
       <div className="flex items-center gap-2">
         {buildTimeMs !== null && (
           <span className="text-muted-foreground">
-            {t("previewBuildTime", { time: buildTimeMs })}
+            {`Built in \${buildTimeMs}ms`}
           </span>
         )}
 
@@ -115,7 +112,7 @@ export function PreviewToolbar({
             type="button"
             onClick={onZoomOut}
             className="rounded p-1 transition-colors hover:bg-accent"
-            title={t("previewZoomOut")}
+            title={"Zoom out"}
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
@@ -123,15 +120,15 @@ export function PreviewToolbar({
             type="button"
             onClick={onZoomReset}
             className="min-w-[3rem] text-center transition-colors hover:text-foreground"
-            title={t("previewZoomReset")}
+            title={"Reset zoom"}
           >
-            {t("previewZoomLevel", { level: zoom })}
+            {`\${zoom}%`}
           </button>
           <button
             type="button"
             onClick={onZoomIn}
             className="rounded p-1 transition-colors hover:bg-accent"
-            title={t("previewZoomIn")}
+            title={"Zoom in"}
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
@@ -142,12 +139,12 @@ export function PreviewToolbar({
           onClick={onCompile}
           disabled={!hasContent || isCompiling}
           className="flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-accent disabled:opacity-50"
-          title={isCompiling ? t("previewCompiling") : t("previewCompile")}
+          title={isCompiling ? "Compiling..." : "Compile"}
         >
           <RefreshCw
             className={`h-3.5 w-3.5 ${isCompiling ? "animate-spin" : ""}`}
           />
-          <span>{isCompiling ? t("previewCompiling") : t("previewCompile")}</span>
+          <span>{isCompiling ? "Compiling..." : "Compile"}</span>
         </button>
       </div>
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
 import { ShieldCheck, ShieldAlert, ChevronDown, ChevronUp } from "lucide-react";
 import { QACheckItem } from "../qa-check-item";
 import { QAOverrideDialog } from "../qa-override-dialog";
@@ -11,10 +10,10 @@ import type { QAResultResponse } from "@/types/qa";
 interface QATabProps {
   result: QAResultResponse;
   onOverrideSuccess: () => void;
+  onHighlightSection?: (sectionId: string) => void;
 }
 
-export function QATab({ result, onOverrideSuccess }: QATabProps) {
-  const t = useTranslations("qa");
+export function QATab({ result, onOverrideSuccess, onHighlightSection }: QATabProps) {
   const session = useSession();
   const userRole = session.data?.user?.role;
   const canOverride =
@@ -55,23 +54,20 @@ export function QATab({ result, onOverrideSuccess }: QATabProps) {
             }`}
           >
             {result.passed
-              ? t("statusPassed")
+              ? "Passed"
               : result.override
-                ? t("statusOverridden")
-                : t("statusFailed")}
+                ? "Overridden"
+                : "Failed"}
           </span>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {t("checksSummary", {
-            passed: result.checks_passed,
-            total: result.checks_total,
-          })}
+          {`\${result.checks_passed} of \${result.checks_total} checks passed`}
         </p>
 
         {result.override && (
           <div className="mt-2 rounded border border-status-warning/30 bg-badge-warning-bg px-2.5 py-2 text-xs text-muted-foreground">
             <p className="font-medium text-badge-warning-text">
-              {t("overrideApplied")}
+              {"Override applied"}
             </p>
             <p className="mt-0.5">{result.override.justification}</p>
           </div>
@@ -83,13 +79,14 @@ export function QATab({ result, onOverrideSuccess }: QATabProps) {
         {failedChecks.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-xs font-medium uppercase tracking-wider text-destructive">
-              {t("failedChecks", { count: failedChecks.length })}
+              {`\${failedChecks.length} Failed`}
             </h3>
             {failedChecks.map((check) => (
               <QACheckItem
                 key={check.check_name}
                 check={check}
                 isOverridden={overriddenNames.has(check.check_name)}
+                onHighlightSection={onHighlightSection}
               />
             ))}
           </div>
@@ -102,7 +99,7 @@ export function QATab({ result, onOverrideSuccess }: QATabProps) {
               onClick={() => setShowPassing((v) => !v)}
               className="flex w-full items-center justify-between text-xs font-medium uppercase tracking-wider text-status-success"
             >
-              {t("passedChecks", { count: passedChecks.length })}
+              {`\${passedChecks.length} Passed`}
               {showPassing ? (
                 <ChevronUp className="h-3.5 w-3.5" />
               ) : (
@@ -112,7 +109,11 @@ export function QATab({ result, onOverrideSuccess }: QATabProps) {
             {showPassing && (
               <div className="mt-2 space-y-2">
                 {passedChecks.map((check) => (
-                  <QACheckItem key={check.check_name} check={check} />
+                  <QACheckItem
+                    key={check.check_name}
+                    check={check}
+                    onHighlightSection={onHighlightSection}
+                  />
                 ))}
               </div>
             )}
@@ -128,7 +129,7 @@ export function QATab({ result, onOverrideSuccess }: QATabProps) {
             onClick={() => setOverrideOpen(true)}
             className="w-full rounded-md border border-status-warning bg-badge-warning-bg px-3 py-2 text-sm font-medium text-badge-warning-text transition-colors hover:opacity-80"
           >
-            {t("overrideButton")}
+            {"Override Failing Checks"}
           </button>
         </div>
       )}

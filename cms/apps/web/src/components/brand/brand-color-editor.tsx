@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 import type { BrandColor } from "@/types/brand";
 
@@ -12,7 +11,6 @@ interface BrandColorEditorProps {
 }
 
 export function BrandColorEditor({ colors, onChange, disabled }: BrandColorEditorProps) {
-  const t = useTranslations("brand");
   const [newName, setNewName] = useState("");
   const [newHex, setNewHex] = useState("#000000");
 
@@ -32,7 +30,7 @@ export function BrandColorEditor({ colors, onChange, disabled }: BrandColorEdito
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{t("colorsTitle")}</h3>
+      <h3 className="text-sm font-medium text-foreground">{"Brand Colors"}</h3>
 
       {/* Existing colors */}
       <div className="flex flex-wrap gap-2">
@@ -68,7 +66,7 @@ export function BrandColorEditor({ colors, onChange, disabled }: BrandColorEdito
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder={t("colorNamePlaceholder")}
+              placeholder={"Color name (e.g., Primary)"}
               className={inputClass}
             />
           </div>
@@ -87,7 +85,7 @@ export function BrandColorEditor({ colors, onChange, disabled }: BrandColorEdito
             className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
           >
             <Plus className="h-3 w-3" />
-            {t("addColor")}
+            {"Add"}
           </button>
         </div>
       )}

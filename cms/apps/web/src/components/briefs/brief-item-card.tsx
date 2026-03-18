@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Calendar, Users } from "lucide-react";
 import type { BriefItem } from "@/types/briefs";
 
@@ -11,11 +10,11 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: "bg-surface-muted text-foreground-muted",
 };
 
-const STATUS_KEYS: Record<string, string> = {
-  open: "itemStatusOpen",
-  in_progress: "itemStatusInProgress",
-  done: "itemStatusDone",
-  cancelled: "itemStatusCancelled",
+const STATUS_LABELS: Record<string, string> = {
+  open: "Open",
+  in_progress: "In Progress",
+  done: "Done",
+  cancelled: "Cancelled",
 };
 
 interface BriefItemCardProps {
@@ -24,8 +23,6 @@ interface BriefItemCardProps {
 }
 
 export function BriefItemCard({ item, onSelect }: BriefItemCardProps) {
-  const t = useTranslations("briefs");
-
   const dueDate = item.due_date
     ? new Date(item.due_date).toLocaleDateString("en-US", {
         month: "short",
@@ -49,7 +46,7 @@ export function BriefItemCard({ item, onSelect }: BriefItemCardProps) {
         <span
           className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status] ?? ""}`}
         >
-          {t(STATUS_KEYS[item.status] ?? "itemStatusOpen")}
+          {STATUS_LABELS[item.status] ?? "Open"}
         </span>
       </div>
 

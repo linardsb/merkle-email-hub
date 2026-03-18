@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Accordion,
   AccordionContent,
@@ -17,15 +16,13 @@ interface EmailClientsTabProps {
 }
 
 export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
-  const t = useTranslations("workspace.sidebarTabs");
-
   return (
     <div className="flex-1 overflow-y-auto">
       <Accordion type="single" collapsible className="px-4">
         {html && (
           <AccordionItem value="outlook">
             <AccordionTrigger className="py-3 text-sm">
-              {t("outlookAdvisor")}
+              {"Outlook Advisor"}
             </AccordionTrigger>
             <AccordionContent>
               <OutlookAdvisorPanel html={html} onHtmlUpdate={onHtmlUpdate} />
@@ -36,7 +33,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
         {html && (
           <AccordionItem value="css">
             <AccordionTrigger className="py-3 text-sm">
-              {t("cssCompiler")}
+              {"CSS Compiler"}
             </AccordionTrigger>
             <AccordionContent>
               <CSSCompilerPanel html={html} onHtmlUpdate={onHtmlUpdate} />
@@ -47,7 +44,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
         {html && (
           <AccordionItem value="gmail">
             <AccordionTrigger className="py-3 text-sm">
-              {t("gmailIntelligence")}
+              {"Gmail Intelligence"}
             </AccordionTrigger>
             <AccordionContent>
               <GmailPredictionPanel html={html} onHtmlUpdate={onHtmlUpdate} />
@@ -57,7 +54,7 @@ export function EmailClientsTab({ html, onHtmlUpdate }: EmailClientsTabProps) {
 
         {!html && (
           <p className="py-4 text-center text-xs text-muted-foreground">
-            {t("compileFirst")}
+            {"Compile the template first to use email client tools."}
           </p>
         )}
       </Accordion>

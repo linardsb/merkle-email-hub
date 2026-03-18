@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { MonitorSmartphone } from "lucide-react";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useRenderingTests } from "@/hooks/use-renderings";
 
 export function RenderingSummaryCard() {
-  const t = useTranslations("renderings");
   const { data, isLoading } = useRenderingTests({ pageSize: 10 });
 
   if (isLoading) {
@@ -22,13 +20,13 @@ export function RenderingSummaryCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MonitorSmartphone className="h-5 w-5 text-foreground-muted" />
-            <h2 className="text-lg font-semibold text-foreground">{t("clientRendering")}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{"Email Client Rendering"}</h2>
           </div>
           <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-foreground-muted">
-            {t("noData")}
+            {"No Data"}
           </span>
         </div>
-        <p className="mt-2 text-sm text-foreground-muted">{t("noTestsDescription")}</p>
+        <p className="mt-2 text-sm text-foreground-muted">{"Run your first cross-client rendering test to see how your emails look everywhere."}</p>
       </div>
     );
   }
@@ -69,25 +67,25 @@ export function RenderingSummaryCard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MonitorSmartphone className="h-5 w-5 text-foreground-muted" />
-          <h2 className="text-lg font-semibold text-foreground">{t("clientRendering")}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{"Email Client Rendering"}</h2>
         </div>
         <Link
           href="/renderings"
           className="text-sm text-foreground-accent hover:underline"
         >
-          {t("viewAllRenderings")}
+          {"View All"}
         </Link>
       </div>
 
       <div className="mt-4 flex items-start gap-6">
         <div>
-          <p className="text-sm text-foreground-muted">{t("clientRenderingScore")}</p>
+          <p className="text-sm text-foreground-muted">{"Latest Compatibility"}</p>
           <p className={`text-3xl font-bold ${scoreColor}`}>{latestScore}%</p>
         </div>
 
         {problematic.length > 0 && (
           <div className="flex-1">
-            <p className="mb-2 text-sm text-foreground-muted">{t("clientRenderingProblematic")}</p>
+            <p className="mb-2 text-sm text-foreground-muted">{"Most Problematic Clients"}</p>
             <div className="space-y-1.5">
               {problematic.map((client) => (
                 <div key={client.name} className="flex items-center gap-2">

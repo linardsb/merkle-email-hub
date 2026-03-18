@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Accordion,
   AccordionContent,
@@ -19,15 +18,13 @@ interface TestingTabProps {
 }
 
 export function TestingTab({ html, entityType, entityId }: TestingTabProps) {
-  const t = useTranslations("workspace.sidebarTabs");
-
   return (
     <div className="flex-1 overflow-y-auto">
       <Accordion type="single" collapsible className="px-4">
         {html && entityType && entityId && (
           <AccordionItem value="visual-qa">
             <AccordionTrigger className="py-3 text-sm">
-              {t("visualQA")}
+              {"Visual QA"}
             </AccordionTrigger>
             <AccordionContent>
               <VisualQAPanelTab
@@ -42,7 +39,7 @@ export function TestingTab({ html, entityType, entityId }: TestingTabProps) {
         {html && (
           <AccordionItem value="chaos">
             <AccordionTrigger className="py-3 text-sm">
-              {t("chaosTest")}
+              {"Chaos Testing"}
             </AccordionTrigger>
             <AccordionContent>
               <ChaosTestPanel html={html} />
@@ -52,7 +49,7 @@ export function TestingTab({ html, entityType, entityId }: TestingTabProps) {
 
         <AccordionItem value="property">
           <AccordionTrigger className="py-3 text-sm">
-            {t("propertyTest")}
+            {"Property Testing"}
           </AccordionTrigger>
           <AccordionContent>
             <PropertyTestPanel />

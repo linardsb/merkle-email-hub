@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Download, ImagePlus } from "lucide-react";
 import type { GeneratedImage } from "@/types/image-gen";
 
@@ -10,8 +9,6 @@ interface ImagePreviewCardProps {
 }
 
 export function ImagePreviewCard({ image, onInsert }: ImagePreviewCardProps) {
-  const t = useTranslations("imageGen");
-
   const createdDate = new Date(image.created_at).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -39,7 +36,7 @@ export function ImagePreviewCard({ image, onInsert }: ImagePreviewCardProps) {
             className="flex flex-1 items-center justify-center gap-1 rounded border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
           >
             <ImagePlus className="h-3 w-3" />
-            {t("insert")}
+            {"Insert"}
           </button>
           <a
             href={image.url}

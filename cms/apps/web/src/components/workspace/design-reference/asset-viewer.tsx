@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import type { DesignImportAsset } from "@/types/design-sync";
 
 interface AssetViewerProps {
@@ -10,12 +9,11 @@ interface AssetViewerProps {
 }
 
 export function AssetViewer({ assets, connectionId }: AssetViewerProps) {
-  const t = useTranslations("workspace.designReference");
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   if (assets.length === 0) {
     return (
-      <p className="text-xs text-foreground-muted">{t("noAssets")}</p>
+      <p className="text-xs text-foreground-muted">{"No exported assets found"}</p>
     );
   }
 

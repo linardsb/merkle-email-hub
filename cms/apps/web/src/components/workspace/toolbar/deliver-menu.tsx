@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Download, CloudUpload, ClipboardCheck, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,8 +16,6 @@ interface DeliverMenuProps {
 }
 
 export function DeliverMenu({ onExport, onPushToESP, onSubmitForApproval, disabled }: DeliverMenuProps) {
-  const t = useTranslations("workspace");
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -28,7 +25,7 @@ export function DeliverMenu({ onExport, onPushToESP, onSubmitForApproval, disabl
           className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
-          {t("deliverMenu")}
+          {"Deliver"}
           <ChevronDown className="h-3 w-3" />
         </button>
       </DropdownMenuTrigger>
@@ -36,19 +33,19 @@ export function DeliverMenu({ onExport, onPushToESP, onSubmitForApproval, disabl
         {onExport && (
           <DropdownMenuItem onClick={onExport}>
             <Download className="h-3.5 w-3.5" />
-            {t("export")}
+            {"Export"}
           </DropdownMenuItem>
         )}
         {onPushToESP && (
           <DropdownMenuItem onClick={onPushToESP}>
             <CloudUpload className="h-3.5 w-3.5" />
-            {t("pushToESP")}
+            {"Push to ESP"}
           </DropdownMenuItem>
         )}
         {onSubmitForApproval && (
           <DropdownMenuItem onClick={onSubmitForApproval}>
             <ClipboardCheck className="h-3.5 w-3.5" />
-            {t("submitForApproval")}
+            {"Submit for Approval"}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Camera, Eye } from "lucide-react";
 import { VisualQADialog } from "./visual-qa-dialog";
 import type { VisualQAEntityType } from "@/types/rendering";
@@ -17,7 +16,6 @@ export function VisualQAPanelTab({
   entityType,
   entityId,
 }: VisualQAPanelTabProps) {
-  const t = useTranslations("visualQa");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -26,12 +24,12 @@ export function VisualQAPanelTab({
         <div className="mb-2 flex items-center gap-2">
           <Camera className="h-4 w-4 text-foreground-muted" />
           <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
-            {t("panelTitle")}
+            {"Visual QA"}
           </h3>
         </div>
 
         <p className="mb-3 text-xs text-foreground-muted">
-          {t("panelDescription")}
+          {"Compare screenshots across email clients"}
         </p>
 
         <button
@@ -41,7 +39,7 @@ export function VisualQAPanelTab({
           className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
         >
           <Eye className="h-3.5 w-3.5" />
-          {t("panelViewDetails")}
+          {"View Visual QA"}
         </button>
       </div>
 

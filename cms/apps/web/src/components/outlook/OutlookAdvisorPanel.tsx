@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Search,
   ChevronDown,
@@ -24,6 +23,24 @@ const SEVERITY_STYLES: Record<string, string> = {
   low: "bg-badge-success-bg text-badge-success-text",
 };
 
+const DEP_TYPE_LABELS: Record<string, string> = {
+  vml_shape: "VML Shape",
+  ghost_table: "Ghost Table",
+  mso_conditional: "MSO Conditional",
+  mso_css: "MSO CSS",
+  dpi_image: "DPI Image",
+  external_class: "External Class",
+  word_wrap_hack: "Word Wrap Hack",
+};
+
+const SEVERITY_LABELS: Record<string, string> = { high: "High", medium: "Medium", low: "Low" };
+
+const TARGET_LABELS: Record<string, string> = {
+  new_outlook: "New Outlook Only",
+  dual_support: "Dual Support",
+  audit_only: "Audit Only",
+};
+
 const TARGET_OPTIONS = ["new_outlook", "dual_support", "audit_only"] as const;
 
 function formatKB(bytes: number): string {
@@ -31,21 +48,11 @@ function formatKB(bytes: number): string {
 }
 
 function DependencyRow({ dep }: { dep: OutlookDependencySchema }) {
-  const t = useTranslations("outlookAdvisor");
   const [expanded, setExpanded] = useState(false);
 
-  let typeLabel: string;
-  try {
-    typeLabel = t(`depTypes.${dep.type}`);
-  } catch {
-    typeLabel = dep.type;
-  }
+  const typeLabel = DEP_TYPE_LABELS[dep.type] ?? dep.type;
 
   const severityStyle = SEVERITY_STYLES[dep.severity] ?? SEVERITY_STYLES.low;
-  const severityKey = `severity${dep.severity.charAt(0).toUpperCase()}${dep.severity.slice(1)}` as
-    | "severityHigh"
-    | "severityMedium"
-    | "severityLow";
 
   return (
     <div className="rounded border border-border bg-card">
@@ -56,13 +63,13 @@ function DependencyRow({ dep }: { dep: OutlookDependencySchema }) {
       >
         <div className="flex items-center gap-1.5">
           <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${severityStyle}`}>
-            {t(severityKey)}
+            {SEVERITY_LABELS[dep.severity] ?? dep.severity}
           </span>
           <span className="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
             {typeLabel}
           </span>
           <span className="text-foreground-muted">
-            {t("line", { number: dep.line_number })}
+            {`Line \${dep.line_number}`}
           </span>
         </div>
         {expanded ? (
@@ -80,7 +87,7 @@ function DependencyRow({ dep }: { dep: OutlookDependencySchema }) {
           <p className="text-[10px] text-foreground-muted">{dep.location}</p>
           {dep.modern_replacement && (
             <p className="text-[10px] text-status-success">
-              {t("modernReplacement", { replacement: dep.modern_replacement })}
+              {`Modern alternative: \${dep.modern_replacement}`}
             </p>
           )}
         </div>
@@ -90,7 +97,6 @@ function DependencyRow({ dep }: { dep: OutlookDependencySchema }) {
 }
 
 export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelProps) {
-  const t = useTranslations("outlookAdvisor");
   const { trigger, data, isMutating } = useOutlookAnalysis();
   const {
     trigger: modernizeTrigger,
@@ -107,7 +113,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-foreground-muted" />
           <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
-            {t("title")}
+            {"Outlook Advisor"}
           </h3>
         </div>
         <button
@@ -119,17 +125,17 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           {isMutating ? (
             <>
               <Loader2 className="h-3 w-3 animate-spin" />
-              {t("analyzing")}
+              {"Analyzing…"}
             </>
           ) : (
-            t("analyzeButton")
+            "Analyze"
           )}
         </button>
       </div>
 
       {/* Empty state */}
       {!data && !isMutating && (
-        <p className="text-xs text-foreground-muted">{t("noResults")}</p>
+        <p className="text-xs text-foreground-muted">{"Analyze your email to detect Outlook Word-engine dependencies."}</p>
       )}
 
       {data && (
@@ -137,14 +143,14 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           {/* Summary stats */}
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-              {t("totalDependencies", { count: data.total_count })}
+              {`\${data.total_count} dependencies found`}
             </span>
             <span className="rounded-full bg-card px-2 py-0.5 text-foreground-muted">
-              {t("removable", { count: data.removable_count })}
+              {`\${data.removable_count} removable`}
             </span>
             {data.byte_savings > 0 && (
               <span className="rounded-full bg-badge-success-bg px-2 py-0.5 text-badge-success-text">
-                {t("byteSavings", { size: formatKB(data.byte_savings) })}
+                {`\${formatKB(data.byte_savings)} KB potential savings`}
               </span>
             )}
           </div>
@@ -162,7 +168,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
                     key={sev}
                     className={`rounded-full px-2 py-0.5 font-medium ${SEVERITY_STYLES[sev]}`}
                   >
-                    {count} {t(`severity${sev.charAt(0).toUpperCase()}${sev.slice(1)}` as "severityHigh" | "severityMedium" | "severityLow")}
+                    {count} {SEVERITY_LABELS[sev] ?? sev}
                   </span>
                 );
               })}
@@ -178,7 +184,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
                 className="flex w-full items-center justify-between text-xs font-medium text-foreground-muted"
               >
                 <span>
-                  {t("totalDependencies", { count: data.dependencies.length })}
+                  {`\${data.dependencies.length} dependencies found`}
                 </span>
                 {showDeps ? (
                   <ChevronUp className="h-3.5 w-3.5" />
@@ -200,7 +206,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           {data.modernization_plan.length > 0 && (
             <div>
               <h4 className="mb-1.5 text-xs font-medium text-foreground-muted">
-                {t("migrationPlan")}
+                {"Migration Plan"}
               </h4>
               <MigrationTimeline plan={data.modernization_plan} />
             </div>
@@ -211,7 +217,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
             <div className="rounded border border-border bg-card p-2.5 space-y-2">
               <div className="flex items-center gap-2">
                 <label className="text-xs text-foreground-muted">
-                  {t("targetLabel")}
+                  {"Target Mode"}
                 </label>
                 <select
                   value={target}
@@ -221,7 +227,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
                 >
                   {TARGET_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
-                      {t(`target${opt === "new_outlook" ? "NewOutlook" : opt === "dual_support" ? "DualSupport" : "AuditOnly"}`)}
+                      {TARGET_LABELS[opt] ?? opt}
                     </option>
                   ))}
                 </select>
@@ -235,12 +241,12 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
                 {isModernizing ? (
                   <>
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    {t("modernizing")}
+                    {"Modernizing…"}
                   </>
                 ) : (
                   <>
                     <ArrowRight className="h-3 w-3" />
-                    {t("modernizeButton")}
+                    {"Modernize"}
                   </>
                 )}
               </button>
@@ -251,14 +257,11 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
           {modernizeData && (
             <div className="rounded border border-status-success/30 bg-badge-success-bg p-2.5 space-y-1.5">
               <p className="text-xs font-medium text-badge-success-text">
-                {t("changesSummary", {
-                  changes: modernizeData.changes_applied,
-                  saved: formatKB(modernizeData.bytes_saved),
-                })}
+                {`\${modernizeData.changes_applied} changes applied · \${formatKB(modernizeData.bytes_saved)} KB saved`}
               </p>
               <div className="flex gap-3 text-[10px] text-foreground-muted">
-                <span>{t("beforeSize", { size: formatKB(modernizeData.bytes_before) })}</span>
-                <span>{t("afterSize", { size: formatKB(modernizeData.bytes_after) })}</span>
+                <span>{`Before: \${formatKB(modernizeData.bytes_before)} KB`}</span>
+                <span>{`After: \${formatKB(modernizeData.bytes_after)} KB`}</span>
               </div>
               {onHtmlUpdate && modernizeData.changes_applied > 0 && (
                 <button
@@ -266,7 +269,7 @@ export function OutlookAdvisorPanel({ html, onHtmlUpdate }: OutlookAdvisorPanelP
                   onClick={() => onHtmlUpdate(modernizeData.html)}
                   className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
                 >
-                  {t("applyButton")}
+                  {"Apply Changes"}
                 </button>
               )}
             </div>

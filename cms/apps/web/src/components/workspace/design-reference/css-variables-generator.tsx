@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Code2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@email-hub/ui/components/ui/button";
@@ -14,12 +13,10 @@ interface CssVariablesGeneratorProps {
 }
 
 export function CssVariablesGenerator({ tokens, editor }: CssVariablesGeneratorProps) {
-  const t = useTranslations("workspace.designReference");
-
   const handleGenerate = () => {
     const block = generateCssVariablesBlock(tokens.colors, tokens.typography);
     editor.insertCssVariablesBlock(block);
-    toast.success(t("cssVarsInserted"));
+    toast.success("CSS variables inserted into <style>");
   };
 
   return (
@@ -30,7 +27,7 @@ export function CssVariablesGenerator({ tokens, editor }: CssVariablesGeneratorP
       className="h-7 gap-1.5 text-xs"
     >
       <Code2 className="h-3.5 w-3.5" />
-      {t("generateCssVars")}
+      {"Generate CSS Variables"}
     </Button>
   );
 }

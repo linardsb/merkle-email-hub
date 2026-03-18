@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { ArrowLeft, Save, ShieldCheck, Zap, Palette } from "lucide-react";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import {
@@ -12,8 +11,7 @@ import {
 } from "@email-hub/ui/components/ui/tooltip";
 import { TemplateSelector } from "./template-selector";
 import { SaveIndicator, type SaveStatus } from "./save-indicator";
-import { CollaboratorAvatars } from "./collaboration/collaborator-avatars";
-import { ConnectionStatus } from "./collaboration/connection-status";
+import { CollaborationBanner } from "@/components/collaboration";
 import { DeliverMenu } from "./toolbar/deliver-menu";
 import { ToolsMenu } from "./toolbar/tools-menu";
 import type { TemplateResponse } from "@/types/templates";
@@ -42,6 +40,8 @@ interface WorkspaceToolbarProps {
   onGenerateImage?: () => void;
   collaborators?: Collaborator[];
   collaborationStatus?: CollaborationStatus;
+  isViewOnly?: boolean;
+  onTogglePresencePanel?: () => void;
   onViewBrief?: () => void;
   onRunBlueprint?: () => void;
   onPushToESP?: () => void;
@@ -70,6 +70,8 @@ export function WorkspaceToolbar({
   onGenerateImage,
   collaborators,
   collaborationStatus,
+  isViewOnly,
+  onTogglePresencePanel,
   onViewBrief,
   onRunBlueprint,
   onPushToESP,
@@ -78,8 +80,6 @@ export function WorkspaceToolbar({
   onToggleVoiceBriefs,
   commandPalette,
 }: WorkspaceToolbarProps) {
-  const t = useTranslations("workspace");
-
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card px-4">
       {/* Left zone: Navigation */}
@@ -95,7 +95,7 @@ export function WorkspaceToolbar({
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              {t("backToDashboard")}
+              {"Back to Dashboard"}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -125,11 +125,11 @@ export function WorkspaceToolbar({
                 className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
-                {t("saveTemplate")}
+                {"Save"}
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              {t("saveTemplate")} (⌘S)
+              {"Save"} (⌘S)
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -143,7 +143,7 @@ export function WorkspaceToolbar({
               className="flex items-center gap-1.5 rounded bg-interactive px-3 py-1 text-xs font-medium text-on-interactive transition-colors hover:opacity-90"
             >
               <Zap className="h-3.5 w-3.5" />
-              {t("generateBlueprint")}
+              {"Generate"}
             </button>
           </>
         )}
@@ -160,7 +160,7 @@ export function WorkspaceToolbar({
               <ShieldCheck
                 className={`h-3.5 w-3.5 ${isRunningQA ? "animate-pulse" : ""}`}
               />
-              {isRunningQA ? t("runningQA") : t("runQA")}
+              {isRunningQA ? "Running..." : "Run QA"}
             </button>
           </>
         )}
@@ -173,7 +173,7 @@ export function WorkspaceToolbar({
                 ? "bg-badge-success-bg text-badge-success-text hover:opacity-80"
                 : "bg-badge-danger-bg text-badge-danger-text hover:opacity-80"
             }`}
-            title={t("viewQAResults")}
+            title={"View QA results"}
           >
             {qaResult.checks_passed}/{qaResult.checks_total}
           </button>
@@ -205,17 +205,19 @@ export function WorkspaceToolbar({
         {brandViolations !== undefined && brandViolations > 0 && (
           <span
             className="flex items-center gap-1 rounded-full bg-badge-warning-bg px-2 py-0.5 text-xs font-medium text-badge-warning-text"
-            title={t("brandViolations", { count: brandViolations })}
+            title={`\${brandViolations} brand violations`}
           >
             <Palette className="h-3 w-3" />
             {brandViolations}
           </span>
         )}
-        {collaborators && collaborators.length > 0 && (
-          <CollaboratorAvatars collaborators={collaborators} />
-        )}
         {collaborationStatus && (
-          <ConnectionStatus status={collaborationStatus} />
+          <CollaborationBanner
+            collaborators={collaborators ?? []}
+            status={collaborationStatus}
+            isViewOnly={isViewOnly}
+            onTogglePresencePanel={onTogglePresencePanel ?? (() => {})}
+          />
         )}
         <ThemeToggle />
 

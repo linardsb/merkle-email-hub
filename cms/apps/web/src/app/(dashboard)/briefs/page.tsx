@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -20,7 +19,6 @@ import {
 type Tab = "overview" | "connections";
 
 export default function BriefsPage() {
-  const t = useTranslations("briefs");
   const { data: connections, error, isLoading } = useBriefConnections();
   const { trigger: deleteConnection } = useDeleteBriefConnection();
   const { trigger: syncConnection } = useSyncBriefConnection();
@@ -41,9 +39,9 @@ export default function BriefsPage() {
         undefined,
         { revalidate: true },
       );
-      toast.success(t("syncSuccess"));
+      toast.success("Briefs synced successfully");
     } catch {
-      toast.error(t("syncError"));
+      toast.error("Failed to sync briefs");
     } finally {
       setSyncingId(null);
     }
@@ -58,9 +56,9 @@ export default function BriefsPage() {
         { revalidate: true },
       );
       if (selectedId === id) setSelectedId(null);
-      toast.success(t("deleteSuccess"));
+      toast.success("Connection removed");
     } catch {
-      toast.error(t("deleteError"));
+      toast.error("Failed to remove connection");
     }
   };
 
@@ -73,8 +71,8 @@ export default function BriefsPage() {
         <div className="flex items-center gap-3">
           <ClipboardList className="h-8 w-8 text-foreground-accent" />
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
-            <p className="text-sm text-foreground-muted">{t("subtitle")}</p>
+            <h1 className="text-2xl font-semibold text-foreground">{"Client Briefs"}</h1>
+            <p className="text-sm text-foreground-muted">{"Connect your project management tools to import and track campaign briefs"}</p>
           </div>
         </div>
         {activeTab === "connections" && (
@@ -83,7 +81,7 @@ export default function BriefsPage() {
             onClick={() => setDialogOpen(true)}
             className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
           >
-            {t("connectPlatform")}
+            {"Connect Platform"}
           </button>
         )}
       </div>
@@ -101,7 +99,7 @@ export default function BriefsPage() {
               : "text-foreground-muted hover:text-foreground"
           }`}
         >
-          {t("tabAllBriefs")}
+          {"All Briefs"}
         </button>
         <button
           type="button"
@@ -114,7 +112,7 @@ export default function BriefsPage() {
               : "text-foreground-muted hover:text-foreground"
           }`}
         >
-          {t("tabConnections")}
+          {"Connections"}
         </button>
       </div>
 
@@ -126,27 +124,27 @@ export default function BriefsPage() {
           {/* Error state */}
           {error ? (
             <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
-              <p className="text-sm text-foreground-muted">{t("error")}</p>
+              <p className="text-sm text-foreground-muted">{"Failed to load brief connections"}</p>
               <button
                 type="button"
                 onClick={() => window.location.reload()}
                 className="mt-2 text-sm font-medium text-interactive hover:underline"
               >
-                {t("retry")}
+                {"Try again"}
               </button>
             </div>
           ) : !isLoading && connections && connections.length === 0 ? (
             <EmptyState
               icon={ClipboardList}
-              title={t("empty")}
-              description={t("emptyDescription")}
+              title={"No brief connections"}
+              description={"Connect a project management tool to import campaign briefs and sync tasks."}
               action={
                 <button
                   type="button"
                   onClick={() => setDialogOpen(true)}
                   className="text-sm font-medium text-interactive hover:underline"
                 >
-                  {t("connectPlatform")}
+                  {"Connect Platform"}
                 </button>
               }
             />
@@ -175,7 +173,7 @@ export default function BriefsPage() {
                   onClick={() => setImportOpen(true)}
                   className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
                 >
-                  {t("importTrigger")}
+                  {"Import to Project"}
                 </button>
               </div>
               <BriefItemsPanel connection={selectedConnection} />

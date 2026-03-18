@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Bot,
   Cog,
@@ -15,6 +14,28 @@ import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { BlueprintProgress, HandoffSummary } from "@email-hub/sdk";
 import { useState } from "react";
 import { NodeHandoffPanel } from "./node-handoff-panel";
+
+const NODE_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  running: "Running",
+  success: "Passed",
+  failed: "Failed",
+  skipped: "Skipped",
+};
+
+const NODE_TYPE_LABELS: Record<string, string> = {
+  agentic: "AI Agent",
+  deterministic: "System Check",
+};
+
+const RUN_STATUS_LABELS: Record<string, string> = {
+  running: "Running",
+  completed: "Completed",
+  completed_with_warnings: "Completed with Warnings",
+  cost_cap_exceeded: "Cost Cap Exceeded",
+  needs_review: "Needs Review",
+  failed: "Failed",
+};
 
 export const NODE_LABELS: Record<string, string> = {
   scaffolder: "Scaffolder",
@@ -71,7 +92,6 @@ export function ConfidenceBar({ value }: { value: number }) {
 }
 
 export function PipelineTimeline({ progress, handoffHistory }: { progress: BlueprintProgress[]; handoffHistory?: HandoffSummary[] }) {
-  const t = useTranslations("blueprintRun");
   return (
     <div className="space-y-1">
       {progress.map((node, idx) => (
@@ -98,16 +118,16 @@ export function PipelineTimeline({ progress, handoffHistory }: { progress: Bluep
                   variant={node.status === "success" ? "secondary" : node.status === "failed" ? "destructive" : "outline"}
                   className="text-[10px] px-1.5 py-0"
                 >
-                  {t(`nodeStatus.${node.status}`)}
+                  {NODE_STATUS_LABELS[node.status] ?? node.status}
                 </Badge>
                 {node.node_type === "agentic" && (
                   <span className="text-[10px] text-muted-foreground">
-                    {t(`nodeType.${node.node_type}`)}
+                    {NODE_TYPE_LABELS[node.node_type] ?? node.node_type}
                   </span>
                 )}
                 {node.iteration > 0 && (
                   <span className="text-[10px] text-muted-foreground">
-                    {t("iteration", { count: node.iteration + 1 })}
+                    {`Attempt \${node.iteration + 1}`}
                   </span>
                 )}
               </div>
@@ -129,7 +149,6 @@ export function PipelineTimeline({ progress, handoffHistory }: { progress: Bluep
 }
 
 export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
-  const t = useTranslations("blueprintRun");
   return (
     <div className="space-y-3">
       {handoffs.map((handoff, idx) => (
@@ -148,7 +167,7 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
           {handoff.decisions.length > 0 && (
             <div className="mt-2">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                {t("handoffDecisions")}
+                {"Decisions"}
               </p>
               <ul className="mt-1 space-y-0.5">
                 {handoff.decisions.map((d, i) => (
@@ -164,7 +183,7 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
           {handoff.warnings.length > 0 && (
             <div className="mt-2">
               <p className="text-[10px] font-medium text-destructive uppercase tracking-wide">
-                {t("handoffWarnings")}
+                {"Warnings"}
               </p>
               <ul className="mt-1 space-y-0.5">
                 {handoff.warnings.map((w, i) => (
@@ -180,7 +199,7 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
           {handoff.component_refs.length > 0 && (
             <div className="mt-2">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                {t("handoffComponents")}
+                {"Components Used"}
               </p>
               <div className="mt-1 flex flex-wrap gap-1">
                 {handoff.component_refs.map((ref) => (
@@ -198,28 +217,27 @@ export function HandoffSection({ handoffs }: { handoffs: HandoffSummary[] }) {
 }
 
 export function StatusBanner({ status, qaPassed }: { status: string; qaPassed: boolean | null }) {
-  const t = useTranslations("blueprintRun");
   return (
     <div className={`rounded-lg border p-3 ${STATUS_STYLES[status] ?? STATUS_STYLES.running}`}>
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">
-          {t(`status.${status}`)}
+          {RUN_STATUS_LABELS[status] ?? status}
         </span>
         <div className="flex items-center gap-3 text-xs">
           {qaPassed === true && (
             <span className="flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              {t("qaPassed")}
+              {"QA Gate Passed"}
             </span>
           )}
           {qaPassed === false && (
             <span className="flex items-center gap-1 text-destructive">
               <XCircle className="h-3.5 w-3.5" />
-              {t("qaFailed")}
+              {"QA Gate Failed"}
             </span>
           )}
           {qaPassed === null && (
-            <span className="text-muted-foreground">{t("qaNotReached")}</span>
+            <span className="text-muted-foreground">{"QA Not Reached"}</span>
           )}
         </div>
       </div>
@@ -228,7 +246,6 @@ export function StatusBanner({ status, qaPassed }: { status: string; qaPassed: b
 }
 
 export function CollapsibleHandoffs({ handoffs }: { handoffs: HandoffSummary[] }) {
-  const t = useTranslations("blueprintRun");
   const [show, setShow] = useState(false);
 
   if (handoffs.length === 0) return null;
@@ -245,7 +262,7 @@ export function CollapsibleHandoffs({ handoffs }: { handoffs: HandoffSummary[] }
         ) : (
           <ChevronDown className="h-4 w-4" />
         )}
-        {show ? t("hideHandoffs") : t("viewHandoffs")}
+        {show ? "Hide Agent Decisions" : "View Agent Decisions"}
       </button>
       {show && (
         <div className="mt-2">

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Camera } from "lucide-react";
 import type { ClientScreenshot, ClientProfile } from "@/types/rendering";
 import { CLIENT_DISPLAY_NAMES } from "@/types/rendering";
@@ -16,14 +15,12 @@ export function ClientComparisonGrid({
   onSelectClient,
   selectedClient,
 }: ClientComparisonGridProps) {
-  const t = useTranslations("visualQa");
-
   if (screenshots.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-16 text-foreground-muted">
         <Camera className="h-10 w-10" />
-        <p className="text-sm">{t("noScreenshots")}</p>
-        <p className="text-xs">{t("captureFirst")}</p>
+        <p className="text-sm">{"No screenshots captured yet"}</p>
+        <p className="text-xs">{"Capture screenshots to begin visual QA review"}</p>
       </div>
     );
   }
@@ -61,7 +58,7 @@ export function ClientComparisonGrid({
             <div className="overflow-hidden rounded-md border border-border bg-surface-muted">
               <img
                 src={`data:image/png;base64,${screenshot.image_base64}`}
-                alt={t("clientScreenshotAlt", { client: displayName })}
+                alt={`\${displayName} screenshot`}
                 className="h-auto max-h-96 w-full object-contain"
                 loading="lazy"
               />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import type { SchemaInjectResponse } from "@/types/gmail-intelligence";
 
 interface SchemaPreviewProps {
@@ -22,7 +21,6 @@ function extractJsonLd(html: string): string | null {
 }
 
 export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
-  const t = useTranslations("gmailIntelligence");
   const jsonLd = useMemo(() => extractJsonLd(result.html), [result.html]);
 
   return (
@@ -35,12 +33,12 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
             : "bg-surface-muted text-foreground-muted"
         }`}
       >
-        {result.injected ? t("schemaInjected") : t("schemaNotInjected")}
+        {result.injected ? "Markup injected" : "No applicable markup detected"}
       </span>
 
       {/* Detected intent */}
       <div className="flex items-center gap-2 text-xs">
-        <span className="text-foreground-muted">{t("detectedIntent")}:</span>
+        <span className="text-foreground-muted">{"Detected Intent"}:</span>
         <span className="font-medium text-foreground">
           {result.intent.intent_type}
         </span>
@@ -61,7 +59,7 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
       {result.entities.length > 0 && (
         <div>
           <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-            {t("entities")}
+            {"Extracted Entities"}
           </h4>
           <div className="flex flex-wrap gap-1">
             {result.entities.map((entity, i) => (
@@ -80,7 +78,7 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
       {result.schema_types.length > 0 && (
         <div>
           <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-            {t("schemaTypes")}
+            {"Schema Types"}
           </h4>
           <div className="flex flex-wrap gap-1">
             {result.schema_types.map((type) => (
@@ -106,7 +104,7 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
       {result.validation_errors.length > 0 && (
         <div>
           <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-            {t("validationErrors")}
+            {"Validation Errors"}
           </h4>
           {result.validation_errors.map((err, i) => (
             <span
@@ -121,7 +119,7 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
 
       {/* Processing time */}
       <p className="text-[10px] text-foreground-muted">
-        {t("injectTime", { ms: result.inject_time_ms.toFixed(0) })}
+        {`Processed in \${result.inject_time_ms.toFixed(0)}ms`}
       </p>
 
       {/* Apply button */}
@@ -131,7 +129,7 @@ export function SchemaPreview({ result, onApply }: SchemaPreviewProps) {
           onClick={() => onApply(result.html)}
           className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          {t("applyButton")}
+          {"Apply HTML"}
         </button>
       )}
     </div>

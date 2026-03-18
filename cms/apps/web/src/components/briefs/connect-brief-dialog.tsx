@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -43,16 +42,16 @@ const URL_PLACEHOLDERS: Record<BriefPlatform, string> = {
   basecamp: "https://3.basecamp.com/...",
 };
 
-function getCredentialLabel(platform: BriefPlatform, t: ReturnType<typeof useTranslations<"briefs">>) {
+function getCredentialLabel(platform: BriefPlatform) {
   switch (platform) {
-    case "jira": return t("connectJiraToken");
-    case "asana": return t("connectAsanaPat");
-    case "monday": return t("connectMondayKey");
-    case "clickup": return t("connectClickupToken");
-    case "trello": return t("connectTrelloKey");
-    case "notion": return t("connectNotionToken");
-    case "wrike": return t("connectWrikeToken");
-    case "basecamp": return t("connectBasecampToken");
+    case "jira": return "API Token";
+    case "asana": return "Personal Access Token";
+    case "monday": return "API Key";
+    case "clickup": return "API Token";
+    case "trello": return "API Key";
+    case "notion": return "Integration Token";
+    case "wrike": return "Access Token";
+    case "basecamp": return "Access Token";
   }
 }
 
@@ -70,7 +69,6 @@ function buildCredentials(platform: BriefPlatform, credential: string, jiraEmail
 }
 
 export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogProps) {
-  const t = useTranslations("briefs");
   const { trigger, isMutating } = useCreateBriefConnection();
   const { mutate } = useSWRConfig();
   const { data: projects } = useProjects({ pageSize: 50 });
@@ -125,10 +123,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
         undefined,
         { revalidate: true },
       );
-      toast.success(t("connectSuccess"));
+      toast.success("Platform connected successfully");
       onOpenChange(false);
     } catch {
-      toast.error(t("connectError"));
+      toast.error("Failed to connect platform");
     }
   };
 
@@ -142,22 +140,22 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
-          <DialogTitle>{t("connectTitle")}</DialogTitle>
-          <DialogDescription>{t("connectDescription")}</DialogDescription>
+          <DialogTitle>{"Connect Brief Platform"}</DialogTitle>
+          <DialogDescription>{"Link a project management tool to import campaign briefs and tasks."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Connection Name */}
           <div>
             <label htmlFor="brief-name" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectName")}
+              {"Connection Name"}
             </label>
             <input
               id="brief-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("connectNamePlaceholder")}
+              placeholder={"e.g., Spring Campaign Briefs"}
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -167,7 +165,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {/* Platform */}
           <div>
             <label htmlFor="brief-platform" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectPlatformLabel")}
+              {"Platform"}
             </label>
             <select
               id="brief-platform"
@@ -187,7 +185,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {/* Project URL */}
           <div>
             <label htmlFor="brief-url" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectProjectUrl")}
+              {"Project / Board URL"}
             </label>
             <input
               id="brief-url"
@@ -204,7 +202,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {needsJiraEmail && (
             <div>
               <label htmlFor="brief-jira-email" className="mb-1.5 block text-sm font-medium text-foreground">
-                {t("connectJiraEmail")}
+                {"Jira Account Email"}
               </label>
               <input
                 id="brief-jira-email"
@@ -221,7 +219,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {/* Primary credential */}
           <div>
             <label htmlFor="brief-credential" className="mb-1.5 block text-sm font-medium text-foreground">
-              {getCredentialLabel(platform, t)}
+              {getCredentialLabel(platform)}
             </label>
             <input
               id="brief-credential"
@@ -236,14 +234,14 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
               disabled={isMutating}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-foreground-muted">{t("connectCredentialHint")}</p>
+            <p className="mt-1 text-xs text-foreground-muted">{"Credentials are encrypted and never stored in plain text."}</p>
           </div>
 
           {/* Trello extra token (only for Trello) */}
           {needsTrelloToken && (
             <div>
               <label htmlFor="brief-trello-token" className="mb-1.5 block text-sm font-medium text-foreground">
-                {t("connectTrelloToken")}
+                {"API Token"}
               </label>
               <input
                 id="brief-trello-token"
@@ -260,7 +258,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
           {/* Link to Project */}
           <div>
             <label htmlFor="brief-project" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectProject")}
+              {"Link to Project"}
             </label>
             <select
               id="brief-project"
@@ -269,7 +267,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
               disabled={isMutating}
               className={selectClass}
             >
-              <option value="">{t("connectProjectNone")}</option>
+              <option value="">{"None"}</option>
               {projects?.items?.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name}
@@ -286,7 +284,7 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("connectCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -297,10 +295,10 @@ export function ConnectBriefDialog({ open, onOpenChange }: ConnectBriefDialogPro
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("connectSubmitting")}
+                {"Connecting…"}
               </span>
             ) : (
-              t("connectSubmit")
+              "Connect"
             )}
           </button>
         </div>

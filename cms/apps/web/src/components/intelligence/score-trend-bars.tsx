@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { QADashboardMetrics } from "@/types/qa";
 
 interface ScoreTrendBarsProps {
@@ -8,12 +7,10 @@ interface ScoreTrendBarsProps {
 }
 
 export function ScoreTrendBars({ scoreTrend }: ScoreTrendBarsProps) {
-  const t = useTranslations("intelligence");
-
   if (scoreTrend.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-foreground-muted">
-        {t("noResultsDescription")}
+        {"Run QA checks on your templates to see intelligence data here."}
       </p>
     );
   }

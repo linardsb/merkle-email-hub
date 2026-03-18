@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Moon, Sun, Monitor, Tablet, Smartphone, Eye } from "lucide-react";
 
 type Viewport = "desktop" | "tablet" | "mobile";
@@ -24,7 +23,6 @@ interface ApprovalPreviewProps {
 }
 
 export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
-  const t = useTranslations("approvals");
   const [darkMode, setDarkMode] = useState(false);
   const [viewport, setViewport] = useState<Viewport>("desktop");
 
@@ -33,7 +31,7 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
       <div className="flex h-full flex-col items-center justify-center text-center">
         <Eye className="h-8 w-8 text-foreground-muted" />
         <p className="mt-2 text-sm text-foreground-muted">
-          {t("previewEmpty")}
+          {"No compiled HTML available for preview"}
         </p>
       </div>
     );
@@ -77,8 +75,8 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
           type="button"
           onClick={() => setDarkMode(!darkMode)}
           className="rounded p-1.5 text-foreground-muted transition-colors hover:text-foreground"
-          title={t("previewDarkMode")}
-          aria-label={t("previewDarkMode")}
+          title={"Toggle dark mode"}
+          aria-label={"Toggle dark mode"}
         >
           {darkMode ? (
             <Sun className="h-4 w-4" />
@@ -97,7 +95,7 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
           <iframe
             srcDoc={htmlWithDarkMode}
             sandbox=""
-            title={t("previewTab")}
+            title={"Preview"}
             className="h-[800px] w-full border-0"
           />
         </div>

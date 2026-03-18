@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -24,10 +23,22 @@ import { useOrgs } from "@/hooks/use-orgs";
 import { useComponents } from "@/hooks/use-components";
 import { useProjects } from "@/hooks/use-projects";
 import type { AgentMode } from "@/types/chat";
-import { AGENT_LABEL_KEYS } from "@/types/chat";
 import type { ConnectorPlatform } from "@/types/connectors";
 import type { ProjectCategory, CreationMethod } from "@/types/projects";
 import { TargetClientsSelector } from "@/components/projects/target-clients-selector";
+
+const AGENT_LABELS: Record<AgentMode, string> = {
+  chat: "Chat",
+  scaffolder: "Scaffolder",
+  dark_mode: "Dark Mode",
+  content: "Content",
+  outlook_fixer: "Outlook Fixer",
+  accessibility: "Accessibility",
+  personalisation: "Personalisation",
+  code_reviewer: "Code Reviewer",
+  knowledge: "Knowledge",
+  innovation: "Innovation",
+};
 
 /** Agents available for project kickoff (excludes generic "chat") */
 const PROJECT_AGENTS: AgentMode[] = [
@@ -42,13 +53,13 @@ const PROJECT_AGENTS: AgentMode[] = [
   "innovation",
 ];
 
-const CATEGORIES: { value: ProjectCategory; labelKey: string }[] = [
-  { value: "promotional", labelKey: "newProjectCategoryPromotional" },
-  { value: "transactional", labelKey: "newProjectCategoryTransactional" },
-  { value: "newsletter", labelKey: "newProjectCategoryNewsletter" },
-  { value: "welcome_series", labelKey: "newProjectCategoryWelcomeSeries" },
-  { value: "automated", labelKey: "newProjectCategoryAutomated" },
-  { value: "other", labelKey: "newProjectCategoryOther" },
+const CATEGORIES: { value: ProjectCategory; label: string }[] = [
+  { value: "promotional", label: "Promotional" },
+  { value: "transactional", label: "Transactional" },
+  { value: "newsletter", label: "Newsletter" },
+  { value: "welcome_series", label: "Welcome Series" },
+  { value: "automated", label: "Automated" },
+  { value: "other", label: "Other" },
 ];
 
 const ESP_OPTIONS: { value: ConnectorPlatform; label: string }[] = [
@@ -61,34 +72,34 @@ const ESP_OPTIONS: { value: ConnectorPlatform; label: string }[] = [
 
 const METHOD_CONFIG: {
   value: CreationMethod;
-  labelKey: string;
-  descKey: string;
+  label: string;
+  description: string;
   icon: typeof FileText;
   dynamic?: boolean;
 }[] = [
   {
     value: "blank",
-    labelKey: "newProjectMethodBlank",
-    descKey: "newProjectMethodBlankDescription",
+    label: "Blank Template",
+    description: "Start from scratch with an empty template",
     icon: FileText,
   },
   {
     value: "ai_scaffolder",
-    labelKey: "newProjectMethodAI",
-    descKey: "newProjectMethodAIDescription",
+    label: "AI Scaffolder",
+    description: "Describe your campaign and let AI generate the initial template",
     icon: Wand2,
     dynamic: true,
   },
   {
     value: "from_components",
-    labelKey: "newProjectMethodComponents",
-    descKey: "newProjectMethodComponentsDescription",
+    label: "From Components",
+    description: "Build from existing component library",
     icon: Blocks,
   },
   {
     value: "clone_existing",
-    labelKey: "newProjectMethodClone",
-    descKey: "newProjectMethodCloneDescription",
+    label: "Clone Existing",
+    description: "Duplicate an existing project as a starting point",
     icon: Copy,
   },
 ];
@@ -102,8 +113,6 @@ export function CreateProjectDialog({
   open,
   onOpenChange,
 }: CreateProjectDialogProps) {
-  const t = useTranslations("dashboard");
-  const tw = useTranslations("workspace");
   const router = useRouter();
   const { trigger, isMutating } = useCreateProject();
   const { mutate } = useSWRConfig();
@@ -193,7 +202,7 @@ export function CreateProjectDialog({
         }
       }
 
-      toast.success(t("newProjectSuccess"));
+      toast.success("Project created successfully");
       onOpenChange(false);
 
       // Build workspace URL with method-specific query params
@@ -210,7 +219,7 @@ export function CreateProjectDialog({
         );
       }
     } catch {
-      toast.error(t("newProjectError"));
+      toast.error("Failed to create project");
     }
   };
 
@@ -224,8 +233,8 @@ export function CreateProjectDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[36rem] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("newProjectTitle")}</DialogTitle>
-          <DialogDescription>{t("newProjectDescription")}</DialogDescription>
+          <DialogTitle>{"Create New Project"}</DialogTitle>
+          <DialogDescription>{"Set up a new email project with your preferred starting point."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -237,14 +246,14 @@ export function CreateProjectDialog({
               htmlFor="project-name"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              {t("newProjectName")}
+              {"Project Name"}
             </label>
             <input
               id="project-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("newProjectNamePlaceholder")}
+              placeholder={"e.g., Q2 Summer Campaign"}
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -257,13 +266,13 @@ export function CreateProjectDialog({
               htmlFor="project-description"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              {t("newProjectDescriptionField")}
+              {"Description"}
             </label>
             <textarea
               id="project-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("newProjectDescriptionPlaceholder")}
+              placeholder={"Brief overview of this email project..."}
               rows={2}
               disabled={isMutating}
               className={inputClass + " resize-none"}
@@ -277,7 +286,7 @@ export function CreateProjectDialog({
                 htmlFor="project-org"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("newProjectOrg")}
+                {"Client Organization"}
               </label>
               <select
                 id="project-org"
@@ -288,7 +297,7 @@ export function CreateProjectDialog({
                 disabled={isMutating}
                 className={selectClass}
               >
-                <option value="">{t("newProjectOrgPlaceholder")}</option>
+                <option value="">{"Select organization"}</option>
                 {orgItems.map((org) => (
                   <option key={org.id} value={org.id}>
                     {org.name}
@@ -302,7 +311,7 @@ export function CreateProjectDialog({
                 htmlFor="project-category"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("newProjectCategory")}
+                {"Category"}
               </label>
               <select
                 id="project-category"
@@ -313,7 +322,7 @@ export function CreateProjectDialog({
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat.value} value={cat.value}>
-                    {t(cat.labelKey)}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -326,7 +335,7 @@ export function CreateProjectDialog({
               htmlFor="project-esp"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              {t("newProjectTargetEsp")}
+              {"Target ESP"}
             </label>
             <select
               id="project-esp"
@@ -337,7 +346,7 @@ export function CreateProjectDialog({
               disabled={isMutating}
               className={selectClass}
             >
-              <option value="">{t("newProjectTargetEspNone")}</option>
+              <option value="">{"Decide later"}</option>
               {ESP_OPTIONS.map((esp) => (
                 <option key={esp.value} value={esp.value}>
                   {esp.label}
@@ -349,7 +358,7 @@ export function CreateProjectDialog({
           {/* Target Email Clients */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("newProjectTargetClients")}
+              {"Priority Email Clients"}
             </label>
             <TargetClientsSelector
               selected={targetClients}
@@ -357,7 +366,7 @@ export function CreateProjectDialog({
               disabled={isMutating}
             />
             <p className="mt-1 text-xs text-foreground-muted">
-              {t("newProjectTargetClientsHint")}
+              {"QA checks all 25 clients. Priority clients get prominent display in results and drive agent retry focus."}
             </p>
           </div>
 
@@ -367,19 +376,19 @@ export function CreateProjectDialog({
               htmlFor="project-figma-url"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              {t("newProjectFigmaUrl")}
+              {"Figma File URL"}
             </label>
             <input
               id="project-figma-url"
               type="url"
               value={figmaUrl}
               onChange={(e) => setFigmaUrl(e.target.value)}
-              placeholder={t("newProjectFigmaUrlPlaceholder")}
+              placeholder={"https://www.figma.com/design/..."}
               disabled={isMutating}
               className={inputClass}
             />
             <p className="mt-1 text-xs text-foreground-muted">
-              {t("newProjectFigmaUrlHint")}
+              {"Optional — link a Figma design file to this project"}
             </p>
           </div>
 
@@ -389,7 +398,7 @@ export function CreateProjectDialog({
           {/* ── Creation Method ── */}
           <div>
             <p className="mb-3 text-sm font-medium text-foreground">
-              {t("newProjectMethod")}
+              {"How do you want to start?"}
             </p>
             <div className="grid grid-cols-2 gap-3">
               {METHOD_CONFIG.map((m) => {
@@ -416,13 +425,13 @@ export function CreateProjectDialog({
                     />
                     <span className="text-sm font-medium text-foreground">
                       {m.dynamic && selected
-                        ? tw(AGENT_LABEL_KEYS[selectedAgent])
-                        : t(m.labelKey)}
+                        ? AGENT_LABELS[selectedAgent]
+                        : m.label}
                     </span>
                     <span className="text-xs leading-snug text-foreground-muted">
                       {m.dynamic && selected
-                        ? t("newProjectMethodAIDescription")
-                        : t(m.descKey)}
+                        ? "Describe your campaign and let AI generate the initial template"
+                        : m.description}
                     </span>
                   </button>
                 );
@@ -440,7 +449,7 @@ export function CreateProjectDialog({
                   htmlFor="project-agent"
                   className="mb-1.5 block text-sm font-medium text-foreground"
                 >
-                  {t("newProjectAgent")}
+                  {"AI Agent"}
                 </label>
                 <select
                   id="project-agent"
@@ -451,7 +460,7 @@ export function CreateProjectDialog({
                 >
                   {PROJECT_AGENTS.map((agent) => (
                     <option key={agent} value={agent}>
-                      {tw(AGENT_LABEL_KEYS[agent])}
+                      {AGENT_LABELS[agent]}
                     </option>
                   ))}
                 </select>
@@ -461,13 +470,13 @@ export function CreateProjectDialog({
                   htmlFor="project-ai-brief"
                   className="mb-1.5 block text-sm font-medium text-foreground"
                 >
-                  {t("newProjectMethodAIBrief")}
+                  {"Campaign Brief"}
                 </label>
                 <textarea
                   id="project-ai-brief"
                   value={aiBrief}
                   onChange={(e) => setAiBrief(e.target.value)}
-                  placeholder={t("newProjectMethodAIBriefPlaceholder")}
+                  placeholder={"Describe the campaign: audience, goal, tone, key content sections..."}
                   rows={3}
                   disabled={isMutating}
                   className={inputClass + " resize-none"}
@@ -480,7 +489,7 @@ export function CreateProjectDialog({
           {method === "from_components" && (
             <div>
               <p className="mb-2 text-sm font-medium text-foreground">
-                {t("newProjectMethodComponentsSelect")}
+                {"Select components to include:"}
               </p>
               <div className="max-h-[10rem] space-y-1.5 overflow-y-auto rounded-md border border-card-border bg-card-bg p-2">
                 {components?.items && components.items.length > 0 ? (
@@ -518,7 +527,7 @@ export function CreateProjectDialog({
                 htmlFor="project-clone-source"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                {t("newProjectMethodCloneSelect")}
+                {"Select project to clone from:"}
               </label>
               <select
                 id="project-clone-source"
@@ -549,7 +558,7 @@ export function CreateProjectDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("newProjectCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -560,10 +569,10 @@ export function CreateProjectDialog({
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("newProjectSubmitting")}
+                {"Creating..."}
               </span>
             ) : (
-              t("newProjectSubmit")
+              "Create Project"
             )}
           </button>
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
 import { Download, Plug, Cloud, Palette, Mail, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useEmailBuild } from "@/hooks/use-email";
@@ -14,7 +13,7 @@ type ConnectorTab = "raw_html" | "braze" | "sfmc" | "adobe_campaign" | "taxi";
 interface ConnectorConfig {
   id: ConnectorTab;
   icon: typeof Plug;
-  tabKey: string;
+  tabLabel: string;
   nameLabel: string;
   namePlaceholder: string;
   nameHint: string;
@@ -28,50 +27,50 @@ const ESP_CONNECTORS: ConnectorConfig[] = [
   {
     id: "braze",
     icon: Plug,
-    tabKey: "tabBraze",
-    nameLabel: "brazeContentBlockName",
-    namePlaceholder: "brazeContentBlockPlaceholder",
-    nameHint: "brazeContentBlockHint",
-    exportButton: "exportToBraze",
-    exportingMsg: "exporting",
-    successMsg: "brazeExportSuccess",
-    errorMsg: "brazeExportError",
+    tabLabel: "Braze",
+    nameLabel: "Content Block Name",
+    namePlaceholder: "e.g., hero_block_v2",
+    nameHint: "Name used in Braze to identify this content block",
+    exportButton: "Export to Braze",
+    exportingMsg: "Exporting to Braze\u2026",
+    successMsg: "Exported to Braze successfully",
+    errorMsg: "Failed to export to Braze",
   },
   {
     id: "sfmc",
     icon: Cloud,
-    tabKey: "tabSfmc",
-    nameLabel: "sfmcContentAreaName",
-    namePlaceholder: "sfmcContentAreaPlaceholder",
-    nameHint: "sfmcContentAreaHint",
-    exportButton: "exportToSfmc",
-    exportingMsg: "sfmcExporting",
-    successMsg: "sfmcExportSuccess",
-    errorMsg: "sfmcExportError",
+    tabLabel: "SFMC",
+    nameLabel: "Content Area Name",
+    namePlaceholder: "e.g., summer_promo_2024",
+    nameHint: "Name used in SFMC to identify this content area",
+    exportButton: "Export to SFMC",
+    exportingMsg: "Exporting to SFMC\u2026",
+    successMsg: "Exported to SFMC successfully",
+    errorMsg: "Failed to export to SFMC",
   },
   {
     id: "adobe_campaign",
     icon: Palette,
-    tabKey: "tabAdobeCampaign",
-    nameLabel: "adobeDeliveryName",
-    namePlaceholder: "adobeDeliveryPlaceholder",
-    nameHint: "adobeDeliveryHint",
-    exportButton: "exportToAdobe",
-    exportingMsg: "adobeExporting",
-    successMsg: "adobeExportSuccess",
-    errorMsg: "adobeExportError",
+    tabLabel: "Adobe Campaign",
+    nameLabel: "Delivery Name",
+    namePlaceholder: "e.g., welcome_series_v3",
+    nameHint: "Name used in Adobe Campaign for this delivery",
+    exportButton: "Export to Adobe Campaign",
+    exportingMsg: "Exporting to Adobe Campaign\u2026",
+    successMsg: "Exported to Adobe Campaign successfully",
+    errorMsg: "Failed to export to Adobe Campaign",
   },
   {
     id: "taxi",
     icon: Mail,
-    tabKey: "tabTaxi",
-    nameLabel: "taxiTemplateName",
-    namePlaceholder: "taxiTemplatePlaceholder",
-    nameHint: "taxiTemplateHint",
-    exportButton: "exportToTaxi",
-    exportingMsg: "taxiExporting",
-    successMsg: "taxiExportSuccess",
-    errorMsg: "taxiExportError",
+    tabLabel: "Taxi",
+    nameLabel: "Template Name",
+    namePlaceholder: "e.g., monthly_newsletter",
+    nameHint: "Name used in Taxi for Email to identify this template",
+    exportButton: "Export to Taxi",
+    exportingMsg: "Exporting to Taxi\u2026",
+    successMsg: "Exported to Taxi successfully",
+    errorMsg: "Failed to export to Taxi",
   },
 ];
 
@@ -108,7 +107,6 @@ export function ExportDialog({
   sourceHtml,
   onExportComplete,
 }: ExportDialogProps) {
-  const t = useTranslations("export");
   const [activeTab, setActiveTab] = useState<ConnectorTab>("raw_html");
   const [espStates, setEspStates] = useState<Record<string, EspState>>({});
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -172,7 +170,7 @@ export function ExportDialog({
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success(t("downloadSuccess"));
+    toast.success("HTML file downloaded");
 
     onExportComplete?.({
       local_id: crypto.randomUUID(),
@@ -184,7 +182,7 @@ export function ExportDialog({
       created_at: new Date().toISOString(),
       build_id: null,
     });
-  }, [compiledHtml, templateName, t, onExportComplete]);
+  }, [compiledHtml, templateName, onExportComplete]);
 
   const handleEspExport = useCallback(
     async (cfg: ConnectorConfig) => {
@@ -230,7 +228,7 @@ export function ExportDialog({
           dialogState: "success",
           externalId: exportResult?.external_id ?? null,
         });
-        toast.success(t(cfg.successMsg));
+        toast.success(cfg.successMsg);
 
         onExportComplete?.({
           local_id: localId,
@@ -243,9 +241,9 @@ export function ExportDialog({
           build_id: buildResult.id,
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : t(cfg.errorMsg);
+        const message = err instanceof Error ? err.message : cfg.errorMsg;
         updateEspState(cfg.id, { dialogState: "error", errorMessage: message });
-        toast.error(t(cfg.errorMsg));
+        toast.error(cfg.errorMsg);
 
         onExportComplete?.({
           local_id: localId,
@@ -260,7 +258,7 @@ export function ExportDialog({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projectId, templateName, sourceHtml, triggerBuild, triggerExport, t, onExportComplete, updateEspState]
+    [projectId, templateName, sourceHtml, triggerBuild, triggerExport, onExportComplete, updateEspState]
   );
 
   if (!open) return null;
@@ -277,7 +275,7 @@ export function ExportDialog({
       <div className="flex flex-col">
         {/* Header */}
         <div className="border-b border-card-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{"Export Template"}</h2>
         </div>
 
         {/* Tabs */}
@@ -292,7 +290,7 @@ export function ExportDialog({
             }`}
           >
             <Download className="h-4 w-4" />
-            {t("tabRawHtml")}
+            {"Raw HTML"}
           </button>
           {ESP_CONNECTORS.map((cfg) => (
             <button
@@ -306,7 +304,7 @@ export function ExportDialog({
               }`}
             >
               <cfg.icon className="h-4 w-4" />
-              {t(cfg.tabKey)}
+              {cfg.tabLabel}
             </button>
           ))}
         </div>
@@ -317,7 +315,7 @@ export function ExportDialog({
             <div className="space-y-4">
               {!compiledHtml ? (
                 <p className="text-sm text-foreground-muted">
-                  {t("noCompiledHtml")}
+                  {"Compile the template first before exporting"}
                 </p>
               ) : (
                 <button
@@ -326,7 +324,7 @@ export function ExportDialog({
                   className="flex w-full items-center justify-center gap-2 rounded-md bg-interactive px-4 py-2.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
                 >
                   <Download className="h-4 w-4" />
-                  {t("downloadHtml")}
+                  {"Download HTML"}
                 </button>
               )}
             </div>
@@ -338,7 +336,6 @@ export function ExportDialog({
               onNameChange={(val) => updateEspState(activeConfig.id, { name: val })}
               onExport={() => handleEspExport(activeConfig)}
               onRetry={() => updateEspState(activeConfig.id, { dialogState: "idle", errorMessage: null })}
-              t={t}
             />
           ) : null}
         </div>
@@ -350,7 +347,7 @@ export function ExportDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md px-4 py-2 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground"
           >
-            {t("close")}
+            {"Close"}
           </button>
         </div>
       </div>
@@ -365,7 +362,6 @@ function EspTabContent({
   onNameChange,
   onExport,
   onRetry,
-  t,
 }: {
   config: ConnectorConfig;
   state: EspState;
@@ -373,7 +369,6 @@ function EspTabContent({
   onNameChange: (val: string) => void;
   onExport: () => void;
   onRetry: () => void;
-  t: ReturnType<typeof useTranslations<"export">>;
 }) {
   const isNameValid = state.name.trim().length >= 1 && state.name.trim().length <= 200;
   const isBusy = state.dialogState === "building" || state.dialogState === "exporting";
@@ -386,20 +381,20 @@ function EspTabContent({
           htmlFor={`${config.id}-name`}
           className="mb-1.5 block text-sm font-medium text-foreground"
         >
-          {t(config.nameLabel)}
+          {config.nameLabel}
         </label>
         <input
           id={`${config.id}-name`}
           type="text"
           value={state.name}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder={t(config.namePlaceholder)}
+          placeholder={config.namePlaceholder}
           maxLength={200}
           disabled={isBusy}
           className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-interactive focus:outline-none focus:ring-1 focus:ring-interactive disabled:opacity-50"
         />
         <p className="mt-1 text-xs text-foreground-muted">
-          {t(config.nameHint)}
+          {config.nameHint}
         </p>
       </div>
 
@@ -407,14 +402,14 @@ function EspTabContent({
       {state.dialogState === "building" && (
         <div className="flex items-center gap-2 text-sm text-foreground-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
-          {t("building")}
+          {"Building production version…"}
         </div>
       )}
 
       {state.dialogState === "exporting" && (
         <div className="flex items-center gap-2 text-sm text-foreground-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
-          {t(config.exportingMsg)}
+          {config.exportingMsg}
         </div>
       )}
 
@@ -422,11 +417,11 @@ function EspTabContent({
         <div className="rounded-md border border-status-success/20 bg-status-success/5 p-3">
           <div className="flex items-center gap-2 text-sm font-medium text-status-success">
             <CheckCircle2 className="h-4 w-4" />
-            {t(config.successMsg)}
+            {config.successMsg}
           </div>
           {state.externalId && (
             <p className="mt-1 text-xs text-foreground-muted">
-              {t("externalId")}: {state.externalId}
+              {"External ID"}: {state.externalId}
             </p>
           )}
         </div>
@@ -437,7 +432,7 @@ function EspTabContent({
           <div className="rounded-md border border-status-danger/20 bg-status-danger/5 p-3">
             <div className="flex items-center gap-2 text-sm font-medium text-status-danger">
               <XCircle className="h-4 w-4" />
-              {state.errorMessage ?? t(config.errorMsg)}
+              {state.errorMessage ?? config.errorMsg}
             </div>
           </div>
           <button
@@ -445,7 +440,7 @@ function EspTabContent({
             onClick={onRetry}
             className="text-sm font-medium text-interactive hover:underline"
           >
-            {t("retry")}
+            {"Retry"}
           </button>
         </div>
       )}
@@ -459,13 +454,13 @@ function EspTabContent({
           className="flex w-full items-center justify-center gap-2 rounded-md bg-interactive px-4 py-2.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
         >
           <config.icon className="h-4 w-4" />
-          {t(config.exportButton)}
+          {config.exportButton}
         </button>
       )}
 
       {!compiledHtml && state.dialogState === "idle" && (
         <p className="text-xs text-foreground-muted">
-          {t("noCompiledHtml")}
+          {"Compile the template first before exporting"}
         </p>
       )}
     </div>

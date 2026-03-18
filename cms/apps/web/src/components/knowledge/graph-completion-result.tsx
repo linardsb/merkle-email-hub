@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { MessageSquare } from "lucide-react";
 
 interface GraphCompletionResultProps {
@@ -9,8 +8,6 @@ interface GraphCompletionResultProps {
 }
 
 export function GraphCompletionResult({ content, query }: GraphCompletionResultProps) {
-  const t = useTranslations("knowledge");
-
   return (
     <div className="animate-fade-in space-y-3">
       {/* Question echo */}
@@ -22,7 +19,7 @@ export function GraphCompletionResult({ content, query }: GraphCompletionResultP
       {/* Answer */}
       <div className="rounded-lg border border-border bg-card p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-          {t("graphAnswer")}
+          {"Answer from knowledge graph"}
         </p>
         <div className="text-sm text-foreground">
           <p className="whitespace-pre-line">{content}</p>

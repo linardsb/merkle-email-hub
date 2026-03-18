@@ -1,44 +1,32 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
-import { LocaleSelector } from "@/components/ui/locale-selector";
 import { MCPConfigPanel } from "@/components/settings/MCPConfigPanel";
 
 export default function SettingsPage() {
-  const t = useTranslations("settings");
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Manage your account preferences and platform configuration</p>
       </div>
-
-      {/* Language section */}
-      <section className="rounded-lg border border-default bg-card p-6">
-        <h2 className="text-lg font-semibold text-foreground">{t("languageTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("languageDescription")}</p>
-        <div className="mt-4">
-          <LocaleSelector />
-        </div>
-      </section>
 
       {/* MCP Configuration (admin-only) */}
       {isAdmin && (
         <section className="rounded-lg border border-default bg-card p-6">
-          <h2 className="mb-4 text-lg font-semibold text-foreground">{t("mcpConfiguration")}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">MCP Server</h2>
           <MCPConfigPanel />
         </section>
       )}
 
       {/* Placeholder for future settings sections */}
       <section className="rounded-lg border border-default bg-card p-6">
-        <h2 className="text-lg font-semibold text-foreground">{t("preferencesTitle")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("preferencesDescription")}</p>
-        <div className="mt-4 text-sm text-muted-foreground italic">{t("comingSoon")}</div>
+        <h2 className="text-lg font-semibold text-foreground">Preferences</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Additional settings and preferences will be available here.</p>
+        <div className="mt-4 text-sm text-muted-foreground italic">More preferences coming soon.</div>
       </section>
     </div>
   );

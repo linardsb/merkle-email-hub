@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import { Eye, Loader2 } from "lucide-react";
 import type { Viewport } from "./preview-toolbar";
 
@@ -35,8 +34,6 @@ export function PreviewIframe({
   isCompiling,
   viewportWidthOverride,
 }: PreviewIframeProps) {
-  const t = useTranslations("workspace");
-
   const srcdoc = useMemo(() => {
     if (!compiledHtml) return null;
     if (!darkMode) return compiledHtml;
@@ -58,14 +55,14 @@ export function PreviewIframe({
           <>
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <p className="mt-4 text-sm text-muted-foreground">
-              {t("previewCompiling")}
+              {"Compiling..."}
             </p>
           </>
         ) : (
           <>
             <Eye className="h-12 w-12 text-muted-foreground" />
             <p className="mt-4 text-sm text-muted-foreground">
-              {t("previewEmpty", { shortcut: "Ctrl+S" })}
+              {`Press \${"Ctrl+S"} to compile your template`}
             </p>
           </>
         )}

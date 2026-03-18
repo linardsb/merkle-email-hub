@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,6 @@ export function PushToESPDialog({
   templateName,
   projectId,
 }: PushToESPDialogProps) {
-  const t = useTranslations("espSync");
   const { data: connections } = useESPConnections();
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
@@ -55,10 +53,10 @@ export function PushToESPDialog({
     try {
       await trigger({ template_id: templateId });
       const espLabel = ESP_LABELS[selectedConnection.esp_type]?.label ?? selectedConnection.esp_type;
-      toast.success(t("pushSuccess", { esp: espLabel }));
+      toast.success(`Template pushed to \${espLabel}`);
       onOpenChange(false);
     } catch {
-      toast.error(t("pushError"));
+      toast.error("Failed to push template");
     }
   };
 
@@ -66,19 +64,19 @@ export function PushToESPDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[28rem]">
         <DialogHeader>
-          <DialogTitle>{t("pushTitle")}</DialogTitle>
+          <DialogTitle>{"Push to ESP"}</DialogTitle>
           <DialogDescription>
-            {t("pushDescription")} &mdash; {templateName}
+            {"Push this template to a connected ESP"} &mdash; {templateName}
           </DialogDescription>
         </DialogHeader>
 
         {projectConnections.length === 0 ? (
           <p className="py-4 text-center text-sm text-foreground-muted">
-            {t("pushNoConnections")}
+            {"No ESP connections for this project"}
           </p>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">{t("pushSelectConnection")}</p>
+            <p className="text-sm font-medium text-foreground">{"Select connection"}</p>
             {projectConnections.map((conn) => {
               const espInfo = ESP_LABELS[conn.esp_type] ?? {
                 label: conn.esp_type,
@@ -112,7 +110,7 @@ export function PushToESPDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("createCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -123,12 +121,12 @@ export function PushToESPDialog({
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("pushSubmitting")}
+                {"Pushing…"}
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
                 <Upload className="h-4 w-4" />
-                {t("pushSubmit")}
+                {"Push Template"}
               </span>
             )}
           </button>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import type { DefectAnnotationData } from "@/types/rendering";
 
 interface DefectAnnotationProps {
@@ -11,6 +10,13 @@ interface DefectAnnotationProps {
   containerWidth: number;
   containerHeight: number;
 }
+
+const DEFECT_SEVERITY_LABELS: Record<string, string> = {
+  critical: "Critical",
+  major: "Major",
+  minor: "Minor",
+  info: "Info",
+};
 
 const SEVERITY_STYLES: Record<
   DefectAnnotationData["severity"],
@@ -44,7 +50,6 @@ export function DefectAnnotation({
   containerWidth,
   containerHeight,
 }: DefectAnnotationProps) {
-  const t = useTranslations("visualQa");
   const [activeDefect, setActiveDefect] = useState<number | null>(null);
 
   if (defects.length === 0) return null;
@@ -89,11 +94,7 @@ export function DefectAnnotation({
                       SEVERITY_BADGE_STYLES[defect.severity]
                     }`}
                   >
-                    {t(`defect${defect.severity.charAt(0).toUpperCase()}${defect.severity.slice(1)}` as
-                      | "defectCritical"
-                      | "defectMajor"
-                      | "defectMinor"
-                      | "defectInfo")}
+                    {DEFECT_SEVERITY_LABELS[defect.severity] ?? defect.severity}
                   </span>
                 </div>
                 <p className="text-sm text-foreground">
@@ -102,7 +103,7 @@ export function DefectAnnotation({
                 {defect.suggested_fix && (
                   <div className="mt-2 rounded bg-surface-muted p-2">
                     <p className="text-xs font-medium text-foreground-muted">
-                      {t("suggestedFix")}
+                      {"Suggested Fix"}
                     </p>
                     <p className="mt-0.5 text-xs text-foreground">
                       {defect.suggested_fix}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Loader2, Check, X, Copy } from "lucide-react";
 import { useBIMICheck } from "@/hooks/use-gmail-intelligence";
 
@@ -11,6 +10,13 @@ const CHECKLIST_ITEMS = [
   "svgValidation",
   "cmcStatus",
 ] as const;
+
+const CHECKLIST_LABELS: Record<(typeof CHECKLIST_ITEMS)[number], string> = {
+  dmarcStatus: "DMARC Status",
+  bimiRecord: "BIMI Record",
+  svgValidation: "SVG Validation",
+  cmcStatus: "CMC Status",
+};
 
 function statusForItem(
   item: (typeof CHECKLIST_ITEMS)[number],
@@ -43,7 +49,6 @@ function extraInfo(
 }
 
 export function BIMIStatusBadge() {
-  const t = useTranslations("gmailIntelligence");
   const { trigger, data, isMutating, error } = useBIMICheck();
   const [domain, setDomain] = useState("");
   const [copied, setCopied] = useState(false);
@@ -68,7 +73,7 @@ export function BIMIStatusBadge() {
           type="text"
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
-          placeholder={t("domainPlaceholder")}
+          placeholder={"example.com"}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCheck();
           }}
@@ -83,10 +88,10 @@ export function BIMIStatusBadge() {
           {isMutating ? (
             <>
               <Loader2 className="h-3 w-3 animate-spin" />
-              {t("checkingBIMI")}
+              {"Checking…"}
             </>
           ) : (
-            t("checkBIMI")
+            "Check BIMI"
           )}
         </button>
       </div>
@@ -106,7 +111,7 @@ export function BIMIStatusBadge() {
                 : "bg-badge-danger-bg text-badge-danger-text"
             }`}
           >
-            {data.ready ? t("bimiReady") : t("bimiNotReady")}
+            {data.ready ? "BIMI Ready" : "Not Ready"}
           </span>
 
           {/* 4-item checklist */}
@@ -121,7 +126,7 @@ export function BIMIStatusBadge() {
                   ) : (
                     <X className="h-3.5 w-3.5 text-status-error" />
                   )}
-                  <span className="text-foreground">{t(item)}</span>
+                  <span className="text-foreground">{CHECKLIST_LABELS[item]}</span>
                   {info && (
                     <span className="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-foreground-muted">
                       {info}
@@ -136,7 +141,7 @@ export function BIMIStatusBadge() {
           {data.issues.length > 0 && (
             <div className="space-y-0.5">
               <h4 className="text-[10px] font-medium text-foreground-muted">
-                {t("issues")}
+                {"Issues"}
               </h4>
               {data.issues.map((issue, i) => (
                 <p key={i} className="text-[10px] text-status-error">
@@ -150,7 +155,7 @@ export function BIMIStatusBadge() {
           {data.generated_record && (
             <div>
               <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-                {t("generatedRecord")}
+                {"Recommended TXT Record"}
               </h4>
               <div className="flex items-start gap-1.5">
                 <code className="block flex-1 overflow-x-auto rounded bg-surface-muted p-2 font-mono text-[10px] text-foreground-muted">
@@ -160,14 +165,14 @@ export function BIMIStatusBadge() {
                   type="button"
                   onClick={() => handleCopy(data.generated_record)}
                   className="shrink-0 rounded border border-border bg-card p-1 text-foreground-muted transition-colors hover:bg-surface-hover"
-                  title={t("copyRecord")}
+                  title={"Copy"}
                 >
                   <Copy className="h-3 w-3" />
                 </button>
               </div>
               {copied && (
                 <p className="mt-0.5 text-[10px] text-status-success">
-                  {t("copied")}
+                  {"Copied!"}
                 </p>
               )}
             </div>

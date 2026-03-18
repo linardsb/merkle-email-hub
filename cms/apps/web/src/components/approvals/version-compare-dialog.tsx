@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +24,6 @@ export function VersionCompareDialog({
   onOpenChange,
   build,
 }: VersionCompareDialogProps) {
-  const t = useTranslations("approvals");
-
   // Look up template by matching build's template_name within the project
   const { data: templatesData } = useTemplates(open ? build.project_id : null);
   const template = useMemo(
@@ -77,8 +74,8 @@ export function VersionCompareDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] max-w-7xl flex-col">
         <DialogHeader>
-          <DialogTitle>{t("compareTitle")}</DialogTitle>
-          <DialogDescription>{t("compareDescription")}</DialogDescription>
+          <DialogTitle>{"Version Comparison"}</DialogTitle>
+          <DialogDescription>{"Side-by-side visual comparison of template versions"}</DialogDescription>
         </DialogHeader>
 
         {versionsLoading ? (
@@ -89,19 +86,18 @@ export function VersionCompareDialog({
         ) : sortedVersions.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-sm text-foreground-muted">
-              {t("compareNoVersions")}
+              {"No version history available for this template"}
             </p>
           </div>
         ) : (
           <div className="flex flex-1 gap-4 overflow-hidden">
             {/* Before pane */}
             <VersionPane
-              label={t("compareBefore")}
+              label={"Before"}
               versions={sortedVersions}
               selectedVersion={effectiveBefore}
               onSelectVersion={setBeforeVersion}
               versionData={beforeData ?? null}
-              t={t}
             />
 
             {/* Divider */}
@@ -109,12 +105,11 @@ export function VersionCompareDialog({
 
             {/* After pane */}
             <VersionPane
-              label={t("compareAfter")}
+              label={"After"}
               versions={sortedVersions}
               selectedVersion={effectiveAfter}
               onSelectVersion={setAfterVersion}
               versionData={afterData ?? null}
-              t={t}
             />
           </div>
         )}
@@ -130,14 +125,12 @@ function VersionPane({
   selectedVersion,
   onSelectVersion,
   versionData,
-  t,
 }: {
   label: string;
   versions: VersionResponse[];
   selectedVersion: number | null;
   onSelectVersion: (v: number) => void;
   versionData: VersionResponse | null;
-  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border">
@@ -153,7 +146,7 @@ function VersionPane({
         >
           {versions.map((v) => (
             <option key={v.version_number} value={v.version_number}>
-              {t("compareVersion", { version: v.version_number })}
+              {`v\${v.version_number}`}
             </option>
           ))}
         </select>
@@ -163,15 +156,13 @@ function VersionPane({
       {versionData && (
         <div className="border-b border-border px-3 py-1.5 text-xs text-foreground-muted">
           <span>
-            {t("compareCreated", {
-              date: new Date(versionData.created_at).toLocaleDateString(),
-            })}
+            {`Created \${new Date(versionData.created_at).toLocaleDateString()}`}
           </span>
           {versionData.changelog ? (
             <span className="ml-2">&middot; {versionData.changelog}</span>
           ) : (
             <span className="ml-2 italic">
-              &middot; {t("compareNoChangelog")}
+              &middot; {"No changelog"}
             </span>
           )}
         </div>
@@ -189,7 +180,7 @@ function VersionPane({
         ) : (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-foreground-muted">
-              {t("compareSelectVersion")}
+              {"Select version"}
             </p>
           </div>
         )}

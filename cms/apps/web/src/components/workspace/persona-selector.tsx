@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { UserCheck, Monitor, Smartphone, Moon, Plus } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,16 +25,15 @@ export function PersonaSelector({
   onSelect,
   isLoading,
 }: PersonaSelectorProps) {
-  const t = useTranslations("workspace");
   const [createOpen, setCreateOpen] = useState(false);
 
   const selectedPersona = personas.find((p) => p.id === selectedPersonaId);
-  const label = selectedPersona?.name ?? t("personaLabel");
+  const label = selectedPersona?.name ?? "Test as";
 
   if (isLoading) {
     return (
       <div className="flex h-7 items-center px-2 text-xs text-muted-foreground">
-        {t("personaLoading")}
+        {"Loading personas..."}
       </div>
     );
   }
@@ -51,7 +49,7 @@ export function PersonaSelector({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[14rem] bg-popover border border-border shadow-lg">
           <DropdownMenuItem onSelect={() => onSelect(null)}>
-            <span className="text-muted-foreground">{t("personaNone")}</span>
+            <span className="text-muted-foreground">{"No persona"}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {personas.map((persona) => {
@@ -69,7 +67,7 @@ export function PersonaSelector({
                   {persona.dark_mode && <Moon className="h-3 w-3" />}
                   <DeviceIcon className="h-3 w-3" />
                   <span className="text-[0.65rem]">
-                    {t("personaViewport", { width: persona.viewport_width ?? 600 })}
+                    {`\${persona.viewport_width ?? 600}px`}
                   </span>
                 </span>
               </DropdownMenuItem>
@@ -79,7 +77,7 @@ export function PersonaSelector({
           <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
             <Plus className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-muted-foreground">
-              {t("personaCreateTrigger")}
+              {"Create custom…"}
             </span>
           </DropdownMenuItem>
         </DropdownMenuContent>

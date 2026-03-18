@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Zap } from "lucide-react";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { BlueprintRunResponse } from "@email-hub/sdk";
@@ -17,7 +16,6 @@ interface BlueprintResultCardProps {
 }
 
 export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCardProps) {
-  const t = useTranslations("workspace");
   const totalMs = result.progress?.reduce((sum, n) => sum + n.duration_ms, 0) ?? 0;
   const totalTokens = Object.values(result.model_usage ?? {}).reduce((a, b) => a + b, 0);
 
@@ -35,7 +33,7 @@ export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCard
       {result.progress && result.progress.length > 0 && (
         <div>
           <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {t("blueprintChatPipeline")}
+            {"Pipeline"}
           </p>
           <PipelineTimeline progress={result.progress} handoffHistory={result.handoff_history} />
         </div>
@@ -49,9 +47,9 @@ export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCard
       {/* Stats row */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         {totalMs > 0 && <span>{formatDuration(totalMs)}</span>}
-        {totalTokens > 0 && <span>{totalTokens.toLocaleString()} {t("blueprintChatTokens")}</span>}
+        {totalTokens > 0 && <span>{totalTokens.toLocaleString()} {"tokens"}</span>}
         {result.skipped_nodes && result.skipped_nodes.length > 0 && (
-          <span>{result.skipped_nodes.length} {t("blueprintChatSkipped")}</span>
+          <span>{result.skipped_nodes.length} {"skipped"}</span>
         )}
       </div>
 
@@ -63,7 +61,7 @@ export function BlueprintResultCard({ result, onApplyHtml }: BlueprintResultCard
           onClick={() => onApplyHtml(result.html)}
         >
           <Zap className="h-3.5 w-3.5" />
-          {t("blueprintChatApply")}
+          {"Apply Generated HTML to Editor"}
         </Button>
       )}
     </div>

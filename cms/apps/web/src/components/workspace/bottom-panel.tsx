@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useTranslations } from "next-intl";
 import { MessageSquare, Zap, Layers } from "lucide-react";
 import { ChatPanel } from "./chat-panel";
 import { BlueprintRunsList } from "./blueprint/runs-list";
@@ -27,7 +26,6 @@ export function BottomPanel({
   initialAgent,
   editorContent,
 }: BottomPanelProps) {
-  const t = useTranslations("workspace");
   const [activeTab, setActiveTab] = useState<BottomPanelTab>("chat");
   const { resume, isRunning, error } = useBlueprintRun({ projectId: projectIdNum });
   const [resumingRun, setResumingRun] = useState<BlueprintRunRecord | null>(null);
@@ -64,7 +62,7 @@ export function BottomPanel({
           }`}
         >
           <MessageSquare className="h-3.5 w-3.5" />
-          {t("chatTabLabel")}
+          {"AI Chat"}
         </button>
         <button
           type="button"
@@ -78,7 +76,7 @@ export function BottomPanel({
           }`}
         >
           <Zap className="h-3.5 w-3.5" />
-          {t("runsTabLabel")}
+          {"Blueprint Runs"}
         </button>
         <button
           type="button"
@@ -92,7 +90,7 @@ export function BottomPanel({
           }`}
         >
           <Layers className="h-3.5 w-3.5" />
-          {t("contextTabLabel")}
+          {"Context"}
         </button>
       </div>
 
@@ -100,13 +98,13 @@ export function BottomPanel({
       {isRunning && resumingRun && (
         <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-3 py-2">
           <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted border-t-primary" />
-          <span className="text-xs text-muted-foreground">{t("resuming")}</span>
+          <span className="text-xs text-muted-foreground">{"Resuming from checkpoint..."}</span>
         </div>
       )}
 
       {error && resumingRun && (
         <div className="border-b border-destructive/20 bg-destructive/5 px-3 py-2">
-          <span className="text-xs text-destructive">{t("resumeError")}</span>
+          <span className="text-xs text-destructive">{"Failed to resume run. Please try again."}</span>
         </div>
       )}
 

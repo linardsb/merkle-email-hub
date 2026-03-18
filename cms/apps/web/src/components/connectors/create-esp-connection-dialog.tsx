@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -28,27 +27,26 @@ const ESP_PROVIDERS: { value: ESPType; label: string }[] = [
   { value: "taxi", label: "Taxi" },
 ];
 
-const CREDENTIAL_FIELDS: Record<ESPType, { key: string; labelKey: string; placeholderKey: string; type?: string }[]> = {
+const CREDENTIAL_FIELDS: Record<ESPType, { key: string; label: string; placeholder: string; type?: string }[]> = {
   braze: [
-    { key: "api_key", labelKey: "credApiKey", placeholderKey: "credApiKeyPlaceholder", type: "password" },
+    { key: "api_key", label: "API Key", placeholder: "Enter API key", type: "password" },
   ],
   sfmc: [
-    { key: "client_id", labelKey: "credClientId", placeholderKey: "credClientIdPlaceholder" },
-    { key: "client_secret", labelKey: "credClientSecret", placeholderKey: "credClientSecretPlaceholder", type: "password" },
-    { key: "subdomain", labelKey: "credSubdomain", placeholderKey: "credSubdomainPlaceholder" },
+    { key: "client_id", label: "Client ID", placeholder: "Enter client ID" },
+    { key: "client_secret", label: "Client Secret", placeholder: "Enter client secret", type: "password" },
+    { key: "subdomain", label: "Subdomain", placeholder: "e.g., mc563885gzdyr890y1re4gym8znk" },
   ],
   adobe_campaign: [
-    { key: "client_id", labelKey: "credClientId", placeholderKey: "credClientIdPlaceholder" },
-    { key: "client_secret", labelKey: "credClientSecret", placeholderKey: "credClientSecretPlaceholder", type: "password" },
-    { key: "org_id", labelKey: "credOrgId", placeholderKey: "credOrgIdPlaceholder" },
+    { key: "client_id", label: "Client ID", placeholder: "Enter client ID" },
+    { key: "client_secret", label: "Client Secret", placeholder: "Enter client secret", type: "password" },
+    { key: "org_id", label: "Organization ID", placeholder: "Enter Adobe IMS org ID" },
   ],
   taxi: [
-    { key: "api_key", labelKey: "credApiKey", placeholderKey: "credApiKeyPlaceholder", type: "password" },
+    { key: "api_key", label: "API Key", placeholder: "Enter API key", type: "password" },
   ],
 };
 
 export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConnectionDialogProps) {
-  const t = useTranslations("espSync");
   const { trigger, isMutating } = useCreateESPConnection();
   const { mutate } = useSWRConfig();
   const { data: projects } = useProjects({ pageSize: 50 });
@@ -92,10 +90,10 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
         undefined,
         { revalidate: true },
       );
-      toast.success(t("createSuccess"));
+      toast.success("ESP connection created");
       onOpenChange(false);
     } catch {
-      toast.error(t("createError"));
+      toast.error("Failed to connect — check credentials");
     }
   };
 
@@ -109,15 +107,15 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
-          <DialogTitle>{t("createTitle")}</DialogTitle>
-          <DialogDescription>{t("createDescription")}</DialogDescription>
+          <DialogTitle>{"Connect to ESP"}</DialogTitle>
+          <DialogDescription>{"Add a connection to an email service provider"}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Provider */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("createProvider")}
+              {"Provider"}
             </label>
             <div className="flex gap-2">
               {ESP_PROVIDERS.map((p) => (
@@ -144,14 +142,14 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
           {/* Connection Name */}
           <div>
             <label htmlFor="esp-name" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("createName")}
+              {"Connection Name"}
             </label>
             <input
               id="esp-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("createNamePlaceholder")}
+              placeholder={"e.g., Production Braze"}
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -161,7 +159,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
           {/* Project */}
           <div>
             <label htmlFor="esp-project" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("createProject")}
+              {"Project"}
             </label>
             <select
               id="esp-project"
@@ -170,7 +168,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
               disabled={isMutating}
               className={selectClass}
             >
-              <option value="">{t("createProjectPlaceholder")}</option>
+              <option value="">{"Select a project"}</option>
               {projects?.items?.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name}
@@ -183,7 +181,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
           {fields.map((field) => (
             <div key={field.key}>
               <label htmlFor={`esp-cred-${field.key}`} className="mb-1.5 block text-sm font-medium text-foreground">
-                {t(field.labelKey as "credApiKey")}
+                {field.label}
               </label>
               <input
                 id={`esp-cred-${field.key}`}
@@ -191,7 +189,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
                 autoComplete="off"
                 value={credentials[field.key] ?? ""}
                 onChange={(e) => handleCredentialChange(field.key, e.target.value)}
-                placeholder={t(field.placeholderKey as "credApiKeyPlaceholder")}
+                placeholder={field.placeholder}
                 disabled={isMutating}
                 className={inputClass}
               />
@@ -206,7 +204,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("createCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -217,10 +215,10 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("createSubmitting")}
+                {"Validating…"}
               </span>
             ) : (
-              t("createSubmit")
+              "Connect"
             )}
           </button>
         </div>

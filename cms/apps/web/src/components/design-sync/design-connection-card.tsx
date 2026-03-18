@@ -1,10 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { FolderOpen, RefreshCw, Trash2, Loader2, Download, Puzzle } from "lucide-react";
 import { DesignStatusBadge } from "./design-status-badge";
 import { ProviderIcon } from "./provider-icon";
 import type { DesignConnection } from "@/types/design-sync";
+
+const PROVIDER_LABELS: Record<string, string> = {
+  figma: "Figma",
+  sketch: "Sketch",
+  canva: "Canva",
+};
 
 interface DesignConnectionCardProps {
   connection: DesignConnection;
@@ -27,8 +32,6 @@ export function DesignConnectionCard({
   onImport,
   onExtractComponents,
 }: DesignConnectionCardProps) {
-  const t = useTranslations("designSync");
-
   const lastSynced = connection.last_synced_at
     ? new Date(connection.last_synced_at).toLocaleDateString("en-US", {
         month: "short",
@@ -65,9 +68,9 @@ export function DesignConnectionCard({
               {connection.name}
             </p>
             <p className="text-xs text-foreground-muted">
-              {t(`provider${connection.provider.charAt(0).toUpperCase()}${connection.provider.slice(1)}` as "providerFigma")}
+              {PROVIDER_LABELS[connection.provider] ?? connection.provider}
               {" · "}
-              {t("tokenEnding", { last4: connection.access_token_last4 })}
+              {`Token ····\${connection.access_token_last4}`}
             </p>
           </div>
         </div>
@@ -83,7 +86,7 @@ export function DesignConnectionCard({
           </span>
         )}
         {lastSynced && (
-          <span>{t("lastSynced", { date: lastSynced })}</span>
+          <span>{`Synced \${lastSynced}`}</span>
         )}
       </div>
 
@@ -103,7 +106,7 @@ export function DesignConnectionCard({
           ) : (
             <RefreshCw className="h-3.5 w-3.5" />
           )}
-          {syncing ? t("syncing") : t("syncNow")}
+          {syncing ? "Syncing…" : "Sync Now"}
         </button>
         <button
           type="button"
@@ -114,7 +117,7 @@ export function DesignConnectionCard({
           className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          {t("remove")}
+          {"Remove"}
         </button>
 
         {connection.status === "connected" && (
@@ -129,7 +132,7 @@ export function DesignConnectionCard({
               className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
               <Download className="h-3.5 w-3.5" />
-              {t("importDesign")}
+              {"Import Design"}
             </button>
             <button
               type="button"
@@ -140,7 +143,7 @@ export function DesignConnectionCard({
               className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
               <Puzzle className="h-3.5 w-3.5" />
-              {t("extractComponents")}
+              {"Extract Components"}
             </button>
           </>
         )}

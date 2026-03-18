@@ -1,16 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Download, Plug, Cloud, Palette, Mail } from "lucide-react";
 import { ExportStatusBadge } from "./export-status-badge";
 import type { ExportHistoryRecord, ConnectorPlatform } from "@/types/connectors";
 
-const PLATFORM_CONFIG: Record<ConnectorPlatform, { labelKey: string; icon: typeof Plug }> = {
-  braze: { labelKey: "platformBraze", icon: Plug },
-  sfmc: { labelKey: "platformSfmc", icon: Cloud },
-  adobe_campaign: { labelKey: "platformAdobeCampaign", icon: Palette },
-  taxi: { labelKey: "platformTaxi", icon: Mail },
-  raw_html: { labelKey: "platformRawHtml", icon: Download },
+const PLATFORM_CONFIG: Record<ConnectorPlatform, { label: string; icon: typeof Plug }> = {
+  braze: { label: "Braze Content Block", icon: Plug },
+  sfmc: { label: "Salesforce Marketing Cloud", icon: Cloud },
+  adobe_campaign: { label: "Adobe Campaign", icon: Palette },
+  taxi: { label: "Taxi for Email", icon: Mail },
+  raw_html: { label: "Raw HTML Download", icon: Download },
 };
 
 interface ExportCardProps {
@@ -18,10 +17,8 @@ interface ExportCardProps {
 }
 
 export function ExportCard({ record }: ExportCardProps) {
-  const t = useTranslations("connectors");
-
   const config = PLATFORM_CONFIG[record.platform];
-  const platformLabel = t(config.labelKey);
+  const platformLabel = config.label;
   const PlatformIcon = config.icon;
 
   return (

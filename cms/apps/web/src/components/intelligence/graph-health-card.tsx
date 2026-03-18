@@ -1,12 +1,10 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Network } from "lucide-react";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useGraphHealth } from "@/hooks/use-intelligence-stats";
 
 export function GraphHealthCard() {
-  const t = useTranslations("intelligence");
   const { data, isLoading } = useGraphHealth();
 
   if (isLoading) {
@@ -20,7 +18,7 @@ export function GraphHealthCard() {
       <div className="flex items-center gap-2">
         <Network className="h-4 w-4 text-foreground-muted" />
         <p className="text-sm font-medium text-foreground-muted">
-          {t("graphHealth")}
+          {"Knowledge Graph"}
         </p>
       </div>
       <div className="mt-2 flex items-center gap-2">
@@ -34,11 +32,11 @@ export function GraphHealthCard() {
             healthy ? "text-status-success" : "text-status-danger"
           }`}
         >
-          {healthy ? t("graphOnline") : t("graphOffline")}
+          {healthy ? "Online" : "Offline"}
         </p>
       </div>
       <p className="mt-1 text-xs text-foreground-muted">
-        {t("graphHealthDescription")}
+        {"Cognee knowledge graph connectivity status"}
       </p>
     </div>
   );

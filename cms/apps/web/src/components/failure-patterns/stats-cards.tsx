@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { AlertTriangle, Users, Target, Shield } from "lucide-react";
 import type { FailurePatternStats } from "@/types/failure-patterns";
 
@@ -11,30 +10,28 @@ interface FailurePatternStatsCardsProps {
 export function FailurePatternStatsCards({
   stats,
 }: FailurePatternStatsCardsProps) {
-  const t = useTranslations("failurePatterns");
-
   const cards = [
     {
-      label: t("totalPatterns"),
+      label: "Total Patterns",
       value: String(stats.total_patterns),
       icon: AlertTriangle,
       colorClass:
         stats.total_patterns > 0 ? "text-status-warning" : "text-foreground",
     },
     {
-      label: t("uniqueAgents"),
+      label: "Unique Agents",
       value: String(stats.unique_agents),
       icon: Users,
       colorClass: "text-foreground",
     },
     {
-      label: t("uniqueChecks"),
+      label: "Unique Checks",
       value: String(stats.unique_checks),
       icon: Target,
       colorClass: "text-foreground",
     },
     {
-      label: t("topCheck"),
+      label: "Top Failing Check",
       value: stats.top_check ?? "-",
       icon: Shield,
       colorClass: stats.top_check

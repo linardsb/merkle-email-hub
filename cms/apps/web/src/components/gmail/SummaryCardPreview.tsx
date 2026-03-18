@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { GmailPredictResponse } from "@/types/gmail-intelligence";
 
 const CATEGORY_STYLES: Record<string, string> = {
@@ -16,7 +15,6 @@ interface SummaryCardPreviewProps {
 }
 
 export function SummaryCardPreview({ prediction }: SummaryCardPreviewProps) {
-  const t = useTranslations("gmailIntelligence");
   const categoryStyle =
     CATEGORY_STYLES[prediction.predicted_category] ?? CATEGORY_STYLES.Forums;
 
@@ -30,7 +28,7 @@ export function SummaryCardPreview({ prediction }: SummaryCardPreviewProps) {
           {prediction.predicted_category}
         </span>
         <span className="text-[10px] text-foreground-muted">
-          {t("confidence")}: {Math.round(prediction.confidence * 100)}%
+          {"Confidence"}: {Math.round(prediction.confidence * 100)}%
         </span>
       </div>
 
@@ -45,7 +43,7 @@ export function SummaryCardPreview({ prediction }: SummaryCardPreviewProps) {
       {/* Summary text */}
       <div>
         <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-          {t("summaryText")}
+          {"AI Summary Preview"}
         </h4>
         <div className="rounded-lg bg-surface-muted p-3">
           <p className="text-sm text-foreground">{prediction.summary_text}</p>
@@ -56,7 +54,7 @@ export function SummaryCardPreview({ prediction }: SummaryCardPreviewProps) {
       {prediction.key_actions.length > 0 && (
         <div>
           <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-            {t("keyActions")}
+            {"Key Actions"}
           </h4>
           <ul className="space-y-0.5 pl-3">
             {prediction.key_actions.map((action, i) => (
@@ -72,7 +70,7 @@ export function SummaryCardPreview({ prediction }: SummaryCardPreviewProps) {
       {prediction.promotion_signals.length > 0 && (
         <div>
           <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-            {t("promotionSignals")}
+            {"Promotion Signals"}
           </h4>
           <div className="flex flex-wrap gap-1">
             {prediction.promotion_signals.map((signal, i) => (
@@ -91,7 +89,7 @@ export function SummaryCardPreview({ prediction }: SummaryCardPreviewProps) {
       {prediction.improvement_suggestions.length > 0 && (
         <div>
           <h4 className="mb-1 text-[10px] font-medium text-foreground-muted">
-            {t("suggestions")}
+            {"Improvement Suggestions"}
           </h4>
           <ol className="space-y-0.5 pl-3">
             {prediction.improvement_suggestions.map((suggestion, i) => (

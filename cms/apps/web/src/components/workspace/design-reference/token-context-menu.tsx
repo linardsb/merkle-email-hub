@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,11 +17,9 @@ interface ColorContextMenuProps {
 }
 
 export function ColorContextMenu({ hex, name, children }: ColorContextMenuProps) {
-  const t = useTranslations("workspace.designReference.copyFormats");
-
   const copyAndNotify = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value);
-    toast.success(t("copied", { format: label }));
+    toast.success(`\${label} copied to clipboard`);
   };
 
   const varName = `--${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
@@ -73,11 +70,9 @@ export function FontContextMenu({
   lineHeight,
   children,
 }: FontContextMenuProps) {
-  const t = useTranslations("workspace.designReference.copyFormats");
-
   const copyAndNotify = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value);
-    toast.success(t("copied", { format: label }));
+    toast.success(`\${label} copied to clipboard`);
   };
 
   const cssShorthand = `font: ${weight} ${size}px/${lineHeight}px '${family}'`;

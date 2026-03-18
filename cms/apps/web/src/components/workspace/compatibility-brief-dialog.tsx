@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import {
   Dialog,
@@ -50,8 +49,6 @@ function EngineBadge({ engine }: { engine: string }) {
 }
 
 function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
-  const t = useTranslations("compatibilityBrief");
-
   return (
     <AccordionItem value={client.id}>
       <AccordionTrigger className="text-sm hover:no-underline">
@@ -60,8 +57,8 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
           <EngineBadge engine={client.engine} />
           <span className="text-muted-foreground">
             {client.unsupported_count > 0
-              ? t("unsupportedCount", { count: client.unsupported_count })
-              : t("fullSupport")}
+              ? `\${client.unsupported_count} unsupported CSS properties`
+              : "Full CSS support"}
           </span>
         </div>
       </AccordionTrigger>
@@ -69,13 +66,13 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
         <div className="space-y-3 pb-2">
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
             <span>
-              {t("platform")}: <span className="text-foreground">{client.platform}</span>
+              {"Platform"}: <span className="text-foreground">{client.platform}</span>
             </span>
             <span>
-              {t("engine")}: <span className="text-foreground">{client.engine}</span>
+              {"Engine"}: <span className="text-foreground">{client.engine}</span>
             </span>
             <span>
-              {t("marketShare")}: <span className="text-foreground">{client.market_share}%</span>
+              {"Market Share"}: <span className="text-foreground">{client.market_share}%</span>
             </span>
           </div>
           {client.unsupported_properties.length > 0 && (
@@ -83,9 +80,9 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4 font-medium">{t("cssProperty")}</th>
-                    <th className="pb-2 pr-4 font-medium">{t("fallback")}</th>
-                    <th className="pb-2 font-medium">{t("technique")}</th>
+                    <th className="pb-2 pr-4 font-medium">{"CSS Property"}</th>
+                    <th className="pb-2 pr-4 font-medium">{"Fallback"}</th>
+                    <th className="pb-2 font-medium">{"Technique"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -98,7 +95,7 @@ function ClientProfileSection({ client }: { client: ClientProfileSchema }) {
                         {prop.css}
                       </td>
                       <td className="py-1.5 pr-4 text-muted-foreground">
-                        {prop.fallback ?? t("noFallback")}
+                        {prop.fallback ?? "No fallback available"}
                       </td>
                       <td className="py-1.5 text-muted-foreground">
                         {prop.technique ?? "—"}
@@ -136,7 +133,6 @@ export function CompatibilityBriefDialog({
   projectId,
   targetClients,
 }: CompatibilityBriefDialogProps) {
-  const t = useTranslations("compatibilityBrief");
   const hasClients = targetClients && targetClients.length > 0;
   const { data: brief, isLoading, error, mutate } = useCompatibilityBrief(
     hasClients ? projectId : null
@@ -156,20 +152,17 @@ export function CompatibilityBriefDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[48rem]">
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogTitle>{"Compatibility Brief"}</DialogTitle>
           {brief && (
             <DialogDescription>
-              {t("description", {
-                clientCount: brief.client_count,
-                riskyCount: brief.total_risky_properties,
-              })}
+              {`\${brief.client_count} email clients · \${brief.total_risky_properties} risky CSS properties`}
             </DialogDescription>
           )}
         </DialogHeader>
 
         {!hasClients && (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {t("noClients")}
+            {"No priority clients configured. Set priority clients in project settings to generate a focused compatibility brief, or view the full 25-client matrix."}
           </p>
         )}
 
@@ -177,7 +170,7 @@ export function CompatibilityBriefDialog({
 
         {hasClients && error && (
           <p className="py-8 text-center text-sm text-destructive">
-            {t("error")}
+            {"Failed to load compatibility brief"}
           </p>
         )}
 
@@ -185,27 +178,27 @@ export function CompatibilityBriefDialog({
           <div className="space-y-6">
             {/* Summary */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground">{t("summary")}</h3>
+              <h3 className="text-sm font-semibold text-foreground">{"Summary"}</h3>
               <div className="flex gap-3">
                 <Badge variant="secondary">
-                  {t("clientCount", { count: brief.client_count })}
+                  {`\${brief.client_count} email clients`}
                 </Badge>
                 <Badge variant="secondary">
-                  {t("riskyProperties", { count: brief.total_risky_properties })}
+                  {`\${brief.total_risky_properties} risky CSS properties`}
                 </Badge>
               </div>
 
               {brief.dark_mode_warning && (
                 <div className="flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p>{t("darkModeWarning")}</p>
+                  <p>{"Target audience includes Outlook (Word engine) — requires explicit dark mode overrides via MSO conditionals and color-scheme meta."}</p>
                 </div>
               )}
             </div>
 
             {/* Per-Client Profiles */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">{t("clientProfiles")}</h3>
+              <h3 className="text-sm font-semibold text-foreground">{"Per-Client Profiles"}</h3>
               <Accordion type="multiple" className="w-full">
                 {brief.clients.map((client) => (
                   <ClientProfileSection key={client.id} client={client} />
@@ -215,20 +208,20 @@ export function CompatibilityBriefDialog({
 
             {/* Risk Matrix */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">{t("riskMatrix")}</h3>
-              <p className="text-xs text-muted-foreground">{t("riskMatrixDescription")}</p>
+              <h3 className="text-sm font-semibold text-foreground">{"Cross-Client Risk Matrix"}</h3>
+              <p className="text-xs text-muted-foreground">{"CSS properties unsupported by 2+ priority clients (highest risk)"}</p>
               {brief.risk_matrix.length === 0 ? (
                 <p className="py-4 text-center text-sm text-muted-foreground">
-                  {t("noRisks")}
+                  {"No CSS properties are unsupported across multiple priority clients."}
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-border text-left text-muted-foreground">
-                        <th className="pb-2 pr-4 font-medium">{t("cssProperty")}</th>
-                        <th className="pb-2 pr-4 font-medium">{t("unsupportedIn")}</th>
-                        <th className="pb-2 font-medium">{t("fallback")}</th>
+                        <th className="pb-2 pr-4 font-medium">{"CSS Property"}</th>
+                        <th className="pb-2 pr-4 font-medium">{"Unsupported In"}</th>
+                        <th className="pb-2 font-medium">{"Fallback"}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -253,7 +246,7 @@ export function CompatibilityBriefDialog({
                             </div>
                           </td>
                           <td className="py-1.5 text-muted-foreground">
-                            {entry.fallback ?? t("noFallback")}
+                            {entry.fallback ?? "No fallback available"}
                           </td>
                         </tr>
                       ))}
@@ -274,11 +267,11 @@ export function CompatibilityBriefDialog({
               disabled={isRegenerating}
             >
               <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRegenerating ? "animate-spin" : ""}`} />
-              {isRegenerating ? t("regenerating") : t("regenerate")}
+              {isRegenerating ? "Regenerating..." : "Regenerate Brief"}
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            {t("close")}
+            {"Close"}
           </Button>
         </DialogFooter>
       </DialogContent>

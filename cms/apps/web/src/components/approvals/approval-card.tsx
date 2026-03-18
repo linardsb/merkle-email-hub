@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { FileText } from "lucide-react";
 import { ApprovalStatusBadge } from "./approval-status-badge";
 import type { ApprovalResponse } from "@email-hub/sdk";
@@ -11,8 +10,6 @@ interface ApprovalCardProps {
 }
 
 export function ApprovalCard({ approval, onClick }: ApprovalCardProps) {
-  const t = useTranslations("approvals");
-
   return (
     <button
       type="button"
@@ -29,14 +26,14 @@ export function ApprovalCard({ approval, onClick }: ApprovalCardProps) {
               Build #{approval.build_id}
             </p>
             <p className="text-xs text-foreground-muted">
-              {t("requestedBy", { userId: approval.requested_by_id })}
+              {`Requested by User #\${approval.requested_by_id}`}
             </p>
           </div>
         </div>
         <ApprovalStatusBadge status={approval.status} />
       </div>
       <p className="mt-3 text-xs text-foreground-muted">
-        {t("createdAt")}:{" "}
+        {"Submitted"}:{" "}
         {new Date(approval.created_at as string).toLocaleDateString()}
       </p>
     </button>

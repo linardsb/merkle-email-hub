@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { Download, Printer, FileSpreadsheet } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,8 +17,6 @@ interface ExportReportMenuProps {
 }
 
 export function ExportReportMenu({ metrics }: ExportReportMenuProps) {
-  const t = useTranslations("intelligence");
-
   const handlePrint = useCallback(() => {
     window.print();
   }, []);
@@ -78,33 +75,33 @@ export function ExportReportMenu({ metrics }: ExportReportMenuProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success(t("exportCsvSuccess"));
-  }, [metrics, t]);
+    toast.success("CSV report downloaded");
+  }, [metrics]);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="no-print">
           <Download className="mr-2 h-4 w-4" />
-          {t("exportReport")}
+          {"Export Report"}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handlePrint}>
           <Printer className="mr-2 h-4 w-4" />
           <div>
-            <p>{t("exportPdf")}</p>
+            <p>{"Print / PDF"}</p>
             <p className="text-xs text-muted-foreground">
-              {t("exportPdfDescription")}
+              {"Opens browser print dialog with PDF option"}
             </p>
           </div>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleCsvExport}>
           <FileSpreadsheet className="mr-2 h-4 w-4" />
           <div>
-            <p>{t("exportCsv")}</p>
+            <p>{"Export CSV"}</p>
             <p className="text-xs text-muted-foreground">
-              {t("exportCsvDescription")}
+              {"Download check performance and results as CSV"}
             </p>
           </div>
         </DropdownMenuItem>

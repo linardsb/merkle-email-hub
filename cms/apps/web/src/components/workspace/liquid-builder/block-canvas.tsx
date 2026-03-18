@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   DndContext,
   closestCenter,
@@ -24,7 +23,6 @@ interface BlockCanvasProps {
 }
 
 export function BlockCanvas({ blocks, onMove, onUpdate, onRemove }: BlockCanvasProps) {
-  const t = useTranslations("liquidBuilder");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -39,7 +37,7 @@ export function BlockCanvas({ blocks, onMove, onUpdate, onRemove }: BlockCanvasP
   if (blocks.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
-        <p className="text-sm text-muted-foreground">{t("canvasEmpty")}</p>
+        <p className="text-sm text-muted-foreground">{"Add blocks from the palette to start building your Liquid template."}</p>
       </div>
     );
   }

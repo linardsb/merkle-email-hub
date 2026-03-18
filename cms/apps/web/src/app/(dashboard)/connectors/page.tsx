@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { Plug, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -19,30 +18,28 @@ import type { ESPTemplate } from "@/types/esp-sync";
 
 const PLATFORM_FILTERS = ["all", "braze", "sfmc", "adobe_campaign", "taxi", "raw_html"] as const;
 
-const FILTER_LABEL_KEYS: Record<string, string> = {
-  all: "filterAll",
-  braze: "filterBraze",
-  sfmc: "filterSfmc",
-  adobe_campaign: "filterAdobeCampaign",
-  taxi: "filterTaxi",
-  raw_html: "filterRawHtml",
+const PLATFORM_LABELS: Record<string, string> = {
+  all: "All",
+  braze: "Braze",
+  sfmc: "SFMC",
+  adobe_campaign: "Adobe Campaign",
+  taxi: "Taxi",
+  raw_html: "Raw HTML",
 };
 
 const ESP_FILTERS = ["all", "braze", "sfmc", "adobe_campaign", "taxi"] as const;
 
-const ESP_FILTER_KEYS: Record<string, string> = {
-  all: "filterAll",
-  braze: "filterBraze",
-  sfmc: "filterSfmc",
-  adobe_campaign: "filterAdobe",
-  taxi: "filterTaxi",
+const ESP_LABELS: Record<string, string> = {
+  all: "All",
+  braze: "Braze",
+  sfmc: "SFMC",
+  adobe_campaign: "Adobe Campaign",
+  taxi: "Taxi",
 };
 
 type PageTab = "export-history" | "esp-sync";
 
 export default function ConnectorsPage() {
-  const tConn = useTranslations("connectors");
-  const tEsp = useTranslations("espSync");
   const { mutate: globalMutate } = useSWRConfig();
   const { records } = useExportHistory();
   const { data: espConnections } = useESPConnections();
@@ -86,17 +83,17 @@ export default function ConnectorsPage() {
     setImportingTemplateId(templateId);
     try {
       await triggerImport({ template_id: templateId });
-      toast.success(tEsp("importSuccess"));
+      toast.success("Template imported successfully");
     } catch {
-      toast.error(tEsp("importError"));
+      toast.error("Failed to import template");
     } finally {
       setImportingTemplateId(null);
     }
-  }, [selectedConnectionId, triggerImport, tEsp]);
+  }, [selectedConnectionId, triggerImport]);
 
   // Delete handler — uses authFetch directly to avoid hook URL race condition
   const handleDelete = useCallback(async (connectionId: number) => {
-    if (!confirm(tEsp("deleteConfirm"))) return;
+    if (!confirm("Delete this connection? This cannot be undone.")) return;
     try {
       const res = await authFetch(`/api/v1/connectors/sync/connections/${connectionId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
@@ -105,14 +102,14 @@ export default function ConnectorsPage() {
         undefined,
         { revalidate: true },
       );
-      toast.success(tEsp("deleteSuccess"));
+      toast.success("Connection deleted");
       if (selectedConnectionId === connectionId) {
         setSelectedConnectionId(null);
       }
     } catch {
-      toast.error(tEsp("deleteError"));
+      toast.error("Failed to delete connection");
     }
-  }, [globalMutate, tEsp, selectedConnectionId]);
+  }, [globalMutate, selectedConnectionId]);
 
   return (
     <div className="space-y-6">
@@ -120,7 +117,7 @@ export default function ConnectorsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Plug className="h-6 w-6 text-foreground" />
-          <h1 className="text-2xl font-bold text-foreground">{tConn("title")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{"Connectors & Exports"}</h1>
         </div>
         {activeTab === "esp-sync" && (
           <button
@@ -129,7 +126,7 @@ export default function ConnectorsPage() {
             className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
           >
             <Plus className="h-4 w-4" />
-            {tEsp("addConnection")}
+            {"Add Connection"}
           </button>
         )}
       </div>
@@ -145,7 +142,7 @@ export default function ConnectorsPage() {
               : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
           }`}
         >
-          {tEsp("tabExportHistory")}
+          {"Export History"}
         </button>
         <button
           type="button"
@@ -156,7 +153,7 @@ export default function ConnectorsPage() {
               : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
           }`}
         >
-          {tEsp("tabEspSync")}
+          {"ESP Sync"}
         </button>
       </div>
 
@@ -176,7 +173,7 @@ export default function ConnectorsPage() {
                     : "bg-surface-muted text-foreground-muted hover:text-foreground"
                 }`}
               >
-                {tConn(FILTER_LABEL_KEYS[filter] ?? "filterAll")}
+                {PLATFORM_LABELS[filter] ?? "All"}
               </button>
             ))}
           </div>
@@ -184,8 +181,8 @@ export default function ConnectorsPage() {
           {filteredRecords.length === 0 ? (
             <EmptyState
               icon={Plug}
-              title={tConn("empty")}
-              description={tConn("emptyDescription")}
+              title={"No exports yet"}
+              description={"Export history will appear here when you export from the workspace."}
             />
           ) : (
             <div className="animate-fade-in grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -213,7 +210,7 @@ export default function ConnectorsPage() {
                     : "bg-surface-muted text-foreground-muted hover:text-foreground"
                 }`}
               >
-                {tEsp(ESP_FILTER_KEYS[filter] ?? "filterAll")}
+                {ESP_LABELS[filter] ?? "All"}
               </button>
             ))}
           </div>
@@ -222,8 +219,8 @@ export default function ConnectorsPage() {
           {filteredConnections.length === 0 ? (
             <EmptyState
               icon={Plug}
-              title={tEsp("empty")}
-              description={tEsp("emptyDescription")}
+              title={"No ESP connections"}
+              description={"Connect to Braze, SFMC, Adobe Campaign, or Taxi to sync templates"}
               action={
                 <button
                   type="button"
@@ -231,7 +228,7 @@ export default function ConnectorsPage() {
                   className="mt-2 flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
                 >
                   <Plus className="h-4 w-4" />
-                  {tEsp("addConnection")}
+                  {"Add Connection"}
                 </button>
               }
             />

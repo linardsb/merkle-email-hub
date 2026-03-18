@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -24,7 +23,6 @@ import { useApprovals } from "@/hooks/use-approvals";
 import { CreateProjectDialog } from "@/components/dashboard/create-project-dialog";
 
 export default function DashboardPage() {
-  const t = useTranslations("dashboard");
   const [createOpen, setCreateOpen] = useState(false);
 
   // Data sources
@@ -48,7 +46,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <LayoutDashboard className="h-8 w-8 text-foreground-accent" />
           <h1 className="text-2xl font-semibold text-foreground">
-            {t("title")}
+            {"Dashboard"}
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -57,14 +55,14 @@ export default function DashboardPage() {
               href={`/projects/${firstProjectId}/workspace`}
               className="rounded-md border border-card-border bg-card-bg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
-              {t("openWorkspace")}
+              {"Open Workspace"}
             </Link>
           )}
           <Link
             href={`/components`}
             className="rounded-md border border-card-border bg-card-bg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("browseComponents")}
+            {"Browse Components"}
           </Link>
           <button
             type="button"
@@ -72,7 +70,7 @@ export default function DashboardPage() {
             className="flex items-center gap-2 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
           >
             <Plus className="h-4 w-4" />
-            {t("createProject")}
+            {"New Project"}
           </button>
         </div>
       </div>
@@ -83,7 +81,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <FolderOpen className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
-              {t("totalProjects")}
+              {"Total Projects"}
             </p>
           </div>
           <p className="mt-2 text-3xl font-semibold text-foreground">
@@ -95,7 +93,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Blocks className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
-              {t("components")}
+              {"Components"}
             </p>
           </div>
           <p className="mt-2 text-3xl font-semibold text-foreground">
@@ -107,7 +105,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
-              {t("qaPassRate")}
+              {"QA Pass Rate"}
             </p>
           </div>
           <p
@@ -129,7 +127,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
-              {t("pendingApprovals")}
+              {"Pending Approvals"}
             </p>
           </div>
           <p
@@ -150,23 +148,23 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <Target className="h-5 w-5 text-foreground-muted" />
               <h2 className="text-lg font-semibold text-foreground">
-                {t("qualityOverview")}
+                {"Quality Overview"}
               </h2>
             </div>
             <Link
               href={`/intelligence`}
               className="text-sm text-interactive hover:underline"
             >
-              {t("viewIntelligence")}
+              {"View Intelligence"}
             </Link>
           </div>
           <p className="mt-1 text-sm text-foreground-muted">
-            {t("qualityOverviewDescription")}
+            {"QA gate performance across all templates"}
           </p>
 
           {qaMetrics.totalRuns === 0 ? (
             <p className="mt-4 text-sm text-foreground-muted">
-              {t("noActivity")}
+              {"No recent activity"}
             </p>
           ) : (
             <div className="mt-4 space-y-4">
@@ -174,7 +172,7 @@ export default function DashboardPage() {
               <div className="flex gap-6">
                 <div>
                   <p className="text-xs font-medium text-foreground-muted">
-                    {t("avgScore")}
+                    {"Avg Score"}
                   </p>
                   <p className="text-xl font-semibold text-foreground">
                     {Math.round(qaMetrics.avgScore * 100)}%
@@ -182,7 +180,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-foreground-muted">
-                    {t("totalRuns")}
+                    {"Total Runs"}
                   </p>
                   <p className="text-xl font-semibold text-foreground">
                     {qaMetrics.totalRuns}
@@ -190,7 +188,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-foreground-muted">
-                    {t("overrides")}
+                    {"Overrides"}
                   </p>
                   <p className="text-xl font-semibold text-foreground">
                     {qaMetrics.overrideCount}
@@ -219,17 +217,17 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-foreground-muted" />
             <h2 className="text-lg font-semibold text-foreground">
-              {t("recentActivity")}
+              {"Recent Activity"}
             </h2>
           </div>
           <p className="mt-1 text-sm text-foreground-muted">
-            {t("recentActivityDescription")}
+            {"Latest QA runs across your projects"}
           </p>
 
           <div className="mt-4">
             {!recentQA || recentQA.items.length === 0 ? (
               <p className="py-4 text-center text-sm text-foreground-muted">
-                {t("noActivityDescription")}
+                {"Activity will appear here as you run QA checks on your templates."}
               </p>
             ) : (
               <div className="divide-y divide-border">
@@ -247,12 +245,10 @@ export default function DashboardPage() {
                         }`}
                       />
                       <span className="text-sm text-foreground">
-                        {t("qaRun")}
+                        {"QA Run"}
                       </span>
                       <span className="text-xs text-foreground-muted">
-                        {t("scoreLabel", {
-                          score: Math.round(result.overall_score * 100),
-                        })}
+                        {`Score: \${Math.round(result.overall_score * 100)}%`}
                       </span>
                     </div>
                     <span className="text-xs text-foreground-muted">
@@ -274,7 +270,7 @@ export default function DashboardPage() {
 
       {/* Projects section */}
       {projectsError ? (
-        <ErrorState message={t("error")} onRetry={() => mutateProjects()} retryLabel={t("retry")} />
+        <ErrorState message={"Failed to load dashboard data"} onRetry={() => mutateProjects()} retryLabel={"Try again"} />
       ) : isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -285,14 +281,14 @@ export default function DashboardPage() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">
-              {t("projects")}
+              {"Projects"}
             </h2>
             {(projects.total ?? 0) > 3 && (
               <Link
                 href={`/projects`}
                 className="text-sm text-interactive hover:underline"
               >
-                {t("viewAll")}
+                {"View All"}
               </Link>
             )}
           </div>
@@ -323,10 +319,10 @@ export default function DashboardPage() {
         <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
           <FolderOpen className="mx-auto h-12 w-12 text-foreground-muted" />
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            {t("noProjects")}
+            {"No projects yet"}
           </h3>
           <p className="mt-2 text-sm text-foreground-muted">
-            {t("noProjectsDescription")}
+            {"Create your first project to get started with email development."}
           </p>
         </div>
       )}

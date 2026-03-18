@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { FailurePatternResponse } from "@/types/failure-patterns";
 
 interface FailurePatternTableProps {
@@ -34,13 +33,11 @@ export function FailurePatternTable({
   patterns,
   onSelect,
 }: FailurePatternTableProps) {
-  const t = useTranslations("failurePatterns");
-
   if (patterns.length === 0) {
     return (
       <div className="rounded-lg border border-card-border bg-card-bg p-8 text-center">
         <p className="text-sm text-foreground-muted">
-          {t("noMatchingPatterns")}
+          {"No patterns match the current filters"}
         </p>
       </div>
     );
@@ -52,19 +49,19 @@ export function FailurePatternTable({
         <thead className="bg-surface-muted">
           <tr>
             <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-              {t("agent")}
+              {"Agent"}
             </th>
             <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-              {t("qaCheck")}
+              {"QA Check"}
             </th>
             <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-              {t("clients")}
+              {"Clients"}
             </th>
             <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-              {t("confidence")}
+              {"Confidence"}
             </th>
             <th className="px-4 py-3 text-left font-medium text-foreground-muted">
-              {t("lastSeen")}
+              {"Last Seen"}
             </th>
           </tr>
         </thead>

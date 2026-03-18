@@ -1,8 +1,13 @@
 "use client";
 
 import { FileText } from "lucide-react";
-import { useTranslations } from "next-intl";
 import type { KnowledgeSearchResult } from "@/types/knowledge";
+
+const DOMAIN_LABELS: Record<string, string> = {
+  css_support: "CSS Support",
+  best_practices: "Best Practices",
+  client_quirks: "Client Quirks",
+};
 
 interface Props {
   result: KnowledgeSearchResult;
@@ -13,7 +18,6 @@ export function KnowledgeSearchResultCard({
   result,
   onViewDocument,
 }: Props) {
-  const t = useTranslations("knowledge");
   const scorePercent = Math.round(result.score * 100);
 
   return (
@@ -25,7 +29,7 @@ export function KnowledgeSearchResultCard({
           {result.document_filename}
         </span>
         <span className="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-xs text-foreground-muted">
-          {t(`domainLabels.${result.domain}`, { defaultValue: result.domain })}
+          {DOMAIN_LABELS[result.domain] ?? result.domain}
         </span>
       </div>
 
@@ -44,7 +48,7 @@ export function KnowledgeSearchResultCard({
             />
           </div>
           <span className="text-xs text-foreground-muted">
-            {t("relevance", { score: scorePercent })}
+            {`\${scorePercent}% match`}
           </span>
         </div>
         <button
@@ -52,7 +56,7 @@ export function KnowledgeSearchResultCard({
           onClick={() => onViewDocument(result.document_id)}
           className="text-xs font-medium text-interactive hover:underline"
         >
-          {t("viewDocument")}
+          {"View Document"}
         </button>
       </div>
     </div>

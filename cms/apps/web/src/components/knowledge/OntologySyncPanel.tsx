@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
   Database,
@@ -31,19 +30,16 @@ const LEVEL_STYLES: Record<string, string> = {
   none: "bg-badge-danger-bg text-badge-danger-text",
 };
 
-function levelLabel(t: ReturnType<typeof useTranslations>, level: string): string {
-  const key = `level${level.charAt(0).toUpperCase()}${level.slice(1)}` as
-    | "levelFull"
-    | "levelPartial"
-    | "levelNone";
-  try {
-    return t(key);
-  } catch {
-    return t("levelUnknown");
-  }
+function levelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    full: "Full",
+    partial: "Partial",
+    none: "None",
+  };
+  return labels[level] ?? "Unknown";
 }
 
-function ChangelogRow({ entry, t }: { entry: ChangelogEntry; t: ReturnType<typeof useTranslations> }) {
+function ChangelogRow({ entry }: { entry: ChangelogEntry }) {
   const newStyle = LEVEL_STYLES[entry.new_level] ?? LEVEL_STYLES.none;
   const oldStyle = entry.old_level ? (LEVEL_STYLES[entry.old_level] ?? LEVEL_STYLES.none) : "";
 
@@ -55,38 +51,38 @@ function ChangelogRow({ entry, t }: { entry: ChangelogEntry; t: ReturnType<typeo
         {entry.old_level && (
           <>
             <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${oldStyle}`}>
-              {levelLabel(t, entry.old_level)}
+              {levelLabel(entry.old_level)}
             </span>
             <span className="text-foreground-muted">→</span>
           </>
         )}
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${newStyle}`}>
-          {levelLabel(t, entry.new_level)}
+          {levelLabel(entry.new_level)}
         </span>
       </span>
     </div>
   );
 }
 
-function SyncResults({ report, t }: { report: SyncReportResponse; t: ReturnType<typeof useTranslations> }) {
+function SyncResults({ report }: { report: SyncReportResponse }) {
   const [showChangelog, setShowChangelog] = useState(false);
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-          {t("newProperties", { count: report.new_properties })}
+          {`\${report.new_properties} new properties`}
         </span>
         <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-          {t("updatedLevels", { count: report.updated_levels })}
+          {`\${report.updated_levels} updated levels`}
         </span>
         <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-          {t("newClients", { count: report.new_clients })}
+          {`\${report.new_clients} new clients`}
         </span>
       </div>
 
       {report.dry_run && (
-        <p className="text-[10px] text-foreground-muted">{t("dryRunNote")}</p>
+        <p className="text-[10px] text-foreground-muted">{"Dry run — no changes applied"}</p>
       )}
 
       {report.changelog.length > 0 && (
@@ -96,7 +92,7 @@ function SyncResults({ report, t }: { report: SyncReportResponse; t: ReturnType<
             onClick={() => setShowChangelog((v) => !v)}
             className="flex w-full items-center justify-between text-xs font-medium text-foreground-muted"
           >
-            <span>{t("changelogTitle")} ({report.changelog.length})</span>
+            <span>{"Changelog"} ({report.changelog.length})</span>
             {showChangelog ? (
               <ChevronUp className="h-3.5 w-3.5" />
             ) : (
@@ -109,7 +105,6 @@ function SyncResults({ report, t }: { report: SyncReportResponse; t: ReturnType<
                 <ChangelogRow
                   key={`${entry.property_id}-${entry.client_id}-${i}`}
                   entry={entry}
-                  t={t}
                 />
               ))}
             </div>
@@ -118,7 +113,7 @@ function SyncResults({ report, t }: { report: SyncReportResponse; t: ReturnType<
       )}
 
       {report.changelog.length === 0 && (
-        <p className="text-xs text-foreground-muted">{t("changelogEmpty")}</p>
+        <p className="text-xs text-foreground-muted">{"No changes detected"}</p>
       )}
 
       {report.errors.length > 0 && (
@@ -133,7 +128,6 @@ function SyncResults({ report, t }: { report: SyncReportResponse; t: ReturnType<
 }
 
 export function OntologySyncPanel() {
-  const t = useTranslations("ontologySync");
   const session = useSession();
   const isAdmin = session.data?.user?.role === "admin";
 
@@ -141,8 +135,8 @@ export function OntologySyncPanel() {
   const { trigger: syncTrigger, data: syncReport, isMutating: isSyncing } = useOntologySync();
 
   const lastSyncText = status?.last_sync_at
-    ? t("lastSyncAt", { time: formatTimeAgo(status.last_sync_at) })
-    : t("neverSynced");
+    ? `Last synced \${formatTimeAgo(status.last_sync_at)}`
+    : "Never synced";
 
   return (
     <div className="rounded-lg bg-surface-muted p-3">
@@ -151,7 +145,7 @@ export function OntologySyncPanel() {
         <div className="flex items-center gap-2">
           <Database className="h-4 w-4 text-foreground-muted" />
           <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
-            {t("title")}
+            {"Ontology Sync"}
           </h3>
         </div>
         {isAdmin && (
@@ -164,12 +158,12 @@ export function OntologySyncPanel() {
             {isSyncing ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
-                {t("syncing")}
+                {"Syncing…"}
               </>
             ) : (
               <>
                 <RefreshCw className="h-3 w-3" />
-                {t("syncButton")}
+                {"Sync Now (Dry Run)"}
               </>
             )}
           </button>
@@ -188,18 +182,18 @@ export function OntologySyncPanel() {
               {lastSyncText}
             </span>
             <span className="rounded-full bg-card px-2 py-0.5 font-medium text-foreground">
-              {t("featuresSynced", { count: status.features_synced })}
+              {`\${status.features_synced} features synced`}
             </span>
             {status.error_count > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-badge-danger-bg px-2 py-0.5 text-badge-danger-text">
                 <AlertTriangle className="h-3 w-3" />
-                {t("errorCount", { count: status.error_count })}
+                {`\${status.error_count} errors`}
               </span>
             )}
           </div>
           {status.last_commit_sha && (
             <p className="font-mono text-[10px] text-foreground-muted">
-              {t("commitSha", { sha: status.last_commit_sha.slice(0, 7) })}
+              {`Commit: \${status.last_commit_sha.slice(0}`}
             </p>
           )}
         </div>
@@ -208,8 +202,8 @@ export function OntologySyncPanel() {
       {/* Sync report (after manual sync) */}
       {syncReport && (
         <div className="mt-3 border-t border-border pt-3">
-          <p className="mb-2 text-xs font-medium text-status-success">{t("syncComplete")}</p>
-          <SyncResults report={syncReport} t={t} />
+          <p className="mb-2 text-xs font-medium text-status-success">{"Sync complete"}</p>
+          <SyncResults report={syncReport} />
         </div>
       )}
     </div>

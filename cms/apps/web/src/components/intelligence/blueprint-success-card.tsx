@@ -1,12 +1,10 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Workflow, AlertTriangle, Users, ListChecks } from "lucide-react";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useFailurePatternStats } from "@/hooks/use-failure-patterns";
 
 export function BlueprintSuccessCard() {
-  const t = useTranslations("intelligence");
   const { data: stats, isLoading } = useFailurePatternStats();
 
   if (isLoading) {
@@ -23,11 +21,11 @@ export function BlueprintSuccessCard() {
       <div className="flex items-center gap-2">
         <Workflow className="h-5 w-5 text-foreground-muted" />
         <h2 className="text-lg font-semibold text-foreground">
-          {t("blueprintHealth")}
+          {"Blueprint Health"}
         </h2>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        {t("blueprintHealthDescription")}
+        {"Failure pattern summary from blueprint pipeline runs"}
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
@@ -35,7 +33,7 @@ export function BlueprintSuccessCard() {
           <AlertTriangle className="h-4 w-4 text-status-warning" />
           <div>
             <p className="text-xs text-foreground-muted">
-              {t("totalPatterns")}
+              {"Patterns"}
             </p>
             <p className="text-lg font-semibold text-foreground">
               {totalPatterns}
@@ -46,7 +44,7 @@ export function BlueprintSuccessCard() {
           <Users className="h-4 w-4 text-foreground-muted" />
           <div>
             <p className="text-xs text-foreground-muted">
-              {t("uniqueAgents")}
+              {"Agents"}
             </p>
             <p className="text-lg font-semibold text-foreground">
               {uniqueAgents}
@@ -57,7 +55,7 @@ export function BlueprintSuccessCard() {
           <ListChecks className="h-4 w-4 text-foreground-muted" />
           <div>
             <p className="text-xs text-foreground-muted">
-              {t("uniqueChecks")}
+              {"Checks"}
             </p>
             <p className="text-lg font-semibold text-foreground">
               {uniqueChecks}
@@ -65,7 +63,7 @@ export function BlueprintSuccessCard() {
           </div>
         </div>
         <div>
-          <p className="text-xs text-foreground-muted">{t("topCheck")}</p>
+          <p className="text-xs text-foreground-muted">{"Top Failing Check"}</p>
           <p className="text-sm font-medium text-foreground capitalize">
             {topCheck}
           </p>

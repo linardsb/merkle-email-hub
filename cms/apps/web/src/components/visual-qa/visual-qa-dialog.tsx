@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { X, Camera, GitCompareArrows, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCaptureScreenshots, useVisualDiff, useBaselines } from "@/hooks/use-visual-qa";
@@ -31,7 +30,6 @@ export function VisualQADialog({
   entityType,
   entityId,
 }: VisualQADialogProps) {
-  const t = useTranslations("visualQa");
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const [activeTab, setActiveTab] = useState<Tab>("screenshots");
@@ -65,13 +63,13 @@ export function VisualQADialog({
       setScreenshots(result.screenshots);
       if (result.clients_failed > 0) {
         toast.warning(
-          t("capturePartial", { failed: result.clients_failed }),
+          `\${result.clients_failed} client(s) failed to render`,
         );
       }
     } catch {
-      toast.error(t("captureError"));
+      toast.error("Failed to capture screenshots");
     }
-  }, [captureScreenshots, html, t]);
+  }, [captureScreenshots, html]);
 
   // Auto-capture on first open if no screenshots
   useEffect(() => {
@@ -100,10 +98,10 @@ export function VisualQADialog({
       // requires the entity to have stored the actual image bytes.
       // The API returns BaselineResponse with hash only, not image data.
       // TODO: When baseline GET returns image_base64, wire this up.
-      toast.info(t("noBaselineSet"));
+      toast.info("No baseline set for this client");
       setDiffResult(null);
     },
-    [screenshots, baselinesData, t],
+    [screenshots, baselinesData],
   );
 
   // Run diff when switching to diff tab with a selected client
@@ -123,9 +121,9 @@ export function VisualQADialog({
   }, [selectedClient, screenshots, handleRunDiff]);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "screenshots", label: t("tabScreenshots") },
-    { key: "diff", label: t("tabDiff") },
-    { key: "baselines", label: t("tabBaselines") },
+    { key: "screenshots", label: "Screenshots" },
+    { key: "diff", label: "Diff Analysis" },
+    { key: "baselines", label: "Baselines" },
   ];
 
   const selectedScreenshot = screenshots.find(
@@ -142,7 +140,7 @@ export function VisualQADialog({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">
-            {t("dialogTitle")}
+            {"Visual QA Results"}
           </h2>
           <button
             type="button"
@@ -190,7 +188,7 @@ export function VisualQADialog({
             <div>
               {!selectedScreenshot ? (
                 <p className="py-12 text-center text-sm text-foreground-muted">
-                  {t("selectClientForDiff")}
+                  {"Select a client from the Screenshots tab to compare"}
                 </p>
               ) : diffResult ? (
                 <DiffOverlay
@@ -204,12 +202,12 @@ export function VisualQADialog({
               ) : isDiffing ? (
                 <div className="flex items-center justify-center gap-2 py-12 text-foreground-muted">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-sm">{t("runningDiff")}</span>
+                  <span className="text-sm">{"Running diff…"}</span>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm text-foreground-muted">
-                    {t("noBaselineSet")}
+                    {"No baseline set for this client"}
                   </p>
                   {/* Show the screenshot even without diff */}
                   <div className="overflow-hidden rounded-lg border border-border">
@@ -246,7 +244,7 @@ export function VisualQADialog({
             ) : (
               <Camera className="h-4 w-4" />
             )}
-            {t("captureScreenshots")}
+            {"Capture Screenshots"}
           </button>
           <button
             type="button"
@@ -259,7 +257,7 @@ export function VisualQADialog({
             ) : (
               <GitCompareArrows className="h-4 w-4" />
             )}
-            {t("runDiffAll")}
+            {"Run Diff All"}
           </button>
         </div>
       </div>

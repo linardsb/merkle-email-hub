@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 import type { ForbiddenPattern } from "@/types/brand";
 
@@ -16,7 +15,6 @@ export function BrandForbiddenPatterns({
   onChange,
   disabled,
 }: BrandForbiddenPatternsProps) {
-  const t = useTranslations("brand");
   const [newPattern, setNewPattern] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
@@ -43,7 +41,7 @@ export function BrandForbiddenPatterns({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{t("forbiddenTitle")}</h3>
+      <h3 className="text-sm font-medium text-foreground">{"Forbidden Patterns"}</h3>
 
       {/* Existing patterns */}
       <div className="space-y-2">
@@ -76,7 +74,7 @@ export function BrandForbiddenPatterns({
             type="text"
             value={newPattern}
             onChange={(e) => setNewPattern(e.target.value)}
-            placeholder={t("forbiddenPatternPlaceholder")}
+            placeholder={"Regex pattern (e.g., font-family:\s*Comic Sans)"}
             className={inputClass}
           />
           <div className="flex items-end gap-2">
@@ -85,7 +83,7 @@ export function BrandForbiddenPatterns({
                 type="text"
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
-                placeholder={t("forbiddenDescPlaceholder")}
+                placeholder={"Description of why this is forbidden"}
                 className={inputClass}
               />
             </div>
@@ -96,7 +94,7 @@ export function BrandForbiddenPatterns({
               className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
             >
               <Plus className="h-3 w-3" />
-              {t("addPattern")}
+              {"Add"}
             </button>
           </div>
         </div>

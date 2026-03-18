@@ -1,14 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Package, Camera, Sparkles } from "lucide-react";
 import type { StylePreset } from "@/types/image-gen";
 import type { LucideIcon } from "lucide-react";
 
-const PRESETS: { value: StylePreset; icon: LucideIcon; labelKey: string }[] = [
-  { value: "product", icon: Package, labelKey: "styleProduct" },
-  { value: "lifestyle", icon: Camera, labelKey: "styleLifestyle" },
-  { value: "abstract", icon: Sparkles, labelKey: "styleAbstract" },
+const PRESETS: { value: StylePreset; icon: LucideIcon; label: string }[] = [
+  { value: "product", icon: Package, label: "Product" },
+  { value: "lifestyle", icon: Camera, label: "Lifestyle" },
+  { value: "abstract", icon: Sparkles, label: "Abstract" },
 ];
 
 interface StylePresetGridProps {
@@ -17,11 +16,9 @@ interface StylePresetGridProps {
 }
 
 export function StylePresetGrid({ selected, onSelect }: StylePresetGridProps) {
-  const t = useTranslations("imageGen");
-
   return (
     <div className="grid grid-cols-3 gap-2">
-      {PRESETS.map(({ value, icon: Icon, labelKey }) => (
+      {PRESETS.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
           type="button"
@@ -33,7 +30,7 @@ export function StylePresetGrid({ selected, onSelect }: StylePresetGridProps) {
           }`}
         >
           <Icon className="h-5 w-5" />
-          {t(labelKey)}
+          {label}
         </button>
       ))}
     </div>

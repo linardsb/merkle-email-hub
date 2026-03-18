@@ -2,21 +2,19 @@
 
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
 
 export default function LoginPage() {
-  const t = useTranslations("login");
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const [isPending, startTransition] = useTransition();
 
   const loginSchema = z.object({
-    username: z.string().min(1, t("usernameRequired")),
-    password: z.string().min(1, t("passwordRequired")),
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(1, "Password is required"),
   });
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -46,7 +44,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(t("error"));
+        setError("Invalid username or password");
       } else {
         router.push("/");
         router.refresh();
@@ -58,7 +56,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-surface">
       <div className="w-full max-w-[24rem] rounded-lg border border-border bg-surface-elevated p-8 shadow-sm">
         <h1 className="mb-6 text-center text-2xl font-semibold text-foreground">
-          {t("title")}
+          {"Sign In"}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -73,7 +71,7 @@ export default function LoginPage() {
               htmlFor="username"
               className="text-sm font-medium text-foreground"
             >
-              {t("username")}
+              {"Username"}
             </label>
             <input
               id="username"
@@ -82,7 +80,7 @@ export default function LoginPage() {
               autoComplete="username"
               onChange={() => fieldErrors.username && setFieldErrors(prev => ({ ...prev, username: undefined }))}
               className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
-              placeholder={t("usernamePlaceholder")}
+              placeholder={"Enter your username"}
             />
             {fieldErrors.username && (
               <p className="text-xs text-status-danger">{fieldErrors.username}</p>
@@ -94,7 +92,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="text-sm font-medium text-foreground"
             >
-              {t("password")}
+              {"Password"}
             </label>
             <input
               id="password"
@@ -103,7 +101,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               onChange={() => fieldErrors.password && setFieldErrors(prev => ({ ...prev, password: undefined }))}
               className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
-              placeholder={t("passwordPlaceholder")}
+              placeholder={"Enter your password"}
             />
             {fieldErrors.password && (
               <p className="text-xs text-status-danger">{fieldErrors.password}</p>
@@ -118,10 +116,10 @@ export default function LoginPage() {
             {isPending ? (
               <span className="flex items-center justify-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("signingIn")}
+                {"Signing in..."}
               </span>
             ) : (
-              t("signIn")
+              "Sign In"
             )}
           </button>
 

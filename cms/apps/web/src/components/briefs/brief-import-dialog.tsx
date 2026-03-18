@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +21,6 @@ interface BriefImportDialogProps {
 }
 
 export function BriefImportDialog({ connection, open, onOpenChange }: BriefImportDialogProps) {
-  const t = useTranslations("briefs");
   const { trigger, isMutating } = useImportBrief();
   const { mutate } = useSWRConfig();
   const { data: items } = useBriefItems(open && connection ? connection.id : null);
@@ -63,10 +61,10 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
         undefined,
         { revalidate: true },
       );
-      toast.success(t("importSuccess"));
+      toast.success("Project created from briefs");
       onOpenChange(false);
     } catch {
-      toast.error(t("importError"));
+      toast.error("Failed to import briefs");
     }
   };
 
@@ -77,22 +75,22 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
-          <DialogTitle>{t("importTitle")}</DialogTitle>
-          <DialogDescription>{t("importDescription")}</DialogDescription>
+          <DialogTitle>{"Import Briefs to Project"}</DialogTitle>
+          <DialogDescription>{"Select brief items and create a new project from them."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Project name */}
           <div>
             <label htmlFor="import-project-name" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("importProjectName")}
+              {"Project Name"}
             </label>
             <input
               id="import-project-name"
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              placeholder={t("importProjectNamePlaceholder")}
+              placeholder={"e.g., Spring Sale Campaign"}
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -101,7 +99,7 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
 
           {/* Brief items selection */}
           <div>
-            <p className="mb-1.5 text-sm font-medium text-foreground">{t("importSelectBriefs")}</p>
+            <p className="mb-1.5 text-sm font-medium text-foreground">{"Select briefs to import"}</p>
             <div className="max-h-48 space-y-1 overflow-y-auto rounded border border-card-border p-2">
               {items?.map((item) => (
                 <label
@@ -120,7 +118,7 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
                   <span className="truncate">{item.external_id} — {item.title}</span>
                 </label>
               )) ?? (
-                <p className="py-2 text-center text-xs text-foreground-muted">{t("itemsEmpty")}</p>
+                <p className="py-2 text-center text-xs text-foreground-muted">{"No brief items"}</p>
               )}
             </div>
           </div>
@@ -133,7 +131,7 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("connectCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -144,10 +142,10 @@ export function BriefImportDialog({ connection, open, onOpenChange }: BriefImpor
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("importSubmitting")}
+                {"Creating…"}
               </span>
             ) : (
-              t("importSubmit")
+              "Create Project"
             )}
           </button>
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   FlaskConical,
   ChevronDown,
@@ -24,7 +23,6 @@ const CONFIG_DISPLAY_KEYS = [
 ] as const;
 
 function FailureRow({ failure }: { failure: PropertyFailureSchema }) {
-  const t = useTranslations("propertyTest");
   const [expanded, setExpanded] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
@@ -40,7 +38,7 @@ function FailureRow({ failure }: { failure: PropertyFailureSchema }) {
             {failure.invariant_name}
           </span>
           <span className="rounded-full bg-badge-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-badge-danger-text">
-            {t("violationCount", { count: failure.violations.length })}
+            {`\${failure.violations.length} violations`}
           </span>
         </div>
         {expanded ? (
@@ -68,7 +66,7 @@ function FailureRow({ failure }: { failure: PropertyFailureSchema }) {
             onClick={() => setShowConfig((v) => !v)}
             className="text-[10px] font-medium text-foreground-muted underline-offset-2 hover:underline"
           >
-            {showConfig ? t("hideConfig") : t("showConfig")}
+            {showConfig ? "Hide Config" : "Show Config"}
           </button>
 
           {showConfig && (
@@ -92,7 +90,6 @@ function FailureRow({ failure }: { failure: PropertyFailureSchema }) {
 }
 
 export function PropertyTestPanel() {
-  const t = useTranslations("propertyTest");
   const { trigger, data, isMutating } = usePropertyTest();
   const [numCases, setNumCases] = useState(100);
 
@@ -102,7 +99,7 @@ export function PropertyTestPanel() {
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-foreground-muted" />
           <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
-            {t("title")}
+            {"Property Testing"}
           </h3>
         </div>
         <div className="flex items-center gap-1.5">
@@ -127,17 +124,17 @@ export function PropertyTestPanel() {
             {isMutating ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
-                {t("running", { count: numCases })}
+                {`Testing \${numCases} cases…`}
               </>
             ) : (
-              t("runButton")
+              "Run Property Test"
             )}
           </button>
         </div>
       </div>
 
       {!data && !isMutating && (
-        <p className="text-xs text-foreground-muted">{t("noResults")}</p>
+        <p className="text-xs text-foreground-muted">{"Run property tests to verify email invariants hold across random configurations"}</p>
       )}
 
       {data && (
@@ -145,13 +142,9 @@ export function PropertyTestPanel() {
           {/* Pass/fail gauge */}
           <div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-foreground-muted">{t("casesLabel")}</span>
+              <span className="text-foreground-muted">{"Cases"}</span>
               <span className="font-medium text-foreground">
-                {t("passRate", {
-                  passed: data.passed,
-                  total: data.total_cases,
-                  percent: Math.round((data.passed / data.total_cases) * 100),
-                })}
+                {`\${data.passed} of \${data.total_cases} passed (\${Math.round((data.passed / data.total_cases) * 100)}%)`}
               </span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -165,14 +158,14 @@ export function PropertyTestPanel() {
               />
             </div>
             <p className="mt-1 font-mono text-[10px] text-foreground-muted">
-              {t("seedLabel", { seed: data.seed })}
+              {`Seed: \${data.seed}`}
             </p>
           </div>
 
           {/* Invariant chips */}
           <div>
             <h4 className="mb-1 text-xs font-medium text-foreground-muted">
-              {t("invariantsTested")}
+              {"Invariants Tested"}
             </h4>
             <div className="flex flex-wrap gap-1">
               {data.invariants_tested.map((inv: string) => {
@@ -199,12 +192,12 @@ export function PropertyTestPanel() {
           {/* Failures */}
           {data.failed === 0 ? (
             <p className="text-xs font-medium text-status-success">
-              {t("allPassed")}
+              {"All invariants passed"}
             </p>
           ) : (
             <div className="space-y-1.5">
               <h4 className="text-xs font-medium text-foreground-muted">
-                {t("failures")}
+                {"Failures"}
               </h4>
               {data.failures.map((f: PropertyFailureSchema, i: number) => (
                 <FailureRow key={`${f.invariant_name}-${i}`} failure={f} />

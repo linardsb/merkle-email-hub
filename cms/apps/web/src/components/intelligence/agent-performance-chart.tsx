@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import { Bot } from "lucide-react";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useFailurePatterns } from "@/hooks/use-failure-patterns";
@@ -14,7 +13,6 @@ function severityColorClass(count: number, max: number): string {
 }
 
 export function AgentPerformanceChart() {
-  const t = useTranslations("intelligence");
   const { data, isLoading } = useFailurePatterns({
     page: 1,
     pageSize: 100,
@@ -46,11 +44,11 @@ export function AgentPerformanceChart() {
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-foreground-muted" />
           <h2 className="text-lg font-semibold text-foreground">
-            {t("agentPerformance")}
+            {"Agent Performance"}
           </h2>
         </div>
         <p className="mt-2 text-sm text-foreground-muted">
-          {t("agentPerformanceNoData")}
+          {"No agent performance data yet. Run blueprints to see agent metrics."}
         </p>
       </div>
     );
@@ -61,11 +59,11 @@ export function AgentPerformanceChart() {
       <div className="flex items-center gap-2">
         <Bot className="h-5 w-5 text-foreground-muted" />
         <h2 className="text-lg font-semibold text-foreground">
-          {t("agentPerformance")}
+          {"Agent Performance"}
         </h2>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        {t("agentPerformanceDescription")}
+        {"Failure pattern frequency per agent from blueprint runs"}
       </p>
       <div className="mt-4 space-y-3">
         {agentStats.map((agent) => {
@@ -78,7 +76,7 @@ export function AgentPerformanceChart() {
                   {agent.name.replace(/_/g, " ")}
                 </span>
                 <span className="text-xs text-foreground-muted">
-                  {agent.count} {t("agentPatterns")}
+                  {agent.count} {"patterns"}
                 </span>
               </div>
               <div className="mt-1 h-2 w-full rounded-full bg-surface-muted">

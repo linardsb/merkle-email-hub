@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { AssignBlock } from "@/types/liquid-builder";
 
 interface BlockAssignProps {
@@ -9,8 +8,6 @@ interface BlockAssignProps {
 }
 
 export function BlockAssign({ block, onUpdate }: BlockAssignProps) {
-  const t = useTranslations("liquidBuilder");
-
   return (
     <div className="flex items-center gap-2">
       <input
@@ -26,7 +23,7 @@ export function BlockAssign({ block, onUpdate }: BlockAssignProps) {
         value={block.expression}
         onChange={(e) => onUpdate({ expression: e.target.value })}
         className="flex-1 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
-        placeholder={t("assignExpressionPlaceholder")}
+        placeholder={"'value' or expression"}
       />
     </div>
   );

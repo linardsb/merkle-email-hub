@@ -1,30 +1,32 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { ModernizationStep } from "@/types/outlook";
+
+const DEP_TYPE_LABELS: Record<string, string> = {
+  vml_shape: "VML Shape",
+  ghost_table: "Ghost Table",
+  mso_conditional: "MSO Conditional",
+  mso_css: "MSO CSS",
+  dpi_image: "DPI Image",
+  external_class: "External Class",
+  word_wrap_hack: "Word Wrap Hack",
+};
 
 interface MigrationTimelineProps {
   plan: ModernizationStep[];
 }
 
 export function MigrationTimeline({ plan }: MigrationTimelineProps) {
-  const t = useTranslations("outlookAdvisor");
-
   if (plan.length === 0) {
     return (
-      <p className="text-xs text-foreground-muted">{t("noMigrationSteps")}</p>
+      <p className="text-xs text-foreground-muted">{"No modernization steps needed"}</p>
     );
   }
 
   return (
     <div className="relative ml-3 border-l-2 border-border pl-4 space-y-3">
       {plan.map((step, i) => {
-        let depKey: string;
-        try {
-          depKey = t(`depTypes.${step.dependency_type}`);
-        } catch {
-          depKey = step.dependency_type;
-        }
+        const depKey = DEP_TYPE_LABELS[step.dependency_type] ?? step.dependency_type;
 
         return (
           <div key={`${step.dependency_type}-${i}`} className="relative">
@@ -42,10 +44,7 @@ export function MigrationTimeline({ plan }: MigrationTimelineProps) {
                   {depKey}
                 </span>
                 <span className="text-[10px] text-foreground-muted">
-                  {t("stepRemovals", {
-                    removals: step.removals,
-                    savings: step.byte_savings,
-                  })}
+                  {`\${step.removals} removals · \${step.byte_savings} bytes saved`}
                 </span>
               </div>
             </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Trophy,
   ChevronDown,
@@ -11,7 +10,7 @@ import {
 import { useCompetitiveReport, useEmailClients } from "@/hooks/use-ontology";
 import type { CapabilityFeasibility } from "@/types/ontology";
 
-function CapabilityRow({ cap, t }: { cap: CapabilityFeasibility; t: ReturnType<typeof useTranslations> }) {
+function CapabilityRow({ cap }: { cap: CapabilityFeasibility }) {
   const coveragePercent = Math.round(cap.audience_coverage * 100);
 
   return (
@@ -25,7 +24,7 @@ function CapabilityRow({ cap, t }: { cap: CapabilityFeasibility; t: ReturnType<t
         </div>
         {cap.hub_supports && cap.hub_agent && (
           <span className="rounded bg-badge-success-bg px-1.5 py-0.5 text-[10px] font-medium text-badge-success-text">
-            {t("hubAgent", { agent: cap.hub_agent })}
+            {`Agent: \${cap.hub_agent}`}
           </span>
         )}
       </div>
@@ -37,12 +36,12 @@ function CapabilityRow({ cap, t }: { cap: CapabilityFeasibility; t: ReturnType<t
           />
         </div>
         <span className="text-[10px] text-foreground-muted">
-          {t("audienceCoverage", { coverage: coveragePercent })}
+          {`\${coveragePercent}% audience coverage`}
         </span>
       </div>
       {cap.blocking_clients.length > 0 && (
         <p className="mt-1 text-[10px] text-foreground-muted">
-          {t("blockingClients", { clients: cap.blocking_clients.join(", ") })}
+          {`Blocked by: \${cap.blocking_clients.join("}`}
         </p>
       )}
     </div>
@@ -53,12 +52,10 @@ function CapabilitySection({
   title,
   items,
   badgeStyle,
-  t,
 }: {
   title: string;
   items: CapabilityFeasibility[];
   badgeStyle: string;
-  t: ReturnType<typeof useTranslations>;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -86,7 +83,7 @@ function CapabilitySection({
       {expanded && (
         <div className="mt-1.5 max-h-48 space-y-1 overflow-y-auto">
           {items.map((cap) => (
-            <CapabilityRow key={cap.id} cap={cap} t={t} />
+            <CapabilityRow key={cap.id} cap={cap} />
           ))}
         </div>
       )}
@@ -95,7 +92,6 @@ function CapabilitySection({
 }
 
 export function CompetitiveReportPanel() {
-  const t = useTranslations("ontologySync");
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -117,7 +113,7 @@ export function CompetitiveReportPanel() {
         <div className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-foreground-muted" />
           <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
-            {t("competitiveTitle")}
+            {"Competitive Intelligence"}
           </h3>
         </div>
       </div>
@@ -130,7 +126,7 @@ export function CompetitiveReportPanel() {
             onClick={() => setFilterOpen((v) => !v)}
             className="flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"
           >
-            {t("filterByClients")}
+            {"Filter by audience…"}
             {selectedClientIds.length > 0 && (
               <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                 {selectedClientIds.length}
@@ -174,26 +170,23 @@ export function CompetitiveReportPanel() {
       {report && (
         <div className="space-y-3">
           <p className="text-xs text-foreground-muted">
-            {t("totalCapabilities", { count: report.total_capabilities })}
+            {`\${report.total_capabilities} capabilities analyzed`}
           </p>
 
           <CapabilitySection
-            title={t("hubAdvantages")}
+            title={"Hub Advantages"}
             items={report.hub_advantages}
             badgeStyle="bg-badge-success-bg text-badge-success-text"
-            t={t}
           />
           <CapabilitySection
-            title={t("gaps")}
+            title={"Gaps"}
             items={report.gaps}
             badgeStyle="bg-badge-danger-bg text-badge-danger-text"
-            t={t}
           />
           <CapabilitySection
-            title={t("opportunities")}
+            title={"Opportunities"}
             items={report.opportunities}
             badgeStyle="bg-badge-warning-bg text-badge-warning-text"
-            t={t}
           />
         </div>
       )}

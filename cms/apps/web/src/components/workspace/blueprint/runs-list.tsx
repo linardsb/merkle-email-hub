@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Zap,
   CheckCircle2,
@@ -18,13 +17,13 @@ import { formatDuration } from "./shared";
 import { RunDetailDialog } from "./run-detail-dialog";
 import type { BlueprintRunRecord, BlueprintRunsFilter } from "@/types/blueprint-runs";
 
-const FILTER_OPTIONS: { value: BlueprintRunsFilter; labelKey: string }[] = [
-  { value: "all", labelKey: "filterAll" },
-  { value: "completed", labelKey: "filterCompleted" },
-  { value: "completed_with_warnings", labelKey: "filterWarnings" },
-  { value: "needs_review", labelKey: "filterNeedsReview" },
-  { value: "failed", labelKey: "filterFailed" },
-  { value: "cost_cap_exceeded", labelKey: "filterCostCap" },
+const FILTER_OPTIONS: { value: BlueprintRunsFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "completed", label: "Completed" },
+  { value: "completed_with_warnings", label: "Warnings" },
+  { value: "needs_review", label: "Needs Review" },
+  { value: "failed", label: "Failed" },
+  { value: "cost_cap_exceeded", label: "Cost Cap" },
 ];
 
 const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -52,7 +51,6 @@ interface BlueprintRunsListProps {
 }
 
 export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: BlueprintRunsListProps) {
-  const t = useTranslations("blueprintRuns");
   const [filter, setFilter] = useState<BlueprintRunsFilter>("all");
   const [selectedRun, setSelectedRun] = useState<BlueprintRunRecord | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -79,7 +77,7 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
             }`}
             onClick={() => setFilter(opt.value)}
           >
-            {t(opt.labelKey)}
+            {opt.label}
           </Button>
         ))}
       </div>
@@ -95,7 +93,7 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
         {!isLoading && runs.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
             <Zap className="h-5 w-5" />
-            <p className="text-sm">{t("empty")}</p>
+            <p className="text-sm">{"No blueprint runs yet. Run a pipeline to see history here."}</p>
           </div>
         )}
 
@@ -105,7 +103,7 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
               const Icon = STATUS_ICON[run.status] ?? Clock;
               const colorClass = STATUS_COLOR[run.status] ?? "text-muted-foreground";
               const date = new Date(run.created_at);
-              const timeAgo = formatRelativeTime(date, t);
+              const timeAgo = formatRelativeTime(date);
               const isResumable = (run.status === "failed" || run.status === "cost_cap_exceeded") && run.checkpoint_count > 0;
 
               return (
@@ -125,20 +123,20 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
                       <span>·</span>
                       <span>{formatDuration(run.duration_ms)}</span>
                       <span>·</span>
-                      <span>{t("tokenCount", { count: run.total_tokens.toLocaleString() })}</span>
+                      <span>{`\${run.total_tokens.toLocaleString()} tokens`}</span>
                       {run.qa_passed === true && (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {t("qaBadgePass")}
+                          {"QA Pass"}
                         </Badge>
                       )}
                       {run.qa_passed === false && (
                         <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                          {t("qaBadgeFail")}
+                          {"QA Fail"}
                         </Badge>
                       )}
                       {run.resumed_from && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
-                          {t("resumedBadge")}
+                          {"Resumed"}
                         </Badge>
                       )}
                     </div>
@@ -154,7 +152,7 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
                       }}
                     >
                       <RotateCcw className="mr-1 h-3 w-3" />
-                      {t("resume")}
+                      {"Resume"}
                     </Button>
                   )}
                 </button>
@@ -175,16 +173,16 @@ export function BlueprintRunsList({ projectId, onApplyResult, onResumeRun }: Blu
   );
 }
 
-function formatRelativeTime(date: Date, t: (key: string, values?: Record<string, string | number>) => string): string {
+function formatRelativeTime(date: Date): string {
   const now = Date.now();
   const diffMs = now - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return t("justNow");
-  if (diffMin < 60) return t("minutesAgo", { count: diffMin });
-  if (diffHr < 24) return t("hoursAgo", { count: diffHr });
-  if (diffDay < 7) return t("daysAgo", { count: diffDay });
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `\${diffMin}m ago`;
+  if (diffHr < 24) return `\${diffHr}h ago`;
+  if (diffDay < 7) return `\${diffDay}d ago`;
   return date.toLocaleDateString();
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Zap, RotateCcw } from "lucide-react";
 import {
   Dialog,
@@ -36,9 +35,6 @@ export function RunDetailDialog({
   onApplyResult,
   onResumeRun,
 }: RunDetailDialogProps) {
-  const t = useTranslations("blueprintRuns");
-  const tRun = useTranslations("blueprintRun");
-
   if (!run) return null;
 
   const runData = run.run_data;
@@ -51,7 +47,7 @@ export function RunDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            {t("detailTitle")}
+            {"Blueprint Run Details"}
           </DialogTitle>
           <DialogDescription>
             {run.brief_excerpt}
@@ -63,14 +59,14 @@ export function RunDetailDialog({
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>{formattedDate}</span>
             <span>·</span>
-            <span>{t("durationLabel", { value: (run.duration_ms / 1000).toFixed(1) })}</span>
+            <span>{`\${(run.duration_ms / 1000).toFixed(1)}s`}</span>
             <span>·</span>
-            <span>{t("tokenCount", { count: run.total_tokens.toLocaleString() })}</span>
+            <span>{`\${run.total_tokens.toLocaleString()} tokens`}</span>
             {run.resumed_from && (
               <>
                 <span>·</span>
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
-                  {t("resumedFrom", { runId: run.resumed_from.slice(0, 8) })}
+                  {`Resumed from \${run.resumed_from.slice(0}`}
                 </Badge>
               </>
             )}
@@ -83,7 +79,7 @@ export function RunDetailDialog({
               {runData.audience_summary && (
                 <div className="rounded-lg border border-border bg-muted/50 p-3">
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                    {tRun("audienceSummary")}
+                    {"Audience Summary"}
                   </p>
                   <p className="mt-1 text-xs text-foreground">{runData.audience_summary}</p>
                 </div>
@@ -94,7 +90,7 @@ export function RunDetailDialog({
               {(runData.skipped_nodes ?? []).length > 0 && (
                 <div className="rounded-lg border border-border bg-muted/50 p-3">
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                    {tRun("skippedNodes")}
+                    {"Skipped Nodes"}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {(runData.skipped_nodes ?? []).map((node) => (
@@ -116,13 +112,13 @@ export function RunDetailDialog({
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("noRunData")}</p>
+            <p className="text-sm text-muted-foreground">{"Full run data is not available for this run."}</p>
           )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {tRun("close")}
+            {"Close"}
           </Button>
           {isResumable && onResumeRun && (
             <Button
@@ -130,12 +126,12 @@ export function RunDetailDialog({
               onClick={() => { onResumeRun(run); onOpenChange(false); }}
             >
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-              {tRun("resumeRun")}
+              {"Resume Run"}
             </Button>
           )}
           {runData?.html && onApplyResult && (
             <Button onClick={() => { onApplyResult(runData.html); onOpenChange(false); }}>
-              {tRun("applyResult")}
+              {"Apply Result"}
             </Button>
           )}
         </DialogFooter>

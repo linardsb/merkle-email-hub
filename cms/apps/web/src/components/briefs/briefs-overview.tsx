@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useTranslations } from "next-intl";
 import { Search, Building2 } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,18 +11,27 @@ import { useAllBriefItems, useBriefConnections } from "@/hooks/use-briefs";
 import type { BriefPlatform, BriefItemStatus } from "@/types/briefs";
 import { ClipboardList } from "lucide-react";
 
+const PLATFORM_LABELS: Record<string, string> = {
+  jira: "Jira",
+  asana: "Asana",
+  monday: "Monday.com",
+  clickup: "ClickUp",
+  trello: "Trello",
+  notion: "Notion",
+  wrike: "Wrike",
+  basecamp: "Basecamp",
+};
+
 const STATUS_FILTERS: BriefItemStatus[] = ["open", "in_progress", "done", "cancelled"];
 
-const STATUS_LABEL_KEYS: Record<BriefItemStatus, string> = {
-  open: "itemStatusOpen",
-  in_progress: "itemStatusInProgress",
-  done: "itemStatusDone",
-  cancelled: "itemStatusCancelled",
+const STATUS_LABELS: Record<BriefItemStatus, string> = {
+  open: "Open",
+  in_progress: "In Progress",
+  done: "Done",
+  cancelled: "Cancelled",
 };
 
 export function BriefsOverview() {
-  const t = useTranslations("briefs");
-
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState<BriefPlatform | undefined>();
@@ -78,9 +86,9 @@ export function BriefsOverview() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t("searchBriefs")}
+          placeholder={"Search briefs..."}
           className="w-full rounded-md border border-input-border bg-input-bg py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
-          aria-label={t("searchBriefs")}
+          aria-label={"Search briefs..."}
         />
       </div>
 
@@ -93,7 +101,7 @@ export function BriefsOverview() {
             onClick={() => setClientFilter(undefined)}
             className={`${pillBase} ${!clientFilter ? pillActive : pillInactive}`}
           >
-            {t("filterAll")}
+            {"All"}
           </button>
           {clientNames.map((name) => (
             <button
@@ -116,7 +124,7 @@ export function BriefsOverview() {
           onClick={() => setPlatformFilter(undefined)}
           className={`${pillBase} ${!platformFilter ? pillActive : pillInactive}`}
         >
-          {t("filterAll")}
+          {"All"}
         </button>
         {connectedPlatforms.map((platform) => (
           <button
@@ -125,7 +133,7 @@ export function BriefsOverview() {
             onClick={() => setPlatformFilter(platformFilter === platform ? undefined : platform)}
             className={`${pillBase} ${platformFilter === platform ? pillActive : pillInactive}`}
           >
-            {t(`platform${platform.charAt(0).toUpperCase()}${platform.slice(1)}` as Parameters<typeof t>[0])}
+            {PLATFORM_LABELS[platform] ?? platform}
           </button>
         ))}
 
@@ -142,7 +150,7 @@ export function BriefsOverview() {
             onClick={() => setStatusFilter(statusFilter === status ? undefined : status)}
             className={`${pillBase} ${statusFilter === status ? pillActive : pillInactive}`}
           >
-            {t(STATUS_LABEL_KEYS[status])}
+            {STATUS_LABELS[status]}
           </button>
         ))}
       </div>
@@ -156,20 +164,20 @@ export function BriefsOverview() {
         </div>
       ) : error ? (
         <ErrorState
-          message={t("allBriefsError")}
+          message={"Failed to load briefs"}
           onRetry={() => mutate()}
-          retryLabel={t("retry")}
+          retryLabel={"Try again"}
         />
       ) : filteredItems.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title={t("allBriefsEmpty")}
-          description={t("allBriefsEmptyDescription")}
+          title={"No briefs yet"}
+          description={"Connect a platform to start syncing campaign briefs"}
         />
       ) : (
         <>
           <p className="text-sm text-foreground-muted">
-            {t("briefCount", { count: filteredItems.length })}
+            {`\${filteredItems.length} briefs`}
           </p>
           <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => (

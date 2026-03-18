@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Search, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -28,21 +27,19 @@ function ColorSwatch({
   count,
   editor,
   hasSelection,
-  t,
 }: {
   color: DesignColor;
   count: number;
   editor: EditorBridge;
   hasSelection: boolean;
-  t: (key: string) => string;
 }) {
   const handleClick = () => {
     if (hasSelection) {
       editor.replaceInSelection(color.hex);
-      toast.success(t("replacedInSelection"));
+      toast.success("Replaced in selection");
     } else {
       editor.insertAtCursor(`color: ${color.hex};`);
-      toast.success(t("insertedAtCursor"));
+      toast.success("Inserted at cursor");
     }
   };
 
@@ -88,7 +85,7 @@ function ColorSwatch({
           type="button"
           onClick={handleFind}
           className="absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center bg-surface text-foreground-muted hover:text-foreground group-hover:flex"
-          title={t("findInCode")}
+          title={"Find in code"}
         >
           <Search className="h-3 w-3" />
         </button>
@@ -100,15 +97,13 @@ function ColorSwatch({
 function FontRow({
   typo,
   editor,
-  t,
 }: {
   typo: DesignTypography;
   editor: EditorBridge;
-  t: (key: string) => string;
 }) {
   const handleClick = () => {
     editor.insertAtCursor(`font-family: '${typo.family}';`);
-    toast.success(t("insertedAtCursor"));
+    toast.success("Inserted at cursor");
   };
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -154,8 +149,6 @@ function FontRow({
 }
 
 export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: TokenDisplayProps) {
-  const t = useTranslations("workspace.designReference");
-
   const colorCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const color of tokens.colors) {
@@ -178,7 +171,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
       {tokens.colors.length > 0 && (
         <section>
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-            {t("colors")}
+            {"Colors"}
           </h4>
           <div className="grid grid-cols-4 gap-3">
             {tokens.colors.map((color) => (
@@ -188,7 +181,6 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                 count={colorCounts.get(color.hex) ?? 0}
                 editor={editor}
                 hasSelection={hasSelection}
-                t={t}
               />
             ))}
           </div>
@@ -199,7 +191,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
         <section>
           <h4 className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-warning">
             <AlertTriangle className="h-3 w-3" />
-            {t("offBrandColors")}
+            {"Off-brand colors"}
           </h4>
           <div className="space-y-1">
             {offBrandColors.map((obc) => (
@@ -212,7 +204,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                       onClick={() => {
                         editor.replaceAll(obc.hex, obc.closestHex);
                         toast.success(
-                          t("correctedColor", { from: obc.hex, to: obc.closestHex }),
+                          `Replaced \${obc.hex} → \${obc.closestHex}`,
                         );
                       }}
                     >
@@ -232,7 +224,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                       </span>
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>{t("clickToCorrect")}</TooltipContent>
+                  <TooltipContent>{"Click to auto-correct to nearest brand color"}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ))}
@@ -243,11 +235,11 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
       {tokens.typography.length > 0 && (
         <section>
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-            {t("typography")}
+            {"Typography"}
           </h4>
           <div className="space-y-1.5">
             {tokens.typography.map((typo) => (
-              <FontRow key={typo.name} typo={typo} editor={editor} t={t} />
+              <FontRow key={typo.name} typo={typo} editor={editor} />
             ))}
           </div>
         </section>
@@ -256,7 +248,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
       {tokens.spacing.length > 0 && (
         <section>
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-            {t("spacing")}
+            {"Spacing"}
           </h4>
           <div className="grid grid-cols-3 gap-2">
             {tokens.spacing.map((sp) => (
@@ -265,7 +257,7 @@ export function TokenDisplay({ tokens, editor, editorContent, hasSelection }: To
                 className="group flex cursor-pointer flex-col gap-0.5"
                 onClick={() => {
                   editor.insertAtCursor(`padding: ${sp.value}px;`);
-                  toast.success(t("insertedAtCursor"));
+                  toast.success("Inserted at cursor");
                 }}
                 draggable
                 onDragStart={(e) => {

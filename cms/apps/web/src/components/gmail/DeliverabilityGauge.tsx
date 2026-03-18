@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type {
   DeliverabilityScoreResponse,
@@ -22,7 +21,6 @@ function scoreColor(score: number): string {
 }
 
 function DimensionBar({ dim }: { dim: DeliverabilityDimension }) {
-  const t = useTranslations("gmailIntelligence");
   const [expanded, setExpanded] = useState(false);
   const pct = dim.max_score > 0 ? (dim.score / dim.max_score) * 100 : 0;
 
@@ -67,7 +65,7 @@ function DimensionBar({ dim }: { dim: DeliverabilityDimension }) {
                     {issue.description}
                   </p>
                   <p className="mt-0.5 text-[10px] text-status-success">
-                    {t("fix")}: {issue.fix}
+                    {"Fix"}: {issue.fix}
                   </p>
                 </div>
               </div>
@@ -84,8 +82,6 @@ interface DeliverabilityGaugeProps {
 }
 
 export function DeliverabilityGauge({ result }: DeliverabilityGaugeProps) {
-  const t = useTranslations("gmailIntelligence");
-
   return (
     <div className="space-y-2.5">
       {/* Overall score */}
@@ -100,7 +96,7 @@ export function DeliverabilityGauge({ result }: DeliverabilityGaugeProps) {
               : "bg-badge-danger-bg text-badge-danger-text"
           }`}
         >
-          {result.passed ? t("passed") : t("failed")}
+          {result.passed ? "Passed" : "Failed"}
         </span>
       </div>
 
@@ -111,7 +107,7 @@ export function DeliverabilityGauge({ result }: DeliverabilityGaugeProps) {
       {result.dimensions.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-[10px] font-medium text-foreground-muted">
-            {t("dimensions")}
+            {"Dimensions"}
           </h4>
           {result.dimensions.map((dim) => (
             <DimensionBar key={dim.name} dim={dim} />

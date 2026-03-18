@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Send,
   CheckCircle2,
@@ -15,37 +14,37 @@ import type { LucideIcon } from "lucide-react";
 const DEFAULT_ACTION = {
   icon: Send,
   colorClass: "text-interactive",
-  labelKey: "auditSubmitted",
+  label: "Submitted for review",
 } as const;
 
 const ACTION_CONFIG: Record<
   string,
-  { icon: LucideIcon; colorClass: string; labelKey: string }
+  { icon: LucideIcon; colorClass: string; label: string }
 > = {
   submitted: {
     icon: Send,
     colorClass: "text-interactive",
-    labelKey: "auditSubmitted",
+    label: "Submitted for review",
   },
   approved: {
     icon: CheckCircle2,
     colorClass: "text-status-success",
-    labelKey: "auditApproved",
+    label: "Approved",
   },
   rejected: {
     icon: XCircle,
     colorClass: "text-status-danger",
-    labelKey: "auditRejected",
+    label: "Rejected",
   },
   revision_requested: {
     icon: RotateCcw,
     colorClass: "text-status-warning",
-    labelKey: "auditRevisionRequested",
+    label: "Revision requested",
   },
   feedback_added: {
     icon: MessageSquare,
     colorClass: "text-foreground-muted",
-    labelKey: "auditFeedbackAdded",
+    label: "Feedback added",
   },
 };
 
@@ -56,7 +55,6 @@ interface ApprovalAuditTimelineProps {
 export function ApprovalAuditTimeline({
   approvalId,
 }: ApprovalAuditTimelineProps) {
-  const t = useTranslations("approvals");
   const { data: entries, isLoading } = useApprovalAudit(approvalId);
 
   if (isLoading) {
@@ -70,7 +68,7 @@ export function ApprovalAuditTimeline({
   if (!entries?.length) {
     return (
       <p className="py-8 text-center text-sm text-foreground-muted">
-        {t("auditEmpty")}
+        {"No audit entries yet"}
       </p>
     );
   }
@@ -97,10 +95,10 @@ export function ApprovalAuditTimeline({
             {/* Content */}
             <div className={isLast ? "pb-0" : "pb-6"}>
               <p className="text-sm font-medium text-foreground">
-                {t(config.labelKey)}
+                {config.label}
               </p>
               <p className="text-xs text-foreground-muted">
-                {t("requestedBy", { userId: entry.actor_id })} &middot;{" "}
+                {`Requested by User #\${entry.actor_id}`} &middot;{" "}
                 {new Date(entry.created_at as string).toLocaleString()}
               </p>
               {entry.details && (

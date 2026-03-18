@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Paintbrush, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -20,15 +19,14 @@ import type { DesignProvider } from "@/types/design-sync";
 
 type ProviderFilter = "all" | DesignProvider;
 
-const FILTER_TABS: { value: ProviderFilter; labelKey: string }[] = [
-  { value: "all", labelKey: "filterAll" },
-  { value: "figma", labelKey: "providerFigma" },
-  { value: "sketch", labelKey: "providerSketch" },
-  { value: "canva", labelKey: "providerCanva" },
+const FILTER_TABS: { value: ProviderFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "figma", label: "Figma" },
+  { value: "sketch", label: "Sketch" },
+  { value: "canva", label: "Canva" },
 ];
 
 export default function DesignSyncPage() {
-  const t = useTranslations("designSync");
   const { data: connections, error, isLoading } = useDesignConnections();
   const { trigger: deleteConnection } = useDeleteDesignConnection();
   const { trigger: syncConnection } = useSyncDesignConnection();
@@ -57,9 +55,9 @@ export default function DesignSyncPage() {
         undefined,
         { revalidate: true },
       );
-      toast.success(t("syncSuccess"));
+      toast.success("Design file synced successfully");
     } catch {
-      toast.error(t("syncError"));
+      toast.error("Failed to sync design file");
     } finally {
       setSyncingId(null);
     }
@@ -74,9 +72,9 @@ export default function DesignSyncPage() {
         { revalidate: true },
       );
       if (selectedId === id) setSelectedId(null);
-      toast.success(t("deleteSuccess"));
+      toast.success("Connection removed");
     } catch {
-      toast.error(t("deleteError"));
+      toast.error("Failed to remove connection");
     }
   };
 
@@ -108,16 +106,16 @@ export default function DesignSyncPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Paintbrush className="h-6 w-6 text-foreground" />
-          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{"Design Sync"}</h1>
         </div>
         <div className="rounded-lg border border-card-border bg-card-bg px-4 py-12 text-center">
-          <p className="text-sm text-foreground-muted">{t("error")}</p>
+          <p className="text-sm text-foreground-muted">{"Failed to load design connections"}</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="mt-2 text-sm font-medium text-interactive hover:underline"
           >
-            {t("retry")}
+            {"Try again"}
           </button>
         </div>
       </div>
@@ -131,8 +129,8 @@ export default function DesignSyncPage() {
         <div className="flex items-center gap-3">
           <Paintbrush className="h-6 w-6 text-foreground" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
-            <p className="text-sm text-foreground-muted">{t("subtitle")}</p>
+            <h1 className="text-2xl font-bold text-foreground">{"Design Sync"}</h1>
+            <p className="text-sm text-foreground-muted">{"Connect design files to extract tokens and sync design systems"}</p>
           </div>
         </div>
         <button
@@ -140,7 +138,7 @@ export default function DesignSyncPage() {
           onClick={() => setDialogOpen(true)}
           className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
         >
-          {t("connectFile")}
+          {"Connect Design File"}
         </button>
       </div>
 
@@ -157,7 +155,7 @@ export default function DesignSyncPage() {
                 : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
             }`}
           >
-            {t(tab.labelKey)}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -166,15 +164,15 @@ export default function DesignSyncPage() {
       {!isLoading && filteredConnections && filteredConnections.length === 0 ? (
         <EmptyState
           icon={Paintbrush}
-          title={t("empty")}
-          description={t("emptyDescription")}
+          title={"No design connections"}
+          description={"Connect a design file to extract colors, typography, and spacing tokens for your email templates."}
           action={
             <button
               type="button"
               onClick={() => setDialogOpen(true)}
               className="text-sm font-medium text-interactive hover:underline"
             >
-              {t("connectFile")}
+              {"Connect Design File"}
             </button>
           }
         />
@@ -214,7 +212,7 @@ export default function DesignSyncPage() {
                   className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
                 >
                   <Download className="h-4 w-4" />
-                  {t("importSelected")}
+                  {"Import Selected Frames"}
                 </button>
               </div>
             )}
@@ -223,7 +221,7 @@ export default function DesignSyncPage() {
           {/* Design Tokens */}
           <div className="rounded-lg border border-card-border bg-card-bg p-5">
             <h2 className="mb-4 text-lg font-semibold text-foreground">
-              {t("tokensTitle")}
+              {"Design Tokens"}
             </h2>
             <DesignTokensView connectionId={selectedId} />
           </div>

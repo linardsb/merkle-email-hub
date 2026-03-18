@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { FolderOpen, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { BriefStatusBadge } from "./brief-status-badge";
 import type { BriefConnection } from "@/types/briefs";
@@ -33,8 +32,6 @@ export function BriefConnectionCard({
   onSync,
   onDelete,
 }: BriefConnectionCardProps) {
-  const t = useTranslations("briefs");
-
   const lastSynced = connection.last_synced_at
     ? new Date(connection.last_synced_at).toLocaleDateString("en-US", {
         month: "short",
@@ -73,7 +70,7 @@ export function BriefConnectionCard({
               {connection.name}
             </p>
             <p className="text-xs text-foreground-muted">
-              {PLATFORM_LABELS[connection.platform]} &middot; {t("credentialEnding", { last4: connection.credential_last4 })}
+              {PLATFORM_LABELS[connection.platform]} &middot; {`Key ····\${connection.credential_last4}`}
             </p>
           </div>
         </div>
@@ -89,10 +86,10 @@ export function BriefConnectionCard({
           </span>
         )}
         {connection.items_count > 0 && (
-          <span>{t("itemsCount", { count: connection.items_count })}</span>
+          <span>{`\${connection.items_count} briefs`}</span>
         )}
         {lastSynced && (
-          <span>{t("lastSynced", { date: lastSynced })}</span>
+          <span>{`Synced \${lastSynced}`}</span>
         )}
       </div>
 
@@ -112,7 +109,7 @@ export function BriefConnectionCard({
           ) : (
             <RefreshCw className="h-3.5 w-3.5" />
           )}
-          {syncing ? t("syncing") : t("syncNow")}
+          {syncing ? "Syncing…" : "Sync Now"}
         </button>
         <button
           type="button"
@@ -123,7 +120,7 @@ export function BriefConnectionCard({
           className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          {t("remove")}
+          {"Remove"}
         </button>
       </div>
     </div>

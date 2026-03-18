@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import { useComponentCompatibility } from "@/hooks/use-components";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
@@ -29,7 +28,6 @@ function groupByFamily(clients: ClientEntry[]) {
 }
 
 export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
-  const t = useTranslations("components");
   const { data, isLoading, error } = useComponentCompatibility(componentId);
 
   if (isLoading) {
@@ -43,7 +41,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
   if (error || !data) {
     return (
       <div className="py-8 text-center">
-        <p className="text-sm text-foreground-muted">{t("compatibilityNoData")}</p>
+        <p className="text-sm text-foreground-muted">{"No compatibility data available. Run QA to generate."}</p>
       </div>
     );
   }
@@ -57,24 +55,24 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
         <div className="flex items-center gap-1.5">
           <CheckCircle2 className="h-4 w-4 text-status-success" />
           <span className="text-sm text-foreground">
-            {t("compatibilityFullCount", { count: data.full_count })}
+            {`\${data.full_count} full`}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <AlertTriangle className="h-4 w-4 text-status-warning" />
           <span className="text-sm text-foreground">
-            {t("compatibilityPartialCount", { count: data.partial_count })}
+            {`\${data.partial_count} partial`}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <XCircle className="h-4 w-4 text-status-danger" />
           <span className="text-sm text-foreground">
-            {t("compatibilityNoneCount", { count: data.none_count })}
+            {`\${data.none_count} unsupported`}
           </span>
         </div>
         {data.qa_score != null && (
           <span className="ml-auto text-sm text-foreground-muted">
-            {t("compatibilityQaScore", { score: Math.round(data.qa_score * 100) })}
+            {`QA Score: \${Math.round(data.qa_score * 100)}%`}
           </span>
         )}
       </div>
@@ -115,9 +113,7 @@ export function CompatibilityMatrix({ componentId }: CompatibilityMatrixProps) {
 
       {data.last_checked && (
         <p className="text-xs text-foreground-muted">
-          {t("compatibilityLastChecked", {
-            date: new Date(data.last_checked).toLocaleDateString(),
-          })}
+          {`Last checked: \${new Date(data.last_checked).toLocaleDateString()}`}
         </p>
       )}
     </div>

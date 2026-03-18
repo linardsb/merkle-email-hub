@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { useRunCheckpoints } from "@/hooks/use-blueprint-runs";
 import { formatNodeName } from "./shared";
+
+const NODE_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  running: "Running",
+  success: "Passed",
+  failed: "Failed",
+  skipped: "Skipped",
+};
 
 const CHECKPOINT_STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   success: CheckCircle2,
@@ -25,7 +32,6 @@ interface RunCheckpointsProps {
 }
 
 export function RunCheckpoints({ runId, resumedFromNode }: RunCheckpointsProps) {
-  const t = useTranslations("blueprintRun");
   const [expanded, setExpanded] = useState(false);
   const { data, isLoading } = useRunCheckpoints(expanded ? runId : null);
 
@@ -39,7 +45,7 @@ export function RunCheckpoints({ runId, resumedFromNode }: RunCheckpointsProps) 
         className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        {t("checkpointsToggle")}
+        {"Checkpoints"}
       </button>
 
       {expanded && (
@@ -51,7 +57,7 @@ export function RunCheckpoints({ runId, resumedFromNode }: RunCheckpointsProps) 
           )}
 
           {!isLoading && checkpoints.length === 0 && (
-            <p className="text-xs text-muted-foreground">{t("checkpointsEmpty")}</p>
+            <p className="text-xs text-muted-foreground">{"No checkpoints available"}</p>
           )}
 
           {!isLoading && checkpoints.map((cp, idx) => {
@@ -78,11 +84,11 @@ export function RunCheckpoints({ runId, resumedFromNode }: RunCheckpointsProps) 
                       variant={cp.status === "success" ? "secondary" : cp.status === "failed" ? "destructive" : "outline"}
                       className="text-[10px] px-1.5 py-0"
                     >
-                      {t(`nodeStatus.${cp.status}`)}
+                      {NODE_STATUS_LABELS[cp.status] ?? cp.status}
                     </Badge>
                     {isResumePoint && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary text-primary">
-                        {t("resumePoint")}
+                        {"Resume Point"}
                       </Badge>
                     )}
                   </div>

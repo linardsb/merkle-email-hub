@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { BrandTypography } from "@/types/brand";
 
 interface BrandTypographyEditorProps {
@@ -14,8 +13,6 @@ export function BrandTypographyEditor({
   onChange,
   disabled,
 }: BrandTypographyEditorProps) {
-  const t = useTranslations("brand");
-
   const inputClass =
     "w-full rounded-md border border-input-border bg-input-bg px-3 py-1.5 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus disabled:opacity-50";
 
@@ -31,7 +28,7 @@ export function BrandTypographyEditor({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{t("typographyTitle")}</h3>
+      <h3 className="text-sm font-medium text-foreground">{"Typography"}</h3>
 
       {typography.map((typo, i) => (
         <div
@@ -41,7 +38,7 @@ export function BrandTypographyEditor({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-xs text-foreground-muted">
-                {t("fontFamily")}
+                {"Font Family"}
               </label>
               <input
                 type="text"
@@ -53,7 +50,7 @@ export function BrandTypographyEditor({
             </div>
             <div>
               <label className="mb-1 block text-xs text-foreground-muted">
-                {t("fontWeights")}
+                {"Weights"}
               </label>
               <input
                 type="text"
@@ -74,7 +71,7 @@ export function BrandTypographyEditor({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-xs text-foreground-muted">
-                {t("minFontSize")}
+                {"Min Size (px)"}
               </label>
               <input
                 type="number"
@@ -90,7 +87,7 @@ export function BrandTypographyEditor({
             </div>
             <div>
               <label className="mb-1 block text-xs text-foreground-muted">
-                {t("maxFontSize")}
+                {"Max Size (px)"}
               </label>
               <input
                 type="number"

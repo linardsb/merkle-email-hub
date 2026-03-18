@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { X, Palette, ExternalLink } from "lucide-react";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
@@ -38,8 +37,6 @@ export function DesignReferencePanel({
   hasEditorSelection,
   onClose,
 }: DesignReferencePanelProps) {
-  const t = useTranslations("workspace.designReference");
-
   // Auto-detect: design import that produced this template
   const { data: autoImport, isLoading: autoLoading } =
     useDesignImportByTemplate(templateId, projectId);
@@ -59,7 +56,7 @@ export function DesignReferencePanel({
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
           <Palette className="h-4 w-4 text-foreground-muted" />
-          <h3 className="text-sm font-semibold">{t("title")}</h3>
+          <h3 className="text-sm font-semibold">{"Design Reference"}</h3>
         </div>
         <div className="flex items-center gap-1">
           {activeConnection?.file_url && (
@@ -68,7 +65,7 @@ export function DesignReferencePanel({
               target="_blank"
               rel="noopener noreferrer"
               className="p-1 text-foreground-muted transition-colors hover:text-foreground"
-              title={t("openInFigma")}
+              title={"Open in Figma"}
             >
               <ExternalLink className="h-4 w-4" />
             </a>
@@ -90,19 +87,19 @@ export function DesignReferencePanel({
             <Skeleton className="h-8 w-full" />
           ) : hasAutoDetect ? (
             <p className="text-xs text-foreground-muted">
-              {t("autoDetected", { name: activeConnection?.name ?? "" })}
+              {`From design: \${activeConnection?.name ?? ""}`}
             </p>
           ) : (
             <div>
               <label className="mb-1 block text-xs text-foreground-muted">
-                {t("selectConnection")}
+                {"Design source"}
               </label>
               <Select
                 value={manualConnectionId?.toString() ?? ""}
                 onValueChange={(v) => setManualConnectionId(Number(v))}
               >
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder={t("selectConnectionPlaceholder")} />
+                  <SelectValue placeholder={"Select a connection…"} />
                 </SelectTrigger>
                 <SelectContent>
                   {connections
@@ -121,7 +118,7 @@ export function DesignReferencePanel({
           {autoImport?.assets && autoImport.assets.length > 0 && (
             <section>
               <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-                {t("designAssets")}
+                {"Design Assets"}
               </h4>
               <AssetViewer
                 assets={autoImport.assets}
@@ -148,15 +145,15 @@ export function DesignReferencePanel({
               hasSelection={hasEditorSelection}
             />
           ) : activeConnectionId ? (
-            <p className="text-xs text-foreground-muted">{t("noTokens")}</p>
+            <p className="text-xs text-foreground-muted">{"No tokens extracted yet"}</p>
           ) : null}
 
           {/* Empty state */}
           {!autoLoading && !hasAutoDetect && !manualConnectionId && (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
               <Palette className="h-8 w-8 text-foreground-muted" />
-              <p className="text-sm text-foreground-muted">{t("emptyTitle")}</p>
-              <p className="text-xs text-foreground-muted">{t("emptyDescription")}</p>
+              <p className="text-sm text-foreground-muted">{"No design linked"}</p>
+              <p className="text-xs text-foreground-muted">{"This template wasn’t created from a Figma import. Select a design connection above to view tokens."}</p>
             </div>
           )}
         </div>

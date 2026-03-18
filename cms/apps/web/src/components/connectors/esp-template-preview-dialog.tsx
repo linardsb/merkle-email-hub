@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -26,8 +25,6 @@ export function ESPTemplatePreviewDialog({
   onImport,
   importing,
 }: ESPTemplatePreviewDialogProps) {
-  const t = useTranslations("espSync");
-
   if (!template) return null;
 
   const espInfo = ESP_LABELS[template.esp_type] ?? {
@@ -52,7 +49,7 @@ export function ESPTemplatePreviewDialog({
           sandbox=""
           srcDoc={template.html}
           className="h-[32rem] w-full rounded-md border border-border bg-white"
-          title={t("previewTitle")}
+          title={"Template Preview"}
         />
 
         {/* Footer actions */}
@@ -62,7 +59,7 @@ export function ESPTemplatePreviewDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("createCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -73,12 +70,12 @@ export function ESPTemplatePreviewDialog({
             {importing ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("previewImporting")}
+                {"Importing…"}
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
                 <Download className="h-4 w-4" />
-                {t("previewImport")}
+                {"Import to Hub"}
               </span>
             )}
           </button>

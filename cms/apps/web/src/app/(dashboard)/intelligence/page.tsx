@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   BarChart3,
   ListChecks,
@@ -24,7 +23,6 @@ import { TopFailurePatternsCard } from "@/components/intelligence/top-failure-pa
 import { ComponentCoverageCard } from "@/components/intelligence/component-coverage-card";
 
 export default function IntelligencePage() {
-  const t = useTranslations("intelligence");
   const { metrics, isLoading, error, mutate } = useQADashboard();
 
   if (isLoading) {
@@ -34,9 +32,9 @@ export default function IntelligencePage() {
           <BarChart3 className="h-8 w-8 text-foreground-accent" />
           <div>
             <h1 className="text-2xl font-semibold text-foreground">
-              {t("title")}
+              {"Rendering Intelligence"}
             </h1>
-            <p className="text-sm text-foreground-muted">{t("subtitle")}</p>
+            <p className="text-sm text-foreground-muted">{"Quality trends and check analytics across all QA runs"}</p>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -65,13 +63,13 @@ export default function IntelligencePage() {
         <div className="flex items-center gap-3">
           <BarChart3 className="h-8 w-8 text-foreground-accent" />
           <h1 className="text-2xl font-semibold text-foreground">
-            {t("title")}
+            {"Rendering Intelligence"}
           </h1>
         </div>
         <ErrorState
-          message={t("error")}
+          message={"Failed to load intelligence data"}
           onRetry={() => mutate()}
-          retryLabel={t("retry")}
+          retryLabel={"Try again"}
         />
       </div>
     );
@@ -84,15 +82,15 @@ export default function IntelligencePage() {
           <BarChart3 className="h-8 w-8 text-foreground-accent" />
           <div>
             <h1 className="text-2xl font-semibold text-foreground">
-              {t("title")}
+              {"Rendering Intelligence"}
             </h1>
-            <p className="text-sm text-foreground-muted">{t("subtitle")}</p>
+            <p className="text-sm text-foreground-muted">{"Quality trends and check analytics across all QA runs"}</p>
           </div>
         </div>
         <EmptyState
           icon={BarChart3}
-          title={t("noResults")}
-          description={t("noResultsDescription")}
+          title={"No QA Results Yet"}
+          description={"Run QA checks on your templates to see intelligence data here."}
         />
       </div>
     );
@@ -106,9 +104,9 @@ export default function IntelligencePage() {
           <BarChart3 className="h-8 w-8 text-foreground-accent" />
           <div>
             <h1 className="text-2xl font-semibold text-foreground">
-              {t("title")}
+              {"Rendering Intelligence"}
             </h1>
-            <p className="text-sm text-foreground-muted">{t("subtitle")}</p>
+            <p className="text-sm text-foreground-muted">{"Quality trends and check analytics across all QA runs"}</p>
           </div>
         </div>
         <ExportReportMenu metrics={metrics} />
@@ -124,11 +122,11 @@ export default function IntelligencePage() {
           <div className="flex items-center gap-2">
             <ListChecks className="h-5 w-5 text-foreground-muted" />
             <h2 className="text-lg font-semibold text-foreground">
-              {t("checkPerformance")}
+              {"Check Performance"}
             </h2>
           </div>
           <p className="mt-1 text-sm text-foreground-muted">
-            {t("checkPerformanceDescription")}
+            {"Average score per QA check across all runs"}
           </p>
           <div className="mt-4">
             <CheckPerformanceChart checkAverages={metrics.checkAverages} />
@@ -140,11 +138,11 @@ export default function IntelligencePage() {
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-foreground-muted" />
             <h2 className="text-lg font-semibold text-foreground">
-              {t("scoreTrend")}
+              {"Quality Trend"}
             </h2>
           </div>
           <p className="mt-1 text-sm text-foreground-muted">
-            {t("scoreTrendDescription")}
+            {"Overall scores from the last 20 QA runs"}
           </p>
           <div className="mt-4">
             <ScoreTrendBars scoreTrend={metrics.scoreTrend} />
@@ -157,11 +155,11 @@ export default function IntelligencePage() {
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-foreground-muted" />
           <h2 className="text-lg font-semibold text-foreground">
-            {t("recentResults")}
+            {"Recent Results"}
           </h2>
         </div>
         <p className="mt-1 text-sm text-foreground-muted">
-          {t("recentResultsDescription")}
+          {"Latest QA run results"}
         </p>
         <div className="mt-4">
           <RecentResultsTable />

@@ -1,24 +1,27 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import type { QACheckResult } from "@/types/qa";
 
 interface QACheckItemProps {
   check: QACheckResult;
   isOverridden?: boolean;
+  onHighlightSection?: (sectionId: string) => void;
 }
 
-export function QACheckItem({ check, isOverridden }: QACheckItemProps) {
-  const t = useTranslations("qa");
-  const i18nKey = `check_${check.check_name}`;
-  const label = t.has(i18nKey as Parameters<typeof t>[0])
-    ? t(i18nKey as Parameters<typeof t>[0])
-    : check.check_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+export function QACheckItem({ check, isOverridden, onHighlightSection }: QACheckItemProps) {
+  // Extract section_id from check metadata if available (best-effort)
+  const sectionId = (check as Record<string, unknown>).section_id as string | undefined;
+  const label = check.check_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const scorePercent = Math.round(check.score * 100);
 
   return (
-    <div className="flex items-start gap-3 rounded-md border border-border px-3 py-2.5">
+    <div
+      className={`flex items-start gap-3 rounded-md border border-border px-3 py-2.5${sectionId && onHighlightSection ? " cursor-pointer hover:bg-accent/50" : ""}`}
+      onClick={sectionId && onHighlightSection ? () => onHighlightSection(sectionId) : undefined}
+      role={sectionId && onHighlightSection ? "button" : undefined}
+      tabIndex={sectionId && onHighlightSection ? 0 : undefined}
+    >
       {/* Status icon */}
       <div className="mt-0.5 shrink-0">
         {check.passed ? (
@@ -37,7 +40,7 @@ export function QACheckItem({ check, isOverridden }: QACheckItemProps) {
             {label}
             {isOverridden && (
               <span className="ml-2 text-xs text-status-warning">
-                {t("overridden")}
+                {"Overridden"}
               </span>
             )}
           </span>

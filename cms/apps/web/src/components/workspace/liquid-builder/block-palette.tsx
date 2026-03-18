@@ -1,8 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { GitBranch, Repeat, Variable, Braces, Code } from "lucide-react";
 import type { LiquidBlockType } from "@/types/liquid-builder";
+
+const BLOCK_TYPE_LABELS: Record<string, string> = {
+  if: "If",
+  for: "For Loop",
+  assign: "Assign",
+  output: "Output",
+  raw: "Raw HTML",
+};
 
 const PALETTE_ITEMS: { type: LiquidBlockType; icon: React.ReactNode }[] = [
   { type: "if", icon: <GitBranch className="h-4 w-4" /> },
@@ -17,12 +24,10 @@ interface BlockPaletteProps {
 }
 
 export function BlockPalette({ onAddBlock }: BlockPaletteProps) {
-  const t = useTranslations("liquidBuilder");
-
   return (
     <div className="space-y-1 p-2">
       <h3 className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-        {t("paletteTitle")}
+        {"Blocks"}
       </h3>
       {PALETTE_ITEMS.map((item) => (
         <button
@@ -32,7 +37,7 @@ export function BlockPalette({ onAddBlock }: BlockPaletteProps) {
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-raised"
         >
           {item.icon}
-          <span>{t(`blockType_${item.type}`)}</span>
+          <span>{BLOCK_TYPE_LABELS[item.type] ?? item.type}</span>
         </button>
       ))}
     </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Activity, Target, CheckCircle2, ShieldAlert } from "lucide-react";
 import type { QADashboardMetrics } from "@/types/qa";
 
@@ -9,30 +8,28 @@ interface ScoreOverviewCardsProps {
 }
 
 export function ScoreOverviewCards({ metrics }: ScoreOverviewCardsProps) {
-  const t = useTranslations("intelligence");
-
   const cards = [
     {
-      label: t("totalRuns"),
+      label: "Total QA Runs",
       value: String(metrics.totalRuns),
       icon: Activity,
       colorClass: "text-foreground",
     },
     {
-      label: t("avgScore"),
+      label: "Average Score",
       value: `${Math.round(metrics.avgScore * 100)}%`,
       icon: Target,
       colorClass: "text-foreground",
     },
     {
-      label: t("passRate"),
+      label: "Pass Rate",
       value: `${Math.round(metrics.passRate * 100)}%`,
       icon: CheckCircle2,
       colorClass:
         metrics.passRate >= 0.8 ? "text-status-success" : "text-status-danger",
     },
     {
-      label: t("overrides"),
+      label: "Overrides",
       value: String(metrics.overrideCount),
       icon: ShieldAlert,
       colorClass:

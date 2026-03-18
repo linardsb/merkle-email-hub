@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
 import { X, ImageOff } from "lucide-react";
 import type { ScreenshotResult } from "@/types/rendering";
 
@@ -21,7 +20,6 @@ function statusLabel(status: string) {
 }
 
 export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props) {
-  const t = useTranslations("renderings");
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -43,7 +41,7 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props)
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold text-foreground">{result.client_name ?? ""}</h2>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusLabel(result.status ?? "")}`}>
-            {t(result.status ?? "pending")}
+            {(result.status ?? "pending").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
           </span>
         </div>
         <button
@@ -65,7 +63,7 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props)
           <div className="flex aspect-[3/2] w-full items-center justify-center rounded-md border border-card-border bg-surface-muted">
             <div className="flex flex-col items-center gap-2">
               <ImageOff className="h-8 w-8 text-foreground-muted/40" />
-              <p className="text-sm text-foreground-muted">{t("screenshotPending")}</p>
+              <p className="text-sm text-foreground-muted">{"Screenshot not yet available"}</p>
             </div>
           </div>
         )}
@@ -75,7 +73,7 @@ export function RenderingScreenshotDialog({ open, onOpenChange, result }: Props)
           {result.category && <span className="capitalize">{result.category}</span>}
         </div>
 
-        <p className="mt-4 text-xs text-foreground-muted/60">{t("demoNote")}</p>
+        <p className="mt-4 text-xs text-foreground-muted/60">{"Screenshots are simulated in demo mode"}</p>
       </div>
     </dialog>
   );

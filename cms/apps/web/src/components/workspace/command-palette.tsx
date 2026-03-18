@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Save,
   Zap,
@@ -56,17 +55,17 @@ interface CommandPaletteProps {
   onSelectAgent?: (agent: AgentMode) => void;
 }
 
-const AGENT_ITEMS: { id: AgentMode; labelKey: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "chat", labelKey: "chatAgentChat", icon: MessageSquare },
-  { id: "scaffolder", labelKey: "chatAgentScaffolder", icon: Wand2 },
-  { id: "dark_mode", labelKey: "chatAgentDarkMode", icon: Moon },
-  { id: "content", labelKey: "chatAgentContent", icon: PenTool },
-  { id: "outlook_fixer", labelKey: "chatAgentOutlookFixer", icon: Wrench },
-  { id: "accessibility", labelKey: "chatAgentAccessibility", icon: Eye },
-  { id: "personalisation", labelKey: "chatAgentPersonalisation", icon: Users },
-  { id: "code_reviewer", labelKey: "chatAgentCodeReviewer", icon: FileSearch },
-  { id: "knowledge", labelKey: "chatAgentKnowledge", icon: BookOpen },
-  { id: "innovation", labelKey: "chatAgentInnovation", icon: Lightbulb },
+const AGENT_ITEMS: { id: AgentMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "chat", label: "Chat", icon: MessageSquare },
+  { id: "scaffolder", label: "Scaffolder", icon: Wand2 },
+  { id: "dark_mode", label: "Dark Mode", icon: Moon },
+  { id: "content", label: "Content", icon: PenTool },
+  { id: "outlook_fixer", label: "Outlook Fixer", icon: Wrench },
+  { id: "accessibility", label: "Accessibility", icon: Eye },
+  { id: "personalisation", label: "Personalize", icon: Users },
+  { id: "code_reviewer", label: "Reviewer", icon: FileSearch },
+  { id: "knowledge", label: "Knowledge", icon: BookOpen },
+  { id: "innovation", label: "Innovator", icon: Lightbulb },
 ];
 
 export function CommandPalette({
@@ -84,7 +83,6 @@ export function CommandPalette({
   onNavigateBack,
   onSelectAgent,
 }: CommandPaletteProps) {
-  const t = useTranslations("workspace");
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -110,64 +108,64 @@ export function CommandPalette({
         onClick={() => setOpen(true)}
         className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
-        <span className="font-medium">{t("commandPalette.hint")}</span>
+        <span className="font-medium">{"⌘K"}</span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[52rem] overflow-hidden p-0">
           <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-3 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4 [&_[cmdk-item]_svg]:w-4">
-            <CommandInput placeholder={t("commandPalette.placeholder")} />
+            <CommandInput placeholder={"Type a command or search..."} />
             <CommandList className="max-h-[min(70vh,36rem)] p-2">
-              <CommandEmpty>{t("commandPalette.empty")}</CommandEmpty>
+              <CommandEmpty>{"No results found."}</CommandEmpty>
 
               {/* Actions & Panels side by side */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-border p-2">
-                  <CommandGroup heading={t("commandPalette.groupActions")}>
+                  <CommandGroup heading={"Actions"}>
                     {onSave && (
                       <CommandItem onSelect={() => run(onSave)}>
                         <Save className="h-4 w-4" />
-                        {t("saveTemplate")}
+                        {"Save"}
                         <CommandShortcut>⌘S</CommandShortcut>
                       </CommandItem>
                     )}
                     {onRunBlueprint && (
                       <CommandItem onSelect={() => run(onRunBlueprint)}>
                         <Zap className="h-4 w-4" />
-                        {t("generateBlueprint")}
+                        {"Generate"}
                         <CommandShortcut>⌘⇧G</CommandShortcut>
                       </CommandItem>
                     )}
                     {onRunQA && (
                       <CommandItem onSelect={() => run(onRunQA)}>
                         <ShieldCheck className="h-4 w-4" />
-                        {t("runQA")}
+                        {"Run QA"}
                         <CommandShortcut>⌘⇧Q</CommandShortcut>
                       </CommandItem>
                     )}
                     {onExport && (
                       <CommandItem onSelect={() => run(onExport)}>
                         <Download className="h-4 w-4" />
-                        {t("export")}
+                        {"Export"}
                         <CommandShortcut>⌘⇧E</CommandShortcut>
                       </CommandItem>
                     )}
                     {onPushToESP && (
                       <CommandItem onSelect={() => run(onPushToESP)}>
                         <CloudUpload className="h-4 w-4" />
-                        {t("pushToESP")}
+                        {"Push to ESP"}
                       </CommandItem>
                     )}
                     {onSubmitForApproval && (
                       <CommandItem onSelect={() => run(onSubmitForApproval)}>
                         <ClipboardCheck className="h-4 w-4" />
-                        {t("submitForApproval")}
+                        {"Submit for Approval"}
                       </CommandItem>
                     )}
                     {onGenerateImage && (
                       <CommandItem onSelect={() => run(onGenerateImage)}>
                         <ImagePlus className="h-4 w-4" />
-                        {t("generateImage")}
+                        {"Generate Image"}
                       </CommandItem>
                     )}
                   </CommandGroup>
@@ -175,24 +173,24 @@ export function CommandPalette({
 
                 <div className="space-y-3">
                   <div className="rounded-lg border border-border p-2">
-                    <CommandGroup heading={t("commandPalette.groupPanels")}>
+                    <CommandGroup heading={"Panels"}>
                       {onToggleQAPanel && (
                         <CommandItem onSelect={() => run(onToggleQAPanel)}>
                           <PanelRight className="h-4 w-4" />
-                          {t("commandPalette.toggleQASidebar")}
+                          {"Toggle QA Sidebar"}
                           <CommandShortcut>⌘J</CommandShortcut>
                         </CommandItem>
                       )}
                       {onDesignRefToggle && (
                         <CommandItem onSelect={() => { setOpen(false); onDesignRefToggle(!designRefOpen); }}>
                           <Palette className="h-4 w-4" />
-                          {t("designRefButton")}
+                          {"Design Ref"}
                         </CommandItem>
                       )}
                       {onToggleChat && (
                         <CommandItem onSelect={() => run(onToggleChat)}>
                           <PanelBottom className="h-4 w-4" />
-                          {t("commandPalette.toggleChat")}
+                          {"Toggle Chat Panel"}
                           <CommandShortcut>⌘B</CommandShortcut>
                         </CommandItem>
                       )}
@@ -200,11 +198,11 @@ export function CommandPalette({
                   </div>
 
                   <div className="rounded-lg border border-border p-2">
-                    <CommandGroup heading={t("commandPalette.groupNavigation")}>
+                    <CommandGroup heading={"Navigation"}>
                       {onNavigateBack && (
                         <CommandItem onSelect={() => run(onNavigateBack)}>
                           <ArrowLeft className="h-4 w-4" />
-                          {t("backToDashboard")}
+                          {"Back to Dashboard"}
                         </CommandItem>
                       )}
                     </CommandGroup>
@@ -214,7 +212,7 @@ export function CommandPalette({
 
               {/* Agents in its own bordered section, 2-col grid */}
               <div className="mt-3 rounded-lg border border-border p-2">
-                <CommandGroup heading={t("commandPalette.groupAgents")}>
+                <CommandGroup heading={"Agents"}>
                   <div className="grid grid-cols-2 gap-1">
                     {AGENT_ITEMS.map((a) => {
                       const Icon = a.icon;
@@ -224,7 +222,7 @@ export function CommandPalette({
                           onSelect={() => { setOpen(false); onSelectAgent?.(a.id); }}
                         >
                           <Icon className="h-4 w-4" />
-                          {t(a.labelKey)}
+                          {a.label}
                         </CommandItem>
                       );
                     })}

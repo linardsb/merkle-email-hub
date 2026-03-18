@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { Eye, EyeOff } from "lucide-react";
 import type { ChangedRegion } from "@/types/rendering";
 
@@ -16,22 +15,21 @@ interface DiffOverlayProps {
 
 function getDiffBadge(
   percentage: number,
-  t: ReturnType<typeof useTranslations>,
 ): { label: string; className: string } {
   if (percentage < 1) {
     return {
-      label: t("diffIdentical"),
+      label: "Identical",
       className: "bg-badge-success-bg text-badge-success-text",
     };
   }
   if (percentage <= 5) {
     return {
-      label: t("diffMinor"),
+      label: "Minor Changes",
       className: "bg-badge-warning-bg text-badge-warning-text",
     };
   }
   return {
-    label: t("diffMajor"),
+    label: "Major Changes",
     className: "bg-badge-danger-bg text-badge-danger-text",
   };
 }
@@ -44,9 +42,8 @@ export function DiffOverlay({
   showDiff,
   onToggleDiff,
 }: DiffOverlayProps) {
-  const t = useTranslations("visualQa");
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const badge = getDiffBadge(diffPercentage, t);
+  const badge = getDiffBadge(diffPercentage);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -106,14 +103,12 @@ export function DiffOverlay({
           ) : (
             <Eye className="h-4 w-4" />
           )}
-          {showDiff ? t("hideDiffOverlay") : t("showDiffOverlay")}
+          {showDiff ? "Hide Diff Overlay" : "Show Diff Overlay"}
         </button>
 
         <div className="flex items-center gap-2">
           <span className="text-sm text-foreground-muted">
-            {t("diffPercentage", {
-              percentage: diffPercentage.toFixed(2),
-            })}
+            {`Diff: \${diffPercentage.toFixed(2)}%`}
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}

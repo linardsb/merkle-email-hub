@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Figma, FolderOpen, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { FigmaStatusBadge } from "./figma-status-badge";
 import type { FigmaConnection } from "@/types/figma";
@@ -22,8 +21,6 @@ export function FigmaConnectionCard({
   onSync,
   onDelete,
 }: FigmaConnectionCardProps) {
-  const t = useTranslations("figma");
-
   const lastSynced = connection.last_synced_at
     ? new Date(connection.last_synced_at).toLocaleDateString("en-US", {
         month: "short",
@@ -60,7 +57,7 @@ export function FigmaConnectionCard({
               {connection.name}
             </p>
             <p className="text-xs text-foreground-muted">
-              {t("tokenEnding", { last4: connection.access_token_last4 })}
+              {`Token ····${connection.access_token_last4}`}
             </p>
           </div>
         </div>
@@ -76,7 +73,7 @@ export function FigmaConnectionCard({
           </span>
         )}
         {lastSynced && (
-          <span>{t("lastSynced", { date: lastSynced })}</span>
+          <span>{`Synced ${lastSynced}`}</span>
         )}
       </div>
 
@@ -96,7 +93,7 @@ export function FigmaConnectionCard({
           ) : (
             <RefreshCw className="h-3.5 w-3.5" />
           )}
-          {syncing ? t("syncing") : t("syncNow")}
+          {syncing ? "Syncing\u2026" : "Sync Now"}
         </button>
         <button
           type="button"
@@ -107,7 +104,7 @@ export function FigmaConnectionCard({
           className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-status-danger transition-colors hover:bg-surface-hover"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          {t("remove")}
+          Remove
         </button>
       </div>
     </div>

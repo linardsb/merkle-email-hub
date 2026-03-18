@@ -5,7 +5,6 @@ import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { keymap, EditorView } from "@codemirror/view";
 import { Compartment } from "@codemirror/state";
 import { useTheme } from "next-themes";
-import { useTranslations } from "next-intl";
 import { maizzleLanguage } from "./maizzle-language";
 import { getEditorTheme } from "./editor-themes";
 import { canIEmailLinter } from "./css-diagnostics";
@@ -18,6 +17,7 @@ import type { BrandConfig } from "@/types/brand";
 import type { Doc as YDoc } from "yjs";
 import type { Awareness } from "y-protocols/awareness";
 import { createCollabExtension } from "@/lib/collaboration/editor-binding";
+import { remoteCursorStyles } from "@/components/collaboration/remote-cursors";
 
 interface CodeEditorProps {
   value: string;
@@ -53,7 +53,6 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
   collaborative,
 }: CodeEditorProps, ref) {
   const { resolvedTheme } = useTheme();
-  const t = useTranslations("workspace");
   const editorRef = useRef<ReactCodeMirrorRef>(null);
 
   useImperativeHandle(ref, () => ({
@@ -97,7 +96,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
       maizzleLanguage(),
       canIEmailLinter(handleDiagnosticsChange),
       ...(brandConfig ? [brandLinter(brandConfig, handleBrandDiagnosticsChange)] : []),
-      ...(collabExtension ? [collabExtension] : []),
+      ...(collabExtension ? [collabExtension, remoteCursorStyles()] : []),
       keymap.of([
         {
           key: "Mod-s",

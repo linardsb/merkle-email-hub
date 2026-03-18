@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +18,6 @@ interface BriefDetailDialogProps {
 }
 
 export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDialogProps) {
-  const t = useTranslations("briefs");
   const { data: detail, isLoading } = useBriefDetail(open ? itemId : null);
 
   return (
@@ -29,7 +27,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
           <div className="flex items-center justify-between gap-2">
             <DialogTitle className="text-base">
               {detail?.external_id ? `${detail.external_id} — ` : ""}
-              {detail?.title ?? t("detailTitle")}
+              {detail?.title ?? "Brief Details"}
             </DialogTitle>
             {detail?.platform && (
               <BriefPlatformBadge platform={detail.platform} />
@@ -66,7 +64,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
               {detail.priority && (
                 <span className="flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  {t("priorityLabel", { priority: detail.priority })}
+                  {`Priority: \${detail.priority}`}
                 </span>
               )}
               {detail.assignees.length > 0 && (
@@ -110,13 +108,13 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
 
             {/* Description */}
             <div className="prose-sm max-h-60 overflow-y-auto rounded border border-card-border bg-surface-muted p-3 text-sm text-foreground whitespace-pre-wrap">
-              {detail.description || t("noDescription")}
+              {detail.description || "No description available"}
             </div>
 
             {/* Resources */}
             {detail.resources && detail.resources.length > 0 && (
               <div>
-                <p className="mb-1.5 text-xs font-medium text-foreground">{t("resources")}</p>
+                <p className="mb-1.5 text-xs font-medium text-foreground">{"Resources"}</p>
                 <BriefResourceLinks resources={detail.resources} maxVisible={10} />
               </div>
             )}
@@ -124,7 +122,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
             {/* Attachments */}
             {detail.attachments.length > 0 && (
               <div>
-                <p className="mb-1.5 text-xs font-medium text-foreground">{t("attachments")}</p>
+                <p className="mb-1.5 text-xs font-medium text-foreground">{"Attachments"}</p>
                 <div className="space-y-1">
                   {detail.attachments.map((att) => (
                     <div
@@ -143,7 +141,7 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
             )}
           </div>
         ) : (
-          <p className="py-4 text-center text-sm text-foreground-muted">{t("detailNotFound")}</p>
+          <p className="py-4 text-center text-sm text-foreground-muted">{"Brief not found"}</p>
         )}
       </DialogContent>
     </Dialog>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
@@ -29,7 +28,6 @@ export function BaselineManager({
   entityId,
   currentScreenshots,
 }: BaselineManagerProps) {
-  const t = useTranslations("visualQa");
   const session = useSession();
   const userRole = session.data?.user?.role;
   const canEdit = userRole === "admin" || userRole === "developer";
@@ -56,12 +54,12 @@ export function BaselineManager({
           image_base64: screenshot.image_base64,
         });
         await mutateBaselines();
-        toast.success(t("baselineUpdated"));
+        toast.success("Baseline updated successfully");
       } catch {
-        toast.error(t("baselineUpdateError"));
+        toast.error("Failed to update baseline");
       }
     },
-    [updateBaseline, mutateBaselines, t],
+    [updateBaseline, mutateBaselines],
   );
 
   const handleUpdateAll = useCallback(async () => {
@@ -74,11 +72,11 @@ export function BaselineManager({
         });
       }
       await mutateBaselines();
-      toast.success(t("baselineUpdated"));
+      toast.success("Baseline updated successfully");
     } catch {
-      toast.error(t("baselineUpdateError"));
+      toast.error("Failed to update baseline");
     }
-  }, [currentScreenshots, updateBaseline, mutateBaselines, t]);
+  }, [currentScreenshots, updateBaseline, mutateBaselines]);
 
   return (
     <div className="space-y-4">
@@ -96,7 +94,7 @@ export function BaselineManager({
             ) : (
               <Upload className="h-4 w-4" />
             )}
-            {t("updateAllBaselines")}
+            {"Update All Baselines"}
           </button>
         </div>
       )}
@@ -132,7 +130,7 @@ export function BaselineManager({
                     </p>
                   ) : (
                     <p className="text-xs text-foreground-muted">
-                      {t("noBaselineSet")}
+                      {"No baseline set for this client"}
                     </p>
                   )}
                 </div>
@@ -145,7 +143,7 @@ export function BaselineManager({
                   disabled={isMutating}
                   className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
                 >
-                  {existing ? t("updateBaseline") : t("setAsBaseline")}
+                  {existing ? "Update Baseline" : "Set as Baseline"}
                 </button>
               )}
             </div>
@@ -155,7 +153,7 @@ export function BaselineManager({
 
       {currentScreenshots.length === 0 && (
         <p className="py-8 text-center text-sm text-foreground-muted">
-          {t("captureFirst")}
+          {"Capture screenshots to begin visual QA review"}
         </p>
       )}
 
@@ -166,10 +164,10 @@ export function BaselineManager({
       >
         <div className="w-96 p-6">
           <h3 className="text-base font-semibold text-foreground">
-            {t("updateConfirmTitle")}
+            {"Update Baselines"}
           </h3>
           <p className="mt-2 text-sm text-foreground-muted">
-            {t("updateConfirmDescription")}
+            {"This will replace the existing baselines with the current screenshots. This action cannot be undone."}
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -177,14 +175,14 @@ export function BaselineManager({
               onClick={() => confirmDialogRef.current?.close()}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
             >
-              {t("cancel")}
+              {"Cancel"}
             </button>
             <button
               type="button"
               onClick={handleUpdateAll}
               className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
             >
-              {t("updateConfirmAction")}
+              {"Update"}
             </button>
           </div>
         </div>

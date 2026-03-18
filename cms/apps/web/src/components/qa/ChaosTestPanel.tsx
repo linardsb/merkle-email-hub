@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Zap, ChevronDown, ChevronUp, Loader2, Wrench } from "lucide-react";
 import { useChaosTest } from "@/hooks/use-chaos-test";
 import { useQARun } from "@/hooks/use-qa";
@@ -18,19 +17,18 @@ function scoreColor(score: number): string {
 }
 
 function SeverityBadge({ severity }: { severity: string }) {
-  const t = useTranslations("chaosTest");
-  const map: Record<string, { className: string; key: string }> = {
+  const map: Record<string, { className: string; label: string }> = {
     error: {
       className: "bg-badge-danger-bg text-badge-danger-text",
-      key: "failureSeverityError",
+      label: "Error",
     },
     warning: {
       className: "bg-badge-warning-bg text-badge-warning-text",
-      key: "failureSeverityWarning",
+      label: "Warning",
     },
     info: {
       className: "bg-surface-muted text-foreground-muted",
-      key: "failureSeverityInfo",
+      label: "Info",
     },
   };
   const entry = map[severity] ?? map.info!;
@@ -38,7 +36,7 @@ function SeverityBadge({ severity }: { severity: string }) {
     <span
       className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${entry.className}`}
     >
-      {t(entry.key)}
+      {entry.label}
     </span>
   );
 }
@@ -50,17 +48,21 @@ function ProfileRow({
   result: ChaosProfileResult;
   html: string;
 }) {
-  const t = useTranslations("chaosTest");
   const [expanded, setExpanded] = useState(false);
   const qaRun = useQARun();
 
-  const profileKey = `profileNames.${result.profile}`;
-  let profileLabel: string;
-  try {
-    profileLabel = t(profileKey);
-  } catch {
-    profileLabel = result.profile;
-  }
+  const PROFILE_NAMES: Record<string, string> = {
+    images_off: "Images Off",
+    no_css: "No CSS",
+    no_javascript: "No JavaScript",
+    dark_mode: "Dark Mode",
+    high_contrast: "High Contrast",
+    low_bandwidth: "Low Bandwidth",
+    outlook_word: "Outlook (Word)",
+    gmail_clipping: "Gmail Clipping",
+    yahoo_stripping: "Yahoo Stripping",
+  };
+  const profileLabel = PROFILE_NAMES[result.profile] ?? result.profile;
 
   return (
     <div className="rounded border border-border bg-card">
@@ -78,15 +80,12 @@ function ProfileRow({
                 : "bg-badge-danger-bg text-badge-danger-text"
             }`}
           >
-            {t("profileScore", { score: Math.round(result.score * 100) })}
+            {`Score: \${Math.round(result.score * 100)}%`}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-foreground-muted">
-            {t("checksPassed", {
-              passed: result.checks_passed,
-              total: result.checks_total,
-            })}
+            {`\${result.checks_passed}/\${result.checks_total} checks`}
           </span>
           {expanded ? (
             <ChevronUp className="h-3 w-3 text-foreground-muted" />
@@ -119,7 +118,7 @@ function ProfileRow({
                 className="shrink-0 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
               >
                 <Wrench className="h-2.5 w-2.5" />
-                {qaRun.isMutating ? t("fixRunning") : t("fixButton")}
+                {qaRun.isMutating ? "Fixing…" : "Fix"}
               </button>
             </div>
           ))}
@@ -130,7 +129,6 @@ function ProfileRow({
 }
 
 export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
-  const t = useTranslations("chaosTest");
   const { trigger, data, isMutating } = useChaosTest();
 
   return (
@@ -139,7 +137,7 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-foreground-muted" />
           <h3 className="text-xs font-medium uppercase tracking-wider text-foreground-muted">
-            {t("title")}
+            {"Chaos Testing"}
           </h3>
         </div>
         <button
@@ -151,16 +149,16 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
           {isMutating ? (
             <>
               <Loader2 className="h-3 w-3 animate-spin" />
-              {t("running")}
+              {"Testing resilience…"}
             </>
           ) : (
-            t("runButton")
+            "Run Chaos Test"
           )}
         </button>
       </div>
 
       {!data && !isMutating && (
-        <p className="text-xs text-foreground-muted">{t("noResults")}</p>
+        <p className="text-xs text-foreground-muted">{"Run a chaos test to measure email resilience across client degradations"}</p>
       )}
 
       {data && (
@@ -169,7 +167,7 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
           {data.critical_failures.length > 0 && (
             <div className="rounded border border-destructive/30 bg-badge-danger-bg p-2">
               <h4 className="mb-1 text-xs font-medium text-badge-danger-text">
-                {t("criticalFailures")}
+                {"Critical Failures"}
               </h4>
               <ul className="space-y-1">
                 {data.critical_failures.map((f: ChaosFailure, i: number) => (
@@ -189,7 +187,7 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-muted">
-                {t("resilienceScore")}
+                {"Resilience Score"}
               </span>
               <span className="font-medium text-foreground">
                 {Math.round(data.resilience_score * 100)}%
@@ -204,7 +202,7 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
 
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-muted">
-                {t("originalScore")}
+                {"Original Score"}
               </span>
               <span className="font-medium text-foreground">
                 {Math.round(data.original_score * 100)}%
@@ -212,12 +210,9 @@ export function ChaosTestPanel({ html }: ChaosTestPanelProps) {
             </div>
 
             <p className="text-xs text-foreground-muted">
-              {t("profilesPassed", {
-                passed: data.profile_results.filter(
+              {`\${data.profile_results.filter(
                   (r: ChaosProfileResult) => r.passed
-                ).length,
-                total: data.profiles_tested,
-              })}
+                ).length} of \${data.profiles_tested} profiles passed`}
             </p>
           </div>
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   MessageSquare,
   Wand2,
@@ -27,34 +26,34 @@ import type { AgentMode } from "@/types/chat";
 
 interface AgentDef {
   id: AgentMode;
-  labelKey: string;
+  label: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const AGENT_GROUPS: { labelKey: string; agents: AgentDef[] }[] = [
+const AGENT_GROUPS: { label: string; agents: AgentDef[] }[] = [
   {
-    labelKey: "agentGroupBuild",
+    label: "Build",
     agents: [
-      { id: "chat", labelKey: "chatAgentChat", icon: MessageSquare },
-      { id: "scaffolder", labelKey: "chatAgentScaffolder", icon: Wand2 },
+      { id: "chat", label: "Chat", icon: MessageSquare },
+      { id: "scaffolder", label: "Scaffolder", icon: Wand2 },
     ],
   },
   {
-    labelKey: "agentGroupOptimize",
+    label: "Optimize",
     agents: [
-      { id: "dark_mode", labelKey: "chatAgentDarkMode", icon: Moon },
-      { id: "content", labelKey: "chatAgentContent", icon: PenTool },
-      { id: "outlook_fixer", labelKey: "chatAgentOutlookFixer", icon: Wrench },
-      { id: "accessibility", labelKey: "chatAgentAccessibility", icon: Eye },
-      { id: "personalisation", labelKey: "chatAgentPersonalisation", icon: Users },
+      { id: "dark_mode", label: "Dark Mode", icon: Moon },
+      { id: "content", label: "Content", icon: PenTool },
+      { id: "outlook_fixer", label: "Outlook Fixer", icon: Wrench },
+      { id: "accessibility", label: "Accessibility", icon: Eye },
+      { id: "personalisation", label: "Personalize", icon: Users },
     ],
   },
   {
-    labelKey: "agentGroupReview",
+    label: "Review",
     agents: [
-      { id: "code_reviewer", labelKey: "chatAgentCodeReviewer", icon: FileSearch },
-      { id: "knowledge", labelKey: "chatAgentKnowledge", icon: BookOpen },
-      { id: "innovation", labelKey: "chatAgentInnovation", icon: Lightbulb },
+      { id: "code_reviewer", label: "Reviewer", icon: FileSearch },
+      { id: "knowledge", label: "Knowledge", icon: BookOpen },
+      { id: "innovation", label: "Innovator", icon: Lightbulb },
     ],
   },
 ];
@@ -68,7 +67,6 @@ interface AgentSelectorDropdownProps {
 }
 
 export function AgentSelectorDropdown({ agent, onSelect }: AgentSelectorDropdownProps) {
-  const t = useTranslations("workspace");
   const current = ALL_AGENTS.find((a) => a.id === agent) ?? DEFAULT_AGENT;
   const Icon = current.icon;
 
@@ -77,15 +75,15 @@ export function AgentSelectorDropdown({ agent, onSelect }: AgentSelectorDropdown
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs">
           <Icon className="h-3.5 w-3.5" />
-          {t(current.labelKey)}
+          {current.label}
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
         {AGENT_GROUPS.map((group) => (
-          <DropdownMenuGroup key={group.labelKey}>
+          <DropdownMenuGroup key={group.label}>
             <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">
-              {t(group.labelKey)}
+              {group.label}
             </DropdownMenuLabel>
             {group.agents.map((a) => {
               const AgentIcon = a.icon;
@@ -96,7 +94,7 @@ export function AgentSelectorDropdown({ agent, onSelect }: AgentSelectorDropdown
                   className={agent === a.id ? "bg-accent" : ""}
                 >
                   <AgentIcon className="h-3.5 w-3.5" />
-                  {t(a.labelKey)}
+                  {a.label}
                 </DropdownMenuItem>
               );
             })}

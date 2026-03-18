@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   Zap,
@@ -48,8 +47,6 @@ function BriefCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const t = useTranslations("blueprintRun");
-
   return (
     <button
       type="button"
@@ -123,7 +120,6 @@ export function BlueprintRunDialog({
   currentHtml,
   onApplyResult,
 }: BlueprintRunDialogProps) {
-  const t = useTranslations("blueprintRun");
   const { run, isRunning, result, error, reset } = useBlueprintRun({ projectId });
   const { data: briefItems } = useAllBriefItems();
 
@@ -187,46 +183,46 @@ export function BlueprintRunDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            {t("title")}
+            {"Generate with Blueprint"}
           </DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogDescription>{"Run a multi-agent pipeline to generate, validate, and optimise your email template."}</DialogDescription>
         </DialogHeader>
 
         {!result && !isRunning && (
           <div className="space-y-4 py-2">
             {/* Blueprint selector */}
             <div>
-              <Label className="text-sm font-medium">{t("blueprintLabel")}</Label>
+              <Label className="text-sm font-medium">{"Pipeline"}</Label>
               <div className="mt-1.5 rounded-lg border border-border bg-muted/50 p-3">
                 <p className="text-sm font-medium text-foreground">
-                  {t("blueprintTemplates.campaign")}
+                  {"Full Campaign"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t("blueprintTemplates.campaignDescription")}
+                  {"Generate a complete email from brief — scaffold, QA, fix, build, export"}
                 </p>
               </div>
             </div>
 
             {/* Brief selector */}
             <div>
-              <Label className="text-sm font-medium">{t("briefLabel")}</Label>
+              <Label className="text-sm font-medium">{"Select a Brief"}</Label>
               <div className="relative mt-1.5">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={briefSearch}
                   onChange={(e) => setBriefSearch(e.target.value)}
-                  placeholder={t("briefSearch")}
+                  placeholder={"Search briefs..."}
                   className="pl-9"
                 />
               </div>
               <div className="mt-2 max-h-[20rem] overflow-y-auto rounded-lg border border-border">
                 {!briefItems || briefItems.length === 0 ? (
                   <p className="p-4 text-center text-sm text-muted-foreground">
-                    {t("noBriefs")}
+                    {"No briefs found. Connect a project management tool in the Briefs page."}
                   </p>
                 ) : filteredBriefs.length === 0 ? (
                   <p className="p-4 text-center text-sm text-muted-foreground">
-                    {t("noBriefsMatch")}
+                    {"No briefs match your search."}
                   </p>
                 ) : (
                   <div className="grid grid-cols-2 gap-2 p-2">
@@ -251,11 +247,11 @@ export function BlueprintRunDialog({
                 onChange={(e) => setIncludeHtml(e.target.checked)}
                 className="h-4 w-4 rounded border-border"
               />
-              {t("includeHtml")}
+              {"Include current editor HTML as starting point"}
             </label>
 
             {error && (
-              <p className="text-sm text-destructive">{t("errors.runFailed")}</p>
+              <p className="text-sm text-destructive">{"Blueprint run failed. Please try again."}</p>
             )}
           </div>
         )}
@@ -263,7 +259,7 @@ export function BlueprintRunDialog({
         {isRunning && (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-            <p className="text-sm text-muted-foreground">{t("running")}</p>
+            <p className="text-sm text-muted-foreground">{"Running..."}</p>
           </div>
         )}
 
@@ -275,7 +271,7 @@ export function BlueprintRunDialog({
             {result.audience_summary && (
               <div className="rounded-lg border border-border bg-muted/50 p-3">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                  {t("audienceSummary")}
+                  {"Audience Context"}
                 </p>
                 <p className="mt-1 text-xs text-foreground">{result.audience_summary}</p>
               </div>
@@ -287,7 +283,7 @@ export function BlueprintRunDialog({
             {(result.skipped_nodes ?? []).length > 0 && (
               <div className="rounded-lg border border-border bg-muted/50 p-3">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                  {t("skippedNodes")}
+                  {"Skipped by routing"}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {(result.skipped_nodes ?? []).map((node) => (
@@ -317,7 +313,7 @@ export function BlueprintRunDialog({
             {/* Token usage */}
             {totalTokens > 0 && (
               <p className="text-xs text-muted-foreground">
-                {t("tokens", { count: totalTokens.toLocaleString() })}
+                {`\${totalTokens.toLocaleString()} tokens`}
               </p>
             )}
           </div>
@@ -327,21 +323,21 @@ export function BlueprintRunDialog({
           {!result && !isRunning && (
             <>
               <Button variant="outline" onClick={handleClose}>
-                {t("cancel")}
+                {"Cancel"}
               </Button>
               <Button onClick={handleRun} disabled={!selectedBrief}>
                 <Zap className="mr-1.5 h-3.5 w-3.5" />
-                {t("run")}
+                {"Run Pipeline"}
               </Button>
             </>
           )}
           {result && (
             <>
               <Button variant="outline" onClick={handleClose}>
-                {t("close")}
+                {"Close"}
               </Button>
               <Button onClick={handleApply}>
-                {t("applyResult")}
+                {"Apply to Editor"}
               </Button>
             </>
           )}

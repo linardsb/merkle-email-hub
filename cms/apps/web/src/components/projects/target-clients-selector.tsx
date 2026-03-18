@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { useEmailClients } from "@/hooks/use-email-clients";
 import type { EmailClientResponse } from "@email-hub/sdk";
@@ -22,13 +21,13 @@ const ENGINE_STYLES: Record<string, string> = {
   presto: "bg-muted text-muted-foreground",
 };
 
-const ENGINE_LABEL_KEYS: Record<string, string> = {
-  word: "engineWord",
-  webkit: "engineWebkit",
-  blink: "engineBlink",
-  gecko: "engineGecko",
-  custom: "engineCustom",
-  presto: "enginePresto",
+const ENGINE_LABELS: Record<string, string> = {
+  word: "Word",
+  webkit: "WebKit",
+  blink: "Blink",
+  gecko: "Gecko",
+  custom: "Custom",
+  presto: "Presto",
 };
 
 interface TargetClientsSelectorProps {
@@ -42,8 +41,6 @@ export function TargetClientsSelector({
   onChange,
   disabled = false,
 }: TargetClientsSelectorProps) {
-  const t = useTranslations("projects");
-  const td = useTranslations("dashboard");
   const { data: clients, isLoading } = useEmailClients();
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -95,7 +92,7 @@ export function TargetClientsSelector({
   if (isLoading) {
     return (
       <div className="rounded-md border border-input-border bg-input-bg p-4 text-center text-sm text-muted-foreground">
-        {td("loading")}
+        {"Loading..."}
       </div>
     );
   }
@@ -110,7 +107,7 @@ export function TargetClientsSelector({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={td("newProjectTargetClientsSearch")}
+            placeholder={"Search clients..."}
             disabled={disabled}
             className="w-full rounded border-0 bg-transparent py-1 pl-7 pr-2 text-sm text-foreground placeholder:text-input-placeholder focus:outline-none disabled:opacity-50"
           />
@@ -121,7 +118,7 @@ export function TargetClientsSelector({
           disabled={disabled}
           className="shrink-0 rounded px-2 py-1 text-xs font-medium text-interactive transition-colors hover:bg-interactive/10 disabled:opacity-50"
         >
-          {td("newProjectTargetClientsCommon")}
+          {"Select Common"}
         </button>
       </div>
 
@@ -145,7 +142,7 @@ export function TargetClientsSelector({
                 <span>{family}</span>
                 {selCount > 0 && (
                   <span className="ml-auto text-xs text-interactive">
-                    {td("newProjectTargetClientsSelected", { count: selCount })}
+                    {`${selCount} clients selected`}
                   </span>
                 )}
               </button>
@@ -166,7 +163,7 @@ export function TargetClientsSelector({
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${ENGINE_STYLES[client.engine] ?? ENGINE_STYLES.custom}`}
                     >
-                      {t(ENGINE_LABEL_KEYS[client.engine] ?? "engineCustom")}
+                      {ENGINE_LABELS[client.engine] ?? "Custom"}
                     </span>
                     <span className="w-10 text-right text-xs text-muted-foreground">
                       {client.market_share}%
@@ -181,8 +178,8 @@ export function TargetClientsSelector({
       {/* Footer */}
       <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
         {selected.length > 0
-          ? td("newProjectTargetClientsSelected", { count: selected.length })
-          : td("newProjectTargetClientsNone")}
+          ? `${selected.length} clients selected`
+          : "No priority clients \u2014 all 25 clients treated equally"}
       </div>
     </div>
   );

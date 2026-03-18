@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
 import { Upload, X } from "lucide-react";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -18,7 +17,6 @@ export function DesignReferenceUpload({
   onClear,
   currentImage,
 }: DesignReferenceUploadProps) {
-  const t = useTranslations("designReference");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,11 +26,11 @@ export function DesignReferenceUpload({
       setError(null);
 
       if (!ACCEPTED_TYPES.includes(file.type)) {
-        setError(t("invalidFormat"));
+        setError("Invalid format. Use PNG, JPEG, or WebP.");
         return;
       }
       if (file.size > MAX_SIZE_BYTES) {
-        setError(t("fileTooLarge"));
+        setError("File too large. Maximum size is 10MB.");
         return;
       }
 
@@ -44,7 +42,7 @@ export function DesignReferenceUpload({
       };
       reader.readAsDataURL(file);
     },
-    [onImageSelected, t],
+    [onImageSelected],
   );
 
   const handleDrop = useCallback(
@@ -62,7 +60,7 @@ export function DesignReferenceUpload({
       <div className="relative rounded-lg border border-default bg-card p-2">
         <img
           src={`data:image/png;base64,${currentImage}`}
-          alt={t("designReference")}
+          alt={"Design Reference"}
           className="max-h-40 w-full rounded object-contain"
         />
         <button
@@ -72,7 +70,7 @@ export function DesignReferenceUpload({
         >
           <X className="h-3.5 w-3.5" />
         </button>
-        <p className="mt-1 text-center text-xs text-muted-foreground">{t("referenceAttached")}</p>
+        <p className="mt-1 text-center text-xs text-muted-foreground">{"Design reference attached"}</p>
       </div>
     );
   }
@@ -91,8 +89,8 @@ export function DesignReferenceUpload({
         }`}
       >
         <Upload className="h-6 w-6 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">{t("dropzoneLabel")}</p>
-        <p className="text-xs text-muted-foreground/60">{t("acceptedFormats")}</p>
+        <p className="text-xs text-muted-foreground">{"Drop a design screenshot or click to upload"}</p>
+        <p className="text-xs text-muted-foreground/60">{"PNG, JPEG, or WebP — max 10MB"}</p>
         <input
           ref={inputRef}
           type="file"

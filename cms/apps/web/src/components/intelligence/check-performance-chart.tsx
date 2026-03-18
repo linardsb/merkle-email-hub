@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import type { QADashboardMetrics } from "@/types/qa";
 
 interface CheckPerformanceChartProps {
@@ -14,11 +13,22 @@ function scoreColorClass(score: number): string {
   return "bg-status-danger";
 }
 
+const QA_CHECK_LABELS: Record<string, string> = {
+  html_validation: "HTML Validation",
+  css_support: "CSS Support",
+  file_size: "File Size",
+  link_validation: "Link Validation",
+  spam_score: "Spam Score",
+  dark_mode: "Dark Mode",
+  accessibility: "Accessibility",
+  fallback: "Fallback Support",
+  image_optimization: "Image Optimization",
+  brand_compliance: "Brand Compliance",
+};
+
 export function CheckPerformanceChart({
   checkAverages,
 }: CheckPerformanceChartProps) {
-  const tQa = useTranslations("qa");
-
   const sorted = useMemo(
     () => [...checkAverages].sort((a, b) => a.avgScore - b.avgScore),
     [checkAverages]
@@ -30,9 +40,8 @@ export function CheckPerformanceChart({
         const pct = Math.round(check.avgScore * 100);
         const passRatePct = Math.round(check.passRate * 100);
         const label =
-          tQa.has(`check_${check.checkName}`)
-            ? tQa(`check_${check.checkName}`)
-            : check.checkName.replace(/_/g, " ");
+          QA_CHECK_LABELS[check.checkName]
+            ?? check.checkName.replace(/_/g, " ");
 
         return (
           <div key={check.checkName}>

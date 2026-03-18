@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Moon, Sun, Copy, Check, Plus, Camera } from "lucide-react";
 import {
@@ -45,7 +44,6 @@ export function ComponentDetailDialog({
   open,
   onOpenChange,
 }: ComponentDetailDialogProps) {
-  const t = useTranslations("components");
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("preview");
   const [darkMode, setDarkMode] = useState(false);
@@ -79,10 +77,10 @@ export function ComponentDetailDialog({
   );
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "preview", label: t("previewTab") },
-    { key: "source", label: t("sourceTab") },
-    { key: "versions", label: t("versionsTab") },
-    { key: "compatibility", label: t("compatibilityTab") },
+    { key: "preview", label: "Preview" },
+    { key: "source", label: "Source" },
+    { key: "versions", label: "Versions" },
+    { key: "compatibility", label: "Compatibility" },
   ];
 
   return (
@@ -90,7 +88,7 @@ export function ComponentDetailDialog({
       <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {component?.name ?? t("detailTitle")}
+            {component?.name ?? "Component Details"}
             <CompatibilityBadge badge={component?.compatibility_badge} />
           </DialogTitle>
           {component?.description && (
@@ -129,14 +127,14 @@ export function ComponentDetailDialog({
                   type="button"
                   onClick={() => setDarkMode((d) => !d)}
                   className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-hover"
-                  aria-label={t("darkModeToggle")}
+                  aria-label={"Dark mode"}
                 >
                   {darkMode ? (
                     <Sun className="h-3.5 w-3.5" />
                   ) : (
                     <Moon className="h-3.5 w-3.5" />
                   )}
-                  {t("darkModeToggle")}
+                  {"Dark mode"}
                 </button>
               </div>
               <div className="overflow-hidden rounded-md border border-border">
@@ -155,7 +153,7 @@ export function ComponentDetailDialog({
               <div>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-medium text-foreground">
-                    {t("htmlSource")}
+                    {"HTML Source"}
                   </h4>
                   {latestVersion?.html_source && (
                     <button
@@ -168,12 +166,12 @@ export function ComponentDetailDialog({
                       {copied ? (
                         <>
                           <Check className="h-3 w-3" />
-                          {t("copied")}
+                          {"Copied to clipboard"}
                         </>
                       ) : (
                         <>
                           <Copy className="h-3 w-3" />
-                          {t("copySource")}
+                          {"Copy"}
                         </>
                       )}
                     </button>
@@ -182,7 +180,7 @@ export function ComponentDetailDialog({
                 <div className="mt-2 max-h-80 overflow-auto rounded-md bg-surface-muted">
                   <pre className="p-4 text-xs text-foreground">
                     <code>
-                      {latestVersion?.html_source ?? t("noSource")}
+                      {latestVersion?.html_source ?? "No source available"}
                     </code>
                   </pre>
                 </div>
@@ -191,7 +189,7 @@ export function ComponentDetailDialog({
               {latestVersion?.css_source && (
                 <div>
                   <h4 className="text-sm font-medium text-foreground">
-                    {t("cssSource")}
+                    {"CSS Source"}
                   </h4>
                   <div className="mt-2 max-h-60 overflow-auto rounded-md bg-surface-muted">
                     <pre className="p-4 text-xs text-foreground">
@@ -206,7 +204,7 @@ export function ComponentDetailDialog({
           {activeTab === "versions" && (
             <div>
               <h4 className="mb-3 text-sm font-medium text-foreground">
-                {t("versionHistory")}
+                {"Version History"}
               </h4>
               {versions && versions.length > 0 ? (
                 <ScrollArea className="max-h-96">
@@ -218,16 +216,14 @@ export function ComponentDetailDialog({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-foreground">
-                            {t("version", {
-                              version: v.version_number,
-                            })}
+                            {`v\${v.version_number}`}
                           </span>
                           <span className="text-xs text-foreground-muted">
                             {new Date(v.created_at).toLocaleDateString()}
                           </span>
                         </div>
                         <p className="mt-1 text-xs text-foreground-muted">
-                          {t("versionBy", { userId: v.created_by_id })}
+                          {`by User #\${v.created_by_id}`}
                         </p>
                         {v.changelog ? (
                           <p className="mt-2 text-xs text-foreground">
@@ -235,7 +231,7 @@ export function ComponentDetailDialog({
                           </p>
                         ) : (
                           <p className="mt-2 text-xs text-foreground-muted italic">
-                            {t("noChangelog")}
+                            {"No changelog"}
                           </p>
                         )}
                       </div>
@@ -244,7 +240,7 @@ export function ComponentDetailDialog({
                 </ScrollArea>
               ) : (
                 <p className="text-sm text-foreground-muted">
-                  {t("noVersions")}
+                  {"No versions"}
                 </p>
               )}
             </div>
@@ -264,7 +260,7 @@ export function ComponentDetailDialog({
               className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
               <Camera className="h-4 w-4" />
-              {t("visualQa")}
+              {"Visual QA"}
             </button>
           )}
           <Popover open={campaignOpen} onOpenChange={setCampaignOpen}>
@@ -274,18 +270,18 @@ export function ComponentDetailDialog({
                 className="inline-flex items-center gap-2 rounded-md bg-interactive px-4 py-2 text-sm font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
               >
                 <Plus className="h-4 w-4" />
-                {t("addToCampaign")}
+                {"Add to Campaign"}
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
               <Command shouldFilter={false}>
                 <CommandInput
-                  placeholder={t("searchCampaigns")}
+                  placeholder={"Search campaigns..."}
                   value={campaignSearch}
                   onValueChange={setCampaignSearch}
                 />
                 <CommandList>
-                  <CommandEmpty>{t("noCampaigns")}</CommandEmpty>
+                  <CommandEmpty>{"No campaigns found"}</CommandEmpty>
                   <CommandGroup>
                     {projects?.items.map((project) => (
                       <CommandItem

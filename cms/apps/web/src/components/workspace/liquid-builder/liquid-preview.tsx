@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import DOMPurify from "dompurify";
 import { SAMPLE_DATA } from "@/lib/liquid/sample-data";
 
@@ -15,8 +14,6 @@ interface LiquidPreviewProps {
  * For demo purposes — not a full Liquid engine.
  */
 export function LiquidPreview({ code }: LiquidPreviewProps) {
-  const t = useTranslations("liquidBuilder");
-
   const rendered = useMemo(() => {
     try {
       return simpleRender(code, SAMPLE_DATA);
@@ -28,7 +25,7 @@ export function LiquidPreview({ code }: LiquidPreviewProps) {
   return (
     <div className="h-full overflow-auto border-t border-default bg-white p-4">
       <h3 className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        {t("previewTitle")}
+        {"Preview"}
       </h3>
       <div
         className="prose prose-sm max-w-none text-foreground"

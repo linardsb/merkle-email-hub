@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { ImagePlus, Palette, Mic, FileText, ChevronDown, Wrench } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,8 +23,6 @@ export function ToolsMenu({
   onToggleVoiceBriefs,
   onViewBrief,
 }: ToolsMenuProps) {
-  const t = useTranslations("workspace");
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -34,7 +31,7 @@ export function ToolsMenu({
           className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <Wrench className="h-3.5 w-3.5" />
-          {t("toolsMenu")}
+          {"Tools"}
           <ChevronDown className="h-3 w-3" />
         </button>
       </DropdownMenuTrigger>
@@ -42,25 +39,25 @@ export function ToolsMenu({
         {onGenerateImage && (
           <DropdownMenuItem onClick={onGenerateImage}>
             <ImagePlus className="h-3.5 w-3.5" />
-            {t("generateImage")}
+            {"Generate Image"}
           </DropdownMenuItem>
         )}
         {onDesignRefToggle && (
           <DropdownMenuItem onClick={() => onDesignRefToggle(!designRefOpen)}>
             <Palette className="h-3.5 w-3.5" />
-            {t("designRefButton")}
+            {"Design Ref"}
           </DropdownMenuItem>
         )}
         {onToggleVoiceBriefs && (
           <DropdownMenuItem onClick={onToggleVoiceBriefs}>
             <Mic className="h-3.5 w-3.5" />
-            {t("voiceBriefs")}
+            {"Voice Briefs"}
           </DropdownMenuItem>
         )}
         {onViewBrief && (
           <DropdownMenuItem onClick={onViewBrief}>
             <FileText className="h-3.5 w-3.5" />
-            {t("viewCompatibilityBrief")}
+            {"View Compatibility Brief"}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

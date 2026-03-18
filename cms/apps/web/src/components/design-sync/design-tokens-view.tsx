@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Loader2, Palette } from "lucide-react";
 import { useDesignTokens } from "@/hooks/use-design-sync";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,7 +9,6 @@ interface DesignTokensViewProps {
 }
 
 export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
-  const t = useTranslations("designSync");
   const { data: tokens, isLoading, error } = useDesignTokens(connectionId);
 
   if (isLoading) {
@@ -24,13 +22,13 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
   if (error) {
     return (
       <div className="rounded-lg border border-card-border bg-card-bg px-4 py-8 text-center">
-        <p className="text-sm text-foreground-muted">{t("tokensError")}</p>
+        <p className="text-sm text-foreground-muted">{"Failed to load design tokens"}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="mt-2 text-sm font-medium text-interactive hover:underline"
         >
-          {t("retry")}
+          {"Try again"}
         </button>
       </div>
     );
@@ -40,8 +38,8 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
     return (
       <EmptyState
         icon={Palette}
-        title={t("tokensEmpty")}
-        description={t("tokensEmptyDescription")}
+        title={"No design tokens"}
+        description={"Design tokens will appear here once extracted from a connected design file."}
       />
     );
   }
@@ -51,7 +49,7 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
       {/* Colors */}
       <section>
         <h3 className="mb-3 text-sm font-medium text-foreground">
-          {t("colorsTitle")} ({tokens.colors.length})
+          {"Colors"} ({tokens.colors.length})
         </h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {tokens.colors.map((color) => (
@@ -73,7 +71,7 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
       {/* Typography */}
       <section>
         <h3 className="mb-3 text-sm font-medium text-foreground">
-          {t("typographyTitle")} ({tokens.typography.length})
+          {"Typography"} ({tokens.typography.length})
         </h3>
         <div className="space-y-2">
           {tokens.typography.map((typo) => (
@@ -106,7 +104,7 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
       {/* Spacing */}
       <section>
         <h3 className="mb-3 text-sm font-medium text-foreground">
-          {t("spacingTitle")} ({tokens.spacing.length})
+          {"Spacing"} ({tokens.spacing.length})
         </h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {tokens.spacing.map((sp) => (

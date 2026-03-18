@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,19 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQAOverride } from "@/hooks/use-qa";
 import type { QACheckResult } from "@/types/qa";
+
+const CHECK_LABELS: Record<string, string> = {
+  html_validation: "HTML Validation",
+  css_support: "CSS Support",
+  file_size: "File Size",
+  link_validation: "Link Validation",
+  spam_score: "Spam Score",
+  dark_mode: "Dark Mode",
+  accessibility: "Accessibility",
+  fallback: "Fallback Support",
+  image_optimization: "Image Optimization",
+  brand_compliance: "Brand Compliance",
+};
 
 interface QAOverrideDialogProps {
   open: boolean;
@@ -29,7 +41,6 @@ export function QAOverrideDialog({
   failedChecks,
   onSuccess,
 }: QAOverrideDialogProps) {
-  const t = useTranslations("qa");
   const { trigger: submitOverride, isMutating } = useQAOverride(resultId);
 
   const [justification, setJustification] = useState("");
@@ -66,11 +77,11 @@ export function QAOverrideDialog({
         justification: justification.trim(),
         checks_overridden: Array.from(selectedChecks),
       });
-      toast.success(t("overrideSuccess"));
+      toast.success("QA checks overridden successfully");
       setJustification("");
       onSuccess();
     } catch {
-      toast.error(t("overrideError"));
+      toast.error("Failed to override checks");
     }
   };
 
@@ -78,14 +89,14 @@ export function QAOverrideDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[28rem]">
         <DialogHeader>
-          <DialogTitle>{t("overrideTitle")}</DialogTitle>
-          <DialogDescription>{t("overrideDescription")}</DialogDescription>
+          <DialogTitle>{"Override QA Checks"}</DialogTitle>
+          <DialogDescription>{"Select which failing checks to override and provide justification. This action is audited."}</DialogDescription>
         </DialogHeader>
 
         {/* Check selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
-            {t("overrideChecksLabel")}
+            {"Checks to override"}
           </label>
           <div className="space-y-1.5">
             {failedChecks.map((check) => (
@@ -100,9 +111,7 @@ export function QAOverrideDialog({
                   className="accent-interactive"
                 />
                 <span className="text-foreground">
-                  {t.has(`check_${check.check_name}` as Parameters<typeof t>[0])
-                    ? t(`check_${check.check_name}` as Parameters<typeof t>[0])
-                    : check.check_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {CHECK_LABELS[check.check_name] ?? check.check_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                 </span>
               </label>
             ))}
@@ -112,17 +121,17 @@ export function QAOverrideDialog({
         {/* Justification */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
-            {t("overrideJustificationLabel")}
+            {"Justification"}
           </label>
           <textarea
             value={justification}
             onChange={(e) => setJustification(e.target.value)}
-            placeholder={t("overrideJustificationPlaceholder")}
+            placeholder={"Explain why these checks can be safely overridden..."}
             rows={3}
             className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
           />
           <p className="text-xs text-foreground-muted">
-            {t("overrideJustificationHint", { min: 10 })}
+            {`Minimum \${10} characters required`}
           </p>
         </div>
 
@@ -133,7 +142,7 @@ export function QAOverrideDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("cancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -144,10 +153,10 @@ export function QAOverrideDialog({
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("overrideSubmitting")}
+                {"Submitting..."}
               </span>
             ) : (
-              t("overrideSubmit")
+              "Confirm Override"
             )}
           </button>
         </div>

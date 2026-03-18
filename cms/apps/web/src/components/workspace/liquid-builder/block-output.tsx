@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { OutputBlock } from "@/types/liquid-builder";
 
 interface BlockOutputProps {
@@ -9,8 +8,6 @@ interface BlockOutputProps {
 }
 
 export function BlockOutput({ block, onUpdate }: BlockOutputProps) {
-  const t = useTranslations("liquidBuilder");
-
   return (
     <div className="flex items-center gap-2">
       <span className="font-mono text-xs text-muted-foreground">{"{{"}</span>
@@ -19,7 +16,7 @@ export function BlockOutput({ block, onUpdate }: BlockOutputProps) {
         value={block.expression}
         onChange={(e) => onUpdate({ expression: e.target.value })}
         className="flex-1 rounded border border-default bg-input px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-interactive"
-        placeholder={t("outputPlaceholder")}
+        placeholder={"subscriber.first_name"}
       />
       <span className="font-mono text-xs text-muted-foreground">{"}}"}</span>
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { useTranslations } from "next-intl";
 import { Send, Square } from "lucide-react";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatStatus } from "@/types/chat";
@@ -14,7 +13,6 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProps) {
-  const t = useTranslations("workspace");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isStreaming = status === "streaming";
 
@@ -50,7 +48,7 @@ export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProp
       <textarea
         ref={textareaRef}
         className="flex-1 resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-        placeholder={placeholder ?? t("chatInputPlaceholder")}
+        placeholder={placeholder ?? "Ask the AI assistant..."}
         rows={1}
         disabled={isStreaming}
         onInput={handleInput}
@@ -62,7 +60,7 @@ export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProp
           size="icon"
           className="h-9 w-9 shrink-0"
           onClick={onStop}
-          aria-label={t("chatStop")}
+          aria-label={"Stop generating"}
         >
           <Square className="h-4 w-4" />
         </Button>
@@ -72,7 +70,7 @@ export function ChatInput({ onSend, onStop, status, placeholder }: ChatInputProp
           size="icon"
           className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={handleSend}
-          aria-label={t("chatSend")}
+          aria-label={"Send message"}
         >
           <Send className="h-4 w-4" />
         </Button>

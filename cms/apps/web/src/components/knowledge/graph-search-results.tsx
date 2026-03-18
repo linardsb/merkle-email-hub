@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import {
   Network,
   ArrowRight,
@@ -79,17 +78,19 @@ function RelationshipRow({
   relationship: GraphRelationship;
   entityMap: Map<string, GraphEntity>;
 }) {
-  const t = useTranslations("knowledge");
   const display = RELATIONSHIP_DISPLAY[relationship.relationship_type] ?? DEFAULT_REL;
   const RelIcon = display.icon;
   const source = entityMap.get(relationship.source_id);
   const target = entityMap.get(relationship.target_id);
 
-  // Use i18n key for relationship type, with fallback
-  const relKey = `rel_${relationship.relationship_type}`;
-  const relLabel = t.has(relKey as Parameters<typeof t>[0])
-    ? t(relKey as Parameters<typeof t>[0])
-    : relationship.relationship_type.replace(/_/g, " ");
+  const REL_LABELS: Record<string, string> = {
+    supports: "supports",
+    partially_supports: "partially supports",
+    does_not_support: "does not support",
+    fallback_for: "fallback for",
+    targets: "targets",
+  };
+  const relLabel = REL_LABELS[relationship.relationship_type] ?? relationship.relationship_type.replace(/_/g, " ");
 
   return (
     <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
@@ -116,8 +117,6 @@ interface GraphSearchResultsProps {
 }
 
 export function GraphSearchResults({ results }: GraphSearchResultsProps) {
-  const t = useTranslations("knowledge");
-
   if (results.length === 0) return null;
 
   // Build entity map for relationship lookups
@@ -148,7 +147,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
                 <p className="text-sm text-foreground">{result.content}</p>
                 {(result.score ?? 0) > 0 && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {t("graphRelevance", { score: Math.round((result.score ?? 0) * 100) })}
+                    {`\${Math.round((result.score ?? 0) * 100)}% relevance`}
                   </p>
                 )}
               </div>
@@ -156,10 +155,12 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
 
             {/* Entities grouped by type */}
             {Array.from(grouped.entries()).map(([type, entities]) => {
-              const typeKey = `entityType_${type}`;
-              const typeLabel = t.has(typeKey as Parameters<typeof t>[0])
-                ? t(typeKey as Parameters<typeof t>[0])
-                : type.replace(/_/g, " ");
+              const ENTITY_TYPE_LABELS: Record<string, string> = {
+                email_client: "Email Client",
+                css_property: "CSS Property",
+                technique: "Technique",
+              };
+              const typeLabel = ENTITY_TYPE_LABELS[type] ?? type.replace(/_/g, " ");
 
               return (
                 <div key={type}>
@@ -180,7 +181,7 @@ export function GraphSearchResults({ results }: GraphSearchResultsProps) {
             {(result.relationships ?? []).length > 0 && (
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("graphRelationships")}
+                  {"Relationships"}
                   <span className="ml-1.5 opacity-70">({(result.relationships ?? []).length})</span>
                 </h3>
                 <div className="space-y-1.5">

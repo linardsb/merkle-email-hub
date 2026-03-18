@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Play, Pause, Sparkles, Trash2, Clock, User, BarChart3,
 } from "lucide-react";
@@ -35,7 +34,6 @@ export function VoiceBriefDetail({
   open,
   onOpenChange,
 }: VoiceBriefDetailProps) {
-  const t = useTranslations("voiceBriefs");
   const { data: brief, isLoading } = useVoiceBrief(projectId, briefId);
   const { trigger: generate, isMutating: isGenerating } = useGenerateFromBrief(projectId);
   const { trigger: deleteBrief } = useDeleteVoiceBrief(projectId);
@@ -54,7 +52,7 @@ export function VoiceBriefDetail({
   const handleGenerate = async () => {
     const result = await generate({ brief_id: briefId });
     if (result) {
-      toast.success(t("generateStarted"));
+      toast.success("Email generation started");
       onOpenChange(false);
       void mutate((key: string) => typeof key === "string" && key.includes("blueprint-runs"));
     }
@@ -62,7 +60,7 @@ export function VoiceBriefDetail({
 
   const handleDelete = async () => {
     await deleteBrief({ brief_id: briefId });
-    toast.success(t("briefDismissed"));
+    toast.success("Brief dismissed");
     void mutate((key: string) => typeof key === "string" && key.includes("voice-briefs"));
     onOpenChange(false);
   };
@@ -77,7 +75,7 @@ export function VoiceBriefDetail({
       <DialogContent className="max-w-[28rem]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            {brief?.brief?.topic ?? t("voiceBrief")}
+            {brief?.brief?.topic ?? "Voice Brief"}
           </DialogTitle>
         </DialogHeader>
 
@@ -104,7 +102,7 @@ export function VoiceBriefDetail({
               {brief.confidence != null && (
                 <span className="flex items-center gap-1">
                   <BarChart3 className="h-3 w-3" />
-                  {t("confidence")}: {Math.round(brief.confidence * 100)}%
+                  {"Confidence"}: {Math.round(brief.confidence * 100)}%
                 </span>
               )}
             </div>
@@ -125,14 +123,14 @@ export function VoiceBriefDetail({
                 className="flex items-center gap-2 rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                {isPlaying ? t("pause") : t("playAudio")}
+                {isPlaying ? "Pause" : "Play"}
               </button>
             </div>
 
             {/* Transcript with segment highlighting */}
             {brief.transcript_text && (
               <div className="rounded-md border border-default bg-surface-muted p-3">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">{t("transcript")}</p>
+                <p className="mb-1 text-xs font-medium text-muted-foreground">{"Transcript"}</p>
                 <div className="text-sm leading-relaxed text-foreground">
                   {brief.transcript_segments.length > 0
                     ? brief.transcript_segments.map((seg, i) => (
@@ -151,30 +149,30 @@ export function VoiceBriefDetail({
             {/* Extracted brief */}
             {brief.brief && (
               <div className="rounded-md border border-default bg-surface-muted p-3">
-                <p className="mb-2 text-xs font-medium text-muted-foreground">{t("extractedBrief")}</p>
+                <p className="mb-2 text-xs font-medium text-muted-foreground">{"Extracted Brief"}</p>
                 <div className="grid gap-2 text-xs">
                   <div>
-                    <span className="font-medium text-foreground">{t("briefTopic")}:</span>{" "}
+                    <span className="font-medium text-foreground">{"Topic"}:</span>{" "}
                     <span className="text-muted-foreground">{brief.brief.topic}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-foreground">{t("briefTone")}:</span>{" "}
+                    <span className="font-medium text-foreground">{"Tone"}:</span>{" "}
                     <span className="text-muted-foreground">{brief.brief.tone}</span>
                   </div>
                   {brief.brief.cta_text && (
                     <div>
-                      <span className="font-medium text-foreground">{t("briefCta")}:</span>{" "}
+                      <span className="font-medium text-foreground">{"CTA"}:</span>{" "}
                       <span className="text-muted-foreground">{brief.brief.cta_text}</span>
                     </div>
                   )}
                   {brief.brief.audience && (
                     <div>
-                      <span className="font-medium text-foreground">{t("briefAudience")}:</span>{" "}
+                      <span className="font-medium text-foreground">{"Audience"}:</span>{" "}
                       <span className="text-muted-foreground">{brief.brief.audience}</span>
                     </div>
                   )}
                   <div>
-                    <span className="font-medium text-foreground">{t("briefSections")}:</span>
+                    <span className="font-medium text-foreground">{"Sections"}:</span>
                     <ul className="ml-4 mt-1 list-disc text-muted-foreground">
                       {brief.brief.sections.map((s, i) => (
                         <li key={i}>
@@ -185,7 +183,7 @@ export function VoiceBriefDetail({
                   </div>
                   {brief.brief.constraints.length > 0 && (
                     <div>
-                      <span className="font-medium text-foreground">{t("briefConstraints")}:</span>
+                      <span className="font-medium text-foreground">{"Constraints"}:</span>
                       <ul className="ml-4 mt-1 list-disc text-muted-foreground">
                         {brief.brief.constraints.map((c, i) => (
                           <li key={i}>{c}</li>
@@ -206,7 +204,7 @@ export function VoiceBriefDetail({
             className="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-status-danger"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {t("dismiss")}
+            {"Dismiss"}
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -214,7 +212,7 @@ export function VoiceBriefDetail({
               onClick={() => onOpenChange(false)}
               className="rounded px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              {t("close")}
+              {"Close"}
             </button>
             {brief?.status === "extracted" && (
               <button
@@ -224,7 +222,7 @@ export function VoiceBriefDetail({
                 className="flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium bg-interactive text-foreground-inverse hover:bg-interactive/90 disabled:opacity-50"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                {isGenerating ? t("generating") : t("generateEmail")}
+                {isGenerating ? "Generating..." : "Generate Email"}
               </button>
             )}
           </div>

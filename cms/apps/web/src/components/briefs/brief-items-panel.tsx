@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { useBriefItems } from "@/hooks/use-briefs";
 import { BriefItemCard } from "./brief-item-card";
@@ -13,7 +12,6 @@ interface BriefItemsPanelProps {
 }
 
 export function BriefItemsPanel({ connection }: BriefItemsPanelProps) {
-  const t = useTranslations("briefs");
   const { data: items, isLoading, error } = useBriefItems(connection.id);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
@@ -27,13 +25,13 @@ export function BriefItemsPanel({ connection }: BriefItemsPanelProps) {
 
   if (error) {
     return (
-      <p className="py-4 text-center text-sm text-foreground-muted">{t("itemsError")}</p>
+      <p className="py-4 text-center text-sm text-foreground-muted">{"Failed to load brief items"}</p>
     );
   }
 
   if (!items || items.length === 0) {
     return (
-      <p className="py-4 text-center text-sm text-foreground-muted">{t("itemsEmpty")}</p>
+      <p className="py-4 text-center text-sm text-foreground-muted">{"No brief items"}</p>
     );
   }
 
@@ -41,7 +39,7 @@ export function BriefItemsPanel({ connection }: BriefItemsPanelProps) {
     <>
       <div className="space-y-2">
         <h3 className="text-sm font-medium text-foreground">
-          {t("itemsTitle", { name: connection.name })}
+          {`Briefs from \${connection.name}`}
         </h3>
         {items.map((item) => (
           <BriefItemCard

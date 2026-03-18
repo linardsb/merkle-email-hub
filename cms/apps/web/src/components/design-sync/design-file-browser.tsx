@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useTranslations } from "next-intl";
 import {
   ChevronRight,
   ChevronDown,
@@ -79,7 +78,6 @@ interface TreeNodeProps {
   thumbnails: Map<string, string>;
   onToggleExpand: (id: string) => void;
   onToggleSelect: (node: DesignNode) => void;
-  t: ReturnType<typeof useTranslations>;
 }
 
 function TreeNode({
@@ -90,7 +88,6 @@ function TreeNode({
   thumbnails,
   onToggleExpand,
   onToggleSelect,
-  t,
 }: TreeNodeProps) {
   const Icon = getNodeIcon(node.type);
   const hasChildren = node.children.length > 0;
@@ -147,7 +144,7 @@ function TreeNode({
         {thumbnail ? (
           <img
             src={thumbnail}
-            alt={t("thumbnailAlt", { name: node.name })}
+            alt={`Thumbnail for \${node.name}`}
             className="h-8 w-8 shrink-0 rounded border border-card-border object-cover"
           />
         ) : (
@@ -180,7 +177,6 @@ function TreeNode({
               thumbnails={thumbnails}
               onToggleExpand={onToggleExpand}
               onToggleSelect={onToggleSelect}
-              t={t}
             />
           ))}
         </div>
@@ -194,7 +190,6 @@ export function DesignFileBrowser({
   selectedNodeIds,
   onSelectionChange,
 }: DesignFileBrowserProps) {
-  const t = useTranslations("designSync");
   const { data: structure, isLoading, error } = useDesignFileStructure(connectionId);
   const { trigger: exportImages } = useExportImages();
 
@@ -275,7 +270,7 @@ export function DesignFileBrowser({
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-5 w-5 animate-spin text-foreground-muted" />
-        <span className="ml-2 text-sm text-foreground-muted">{t("fileBrowserLoading")}</span>
+        <span className="ml-2 text-sm text-foreground-muted">{"Loading file structure…"}</span>
       </div>
     );
   }
@@ -283,13 +278,13 @@ export function DesignFileBrowser({
   if (error) {
     return (
       <div className="rounded-lg border border-card-border bg-card-bg px-4 py-8 text-center">
-        <p className="text-sm text-foreground-muted">{t("fileBrowserError")}</p>
+        <p className="text-sm text-foreground-muted">{"Failed to load file structure"}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="mt-2 text-sm font-medium text-interactive hover:underline"
         >
-          {t("retry")}
+          {"Try again"}
         </button>
       </div>
     );
@@ -298,7 +293,7 @@ export function DesignFileBrowser({
   if (!structure?.pages || structure.pages.length === 0) {
     return (
       <div className="rounded-lg border border-card-border bg-card-bg px-4 py-8 text-center">
-        <p className="text-sm text-foreground-muted">{t("fileBrowserEmpty")}</p>
+        <p className="text-sm text-foreground-muted">{"No pages found in this design file"}</p>
       </div>
     );
   }
@@ -306,10 +301,10 @@ export function DesignFileBrowser({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground">{t("fileBrowser")}</h3>
+        <h3 className="text-sm font-medium text-foreground">{"File Structure"}</h3>
         {selectedNodeIds.length > 0 && (
           <span className="text-xs text-foreground-muted">
-            {t("selectedNodes", { count: selectedNodeIds.length })}
+            {`\${selectedNodeIds.length} frames selected`}
           </span>
         )}
       </div>
@@ -324,7 +319,6 @@ export function DesignFileBrowser({
             thumbnails={thumbnails}
             onToggleExpand={handleToggleExpand}
             onToggleSelect={handleToggleSelect}
-            t={t}
           />
         ))}
       </div>

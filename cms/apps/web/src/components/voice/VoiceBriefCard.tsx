@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { Mic, Clock, ChevronRight, AlertCircle } from "lucide-react";
 import type { VoiceBriefSummary } from "@/hooks/use-voice-briefs";
 
@@ -10,29 +9,27 @@ interface VoiceBriefCardProps {
 }
 
 export function VoiceBriefCard({ brief, onSelect }: VoiceBriefCardProps) {
-  const t = useTranslations("voiceBriefs");
-
   const statusConfig: Record<string, { label: string; className: string }> = {
     pending: {
-      label: t("statusPending"),
+      label: "Processing",
       className: "bg-badge-warning-bg text-badge-warning-text",
     },
     transcribed: {
-      label: t("statusTranscribed"),
+      label: "Transcribed",
       className: "bg-badge-info-bg text-badge-info-text",
     },
     extracted: {
-      label: t("statusReady"),
+      label: "Ready",
       className: "bg-badge-success-bg text-badge-success-text",
     },
     failed: {
-      label: t("statusFailed"),
+      label: "Failed",
       className: "bg-badge-danger-bg text-badge-danger-text",
     },
   };
 
   const status = statusConfig[brief.status] ?? {
-    label: t("statusPending"),
+    label: "Processing",
     className: "bg-badge-warning-bg text-badge-warning-text",
   };
 
@@ -45,11 +42,11 @@ export function VoiceBriefCard({ brief, onSelect }: VoiceBriefCardProps) {
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60_000);
-    if (mins < 1) return t("justNow");
-    if (mins < 60) return t("minutesAgo", { count: mins });
+    if (mins < 1) return "just now";
+    if (mins < 60) return `\${mins}m ago`;
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return t("hoursAgo", { count: hours });
-    return t("daysAgo", { count: Math.floor(hours / 24) });
+    if (hours < 24) return `\${hours}h ago`;
+    return `\${Math.floor(hours / 24)}d ago`;
   };
 
   return (
@@ -72,7 +69,7 @@ export function VoiceBriefCard({ brief, onSelect }: VoiceBriefCardProps) {
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">
-            {brief.brief_topic ?? t("untitledBrief")}
+            {brief.brief_topic ?? "Untitled Brief"}
           </span>
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.className}`}>
             {status.label}

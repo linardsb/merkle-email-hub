@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,6 @@ const PROVIDERS: { value: DesignProvider; label: string }[] = [
 ];
 
 export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogProps) {
-  const t = useTranslations("designSync");
   const { trigger, isMutating } = useCreateDesignConnection();
   const { mutate } = useSWRConfig();
   const { data: projects } = useProjects({ pageSize: 50 });
@@ -69,10 +67,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
         undefined,
         { revalidate: true },
       );
-      toast.success(t("connectSuccess"));
+      toast.success("Design file connected successfully");
       onOpenChange(false);
     } catch {
-      toast.error(t("connectError"));
+      toast.error("Failed to connect design file");
     }
   };
 
@@ -86,15 +84,15 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
-          <DialogTitle>{t("connectTitle")}</DialogTitle>
-          <DialogDescription>{t("connectDescription")}</DialogDescription>
+          <DialogTitle>{"Connect Design File"}</DialogTitle>
+          <DialogDescription>{"Link a design file to extract design tokens and sync your design system."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Provider */}
           <div>
             <label htmlFor="design-provider" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectProvider")}
+              {"Design Tool"}
             </label>
             <select
               id="design-provider"
@@ -114,14 +112,14 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
           {/* Connection Name */}
           <div>
             <label htmlFor="design-name" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectName")}
+              {"Connection Name"}
             </label>
             <input
               id="design-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("connectNamePlaceholder")}
+              placeholder={"e.g., Campaign Design System"}
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -131,14 +129,14 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
           {/* File URL */}
           <div>
             <label htmlFor="design-url" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectFileUrl")}
+              {"Design File URL"}
             </label>
             <input
               id="design-url"
               type="url"
               value={fileUrl}
               onChange={(e) => setFileUrl(e.target.value)}
-              placeholder={provider === "figma" ? "https://www.figma.com/design/..." : t("connectFileUrlPlaceholder")}
+              placeholder={provider === "figma" ? "https://www.figma.com/design/..." : "Paste file URL…"}
               disabled={isMutating}
               className={inputClass}
             />
@@ -147,24 +145,24 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
           {/* Access Token */}
           <div>
             <label htmlFor="design-token" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectAccessToken")}
+              {"Access Token"}
             </label>
             <input
               id="design-token"
               type="text"
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
-              placeholder={provider === "figma" ? "figd_..." : t("connectAccessTokenPlaceholder")}
+              placeholder={provider === "figma" ? "figd_..." : "Paste access token…"}
               disabled={isMutating}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-foreground-muted">{t("connectAccessTokenHint")}</p>
+            <p className="mt-1 text-xs text-foreground-muted">{"Generate a token from your design tool's developer settings."}</p>
           </div>
 
           {/* Link to Project */}
           <div>
             <label htmlFor="design-project" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectProject")}
+              {"Link to Project"}
             </label>
             <select
               id="design-project"
@@ -173,7 +171,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
               disabled={isMutating}
               className={selectClass}
             >
-              <option value="">{t("connectProjectNone")}</option>
+              <option value="">{"None"}</option>
               {projects?.items?.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name}
@@ -190,7 +188,7 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("connectCancel")}
+            {"Cancel"}
           </button>
           <button
             type="button"
@@ -201,10 +199,10 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("connectSubmitting")}
+                {"Connecting…"}
               </span>
             ) : (
-              t("connectSubmit")
+              "Connect"
             )}
           </button>
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { MessageSquare, Send, Loader2 } from "lucide-react";
 import { useApprovalFeedback, useAddFeedback } from "@/hooks/use-approvals";
@@ -14,7 +13,6 @@ interface ApprovalFeedbackPanelProps {
 export function ApprovalFeedbackPanel({
   approvalId,
 }: ApprovalFeedbackPanelProps) {
-  const t = useTranslations("approvals");
   const session = useSession();
   const { data: feedback, isLoading, mutate } = useApprovalFeedback(approvalId);
   const { trigger: addFeedback, isMutating } = useAddFeedback(approvalId);
@@ -29,11 +27,11 @@ export function ApprovalFeedbackPanel({
       await addFeedback({ content: content.trim(), feedback_type: "comment" });
       setContent("");
       await mutate();
-      toast.success(t("feedbackSent"));
+      toast.success("Feedback submitted");
     } catch {
-      toast.error(t("feedbackError"));
+      toast.error("Failed to submit feedback");
     }
-  }, [canSubmit, isMutating, addFeedback, content, mutate, t]);
+  }, [canSubmit, isMutating, addFeedback, content, mutate]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -58,7 +56,7 @@ export function ApprovalFeedbackPanel({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <MessageSquare className="h-8 w-8 text-foreground-muted" />
             <p className="mt-2 text-sm text-foreground-muted">
-              {t("feedbackEmpty")}
+              {"No feedback yet"}
             </p>
           </div>
         ) : (
@@ -69,7 +67,7 @@ export function ApprovalFeedbackPanel({
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground">
-                  {t("requestedBy", { userId: fb.author_id })}
+                  {`Requested by User #\${fb.author_id}`}
                 </span>
                 <span className="text-xs text-foreground-muted">
                   {new Date(fb.created_at as string).toLocaleString()}
@@ -89,7 +87,7 @@ export function ApprovalFeedbackPanel({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t("feedbackPlaceholder")}
+              placeholder={"Leave feedback on this template..."}
               rows={2}
               className="flex-1 resize-none rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-input-focus focus:outline-none"
               disabled={isMutating}
@@ -105,11 +103,11 @@ export function ApprovalFeedbackPanel({
               ) : (
                 <Send className="h-4 w-4" aria-hidden />
               )}
-              <span className="sr-only">{t("feedbackSending")}</span>
+              <span className="sr-only">{"Sending..."}</span>
             </button>
           </div>
           <p className="mt-1 text-xs text-foreground-muted">
-            {t("feedbackHint")}
+            {"1-5000 characters"}
           </p>
         </div>
       )}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, X, GitBranch, Repeat, Variable, Braces, Code } from "lucide-react";
@@ -10,6 +9,14 @@ import { BlockFor } from "./block-for";
 import { BlockAssign } from "./block-assign";
 import { BlockOutput } from "./block-output";
 import { BlockRaw } from "./block-raw";
+
+const BLOCK_TYPE_LABELS: Record<string, string> = {
+  if: "If",
+  for: "For Loop",
+  assign: "Assign",
+  output: "Output",
+  raw: "Raw HTML",
+};
 
 const BLOCK_ICONS: Record<LiquidBlock["type"], React.ReactNode> = {
   if: <GitBranch className="h-3.5 w-3.5" />,
@@ -34,7 +41,6 @@ interface BlockNodeProps {
 }
 
 export function BlockNode({ block, onUpdate, onRemove }: BlockNodeProps) {
-  const t = useTranslations("liquidBuilder");
   const {
     attributes,
     listeners,
@@ -71,7 +77,7 @@ export function BlockNode({ block, onUpdate, onRemove }: BlockNodeProps) {
         </button>
         {BLOCK_ICONS[block.type]}
         <span className="flex-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t(`blockType_${block.type}`)}
+          {BLOCK_TYPE_LABELS[block.type] ?? block.type}
         </span>
         <button
           type="button"

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -27,15 +26,14 @@ export function KnowledgeDocumentDialog({
   open,
   onOpenChange,
 }: Props) {
-  const t = useTranslations("knowledge");
   const [activeTab, setActiveTab] = useState<Tab>("content");
 
   const { data: doc } = useKnowledgeDocument(documentId);
   const { data: content } = useKnowledgeDocumentContent(documentId);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "content", label: t("contentTab") },
-    { key: "metadata", label: t("metadataTab") },
+    { key: "content", label: "Content" },
+    { key: "metadata", label: "Metadata" },
   ];
 
   const formatDate = (dateStr: string) =>
@@ -50,7 +48,7 @@ export function KnowledgeDocumentDialog({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            {doc?.title ?? doc?.filename ?? t("documentTitle")}
+            {doc?.title ?? doc?.filename ?? "Document Details"}
           </DialogTitle>
           {doc?.description && (
             <p className="text-sm text-foreground-muted">{doc.description}</p>
@@ -63,7 +61,7 @@ export function KnowledgeDocumentDialog({
             <span className="rounded-full bg-surface-muted px-2 py-0.5">
               {doc.domain.replace(/_/g, " ")}
             </span>
-            <span>{t("chunks", { count: doc.chunk_count })}</span>
+            <span>{`\${doc.chunk_count} chunks`}</span>
             <span>{formatDate(doc.created_at)}</span>
           </div>
         )}
@@ -114,7 +112,7 @@ export function KnowledgeDocumentDialog({
                       className="rounded-md bg-surface-muted p-3"
                     >
                       <p className="mb-1 text-xs font-medium text-foreground-muted">
-                        {t("chunkLabel", { index: chunk.chunk_index + 1 })}
+                        {`Chunk \${chunk.chunk_index + 1}`}
                       </p>
                       <p className="whitespace-pre-wrap text-sm text-foreground">
                         {chunk.content}
@@ -124,7 +122,7 @@ export function KnowledgeDocumentDialog({
                 </div>
               ) : (
                 <p className="py-8 text-center text-sm text-foreground-muted">
-                  {t("noContent")}
+                  {"No content available"}
                 </p>
               )}
             </ScrollArea>
@@ -134,13 +132,13 @@ export function KnowledgeDocumentDialog({
             <div className="space-y-2 text-sm">
               {(
                 [
-                  [t("metaFilename"), doc.filename],
-                  [t("metaSourceType"), doc.source_type],
-                  [t("metaLanguage"), doc.language],
-                  [t("metaStatus"), doc.status],
-                  [t("metaChunks"), String(doc.chunk_count)],
-                  [t("metaCreated"), formatDate(doc.created_at)],
-                  [t("metaUpdated"), formatDate(doc.updated_at)],
+                  ["Filename", doc.filename],
+                  ["Source Type", doc.source_type],
+                  ["Language", doc.language],
+                  ["Status", doc.status],
+                  ["Total Chunks", String(doc.chunk_count)],
+                  ["Created", formatDate(doc.created_at)],
+                  ["Last Updated", formatDate(doc.updated_at)],
                 ] as const
               ).map(([label, value]) => (
                 <div

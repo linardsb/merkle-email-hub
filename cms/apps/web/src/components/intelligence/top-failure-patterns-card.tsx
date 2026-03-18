@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useFailurePatterns } from "@/hooks/use-failure-patterns";
 
 export function TopFailurePatternsCard() {
-  const t = useTranslations("intelligence");
   const { data: patterns, isLoading } = useFailurePatterns({
     page: 1,
     pageSize: 5,
@@ -26,11 +24,11 @@ export function TopFailurePatternsCard() {
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-foreground-muted" />
           <h2 className="text-lg font-semibold text-foreground">
-            {t("topFailurePatterns")}
+            {"Top Failure Patterns"}
           </h2>
         </div>
         <p className="mt-2 text-sm text-foreground-muted">
-          {t("noFailurePatterns")}
+          {"No failure patterns detected yet."}
         </p>
       </div>
     );
@@ -42,18 +40,18 @@ export function TopFailurePatternsCard() {
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-foreground-muted" />
           <h2 className="text-lg font-semibold text-foreground">
-            {t("topFailurePatterns")}
+            {"Top Failure Patterns"}
           </h2>
         </div>
         <Link
           href="/renderings?tab=patterns"
           className="text-sm text-foreground-accent hover:underline"
         >
-          {t("viewAllPatterns")}
+          {"View all patterns"}
         </Link>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        {t("topFailurePatternsDescription", { count: totalPatterns })}
+        {`\${totalPatterns} total patterns tracked across agents`}
       </p>
 
       <div className="mt-4 space-y-2">

@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import type { BriefPlatform } from "@/types/briefs";
 
 const PLATFORM_COLORS: Record<BriefPlatform, string> = {
@@ -14,15 +13,15 @@ const PLATFORM_COLORS: Record<BriefPlatform, string> = {
   basecamp: "#F5A623",
 };
 
-const PLATFORM_LABEL_KEYS: Record<BriefPlatform, string> = {
-  jira: "platformJira",
-  asana: "platformAsana",
-  monday: "platformMonday",
-  clickup: "platformClickup",
-  trello: "platformTrello",
-  notion: "platformNotion",
-  wrike: "platformWrike",
-  basecamp: "platformBasecamp",
+const PLATFORM_LABELS: Record<BriefPlatform, string> = {
+  jira: "Jira",
+  asana: "Asana",
+  monday: "Monday.com",
+  clickup: "ClickUp",
+  trello: "Trello",
+  notion: "Notion",
+  wrike: "Wrike",
+  basecamp: "Basecamp",
 };
 
 interface BriefPlatformBadgeProps {
@@ -31,8 +30,6 @@ interface BriefPlatformBadgeProps {
 }
 
 export function BriefPlatformBadge({ platform, size = "sm" }: BriefPlatformBadgeProps) {
-  const t = useTranslations("briefs");
-
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full bg-surface-muted ${size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-sm"} font-medium text-foreground-muted`}>
       <span
@@ -40,9 +37,9 @@ export function BriefPlatformBadge({ platform, size = "sm" }: BriefPlatformBadge
         style={{ backgroundColor: PLATFORM_COLORS[platform] }}
         aria-hidden="true"
       />
-      {t(PLATFORM_LABEL_KEYS[platform])}
+      {PLATFORM_LABELS[platform]}
     </span>
   );
 }
 
-export { PLATFORM_COLORS, PLATFORM_LABEL_KEYS };
+export { PLATFORM_COLORS, PLATFORM_LABELS };

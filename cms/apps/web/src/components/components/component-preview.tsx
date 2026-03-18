@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
 import { Eye } from "lucide-react";
 
 const DARK_MODE_STYLE = `<style id="component-dark-mode">
@@ -24,8 +23,6 @@ export function ComponentPreview({
   height = 300,
   interactive = false,
 }: ComponentPreviewProps) {
-  const t = useTranslations("components");
-
   const srcdoc = useMemo(() => {
     if (!html) return null;
     if (!darkMode) return html;
@@ -43,7 +40,7 @@ export function ComponentPreview({
         style={{ height: `${height}px` }}
       >
         <Eye className="h-8 w-8 text-foreground-muted" />
-        <p className="mt-2 text-xs text-foreground-muted">{t("noSource")}</p>
+        <p className="mt-2 text-xs text-foreground-muted">{"No source available"}</p>
       </div>
     );
   }
@@ -56,7 +53,7 @@ export function ComponentPreview({
       <iframe
         srcDoc={srcdoc}
         sandbox=""
-        title={t("previewTab")}
+        title={"Preview"}
         className="h-full w-full border-0 bg-white"
         style={{ pointerEvents: interactive ? "auto" : "none" }}
       />

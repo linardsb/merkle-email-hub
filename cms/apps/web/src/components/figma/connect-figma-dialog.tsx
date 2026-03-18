@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +20,6 @@ interface ConnectFigmaDialogProps {
 }
 
 export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogProps) {
-  const t = useTranslations("figma");
   const { trigger, isMutating } = useCreateFigmaConnection();
   const { mutate } = useSWRConfig();
   const { data: projects } = useProjects({ pageSize: 50 });
@@ -59,10 +57,10 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
         undefined,
         { revalidate: true },
       );
-      toast.success(t("connectSuccess"));
+      toast.success("Design file connected successfully");
       onOpenChange(false);
     } catch {
-      toast.error(t("connectError"));
+      toast.error("Failed to connect design file");
     }
   };
 
@@ -76,22 +74,22 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
-          <DialogTitle>{t("connectTitle")}</DialogTitle>
-          <DialogDescription>{t("connectDescription")}</DialogDescription>
+          <DialogTitle>Connect Design File</DialogTitle>
+          <DialogDescription>Link a design file to extract design tokens and sync your design system.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Connection Name */}
           <div>
             <label htmlFor="figma-name" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectName")}
+              Connection Name
             </label>
             <input
               id="figma-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("connectNamePlaceholder")}
+              placeholder="e.g., Campaign Design System"
               maxLength={200}
               disabled={isMutating}
               className={inputClass}
@@ -101,7 +99,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
           {/* Figma File URL */}
           <div>
             <label htmlFor="figma-url" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectFileUrl")}
+              Design File URL
             </label>
             <input
               id="figma-url"
@@ -117,7 +115,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
           {/* Personal Access Token */}
           <div>
             <label htmlFor="figma-token" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectAccessToken")}
+              Access Token
             </label>
             <input
               id="figma-token"
@@ -128,13 +126,13 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
               disabled={isMutating}
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-foreground-muted">{t("connectAccessTokenHint")}</p>
+            <p className="mt-1 text-xs text-foreground-muted">Generate a token from your design tool&apos;s developer settings.</p>
           </div>
 
           {/* Link to Project */}
           <div>
             <label htmlFor="figma-project" className="mb-1.5 block text-sm font-medium text-foreground">
-              {t("connectProject")}
+              Link to Project
             </label>
             <select
               id="figma-project"
@@ -143,7 +141,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
               disabled={isMutating}
               className={selectClass}
             >
-              <option value="">{t("connectProjectNone")}</option>
+              <option value="">None</option>
               {projects?.items?.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name}
@@ -160,7 +158,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
           >
-            {t("connectCancel")}
+            Cancel
           </button>
           <button
             type="button"
@@ -171,10 +169,10 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
             {isMutating ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t("connectSubmitting")}
+                Connecting&hellip;
               </span>
             ) : (
-              t("connectSubmit")
+              "Connect"
             )}
           </button>
         </div>

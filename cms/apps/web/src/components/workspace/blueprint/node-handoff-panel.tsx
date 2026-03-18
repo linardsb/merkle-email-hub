@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { HandoffSummary } from "@email-hub/sdk";
@@ -12,7 +11,6 @@ interface NodeHandoffPanelProps {
 }
 
 export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
-  const t = useTranslations("blueprintRun");
   const [expanded, setExpanded] = useState(false);
 
   const hasContent =
@@ -26,12 +24,12 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
     <div className="mt-1">
       {handoff.confidence != null && (
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground">{t("confidence")}</span>
+          <span className="text-[10px] text-muted-foreground">{"Confidence"}</span>
           <ConfidenceBar value={handoff.confidence ?? 0} />
           {(handoff.confidence ?? 0) < 0.5 && (
             <Badge variant="destructive" className="gap-1 px-1.5 py-0 text-[10px]">
               <AlertTriangle className="h-2.5 w-2.5" />
-              {t("status.needs_review")}
+              {"Needs Review"}
             </Badge>
           )}
         </div>
@@ -49,7 +47,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
             ) : (
               <ChevronRight className="h-3 w-3" />
             )}
-            {t("nodeHandoffToggle")}
+            {"Agent Decisions"}
           </button>
 
           {expanded && (
@@ -57,7 +55,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
               {handoff.decisions.length > 0 && (
                 <div>
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                    {t("handoffDecisions")}
+                    {"Decisions"}
                   </p>
                   <ul className="mt-0.5 space-y-0.5">
                     {handoff.decisions.map((d, i) => (
@@ -73,7 +71,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
               {handoff.warnings.length > 0 && (
                 <div>
                   <p className="text-[10px] font-medium text-destructive uppercase tracking-wide">
-                    {t("handoffWarnings")}
+                    {"Warnings"}
                   </p>
                   <ul className="mt-0.5 space-y-0.5">
                     {handoff.warnings.map((w, i) => (
@@ -89,7 +87,7 @@ export function NodeHandoffPanel({ handoff }: NodeHandoffPanelProps) {
               {handoff.component_refs.length > 0 && (
                 <div>
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                    {t("handoffComponents")}
+                    {"Components Used"}
                   </p>
                   <div className="mt-0.5 flex flex-wrap gap-1">
                     {handoff.component_refs.map((ref) => (

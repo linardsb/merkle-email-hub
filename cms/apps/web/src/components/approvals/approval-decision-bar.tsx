@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { CheckCircle2, XCircle, RotateCcw, Loader2 } from "lucide-react";
 import { useApprovalDecide } from "@/hooks/use-approvals";
@@ -18,7 +17,6 @@ export function ApprovalDecisionBar({
   currentStatus,
   onDecisionMade,
 }: ApprovalDecisionBarProps) {
-  const t = useTranslations("approvals");
   const session = useSession();
   const { trigger: decide, isMutating } = useApprovalDecide(approvalId);
   const [reviewNote, setReviewNote] = useState("");
@@ -36,13 +34,13 @@ export function ApprovalDecisionBar({
           status,
           review_note: reviewNote.trim() || undefined,
         });
-        toast.success(t("decisionSuccess"));
+        toast.success("Decision submitted");
         onDecisionMade();
       } catch {
-        toast.error(t("decisionError"));
+        toast.error("Failed to submit decision");
       }
     },
-    [isMutating, decide, reviewNote, t, onDecisionMade]
+    [isMutating, decide, reviewNote, onDecisionMade]
   );
 
   if (!canDecide || !isPending) return null;
@@ -52,13 +50,13 @@ export function ApprovalDecisionBar({
       <textarea
         value={reviewNote}
         onChange={(e) => setReviewNote(e.target.value)}
-        placeholder={t("decisionNotePlaceholder")}
+        placeholder={"Add a note about your decision..."}
         rows={2}
         className="w-full resize-none rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-input-focus focus:outline-none"
         disabled={isMutating}
       />
       <p className="mb-3 mt-1 text-xs text-foreground-muted">
-        {t("decisionNoteLabel")}
+        {"Review note (optional)"}
       </p>
       <div className="flex gap-2">
         <button
@@ -72,7 +70,7 @@ export function ApprovalDecisionBar({
           ) : (
             <CheckCircle2 className="h-4 w-4" />
           )}
-          {t("approve")}
+          {"Approve"}
         </button>
         <button
           type="button"
@@ -81,7 +79,7 @@ export function ApprovalDecisionBar({
           className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
         >
           <RotateCcw className="h-4 w-4" />
-          {t("requestRevision")}
+          {"Request Revision"}
         </button>
         <button
           type="button"
@@ -90,7 +88,7 @@ export function ApprovalDecisionBar({
           className="flex items-center gap-1.5 rounded-md bg-status-danger px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:opacity-90 disabled:opacity-50"
         >
           <XCircle className="h-4 w-4" />
-          {t("reject")}
+          {"Reject"}
         </button>
       </div>
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Server, Shield, Key, Activity, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -10,7 +9,6 @@ import {
 } from "@/hooks/use-mcp";
 
 export function MCPConfigPanel() {
-  const t = useTranslations("mcp");
   const { data: status } = useMCPStatus();
   const { data: tools, mutate: refreshTools } = useMCPTools();
   const { data: connections } = useMCPConnections();
@@ -27,7 +25,7 @@ export function MCPConfigPanel() {
   const handleGenerateKey = async () => {
     const result = await generateKey({ label: `key-${Date.now()}` });
     if (result) {
-      toast.success(t("apiKeyGenerated"));
+      toast.success("API key generated");
       await refreshKeys();
     }
   };
@@ -52,15 +50,15 @@ export function MCPConfigPanel() {
         <div className="flex items-center gap-3">
           <Server className="h-5 w-5 text-muted-foreground" />
           <div>
-            <h4 className="text-sm font-medium text-foreground">{t("serverStatus")}</h4>
+            <h4 className="text-sm font-medium text-foreground">{"Server Status"}</h4>
             <div className="mt-1 flex items-center gap-2">
               <span className={`h-2 w-2 rounded-full ${status?.running ? "bg-status-success" : "bg-status-danger"}`} />
               <span className="text-xs text-muted-foreground">
-                {status?.running ? t("running") : t("stopped")}
+                {status?.running ? "Running" : "Stopped"}
               </span>
               {status?.running && (
                 <span className="text-xs text-muted-foreground">
-                  · {status.tool_count} {t("toolsAvailable")}
+                  · {status.tool_count} {"tools available"}
                 </span>
               )}
             </div>
@@ -72,7 +70,7 @@ export function MCPConfigPanel() {
       <div className="rounded-lg border border-default bg-card p-4">
         <div className="mb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-muted-foreground" />
-          <h4 className="text-sm font-medium text-foreground">{t("toolAllowlist")}</h4>
+          <h4 className="text-sm font-medium text-foreground">{"Tool Allowlist"}</h4>
         </div>
         <div className="flex flex-col gap-4">
           {Object.entries(toolsByCategory).map(([category, categoryTools]) => (
@@ -101,17 +99,17 @@ export function MCPConfigPanel() {
       <div className="rounded-lg border border-default bg-card p-4">
         <div className="mb-3 flex items-center gap-2">
           <Activity className="h-4 w-4 text-muted-foreground" />
-          <h4 className="text-sm font-medium text-foreground">{t("connectionLog")}</h4>
+          <h4 className="text-sm font-medium text-foreground">{"Connection Log"}</h4>
         </div>
         {connections && connections.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-default text-left text-muted-foreground">
-                  <th className="pb-2 pr-4">{t("clientId")}</th>
-                  <th className="pb-2 pr-4">{t("connectedAt")}</th>
-                  <th className="pb-2 pr-4">{t("toolCalls")}</th>
-                  <th className="pb-2">{t("lastCall")}</th>
+                  <th className="pb-2 pr-4">{"Client ID"}</th>
+                  <th className="pb-2 pr-4">{"Connected"}</th>
+                  <th className="pb-2 pr-4">{"Tool Calls"}</th>
+                  <th className="pb-2">{"Last Call"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,7 +125,7 @@ export function MCPConfigPanel() {
             </table>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">{t("noConnections")}</p>
+          <p className="text-xs text-muted-foreground">{"No recent connections"}</p>
         )}
       </div>
 
@@ -136,7 +134,7 @@ export function MCPConfigPanel() {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Key className="h-4 w-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-foreground">{t("apiKeys")}</h4>
+            <h4 className="text-sm font-medium text-foreground">{"API Keys"}</h4>
           </div>
           <button
             type="button"
@@ -144,7 +142,7 @@ export function MCPConfigPanel() {
             disabled={generatingKey}
             className="rounded px-3 py-1.5 text-xs font-medium bg-interactive text-foreground-inverse hover:bg-interactive/90 disabled:opacity-50"
           >
-            {t("generateKey")}
+            {"Generate Key"}
           </button>
         </div>
         {apiKeys && apiKeys.length > 0 ? (
@@ -159,7 +157,7 @@ export function MCPConfigPanel() {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">{t("noApiKeys")}</p>
+          <p className="text-xs text-muted-foreground">{"No API keys created"}</p>
         )}
       </div>
     </div>

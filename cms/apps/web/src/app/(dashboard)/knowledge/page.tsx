@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { BookOpen, Search, Network, MessageSquare } from "lucide-react";
 import {
   useKnowledgeDocuments,
@@ -25,9 +24,13 @@ import type { SearchMode } from "@/types/graph-search";
 
 const PAGE_SIZE = 12;
 
-export default function KnowledgePage() {
-  const t = useTranslations("knowledge");
+const DOMAIN_LABELS: Record<string, string> = {
+  css_support: "CSS Support",
+  best_practices: "Best Practices",
+  client_quirks: "Client Quirks",
+};
 
+export default function KnowledgePage() {
   // ── State ──
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -137,10 +140,10 @@ export default function KnowledgePage() {
         <div className="flex items-center gap-3">
           <BookOpen className="h-8 w-8 text-foreground-accent" />
           <h1 className="text-2xl font-semibold text-foreground">
-            {t("title")}
+            {"Knowledge Base"}
           </h1>
         </div>
-        <p className="mt-1 text-sm text-foreground-muted">{t("subtitle")}</p>
+        <p className="mt-1 text-sm text-foreground-muted">{"Search email development best practices, CSS support, and client quirks"}</p>
       </div>
 
       {/* Search bar */}
@@ -150,16 +153,16 @@ export default function KnowledgePage() {
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder={t("searchPlaceholder")}
+          placeholder={"Search the knowledge base..."}
           className="w-full rounded-lg border border-input-border bg-input-bg py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
-          aria-label={t("searchPlaceholder")}
+          aria-label={"Search the knowledge base..."}
         />
       </div>
 
       {/* Search mode toggle — visible when in search mode */}
       {isSearchMode && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground mr-1">{t("graphSearchMode")}:</span>
+          <span className="text-xs text-muted-foreground mr-1">{"Search mode"}:</span>
           <button
             type="button"
             onClick={() => setSearchMode("text")}
@@ -170,7 +173,7 @@ export default function KnowledgePage() {
             }`}
           >
             <Search className="h-3 w-3" />
-            {t("graphModeText")}
+            {"Text"}
           </button>
           <button
             type="button"
@@ -182,7 +185,7 @@ export default function KnowledgePage() {
             }`}
           >
             <Network className="h-3 w-3" />
-            {t("graphModeGraph")}
+            {"Graph"}
           </button>
           <button
             type="button"
@@ -194,7 +197,7 @@ export default function KnowledgePage() {
             }`}
           >
             <MessageSquare className="h-3 w-3" />
-            {t("graphModeAsk")}
+            {"Ask"}
           </button>
 
           {/* Dataset filter (graph/ask modes only) */}
@@ -204,9 +207,9 @@ export default function KnowledgePage() {
               onChange={(e) => setDatasetName(e.target.value || undefined)}
               className="ml-2 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground"
             >
-              <option value="">{t("graphAllDatasets")}</option>
-              <option value="email_ontology">{t("graphDatasetOntology")}</option>
-              <option value="email_components">{t("graphDatasetComponents")}</option>
+              <option value="">{"All datasets"}</option>
+              <option value="email_ontology">{"Email Ontology"}</option>
+              <option value="email_components">{"Components"}</option>
             </select>
           )}
         </div>
@@ -223,7 +226,7 @@ export default function KnowledgePage() {
               : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
           }`}
         >
-          {t("allDomains")}
+          {"All"}
         </button>
         {(domainsData?.domains ?? []).map((domain) => (
           <button
@@ -236,7 +239,7 @@ export default function KnowledgePage() {
                 : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
             }`}
           >
-            {t(`domainLabels.${domain}`, { defaultValue: domain })}
+            {DOMAIN_LABELS[domain] ?? domain}
           </button>
         ))}
       </div>
@@ -269,10 +272,7 @@ export default function KnowledgePage() {
             <>
               {searchData && !searchLoading && (
                 <p className="text-sm text-muted-foreground">
-                  {t("searchResultsCount", {
-                    count: searchData.results.length,
-                    total: searchData.total_candidates,
-                  })}
+                  {`\${searchData.results.length} results from \${searchData.total_candidates} candidates`}
                 </p>
               )}
               {searchLoading ? (
@@ -283,7 +283,7 @@ export default function KnowledgePage() {
                 </div>
               ) : searchError ? (
                 <ErrorState
-                  message={t("searchError")}
+                  message={"Search failed"}
                   onRetry={() =>
                     triggerSearch({
                       query: debouncedQuery,
@@ -291,13 +291,13 @@ export default function KnowledgePage() {
                       limit: 20,
                     })
                   }
-                  retryLabel={t("retry")}
+                  retryLabel={"Try again"}
                 />
               ) : searchData?.results.length === 0 ? (
                 <EmptyState
                   icon={Search}
-                  title={t("noSearchResults")}
-                  description={t("noSearchResultsDescription")}
+                  title={"No results found"}
+                  description={"Try different search terms or broaden your filters."}
                 />
               ) : (
                 <div className="animate-fade-in space-y-3">
@@ -324,7 +324,7 @@ export default function KnowledgePage() {
                 </div>
               ) : graphSearchError ? (
                 <ErrorState
-                  message={t("graphSearchError")}
+                  message={"Graph search failed. Please try again."}
                   onRetry={() =>
                     triggerGraphSearch({
                       query: debouncedQuery,
@@ -333,13 +333,13 @@ export default function KnowledgePage() {
                       mode: "chunks",
                     })
                   }
-                  retryLabel={t("retry")}
+                  retryLabel={"Try again"}
                 />
               ) : graphSearchData?.results.length === 0 ? (
                 <EmptyState
                   icon={Network}
-                  title={t("graphNoResults")}
-                  description={t("graphNoResultsDescription")}
+                  title={"No graph results"}
+                  description={"No entities or relationships found for your query. Try different keywords."}
                 />
               ) : graphSearchData ? (
                 <GraphSearchResults results={graphSearchData.results} />
@@ -356,7 +356,7 @@ export default function KnowledgePage() {
                 </div>
               ) : graphSearchError ? (
                 <ErrorState
-                  message={t("graphSearchError")}
+                  message={"Graph search failed. Please try again."}
                   onRetry={() =>
                     triggerGraphSearch({
                       query: debouncedQuery,
@@ -365,7 +365,7 @@ export default function KnowledgePage() {
                       mode: "completion",
                     })
                   }
-                  retryLabel={t("retry")}
+                  retryLabel={"Try again"}
                 />
               ) : graphSearchData?.results?.[0]?.content ? (
                 <GraphCompletionResult
@@ -375,8 +375,8 @@ export default function KnowledgePage() {
               ) : graphSearchData ? (
                 <EmptyState
                   icon={MessageSquare}
-                  title={t("graphNoAnswer")}
-                  description={t("graphNoAnswerDescription")}
+                  title={"No answer available"}
+                  description={"The knowledge graph could not generate an answer for this query."}
                 />
               ) : null}
             </>
@@ -389,7 +389,7 @@ export default function KnowledgePage() {
         <>
           {documentsData && !docsLoading && (
             <p className="text-sm text-foreground-muted">
-              {t("documentCount", { count: documentsData.total })}
+              {`\${documentsData.total} documents`}
             </p>
           )}
 
@@ -401,15 +401,15 @@ export default function KnowledgePage() {
             </div>
           ) : docsError ? (
             <ErrorState
-              message={t("browseError")}
+              message={"Failed to load documents"}
               onRetry={() => docsMutate()}
-              retryLabel={t("retry")}
+              retryLabel={"Try again"}
             />
           ) : documentsData?.items.length === 0 ? (
             <EmptyState
               icon={BookOpen}
-              title={t("noDocuments")}
-              description={t("noDocumentsDescription")}
+              title={"No documents found"}
+              description={"Knowledge base documents will appear here once they are ingested."}
             />
           ) : (
             <div className="animate-fade-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -427,11 +427,7 @@ export default function KnowledgePage() {
           {documentsData && totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-foreground-muted">
-                {t("showing", {
-                  from: (page - 1) * PAGE_SIZE + 1,
-                  to: Math.min(page * PAGE_SIZE, documentsData.total),
-                  total: documentsData.total,
-                })}
+                {`Showing \${(page - 1) * PAGE_SIZE + 1}-\${Math.min(page * PAGE_SIZE} of \${documentsData.total}`}
               </p>
               <div className="flex gap-2">
                 <button
@@ -440,7 +436,7 @@ export default function KnowledgePage() {
                   disabled={page === 1}
                   className="rounded-md border border-border px-3 py-1 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
                 >
-                  {t("previous")}
+                  {"Previous"}
                 </button>
                 <button
                   type="button"
@@ -448,7 +444,7 @@ export default function KnowledgePage() {
                   disabled={page === totalPages}
                   className="rounded-md border border-border px-3 py-1 text-sm text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
                 >
-                  {t("next")}
+                  {"Next"}
                 </button>
               </div>
             </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
 import {
   MessageSquare,
   Trash2,
@@ -30,7 +29,6 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent, editorContent }: ChatPanelProps) {
-  const t = useTranslations("workspace");
   const [agent, setAgent] = useState<AgentMode>(initialAgent ?? "chat");
   const [activeTab, setActiveTab] = useState<ChatPanelTab>("chat");
   const [blueprintMode, setBlueprintMode] = useState(false);
@@ -98,10 +96,32 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [messages, agent, saveSession]);
 
-  const emptyKey = `chatEmpty_${agent}` as const;
-  const placeholderKey = `chatPlaceholder_${agent}` as const;
-  const emptyText = t.has(emptyKey) ? t(emptyKey) : t("chatEmpty");
-  const placeholder = t.has(placeholderKey) ? t(placeholderKey) : t("chatInputPlaceholder");
+  const EMPTY_TEXT: Record<string, string> = {
+    chat: "Ask a question about email development, HTML, CSS, or Maizzle.",
+    scaffolder: "Describe your email and the Scaffolder will generate a template.",
+    dark_mode: "Paste your HTML and the Dark Mode agent will optimize it.",
+    content: "Describe your content needs and the Content agent will help.",
+    outlook_fixer: "Paste your HTML and the Outlook Fixer will patch compatibility issues.",
+    accessibility: "Paste your HTML and the Accessibility agent will audit it.",
+    personalisation: "Describe your personalisation needs.",
+    code_reviewer: "Paste your HTML for a code review.",
+    knowledge: "Ask about email development best practices.",
+    innovation: "Explore new email techniques and innovations.",
+  };
+  const PLACEHOLDER_TEXT: Record<string, string> = {
+    chat: "Ask the AI assistant...",
+    scaffolder: "Describe the email you want to build...",
+    dark_mode: "Paste HTML to optimize for dark mode...",
+    content: "Describe your content needs...",
+    outlook_fixer: "Paste HTML to fix for Outlook...",
+    accessibility: "Paste HTML to audit for accessibility...",
+    personalisation: "Describe personalisation requirements...",
+    code_reviewer: "Paste HTML for code review...",
+    knowledge: "Ask about email best practices...",
+    innovation: "Explore new email techniques...",
+  };
+  const emptyText = EMPTY_TEXT[agent] ?? "Ask a question about email development, HTML, CSS, or Maizzle.";
+  const placeholder = PLACEHOLDER_TEXT[agent] ?? "Ask the AI assistant...";
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -119,7 +139,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
           }`}
         >
           <MessageSquare className="h-4 w-4" />
-          {t("chatTab")}
+          {"Chat"}
           {messages.length > 0 && (
             <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-[10px]">
               {messages.length}
@@ -138,7 +158,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
           }`}
         >
           <History className="h-4 w-4" />
-          {t("historyTab")}
+          {"History"}
           {sessions.length > 0 && (
             <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-[10px]">
               {sessions.length}
@@ -157,7 +177,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
               type="button"
               onClick={() => setBlueprintMode((v) => !v)}
               className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors hover:bg-accent"
-              title={t("blueprintChatToggleTitle")}
+              title={"Toggle Blueprint Mode"}
             >
               {blueprintMode ? (
                 <ToggleRight className="h-4 w-4 text-primary" />
@@ -171,7 +191,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
               /* Blueprint mode: label + include HTML checkbox */
               <div className="flex flex-1 items-center gap-3">
                 <span className="text-xs font-medium text-primary">
-                  {t("blueprintChatModeLabel")}
+                  {"Blueprint Pipeline"}
                 </span>
                 <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Checkbox
@@ -179,7 +199,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
                     onCheckedChange={(v) => setIncludeHtml(v === true)}
                     className="h-3.5 w-3.5"
                   />
-                  {t("blueprintChatIncludeHtml")}
+                  {"Include current HTML"}
                 </label>
               </div>
             ) : (
@@ -197,7 +217,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
                 onClick={handleClear}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {t("chatClear")}
+                {"Clear"}
               </Button>
             )}
           </div>
@@ -212,7 +232,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
                   <MessageSquare className="h-5 w-5 shrink-0" />
                 )}
                 <p className="text-sm">
-                  {blueprintMode ? t("blueprintChatEmpty") : emptyText}
+                  {blueprintMode ? "Blueprint Mode — describe a campaign brief and the full agent pipeline will execute automatically" : emptyText}
                 </p>
               </div>
             </div>
@@ -223,7 +243,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
           {/* Error banner */}
           {status === "error" && error && (
             <div className="border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {t("chatError")}
+              {"Something went wrong. Please try again."}
             </div>
           )}
 
@@ -232,7 +252,7 @@ export function ChatPanel({ projectId = "default", onApplyToEditor, initialAgent
             onSend={handleSend}
             onStop={stopStreaming}
             status={blueprintRunning ? "streaming" : status}
-            placeholder={blueprintMode ? t("blueprintChatPlaceholder") : placeholder}
+            placeholder={blueprintMode ? "Describe your email campaign brief..." : placeholder}
           />
         </>
       ) : (

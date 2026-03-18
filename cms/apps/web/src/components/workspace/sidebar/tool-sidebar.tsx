@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ShieldCheck, FlaskConical, Monitor, Brain, X } from "lucide-react";
 import {
   Tooltip,
@@ -18,11 +17,11 @@ import type { VisualQAEntityType } from "@/types/rendering";
 
 type SidebarTab = "qa" | "testing" | "clients" | "intelligence";
 
-const TABS: { id: SidebarTab; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
-  { id: "qa", icon: ShieldCheck, labelKey: "tabQA" },
-  { id: "testing", icon: FlaskConical, labelKey: "tabTesting" },
-  { id: "clients", icon: Monitor, labelKey: "tabClients" },
-  { id: "intelligence", icon: Brain, labelKey: "tabIntelligence" },
+const TABS: { id: SidebarTab; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
+  { id: "qa", icon: ShieldCheck, label: "QA" },
+  { id: "testing", icon: FlaskConical, label: "Testing" },
+  { id: "clients", icon: Monitor, label: "Clients" },
+  { id: "intelligence", icon: Brain, label: "Intelligence" },
 ];
 
 interface ToolSidebarProps {
@@ -33,6 +32,7 @@ interface ToolSidebarProps {
   entityType?: VisualQAEntityType;
   entityId?: number;
   onHtmlUpdate?: (html: string) => void;
+  onHighlightSection?: (sectionId: string) => void;
 }
 
 export function ToolSidebar({
@@ -43,8 +43,8 @@ export function ToolSidebar({
   entityType,
   entityId,
   onHtmlUpdate,
+  onHighlightSection,
 }: ToolSidebarProps) {
-  const t = useTranslations("workspace.sidebarTabs");
   const [activeTab, setActiveTab] = useState<SidebarTab>("qa");
 
   return (
@@ -72,7 +72,7 @@ export function ToolSidebar({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs">
-                    {t(tab.labelKey)}
+                    {tab.label}
                   </TooltipContent>
                 </Tooltip>
               );
@@ -82,7 +82,7 @@ export function ToolSidebar({
         <button
           type="button"
           onClick={onClose}
-          aria-label={t("close")}
+          aria-label={"Close sidebar"}
           className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground mr-1"
         >
           <X className="h-4 w-4" />
@@ -92,7 +92,7 @@ export function ToolSidebar({
       {/* Tab content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {activeTab === "qa" && (
-          <QATab result={result} onOverrideSuccess={onOverrideSuccess} />
+          <QATab result={result} onOverrideSuccess={onOverrideSuccess} onHighlightSection={onHighlightSection} />
         )}
         {activeTab === "testing" && (
           <TestingTab html={html} entityType={entityType} entityId={entityId} />

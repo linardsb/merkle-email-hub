@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
 import { X, AlertTriangle } from "lucide-react";
 import type { FailurePatternResponse } from "@/types/failure-patterns";
 
@@ -14,8 +13,6 @@ export function FailurePatternDetailDialog({
   pattern,
   onClose,
 }: FailurePatternDetailDialogProps) {
-  const t = useTranslations("failurePatterns");
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -33,7 +30,7 @@ export function FailurePatternDetailDialog({
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-label={t("patternDetail")}
+      aria-label={"Pattern Detail"}
     >
       <div className="fixed inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
       <div className="relative z-10 w-full max-w-[32rem] rounded-lg border border-card-border bg-card-bg p-6 shadow-lg">
@@ -42,7 +39,7 @@ export function FailurePatternDetailDialog({
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-status-warning" />
             <h2 className="text-lg font-semibold text-foreground">
-              {t("patternDetail")}
+              {"Pattern Detail"}
             </h2>
           </div>
           <button
@@ -58,7 +55,7 @@ export function FailurePatternDetailDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-medium text-foreground-muted">
-                {t("agent")}
+                {"Agent"}
               </p>
               <p className="mt-1 text-sm text-foreground">
                 {pattern.agent_name.replace(/_/g, " ")}
@@ -66,7 +63,7 @@ export function FailurePatternDetailDialog({
             </div>
             <div>
               <p className="text-xs font-medium text-foreground-muted">
-                {t("qaCheck")}
+                {"QA Check"}
               </p>
               <p className="mt-1 text-sm text-foreground">
                 {pattern.qa_check.replace(/_/g, " ")}
@@ -74,7 +71,7 @@ export function FailurePatternDetailDialog({
             </div>
             <div>
               <p className="text-xs font-medium text-foreground-muted">
-                {t("blueprint")}
+                {"Blueprint"}
               </p>
               <p className="mt-1 text-sm text-foreground">
                 {pattern.blueprint_name || "-"}
@@ -82,7 +79,7 @@ export function FailurePatternDetailDialog({
             </div>
             <div>
               <p className="text-xs font-medium text-foreground-muted">
-                {t("confidence")}
+                {"Confidence"}
               </p>
               <p className="mt-1 text-sm text-foreground">
                 {pattern.confidence != null
@@ -96,7 +93,7 @@ export function FailurePatternDetailDialog({
           {pattern.client_ids.length > 0 && (
             <div>
               <p className="text-xs font-medium text-foreground-muted">
-                {t("affectedClients")}
+                {"Affected Clients"}
               </p>
               <div className="mt-1 flex flex-wrap gap-1">
                 {pattern.client_ids.map((c) => (
@@ -114,7 +111,7 @@ export function FailurePatternDetailDialog({
           {/* Description */}
           <div>
             <p className="text-xs font-medium text-foreground-muted">
-              {t("description")}
+              {"Description"}
             </p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
               {pattern.description}
@@ -125,7 +122,7 @@ export function FailurePatternDetailDialog({
           {pattern.workaround && (
             <div>
               <p className="text-xs font-medium text-foreground-muted">
-                {t("workaround")}
+                {"Workaround"}
               </p>
               <p className="mt-1 rounded bg-surface-muted p-3 text-sm text-foreground">
                 {pattern.workaround}
@@ -137,16 +134,16 @@ export function FailurePatternDetailDialog({
           <div className="border-t border-card-border pt-4">
             <div className="grid grid-cols-2 gap-4 text-xs text-foreground-muted">
               <div>
-                <p className="font-medium">{t("firstSeen")}</p>
+                <p className="font-medium">{"First Seen"}</p>
                 <p>{new Date(pattern.first_seen).toLocaleString()}</p>
               </div>
               <div>
-                <p className="font-medium">{t("lastSeen")}</p>
+                <p className="font-medium">{"Last Seen"}</p>
                 <p>{new Date(pattern.last_seen).toLocaleString()}</p>
               </div>
               {pattern.run_id && (
                 <div className="col-span-2">
-                  <p className="font-medium">{t("runId")}</p>
+                  <p className="font-medium">{"Run ID"}</p>
                   <p className="font-mono">{pattern.run_id}</p>
                 </div>
               )}

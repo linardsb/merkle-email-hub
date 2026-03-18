@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ClipboardCheck } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
@@ -20,16 +19,15 @@ const STATUS_FILTERS = [
   "revision_requested",
 ] as const;
 
-const FILTER_LABEL_KEYS: Record<string, string> = {
-  all: "filterAll",
-  pending: "filterPending",
-  approved: "filterApproved",
-  rejected: "filterRejected",
-  revision_requested: "filterRevision",
+const FILTER_LABELS: Record<string, string> = {
+  all: "All",
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+  revision_requested: "Revision Requested",
 };
 
 export default function ApprovalsPage() {
-  const t = useTranslations("approvals");
   const router = useRouter();
 
   const [activeFilter, setActiveFilter] = useState<string>("all");
@@ -63,7 +61,7 @@ export default function ApprovalsPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <ClipboardCheck className="h-6 w-6 text-foreground" />
-        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{"Approvals"}</h1>
       </div>
 
       {/* Status filter tabs */}
@@ -79,7 +77,7 @@ export default function ApprovalsPage() {
                 : "bg-surface-muted text-foreground-muted hover:text-foreground"
             }`}
           >
-            {t(FILTER_LABEL_KEYS[filter] ?? "filterAll")}
+            {FILTER_LABELS[filter] ?? "All"}
           </button>
         ))}
       </div>
@@ -92,12 +90,12 @@ export default function ApprovalsPage() {
           ))}
         </div>
       ) : error ? (
-        <ErrorState message={t("error")} onRetry={() => mutate()} retryLabel={t("retry")} />
+        <ErrorState message={"Failed to load approvals"} onRetry={() => mutate()} retryLabel={"Try again"} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={ClipboardCheck}
-          title={t("empty")}
-          description={t("emptyDescription")}
+          title={"No approvals yet"}
+          description={"Approvals will appear here when templates are submitted for review."}
         />
       ) : (
         <div className="animate-fade-in grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

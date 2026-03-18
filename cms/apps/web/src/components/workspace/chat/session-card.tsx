@@ -1,11 +1,23 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { Badge } from "@email-hub/ui/components/ui/badge";
-import { AGENT_LABEL_KEYS } from "@/types/chat";
+import type { AgentMode } from "@/types/chat";
 import type { ChatSession } from "@/types/chat-history";
+
+const AGENT_LABELS: Record<AgentMode, string> = {
+  chat: "Chat",
+  scaffolder: "Scaffolder",
+  dark_mode: "Dark Mode",
+  content: "Content",
+  outlook_fixer: "Outlook Fixer",
+  accessibility: "Accessibility",
+  personalisation: "Personalize",
+  code_reviewer: "Reviewer",
+  knowledge: "Knowledge",
+  innovation: "Innovator",
+};
 
 interface SessionCardProps {
   session: ChatSession;
@@ -25,10 +37,8 @@ function formatRelativeTime(timestamp: number): string {
 }
 
 export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) {
-  const t = useTranslations("workspace");
-
   const timeAgo = formatRelativeTime(session.updatedAt);
-  const labelKey = AGENT_LABEL_KEYS[session.agent];
+  const label = AGENT_LABELS[session.agent] ?? session.agent;
 
   return (
     <div className="group rounded-lg border border-border bg-card p-3 transition-colors hover:border-border-accent">
@@ -36,7 +46,7 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-              {t(labelKey as Parameters<typeof t>[0])}
+              {label}
             </Badge>
             <span className="text-[11px] text-muted-foreground">{timeAgo}</span>
           </div>
@@ -46,7 +56,7 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
           </p>
 
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {t("historyMessageCount", { count: session.messageCount })}
+            {`\${session.messageCount} messages`}
           </p>
         </div>
 
@@ -56,7 +66,7 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
             size="sm"
             className="h-6 w-6 p-0"
             onClick={() => onRestore(session)}
-            title={t("historyRestore")}
+            title={"Restore conversation"}
           >
             <RotateCcw className="h-3 w-3" />
           </Button>
@@ -65,7 +75,7 @@ export function SessionCard({ session, onRestore, onDelete }: SessionCardProps) 
             size="sm"
             className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
             onClick={() => onDelete(session.id)}
-            title={t("historyDelete")}
+            title={"Delete session"}
           >
             <Trash2 className="h-3 w-3" />
           </Button>

@@ -1,4 +1,3 @@
-import { useTranslations } from "next-intl";
 import type { FigmaConnectionStatus } from "@/types/figma";
 
 const STATUS_STYLES: Record<FigmaConnectionStatus, string> = {
@@ -8,11 +7,11 @@ const STATUS_STYLES: Record<FigmaConnectionStatus, string> = {
   disconnected: "bg-surface-muted text-foreground-muted",
 };
 
-const STATUS_LABEL_KEYS: Record<FigmaConnectionStatus, string> = {
-  connected: "statusConnected",
-  syncing: "statusSyncing",
-  error: "statusError",
-  disconnected: "statusDisconnected",
+const STATUS_LABELS: Record<FigmaConnectionStatus, string> = {
+  connected: "Connected",
+  syncing: "Syncing",
+  error: "Error",
+  disconnected: "Disconnected",
 };
 
 interface FigmaStatusBadgeProps {
@@ -20,13 +19,11 @@ interface FigmaStatusBadgeProps {
 }
 
 export function FigmaStatusBadge({ status }: FigmaStatusBadgeProps) {
-  const t = useTranslations("figma");
-
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}
     >
-      {t(STATUS_LABEL_KEYS[status])}
+      {STATUS_LABELS[status]}
     </span>
   );
 }

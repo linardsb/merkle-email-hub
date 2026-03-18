@@ -1,6 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { ChevronDown, Plus, FileCode } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,10 +25,8 @@ export function TemplateSelector({
   onCreate,
   isLoading,
 }: TemplateSelectorProps) {
-  const t = useTranslations("workspace");
-
   const activeTemplate = templates.find((tpl) => tpl.id === activeTemplateId);
-  const label = activeTemplate?.name ?? t("templateSelector");
+  const label = activeTemplate?.name ?? "Select template";
 
   return (
     <DropdownMenu>
@@ -44,7 +41,7 @@ export function TemplateSelector({
       <DropdownMenuContent align="start" className="w-[16rem]">
         {templates.length === 0 && (
           <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-            {t("noTemplates")}
+            {"No templates yet"}
           </div>
         )}
         {templates.map((tpl) => (
@@ -64,7 +61,7 @@ export function TemplateSelector({
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onCreate}>
           <Plus className="mr-2 h-3.5 w-3.5" />
-          {t("createTemplate")}
+          {"New Template"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

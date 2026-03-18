@@ -1,7 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-
 interface CompatibilityBadgeProps {
   badge: string | null | undefined;
   className?: string;
@@ -13,17 +11,20 @@ const BADGE_STYLES: Record<string, string> = {
   issues: "bg-badge-danger-bg text-badge-danger-text",
 };
 
-export function CompatibilityBadge({ badge, className = "" }: CompatibilityBadgeProps) {
-  const t = useTranslations("components");
+const BADGE_LABELS: Record<string, string> = {
+  full: "Full Support",
+  partial: "Partial",
+  issues: "Issues",
+};
 
+export function CompatibilityBadge({ badge, className = "" }: CompatibilityBadgeProps) {
   if (!badge) return null;
 
   const style = BADGE_STYLES[badge] ?? "bg-badge-default-bg text-badge-default-text";
-  const labelKey = badge === "full" ? "badgeFull" : badge === "partial" ? "badgePartial" : "badgeIssues";
 
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style} ${className}`}>
-      {t(labelKey)}
+      {BADGE_LABELS[badge] ?? badge}
     </span>
   );
 }
