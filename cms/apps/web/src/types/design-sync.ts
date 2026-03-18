@@ -1,6 +1,6 @@
 export type DesignConnectionStatus = "connected" | "syncing" | "error" | "disconnected";
 
-export type DesignProvider = "figma" | "sketch" | "canva";
+export type DesignProvider = "figma" | "sketch" | "canva" | "penpot";
 
 export interface DesignConnection {
   id: number;
