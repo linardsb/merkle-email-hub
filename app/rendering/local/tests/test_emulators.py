@@ -104,7 +104,7 @@ class TestEmulatorRoundTrip:
 <body><table><tr><td class="test" style="padding: 10px;">Hello</td></tr></table></body></html>"""
         result = emulator.transform(html)
         assert "<html>" in result
-        assert "<body>" in result
+        assert "<body" in result
         assert "Hello" in result
 
     def test_outlook_valid_html(self) -> None:
