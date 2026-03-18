@@ -2,6 +2,8 @@
 # ruff: noqa: ANN401, ARG002
 """Accessibility Auditor agent service — audits and fixes WCAG issues in email HTML."""
 
+from __future__ import annotations
+
 import contextvars
 import json
 from collections.abc import AsyncIterator

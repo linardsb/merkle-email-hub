@@ -2,6 +2,8 @@
 # ruff: noqa: ANN401, ARG002
 """Code Reviewer agent service -- orchestrates LLM -> parse issues -> optional QA."""
 
+from __future__ import annotations
+
 import contextvars
 import json
 from collections.abc import AsyncIterator

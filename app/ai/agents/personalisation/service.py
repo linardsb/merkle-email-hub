@@ -2,6 +2,8 @@
 # ruff: noqa: ANN401, ARG002
 """Personalisation agent service -- injects ESP personalisation syntax into email HTML."""
 
+from __future__ import annotations
+
 import contextvars
 import json
 from collections.abc import AsyncIterator

@@ -2,6 +2,8 @@
 # ruff: noqa: ANN401, ARG002
 """Outlook Fixer agent service — fixes Outlook rendering issues in email HTML."""
 
+from __future__ import annotations
+
 import json
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any

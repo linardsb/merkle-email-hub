@@ -2,6 +2,8 @@
 # ruff: noqa: ANN401, ARG002
 """Dark Mode agent service — orchestrates LLM → extract → sanitize → QA."""
 
+from __future__ import annotations
+
 import contextvars
 import json
 from collections.abc import AsyncIterator

@@ -139,11 +139,11 @@ _OUTLOOK_UNSUPPORTED_RE = re.compile(
 _BORDER_RADIUS_RE = re.compile(r"border-radius\s*:[^;]+;?", re.IGNORECASE)
 
 _SHORTHAND_MARGIN_RE = re.compile(
-    r"margin\s*:\s*(\S+?)(?:\s+(\S+?))?(?:\s+(\S+?))?(?:\s+(\S+?))?\s*;",
+    r"margin\s*:\s*(\S+?)(?:\s+(\S+?))?(?:\s+(\S+?))?(?:\s+(\S+?))?\s*(?:;|$)",
     re.IGNORECASE,
 )
 _SHORTHAND_PADDING_RE = re.compile(
-    r"padding\s*:\s*(\S+?)(?:\s+(\S+?))?(?:\s+(\S+?))?(?:\s+(\S+?))?\s*;",
+    r"padding\s*:\s*(\S+?)(?:\s+(\S+?))?(?:\s+(\S+?))?(?:\s+(\S+?))?\s*(?:;|$)",
     re.IGNORECASE,
 )
 
