@@ -9,6 +9,7 @@ interface WorkspaceShortcuts {
   onExport?: () => void;
   onToggleChat?: () => void;
   onToggleSidebar?: () => void;
+  onToggleView?: () => void;
 }
 
 export function useWorkspaceShortcuts({
@@ -18,6 +19,7 @@ export function useWorkspaceShortcuts({
   onExport,
   onToggleChat,
   onToggleSidebar,
+  onToggleView,
 }: WorkspaceShortcuts) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -65,9 +67,16 @@ export function useWorkspaceShortcuts({
         onToggleSidebar?.();
         return;
       }
+
+      // Ctrl/Cmd+Shift+V — Toggle view mode
+      if (e.key === "v" && e.shiftKey) {
+        e.preventDefault();
+        onToggleView?.();
+        return;
+      }
     };
 
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [onSave, onGenerate, onRunQA, onExport, onToggleChat, onToggleSidebar]);
+  }, [onSave, onGenerate, onRunQA, onExport, onToggleChat, onToggleSidebar, onToggleView]);
 }

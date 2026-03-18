@@ -10,6 +10,7 @@ import type { Doc as YDoc } from "yjs";
 import type { Awareness } from "y-protocols/awareness";
 import type { SyncStatus } from "@/types/visual-builder";
 import { useBuilderSync } from "@/hooks/use-builder-sync";
+import { ViewSwitcher, type ViewMode } from "./view-switcher";
 
 const CodeEditor = dynamic(
   () =>
@@ -44,14 +45,7 @@ function EditorLoading() {
   );
 }
 
-const SYNC_STATUS_COLORS: Record<SyncStatus, string> = {
-  synced: "bg-success",
-  syncing: "bg-warning animate-pulse",
-  parse_error: "bg-destructive",
-  conflict: "bg-destructive",
-};
-
-type EditorTab = "code" | "builder" | "split";
+type EditorTab = ViewMode;
 
 interface EditorPanelProps {
   value: string;
@@ -70,9 +64,20 @@ interface EditorPanelProps {
     fieldName?: string;
   };
   projectId?: number;
+  onViewChange?: (view: ViewMode) => void;
+  /** Builder-specific callbacks passed through to VisualBuilderPanel */
+  builderProps?: {
+    onRunQA?: () => void;
+    isRunningQA?: boolean;
+    onAISuggest?: () => void;
+    onCopyHtml?: () => void;
+    onDownloadHtml?: () => void;
+    onPushToESP?: () => void;
+    onHighlightSection?: (sectionId: string) => void;
+  };
 }
 
-export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange, onSelectionChange, collaborative, projectId }: EditorPanelProps, ref) {
+export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange, onSelectionChange, collaborative, projectId, onViewChange, builderProps }: EditorPanelProps, ref) {
   // Persist view mode per project in localStorage
   const storageKey = projectId ? `editor-view-${projectId}` : null;
   const [activeTab, setActiveTab] = useState<EditorTab>(() => {
@@ -85,6 +90,14 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
   useEffect(() => {
     if (storageKey) localStorage.setItem(storageKey, activeTab);
   }, [activeTab, storageKey]);
+
+  const handleTabChange = useCallback(
+    (tab: EditorTab) => {
+      setActiveTab(tab);
+      onViewChange?.(tab);
+    },
+    [onViewChange]
+  );
 
   // Sync engine — only active in split mode
   const isSplit = activeTab === "split";
@@ -123,36 +136,11 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
     [isSplit, onChange]
   );
 
-  const tabClasses = (tab: EditorTab) =>
-    `px-4 py-1.5 text-xs font-medium transition-colors ${
-      activeTab === tab
-        ? "border-b-2 border-interactive text-foreground"
-        : "text-muted-foreground hover:text-foreground"
-    }`;
-
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
-      {/* Tab bar */}
-      <div className="flex items-center border-b border-default bg-surface">
-        <button type="button" onClick={() => setActiveTab("code")} className={tabClasses("code")}>
-          {"Code"}
-        </button>
-        <button type="button" onClick={() => setActiveTab("builder")} className={tabClasses("builder")}>
-          {"Builder"}
-        </button>
-        <button type="button" onClick={() => setActiveTab("split")} className={tabClasses("split")}>
-          {"Split"}
-        </button>
-
-        {/* Sync status indicator (split mode only) */}
-        {isSplit && (
-          <div className="ml-2 flex items-center gap-1.5">
-            <div className={`h-1.5 w-1.5 rounded-full ${SYNC_STATUS_COLORS[syncStatus]}`} />
-            {syncStatus === "parse_error" && (
-              <span className="text-[10px] text-destructive">{"Parse error"}</span>
-            )}
-          </div>
-        )}
+      {/* View switcher */}
+      <div className="border-b border-default bg-surface">
+        <ViewSwitcher activeView={activeTab} onViewChange={handleTabChange} syncStatus={isSplit ? syncStatus : undefined} />
       </div>
 
       {/* Parse error banner (split mode) */}
@@ -189,7 +177,18 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
         )}
 
         {activeTab === "builder" && (
-          <VisualBuilderPanel code={value} onCodeChange={onChange} projectId={projectId} />
+          <VisualBuilderPanel
+            code={value}
+            onCodeChange={onChange}
+            projectId={projectId}
+            onRunQA={builderProps?.onRunQA}
+            isRunningQA={builderProps?.isRunningQA}
+            onAISuggest={builderProps?.onAISuggest}
+            onCopyHtml={builderProps?.onCopyHtml}
+            onDownloadHtml={builderProps?.onDownloadHtml}
+            onPushToESP={builderProps?.onPushToESP}
+            onHighlightSection={builderProps?.onHighlightSection}
+          />
         )}
 
         {activeTab === "split" && (
@@ -215,6 +214,13 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
                 onCodeChange={handleSyncedBuilderChange}
                 projectId={projectId}
                 syncedSections={parsedSections}
+                onRunQA={builderProps?.onRunQA}
+                isRunningQA={builderProps?.isRunningQA}
+                onAISuggest={builderProps?.onAISuggest}
+                onCopyHtml={builderProps?.onCopyHtml}
+                onDownloadHtml={builderProps?.onDownloadHtml}
+                onPushToESP={builderProps?.onPushToESP}
+                onHighlightSection={builderProps?.onHighlightSection}
               />
             </div>
           </div>

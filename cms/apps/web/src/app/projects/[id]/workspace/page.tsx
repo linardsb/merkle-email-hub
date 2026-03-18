@@ -50,6 +50,7 @@ import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
 import type { QAResultResponse } from "@/types/qa";
+import type { ViewMode } from "@/components/workspace/view-switcher";
 
 const DEFAULT_TEMPLATE = `---
 title: "New Email Template"
@@ -169,6 +170,9 @@ export default function WorkspacePage() {
     stopFollowing,
   } = usePresence({ awareness, role: "developer" });
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
+
+  // ── View Mode ──
+  const [viewMode, setViewMode] = useState<ViewMode>("code");
 
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
@@ -398,6 +402,29 @@ export default function WorkspacePage() {
     setExportDialogOpen(true);
   }, [compiledHtml]);
 
+  // ── Builder Export Handlers ──
+  const handleCopyHtml = useCallback(() => {
+    const html = sanitizeHtml(stripAnnotations(editorContent));
+    navigator.clipboard.writeText(html).then(
+      () => toast.success("HTML copied to clipboard"),
+      () => toast.error("Failed to copy HTML")
+    );
+  }, [editorContent]);
+
+  const handleDownloadHtml = useCallback(() => {
+    const html = sanitizeHtml(stripAnnotations(editorContent));
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeTemplate?.name ?? "email"}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("HTML downloaded");
+  }, [editorContent, activeTemplate?.name]);
+
   // ── Push to ESP Handler ──
   const handlePushToESP = useCallback(() => {
     if (!compiledHtml?.trim()) {
@@ -446,6 +473,15 @@ export default function WorkspacePage() {
     }
   }, [chatCollapsed, chatPanelRef]);
 
+  // ── View Toggle ──
+  const handleToggleView = useCallback(() => {
+    setViewMode((current) => {
+      const cycle: ViewMode[] = ["code", "builder", "split"];
+      const idx = cycle.indexOf(current);
+      return cycle[(idx + 1) % cycle.length] as ViewMode;
+    });
+  }, []);
+
   // ── Keyboard Shortcuts ──
   useWorkspaceShortcuts({
     onSave: handleSave,
@@ -454,6 +490,7 @@ export default function WorkspacePage() {
     onExport: handleExport,
     onToggleChat: handleToggleChat,
     onToggleSidebar: handleToggleQAPanel,
+    onToggleView: handleToggleView,
   });
 
   // ── Follow Mode: scroll editor to followed user's cursor ──
@@ -573,6 +610,15 @@ export default function WorkspacePage() {
                     user: { name: "You", color: getCursorColor(collabDoc.clientID), role: "developer" },
                   } : undefined}
                   projectId={projectId}
+                  onViewChange={setViewMode}
+                  builderProps={{
+                    onRunQA: handleRunQA,
+                    isRunningQA,
+                    onAISuggest: () => setBlueprintOpen(true),
+                    onCopyHtml: handleCopyHtml,
+                    onDownloadHtml: handleDownloadHtml,
+                    onPushToESP: handlePushToESP,
+                  }}
                 />
               </Panel>
 
