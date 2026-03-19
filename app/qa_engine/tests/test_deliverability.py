@@ -65,7 +65,7 @@ class TestDeliverabilityCheck:
     @pytest.mark.asyncio()
     async def test_clean_transactional_scores_high(self, check: Any) -> None:
         result = await check.run(CLEAN_TRANSACTIONAL)
-        assert result.score >= 0.85  # > 85/100
+        assert result.score >= 0.70  # > 70/100 (ISP penalty on short emails)
         assert result.passed is True
 
     @pytest.mark.asyncio()
@@ -261,24 +261,26 @@ class TestDeliverabilityGetDetailedResult:
     def test_returns_four_dimensions(self) -> None:
         from app.qa_engine.checks.deliverability import get_detailed_result
 
-        score, passed, dims = get_detailed_result(CLEAN_TRANSACTIONAL)
+        score, passed, dims, analysis = get_detailed_result(CLEAN_TRANSACTIONAL)
         assert len(dims) == 4
         assert isinstance(score, int)
         assert isinstance(passed, bool)
+        assert analysis is not None
 
     def test_invalid_html_returns_zero(self) -> None:
         from app.qa_engine.checks.deliverability import get_detailed_result
 
-        score, passed, dims = get_detailed_result("")
+        score, passed, dims, analysis = get_detailed_result("")
         assert score == 0
         assert passed is False
         assert dims == []
+        assert analysis is None
 
     def test_custom_threshold(self) -> None:
         from app.qa_engine.checks.deliverability import get_detailed_result
 
-        score_70, passed_70, _ = get_detailed_result(CLEAN_TRANSACTIONAL, threshold=70)
-        score_99, _passed_99, _ = get_detailed_result(CLEAN_TRANSACTIONAL, threshold=99)
+        score_70, passed_70, _, _ = get_detailed_result(CLEAN_TRANSACTIONAL, threshold=70)
+        score_99, _passed_99, _, _ = get_detailed_result(CLEAN_TRANSACTIONAL, threshold=99)
         assert score_70 == score_99  # same score
         assert passed_70 is True  # passes at 70
         # may or may not pass at 99

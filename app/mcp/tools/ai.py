@@ -62,7 +62,7 @@ Output: Total score, per-dimension breakdown, and specific issues with fix recom
         try:
             from app.qa_engine.checks.deliverability import get_detailed_result
 
-            score, passed, dimensions = get_detailed_result(html)
+            score, passed, dimensions, _isp_analysis = get_detailed_result(html)
             return format_simple_result(
                 {
                     "score": score,

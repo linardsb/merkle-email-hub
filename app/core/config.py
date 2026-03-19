@@ -478,6 +478,14 @@ class TemplatesUploadConfig(BaseModel):
     auto_eval_generate: bool = True  # TEMPLATES__AUTO_EVAL_GENERATE
 
 
+class VariantsConfig(BaseModel):
+    """Multi-variant campaign assembly settings."""
+
+    enabled: bool = False
+    max_variants: int = 5
+    rate_limit_per_hour: int = 3
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -538,6 +546,7 @@ class Settings(BaseSettings):
     plugins: PluginsConfig = PluginsConfig()
     skill_extraction: SkillExtractionConfig = SkillExtractionConfig()
     templates: TemplatesUploadConfig = TemplatesUploadConfig()
+    variants: VariantsConfig = VariantsConfig()
     tolgee: TolgeeConfig = TolgeeConfig()
     kestra: KestraConfig = KestraConfig()
     reporting: ReportingConfig = ReportingConfig()

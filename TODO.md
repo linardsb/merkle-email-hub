@@ -419,7 +419,7 @@
 - SDK regeneration with all new types
 - Target: 110+ tests
 **Verify:** `make test` passes with all new tests. `make check-fe` passes. `make check` all green. No regression in existing test suite. SDK types match API responses.
-- [ ] 25.9 Tests & documentation
+- [x] ~~25.9 Tests & documentation~~ **DONE**
 
 ### 25.10 Template Learning Pipeline — Self-Serve HTML Upload `[Full-Stack]`
 **What:** Allow email developers to upload production HTML templates via UI or API. The system automatically extracts patterns, registers them as golden templates with slot definitions, generates eval test cases, and propagates knowledge to agent skills and CRAG retrieval.
@@ -528,7 +528,7 @@
   - `DELETE /api/v1/evals/templates/{template_id}/cases` — remove cases (e.g., when template is deleted)
 **Security:** Eval cases use synthetic data only — template HTML is analyzed but subscriber data is never included. Generated briefs are deterministic strings, not LLM output. Cases stored as JSON in the repo — version controlled.
 **Verify:** Upload newsletter template → 5 eval cases auto-generated (2 selection, 1 fill, 1 golden, 1 QA) → `make eval-golden` includes the new golden case → passes. Upload 10 templates → 50 cases generated → eval suite coverage increases measurably. Delete a template → associated eval cases removed.
-- [ ] 25.12 Template-to-eval pipeline
+- [x] ~~25.12 Template-to-eval pipeline~~ **DONE**
 
 ### 25.13 Email Deliverability Intelligence `[Backend]`
 **What:** Real-time deliverability risk scoring integrated into the QA pipeline. Analyzes email HTML for patterns that trigger spam filters, damage sender reputation, or cause inbox placement issues across major ISPs (Gmail, Microsoft, Yahoo/AOL). Goes beyond the existing `spam_score` check by incorporating structural analysis, authentication readiness, and ISP-specific heuristics.
@@ -598,7 +598,7 @@
   - `VariantSelector.tsx` — pick which variants to export/send
 **Security:** Variant generation uses the same sanitization pipeline as single-email generation. No additional attack surface. Variant count capped at 5 to prevent resource abuse. Rate limited (3 variant sets/hour per user).
 **Verify:** Brief "Summer sale for premium subscribers" → 3 variants generated: urgency (countdown CTA), benefit (savings calculator), social proof (customer testimonials) → all 3 pass QA → side-by-side preview shows measurable differences in subject line, hero copy, CTA text. Single-template brief → all variants use same layout, only content differs. `make test` passes. `make eval-golden` passes.
-- [ ] 25.14 Multi-variant campaign assembly
+- [x] ~~25.14 Multi-variant campaign assembly~~ **DONE**
 
 ### 25.15 Tests & Documentation for 25.10–25.14 `[Full-Stack]`
 **What:** Test suite for template learning pipeline, skill extraction, template-to-eval, deliverability intelligence, and multi-variant assembly.

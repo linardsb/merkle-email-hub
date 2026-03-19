@@ -99,7 +99,7 @@ Output: Markdown report with go/no-go verdict, per-dimension scores, and priorit
             await ctx.report_progress(progress=0.4, total=1.0)
             from app.qa_engine.checks.deliverability import get_detailed_result
 
-            score, passed, dimensions = get_detailed_result(html)
+            score, passed, dimensions, _isp_analysis = get_detailed_result(html)
             results["deliverability"] = {
                 "score": score,
                 "passed": passed,

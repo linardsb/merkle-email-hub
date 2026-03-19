@@ -1,0 +1,10 @@
+name: sample-qa-check
+version: "1.0.0"
+hub_api_version: ">=1.0"
+plugin_type: qa_check
+entry_point: sample_qa_check.main
+permissions: []
+metadata:
+  author: "Merkle Email Hub"
+  description: "Sample QA check plugin — verifies preheader text exists"
+  tags: ["sample", "qa"]

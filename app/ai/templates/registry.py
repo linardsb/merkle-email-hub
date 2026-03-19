@@ -182,6 +182,56 @@ class TemplateRegistry:
                 result.append(t.metadata)
         return result
 
+    def register_uploaded(self, template: GoldenTemplate) -> None:
+        """Register a template from the upload pipeline.
+
+        Validates name uniqueness and stores in the in-memory registry.
+        Does NOT persist to disk (DB is source of truth for uploaded templates).
+
+        Raises:
+            ValueError: If a template with the same name already exists.
+        """
+        self._ensure_loaded()
+        name = template.metadata.name
+        if name in self._templates:
+            msg = f"Template '{name}' already exists in registry"
+            raise ValueError(msg)
+        self._templates[name] = template
+        logger.info("templates.uploaded_registered", name=name)
+
+    def list_for_selection_with_uploaded(
+        self,
+        project_id: int | None = None,
+    ) -> list[TemplateMetadata]:
+        """List all templates for LLM selection, including uploaded ones.
+
+        Uploaded templates for the given project are tagged with [uploaded].
+        """
+        self._ensure_loaded()
+        result: list[TemplateMetadata] = []
+        for t in self._templates.values():
+            if t.source == "uploaded":
+                # Only include uploaded templates that match the project scope
+                if t.project_id is not None and t.project_id != project_id:
+                    continue
+                result.append(
+                    TemplateMetadata(
+                        name=t.metadata.name,
+                        display_name=t.metadata.display_name,
+                        layout_type=t.metadata.layout_type,
+                        column_count=t.metadata.column_count,
+                        has_hero_image=t.metadata.has_hero_image,
+                        has_navigation=t.metadata.has_navigation,
+                        has_social_links=t.metadata.has_social_links,
+                        sections=t.metadata.sections,
+                        ideal_for=t.metadata.ideal_for,
+                        description=f"[uploaded] {t.metadata.description}",
+                    )
+                )
+            else:
+                result.append(t.metadata)
+        return result
+
     def names(self) -> list[str]:
         """Return all template names."""
         self._ensure_loaded()

@@ -76,3 +76,5 @@ class GoldenTemplate:
     slots: tuple[TemplateSlot, ...]
     maizzle_source: str = ""
     default_tokens: DefaultTokens | None = None
+    source: Literal["builtin", "uploaded"] = "builtin"
+    project_id: int | None = None  # project scope (None = global)

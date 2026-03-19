@@ -65,5 +65,8 @@ traces/*.json
 !traces/baseline.json
 traces/suggestions/*.md
 
+# Uploaded template eval cases (generated at runtime)
+app/ai/agents/evals/data/uploaded_golden/*.json
+
 # Session handoff (transient, not committed)
 HANDOFF.md

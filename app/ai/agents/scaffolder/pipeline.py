@@ -11,6 +11,7 @@ Per-slot retry on content failures.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import json
 import re
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
         PassName,
         PipelineCheckpointCallback,
     )
+    from app.ai.agents.scaffolder.variant_schemas import CampaignVariantSet
     from app.projects.design_system import DesignSystem
 
 from app.ai.agents.scaffolder.pipeline_checkpoint import (
@@ -568,6 +570,170 @@ class ScaffolderPipeline:
             if fill.slot_id == "subject_line":
                 return fill.content
         return ""
+
+    async def execute_variants(
+        self,
+        brief: str,
+        count: int = 3,
+        brand_config: dict[str, object] | None = None,
+    ) -> CampaignVariantSet:
+        """Execute multi-variant pipeline: shared layout+design, parallel content passes.
+
+        1. Layout pass (once) — shared template + sections
+        2. Design pass (once) — shared design tokens
+        3. Strategy selection — LLM picks top N strategies for this brief
+        4. Content pass x N (parallel) — one per strategy with prompt modifier
+        5. Assembly x N (parallel) — deterministic HTML assembly
+        6. QA x N (parallel) — all variants checked
+        7. Comparison matrix — side-by-side diff
+        """
+        from app.ai.agents.scaffolder.variant_generator import (
+            build_comparison_matrix,
+            build_strategy_prompt_modifier,
+            select_strategies,
+        )
+        from app.ai.agents.scaffolder.variant_schemas import (
+            CampaignVariantSet,
+            StrategyName,
+            VariantPlan,
+            VariantResult,
+        )
+
+        brief = sanitize_prompt(brief)
+
+        # Step 1: Layout pass (shared)
+        template_selection, section_decisions = await self._layout_pass(brief)
+        template = self._resolve_template_for_slots(template_selection)
+        slot_details: list[dict[str, object]] = (
+            [
+                {
+                    "slot_id": s.slot_id,
+                    "slot_type": s.slot_type,
+                    "max_chars": s.max_chars,
+                    "required": s.required,
+                }
+                for s in template.slots
+            ]
+            if template
+            else []
+        )
+
+        # Step 2: Design pass (shared)
+        design_tokens = await self._design_pass(brief, brand_config)
+
+        # Step 3: Strategy selection
+        strategies = await select_strategies(brief, count, self._call_json)
+        if not strategies:
+            raise PipelineError("Strategy selection returned no strategies")
+
+        # Step 4: Parallel content passes (one per strategy)
+        variant_labels = ("A", "B", "C", "D", "E")
+
+        async def _content_for_strategy(
+            idx: int,
+            strategy_name: StrategyName,
+            hypothesis: str,
+            differentiator: str,
+        ) -> VariantPlan:
+            modifier = build_strategy_prompt_modifier(strategy_name)
+            modified_brief = f"{brief}\n\n{modifier}"
+            slot_fills = await self._content_pass(modified_brief, template_selection, slot_details)
+
+            return VariantPlan(
+                variant_id=variant_labels[idx],
+                strategy_name=strategy_name,
+                hypothesis=hypothesis,
+                slot_fills=slot_fills,
+                subject_line=self._extract_subject(slot_fills),
+                preheader=self._extract_preheader(slot_fills),
+                predicted_differentiator=differentiator,
+            )
+
+        variant_plans = list(
+            await asyncio.gather(
+                *(
+                    _content_for_strategy(i, name, hyp, diff)
+                    for i, (name, hyp, diff) in enumerate(strategies)
+                )
+            )
+        )
+
+        # Merge locked fills from design system (same as single-email path)
+        locked: dict[str, SlotFill] = {}
+        if self._design_system is not None:
+            available_slots: set[str] = {s.slot_id for s in template.slots} if template else set()
+            locked = self._build_locked_fills(self._design_system, available_slots)
+
+        # Step 5: Assemble + QA each variant (parallel)
+        from app.ai.agents.scaffolder.assembler import TemplateAssembler
+        from app.ai.shared import sanitize_html_xss
+        from app.qa_engine.checks import ALL_CHECKS
+
+        assembler = TemplateAssembler()
+        tier_strategy = self._detect_tier_strategy(template_selection)
+
+        async def _assemble_and_qa(vp: VariantPlan) -> VariantResult:
+            # Apply locked fills
+            fills = vp.slot_fills
+            if locked:
+                fill_map = {sf.slot_id: sf for sf in fills}
+                fill_map.update(locked)
+                fills = tuple(fill_map.values())
+            plan = EmailBuildPlan(
+                template=template_selection,
+                slot_fills=fills,
+                design_tokens=design_tokens,
+                sections=section_decisions,
+                preheader_text=vp.preheader,
+                subject_line=vp.subject_line,
+                tier_strategy=tier_strategy,
+                confidence=0.85,
+                reasoning=f"Variant {vp.variant_id}: {vp.strategy_name}",
+            )
+
+            html = assembler.assemble(plan)
+            html = sanitize_html_xss(html, profile="scaffolder")
+
+            # QA (reuse base agent QA pattern)
+            qa_results = []
+            for check in ALL_CHECKS:
+                qa_results.append(await check.run(html))
+            qa_passed = all(r.passed for r in qa_results)
+
+            return VariantResult(
+                variant_id=vp.variant_id,
+                strategy_name=vp.strategy_name,
+                hypothesis=vp.hypothesis,
+                predicted_differentiator=vp.predicted_differentiator,
+                subject_line=vp.subject_line,
+                preheader=vp.preheader,
+                html=html,
+                build_plan=plan,
+                qa_results=qa_results,
+                qa_passed=qa_passed,
+            )
+
+        variant_results = tuple(
+            await asyncio.gather(*(_assemble_and_qa(vp) for vp in variant_plans))
+        )
+
+        # Step 6: Comparison matrix
+        comparison = build_comparison_matrix(variant_plans)
+
+        logger.info(
+            "scaffolder.variants_completed",
+            variant_count=len(variant_results),
+            all_passed=all(vr.qa_passed for vr in variant_results),
+            strategies=[vr.strategy_name for vr in variant_results],
+        )
+
+        return CampaignVariantSet(
+            brief=brief,
+            base_template=template_selection.template_name,
+            base_design_tokens=dataclasses.asdict(design_tokens),
+            variants=variant_results,
+            comparison=comparison,
+        )
 
     def _detect_tier_strategy(
         self, selection: TemplateSelection

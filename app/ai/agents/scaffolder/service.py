@@ -16,7 +16,15 @@ from app.ai.agents.scaffolder.prompt import (
 from app.ai.agents.scaffolder.prompt import (
     detect_relevant_skills as _detect_relevant_skills,
 )
-from app.ai.agents.scaffolder.schemas import ScaffolderRequest, ScaffolderResponse
+from app.ai.agents.scaffolder.schemas import (
+    ComparisonMatrixResponse,
+    ScaffolderRequest,
+    ScaffolderResponse,
+    SlotDifferenceResponse,
+    VariantRequest,
+    VariantResultResponse,
+    VariantSetResponse,
+)
 from app.ai.agents.schemas.build_plan import EmailBuildPlan
 from app.ai.agents.validation_loop import CRAG_SYSTEM_PROMPT, CRAGMixin
 from app.ai.exceptions import AIExecutionError
@@ -176,6 +184,70 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
             confidence=plan.confidence,
             skills_loaded=[],
             mso_warnings=[],
+        )
+
+    async def generate_variants(self, request: VariantRequest) -> VariantSetResponse:
+        """Generate multi-variant campaign from a single brief."""
+        settings = get_settings()
+        if not settings.variants.enabled:
+            raise AIExecutionError("Multi-variant generation is not enabled")
+
+        if request.variant_count > settings.variants.max_variants:
+            raise AIExecutionError(
+                f"Requested {request.variant_count} variants exceeds maximum of {settings.variants.max_variants}"
+            )
+
+        provider_name = settings.ai.provider
+        model = resolve_model(self._get_model_tier(request))
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+
+        logger.info(
+            "agents.scaffolder.variants_started",
+            provider=provider_name,
+            model=model,
+            variant_count=request.variant_count,
+        )
+
+        pipeline = ScaffolderPipeline(provider, model)
+        try:
+            variant_set = await pipeline.execute_variants(
+                brief=request.brief,
+                count=request.variant_count,
+                brand_config=request.brand_config,
+            )
+        except PipelineError as e:
+            logger.error("agents.scaffolder.variants_failed", error=str(e))
+            raise AIExecutionError("variant generation pipeline failed") from e
+
+        return VariantSetResponse(
+            brief=variant_set.brief,
+            base_template=variant_set.base_template,
+            variant_count=len(variant_set.variants),
+            variants=[
+                VariantResultResponse(
+                    variant_id=vr.variant_id,
+                    strategy_name=vr.strategy_name,
+                    hypothesis=vr.hypothesis,
+                    predicted_differentiator=vr.predicted_differentiator,
+                    subject_line=vr.subject_line,
+                    preheader=vr.preheader,
+                    html=vr.html,
+                    qa_results=list(vr.qa_results),
+                    qa_passed=vr.qa_passed,
+                )
+                for vr in variant_set.variants
+            ],
+            comparison=ComparisonMatrixResponse(
+                subject_lines=variant_set.comparison.subject_lines,
+                preheaders=variant_set.comparison.preheaders,
+                slot_differences=[
+                    SlotDifferenceResponse(slot_id=sd.slot_id, variants=sd.variants)
+                    for sd in variant_set.comparison.slot_differences
+                ],
+                strategy_summary=variant_set.comparison.strategy_summary,
+            ),
+            all_qa_passed=all(vr.qa_passed for vr in variant_set.variants),
         )
 
     # Scaffolder uses generate/stream_generate names for backward compat with routes

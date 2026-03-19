@@ -1,0 +1,42 @@
+id: email-build-and-qa
+namespace: merkle-email-hub
+description: "Standard email build pipeline: blueprint → QA → chaos test → result"
+
+inputs:
+  - id: brief
+    type: STRING
+    required: true
+    description: "Email build brief"
+  - id: blueprint_name
+    type: STRING
+    required: true
+    defaults: "full_pipeline"
+  - id: project_id
+    type: INT
+    required: false
+
+tasks:
+  - id: build
+    type: hub.blueprint_run
+    inputs:
+      brief: "{{ inputs.brief }}"
+      blueprint_name: "{{ inputs.blueprint_name }}"
+      project_id: "{{ inputs.project_id }}"
+    retry:
+      maxAttempt: 3
+      type: constant
+      interval: PT30S
+
+  - id: quality_checks
+    type: io.kestra.core.tasks.flows.Parallel
+    tasks:
+      - id: qa
+        type: hub.qa_check
+        inputs:
+          html: "{{ outputs.build.html }}"
+          project_id: "{{ inputs.project_id }}"
+
+      - id: chaos
+        type: hub.chaos_test
+        inputs:
+          html: "{{ outputs.build.html }}"

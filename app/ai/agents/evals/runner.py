@@ -31,6 +31,7 @@ from app.ai.agents.evals.synthetic_data_knowledge import KNOWLEDGE_TEST_CASES
 from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_CASES
 from app.ai.agents.evals.synthetic_data_personalisation import PERSONALISATION_TEST_CASES
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
+from app.ai.agents.evals.template_eval_generator import TemplateEvalGenerator
 
 
 async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
@@ -56,7 +57,7 @@ async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
                 "qa_passed": response.qa_passed,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -69,7 +70,7 @@ async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
             "dimensions": case["dimensions"],
             "input": {"brief": case["brief"]},
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -110,7 +111,7 @@ async def run_dark_mode_case(case: dict[str, Any]) -> dict[str, Any]:
                 "qa_passed": response.qa_passed,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -128,7 +129,7 @@ async def run_dark_mode_case(case: dict[str, Any]) -> dict[str, Any]:
                 "preserve_colors": case.get("preserve_colors"),
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -166,7 +167,7 @@ async def run_content_case(case: dict[str, Any]) -> dict[str, Any]:
                 "spam_warnings": [w.model_dump() for w in response.spam_warnings],
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -179,7 +180,7 @@ async def run_content_case(case: dict[str, Any]) -> dict[str, Any]:
             "dimensions": case["dimensions"],
             "input": inp,
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -219,7 +220,7 @@ async def run_outlook_fixer_case(case: dict[str, Any]) -> dict[str, Any]:
                 "qa_passed": response.qa_passed,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -235,7 +236,7 @@ async def run_outlook_fixer_case(case: dict[str, Any]) -> dict[str, Any]:
                 "html_length": len(html_input),
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -275,7 +276,7 @@ async def run_accessibility_case(case: dict[str, Any]) -> dict[str, Any]:
                 "qa_passed": response.qa_passed,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -291,7 +292,7 @@ async def run_accessibility_case(case: dict[str, Any]) -> dict[str, Any]:
                 "html_length": len(html_input),
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -337,7 +338,7 @@ async def run_personalisation_case(case: dict[str, Any]) -> dict[str, Any]:
                 "qa_passed": response.qa_passed,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -355,7 +356,7 @@ async def run_personalisation_case(case: dict[str, Any]) -> dict[str, Any]:
                 "requirements": requirements,
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -399,7 +400,7 @@ async def run_code_reviewer_case(case: dict[str, Any]) -> dict[str, Any]:
                 "qa_passed": response.qa_passed,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -416,7 +417,7 @@ async def run_code_reviewer_case(case: dict[str, Any]) -> dict[str, Any]:
                 "focus": focus,
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -456,7 +457,7 @@ async def run_knowledge_case(case: dict[str, Any]) -> dict[str, Any]:
                 "skills_loaded": response.skills_loaded,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -472,7 +473,7 @@ async def run_knowledge_case(case: dict[str, Any]) -> dict[str, Any]:
                 "domain": domain,
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -512,7 +513,7 @@ async def run_innovation_case(case: dict[str, Any]) -> dict[str, Any]:
                 "skills_loaded": response.skills_loaded,
                 "model": response.model,
             },
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
@@ -528,7 +529,7 @@ async def run_innovation_case(case: dict[str, Any]) -> dict[str, Any]:
                 "category": category,
             },
             "output": None,
-            "expected_challenges": case["expected_challenges"],
+            "expected_challenges": case.get("expected_challenges"),
             "elapsed_seconds": round(elapsed, 2),
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
@@ -543,6 +544,7 @@ async def run_agent(
     batch_size: int = 5,
     delay: float = 3.0,
     skip_existing: bool = False,
+    include_uploaded: bool = False,
 ) -> None:
     """Run all test cases for an agent and write traces to JSONL."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -550,7 +552,16 @@ async def run_agent(
     cases: list[dict[str, Any]]
     runner: Any
     if agent == "scaffolder":
-        cases = SCAFFOLDER_TEST_CASES
+        cases = list(SCAFFOLDER_TEST_CASES)
+        if include_uploaded:
+            gen = TemplateEvalGenerator()
+            for tmpl_cases in gen.load_all().values():
+                for c in tmpl_cases:
+                    if c.get("case_type") in (
+                        "selection_positive",
+                        "selection_negative",
+                    ):
+                        cases.append(c)
         runner = run_scaffolder_case
     elif agent == "dark_mode":
         cases = DARK_MODE_TEST_CASES
@@ -666,6 +677,11 @@ async def main() -> None:
         action="store_true",
         help="Skip test cases already in output file (resume after crash)",
     )
+    parser.add_argument(
+        "--include-uploaded",
+        action="store_true",
+        help="Include eval cases from uploaded templates",
+    )
     args = parser.parse_args()
 
     agents = (
@@ -692,6 +708,7 @@ async def main() -> None:
             batch_size=args.batch_size,
             delay=args.delay,
             skip_existing=args.skip_existing,
+            include_uploaded=args.include_uploaded,
         )
 
 

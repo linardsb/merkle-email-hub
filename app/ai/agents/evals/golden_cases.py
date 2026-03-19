@@ -11,9 +11,11 @@ Makefile: make eval-golden
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass, field
 
+from app.ai.agents.evals.template_eval_generator import UPLOADED_GOLDEN_DIR
 from app.ai.templates.registry import get_template_registry
 from app.core.logging import get_logger
 
@@ -118,6 +120,30 @@ GOLDEN_CASES: list[GoldenCase] = [
 ]
 
 
+def load_uploaded_golden_cases() -> list[GoldenCase]:
+    """Load golden cases auto-generated from uploaded templates."""
+    cases: list[GoldenCase] = []
+    if not UPLOADED_GOLDEN_DIR.exists():
+        return cases
+    for path in sorted(UPLOADED_GOLDEN_DIR.glob("*.json")):
+        try:
+            data = json.loads(path.read_text())
+            for case_data in data.get("cases", []):
+                if case_data.get("case_type") != "assembly_golden":
+                    continue
+                cases.append(
+                    GoldenCase(
+                        name=case_data["id"],
+                        template_name=case_data["template_name"],
+                        slot_fills=case_data.get("slot_fills", {}),
+                        expected_qa_checks=case_data.get("expected_qa_checks", {}),
+                    )
+                )
+        except (json.JSONDecodeError, KeyError, TypeError):
+            logger.warning("golden_cases.uploaded_load_failed", path=str(path))
+    return cases
+
+
 @dataclass
 class GoldenResult:
     """Result of running a single golden case."""
@@ -141,7 +167,9 @@ def run_golden_cases(verbose: bool = False) -> list[GoldenResult]:
     registry = get_template_registry()
     results: list[GoldenResult] = []
 
-    for case in GOLDEN_CASES:
+    all_cases = list(GOLDEN_CASES) + load_uploaded_golden_cases()
+
+    for case in all_cases:
         failures: list[str] = []
         template = registry.get(case.template_name)
 

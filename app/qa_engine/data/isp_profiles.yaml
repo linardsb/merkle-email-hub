@@ -1,0 +1,91 @@
+# ISP-specific deliverability thresholds and heuristics.
+# Pure data — no code execution. Developer-maintained.
+
+isps:
+  gmail:
+    display_name: "Gmail"
+    market_share: 0.30  # approximate for reference only
+    thresholds:
+      image_text_ratio_max: 0.60  # 60% image area — above triggers filtering
+      link_density_max: 3.0       # links per 100 words
+      clipping_size_bytes: 104857 # 102KB
+      clipping_warning_pct: 0.85  # warn at 85% of clip threshold
+      max_caps_words: 5
+    promo_tab_triggers:
+      # Patterns that push email to Promotions tab instead of Primary
+      - pattern: "coupon|promo code|discount code|voucher"
+        weight: 3
+        description: "Coupon/promo code language"
+      - pattern: "shop now|buy now|order now|add to cart"
+        weight: 2
+        description: "Direct commerce CTA"
+      - pattern: "\\$\\d+\\.?\\d*\\s*(off|discount|savings?)"
+        weight: 3
+        description: "Price/discount display"
+      - pattern: "(\\$\\d+[\\s\\S]*?){4,}"
+        weight: 4
+        description: "Multiple price mentions (4+)"
+      - pattern: "free shipping|free delivery|free trial"
+        weight: 2
+        description: "Free offer language"
+      - pattern: "limited.?time|expires?\\s+(soon|today|tomorrow)|last\\s+chance|ending\\s+soon"
+        weight: 2
+        description: "Urgency language (Promotions signal)"
+    engagement_signals:
+      # Patterns that improve Primary tab placement
+      - "personalization tokens present"
+      - "conversational tone (first person)"
+      - "reply-to header hint"
+
+  microsoft:
+    display_name: "Microsoft (Outlook.com / Hotmail)"
+    market_share: 0.10
+    thresholds:
+      image_text_ratio_max: 0.40  # stricter for new senders
+      link_density_max: 2.5
+      smartscreen_link_max: 15    # total links before SmartScreen flags
+      max_caps_words: 4
+    smartscreen_patterns:
+      - pattern: "attachment|attached|find attached"
+        weight: 1
+        description: "Attachment indicator words (triggers deeper scan)"
+      - pattern: "verify your (account|identity|email)"
+        weight: 3
+        description: "Verification request (phishing signal)"
+      - pattern: "click (here|below) to (confirm|verify|validate)"
+        weight: 3
+        description: "Click-to-verify pattern"
+
+  yahoo:
+    display_name: "Yahoo / AOL"
+    market_share: 0.06
+    thresholds:
+      image_text_ratio_max: 0.55
+      link_density_max: 3.0       # links per 100 words (>3 is spam trigger)
+      max_caps_words: 5
+    sender_reputation_signals:
+      footer_required: true
+      physical_address_required: true
+      unsubscribe_prominence:
+        min_font_size: 10          # px — unsubscribe must be readable
+        max_nesting_depth: 5       # don't bury it
+      consistent_branding:
+        - "from name matches domain"
+        - "logo present"
+
+# Hidden text detection thresholds
+hidden_text:
+  brightness_proximity_pct: 10     # flag if text/bg colors within 10% brightness
+  min_font_size_px: 1              # font-size below this = hidden
+  suspicious_styles:
+    - "display:none"               # on content divs (not preheader)
+    - "visibility:hidden"
+    - "opacity:0"
+    - "font-size:0"
+    - "line-height:0"
+    - "max-height:0"
+
+# Responsive design thresholds
+responsive:
+  wide_table_threshold_px: 600     # tables wider than this without media queries = problem
+  min_media_queries: 1             # at least 1 responsive breakpoint expected

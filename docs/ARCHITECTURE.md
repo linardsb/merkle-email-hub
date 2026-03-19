@@ -164,3 +164,19 @@
 - ESP token preservation enables round-trip editing of production templates.
 - Room-based architecture scales horizontally via Redis pub/sub bridge.
 - Viewer role enforced at protocol level — cannot send updates, only sync state vectors.
+
+## ADR-012: Platform Ecosystem Architecture
+
+**Decision:** Build platform integrations as isolated, feature-flagged vertical slices with a unified ecosystem dashboard.
+
+**Context:** Phase 25 introduced 5 major platform integrations: plugin system, Tolgee TMS, Kestra workflow orchestration, Penpot design sync, and Typst PDF reporting. Each integration connects to an external service with its own API, failure modes, and lifecycle. Without architectural guidance, these could become tangled dependencies that increase coupling and make the system fragile.
+
+**Solution:** Each integration follows the same structural pattern:
+1. **Feature flag** — `PLUGINS__ENABLED`, `TOLGEE__ENABLED`, `KESTRA__ENABLED`, `DESIGN_SYNC__PENPOT_ENABLED`, `REPORTING__ENABLED`. Disabled by default; router only registered when enabled.
+2. **Vertical slice** — Each integration lives in its own directory with client, service, schemas, routes, exceptions, and tests. No cross-integration imports.
+3. **Client isolation** — External API clients use `httpx.AsyncClient` with `resilient_request()` for retries, timeouts, and circuit-breaking. Clients are independently testable.
+4. **Protocol compliance** — Design sync providers implement `DesignSyncProvider` protocol. Plugin QA checks implement the same `QACheckResult` interface as built-in checks. Workflow tasks implement `HubTask` protocol.
+5. **Security boundary** — Plugins execute in-process with a stdlib blocklist and permission manifest. Kestra custom flows validate task types against an allowlist. Tolgee credentials are encrypted at rest via `encrypt_token()`.
+6. **Unified dashboard** — The ecosystem dashboard (`/ecosystem`) provides a single entry point for all integrations with tab navigation, SWR data fetching (60s auto-refresh), and role-based admin controls.
+
+**Consequence:** Integrations can be enabled/disabled independently. External service failures are isolated — a Kestra outage doesn't affect QA checks or design sync. Each integration can be developed, tested, and deployed independently. The unified dashboard provides operational visibility without requiring users to navigate to 5 separate pages.

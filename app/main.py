@@ -402,6 +402,17 @@ if settings.templates.upload_enabled:
 
     app.include_router(template_upload_router)
 
+    # Template eval case management (Phase 25.12)
+    from app.ai.agents.evals.template_eval_routes import router as eval_template_router
+
+    app.include_router(eval_template_router)
+
+# Multi-variant campaign assembly (Phase 25.14)
+if settings.variants.enabled:
+    from app.ai.agents.scaffolder.variant_routes import router as variant_router
+
+    app.include_router(variant_router)
+
 # Skill extraction endpoints (Phase 25.11)
 if settings.skill_extraction.enabled:
     from app.ai.skills.routes import router as skill_extraction_router

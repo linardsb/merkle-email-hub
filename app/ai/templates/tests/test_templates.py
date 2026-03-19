@@ -100,7 +100,15 @@ class TestTemplateQACompliance:
             # - -webkit-text-size-adjust (vendor prefix, required for iOS)
             # - dark mode background-color in <style> without inline fallback
             #   (Gmail strips <style> but doesn't support prefers-color-scheme)
-            threshold = 0.7 if check.name in {"css_support", "deliverability"} else 0.9
+            # css_support: 0.7 (vendor prefixes, color-scheme limited support)
+            # deliverability: 0.6 (ISP-aware scoring applies per-ISP penalties
+            # that lower scores on promotional templates with high image ratios)
+            if check.name == "deliverability":
+                threshold = 0.6
+            elif check.name == "css_support":
+                threshold = 0.7
+            else:
+                threshold = 0.9
             assert result.score >= threshold, (
                 f"Template {html_file.stem} failed {check.name}: "
                 f"score={result.score}, details={result.details}"

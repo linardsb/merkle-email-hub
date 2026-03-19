@@ -32,6 +32,10 @@ import { DEMO_COMPATIBILITY_BRIEF } from "./data/compatibility-brief";
 import { DEMO_BLUEPRINT_RUN } from "./data/blueprint-run";
 import { DEMO_BLUEPRINT_RUNS } from "./data/blueprint-runs";
 import { DEMO_FAILURE_PATTERNS, DEMO_FAILURE_PATTERN_STATS } from "./data/failure-patterns";
+import { DEMO_CONNECTION, DEMO_LANGUAGES } from "./data/tolgee";
+import { DEMO_PLUGINS, DEMO_PLUGIN_HEALTH } from "./data/plugins";
+import { DEMO_WORKFLOWS, DEMO_EXECUTIONS, DEMO_EXECUTION_LOGS } from "./data/workflows";
+import { DEMO_PENPOT_CONNECTIONS } from "./data/penpot";
 import { demoStore } from "./demo-store";
 
 function paginate<T>(items: T[], url: URL): { items: T[]; total: number; page: number; page_size: number } {
@@ -236,9 +240,9 @@ export function resolveDemo(urlStr: string): unknown | null {
     return { tags: DEMO_KNOWLEDGE_TAGS, total: DEMO_KNOWLEDGE_TAGS.length };
   }
 
-  // ── Design Sync Connections ──
+  // ── Design Sync Connections (includes Penpot) ──
   if (p === "/api/v1/design-sync/connections") {
-    return DEMO_DESIGN_CONNECTIONS;
+    return [...DEMO_DESIGN_CONNECTIONS, ...DEMO_PENPOT_CONNECTIONS];
   }
   m = p.match(/^\/api\/v1\/design-sync\/connections\/(\d+)$/);
   if (m) {
@@ -375,6 +379,39 @@ export function resolveDemo(urlStr: string): unknown | null {
     const clientFilter = url.searchParams.get("client_id");
     if (clientFilter) patterns = patterns.filter((fp) => fp.client_ids.includes(clientFilter));
     return paginate(patterns, url);
+  }
+
+  // ── Tolgee Connections ──
+  m = p.match(/^\/api\/v1\/connectors\/tolgee\/connections\/(\d+)\/languages$/);
+  if (m) {
+    return DEMO_LANGUAGES;
+  }
+  m = p.match(/^\/api\/v1\/connectors\/tolgee\/connections\/(\d+)$/);
+  if (m) {
+    return DEMO_CONNECTION;
+  }
+
+  // ── Plugins ──
+  if (p === "/api/v1/plugins") {
+    return DEMO_PLUGINS;
+  }
+  if (p === "/api/v1/plugins/health") {
+    return DEMO_PLUGIN_HEALTH;
+  }
+
+  // ── Workflows ──
+  if (p === "/api/v1/workflows") {
+    return DEMO_WORKFLOWS;
+  }
+  m = p.match(/^\/api\/v1\/workflows\/([^/]+)$/);
+  if (m) {
+    const execId = m[1];
+    return DEMO_EXECUTIONS.find((e) => e.execution_id === execId) ?? null;
+  }
+  m = p.match(/^\/api\/v1\/workflows\/([^/]+)\/logs$/);
+  if (m) {
+    const execId = m[1]!;
+    return DEMO_EXECUTION_LOGS[execId] ?? null;
   }
 
   return null;

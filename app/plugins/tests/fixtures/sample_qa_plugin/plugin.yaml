@@ -1,0 +1,15 @@
+name: sample-qa-check
+version: "1.0.0"
+hub_api_version: "1.0"
+plugin_type: qa_check
+entry_point: check
+permissions:
+  - read_templates
+  - read_qa_results
+  - write_qa_results
+metadata:
+  author: Test Suite
+  description: Sample QA check plugin for testing
+  tags:
+    - testing
+    - qa

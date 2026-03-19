@@ -50,3 +50,56 @@ class ScaffolderResponse(BaseModel):
     skills_loaded: list[str] = Field(default_factory=list)
     mso_warnings: list[str] = Field(default_factory=list)
     plan: dict[str, object] | None = None
+
+
+class VariantRequest(BaseModel):
+    """Request body for multi-variant campaign assembly."""
+
+    brief: str = Field(min_length=10, max_length=4000, description="Campaign brief")
+    variant_count: int = Field(default=3, ge=2, le=5, description="Number of variants (2-5)")
+    run_qa: bool = True
+    brand_config: dict[str, object] | None = Field(
+        default=None,
+        description="Brand guidelines for design token selection",
+    )
+
+
+class VariantResultResponse(BaseModel):
+    """Single variant in the response."""
+
+    variant_id: str
+    strategy_name: str
+    hypothesis: str
+    predicted_differentiator: str
+    subject_line: str
+    preheader: str
+    html: str
+    qa_results: list[QACheckResult] = Field(default_factory=list)
+    qa_passed: bool = False
+
+
+class SlotDifferenceResponse(BaseModel):
+    """A slot that differs across variants."""
+
+    slot_id: str
+    variants: dict[str, str]
+
+
+class ComparisonMatrixResponse(BaseModel):
+    """Side-by-side comparison."""
+
+    subject_lines: dict[str, str]
+    preheaders: dict[str, str]
+    slot_differences: list[SlotDifferenceResponse] = Field(default_factory=list)
+    strategy_summary: dict[str, str]
+
+
+class VariantSetResponse(BaseModel):
+    """Response from multi-variant generation."""
+
+    brief: str
+    base_template: str
+    variant_count: int
+    variants: list[VariantResultResponse]
+    comparison: ComparisonMatrixResponse
+    all_qa_passed: bool

@@ -1,0 +1,51 @@
+id: weekly-newsletter
+namespace: merkle-email-hub
+description: "Scheduled weekly newsletter: cron trigger → build → QA → approve → push"
+
+triggers:
+  - id: weekly_schedule
+    type: io.kestra.core.models.triggers.types.Schedule
+    cron: "0 9 * * MON"
+    timezone: "UTC"
+
+inputs:
+  - id: brief
+    type: STRING
+    defaults: "Weekly newsletter"
+  - id: project_id
+    type: INT
+    required: true
+  - id: connector_type
+    type: STRING
+    defaults: "braze"
+
+tasks:
+  - id: build
+    type: hub.blueprint_run
+    inputs:
+      brief: "{{ inputs.brief }}"
+      blueprint_name: "full_pipeline"
+      project_id: "{{ inputs.project_id }}"
+    retry:
+      maxAttempt: 3
+      type: constant
+      interval: PT30S
+
+  - id: qa
+    type: hub.qa_check
+    inputs:
+      html: "{{ outputs.build.html }}"
+      project_id: "{{ inputs.project_id }}"
+
+  - id: approval
+    type: hub.approval_gate
+    inputs:
+      project_id: "{{ inputs.project_id }}"
+      approver_role: "admin"
+
+  - id: push
+    type: hub.esp_push
+    inputs:
+      html: "{{ outputs.build.html }}"
+      connector_type: "{{ inputs.connector_type }}"
+      content_block_name: "newsletter-{{ inputs.project_id }}"

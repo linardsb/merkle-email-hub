@@ -30,6 +30,8 @@ from app.design_sync.figma.layout_analyzer import (
     analyze_layout as run_layout_analysis,
 )
 from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
+from app.design_sync.penpot.service import PenpotDesignSyncService
+from app.design_sync.penpot.service import extract_file_id as extract_penpot_id
 from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
@@ -71,6 +73,7 @@ SUPPORTED_PROVIDERS: dict[str, type[DesignSyncProvider]] = {
     "figma": FigmaDesignSyncService,
     "sketch": SketchDesignSyncService,
     "canva": CanvaDesignSyncService,
+    "penpot": PenpotDesignSyncService,
 }
 
 
@@ -97,6 +100,8 @@ class DesignSyncService:
         """Extract provider-specific file reference from URL."""
         if provider == "figma":
             return extract_file_key(file_url)
+        if provider == "penpot":
+            return extract_penpot_id(file_url)
         # Stub providers: use the URL itself as the ref
         return file_url
 

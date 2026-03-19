@@ -132,7 +132,7 @@ class TestQAToolExecution:
             patch("app.core.database.get_db_context", return_value=_mock_db_ctx()),
             patch(
                 "app.qa_engine.checks.deliverability.get_detailed_result",
-                return_value=(85, True, []),
+                return_value=(85, True, [], None),
             ),
             patch("app.qa_engine.gmail_intelligence.predictor.GmailSummaryPredictor") as MockGmail,
             patch(
@@ -419,7 +419,7 @@ class TestAIToolExecution:
     async def test_deliverability_score_returns_dimensions(self) -> None:
         """Deliverability score returns dimension breakdown."""
         with patch("app.qa_engine.checks.deliverability.get_detailed_result") as mock_detail:
-            mock_detail.return_value = (85, True, [])
+            mock_detail.return_value = (85, True, [], None)
 
             mcp = FastMCP("test")
             _register_ai(mcp)

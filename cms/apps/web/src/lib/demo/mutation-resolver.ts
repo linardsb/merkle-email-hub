@@ -8,6 +8,14 @@ import { SPRING_SALE_HERO_HTML } from "./data/html-sources";
 import { DEMO_KNOWLEDGE_DOCUMENTS } from "./data/knowledge";
 import { DEMO_RENDERING_COMPARISON } from "./data/renderings";
 import { buildDemoGraphSearchResults, buildDemoGraphCompletion } from "./data/graph-search";
+import {
+  DEMO_CONNECTION,
+  DEMO_SYNC_RESPONSE,
+  buildDemoPullResponse,
+  buildDemoLocaleBuildResponse,
+} from "./data/tolgee";
+import { DEMO_PLUGINS } from "./data/plugins";
+import { buildDemoReportResponse, buildDemoReportDownload } from "./data/reports";
 import { demoStore } from "./demo-store";
 
 const CHECK_NAMES = [
@@ -458,6 +466,73 @@ export function resolveDemoMutation(urlStr: string, _body: unknown): unknown | n
   // Rendering comparison (POST-based)
   if (p === "/api/v1/rendering/compare") {
     return DEMO_RENDERING_COMPARISON;
+  }
+
+  // ── Tolgee ──
+  if (p === "/api/v1/connectors/tolgee/connect") {
+    return {
+      ...DEMO_CONNECTION,
+      id: Math.floor(Math.random() * 10000) + 100,
+    };
+  }
+  if (p === "/api/v1/connectors/tolgee/sync-keys") {
+    return DEMO_SYNC_RESPONSE;
+  }
+  if (p === "/api/v1/connectors/tolgee/pull") {
+    const body = _body as Record<string, unknown> | null;
+    const locales = (body?.locales as string[] | undefined) ?? ["de"];
+    return buildDemoPullResponse(locales);
+  }
+  if (p === "/api/v1/connectors/tolgee/build-locales") {
+    const body = _body as Record<string, unknown> | null;
+    const locales = (body?.locales as string[] | undefined) ?? ["de"];
+    const templateId = (body?.template_id as number | undefined) ?? 1;
+    return buildDemoLocaleBuildResponse(templateId, locales);
+  }
+
+  // ── Plugin Actions ──
+  if (p.match(/^\/api\/v1\/plugins\/[^/]+\/(enable|disable|restart)$/)) {
+    const pluginName = decodeURIComponent(p.split("/")[4]!);
+    const action = p.split("/")[5];
+    const plugin = DEMO_PLUGINS.plugins.find((pl) => pl.name === pluginName);
+    if (plugin) {
+      return {
+        ...plugin,
+        status: action === "disable" ? "disabled" : "active",
+        loaded_at: action === "disable" ? null : new Date().toISOString(),
+      };
+    }
+    return { name: pluginName, status: action === "disable" ? "disabled" : "active" };
+  }
+
+  // ── Workflow Trigger ──
+  if (p === "/api/v1/workflows/trigger") {
+    const body = _body as Record<string, unknown> | null;
+    const flowId = (body?.flow_id as string) ?? "email-hub.qa-pipeline";
+    return {
+      execution_id: `exec-${Date.now().toString(36)}`,
+      flow_id: flowId,
+      status: "RUNNING",
+      started: new Date().toISOString(),
+      ended: null,
+      inputs: (body?.inputs as Record<string, unknown>) ?? {},
+      outputs: {},
+      task_runs: [
+        { task_id: "init", status: "RUNNING", started: new Date().toISOString(), ended: null, outputs: {} },
+      ],
+    };
+  }
+
+  // ── Report Generation ──
+  if (p.match(/^\/api\/v1\/reports\/(qa|approval|regression)$/)) {
+    const reportType = p.split("/").pop()!;
+    return buildDemoReportResponse(reportType);
+  }
+
+  // ── Report Download ──
+  if (p.match(/^\/api\/v1\/reports\/rpt-/)) {
+    const reportId = p.split("/").pop()!;
+    return buildDemoReportDownload(reportId);
   }
 
   // Brief import

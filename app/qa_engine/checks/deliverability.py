@@ -18,6 +18,14 @@ from typing import TYPE_CHECKING
 
 from lxml import html as lxml_html
 
+from app.qa_engine.deliverability_analyzer import (
+    DeliverabilityAnalysis,
+    colors_within_brightness,
+    parse_color,
+)
+from app.qa_engine.deliverability_analyzer import (
+    analyze as isp_analyze,
+)
 from app.qa_engine.schemas import QACheckResult
 
 if TYPE_CHECKING:
@@ -290,26 +298,62 @@ def _score_html_hygiene(doc: HtmlElement, html: str) -> _DimensionResult:
 
 
 def _check_hidden_text(doc: HtmlElement, result: _DimensionResult) -> None:
-    """Detect hidden text (same color as background)."""
+    """Detect hidden text — brightness proximity, font-size:0, visibility:hidden."""
     for el in doc.xpath("//*[@style]"):
         style = (el.get("style") or "").lower()
-        # Simple check: color and background-color set to same value
-        color_match = re.search(r"(?:^|;)\s*color\s*:\s*([^;]+)", style)
-        bg_match = re.search(r"background(?:-color)?\s*:\s*([^;]+)", style)
+        tag = el.tag
+        el_class = (el.get("class") or "").lower()
+        is_preheader = "preheader" in el_class or "preview" in el_class
+
+        # Color/background brightness proximity (enhanced from exact match)
+        color_match = re.search(r"(?:^|;)\s*color\s*:\s*([^;!]+)", style)
+        bg_match = re.search(r"background(?:-color)?\s*:\s*([^;!]+)", style)
         if color_match and bg_match:
-            color_val = color_match.group(1).strip()
-            bg_val = bg_match.group(1).strip()
-            if color_val == bg_val and color_val not in ("inherit", "initial", "unset"):
+            fg = parse_color(color_match.group(1))
+            bg = parse_color(bg_match.group(1))
+            if fg and bg and colors_within_brightness(fg, bg, 10):
                 result.issues.append(
                     _Issue(
                         dimension="html_hygiene",
                         severity="error",
-                        description="Hidden text detected: text color matches background color.",
-                        fix="Ensure text color is different from background color.",
+                        description=(
+                            f"Hidden text detected: <{tag}> text color and background "
+                            "within 10% brightness."
+                        ),
+                        fix="Ensure text color contrasts visibly with background color.",
                         penalty=10,
                     )
                 )
-                return  # one penalty is enough
+                return
+
+        # font-size: 0 (not preheader)
+        font_match = re.search(r"font-size\s*:\s*0(?:px|em|rem|%)?\s*(?:;|$)", style)
+        if font_match and not is_preheader:
+            result.issues.append(
+                _Issue(
+                    dimension="html_hygiene",
+                    severity="error",
+                    description=f"Hidden text: <{tag}> has font-size: 0.",
+                    fix="Remove zero-size text or use a visible font size.",
+                    penalty=10,
+                )
+            )
+            return
+
+        # visibility:hidden on content
+        if "visibility" in style and "hidden" in style:
+            text = (el.text_content() or "").strip()
+            if len(text) > 10 and not is_preheader:
+                result.issues.append(
+                    _Issue(
+                        dimension="html_hygiene",
+                        severity="error",
+                        description=f"Hidden text: <{tag}> with visibility:hidden ({len(text)} chars).",
+                        fix="Remove hidden content or make it visible.",
+                        penalty=10,
+                    )
+                )
+                return
 
 
 def _score_auth_readiness(doc: HtmlElement, html: str) -> _DimensionResult:
@@ -466,7 +510,7 @@ class DeliverabilityCheck:
     name: str = "deliverability"
 
     async def run(self, html: str, config: QACheckConfig | None = None) -> QACheckResult:
-        """Run deliverability scoring across all 4 dimensions."""
+        """Run deliverability scoring across all 4 dimensions + ISP-specific analysis."""
         try:
             doc = lxml_html.fromstring(html)
         except Exception:
@@ -491,6 +535,11 @@ class DeliverabilityCheck:
         if config and config.params.get("threshold"):
             threshold = int(config.params["threshold"])
 
+        # --- ISP-specific analysis ---
+        isp_analysis = isp_analyze(html)
+        isp_penalty = min(15, isp_analysis.total_isp_flags * 2)
+        total_score = max(0, total_score - isp_penalty)
+
         passed = total_score >= threshold
 
         # Build details string
@@ -498,17 +547,38 @@ class DeliverabilityCheck:
         issue_lines: list[str] = []
         for d in dimensions:
             for issue in d.issues:
-                issue_lines.append(f"[{issue.severity}] {issue.description}")
+                issue_lines.append(f"[{issue.severity}] {issue.description} → {issue.fix}")
 
-        details = f"Score: {total_score}/100 (threshold: {threshold})\n"
+        # Add ISP-specific flags
+        for _isp_name, profile in isp_analysis.isp_risks.items():
+            for flag in profile.flags:
+                issue_lines.append(
+                    f"[{flag.severity}] [{flag.isp.upper()}] {flag.description} → {flag.fix}"
+                )
+
+        # Add structural flags from ISP analysis
+        for sf in isp_analysis.structural_flags:
+            if sf not in issue_lines:
+                issue_lines.append(sf)
+
+        details = f"Score: {total_score}/100 (threshold: {threshold})"
+        details += f" | ISP penalty: -{isp_penalty}"
+        details += f" | Overall risk: {isp_analysis.overall_risk}\n"
         details += " | ".join(dimension_lines)
+
+        # Per-ISP summary
+        for _isp_name, profile in isp_analysis.isp_risks.items():
+            details += (
+                f"\n{profile.display_name}: risk={profile.risk_level}, score={profile.score}/100"
+            )
+
         if issue_lines:
             details += "\n" + "\n".join(issue_lines)
 
-        # Severity based on score
-        if total_score < 40:
+        # Severity based on score and ISP risk
+        if total_score < 40 or isp_analysis.overall_risk == "critical":
             severity = "error"
-        elif total_score < threshold:
+        elif total_score < threshold or isp_analysis.overall_risk == "high":
             severity = "warning"
         else:
             severity = "info"
@@ -516,7 +586,7 @@ class DeliverabilityCheck:
         return QACheckResult(
             check_name=self.name,
             passed=passed,
-            score=total_score / 100.0,  # normalize to 0.0-1.0
+            score=total_score / 100.0,
             details=details,
             severity=severity,
         )
@@ -525,12 +595,12 @@ class DeliverabilityCheck:
 def get_detailed_result(
     html: str,
     threshold: int = 70,
-) -> tuple[int, bool, list[_DimensionResult]]:
-    """Return (score, passed, dimensions) for the standalone endpoint."""
+) -> tuple[int, bool, list[_DimensionResult], DeliverabilityAnalysis | None]:
+    """Return (score, passed, dimensions, isp_analysis) for the standalone endpoint."""
     try:
         doc = lxml_html.fromstring(html)
     except Exception:
-        return (0, False, [])
+        return (0, False, [], None)
 
     dimensions = [
         _score_content_quality(doc, html),
@@ -539,4 +609,9 @@ def get_detailed_result(
         _score_engagement_signals(doc, html),
     ]
     total = sum(d.score for d in dimensions)
-    return (total, total >= threshold, dimensions)
+
+    analysis = isp_analyze(html)
+    isp_penalty = min(15, analysis.total_isp_flags * 2)
+    total = max(0, total - isp_penalty)
+
+    return (total, total >= threshold, dimensions, analysis)

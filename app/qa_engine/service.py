@@ -112,6 +112,47 @@ class QAEngineService:
                 resilience_result = await resilience_check.run(data.html, res_config)
                 check_results.append(resilience_result)
 
+        # Run plugin QA checks (Phase 25.1)
+        if settings.plugins.enabled:
+            from app.plugins.registry import get_plugin_registry
+
+            registry = get_plugin_registry()
+            for check_name, check_fn in registry.get_active_qa_checks().items():
+                check_config = profile.get_check_config(check_name)
+                if check_config and not check_config.enabled:
+                    check_results.append(
+                        QACheckResult(
+                            check_name=check_name,
+                            passed=True,
+                            score=1.0,
+                            details="Check disabled by project configuration",
+                            severity="info",
+                        )
+                    )
+                    continue
+                # Resolve plugin name for this check
+                plugin_name = registry.get_plugin_name_for_check(check_name)
+                try:
+                    plugin_result: QACheckResult = await registry.sandbox.execute(  # type: ignore[assignment]
+                        plugin_name,
+                        check_fn,
+                        data.html,
+                        check_config,
+                        timeout_s=30.0,
+                    )
+                    check_results.append(plugin_result)
+                except Exception as exc:
+                    logger.warning("plugins.qa_check_failed", check=check_name, error=str(exc))
+                    check_results.append(
+                        QACheckResult(
+                            check_name=check_name,
+                            passed=False,
+                            score=0.0,
+                            details=f"Plugin check error: {check_name} — {exc}",
+                            severity="warning",
+                        )
+                    )
+
         passed_count = sum(1 for c in check_results if c.passed)
         overall_score = (
             sum(c.score for c in check_results) / len(check_results) if check_results else 0.0
@@ -453,7 +494,7 @@ class QAEngineService:
         from app.qa_engine.checks.deliverability import get_detailed_result
 
         threshold = settings.qa_deliverability.threshold
-        total_score, passed, dimensions = get_detailed_result(data.html, threshold)
+        total_score, passed, dimensions, _isp_analysis = get_detailed_result(data.html, threshold)
 
         response_dimensions: list[DeliverabilityDimension] = []
         all_issues: list[DeliverabilityIssue] = []

@@ -33,6 +33,7 @@ from app.ai.agents.evals.judges.personalisation import PersonalisationJudge
 from app.ai.agents.evals.judges.scaffolder import ScaffolderJudge
 from app.ai.agents.evals.judges.schemas import CriterionResult, JudgeInput, JudgeVerdict
 from app.ai.agents.evals.judges.visual_qa import VisualQAJudge
+from app.ai.agents.import_annotator.evals.judges.import_judge import ImportAnnotatorJudge
 from app.ai.protocols import CompletionResponse, LLMProvider, Message
 from app.ai.registry import get_registry
 from app.core.config import get_settings
@@ -73,7 +74,8 @@ async def judge_trace(
     | CodeReviewerJudge
     | KnowledgeJudge
     | InnovationJudge
-    | VisualQAJudge,
+    | VisualQAJudge
+    | ImportAnnotatorJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,
@@ -114,7 +116,8 @@ async def judge_trace_hybrid(
     | CodeReviewerJudge
     | KnowledgeJudge
     | InnovationJudge
-    | VisualQAJudge,
+    | VisualQAJudge
+    | ImportAnnotatorJudge,
     trace: dict[str, Any],
     provider: LLMProvider,
     model: str,

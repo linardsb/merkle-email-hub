@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from app.ai.agents.scaffolder.assembler import TemplateAssembler
 from app.ai.agents.schemas.build_plan import (
     DesignTokens,
@@ -11,7 +13,7 @@ from app.ai.agents.schemas.build_plan import (
 )
 
 
-def _make_plan(tier_strategy: str = "universal") -> EmailBuildPlan:
+def _make_plan(tier_strategy: Literal["universal", "progressive"] = "universal") -> EmailBuildPlan:
     """Create a minimal EmailBuildPlan for testing."""
     return EmailBuildPlan(
         template=TemplateSelection(

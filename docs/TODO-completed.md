@@ -2508,6 +2508,20 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 
 ---
 
+## Phase 24.7 — Frontend Builder Integration & Workspace `[Frontend]`
+
+### 24.7 Frontend Builder Integration & Workspace
+- Workspace split-view with code editor ↔ visual builder bidirectional sync
+- Builder toolbar with device preview, QA run, AI suggest, copy/download/push actions
+- Synced sections from code editor render as draggable builder sections
+- Component palette drag-and-drop with version HTML fetch and cache (50-entry LRU)
+- Keyboard shortcuts: Ctrl+Z/Y undo/redo, Delete remove section, Ctrl+D duplicate, Ctrl+Arrow reorder, Escape deselect
+- Property panel integration with design system token overrides
+- Builder onboarding overlay for first-time users
+- [x] ~~24.7 Frontend builder integration & workspace~~ DONE
+
+---
+
 ## Phase 24.8 — Tests & Documentation `[Full-Stack]`
 
 ### 24.8 Tests & Documentation
@@ -2559,5 +2573,98 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - **Tests**: 18 unit tests (service, parsing, annotations, ESP token preservation, fallback, skill detection, schemas), all passing
 - **Security**: CSS selector validation (length + safe chars), generic error messages (no internal leaks), input size validation (2MB)
 - [x] ~~24.9 AI-powered HTML import & section annotation~~ DONE
+
+---
+
+## Phase 25 — Platform Ecosystem & Advanced Integrations (partial)
+
+### 25.1 Plugin Architecture — Manifest, Discovery & Registry `[Backend]` — DONE
+- `app/plugins/` — manifest schema (6 types, 7 permissions, semver), YAML/JSON discovery, dynamic import loader with entry point blocklist, `HubPluginAPI` sandboxed registration, `PluginRegistry` singleton with QA check conflict detection
+- Admin endpoints: `GET/POST/DELETE /api/v1/plugins` with `require_role("admin")` + rate limiting
+- QA engine integration: plugin checks run after core checks with error isolation
+- Sample plugin: `plugins/sample-qa-check/`
+- Config: `PLUGINS__ENABLED=false`; 50 tests
+- [x] ~~25.1 Plugin architecture — manifest, discovery & registry~~ DONE
+
+### 25.2 Plugin Sandboxed Execution & Lifecycle `[Backend]` — DONE
+- `sandbox.py` — `PluginSandbox` with `asyncio.wait_for` timeout, sync/async support, `PluginHealth` dataclass, `PluginExecutionContext` with scoped logger
+- `lifecycle.py` — `PluginLifecycleManager` with startup/shutdown/restart hooks, periodic health monitoring, auto-disable after N failures
+- 3 new admin endpoints: health summary, per-plugin health, restart
+- QA engine plugin checks wrapped in sandbox with 30s timeout
+- Config: `PLUGINS__DEFAULT_TIMEOUT_S`, `PLUGINS__HEALTH_CHECK_INTERVAL_S`, `PLUGINS__MAX_CONSECUTIVE_FAILURES`
+- Lifecycle manager wired into app startup/shutdown; 27 new tests (77 total plugin tests)
+- [x] ~~25.2 Plugin sandboxed execution & lifecycle~~ DONE
+
+### 25.3 Tolgee Multilingual Campaign Support `[Backend]` — DONE
+- `app/connectors/tolgee/` — `TolgeeClient` (httpx + resilient_request), `TranslationKeyExtractor` (HTMLParser, ICU-aware), `LocaleEmailBuilder` (RTL/LTR, Maizzle sidecar), `TolgeeService` with BOLA + encrypted PAT
+- 5 endpoints at `/api/v1/connectors/tolgee/` (connect, sync-keys, pull, build-locales, languages)
+- Config: `TOLGEE__ENABLED=false`; BCP-47 validation; HTML injection prevention; 43 tests
+- [x] ~~25.3 Tolgee multilingual campaign support~~ DONE
+
+### 25.4 Tolgee Frontend & Per-Locale Maizzle Builds `[Frontend]` — DONE
+- 5 components: `TranslationPanel`, `LocalePreview`, `LocaleQAResults`, `InContextOverlay`, `TolgeeConnectionDialog`
+- `hooks/use-tolgee.ts` (6 SWR hooks), `types/tolgee.ts`, demo data with 6 languages
+- Demo resolvers for GET + POST endpoints; all iframes sandboxed; PAT masked
+- [x] ~~25.4 Tolgee frontend & per-locale Maizzle builds~~ DONE
+
+### 25.5 Kestra Workflow Orchestration `[Backend]` — DONE
+- `app/workflows/` — `KestraClient` (shared httpx.AsyncClient), `WorkflowService` (flow CRUD, YAML validation, template sync)
+- 6 task wrappers: `BlueprintRunTask`, `QACheckTask`, `ChaosTestTask`, `ESPPushTask`, `LocaleBuildTask`, `ApprovalGateTask`
+- 4 YAML flow templates: email-build-and-qa, multilingual-campaign, weekly-newsletter, design-import-pipeline
+- 6 HTTP endpoints at `/api/v1/workflows/` with auth + rate limiting; admin-only custom flow creation
+- Config: `KESTRA__ENABLED=false`; conditional router registration + startup template sync; 41 tests
+- [x] ~~25.5 Kestra workflow orchestration~~ DONE
+
+### 25.6 Penpot Design-to-Email Pipeline `[Backend]` — DONE
+- `app/design_sync/penpot/` — `PenpotClient` (async context manager, Penpot v2 RPC API), `PenpotDesignSyncService` implementing `DesignSyncProvider` protocol (5 methods)
+- CSS-to-email converter: color palette heuristics, typography detection, table-layout generator with y-position row grouping
+- Registered in `SUPPORTED_PROVIDERS` + URL extraction routing
+- Config: `DESIGN_SYNC__PENPOT_ENABLED`, `DESIGN_SYNC__PENPOT_BASE_URL`; 24 tests
+- [x] ~~25.6 Penpot design-to-email pipeline~~ DONE
+
+### 25.7 Typst QA Report Generator `[Backend]` — DONE
+- `app/reporting/` — `TypstRenderer` (subprocess compilation with timeout, temp file management), `ReportBuilder` (data assembly from QA/rendering/blueprint services, image base64 embedding), `ReportingService` (Redis-cached PDF generation with TTL)
+- 3 report types: QA report, approval package, regression report + cached retrieval
+- 4 endpoints at `/api/v1/reports/` with auth + rate limiting (5/min generate, 20/min retrieve)
+- Config: `REPORTING__ENABLED=false`, `REPORTING__TYPST_BINARY`, `REPORTING__CACHE_TTL_H=24`, `REPORTING__COMPILATION_TIMEOUT_S=10`
+- Conditional router registration in `app/main.py`; 19 tests
+- [x] ~~25.7 Typst QA report generator~~ DONE
+
+### 25.8 Frontend Ecosystem Dashboard `[Frontend]` — DONE
+- `cms/apps/web/src/components/ecosystem/` — `EcosystemDashboard` (4 stat cards + 4 quadrant panels with health/flow/connection counts), `PluginManagerPanel` (status filter tabs, health summary badges, admin toggle/restart), `PluginRow` (role-based enable/disable/restart with session auth), `WorkflowPanel` (flow cards with template/scheduled badges, trigger dialog with JSON validation, Gantt timeline execution view, log viewer), `ReportPanel` (session-persisted history table, generate dialog with type-specific fields, PDF preview iframe, download via base64), `PenpotPanel` (connection browser)
+- SWR hooks: `use-plugins` (list, health, enable, disable, restart), `use-workflows` (list, status, logs, trigger), `use-reports` (generate QA/approval/regression, download), `use-penpot` (connections)
+- Types: `plugins.ts`, `workflows.ts`, `reports.ts`, `ecosystem.ts`
+- Route at `/ecosystem` with all-role RBAC, tab navigation
+- [x] ~~25.8 Frontend ecosystem dashboard~~ DONE
+
+### 25.9 Tests & Documentation `[Full-Stack]` — DONE
+- 248 tests across Phase 25 modules (77 plugin + 43 Tolgee + 41 workflow + 24 Penpot + 20 reporting + 43 frontend ecosystem)
+- Frontend tests: `ecosystem-dashboard.test.tsx` (10 tests), `plugin-manager.test.tsx` (12 tests), `workflow-panel.test.tsx` (11 tests), `report-panel.test.tsx` (10 tests)
+- Sample plugin fixture: `app/plugins/tests/fixtures/sample_qa_plugin/` with `plugin.yaml` manifest + `check.py` QA check module using proper `QACheckResult`/`QACheckConfig` types
+- ADR-012: Platform Ecosystem Architecture in `docs/ARCHITECTURE.md` — feature-flagged vertical slices, protocol compliance, client isolation, security boundaries, unified dashboard
+- [x] ~~25.9 Tests & documentation~~ DONE
+
+### 25.12 Template-to-Eval Pipeline `[Backend]` — DONE
+- `app/ai/agents/evals/template_eval_generator.py` — `TemplateEvalGenerator` producing 5 deterministic eval cases per uploaded template (selection positive/negative, slot fill, assembly golden, QA passthrough), zero LLM calls
+- `app/ai/agents/evals/template_eval_schemas.py` — Pydantic schemas (`EvalCaseType` StrEnum, `TemplateEvalCase`, `TemplateEvalCaseSet`, `TemplateEvalSummary`)
+- `app/ai/agents/evals/template_eval_routes.py` — 3 REST endpoints at `/api/v1/evals/templates` (GET list, GET by template, DELETE) with `require_role("developer")`/`require_role("admin")` + rate limiting
+- Per-template JSON case storage in `data/uploaded_golden/` directory with path traversal validation (`_validate_template_name`)
+- `golden_cases.py` extended with `load_uploaded_golden_cases()` merging uploaded assembly cases into `run_golden_cases()`
+- `runner.py` extended with `--include-uploaded` flag merging uploaded selection cases into scaffolder eval runs
+- `service.py` replaced old `EvalGenerator` with `TemplateEvalGenerator` — upload confirm auto-generates 5 eval cases
+- Routes registered behind `TEMPLATES__UPLOAD_ENABLED` feature flag; 33 tests (14 generator + 9 golden cases + 10 service)
+- [x] ~~25.12 Template-to-eval pipeline~~ DONE
+
+### 25.14 Multi-Variant Campaign Assembly `[Backend]` — DONE
+- `app/ai/agents/scaffolder/variant_schemas.py` — 6 frozen dataclasses (`VariantPlan`, `VariantResult`, `SlotDifference`, `ComparisonMatrix`, `CampaignVariantSet`) + `StrategyName` Literal type with 6 strategies (urgency_driven, benefit_focused, social_proof, curiosity_gap, personalization_heavy, minimal)
+- `app/ai/agents/scaffolder/variant_generator.py` — `select_strategies()` (LLM picks best N for brief), `build_strategy_prompt_modifier()` (content pass steering), `build_comparison_matrix()` (slot-level diff detection)
+- `app/ai/agents/scaffolder/pipeline.py` — `execute_variants()` method: shared layout+design passes, parallel content passes with strategy modifiers, parallel assembly+QA, comparison matrix generation
+- `app/ai/agents/scaffolder/variant_routes.py` — `POST /api/v1/agents/scaffolder/generate-variants` with `require_role("admin", "developer")` + `@limiter.limit("3/hour")`
+- `app/ai/agents/scaffolder/schemas.py` — `VariantRequest` (brief, variant_count 2-5, brand_config), `VariantSetResponse`, `ComparisonMatrixResponse`
+- `app/ai/agents/scaffolder/service.py` — `generate_variants()` with feature flag gate + configurable `max_variants` enforcement
+- `app/core/config.py` — `VariantsConfig(enabled, max_variants, rate_limit_per_hour)` + `settings.variants`
+- Config: `VARIANTS__ENABLED=false`, `VARIANTS__MAX_VARIANTS=5`, `VARIANTS__RATE_LIMIT_PER_HOUR=3`
+- Conditional router registration in `app/main.py`; 13 tests in `test_variant_generator.py`
+- [x] ~~25.14 Multi-variant campaign assembly~~ **DONE**
 
 ---

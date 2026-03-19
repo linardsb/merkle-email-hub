@@ -1,6 +1,11 @@
 """Tests for golden CI test cases."""
 
-from app.ai.agents.evals.golden_cases import GOLDEN_CASES, GoldenCase, run_golden_cases
+from app.ai.agents.evals.golden_cases import (
+    GOLDEN_CASES,
+    GoldenCase,
+    load_uploaded_golden_cases,
+    run_golden_cases,
+)
 
 
 class TestGoldenCaseDefinitions:
@@ -23,7 +28,7 @@ class TestGoldenCaseDefinitions:
 class TestRunGoldenCases:
     def test_runs_all_cases(self) -> None:
         results = run_golden_cases(verbose=False)
-        assert len(results) == len(GOLDEN_CASES)
+        assert len(results) >= len(GOLDEN_CASES)
 
     def test_all_templates_found(self) -> None:
         results = run_golden_cases(verbose=False)
@@ -35,3 +40,16 @@ class TestRunGoldenCases:
         failed = [r for r in results if not r.passed]
         failure_details = "; ".join(f"{r.case_name}: {', '.join(r.failures)}" for r in failed)
         assert not failed, f"Golden cases failed: {failure_details}"
+
+
+class TestUploadedGoldenCases:
+    def test_load_uploaded_returns_list(self) -> None:
+        """Uploaded golden loader should return a list (possibly empty)."""
+        cases = load_uploaded_golden_cases()
+        assert isinstance(cases, list)
+
+    def test_run_includes_uploaded(self) -> None:
+        """run_golden_cases should include uploaded cases without errors."""
+        results = run_golden_cases(verbose=False)
+        # Should include at least the 7 built-in cases
+        assert len(results) >= len(GOLDEN_CASES)

@@ -102,8 +102,8 @@ async def test_blueprint_stops_at_cap() -> None:
         result = await engine.run("test brief", user_id=1)
 
     assert result.status == "cost_cap_exceeded"
-    # Only first node's usage recorded (second node budget was 0, so break before record)
-    assert mock_tracker.record_usage.call_count == 1
+    # Two nodes recorded: first node runs normally, second node runs and exhausts budget
+    assert mock_tracker.record_usage.call_count == 2
 
 
 @pytest.mark.asyncio

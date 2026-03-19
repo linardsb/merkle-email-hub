@@ -1,0 +1,52 @@
+id: multilingual-campaign
+namespace: merkle-email-hub
+description: "Multilingual campaign: build → translate → per-locale QA → approve → push"
+
+inputs:
+  - id: brief
+    type: STRING
+    required: true
+  - id: blueprint_name
+    type: STRING
+    defaults: "full_pipeline"
+  - id: project_id
+    type: INT
+    required: true
+  - id: locales
+    type: JSON
+    required: true
+    description: "Array of locale codes, e.g. ['en', 'de', 'fr']"
+  - id: connector_type
+    type: STRING
+    defaults: "braze"
+
+tasks:
+  - id: build
+    type: hub.blueprint_run
+    inputs:
+      brief: "{{ inputs.brief }}"
+      blueprint_name: "{{ inputs.blueprint_name }}"
+      project_id: "{{ inputs.project_id }}"
+    retry:
+      maxAttempt: 3
+      type: constant
+      interval: PT30S
+
+  - id: locale_builds
+    type: hub.locale_build
+    inputs:
+      template_id: "{{ outputs.build.run_id }}"
+      locales: "{{ inputs.locales }}"
+
+  - id: approval
+    type: hub.approval_gate
+    inputs:
+      project_id: "{{ inputs.project_id }}"
+      approver_role: "admin"
+
+  - id: push
+    type: hub.esp_push
+    inputs:
+      html: "{{ outputs.build.html }}"
+      connector_type: "{{ inputs.connector_type }}"
+      content_block_name: "campaign-{{ inputs.project_id }}"
