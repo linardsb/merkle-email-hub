@@ -72,6 +72,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: "no"
     deploy:
       resources:
         limits:
@@ -82,18 +83,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8891", "--reload"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8891"]
     expose:
       - "8891"
     ports:
       - "8891:8891"
     volumes:
-      - ./app:/app/app
-      - ./alembic:/app/alembic
-      - ./pyproject.toml:/app/pyproject.toml
-      - ./alembic.ini:/app/alembic.ini
-      - /app/.venv
-
       - document_data:/app/data/documents
 
     env_file:
@@ -101,10 +96,16 @@ services:
         required: false
     environment:
       - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=${ENVIRONMENT:-production}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-email_hub}
       - REDIS__URL=redis://:${REDIS_PASSWORD:-devpassword}@redis:6379/0
       - MAIZZLE_BUILDER_URL=http://maizzle-builder:3001
+      - AUTH__JWT_SECRET_KEY=${AUTH__JWT_SECRET_KEY}
+      - AUTH__DEMO_USER_PASSWORD=${AUTH__DEMO_USER_PASSWORD:-admin}
+      - AI__PROVIDER=${AI__PROVIDER:-anthropic}
+      - AI__API_KEY=${AI__API_KEY}
+      - AI__MODEL=${AI__MODEL:-claude-sonnet-4-20250514}
     depends_on:
       db:
         condition: service_healthy
@@ -136,8 +137,8 @@ services:
     expose:
       - "3000"
     environment:
-      - NEXT_PUBLIC_AGENT_URL=http://app:8891
       - INTERNAL_API_URL=http://app:8891
+      - BACKEND_URL=http://app:8891
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set}
       - AUTH_TRUST_HOST=true
     healthcheck:
