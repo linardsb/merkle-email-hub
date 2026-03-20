@@ -172,7 +172,13 @@ export default function WorkspacePage() {
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
 
   // ── View Mode ──
-  const [viewMode, setViewMode] = useState<ViewMode>("code");
+  const VALID_VIEWS: ViewMode[] = ["code", "builder", "split"];
+  const viewParam = searchParams.get("view");
+  const initialView: ViewMode =
+    viewParam && VALID_VIEWS.includes(viewParam as ViewMode)
+      ? (viewParam as ViewMode)
+      : "code";
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
 
   // ── Persona State ──
   const { data: personas, isLoading: personasLoading } = usePersonas();
@@ -188,19 +194,24 @@ export default function WorkspacePage() {
   );
 
   // Sync editor content when version data loads
-  const demoCompiledRef = useRef(false);
+  const autoCompiledRef = useRef(false);
   useEffect(() => {
     if (latestVersion?.html_source) {
       setEditorContent(latestVersion.html_source);
       setSavedContent(latestVersion.html_source);
       setSaveStatus("idle");
 
-      // Auto-compile in demo mode so preview is always populated
-      if (
-        process.env.NEXT_PUBLIC_DEMO_MODE === "true" &&
-        !demoCompiledRef.current
-      ) {
-        demoCompiledRef.current = true;
+      // Populate Yjs document so collaborative editor shows the content
+      if (collabDoc) {
+        const yText = collabDoc.getText("content");
+        if (yText.length === 0) {
+          yText.insert(0, latestVersion.html_source);
+        }
+      }
+
+      // Auto-compile so preview is always populated
+      if (!autoCompiledRef.current) {
+        autoCompiledRef.current = true;
         const sanitized = sanitizeHtml(stripAnnotations(latestVersion.html_source));
         triggerPreview({ source_html: sanitized })
           .then((r) => {
@@ -210,11 +221,16 @@ export default function WorkspacePage() {
             }
           })
           .catch(() => {
-            /* demo compile failed silently */
+            /* compile failed silently */
           });
       }
     }
-  }, [latestVersion?.html_source, triggerPreview]);
+  }, [latestVersion?.html_source, triggerPreview, collabDoc]);
+
+  // Reset auto-compile flag when template changes
+  useEffect(() => {
+    autoCompiledRef.current = false;
+  }, [activeTemplateId]);
 
   // Track dirty state
   const isDirty = editorContent !== savedContent;
@@ -310,7 +326,7 @@ export default function WorkspacePage() {
       setBuildTimeMs(null);
       setQaResultData(null);
       setQaPanelOpen(false);
-      demoCompiledRef.current = false;
+      autoCompiledRef.current = false;
       const url = new URL(window.location.href);
       url.searchParams.set("template", String(template.id));
       router.replace(url.pathname + url.search, { scroll: false });
@@ -611,6 +627,7 @@ export default function WorkspacePage() {
                   } : undefined}
                   projectId={projectId}
                   onViewChange={setViewMode}
+                  initialView={viewParam ? initialView : undefined}
                   builderProps={{
                     onRunQA: handleRunQA,
                     isRunningQA,

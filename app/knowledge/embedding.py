@@ -173,9 +173,17 @@ def get_embedding_provider(settings: Settings) -> EmbeddingProvider:
     provider = settings.embedding.provider.lower()
 
     if provider in ("openai", "jina"):
+        # Fall back to AI__API_KEY when EMBEDDING__API_KEY is not set
+        api_key = settings.embedding.api_key or settings.ai.api_key or ""
+        if not api_key:
+            logger.warning(
+                "knowledge.embedding.no_api_key",
+                provider=provider,
+                hint="Set EMBEDDING__API_KEY or AI__API_KEY",
+            )
         return OpenAIEmbeddingProvider(
             model=settings.embedding.model,
-            api_key=settings.embedding.api_key or "",
+            api_key=api_key,
             dim=settings.embedding.dimension,
             base_url=settings.embedding.base_url,
         )

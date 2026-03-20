@@ -28,7 +28,7 @@ function sectionNodeToBuilderSection(node: SectionNode): BuilderSection {
     componentId: node.componentId,
     componentName: node.componentName,
     componentSlug: "",
-    category: "custom",
+    category: "content",
     html: node.htmlFragment,
     css: null,
     slotFills: node.slotValues,
@@ -48,6 +48,8 @@ interface VisualBuilderPanelProps {
   syncedSections?: SectionNode[];
   /** Original template shell from ESP import / sync engine */
   templateShell?: string;
+  /** Emit section nodes when builder sections change (for sync engine in split mode) */
+  onSectionsChange?: (sections: SectionNode[]) => void;
   /** Builder toolbar callbacks */
   onRunQA?: () => void;
   isRunningQA?: boolean;
@@ -65,6 +67,7 @@ export function VisualBuilderPanel({
   projectId,
   syncedSections,
   templateShell,
+  onSectionsChange,
   onRunQA,
   isRunningQA,
   onAISuggest,
@@ -137,6 +140,26 @@ export function VisualBuilderPanel({
     setSections(builderSections);
   }, [syncedSections, setSections]);
 
+  // Emit SectionNode[] to parent when builder sections change (split mode sync)
+  const lastEmittedSectionIdsRef = useRef<string>("");
+  useEffect(() => {
+    if (!onSectionsChange || sections.length === 0) return;
+    // Guard against feedback loop: don't re-emit sections we just received
+    const currentIds = sections.map((s) => s.id).join(",");
+    if (currentIds === lastEmittedSectionIdsRef.current) return;
+    if (currentIds === lastSyncedIdsRef.current) return;
+    lastEmittedSectionIdsRef.current = currentIds;
+    const nodes: SectionNode[] = sections.map((s) => ({
+      id: s.id,
+      componentId: s.componentId,
+      componentName: s.componentName,
+      slotValues: { ...s.slotFills },
+      styleOverrides: {},
+      htmlFragment: s.html,
+    }));
+    onSectionsChange(nodes);
+  }, [sections, onSectionsChange]);
+
   // Fetch component version HTML on drop
   const fetchComponentHtml = useCallback(
     async (componentId: number): Promise<VersionResponse | null> => {
@@ -196,7 +219,7 @@ export function VisualBuilderPanel({
         componentId,
         componentName: component.name ?? `Component ${componentId}`,
         componentSlug: "",
-        category: "custom",
+        category: "content",
         html: version.html_source,
         css: version.css_source ?? null,
         slotFills: {},

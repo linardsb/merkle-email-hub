@@ -12,7 +12,12 @@ import type {
 } from "@/types/chat";
 import { extractConfidence, stripConfidenceComment } from "@/lib/confidence";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
+/**
+ * When NEXT_PUBLIC_API_URL is set (e.g. "http://localhost:8891"), requests go
+ * directly to the backend.  Otherwise they go through the Next.js /api/v1/*
+ * catch-all proxy that forwards to the backend preserving the path.
+ */
+const DIRECT_BACKEND = process.env.NEXT_PUBLIC_API_URL || "";
 
 function makeId(): string {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -20,9 +25,15 @@ function makeId(): string {
 
 function buildUrl(agent: AgentMode): string {
   if (agent === "scaffolder") {
-    return `${API_BASE}/api/v1/agents/scaffolder/generate`;
+    // Backend: POST /api/v1/agents/scaffolder/generate
+    return DIRECT_BACKEND
+      ? `${DIRECT_BACKEND}/api/v1/agents/scaffolder/generate`
+      : "/api/v1/agents/scaffolder/generate";
   }
-  return `${API_BASE}/v1/chat/completions`;
+  // Backend: POST /v1/chat/completions (OpenAI-compat prefix)
+  return DIRECT_BACKEND
+    ? `${DIRECT_BACKEND}/v1/chat/completions`
+    : "/api/v1/chat/completions";
 }
 
 function buildBody(
@@ -47,8 +58,6 @@ function buildBody(
 
   return JSON.stringify({ messages: recent, stream: true, ...(pid && { project_id: pid }) });
 }
-
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export function useChat(projectId?: string): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -98,47 +107,6 @@ export function useChat(projectId?: string): UseChatReturn {
 
       const url = buildUrl(agent);
       const body = buildBody(content, agent, messages, projectId);
-
-      // Demo mode: simulate streaming from canned responses
-      if (IS_DEMO) {
-        (async () => {
-          const { DEMO_CHAT_RESPONSES } = await import(
-            "@/lib/demo/chat-responses"
-          );
-          const fullText = DEMO_CHAT_RESPONSES[agent] || DEMO_CHAT_RESPONSES.chat;
-          const words = fullText.split(/(\s+)/);
-          let accumulated = "";
-
-          for (let i = 0; i < words.length; i++) {
-            if (controller.signal.aborted) break;
-            accumulated += words[i];
-            const snapshot = accumulated;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: snapshot } : m,
-              ),
-            );
-            // ~30ms per token for realistic typing feel
-            await new Promise((r) => setTimeout(r, 15 + Math.random() * 30));
-          }
-
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? {
-                    ...m,
-                    isStreaming: false,
-                    confidence: extractConfidence(m.content),
-                    content: stripConfidenceComment(m.content),
-                  }
-                : m,
-            ),
-          );
-          setStatus("idle");
-          abortRef.current = null;
-        })();
-        return;
-      }
 
       (async () => {
         try {
@@ -262,30 +230,24 @@ export function useChat(projectId?: string): UseChatReturn {
       try {
         let data: BlueprintRunResponse;
 
-        if (IS_DEMO) {
-          const { resolveDemo } = await import("@/lib/demo/resolver");
-          await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
-          data = resolveDemo("/api/v1/blueprints/run") as BlueprintRunResponse;
-        } else {
-          const res = await authFetch("/api/v1/blueprints/run", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              blueprint_name: "campaign",
-              brief: brief.trim(),
-              ...(options?.includeHtml && options.currentHtml ? { initial_html: options.currentHtml } : {}),
-              options: pid ? { project_id: pid } : {},
-            }),
-            timeoutMs: LONG_TIMEOUT_MS,
-          });
+        const res = await authFetch("/api/v1/blueprints/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blueprint_name: "campaign",
+            brief: brief.trim(),
+            ...(options?.includeHtml && options.currentHtml ? { initial_html: options.currentHtml } : {}),
+            options: pid ? { project_id: pid } : {},
+          }),
+          timeoutMs: LONG_TIMEOUT_MS,
+        });
 
-          if (!res.ok) {
-            const body = await res.json().catch(() => null);
-            throw new Error(body?.error ?? "Blueprint run failed");
-          }
-
-          data = await res.json();
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error ?? "Blueprint run failed");
         }
+
+        data = await res.json();
 
         const summaryParts: string[] = [];
         summaryParts.push(`**Pipeline ${data.status === "completed" ? "completed" : data.status?.replace(/_/g, " ") ?? "finished"}**`);

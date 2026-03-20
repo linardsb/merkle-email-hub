@@ -12,12 +12,14 @@ const VALID_ROLES: AppRole[] = ["admin", "developer", "viewer"];
 
 const API_BASE = process.env.INTERNAL_API_URL || "http://localhost:8891";
 
-interface TokenPair {
+/** Matches backend LoginResponse schema */
+interface LoginResponseData {
+  id: number;
+  email: string;
+  name: string;
+  role: AppRole;
   access_token: string;
   refresh_token: string;
-  role: AppRole;
-  user_id: number;
-  username: string;
 }
 
 function getExpFromToken(token: string): number {
@@ -43,13 +45,12 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       return { ...token, error: "RefreshAccessTokenError" };
     }
 
-    const data: TokenPair = await res.json();
+    // RefreshResponse only returns access_token (refresh token stays the same)
+    const data: { access_token: string } = await res.json();
     return {
       ...token,
       accessToken: data.access_token,
-      refreshToken: data.refresh_token,
       accessTokenExpires: getExpFromToken(data.access_token),
-      role: VALID_ROLES.includes(data.role as AppRole) ? data.role : "viewer",
     };
   } catch {
     return { ...token, error: "RefreshAccessTokenError" };
@@ -74,43 +75,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        // Demo mode: validate against DEMO_USERNAME + DEMO_PASSWORD env vars
-        if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-          const demoPassword = process.env.DEMO_PASSWORD;
-          const demoUsername = process.env.DEMO_USERNAME;
-          if (demoPassword && String(credentials.password) !== demoPassword) {
-            return null;
-          }
-          if (demoUsername && String(credentials.username) !== demoUsername) {
-            return null;
-          }
-          return {
-            id: "1",
-            name: String(credentials.username) || "demo",
-            role: "admin" as AppRole,
-            accessToken: "demo-access-token",
-            refreshToken: "demo-refresh-token",
-          };
-        }
-
         try {
+          // Backend LoginRequest expects { email, password }
           const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              username: credentials.username,
+              email: credentials.username,
               password: credentials.password,
             }),
           });
 
           if (!res.ok) return null;
 
-          const data: TokenPair = await res.json();
+          const data: LoginResponseData = await res.json();
           const role = VALID_ROLES.includes(data.role as AppRole) ? data.role : "viewer";
 
           return {
-            id: String(data.user_id),
-            name: data.username,
+            id: String(data.id),
+            name: data.name,
+            email: data.email,
             role,
             accessToken: data.access_token,
             refreshToken: data.refresh_token,

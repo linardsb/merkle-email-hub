@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, Sun, Copy, Check, Plus, Camera } from "lucide-react";
+import { Moon, Sun, Copy, Check, Plus, Camera, Pencil, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,11 @@ import { useProjects } from "@/hooks/use-projects";
 import { ComponentPreview } from "./component-preview";
 import { CompatibilityBadge } from "./compatibility-badge";
 import { CompatibilityMatrix } from "./compatibility-matrix";
+import { EditComponentDialog } from "./edit-component-dialog";
+import { DeleteComponentDialog } from "./delete-component-dialog";
+import { CreateVersionDialog } from "./create-version-dialog";
+import { ComponentVersionTimeline } from "./component-version-timeline";
+import { ComponentVersionCompareDialog } from "./component-version-compare-dialog";
 import { VisualQADialog } from "@/components/visual-qa/visual-qa-dialog";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 
@@ -51,9 +56,15 @@ export function ComponentDetailDialog({
   const [campaignOpen, setCampaignOpen] = useState(false);
   const [campaignSearch, setCampaignSearch] = useState("");
   const [visualQaOpen, setVisualQaOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [createVersionOpen, setCreateVersionOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const session = useSession();
   const userRole = session.data?.user?.role;
   const canVisualQa = userRole === "admin" || userRole === "developer";
+  const canEdit = userRole === "admin" || userRole === "developer";
+  const canDelete = userRole === "admin";
 
   const { data: component } = useComponent(componentId);
   const { data: versions } = useComponentVersions(componentId);
@@ -90,6 +101,27 @@ export function ComponentDetailDialog({
           <DialogTitle className="flex items-center gap-2">
             {component?.name ?? "Component Details"}
             <CompatibilityBadge badge={component?.compatibility_badge} />
+            <span className="flex-1" />
+            {canEdit && component && (
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="rounded-md p-1.5 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                aria-label="Edit component"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+            {canDelete && component && (
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                className="rounded-md p-1.5 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-status-danger"
+                aria-label="Delete component"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </DialogTitle>
           {component?.description && (
             <p className="text-sm text-foreground-muted">
@@ -203,45 +235,37 @@ export function ComponentDetailDialog({
 
           {activeTab === "versions" && (
             <div>
-              <h4 className="mb-3 text-sm font-medium text-foreground">
-                {"Version History"}
-              </h4>
-              {versions && versions.length > 0 ? (
-                <ScrollArea className="max-h-96">
-                  <div className="space-y-3">
-                    {versions.map((v) => (
-                      <div
-                        key={v.id}
-                        className="rounded-md border border-border p-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">
-                            {`v${v.version_number}`}
-                          </span>
-                          <span className="text-xs text-foreground-muted">
-                            {new Date(v.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs text-foreground-muted">
-                          {`by User #${v.created_by_id}`}
-                        </p>
-                        {v.changelog ? (
-                          <p className="mt-2 text-xs text-foreground">
-                            {v.changelog}
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-xs text-foreground-muted italic">
-                            {"No changelog"}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <p className="text-sm text-foreground-muted">
-                  {"No versions"}
-                </p>
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-medium text-foreground">
+                  {"Version History"}
+                </h4>
+                <div className="flex gap-2">
+                  {versions && versions.length >= 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setCompareOpen(true)}
+                      className="rounded-md border border-border px-3 py-1 text-xs text-foreground transition-colors hover:bg-surface-hover"
+                    >
+                      {"Compare Versions"}
+                    </button>
+                  )}
+                  {canEdit && componentId && (
+                    <button
+                      type="button"
+                      onClick={() => setCreateVersionOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1 text-xs font-medium text-on-interactive transition-colors hover:bg-interactive-hover"
+                    >
+                      <Plus className="h-3 w-3" />
+                      {"New Version"}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {componentId && (
+                <ComponentVersionTimeline
+                  componentId={componentId}
+                  versions={versions ?? []}
+                />
               )}
             </div>
           )}
@@ -315,6 +339,41 @@ export function ComponentDetailDialog({
           entityType="component_version"
           entityId={latestVersion.id}
         />
+      )}
+
+      {component && (
+        <>
+          <EditComponentDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            component={component}
+          />
+          <DeleteComponentDialog
+            open={deleteOpen}
+            onOpenChange={(o) => {
+              setDeleteOpen(o);
+              if (!o) onOpenChange(false);
+            }}
+            componentId={component.id}
+            componentName={component.name}
+          />
+        </>
+      )}
+
+      {componentId && (
+        <>
+          <CreateVersionDialog
+            open={createVersionOpen}
+            onOpenChange={setCreateVersionOpen}
+            componentId={componentId}
+          />
+          <ComponentVersionCompareDialog
+            open={compareOpen}
+            onOpenChange={setCompareOpen}
+            componentId={componentId}
+            versions={versions ?? []}
+          />
+        </>
       )}
     </Dialog>
   );

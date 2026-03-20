@@ -478,6 +478,17 @@ class TemplatesUploadConfig(BaseModel):
     auto_eval_generate: bool = True  # TEMPLATES__AUTO_EVAL_GENERATE
 
 
+class BriefsConfig(BaseModel):
+    """Brief connection settings."""
+
+    enabled: bool = True
+    sync_timeout: float = 30.0  # HTTP timeout for platform API calls
+    max_items_per_sync: int = 500  # Safety cap on items fetched per sync
+    provider_base_urls: dict[
+        str, str
+    ] = {}  # Override API URLs, e.g. {"asana": "http://localhost:3002/briefs/asana"}
+
+
 class VariantsConfig(BaseModel):
     """Multi-variant campaign assembly settings."""
 
@@ -550,6 +561,7 @@ class Settings(BaseSettings):
     tolgee: TolgeeConfig = TolgeeConfig()
     kestra: KestraConfig = KestraConfig()
     reporting: ReportingConfig = ReportingConfig()
+    briefs: BriefsConfig = BriefsConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

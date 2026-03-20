@@ -150,8 +150,8 @@ class TestCaptureScreenshot:
     @pytest.mark.asyncio()
     async def test_subprocess_called_with_correct_args(self, tmp_path: Path) -> None:
         profile = CLIENT_PROFILES["gmail_web"]
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (b"", b"")
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(b"", b""))
         mock_proc.returncode = 0
 
         # Write a fake PNG so the file exists check passes
@@ -180,7 +180,7 @@ class TestCaptureScreenshot:
     @pytest.mark.asyncio()
     async def test_timeout_raises_screenshot_timeout_error(self, tmp_path: Path) -> None:
         profile = CLIENT_PROFILES["apple_mail"]
-        mock_proc = AsyncMock()
+        mock_proc = MagicMock()
         mock_proc.kill = MagicMock()
 
         with (
@@ -199,8 +199,8 @@ class TestCaptureScreenshot:
     @pytest.mark.asyncio()
     async def test_nonzero_exit_raises_render_error(self, tmp_path: Path) -> None:
         profile = CLIENT_PROFILES["outlook_2019"]
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (b"", b"browser crashed")
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(b"", b"browser crashed"))
         mock_proc.returncode = 1
 
         with (
@@ -310,7 +310,9 @@ class TestRenderingServiceScreenshots:
 
         with patch("app.rendering.service.settings") as mock_settings:
             mock_settings.rendering.screenshots_enabled = False
-            service = RenderingService(db=AsyncMock())
+            _db = AsyncMock()
+            _db.add = MagicMock()
+            service = RenderingService(db=_db)
             with pytest.raises(RenderingProviderError, match="disabled"):
                 from app.rendering.schemas import ScreenshotRequest
 
@@ -345,7 +347,9 @@ class TestRenderingServiceScreenshots:
             ),
         ):
             mock_settings.rendering.screenshots_enabled = True
-            service = RenderingService(db=AsyncMock())
+            _db = AsyncMock()
+            _db.add = MagicMock()
+            service = RenderingService(db=_db)
             response = await service.render_screenshots(
                 ScreenshotRequest(html="<html></html>", clients=["gmail_web"])
             )

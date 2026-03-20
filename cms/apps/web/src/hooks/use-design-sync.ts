@@ -21,7 +21,18 @@ import type {
   ConvertImportArg,
   ExtractComponentsResult,
   ExtractComponentsArg,
+  BrowseFilesResponse,
+  BrowseFilesArg,
 } from "@/types/design-sync";
+
+// ── Browse files (wizard) ──
+
+export function useBrowseDesignFiles() {
+  return useSWRMutation<BrowseFilesResponse, Error, string, BrowseFilesArg>(
+    "/api/v1/design-sync/browse-files",
+    mutationFetcher,
+  );
+}
 
 // ── Existing hooks ──
 

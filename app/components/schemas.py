@@ -18,6 +18,15 @@ class SlotHintSchema(BaseModel):
     max_chars: int | None = Field(None, ge=1, le=5000)
 
 
+class DesignOrigin(BaseModel):
+    """Design tool origin metadata parsed from compatibility JSON."""
+
+    provider: str = Field(..., description="Design tool provider (e.g. figma, penpot)")
+    file_key: str = Field(..., description="Design file identifier")
+    component_id: str = Field(..., description="Component ID within the design file")
+    component_name: str | None = Field(None, description="Human-readable component name")
+
+
 class ComponentBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=100)
@@ -43,6 +52,7 @@ class ComponentResponse(ComponentBase):
     updated_at: datetime.datetime
     latest_version: int | None = None
     compatibility_badge: str | None = None  # "full" | "partial" | "issues" | None
+    design_origin: DesignOrigin | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -89,7 +99,20 @@ class VersionResponse(BaseModel):
     compatibility: dict[str, str] | None = None
     slot_definitions: list[SlotHintSchema] | None = None
     default_tokens: dict[str, Any] | None = None
+    design_origin: DesignOrigin | None = None
     created_by_id: int
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AssignDesignOriginRequest(BaseModel):
+    """Request to assign a design component to a Hub component."""
+
+    connection_id: int = Field(..., description="Design connection ID")
+    design_component_id: str = Field(
+        ..., min_length=1, max_length=500, description="Component ID in the design tool"
+    )
+    design_component_name: str | None = Field(
+        None, max_length=200, description="Human-readable component name"
+    )

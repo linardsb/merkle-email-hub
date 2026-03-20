@@ -1,10 +1,5 @@
 # Frontend Validate — Run All Frontend Quality Checks
 
-## Token Efficiency Note
-If the project is indexed via jcodemunch, use `search_symbols` and `get_file_outline` to locate design system and i18n violations in Levels 3-4 instead of grepping entire file trees.
-
-Run the frontend validation pyramid:
-
 ## Level 1: TypeScript
 ```bash
 cd cms && pnpm --filter @merkle-email-hub/web exec tsc --noEmit
@@ -16,21 +11,32 @@ cd cms && pnpm build
 ```
 This runs turbo build across all packages (SDK + web). Catches TypeScript errors, import issues, and SSR problems.
 
-## Level 3: Design System
-Grep for primitive Tailwind colors in `cms/apps/web/src/**/*.tsx`. No matches = pass.
-Pattern: `(text|bg|border|ring)-(gray|slate|zinc|red|blue|green|...)-\d`
+## Level 3: Design System (via jCodeMunch — no full grep scans)
+
+Use jCodeMunch to find design system violations efficiently:
+1. `search_text({ "query": "text-gray-", "file_pattern": "*.tsx" })` — primitive color usage
+2. `search_text({ "query": "bg-blue-", "file_pattern": "*.tsx" })` — primitive color usage
+3. `search_text({ "query": "bg-slate-", "file_pattern": "*.tsx" })` — primitive color usage
+4. `search_text({ "query": "border-zinc-", "file_pattern": "*.tsx" })` — primitive color usage
+
 Should use semantic tokens (`text-foreground`, `bg-card`, `border-border`, etc.)
+
+Fallback: Grep for `(text|bg|border|ring)-(gray|slate|zinc|red|blue|green)-\d` in `cms/apps/web/src/**/*.tsx`
 
 ## Level 4: i18n
 Grep for hardcoded English strings in component JSX in `cms/apps/web/src/**/*.tsx`.
 All user-visible text must use `useTranslations()` / `t("key")`.
 
 ## Level 5: Security
-- Grep for `as any` in `cms/apps/web/src/**/*.{ts,tsx}`. Flag all instances — should use proper types.
-- Grep for `dangerouslySetInnerHTML` — must have DOMPurify sanitization.
-- Grep for raw `fetch(` calls that should use `authFetch` for authenticated endpoints.
-- Verify token handling uses JWT `exp` claim (not hardcoded millisecond values).
-- Verify data from `sessionStorage`/`localStorage` has runtime type validation before use.
+
+Use jCodeMunch to locate violations without reading full files:
+1. `search_text({ "query": "as any", "file_pattern": "*.ts" })` — flag all instances
+2. `search_text({ "query": "dangerouslySetInnerHTML", "file_pattern": "*.tsx" })` — must have DOMPurify
+3. `search_text({ "query": "fetch(", "file_pattern": "*.ts" })` — verify authenticated endpoints use `authFetch`
+4. `find_references({ "symbol_name": "sessionStorage" })` — verify runtime type validation
+5. `find_references({ "symbol_name": "localStorage" })` — verify runtime type validation
+
+Only `Read` files when you need to fix a violation found above.
 
 ## Notes
 - No ESLint config exists yet — skip lint level until configured

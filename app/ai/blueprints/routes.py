@@ -13,6 +13,8 @@ from sqlalchemy.sql import Select
 from app.ai.blueprints.checkpoint_models import BlueprintCheckpoint
 from app.ai.blueprints.schemas import (
     BlueprintResumeRequest,
+    BlueprintRunListResponse,
+    BlueprintRunRecord,
     BlueprintRunRequest,
     BlueprintRunResponse,
     CheckpointListResponse,
@@ -289,3 +291,141 @@ async def list_run_checkpoints(
         checkpoints=items,
         count=len(items),
     )
+
+
+# ── Blueprint run history (derived from checkpoints) ──
+
+# Separate router for project-scoped blueprint runs
+runs_router = APIRouter(tags=["blueprints"])
+
+
+def _checkpoint_to_run_record(
+    rows: list[BlueprintCheckpoint],
+) -> BlueprintRunRecord:
+    """Aggregate a set of checkpoints (same run_id) into a BlueprintRunRecord."""
+    first = rows[0]
+    last = rows[-1]
+    state = last.state_json or {}
+
+    model_usage = state.get("model_usage", {})
+    total_tokens = int(model_usage.get("total_tokens", 0))
+
+    # Duration: difference between first and last checkpoint timestamps
+    duration_ms = 0
+    if first.created_at and last.created_at:
+        delta = last.created_at - first.created_at
+        duration_ms = int(delta.total_seconds() * 1000)
+
+    return BlueprintRunRecord(
+        id=first.id,
+        run_id=first.run_id,
+        project_id=state.get("project_id"),
+        blueprint_name=first.blueprint_name,
+        brief_excerpt="",
+        status=state.get("status", "unknown"),
+        qa_passed=state.get("qa_passed"),
+        total_tokens=total_tokens,
+        duration_ms=duration_ms,
+        created_at=first.created_at,  # pyright: ignore[reportArgumentType]
+        checkpoint_count=len(rows),
+        resumed_from=state.get("resumed_from"),
+    )
+
+
+@runs_router.get(
+    "/api/v1/projects/{project_id}/blueprint-runs",
+    response_model=BlueprintRunListResponse,
+    dependencies=[Depends(require_role("admin", "developer", "viewer"))],
+)
+@limiter.limit("30/minute")
+async def list_blueprint_runs(
+    request: Request,  # noqa: ARG001
+    project_id: int,
+    status: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> BlueprintRunListResponse:
+    """List blueprint runs for a project, derived from checkpoint data."""
+    from app.projects.service import ProjectService
+
+    await ProjectService(db).verify_project_access(project_id, current_user)
+
+    # Load all checkpoints grouped by run_id, then build records.
+    # Checkpoint tables are bounded (max ~25 per run * N runs) so this is safe.
+    base_q = select(BlueprintCheckpoint).order_by(
+        BlueprintCheckpoint.run_id,
+        BlueprintCheckpoint.node_index.asc(),
+    )
+    result = await db.execute(base_q)
+    all_rows = list(result.scalars().all())
+
+    # Group by run_id
+    runs_map: dict[str, list[BlueprintCheckpoint]] = {}
+    for row in all_rows:
+        runs_map.setdefault(row.run_id, []).append(row)
+
+    # Build records with project_id and status filtering
+    records: list[BlueprintRunRecord] = []
+    for rows in runs_map.values():
+        record = _checkpoint_to_run_record(rows)
+        if record.project_id is not None and record.project_id != project_id:
+            continue
+        if status and status != "all" and record.status != status:
+            continue
+        records.append(record)
+
+    # Sort by created_at descending, then paginate
+    records.sort(key=lambda r: r.created_at, reverse=True)
+    total = len(records)
+    start = (page - 1) * page_size
+    page_items = records[start : start + page_size]
+
+    logger.info(
+        "blueprints.runs_listed",
+        project_id=project_id,
+        total=total,
+        page=page,
+    )
+
+    return BlueprintRunListResponse(
+        items=page_items,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@runs_router.get(
+    "/api/v1/blueprint-runs/{run_id}",
+    response_model=BlueprintRunRecord,
+    dependencies=[Depends(require_role("admin", "developer", "viewer"))],
+)
+@limiter.limit("30/minute")
+async def get_blueprint_run(
+    request: Request,  # noqa: ARG001
+    run_id: int,
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> BlueprintRunRecord:
+    """Get a single blueprint run detail by checkpoint ID."""
+    # The frontend uses a numeric ID (first checkpoint ID for the run)
+    stmt = select(BlueprintCheckpoint).where(BlueprintCheckpoint.id == run_id)
+    result = await db.execute(stmt)
+    first_cp = result.scalar_one_or_none()
+    if not first_cp:
+        from app.core.exceptions import NotFoundError
+
+        raise NotFoundError(f"Blueprint run {run_id} not found")
+
+    # Fetch all checkpoints for this run_id
+    all_stmt = (
+        select(BlueprintCheckpoint)
+        .where(BlueprintCheckpoint.run_id == first_cp.run_id)
+        .order_by(BlueprintCheckpoint.node_index.asc())
+    )
+    all_result = await db.execute(all_stmt)
+    rows = list(all_result.scalars().all())
+
+    return _checkpoint_to_run_record(rows)

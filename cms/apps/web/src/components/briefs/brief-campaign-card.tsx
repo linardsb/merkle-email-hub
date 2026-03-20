@@ -1,9 +1,10 @@
 "use client";
 
-import { Calendar, Users, ImageOff, Building2 } from "lucide-react";
+import { Calendar, Users, ImageOff, Building2, Puzzle, ArrowRight, Link as LinkIcon } from "lucide-react";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
 import type { BriefItem, BriefPlatform } from "@/types/briefs";
+import type { DesignConnection } from "@/types/design-sync";
 
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-badge-info-bg text-badge-info-text",
@@ -45,9 +46,12 @@ function getClientColor(clientName: string): string {
 interface BriefCampaignCardProps {
   item: BriefItem;
   onClick: () => void;
+  designConnection?: DesignConnection | null;
+  onSyncDesign?: (connectionId: number) => void;
+  onConnectDesign?: () => void;
 }
 
-export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
+export function BriefCampaignCard({ item, onClick, designConnection, onSyncDesign, onConnectDesign }: BriefCampaignCardProps) {
   const dueDate = item.due_date
     ? new Date(item.due_date).toLocaleDateString("en-US", {
         month: "short",
@@ -58,10 +62,12 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
   const clientColor = item.client_name ? getClientColor(item.client_name) : undefined;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="w-full overflow-hidden rounded-lg border border-card-border bg-card-bg text-left transition-colors hover:bg-surface-hover"
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+      className="w-full cursor-pointer overflow-hidden rounded-lg border border-card-border bg-card-bg text-left transition-colors hover:bg-surface-hover"
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-muted">
@@ -140,9 +146,31 @@ export function BriefCampaignCard({ item, onClick }: BriefCampaignCardProps) {
           )}
         </div>
 
+        {/* Design sync action */}
+        {designConnection ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onSyncDesign?.(designConnection.id); }}
+            className="flex items-center gap-2 rounded-md border border-interactive/20 bg-interactive/5 px-3 py-2 text-xs font-medium text-interactive transition-colors hover:bg-interactive/10"
+          >
+            <Puzzle className="h-3.5 w-3.5" />
+            Sync & Extract Components
+            <ArrowRight className="ml-auto h-3 w-3" />
+          </button>
+        ) : onConnectDesign ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onConnectDesign(); }}
+            className="flex items-center gap-2 rounded-md border border-dashed border-foreground-muted/30 px-3 py-2 text-xs text-foreground-muted transition-colors hover:border-interactive/40 hover:text-interactive"
+          >
+            <LinkIcon className="h-3.5 w-3.5" />
+            Connect Design File
+          </button>
+        ) : null}
+
         {/* Resources */}
         {item.resources.length > 0 && <BriefResourceLinks resources={item.resources} />}
       </div>
-    </button>
+    </div>
   );
 }

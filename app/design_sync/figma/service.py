@@ -13,6 +13,7 @@ from app.core.logging import get_logger
 from app.design_sync.exceptions import SyncFailedError
 from app.design_sync.protocol import (
     DesignComponent,
+    DesignFile,
     DesignFileStructure,
     DesignNode,
     DesignNodeType,
@@ -67,6 +68,51 @@ def _rgba_to_hex(r: float, g: float, b: float) -> str:
 
 class FigmaDesignSyncService:
     """Real Figma API integration."""
+
+    async def list_files(self, access_token: str) -> list[DesignFile]:
+        """List recent Figma files using GET /v1/me/files/recents."""
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(
+                f"{_FIGMA_API}/v1/me/files/recents",
+                headers={"X-Figma-Token": access_token},
+            )
+        if resp.status_code == 403:
+            raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
+        if resp.status_code != 200:
+            logger.warning("design_sync.figma.list_files_failed", status=resp.status_code)
+            return []
+
+        data: dict[str, Any] = resp.json()
+        files: list[DesignFile] = []
+        for item in data.get("files", []):
+            if not isinstance(item, dict):
+                continue
+            item_d = cast(dict[str, Any], item)
+            file_key = str(item_d.get("key", ""))
+            name = str(item_d.get("name", "Untitled"))
+            thumbnail = item_d.get("thumbnail_url")
+            last_modified_raw = item_d.get("last_modified")
+            last_modified: datetime | None = None
+            if isinstance(last_modified_raw, str):
+                try:
+                    last_modified = datetime.fromisoformat(last_modified_raw.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+            files.append(
+                DesignFile(
+                    file_id=file_key,
+                    name=name,
+                    url=f"https://www.figma.com/design/{file_key}",
+                    thumbnail_url=str(thumbnail) if thumbnail else None,
+                    last_modified=last_modified,
+                    folder=str(item_d.get("folder", {}).get("name"))
+                    if isinstance(item_d.get("folder"), dict)
+                    else None,
+                )
+            )
+
+        logger.info("design_sync.figma.files_listed", count=len(files))
+        return files
 
     async def validate_connection(self, file_ref: str, access_token: str) -> bool:
         """Check that the PAT can access the file."""

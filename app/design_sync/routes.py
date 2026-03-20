@@ -12,6 +12,8 @@ from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.design_sync.schemas import (
     AnalyzeLayoutRequest,
+    BrowseFilesRequest,
+    BrowseFilesResponse,
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionDeleteRequest,
@@ -40,6 +42,23 @@ router = APIRouter(prefix="/api/v1/design-sync", tags=["design-sync"])
 
 def get_service(db: AsyncSession = Depends(get_db)) -> DesignSyncService:
     return DesignSyncService(db)
+
+
+@router.post("/browse-files", response_model=BrowseFilesResponse)
+@limiter.limit("10/minute")
+async def browse_files(
+    request: Request,
+    data: BrowseFilesRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> BrowseFilesResponse:
+    """Browse design files from a provider before creating a connection.
+
+    Token is passed in the request body, NOT logged or persisted.
+    """
+    _ = request
+    _ = current_user  # auth required but no BOLA check (pre-connection)
+    return await service.browse_files(data.provider, data.access_token)
 
 
 @router.get("/connections", response_model=list[ConnectionResponse])

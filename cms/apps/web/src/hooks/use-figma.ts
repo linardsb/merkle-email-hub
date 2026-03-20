@@ -1,50 +1,38 @@
 "use client";
 
-import useSWR from "swr";
-import useSWRMutation from "swr/mutation";
-import { fetcher } from "@/lib/swr-fetcher";
-import { mutationFetcher } from "@/lib/mutation-fetcher";
-import type {
-  FigmaConnection,
-  FigmaDesignTokens,
-  FigmaConnectionCreate,
-} from "@/types/figma";
+/**
+ * Figma-specific convenience hooks — thin wrappers over the unified
+ * design-sync API (`/api/v1/design-sync/`).
+ *
+ * New code should prefer `use-design-sync.ts` directly.
+ */
 
-export function useFigmaConnections() {
-  return useSWR<FigmaConnection[]>("/api/v1/figma/connections", fetcher);
-}
+import {
+  useCreateDesignConnection,
+  useDesignTokens,
+} from "@/hooks/use-design-sync";
+import type { DesignConnectionCreate } from "@/types/design-sync";
 
-export function useFigmaConnection(id: number | null) {
-  return useSWR<FigmaConnection>(
-    id ? `/api/v1/figma/connections/${id}` : null,
-    fetcher,
-  );
-}
+// Re-export Figma-compatible types from design-sync
+export type { DesignConnection as FigmaConnection } from "@/types/design-sync";
+export type { DesignTokens as FigmaDesignTokens } from "@/types/design-sync";
+export type { DesignConnectionCreate as FigmaConnectionCreate } from "@/types/design-sync";
 
-export function useFigmaDesignTokens(connectionId: number | null) {
-  return useSWR<FigmaDesignTokens>(
-    connectionId ? `/api/v1/figma/connections/${connectionId}/tokens` : null,
-    fetcher,
-  );
-}
-
+/**
+ * Create a design connection pre-filled with provider="figma".
+ */
 export function useCreateFigmaConnection() {
-  return useSWRMutation<FigmaConnection, Error, string, FigmaConnectionCreate>(
-    "/api/v1/figma/connections",
-    mutationFetcher,
-  );
+  const mutation = useCreateDesignConnection();
+  return {
+    ...mutation,
+    trigger: (arg: Omit<DesignConnectionCreate, "provider">) =>
+      mutation.trigger({ ...arg, provider: "figma" as const }),
+  };
 }
 
-export function useDeleteFigmaConnection() {
-  return useSWRMutation<{ success: boolean }, Error, string, { id: number }>(
-    "/api/v1/figma/connections/delete",
-    mutationFetcher,
-  );
-}
-
-export function useSyncFigmaConnection() {
-  return useSWRMutation<FigmaConnection, Error, string, { id: number }>(
-    "/api/v1/figma/connections/sync",
-    mutationFetcher,
-  );
+/**
+ * Fetch design tokens for a given connection (provider-agnostic).
+ */
+export function useFigmaDesignTokens(connectionId: number | null) {
+  return useDesignTokens(connectionId);
 }

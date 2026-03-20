@@ -10,4 +10,16 @@
 | #18087 | 9:26 AM | 🔵 | Shared Pattern Architecture - Literal Enums, Integer PKs, No Soft Deletes | ~829 |
 | #18086 | 9:25 AM | 🔵 | Complete Email-Hub Database Schema Inventory via Explore Agent | ~734 |
 | #18085 | 9:24 AM | 🔵 | Comprehensive Database Migration Status Analysis | ~623 |
+
+### Mar 1, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #18430 | 9:14 AM | 🔵 | Authentication API Routes with RBAC and Rate Limiting | ~637 |
+
+### Mar 6, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #19892 | 4:33 PM | 🔵 | Examined user deletion implementation revealing hard delete pattern without soft delete protection | ~648 |
 </claude-mem-context>

@@ -153,3 +153,33 @@ class FailurePatternStats(BaseModel):
     unique_checks: int
     top_agent: str | None = None
     top_check: str | None = None
+
+
+# ── Blueprint run records (derived from checkpoints) ──
+
+
+class BlueprintRunRecord(BaseModel):
+    """A persisted blueprint run record derived from checkpoint data."""
+
+    id: int  # Surrogate — first checkpoint ID for this run
+    run_id: str
+    project_id: int | None = None
+    blueprint_name: str
+    brief_excerpt: str = ""
+    status: str
+    qa_passed: bool | None = None
+    total_tokens: int = 0
+    duration_ms: int = 0
+    created_at: datetime
+    run_data: BlueprintRunResponse | None = None
+    checkpoint_count: int = 0
+    resumed_from: str | None = None
+
+
+class BlueprintRunListResponse(BaseModel):
+    """Paginated list of blueprint run records."""
+
+    items: list[BlueprintRunRecord]
+    total: int
+    page: int
+    page_size: int

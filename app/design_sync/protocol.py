@@ -83,6 +83,18 @@ class DesignFileStructure:
 
 
 @dataclass(frozen=True)
+class DesignFile:
+    """A browsable file returned by design tool providers."""
+
+    file_id: str
+    name: str
+    url: str
+    thumbnail_url: str | None = None
+    last_modified: datetime | None = None
+    folder: str | None = None
+
+
+@dataclass(frozen=True)
 class DesignComponent:
     """A reusable component from a design file."""
 
@@ -101,6 +113,17 @@ class ExportedImage:
     url: str
     format: str  # "png", "jpg", "svg", "pdf"
     expires_at: datetime | None = None
+
+
+@runtime_checkable
+class BrowseableProvider(Protocol):
+    """Protocol for providers that support listing files before connection.
+
+    Separate from DesignSyncProvider to avoid breaking existing contract.
+    Providers that don't support browsing simply don't implement this.
+    """
+
+    async def list_files(self, access_token: str) -> list[DesignFile]: ...
 
 
 @runtime_checkable

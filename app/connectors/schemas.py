@@ -16,6 +16,10 @@ class ExportRequest(BaseModel):
     content_block_name: str = Field(
         default="email", max_length=200, description="Name for the ESP content block"
     )
+    connection_id: int | None = Field(
+        default=None,
+        description="ESP connection ID — when provided, uses real credentials for the API call",
+    )
 
     @model_validator(mode="after")
     def _require_at_least_one_source(self) -> "ExportRequest":

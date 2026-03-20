@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 from typing import cast
 
 from sqlalchemy import select
@@ -16,9 +17,11 @@ from app.connectors.models import ExportRecord
 from app.connectors.protocol import ConnectorProvider
 from app.connectors.schemas import ExportRequest, ExportResponse
 from app.connectors.sfmc.service import SFMCConnectorService
+from app.connectors.sync_models import ESPConnection
 from app.connectors.taxi.service import TaxiConnectorService
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
+from app.design_sync.crypto import decrypt_token
 from app.email_engine.models import EmailBuild
 from app.projects.service import ProjectService
 from app.templates.models import TemplateVersion
@@ -81,22 +84,51 @@ class ConnectorService:
             raise ExportFailedError("Build has no compiled HTML yet")
         return build.compiled_html
 
+    async def _resolve_credentials(self, connection_id: int, user: User) -> dict[str, str]:
+        """Load an ESPConnection, verify BOLA, and decrypt credentials."""
+        logger.info("connectors.resolve_credentials_started", connection_id=connection_id)
+        result = await self.db.execute(
+            select(ESPConnection).where(ESPConnection.id == connection_id)
+        )
+        conn = result.scalar_one_or_none()
+        if conn is None:
+            raise NotFoundError(f"ESP connection {connection_id} not found")
+        project_service = ProjectService(self.db)
+        await project_service.verify_project_access(conn.project_id, user)
+        try:
+            credentials: dict[str, str] = json.loads(decrypt_token(conn.encrypted_credentials))
+        except Exception as exc:
+            logger.error(
+                "connectors.credential_decryption_failed",
+                connection_id=connection_id,
+                error_type=type(exc).__name__,
+            )
+            raise ExportFailedError("Failed to decrypt ESP credentials") from exc
+        logger.info("connectors.resolve_credentials_completed", connection_id=connection_id)
+        return credentials
+
     async def export(self, data: ExportRequest, user: User) -> ExportResponse:
         """Export an email build or template version to the specified ESP."""
         html = await self._resolve_html(data, user)
         provider = self._get_provider(data.connector_type)
+
+        # Resolve credentials if a connection_id was provided
+        credentials: dict[str, str] | None = None
+        if data.connection_id is not None:
+            credentials = await self._resolve_credentials(data.connection_id, user)
 
         logger.info(
             "connectors.export_started",
             connector=data.connector_type,
             build_id=data.build_id,
             template_version_id=data.template_version_id,
+            has_credentials=credentials is not None,
         )
 
         # Template version path: no ExportRecord (no build_id FK to satisfy)
         if data.template_version_id is not None and data.build_id is None:
             try:
-                external_id = await provider.export(html, data.content_block_name)
+                external_id = await provider.export(html, data.content_block_name, credentials)
             except Exception as exc:
                 logger.error(
                     "connectors.export_error",

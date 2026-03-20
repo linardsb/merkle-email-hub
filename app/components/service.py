@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+from sqlalchemy import select as sa_select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.exceptions import (
@@ -13,11 +16,13 @@ from app.components.models import Component
 from app.components.repository import ComponentRepository
 from app.components.sanitize import sanitize_component_html
 from app.components.schemas import (
+    AssignDesignOriginRequest,
     ClientCompatibility,
     ComponentCompatibilityResponse,
     ComponentCreate,
     ComponentResponse,
     ComponentUpdate,
+    DesignOrigin,
     VersionCreate,
     VersionResponse,
 )
@@ -44,6 +49,9 @@ class ComponentService:
         resp.latest_version = latest if latest > 0 else None
         compat = await self.repository.get_latest_compatibility(component_id)
         resp.compatibility_badge = self._compute_badge(compat)
+        # Enrich with design origin from latest version
+        if component.versions:
+            resp.design_origin = self._parse_design_origin(component.versions[0].compatibility)
         return resp
 
     async def list_components(
@@ -57,8 +65,22 @@ class ComponentService:
             offset=pagination.offset, limit=pagination.page_size, category=category, search=search
         )
         total = await self.repository.count(category=category, search=search)
+
+        component_ids = [c.id for c in items]
+        compat_map = await self.repository.get_latest_compatibility_batch(component_ids)
+        version_compat_map = await self.repository.get_latest_version_compatibility_batch(
+            component_ids
+        )
+
+        responses: list[ComponentResponse] = []
+        for c in items:
+            resp = ComponentResponse.model_validate(c)
+            resp.compatibility_badge = self._compute_badge(compat_map.get(c.id))
+            resp.design_origin = self._parse_design_origin(version_compat_map.get(c.id))
+            responses.append(resp)
+
         return PaginatedResponse[ComponentResponse](
-            items=[ComponentResponse.model_validate(c) for c in items],
+            items=responses,
             total=total,
             page=pagination.page,
             page_size=pagination.page_size,
@@ -100,14 +122,21 @@ class ComponentService:
         if data.css_source:
             data.css_source = sanitize_component_html(data.css_source)
         version = await self.repository.create_version(component_id, data, user_id)
-        return VersionResponse.model_validate(version)
+        resp = VersionResponse.model_validate(version)
+        resp.design_origin = self._parse_design_origin(version.compatibility)
+        return resp
 
     async def list_versions(self, component_id: int) -> list[VersionResponse]:
         component = await self.repository.get(component_id)
         if not component:
             raise ComponentNotFoundError(f"Component {component_id} not found")
         versions = await self.repository.get_versions(component_id)
-        return [VersionResponse.model_validate(v) for v in versions]
+        results: list[VersionResponse] = []
+        for v in versions:
+            resp = VersionResponse.model_validate(v)
+            resp.design_origin = self._parse_design_origin(v.compatibility)
+            results.append(resp)
+        return results
 
     async def run_qa_for_version(
         self, component_id: int, version_number: int
@@ -172,6 +201,69 @@ class ComponentService:
         if not component:
             raise ComponentNotFoundError(f"Component {component_id} not found")
         return component
+
+    async def assign_design_origin(
+        self, component_id: int, data: AssignDesignOriginRequest
+    ) -> ComponentResponse:
+        """Assign a design component to a Hub component's latest version."""
+        from app.design_sync.models import DesignConnection
+
+        await self._get_or_404(component_id)
+
+        # Validate the connection exists
+        result = await self.db.execute(
+            sa_select(DesignConnection).where(DesignConnection.id == data.connection_id)
+        )
+        connection = result.scalar_one_or_none()
+        if not connection:
+            raise ComponentNotFoundError(f"Design connection {data.connection_id} not found")
+
+        version = await self.repository.get_latest_version(component_id)
+        if not version:
+            raise ComponentNotFoundError(f"No versions found for component {component_id}")
+
+        # Merge design origin into existing compatibility JSON (don't overwrite QA data)
+        existing_compat: dict[str, object] = dict(version.compatibility or {})
+        existing_compat[connection.provider] = {
+            "file_key": connection.file_ref,
+            "component_id": data.design_component_id,
+            "component_name": data.design_component_name,
+        }
+
+        await self.repository.update_version_compatibility(version, existing_compat)
+
+        logger.info(
+            "components.design_origin_assigned",
+            component_id=component_id,
+            provider=connection.provider,
+            connection_id=data.connection_id,
+        )
+
+        return await self.get_component(component_id)
+
+    @staticmethod
+    def _parse_design_origin(
+        compatibility: dict[str, Any] | None,
+    ) -> DesignOrigin | None:
+        """Extract design origin from version compatibility JSON.
+
+        Looks for known design provider keys (figma, penpot) containing
+        file_key and component_id sub-fields.
+        """
+        if not compatibility:
+            return None
+
+        for provider in ("figma", "penpot"):
+            origin = compatibility.get(provider)
+            if isinstance(origin, dict) and "file_key" in origin and "component_id" in origin:
+                name = origin.get("component_name")
+                return DesignOrigin(
+                    provider=provider,
+                    file_key=str(origin["file_key"]),
+                    component_id=str(origin["component_id"]),
+                    component_name=str(name) if name is not None else None,
+                )
+        return None
 
     @staticmethod
     def _compute_badge(compatibility: dict[str, str] | None) -> str | None:

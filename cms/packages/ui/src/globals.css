@@ -5,6 +5,85 @@
 @import "tailwindcss";
 @import "./tokens.css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ═══════════════════════════════════════════════════════════════════
+   Dark Mode Overrides
+   Override Tier 2 semantic tokens; Tier 3 + shadcn aliases auto-resolve
+   via var() chains — no duplication needed.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.dark {
+  /* Backgrounds */
+  --color-surface: var(--color-neutral-950);
+  --color-surface-elevated: var(--color-neutral-900);
+  --color-surface-muted: var(--color-neutral-800);
+  --color-surface-accent: oklch(0.25 0.040 25);
+  --color-surface-hover: var(--color-neutral-800);
+
+  /* Text */
+  --color-foreground: var(--color-neutral-50);
+  --color-foreground-muted: var(--color-neutral-300);
+  --color-foreground-accent: var(--color-primary-300);
+  --color-foreground-inverse: var(--color-neutral-950);
+
+  /* Borders */
+  --color-border: var(--color-neutral-700);
+  --color-border-muted: var(--color-neutral-800);
+  --color-border-accent: var(--color-primary-500);
+  --color-border-focus: var(--color-primary-400);
+
+  /* Interactive */
+  --color-interactive: var(--color-primary-400);
+  --color-interactive-hover: var(--color-primary-300);
+  --color-interactive-active: var(--color-primary-200);
+  --color-interactive-muted: oklch(0.25 0.040 25);
+
+  /* Status */
+  --color-status-success: var(--color-success-500);
+  --color-status-warning: var(--color-warning-500);
+  --color-status-danger: var(--color-danger-500);
+  --color-status-info: var(--color-primary-400);
+
+  /* Component: Sidebar — Brand navy (darker for dark mode) */
+  --color-sidebar-bg: oklch(0.17 0.09 268);
+  --color-sidebar-text: var(--color-neutral-300);
+  --color-sidebar-text-active: white;
+  --color-sidebar-hover: oklch(0.22 0.08 268);
+  --color-sidebar-active: var(--color-primary-500);
+  --color-sidebar-border: oklch(0.24 0.06 268);
+
+  /* Component: Card */
+  --color-card-bg: var(--color-neutral-900);
+  --color-card-border: var(--color-neutral-700);
+
+  /* Component: Input */
+  --color-input-bg: var(--color-neutral-900);
+  --color-input-border: var(--color-neutral-700);
+  --color-input-focus: var(--color-primary-400);
+  --color-input-placeholder: var(--color-neutral-500);
+
+  /* Component: Badge */
+  --color-badge-default-bg: var(--color-neutral-800);
+  --color-badge-default-text: var(--color-neutral-200);
+  --color-badge-primary-bg: oklch(0.30 0.060 25);
+  --color-badge-primary-text: var(--color-primary-200);
+  --color-badge-success-bg: oklch(0.25 0.040 195);
+  --color-badge-success-text: var(--color-success-500);
+  --color-badge-warning-bg: oklch(0.30 0.060 75);
+  --color-badge-warning-text: var(--color-warning-500);
+  --color-badge-danger-bg: oklch(0.28 0.060 40);
+  --color-badge-danger-text: var(--color-danger-500);
+
+  /* Chart / Data Visualization (lighter for dark backgrounds) */
+  --color-chart-1: oklch(0.65 0.08 265);   /* Lighter navy */
+  --color-chart-2: oklch(0.60 0.09 195);   /* Lighter teal */
+  --color-chart-3: oklch(0.65 0.190 27);   /* Lighter red */
+  --color-chart-4: oklch(0.70 0.13 245);   /* Lighter blue */
+  --color-chart-5: oklch(0.70 0.025 270);  /* Lighter gray */
+  --color-chart-6: oklch(0.75 0.150 75);   /* Lighter amber */
+}
+
 @layer base {
   *,
   *::before,

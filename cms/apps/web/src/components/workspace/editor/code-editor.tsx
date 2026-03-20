@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { keymap, EditorView } from "@codemirror/view";
 import { Compartment } from "@codemirror/state";
@@ -81,15 +81,32 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
     onBrandViolationsChange?.(count);
   }, [onBrandViolationsChange]);
 
-  const collabExtension = useMemo(() => {
-    if (!collaborative) return null;
-    return createCollabExtension({
-      doc: collaborative.doc,
-      awareness: collaborative.awareness,
-      user: collaborative.user,
-      fieldName: collaborative.fieldName,
-    });
-  }, [collaborative]);
+  // Stabilize on doc identity — the collab extension only needs to be created once per doc
+  const collabDoc = collaborative?.doc ?? null;
+  const collabAwareness = collaborative?.awareness ?? null;
+  const collabUser = collaborative?.user;
+  const collabField = collaborative?.fieldName;
+
+  // Defer collab extension creation to after mount — yCollab accesses
+  // DOM parent during setup, which isn't available during render.
+  const [collabExtension, setCollabExtension] = useState<ReturnType<typeof createCollabExtension> | null>(null);
+  useEffect(() => {
+    if (!collabDoc || !collabAwareness || !collabUser) {
+      setCollabExtension(null);
+      return;
+    }
+    try {
+      const ext = createCollabExtension({
+        doc: collabDoc,
+        awareness: collabAwareness,
+        user: collabUser,
+        fieldName: collabField,
+      });
+      setCollabExtension(ext);
+    } catch {
+      setCollabExtension(null);
+    }
+  }, [collabDoc, collabAwareness, collabUser, collabField]);
 
   const extensions = useMemo(
     () => [

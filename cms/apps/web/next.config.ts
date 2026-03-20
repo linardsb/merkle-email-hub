@@ -3,14 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@email-hub/ui", "@email-hub/sdk"],
-  async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: "http://localhost:8891/api/v1/:path*",
-      },
-    ];
-  },
+  skipTrailingSlashRedirect: true,
   async headers() {
     return [
       {
@@ -42,10 +35,10 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob:",
+              "img-src 'self' data: blob: https://s3-alpha.figma.com https://*.figma.com",
               "font-src 'self' data: https://fonts.gstatic.com",
               "worker-src 'self' blob:",
-              "connect-src 'self' https://cdn.jsdelivr.net",
+              "connect-src 'self' https://cdn.jsdelivr.net http://localhost:8891 ws://localhost:8891",
               "frame-ancestors 'none'",
             ].join("; "),
           },

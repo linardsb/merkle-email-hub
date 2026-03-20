@@ -53,7 +53,7 @@ export function ConnectFigmaDialog({ open, onOpenChange }: ConnectFigmaDialogPro
         project_id: projectId,
       });
       await mutate(
-        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/figma"),
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
         undefined,
         { revalidate: true },
       );

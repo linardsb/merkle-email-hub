@@ -7,17 +7,6 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import app.approval.models
-import app.auth.models
-import app.components.models
-import app.connectors.models
-import app.email_engine.models
-import app.example.models
-import app.knowledge.models
-import app.personas.models
-import app.projects.models
-import app.qa_engine.models
-import app.templates.models  # noqa: F401
 from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base

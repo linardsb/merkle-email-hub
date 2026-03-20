@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.models import ComponentQAResult, ComponentVersion
+from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.knowledge.ontology.query import unsupported_css_in_html
 from app.knowledge.ontology.registry import load_ontology
@@ -70,12 +71,29 @@ async def run_component_qa(
 
     # Run QA engine
     qa_service = QAEngineService(db)
-    qa_response = await qa_service.run_checks(
-        QARunRequest(html=version.html_source),  # pyright: ignore[reportCallIssue]
-    )
+    try:
+        qa_response = await qa_service.run_checks(
+            QARunRequest(html=version.html_source),  # pyright: ignore[reportCallIssue]
+        )
+    except Exception as exc:
+        logger.error(
+            "components.qa_engine_failed",
+            component_id=version.component_id,
+            version_number=version.version_number,
+            error=str(exc),
+        )
+        raise AppError("QA engine failed for component version") from exc
 
     # Extract compatibility from ontology analysis
-    compatibility = extract_compatibility(version.html_source)
+    try:
+        compatibility = extract_compatibility(version.html_source)
+    except Exception as exc:
+        logger.error(
+            "components.compatibility_extraction_failed",
+            component_id=version.component_id,
+            error=str(exc),
+        )
+        raise AppError("Compatibility extraction failed") from exc
 
     # Store link + update version compatibility in a single transaction
     cqa = ComponentQAResult(

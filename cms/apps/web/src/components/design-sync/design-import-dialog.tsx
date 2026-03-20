@@ -23,12 +23,12 @@ import { DesignFileBrowser } from "./design-file-browser";
 import {
   useGenerateBrief,
   useCreateDesignImport,
-  useConvertImport,
   useDesignImport,
   useDesignComponents,
   useExtractComponents,
 } from "@/hooks/use-design-sync";
-import type { GeneratedBrief, DesignImport } from "@/types/design-sync";
+import { longMutationFetcher } from "@/lib/mutation-fetcher";
+import type { GeneratedBrief, DesignImport, ConvertImportArg } from "@/types/design-sync";
 
 // ── Types ──
 
@@ -118,7 +118,6 @@ function ImportDesignWizard({
 
   const { trigger: generateBrief, isMutating: isGenerating } = useGenerateBrief();
   const { trigger: createImport, isMutating: isCreating } = useCreateDesignImport();
-  const { trigger: triggerConvert } = useConvertImport(importId);
   const { data: polledImport } = useDesignImport(
     step === "converting" ? importId : null,
     true,
@@ -164,7 +163,14 @@ function ImportDesignWizard({
         selected_node_ids: selectedNodeIds,
       });
       setImportId(importResp.id);
-      await triggerConvert({ run_qa: true, output_mode: "structured" });
+      // Call convert directly with the fresh import ID — can't use
+      // useConvertImport hook here because importId state hasn't
+      // re-rendered yet (stale closure).
+      const convertArg: ConvertImportArg = { run_qa: true, output_mode: "structured" };
+      await longMutationFetcher<DesignImport>(
+        `/api/v1/design-sync/imports/${importResp.id}/convert`,
+        { arg: convertArg },
+      );
       setStep("converting");
     } catch {
       toast.error("Failed");
@@ -302,7 +308,7 @@ function ImportDesignWizard({
                     type="button"
                     onClick={() =>
                       router.push(
-                        `/projects/${importResult.project_id}/workspace?template=${importResult.result_template_id}`,
+                        `/projects/${importResult.project_id}/workspace?template=${importResult.result_template_id}&view=code`,
                       )
                     }
                     className="flex items-center gap-1.5 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"

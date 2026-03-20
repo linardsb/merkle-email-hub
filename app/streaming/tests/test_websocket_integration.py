@@ -31,6 +31,7 @@ def _make_user(user_id: int = 1, role: str = "admin") -> Any:
 def _make_mock_db() -> AsyncMock:
     """Create a mock async DB session for CRDT operations."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock

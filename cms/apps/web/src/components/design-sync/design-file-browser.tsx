@@ -21,7 +21,7 @@ interface DesignFileBrowserProps {
   onSelectionChange: (nodeIds: string[]) => void;
 }
 
-const SELECTABLE_TYPES = new Set(["FRAME", "GROUP", "COMPONENT", "COMPONENT_SET"]);
+const SELECTABLE_TYPES = new Set(["FRAME", "GROUP", "COMPONENT", "COMPONENT_SET", "INSTANCE", "SECTION"]);
 
 function getNodeIcon(type: string) {
   switch (type) {

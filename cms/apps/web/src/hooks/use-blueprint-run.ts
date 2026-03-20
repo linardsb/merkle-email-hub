@@ -4,8 +4,6 @@ import { useCallback, useState } from "react";
 import { authFetch, LONG_TIMEOUT_MS } from "@/lib/auth-fetch";
 import type { BlueprintRunResponse } from "@email-hub/sdk";
 
-const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-
 interface UseBlueprintRunOptions {
   projectId: number;
 }
@@ -35,14 +33,6 @@ export function useBlueprintRun({ projectId }: UseBlueprintRunOptions) {
       setResult(null);
 
       try {
-        if (IS_DEMO) {
-          const { resolveDemo } = await import("@/lib/demo/resolver");
-          await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
-          const data = resolveDemo("/api/v1/blueprints/run") as BlueprintRunResponse;
-          setResult(data);
-          return data;
-        }
-
         const res = await authFetch("/api/v1/blueprints/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -79,14 +69,6 @@ export function useBlueprintRun({ projectId }: UseBlueprintRunOptions) {
       setResult(null);
 
       try {
-        if (IS_DEMO) {
-          const { resolveDemo } = await import("@/lib/demo/resolver");
-          await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
-          const data = resolveDemo("/api/v1/blueprints/resume") as BlueprintRunResponse;
-          setResult(data);
-          return data;
-        }
-
         const res = await authFetch("/api/v1/blueprints/resume", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

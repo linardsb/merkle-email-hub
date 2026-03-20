@@ -29,6 +29,7 @@ def _make_db_row(room_id: str = ROOM) -> MagicMock:
 def _make_db(row: MagicMock | None = None) -> AsyncMock:
     """Create mock db session. If row is None, simulates new doc creation."""
     db = AsyncMock()
+    db.add = MagicMock()
     if row is None:
         result_mock = MagicMock()
         result_mock.scalar_one_or_none.return_value = None

@@ -1,6 +1,6 @@
 export type DesignConnectionStatus = "connected" | "syncing" | "error" | "disconnected";
 
-export type DesignProvider = "figma" | "sketch" | "canva" | "penpot";
+export type DesignProvider = "figma" | "sketch" | "canva" | "penpot" | "mock";
 
 export interface DesignConnection {
   id: number;
@@ -13,6 +13,7 @@ export interface DesignConnection {
   last_synced_at: string | null;
   project_id: number | null;
   project_name: string | null;
+  error_message: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +51,28 @@ export interface DesignConnectionCreate {
   project_id: number | null;
   name: string;
   provider: DesignProvider;
+}
+
+// ── Browse files (wizard) ──
+
+export interface DesignFileBrowse {
+  file_id: string;
+  name: string;
+  url: string;
+  thumbnail_url: string | null;
+  last_modified: string | null;
+  folder: string | null;
+}
+
+export interface BrowseFilesResponse {
+  provider: string;
+  files: DesignFileBrowse[];
+  total: number;
+}
+
+export interface BrowseFilesArg {
+  provider: DesignProvider;
+  access_token: string;
 }
 
 // ── File tree (12.7) ──
@@ -176,7 +199,7 @@ export interface CreateImportArg {
 
 export interface ConvertImportArg {
   run_qa?: boolean;
-  output_mode?: string;
+  output_mode?: "html" | "structured";
 }
 
 export interface ExtractComponentsArg {

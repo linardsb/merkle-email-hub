@@ -33,8 +33,6 @@ export function useChatHistory(projectId: string) {
   const [sessions, setSessions] = useState<ChatSession[]>(() =>
     loadSessions(projectId)
   );
-  const [seeded, setSeeded] = useState(false);
-
   // Sync state → localStorage
   useEffect(() => {
     persistSessions(projectId, sessions);
@@ -43,36 +41,7 @@ export function useChatHistory(projectId: string) {
   // Reload if projectId changes
   useEffect(() => {
     setSessions(loadSessions(projectId));
-    setSeeded(false);
   }, [projectId]);
-
-  // Demo mode: seed history on first load if empty
-  useEffect(() => {
-    if (seeded) return;
-    if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") return;
-
-    const existing = loadSessions(projectId);
-    if (existing.length > 0) {
-      setSeeded(true);
-      return;
-    }
-
-    import("@/lib/demo/chat-responses")
-      .then(({ DEMO_CHAT_HISTORY }) => {
-        if (DEMO_CHAT_HISTORY) {
-          const projectSessions = DEMO_CHAT_HISTORY.filter(
-            (s) => s.projectId === projectId
-          );
-          if (projectSessions.length > 0) {
-            setSessions(projectSessions);
-          }
-        }
-      })
-      .catch(() => {
-        // demo data unavailable — fine
-      })
-      .finally(() => setSeeded(true));
-  }, [projectId, seeded]);
 
   const saveSession = useCallback(
     (messages: ChatMessage[], agent: AgentMode) => {

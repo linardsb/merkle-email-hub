@@ -24,6 +24,7 @@ from app.ai.agents.dark_mode.routes import router as dark_mode_router
 from app.ai.agents.scaffolder.routes import router as scaffolder_router
 from app.ai.agents.skills_routes import router as skills_router
 from app.ai.blueprints.routes import router as blueprint_router
+from app.ai.blueprints.routes import runs_router as blueprint_runs_router
 from app.ai.cost_governor_routes import router as cost_governor_router
 from app.ai.exceptions import setup_ai_exception_handlers
 from app.ai.prompt_store_routes import router as prompt_store_router
@@ -336,6 +337,10 @@ app.include_router(auth_router)
 app.include_router(example_router)
 
 app.include_router(ai_router)
+# Dual-mount so the Next.js /api/v1/* proxy can reach chat completions.
+# ai_router has prefix="/v1", so mounting under "/api" yields /api/v1/chat/completions.
+# Rate limiting is shared (slowapi keys by function, not path).
+app.include_router(ai_router, prefix="/api", include_in_schema=False)
 
 
 app.include_router(knowledge_router)
@@ -359,11 +364,18 @@ app.include_router(templates_router)
 app.include_router(rendering_router)
 app.include_router(memory_router)
 
+# Briefs — project management platform connections
+if settings.briefs.enabled:
+    from app.briefs.routes import router as briefs_router
+
+    app.include_router(briefs_router)
+
 # AI agents
 app.include_router(scaffolder_router)
 app.include_router(dark_mode_router)
 app.include_router(content_router)
 app.include_router(blueprint_router)
+app.include_router(blueprint_runs_router)
 
 app.include_router(skills_router)
 app.include_router(prompt_store_router)

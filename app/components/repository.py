@@ -8,6 +8,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.components.models import Component, ComponentQAResult, ComponentVersion
 from app.components.schemas import ComponentCreate, ComponentUpdate, VersionCreate
@@ -23,7 +24,9 @@ class ComponentRepository:
 
     async def get(self, component_id: int) -> Component | None:
         result = await self.db.execute(
-            select(Component).where(Component.id == component_id, Component.deleted_at.is_(None))
+            select(Component)
+            .where(Component.id == component_id, Component.deleted_at.is_(None))
+            .options(selectinload(Component.versions))
         )
         return result.scalar_one_or_none()
 
@@ -217,6 +220,39 @@ class ComponentRepository:
         result = await self.db.execute(query)
         return list(result.tuples().all())
 
+    async def get_latest_compatibility_batch(
+        self, component_ids: builtins.list[int]
+    ) -> dict[int, dict[str, str]]:
+        """Get latest QA compatibility for multiple components in one query.
+
+        Returns dict mapping component_id → compatibility dict.
+        Components without QA data are omitted from the result.
+        """
+        if not component_ids:
+            return {}
+
+        latest_qa = (
+            select(
+                ComponentVersion.component_id,
+                ComponentQAResult.compatibility,
+                func.row_number()
+                .over(
+                    partition_by=ComponentVersion.component_id,
+                    order_by=ComponentVersion.version_number.desc(),
+                )
+                .label("rn"),
+            )
+            .join(ComponentQAResult, ComponentQAResult.component_version_id == ComponentVersion.id)
+            .where(ComponentVersion.component_id.in_(component_ids))
+            .subquery()
+        )
+
+        query = select(latest_qa.c.component_id, latest_qa.c.compatibility).where(
+            latest_qa.c.rn == 1
+        )
+        result = await self.db.execute(query)
+        return {row.component_id: row.compatibility for row in result.all()}
+
     async def get_latest_compatibility(self, component_id: int) -> dict[str, str] | None:
         """Get compatibility from the latest version that has QA results."""
         result = await self.db.execute(
@@ -227,3 +263,52 @@ class ComponentRepository:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+    async def get_latest_version_compatibility_batch(
+        self, component_ids: builtins.list[int]
+    ) -> dict[int, dict[str, object] | None]:
+        """Get latest ComponentVersion.compatibility for multiple components.
+
+        This returns the version-level compatibility JSON (which may contain
+        design origin data), NOT the QA result compatibility.
+        """
+        if not component_ids:
+            return {}
+
+        latest_version_sq = (
+            select(
+                ComponentVersion.component_id,
+                func.max(ComponentVersion.version_number).label("max_version"),
+            )
+            .where(ComponentVersion.component_id.in_(component_ids))
+            .group_by(ComponentVersion.component_id)
+            .subquery()
+        )
+
+        query = select(ComponentVersion.component_id, ComponentVersion.compatibility).join(
+            latest_version_sq,
+            sa.and_(
+                ComponentVersion.component_id == latest_version_sq.c.component_id,
+                ComponentVersion.version_number == latest_version_sq.c.max_version,
+            ),
+        )
+        result = await self.db.execute(query)
+        return {row.component_id: row.compatibility for row in result.all()}
+
+    async def get_latest_version(self, component_id: int) -> ComponentVersion | None:
+        """Get the latest version of a component."""
+        result = await self.db.execute(
+            select(ComponentVersion)
+            .where(ComponentVersion.component_id == component_id)
+            .order_by(ComponentVersion.version_number.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def update_version_compatibility(
+        self, version: ComponentVersion, compatibility: dict[str, object] | None
+    ) -> None:
+        """Update the compatibility JSON on a component version."""
+        version.compatibility = compatibility  # type: ignore[assignment]
+        await self.db.commit()
+        await self.db.refresh(version)

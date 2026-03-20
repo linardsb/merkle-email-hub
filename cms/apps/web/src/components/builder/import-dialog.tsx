@@ -81,11 +81,12 @@ export function ImportDialog({ open, onClose, onAccept }: ImportDialogProps) {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({ detail: "Import failed" }));
-        throw new Error(data.detail || `Import failed (${res.status})`);
+        const errBody = await res.json().catch(() => ({ detail: "Import failed" }));
+        throw new Error(errBody.detail || `Import failed (${res.status})`);
       }
 
       const data: ImportResult = await res.json();
+
       setResult(data);
       setState("done");
     } catch (err) {

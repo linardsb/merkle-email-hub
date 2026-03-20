@@ -620,7 +620,7 @@
   - Strategy selection, variant plan generation, parallel content pass, comparison matrix, QA per variant
 - Target: 80+ tests
 **Verify:** `make test` passes. `make check` all green. `make eval-golden` passes (no regression).
-- [ ] 25.15 Tests & documentation for 25.10–25.14
+- [x] ~~25.15 Tests & documentation for 25.10–25.14~~ **DONE**
 
 ---
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.design_sync.protocol import (
     DesignComponent,
+    DesignFile,
     DesignFileStructure,
     ExportedImage,
     ExtractedTokens,
@@ -12,6 +13,10 @@ from app.design_sync.protocol import (
 
 class SketchDesignSyncService:
     """Stub Sketch provider. Returns empty tokens."""
+
+    async def list_files(self, access_token: str) -> list[DesignFile]:  # noqa: ARG002
+        """Stub — file browsing not supported for Sketch."""
+        return []
 
     async def validate_connection(self, file_ref: str, access_token: str) -> bool:  # noqa: ARG002
         """Sketch validation always succeeds (stub)."""

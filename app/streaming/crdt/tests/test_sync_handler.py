@@ -51,6 +51,7 @@ def _create_update(text: str = "hello") -> bytes:
 async def test_step1_returns_step2(handler: YjsSyncHandler, store: YjsDocumentStore) -> None:
     """SyncStep1 returns SyncStep2 response with document state."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -72,6 +73,7 @@ async def test_update_persists_and_broadcasts(
 ) -> None:
     """Incoming update is persisted and broadcast to peers."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_new = MagicMock()
     result_new.scalar_one_or_none.return_value = None
 
@@ -103,6 +105,7 @@ async def test_update_persists_and_broadcasts(
 async def test_empty_message_ignored(handler: YjsSyncHandler) -> None:
     """Messages shorter than 2 bytes are ignored."""
     db = AsyncMock()
+    db.add = MagicMock()
     replies, broadcasts = await handler.handle_sync_message(db, ROOM, "user1", b"")
     assert replies == []
     assert broadcasts == []
@@ -112,6 +115,7 @@ async def test_empty_message_ignored(handler: YjsSyncHandler) -> None:
 async def test_non_sync_message_passthrough(handler: YjsSyncHandler) -> None:
     """Non-sync messages (awareness) pass through as broadcasts."""
     db = AsyncMock()
+    db.add = MagicMock()
     msg = bytes([MessageType.AWARENESS, 0]) + b"awareness_data"
     replies, broadcasts = await handler.handle_sync_message(db, ROOM, "user1", msg)
     assert replies == []
@@ -122,6 +126,7 @@ async def test_non_sync_message_passthrough(handler: YjsSyncHandler) -> None:
 async def test_cleanup_room(handler: YjsSyncHandler, store: YjsDocumentStore) -> None:
     """Cleanup evicts doc from store."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -142,6 +147,7 @@ async def test_step2_applies_and_broadcasts(
 ) -> None:
     """SyncStep2 message applies update and broadcasts to peers."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     row = MagicMock()
@@ -173,6 +179,7 @@ async def test_step2_applies_and_broadcasts(
 async def test_step2_rejected_no_broadcast(handler: YjsSyncHandler) -> None:
     """Rejected SyncStep2 (size limit) produces no broadcast."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -193,6 +200,7 @@ async def test_step2_rejected_no_broadcast(handler: YjsSyncHandler) -> None:
 async def test_single_byte_message_ignored(handler: YjsSyncHandler) -> None:
     """Single-byte message (too short) is silently ignored."""
     db = AsyncMock()
+    db.add = MagicMock()
     replies, broadcasts = await handler.handle_sync_message(db, ROOM, "1", b"\x00")
     assert replies == []
     assert broadcasts == []
@@ -202,6 +210,7 @@ async def test_single_byte_message_ignored(handler: YjsSyncHandler) -> None:
 async def test_unknown_sync_subtype_ignored(handler: YjsSyncHandler) -> None:
     """Unknown sync sub-type (e.g. 99) is logged and ignored."""
     db = AsyncMock()
+    db.add = MagicMock()
     msg = bytes([MessageType.SYNC, 99]) + b"payload"
     replies, broadcasts = await handler.handle_sync_message(db, ROOM, "1", msg)
     assert replies == []

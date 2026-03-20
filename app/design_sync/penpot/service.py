@@ -12,6 +12,7 @@ from app.design_sync.exceptions import SyncFailedError
 from app.design_sync.penpot.client import PenpotClient
 from app.design_sync.protocol import (
     DesignComponent,
+    DesignFile,
     DesignFileStructure,
     DesignNode,
     DesignNodeType,
@@ -68,6 +69,33 @@ class PenpotDesignSyncService:
             access_token=access_token,
             timeout=settings.design_sync.penpot_request_timeout,
         )
+
+    async def list_files(self, access_token: str) -> list[DesignFile]:
+        """List files across all Penpot projects (max 20 projects)."""
+        settings = get_settings()
+        base_url = settings.design_sync.penpot_base_url
+        files: list[DesignFile] = []
+        try:
+            async with self._make_client(access_token) as client:
+                projects = await client.list_projects()
+                for project in projects[:20]:
+                    project_files = await client.list_project_files(project.id)
+                    for pf in project_files:
+                        files.append(
+                            DesignFile(
+                                file_id=pf.id,
+                                name=pf.name,
+                                url=f"{base_url}/view/{pf.id}",
+                                thumbnail_url=None,
+                                last_modified=None,
+                                folder=project.name,
+                            )
+                        )
+        except Exception:
+            logger.warning("design_sync.penpot.list_files_failed", exc_info=True)
+            return []
+        logger.info("design_sync.penpot.files_listed", count=len(files))
+        return files
 
     async def validate_connection(self, file_ref: str, access_token: str) -> bool:
         async with self._make_client(access_token) as client:

@@ -76,7 +76,10 @@ class TestProtocol:
         assert isinstance(FigmaDesignSyncService(), DesignSyncProvider)
 
     def test_all_providers_registered(self):
-        assert set(SUPPORTED_PROVIDERS.keys()) == {"figma", "sketch", "canva", "penpot"}
+        required = {"figma", "sketch", "canva", "penpot"}
+        assert required.issubset(set(SUPPORTED_PROVIDERS.keys()))
+        # In development mode, "mock" provider is also registered
+        assert set(SUPPORTED_PROVIDERS.keys()) - required <= {"mock"}
 
 
 # ── Service Tests ──

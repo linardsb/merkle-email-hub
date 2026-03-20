@@ -96,6 +96,23 @@ async def build_locales(
 
 
 @router.get(
+    "/connections/{connection_id}",
+    response_model=TolgeeConnectionResponse,
+)
+@limiter.limit("20/minute")
+async def get_connection(
+    request: Request,
+    connection_id: int,
+    user: User = Depends(require_role("viewer")),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> TolgeeConnectionResponse:
+    """Get a Tolgee connection by ID."""
+    _ = request
+    service = TolgeeService(db)
+    return await service.get_connection(connection_id, user)
+
+
+@router.get(
     "/connections/{connection_id}/languages",
     response_model=list[TolgeeLanguage],
 )

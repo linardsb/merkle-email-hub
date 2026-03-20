@@ -118,17 +118,29 @@ async def get_current_user(
     return user
 
 
+# Role hierarchy: admin > developer > viewer.
+# require_role("viewer") allows admin and developer too.
+_ROLE_HIERARCHY: dict[str, int] = {"admin": 3, "developer": 2, "viewer": 1}
+
+
 def require_role(*roles: str) -> Callable[..., Coroutine[Any, Any, User]]:
-    """Factory that returns a dependency checking user.role is in allowed roles.
+    """Factory that returns a dependency checking user has sufficient role.
+
+    Uses role hierarchy: admin > developer > viewer. If the required role is
+    "viewer", then "developer" and "admin" also pass. If the required role is
+    "developer", then "admin" also passes.
 
     Usage:
-        current_user: User = Depends(require_role("admin", "editor"))
+        current_user: User = Depends(require_role("developer"))  # admin also OK
+        current_user: User = Depends(require_role("admin"))       # admin only
     """
+    min_level = min(_ROLE_HIERARCHY.get(r, 0) for r in roles)
 
     async def _check_role(
         current_user: User = Depends(get_current_user),  # noqa: B008
     ) -> User:
-        if current_user.role not in roles:
+        user_level = _ROLE_HIERARCHY.get(current_user.role, 0)
+        if user_level < min_level:
             logger.warning(
                 "auth.role_escalation_attempt",
                 user_id=current_user.id,

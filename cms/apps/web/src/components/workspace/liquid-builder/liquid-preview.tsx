@@ -23,7 +23,7 @@ export function LiquidPreview({ code }: LiquidPreviewProps) {
   }, [code]);
 
   return (
-    <div className="h-full overflow-auto border-t border-default bg-white p-4">
+    <div className="h-full overflow-auto border-t border-border bg-surface-elevated p-4">
       <h3 className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
         {"Preview"}
       </h3>

@@ -19,7 +19,6 @@ from pathlib import Path
 from lxml import html as lxml_html
 
 # Import custom checks to ensure dark mode check functions are registered
-import app.qa_engine.custom_checks  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.dark_mode_parser import clear_dm_cache
 from app.qa_engine.rule_engine import RuleEngine, load_rules

@@ -47,6 +47,7 @@ ROOM = "project:1:template:10"
 async def test_get_or_create_new_doc(store: YjsDocumentStore) -> None:
     """New room creates empty doc and DB record."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -62,6 +63,7 @@ async def test_get_or_create_new_doc(store: YjsDocumentStore) -> None:
 async def test_get_or_create_cached(store: YjsDocumentStore) -> None:
     """Second call returns cached doc without DB query."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -78,6 +80,7 @@ async def test_get_or_create_cached(store: YjsDocumentStore) -> None:
 async def test_apply_update(store: YjsDocumentStore) -> None:
     """Update is applied to doc and persisted."""
     db = AsyncMock()
+    db.add = MagicMock()
     row = _make_db_row(ROOM)
 
     # First call: get_or_create
@@ -102,6 +105,7 @@ async def test_apply_update(store: YjsDocumentStore) -> None:
 async def test_compaction_triggers(store: YjsDocumentStore) -> None:
     """Compaction triggers when threshold is reached."""
     db = AsyncMock()
+    db.add = MagicMock()
     row = _make_db_row(ROOM)
     row.pending_update_count = 2  # threshold is 3, so next update triggers
 
@@ -129,6 +133,7 @@ async def test_size_limit_rejected(store: YjsDocumentStore) -> None:
     store._max_size_bytes = 10  # Very small limit
 
     db = AsyncMock()
+    db.add = MagicMock()
     result_new = MagicMock()
     result_new.scalar_one_or_none.return_value = None
     db.execute.return_value = result_new
@@ -145,6 +150,7 @@ async def test_size_limit_rejected(store: YjsDocumentStore) -> None:
 async def test_evict(store: YjsDocumentStore) -> None:
     """Evicting removes doc from cache."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -160,6 +166,7 @@ async def test_evict(store: YjsDocumentStore) -> None:
 async def test_get_full_state(store: YjsDocumentStore) -> None:
     """Full state returns valid Yjs update."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_mock = MagicMock()
     result_mock.scalar_one_or_none.return_value = None
     db.execute.return_value = result_mock
@@ -177,6 +184,7 @@ async def test_get_full_state(store: YjsDocumentStore) -> None:
 async def test_concurrent_updates_both_preserved(store: YjsDocumentStore) -> None:
     """Two sequential updates are both reflected in final state."""
     db = AsyncMock()
+    db.add = MagicMock()
     # get_or_create: no existing row
     result_new = MagicMock()
     result_new.scalar_one_or_none.return_value = None
@@ -208,6 +216,7 @@ async def test_compaction_by_time_threshold() -> None:
         compaction_interval_s=0,  # Zero seconds = always compact by time
     )
     db = AsyncMock()
+    db.add = MagicMock()
     row = _make_db_row(ROOM)
     row.last_compacted_at = datetime(2020, 1, 1, tzinfo=UTC)  # Long ago
     row.pending_update_count = 0
@@ -234,6 +243,7 @@ async def test_corrupted_state_creates_fresh_doc() -> None:
     """Corrupted state in DB results in fresh empty document."""
     store = YjsDocumentStore()
     db = AsyncMock()
+    db.add = MagicMock()
     row = _make_db_row(ROOM)
     row.state = b"\xff\xff\xff\xff"  # Invalid Yjs state
     row.pending_updates = b""
@@ -259,6 +269,7 @@ async def test_get_state_vector_unloaded_room() -> None:
 async def test_get_update_for_peer_empty_sv(store: YjsDocumentStore) -> None:
     """Empty state vector returns full document state (new client)."""
     db = AsyncMock()
+    db.add = MagicMock()
     result_new = MagicMock()
     result_new.scalar_one_or_none.return_value = None
     row = _make_db_row(ROOM)

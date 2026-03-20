@@ -15,6 +15,7 @@ import {
   useDeleteBriefConnection,
   useSyncBriefConnection,
 } from "@/hooks/use-briefs";
+import { useDesignConnections } from "@/hooks/use-design-sync";
 
 type Tab = "overview" | "connections";
 
@@ -62,7 +63,15 @@ export default function BriefsPage() {
     }
   };
 
+  const { data: designConnections } = useDesignConnections();
+
   const selectedConnection = connections?.find((c) => c.id === selectedId) ?? null;
+
+  // Resolve design connection for the selected brief connection via shared project_id
+  const selectedDesignConnection = (() => {
+    if (!selectedConnection?.project_id || !designConnections) return null;
+    return designConnections.find(dc => dc.project_id === selectedConnection.project_id) ?? null;
+  })();
 
   return (
     <div className="space-y-6">
@@ -176,7 +185,7 @@ export default function BriefsPage() {
                   {"Import to Project"}
                 </button>
               </div>
-              <BriefItemsPanel connection={selectedConnection} />
+              <BriefItemsPanel connection={selectedConnection} designConnection={selectedDesignConnection} />
             </div>
           )}
         </>

@@ -25,6 +25,27 @@ function DropZone({ id }: DropZoneProps) {
   );
 }
 
+function EmptyDropZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: "drop-zone-0" });
+
+  return (
+    <div ref={setNodeRef} className="flex h-full items-center justify-center">
+      <div
+        className={`flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-8 text-muted-foreground transition-colors ${
+          isOver
+            ? "border-interactive bg-interactive/10"
+            : "border-border"
+        }`}
+      >
+        <ArrowDown className="h-8 w-8 opacity-40" />
+        <p className="text-sm">
+          {"Drag components here to start building"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 interface BuilderCanvasProps {
   sections: BuilderSection[];
   selectedSectionId: string | null;
@@ -41,16 +62,7 @@ export function BuilderCanvas({
   onDuplicate,
 }: BuilderCanvasProps) {
   if (sections.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-border p-8 text-muted-foreground">
-          <ArrowDown className="h-8 w-8 opacity-40" />
-          <p className="text-sm">
-            {"Drag components here to start building"}
-          </p>
-        </div>
-      </div>
-    );
+    return <EmptyDropZone />;
   }
 
   return (

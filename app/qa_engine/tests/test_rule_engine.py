@@ -7,7 +7,6 @@ from lxml import html as lxml_html
 from lxml.html import HtmlElement
 
 # Ensure custom checks are registered
-import app.qa_engine.custom_checks  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.rule_engine import (
     _CHECK_TYPES,

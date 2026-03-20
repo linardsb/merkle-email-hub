@@ -11,6 +11,7 @@ from typing import Any, Literal, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.design_sync.assets import DesignAssetService
 from app.design_sync.brief_generator import generate_brief as generate_brief_text
@@ -33,6 +34,7 @@ from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_k
 from app.design_sync.penpot.service import PenpotDesignSyncService
 from app.design_sync.penpot.service import extract_file_id as extract_penpot_id
 from app.design_sync.protocol import (
+    BrowseableProvider,
     DesignFileStructure,
     DesignNode,
     DesignSyncProvider,
@@ -41,12 +43,14 @@ from app.design_sync.protocol import (
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
     AnalyzedSectionResponse,
+    BrowseFilesResponse,
     ButtonElementResponse,
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionResponse,
     DesignColorResponse,
     DesignComponentResponse,
+    DesignFileResponse,
     DesignNodeResponse,
     DesignSpacingResponse,
     DesignTokensResponse,
@@ -76,6 +80,12 @@ SUPPORTED_PROVIDERS: dict[str, type[DesignSyncProvider]] = {
     "penpot": PenpotDesignSyncService,
 }
 
+# Register mock provider in development mode
+if get_settings().environment == "development":
+    from app.design_sync.mock.service import MockDesignSyncService
+
+    SUPPORTED_PROVIDERS["mock"] = MockDesignSyncService
+
 
 class DesignSyncService:
     """Orchestrates design tool connections and token extraction."""
@@ -104,6 +114,41 @@ class DesignSyncService:
             return extract_penpot_id(file_url)
         # Stub providers: use the URL itself as the ref
         return file_url
+
+    # ── Browse Files (pre-connection) ──
+
+    async def browse_files(self, provider_name: str, access_token: str) -> BrowseFilesResponse:
+        """Browse design files from a provider before creating a connection.
+
+        No DB session needed — operates pre-connection.
+        """
+        provider = self._get_provider(provider_name)
+
+        if not isinstance(provider, BrowseableProvider):
+            logger.info("design_sync.browse_not_supported", provider=provider_name)
+            return BrowseFilesResponse(provider=provider_name, files=[], total=0)
+
+        files = await provider.list_files(access_token)
+        logger.info(
+            "design_sync.browse_files_completed",
+            provider=provider_name,
+            count=len(files),
+        )
+        return BrowseFilesResponse(
+            provider=provider_name,
+            files=[
+                DesignFileResponse(
+                    file_id=f.file_id,
+                    name=f.name,
+                    url=f.url,
+                    thumbnail_url=f.thumbnail_url,
+                    last_modified=f.last_modified,
+                    folder=f.folder,
+                )
+                for f in files
+            ],
+            total=len(files),
+        )
 
     # ── CRUD ──
 

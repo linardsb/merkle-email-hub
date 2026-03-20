@@ -108,7 +108,7 @@ export function CreateESPConnectionDialog({ open, onOpenChange }: CreateESPConne
       <DialogContent className="max-w-[32rem]">
         <DialogHeader>
           <DialogTitle>{"Connect to ESP"}</DialogTitle>
-          <DialogDescription>{"Add a connection to an email service provider"}</DialogDescription>
+          <DialogDescription>{"Add a connection to an email service provider. For local demo, use Braze with any API key."}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

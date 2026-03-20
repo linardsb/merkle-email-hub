@@ -13,14 +13,16 @@ class ConnectorProvider(Protocol):
     and returns a mock external ID (real API integration deferred to production).
     """
 
-    async def export(self, html: str, name: str) -> str:
+    async def export(self, html: str, name: str, credentials: dict[str, str] | None = None) -> str:
         """Export compiled HTML to the ESP.
 
         Args:
             html: Compiled email HTML from Maizzle build.
             name: User-provided name for the content block/template.
+            credentials: Optional decrypted ESP credentials. When provided,
+                makes real API calls; otherwise returns a mock ID.
 
         Returns:
-            External ID string from the ESP (mock for placeholder implementations).
+            External ID string from the ESP.
         """
         ...

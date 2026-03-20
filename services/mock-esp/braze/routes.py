@@ -67,7 +67,7 @@ async def create_content_block(body: ContentBlockCreate) -> ContentBlockResponse
 )
 async def list_content_blocks(
     offset: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=10000),
 ) -> ContentBlockListResponse:
     db = _get_db()
     count_row = await db.fetchone("SELECT COUNT(*) as total FROM braze_content_blocks")

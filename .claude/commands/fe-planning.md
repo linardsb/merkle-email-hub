@@ -5,7 +5,19 @@ Research the codebase and create a self-contained frontend implementation plan.
 ## Process
 
 1. **Understand the task** — Read the user's requirements carefully
-2. **Research existing code** — Use jCodeMunch `search_symbols` and `get_file_outline` to find related pages, components, hooks, and patterns without reading entire files. Use jDocMunch `get_section` to pull relevant sections from `CLAUDE.md` (e.g. `::frontend-features-for-fe-prime#3`, `::project-structure#3`) and task context from `TODO.md` phase sections. Repo: `local/merkle-email-hub`.
+2. **Research existing code** — Use jCodeMunch (repo from `list_repos`) for all code research:
+   - `search_symbols({ "query": "...", "kind": "function", "file_pattern": "cms/..." })` — find related components/hooks
+   - `get_file_outline` on candidate files — understand exports without reading
+   - `get_symbol` — read specific components/functions, not entire files
+   - `find_references` — trace where components/hooks are used
+   - `get_file_tree({ "path_prefix": "cms/apps/web/src/..." })` — discover layout
+
+   Use jDocMunch (repo: `local/merkle-email-hub`) for docs:
+   - `search_sections({ "query": "frontend", "doc_path": "CLAUDE.md" })` → `get_section` for architecture context
+   - `search_sections({ "query": "...", "doc_path": "TODO.md" })` → `get_section` for task context
+
+   **Only `Read` files you will list in "Files to Create/Modify"** — not for research.
+
 3. **Identify files to create/modify** — List every file that needs changes
 4. **Write the plan** — Step-by-step instructions that another agent can follow
 

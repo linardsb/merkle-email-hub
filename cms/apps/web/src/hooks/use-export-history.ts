@@ -62,34 +62,7 @@ function getServerSnapshot(): ExportHistoryRecord[] {
   return EMPTY;
 }
 
-let demoSeeded = false;
-
-function seedDemoData() {
-  if (demoSeeded) return;
-  demoSeeded = true;
-
-  try {
-    const existing = sessionStorage.getItem(STORAGE_KEY);
-    if (existing) return; // Already has data
-
-    // Lazy import to avoid bundling demo data in production
-    import("@/lib/demo/data/connectors").then(({ DEMO_EXPORT_HISTORY }) => {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_EXPORT_HISTORY));
-      cachedRaw = null; // Invalidate cache
-      cachedParsed = EMPTY;
-      notifyListeners();
-    });
-  } catch {
-    // sessionStorage not available (SSR)
-  }
-}
-
 export function useExportHistory() {
-  // Seed demo data on first client-side mount
-  if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    seedDemoData();
-  }
-
   const records = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const addRecord = useCallback((record: ExportHistoryRecord) => {

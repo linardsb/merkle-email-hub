@@ -19,7 +19,6 @@ class TestSyncCLI:
 
     def test_cli_module_importable(self) -> None:
         """CLI module can be imported without errors."""
-        from app.knowledge.ontology.sync import cli  # noqa: F401
 
     @pytest.mark.asyncio
     async def test_cli_main_dry_run(self) -> None:

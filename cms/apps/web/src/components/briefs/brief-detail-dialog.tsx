@@ -6,18 +6,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
-import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2 } from "lucide-react";
+import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2, Puzzle, Link as LinkIcon } from "lucide-react";
 import { useBriefDetail } from "@/hooks/use-briefs";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
+import type { DesignConnection } from "@/types/design-sync";
 
 interface BriefDetailDialogProps {
   itemId: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  designConnection?: DesignConnection | null;
+  onSyncDesign?: (connectionId: number) => void;
+  onConnectDesign?: () => void;
 }
 
-export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDialogProps) {
+export function BriefDetailDialog({ itemId, open, onOpenChange, designConnection, onSyncDesign, onConnectDesign }: BriefDetailDialogProps) {
   const { data: detail, isLoading } = useBriefDetail(open ? itemId : null);
 
   return (
@@ -110,6 +114,32 @@ export function BriefDetailDialog({ itemId, open, onOpenChange }: BriefDetailDia
             <div className="prose-sm max-h-60 overflow-y-auto rounded border border-card-border bg-surface-muted p-3 text-sm text-foreground whitespace-pre-wrap">
               {detail.description || "No description available"}
             </div>
+
+            {/* Design sync action */}
+            {designConnection ? (
+              <button
+                type="button"
+                onClick={() => onSyncDesign?.(designConnection.id)}
+                className="flex items-center gap-2 rounded-md border border-interactive/20 bg-interactive/5 px-4 py-3 text-sm font-medium text-interactive transition-colors hover:bg-interactive/10"
+              >
+                <Puzzle className="h-4 w-4" />
+                Sync & Extract Components
+                <span className="ml-auto text-xs text-foreground-muted">
+                  {designConnection.provider === "figma" ? "from Figma" :
+                   designConnection.provider === "sketch" ? "from Sketch" :
+                   `from ${designConnection.provider}`}
+                </span>
+              </button>
+            ) : onConnectDesign ? (
+              <button
+                type="button"
+                onClick={onConnectDesign}
+                className="flex items-center gap-2 rounded-md border border-dashed border-foreground-muted/30 px-4 py-3 text-sm text-foreground-muted transition-colors hover:border-interactive/40 hover:text-interactive"
+              >
+                <LinkIcon className="h-4 w-4" />
+                Connect Design File
+              </button>
+            ) : null}
 
             {/* Resources */}
             {detail.resources && detail.resources.length > 0 && (

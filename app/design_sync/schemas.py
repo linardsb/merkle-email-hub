@@ -18,6 +18,32 @@ class ConnectionCreateRequest(BaseModel):
     project_id: int | None = Field(default=None, description="Link to a project")
 
 
+class BrowseFilesRequest(BaseModel):
+    """Request to browse design files from a provider."""
+
+    provider: str = Field(..., max_length=50, description="Design tool provider")
+    access_token: str = Field(..., min_length=1, description="Provider access token / PAT")
+
+
+class DesignFileResponse(BaseModel):
+    """A single browsable design file."""
+
+    file_id: str
+    name: str
+    url: str
+    thumbnail_url: str | None = None
+    last_modified: datetime.datetime | None = None
+    folder: str | None = None
+
+
+class BrowseFilesResponse(BaseModel):
+    """Result of browsing design files."""
+
+    provider: str
+    files: list[DesignFileResponse]
+    total: int
+
+
 class ConnectionDeleteRequest(BaseModel):
     """Request to delete a connection."""
 

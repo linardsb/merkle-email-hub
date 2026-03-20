@@ -40,8 +40,8 @@ class TestRunOdiff:
         baseline.write_bytes(TINY_PNG_BYTES)
         current.write_bytes(TINY_PNG_BYTES)
 
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (b"", b"")
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(b"", b""))
         mock_proc.returncode = 0
 
         with patch(
@@ -63,10 +63,12 @@ class TestRunOdiff:
         current.write_bytes(TINY_PNG_BYTES)
         output.write_bytes(b"fake-diff-png")
 
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (
-            b"Files are different. 1234 changed pixels (3.45% of all)",
-            b"",
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(
+            return_value=(
+                b"Files are different. 1234 changed pixels (3.45% of all)",
+                b"",
+            )
         )
         mock_proc.returncode = 1
 
@@ -88,8 +90,8 @@ class TestRunOdiff:
         baseline.write_bytes(TINY_PNG_BYTES)
         current.write_bytes(TINY_PNG_BYTES)
 
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (b"", b"Images have different dimensions")
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(b"", b"Images have different dimensions"))
         mock_proc.returncode = 2
 
         with patch(
@@ -106,8 +108,8 @@ class TestRunOdiff:
         baseline.write_bytes(TINY_PNG_BYTES)
         current.write_bytes(TINY_PNG_BYTES)
 
-        mock_proc = AsyncMock()
-        mock_proc.communicate.side_effect = TimeoutError()
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(side_effect=TimeoutError())
 
         with patch(
             "app.rendering.visual_diff.asyncio.create_subprocess_exec", return_value=mock_proc
@@ -140,8 +142,8 @@ class TestRunOdiff:
         baseline.write_bytes(TINY_PNG_BYTES)
         current.write_bytes(TINY_PNG_BYTES)
 
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (b"12.5% difference", b"")
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(b"12.5% difference", b""))
         mock_proc.returncode = 1
 
         with patch(
@@ -159,8 +161,8 @@ class TestRunOdiff:
         baseline.write_bytes(TINY_PNG_BYTES)
         current.write_bytes(TINY_PNG_BYTES)
 
-        mock_proc = AsyncMock()
-        mock_proc.communicate.return_value = (b"99 changed pixels (0.5% of all)", b"")
+        mock_proc = MagicMock()
+        mock_proc.communicate = AsyncMock(return_value=(b"99 changed pixels (0.5% of all)", b""))
         mock_proc.returncode = 1
 
         with patch(
@@ -215,7 +217,9 @@ class TestScreenshotBaselineRepository:
 
     @pytest.fixture()
     def mock_db(self) -> AsyncMock:
-        return AsyncMock()
+        db = AsyncMock()
+        db.add = MagicMock()  # sync in production code
+        return db
 
     @pytest.fixture()
     def repo(self, mock_db: AsyncMock) -> Any:
@@ -316,7 +320,9 @@ class TestRenderingServiceVisualDiff:
     def service(self) -> Any:
         from app.rendering.service import RenderingService
 
-        return RenderingService(db=AsyncMock())
+        db = AsyncMock()
+        db.add = MagicMock()
+        return RenderingService(db=db)
 
     @pytest.mark.asyncio()
     async def test_visual_diff_disabled_raises(self, service: Any) -> None:

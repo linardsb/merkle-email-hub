@@ -2,15 +2,15 @@
 
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Upload } from "lucide-react";
 import type { CodeEditorHandle } from "@/hooks/use-editor-bridge";
 import type { SaveStatus } from "./save-indicator";
 import type { BrandConfig } from "@/types/brand";
 import type { Doc as YDoc } from "yjs";
 import type { Awareness } from "y-protocols/awareness";
-import type { SyncStatus } from "@/types/visual-builder";
 import { useBuilderSync } from "@/hooks/use-builder-sync";
 import { ViewSwitcher, type ViewMode } from "./view-switcher";
+import { ImportDialog } from "@/components/builder/import-dialog";
 
 const CodeEditor = dynamic(
   () =>
@@ -65,6 +65,8 @@ interface EditorPanelProps {
   };
   projectId?: number;
   onViewChange?: (view: ViewMode) => void;
+  /** When set, overrides localStorage-persisted view for this mount (e.g. from ?view=code) */
+  initialView?: ViewMode;
   /** Builder-specific callbacks passed through to VisualBuilderPanel */
   builderProps?: {
     onRunQA?: () => void;
@@ -77,10 +79,12 @@ interface EditorPanelProps {
   };
 }
 
-export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange, onSelectionChange, collaborative, projectId, onViewChange, builderProps }: EditorPanelProps, ref) {
-  // Persist view mode per project in localStorage
+export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(function EditorPanel({ value, onChange, onSave, saveStatus, readOnly, brandConfig, onBrandViolationsChange, onCursorOffsetChange, onSelectionChange, collaborative, projectId, onViewChange, initialView, builderProps }: EditorPanelProps, ref) {
+  // Persist view mode per project in localStorage.
+  // initialView prop (from ?view= query param) takes precedence over stored value.
   const storageKey = projectId ? `editor-view-${projectId}` : null;
   const [activeTab, setActiveTab] = useState<EditorTab>(() => {
+    if (initialView) return initialView;
     if (typeof window === "undefined" || !storageKey) return "code";
     const stored = localStorage.getItem(storageKey);
     if (stored === "code" || stored === "builder" || stored === "split") return stored;
@@ -99,6 +103,15 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
     [onViewChange]
   );
 
+  // Import HTML dialog (available in code mode)
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const handleImportAccept = useCallback(
+    (annotatedHtml: string) => {
+      onChange(annotatedHtml);
+    },
+    [onChange]
+  );
+
   // Sync engine — only active in split mode
   const isSplit = activeTab === "split";
   const {
@@ -109,6 +122,15 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
     serializedHtml,
     dismissParseError,
   } = useBuilderSync({ enabled: isSplit });
+
+  // When entering split mode, seed the sync engine with current content
+  // so it captures the template shell and parses initial sections
+  useEffect(() => {
+    if (isSplit && value) {
+      syncCodeChange(value);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on mode change
+  }, [isSplit]);
 
   // When sync engine produces new HTML from builder changes, push to parent
   useEffect(() => {
@@ -126,21 +148,32 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
     [onChange, isSplit, syncCodeChange]
   );
 
-  // Builder code change handler for split mode (builder -> code via sync)
+  // Builder code change handler — HTML flows to parent in all modes.
+  // In split mode, code→builder direction uses the sync engine (parsedSections).
+  // Builder→code uses the HTML path (useBuilderPreview is higher fidelity).
   const handleSyncedBuilderChange = useCallback(
     (html: string) => {
-      // In split mode, builder HTML changes are handled by sync engine
-      // For non-split mode, pass through directly
-      if (!isSplit) onChange(html);
+      onChange(html);
     },
-    [isSplit, onChange]
+    [onChange]
   );
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
-      {/* View switcher */}
-      <div className="border-b border-default bg-surface">
+      {/* View switcher + Import HTML */}
+      <div className="flex items-center justify-between border-b border-default bg-surface">
         <ViewSwitcher activeView={activeTab} onViewChange={handleTabChange} syncStatus={isSplit ? syncStatus : undefined} />
+        {activeTab === "code" && !readOnly && (
+          <button
+            type="button"
+            onClick={() => setImportDialogOpen(true)}
+            className="mr-2 flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Import HTML email"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <span>Import HTML</span>
+          </button>
+        )}
       </div>
 
       {/* Parse error banner (split mode) */}
@@ -205,7 +238,7 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
                 onBrandViolationsChange={onBrandViolationsChange}
                 onCursorOffsetChange={onCursorOffsetChange}
                 onSelectionChange={onSelectionChange}
-                collaborative={collaborative}
+                collaborative={undefined /* collab disabled in split — sync engine manages state */}
               />
             </div>
             <div className="w-1/2 overflow-hidden">
@@ -214,6 +247,8 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
                 onCodeChange={handleSyncedBuilderChange}
                 projectId={projectId}
                 syncedSections={parsedSections}
+                /* onSectionsChange not wired — builder→code flows via
+                   useBuilderPreview HTML (higher fidelity than sync engine's sectionsToHtml) */
                 onRunQA={builderProps?.onRunQA}
                 isRunningQA={builderProps?.isRunningQA}
                 onAISuggest={builderProps?.onAISuggest}
@@ -226,6 +261,13 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
           </div>
         )}
       </div>
+
+      {/* Import HTML dialog */}
+      <ImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onAccept={handleImportAccept}
+      />
     </div>
   );
 });

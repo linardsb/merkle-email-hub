@@ -21,7 +21,6 @@ from lxml import html as lxml_html
 from pydantic import ValidationError
 
 # Import custom checks to ensure brand check functions are registered
-import app.qa_engine.custom_checks  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from app.projects.design_system import design_system_to_brand_rules, load_design_system
 from app.qa_engine.brand_analyzer import clear_brand_cache
 from app.qa_engine.check_config import QACheckConfig

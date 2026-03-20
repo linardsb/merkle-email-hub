@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo help
 
 # === Local Development ===
 
@@ -15,6 +15,15 @@ dev-fe: ## Start frontend dev server
 
 dev-mock-esp: ## Start mock ESP server
 	cd services/mock-esp && uvicorn main:app --reload --port 3002
+
+seed-demo: ## Seed database with demo data (admin user, project, components)
+	uv run python -m app.seed_demo
+
+demo: db db-migrate seed-demo ## Full demo: start infra, migrate, seed, launch all services
+	@echo "Starting mock ESP (:3002), backend (:8891), frontend (:3000)..."
+	@(cd services/mock-esp && uvicorn main:app --port 3002 &) && \
+	(uv run uvicorn app.main:app --reload --port 8891 &) && \
+	(cd cms && pnpm --filter web dev)
 
 # === Docker ===
 

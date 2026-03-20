@@ -5,15 +5,21 @@ import { Loader2 } from "lucide-react";
 import { useBriefItems } from "@/hooks/use-briefs";
 import { BriefItemCard } from "./brief-item-card";
 import { BriefDetailDialog } from "./brief-detail-dialog";
+import { DesignImportDialog } from "@/components/design-sync/design-import-dialog";
+import { ConnectDesignDialog } from "@/components/design-sync/connect-design-dialog";
 import type { BriefConnection } from "@/types/briefs";
+import type { DesignConnection } from "@/types/design-sync";
 
 interface BriefItemsPanelProps {
   connection: BriefConnection;
+  designConnection?: DesignConnection | null;
 }
 
-export function BriefItemsPanel({ connection }: BriefItemsPanelProps) {
+export function BriefItemsPanel({ connection, designConnection }: BriefItemsPanelProps) {
   const { data: items, isLoading, error } = useBriefItems(connection.id);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [syncConnection, setSyncConnection] = useState<DesignConnection | null>(null);
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -56,6 +62,28 @@ export function BriefItemsPanel({ connection }: BriefItemsPanelProps) {
         onOpenChange={(open) => {
           if (!open) setSelectedItemId(null);
         }}
+        designConnection={designConnection}
+        onSyncDesign={(connId) => {
+          setSelectedItemId(null);
+          if (designConnection && designConnection.id === connId) {
+            setSyncConnection(designConnection);
+          }
+        }}
+        onConnectDesign={() => { setSelectedItemId(null); setShowConnectDialog(true); }}
+      />
+
+      {syncConnection && (
+        <DesignImportDialog
+          open
+          onOpenChange={(open) => { if (!open) setSyncConnection(null); }}
+          connectionId={syncConnection.id}
+          connectionName={syncConnection.name}
+          initialTab="components"
+        />
+      )}
+      <ConnectDesignDialog
+        open={showConnectDialog}
+        onOpenChange={setShowConnectDialog}
       />
     </>
   );

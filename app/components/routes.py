@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.components.schemas import (
+    AssignDesignOriginRequest,
     ComponentCompatibilityResponse,
     ComponentCreate,
     ComponentResponse,
@@ -140,6 +141,20 @@ async def run_component_qa(
     """Run QA checks on a component version and generate compatibility data."""
     _ = request
     return await service.run_qa_for_version(component_id, version_number)
+
+
+@router.post("/{component_id}/design-origin", response_model=ComponentResponse)
+@limiter.limit("10/minute")
+async def assign_design_origin(
+    request: Request,
+    component_id: int,
+    data: AssignDesignOriginRequest,
+    service: ComponentService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> ComponentResponse:
+    """Assign a design component to a Hub component."""
+    _ = request
+    return await service.assign_design_origin(component_id, data)
 
 
 @router.get(

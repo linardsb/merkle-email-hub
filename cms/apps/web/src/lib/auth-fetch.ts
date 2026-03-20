@@ -65,13 +65,18 @@ async function getAccessToken(): Promise<string | null> {
     const session = (await getSession()) as (Session & { accessToken?: string }) | null;
     const token = session?.accessToken ?? null;
 
+    if (!token) {
+      console.warn("[authFetch] No access token in session", { hasSession: !!session, keys: session ? Object.keys(session) : [] });
+    }
+
     if (token) {
       cachedToken = token;
       cacheExpiry = Date.now() + 60_000; // 60s cache
     }
 
     return token;
-  } catch {
+  } catch (err) {
+    console.error("[authFetch] getSession failed", err);
     return null;
   }
 }

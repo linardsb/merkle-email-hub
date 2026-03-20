@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Blocks, Search } from "lucide-react";
+import { Blocks, Search, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useComponents } from "@/hooks/use-components";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonComponentCard } from "@/components/ui/skeletons";
 import { ComponentCard } from "@/components/components/component-card";
 import { ComponentDetailDialog } from "@/components/components/component-detail-dialog";
+import { CreateComponentDialog } from "@/components/components/create-component-dialog";
 
 const PAGE_SIZE = 12;
 
@@ -20,6 +22,10 @@ export default function ComponentsPage() {
     null
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const session = useSession();
+  const userRole = session.data?.user?.role;
+  const canCreate = userRole === "admin" || userRole === "developer";
 
   // Debounce search input
   useEffect(() => {
@@ -64,11 +70,23 @@ export default function ComponentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Blocks className="h-8 w-8 text-foreground-accent" />
-        <h1 className="text-2xl font-semibold text-foreground">
-          {"Component Library"}
-        </h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Blocks className="h-8 w-8 text-foreground-accent" />
+          <h1 className="text-2xl font-semibold text-foreground">
+            {"Component Library"}
+          </h1>
+        </div>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover"
+          >
+            <Plus className="h-4 w-4" />
+            {"Create Component"}
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -175,6 +193,9 @@ export default function ComponentsPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
+
+      {/* Create dialog */}
+      <CreateComponentDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

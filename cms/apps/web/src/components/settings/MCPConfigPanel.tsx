@@ -18,15 +18,23 @@ export function MCPConfigPanel() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleToggleTool = async (toolName: string, enabled: boolean) => {
-    await toggleTool({ tool_name: toolName, enabled });
-    await refreshTools();
+    try {
+      await toggleTool({ tool_name: toolName, enabled });
+      await refreshTools();
+    } catch {
+      toast.error("MCP server not available");
+    }
   };
 
   const handleGenerateKey = async () => {
-    const result = await generateKey({ label: `key-${Date.now()}` });
-    if (result) {
-      toast.success("API key generated");
-      await refreshKeys();
+    try {
+      const result = await generateKey({ label: `key-${Date.now()}` });
+      if (result) {
+        toast.success("API key generated");
+        await refreshKeys();
+      }
+    } catch {
+      toast.error("MCP server not available");
     }
   };
 

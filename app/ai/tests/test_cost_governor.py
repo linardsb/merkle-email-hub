@@ -22,6 +22,19 @@ from app.auth.models import User
 from app.core.rate_limit import limiter
 from app.main import app
 
+# ── Fixtures ──
+
+
+@pytest.fixture(autouse=True)
+def _no_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force cost governor to use in-memory fallback (no real Redis)."""
+
+    async def _raise(*_: object, **__: object) -> None:
+        raise ConnectionError("Redis unavailable in unit tests")
+
+    monkeypatch.setattr("app.core.redis.get_redis", _raise)
+
+
 # ── Helpers ──
 
 

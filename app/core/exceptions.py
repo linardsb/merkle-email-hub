@@ -52,6 +52,11 @@ class ServiceUnavailableError(AppError):
 # ── Exception Handlers ──
 
 
+def _is_sync_error(exc: AppError) -> bool:
+    """Check if exception is a SyncFailedError (avoids circular import)."""
+    return any(cls.__name__ == "SyncFailedError" for cls in type(exc).__mro__)
+
+
 async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse:
     """Handle application exceptions globally."""
     logger.error(
@@ -76,6 +81,8 @@ async def app_exception_handler(request: Request, exc: AppError) -> JSONResponse
         status_code = status.HTTP_409_CONFLICT
     elif isinstance(exc, ServiceUnavailableError):
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    elif _is_sync_error(exc):
+        status_code = status.HTTP_502_BAD_GATEWAY
 
     from app.core.error_sanitizer import get_safe_error_message, get_safe_error_type
 

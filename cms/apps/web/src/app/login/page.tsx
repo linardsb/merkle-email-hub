@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
 
   const loginSchema = z.object({
-    username: z.string().min(1, "Username is required"),
+    username: z.string().min(1, "Email is required").email("Enter a valid email address"),
     password: z.string().min(1, "Password is required"),
   });
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid username or password");
+        setError("Invalid email or password");
       } else {
         router.push("/");
         router.refresh();
@@ -71,16 +71,16 @@ export default function LoginPage() {
               htmlFor="username"
               className="text-sm font-medium text-foreground"
             >
-              {"Username"}
+              {"Email"}
             </label>
             <input
               id="username"
               name="username"
-              type="text"
-              autoComplete="username"
+              type="email"
+              autoComplete="email"
               onChange={() => fieldErrors.username && setFieldErrors(prev => ({ ...prev, username: undefined }))}
               className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus"
-              placeholder={"Enter your username"}
+              placeholder={"Enter your email"}
             />
             {fieldErrors.username && (
               <p className="text-xs text-status-danger">{fieldErrors.username}</p>

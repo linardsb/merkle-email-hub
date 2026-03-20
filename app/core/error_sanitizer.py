@@ -62,6 +62,8 @@ _PASSTHROUGH_TYPES: set[str] = {
     "RenderingProviderError",
     "DuplicateTagError",
     "ImportAnnotationError",
+    "SyncFailedError",
+    "UnsupportedProviderError",
 }
 
 

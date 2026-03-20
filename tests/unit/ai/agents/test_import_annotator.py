@@ -1,6 +1,6 @@
 """Unit tests for import annotator service."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -132,7 +132,7 @@ class TestImportAnnotatorService:
     async def test_fallback_on_provider_failure(self) -> None:
         """If LLM call fails, return original HTML unchanged."""
         html = "<html><body><table><tr><td>Hello</td></tr></table></body></html>"
-        mock_registry = AsyncMock()
+        mock_registry = MagicMock()
         mock_registry.get_llm.return_value.complete = AsyncMock(side_effect=Exception("LLM down"))
         with (
             patch(

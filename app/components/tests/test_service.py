@@ -6,7 +6,12 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.components.exceptions import ComponentAlreadyExistsError, ComponentNotFoundError
-from app.components.schemas import ComponentCreate, ComponentUpdate, VersionCreate
+from app.components.schemas import (
+    AssignDesignOriginRequest,
+    ComponentCreate,
+    ComponentUpdate,
+    VersionCreate,
+)
 from app.components.service import ComponentService
 from app.components.tests.conftest import make_component, make_version
 from app.shared.schemas import PaginationParams
@@ -50,6 +55,8 @@ async def test_list_components(service):
     ]
     service.repository.list = AsyncMock(return_value=components)
     service.repository.count = AsyncMock(return_value=2)
+    service.repository.get_latest_compatibility_batch = AsyncMock(return_value={})
+    service.repository.get_latest_version_compatibility_batch = AsyncMock(return_value={})
 
     pagination = PaginationParams(page=1, page_size=20)
     result = await service.list_components(pagination)
@@ -63,6 +70,8 @@ async def test_list_components_with_category_filter(service):
     components = [make_component(id=1, name="Header", category="structure")]
     service.repository.list = AsyncMock(return_value=components)
     service.repository.count = AsyncMock(return_value=1)
+    service.repository.get_latest_compatibility_batch = AsyncMock(return_value={})
+    service.repository.get_latest_version_compatibility_batch = AsyncMock(return_value={})
 
     pagination = PaginationParams(page=1, page_size=20)
     result = await service.list_components(pagination, category="structure")
@@ -220,3 +229,91 @@ async def test_list_versions_component_not_found(service):
 
     with pytest.raises(ComponentNotFoundError, match="Component 999 not found"):
         await service.list_versions(999)
+
+
+# ── Design Origin ──
+
+
+def test_parse_design_origin_figma():
+    """Parse Figma origin from compatibility JSON."""
+    compat = {
+        "figma": {"file_key": "abc123", "component_id": "1:42", "component_name": "Header"},
+        "gmail_web": "full",
+    }
+    result = ComponentService._parse_design_origin(compat)
+    assert result is not None
+    assert result.provider == "figma"
+    assert result.file_key == "abc123"
+    assert result.component_id == "1:42"
+    assert result.component_name == "Header"
+
+
+def test_parse_design_origin_penpot():
+    """Parse Penpot origin from compatibility JSON."""
+    compat = {"penpot": {"file_key": "uuid-xyz", "component_id": "comp-1"}}
+    result = ComponentService._parse_design_origin(compat)
+    assert result is not None
+    assert result.provider == "penpot"
+    assert result.component_name is None
+
+
+def test_parse_design_origin_none():
+    """No design origin when compatibility is None or has no provider keys."""
+    assert ComponentService._parse_design_origin(None) is None
+    assert ComponentService._parse_design_origin({}) is None
+    assert ComponentService._parse_design_origin({"gmail_web": "full"}) is None
+
+
+async def test_assign_design_origin_success(service):
+    """Assign a design component to a Hub component."""
+    from unittest.mock import MagicMock
+
+    component = make_component(id=1, name="Header")
+    version = make_version(id=5, component_id=1, version_number=2, compatibility=None)
+
+    # Mock the connection lookup
+    mock_connection = MagicMock()
+    mock_connection.provider = "figma"
+    mock_connection.file_ref = "abc123"
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_connection
+    service.db.execute = AsyncMock(return_value=mock_result)
+
+    service.repository.get = AsyncMock(return_value=component)
+    service.repository.get_latest_version = AsyncMock(return_value=version)
+    service.repository.update_version_compatibility = AsyncMock()
+    service.repository.get_latest_version_number = AsyncMock(return_value=2)
+    service.repository.get_latest_compatibility = AsyncMock(return_value=None)
+
+    data = AssignDesignOriginRequest(
+        connection_id=10,
+        design_component_id="1:42",
+        design_component_name="My Header",
+    )
+    await service.assign_design_origin(1, data)
+
+    service.repository.update_version_compatibility.assert_awaited_once()
+    call_args = service.repository.update_version_compatibility.call_args
+    updated_compat = call_args[0][1]
+    assert "figma" in updated_compat
+    assert updated_compat["figma"]["file_key"] == "abc123"
+    assert updated_compat["figma"]["component_id"] == "1:42"
+
+
+async def test_assign_design_origin_connection_not_found(service):
+    """Assign with non-existent connection → raises not found."""
+    from unittest.mock import MagicMock
+
+    component = make_component(id=1)
+    service.repository.get = AsyncMock(return_value=component)
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    service.db.execute = AsyncMock(return_value=mock_result)
+
+    data = AssignDesignOriginRequest(
+        connection_id=999,
+        design_component_id="1:42",
+    )
+    with pytest.raises(ComponentNotFoundError, match="Design connection 999 not found"):
+        await service.assign_design_origin(1, data)

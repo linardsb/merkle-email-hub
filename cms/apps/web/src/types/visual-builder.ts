@@ -1,16 +1,12 @@
 import type { ComponentResponse } from "@email-hub/sdk";
 
-/** Category constants for the component palette */
+/** Category constants for the component palette (must match backend seed categories) */
 export const SECTION_CATEGORIES = [
-  "header",
-  "hero",
+  "structure",
   "content",
-  "product",
-  "cta",
+  "action",
   "social",
-  "footer",
-  "divider",
-  "custom",
+  "commerce",
 ] as const;
 export type SectionCategory = (typeof SECTION_CATEGORIES)[number];
 

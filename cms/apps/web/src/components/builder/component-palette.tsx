@@ -5,29 +5,23 @@ import { useDraggable } from "@dnd-kit/core";
 import {
   Search,
   Layout,
-  ImageIcon,
   Type,
   ShoppingBag,
   MousePointerClick,
   Share2,
-  Footprints,
-  Minus,
   Puzzle,
 } from "lucide-react";
 import { useComponents } from "@/hooks/use-components";
 import { SECTION_CATEGORIES, type SectionCategory } from "@/types/visual-builder";
 import type { ComponentResponse } from "@email-hub/sdk";
+import { CompatibilityBadge } from "@/components/components/compatibility-badge";
 
 const CATEGORY_ICONS: Record<SectionCategory, typeof Layout> = {
-  header: Layout,
-  hero: ImageIcon,
+  structure: Layout,
   content: Type,
-  product: ShoppingBag,
-  cta: MousePointerClick,
+  action: MousePointerClick,
   social: Share2,
-  footer: Footprints,
-  divider: Minus,
-  custom: Puzzle,
+  commerce: ShoppingBag,
 };
 
 function PaletteCard({ component }: { component: ComponentResponse }) {
@@ -36,7 +30,7 @@ function PaletteCard({ component }: { component: ComponentResponse }) {
     data: { source: "palette", componentId: component.id, component },
   });
 
-  const category = (component.category ?? "custom") as SectionCategory;
+  const category = (component.category ?? "content") as SectionCategory;
   const Icon = CATEGORY_ICONS[category] ?? Puzzle;
 
   return (
@@ -56,8 +50,11 @@ function PaletteCard({ component }: { component: ComponentResponse }) {
         <div className="truncate text-xs font-medium text-foreground">
           {component.name}
         </div>
-        <div className="truncate text-[10px] text-muted-foreground">
-          {category}
+        <div className="flex items-center gap-1">
+          <span className="truncate text-[10px] text-muted-foreground">
+            {category}
+          </span>
+          <CompatibilityBadge badge={component.compatibility_badge} className="!px-1 !py-0 !text-[8px]" />
         </div>
       </div>
     </div>

@@ -40,6 +40,22 @@ def get_service(db: AsyncSession = Depends(get_db)) -> AuthService:  # noqa: B00
     return AuthService(db)
 
 
+@router.post("/bootstrap", response_model=LoginResponse)
+@limiter.limit("5/minute")
+async def bootstrap(
+    request: Request,
+    service: AuthService = Depends(get_service),  # noqa: B008
+) -> LoginResponse:
+    """Bootstrap first admin user (dev only, zero-users guard, no auth required).
+
+    Creates the initial admin account and returns JWT tokens so you can
+    immediately use authenticated endpoints. Only works when ENVIRONMENT=development
+    and no users exist in the database.
+    """
+    _ = request
+    return await service.bootstrap_demo()
+
+
 @router.post("/login", response_model=LoginResponse)
 @limiter.limit("10/minute")
 async def login(

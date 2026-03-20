@@ -134,3 +134,44 @@ async def test_get_component_no_badge_without_qa(service):
 
     result = await service.get_component(1)
     assert result.compatibility_badge is None
+
+
+# ── list_components with badges ──
+
+
+async def test_list_components_includes_badges(service):
+    """list_components populates compatibility_badge from batch QA data."""
+    comp1 = make_component(id=1, name="Header")
+    comp2 = make_component(id=2, name="Footer")
+
+    service.repository.list = AsyncMock(return_value=[comp1, comp2])
+    service.repository.count = AsyncMock(return_value=2)
+    service.repository.get_latest_compatibility_batch = AsyncMock(
+        return_value={
+            1: {"gmail_web": "full", "outlook_2019": "full"},
+            2: {"gmail_web": "full", "outlook_2019": "none"},
+        }
+    )
+    service.repository.get_latest_version_compatibility_batch = AsyncMock(return_value={})
+
+    from app.shared.schemas import PaginationParams
+
+    result = await service.list_components(PaginationParams(page=1, page_size=20))
+
+    assert result.items[0].compatibility_badge == "full"
+    assert result.items[1].compatibility_badge == "issues"
+
+
+async def test_list_components_no_qa_data(service):
+    """list_components without QA data has no badge."""
+    comp1 = make_component(id=1, name="Header")
+    service.repository.list = AsyncMock(return_value=[comp1])
+    service.repository.count = AsyncMock(return_value=1)
+    service.repository.get_latest_compatibility_batch = AsyncMock(return_value={})
+    service.repository.get_latest_version_compatibility_batch = AsyncMock(return_value={})
+
+    from app.shared.schemas import PaginationParams
+
+    result = await service.list_components(PaginationParams(page=1, page_size=20))
+
+    assert result.items[0].compatibility_badge is None

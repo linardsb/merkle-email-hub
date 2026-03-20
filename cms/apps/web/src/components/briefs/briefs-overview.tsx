@@ -8,7 +8,11 @@ import { ErrorState } from "@/components/ui/error-state";
 import { BriefCampaignCard } from "./brief-campaign-card";
 import { BriefDetailDialog } from "./brief-detail-dialog";
 import { useAllBriefItems, useBriefConnections } from "@/hooks/use-briefs";
-import type { BriefPlatform, BriefItemStatus } from "@/types/briefs";
+import { useDesignConnections } from "@/hooks/use-design-sync";
+import { DesignImportDialog } from "@/components/design-sync/design-import-dialog";
+import { ConnectDesignDialog } from "@/components/design-sync/connect-design-dialog";
+import type { BriefPlatform, BriefItemStatus, BriefItem } from "@/types/briefs";
+import type { DesignConnection } from "@/types/design-sync";
 import { ClipboardList } from "lucide-react";
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -38,6 +42,8 @@ export function BriefsOverview() {
   const [statusFilter, setStatusFilter] = useState<BriefItemStatus | undefined>();
   const [clientFilter, setClientFilter] = useState<string | undefined>();
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [syncConnection, setSyncConnection] = useState<DesignConnection | null>(null);
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -50,6 +56,23 @@ export function BriefsOverview() {
     status: statusFilter,
     search: debouncedSearch || undefined,
   });
+  const { data: designConnections } = useDesignConnections();
+
+  // Build project_id → DesignConnection lookup
+  const designConnectionByProject = useMemo(() => {
+    const map = new Map<number, DesignConnection>();
+    for (const dc of designConnections ?? []) {
+      if (dc.project_id != null) map.set(dc.project_id, dc);
+    }
+    return map;
+  }, [designConnections]);
+
+  // Resolve design connection for a brief item via its brief connection's project_id
+  const getDesignConnection = (item: BriefItem): DesignConnection | null => {
+    const briefConn = connections?.find(c => c.id === item.connection_id);
+    if (!briefConn?.project_id) return null;
+    return designConnectionByProject.get(briefConn.project_id) ?? null;
+  };
 
   // Gather unique platforms from all connections for filter pills
   const connectedPlatforms = connections
@@ -76,6 +99,9 @@ export function BriefsOverview() {
   const pillBase = "rounded-full px-3 py-1 text-xs font-medium transition-colors";
   const pillActive = "bg-interactive text-foreground-inverse";
   const pillInactive = "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground";
+
+  // Resolve design connection for currently selected item (using unfiltered items)
+  const selectedItem = items?.find(i => i.id === selectedItemId) ?? null;
 
   return (
     <div className="space-y-4">
@@ -185,6 +211,12 @@ export function BriefsOverview() {
                 key={item.id}
                 item={item}
                 onClick={() => setSelectedItemId(item.id)}
+                designConnection={getDesignConnection(item)}
+                onSyncDesign={(connId) => {
+                  const dc = designConnections?.find(c => c.id === connId) ?? null;
+                  setSyncConnection(dc);
+                }}
+                onConnectDesign={() => setShowConnectDialog(true)}
               />
             ))}
           </div>
@@ -197,6 +229,27 @@ export function BriefsOverview() {
         onOpenChange={(open) => {
           if (!open) setSelectedItemId(null);
         }}
+        designConnection={selectedItem ? getDesignConnection(selectedItem) : null}
+        onSyncDesign={(connId) => {
+          setSelectedItemId(null);
+          const dc = designConnections?.find(c => c.id === connId) ?? null;
+          setSyncConnection(dc);
+        }}
+        onConnectDesign={() => { setSelectedItemId(null); setShowConnectDialog(true); }}
+      />
+
+      {syncConnection && (
+        <DesignImportDialog
+          open
+          onOpenChange={(open) => { if (!open) setSyncConnection(null); }}
+          connectionId={syncConnection.id}
+          connectionName={syncConnection.name}
+          initialTab="components"
+        />
+      )}
+      <ConnectDesignDialog
+        open={showConnectDialog}
+        onOpenChange={setShowConnectDialog}
       />
     </div>
   );

@@ -56,8 +56,26 @@ export default function DesignSyncPage() {
         { revalidate: true },
       );
       toast.success("Design file synced successfully");
-    } catch {
-      toast.error("Failed to sync design file");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      const conn = connections?.find((c) => c.id === id);
+      const label = conn?.provider ? conn.provider.charAt(0).toUpperCase() + conn.provider.slice(1) : "Design tool";
+      if (message.includes("429")) {
+        toast.error(`${label} rate limit reached. Wait 60 seconds and try again.`, {
+          description: `The ${label} API limits how many requests you can make per minute. Avoid clicking Sync repeatedly.`,
+          duration: 8000,
+        });
+      } else if (message.includes("access denied")) {
+        toast.error(`${label} access denied. Your token may have expired.`, {
+          description: "Remove this connection and reconnect with a fresh access token.",
+          duration: 8000,
+        });
+      } else {
+        toast.error(`Failed to sync ${label} file`, {
+          description: message || undefined,
+          duration: 6000,
+        });
+      }
     } finally {
       setSyncingId(null);
     }

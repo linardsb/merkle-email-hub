@@ -20,6 +20,31 @@ make eval-golden     # CI golden test (deterministic, no LLM)
 make eval-qa-coverage # Deterministic micro-judges coverage
 ```
 
+## Token-Efficient Research (MCP Tools)
+
+**jDocMunch** (repo: `local/merkle-email-hub`) — for docs >200 lines (TODO.md, PRD.md, etc.):
+- `search_sections(repo, query, doc_path)` → find sections by keyword
+- `get_section(repo, section_id)` → read one section (~400t vs 25k for full file)
+- `index_local(path, incremental=true, use_ai_summaries=false)` → re-index after big changes
+- **NEVER** `get_document_outline` on large docs. **NEVER** `Read` TODO.md/PRD.md in full.
+
+**jCodeMunch** (repo: `local/merkle-email-hub-0ddab3c4`) — for cross-file code research:
+- `search_symbols(repo, query, kind, file_pattern)` → find functions/classes/methods
+- `find_references(repo, symbol_name)` → find all usages across codebase
+- `get_file_outline(repo, file_path)` → file structure without reading full content
+- `get_symbol(repo, symbol_name)` → get specific symbol's code
+- `index_folder(path, incremental=true, use_ai_summaries=false)` → re-index after big changes
+
+**When to use what:**
+| Task | Tool |
+|------|------|
+| Read docs >200 lines | jDocMunch `search_sections` → `get_section` |
+| Read docs <200 lines | `Read` directly |
+| "Which files use X?" | jCodeMunch `search_symbols` / `find_references` |
+| "What's in this dir?" | jCodeMunch `get_file_tree(repo, path_prefix=...)` |
+| "Show me this function" (to edit) | `Read` the file |
+| Find exact string | `Grep` |
+
 ## Development Guidelines
 
 **Feature file order:** schemas → models → repository → service → exceptions → routes → tests
@@ -48,10 +73,9 @@ See `TODO.md` for details on upcoming phases. See `docs/TODO-completed.md` for d
 
 **Upcoming phases (priority order — highest differentiation first):**
 - ~~**Phase 24**~~ — Real-Time Collaboration & Visual Builder — **ALL DONE** (9/9 subtasks)
-- **Phase 25** — Platform Ecosystem & Advanced Integrations (15 subtasks: 25.1 Plugin architecture DONE, 25.2 Plugin sandbox & lifecycle DONE, 25.3 Tolgee TMS DONE, 25.4 Tolgee frontend DONE, 25.5 Kestra workflows DONE, 25.6 Penpot design pipeline DONE, 25.7 Typst report generator DONE, 25.8 Ecosystem dashboard DONE, 25.9 Tests & docs DONE, 25.10 Template learning pipeline DONE, 25.11 Automatic skill extraction DONE, 25.12 Template-to-eval pipeline DONE, 25.13 Deliverability intelligence DONE, 25.14 Multi-variant campaign assembly DONE; remaining: 25.15 tests for 25.10-25.14)
+- ~~**Phase 25**~~ — Platform Ecosystem & Advanced Integrations — **ALL DONE** (15/15 subtasks)
 
-**Completed phases 0–24, 25.1–25.14** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).
-**Next:** Phase 25.15 (Tests & Documentation for 25.10–25.14).
+**Completed phases 0–25** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).
 
 ## Compact instructions
 

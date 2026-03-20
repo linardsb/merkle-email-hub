@@ -7,39 +7,5 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #18738 | 9:04 PM | 🟣 | Version Comparison Feature Fully Implemented and Staged | ~847 |
-| #18736 | " | ✅ | Version Comparison Feature Committed to Main Branch | ~315 |
-| #18734 | 9:03 PM | 🟣 | Version Comparison Dialog for Approval Portal | ~422 |
-
-### Mar 2, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #18816 | 5:34 AM | 🔵 | Side-by-Side Template Version Comparison | ~466 |
-| #18815 | " | 🔵 | New Project Dialog Requirements and Codebase Patterns Research | ~624 |
-
-### Mar 4, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #19390 | 6:58 AM | 🔵 | Frontend Architecture Patterns Mapped for Litmus Integration | ~227 |
-
-### Mar 6, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #19767 | 9:59 AM | 🔵 | Approval State Machine Gap Analysis | ~585 |
-| #19660 | 6:55 AM | 🔵 | Frontend Error Handling Audit for BOLA Security Fixes | ~568 |
-
-### Mar 11, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #21954 | 3:02 PM | 🔵 | Component Compatibility System Architecture Mapped | ~717 |
-
-### Mar 18, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #24970 | 4:25 AM | 🔄 | Removed next-intl internationalization system from web app | ~310 |
+| #18633 | 7:57 PM | 🔵 | Frontend Component Architecture Survey | ~794 |
 </claude-mem-context>

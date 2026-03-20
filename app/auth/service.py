@@ -331,6 +331,50 @@ class AuthService:
         logger.info("auth.user_updated", user_id=user_id)
         return UserDetailResponse.model_validate(user)
 
+    async def bootstrap_demo(self) -> LoginResponse:
+        """Bootstrap the first admin user and return a login response.
+
+        Only works in development environment when zero users exist.
+        This solves the chicken-and-egg problem: the /seed endpoint
+        requires admin auth, but no users exist yet.
+
+        Returns:
+            LoginResponse with JWT tokens for the created admin.
+
+        Raises:
+            InvalidCredentialsError: If environment is not development or users already exist.
+        """
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        if settings.environment != "development":
+            raise InvalidCredentialsError("Bootstrap only available in development")
+
+        count = await self.repo.count()
+        if count > 0:
+            raise InvalidCredentialsError("Users already exist — use /login instead")
+
+        password = settings.auth.demo_user_password
+        user = User(
+            email="admin@email-hub.dev",
+            hashed_password=self.hash_password(password),
+            name="Admin",
+            role="admin",
+        )
+        user = await self.repo.create(user)
+        logger.info("auth.bootstrap_completed", user_id=user.id)
+
+        access_token = create_access_token(user.id, user.role)
+        refresh_token = create_refresh_token(user.id)
+        return LoginResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            role=user.role,
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+
     async def seed_demo_users(self) -> list[User]:
         """Create demo users if no users exist. Returns created users.
 
