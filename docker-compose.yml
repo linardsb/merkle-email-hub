@@ -141,6 +141,7 @@ services:
       - BACKEND_URL=http://app:8891
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set}
       - AUTH_TRUST_HOST=true
+      - AUTH_URL=${AUTH_URL:-http://localhost}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 || exit 1"]
       interval: 10s
@@ -215,11 +216,8 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    ports:
-      - "80:80"
-      # - "443:443"
-    # volumes:
-    #   - ./certs:/etc/nginx/certs:ro
+    expose:
+      - "80"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health || exit 1"]
       interval: 10s
