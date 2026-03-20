@@ -163,6 +163,8 @@ services:
     networks:
       - default
       - coolify
+    labels:
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health || exit 1"]
       interval: 10s
