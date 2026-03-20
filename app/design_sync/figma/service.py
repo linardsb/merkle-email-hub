@@ -78,6 +78,11 @@ class FigmaDesignSyncService:
             )
         if resp.status_code == 403:
             raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
+        if resp.status_code == 429:
+            retry_after = resp.headers.get("Retry-After", "60")
+            raise SyncFailedError(
+                f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+            )
         if resp.status_code != 200:
             logger.warning("design_sync.figma.list_files_failed", status=resp.status_code)
             return []
@@ -126,8 +131,13 @@ class FigmaDesignSyncService:
             raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
         if resp.status_code == 404:
             raise SyncFailedError("Figma file not found. Check the file URL.")
+        if resp.status_code == 429:
+            retry_after = resp.headers.get("Retry-After", "60")
+            raise SyncFailedError(
+                f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+            )
         if resp.status_code != 200:
-            raise SyncFailedError(f"Figma API returned status {resp.status_code}")
+            raise SyncFailedError(f"Figma API error (HTTP {resp.status_code})")
         return True
 
     async def sync_tokens(self, file_ref: str, access_token: str) -> ExtractedTokens:
@@ -140,8 +150,13 @@ class FigmaDesignSyncService:
                 f"{_FIGMA_API}/v1/files/{file_ref}",
                 headers=headers,
             )
+            if file_resp.status_code == 429:
+                retry_after = file_resp.headers.get("Retry-After", "60")
+                raise SyncFailedError(
+                    f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+                )
             if file_resp.status_code != 200:
-                raise SyncFailedError(f"Figma file API returned {file_resp.status_code}")
+                raise SyncFailedError(f"Figma file API error (HTTP {file_resp.status_code})")
 
             # Fetch published styles
             styles_resp = await client.get(
@@ -309,8 +324,13 @@ class FigmaDesignSyncService:
             raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
         if resp.status_code == 404:
             raise SyncFailedError("Figma file not found. Check the file URL.")
+        if resp.status_code == 429:
+            retry_after = resp.headers.get("Retry-After", "60")
+            raise SyncFailedError(
+                f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+            )
         if resp.status_code != 200:
-            raise SyncFailedError(f"Figma API returned status {resp.status_code}")
+            raise SyncFailedError(f"Figma API error (HTTP {resp.status_code})")
 
         data: dict[str, Any] = resp.json()
         file_name = str(data.get("name", "Untitled"))
@@ -400,8 +420,13 @@ class FigmaDesignSyncService:
             raise SyncFailedError("Figma access denied. Check your Personal Access Token.")
         if resp.status_code == 404:
             raise SyncFailedError("Figma file not found. Check the file URL.")
+        if resp.status_code == 429:
+            retry_after = resp.headers.get("Retry-After", "60")
+            raise SyncFailedError(
+                f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+            )
         if resp.status_code != 200:
-            raise SyncFailedError(f"Figma components API returned {resp.status_code}")
+            raise SyncFailedError(f"Figma components API error (HTTP {resp.status_code})")
 
         data: dict[str, Any] = resp.json()
         error = data.get("error")
@@ -484,8 +509,13 @@ class FigmaDesignSyncService:
                 )
                 if resp.status_code == 403:
                     raise SyncFailedError("Figma access denied.")
+                if resp.status_code == 429:
+                    retry_after = resp.headers.get("Retry-After", "60")
+                    raise SyncFailedError(
+                        f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+                    )
                 if resp.status_code != 200:
-                    raise SyncFailedError(f"Figma images API returned {resp.status_code}")
+                    raise SyncFailedError(f"Figma images API error (HTTP {resp.status_code})")
                 result: dict[str, Any] = resp.json()
                 return result
 

@@ -45,7 +45,7 @@ def get_service(db: AsyncSession = Depends(get_db)) -> DesignSyncService:
 
 
 @router.post("/browse-files", response_model=BrowseFilesResponse)
-@limiter.limit("10/minute")
+@limiter.limit("30/minute")
 async def browse_files(
     request: Request,
     data: BrowseFilesRequest,

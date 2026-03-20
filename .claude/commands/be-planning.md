@@ -41,9 +41,9 @@ Save the plan to `.agents/plans/{feature-name}.md` with this structure:
 
 ## Security Checklist (scoped to this feature's endpoints)
 For every new or modified endpoint in this plan, address:
-- [ ] Auth dependency (`get_current_user`) on every route
-- [ ] Authorization check (`verify_project_access()`) for resource-scoped endpoints
-- [ ] Rate limiting (`@limiter.limit()`) with `Request` parameter
+- [ ] Auth dependency (`get_current_user` or `require_role()`) on every HTTP route, unless intentionally public (document why)
+- [ ] Authorization check (`verify_project_access()` in service layer) for project-scoped endpoints only
+- [ ] Rate limiting (`@limiter.limit()`) with `Request` parameter on all HTTP routes (WebSocket exempt)
 - [ ] Input validation via Pydantic schemas (no raw dict access)
 - [ ] Error responses use `AppError` hierarchy (auto-sanitized, no class name leakage)
 - [ ] No secrets/credentials in logs or error responses
@@ -61,8 +61,8 @@ Only check the feature being planned — full codebase security sweep is `/be-va
 - Use `from app.core.exceptions import AppError` hierarchy for errors
 - All functions must have complete type annotations
 - Use nested config: `settings.database.url`, `settings.auth.jwt_secret_key`, etc.
-- Every new route MUST have `Depends(get_current_user)` and `@limiter.limit()`
-- Resource endpoints MUST call `verify_project_access()` before returning data
-- Use `get_safe_error_message()`/`get_safe_error_type()` from `app.core.error_sanitizer` for custom error responses
+- Every new HTTP route MUST have `Depends(get_current_user)` or `require_role()` and `@limiter.limit()`, unless intentionally public (document in plan). WebSocket endpoints use manual JWT validation.
+- Project-scoped endpoints MUST call `verify_project_access()` in the service layer (not all endpoints are project-scoped)
+- Error responses are auto-sanitized via `AppError` hierarchy and global `error_sanitizer` middleware — no need to call sanitizer functions in routes
 
 @_shared/python-anti-patterns.md

@@ -12,7 +12,7 @@ Execute a frontend implementation plan step by step.
 
 ## Rules
 - Use semantic Tailwind tokens (not primitive colors like `text-gray-500`)
-- Use `useTranslations()` for all user-visible text
+- i18n (`useTranslations`) is not yet active — use plain English strings for now
 - Follow React 19 patterns (no setState in useEffect, no component defs inside components)
 - Use `authFetch` for API calls, SWR for data fetching
 - All detail views use Dialog (not Sheet)

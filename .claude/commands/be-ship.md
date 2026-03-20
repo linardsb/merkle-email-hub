@@ -24,9 +24,9 @@ Report all findings with severity (critical, warning, suggestion).
 
 ## Phase 3: Fix Review Findings
 
-Run `/be-code-review-fix` for any critical or warning findings from Phase 2. Suggestions are optional — fix only if trivial (<3 lines).
+Run `/be-code-review-fix` for **critical** findings from Phase 2 that violate codified project rules (CLAUDE.md, pyproject.toml, .claude/rules/). Warnings are optional — fix only if they match a documented convention and are trivial (<3 lines). Do NOT fix subjective LLM opinions (e.g. "could add logging", "consider refactoring") that don't reference a specific project rule.
 
-Skip this phase if Phase 2 found zero critical/warning issues.
+Skip this phase if Phase 2 found zero critical issues.
 
 @_shared/python-anti-patterns.md
 

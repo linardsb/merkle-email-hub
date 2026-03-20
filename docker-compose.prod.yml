@@ -40,15 +40,31 @@ services:
         condition: service_healthy
     restart: "no"
 
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "app.seed_demo"]
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DATABASE__URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-email_hub}
+      - REDIS__URL=redis://:${REDIS_PASSWORD:-devpassword}@redis:6379/0
+      - AUTH__JWT_SECRET_KEY=${AUTH__JWT_SECRET_KEY}
+      - AUTH__DEMO_USER_PASSWORD=${AUTH__DEMO_USER_PASSWORD:-admin}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: "no"
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8891"]
+    # Uses Dockerfile CMD: gunicorn with 4 UvicornWorkers
     expose:
       - "8891"
-    ports:
-      - "8891:8891"
     volumes:
       - document_data:/app/data/documents
     environment:
@@ -63,12 +79,17 @@ services:
       - AI__PROVIDER=${AI__PROVIDER:-anthropic}
       - AI__API_KEY=${AI__API_KEY}
       - AI__MODEL=${AI__MODEL:-claude-sonnet-4-20250514}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:3000"]}
+      - ESP_SYNC__BRAZE_BASE_URL=http://mock-esp:3002/braze
+      - ESP_SYNC__SFMC_BASE_URL=http://mock-esp:3002/sfmc
+      - ESP_SYNC__ADOBE_BASE_URL=http://mock-esp:3002/adobe
+      - ESP_SYNC__TAXI_BASE_URL=http://mock-esp:3002/taxi
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
+      seed:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8891/health')"]
@@ -82,6 +103,8 @@ services:
     build:
       context: ./cms
       dockerfile: apps/web/Dockerfile
+      args:
+        - NEXT_PUBLIC_COLLAB_WS_URL=${NEXT_PUBLIC_COLLAB_WS_URL:-wss://localhost}
     expose:
       - "3000"
     environment:
@@ -89,6 +112,7 @@ services:
       - BACKEND_URL=http://app:8891
       - AUTH_SECRET=${AUTH_SECRET}
       - AUTH_TRUST_HOST=true
+      - AUTH_URL=${AUTH_URL:?AUTH_URL must be set to your production domain (e.g. https://yourdomain.com)}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 || exit 1"]
       interval: 10s
@@ -112,7 +136,7 @@ services:
       timeout: 5s
       retries: 3
     volumes:
-      - ./email-templates:/app/email-templates
+      - email_templates:/app/email-templates
     restart: unless-stopped
 
   mock-esp:
@@ -134,8 +158,11 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    ports:
-      - "80:80"
+    expose:
+      - "80"
+    networks:
+      - default
+      - coolify
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health || exit 1"]
       interval: 10s
@@ -148,8 +175,13 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+networks:
+  coolify:
+    external: true
+
 volumes:
   postgres_data:
   redis_data:
   document_data:
   mock_esp_data:
+  email_templates:

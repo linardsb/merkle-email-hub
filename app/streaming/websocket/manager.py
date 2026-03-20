@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
@@ -63,6 +64,7 @@ class CollabConnectionManager:
         # user_id -> set of room_ids they're in
         self._user_rooms: dict[int, set[str]] = {}
         self._color_index: int = 0
+        self._lock = asyncio.Lock()
 
     def _next_color(self) -> str:
         color = _CURSOR_COLORS[self._color_index % len(_CURSOR_COLORS)]
@@ -77,78 +79,80 @@ class CollabConnectionManager:
         can_edit: bool,
     ) -> ConnectionInfo | None:
         """Add a peer to a room. Returns ConnectionInfo on success, None if limit reached."""
-        user_id = user.id
-        room = self._rooms.get(room_id, {})
+        async with self._lock:
+            user_id = user.id
+            room = self._rooms.get(room_id, {})
 
-        # Check room capacity
-        if len(room) >= self._max_per_room:
-            logger.warning(
-                "collab.ws.room_full",
-                room_id=room_id,
-                max_per_room=self._max_per_room,
-            )
-            return None
+            # Check room capacity
+            if len(room) >= self._max_per_room:
+                logger.warning(
+                    "collab.ws.room_full",
+                    room_id=room_id,
+                    max_per_room=self._max_per_room,
+                )
+                return None
 
-        # Check per-user room limit
-        user_rooms = self._user_rooms.get(user_id, set())
-        if room_id not in user_rooms and len(user_rooms) >= self._max_rooms_per_user:
-            logger.warning(
-                "collab.ws.user_room_limit",
+            # Check per-user room limit
+            user_rooms = self._user_rooms.get(user_id, set())
+            if room_id not in user_rooms and len(user_rooms) >= self._max_rooms_per_user:
+                logger.warning(
+                    "collab.ws.user_room_limit",
+                    user_id=user_id,
+                    max_rooms=self._max_rooms_per_user,
+                )
+                return None
+
+            info = ConnectionInfo(
                 user_id=user_id,
-                max_rooms=self._max_rooms_per_user,
+                room_id=room_id,
+                display_name=user.name,
+                role="viewer" if not can_edit else user.role,
+                color=self._next_color(),
             )
-            return None
+            peer = Peer(websocket=websocket, info=info)
+            ws_id = id(websocket)
 
-        info = ConnectionInfo(
-            user_id=user_id,
-            room_id=room_id,
-            display_name=user.name,
-            role="viewer" if not can_edit else user.role,
-            color=self._next_color(),
-        )
-        peer = Peer(websocket=websocket, info=info)
-        ws_id = id(websocket)
+            if room_id not in self._rooms:
+                self._rooms[room_id] = {}
+            self._rooms[room_id][ws_id] = peer
+            self._user_rooms.setdefault(user_id, set()).add(room_id)
 
-        if room_id not in self._rooms:
-            self._rooms[room_id] = {}
-        self._rooms[room_id][ws_id] = peer
-        self._user_rooms.setdefault(user_id, set()).add(room_id)
-
-        logger.info(
-            "collab.ws.peer_joined",
-            user_id=user_id,
-            room_id=room_id,
-            room_size=len(self._rooms[room_id]),
-        )
-        return info
+            logger.info(
+                "collab.ws.peer_joined",
+                user_id=user_id,
+                room_id=room_id,
+                room_size=len(self._rooms[room_id]),
+            )
+            return info
 
     async def disconnect(self, websocket: WebSocket, room_id: str) -> ConnectionInfo | None:
         """Remove a peer from a room. Returns the peer's info or None."""
-        ws_id = id(websocket)
-        room = self._rooms.get(room_id)
-        if room is None or ws_id not in room:
-            return None
+        async with self._lock:
+            ws_id = id(websocket)
+            room = self._rooms.get(room_id)
+            if room is None or ws_id not in room:
+                return None
 
-        peer = room.pop(ws_id)
-        user_id = peer.info.user_id
+            peer = room.pop(ws_id)
+            user_id = peer.info.user_id
 
-        # Clean up empty room
-        if not room:
-            del self._rooms[room_id]
+            # Clean up empty room
+            if not room:
+                del self._rooms[room_id]
 
-        # Clean up user room tracking
-        if user_id in self._user_rooms:
-            self._user_rooms[user_id].discard(room_id)
-            if not self._user_rooms[user_id]:
-                del self._user_rooms[user_id]
+            # Clean up user room tracking
+            if user_id in self._user_rooms:
+                self._user_rooms[user_id].discard(room_id)
+                if not self._user_rooms[user_id]:
+                    del self._user_rooms[user_id]
 
-        logger.info(
-            "collab.ws.peer_left",
-            user_id=user_id,
-            room_id=room_id,
-            room_size=len(self._rooms.get(room_id, {})),
-        )
-        return peer.info
+            logger.info(
+                "collab.ws.peer_left",
+                user_id=user_id,
+                room_id=room_id,
+                room_size=len(self._rooms.get(room_id, {})),
+            )
+            return peer.info
 
     def get_peers(self, room_id: str) -> list[ConnectionInfo]:
         """Get info for all peers in a room."""
@@ -178,7 +182,9 @@ class CollabConnectionManager:
             except Exception:
                 disconnected.append(ws_id)
 
-        self._cleanup_disconnected(room_id, disconnected)
+        if disconnected:
+            async with self._lock:
+                self._cleanup_disconnected(room_id, disconnected)
 
     async def broadcast_json(
         self,
@@ -203,7 +209,9 @@ class CollabConnectionManager:
             except Exception:
                 disconnected.append(ws_id)
 
-        self._cleanup_disconnected(room_id, disconnected)
+        if disconnected:
+            async with self._lock:
+                self._cleanup_disconnected(room_id, disconnected)
 
     async def send_to_user(
         self,

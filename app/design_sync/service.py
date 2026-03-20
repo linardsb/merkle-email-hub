@@ -31,7 +31,6 @@ from app.design_sync.figma.layout_analyzer import (
     analyze_layout as run_layout_analysis,
 )
 from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
-from app.design_sync.penpot.service import PenpotDesignSyncService
 from app.design_sync.penpot.service import extract_file_id as extract_penpot_id
 from app.design_sync.protocol import (
     BrowseableProvider,
@@ -77,8 +76,13 @@ SUPPORTED_PROVIDERS: dict[str, type[DesignSyncProvider]] = {
     "figma": FigmaDesignSyncService,
     "sketch": SketchDesignSyncService,
     "canva": CanvaDesignSyncService,
-    "penpot": PenpotDesignSyncService,
 }
+
+# Register Penpot provider when enabled (self-hosted design tool)
+if get_settings().design_sync.penpot_enabled:
+    from app.design_sync.penpot.service import PenpotDesignSyncService
+
+    SUPPORTED_PROVIDERS["penpot"] = PenpotDesignSyncService
 
 # Register mock provider in development mode
 if get_settings().environment == "development":

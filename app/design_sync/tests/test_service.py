@@ -76,10 +76,11 @@ class TestProtocol:
         assert isinstance(FigmaDesignSyncService(), DesignSyncProvider)
 
     def test_all_providers_registered(self):
-        required = {"figma", "sketch", "canva", "penpot"}
+        required = {"figma", "sketch", "canva"}
         assert required.issubset(set(SUPPORTED_PROVIDERS.keys()))
+        # penpot is optional (gated by DESIGN_SYNC__PENPOT_ENABLED)
         # In development mode, "mock" provider is also registered
-        assert set(SUPPORTED_PROVIDERS.keys()) - required <= {"mock"}
+        assert set(SUPPORTED_PROVIDERS.keys()) - required <= {"mock", "penpot"}
 
 
 # ── Service Tests ──
@@ -519,6 +520,64 @@ class TestFigmaImageExport:
 
         assert len(images) == 1  # null URL skipped
         assert images[0].node_id == "1:1"
+
+
+# ── Figma 429 Rate Limit Handling ──
+
+
+class TestFigmaRateLimitHandling:
+    """Verify that Figma 429 responses raise SyncFailedError with clear message."""
+
+    @pytest.mark.asyncio
+    async def test_list_files_429_raises(self) -> None:
+        service = FigmaDesignSyncService()
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {"Retry-After": "30"}
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            with pytest.raises(SyncFailedError, match="rate limit exceeded"):
+                await service.list_files("token")
+
+    @pytest.mark.asyncio
+    async def test_validate_connection_429_raises(self) -> None:
+        service = FigmaDesignSyncService()
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {"Retry-After": "45"}
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            with pytest.raises(SyncFailedError, match="Try again in 45 seconds"):
+                await service.validate_connection("abc123", "token")
+
+    @pytest.mark.asyncio
+    async def test_list_components_429_raises(self) -> None:
+        service = FigmaDesignSyncService()
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.headers = {}
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            with pytest.raises(SyncFailedError, match="Try again in 60 seconds"):
+                await service.list_components("abc123", "token")
 
 
 # ── Updated Stub Tests ──

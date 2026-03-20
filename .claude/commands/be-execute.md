@@ -11,10 +11,10 @@ Execute a backend implementation plan step by step.
 
 ## Security Verification (scoped to the feature being built)
 After each step that adds/modifies routes in the current feature:
-- Confirm every new/changed route has `Depends(get_current_user)` and `@limiter.limit()`
-- Confirm resource-scoped endpoints call `verify_project_access()`
+- Confirm every NEW route added in this step has `Depends(get_current_user)` or `require_role()` and `@limiter.limit()`. Known exceptions: public auth endpoints (login/bootstrap/refresh), health checks, WebSocket endpoints (use manual JWT validation)
+- For project-scoped features: confirm service layer calls `verify_project_access()` (this is a service method, not a route dependency)
 - Confirm error responses use `AppError` hierarchy (auto-sanitized via `error_sanitizer`)
-- Run `uv run ruff check app/{feature}/ --select=S --no-fix` on the feature directory only
+- Run `uv run ruff check app/{feature}/ --select=S --ignore=S311 --no-fix` on the feature directory only
 - Do NOT scan the entire codebase — `/be-validate` handles the full sweep
 
 ## Rules
@@ -23,7 +23,7 @@ After each step that adds/modifies routes in the current feature:
 - All functions must have complete type annotations
 - Use structured logging: `logger.info("domain.action_state", key=value)`
 - Use nested config: `settings.database.url`, `settings.auth.jwt_secret_key`
-- Every new route MUST have auth dependency and rate limiting — no exceptions
+- Every new HTTP route MUST have auth dependency (`get_current_user` or `require_role()`) and `@limiter.limit()`, unless it is a public endpoint documented in the plan
 - Never return raw exception class names in error responses
 
 @_shared/python-anti-patterns.md

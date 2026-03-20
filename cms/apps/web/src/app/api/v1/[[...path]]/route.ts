@@ -15,6 +15,13 @@ async function proxy(req: NextRequest) {
   headers.delete("host");
   headers.delete("cookie"); // Don't forward session cookies to backend
 
+  // Forward client IP so backend rate limiter can distinguish users
+  if (!headers.has("X-Real-IP")) {
+    const forwarded = req.headers.get("x-forwarded-for");
+    const clientIp = forwarded?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "127.0.0.1";
+    headers.set("X-Real-IP", clientIp);
+  }
+
   // If no Authorization header present, inject JWT from NextAuth session
   if (!headers.has("Authorization")) {
     try {

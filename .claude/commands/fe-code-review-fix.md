@@ -48,8 +48,8 @@ Apply the fix following project conventions:
 
 **Key rules:**
 - Use semantic Tailwind tokens — NEVER primitive colors (`text-gray-500`, `bg-blue-600`)
-- Use `useTranslations()` hook for ALL user-visible text
-- Use `authFetch` for API calls, SWR hooks for data fetching
+- i18n (`useTranslations`) is not yet active — use plain English strings for now
+- Use `authFetch` for API calls in client components, SWR hooks for data fetching
 - React 19: No setState in useEffect, no component defs inside components
 - Dialog for detail views (not Sheet). Widths: detail=28rem, forms=32rem
 - Don't over-engineer — fix the issue, nothing more

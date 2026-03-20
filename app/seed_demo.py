@@ -24,6 +24,7 @@ from app.core.config import get_settings
 from app.core.database import AsyncSessionLocal, engine
 from app.core.logging import get_logger
 from app.projects.models import ClientOrg, Project, ProjectMember
+from app.qa_engine.models import QAResult  # noqa: F401 — ensures metadata for FK resolution
 
 logger = get_logger(__name__)
 
@@ -234,9 +235,9 @@ async def _seed_components(db: AsyncSession, user: User) -> int:
 async def seed_all() -> None:
     """Run the full idempotent seed pipeline."""
     settings = get_settings()
-    if settings.environment != "development":
+    if settings.environment not in ("development", "production"):
         logger.warning("seed.skipped", environment=settings.environment)
-        print(f"Seed skipped: environment is '{settings.environment}', not 'development'")
+        print(f"Seed skipped: environment is '{settings.environment}'")
         return
 
     async with AsyncSessionLocal() as db:
@@ -253,7 +254,9 @@ async def seed_all() -> None:
             print(f"  Client org: {org.name} (id={org.id})")
             print(f"  Project: {project.name} (id={project.id})")
             print(f"  Components seeded: {comp_count}")
-            print(f"\nLogin: email=admin@email-hub.dev password={settings.auth.demo_user_password}")
+            print(
+                "\nLogin: email=admin@email-hub.dev (password from AUTH__DEMO_USER_PASSWORD env var)"
+            )
         except Exception:
             await db.rollback()
             logger.exception("seed.failed")

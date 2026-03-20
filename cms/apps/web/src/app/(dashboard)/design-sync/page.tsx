@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Paintbrush, Download } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api-error";
 import { useSWRConfig } from "swr";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DesignConnectionCard } from "@/components/design-sync/design-connection-card";
@@ -60,9 +61,10 @@ export default function DesignSyncPage() {
       const message = err instanceof Error ? err.message : "";
       const conn = connections?.find((c) => c.id === id);
       const label = conn?.provider ? conn.provider.charAt(0).toUpperCase() + conn.provider.slice(1) : "Design tool";
-      if (message.includes("429")) {
-        toast.error(`${label} rate limit reached. Wait 60 seconds and try again.`, {
-          description: `The ${label} API limits how many requests you can make per minute. Avoid clicking Sync repeatedly.`,
+      const status = err instanceof ApiError ? err.status : 0;
+      if (status === 429) {
+        toast.error("Too many requests. Please wait a moment and try again.", {
+          description: "The server is rate-limiting requests. Wait a few seconds before retrying.",
           duration: 8000,
         });
       } else if (message.includes("access denied")) {

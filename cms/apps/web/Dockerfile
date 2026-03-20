@@ -23,6 +23,10 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Build-time env vars (NEXT_PUBLIC_* are inlined at build time by Next.js)
+ARG NEXT_PUBLIC_COLLAB_WS_URL=ws://localhost:8891
+ENV NEXT_PUBLIC_COLLAB_WS_URL=$NEXT_PUBLIC_COLLAB_WS_URL
+
 RUN pnpm --filter @email-hub/web build
 
 # ── Runner ──

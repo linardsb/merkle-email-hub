@@ -23,16 +23,12 @@ Should use semantic tokens (`text-foreground`, `bg-card`, `border-border`, etc.)
 
 Fallback: Grep for `(text|bg|border|ring)-(gray|slate|zinc|red|blue|green)-\d` in `cms/apps/web/src/**/*.tsx`
 
-## Level 4: i18n
-Grep for hardcoded English strings in component JSX in `cms/apps/web/src/**/*.tsx`.
-All user-visible text must use `useTranslations()` / `t("key")`.
-
-## Level 5: Security
+## Level 4: Security
 
 Use jCodeMunch to locate violations without reading full files:
-1. `search_text({ "query": "as any", "file_pattern": "*.ts" })` — flag all instances
-2. `search_text({ "query": "dangerouslySetInnerHTML", "file_pattern": "*.tsx" })` — must have DOMPurify
-3. `search_text({ "query": "fetch(", "file_pattern": "*.ts" })` — verify authenticated endpoints use `authFetch`
+1. `search_text({ "query": "as any", "file_pattern": "*.ts" })` — flag new instances (currently 0 in codebase — this is a guard rail)
+2. `search_text({ "query": "dangerouslySetInnerHTML", "file_pattern": "*.tsx" })` — only flag if DOMPurify is NOT used alongside it
+3. `search_text({ "query": "fetch(", "file_pattern": "*.tsx" })` — verify client components use `authFetch`. **Exclude** these files (legitimate raw fetch): `app/api/` (server route handlers), `lib/auth-fetch.ts` (wrapper itself), `lib/sdk.ts` (SDK internals)
 4. `find_references({ "symbol_name": "sessionStorage" })` — verify runtime type validation
 5. `find_references({ "symbol_name": "localStorage" })` — verify runtime type validation
 
@@ -40,4 +36,5 @@ Only `Read` files when you need to fix a violation found above.
 
 ## Notes
 - No ESLint config exists yet — skip lint level until configured
-- Fix any issues found automatically before reporting results
+- i18n (`useTranslations`) is not yet active — skip i18n checks until adopted across components
+- Report results for each level. Do NOT auto-fix — use `/fe-code-review-fix` for targeted fixes

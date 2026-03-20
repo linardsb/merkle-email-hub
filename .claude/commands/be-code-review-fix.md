@@ -48,9 +48,9 @@ Apply the fix following project conventions:
 - Don't over-engineer — fix the issue, nothing more
 
 **Security checks (scoped to files being fixed):**
-- If touching routes: verify `Depends(get_current_user)` and `@limiter.limit()` are present
-- If touching error handling: use `AppError` hierarchy (auto-sanitized), never hardcode class names
-- If touching resource access: verify `verify_project_access()` authorization
+- If touching routes: verify `Depends(get_current_user)` or `require_role()` and `@limiter.limit()` are present. Known exceptions: public auth endpoints (login/bootstrap/refresh), health checks, WebSocket endpoints (use manual JWT)
+- If touching error handling: use `AppError` hierarchy (auto-sanitized via middleware), never hardcode class names
+- If touching project-scoped resource access: verify `verify_project_access()` in service layer (not all endpoints are project-scoped)
 - If adding user input handling: validate via Pydantic schema, use `escape_like()` for SQL patterns
 - Only check the files/module being fixed — full sweep is `/be-validate`
 
