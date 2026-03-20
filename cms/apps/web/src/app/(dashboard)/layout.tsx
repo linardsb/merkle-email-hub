@@ -87,9 +87,7 @@ export default async function DashboardLayout({
       <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <aside className="hidden w-60 flex-col bg-sidebar-bg text-sidebar-text md:flex">
-        <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-3">
-          <span className="text-sm font-semibold text-sidebar-text">Email Hub</span>
-        </div>
+        <div className="h-14 shrink-0 border-b border-sidebar-border" />
         <div className="flex-1 overflow-y-auto">
           <SidebarNav items={navItems} />
         </div>
