@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://s3-alpha.figma.com https://*.figma.com",
               "font-src 'self' data: https://fonts.gstatic.com",
               "worker-src 'self' blob:",
-              "connect-src 'self' https://cdn.jsdelivr.net http://localhost:8891 ws://localhost:8891",
+              "connect-src 'self' https://cdn.jsdelivr.net",
               "frame-ancestors 'none'",
             ].join("; "),
           },
