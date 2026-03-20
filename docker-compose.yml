@@ -218,6 +218,9 @@ services:
       dockerfile: Dockerfile
     expose:
       - "80"
+    networks:
+      - default
+      - coolify
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health || exit 1"]
       interval: 10s
@@ -244,6 +247,10 @@ services:
         limits:
           cpus: "0.25"
           memory: 128M
+
+networks:
+  coolify:
+    external: true
 
 volumes:
   postgres_data:
