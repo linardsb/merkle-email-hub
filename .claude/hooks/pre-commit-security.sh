@@ -29,8 +29,8 @@ fi
 
 FOUND_SECRETS=0
 
-# Check for .env files being committed
-if echo "$STAGED_FILES" | grep -qE '\.env($|\.)'; then
+# Check for .env files being committed (allow .env.example — it's a template)
+if echo "$STAGED_FILES" | grep -E '\.env($|\.)' | grep -vq '\.env\.example$'; then
   echo "BLOCKED: Staged .env file detected — never commit environment files." >&2
   FOUND_SECRETS=1
 fi
