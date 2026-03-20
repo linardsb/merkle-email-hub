@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+                <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwfsfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#F3F3F2">
+                  <tr align="center">
+                    <td align="center" class="padlr20" style="padding-top: 40px; padding-bottom: 40px;">
+                      <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                        <tr align="center">
+                          <td align="center" style="padding-bottom:35px;">
+                            <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width: 520px;">
+                              <tr align="center">
+                                <th align="left" class="resptab db lfloat" valign="middle">
+                                  <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_VWFS_LOGO&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.volkswagen.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_VWFS_LOGO" xt="SPNOTRACK" style="color: #001E50; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/vwfstextlogo.png" alt="Volkswagen Financial Services" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 20px; font-weight: bold; color: #001E50; line-height: 20px; mso-line-height-rule: exactly;" border="0" class="respimg" width="244" height="36"></a>
+                                </th>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr align="center">
+                          <td align="center">
+                            <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;border-bottom: solid 1px #E1E1E1;">
+                              <tr align="center">
+                                <td align="center"></td>
+                                <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr align="center">
+                          <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left; padding-top:20px;">
+                            Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. <br><br>
+                            &copy; 2022 Volkswagen Group Ltd. All rights reserved.
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+]]></content>
+	<tabTrigger>vwfsfooter</tabTrigger>
+</snippet>

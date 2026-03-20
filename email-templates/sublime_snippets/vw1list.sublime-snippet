@@ -1,0 +1,26 @@
+<snippet>
+	<content><![CDATA[
+        <tr align="center" id="bullet1">
+          <td align="left" style="padding-bottom:10px;">
+            <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+              <tr align="center">
+                <td align="center" width="10" class="dm_fontc" width="10" valign="top" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 30px; line-height: 17px; color:#00B0F0; mso-line-height-rule: exactly; text-align:left" valign="top">
+                  &bull;
+                </td>
+                <td align="center" width="10" style="width:10px" valign="top"></td>
+                <td align="center" valign="middle">
+                  <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+                    <tr align="center">
+                      <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-align:left">
+                        Lorem Ipsum
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+]]></content>
+	<tabTrigger>vw1list</tabTrigger>
+</snippet>

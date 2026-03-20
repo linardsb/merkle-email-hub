@@ -1,0 +1,61 @@
+<snippet>
+	<content><![CDATA[
+              <table cellpadding="0" cellspacing="0" border="0" width="600" id="sesocialfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#352F2F">
+                <tr align="center">
+                  <td align="center" class="padlr25" style="padding-top:40px; padding-bottom: 40px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="552" class="resptab" role="presentation" style="width:552px;">
+                      <tr align="center">
+                        <td align="center" style="padding-bottom:40px;">
+                          <table cellpadding="0" cellspacing="0" border="0" width="552" class="resptab" role="presentation" style="width: 552px;">
+                            <tr align="center">
+                              <td align="center">
+                                <table cellpadding="0" cellspacing="0" border="0" width="150" class="resptab" role="presentation" style="width:150px; max-width: 180px;">
+                                  <tr align="center">
+                                    <td align="center" width="28">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_ST_SeatLogoFooter&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://twitter.com/seatuk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_ST_SeatLogoFooter" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Seat/Logos/twitter2.png" alt="Twitter" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly; max-width: 30px;" border="0" class="respimg" width="30" height="30"></a>
+                                    </td>
+                                    <td align="center" class="hide" width="10"></td>
+                                    <td align="center" width="28" class="padl24">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_ST_Youtube&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.youtube.com/seatuk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_ST_Youtube" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Seat/Logos/youtube2.png" alt="Youtube" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly; max-width: 30px;" border="0" class="respimg" width="30" height="30"></a>
+                                    </td>
+                                    <td align="center" class="hide" width="10"></td>
+                                    <td align="center" width="28" class="padl24">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_ST_Facebook&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.facebook.com/seatuk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_ST_Facebook" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Seat/Logos/facebook2.png" alt="Facebook" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly; max-width: 30px;" border="0" class="respimg" width="30" height="30"></a>
+                                    </td>
+                                    <td align="center" class="hide" width="10"></td>
+                                    <td align="center" width="28" class="padl24">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_ST_Instagram&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.instagram.com/accounts/login/?next=/seatuk/?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_ST_Instagram" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Seat/Logos/instagram2.png" alt="Instagram" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly; max-width: 30px;" border="0" class="respimg" width="30" height="30"></a>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr align="center">
+                        <td align="center" style="padding-bottom:40px;">
+                          <table cellpadding="0" cellspacing="0" border="0" width="552" class="resptab" role="presentation" style="width:552px;border-bottom: solid 1px #DEDAD4;">
+                            <tr align="center">
+                              <td align="center"></td>
+                              <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    <tr align="center">
+                      <td align="center" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-align: left;">
+                        <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_ST_SeatPrivacy&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.seat.co.uk/privacy-statement.html?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" target="_blank" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-align: left; text-decoration: underline;" xt="SPNOTRACK" name="FTR_TXT_ST_SeatPrivacy">Privacy Statement</a> / <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_ST_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/st-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" target="_blank" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-align: left; text-decoration: underline;" xt="SPNOTRACK" name="FTR_TXT_ST_Unsubscribe">Unsubscribe from Marketing</a><br><br>
+                        To make sure you receive all of your emails from us, add <a href="mailto:mail@seatcomms.co.uk" name="FTR_TXT_ST_MailTo" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-decoration:underline;" xt="SPEMAIL">mail@seatcomms.co.uk</a> to your address book.<br><br>
+                        This email has been sent to you either by marketing consent or following your request to be kept up to date about SEAT. For more information about how we use your data, please see our privacy policy which can be found at <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_ST_SeatCoUk&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.seat.co.uk/privacy-statement.html?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" id="FTR_TXT_ST_SeatCoUk" name="FTR_TXT_ST_SeatCoUk" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-decoration: underline" xt="SPNOTRACK">seat.co.uk</a>.<br><br>
+                        Models shown for illustrative purposes only. For the latest fuel consumption and CO<sub style="font-size: 8px">2</sub> emissions figures, please visit <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_ST_SeatCoUk1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.seat.co.uk/?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" id="FTR_TXT_ST_SeatCoUk1" name="FTR_TXT_ST_SeatCoUk1" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-decoration: underline" xt="SPNOTRACK">seat.co.uk</a>.<br><br>
+                        Correct at time of broadcast.
+                      </td>
+                    </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+]]></content>
+	<tabTrigger>sesocialfooter</tabTrigger>
+</snippet>

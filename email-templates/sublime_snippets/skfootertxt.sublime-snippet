@@ -1,0 +1,22 @@
+<snippet>
+	<content><![CDATA[
+      <table cellpadding="0" cellspacing="0" border="0" width="600" id="skfootertxt" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+        <tr align="center">
+          <td align="center" class="padlr32" style="padding-top:24px; padding-bottom: 40px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="488" class="resptab" role="presentation" style="width:488px;">
+              <tr align="center">
+                <td align="center" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left;">
+                  To make sure you receive all of your emails from us, add <a href="mailto:mail@skoda-uk.co.uk" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline;">mail@skoda-uk.co.uk</a> to your address book. <br><br>
+                  You have received this message because you indicated on our website that you&rsquo;d like to receive communications from us. If we've got this wrong, or you no longer wish to receive emails from us, you can unsubscribe here.<br><br>
+                  To find out more about how we use your personal information, and your rights, please see our Privacy Statement.<br><br>
+                  Models shown may not be UK spec.<br><br>
+                  <span class="appleLinks">(VAT registration number 217990930) (Company registration number 514809) whose registered office is at Yeomans Drive, Blakelands, Milton Keynes MK14 5AN, a company authorised to conduct business in the United Kingdom (&quot;&Scaron;koda UK&quot;)</span>.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+]]></content>
+	<tabTrigger>skfootertxt</tabTrigger>
+</snippet>

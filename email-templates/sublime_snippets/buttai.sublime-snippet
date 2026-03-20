@@ -1,0 +1,32 @@
+<snippet>
+	<content><![CDATA[
+        <!-- logo -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" class="wf" role="presentation" style="width:100%;">
+          <tr align="center">
+            <td align="center">
+              <table cellpadding="0" cellspacing="0" border="0" width="700" class="wf" role="presentation" style="width:700px;" bgcolor="#000000;">
+                <tr align="center">
+                  <td align="center" class="hide">
+                  	<img src="https://code-creative-share.s3.amazonaws.com/RAPP/rappup_dario/bugatti/img_01.jpg" alt="" style="display: block; border: 0; font-size: 16px; line-height: 16px;" border="0" class="bannerimg" width="234" height="186">
+                  </td>
+                  <td align="center" class="wf">
+                  	<table cellpadding="0" cellspacing="0" border="0" width="233" class="wf" role="presentation" style="width:233px;">
+                  	  <tr align="center">
+                  	    <td align="center">
+                  	      <a href="" style="color: #000001; text-decoration: none;"><img src="https://code-creative-share.s3.amazonaws.com/RAPP/rappup_dario/bugatti/img_02.jpg" alt="Bugatti" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;max-width: 233px" border="0" class="bannerimg" width="233" height="186"></a>
+                  	    </td>
+                  	  </tr>
+                  	</table>
+                  </td>
+                  <td align="center" class="hide">
+                  	<img src="https://code-creative-share.s3.amazonaws.com/RAPP/rappup_dario/bugatti/img_03.jpg" alt="" style="display: block; border: 0; font-size: 16px; line-height: 16px;" border="0" class="bannerimg" width="233" height="186">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <!-- logo ends -->
+]]></content>
+	<tabTrigger>buttai</tabTrigger> 
+</snippet>

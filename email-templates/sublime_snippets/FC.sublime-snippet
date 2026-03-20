@@ -1,0 +1,6 @@
+<snippet>
+  <content><![CDATA[
+<span style="color: #$1;">$2
+]]></content>
+  <tabTrigger>FC</tabTrigger>
+</snippet>

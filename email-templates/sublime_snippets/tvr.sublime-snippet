@@ -1,0 +1,8 @@
+<snippet>
+    <content><![CDATA[
+<tr>
+  <td align="right">$1</td>
+</tr>
+]]></content>
+<tabTrigger>tvr</tabTrigger>
+</snippet>

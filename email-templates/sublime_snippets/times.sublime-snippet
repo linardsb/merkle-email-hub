@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[
+font-family: Times New Roman,'Times New Roman', Times, 'Baskerville', Georgia, serif;
+]]></content>
+<tabTrigger>times</tabTrigger>
+</snippet>

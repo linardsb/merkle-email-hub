@@ -1,0 +1,33 @@
+<snippet>
+	<content><![CDATA[
+        <table cellpadding="0" cellspacing="0" border="0" width="600" id="cuph" class="resptab" role="presentation" style="width:600px;" bgcolor="#46525B">
+         <tr align="center">
+          <td align="center" style="padding-top:8px; padding-bottom:8px;" class="padlr40">
+           <table cellpadding="0" cellspacing="0" border="0" width="560" class="resptab" role="presentation" style="width:560px;">
+            <tr align="center">
+             <th align="left" class="resptab db lfloat" valign="top">
+              <table cellpadding="0" cellspacing="0" border="0" width="341" class="resptab" role="presentation" style="width:341px;">
+               <tr align="center">
+                <td align="left" class="textCenter" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#ffffff; mso-line-height-rule: exactly; text-align:left;">
+                 Some pre-header text right here
+                </td>
+               </tr>
+              </table>
+             </th>
+             <th align="right" class="resptab db lfloat" valign="top">
+              <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+               <tr align="center">
+                <td align="center" class="textCenter padtop10" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#ffffff; mso-line-height-rule: exactly; text-align:left;">
+                 <a href="https://links.marketing.seatcomms.co.uk/servlet/MailView?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&j=%%JOB_ID_CODE%%&mt=1&rt=0" name="HDR_TXT_ST_VIB" xt="SPNOTRACk" target="_blank" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#ffffff; mso-line-height-rule: exactly;">View in browser</a>
+                </td>
+               </tr>
+              </table>
+             </th>
+            </tr>
+           </table>
+          </td>
+         </tr>
+        </table>
+]]></content>
+	<tabTrigger>cuph</tabTrigger>
+</snippet>

@@ -1,0 +1,152 @@
+<snippet>
+	<content><![CDATA[
+<editable name="mod_setting" label="Module Setting">
+	<field type="color" name="mod_bgcolor" label="Background Colour" hint="Use HEX code with 6 digits" default=""></field>
+	<field type="number" name="mod_padtop" label="Module Pading Top Desktop" hint="Use number only, no px!" expect="no-blank; min-value:0" default=""></field>
+	<field type="number" name="mod_padbot" label="Module Pading Bottom Desktop" hint="Use number only, no px!" expect="no-blank; min-value:0" default=""></field>
+	<field type="dropdown" name="mod_mobpadtop" label="Module Padding Top Mobile" hint="Select your mobile padding from the list" default="">
+		<choice value="padtop0" label="0"></choice>
+		<choice value="padtop10" label="10"></choice>
+		<choice value="padtop20" label="20"></choice>
+		<choice value="padtop30" label="30"></choice>
+		<choice value="padtop40" label="40"></choice>
+		<choice value="padtop50" label="50"></choice>
+		<choice value="padtop60" label="60"></choice>
+		<choice value="padtop70" label="70"></choice>
+		<choice value="padtop80" label="80"></choice>
+		<choice value="padtop90" label="90"></choice>
+		<choice value="padtop100" label="100"></choice>
+	</field>
+	<field type="dropdown" name="mod_mobpadbot" label="Module Padding Bottom Mobile" hint="Select your mobile padding from the list" default="">
+		<choice value="padbot0" label="0"></choice>
+          <choice value="padbot10" label="10"></choice>
+          <choice value="padbot20" label="20"></choice>
+          <choice value="padbot30" label="30"></choice>
+          <choice value="padbot40" label="40"></choice>
+          <choice value="padbot50" label="50"></choice>
+          <choice value="padbot60" label="60"></choice>
+          <choice value="padbot70" label="70"></choice>
+          <choice value="padbot80" label="80"></choice>
+          <choice value="padbot90" label="90"></choice>
+          <choice value="padbot100" label="100"></choice>		
+	</field>
+	<field type="dropdown" name="mod_mobpadlr" label="Module Padding Left and Right Mobile" hint="" default="">
+          <choice value="padlr0" label="0"></choice>
+          <choice value="padlr10" label="10"></choice>
+          <choice value="padlr20" label="20"></choice>
+          <choice value="padlr30" label="30"></choice>
+          <choice value="padlr40" label="40"></choice>		
+	</field>
+	<field type="dropdown" name="mod_deskalignment" label="Module Elements Alignment" hint="" default="">
+		<choice value="left" label="Left"></choice>
+		<choice value="right" label="Right"></choice>
+	</field>
+</editable>
+<editable name="img_setting" label="Image Setting">
+	<field type="checkbox" name="turn_img" label="Turn Image On or Off" hint="Turn On/Off to show/hide the element - No HTML if OFF" default="true">
+		<field type="src" name="img_src" label="Image Source URL" hint="" default=""></field>
+		<field type="href" name="img_link" label="Image Link URL" hint="" default="" expect="https-only"></field>
+		<field type="rich" name="img_alt" label="Image Alt-Text" hint="Keep it short" default=""></field>
+		<field type="number" name="img_width" label="Image Width Desktop" hint="Use number only, no px!" default=""></field>
+		<field type="number" name="img_height" label="Image Height Desktop" hint="Use number only, no px!" expect="no-blank" default=""></field>
+	</field>
+</editable>
+<editable name="eyebrow_setting" label="Eyebrow Setting">
+	<field type="checkbox" name="turn_eyebrow" label="Turn Eyebrow On or Off" hint="Turn On/Off to show/hide the element - No HTML if OFF" default="true">
+		<field type="rich" name="eyebrow_txt" label="Eyebrow Text Here" hint="" allow-styles="bold underline italic linkBody superscript subscript personalisation textcol lineThrough fontsize" default=""></field>
+		<field type="number" name="eyebrow_fs" label="Eyebrow Font Size" hint="Use number only, no px!" default=""></field>
+		<field type="number" name="eyebrow_lh" label="Eyebrow Ling Height Text" hint="" default=""></field>
+		<field type="color" name="eyebrow_color" label="Eyebrow Text Colour" hint="Use HEX code with 6 digits" default=""></field>
+	</field>
+</editable>
+<editable name="headline_setting" label="Headline Setting">
+	<field type="checkbox" name="turn_headline" label="Turn Headline On or Off" hint="Turn On/Off to show/hide the element - No HTML if OFF" default="true">
+		<field type="rich" name="headline_txt" label="Headline Text Here" hint="" allow-styles="bold underline italic linkBody superscript subscript personalisation textcol lineThrough fontsize" default=""></field>
+		<field type="number" name="headline_fs" label="Headline Font Size" hint="Use number only, no px!" default=""></field>
+		<field type="number" name="headline_lh" label="Headline Ling Height Text" hint="" default=""></field>
+		<field type="color" name="headline_color" label="Headline Text Colour" hint="Use HEX code with 6 digits" default=""></field>
+	</field>
+</editable>
+<editable name="subheadline_setting" label="Sub Headline Setting">
+	<field type="checkbox" name="turn_subheadline" label="Turn Sub Headline On or Off" hint="Turn On/Off to show/hide the element - No HTML if OFF" default="true">
+		<field type="rich" name="subheadline_txt" label="Sub Headline Text Here" hint="" allow-styles="bold underline italic linkBody superscript subscript personalisation textcol lineThrough fontsize" default=""></field>
+		<field type="number" name="subheadline_fs" label="Sub Headline Font Size" hint="Use number only, no px!" default=""></field>
+		<field type="number" name="subheadline_lh" label="Sub Headline Ling Height Text" hint="" default=""></field>
+		<field type="color" name="subheadline_color" label="Sub Headline Text Colour" hint="Use HEX code with 6 digits" default=""></field>
+	</field>
+</editable>
+<editable name="paragraph_setting" label="Paragraph Setting">
+	<field type="checkbox" name="turn_paragraph" label="Turn Paragraph On or Off" hint="Turn On/Off to show/hide the element - No HTML if OFF" default="true">
+		<field type="rich" name="paragraph_txt" label="Paragraph Text Here" hint="" allow-styles="bold underline italic linkBody superscript subscript personalisation textcol lineThrough fontsize" default=""></field>
+		<field type="number" name="paragraph_fs" label="Paragraph Font Size" hint="Use number only, no px!" default=""></field>
+		<field type="number" name="paragraph_lh" label="Paragraph Ling Height Text" hint="" default=""></field>
+		<field type="color" name="paragraph_color" label="Paragraph Text Colour" hint="Use HEX code with 6 digits" default=""></field>
+	</field>
+</editable>
+<editable name="cta_setting" label="CTA Setting">
+	<field type="checkbox" name="turn_cta" label="Turn CTA On or Off" hint="Turn On/Off to show/hide the element - No HTML if OFF" default="true">
+		<field type="rich" name="cta_txt" label="CTA Text Here" hint="" default=""></field>
+		<field type="href" name="cta_link" label="CTA Link URL" hint="" default="" expect="https-only"></field>
+		<field type="color" name="cta_color" label="CTA Text Colour" hint="Use HEX code with 6 digits" default=""></field>
+		<field type="color" name="cta_bgcolor" label="CTA Background Colour" hint="Use HEX code with 6 digits" default=""></field>
+		<field type="number" name="cta_border" label="CTA Border Thickness" hint="" default=""></field>
+		<field type="color" name="cta_bordercolor" label="CTA Border Colour" hint="Use HEX code with 6 digits" default=""></field>
+	</field>
+</editable>
+
+
+
+editables.mod_setting.mod_bgcolor
+editables.mod_setting.mod_padtop
+editables.mod_setting.mod_padbot
+editables.mod_setting.mod_mobpadbot
+editables.mod_setting.mod_mobpadlr
+editables.mod_setting.mod_deskalignment
+
+
+editables.img_setting.turn_img
+editables.img_setting.img_src
+editables.img_setting.img_link
+editables.img_setting.img_alt
+editables.img_setting.img_width
+editables.img_setting.img_height
+
+
+editables.eyebrow_setting.turn_eyebrow
+editables.eyebrow_setting.eyebrow_txt
+editables.eyebrow_setting.eyebrow_fs
+editables.eyebrow_setting.eyebrow_lh
+editables.eyebrow_setting.eyebrow_color
+
+
+editables.headline_setting.turn_headline
+editables.headline_setting.headline_txt
+editables.headline_setting.headline_fs
+editables.headline_setting.headline_lh
+editables.headline_setting.headline_color
+
+
+editables.subheadline_setting.turn_subheadline
+editables.subheadline_setting.subheadline_txt
+editables.subheadline_setting.subheadline_fs
+editables.subheadline_setting.subheadline_lh
+editables.subheadline_setting.subheadline_color
+
+
+editables.paragraph_setting.turn_paragraph
+editables.paragraph_setting.paragraph_txt
+editables.paragraph_setting.paragraph_fs
+editables.paragraph_setting.paragraph_lh
+editables.paragraph_setting.paragraph_color
+
+
+editables.cta_setting.turn_cta
+editables.cta_setting.cta_txt
+editables.cta_setting.cta_link
+editables.cta_setting.cta_color
+editables.cta_setting.cta_bgcolor
+editables.cta_setting.cta_border
+editables.cta_setting.cta_bordercolor
+]]></content>
+	<tabTrigger>taxiedit</tabTrigger>
+</snippet>

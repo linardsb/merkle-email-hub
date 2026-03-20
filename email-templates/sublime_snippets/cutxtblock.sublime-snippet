@@ -1,0 +1,45 @@
+<snippet>
+	<content><![CDATA[
+      <table cellpadding="0" cellspacing="0" border="0" width="600" id="cutxtblock" class="resptab" role="presentation" style="width:600px;" bgcolor="#0C1D27"> 
+        <tr align="center">
+          <td align="center" class="padlr20 padtop20 padbot20" style="padding-top: 40px; padding-bottom: 40px">
+			      <table cellpadding="0" cellspacing="0" border="0" width="500" class="resptab" role="presentation" style="width:500px;" bgcolor="#000000"> 
+			        <tr align="center">
+			          <td align="center" class="padlr20 padtop20 padbot20" style="padding-top: 40px; padding-bottom: 40px">
+						      <table cellpadding="0" cellspacing="0" border="0" width="420" class="resptab" role="presentation" style="width:420px;"> 
+						        <tr align="center">
+						        	<td align="center" style="font-family: 'CupraRegular', Arial, sans-serif; font-size: 25px; line-height: 30px; color:#ffffff; font-style:italic; mso-line-height-rule: exactly; text-align: left; font-weight:400; text-transform: uppercase;">
+						        		Lorem ipsum dolor
+						        	</td>
+						        </tr>
+						        <tr align="center">
+						          <td align="center" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 15px; line-height: 22px; color:#ffffff; mso-line-height-rule: exactly; text-align: left;padding-top: 20px">
+												Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. <br><br>
+                        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+						          </td>
+						        </tr>
+	                 <tr align="center">
+	                  <td align="center" style="padding-top: 20px; padding-bottom: 20px;">
+	                   <table cellpadding="0" cellspacing="0" border="0" width="420" class="resptab" role="presentation" style="width:420px;border-bottom: solid 1px #ffffff;">
+	                    <tr align="center">
+	                     <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+	                    </tr>
+	                   </table>
+	                  </td>
+	                 </tr>						        
+						        <tr align="center">
+						          <td align="center" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 15px; line-height: 22px; color:#ffffff; mso-line-height-rule: exactly; text-align: left;">
+												Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. <br><br>
+                        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+						          </td>
+						        </tr>
+						      </table>
+			          </td>
+			        </tr>
+			      </table>
+          </td>
+        </tr>
+      </table>
+]]></content>
+	<tabTrigger>cutxtblock</tabTrigger>
+</snippet>

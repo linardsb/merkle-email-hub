@@ -1,0 +1,6 @@
+<snippet>
+  <content><![CDATA[
+font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: $1px; line-height: $2px; color:#$3; mso-line-height-rule: exactly;
+]]></content>
+<tabTrigger>nktxt</tabTrigger>
+</snippet>

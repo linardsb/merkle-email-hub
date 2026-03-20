@@ -1,0 +1,31 @@
+<snippet>
+	<content><![CDATA[
+        <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwfootertxt" class="resptab darkmode" role="presentation" style="width:600px;" bgcolor="#F3F3F2">
+          <tr align="center">
+            <td align="center" class="padlr20" style="padding-top:40px; padding-bottom: 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                <tr align="center">
+                  <td align="center">
+                    <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab dm_footerline" role="presentation" style="width:520px;border-bottom: solid 1px #E1E1E1;">
+                      <tr align="center">
+                        <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr align="center">
+                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left; padding-top:20px;">
+                    Images are for illustrative purposes only. Model shown is not UK specification and may include features or options which are not available in the UK. <br><br>
+                    The above email has been sent to you following your request to be kept informed about the new Volkswagen Caddy. If you do not wish to receive emails from us, you can <a style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left; text-decoration: underline" href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_VW_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/vw-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" name="FTR_TXT_VW_Unsubscribe" xt="SPNOTRACK" class="dm_fontc">Unsubscribe here.</a> <br><br>
+                    To find out more about how we use your personal information, and your rights, please see our <a style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left; text-decoration: underline" href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_VW_Privacy&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.volkswagen.co.uk/privacy/privacy-statement?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_TXT_VW_Privacy" xt="SPNOTRACK" class="dm_fontc">Privacy Statement</a><br><br>
+                    <span class="appleLinks">Volkswagen Commercial Vehicles UK is a trading division of Volkswagen Group United Kingdom Limited (company registration number 514809) whose registered office is at Yeoman's Drive, Blakelands, Milton Keynes MK14 5AN, a company authorised to conduct business in the United Kingdom ('Volkswagen Commercial Vehicles UK').</span><br><br>
+                    Please add <a href="mailto:mail@volkswagenvansuk.co.uk" name="FTR_TXT_CV_MailTo" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left;">mail@volkswagenvansuk.co.uk</a> to your address book or safe list to ensure you receive our emails.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+]]></content>
+	<tabTrigger>vwfootertxt</tabTrigger>
+</snippet>

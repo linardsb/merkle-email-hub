@@ -1,0 +1,18 @@
+<snippet>
+	<content><![CDATA[
+            <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwcvfslogo" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff"> 
+              <tr align="center">
+                <td align="center" style="padding-top:16px; padding-bottom: 16px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                    <tr align="center">
+                      <td align="left" class="padl20">
+                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_IMG_CVFS_LOGO&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://myvwcvfinance.vwfs.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_IMG_CVFS_LOGO" xt="SPNOTRACK" style="color: #001E50; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/vwfstextlogo.png" alt="Volkswagen Financial Services" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 20px; font-weight: bold; color: #001E50; line-height: 20px; mso-line-height-rule: exactly; max-width: 244px !important;" border="0" class="respimg" width="244" height="36"></a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+]]></content>
+	<tabTrigger>vwcvfslogo</tabTrigger>
+</snippet>

@@ -1,0 +1,37 @@
+<snippet>
+	<content><![CDATA[
+        <table cellpadding="0" cellspacing="0" border="0" width="600" id="cunav" class="resptab" role="presentation" style="width: 600px;" bgcolor="#000000">
+          <tr align="center">
+            <td align="center" class="padtop20 padbot20" style="padding-top:8px; padding-bottom:8px">
+              <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width: 520px;">
+                <tr align="center">
+                  <td align="right">
+                    <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                      <tr align="center">
+                        <td align="center" class="padlr20">
+                          <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                            <tr align="center">
+                              <th align="center" class="resptab db lfloat" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: underline;">
+                                <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_NAV_ST_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_NAV_ST_NAMEHERE1" xt="SPNOTRACK" alias="" target="_blank" class="mobfs16" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: underline;">CTA TEXT</a>
+                              </th>
+                              <th align="center" class="hide" width="20"></th>
+                              <th align="center" class="hide" width="1" bgcolor="#6F7790"></th>
+                              <th align="center" class="hide" width="20"></th>
+                              <th align="center" class="resptab db lfloat padtop10" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: underline;">
+                                <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_NAV_ST_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_NAV_ST_NAMEHERE2" xt="SPNOTRACK" alias="" target="_blank" class="mobfs16" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: underline;">CTA TEXT</a>
+                              </th>
+                              </th>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>              
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+]]></content>
+	<tabTrigger>cunav</tabTrigger>
+</snippet>

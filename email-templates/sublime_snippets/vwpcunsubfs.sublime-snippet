@@ -1,0 +1,6 @@
+<snippet>
+	<content><![CDATA[
+If you no longer wish to receive Volkswagen UK emails, please click <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_VWFS_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/vw-fs-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" name="FTR_TXT_VWFS_Unsubscribe" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 13px; line-height: 18px; color:#969696; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">here</a> to unsubscribe.
+]]></content>
+	<tabTrigger>vwpcunsubfs</tabTrigger>
+</snippet>

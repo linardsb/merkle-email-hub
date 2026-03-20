@@ -1,0 +1,87 @@
+<snippet>
+	<content><![CDATA[
+            <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwpcfooter" class="resptab darkmode" role="presentation" style="width:600px;" bgcolor="#ffffff">
+              <tr align="center">
+                <td align="center" class="padlr20" style="padding-top:40px; padding-bottom:40px">
+                  <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                    <tr align="center">
+                      <td align="center">
+                        <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;"> 
+                          <tr align="center">
+                            <td align="center">
+                              <table cellpadding="0" cellspacing="0" border="0" width="360" class="resptab" role="presentation" style="width:360px;">
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 21px; line-height: 24px; color:#001E50; mso-line-height-rule: exactly; text-align: center; padding-bottom:24px; font-weight:bold;">
+                                    Follow Us
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          <tr align="center">
+                            <td align="center" style="padding-bottom:40px">
+                              <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+                                <tr align="center">
+                                  <td align="center" width="26">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_VW_Twitter&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://twitter.com/ukvolkswagen?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #000001; text-decoration: none;" name="FTR_IMG_VW_Twitter" xt="SPNOTRACK" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/xtwitter.png" alt="X" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly;" border="0" width="26" height="26"></a>
+                                  </td>
+                                   <!-- icon divider -->
+                                    <td align="center" width="10"></td>
+                                    <!-- icon divider -->
+                                  <td align="center" width="26">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_VW_Youtube&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.youtube.com/user/UKVolkswagen?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #000001; text-decoration: none;" name="FTR_IMG_VW_Youtube" xt="SPNOTRACK" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/yt_new.png" alt="YouTube" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly;" border="0" width="26" height="26"></a>
+                                  </td>
+                                   <!-- icon divider -->
+                                    <td align="center" width="10"></td>
+                                    <!-- icon divider -->
+                                  <td align="center" width="26">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_VW_Facebook&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.facebook.com/VolkswagenUK?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #000001; text-decoration: none;" name="FTR_IMG_VW_Facebook" xt="SPNOTRACK" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/fb_new.png" alt="Facebook" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly;" border="0" width="26" height="26"></a>
+                                  </td>
+                                   <!-- icon divider -->
+                                    <td align="center" width="10"></td>
+                                    <!-- icon divider -->
+                                  <td align="center" width="26">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_VW_Instagram&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.instagram.com/volkswagen_uk/?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #000001; text-decoration: none;" name="FTR_IMG_VW_Instagram" xt="SPNOTRACK" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/insta_new.png" alt="Instagram" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly;" border="0" width="26" height="26"></a>
+                                  </td>
+                                    <!-- icon divider -->
+                                    <td align="center" width="10"></td>
+                                    <!-- icon divider -->
+                                    <td align="center" width="26">
+                                      <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_VW_LinkedIn&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.linkedin.com/company/volkswagenuk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #000001; text-decoration: none;" name="FTR_IMG_VW_LinkedIn" xt="SPNOTRACK" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/linkedin_a.png" alt="LinkedIn" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #000001; line-height: 10px; mso-line-height-rule: exactly;" border="0" width="26" height="26"></a>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>                        
+                      </td>
+                    </tr>
+                    <tr align="center">
+                      <td align="center">
+                        <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                          <tr align="center">
+                            <td align="center">
+                              <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab dm_footerline" role="presentation" style="width:520px;border-bottom: solid 1px #E1E1E1;">
+                                <tr align="center">
+                                  <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          <tr align="center">
+                            <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left; padding-top:40px;">
+                              To unsubscribe from the newsletter, please click <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_VW_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/vw-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" name="FTR_TXT_VWPC_Unsubscribe" xt="SPNOTRACK" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-decoration: underline; text-align: left; font-weight: bold;">here</a>. <br><br>
+                              To find out more about how we use your personal information, and your rights, please see our <a style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 13px; line-height: 18px; color:#666666; mso-line-height-rule: exactly; text-align: left; text-decoration: underline" href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_VW_Privacy&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.volkswagen.co.uk/privacy/privacy-statement?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_TXT_VW_Privacy" xt="SPNOTRACK" class="dm_fontc">Privacy Statement</a>. <br><br>
+                              <span class="appleLinks">Volkswagen UK is a trading division of Volkswagen Group United Kingdom Limited (company registration number 514809) whose registered office is at Yeomans Drive, Blakelands, Milton Keynes MK14 5AN, a company authorised to conduct business in the United Kingdom (&quot;&quot;Volkswagen UK&quot;&quot;).</span>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+]]></content>
+	<tabTrigger>vwpcfooter</tabTrigger>
+</snippet>

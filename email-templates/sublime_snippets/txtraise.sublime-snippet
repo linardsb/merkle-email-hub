@@ -1,0 +1,6 @@
+<snippet>
+	<content><![CDATA[
+mso-text-raise:$1px;
+]]></content>
+	<tabTrigger>txtraise</tabTrigger>
+</snippet>

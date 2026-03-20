@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+			<table cellpadding="0" cellspacing="0" border="0" width="600" id="auart4" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+				<tr align="center">
+					<th align="center" class="ldown" valign="top">
+						<table cellpadding="0" cellspacing="0" border="0" width="400" class="resptab" role="presentation" style="width:400px;">
+							<tr align="center">
+								<td align="center" class="padlr24 padtop40 padbot40" style="padding-top:47px; padding-bottom:47px;">
+									<table cellpadding="0" cellspacing="0" border="0" width="312" class="resptab" role="presentation" style="width:312px;">
+										<tr align="center">
+											<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 20px; line-height: 24px; color:#292524; mso-line-height-rule: exactly; text-align: left; font-weight:bold; padding-bottom:20px;">
+												Lorem ipsum dolor sit amet, consectetur
+											</td>
+										</tr>
+										<tr align="center">
+											<td align="center" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-align: left;">
+												Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+											</td>
+										</tr>
+										<tr align="center">
+											<td align="left" style="padding-top: 31px;padding-bottom:5px">
+												<table cellpadding="0" cellspacing="0" border="0" class="cta resptab" role="presentation" style="border:1px solid #BB0A30" bgcolor="#BB0A30">
+													<tr align="center">
+														<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-top: 12px; padding-bottom:12px; padding-left: 32px; padding-right: 32px;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_AU_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_AU_NAMEHERE" xt="SPNOTRACK" alias="" target="_blank" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">Call to action</a>
+														</td>
+													</tr>
+												</table>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</th>
+					<th align="center" class="rup" valign="top">
+						<table cellpadding="0" cellspacing="0" border="0" width="200" class="resptab" role="presentation" style="width:200px;">
+							<tr align="center">
+								<td align="center">
+									<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_AU_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_AU_NAMEHERE" xt="SPNOTRACK" target="_blank">
+										<img src="https://fakeimg.pl/400x600/?text=DesktopIMG" alt="" style="display: block; border: 0" border="0" class="hide" width="200" height="300"></a>
+										<!--[if !mso]><!-->
+										<div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+											<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_AU_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_AU_NAMEHERE" xt="SPNOTRACK" target="_blank"><img src="https://fakeimg.pl/460x427/?text=MobileIMG" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="427"></a>
+										</div>
+										<!--<![endif]-->
+								</td>
+							</tr>
+						</table>
+					</th>
+				</tr>
+			</table>
+]]></content>
+	<tabTrigger>auart4</tabTrigger>
+</snippet>

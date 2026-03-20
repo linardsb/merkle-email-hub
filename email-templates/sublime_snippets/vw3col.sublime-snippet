@@ -1,0 +1,134 @@
+<snippet>
+	<content><![CDATA[
+            <table cellpadding="0" cellspacing="0" border="0" width="600" id="vw3col" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+              <tr align="center">
+                <td align="center" class="padlr20">
+                  <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                    <tr align="center">
+                      <th align="center" class="resptab db lfloat" valign="top">
+                        <table cellpadding="0" cellspacing="0" border="0" width="160" class="resptab" role="presentation" style="width:160px;">
+                          <tr align="center">
+                            <td align="center" style="padding-top:20px; padding-bottom:20px;">
+                              <table cellpadding="0" cellspacing="0" border="0" width="160" class="resptab" role="presentation" style="width:160px;">
+                                <tr align="center">
+                                  <td align="left" style="padding-bottom: 15px;">
+                                   <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE1.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE1" xt="SPNOTRACK">
+                                     <img src="https://fakeimg.pl/320x320/?text=320xFlex" alt="" style="display: block; border: 0" border="0" class="hide" width="160" height="160">
+                                   </a> 
+                                   <!--[if !mso]><!-->
+                                     <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                                       <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_VW_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE1.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_VW_NAMEHERE1" xt="SPNOTRACK">
+                                        <img src="https://fakeimg.pl/640x400/?text=640xFlex" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="400">
+                                      </a>
+                                    </div>
+                                    <!--<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 18px; line-height: 24px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight: 700;padding-bottom: 15px;">
+                                    Lorem ipsum dolor sit amet
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-align: left; padding-top: 15px;text-decoration:none; font-weight:bold;" valign="top">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_VW_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE1.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE1" xt="SPNOTRACK" target="_blank" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-align: left; text-decoration:none; font-weight:bold;">CTA text &rarr;</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </th>
+                      <th align="center" width="20" class="hide" valign="top"></th>
+                      <th align="center" class="resptab db lfloat" valign="top">
+                        <table cellpadding="0" cellspacing="0" border="0" width="160" class="resptab" role="presentation" style="width:160px;">
+                          <tr align="center">
+                            <td align="center" style="padding-top:20px; padding-bottom:20px;">
+                              <table cellpadding="0" cellspacing="0" border="0" width="160" class="resptab" role="presentation" style="width:160px;">
+                                <tr align="center">
+                                  <td align="left" style="padding-bottom: 15px;">
+                                   <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE2.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE2" xt="SPNOTRACK">
+                                     <img src="https://fakeimg.pl/320x320/?text=320xFlex" alt="" style="display: block; border: 0" border="0" class="hide" width="160" height="160">
+                                   </a> 
+                                   <!--[if !mso]><!-->
+                                     <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                                       <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE2.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_VW_NAMEHERE2" xt="SPNOTRACK">
+                                        <img src="https://fakeimg.pl/640x400/?text=640xFlex" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="400">
+                                      </a>
+                                    </div>
+                                    <!--<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 18px; line-height: 24px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight: 700;padding-bottom: 15px;">
+                                    Lorem ipsum dolor sit amet
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-align: left; padding-top: 15px;text-decoration:none; font-weight:bold;" valign="top">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE2.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE2" xt="SPNOTRACK" target="_blank" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-align: left; text-decoration:none; font-weight:bold;">CTA text &rarr;</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </th>
+                      <th align="center" width="20" class="hide" valign="top"></th>
+                      <th align="center" class="resptab db lfloat" valign="top">
+                        <table cellpadding="0" cellspacing="0" border="0" width="160" class="resptab" role="presentation" style="width:160px;">
+                          <tr align="center">
+                            <td align="center" style="padding-top:20px; padding-bottom:20px;">
+                              <table cellpadding="0" cellspacing="0" border="0" width="160" class="resptab" role="presentation" style="width:160px;">
+                                <tr align="center">
+                                  <td align="left" style="padding-bottom: 15px;">
+                                   <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE3.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE3" xt="SPNOTRACK">
+                                     <img src="https://fakeimg.pl/320x320/?text=320xFlex" alt="" style="display: block; border: 0" border="0" class="hide" width="160" height="160">
+                                   </a> 
+                                   <!--[if !mso]><!-->
+                                     <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                                       <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_VW_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE3.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_VW_NAMEHERE3" xt="SPNOTRACK">
+                                        <img src="https://fakeimg.pl/640x400/?text=640xFlex" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="400">
+                                      </a>
+                                    </div>
+                                    <!--<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 18px; line-height: 24px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight: 700;padding-bottom: 15px;">
+                                    Lorem ipsum dolor sit amet
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-align: left; padding-top: 15px;text-decoration:none; font-weight:bold;" valign="top">
+                                    <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_VW_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE3.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE3" xt="SPNOTRACK" target="_blank" class="dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-align: left; text-decoration:none; font-weight:bold;">CTA text &rarr;</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </th>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+]]></content>
+	<tabTrigger>vw3col</tabTrigger>
+</snippet>

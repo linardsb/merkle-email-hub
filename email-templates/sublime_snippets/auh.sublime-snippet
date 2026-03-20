@@ -1,0 +1,18 @@
+<snippet>
+	<content><![CDATA[
+			<table cellpadding="0" cellspacing="0" border="0" width="600" id="auh" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+				<tr align="center">
+					<td align="center" class="padlr24" style="padding-top:0px; padding-bottom:0px;">
+						<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;">
+							<tr align="center">
+								<td align="center" style="font-family:'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 26px; line-height: 32px; color:#352F2F; mso-line-height-rule: exactly; text-align: left; font-weight:bold;">
+									Lorem ipsum dolor sit amet, consectetur
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+]]></content>
+	<tabTrigger>auh</tabTrigger>
+</snippet>

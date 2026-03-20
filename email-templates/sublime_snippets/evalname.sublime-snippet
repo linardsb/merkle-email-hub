@@ -1,0 +1,6 @@
+<snippet>
+	<content><![CDATA[
+<span elqid="285" elqtype="DynamicContent" class="remove-absolute" style="display: block"></span>
+]]></content>
+	<tabTrigger>evalname</tabTrigger>
+</snippet>

@@ -1,0 +1,10 @@
+<snippet>
+  <content><![CDATA[
+<table width="700" border="0" cellspacing="0" cellpadding="0" class="wf" bgcolor="#FFFFFF" role="presentation" style="width:700px;">
+  <tr>
+    <td height="20" style="font-size: 20px; line-height: 20px; mso-line-height-rule: exactly;">&nbsp;</td>
+  </tr>
+</table>
+]]></content>
+<tabTrigger>sspace</tabTrigger>
+</snippet>

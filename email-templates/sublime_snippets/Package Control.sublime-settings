@@ -1,0 +1,33 @@
+{
+	"bootstrapped": true,
+	"in_process_packages":
+	[
+	],
+	"installed_packages":
+	[
+		"3024 Color Scheme",
+		"Agila Theme",
+		"AMPScript",
+		"Ant Buildfile",
+		"AutoSetSyntax",
+		"BracketHighlighter",
+		"CSS3",
+		"Default File Type",
+		"Emmet",
+		"HTML5",
+		"Liquid",
+		"Material Theme",
+		"Monocyanide Colorscheme",
+		"Package Control",
+		"Predawn",
+		"Predawn Twilight Theme",
+		"Sass",
+		"SetSyntax",
+		"SideBarEnhancements",
+		"SublimeLinter-contrib-htmlhint",
+		"Theme - Afterglow",
+		"Theme - Cyanide",
+		"Theme - Gravity",
+		"View In Browser",
+	],
+}

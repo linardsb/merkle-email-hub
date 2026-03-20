@@ -1,0 +1,67 @@
+<snippet>
+	<content><![CDATA[
+		<table cellpadding="0" cellspacing="0" border="0" width="600" id="ausocialfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+			<tr align="center">
+				<td align="center" class="padlr24" style="padding-top:24px; padding-bottom: 40px;">
+					<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;">
+						<tr align="center">
+							<td align="center" style="padding-bottom: 10px;">
+								<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;border-bottom: solid 1px #B6B1A9;">
+									<tr align="center">
+										<td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr align="center">
+							<td align="center">
+								<!-- aufootermenu1 -->
+								<!-- aufootermenu2 -->
+								<!-- aufootermenu3 -->
+								<!-- aufootermenu4 -->
+							</td>
+						</tr>	
+						<tr align="center">
+							<td align="center" style="padding-top:10px; padding-bottom: 30px;">
+								<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;border-bottom: solid 1px #B6B1A9;">
+									<tr align="center">
+										<td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr align="center">
+							<td align="center" style="padding-bottom:20px">
+								<table cellpadding="0" cellspacing="0" border="0" width="142" class="resptab" role="presentation" style="width:142px; max-width: 180px;">
+									<tr align="center">
+										<td align="center" width="28">
+											<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_AU_Twitter&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://twitter.com/audiuk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #969696; text-decoration: none;" target="_blank" name="FTR_IMG_AU_Twitter" xt="SPNOTRACK"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Audi/Logos/twitter.png" alt="Twitter" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #969696; line-height: 10px; mso-line-height-rule: exactly; max-width: 28px;" border="0" class="respimg" width="28" height="28"></a>
+										</td>
+										<td align="center" class="hide" width="10"></td>
+										<td align="center" width="28" class="padl24">
+											<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_AU_Youtube&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.youtube.com/user/Audichannel?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #969696; text-decoration: none;" target="_blank" name="FTR_IMG_AU_Youtube" xt="SPNOTRACK"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Audi/Logos/youtube.png" alt="Youtube" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #969696; line-height: 10px; mso-line-height-rule: exactly; max-width: 28px;" border="0" class="respimg" width="28" height="28"></a>
+										</td>
+										<td align="center" class="hide" width="10"></td>
+										<td align="center" width="28" class="padl24">
+											<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_AU_Facebook&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.facebook.com/AudiUK?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_AU_Facebook" xt="SPNOTRACK"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Audi/Logos/facebook.png" alt="Facebook" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #969696; line-height: 10px; mso-line-height-rule: exactly; max-width: 28px;" border="0" class="respimg" width="28" height="28"></a>
+										</td>
+										<td align="center" class="hide" width="10"></td>
+										<td align="center" width="28" class="padl24">
+											<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_AU_Instagram&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.instagram.com/audiuk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #969696; text-decoration: none;" target="_blank" name="FTR_IMG_AU_Instagram" xt="SPNOTRACK"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Audi/Logos/instagram.png" alt="Instagram" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #969696; line-height: 10px; mso-line-height-rule: exactly; max-width: 28px;" border="0" class="respimg" width="28" height="28"></a>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>						
+						<tr align="center">
+							<td align="center" class="mobfs14" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#969696; mso-line-height-rule: exactly; text-align: left;">
+								You are receiving this email because you opted in to receive marketing information from Audi UK. If you no longer wish to receive marketing related communications from us please <a style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#969696; mso-line-height-rule: exactly; text-align: left; text-decoration: underline;" href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_AU_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Fclick%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/au-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" name="FTR_TXT_AU_Unsubscribe" xt="SPNOTRACK">click here</a> to unsubscribe. Audi (UK) is a division of VOLKSWAGEN Group United Kingdom Limited. Registered Office: Audi (UK), Yeomans Drive, Blakelands, Milton Keynes, <span class="appleLinks">MK14 5AN, Registered in England No. 514&zwnj;809</span>.
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+]]></content>
+	<tabTrigger>ausocialfooter</tabTrigger>
+</snippet>

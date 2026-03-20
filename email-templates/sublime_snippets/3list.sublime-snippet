@@ -1,0 +1,76 @@
+<snippet>
+	<content><![CDATA[
+    <table cellpadding="0" cellspacing="0" border="0" width="600" id="3list" class="resptab" role="presentation" style="width: 600px;">
+      <tr align="center">
+        <td align="center" style="padding-top:24px; padding-bottom:24px;">
+          <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+            <tr align="center">
+              <td align="center" class="padlr30" style="padding-bottom:20px">
+                <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                  <tr align="center">
+                    <td align="center" width="24" valign="top">
+                      <img src="https://fakeimg.pl/48x48/" alt="" style="display: block; border: 0; font-size: 16px; line-height: 16px;" border="0" width="24" height="24">
+                      </td>
+                      <td align="center" width="15"></td>
+                      <td align="center" valign="top">
+                        <table cellpadding="0" cellspacing="0" border="0" width="481" class="resptab" role="presentation" style="width:481px;">
+                          <tr align="center">
+                            <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly; text-align:left">
+                              Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr align="center">
+                <td align="center" class="padlr30" style="padding-bottom:20px">
+                  <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                    <tr align="center">
+                      <td align="center" width="24" valign="top">
+                        <img src="https://fakeimg.pl/48x48/" alt="" style="display: block; border: 0; font-size: 16px; line-height: 16px;" border="0" width="24" height="24">
+                        </td>
+                        <td align="center" width="15"></td>
+                        <td align="center" valign="top">
+                          <table cellpadding="0" cellspacing="0" border="0" width="481" class="resptab" role="presentation" style="width:481px;">
+                            <tr align="center">
+                              <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly; text-align:left">
+                                Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr align="center">
+                  <td align="center" class="padlr30" style="padding-bottom:10px">
+                    <table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+                      <tr align="center">
+                        <td align="center" width="24" valign="top">
+                          <img src="https://fakeimg.pl/48x48/" alt="" style="display: block; border: 0; font-size: 16px; line-height: 16px;" border="0" width="24" height="24">
+                          </td>
+                          <td align="center" width="15"></td>
+                          <td align="center" valign="top">
+                            <table cellpadding="0" cellspacing="0" border="0" width="481" class="resptab" role="presentation" style="width:481px;">
+                              <tr align="center">
+                                <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly; text-align:left">
+                                  Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+]]></content>
+	<tabTrigger>3list</tabTrigger>
+</snippet>

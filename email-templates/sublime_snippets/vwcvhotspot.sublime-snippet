@@ -1,0 +1,525 @@
+<snippet>
+	<content><![CDATA[
+<style type="text/css">
+	      /** HOTSPOT CSS - to copy in your style /**
+        /* Test to see if device has the ability to have checked */
+        @media only screen and (-webkit-min-device-pixel-ratio:0), (min--moz-device-pixel-ratio:0) {
+        #webkitnocheck:checked ~ .fallback {display: none;}
+        #webkitnocheck:checked ~ div .interactive {display: block !important;max-height: none !important;}
+        .gradient {background: -webkit-linear-gradient(#e0c29e, #a98c70, #e4c8a3, #fcdeb4);-webkit-background-clip: text;-webkit-text-fill-color: transparent;}
+        }
+        /* Specific Yahoo! Detection */
+        @media screen yahoo {
+        .fallback {display: block !important;max-height: none;}
+        .interactive {display: none !important;}
+        }
+        /* Specific Samsung Mail detection */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+        #MessageViewBody .fallback, body.MsgBody .fallback {display: block !important;}
+        #MessageViewBody .interactive, body.MsgBody .interactive {display: none !important;}
+        #MessageViewBody .samsung {display: none !important;}
+        }
+        /* Specific Gmail detection */
+        @media screen and (max-width:9999px) {
+        u + .gmailbody .fallback {display: block !important;max-height: none;}
+        u + .gmailbody .interactive {display: none!important;}
+        }
+        /*Start of interactive CSS */
+        /* Background image Desktop */
+        @media only screen and (-webkit-min-device-pixel-ratio:0),(min--moz-device-pixel-ratio:0) {
+        .dynasties {position: relative; display: block !important; overflow: hidden; width: 600px;height: 325px;background-image: url(https://fakeimg.pl/1200x650/?text=HotSpotBgIMG);background-size: cover;}
+        /* Buttons */
+        .hotspot1,.hotspot2,.hotspot3,.hotspot4,.hotspot5 {visibility: visible!important; display: block !important; max-height: 33px !important;position: absolute!important;z-index: 1;left: -1000px;top: -1000px;width: 27px;height: 27px;background-size: cover;background-position: center;-webkit-animation: pulse 2s ease 0s infinite;border-radius: 23px;-webkit-box-shadow: 0px 0px 5px 5px rgba(50, 50, 50, 0.5);cursor: pointer;}
+        .hotspot1,.hotspot2,.hotspot3,.hotspot4,.hotspot5 {background-image: url(https://fakeimg.pl/54x54/);}
+        /* Content Labels Position Desktop */
+        #hotspot1-content {position: absolute;left: 10px;top: 50px;z-index: 1;}
+        #hotspot2-content {position: absolute;left: 10px;top: 50px;z-index: 1;}
+        #hotspot3-content {position: absolute;left: 10px;top: 50px;z-index: 1;}
+        #hotspot4-content {position: absolute;left: 10px;top: 50px;z-index: 1;}
+        #hotspot5-content {position: absolute;left: 10px;top: 50px;z-index: 1;}
+        /* keyframe animation - button pulse */
+        @-webkit-keyframes pulse {
+        0% {opacity: 0.7;-webkit-transform: scale(1);}
+        50% {opacity: 1;-webkit-transform: scale(1.2);}
+        100% {opacity: 0.7;-webkit-transform: scale(1);}
+        }
+        /* Desktop button positions */
+        .hotspot1 {left: 100px !important;top: 250px !important;}
+        .hotspot2 {left: 200px !important;top: 250px !important;}
+        .hotspot3 {left: 300px !important; top: 250px !important;}
+        .hotspot4 {left: 400px !important;top: 250px !important;}
+        .hotspot5 {left: 500px !important;top: 250px !important;}
+        /* If button checked desktop */
+        #hotspot1:checked ~ div #hotspot1-content {display: block !important;z-index: 10;}
+        #hotspot1:checked ~ div .hotspot1 {width:40px;height: 40px; max-height: 40px !important; display: block !important;position: absolute;left: 535px !important;top: 50px !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot1:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot1:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot1:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot1:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot2:checked ~ div #hotspot2-content {display: block !important;z-index: 10;}
+        #hotspot2:checked ~ div .hotspot1 {display: block !important;}
+        #hotspot2:checked ~ div .hotspot2 {width:40px;height: 40px; max-height: 40px !important; display: block !important;position: absolute;left: 535px !important;top: 50px !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot2:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot2:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot2:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot3:checked ~ div #hotspot3-content {display: block !important;z-index: 10;}
+        #hotspot3:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot3:checked ~ div .hotspot3 {width:40px;height: 40px; max-height: 40px !important; display: block !important;position: absolute;left: 535px !important;top: 50px !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot3:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot3:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot4:checked ~ div #hotspot4-content {display: block !important;z-index: 10;}
+        #hotspot4:checked ~ div .hotspot1 {display: block !important;}
+        #hotspot4:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot4:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot4:checked ~ div .hotspot4 {width:40px;height: 40px; max-height: 40px !important; display: block !important;position: absolute;left: 535px !important;top: 50px !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot4:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot5:checked ~ div #hotspot5-content {display: block !important;z-index: 10;}
+        #hotspot5:checked ~ div .hotspot1 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot5 {width:40px;height: 40px; max-height: 40px !important; display: block !important;position: absolute;left: 535px !important;top: 50px !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none; }
+        /* Background image Mobile */
+        @media only screen and (max-width: 420px) {
+        .dynasties {position: relative;display: block !important;overflow: hidden;width: 100vw;height: 100vw;background-image: url(https://fakeimg.pl/1200x900/?text=HotSpotBgIMG);background-size: 100vw 100vw;}
+        /* Buttons */
+        .hotspot1m, .hotspot2m, .hotspot3m, .hotspot4m, .hotspot5m {visibility: visible!important;display: block !important;max-height: 33px !important;position: absolute!important;z-index: 1;left: -1000px;top: -1000px;width: 27px;height: 27px;background-size: cover;background-position: center;-webkit-animation: pulse 2s ease 0s infinite;border-radius: 23px;-webkit-box-shadow: 0px 0px 5px 5px rgba(50, 50, 50, 0.5);cursor: pointer;}
+        .hotspot1m, .hotspot2m, .hotspot3m, .hotspot4m, .hotspot5m {background-image: url(https://fakeimg.pl/54x54/);}
+        /* Content Labels Position Mobile */
+        #hotspot1m-content {position: absolute;left: 5vw;top: 6vw; z-index: 1;}
+        #hotspot2m-content {position: absolute;left: 5vw;top: 6vw; z-index: 1;}
+        #hotspot3m-content {position: absolute;left: 5vw;top: 6vw; z-index: 1;}
+        #hotspot4m-content {position: absolute;left: 5vw;top: 6vw;z-index: 1;}
+        #hotspot5m-content {position: absolute;left: 5vw;top: 6vw;z-index: 1;}
+        /* keyframe animation - button pulse */
+        @-webkit-keyframes pulse {
+        0% {opacity: 0.7;-webkit-transform: scale(1);}
+        50% {opacity: 1;-webkit-transform: scale(1.2);}
+        100% {opacity: 0.7;-webkit-transform: scale(1); }
+        }
+        /* Mobile button positions */
+        .hotspot1m {left: 10vw !important;top: 70vw !important;}
+        .hotspot2m {left: 20vw !important;top: 70vw !important;}
+        .hotspot3m {left: 30vw !important;top: 70vw !important;}
+        .hotspot4m {left: 40vw !important;top: 70vw !important; }
+        .hotspot5m {left: 50vw !important;top: 70vw !important;}
+        }
+        /* If button checked mobile */
+        #hotspot1m:checked ~ div #hotspot1m-content {display: block !important;z-index: 10;}
+        #hotspot1m:checked ~ div .hotspot1m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important; z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0; -webkit-box-shadow: none; width:40px; height:40px; max-height: 40px !important;}
+        #hotspot1m:checked ~ div .hotspot2m {display: block !important;}
+        #hotspot1m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot1m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot1m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot2m:checked ~ div #hotspot2m-content {display: block !important;z-index: 10;}
+        #hotspot2m:checked ~ div .hotspot1m {display: block !important; }
+        #hotspot2m:checked ~ div .hotspot2m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important; z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none; width:40px; height:40px; max-height: 40px !important;}
+        #hotspot2m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot2m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot2m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot3m:checked ~ div #hotspot3m-content {display: block !important; z-index: 10;}
+        #hotspot3m:checked ~ div .hotspot1m {display: block !important;}
+        #hotspot3m:checked ~ div .hotspot2m { display: block !important;}
+        #hotspot3m:checked ~ div .hotspot3m {display: block !important; position: absolute;left: 86vw !important;top: 3vw !important; z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none; width:40px; height:40px; max-height: 40px !important;}
+        #hotspot3m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot3m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot4m:checked ~ div #hotspot4m-content {display: block !important;z-index: 10;}
+        #hotspot4m:checked ~ div .hotspot1m {display: block !important;}
+        #hotspot4m:checked ~ div .hotspot2m {display: block !important;}
+        #hotspot4m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot4m:checked ~ div .hotspot4m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none; width:40px; height:40px; max-height: 40px !important;}
+        #hotspot4m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot5m:checked ~ div #hotspot5m-content {display: block !important;z-index: 10;}
+        #hotspot5m:checked ~ div .hotspot1m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot2m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot5m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important;z-index: 11;background-image: url('https://fakeimg.pl/80x80/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none; width:40px; height:40px; max-height: 40px !important;}
+        /** HOTSPOT CSS - to copy in your style /**
+</style>
+
+      <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwcvhotspot" class="resptab" role="presentation" style="width:600px;"> 
+        <tr align="center">
+          <td align="center">
+            <table cellpadding="0" cellspacing="0" border="0" width="600" class="hide" role="presentation" style="width:600px;">
+              <tr align="center">
+                <td align="center" valign="top">
+                  <!--[if !mso]> -->
+                <input type="checkbox" id="webkitnocheck" name="webkit" checked="checked" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                  <!--<![endif]-->
+                  <div class="fallback">
+                    <img src="https://fakeimg.pl/1200x900/?text=Fallback" width="600" height="450" style="display: block;" border="0" alt="Dynasties">
+                  </div>
+                  <div class="samsung">
+                    <!--[if !mso]>-->
+                  <div class="interactive" style="display: none; max-height: 0px; overflow: hidden;">
+                    <input type="checkbox" class="hotspot" id="hotspot1" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                    <input type="checkbox" class="hotspot" id="hotspot2" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                    <input type="checkbox" class="hotspot" id="hotspot3" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                    <input type="checkbox" class="hotspot" id="hotspot4" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                  <div class="dynasties">
+                    <label class="hotspot1" for="hotspot1" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                    <label class="hotspot2" for="hotspot2" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                    <label class="hotspot3" for="hotspot3" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                    <label class="hotspot4" for="hotspot4" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                    <div id="hotspot1-content" style="display: none;">
+                      <table cellpadding="0" cellspacing="0" border="0" width="580"  role="presentation" style="width:580px; border: 2px solid #444444;" bgcolor="#ffffff">
+                        <tr align="center">
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="left" width="40"></td>
+                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="220" role="presentation" style="width:220px;">
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 21px; line-height: 25px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight:bold; padding-bottom:15px;">
+                                        Lorem ipsum dolor sit
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus sed dignissim.
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:15px;">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">CTA text &rarr;</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="center">
+                                  <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/580x650/?text=580xFlex" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" width="290" height="325"></a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div id="hotspot2-content" style="display: none;">
+                      <table cellpadding="0" cellspacing="0" border="0" width="580"  role="presentation" style="width:580px; border: 2px solid #444444;" bgcolor="#ffffff">
+                        <tr align="center">
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="left" width="40"></td>
+                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="220" role="presentation" style="width:220px;">
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 21px; line-height: 25px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight:bold; padding-bottom:15px;">
+                                        Lorem ipsum dolor sit
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus sed dignissim.
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:15px;">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">CTA text &rarr;</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="center">
+                                  <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/580x650/?text=580xFlex" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" width="290" height="325"></a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div id="hotspot3-content" style="display: none;">
+                      <table cellpadding="0" cellspacing="0" border="0" width="580"  role="presentation" style="width:580px; border: 2px solid #444444;" bgcolor="#ffffff">
+                        <tr align="center">
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="left" width="40"></td>
+                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="220" role="presentation" style="width:220px;">
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 21px; line-height: 25px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight:bold; padding-bottom:15px;">
+                                        Lorem ipsum dolor sit
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus sed dignissim.
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:15px;">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">CTA text &rarr;</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="center">
+                                  <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/580x650/?text=580xFlex" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" width="290" height="325"></a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div id="hotspot4-content" style="display: none;">
+                      <table cellpadding="0" cellspacing="0" border="0" width="580"  role="presentation" style="width:580px; border: 2px solid #444444;" bgcolor="#ffffff">
+                        <tr align="center">
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="left" width="40"></td>
+                                <td align="left" style="padding-top: 0px; padding-bottom: 0px;">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="220" role="presentation" style="width:220px;">
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 21px; line-height: 25px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight:bold; padding-bottom:15px;">
+                                        Lorem ipsum dolor sit
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus sed dignissim.
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:15px;">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">CTA text &rarr;</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td align="center" valign="middle">
+                            <table cellpadding="0" cellspacing="0" border="0" width="290" role="presentation" style="width:290px;">
+                              <tr align="center">
+                                <td align="center">
+                                  <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/580x650/?text=580xFlex" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" width="290" height="325"></a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <!--<![endif]-->
+                </div>
+              </td>
+            </tr>
+          </table>
+          <!--[if !mso]><!-->
+            <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+              <table cellpadding="0" cellspacing="0" border="0" width="420" class="resptab" role="presentation" style="width:420px;">
+                <tr align="center">
+                  <td align="center" valign="top">
+                    <!--[if !mso]> -->
+                    <input type="checkbox" id="webkitnocheck" name="webkit" checked="checked" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                    <!--<![endif]-->
+                      <div class="fallback">
+                        <img src="https://image.info.esteelauder.co.uk/lib/fe37117075640474741075/m/4/427722df-92c9-4051-993b-d4a740a6646b.jpg" width="420" height="420" style="display: block;" border="0" alt="Dynasties" class="respimg">
+                      </div>
+                      <div class="samsung">
+                        <!--[if !mso]> -->
+                        <div class="interactive" style="display: none; max-height: 0px; overflow: hidden;">
+                          <input type="checkbox" class="hotspot" id="hotspot1m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                          <input type="checkbox" class="hotspot" id="hotspot2m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                          <input type="checkbox" class="hotspot" id="hotspot3m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                          <input type="checkbox" class="hotspot" id="hotspot4m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                        <div class="dynasties">
+                          <label class="hotspot1m" for="hotspot1m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                          <label class="hotspot2m" for="hotspot2m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                          <label class="hotspot3m" for="hotspot3m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                          <label class="hotspot4m" for="hotspot4m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                          <div id="hotspot1m-content" style="display: none;">
+                            <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                              <tr align="center">
+                                <td align="center">
+                                  <table width="100%" border="0" role="presentation" cellspacing="0" cellpadding="0">
+                                    <tr align="center">
+                                      <td align="center" valign="middle">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1280x260/?text=ProdPreview" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="640" height="130"></a>
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="padding-top: 20px; padding-bottom:20px;">
+                                        <table cellpadding="0" cellspacing="0" border="0" width="90%" role="presentation" style="width:90%;">
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 24px; line-height: 28px; color:#000000; mso-line-height-rule: exactly; text-align: left; padding-bottom: 15px;">
+                                              Lorem ipsum dolor sit
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-align: left;">
+                                              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:25px;">
+                                              <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">
+                                                CTA text &rarr;
+                                              </a>
+                                            </td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </div>
+                          <div id="hotspot2m-content" style="display: none;">
+                            <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                              <tr align="center">
+                                <td align="center">
+                                  <table width="100%" border="0" role="presentation" cellspacing="0" cellpadding="0">
+                                    <tr align="center">
+                                      <td align="center" valign="middle">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1280x260/?text=ProdPreview" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="640" height="130"></a>
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="padding-top: 20px; padding-bottom:20px;">
+                                        <table cellpadding="0" cellspacing="0" border="0" width="90%" role="presentation" style="width:90%;">
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 24px; line-height: 28px; color:#000000; mso-line-height-rule: exactly; text-align: left; padding-bottom: 15px;">
+                                              Lorem ipsum dolor sit
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-align: left;">
+                                              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:25px;">
+                                              <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">
+                                                CTA text &rarr;
+                                              </a>
+                                            </td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </div>
+                          <div id="hotspot3m-content" style="display: none;">
+                            <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                              <tr align="center">
+                                <td align="center">
+                                  <table width="100%" border="0" role="presentation" cellspacing="0" cellpadding="0">
+                                    <tr align="center">
+                                      <td align="center" valign="middle">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1280x260/?text=ProdPreview" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="640" height="130"></a>
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="padding-top: 20px; padding-bottom:20px;">
+                                        <table cellpadding="0" cellspacing="0" border="0" width="90%" role="presentation" style="width:90%;">
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 24px; line-height: 28px; color:#000000; mso-line-height-rule: exactly; text-align: left; padding-bottom: 15px;">
+                                              Lorem ipsum dolor sit
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-align: left;">
+                                              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:25px;">
+                                              <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">
+                                                CTA text &rarr;
+                                              </a>
+                                            </td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </div>
+                          <div id="hotspot4m-content" style="display: none;">
+                            <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                              <tr align="center">
+                                <td align="center">
+                                  <table width="100%" border="0" role="presentation" cellspacing="0" cellpadding="0">
+                                    <tr align="center">
+                                      <td align="center" valign="middle">
+                                        <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1280x260/?text=ProdPreview" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="640" height="130"></a>
+                                      </td>
+                                    </tr>
+                                    <tr align="center">
+                                      <td align="center" style="padding-top: 20px; padding-bottom:20px;">
+                                        <table cellpadding="0" cellspacing="0" border="0" width="90%" role="presentation" style="width:90%;">
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 24px; line-height: 28px; color:#000000; mso-line-height-rule: exactly; text-align: left; padding-bottom: 15px;">
+                                              Lorem ipsum dolor sit
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-align: left;">
+                                              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus. Sed dignissim, metus nec fringilla accumsan, risus sem sollicitudin lacus, ut interdum tellus elit sed risus.
+                                            </td>
+                                          </tr>
+                                          <tr align="center">
+                                            <td align="center" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top:25px;">
+                                              <a href="https://links.marketing.volkswagenvansuk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-QZVFKZUVBZ-4767%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 12px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">
+                                                CTA text &rarr;
+                                              </a>
+                                            </td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                      <!--<![endif]-->
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <!--<![endif]-->
+              </td>
+            </tr>
+          </table>
+]]></content>
+	<tabTrigger>vwcvhotspot</tabTrigger>
+</snippet>

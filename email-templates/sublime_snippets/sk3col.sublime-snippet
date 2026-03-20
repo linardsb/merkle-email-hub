@@ -1,0 +1,146 @@
+<snippet>
+	<content><![CDATA[
+      <table cellpadding="0" cellspacing="0" border="0" width="600" id="sk3col" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+        <tr align="center">
+          <td align="center" class="padtop0 padbot40" style="padding-top:36px; padding-bottom:36px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="528" class="resptab" role="presentation" style="width:528px;">
+              <tr align="center">
+                <th align="center" class="resptab db lfloat" valign="top">
+                  <table cellpadding="0" cellspacing="0" border="0" width="176" class="resptab" role="presentation" style="width:176px;">
+                    <tr align="center">
+                      <td align="center">
+                        <table cellpadding="0" cellspacing="0" border="0" width="176" class="resptab" role="presentation" style="width:176px;">
+                          <tr align="center">
+                            <td align="center">
+                              <table cellpadding="0" cellspacing="0" border="0" width="136" class="resptab" role="presentation" style="width:136px;">
+                                <tr align="center">
+                                  <td align="left" class="padbot40" style="padding-bottom:36px">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;">
+                                      <img src="https://fakeimg.pl/272x272/?text=L272x272" alt="" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" class="respimg" border="0" width="136" height="136">
+                                    </a>
+                                    <!--[if !mso]><!-->
+                                      <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                                        <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=MOB_IMG_SD_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="MOB_IMG_SD_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;">
+                                          <img src="https://fakeimg.pl/640x640/?text=MobileIMG" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="640">
+                                        </div>
+                                        <!--<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32 padbot20" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 20px; line-height: 24px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; padding-bottom:18px; font-weight: 400;">
+                                    Lorem ipsum dolor sit
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 16px; line-height: 22px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left;" valign="top">
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis.
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32 padtop20" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline; padding-top:36px; font-weight:700;" valign="top">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline; font-weight:700;">Call To Action</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </th>
+                <th align="center" class="resptab db lfloat padtop40" valign="top">
+                  <table cellpadding="0" cellspacing="0" border="0" width="176" class="resptab" role="presentation" style="width:176px;">
+                    <tr align="center">
+                      <td align="center">
+                        <table cellpadding="0" cellspacing="0" border="0" width="176" class="resptab" role="presentation" style="width:176px;">
+                          <tr align="center">
+                            <td align="center">
+                              <table cellpadding="0" cellspacing="0" border="0" width="136" class="resptab" role="presentation" style="width:136px;">
+                                <tr align="center">
+                                  <td align="left" class="padbot40" style="padding-bottom:36px">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;">
+                                      <img src="https://fakeimg.pl/272x272/?text=C272x272" alt="" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" class="respimg" border="0" width="136" height="136">
+                                    </a>
+                                    <!--[if !mso]><!-->
+                                      <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                                        <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=MOB_IMG_SD_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="MOB_IMG_SD_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;">
+                                          <img src="https://fakeimg.pl/640x640/?text=MobileIMG" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="640">
+                                        </div>
+                                        <!--<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32 padbot20" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 20px; line-height: 24px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; padding-bottom:18px; font-weight: 400;">
+                                    Lorem ipsum dolor sit
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 16px; line-height: 22px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left;" valign="top">
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis.
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32 padtop20" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline; padding-top:36px; font-weight:700;" valign="top">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline; font-weight:700;">Call To Action</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </th>
+                <th align="center" class="resptab db lfloat padtop40" valign="top">
+                  <table cellpadding="0" cellspacing="0" border="0" width="176" class="resptab" role="presentation" style="width:176px;">
+                    <tr align="center">
+                      <td align="center">
+                        <table cellpadding="0" cellspacing="0" border="0" width="176" class="resptab" role="presentation" style="width:176px;">
+                          <tr align="center">
+                            <td align="center">
+                              <table cellpadding="0" cellspacing="0" border="0" width="136" class="resptab" role="presentation" style="width:136px;">
+                                <tr align="center">
+                                  <td align="left" class="padbot40" style="padding-bottom:36px">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;">
+                                      <img src="https://fakeimg.pl/272x272/?text=R272x272" alt="" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" class="respimg" border="0" width="136" height="136">
+                                    </a>
+                                    <!--[if !mso]><!-->
+                                      <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                                        <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=MOB_IMG_SD_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="MOB_IMG_SD_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;">
+                                          <img src="https://fakeimg.pl/640x640/?text=MobileIMG" alt="" style="display: block; border: 0" border="0" class="respimg" width="640" height="640">
+                                        </div>
+                                        <!--<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32 padbot20" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 20px; line-height: 24px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; padding-bottom:18px; font-weight: 400;">
+                                    Lorem ipsum dolor sit
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 16px; line-height: 22px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left;" valign="top">
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis.
+                                  </td>
+                                </tr>
+                                <tr align="center">
+                                  <td align="center" class="padlr32 padtop20" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline; padding-top:36px; font-weight:700;" valign="top">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline; font-weight:700;">Call To Action</a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+]]></content>
+	<tabTrigger>sk3col</tabTrigger>
+</snippet>

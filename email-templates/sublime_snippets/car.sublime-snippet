@@ -1,0 +1,252 @@
+<snippet>
+	<content><![CDATA[
+
+
+/** Carousel CSS **/
+body{
+  padding:0;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+
+  /* Hide Fallback content first */
+  .fallback{
+    display:none;
+  }
+
+  .carousel{
+    display:block !important;
+    max-height:none !important;
+    position:relative;
+  }
+
+  /* 
+  Selective blocking for clients.
+  - Samsung (#MessageViewBody) - no absolute positioning
+  - Comcast/Zimbra (body.MsgBody) - inconsistent CSS support
+  */
+  #MessageViewBody .fallback,
+  body.MsgBody .fallback{ 
+    display:block; 
+  }
+  #MessageViewBody .carousel,
+  body.MsgBody .carousel{
+    display:none !important;
+  }
+
+  .carousel a{
+    width:100%;
+    display:block;
+    overflow:hidden;
+  }  
+
+  .carousel img{
+    display:block!important;
+    width:100% !important;
+    height:auto !important;
+  }
+
+  .carousel.responsive{
+    width:100% !important;
+  }
+
+  .carousel.responsive .car-cont{
+    width:100% !important;
+    height:auto !important;
+  }  
+
+  /* Fade  */
+  .carousel.fade a{
+    position:absolute;
+    top:0px;
+    left:0px; 
+    opacity:0;   
+    -webkit-animation: car-anim 9s linear infinite;    
+  }
+
+  .carousel.fade a:nth-child(1){
+    position:relative;
+    -webkit-animation-delay: -10s;    
+  }
+  .carousel.fade a:nth-child(2){
+    -webkit-animation-delay: -7s;    
+  }
+  .carousel.fade a:nth-child(3){
+    -webkit-animation-delay: -4s;    
+  }
+
+
+
+  @-webkit-keyframes car-anim
+  {
+      /* start fade in */
+      0% {
+        z-index:2;
+        opacity:0;
+      }
+      /* end fade in */
+      5%{
+        opacity:1;
+      }
+      /* start fade out */
+      33%{
+        z-index:2;
+      }
+      33.1%{
+        z-index:1;
+      }
+      /* end fade out */
+      38%{
+        opacity:1;
+      }
+      /* drop z-index to 1 */
+      38.1%{
+        opacity:0;
+      }
+      100%{
+        z-index:1;
+        opacity:0;
+      }
+  }
+
+
+  /* EFFECTS */
+  .carousel.effects img{
+    -webkit-animation-name: effect-zoomin;
+    -webkit-animation-duration: 9s;
+    -webkit-animation-timing-function: linear;
+    -webkit-animation-iteration-count: infinite;
+  }
+  .carousel.effects a:nth-child(1) img{
+    -webkit-animation-delay: -10s;    
+  }
+  .carousel.effects a:nth-child(2) img{
+    -webkit-animation-delay: -7s;    
+  }
+  .carousel.effects a:nth-child(3) img{
+    -webkit-animation-delay: -4s;    
+  }
+
+
+
+  .carousel.effects img.zoom-in{
+    -webkit-animation-name: effect-zoomin;
+  }
+  .carousel.effects img.zoom-out{
+    -webkit-animation-name: effect-zoomout;
+  }
+  .carousel.effects img.pan-right{
+    -webkit-animation-name: effect-panright;
+  }
+  .carousel.effects img.pan-left{
+    -webkit-animation-name: effect-panleft;
+  }
+
+  @-webkit-keyframes effect-zoomin
+  {
+    0% {
+      -webkit-transform: scale(1);
+    }
+    33.33%{
+      -webkit-transform: scale(1.2);
+    }
+    38%{
+      -webkit-transform: scale(1.2);
+    }
+    100%{
+      -webkit-transform: scale(1);
+    }
+  }
+  @-webkit-keyframes effect-zoomout
+  {
+    0% {
+      -webkit-transform: scale(1.2);
+    }
+    33.33%{
+      -webkit-transform: scale(1);
+    }
+    38%{
+      -webkit-transform: scale(1);
+    }
+    100%{
+      -webkit-transform: scale(1.2);
+    }
+  }
+
+  @-webkit-keyframes effect-panright
+  {
+    0% {
+      -webkit-transform: scale(1.2);
+      margin-left:-10%;
+    }
+    33.33%{
+      -webkit-transform: scale(1.2);
+      margin-left:10%;
+    }
+    38%{
+      -webkit-transform: scale(1.2);
+      margin-left:10%;
+    }
+    100%{
+      -webkit-transform: scale(1.2);
+      margin-left:-10%;
+    }
+  }
+  @-webkit-keyframes effect-panleft
+  {
+    0% {
+      -webkit-transform: scale(1.2);
+      margin-left:10%;
+    }
+    33.33%{
+      -webkit-transform: scale(1.2);
+      margin-left:-10%;
+    }
+    38%{
+      -webkit-transform: scale(1.2);
+      margin-left:-10%;
+    }
+    100%{
+      -webkit-transform: scale(1.2);
+      margin-left:10%;
+    }
+  }
+
+}
+/******************/
+
+<table cellpadding="0" cellspacing="0" border="0" width="$1" class="resptab" role="presentation" style="width:$1px;">
+	<tr align="center">
+		<td align="center">
+			<!-- content -->
+			<!-- animated carousel -->
+			<!--[if !mso]><!-- -->
+			<div class="carousel fade responsive effects" style="overflow:hidden;display:none;max-height:0px;">
+				<div class="car-cont" style="position:relative; width:$1px; height:$2px;">
+					<a href="https://www.google.com/search?q=castles"><img class="zoom-in" src="http://freshinbox.com/examples/animated-carousel/images/car-castle.jpg" border="0"></a>
+					<a href="https://www.google.com/search?q=meadows"><img class="zoom-out" src="http://freshinbox.com/examples/animated-carousel/images/car-meadow.jpg" border="0"></a>
+					<a href="https://www.google.com/search?q=coast"><img class="pan-right" src="http://freshinbox.com/examples/animated-carousel/images/car-coast.jpg" border="0"></a>
+				</div>
+			</div>
+			<!--<![endif]-->
+			<br><br>
+			<!-- static fallback content -->
+			<div class="fallback">
+				<a href="https://www.google.com/search?q=fallback" ><img src="http://freshinbox.com/examples/animated-carousel/images/carousel-fallback.jpg" width="$1" height="$2" style="display:block;" border="0" class="respimg"></a>
+			</div>
+			<!-- /content -->
+		</td>
+	</tr>
+</table>
+
+
+
+
+
+
+
+
+]]></content>
+	<tabTrigger>car</tabTrigger>
+	
+</snippet>

@@ -1,0 +1,6 @@
+<snippet>
+  <content><![CDATA[
+<span style="text-transform: uppercase;">$1
+]]></content>
+  <tabTrigger>TT</tabTrigger>
+</snippet>

@@ -1,0 +1,15 @@
+<snippet>
+  <content><![CDATA[
+<table cellpadding="0" cellspacing="0" border="0" width="$1" class="wf" bgcolor="#ffffff" role="presentation" style="width:$1px;">
+  <tr align="center">
+    <td class="wf wr fl" style="font-size:0; line-height:0;">
+      <a href=""><img src="images/img_$2.jpg" alt="" style="display: block; border: 0; font-size:16px; line-height:16px;" border="0" class="bannerimg" width="$4" height=""></a>
+    </td>
+    <td class="wf wr fl" style="font-size:0; line-height:0;">
+      <a href=""><img src="images/img_$3.jpg" alt="" style="display: block; border: 0; font-size:16px; line-height:16px;" border="0" class="bannerimg" width="$4" height=""></a>
+    </td>
+  </tr>
+</table>
+]]></content>
+<tabTrigger>rnor</tabTrigger>
+</snippet>

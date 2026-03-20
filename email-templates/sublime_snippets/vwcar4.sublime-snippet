@@ -1,0 +1,185 @@
+<snippet>
+	<content><![CDATA[
+
+    <style type="text/css" id="vwcar4">
+      @media screen yahoo { 
+      .mobileonly, .overflow-hidden { overflow: hidden !important; } 
+      }
+    </style>
+    <style type="text/css">
+      @media only screen and (-webkit-min-device-pixel-ratio:0), (min--moz-device-pixel-ratio:0) { 
+      #on:checked ~ .fallback{ display:none; }
+      #on:checked ~ div .interactive{ display: block !important; max-height: none !important; }
+      }
+      @media screen yahoo { 
+      .fallback{ display: block!important; max-height: none; }
+      .interactive{ display: none !important; }
+      div{ overflow: visible!important}
+      .mobileonly{ overflow: hidden; }
+      }
+      @media screen and (-webkit-min-device-pixel-ratio: 0) {
+      #MessageViewBody .fallback, body.MsgBody .fallback { display:block !important; }
+      #MessageViewBody .interactive, body.MsgBody .interactive {display:none !important; }
+      #MessageViewBody .samsung { display:none !important; }
+      }
+      @media screen and (max-width:9999px) {
+      u + .gmailbody .fallback { display:block!important; max-height:none; }
+      u + .gmailbody .interactive { display:none!important; }
+      }
+      body[data-outlook-cycle] .fallback { display:block! important; }
+      body[data-outlook-cycle] .interactive{ display:none !important; }
+      [owa] .fallback,[id="x_body"] .fallback{ display:block! important; }
+      [owa] .interactive,[id="x_body"] .interactive{ display:none !important; }
+    </style>
+    <style type="text/css">
+      @media only screen and (-webkit-min-device-pixel-ratio:0), (min--moz-device-pixel-ratio:0) { 
+      body{ -webkit-animation:bugfix infinite 1s; }
+      @-webkit-keyframes bugfix { from {padding:0; }
+      to { padding:0; }
+      }
+      .carousel{ position:relative; display:block !important; max-height:inherit !important; overflow:hidden; width:600px; height:auto; z-index:1; }
+      .arrows { display:block !important; }
+      .arrow { display:inline-block; width: 40px; height: 40px; padding-bottom: 40px; padding-left: 32px; padding-right: 32px; font-family: Arial,sans-serif; font-size: 12px; font-weight: bold; color: #ffffff;cursor: pointer; border-radius: 50%; }
+      .left{position:absolute; left:0px; bottom:0px; z-index:3; }
+      .right{position:absolute; right:0px; bottom:0px; z-index:3; }
+      .dots{position:absolute; left:0; right:0; bottom:10px; margin:0 auto; width:100%; z-index:2; }
+      .dot{display:inline-block; width:7px; height:7px; border:3px solid rgba(128,128,128,0.6); border-radius:50%; background-color:#808080; margin:10px 6px; transition:0.5s; cursor:pointer; }
+      .dot:hover{border-color:#ffffff; background-color:#ffffff; box-shadow:0 0 0 1px #808080,0 0 0 3px #ffffff; }
+      .dot:hover:before{position:absolute; font-size:14px; font-family:arial; background:rgba(0,0,0,.3); color:#ffffff; padding:10px; border-radius:3px; opacity:1; margin-top:-60px; transform:translateX(-50%); font-family:arial; }
+      #one:checked~* .dot[name="one"]{border-color:#ffffff !important; background-color:#ffffff !important; }
+      #two:checked~* .dot[name="two"]{border-color:#ffffff !important; background-color:#ffffff !important; }
+      #three:checked~* .dot[name="three"]{border-color:#ffffff !important; background-color:#ffffff !important; }
+      #four:checked~* .dot[name="four"]{border-color:#ffffff !important; background-color:#ffffff !important; }
+      #one:not(:checked)~* .first{display:none; opacity:0; }
+      #two:not(:checked)~* .second{display:none; opacity:0; }
+      #three:not(:checked)~* .third{display:none; opacity:0; }
+      #four:not(:checked)~* .fourth{display:none; opacity:0; }
+      @keyframes fadein{0%{opacity:0; }
+      100%{opacity:1; }
+      }
+      input{display:none; max-height:0px; visibility:hidden; }
+      }
+      @media only screen and (max-width: 600px) { 
+      .hide { display: none!important;}
+      .carousel { position:relative; display:block !important; overflow:hidden; width:100vw; max-width:100%; height:auto; }
+      .left { left:20px !important; }
+      .right { right:20px !important; }
+      .dots h2 { font-size:20px !important; }
+      .dot:hover:before { display:none !important; }
+      }     
+    </style>
+
+
+		
+        <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwcar4" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+          <tr align="center">
+            <td align="center">
+              <!--[if !mso]><!-->
+              <input type="checkbox" name="webkit" id="on" value="on" checked="checked" style="display: none; max-height: 0px; visibility: hidden;">
+              <!--<![endif]-->
+              <!--start fallback-->
+              <div class="fallback">
+                <div>
+                  <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+                    <tr align="center">
+                      <td align="center">
+                        <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE1" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x800/?text=Fallback" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="600" height="400"></a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+              <!--end fallback-->
+              <!--start interactive-->
+              <!--[if !mso]><!-->
+              <div class="samsung">
+                <input type="radio" name="model" id="one" value="on" style="display: none; max-height: 0px; visibility: hidden;" checked="">
+                <input type="radio" name="model" id="two" value="on" style="display: none; max-height: 0px; visibility: hidden;">
+                <input type="radio" name="model" id="three" value="on" style="display: none; max-height: 0px; visibility: hidden;">
+                <input type="radio" name="model" id="four" value="on" style="display: none; max-height: 0px; visibility: hidden;">
+                <div class="interactive" style="display:none; max-height:0; line-height:0; font-size:0; mso-hide:all; padding: 0; margin: 0;">
+                  <div class="carousel" style="display:none;">
+                    <div class="first">
+                      <div>
+                        <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE2" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x800/?text=IMG1" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="600" height="400"></a>
+                      </div>
+                      <div style="display:none;" class="arrows">
+                        <div class="left">
+                          <label name="prev" for="four" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/left_arrow.png" width="40" height="40" alt="previous" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                        <div class="right">
+                          <label name="next" for="two" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/right_arrow.png" width="40" height="40" alt="next" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="second">
+                      <div>
+                        <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE2" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x800/?text=IMG2" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="600" height="400"></a>
+                      </div>
+                      <div style="display:none;" class="arrows">
+                        <div class="left">
+                          <label name="prev" for="one" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/left_arrow.png" width="40" height="40" alt="previous" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                        <div class="right">
+                          <label name="next" for="three" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/right_arrow.png" width="40" height="40" alt="next" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="third">
+                      <div>
+                        <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE2" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x800/?text=IMG3" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="600" height="400"></a>
+                      </div>
+                      <div style="display:none;" class="arrows">
+                        <div class="left">
+                          <label name="prev" for="two" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/left_arrow.png" width="40" height="40" alt="previous" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                        <div class="right">
+                          <label name="next" for="four" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/right_arrow.png" width="40" height="40" alt="next" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="fourth">
+                      <div>
+                        <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE2" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x800/?text=IMG4" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="600" height="400"></a>
+                      </div>
+                      <div style="display:none;" class="arrows">
+                        <div class="left">
+                          <label name="prev" for="three" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/left_arrow.png" width="40" height="40" alt="previous" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                        <div class="right">
+                          <label name="next" for="one" class="arrow padbot20">
+                          <img border="0" src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/VW/Logos/right_arrow.png" width="40" height="40" alt="next" style="display:block;margin: 0 auto;" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="dots">
+                      <label name="one" for="one" class="dot">&zwnj;</label>
+                      <label name="two" for="two" class="dot">&zwnj;</label>
+                      <label name="three" for="three" class="dot">&zwnj;</label>
+                      <label name="four" for="four" class="dot">&zwnj;</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!--<![endif]-->
+            </td>
+          </tr>
+        </table>
+]]></content>
+	<tabTrigger>vwcar4</tabTrigger>
+</snippet>

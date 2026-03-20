@@ -1,0 +1,10 @@
+<snippet>
+  <content><![CDATA[
+<tr>
+  <td align="center">
+    <img src="images/img_$0.jpg" alt="" style="display: block; border: 0"/>
+  </td>
+</tr>
+]]></content>
+ <tabTrigger>simg</tabTrigger>
+</snippet>

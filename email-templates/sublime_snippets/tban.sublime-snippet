@@ -1,0 +1,12 @@
+<snippet>
+  <content><![CDATA[
+ <table cellpadding="10" cellspacing="0" border="0" width="640" class="wf" bgcolor="$1" role="presentation" style="width:640px;">
+  <tr>
+    <td align="left" style="font-family: Helvetica, Arial, 'Lucida Grande', sans-serif; mso-line-height-rule:exactly; line-height: 25px; color: #fff;font-size: 19px; padding-left: 20px">
+      <strong>$2</strong>
+    </td>
+  </tr>
+</table>
+]]></content>
+<tabTrigger>tban</tabTrigger>
+</snippet>

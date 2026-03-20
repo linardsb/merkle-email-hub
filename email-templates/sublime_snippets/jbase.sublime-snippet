@@ -1,0 +1,70 @@
+<snippet>
+  <content><![CDATA[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title></title>
+  <style>
+    a[x-apple-data-detectors] {
+        color: inherit !important;
+        text-decoration: none !important;
+        font-size: inherit !important;
+        font-family: inherit !important;
+        font-weight: inherit !important;
+        line-height: inherit !important;
+    }
+    *[class="gmail-fix"] {display: none !important;}
+     body {width: 100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; margin:0; padding:0; }
+    #outlook a {padding:0;}
+    img { outline: none; text-decoration: none; }
+    a img { border:none; }
+    table td { border-collapse: collapse; }
+    th { margin:0 !important; padding:0 !important; vertical-align:top !important; table-layout: fixed !important;}
+    /* Force hotmail/outlook.com to display at full width (outer div) */
+    .ReadMsgBody { width:100%; }
+    /* Force hotmail/outlook.com to display at full width (inner div) */
+    .ExternalClass { width:100%; }
+
+  </style>
+</head>
+<body>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F1F1F1" role="presentation">
+  <tr>
+    <td width="100%" valign="top" align="center">
+
+
+
+
+
+
+
+
+
+
+      </td>
+    </tr>
+    <tr class="gmail-fix">
+      <td>
+        <table cellpadding="0" cellspacing="0" border="0" align="center" width="640" role="presentation">
+          <tr>
+            <td style="line-height: 1px; min-width: 640px;">
+              <img src="images/spacer.gif" width="640" height="1" style="display: block; max-height: 1px; min-height: 1px; min-width: 640px; width: 640px;"/>
+              </td>
+            </tr>
+        </table>
+      </td>
+    </tr>
+</table>
+</body>
+</html>
+]]></content>
+<tabTrigger>jbase</tabTrigger>
+</snippet>

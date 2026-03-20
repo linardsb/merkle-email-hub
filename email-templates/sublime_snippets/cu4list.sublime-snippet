@@ -1,0 +1,89 @@
+<snippet>
+	<content><![CDATA[
+                <tr align="center" id="bullet1">
+                  <td align="center" style="padding-bottom: 8px;">
+                    <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                      <tr align="center">
+                        <td align="center" width="20" valign="top" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 20px; line-height: 16px; color:#46525B; mso-line-height-rule: exactly; text-align:right">
+                          &rsaquo;
+                        </td>
+                        <td align="center" width="8"></td>
+                        <td align="center" valign="top">
+                          <table cellpadding="0" cellspacing="0" border="0" width="492" class="resptab" role="presentation" style="width:492px;">
+                            <tr align="center">
+                              <td align="center" class="mobfs16" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align:left">
+                                Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+                              </td>
+                            </tr>
+                          </table>
+                        </td> 
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr align="center" id="bullet2">
+                  <td align="center" style="padding-bottom: 8px;">
+                    <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                      <tr align="center">
+                        <td align="center" width="20" valign="top" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 20px; line-height: 16px; color:#46525B; mso-line-height-rule: exactly; text-align:right">
+                          &rsaquo;
+                        </td>
+                        <td align="center" width="8"></td>
+                        <td align="center" valign="top">
+                          <table cellpadding="0" cellspacing="0" border="0" width="492" class="resptab" role="presentation" style="width:492px;">
+                            <tr align="center">
+                              <td align="center" class="mobfs16" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align:left">
+                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
+                              </td>
+                            </tr>
+                          </table>
+                        </td> 
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr align="center" id="bullet3">
+                  <td align="center" style="padding-bottom: 8px;">
+                    <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                      <tr align="center">
+                        <td align="center" width="20" valign="top" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 20px; line-height: 16px; color:#46525B; mso-line-height-rule: exactly; text-align:right">
+                          &rsaquo;
+                        </td>
+                        <td align="center" width="8"></td>
+                        <td align="center" valign="top">
+                          <table cellpadding="0" cellspacing="0" border="0" width="492" class="resptab" role="presentation" style="width:492px;">
+                            <tr align="center">
+                              <td align="center" class="mobfs16" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align:left">
+                                Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                              </td>
+                            </tr>
+                          </table>
+                        </td> 
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr align="center" id="bullet4">
+                  <td align="center" style="padding-bottom: 8px;">
+                    <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                      <tr align="center">
+                        <td align="center" width="20" valign="top" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 20px; line-height: 16px; color:#46525B; mso-line-height-rule: exactly; text-align:right">
+                          &rsaquo;
+                        </td>
+                        <td align="center" width="8"></td>
+                        <td align="center" valign="top">
+                          <table cellpadding="0" cellspacing="0" border="0" width="492" class="resptab" role="presentation" style="width:492px;">
+                            <tr align="center">
+                              <td align="center" class="mobfs16" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align:left">
+                                Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                              </td>
+                            </tr>
+                          </table>
+                        </td> 
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+]]></content>
+	<tabTrigger>cu4list</tabTrigger>
+</snippet>

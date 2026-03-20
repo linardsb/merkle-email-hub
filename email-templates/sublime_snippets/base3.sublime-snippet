@@ -1,0 +1,568 @@
+<snippet>
+	<content><![CDATA[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <!--[if !mso]><!-->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <!--<![endif]-->
+  <!--[if gte mso 9]><xml>
+  <o:OfficeDocumentSettings>
+    <o:AllowPNG/>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+  </xml><![endif]-->
+   <!--[if gte mso 9]>
+<style>
+li {text-indent: -1em; /* Normalise space between bullets and text */ display:list-item;}
+</style>
+<![endif]--> 
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="x-apple-disable-message-reformatting">
+
+  <title></title>
+
+  <style type="text/css">
+    * {-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;}
+    html, body {margin:0 auto !important; padding:0 !important; width:100% !important; min-width:100% !important; height:100% !important;font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Arial',sans-serif;}
+    #outlook a {padding:0 !important;}
+    img {outline:none !important; text-decoration:none !important; border:0 !important;}
+    a img {border:none !important; }
+    table {border-collapse:collapse; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; min-width:0 !important;border-spacing:0 !important; padding:0 !important;}
+    table td {border-collapse:collapse; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important;}
+    table th {border-collapse:collapse; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important;}
+    table .cta{border-collapse:separate; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; min-width:0 !important;border-spacing:0 !important; padding:0 !important;}
+    img{-ms-interpolation-mode:bicubic;}
+    th{font-weight: normal;}
+    .wrapper {width:100% !important; table-layout:fixed !important;}
+    ul, ol{padding: 0; Margin: 0 0 0 1em; list-style: disc;}
+    ul li{margin:0px 0 10px 0;}
+    ol li{margin:0px 0 10px 0;}
+    /*Mobile*/
+    @media only screen and (max-width:699px) {
+      .maintable {width:100% !important;}
+      .respimg {width:100% !important; height:auto !important;}
+      .lfloat{float:left !important;}
+      .db{display:block !important;}
+      .resptab{width:100% !important;}
+    /* paddings 20-40-60 */
+      .nopad{padding-top: 0px !important; padding-bottom: 0px !important; padding-left: 0px !important; padding-right: 0px !important;}
+      .padtop20{padding-top:20px !important;}
+      .padbot20{padding-bottom:20px !important;}
+      .padl20{padding-left:20px !important;}
+      .padr20{padding-right:20px !important;}
+      .padlr20{padding-left:20px !important; padding-right:20px !important}
+      .padtop40{padding-top:40px !important;}
+      .padbot40{padding-bottom:40px !important;}
+      .padl40{padding-left:40px !important;}
+      .padr40{padding-right:40px !important;}
+      .padlr40{padding-left:40px !important; padding-right:40px !important}
+      .padtop60{padding-top:60px !important;}
+      .padbot60{padding-bottom:60px !important;}
+      .padl60{padding-left:60px !important;}
+      .padr60{padding-right:60px !important;}
+      .padlr60{padding-left:60px !important; padding-right:60px !important}      
+    /* paddings */
+    /* Reverse Table */      
+      .rup{display: table-header-group!important; width:100%!important;}
+      .ldown{display: table-footer-group!important; width:100%!important;}
+    /* Reverse Table ends */  
+      .hide{display:none !important;}
+      .delete{width:0px !important; height:0px !important; font-size:0px !important; line-height:0px !important;}
+    /* paddings ends */  
+    /* text format mobile */
+      .textCenter{text-align: center !important;}
+    /* text format mobile */  
+      .show {
+        display:block !important;
+        margin:0 !important;
+        overflow:visible !important;
+        width:auto !important;
+        max-height:inherit !important;
+        font-size:inherit !important;
+        line-height:inherit !important
+      }
+      a[x-apple-data-detectors] {
+        color:inherit !important;
+        text-decoration:none !important;
+        font-size:inherit !important;
+        font-family:inherit !important;
+        font-weight:inherit !important;
+        line-height:inherit !important;
+      }
+    }
+    /* This center the email on Gmail and Outlook mobile */
+    @media only screen and (max-width: 480px) {
+    /* Targets Gmail */
+    u ~ .resptab {min-width: 100vw;}
+    /* Targets Gmail on Android */
+    div > u ~ .resptab {min-width: 100%;}
+    }
+    /* This center the email on Gmail and Outlook mobile ends */
+  </style>
+</head>
+<body style="margin:0 auto;padding-bottom:10px;padding-right:0;padding-left:0;min-width:100%;background-color:#ffffff;line-height: 0px;">
+  <center class="wrapper" style="width:100%;table-layout:fixed;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="table-layout: fixed;line-height: 0px;">
+      <tr>
+        <td valign="top" align="center" style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif;">
+        <!-- Emailcontent -->
+        <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+          <tr align="center">
+            <td align="center" class="padlr20" style="padding-top:20px; padding-bottom: 20px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+                <tr align="center">
+                  <td align="left" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: left; padding-right: 30px;">
+                    Preheader text here
+                  </td>
+                  <td align="right" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: right;">
+                    <a href="##" target="_blank" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: right;"><strong>View Online</strong></a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;" bgcolor="#ffffff">
+        	<tr align="center">
+        		<td align="center" class="padlr20" style="padding-top: 20px; padding-bottom: 40px">
+        			<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/500x200/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="250" height="100"></a>
+        		</td>
+        	</tr>
+        </table>
+        <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+        	<tr align="center">
+        		<td align="center" style="padding-bottom: 40px;">
+        			<table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+        				<tr align="center">
+        					<td align="center" class="padlr20">
+        						<table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+        							<tr align="center">
+        								<td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 20px; line-height: 24px; color:#000001; mso-line-height-rule: exactly; text-align:left;padding-bottom: 20px;">
+			          						<strong>Lorem Ipsum</strong>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</td>
+			          	</tr>
+			          	<tr align="center">
+			          		<td align="center">
+			          			<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/1280x640" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="640" height="350"></a>
+			          		</td>
+			          	</tr>
+			          	<tr align="center">
+			          		<td align="center" class="padlr20">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+			          				<tr align="center">
+			          					<td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-top: 20px; padding-bottom: 30px; padding-top:20px;">
+			          						is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+			          					</td>
+			          				</tr>
+			          				<tr align="center">
+			          					<td align="center">
+			          						<table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+			          							<tr align="center">
+			          								<th align="left" class="resptab db lfloat">
+			          									<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+			          										<tr align="center">
+			          											<td align="center">
+			          												<table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#000000">
+			          													<tr align="center">
+			          														<td align="center" height="46" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;">
+			          															<a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none; border-top: 15px solid #000000; border-bottom: 15px solid #000000; border-left: 15px solid #000000; border-right: 15px solid #000000; mso-padding-alt: 15px 15px 15px 15px;">
+			          																Lorem Ipsum
+			          															</a>
+			          														</td>
+			          													</tr>
+			          												</table>
+			          											</td>
+			          										</tr>
+			          									</table>
+			          								</th>
+			          								<th align="center" class="resptab db lfloat hide">
+			          									<table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+			          										<tr align="center">
+			          											<td align="center"></td>
+			          										</tr>
+			          									</table>
+			          								</th>
+			          							</tr>
+			          						</table>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</td>
+			          	</tr>
+			          </table> 
+              </td>
+            </tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+            <tr align="center">
+              <td align="center">
+			          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;" bgcolor="#ffffff">
+			          	<tr align="center">
+			          		<th align="center" class="resptab db lfloat" valign="top">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="320" class="resptab" role="presentation" style="width:320px;">
+			          				<tr align="center">
+			          					<td align="center" class="padlr20">
+			          						<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/640x640/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="320" height="320"></a>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</th>
+			          		<th align="center" class="resptab db lfloat" valign="top">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="320" class="resptab" role="presentation" style="width:320px;">
+			          				<tr align="center">
+			          					<td align="center" class="padlr20 padtop20 padbot20">
+			          						<table cellpadding="0" cellspacing="0" border="0" width="280" class="resptab" role="presentation" style="width:280px;">
+			          							<tr align="center">
+			          								<td align="center" class="nopad textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 20px; line-height: 24px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-top: 40px;">
+			          									<strong>Lorem Ipsum</strong>
+			          								</td>
+			          							</tr>
+			          							<tr align="center">
+			          								<td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-bottom: 30px; padding-top:20px;">
+			          									is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+			          								</td>
+			          							</tr>
+			          							<tr align="center">
+			          								<td align="center">
+			          									<table cellpadding="0" cellspacing="0" border="0" width="280" class="resptab" role="presentation" style="width:280px;">
+			          										<tr align="center">
+			          											<th align="left" class="resptab db lfloat">
+			          												<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+			          													<tr align="center">
+			          														<td align="center">
+			          															<table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#000000">
+			          																<tr align="center">
+			          																	<td align="center" height="46" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;">
+			          																		<a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;border-top: 15px solid #000000; border-bottom: 15px solid #000000; border-left: 15px solid #000000; border-right: 15px solid #000000; mso-padding-alt: 15px 15px 15px 15px;">
+			          																			Lorem Ipsum
+			          																		</a>
+			          																	</td>
+			          																</tr>
+			          															</table>
+			          														</td>
+			          													</tr>
+			          												</table>
+			          											</th>
+			          											<th align="center" class="resptab db lfloat hide">
+			          												<table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+			          													<tr align="center">
+			          														<td align="center"></td>
+			          													</tr>
+			          												</table>
+			          											</th>
+			          										</tr>
+			          									</table>
+			          								</td>
+			          							</tr>
+			          						</table>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</th>
+			          	</tr>
+			          </table>                
+              </td>
+            </tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+            <tr align="center">
+              <td align="center" style="padding-bottom: 40px;">
+			          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+			          	<tr align="center">
+			          		<th align="center" class="ldown" valign="top">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="320" class="resptab" role="presentation" style="width:320px;">
+			          				<tr align="center">
+			          					<td align="center" class="padlr20 padtop20 padbot20">
+			          						<table cellpadding="0" cellspacing="0" border="0" width="280" class="resptab" role="presentation" style="width:280px;">
+			          							<tr align="center">
+			          								<td align="center" class="nopad textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 20px; line-height: 24px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-top: 40px;">
+			          									<strong>Lorem Ipsum</strong>
+			          								</td>
+			          							</tr>
+			          							<tr align="center">
+			          								<td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-bottom: 30px; padding-top:20px;">
+			          									is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+			          								</td>
+			          							</tr>
+			          							<tr align="center">
+			          								<td align="center">
+			          									<table cellpadding="0" cellspacing="0" border="0" width="280" class="resptab" role="presentation" style="width:280px;">
+			          										<tr align="center">
+			          											<th align="left" class="resptab db lfloat">
+			          												<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+			          													<tr align="center">
+			          														<td align="center">
+			          															<table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#000000">
+			          																<tr align="center">
+			          																	<td align="center" height="46" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;">
+			          																		<a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;border-top: 15px solid #000000; border-bottom: 15px solid #000000; border-left: 15px solid #000000; border-right: 15px solid #000000; mso-padding-alt: 15px 15px 15px 15px;">
+			          																			Lorem Ipsum
+			          																		</a>
+			          																	</td>
+			          																</tr>
+			          															</table>
+			          														</td>
+			          													</tr>
+			          												</table>
+			          											</th>
+			          											<th align="center" class="resptab db lfloat hide">
+			          												<table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+			          													<tr align="center">
+			          														<td align="center"></td>
+			          													</tr>
+			          												</table>
+			          											</th>
+			          										</tr>
+			          									</table>
+			          								</td>
+			          							</tr>
+			          						</table>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</th>
+			          		<th align="center" class="rup" valign="top">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="320" class="resptab" role="presentation" style="width:320px;">
+			          				<tr align="center">
+			          					<td align="center" class="padlr20">
+			          						<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/640x640/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="320" height="320"></a>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</th>
+			          	</tr>
+			          </table>
+              </td>
+            </tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+            <tr align="center">
+              <td align="center" style="padding-bottom:40px">
+			          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+			          	<tr align="center">
+			          		<th align="center" class="resptab db lfloat" valign="top">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+			          				<tr align="center">
+			          					<td align="center" class="padlr20">
+			          						<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/600x600/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="300" height="300"></a>
+			          					</td>
+			          				</tr>
+			          				<tr align="center">
+			          					<td align="center">
+			          						<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+			          							<tr align="center">
+			          								<td align="center" class="padlr20 padtop20">
+			          									<table cellpadding="0" cellspacing="0" border="0" width="260" class="resptab" role="presentation" style="width:260px;">
+			          										<tr align="center">
+			          											<td align="center" class="nopad textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 20px; line-height: 24px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-top: 20px">
+			          												<strong>Lorem Ipsum</strong>
+			          											</td>
+			          										</tr>
+			          										<tr align="center">
+			          											<td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-bottom: 30px; padding-top:20px;">
+			          												is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+			          											</td>
+			          										</tr>
+			          										<tr align="center">
+			          											<td align="center">
+			          												<table cellpadding="0" cellspacing="0" border="0" width="260" class="resptab" role="presentation" style="width:260px;">
+			          													<tr align="center">
+			          														<th align="left" class="resptab db lfloat">
+			          															<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+			          																<tr align="center">
+			          																	<td align="center">
+			          																		<table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#000000">
+			          																			<tr align="center">
+			          																				<td align="center" height="46" style="mso-line-height-rule: exactly; font-size: 14px; line-height: 21px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;">
+			          																					<a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 14px; line-height: 21px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;border-top: 15px solid #000000; border-bottom: 15px solid #000000; border-left: 15px solid #000000; border-right: 15px solid #000000; mso-padding-alt: 15px 15px 15px 15px;">
+			          																					Lorem Ipsum</a>
+			          																				</td>
+			          																			</tr>
+			          																		</table>
+			          																	</td>
+			          																</tr>
+			          															</table>
+			          														</th>
+			          														<th align="center" class="resptab db lfloat hide">
+			          															<table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+			          																<tr align="center">
+			          																	<td align="center"></td>
+			          																</tr>
+			          															</table>
+			          														</th>
+			          													</tr>
+			          												</table>
+			          											</td>
+			          										</tr>
+			          									</table>
+			          								</td>
+			          							</tr>
+			          						</table>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</th>
+			          		<th align="center" class="resptab db lfloat hide" width="40"></th>
+			          		<th align="center" class="resptab db lfloat" valign="top">
+			          			<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+			          				<tr align="center">
+			          					<td align="center" class="padtop40 padlr20">
+			          						<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/600x600/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="300" height="300"></a>
+			          					</td>
+			          				</tr>
+			          				<tr align="center">
+			          					<td align="center">
+			          						<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+			          							<tr align="center">
+			          								<td align="center" class="padlr20 padtop20">
+			          									<table cellpadding="0" cellspacing="0" border="0" width="260" class="resptab" role="presentation" style="width:260px;">
+			          										<tr align="center">
+			          											<td align="center" class="nopad textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 20px; line-height: 24px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-top: 20px">
+			          												<strong>Lorem Ipsum</strong>
+			          											</td>
+			          										</tr>
+			          										<tr align="center">
+			          											<td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-bottom: 30px; padding-top:20px;">
+			          												is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+			          											</td>
+			          										</tr>
+			          										<tr align="center">
+			          											<td align="center">
+			          												<table cellpadding="0" cellspacing="0" border="0" width="260" class="resptab" role="presentation" style="width:260px;">
+			          													<tr align="center">
+			          														<th align="left" class="resptab db lfloat">
+			          															<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+			          																<tr align="center">
+			          																	<td align="center">
+			          																		<table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#000000">
+			          																			<tr align="center">
+			          																				<td align="center" height="46" style="mso-line-height-rule: exactly; font-size: 14px; line-height: 21px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;">
+			          																					<a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 14px; line-height: 21px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;border-top: 15px solid #000000; border-bottom: 15px solid #000000; border-left: 15px solid #000000; border-right: 15px solid #000000; mso-padding-alt: 15px 15px 15px 15px;">
+			          																					Lorem Ipsum</a>
+			          																				</td>
+			          																			</tr>
+			          																		</table>
+			          																	</td>
+			          																</tr>
+			          															</table>
+			          														</th>
+			          														<th align="center" class="resptab db lfloat hide">
+			          															<table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+			          																<tr align="center">
+			          																	<td align="center"></td>
+			          																</tr>
+			          															</table>
+			          														</th>
+			          													</tr>
+			          												</table>
+			          											</td>
+			          										</tr>
+			          									</table>
+			          								</td>
+			          							</tr>
+			          						</table>
+			          					</td>
+			          				</tr>
+			          			</table>
+			          		</th>
+			          	</tr>
+			          </table>                  
+              </td>
+            </tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+          	<tr align="center">
+          		<td align="center" style="padding-bottom: 40px;">
+          			<a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/1280x640" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="640" height="350"></a>
+          		</td>
+          	</tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+	          <tr align="center">
+	            <td align="center" class="padlr20" style="padding-bottom: 40px;">
+	              <table cellpadding="0" cellspacing="0" border="0" width="577" class="resptab" role="presentation" style="width:577px;">
+	                <tr align="center">
+	                  <td align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: center; padding-bottom: 20px;">
+	                    To ensure you continue to receive our emails in your inbox (not your bulk or junk folders), please add clinique@email.clinique.co.uk to your address book.
+	                    <br><br>
+	                    If you&rsquo;d like to contact clinique.co.uk with a question, comment or concern, please go to our contact us page. For the most efficient customer service experience, please do not reply to this email.<br><br>
+	                    You are receiving this commercial communication from Clinique because you subscribed to hear from us regarding products, services and events, either through our website (clinique.co.uk) or in store. Clinique is a trading name of Est&eacute;e Lauder Cosmetics Limited, a company registered in England and Wales with company number 659213 and VAT number GB193081658 and having its registered address at One Fitzroy, 6 Mortimer Street, London W1T 3JJ. <a href="##" target="_blank" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: center;">Privacy Policy</a> | <a href="##" target="_blank" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: center;">Terms &amp; Conditions</a>
+	                  </td>
+	                </tr>
+	                <tr align="center">
+	                  <td align="center">
+	                    <table cellpadding="0" cellspacing="0" border="0" width="500" class="resptab" role="presentation" style="width:500px;">
+	                      <tr align="center">
+	                        <td align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: center; border-right: 1px solid #000000">
+	                          UNSUBSCRIBE
+	                        </td>
+	                        <td align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: center;">
+	                          UPDATE EMAIL PREFERENCES
+	                        </td>
+	                        <td align="center" class="hide" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 18px; color:#000000; mso-line-height-rule: exactly; text-align: center;border-left: 1px solid #000000">
+	                          LIVE CHAT
+	                        </td>
+	                      </tr>
+	                    </table>
+	                  </td>
+	                </tr>
+	              </table>
+	            </td>
+	          </tr>
+	          <tr align="center">
+	            <td align="center" style="padding-bottom: 40px;">
+	              <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+	                <tr align="center">
+	                  <td align="center" style="border-right: 1px solid #e9e9e9">
+	                    <a href="##" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/212x120/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="106" height="60"></a>
+	                  </td>
+	                  <td align="center" style="border-right: 1px solid #e9e9e9">
+	                    <a href="##" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/212x120/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="106" height="60"></a>
+	                  </td>
+	                  <td align="center" style="border-right: 1px solid #e9e9e9">
+	                    <a href="##" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/212x120/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="106" height="60"></a>
+	                  </td>
+	                  <td align="center" style="border-right: 1px solid #e9e9e9">
+	                    <a href="##" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/212x120/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="106" height="60"></a>
+	                  </td>
+	                  <td align="center" style="border-right: 1px solid #e9e9e9">
+	                    <a href="##" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/212x120/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="106" height="60"></a>
+	                  </td>
+	                  <td align="center">
+	                    <a href="##" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/212x120/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="106" height="60"></a>
+	                  </td>
+	                </tr>
+	              </table>
+	            </td>
+	          </tr>
+	        </table>                                          
+        <!-- Emailcontent -->
+        </td>
+      </tr>
+    </table>
+  </center>
+  <style type="text/css">
+    #secdiv #new-gmail-hack {display: block  !important;}
+    #MessageWebViewDiv #new-gmail-hack {display: block  !important;} 
+    u + #new-gmail-hack {
+      display: block  !important;
+    }
+  </style>
+
+</body>
+</html>
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>base3</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>

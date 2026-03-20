@@ -1,0 +1,13 @@
+<snippet>
+  <content><![CDATA[.pulse {
+  -webkit-animation: pulsate 2s linear infinite;
+  -moz-animation: pulsate 2s linear infinite;
+  -o-animation: pulsate 2s linear infinite;
+  }
+  @-webkit-keyframes pulsate {
+      0% {-webkit-transform: scale(1);}
+      50% {-webkit-transform: scale(0.8);}
+      100% {-webkit-transform: scale(1);}
+  }]]></content>
+  <tabTrigger>anipulse</tabTrigger>
+</snippet>

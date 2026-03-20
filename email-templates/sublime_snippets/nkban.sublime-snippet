@@ -1,0 +1,12 @@
+<snippet>
+  <content><![CDATA[
+<table cellpadding="0" cellspacing="0" border="0" width="700" class="wf" role="presentation" style="width:700px;" bgcolor="#E6ACB7">
+  <tr align="center">
+    <td align="center" width="7"><img src="images/img_02.jpg" alt="" width="7" height="36" style="display: block; border:0; font-size: 16px; line-height: 16px" border="0" /></td>
+    <td align="center"><a href="http://www.spacenk.com/uk/en_GB/aw17-collection.html/?cm_mmc=email-_-Editorial2-_-uk_week25_Edtrl2-_-WHATS%20IN%20THE%20GIFT&e={?$contacts_email_address?}" style="font-family: HelveticaNeue, Helvetica, Arial, sans-serif; font-size: 16px; line-height: 16px; color:#fff; mso-line-height-rule: exactly; text-decoration: none; text-transform: uppercase;">N.DULGE EXCLUSIVE</a></td>
+    <td align="center" width="7"><img src="images/img_02.jpg" alt="" width="7" height="36" style="display: block; border:0; font-size: 16px; line-height: 16px" border="0" /></td>
+  </tr>
+</table>
+]]></content>
+<tabTrigger>nkban</tabTrigger>
+</snippet>

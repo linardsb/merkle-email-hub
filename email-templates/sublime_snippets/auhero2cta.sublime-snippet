@@ -1,0 +1,72 @@
+<snippet>
+	<content><![CDATA[
+		<table cellpadding="0" cellspacing="0" border="0" width="600" id="auhero2cta" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+			<tr align="center">
+				<td align="center">
+					<table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+						<tr align="center">
+							<td align="center">
+								<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_AU_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_AU_NAMEHERE1" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank">
+									<img src="https://fakeimg.pl/1200x600/?text=DesktopIMG" alt="" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="hide" width="600" height="300"></a>
+									<!--[if !mso]><!-->
+									<div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+										<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_AU_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_AU_NAMEHERE2" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x1400/?text=MobileIMG" alt="" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="600" height="700"></a>
+									</div>
+									<!--<![endif]-->
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr align="center">
+				<td align="center" class="padlr24 padtop40 padbot40" style="padding-top:40px; padding-bottom: 40px;">
+					<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;">
+						<tr align="center">
+							<td align="center" style="font-family:'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 20px; line-height: 24px; color:#292524; mso-line-height-rule: exactly; text-align: left; padding-bottom: 20px; font-weight:bold;">
+								Lorem ipsum dolor sit amet, consectetur
+							</td>
+						</tr>
+						<tr align="center">
+							<td align="center" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-align: left;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+							</td>
+						</tr>
+						<tr align="center">
+							<td align="left" style="padding-top:30px;">
+								<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;">
+									<tr align="center">
+										<td align="left">
+											<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+												<tr align="center">
+													<th align="left" class="resptab db lfloat" valign="top">
+														<table cellpadding="0" cellspacing="0" border="0" class="cta resptab" role="presentation" style="border:1px solid #BB0A30" bgcolor="#BB0A30">
+															<tr align="center">
+																<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-top: 12px; padding-bottom:12px; padding-left: 32px; padding-right: 32px;">
+																	<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_AU_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%1228ca9-6bf0-4c30-9233-1094be4970bf%26dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_AU_NAMEHERE1" xt="SPNOTRACK" alias="" target="_blank" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">Call to action</a>
+																</td>
+															</tr>
+														</table>
+													</th>
+													<th align="center" class="resptab db lfloat hide" width="12"></th>
+													<th align="left" class="resptab db lfloat padtop20" valign="top">
+														<table cellpadding="0" cellspacing="0" border="0" class="cta resptab" role="presentation" style="border: 1px solid #292524">
+															<tr align="center">
+																<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-top: 12px; padding-bottom:12px; padding-left: 32px; padding-right: 32px;">
+																	<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_AU_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_AU_NAMEHERE2" xt="SPNOTRACK" alias="" target="_blank" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">Call to action</a>
+																</td>
+															</tr>
+														</table>
+													</th>
+												</tr>
+											</table>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+]]></content>
+	<tabTrigger>auhero2cta</tabTrigger>
+</snippet>

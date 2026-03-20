@@ -1,0 +1,52 @@
+<snippet>
+	<content><![CDATA[
+				<table cellpadding="0" cellspacing="0" border="0" width="600" id="vwed5txt" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+					<tr align="center">
+						<td align="left">
+							<a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank">
+								<img src="https://fakeimg.pl/1090x480/?text=DesktopIMG" alt="" style="display: block; border: 0" border="0" class="hide" width="600" height="240"></a>
+								<!--[if !mso]><!-->
+								<div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+									<a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x480/?text=MobIMG" alt="" style="display: block; border: 0" border="0" class="respimg" width="1200" height="480"></a>
+								</div>
+								<!--<![endif]-->
+						</td>
+					</tr>
+					<tr align="center">
+						<td align="center">
+							<table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;">
+								<tr align="center">
+									<td align="center" width="40" class="hide"></td>
+									<td align="left">
+										<table cellpadding="0" cellspacing="0" border="0" width="505" class="resptab" role="presentation" style="width:505px;" bgcolor="#EDEDED">
+											<tr align="center">
+												<td align="center" class="padlr20" style="padding-top:40px; padding-bottom: 40px;">
+													<table cellpadding="0" cellspacing="0" border="0" width="424" class="resptab" role="presentation" style="width:424px;">
+														<tr align="center">
+															<td align="center" class="padbot14" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 26px; line-height: 30px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight:normal; padding-bottom:20px;">
+																Lorem Ipsum
+															</td>
+														</tr>
+														<tr align="center">
+															<td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+																Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
+															</td>
+														</tr>
+														<tr align="center">
+															<td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold; padding-top: 20px;">
+																<a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#001E50; mso-line-height-rule: exactly; text-decoration: none; text-align: left; font-weight: bold;">Secundary button</a>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+]]></content>
+	<tabTrigger>vwed5txt</tabTrigger>
+</snippet>

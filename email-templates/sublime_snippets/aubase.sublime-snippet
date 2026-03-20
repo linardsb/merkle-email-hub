@@ -1,0 +1,180 @@
+<snippet>
+	<content><![CDATA[
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<!--[if !mso]><!-->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+		<!--<![endif]-->
+		<!--[if gte mso 9]>
+		<xml>
+			<o:OfficeDocumentSettings>
+				<o:AllowPNG/>
+				<o:PixelsPerInch>96</o:PixelsPerInch>
+			</o:OfficeDocumentSettings>
+		</xml>
+		<![endif]-->
+		<!--[if gte mso 9]>
+		<style>
+			li {text-indent: -1em; /* Normalise space between bullets and text */ display:list-item;}
+			table .cta td a {text-decoration: none !important;}
+		</style>
+		<![endif]-->		 
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<meta name="format-detection" content="telephone=no">
+		<meta name="robots" content="noindex, nofollow">
+		<meta name="x-apple-disable-message-reformatting">
+		<title>Audi</title>
+		<style>
+			 @media screen {
+
+			@font-face {
+			font-family: AudiType-Extended;
+			src: url('https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Audi/2019/Q4/13_Audi_Presents_OptIn_2020/font_test/AudiType-ExtendedNormal.woff') format('woff'),
+			url('https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Audi/2019/Q4/13_Audi_Presents_OptIn_2020/font_test/AudiType-ExtendedNormal.ttf') format('truetype');
+			font-weight: 400;
+			}
+
+
+			@font-face {
+			font-family: AudiType;
+			src: url('https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Audi/2019/Q4/13_Audi_Presents_OptIn_2020/font_test/AudiType-Normal.woff') format('woff'),
+			url('https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Audi/2019/Q4/13_Audi_Presents_OptIn_2020/font_test/AudiType-Normal.ttf') format('truetype');
+			font-weight: 400;
+			}
+		}
+		</style>
+		<style type="text/css">
+			* {-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;}
+			html, body {margin:0 auto !important; padding:0 !important; width:100% !important; min-width:100% !important; height:100% !important;font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Arial',sans-serif;}
+			#outlook a {padding:0 !important;}
+			img {outline:none !important; text-decoration:none !important; border:0 !important;}
+			a img {border:none !important; }
+			table {border-collapse:collapse; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; min-width:0 !important;border-spacing:0 !important; padding:0 !important;}
+			table .cta{border-collapse:separate; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; min-width:0 !important;border-spacing:0 !important; padding:0 !important;}
+			table td {border-collapse:collapse; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important;}
+			table th {border-collapse:collapse; mso-table-lspace:0pt !important; mso-table-rspace:0pt !important;}
+			table .cta td a {text-decoration: none !important;}
+			img{-ms-interpolation-mode:bicubic;}
+			th{font-weight: normal !important;}
+			.wrapper {width:100% !important; table-layout:fixed !important;}
+			ul, ol{padding: 0; Margin: 0 0 0 1em; list-style: disc;}
+			ul li{margin:0px 0 10px 0;}
+			ol li{margin:0px 0 10px 0;}
+			/*Mobile*/
+			@media only screen and (max-width:699px) {
+			.maintable {width:100% !important;}
+			.respimg {width:100% !important; height:auto !important;}
+			.lfloat{float:left !important;}
+			.db{display:block !important;}
+			.resptab{width:100% !important;}
+			/* mobile font sizes */
+			.mobfs14{font-size: 14px !important; line-height: 21px !important;}
+			.mobfs16{font-size: 16px !important; line-height: 24px !important;}
+			/* paddings  */
+			.nopad{padding-top: 0px !important; padding-bottom: 0px !important; padding-left: 0px !important; padding-right: 0px !important;}
+			.nopadtop{padding-top: 0px !important;}
+			.nopadbot{padding-bottom: 0px !important;}
+			.padtop0{padding-top:0px !important;}
+			.padtop10{padding-top:10px !important;}
+			.padtop20{padding-top:20px !important;}
+			.padtop27{padding-top:27px !important;}
+			.padtop40{padding-top:40px !important;}
+			.padbot14{padding-bottom:14px !important;}
+			.padbot20{padding-bottom:20px !important;}
+			.padbot40{padding-bottom:40px !important;}
+			.padl20{padding-left:20px !important;}
+			.padl24{padding-left:24px !important;}
+			.padr20{padding-right:20px !important;}
+			.padr24{padding-right:24px !important}
+			.padlr16{padding-left:16px !important; padding-right:16px !important}
+			.padlr20{padding-left:20px !important; padding-right:20px !important}
+			.padlr24{padding-left:24px !important; padding-right:24px !important}
+			.padlr5024{padding-left:50px !important; padding-right:24px !important}
+			/* paddings */
+			/* Reverse Table */      
+			.rup{display: table-header-group!important; width:100%!important;}
+			.ldown{display: table-footer-group!important; width:100%!important;}
+			/* Reverse Table ends */  
+			.hide{display:none !important;}
+			.delete{width:0px !important; height:0px !important; font-size:0px !important; line-height:0px !important;}
+			.coldivider{height: 1px !important;}
+			/* paddings ends */  
+			/* text format mobile */
+			.textCenter{text-align: center !important;}
+			/* text format mobile */  
+			.show {
+			display:block !important;
+			margin:0 !important;
+			overflow:visible !important;
+			width:auto !important;
+			max-height:inherit !important;
+			font-size:inherit !important;
+			line-height:inherit !important
+			}
+			a[x-apple-data-detectors] {
+			color:inherit !important;
+			text-decoration:none !important;
+			font-size:inherit !important;
+			font-family:inherit !important;
+			font-weight:inherit !important;
+			line-height:inherit !important;
+			}
+   .logocenter{margin: 0 auto !important; display: table !important;}      
+   .ctacenter{margin: 0 auto !important; display: table !important;}
+			}
+		</style>
+  <style type="text/css">
+    /* This center the email on Gmail and Outlook mobile */
+    @media only screen and (max-width: 480px) {
+    /* Targets Gmail */
+    u ~ .resptab {min-width: 100vw;}
+    /* Targets Gmail on Android */
+    div > u ~ .resptab {min-width: 100%;}
+    .logocenter{margin: 0 auto !important;
+      display: table !important;}
+    .ctacenter{margin: 0 auto !important;
+      display: table !important;}
+    }
+    /* This center the email on Gmail and Outlook mobile ends */
+  </style>
+</head>
+<body style="margin:0 auto;padding-bottom:10px;padding-right:0;padding-left:0;min-width:100%;background-color:#ffffff;line-height: 0px;">
+		<!--[if mso]>
+		<style type="text/css">
+			body, table, td, a {font-family: Verdana, Geneva, sans-serif !important;}
+		</style>
+		<![endif]-->		
+  <center class="wrapper" style="width:100%;table-layout:fixed;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="table-layout: fixed;line-height: 0px;">
+      <tr>
+        <td valign="top" align="center" style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica Neue',sans-serif;">
+        <!-- Emailcontent -->
+
+
+
+
+
+
+        
+        <!-- Emailcontent -->
+        </td>
+      </tr>
+    </table>
+  </center>
+  <style type="text/css">
+    #secdiv #new-gmail-hack {display: block  !important;}
+    #MessageWebViewDiv #new-gmail-hack {display: block  !important;} 
+    u + #new-gmail-hack {
+      display: block  !important;
+    }
+  </style>
+<img style="display: block" width="1" height="1"  name="Cont_1" src="https://eu2.thunderhead.com/one/rt/track/ONE-W9ZUJ2GZOL-1250/pixel?uri=outbound%3A%2F%2Faudi.crm%2Femail%2Fsurvey%2Fownership%2Fpixel%3Fdbgid%3D%%dbgid%%%26dbg_campaign%3D%%CampaignCode%%%26variant%3D%%Agency_Cell_Code%%"/>
+</body>
+</html>
+]]></content>
+	<tabTrigger>aubase</tabTrigger>
+</snippet>

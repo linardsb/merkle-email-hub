@@ -1,0 +1,48 @@
+<snippet>
+	<content><![CDATA[
+			<table cellpadding="0" cellspacing="0" border="0" width="600" id="aulogo2" class="resptab" role="presentation" style="width: 600px;" bgcolor="#ffffff">
+				<tr align="center">
+					<td align="center" style="padding-top:8px; padding-bottom:8px">
+						<table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width: 520px;">
+							<tr align="center">
+								<th align="center" class="resptab db lfloat">
+									<table cellpadding="0" cellspacing="0" border="0" width="73" class="resptab" role="presentation" style="width: 73px;">
+										<tr align="center">
+											<td align="center">
+												<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_IMG_AU_Logo&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.audi.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_IMG_AU_Logo" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets%2FMES%20project%2FAudi%2FLogos%2Fau_logo2.png" alt="Audi" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly; max-width: 73px !important;" border="0" class="respimg" width="73" height="25"></a>
+											</td>
+										</tr>
+									</table>
+								</th>
+								<th align="center" width="20" class="hide"></th>
+								<th align="center" class="resptab db lfloat padtop27">
+									<table cellpadding="0" cellspacing="0" border="0" width="427" class="resptab" role="presentation" style="width: 427px;">
+										<tr align="center">
+											<td align="right" class="padlr24">
+												<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+													<tr align="center">
+														<th align="center" class="resptab db lfloat" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: underline;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_AU_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_TXT_AU_NAMEHERE1" xt="SPNOTRACK" target="_blank" class="mobfs16" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: underline;">Link</a>
+														</th>
+														<th align="center" class="hide" width="20"></th>
+														<th align="center" class="resptab db lfloat padtop20" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: underline;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_AU_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_TXT_AU_NAMEHERE2" xt="SPNOTRACK" target="_blank" class="mobfs16" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: underline;">Link</a>
+														</th>
+														<th align="center" class="hide" width="20"></th>
+														<th align="center" class="resptab db lfloat padtop20" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: underline;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_AU_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_TXT_AU_NAMEHERE3" xt="SPNOTRACK" target="_blank" class="mobfs16" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#292524; mso-line-height-rule: exactly; text-decoration: underline;">Link</a>
+														</th>
+													</tr>
+												</table>
+											</td>
+										</tr>
+									</table>
+								</th>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+]]></content>
+	<tabTrigger>aulogo2</tabTrigger>
+</snippet>

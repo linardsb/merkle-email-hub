@@ -1,0 +1,19 @@
+<snippet>
+	<content><![CDATA[
+			<table cellpadding="0" cellspacing="0" border="0" width="600" id="aulogo1" class="resptab" role="presentation" style="width: 600px;" bgcolor="#ffffff">
+				<tr align="center">
+					<td align="center" style="padding-top:12px; padding-bottom: 12px;">
+						<table cellpadding="0" cellspacing="0" border="0" width="520" class="resptab" role="presentation" style="width:520px;">
+							<tr align="center">
+								<td align="left" class="padlr24">
+									<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_IMG_AU_Logo&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.audi.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_IMG_AU_Logo" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets%2FMES%20project%2FAudi%2FLogos%2Fau_logo2.png" alt="Audi" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly; max-width: 73px !important;" border="0" class="respimg logocenter" width="73" height="25"></a>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+
+]]></content>
+	<tabTrigger>aulogo1</tabTrigger>
+</snippet>

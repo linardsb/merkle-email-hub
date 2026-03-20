@@ -1,0 +1,17 @@
+<snippet>
+    <content><![CDATA[
+<table cellpadding="0" cellspacing="0" border="0" width="$1" class="resptab" role="presentation" style="width:$1px;">
+  <tr align="center">
+    <th align="center" class="resptab db lfloat">
+    </th>
+    <th align="center" class="resptab db lfloat">
+    </th>
+    <th align="center" class="resptab db lfloat">
+    </th>
+    <th align="center" class="resptab db lfloat">
+    </th>
+  </tr>
+</table>
+]]></content>
+<tabTrigger>r4col</tabTrigger>
+</snippet>

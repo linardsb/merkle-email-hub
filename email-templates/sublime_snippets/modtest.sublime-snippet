@@ -1,0 +1,73 @@
+<snippet>
+	<content><![CDATA[
+          <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;" bgcolor="#ffffff">
+            <tr align="center">
+              <th align="center" class="resptab db lfloat" valign="top">
+                <table cellpadding="0" cellspacing="0" border="0" width="320" class="resptab" role="presentation" style="width:320px;">
+                  <tr align="center">
+                    <td align="center" class="padlr20">
+                      <a href="##" target="_blank" style="color: #000001; text-decoration: none;"><img src="https://fakeimg.pl/640x640/" alt="" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="320" height="320"></a>
+                    </td>
+                  </tr>
+                </table>
+              </th>
+              <th align="center" class="resptab db lfloat" valign="top">
+                <table cellpadding="0" cellspacing="0" border="0" width="320" class="resptab" role="presentation" style="width:320px;">
+                  <tr align="center">
+                    <td align="center" class="padlr20 padtop20 padbot20">
+                      <table cellpadding="0" cellspacing="0" border="0" width="280" class="resptab" role="presentation" style="width:280px;">
+                        <tr align="center">
+                          <td align="center" class="nopad textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 20px; line-height: 24px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-top: 40px;">
+                            <strong>Lorem Ipsum</strong>
+                          </td>
+                        </tr>
+                        <tr align="center">
+                          <td align="center" class="textCenter" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000001; mso-line-height-rule: exactly; text-align:left; padding-bottom: 30px; padding-top:20px;">
+                            is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+                          </td>
+                        </tr>
+                        <tr align="center">
+                          <td align="center">
+                            <table cellpadding="0" cellspacing="0" border="0" width="280" class="resptab" role="presentation" style="width:280px;">
+                              <tr align="center">
+                                <th align="left" class="resptab db lfloat">
+                                  <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                                    <tr align="center">
+                                      <td align="center">
+                                        <table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#000000">
+                                          <tr align="center">
+                                            <td align="center" height="56" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;">
+                                              <a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 15px; line-height: 22px !important; text-align: center; font-family: Arial, sans-serif; color: #ffffff ; text-decoration: none;border-top: 15px solid #000000; border-bottom: 15px solid #000000; border-left: 30px solid #000000; border-right: 30px solid #000000; mso-padding-alt: 15px 30px 15px 30px;">
+                                                Lorem Ipsum
+                                              </a>
+                                            </td>
+                                          </tr>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </th>
+                                <th align="center" class="resptab db lfloat hide">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+                                    <tr align="center">
+                                      <td align="center"></td>
+                                    </tr>
+                                  </table>
+                                </th>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </th>
+            </tr>
+          </table>
+]]></content>
+	<!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+	<tabTrigger>modtest</tabTrigger>
+	<!-- Optional: Set a scope to limit where the snippet will trigger -->
+	<!-- <scope>source.python</scope> -->
+</snippet>

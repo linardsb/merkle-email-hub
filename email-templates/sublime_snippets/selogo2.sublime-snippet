@@ -1,0 +1,51 @@
+<snippet>
+	<content><![CDATA[
+              <table cellpadding="0" cellspacing="0" border="0" width="600" id="selogo2" class="resptab" role="presentation" style="width: 600px;" bgcolor="#F3F3F3">
+                <tr align="center">
+                  <td align="center" class="padtop15 padbot15" style="padding-top:25px; padding-bottom: 25px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="550" class="resptab" role="presentation" style="width: 550px;">
+                      <tr align="center">
+                        <th align="left" class="resptab db lfloat">
+                          <table cellpadding="0" cellspacing="0" border="0" width="114" class="resptab" role="presentation" style="width: 114px;">
+                            <tr align="center">
+                              <td align="left" class="padlr25">
+                                <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_IMG_ST_SeatLogo&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.seat.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" style="color: #000001; text-decoration: none;" name="HDR_IMG_ST_SeatLogo" xt="SPNOTRACK" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Seat/Logos/Logo_Seat.png" alt="SEAT" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly; max-width: 104px !important;" border="0" class="respimg" width="104" height="24"></a>
+                              </td>
+                            </tr>
+                          </table>
+                        </th>
+                        <th align="right" class="resptab db lfloat padtop27">
+                          <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                            <tr align="center">
+                              <td align="center" class="padlr25">
+                                <table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+                                  <tr align="center">
+                                    <td align="center" class="mobfs10" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: underline; font-weight:bold;">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_NAV_ST_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YUOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_NAV_ST_NAMEHERE1" xt="SPNOTRACK" target="_blank" class="mobfs10" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: underline; font-weight:bold;">Link</a>
+                                    </td>
+                                    <td align="center" width="10"></td>
+                                    <td align="center" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly;">|</td>
+                                    <td align="center" width="10"></td>
+                                    <td align="center" class="mobfs10" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: underline; font-weight:bold;">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_NAV_ST_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YUOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_NAV_ST_NAMEHERE2" xt="SPNOTRACK" target="_blank" class="mobfs10" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: underline; font-weight:bold;">Link</a>
+                                    </td>
+                                    <td align="center" width="10"></td>
+                                    <td align="center" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly;">|</td>
+                                    <td align="center" width="10"></td>
+                                    <td align="center" class="mobfs10" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: underline; font-weight:bold;">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_NAV_ST_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YUOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_NAV_ST_NAMEHERE3" xt="SPNOTRACK" target="_blank" class="mobfs10" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: underline; font-weight:bold;">Link</a>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </th>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+]]></content>
+	<tabTrigger>selogo2</tabTrigger>
+</snippet>

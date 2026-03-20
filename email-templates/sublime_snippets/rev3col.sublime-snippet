@@ -1,0 +1,22 @@
+<snippet>
+	<content><![CDATA[
+		<!-- css to add just before the last } the last table stack on top of the first (ABC -> CAB)-->
+.colsplit{width:$1px!important; float:left!important; display:block!important;}
+.colsplit-top{width:$1px!important; display:table-caption !important;}	
+.colsplit-middle{width:$1px!important; display:table-header-group!important;}	
+.colsplit-bottom{width:$1px!important; display:table-footer-group!important;}		
+		<!-- css ends -->
+
+<table width="$1" border="0" cellspacing="0" cellpadding="0" class="wf" align="center" style="$1px">
+	<tr>
+		<th align="center" class="colsplit-middle">A</th>
+		<th align="center" class="colsplit-bottom">B</th>
+		<th align="center" class="colsplit-top">C</th>
+	</tr>
+</table>
+
+]]></content>
+	
+	<tabTrigger>rev3col</tabTrigger>
+	
+</snippet>

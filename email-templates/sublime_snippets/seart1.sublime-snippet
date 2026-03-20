@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+              <table cellpadding="0" cellspacing="0" border="0" width="600" id="seart1L" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+                <tr align="center">
+                  <th align="center" class="resptab db lfloat" valign="top">
+                    <table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+                      <tr align="center">
+                        <td align="center">
+                          <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_ST_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YUOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_ST_NAMEHERE" xt="SPNOTRACk" style="color: #000001; text-decoration: none;" target="_blank">
+                            <img src="https://fakeimg.pl/600x600/?text=DesktopIMG" alt="" style="display: block; border: 0" border="0" class="hide" width="300" height="300"></a>
+                            <!--[if !mso]><!-->
+                            <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+                              <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_MOB_ST_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YUOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_MOB_ST_NAMEHERE" xt="SPNOTRACk" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/1200x1200/?text=MobileIMG" alt="" style="display: block; border: 0" border="0" class="respimg" width="600" height="600"></a>
+                            </div>
+                            <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                  </th>
+                  <th align="center" class="resptab db lfloat" valign="top">
+                    <table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+                      <tr align="center">
+                        <td align="center" class="padlr25 padtop30 padbot30" style="padding-top:50px;">
+                          <table cellpadding="0" cellspacing="0" border="0" width="250" class="resptab" role="presentation" style="width:250px;">
+                            <tr align="center">
+                              <td align="center" style="font-family: 'SEATBCN-Black', Arial, Helvetica, sans-serif; font-size: 20px; line-height: 24px; color:#33302E; mso-line-height-rule: exactly; text-align: left; padding-bottom:15px; font-weight:bold;">
+                                Lorem ipsum dolor sit amet, consectetur
+                              </td>
+                            </tr>
+                            <tr align="center">
+                              <td align="center" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-align: left;">
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+                              </td>
+                            </tr>
+                            <tr align="center">
+                              <td align="left" style="padding-top: 25px; padding-bottom:5px">
+                                <table cellpadding="0" cellspacing="0" border="0" class="cta" role="presentation" style="border-radius: 4px; border: 2px solid #33302E">
+                                  <tr align="center">
+                                    <td align="center" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-top: 10px; padding-bottom:10px; padding-left: 20px; padding-right: 20px;">
+                                      <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_ST_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YUOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_ST_NAMEHERE" xt="SPNOTRACk" target="_blank" style="font-family: 'SEATBCN-Bold', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">Call to action</a>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </th>
+                </tr>
+              </table>
+]]></content>
+<tabTrigger>seart1</tabTrigger>
+</snippet>

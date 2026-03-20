@@ -1,0 +1,306 @@
+<snippet>
+	<content><![CDATA[
+    /** CSS **/
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* bugfix for Android 4.4 to support e ~ y */
+  body { -webkit-animation: bugfix infinite 1s; } 
+  @-webkit-keyframes bugfix { from { padding: 0; } to { padding: 0; } }
+
+  /* Hide Fallback content first */
+  .fallback{
+    display:none;
+  }
+
+  .carousel{
+    display:block !important;
+    max-height:none !important;
+    position:relative;
+  }
+
+  /* 
+  Selective blocking for clients.
+  - Samsung (#MessageViewBody) - no absolute positioning
+  - Comcast/Zimbra (body.MsgBody) - inconsistent CSS support
+  */
+  #MessageViewBody .fallback,
+  body.MsgBody .fallback{ 
+    display:block; 
+  }
+  #MessageViewBody .carousel,
+  body.MsgBody .carousel{
+    display:none !important;
+  }
+
+  input{display:none;}
+
+  .carousel a{
+    width:100%;
+    display:block;
+    overflow:hidden;
+  }  
+
+  .carousel .car-frames img{
+    display:block!important;
+    width:100% !important;
+    height:auto !important;
+  }
+
+  .carousel.responsive{
+    width:100% !important;
+  }
+
+  .carousel.slide a{
+    position:absolute;
+    top:0px;
+    left:0px; 
+    opacity:1;   
+    width:100%;
+    -webkit-animation: slide-anim 15s linear infinite;    
+  }
+
+  .carousel.slide a:nth-child(1){
+    position:relative;
+    -webkit-animation-delay: -16s;    
+  }
+  .carousel.slide a:nth-child(2){
+    -webkit-animation-delay: -11s;    
+  }
+  .carousel.slide a:nth-child(3){
+    -webkit-animation-delay: -6s;    
+  }
+
+  /* iOS doesn't like negative delay with translates (transform:translateX(100%);) */
+  /* So we use margin although it is less "smooth" */
+  @-webkit-keyframes slide-anim
+  {
+      /* start slide in */
+      0% {
+        margin-left:100%;
+      }
+      /* end slide in */
+      5%{
+        margin-left:0%;
+      }
+      /* start slide out */
+      33.3333%{
+        margin-left:0%;
+      }
+      /* end slide out */
+      38.3333%{
+        margin-left:-100%;
+      }
+      100%{
+        margin-left:-100%;
+      }
+  }
+
+
+
+  .carousel.slide .car-radio:checked ~ .car-cont .car-frames{ 
+    position:relative;
+    left:0px;
+    top:0px;
+    width: 300% !important;
+    transition: left 1s;
+  }
+  .carousel.slide .car-radio2:checked ~ .car-cont  .car-frames{
+    left:-100%;
+  }
+
+  .carousel.slide .car-radio3:checked ~ .car-cont  .car-frames{
+    left:-200%;
+  }
+
+  .carousel.slide .car-radio:checked ~ .car-cont a{
+      width:33.333%;
+    }
+  .carousel.slide .car-radio:checked ~ .car-cont a:nth-child(2){
+      position:absolute;
+      left:33.333%;
+      top:0px;
+    }
+  .carousel.slide .car-radio:checked ~ .car-cont a:nth-child(3){
+      position:absolute;
+      left:66.666%;
+      top:0px;
+    }
+
+
+
+
+
+    /* Navigation arrows */
+
+    .carousel .car-ltn,
+    .carousel .car-rtn {
+      z-index:100;
+      display: none;
+      width: 10%;
+      height: 100%;
+      position: absolute;
+      background-color:transparent;
+      top:0px;
+      cursor:pointer;
+    }
+    .car-ltn {
+      left:0px;
+    }
+    .car-rtn {
+      right:0px;
+    }
+
+    .carousel .car-ltn::after,
+    .carousel .car-rtn::after {
+      content: '';
+      width: 0; 
+      height: 0; 
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      position: absolute;
+      top:50%;
+      margin-top:-8px;
+      -webkit-filter: drop-shadow(1px 1.5px 1px rgba(0,0,0,.4));
+
+    }
+    .car-ltn::after {
+      border-right: 8px solid #ffffff; 
+      left: 30%;
+    }
+    .car-rtn::after {
+      border-left: 8px solid #ffffff;
+      right: 30%;
+    }
+    .carousel #car-cbox-support:checked ~ .car-cont .car-nav-1 {
+      display:block;
+    }
+    .car-radio2:checked ~ .car-cont .car-controls .car-nav-2,
+    .car-radio3:checked ~ .car-cont .car-controls .car-nav-3 {
+      display:block;
+    }
+
+
+  .carousel .car-radio:checked ~ .car-cont,
+  .carousel .car-radio:checked ~ .car-cont *,
+  .carousel .car-radio:checked ~ .car-thumbnails *  {
+    -webkit-animation: none;
+  }
+
+  /* Thumbnails */
+
+  .carousel #car-cbox-support:checked ~ .car-thumbnails {
+    display:block!important;
+    text-align:center;
+    position:relative;
+  }
+
+  .carousel .car-thumb {
+    width: 20%;
+    opacity:0.5;
+    z-index:100;
+    border:3px solid black;
+    cursor:pointer;
+    display:inline-block;
+    margin:1.5% 0.8%;
+  }
+
+  .carousel .car-thumb img{
+    width: 100%;
+    height: auto;
+  }
+
+  @-webkit-keyframes focus3-anim
+  {
+      0% {opacity: 1;}
+      33.33%  {opacity: 1;}
+      34% {opacity: 0.5;}
+  }
+  /* to eliminate use of delay */
+  @-webkit-keyframes focus3-anim-2
+  {
+      33.33%  {opacity: 0.5;}
+      34% {opacity: 1;}
+      66.66%  {opacity: 1;}
+      67%  {opacity: 0.5;}
+  }
+  @-webkit-keyframes focus3-anim-3
+  {
+      66.66%  {opacity: 0.5;}
+      67% {opacity: 1;}
+      100% {opacity:1;}
+  }
+
+
+  .car-thumb:nth-child(1){
+    -webkit-animation: focus3-anim 15s linear infinite;
+  }
+  .car-thumb:nth-child(2){
+    /*-webkit-animation: focus3-anim 15s linear  5s infinite;*/
+    -webkit-animation: focus3-anim-2 15s linear infinite;
+  }
+  .car-thumb:nth-child(3){
+    /*-webkit-animation: focus3-anim 15s linear  10s infinite;*/
+    -webkit-animation: focus3-anim-3 15s linear infinite;
+  }
+
+  .car-radio:checked ~ .car-thumbnails .car-thumb:nth-child(1){
+    opacity:0.5 !important;
+  }
+  .car-radio1:checked ~ .car-thumbnails .car-thumb:nth-child(1){
+    opacity:1 !important;
+  }
+  .car-radio2:checked ~ .car-thumbnails  .car-thumb:nth-child(2),
+  .car-radio3:checked ~ .car-thumbnails  .car-thumb:nth-child(3){
+    opacity:1;
+  }
+
+}
+
+    /****/
+
+
+<table cellpadding="0" cellspacing="0" border="0" width="$1" class="resptab" role="presentation" style="width:$1px;">
+  <tr>
+    <td>
+    <!-- animated carousel -->
+    <!--[if !mso]><!-- -->
+    <div class="carousel slide responsive" style="overflow:hidden;display:none;max-height:0px;width:500px;">
+    <input id="car-cbox-support" type="checkbox" checked style="display:none!important">
+    <input name="car-radio" type=radio id="car1-radio-1" class="car-radio car-radio1" style="display:none!important">
+    <input name="car-radio" type=radio id="car1-radio-2" class="car-radio car-radio2" style="display:none!important">
+    <input name="car-radio" type=radio id="car1-radio-3" class="car-radio car-radio3" style="display:none!important">
+    <div class="car-cont" style="position:relative;background-color:#ffffff;">
+      <div class="car-frames">
+        <a href="https://www.google.com/search?q=castles"><img class="zoom-in" src="http://freshinbox.com/examples/animated-carousel/images/car-castle.jpg" border="0"></a>
+        <a href="https://www.google.com/search?q=meadows"><img class="zoom-out" src="http://freshinbox.com/examples/animated-carousel/images/car-meadow.jpg" border="0"></a>
+        <a href="https://www.google.com/search?q=coast"><img class="pan-right" src="http://freshinbox.com/examples/animated-carousel/images/car-coast.jpg" border="0"></a>
+      </div>
+      <div class="car-controls">
+        <label for="car1-radio-3" class="car-ltn car-nav-1"></label>
+        <label for="car1-radio-2" class="car-rtn car-nav-1"></label>
+        <label for="car1-radio-1" class="car-ltn car-nav-2"></label>
+        <label for="car1-radio-3" class="car-rtn car-nav-2"></label>
+        <label for="car1-radio-2" class="car-ltn car-nav-3"></label>
+        <label for="car1-radio-1" class="car-rtn car-nav-3"></label>
+      </div>
+    </div>
+    <div class="car-thumbnails" style="display:none;">
+      <label for="car1-radio-1" class="car-thumb"><img src="http://freshinbox.com/examples/animated-carousel/images/car-castle.jpg"></label>
+      <label for="car1-radio-2" class="car-thumb"><img src="http://freshinbox.com/examples/animated-carousel/images/car-meadow.jpg"></label>
+      <label for="car1-radio-3" class="car-thumb"><img src="http://freshinbox.com/examples/animated-carousel/images/car-coast.jpg"></label>
+    </div>
+    </div>
+    <!--<![endif]-->
+    <br><br>
+    <!-- static fallback content -->
+    <div class="fallback">
+      <a href="https://www.google.com/search?q=fallback" ><img src="http://freshinbox.com/examples/animated-carousel/images/carousel-fallback.jpg" width="" height="" style="display:block;" border="0" class="respimg"></a>
+    </div>
+
+        </td>
+      </tr>
+    </table>
+    
+]]></content>
+	<tabTrigger>carousel</tabTrigger>
+	
+</snippet>

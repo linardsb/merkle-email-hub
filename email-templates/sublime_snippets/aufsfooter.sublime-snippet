@@ -1,0 +1,59 @@
+<snippet>
+	<content><![CDATA[
+		<table cellpadding="0" cellspacing="0" border="0" width="600" id="aufsfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+			<tr align="center">
+				<td align="center" class="padlr24" style="padding-top:24px; padding-bottom: 40px;">
+					<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512x;">
+						<tr align="center">
+							<td align="center" style="padding-bottom: 10px;">
+								<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;border-top: solid 1px #B6B1A9;">
+									<tr align="center">
+										<td height="0" style="font-size:1px;line-height:0px">&nbsp;</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr align="center">
+							<td align="center">
+								<!-- aufootermenu1 -->
+								<!-- aufootermenu2 -->
+								<!-- aufootermenu3 -->
+								<!-- aufootermenu4 -->
+							</td>
+						</tr>						
+						<tr align="center">
+							<td align="center" style="padding-top:10px; padding-bottom: 30px;">
+								<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;border-top: solid 1px #B6B1A9;">
+									<tr align="center">
+										<td height="0" style="font-size:1px;line-height:0px">&nbsp;</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr align="center">
+							<td align="center" style="padding-bottom:30px;">
+								<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width: 512px;">
+									<tr align="center">
+										<td align="left" class="resptab db lfloat" valign="middle">
+											<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_AU_AudiFinancialSrvices&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://myaudifinance.vwfs.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_AU_AudiFinancialSrvices" xt="SPNOTRACK" style="color: #000000; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Audi/Logos/audi-fs.png" alt="Audi Financial Services" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000000; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="271" height="36"></a>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>						
+						<tr align="center">
+							<td align="center" class="mobfs14" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#969696; mso-line-height-rule: exactly; text-align: left;">
+								Don&rsquo;t want to hear from us anymore? Unsubscribe <a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_AUFS_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/au-fs-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%" name="FTR_TXT_AUFS_Unsubscribe" xt="SPNOTRACK" target="_blank" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#969696; mso-line-height-rule: exactly; text-decoration: underline;">here</a>.<br><br>
+								<span class="appleLinks">Audi Financial Services is a trading name of Volkswagen Financial Services (UK) Limited (&ldquo;VWFS UK&rdquo;), registered in England and Wales with company number: 2835230. Registered office: Brunswick Court, Yeomans Drive, Blakelands, Milton Keynes MK14 5LR. Financial and consumer credit services are provided by VWFS UK, authorised and regulated by the Financial Conduct Authority, Financial Services Register number: 311988.</span> <br><br>
+								<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_AUFS_PrivacyPolicy&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://myaudifinance.vwfs.co.uk/privacy-policy?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_TXT_AUFS_PrivacyPolicy" xt="SPNOTRACK" style="font-family: 'AudiType', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#969696; mso-line-height-rule: exactly; text-align: left; text-decoration:underline;" target="_blank">Privacy Policy</a><br><br>
+								Replies to this email are unmonitored. Please do not reply.
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+
+]]></content>
+	<tabTrigger>aufsfooter</tabTrigger>
+</snippet>

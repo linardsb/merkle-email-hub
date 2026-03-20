@@ -1,0 +1,40 @@
+<snippet>
+	<content><![CDATA[
+  <field type="subject" name="subject" label="Subject line" allow-styles="personalisation"></field>
+  <module name="formatting" label="Branding Values" hint="Here is where all the branding values are set. Important! Please make sure no values are left blank">
+    <field type="color" allow-custom="true" name="linkCOLOR" label="Body URL Text Colour" default="#000000" hint="Need a custom colour, enter HEX colour code or click on a colour swatch in the dropdown menu to select colour. This will set for all"></field>
+    <field type="color" allow-custom="true" name="linkFooter" label="Footer URL Text Colour" default="#000000" hint="Need a custom colour, enter HEX colour code or click on a colour swatch in the dropdown menu to select colour."></field>
+  </module>
+  <rich-editable-style name="link" label="Inline link">
+    <field type="href" name="href" label="Add link" default="https://www.tbc.com" expect="https-only"></field>
+    <field type="color" allow-custom="true" name="linkFooter2" label="Footer URL Text Colour" default="#000000" hint="Need a custom colour, enter HEX colour code or click on a colour swatch in the dropdown menu to select colour."></field>
+    <field name="linkChx2" label="Individual Footer URL Text Colour" type="checkbox" default="true" hint="ON - use color here | OFF - Default from Brand Values"></field>
+    <field name="underline" type="checkbox" default="false"></field>
+    <a replace-href="{{href}}" replace-style="color:{% if linkChx2 == true %}{{modules.formatting.linkFooter}}{% else %}{{linkFooter2}}{% endif %}; text-decoration: {% if underline == true %}underline{%else%}none{%endif%}" replace="{{rich.selection_text}}" target="_blank"></a> 
+  </rich-editable-style>
+  <rich-editable-style name="linkBody" label="Body link">
+    <field type="href" name="href" label="Add link" default="https://www.tbc.com" expect="https-only"></field>
+    <field type="color" allow-custom="true" name="linkCOLOR1" label="URL Text Colour" default="#000000" hint="Need a custom colour, enter HEX colour code or click on a colour swatch in the dropdown menu to select colour. "></field>
+    <field name="linkColor" label="Individual URL Text Colour" type="checkbox" default="false" hint="ON - Default from Brand Values | OFF - use color here"></field>
+    <field name="underline" type="checkbox" default="false"></field>
+    <a replace-href="{{href}}" replace-style="color:{% if linkColor == true %}{{modules.formatting.linkCOLOR}}{% else %}{{linkCOLOR1}}{% endif %}; text-decoration: {% if underline == true %}underline{%else%}none{%endif%}" replace="{{rich.selection_text}}" target="_blank"></a> 
+  </rich-editable-style>
+  <!-- inline color editable sytle -->
+  <rich-editable-style name="textcol" label="Colour + Strikethrough">
+    <field name="colorH" type="checkbox" default="false"></field>
+    <field type="color" name="textcol2" allow-custom="true" label="Highlight individual Text" default="#000000"></field>
+    <field name="lineThrough" type="checkbox" default="false"></field>
+    <span replace-style="color:{% if colorH == false %}{{textcol}}{%else%}{{textcol2}}{%endif%}; text-decoration: {% if lineThrough == false %}none{%else%}line-through{%endif%}" replace="{{rich.selection_text}}"></span> 
+  </rich-editable-style>
+  <rich-editable-style name="fontsize" label="Font Size">
+    <field type="number" name="fontsize" label="Font Size"></field>
+    <field type="number" name="lineheight" label="Line Height"></field>
+    <span style="font-size: 12px; line-height: 16px;" replace-style="font-size: {{fontsize}}px; line-height: {{lineheight}}px;" replace="{{rich.selection_text}}"></span> 
+  </rich-editable-style>
+  <!-- inline subscript editable style -->
+  <rich-editable-style name="subscript" label="Subscript"> <sub replace="{{rich.selection_text}}"></sub> </rich-editable-style>
+  <!-- inline superscript editable style -->
+  <rich-editable-style name="superscript" label="Superscript"> <sup replace="{{rich.selection_text}}"></sup></rich-editable-style>
+]]></content>
+<tabTrigger>taxiformatting</tabTrigger>
+</snippet>

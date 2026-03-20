@@ -1,0 +1,22 @@
+<snippet>
+  <content><![CDATA[
+<style>
+  .img_roll:hover {
+      background-image:url(https://) !important;
+      }
+      * [lang~="x-img_roll"]:hover {
+      background-image:url(https://) !important;
+      }
+</style>
+
+<td class="img_roll" style="background-image: url('https://'); background-size: 30px 30px; background-repeat: no-repeat;" width="30" valign="top" background="https://" align="center"><a href="" style="text-decoration:none; display:block; line-height:30px; height:30px; width:30px;">
+<!--[if !mso]><!-->
+<img src="images/blankimage" alt="" style="display: block; font-family: Arial, sans-serif; font-size: 10px; line-height: 13px; color: #fff; max-width: 30px; width: 30px;" border="0" width="30">
+<!--<![endif]-->
+<!--[if gte mso 9]>
+<img src="" width="30" alt="" border="0" style="display:block; font-family:Arial, sans-serif; font-size:10px; line-height:13px; color:#fff;">
+<![endif]-->
+</a></td>
+]]></content>
+ <tabTrigger>rollover</tabTrigger>
+</snippet>

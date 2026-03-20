@@ -1,0 +1,68 @@
+<snippet>
+  <content><![CDATA[
+        <table cellpadding="0" cellspacing="0" border="0" width="600" id="sklogosocialfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff"> 
+          <tr align="center">
+            <td align="center" class="padlr32" style="padding-top:24px; padding-bottom:25px">
+              <table cellpadding="0" cellspacing="0" border="0" width="488" class="resptab" role="presentation" style="width:488px;">
+                <tr align="center">
+                  <td align="center" class="resptab db lfloat">
+                    <table cellpadding="0" cellspacing="0" border="0" width="488" class="resptab nobordbott" role="presentation" style="width:488px; border-bottom: 2px solid #000000">
+                      <tr align="center">
+                        <th align="center" class="resptab db lfloat" valign="middle">
+                          <table cellpadding="0" cellspacing="0" border="0" width="243" class="resptab" role="presentation" style="width:243px;">
+                            <tr align="center">
+                              <td align="center">
+                                <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_FOOTERLOGO&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.skoda.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_FOOTERLOGO" xt="SPNOTRACK" style="color: #4D4D4D; text-decoration: none;" target="_blank">
+                                  <img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Skoda/Template/logofooter.png" alt="SKODA" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #4D4D4D; line-height: 16px; mso-line-height-rule: exactly; max-width: 243px !important;" border="0" class="respimg logocenter" width="243" height="83">
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </th>
+                        <th align="center" class="resptab db lfloat" valign="middle" width="2" bgcolor="#000000"></th>
+                        <th align="center" class="resptab db lfloat" valign="middle">
+                          <table cellpadding="0" cellspacing="0" border="0" width="243" class="resptab bordtop2" role="presentation" style="width:243px;"> <tr align="center">
+                            <td align="center" class="padtop30">
+                              <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+                                <tr align="center">
+                                  <td align="center" width="12">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_Facebook&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://en-gb.facebook.com/Skoda.uk/?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_Facebook" xt="SPNOTRACK" style="color: #ffffff; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Skoda/Template/fb.png" alt="Facebook" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #ffffff; line-height: 10px; mso-line-height-rule: exactly; max-width: 12px;" border="0" class="respimg" width="12" height="23"></a>
+                                  </td>
+                                  <td align="center" class="hide" width="28"></td>
+                                  <td align="center" width="26" class="padl24">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_Twitter&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://twitter.com/skodauk?lang=en%26dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_Twitter" xt="SPNOTRACK" style="color: #ffffff; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Skoda/Template/tw.png" alt="Twitter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #ffffff; line-height: 10px; mso-line-height-rule: exactly; max-width: 26px;" border="0" class="respimg" width="26" height="21"></a>
+                                  </td>
+                                  <td align="center" class="hide" width="28"></td>
+                                  <td align="center" width="32" class="padl24">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_Youtube&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.youtube.com/channel/UClzwtVyvEVZ5d29e0J1E5Zw?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_Youtube" xt="SPNOTRACK" style="color: #ffffff; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Skoda/Template/yt.png" alt="Youtube" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #ffffff; line-height: 10px; mso-line-height-rule: exactly; max-width: 32px;" border="0" class="respimg" width="32" height="22"></a>
+                                  </td>
+                                  <td align="center" class="hide" width="28"></td>
+                                  <td align="center" width="25" class="padl24">
+                                    <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_Instagram&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.instagram.com/skodauk/?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_Instagram" xt="SPNOTRACK" style="color: #ffffff; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Skoda/Template/ig.png" alt="Instagram" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 10px; font-weight: normal; color: #ffffff; line-height: 10px; mso-line-height-rule: exactly; max-width: 25px;" border="0" class="respimg" width="25" height="25"></a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </th>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr align="center">
+                <td align="center" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; padding-top:36px;">
+                  Don&rsquo;t want to hear from us anymore? <a name="FTR_TXT_SD_Unsubscribe" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline;" xt="SPNOTRACK" href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_SD_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/sd-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" target="_blank">Unsubscribe here</a>.<br><br>
+                  To make sure you receive all of your emails from us, add <a target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration:underline;" href="mailto:mail@skoda-uk.co.uk" xt="SPEMAIL" name="FTR_TXT_SD_MailTo">mail@skoda-uk.co.uk</a> to your address book.<br><br>
+                  To find out more about how we use your personal information, and your rights, please see our <a name="FTR_TXT_SD_Privacy" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration: underline" xt="SPNOTRACK" href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_SD_Privacy&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.skoda.co.uk/discover/privacy-statement?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" target="_blank">Privacy Statement</a>.<br><br>
+                  Images shown are for illustrative purposes only. Model shown is not UK specification. Some features shown are optional or currently unavailable.<br><br>
+                  <span class="appleLinks">&Scaron;koda UK is a trading division of Volkswagen Group United Kingdom Limited (VAT registration number 217990930) (Company registration number 514809) whose registered office is at Yeomans Drive, Blakelands, Milton Keynes MK14 5AN, a company authorised to conduct business in the United Kingdom (&quot;&Scaron;koda UK&quot;).</span>
+                </td>
+              </tr>
+            </table>            
+          </td>
+        </tr>
+      </table>
+]]></content>
+  <tabTrigger>sklogosocialfooter</tabTrigger>
+</snippet>

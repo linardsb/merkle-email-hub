@@ -1,0 +1,6 @@
+<snippet>
+  <content><![CDATA[
+font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.1em; line-height: 16px; font-size: 12px; color: #686868; text-decoration: none;
+]]></content>
+<tabTrigger>stxt</tabTrigger>
+</snippet>

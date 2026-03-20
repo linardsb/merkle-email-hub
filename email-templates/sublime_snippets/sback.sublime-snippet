@@ -1,0 +1,21 @@
+<snippet>
+    <content><![CDATA[
+<td background="$1.jpg" bgcolor="$2" width="600" height="$3" valign="middle">
+<!--[if gte mso 9]>
+<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:$3px;">
+<v:fill type="tile" src="$1" color="$2" />
+<v:textbox inset="0,0,0,0">
+<![endif]-->
+  <div>
+
+    <!-- Your code -->
+
+  </div>
+<!--[if gte mso 9]>
+</v:textbox>
+</v:rect>
+<![endif]-->
+</td>
+]]></content>
+    <tabTrigger>sback</tabTrigger>
+</snippet>

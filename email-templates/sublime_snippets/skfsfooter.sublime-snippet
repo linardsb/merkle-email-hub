@@ -1,0 +1,43 @@
+<snippet>
+	<content><![CDATA[
+<table cellpadding="0" cellspacing="0" border="0" width="600" id="skfsfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
+  <tr align="center">
+    <td align="center" class="padlr32 padtop40" style="padding-top:64px; padding-bottom: 40px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="488" class="resptab" role="presentation" style="width:488px;">
+        <tr align="center">
+          <td align="center">
+            <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_FOOTERLOGO&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.skoda.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_FOOTERLOGO" xt="SPNOTRACK" style="color: #4D4D4D; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Skoda/Logos/Skoda_FS_logo.png" alt="SKODA Financial Services" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #4D4D4D; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="272" height="40"></a>
+          </td>
+        </tr>
+        <tr align="center">
+          <td align="center" class="padtop40 padbot40" style="padding-top:36px; padding-bottom:36px">
+            <table cellpadding="0" cellspacing="0" border="0" width="488" class="resptab" role="presentation" style="width:488px;border-bottom: solid 2px #212429;">
+              <tr align="center">
+                <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr align="center">
+          <td align="center" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left;">
+            Don&rsquo;t want to hear from us anymore? Unsubscribe <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_SD_Unsubscribe&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/sd-fs-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" target="_blank" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration: underline;" name="FTR_TXT_SDFS_Unsubscribe" xt="SPNOTRACK">here</a>.
+            <br><br>
+            <span class="appleLinks">&Scaron;koda Financial Services is a trading name of Volkswagen Financial Services (UK) Limited (&ldquo;VWFS UK&rdquo;), registered in England and Wales with company number: 2835230. Registered office: Brunswick Court, Yeomans Drive, Blakelands, Milton Keynes MK14 5LR. Financial and consumer credit services are provided by VWFS UK, authorised and regulated by the Financial Conduct Authority, Financial Services Register number: 311988.</span>
+            <br><br>
+            T&amp;Cs apply. Administered by Volkswagen Financial Services. Freepost &Scaron;koda Financial Services.
+            <br><br>
+            <a name="FTR_TXT_SDFS_Privacy" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#4D4D4D; mso-line-height-rule: exactly; text-align: left; text-decoration: underline" xt="SPNOTRACK" href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_SDFS_Privacy&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://myskodafinance.vwfs.co.uk/privacy-policy?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" target="_blank">Privacy Policy</a>
+            
+            <br><br>
+            Replies to this email are unmonitored. Please do not reply.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+]]></content>
+	<tabTrigger>skfsfooter</tabTrigger>
+</snippet>
+
+

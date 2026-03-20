@@ -1,0 +1,26 @@
+<snippet>
+    <content><![CDATA[
+<table cellpadding="20" cellspacing="0" border="0" width="$1" class="wf" role="presentation" style="width:$1px;">
+  <tr>
+    <td align="center">
+      <table width="$2" border="0" cellspacing="0" cellpadding="0" class="wf" role="presentation" style="width:$2px;">
+        <tr align="center">
+          <td align="center" class="wf wr fl" width="150">
+          </td>
+          <td width="20" class="hide"></td>
+          <td align="center" class="wf wr fl" width="150">
+          </td>
+          <td width="20" class="hide"></td>
+          <td align="center" class="wf wr fl" width="150">
+          </td>
+          <td width="20" class="hide"></td>
+          <td align="center" class="wf wr fl" width="150">
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+]]></content>
+<tabTrigger>r4col20</tabTrigger>
+</snippet>

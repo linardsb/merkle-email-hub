@@ -1,0 +1,38 @@
+<snippet>
+	<content><![CDATA[
+              <table cellpadding="0" cellspacing="0" border="0" width="600" id="sefsfooter" class="resptab" role="presentation" style="width:600px;" bgcolor="#352F2F">
+                <tr align="center">
+                  <td align="center" class="padlr25" style="padding-top:24px; padding-bottom: 40px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="552" class="resptab" role="presentation" style="width:552;">
+                      <tr align="center">
+                        <td align="left">
+                          <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_IMG_SD_LogoFooter&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://myseatfinance.vwfs.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="FTR_IMG_SD_LogoFooter" xt="SPNOTRACK" style="color: #ffffff; text-decoration: none;" target="_blank"><img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/VW_MES_assets/MES%20project/Seat/Logos/seat-fs.png" alt="Seat FINANCIAL SERVICES" style="font-family: HelveticaNeue-Light, Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #ffffff; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="270" height="80"></a>
+                        </td>
+                      </tr>
+                      <tr align="center">
+                        <td align="center" style="padding-top:40px; padding-bottom: 30px;">
+                          <table cellpadding="0" cellspacing="0" border="0" width="552" class="resptab" role="presentation" style="width:552px;border-bottom: solid 1px #DEDAD4;">
+                            <tr align="center">
+                              <td align="center"></td>
+                              <td height="1" style="font-size:1px;line-height:1px">&nbsp;</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr align="center">
+                        <td align="center" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-align: left;">
+                          Don&rsquo;t want to hear from us anymore? Unsubscribe <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_TXT_SD_Unsub&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.pages06.net/vwgroup-production/st-fs-unsubscribe?emailguid=%%EmailGUID%%%26brand=%%Brand_Code%%%26treatmentcode=%%MAILING_ID%%" name="FTR_TXT_SD_Unsub" xt="SPNOTRACK" target="_blank" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-align: left; text-decoration: underline;">here</a><br><br>
+                          <span class="appleLinks">SEAT Financial Services is a trading name of Volkswagen Financial Services (UK) Limited (&ldquo;VWFS UK&rdquo;), registered in England and Wales with company number 2835230. Registered office: Brunswick Court, Yeomans Drive, Blakelands, Milton Keynes MK14 5LR. Financial and consumer credit services are provided by VWFS UK, authorised and regulated by the Financial Conduct Authority, financial services register no. 311988.</span> <br><br>
+                          Models shown for illustrative purposes only. For the latest fuel consumption and CO<sub">2</sub> emissions figures please visit <a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=FTR_BTN_TXT_SD_Seat&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https:///www.seat.co.uk?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" target="_blank" style="font-family: 'SEATBCN-Regular', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#B3B3B3; mso-line-height-rule: exactly; text-align: left; text-decoration: underline;" target="_blank" name="FTR_BTN_TXT_SD_Seat" xt="SPNOTRACK">seat.co.uk</a> <br><br>
+                            Correct at time of broadcast.
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+]]></content>
+	<tabTrigger>sefsfooter</tabTrigger>
+</snippet>
+
+

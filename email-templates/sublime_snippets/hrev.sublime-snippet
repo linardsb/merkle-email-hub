@@ -1,0 +1,54 @@
+<snippet>
+  <content><![CDATA[
+<!--[if (gte mso 9)]>
+  <table cellpadding="0" cellspacing="0" width="$1" border="0" role="presentation" style="width:$1px;">
+    <tr>
+      <td>
+<![endif]-->
+<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="max-width: $1px;" role="presentation">
+  <tr>
+    <td dir="rtl" style="text-align:center;vertical-align:top;font-size:0;">
+      <!--[if (gte mso 9)]>
+      <table dir="rtl" width="$1" align="center" cellpadding="0" cellspacing="0" border="0" role="presentation">
+        <tr>
+          <td dir="ltr"><![endif]-->
+            <div dir="ltr" style="width:$2px;display:inline-block;vertical-align:top;" class="wf">
+              <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0" style="border-spacing:0;width:100%;font-size:14px;text-align:left;" role="presentation">
+                <tr>
+                  <td style="padding:0;" class="wf">
+                    <a href=""><img src="images/img_.jpg" width="$2" height="" alt="" style="border-width:0;width:100%;height:auto;" class="bannerimg" /></a>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <!--[if (gte mso 9)]></td><td dir="ltr"><![endif]-->
+            <div dir="ltr" style="width:$2px;display:inline-block;vertical-align: top;" class="wf">
+              <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0" style="border-spacing:0;width:100%;font-size:14px;text-align:left;" role="presentation">
+                <tr>
+                  <td style="padding:0;" class="wf">
+                    <table cellpadding="0" cellspacing="0" border="0" role="presentation" class="wf">
+                      <tr>
+                        <td>
+                          <a href=""><img src="images/img_.jpg" width="$2" height="" alt="" style="border-width:0;width:100%;height:auto;" class="bannerimg" /></a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <!--[if (gte mso 9)]></td>
+        </tr>
+      </table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if (gte mso 9)]>
+      </td>
+    </tr>
+  </table>
+<![endif]-->
+]]></content>
+  <tabTrigger>hrev</tabTrigger>
+</snippet>

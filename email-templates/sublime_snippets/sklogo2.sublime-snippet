@@ -1,0 +1,80 @@
+<snippet>
+	<content><![CDATA[
+          <table cellpadding="0" cellspacing="0" border="0" width="600" id="sklogo2" class="resptab" role="presentation" style="width:600px;">
+            <tr align="center">
+              <td align="center">
+                <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff"> 
+                  <tr align="center">
+                    <td align="center" style="padding-top: 16px; padding-bottom: 16px;">
+                      <table cellpadding="0" cellspacing="0" border="0" width="489" class="resptab" role="presentation" style="width:489px;">
+                        <tr align="center">
+                          <th align="center" class="resptab db lfloat" valign="top">
+                            <table cellpadding="0" cellspacing="0" border="0" width="163" class="resptab" role="presentation" style="width:163px;">
+                              <tr align="center">
+                                <td align="center" class="padlr32">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="155" class="resptab" role="presentation" style="width:155px;">
+                                    <tr align="center">
+                                      <td align="center" class="textCenter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#2C2D2E; mso-line-height-rule: exactly; text-decoration: none; text-align: left;">
+                                        <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_SD_NAMEHERE1&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_TXT_SD_NAMEHERE1" xt="SPNOTRACK" target="_blank" class="textCenter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#2C2D2E; mso-line-height-rule: exactly; text-decoration: none; text-align: left;">Link 1</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </th>
+                          <th align="center" class="resptab db lfloat padtop10" valign="top">
+                            <table cellpadding="0" cellspacing="0" border="0" width="163" class="resptab" role="presentation" style="width:163px;">
+                              <tr align="center">
+                                <td align="center" class="padlr32">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="155" class="resptab" role="presentation" style="width:155px;">
+                                    <tr align="center">
+                                      <td align="center" class="textCenter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#2C2D2E; mso-line-height-rule: exactly; text-decoration: none; text-align:center;">
+                                        <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_SD_NAMEHERE2&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_TXT_SD_NAMEHERE2" xt="SPNOTRACK" target="_blank" class="textCenter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#2C2D2E; mso-line-height-rule: exactly; text-decoration: none; text-align:center;">Link 2</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </th>
+                          <th align="center" class="resptab db lfloat padtop10" valign="top">
+                            <table cellpadding="0" cellspacing="0" border="0" width="163" class="resptab" role="presentation" style="width:163px;">
+                              <tr align="center">
+                                <td align="center" class="padlr32">
+                                  <table cellpadding="0" cellspacing="0" border="0" width="155" class="resptab" role="presentation" style="width:155px;">
+                                    <tr align="center">
+                                      <td align="center" class="textCenter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#2C2D2E; mso-line-height-rule: exactly; text-decoration: none; text-align: right;">
+                                        <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_SD_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_BTN_TXT_SD_NAMEHERE3" xt="SPNOTRACK" target="_blank" class="textCenter" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; font-size: 12px; line-height: 18px; color:#2C2D2E; mso-line-height-rule: exactly; text-decoration: none; text-align: right;">Link 3</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </th>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr align="center">
+              <td align="center" style="border-top: 1px solid #BEC2C7">
+                <table cellpadding="0" cellspacing="0" border="0" width="600" class="resptab" role="presentation" style="width:600px;" bgcolor="#0E3A2F"> 
+                  <tr align="center">
+                    <td align="center" class="padlr32" style="padding-top:32px; padding-bottom: 32px;">
+                      <a href="https://links.marketing.skoda-uk.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=HDR_BTN_TXT_SD_NAMEHERE3&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-S56TCVKP7H-6823%2Fredirect%3Furi%3Doutbound%253A%252F%252Fskoda.crm%252Femail%252Fnewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.skoda.co.uk/?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="HDR_IMG_SD_LOGO" xt="SPNOTRACK" style="color: #78FAAE; text-decoration: none;" target="_blank">
+                        <img src="https://9e3a7bd596448ab1594f-88b12dd1a5d2767cd8603291916d30ae.ssl.cf3.rackcdn.com/Skoda/Template/skodalogo_acidgreen.png" alt="Skoda" style="font-family: 'SKODANext-Regular', Verdana, Geneva, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="389" height="34">
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+]]></content>
+	<tabTrigger>sklogo2</tabTrigger>
+</snippet>

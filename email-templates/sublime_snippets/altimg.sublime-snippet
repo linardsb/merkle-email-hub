@@ -1,0 +1,6 @@
+<snippet>
+  <content><![CDATA[
+<a href="" style="color: #000001; text-decoration: none;"><img src="images/img_$1.jpg" alt="" style="font-family: Helvetica, Arial, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="bannerimg" width="" height=""></a>
+]]></content>
+<tabTrigger>altimg</tabTrigger>
+</snippet>

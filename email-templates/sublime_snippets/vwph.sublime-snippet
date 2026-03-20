@@ -1,0 +1,33 @@
+<snippet>
+	<content><![CDATA[
+<table cellpadding="0" cellspacing="0" border="0" width="600" id="vwph" class="resptab darkmode" role="presentation" style="width:600px;">
+	<tr align="center">
+		<td align="center" class="padlr30 padtop20 padbot20" style="padding-top:8px; padding-bottom:8px;">
+			<table cellpadding="0" cellspacing="0" border="0" width="560" class="resptab" role="presentation" style="width:560px;">
+				<tr align="center">
+					<th align="left" class="resptab db lfloat" valign="top">
+						<table cellpadding="0" cellspacing="0" border="0" width="341" class="resptab" role="presentation" style="width:341px;">
+							<tr align="center">
+								<td align="left" class="textCenter dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#8B8B8B; mso-line-height-rule: exactly; text-align:left;">
+									Some pre-header text right here
+								</td>
+							</tr>
+						</table>
+					</th>
+					<th align="right" class="resptab db lfloat" valign="top">
+						<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+							<tr align="center">
+								<td align="center" class="textCenter padtop10 dm_fontc" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#8B8B8B; mso-line-height-rule: exactly; text-align:left;">
+									 <a href="https://links.marketing.vwcrm.co.uk/servlet/MailView?m=%%MAILING_ID%%&amp;r=%%RECIPIENT_ID%%&amp;j=%%JOB_ID_CODE%%&amp;mt=1&amp;rt=0" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color:#8B8B8B; mso-line-height-rule: exactly;" xt="SPNOTRACK" class="dm_fontc" name="HDR_TXT_VW_VIB">View online</a>
+								</td>
+							</tr>
+						</table>
+					</th>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+]]></content>
+	<tabTrigger>vwph</tabTrigger>
+</snippet>

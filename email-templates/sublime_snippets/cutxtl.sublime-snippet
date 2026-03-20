@@ -1,0 +1,6 @@
+<snippet>
+	<content><![CDATA[
+<a href="https://links.marketing.seatcomms.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_TXT_ST_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-GOONLIAURK-1691%2Fredirect%3Furi%3Doutbound%253A%252F%252Femail%252Femail%252FNewsletterawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_TXT_ST_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'CupraRegular', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#; mso-line-height-rule: exactly; text-align: left; text-decoration: none;">$1</a>
+]]></content>
+	<tabTrigger>cutxtl</tabTrigger>
+</snippet>

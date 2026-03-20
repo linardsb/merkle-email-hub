@@ -1,0 +1,145 @@
+<snippet>
+  <content><![CDATA[
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+   <!--[if !mso]><!-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <!--<![endif]-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>{??}</title>
+
+  <!--[if (gte mso 9)|(IE)]>
+  <style type="text/css">
+      table {border-collapse: collapse !important;}
+  </style>
+  <![endif]-->
+
+  <style type="text/css">
+    body{width:100% !important; min-width:100%; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; Margin: 0; padding:0;}
+    #outlook a {padding:0;}
+    img {outline:none;text-decoration:none;border: 0;}
+    a img {border:none;}
+    table {border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; min-width:0px !important;border-spacing: 0; font-family: sans-serif; padding: 0;}
+    table td {border-collapse:collapse;}
+    a[x-apple-data-detectors] {color:inherit !important; text-decoration:none !important; font-size:inherit !important; font-family:inherit !important; font-weight:inherit !important; line-height:inherit !important;}
+    body, table, td, a{-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;}
+    table, td{mso-table-lspace:0pt; mso-table-rspace:0pt;}
+    img{-ms-interpolation-mode:bicubic;}
+
+    .wrapper {width: 100%;table-layout: fixed; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;}
+    .webkit {max-width: 640px;}
+    .outer {Margin: 0 auto; width: 100%; max-width: 640px;}
+    .full-width-image img {width: 100%; max-width: 640px; height: auto;}
+    .inner {padding: 10px;}
+    p {Margin: 0;}
+    /*this is important for Outlook PC*/
+    a{color:#2D343A;}
+    .h1 {font-size: 21px; font-weight: bold; Margin-bottom: 18px;}
+    .h2 {font-size: 18px; font-weight: bold; Margin-bottom: 12px;}
+
+    .one-column .contents {text-align: left;}
+    .one-column p {font-size: 14px; Margin-bottom: 10px; }
+
+    /* Two col layout */
+    .two-column {text-align: center; font-size: 0;}
+    .two-column .column {width: 100%; max-width: 300px; display: inline-block; vertical-align: top;}
+    .contents {width: 100%;}
+    .two-column .contents {font-size: 14px; text-align: left;}
+    .two-column img {width: 100%; max-width: 300px; height: auto;}
+
+    .contents {width: 100%;}
+    /*Three column layout*/
+    .three-column {text-align: center; font-size: 0; padding-top: 10px; padding-bottom: 10px;}
+    .three-column .column {width: 100%; max-width: 212px; display: inline-block; vertical-align: top;}
+
+    .three-column img {width: 100%; max-width: 180px; height: auto;}
+    /* Four column layout */
+    .four-column .contents {font-size: 14px; text-align: left;}
+    .four-column img {width: 25%; max-width: 140px !important; height: auto;}
+    .four-column .text {padding-top: 10px;}
+    .four-column {text-align: center; font-size: 0;}
+    .four-column .column {width: 100%; max-width: 150px; display: inline-block; vertical-align: top;}
+    .title {font-family: Helvetica, Arial, 'Lucida Grande', sans-serif; font-size:11px; font-weight:bold; text-decoration:none; text-align:center; display:block; letter-spacing:1px; padding-top:10px;}
+    .full-width-image { font-size:0; }
+
+
+    /* mobile styles
+    ____________________________________*/
+
+    @media screen and (max-width: 480px) {
+      .two-column .column, .three-column .column {max-width: 100% !important;}
+      .four-column .column {max-width: 50% !important;}
+      .two-column img {max-width: 100% !important;}
+      .three-column img {max-width: 100% !important;}
+      .four-column img {max-width: 100% !important;}
+      .hide{display:none !important;}
+
+      *[class="show"] {
+        display: block !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        width: auto !important;
+        max-height: inherit !important;
+        font-size: inherit !important;
+        line-height: inherit !important
+      }
+
+      *[class=wrapto100pc] {
+        width: 100% !important;
+        height: auto !important;
+      }
+      *[class=nomob] {
+        display:none !important;
+      }
+    }
+
+    @media screen and (min-width: 480px) and (max-width: 650px) {
+      .three-column .column {max-width: 32% !important;}
+      .two-column .column {max-width: 48% !important;}
+      .two-column .column-wide {max-width: 100% !important;}
+      .four-column .column {max-width: 24% !important;}
+    }
+
+    </style>
+  </head>
+<body style="Margin:0 auto;padding-bottom:10px;padding-right:0;padding-left:0;min-width:100%;background-color:#ffffff;" >
+  <center class="wrapper" style="width:100%;table-layout:fixed;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;" >
+    <div class="webkit" style="max-width:640px;">
+      <!--[if (gte mso 9)|(IE)]>
+      <table border="0" cellpadding="0" cellspacing="0" width="640" align="center" valign="top" style="border-spacing:0;font-family:sans-serif;color:#333333;margin:0 auto;max-width:640px;" role="presentation">
+      <tr>
+      <td width="640" align="center" valign="top" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+      <![endif]-->
+      <table border="0" cellpadding="0" cellspacing="0" class="outer" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;Margin:0 auto;width:100%;max-width:640px;" role="presentation">
+
+      <!-- EMAIL CONTENT -->
+
+
+
+
+      <!-- /EMAIL CONTENT -->
+
+      </table>
+      <!--[if (gte mso 9)|(IE)]>
+      </td>
+      </tr>
+      </table>
+      <![endif]-->
+    </div>
+  </center>
+</body>
+</html>
+]]></content>
+  <tabTrigger>hbase</tabTrigger>
+  <!-- Optional: Set a tabTrigger to define how to trigger the snippet -->
+  <!-- <tabTrigger>hello</tabTrigger> -->
+  <!-- Optional: Set a scope to limit where the snippet will trigger -->
+  <!-- <scope>source.python</scope> -->
+</snippet>

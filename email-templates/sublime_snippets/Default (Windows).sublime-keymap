@@ -1,0 +1,15 @@
+[
+
+{
+	"keys":["shift+ctrl+i"],
+	"command": "emmet_update_image_size"
+},
+
+{
+	"keys":["shift+alt+5"],
+	"command": "find_all_under"
+}
+
+]
+
+
