@@ -31,3 +31,12 @@ def encrypt_token(plaintext: str) -> str:
 def decrypt_token(ciphertext: str) -> str:
     """Decrypt a stored access token."""
     return str(_get_fernet().decrypt(ciphertext.encode()).decode())
+
+
+def can_decrypt(ciphertext: str) -> bool:
+    """Check if a ciphertext can be decrypted with the current key."""
+    try:
+        _get_fernet().decrypt(ciphertext.encode())
+    except Exception:
+        return False
+    return True

@@ -740,3 +740,463 @@ class TestGetImportByTemplate:
 
         assert result is None
         mock_db.execute.assert_awaited_once()
+
+
+# ── Figma URL Format Tests (Bug Fix) ──
+
+
+class TestExtractFileKeyExpanded:
+    """Verify that all Figma URL path types are handled."""
+
+    def test_proto_url(self) -> None:
+        url = "https://www.figma.com/proto/aBcDeFgH123/My-Prototype?node-id=1:2"
+        assert extract_file_key(url) == "aBcDeFgH123"
+
+    def test_board_url(self) -> None:
+        url = "https://www.figma.com/board/xYz789AbC/My-Board"
+        assert extract_file_key(url) == "xYz789AbC"
+
+    def test_embed_url(self) -> None:
+        url = "https://www.figma.com/embed/qWe456RtY/Embedded-View"
+        assert extract_file_key(url) == "qWe456RtY"
+
+    def test_design_url_still_works(self) -> None:
+        url = "https://www.figma.com/design/aBcDeFgH123/My-Design"
+        assert extract_file_key(url) == "aBcDeFgH123"
+
+    def test_file_url_still_works(self) -> None:
+        url = "https://www.figma.com/file/xYz789AbC/Another-File"
+        assert extract_file_key(url) == "xYz789AbC"
+
+    def test_url_with_query_params(self) -> None:
+        url = "https://www.figma.com/design/aBcDeFgH123/My-Design?node-id=1:2&t=abc"
+        assert extract_file_key(url) == "aBcDeFgH123"
+
+    def test_invalid_url_still_raises(self) -> None:
+        with pytest.raises(SyncFailedError, match="Invalid Figma URL"):
+            extract_file_key("https://example.com/not-figma")
+
+
+# ── Duplicate Connection Guard Test ──
+
+
+class TestDuplicateConnectionGuard:
+    @pytest.fixture
+    def mock_db(self) -> AsyncMock:
+        return AsyncMock(spec=AsyncSession)
+
+    @pytest.fixture
+    def service(self, mock_db: AsyncMock) -> DesignSyncService:
+        return DesignSyncService(mock_db)
+
+    @pytest.mark.asyncio
+    async def test_create_connection_duplicate_raises_conflict(
+        self, service: DesignSyncService
+    ) -> None:
+        from app.core.exceptions import ConflictError
+        from app.design_sync.schemas import ConnectionCreateRequest
+
+        # Set up a fake existing connection
+        existing = MagicMock()
+        existing.name = "Existing Connection"
+        existing.id = 42
+
+        with patch.object(
+            service._repo,
+            "get_connection_by_file_ref",
+            new_callable=AsyncMock,
+            return_value=existing,
+        ):
+            data = ConnectionCreateRequest(
+                name="New Connection",
+                provider="figma",
+                file_url="https://www.figma.com/design/abc123/My-File",
+                access_token="figd_test_token",
+            )
+            with pytest.raises(ConflictError, match="already exists"):
+                await service.create_connection(data, MagicMock(id=1))
+
+
+# ── Token Decryption Failure Test ──
+
+
+class TestTokenDecryptionFailure:
+    @pytest.fixture
+    def mock_db(self) -> AsyncMock:
+        return AsyncMock(spec=AsyncSession)
+
+    @pytest.fixture
+    def service(self, mock_db: AsyncMock) -> DesignSyncService:
+        return DesignSyncService(mock_db)
+
+    @pytest.mark.asyncio
+    async def test_sync_connection_token_decrypt_failure(self, service: DesignSyncService) -> None:
+        from app.design_sync.exceptions import TokenDecryptionError
+
+        mock_conn = MagicMock()
+        mock_conn.id = 1
+        mock_conn.provider = "figma"
+        mock_conn.file_ref = "abc123"
+        mock_conn.encrypted_token = "invalid-ciphertext"
+        mock_conn.project_id = None
+
+        mock_update_status = AsyncMock()
+        with (
+            patch.object(
+                service._repo,
+                "get_connection",
+                new_callable=AsyncMock,
+                return_value=mock_conn,
+            ),
+            patch.object(service._repo, "update_status", mock_update_status),
+            patch(
+                "app.design_sync.service.decrypt_token",
+                side_effect=Exception("Invalid token"),
+            ),
+        ):
+            with pytest.raises(TokenDecryptionError, match="Cannot decrypt"):
+                await service.sync_connection(1, MagicMock(id=1))
+
+            # Verify error status was set with descriptive message
+            mock_update_status.assert_awaited_with(
+                mock_conn,
+                "error",
+                error_message="Access token expired or encryption key changed. Please refresh your token.",
+            )
+
+
+# ── Token Refresh Test ──
+
+
+class TestTokenRefresh:
+    @pytest.fixture
+    def mock_db(self) -> AsyncMock:
+        return AsyncMock(spec=AsyncSession)
+
+    @pytest.fixture
+    def service(self, mock_db: AsyncMock) -> DesignSyncService:
+        return DesignSyncService(mock_db)
+
+    @pytest.mark.asyncio
+    async def test_refresh_token_success(self, service: DesignSyncService) -> None:
+        mock_conn = MagicMock()
+        mock_conn.id = 1
+        mock_conn.name = "Test"
+        mock_conn.provider = "figma"
+        mock_conn.file_ref = "abc123"
+        mock_conn.file_url = "https://figma.com/design/abc123/Test"
+        mock_conn.token_last4 = "old4"
+        mock_conn.status = "error"
+        mock_conn.error_message = "Sync failed"
+        mock_conn.last_synced_at = None
+        mock_conn.project_id = None
+        mock_conn.created_at = "2026-01-01T00:00:00"
+        mock_conn.updated_at = "2026-01-01T00:00:00"
+        mock_conn.encrypted_token = "old_encrypted"
+
+        mock_provider = AsyncMock()
+        mock_provider.validate_connection = AsyncMock(return_value=True)
+        mock_update_token = AsyncMock()
+        mock_update_status = AsyncMock()
+
+        with (
+            patch.object(
+                service._repo,
+                "get_connection",
+                new_callable=AsyncMock,
+                return_value=mock_conn,
+            ),
+            patch.object(service._repo, "update_connection_token", mock_update_token),
+            patch.object(service._repo, "update_status", mock_update_status),
+            patch.object(
+                service._repo,
+                "get_project_name",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch.object(service, "_get_provider", return_value=mock_provider),
+            patch("app.design_sync.service.encrypt_token", return_value="new_encrypted"),
+            patch("app.design_sync.schemas.isinstance", return_value=True),
+        ):
+            result = await service.refresh_token(1, "figd_new_token_1234", MagicMock(id=1))
+
+            assert result.status == "error"  # from mock — update_status is also mocked
+            mock_provider.validate_connection.assert_awaited_once_with(
+                "abc123", "figd_new_token_1234"
+            )
+            mock_update_token.assert_awaited_once()
+            mock_update_status.assert_awaited_once_with(mock_conn, "connected")
+
+
+# ── Node Walk Token Extraction ──
+
+
+class TestNodeWalkExtraction:
+    """Test node-level color and typography extraction from Figma document tree."""
+
+    @pytest.fixture
+    def figma_service(self) -> FigmaDesignSyncService:
+        return FigmaDesignSyncService()
+
+    def _make_file_data(
+        self,
+        document: dict[str, Any] | None = None,
+        styles: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        data: dict[str, Any] = {"document": document or {}}
+        if styles is not None:
+            data["styles"] = styles
+        return data
+
+    def _solid_fill(self, r: float, g: float, b: float, a: float = 1.0) -> dict[str, Any]:
+        return {"type": "SOLID", "color": {"r": r, "g": g, "b": b, "a": a}}
+
+    # 1. Colors from node fills, no published styles
+    def test_colors_from_node_fills(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "fills": [self._solid_fill(0.2, 0.4, 0.8)],
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 1
+        assert colors[0].hex == "#3366CC"
+        assert colors[0].name == "#3366CC"
+
+    # 2. Colors from strokes
+    def test_colors_from_strokes(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "RECTANGLE",
+                        "strokes": [self._solid_fill(1.0, 0.0, 0.0)],
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 1
+        assert colors[0].hex == "#FF0000"
+
+    # 3. Transparent fills skipped
+    def test_transparent_fills_skipped(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "fills": [self._solid_fill(1.0, 1.0, 1.0, a=0.005)],
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 0
+
+    # 4. Gradient fills skipped
+    def test_gradient_fills_skipped(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "fills": [
+                            {"type": "GRADIENT_LINEAR", "color": {"r": 1, "g": 0, "b": 0, "a": 1}},
+                            self._solid_fill(0.0, 0.0, 1.0),
+                        ],
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 1
+        assert colors[0].hex == "#0000FF"
+
+    # 5. Published style takes priority over node-walked
+    def test_published_style_priority(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "fills": [self._solid_fill(0.2, 0.4, 0.8)],
+                        "styles": {"fill": "style_1"},
+                        "children": [],
+                    }
+                ]
+            },
+            styles={
+                "style_1": {"styleType": "FILL", "name": "Brand Blue"},
+            },
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 1
+        assert colors[0].name == "Brand Blue"
+        assert colors[0].hex == "#3366CC"
+
+    # 6. Typography from node walk, no published styles
+    def test_typography_from_node_walk(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "TEXT",
+                        "style": {
+                            "fontFamily": "Inter",
+                            "fontWeight": "700",
+                            "fontSize": 24,
+                            "lineHeightPx": 32,
+                        },
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        typography = figma_service._parse_typography(file_data, {})
+        assert len(typography) == 1
+        assert typography[0].family == "Inter"
+        assert typography[0].weight == "700"
+        assert typography[0].size == 24
+        assert typography[0].line_height == 32
+        assert typography[0].name == "Inter 700 24px"
+
+    # 7. Typography dedup by (family, weight, size)
+    def test_typography_dedup(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "TEXT",
+                        "style": {"fontFamily": "Roboto", "fontWeight": "400", "fontSize": 16},
+                        "children": [],
+                    },
+                    {
+                        "type": "TEXT",
+                        "style": {
+                            "fontFamily": "Roboto",
+                            "fontWeight": "400",
+                            "fontSize": 16,
+                            "lineHeightPx": 28,
+                        },
+                        "children": [],
+                    },
+                ]
+            }
+        )
+        typography = figma_service._parse_typography(file_data, {})
+        assert len(typography) == 1
+
+    # 7b. Typography lineHeightPx fallback (size * 1.2)
+    def test_typography_line_height_fallback(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "TEXT",
+                        "style": {"fontFamily": "Inter", "fontWeight": "400", "fontSize": 20},
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        typography = figma_service._parse_typography(file_data, {})
+        assert len(typography) == 1
+        assert typography[0].line_height == 24.0  # 20 * 1.2
+
+    # 8. Non-TEXT nodes' style ignored
+    def test_non_text_node_style_ignored(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "style": {"fontFamily": "Arial", "fontWeight": "400", "fontSize": 14},
+                        "children": [],
+                    }
+                ]
+            }
+        )
+        typography = figma_service._parse_typography(file_data, {})
+        assert len(typography) == 0
+
+    # 9. Mixed published + node-walked colors
+    def test_mixed_published_and_node_walked_colors(
+        self, figma_service: FigmaDesignSyncService
+    ) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "fills": [self._solid_fill(0.2, 0.4, 0.8)],
+                        "styles": {"fill": "style_1"},
+                        "children": [
+                            {
+                                "type": "RECTANGLE",
+                                "fills": [self._solid_fill(1.0, 0.0, 0.0)],
+                                "children": [],
+                            }
+                        ],
+                    }
+                ]
+            },
+            styles={
+                "style_1": {"styleType": "FILL", "name": "Brand Blue"},
+            },
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 2
+        assert colors[0].name == "Brand Blue"
+        assert colors[0].hex == "#3366CC"
+        assert colors[1].name == "#FF0000"
+        assert colors[1].hex == "#FF0000"
+
+    # 10. Empty document → empty lists
+    def test_empty_document(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(document={})
+        colors = figma_service._parse_colors(file_data, {})
+        typography = figma_service._parse_typography(file_data, {})
+        assert colors == []
+        assert typography == []
+
+    # 11. Deeply nested colors extracted
+    def test_deeply_nested_colors(self, figma_service: FigmaDesignSyncService) -> None:
+        file_data = self._make_file_data(
+            document={
+                "children": [
+                    {
+                        "type": "FRAME",
+                        "children": [
+                            {
+                                "type": "GROUP",
+                                "children": [
+                                    {
+                                        "type": "FRAME",
+                                        "children": [
+                                            {
+                                                "type": "RECTANGLE",
+                                                "fills": [self._solid_fill(0.0, 1.0, 0.0)],
+                                                "children": [],
+                                            }
+                                        ],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+        colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 1
+        assert colors[0].hex == "#00FF00"

@@ -26,9 +26,10 @@ from app.design_sync.protocol import (
 
 logger = get_logger(__name__)
 
-_FIGMA_FILE_KEY_RE = re.compile(r"figma\.com/(?:design|file)/([a-zA-Z0-9]+)")
+_FIGMA_FILE_KEY_RE = re.compile(r"figma\.com/(?:design|file|proto|board|embed)/([a-zA-Z0-9]+)")
 _FIGMA_API = "https://api.figma.com"
 _TIMEOUT = 30.0
+_MAX_WALK_DEPTH = 500
 
 _FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
     "DOCUMENT": DesignNodeType.OTHER,
@@ -57,7 +58,10 @@ def extract_file_key(url: str) -> str:
     """
     m = _FIGMA_FILE_KEY_RE.search(url)
     if not m:
-        raise SyncFailedError("Invalid Figma URL. Expected format: figma.com/design/<file_key>/...")
+        raise SyncFailedError(
+            "Invalid Figma URL. Expected format: figma.com/design/<file_key>/... "
+            "(also accepts /file/, /proto/, /board/, /embed/ paths)"
+        )
     return m.group(1)
 
 
@@ -132,10 +136,14 @@ class FigmaDesignSyncService:
         if resp.status_code == 404:
             raise SyncFailedError("Figma file not found. Check the file URL.")
         if resp.status_code == 429:
-            retry_after = resp.headers.get("Retry-After", "60")
-            raise SyncFailedError(
-                f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+            # Rate-limited but token/file may be valid — allow connection creation
+            # so the user isn't blocked. Sync will verify access later.
+            logger.warning(
+                "design_sync.figma.validate_rate_limited",
+                file_ref=file_ref,
+                retry_after=resp.headers.get("Retry-After", "unknown"),
             )
+            return True
         if resp.status_code != 200:
             raise SyncFailedError(f"Figma API error (HTTP {resp.status_code})")
         return True
@@ -185,36 +193,43 @@ class FigmaDesignSyncService:
         file_data: dict[str, Any],
         styles_data: dict[str, Any],  # noqa: ARG002
     ) -> list[ExtractedColor]:
-        """Extract colour tokens from styles metadata."""
+        """Extract colour tokens from published styles + node walk fallback."""
         colors: list[ExtractedColor] = []
-        raw_styles = file_data.get("styles", {})
-        if not isinstance(raw_styles, dict):
-            return colors
-        styles = cast(dict[str, Any], raw_styles)
+        seen_hex: set[str] = set()
 
-        for style_id, style_meta in styles.items():
-            if not isinstance(style_meta, dict):
-                continue
-            style_meta_d = cast(dict[str, Any], style_meta)
-            if style_meta_d.get("styleType") != "FILL":
-                continue
-            name = str(style_meta_d.get("name", f"Color-{style_id}"))
-            # Try to find colour from style node
-            fills = self._find_fills_for_style(file_data, str(style_id))
-            if fills:
-                fill = fills[0]
-                if isinstance(fill, dict) and "color" in fill:
-                    fill_d = cast(dict[str, Any], fill)
-                    color_raw = fill_d["color"]
-                    if isinstance(color_raw, dict):
-                        c = cast(dict[str, Any], color_raw)
-                        hex_val = _rgba_to_hex(
-                            float(c.get("r", 0)),
-                            float(c.get("g", 0)),
-                            float(c.get("b", 0)),
-                        )
-                        opacity = float(c.get("a", 1.0))
-                        colors.append(ExtractedColor(name=name, hex=hex_val, opacity=opacity))
+        # Phase 1: Published styles (better names, take priority)
+        raw_styles = file_data.get("styles", {})
+        if isinstance(raw_styles, dict):
+            styles = cast(dict[str, Any], raw_styles)
+            for style_id, style_meta in styles.items():
+                if not isinstance(style_meta, dict):
+                    continue
+                style_meta_d = cast(dict[str, Any], style_meta)
+                if style_meta_d.get("styleType") != "FILL":
+                    continue
+                name = str(style_meta_d.get("name", f"Color-{style_id}"))
+                raw_fills = self._find_fills_for_style(file_data, str(style_id))
+                # _find_fills_for_style returns [node["fills"]] where fills is a list
+                fills_list: list[Any] = raw_fills[0] if raw_fills else []
+                if fills_list:
+                    fill: Any = fills_list[0]
+                    if isinstance(fill, dict) and "color" in fill:
+                        fill_d = cast(dict[str, Any], fill)
+                        color_raw = fill_d["color"]
+                        if isinstance(color_raw, dict):
+                            c = cast(dict[str, Any], color_raw)
+                            hex_val = _rgba_to_hex(
+                                float(c.get("r", 0)),
+                                float(c.get("g", 0)),
+                                float(c.get("b", 0)),
+                            )
+                            opacity = float(c.get("a", 1.0))
+                            seen_hex.add(hex_val)
+                            colors.append(ExtractedColor(name=name, hex=hex_val, opacity=opacity))
+
+        # Phase 2: Node walk (picks up unstyled colors, skips duplicates via seen_hex)
+        self._walk_for_colors(file_data.get("document", {}), colors, seen_hex)
+
         return colors
 
     def _parse_typography(
@@ -222,32 +237,41 @@ class FigmaDesignSyncService:
         file_data: dict[str, Any],
         styles_data: dict[str, Any],  # noqa: ARG002
     ) -> list[ExtractedTypography]:
-        """Extract typography tokens from styles metadata."""
+        """Extract typography tokens from published styles + node walk fallback."""
         typography: list[ExtractedTypography] = []
-        raw_styles = file_data.get("styles", {})
-        if not isinstance(raw_styles, dict):
-            return typography
-        styles = cast(dict[str, Any], raw_styles)
+        seen_keys: set[tuple[str, str, float]] = set()
 
-        for style_id, style_meta in styles.items():
-            if not isinstance(style_meta, dict):
-                continue
-            style_meta_d = cast(dict[str, Any], style_meta)
-            if style_meta_d.get("styleType") != "TEXT":
-                continue
-            name = str(style_meta_d.get("name", f"Type-{style_id}"))
-            type_props = self._find_type_style_for_style(file_data, str(style_id))
-            if type_props and isinstance(type_props, dict):
-                tp = cast(dict[str, Any], type_props)
-                typography.append(
-                    ExtractedTypography(
-                        name=name,
-                        family=str(tp.get("fontFamily", "Unknown")),
-                        weight=str(tp.get("fontWeight", "400")),
-                        size=float(tp.get("fontSize", 16)),
-                        line_height=float(tp.get("lineHeightPx", 24)),
+        # Phase 1: Published styles (better names, take priority)
+        raw_styles = file_data.get("styles", {})
+        if isinstance(raw_styles, dict):
+            styles = cast(dict[str, Any], raw_styles)
+            for style_id, style_meta in styles.items():
+                if not isinstance(style_meta, dict):
+                    continue
+                style_meta_d = cast(dict[str, Any], style_meta)
+                if style_meta_d.get("styleType") != "TEXT":
+                    continue
+                name = str(style_meta_d.get("name", f"Type-{style_id}"))
+                type_props = self._find_type_style_for_style(file_data, str(style_id))
+                if type_props and isinstance(type_props, dict):
+                    tp = cast(dict[str, Any], type_props)
+                    family = str(tp.get("fontFamily", "Unknown"))
+                    weight = str(tp.get("fontWeight", "400"))
+                    size = float(tp.get("fontSize", 16))
+                    seen_keys.add((family, weight, size))
+                    typography.append(
+                        ExtractedTypography(
+                            name=name,
+                            family=family,
+                            weight=weight,
+                            size=size,
+                            line_height=float(tp.get("lineHeightPx", 24)),
+                        )
                     )
-                )
+
+        # Phase 2: Node walk (picks up unstyled typography, skips duplicates via seen_keys)
+        self._walk_for_typography(file_data.get("document", {}), typography, seen_keys)
+
         return typography
 
     def _parse_spacing(self, file_data: dict[str, Any]) -> list[ExtractedSpacing]:
@@ -262,8 +286,9 @@ class FigmaDesignSyncService:
         node: Any,
         spacing: list[ExtractedSpacing],
         seen: set[float],
+        depth: int = 0,
     ) -> None:
-        if not isinstance(node, dict):
+        if depth >= _MAX_WALK_DEPTH or not isinstance(node, dict):
             return
         node_d = cast(dict[str, Any], node)
         # Auto-layout frames expose itemSpacing / paddingLeft etc.
@@ -273,7 +298,87 @@ class FigmaDesignSyncService:
                 seen.add(float(val))
                 spacing.append(ExtractedSpacing(name=f"spacing-{int(val)}", value=float(val)))
         for child in cast(list[Any], node_d.get("children", [])):
-            self._walk_for_spacing(child, spacing, seen)
+            self._walk_for_spacing(child, spacing, seen, depth + 1)
+
+    def _walk_for_colors(
+        self,
+        node: Any,
+        colors: list[ExtractedColor],
+        seen_hex: set[str],
+        depth: int = 0,
+    ) -> None:
+        """Recursively extract SOLID fill/stroke colors from every node."""
+        if depth >= _MAX_WALK_DEPTH or not isinstance(node, dict):
+            return
+        node_d = cast(dict[str, Any], node)
+
+        for prop in ("fills", "strokes"):
+            raw_list = node_d.get(prop)
+            if not isinstance(raw_list, list):
+                continue
+            for fill_item in cast(list[Any], raw_list):  # type: ignore[redundant-cast]
+                if not isinstance(fill_item, dict):
+                    continue
+                fill_d = cast(dict[str, Any], fill_item)
+                if fill_d.get("type") != "SOLID":
+                    continue
+                color_raw = fill_d.get("color")
+                if not isinstance(color_raw, dict):
+                    continue
+                c = cast(dict[str, Any], color_raw)
+                alpha = float(c.get("a", 1.0))
+                if alpha < 0.01:
+                    continue
+                hex_val = _rgba_to_hex(
+                    float(c.get("r", 0)),
+                    float(c.get("g", 0)),
+                    float(c.get("b", 0)),
+                )
+                if hex_val in seen_hex:
+                    continue
+                seen_hex.add(hex_val)
+                colors.append(ExtractedColor(name=hex_val, hex=hex_val, opacity=alpha))
+
+        for child in node_d.get("children", []):
+            self._walk_for_colors(child, colors, seen_hex, depth + 1)
+
+    def _walk_for_typography(
+        self,
+        node: Any,
+        typography: list[ExtractedTypography],
+        seen_keys: set[tuple[str, str, float]],
+        depth: int = 0,
+    ) -> None:
+        """Recursively extract typography from TEXT nodes."""
+        if depth >= _MAX_WALK_DEPTH or not isinstance(node, dict):
+            return
+        node_d = cast(dict[str, Any], node)
+
+        if str(node_d.get("type", "")) == "TEXT":
+            style = node_d.get("style")
+            if isinstance(style, dict):
+                s = cast(dict[str, Any], style)
+                family = str(s.get("fontFamily", ""))
+                weight = str(s.get("fontWeight", "400"))
+                size = float(s.get("fontSize", 0))
+                if family and size > 0:
+                    key = (family, weight, size)
+                    if key not in seen_keys:
+                        seen_keys.add(key)
+                        line_height = float(s.get("lineHeightPx", size * 1.2))
+                        name = f"{family} {weight} {int(size)}px"
+                        typography.append(
+                            ExtractedTypography(
+                                name=name,
+                                family=family,
+                                weight=weight,
+                                size=size,
+                                line_height=line_height,
+                            )
+                        )
+
+        for child in node_d.get("children", []):
+            self._walk_for_typography(child, typography, seen_keys, depth + 1)
 
     def _find_fills_for_style(self, file_data: dict[str, Any], style_id: str) -> list[Any]:
         """Walk document tree looking for a node that references this style."""

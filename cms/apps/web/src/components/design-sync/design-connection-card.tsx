@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, RefreshCw, Trash2, Loader2, Download, Puzzle } from "lucide-react";
+import { FolderOpen, RefreshCw, Trash2, Loader2, Download, Puzzle, KeyRound } from "lucide-react";
 import { DesignStatusBadge } from "./design-status-badge";
 import { ProviderIcon } from "./provider-icon";
 import type { DesignConnection } from "@/types/design-sync";
@@ -20,6 +20,7 @@ interface DesignConnectionCardProps {
   onDelete: () => void;
   onImport: () => void;
   onExtractComponents: () => void;
+  onRefreshToken?: () => void;
 }
 
 export function DesignConnectionCard({
@@ -31,6 +32,7 @@ export function DesignConnectionCard({
   onDelete,
   onImport,
   onExtractComponents,
+  onRefreshToken,
 }: DesignConnectionCardProps) {
   const lastSynced = connection.last_synced_at
     ? new Date(connection.last_synced_at).toLocaleDateString("en-US", {
@@ -108,6 +110,19 @@ export function DesignConnectionCard({
           )}
           {syncing ? "Syncing…" : "Sync Now"}
         </button>
+        {onRefreshToken && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRefreshToken();
+            }}
+            className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            {"Refresh Token"}
+          </button>
+        )}
         <button
           type="button"
           onClick={(e) => {

@@ -61,6 +61,28 @@ export function useCreateDesignConnection() {
   );
 }
 
+export function useRefreshConnectionToken(connectionId: number | null) {
+  return useSWRMutation<DesignConnection, Error, string, { access_token: string }>(
+    connectionId ? `/api/v1/design-sync/connections/${connectionId}/token` : "",
+    async (url: string, { arg }: { arg: { access_token: string } }) => {
+      const res = await authFetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(arg),
+      });
+      if (!res.ok) {
+        let message = "Failed to refresh token";
+        try {
+          const body = await res.json();
+          if (body.error) message = body.error;
+        } catch { /* use default */ }
+        throw new ApiError(res.status, message);
+      }
+      return res.json();
+    },
+  );
+}
+
 export function useDeleteDesignConnection() {
   return useSWRMutation<{ success: boolean }, Error, string, { id: number }>(
     "/api/v1/design-sync/connections/delete",

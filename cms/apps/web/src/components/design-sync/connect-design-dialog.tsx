@@ -128,27 +128,35 @@ export function ConnectDesignDialog({ open, onOpenChange }: ConnectDesignDialogP
       const message = err instanceof Error ? err.message : "";
       const label = PROVIDERS.find((p) => p.value === provider)?.label ?? provider;
       const status = err instanceof ApiError ? err.status : 0;
-      if (status === 429) {
-        toast.error("Too many requests. Please wait a moment and try again.", {
-          description: "The server is rate-limiting requests. Wait a few seconds before retrying.",
-          duration: 8000,
-        });
-      } else if (message.includes("access denied") || message.includes("403")) {
+      if (message.includes("access denied") || message.includes("403")) {
+        // Token is invalid — stay on Step 1 so user can fix it
         toast.error(`${label} access denied. Check your access token is valid.`, {
           description: `Generate a new token from your ${label} account settings.`,
           duration: 8000,
         });
+        return;
+      }
+      // For rate limits, unsupported browse, or other errors — advance to manual URL entry
+      if (status === 429) {
+        toast.info("File browsing unavailable due to rate limiting.", {
+          description: "Enter your design file URL manually below.",
+          duration: 6000,
+        });
       } else if (message.includes("not supported")) {
-        toast.error(`${label} is not yet fully supported.`, {
-          description: "Use the manual URL entry to connect your file.",
+        toast.info(`File browsing is not yet supported for ${label}.`, {
+          description: "Enter your design file URL manually below.",
           duration: 6000,
         });
       } else {
         toast.error(`Failed to browse ${label} files.`, {
-          description: message || "Check your access token and try again.",
+          description: "You can enter a file URL manually instead.",
           duration: 6000,
         });
       }
+      // Fall through to Step 2 manual URL entry
+      setBrowseUnsupported(true);
+      setFiles([]);
+      setStep(2);
     }
   };
 

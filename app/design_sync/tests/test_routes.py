@@ -904,3 +904,39 @@ def test_viewer_allowed_on_analyze_layout(client: TestClient) -> None:
         )
 
     assert resp.status_code == 200
+
+
+# ── PATCH /connections/{id}/token → 200 ──
+
+
+@pytest.mark.usefixtures("_auth_developer")
+def test_refresh_connection_token(client: TestClient) -> None:
+    """Developer can refresh access token on an existing connection."""
+    mock_conn = _make_connection_response(id=1)
+
+    with patch.object(
+        DesignSyncService,
+        "refresh_token",
+        new_callable=AsyncMock,
+        return_value=mock_conn,
+    ):
+        resp = client.patch(
+            f"{BASE}/connections/1/token",
+            json={"access_token": "figd_new_token_1234"},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == 1
+    assert data["status"] == "connected"
+
+
+@pytest.mark.usefixtures("_auth_viewer")
+def test_refresh_connection_token_forbidden_for_viewer(client: TestClient) -> None:
+    """Viewer role cannot refresh tokens (requires developer)."""
+    resp = client.patch(
+        f"{BASE}/connections/1/token",
+        json={"access_token": "figd_new_token_1234"},
+    )
+
+    assert resp.status_code == 403

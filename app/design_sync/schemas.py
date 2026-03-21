@@ -56,6 +56,12 @@ class ConnectionSyncRequest(BaseModel):
     id: int = Field(..., description="Connection ID to sync")
 
 
+class ConnectionUpdateTokenRequest(BaseModel):
+    """Request to update the access token on an existing connection."""
+
+    access_token: str = Field(..., min_length=1, description="New provider access token / PAT")
+
+
 # ── Responses ──
 
 

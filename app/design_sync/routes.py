@@ -19,6 +19,7 @@ from app.design_sync.schemas import (
     ConnectionDeleteRequest,
     ConnectionResponse,
     ConnectionSyncRequest,
+    ConnectionUpdateTokenRequest,
     ConvertImportRequest,
     DesignTokensResponse,
     DownloadAssetsRequest,
@@ -137,6 +138,23 @@ async def sync_connection(
     """Trigger a design token sync."""
     _ = request
     return await service.sync_connection(data.id, current_user)
+
+
+@router.patch(
+    "/connections/{connection_id}/token",
+    response_model=ConnectionResponse,
+)
+@limiter.limit("10/minute")
+async def refresh_connection_token(
+    connection_id: int,
+    request: Request,
+    data: ConnectionUpdateTokenRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ConnectionResponse:
+    """Refresh the access token for a design connection."""
+    _ = request
+    return await service.refresh_token(connection_id, data.access_token, current_user)
 
 
 # ── Phase 12.1: File Structure, Components, Image Export ──

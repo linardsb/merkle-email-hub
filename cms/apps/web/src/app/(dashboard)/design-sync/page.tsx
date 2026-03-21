@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Paintbrush, Download } from "lucide-react";
+import { Paintbrush, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api-error";
 import { useSWRConfig } from "swr";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@email-hub/ui/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DesignConnectionCard } from "@/components/design-sync/design-connection-card";
 import { DesignTokensView } from "@/components/design-sync/design-tokens-view";
@@ -15,6 +22,7 @@ import {
   useDesignConnections,
   useDeleteDesignConnection,
   useSyncDesignConnection,
+  useRefreshConnectionToken,
 } from "@/hooks/use-design-sync";
 import type { DesignProvider } from "@/types/design-sync";
 
@@ -43,6 +51,12 @@ export default function DesignSyncPage() {
   const [importConnectionId, setImportConnectionId] = useState<number | null>(null);
   const [importConnectionName, setImportConnectionName] = useState("");
   const [importInitialTab, setImportInitialTab] = useState<"import" | "components">("import");
+
+  // Refresh token dialog state
+  const [refreshTokenDialogOpen, setRefreshTokenDialogOpen] = useState(false);
+  const [refreshTokenConnId, setRefreshTokenConnId] = useState<number | null>(null);
+  const [refreshTokenValue, setRefreshTokenValue] = useState("");
+  const { trigger: refreshToken, isMutating: isRefreshing } = useRefreshConnectionToken(refreshTokenConnId);
 
   // File browser selection state
   const [browserNodeIds, setBrowserNodeIds] = useState<string[]>([]);
@@ -96,6 +110,31 @@ export default function DesignSyncPage() {
     } catch {
       toast.error("Failed to remove connection");
     }
+  };
+
+  const handleRefreshToken = async () => {
+    if (!refreshTokenValue.trim() || !refreshTokenConnId) return;
+    try {
+      await refreshToken({ access_token: refreshTokenValue.trim() });
+      await mutate(
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
+        undefined,
+        { revalidate: true },
+      );
+      toast.success("Access token refreshed successfully");
+      setRefreshTokenDialogOpen(false);
+      setRefreshTokenValue("");
+      setRefreshTokenConnId(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Check your token and try again.";
+      toast.error("Failed to refresh token", { description: message, duration: 6000 });
+    }
+  };
+
+  const openRefreshTokenDialog = (connId: number) => {
+    setRefreshTokenConnId(connId);
+    setRefreshTokenValue("");
+    setRefreshTokenDialogOpen(true);
   };
 
   const openImportDialog = (connId: number, connName: string, tab: "import" | "components") => {
@@ -209,6 +248,7 @@ export default function DesignSyncPage() {
               onDelete={() => handleDelete(conn.id)}
               onImport={() => openImportDialog(conn.id, conn.name, "import")}
               onExtractComponents={() => openImportDialog(conn.id, conn.name, "components")}
+              onRefreshToken={() => openRefreshTokenDialog(conn.id)}
             />
           ))}
         </div>
@@ -260,6 +300,62 @@ export default function DesignSyncPage() {
           initialTab={importInitialTab}
         />
       )}
+
+      {/* Refresh Token Dialog */}
+      <Dialog open={refreshTokenDialogOpen} onOpenChange={isRefreshing ? undefined : setRefreshTokenDialogOpen}>
+        <DialogContent className="max-w-[28rem]">
+          <DialogHeader>
+            <DialogTitle>{"Refresh Access Token"}</DialogTitle>
+            <DialogDescription>
+              {"Enter a new Personal Access Token to restore this connection."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="refresh-token" className="mb-1.5 block text-sm font-medium text-foreground">
+                {"New Access Token"}
+              </label>
+              <input
+                id="refresh-token"
+                type="password"
+                value={refreshTokenValue}
+                onChange={(e) => setRefreshTokenValue(e.target.value)}
+                placeholder="figd_..."
+                disabled={isRefreshing}
+                className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground placeholder:text-input-placeholder focus:border-input-focus focus:outline-none focus:ring-1 focus:ring-input-focus disabled:opacity-50"
+              />
+              <p className="mt-1 text-xs text-foreground-muted">
+                {"Generate a new token from your design tool's developer settings."}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRefreshTokenDialogOpen(false)}
+                disabled={isRefreshing}
+                className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
+              >
+                {"Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleRefreshToken}
+                disabled={!refreshTokenValue.trim() || isRefreshing}
+                className="rounded-md bg-interactive px-3 py-1.5 text-sm font-medium text-foreground-inverse transition-colors hover:bg-interactive-hover disabled:opacity-50"
+              >
+                {isRefreshing ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {"Refreshing..."}
+                  </span>
+                ) : (
+                  "Refresh Token"
+                )}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

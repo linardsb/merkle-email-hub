@@ -82,6 +82,29 @@ class DesignSyncRepository:
         result = await self.db.execute(stmt)
         return [(row[0], row[1]) for row in result.all()]
 
+    async def get_connection_by_file_ref(
+        self, provider: str, file_ref: str
+    ) -> DesignConnection | None:
+        """Find an existing connection by provider + file reference."""
+        result = await self.db.execute(
+            select(DesignConnection).where(
+                DesignConnection.provider == provider,
+                DesignConnection.file_ref == file_ref,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update_connection_token(
+        self,
+        connection: DesignConnection,
+        encrypted_token: str,
+        token_last4: str,
+    ) -> None:
+        """Update the stored access token for a connection."""
+        connection.encrypted_token = encrypted_token
+        connection.token_last4 = token_last4
+        await self.db.flush()
+
     async def delete_connection(self, connection_id: int) -> bool:
         conn = await self.get_connection(connection_id)
         if conn is None:
@@ -99,7 +122,7 @@ class DesignSyncRepository:
         connection.status = status
         connection.error_message = error_message
         if status == "connected":
-            connection.last_synced_at = datetime.now(UTC)
+            connection.last_synced_at = datetime.now(UTC).replace(tzinfo=None)
         await self.db.commit()
         await self.db.refresh(connection)
 
@@ -111,7 +134,7 @@ class DesignSyncRepository:
         snapshot = DesignTokenSnapshot(
             connection_id=connection_id,
             tokens_json=tokens_json,
-            extracted_at=datetime.now(UTC),
+            extracted_at=datetime.now(UTC).replace(tzinfo=None),
         )
         self.db.add(snapshot)
         await self.db.commit()

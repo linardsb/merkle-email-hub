@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.core.config import get_settings
+from app.core.exceptions import ConflictError
 from app.core.logging import get_logger
 from app.design_sync.assets import DesignAssetService
 from app.design_sync.brief_generator import generate_brief as generate_brief_text
@@ -22,6 +23,7 @@ from app.design_sync.exceptions import (
     ImportNotFoundError,
     ImportStateError,
     SyncFailedError,
+    TokenDecryptionError,
     UnsupportedProviderError,
 )
 from app.design_sync.figma.layout_analyzer import (
@@ -186,6 +188,15 @@ class DesignSyncService:
             await self._verify_access(data.project_id, user)
 
         file_ref = self._extract_file_ref(provider_name, data.file_url)
+
+        # Check for duplicate connection to the same file
+        existing = await self._repo.get_connection_by_file_ref(provider_name, file_ref)
+        if existing is not None:
+            raise ConflictError(
+                f"A connection to this file already exists ('{existing.name}', id={existing.id}). "
+                "Use the token refresh endpoint to update credentials."
+            )
+
         token_last4 = data.access_token[-4:] if len(data.access_token) >= 4 else data.access_token
 
         # Validate credentials with provider
@@ -242,13 +253,39 @@ class DesignSyncService:
             await self._verify_access(conn.project_id, user)
 
         provider = self._get_provider(conn.provider)
+
+        # Decrypt the stored token — fails if encryption key has rotated
+        try:
+            access_token = decrypt_token(conn.encrypted_token)
+        except Exception as exc:
+            await self._repo.update_status(
+                conn,
+                "error",
+                error_message="Access token expired or encryption key changed. Please refresh your token.",
+            )
+            raise TokenDecryptionError(
+                "Cannot decrypt stored access token. The encryption key may have changed. "
+                "Please update your access token via the connection settings."
+            ) from exc
+
         await self._repo.update_status(conn, "syncing")
 
         try:
-            access_token = decrypt_token(conn.encrypted_token)
             tokens = await provider.sync_tokens(conn.file_ref, access_token)
 
+            # Also fetch and cache file structure during sync to avoid extra API calls
+            try:
+                structure = await provider.get_file_structure(conn.file_ref, access_token, depth=3)
+                structure_cache = {
+                    "file_name": structure.file_name,
+                    "pages": [self._serialize_node(p) for p in structure.pages],
+                }
+            except Exception:
+                structure_cache = None
+
             tokens_dict = asdict(tokens)
+            if structure_cache is not None:
+                tokens_dict["_file_structure"] = structure_cache
             await self._repo.save_snapshot(conn.id, tokens_dict)
             await self._repo.update_status(conn, "connected")
 
@@ -266,6 +303,40 @@ class DesignSyncService:
                 exc_info=True,
             )
             raise SyncFailedError("Token sync failed") from exc
+
+        project_name = await self._get_project_name(conn.project_id)
+        return ConnectionResponse.from_model(conn, project_name=project_name)
+
+    async def refresh_token(
+        self, connection_id: int, new_access_token: str, user: User
+    ) -> ConnectionResponse:
+        """Update the access token for an existing connection."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        # Validate new token with provider
+        provider = self._get_provider(conn.provider)
+        try:
+            await provider.validate_connection(conn.file_ref, new_access_token)
+        except SyncFailedError:
+            raise
+        except Exception as exc:
+            raise SyncFailedError("Failed to validate new token") from exc
+
+        # Re-encrypt and save
+        encrypted = encrypt_token(new_access_token)
+        token_last4 = new_access_token[-4:] if len(new_access_token) >= 4 else new_access_token
+        await self._repo.update_connection_token(conn, encrypted, token_last4)
+        await self._repo.update_status(conn, "connected")
+
+        logger.info(
+            "design_sync.token_refreshed",
+            connection_id=connection_id,
+            provider=conn.provider,
+        )
 
         project_name = await self._get_project_name(conn.project_id)
         return ConnectionResponse.from_model(conn, project_name=project_name)
@@ -328,13 +399,33 @@ class DesignSyncService:
     async def get_file_structure(
         self, connection_id: int, user: User, *, depth: int | None = 2
     ) -> FileStructureResponse:
-        """Get the file structure for a connection."""
+        """Get the file structure for a connection.
+
+        Serves from cached snapshot when available to avoid extra Figma API calls.
+        Falls back to live API if no cache exists.
+        """
         conn = await self._repo.get_connection(connection_id)
         if conn is None:
             raise ConnectionNotFoundError(f"Connection {connection_id} not found")
         if conn.project_id is not None:
             await self._verify_access(conn.project_id, user)
 
+        # Try cached structure from last sync
+        snapshot = await self._repo.get_latest_snapshot(connection_id)
+        if snapshot is not None:
+            cached = snapshot.tokens_json.get("_file_structure")
+            if isinstance(cached, dict):
+                return FileStructureResponse(
+                    connection_id=connection_id,
+                    file_name=str(cached.get("file_name", "")),
+                    pages=[
+                        self._deserialize_node(p)
+                        for p in cached.get("pages", [])
+                        if isinstance(p, dict)
+                    ],
+                )
+
+        # No cache — fetch live
         provider = self._get_provider(conn.provider)
         access_token = decrypt_token(conn.encrypted_token)
         structure = await provider.get_file_structure(conn.file_ref, access_token, depth=depth)
@@ -357,6 +448,36 @@ class DesignSyncService:
             x=node.x,
             y=node.y,
             text_content=node.text_content,
+        )
+
+    def _serialize_node(self, node: DesignNode) -> dict[str, Any]:
+        """Serialize a DesignNode to a JSON-safe dict for caching."""
+        return {
+            "id": node.id,
+            "name": node.name,
+            "type": str(node.type),
+            "children": [self._serialize_node(c) for c in node.children],
+            "width": node.width,
+            "height": node.height,
+            "x": node.x,
+            "y": node.y,
+            "text_content": node.text_content,
+        }
+
+    def _deserialize_node(self, data: dict[str, Any]) -> DesignNodeResponse:
+        """Deserialize a cached node dict to DesignNodeResponse."""
+        return DesignNodeResponse(
+            id=str(data.get("id", "")),
+            name=str(data.get("name", "")),
+            type=str(data.get("type", "OTHER")),
+            children=[
+                self._deserialize_node(c) for c in data.get("children", []) if isinstance(c, dict)
+            ],
+            width=data.get("width"),
+            height=data.get("height"),
+            x=data.get("x"),
+            y=data.get("y"),
+            text_content=data.get("text_content"),
         )
 
     async def list_components(self, connection_id: int, user: User) -> ComponentListResponse:

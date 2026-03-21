@@ -29,3 +29,7 @@ class ImportNotFoundError(NotFoundError):
 
 class ImportStateError(DomainValidationError):
     """Raised when an import is in an invalid state for the requested operation."""
+
+
+class TokenDecryptionError(AppError):
+    """Raised when a stored access token cannot be decrypted (key rotation)."""

@@ -55,11 +55,12 @@ function collectSelectableIds(node: DesignNode): string[] {
   return ids;
 }
 
-/** Collect all FRAME-type IDs for thumbnail export */
+/** Collect IDs of all visual nodes for thumbnail export */
+const THUMBNAIL_TYPES = new Set(["FRAME", "SECTION", "COMPONENT", "COMPONENT_SET", "INSTANCE", "GROUP"]);
 function collectFrameIds(nodes: DesignNode[]): string[] {
   const ids: string[] = [];
   function walk(node: DesignNode) {
-    if (node.type === "FRAME" || node.type === "SECTION") {
+    if (THUMBNAIL_TYPES.has(node.type)) {
       ids.push(node.id);
     }
     for (const child of node.children) {
@@ -145,7 +146,7 @@ function TreeNode({
           <img
             src={thumbnail}
             alt={`Thumbnail for ${node.name}`}
-            className="h-8 w-8 shrink-0 rounded border border-card-border object-cover"
+            className="h-24 w-32 shrink-0 rounded border border-card-border object-cover object-top bg-surface-sunken"
           />
         ) : (
           <Icon className={`h-4 w-4 shrink-0 ${isPage ? "text-foreground" : "text-foreground-muted"}`} />
@@ -222,9 +223,9 @@ export function DesignFileBrowser({
 
     exportImages({
       connection_id: connectionId,
-      node_ids: frameIds.slice(0, 50), // Limit batch size
+      node_ids: frameIds.slice(0, 15), // Conservative batch to avoid Figma rate limits
       format: "png",
-      scale: 0.5, // Small thumbnails
+      scale: 1,
     })
       .then((result) => {
         const map = new Map<string, string>();

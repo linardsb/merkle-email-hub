@@ -100,7 +100,7 @@ Figma's rate limit is approximately **30 requests per minute** per PAT. The Hub 
 Once connected, you can:
 
 1. **Browse file structure** — Expand the tree to see pages, frames, and components
-2. **Extract design tokens** — Click "Sync Now" to pull colors, typography, and spacing
+2. **Extract design tokens** — Click "Sync Now" to pull spacing tokens. **Note:** Colors and typography currently only extract from published Figma styles. If your file uses direct fills/text properties (most community templates do), these will show as (0). Node-level extraction from the document tree is a planned enhancement — see `workflows/design-import-pipeline.md` for details
 3. **Import frames** — Select frames and click "Import Selected Frames" to generate email HTML via the Scaffolder AI agent
 4. **Extract components** — Pull individual Figma components into the Hub's component library
 
