@@ -181,8 +181,9 @@ function ImportDesignWizard({
         { arg: convertArg },
       );
       setStep("converting");
-    } catch {
-      toast.error("Failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Conversion failed";
+      toast.error(message);
     }
   };
 
@@ -411,8 +412,9 @@ function ExtractComponentsWizard({
       setExtractImportId(result.import_id);
       setTotalComponents(result.total_components);
       setStep("extracting");
-    } catch {
-      toast.error("Failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Component extraction failed";
+      toast.error(message);
     }
   };
 
