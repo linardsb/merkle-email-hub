@@ -160,6 +160,15 @@ class DesignSyncProvider(Protocol):
         """
         ...
 
+    async def sync_tokens_and_structure(
+        self, file_ref: str, access_token: str
+    ) -> tuple[ExtractedTokens, DesignFileStructure]:
+        """Extract tokens and file structure from a single API call.
+
+        Providers should override for efficiency. Default falls back to two calls.
+        """
+        ...
+
     async def get_file_structure(
         self, file_ref: str, access_token: str, *, depth: int | None = 2
     ) -> DesignFileStructure:

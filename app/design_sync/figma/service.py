@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 
 _FIGMA_FILE_KEY_RE = re.compile(r"figma\.com/(?:design|file|proto|board|embed)/([a-zA-Z0-9]+)")
 _FIGMA_API = "https://api.figma.com"
-_TIMEOUT = 30.0
+_TIMEOUT = 60.0
 _MAX_WALK_DEPTH = 500
 
 _FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
@@ -150,6 +150,13 @@ class FigmaDesignSyncService:
 
     async def sync_tokens(self, file_ref: str, access_token: str) -> ExtractedTokens:
         """Fetch styles from Figma and parse into design tokens."""
+        tokens, _ = await self.sync_tokens_and_structure(file_ref, access_token)
+        return tokens
+
+    async def sync_tokens_and_structure(
+        self, file_ref: str, access_token: str
+    ) -> tuple[ExtractedTokens, DesignFileStructure]:
+        """Fetch file once and extract both tokens and structure from the same response."""
         headers = {"X-Figma-Token": access_token}
 
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
@@ -186,7 +193,21 @@ class FigmaDesignSyncService:
             spacing=len(spacing),
         )
 
-        return ExtractedTokens(colors=colors, typography=typography, spacing=spacing)
+        tokens = ExtractedTokens(colors=colors, typography=typography, spacing=spacing)
+
+        # Parse file structure from the same response (no extra API call)
+        file_name = str(file_data.get("name", "Untitled"))
+        document = file_data.get("document", {})
+        pages: list[DesignNode] = []
+        for page_data in document.get("children", []):
+            if isinstance(page_data, dict):
+                pages.append(
+                    self._parse_node(cast(dict[str, Any], page_data), current_depth=0, max_depth=3)
+                )
+
+        structure = DesignFileStructure(file_name=file_name, pages=pages)
+
+        return tokens, structure
 
     def _parse_colors(
         self,

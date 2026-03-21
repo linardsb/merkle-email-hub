@@ -111,12 +111,23 @@ class PenpotDesignSyncService:
         return True
 
     async def sync_tokens(self, file_ref: str, access_token: str) -> ExtractedTokens:
+        tokens, _ = await self.sync_tokens_and_structure(file_ref, access_token)
+        return tokens
+
+    async def sync_tokens_and_structure(
+        self, file_ref: str, access_token: str
+    ) -> tuple[ExtractedTokens, DesignFileStructure]:
+        """Extract tokens and structure from a single Penpot API call."""
         async with self._make_client(access_token) as client:
             file_data = await client.get_file(file_ref)
         colors = self._parse_colors(file_data)
         typography = self._parse_typography(file_data)
         spacing = self._parse_spacing(file_data)
-        return ExtractedTokens(colors=colors, typography=typography, spacing=spacing)
+        tokens = ExtractedTokens(colors=colors, typography=typography, spacing=spacing)
+        file_name = file_data.get("name", "Untitled")
+        pages = self._parse_pages(file_data, depth=3)
+        structure = DesignFileStructure(file_name=file_name, pages=pages)
+        return tokens, structure
 
     async def get_file_structure(
         self,

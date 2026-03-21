@@ -230,8 +230,19 @@ class DesignSyncService:
             project_id=data.project_id,
             created_by_id=user.id,
         )
-        project_name = await self._get_project_name(conn.project_id)
-        return ConnectionResponse.from_model(conn, project_name=project_name)
+
+        # Auto-sync tokens and file structure on creation
+        try:
+            return await self.sync_connection(conn.id, user)
+        except Exception:
+            logger.warning(
+                "design_sync.auto_sync_failed",
+                connection_id=conn.id,
+                exc_info=True,
+            )
+            # Return the connection even if sync fails — user can retry manually
+            project_name = await self._get_project_name(conn.project_id)
+            return ConnectionResponse.from_model(conn, project_name=project_name)
 
     async def delete_connection(self, connection_id: int, user: User) -> bool:
         """Delete a connection with BOLA check."""
@@ -275,35 +286,34 @@ class DesignSyncService:
         await self._repo.update_status(conn, "syncing")
 
         try:
-            tokens = await provider.sync_tokens(conn.file_ref, access_token)
+            # Fetch tokens and file structure from a single Figma API call
+            tokens, structure = await provider.sync_tokens_and_structure(
+                conn.file_ref, access_token
+            )
 
-            # Also fetch and cache file structure during sync to avoid extra API calls
-            structure_cache = None
-            try:
-                structure = await provider.get_file_structure(conn.file_ref, access_token, depth=3)
-                structure_cache = {
-                    "file_name": structure.file_name,
-                    "pages": [self._serialize_node(p) for p in structure.pages],
-                }
-            except Exception:
-                pass
+            structure_cache = {
+                "file_name": structure.file_name,
+                "pages": [self._serialize_node(p) for p in structure.pages],
+            }
 
             # Cache thumbnail URLs for top-level frames (avoids Figma API on every page load)
             thumbnail_cache: dict[str, str] | None = None
-            if structure_cache is not None:
-                try:
-                    top_frame_ids = self._collect_top_frame_ids(structure_cache["pages"])
-                    if top_frame_ids:
-                        images = await provider.export_images(
-                            conn.file_ref, access_token, top_frame_ids, format="png", scale=1.0
-                        )
-                        thumbnail_cache = {img.node_id: img.url for img in images}
-                except Exception:
-                    pass  # Thumbnails are non-critical
+            try:
+                top_frame_ids = self._collect_top_frame_ids(structure_cache["pages"])
+                if top_frame_ids:
+                    images = await provider.export_images(
+                        conn.file_ref, access_token, top_frame_ids, format="png", scale=1.0
+                    )
+                    thumbnail_cache = {img.node_id: img.url for img in images}
+            except Exception:
+                logger.warning(
+                    "design_sync.thumbnail_cache_failed",
+                    connection_id=connection_id,
+                    exc_info=True,
+                )
 
             tokens_dict = asdict(tokens)
-            if structure_cache is not None:
-                tokens_dict["_file_structure"] = structure_cache
+            tokens_dict["_file_structure"] = structure_cache
             if thumbnail_cache:
                 tokens_dict["_thumbnails"] = thumbnail_cache
             await self._repo.save_snapshot(conn.id, tokens_dict)
