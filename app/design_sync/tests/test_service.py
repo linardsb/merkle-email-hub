@@ -546,7 +546,8 @@ class TestFigmaRateLimitHandling:
                 await service.list_files("token")
 
     @pytest.mark.asyncio
-    async def test_validate_connection_429_raises(self) -> None:
+    async def test_validate_connection_429_passes_through(self) -> None:
+        """429 on validate returns True — allows connection while rate-limited."""
         service = FigmaDesignSyncService()
         mock_response = MagicMock()
         mock_response.status_code = 429
@@ -559,8 +560,8 @@ class TestFigmaRateLimitHandling:
             mock_client.get = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value = mock_client
 
-            with pytest.raises(SyncFailedError, match="Try again in 45 seconds"):
-                await service.validate_connection("abc123", "token")
+            result = await service.validate_connection("abc123", "token")
+            assert result is True
 
     @pytest.mark.asyncio
     async def test_list_components_429_raises(self) -> None:

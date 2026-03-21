@@ -197,7 +197,7 @@ async def list_components(
     "/connections/export-images",
     response_model=ImageExportResponse,
 )
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 async def export_images(
     request: Request,
     data: ExportImageRequest,

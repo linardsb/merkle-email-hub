@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
-import { FolderOpen, Plus } from "lucide-react";
+import { FolderOpen, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { authFetch } from "@/lib/auth-fetch";
 import { useProjects } from "@/hooks/use-projects";
 import { ErrorState } from "@/components/ui/error-state";
 import { SkeletonCard } from "@/components/ui/skeletons";
@@ -11,6 +13,20 @@ import { CreateProjectDialog } from "@/components/dashboard/create-project-dialo
 export default function ProjectsPage() {
   const { data: projects, isLoading, error, mutate } = useProjects();
   const [createOpen, setCreateOpen] = useState(false);
+
+  const handleDelete = useCallback(async (e: React.MouseEvent, projectId: number, projectName: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Delete "${projectName}"? This cannot be undone.`)) return;
+    try {
+      const res = await authFetch(`/api/v1/projects/${projectId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.success("Project deleted");
+      await mutate();
+    } catch {
+      toast.error("Failed to delete project");
+    }
+  }, [mutate]);
 
   return (
     <div className="space-y-6">
@@ -45,8 +61,16 @@ export default function ProjectsPage() {
             <Link
               key={project.id}
               href={`/projects/${project.id}/workspace`}
-              className="block rounded-lg border border-card-border bg-card-bg p-6 transition-colors hover:bg-surface-hover"
+              className="group relative block rounded-lg border border-card-border bg-card-bg p-6 transition-colors hover:bg-surface-hover"
             >
+              <button
+                type="button"
+                onClick={(e) => handleDelete(e, project.id, project.name)}
+                className="absolute right-3 top-3 rounded p-1.5 text-foreground-muted opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                title="Delete project"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
               <h3 className="font-medium text-foreground">{project.name}</h3>
               <p className="mt-1 line-clamp-2 text-sm text-foreground-muted">
                 {project.description || "\u2014"}
@@ -69,7 +93,11 @@ export default function ProjectsPage() {
                 </div>
               )}
               <div className="mt-4 flex items-center justify-between">
-                <span className="rounded-full bg-badge-default-bg px-2 py-0.5 text-xs font-medium text-badge-default-text">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  project.status === "active"
+                    ? "bg-status-success/10 text-status-success"
+                    : "bg-badge-default-bg text-badge-default-text"
+                }`}>
                   {project.status}
                 </span>
                 <span className="text-xs text-foreground-muted">

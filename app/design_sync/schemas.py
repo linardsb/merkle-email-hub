@@ -176,6 +176,7 @@ class FileStructureResponse(BaseModel):
     connection_id: int
     file_name: str
     pages: list[DesignNodeResponse]
+    thumbnails: dict[str, str] = Field(default_factory=dict, description="node_id → image URL")
 
 
 # ── Component Responses ──

@@ -43,3 +43,14 @@ export function useCreateProject() {
     mutationFetcher
   );
 }
+
+export function useDeleteProject(id: number | null) {
+  return useSWRMutation<void, Error, string, never>(
+    id ? `/api/v1/projects/${id}` : "",
+    async (url: string) => {
+      const { authFetch } = await import("@/lib/auth-fetch");
+      const res = await authFetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete project");
+    }
+  );
+}

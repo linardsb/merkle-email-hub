@@ -169,11 +169,17 @@ class DesignSyncRepository:
         )
         self.db.add(design_import)
         await self.db.commit()
-        await self.db.refresh(design_import)
+        await self.db.refresh(design_import, ["assets"])
         return design_import
 
     async def get_import(self, import_id: int) -> DesignImport | None:
-        result = await self.db.execute(select(DesignImport).where(DesignImport.id == import_id))
+        from sqlalchemy.orm import selectinload
+
+        result = await self.db.execute(
+            select(DesignImport)
+            .options(selectinload(DesignImport.assets))
+            .where(DesignImport.id == import_id)
+        )
         return result.scalar_one_or_none()
 
     async def get_import_with_assets(self, import_id: int) -> DesignImport | None:

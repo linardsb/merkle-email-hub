@@ -52,8 +52,8 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
           {"Colors"} ({tokens.colors.length})
         </h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-          {tokens.colors.map((color) => (
-            <div key={color.name} className="flex flex-col items-center gap-1.5">
+          {tokens.colors.map((color, i) => (
+            <div key={`${color.hex}-${i}`} className="flex flex-col items-center gap-1.5">
               <div
                 className="h-10 w-10 rounded-lg border border-card-border"
                 style={{
@@ -74,9 +74,9 @@ export function DesignTokensView({ connectionId }: DesignTokensViewProps) {
           {"Typography"} ({tokens.typography.length})
         </h3>
         <div className="space-y-2">
-          {tokens.typography.map((typo) => (
+          {tokens.typography.map((typo, i) => (
             <div
-              key={typo.name}
+              key={`${typo.family}-${typo.size}-${i}`}
               className="flex items-center justify-between rounded-md border border-card-border bg-card-bg px-3 py-2"
             >
               <div>

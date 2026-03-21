@@ -19,20 +19,21 @@ Figma's REST API has aggressive rate limits on free/starter plans. This document
 |------------|----------------|-------------|
 | Connect (Browse Files) | 1 | `GET /v1/me/files/recents` |
 | Connect (Validate) | 1 | `GET /v1/files/{key}?depth=1` |
-| Sync Now | 2-3 | `GET /v1/files/{key}` + `GET /v1/files/{key}/styles` + file structure cache |
+| Sync Now | 3-4 | `GET /v1/files/{key}` + `GET /v1/files/{key}/styles` + file structure cache + thumbnail export (top 100 frames) |
 | File Structure | 0 (cached) | Served from snapshot after sync |
-| Export Thumbnails | 1 per batch (up to 15 nodes) | `GET /v1/images/{key}` |
+| Thumbnails (page load) | 0 (cached) | Served from snapshot — cached during sync |
 | List Components | 1 | `GET /v1/files/{key}/components` |
 | Extract Components | 1 | `GET /v1/images/{key}` (batch export) |
 
-**Total for a full connect + sync + browse**: ~5-6 API calls. On starter plans, this can exhaust the budget in one session.
+**Total for a full connect + sync + browse**: ~5-6 API calls. On starter plans, this can exhaust the budget in one session. Subsequent page loads use **zero** Figma API calls — both file structure and thumbnails are served from the DB cache.
 
 ## How the Hub Minimizes API Calls
 
 1. **File structure caching** — During "Sync Now", the file structure is cached in the token snapshot. Subsequent file browser loads serve from cache (0 API calls)
-2. **Thumbnail batching** — Image exports are batched (max 15 nodes per request) instead of one call per node
-3. **Rate limit passthrough on validation** — If Figma returns 429 during `validate_connection`, the connection is still created (token is valid, just rate-limited)
-4. **Browse fallback** — If file browsing is rate-limited, the wizard falls through to manual URL entry instead of blocking
+2. **Thumbnail caching** — During "Sync Now", thumbnails for the top 100 priority-ranked frames are exported and cached in the snapshot. The file browser reads thumbnails directly from the file-structure response — no separate API call needed on page load
+3. **Cache-first export** — The `export-images` endpoint checks the cached thumbnail URLs before calling Figma. Only uncached node IDs trigger a live API call
+4. **Rate limit passthrough on validation** — If Figma returns 429 during `validate_connection`, the connection is still created (token is valid, just rate-limited)
+5. **Browse fallback** — If file browsing is rate-limited, the wizard falls through to manual URL entry instead of blocking
 
 ## Import Design vs Extract Components
 

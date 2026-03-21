@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Paintbrush, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api-error";
@@ -18,9 +18,9 @@ import { DesignTokensView } from "@/components/design-sync/design-tokens-view";
 import { ConnectDesignDialog } from "@/components/design-sync/connect-design-dialog";
 import { DesignFileBrowser } from "@/components/design-sync/design-file-browser";
 import { DesignImportDialog } from "@/components/design-sync/design-import-dialog";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   useDesignConnections,
-  useDeleteDesignConnection,
   useSyncDesignConnection,
   useRefreshConnectionToken,
 } from "@/hooks/use-design-sync";
@@ -37,7 +37,6 @@ const FILTER_TABS: { value: ProviderFilter; label: string }[] = [
 
 export default function DesignSyncPage() {
   const { data: connections, error, isLoading } = useDesignConnections();
-  const { trigger: deleteConnection } = useDeleteDesignConnection();
   const { trigger: syncConnection } = useSyncDesignConnection();
   const { mutate } = useSWRConfig();
 
@@ -97,9 +96,16 @@ export default function DesignSyncPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  // Uses authFetch directly to avoid useSWRMutation trigger issues
+  const handleDelete = useCallback(async (id: number) => {
+    if (!confirm("Remove this connection? This cannot be undone.")) return;
     try {
-      await deleteConnection({ id });
+      const res = await authFetch("/api/v1/design-sync/connections/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
       await mutate(
         (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
         undefined,
@@ -110,7 +116,7 @@ export default function DesignSyncPage() {
     } catch {
       toast.error("Failed to remove connection");
     }
-  };
+  }, [mutate, selectedId]);
 
   const handleRefreshToken = async () => {
     if (!refreshTokenValue.trim() || !refreshTokenConnId) return;

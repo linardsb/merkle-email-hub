@@ -38,8 +38,12 @@ from app.design_sync.protocol import (
     BrowseableProvider,
     DesignFileStructure,
     DesignNode,
+    DesignNodeType,
     DesignSyncProvider,
+    ExtractedColor,
+    ExtractedSpacing,
     ExtractedTokens,
+    ExtractedTypography,
 )
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
@@ -274,6 +278,7 @@ class DesignSyncService:
             tokens = await provider.sync_tokens(conn.file_ref, access_token)
 
             # Also fetch and cache file structure during sync to avoid extra API calls
+            structure_cache = None
             try:
                 structure = await provider.get_file_structure(conn.file_ref, access_token, depth=3)
                 structure_cache = {
@@ -281,11 +286,26 @@ class DesignSyncService:
                     "pages": [self._serialize_node(p) for p in structure.pages],
                 }
             except Exception:
-                structure_cache = None
+                pass
+
+            # Cache thumbnail URLs for top-level frames (avoids Figma API on every page load)
+            thumbnail_cache: dict[str, str] | None = None
+            if structure_cache is not None:
+                try:
+                    top_frame_ids = self._collect_top_frame_ids(structure_cache["pages"])
+                    if top_frame_ids:
+                        images = await provider.export_images(
+                            conn.file_ref, access_token, top_frame_ids, format="png", scale=1.0
+                        )
+                        thumbnail_cache = {img.node_id: img.url for img in images}
+                except Exception:
+                    pass  # Thumbnails are non-critical
 
             tokens_dict = asdict(tokens)
             if structure_cache is not None:
                 tokens_dict["_file_structure"] = structure_cache
+            if thumbnail_cache:
+                tokens_dict["_thumbnails"] = thumbnail_cache
             await self._repo.save_snapshot(conn.id, tokens_dict)
             await self._repo.update_status(conn, "connected")
 
@@ -415,6 +435,13 @@ class DesignSyncService:
         if snapshot is not None:
             cached = snapshot.tokens_json.get("_file_structure")
             if isinstance(cached, dict):
+                # Include cached thumbnails if available
+                raw_thumbs = snapshot.tokens_json.get("_thumbnails")
+                thumbs: dict[str, str] = (
+                    cast(dict[str, str], raw_thumbs)
+                    if isinstance(raw_thumbs, dict)
+                    else {}
+                )
                 return FileStructureResponse(
                     connection_id=connection_id,
                     file_name=str(cached.get("file_name", "")),
@@ -423,6 +450,7 @@ class DesignSyncService:
                         for p in cached.get("pages", [])
                         if isinstance(p, dict)
                     ],
+                    thumbnails=thumbs,
                 )
 
         # No cache — fetch live
@@ -463,6 +491,36 @@ class DesignSyncService:
             "y": node.y,
             "text_content": node.text_content,
         }
+
+    _THUMBNAIL_NODE_TYPES = {"FRAME", "COMPONENT", "INSTANCE", "GROUP", "SECTION"}
+    _MAX_THUMBNAIL_CACHE = 100  # Single Figma API call (100 IDs per batch)
+
+    def _collect_top_frame_ids(self, pages: list[dict[str, Any]]) -> list[str]:
+        """Collect frame IDs from cached structure, prioritising top-level email sections."""
+        scored: list[tuple[float, str]] = []
+
+        def walk(node: dict[str, Any], depth: int) -> None:
+            ntype = str(node.get("type", ""))
+            if ntype in self._THUMBNAIL_NODE_TYPES:
+                area = float(node.get("width", 0) or 0) * float(node.get("height", 0) or 0)
+                score = 0.0
+                if depth == 0:
+                    score += 1000
+                score += min(200.0, area / 1000)
+                score += max(0.0, 50 - depth * 10)
+                scored.append((score, str(node.get("id", ""))))
+            for child in node.get("children", []):
+                if isinstance(child, dict):
+                    walk(child, depth + 1)
+
+        for page in pages:
+            if isinstance(page, dict):
+                for child in page.get("children", []):
+                    if isinstance(child, dict):
+                        walk(child, 0)
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [sid for _, sid in scored[: self._MAX_THUMBNAIL_CACHE]]
 
     def _deserialize_node(self, data: dict[str, Any]) -> DesignNodeResponse:
         """Deserialize a cached node dict to DesignNodeResponse."""
@@ -516,22 +574,45 @@ class DesignSyncService:
         format: str = "png",
         scale: float = 2.0,
     ) -> ImageExportResponse:
-        """Export images for nodes in a connection."""
+        """Export images for nodes in a connection.
+
+        Serves from cached thumbnail URLs when available (populated during sync).
+        Falls back to live Figma API for cache misses.
+        """
         conn = await self._repo.get_connection(connection_id)
         if conn is None:
             raise ConnectionNotFoundError(f"Connection {connection_id} not found")
         if conn.project_id is not None:
             await self._verify_access(conn.project_id, user)
 
-        provider = self._get_provider(conn.provider)
-        access_token = decrypt_token(conn.encrypted_token)
-        images = await provider.export_images(
-            conn.file_ref, access_token, node_ids, format=format, scale=scale
-        )
+        # Try cached thumbnails first (avoids Figma API calls on every page load)
+        snapshot = await self._repo.get_latest_snapshot(connection_id)
+        cached_thumbs: dict[str, str] = {}
+        if snapshot is not None:
+            raw = snapshot.tokens_json.get("_thumbnails")
+            if isinstance(raw, dict):
+                cached_thumbs = cast(dict[str, str], raw)
 
-        return ImageExportResponse(
-            connection_id=connection_id,
-            images=[
+        cached_images: list[ExportedImageResponse] = []
+        uncached_ids: list[str] = []
+        for nid in node_ids:
+            url = cached_thumbs.get(nid)
+            if url:
+                cached_images.append(
+                    ExportedImageResponse(node_id=nid, url=url, format="png")
+                )
+            else:
+                uncached_ids.append(nid)
+
+        # Fetch uncached nodes from provider (if any)
+        live_images: list[ExportedImageResponse] = []
+        if uncached_ids:
+            provider = self._get_provider(conn.provider)
+            access_token = decrypt_token(conn.encrypted_token)
+            images = await provider.export_images(
+                conn.file_ref, access_token, uncached_ids, format=format, scale=scale
+            )
+            live_images = [
                 ExportedImageResponse(
                     node_id=img.node_id,
                     url=img.url,
@@ -539,8 +620,13 @@ class DesignSyncService:
                     expires_at=img.expires_at,
                 )
                 for img in images
-            ],
-            total=len(images),
+            ]
+
+        all_images = cached_images + live_images
+        return ImageExportResponse(
+            connection_id=connection_id,
+            images=all_images,
+            total=len(all_images),
         )
 
     # ── Phase 12.2: Asset Storage ──
@@ -595,8 +681,8 @@ class DesignSyncService:
     ) -> LayoutAnalysisResponse:
         """Analyze layout of a design file and return detected sections.
 
-        depth defaults to 3 (pages + frames + immediate children) to avoid
-        full-tree fetches on large Figma files.
+        Uses cached file structure when available to avoid Figma API calls.
+        Falls back to live API if no cache exists.
         """
         conn = await self._repo.get_connection(connection_id)
         if conn is None:
@@ -606,7 +692,9 @@ class DesignSyncService:
 
         provider = self._get_provider(conn.provider)
         access_token = decrypt_token(conn.encrypted_token)
-        structure = await provider.get_file_structure(conn.file_ref, access_token, depth=depth)
+        structure = await self._get_cached_structure(
+            conn.id, conn.file_ref, access_token, provider, depth=depth
+        )
 
         if selected_node_ids:
             structure = _filter_structure(structure, selected_node_ids)
@@ -622,7 +710,10 @@ class DesignSyncService:
         selected_node_ids: list[str] | None = None,
         include_tokens: bool = True,
     ) -> GenerateBriefResponse:
-        """Generate a Scaffolder-compatible brief from design analysis."""
+        """Generate a Scaffolder-compatible brief from design analysis.
+
+        Uses cached file structure and tokens to avoid Figma API calls.
+        """
         conn = await self._repo.get_connection(connection_id)
         if conn is None:
             raise ConnectionNotFoundError(f"Connection {connection_id} not found")
@@ -631,7 +722,9 @@ class DesignSyncService:
 
         provider = self._get_provider(conn.provider)
         access_token = decrypt_token(conn.encrypted_token)
-        structure = await provider.get_file_structure(conn.file_ref, access_token, depth=None)
+        structure = await self._get_cached_structure(
+            conn.id, conn.file_ref, access_token, provider, depth=None
+        )
 
         if selected_node_ids:
             structure = _filter_structure(structure, selected_node_ids)
@@ -640,14 +733,26 @@ class DesignSyncService:
 
         tokens: ExtractedTokens | None = None
         if include_tokens:
-            try:
-                tokens = await provider.sync_tokens(conn.file_ref, access_token)
-            except Exception:
-                logger.warning(
-                    "design_sync.brief_tokens_skipped",
-                    connection_id=connection_id,
-                    exc_info=True,
-                )
+            # Try cached tokens first, fall back to live API
+            snapshot = await self._repo.get_latest_snapshot(connection_id)
+            if snapshot is not None:
+                try:
+                    tokens = ExtractedTokens(
+                        colors=[ExtractedColor(**c) for c in snapshot.tokens_json.get("colors", [])],
+                        typography=[ExtractedTypography(**t) for t in snapshot.tokens_json.get("typography", [])],
+                        spacing=[ExtractedSpacing(**s) for s in snapshot.tokens_json.get("spacing", [])],
+                    )
+                except Exception:
+                    tokens = None
+            if tokens is None:
+                try:
+                    tokens = await provider.sync_tokens(conn.file_ref, access_token)
+                except Exception:
+                    logger.warning(
+                        "design_sync.brief_tokens_skipped",
+                        connection_id=connection_id,
+                        exc_info=True,
+                    )
 
         brief_text = generate_brief_text(
             layout,
@@ -766,7 +871,9 @@ class DesignSyncService:
             import_id=design_import.id,
             connection_id=data.connection_id,
         )
-        return self._import_to_response(design_import)
+        # Re-fetch with assets eagerly loaded for async-safe serialization
+        loaded = await self._repo.get_import(design_import.id)
+        return self._import_to_response(loaded)
 
     async def get_design_import(self, import_id: int, user: User) -> ImportResponse:
         """Get import status with BOLA check."""
@@ -788,7 +895,9 @@ class DesignSyncService:
             )
         await self._repo.update_import_status(design_import, "pending", generated_brief=brief)
         logger.info("design_sync.import_brief_updated", import_id=import_id)
-        return self._import_to_response(design_import)
+        # Re-fetch with assets eagerly loaded after commit expired relationships
+        loaded = await self._repo.get_import(import_id)
+        return self._import_to_response(loaded)
 
     async def start_conversion(
         self,
@@ -843,7 +952,9 @@ class DesignSyncService:
         )
         task.add_done_callback(_on_task_done)
 
-        return self._import_to_response(design_import)
+        # Re-fetch with assets eagerly loaded after commit expired relationships
+        loaded = await self._repo.get_import(import_id)
+        return self._import_to_response(loaded)
 
     async def get_import_by_template(
         self, template_id: int, project_id: int, user: User
@@ -858,6 +969,43 @@ class DesignSyncService:
     def _import_to_response(self, design_import: object) -> ImportResponse:
         """Convert DesignImport model to response schema."""
         return ImportResponse.model_validate(design_import, from_attributes=True)
+
+    async def _get_cached_structure(
+        self, conn_id: int, file_ref: str, access_token: str, provider: DesignSyncProvider, *, depth: int | None = 3
+    ) -> DesignFileStructure:
+        """Get file structure from cache if available, otherwise fetch live."""
+        snapshot = await self._repo.get_latest_snapshot(conn_id)
+        if snapshot is not None:
+            cached = snapshot.tokens_json.get("_file_structure")
+            if isinstance(cached, dict):
+                return DesignFileStructure(
+                    file_name=str(cached.get("file_name", "")),
+                    pages=[
+                        self._cached_dict_to_node(p)
+                        for p in cached.get("pages", [])
+                        if isinstance(p, dict)
+                    ],
+                )
+        return await provider.get_file_structure(file_ref, access_token, depth=depth)
+
+    def _cached_dict_to_node(self, data: dict[str, Any]) -> DesignNode:
+        """Convert a cached node dict back to a protocol DesignNode."""
+        raw_type = str(data.get("type", "OTHER"))
+        try:
+            node_type = DesignNodeType(raw_type)
+        except ValueError:
+            node_type = DesignNodeType.OTHER
+        return DesignNode(
+            id=str(data.get("id", "")),
+            name=str(data.get("name", "")),
+            type=node_type,
+            children=[self._cached_dict_to_node(c) for c in data.get("children", []) if isinstance(c, dict)],
+            width=data.get("width"),
+            height=data.get("height"),
+            x=data.get("x"),
+            y=data.get("y"),
+            text_content=data.get("text_content"),
+        )
 
     # ── Helpers ──
 

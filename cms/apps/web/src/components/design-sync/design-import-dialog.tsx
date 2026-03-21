@@ -109,7 +109,8 @@ function ImportDesignWizard({
   initialNodeIds: string[];
 }) {
   const router = useRouter();
-  const [step, setStep] = useState<ImportStep>("select-frames");
+  const hasPreselection = initialNodeIds.length > 0;
+  const [step, setStep] = useState<ImportStep>(hasPreselection ? "review-brief" : "select-frames");
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>(initialNodeIds);
   const [briefData, setBriefData] = useState<GeneratedBrief | null>(null);
   const [editedBrief, setEditedBrief] = useState("");
@@ -154,6 +155,14 @@ function ImportDesignWizard({
       toast.error("Failed to load file structure");
     }
   };
+
+  // Auto-generate brief when frames were pre-selected from the file browser
+  useEffect(() => {
+    if (hasPreselection && !briefData && !isGenerating) {
+      handleGenerateBrief();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStartConversion = async () => {
     try {
@@ -213,7 +222,16 @@ function ImportDesignWizard({
         </div>
       )}
 
-      {/* Step 2: Review Brief */}
+      {/* Step 2: Review Brief (loading state while auto-generating) */}
+      {step === "review-brief" && !briefData && (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-foreground-muted" />
+          <p className="text-sm text-foreground-muted">{"Analyzing design and generating brief…"}</p>
+          <p className="text-xs text-foreground-muted">{`${selectedNodeIds.length} frames selected`}</p>
+        </div>
+      )}
+
+      {/* Step 2: Review Brief (ready) */}
       {step === "review-brief" && briefData && (
         <div className="space-y-4">
           <div className="flex items-center gap-4 text-sm text-foreground-muted">

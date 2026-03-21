@@ -68,51 +68,21 @@ With a full Figma URL (the system extracts the file key):
 - **`figma_file_ref`** — Open the design in Figma, copy the URL. The file key is the alphanumeric string after `/file/` in the URL. You can also find connected designs in **Ecosystem > Penpot/Figma**
 - **`project_id`** — Found in the URL when viewing a project, or via `GET /api/v1/projects/`
 
-## Critical: Full Design Token Extraction for Accurate HTML
+## Design Token Extraction
 
-For the Scaffolder agent to generate HTML that matches the Figma design as closely as possible, the design sync must extract **all visual properties** from the document tree — not just published styles.
+The sync process extracts all visual properties from the Figma document tree using a two-phase approach:
 
-### Current State
+### Extraction Method
 
-| Token type | Extraction method | Coverage |
-|------------|-------------------|----------|
-| Spacing | Auto-layout frame properties (padding, gap) | Works on any file |
-| Colors | Published color styles only (`/v1/files/{key}/styles`) | Only files with explicitly published styles |
-| Typography | Published text styles only (`/v1/files/{key}/styles`) | Only files with explicitly published styles |
+| Token type | Phase 1: Published styles | Phase 2: Node walk | Coverage |
+|------------|--------------------------|---------------------|----------|
+| **Colors** | Published color styles (named, take priority) | Fills + strokes on FRAME/RECTANGLE/COMPONENT nodes | Full — works on any file |
+| **Typography** | Published text styles (named, take priority) | `style` property on TEXT nodes (fontFamily, weight, size, lineHeight) | Full — works on any file |
+| **Spacing** | — | Auto-layout frame properties (padding, gap) | Full — works on any file |
 
-**Problem**: Most Figma files (especially community templates and quick designs) apply colors and fonts **directly on nodes** without publishing them as reusable styles. This means the Scaffolder receives spacing tokens but **zero color and typography context**, producing HTML that doesn't match the design's visual identity.
+Phase 1 extracts from published Figma styles (better names). Phase 2 walks the document tree to fill gaps — picking up colors and typography applied directly on nodes. Duplicates are merged (Phase 1 wins on name conflicts).
 
-### Required Enhancement: Node-Level Token Extraction
-
-The `sync_tokens` method must walk the document tree and extract visual properties directly from nodes, the same way spacing extraction already works:
-
-**Colors** — collect from:
-- `fills` array on FRAME, RECTANGLE, COMPONENT nodes (solid fills → hex + opacity)
-- `strokes` array (border colors)
-- `backgroundColor` on CANVAS nodes
-- Deduplicate by hex value, name by frequency/context (e.g., "primary", "background", "accent")
-
-**Typography** — collect from:
-- `style` property on TEXT nodes (`fontFamily`, `fontWeight`, `fontSize`, `lineHeightPx`, `letterSpacing`)
-- Deduplicate by font family + size + weight combination
-- Name by hierarchy (largest = "heading-1", next = "heading-2", body sizes = "body", etc.)
-
-**Why this matters for the Scaffolder**:
-- The Scaffolder's `DesignTokens` include `color_map` and `font_map` that drive HTML generation
-- Without colors, the generated HTML uses default/brand palette instead of the design's actual colors
-- Without typography, font families and sizes are guessed from the brief text, not from the design
-- The design system constraint injection (`_design_pass_from_system`) relies on these tokens for palette replacement, font substitution, and dark mode color mapping
-
-### Impact on Pipeline Accuracy
-
-| With published styles only | With node-level extraction |
-|---------------------------|---------------------------|
-| Scaffolder guesses colors from brief | Scaffolder uses exact hex values from design |
-| Font families default to project design system | Font families match the Figma text nodes |
-| Dark mode colors are approximated | Dark mode maps from actual design palette |
-| Brand compliance check may flag "off-palette" colors that are actually from the design | Brand compliance validates against the design's own palette |
-
-This enhancement is a prerequisite for achieving design-to-HTML fidelity targets.
+This ensures the Scaffolder receives accurate `color_map` and `font_map` even for community templates and quick designs that don't publish styles.
 
 ## Client Best Practices: Designing for Email Build Accuracy
 
@@ -162,7 +132,7 @@ Share these guidelines with designers and clients to ensure the best possible de
 
 | Tool | Import support | Component extraction | Token extraction |
 |------|---------------|---------------------|------------------|
-| **Figma** | Full (layout analysis + AI conversion) | Yes (published components) | Spacing from auto-layout; colors/typography from published styles |
+| **Figma** | Full (layout analysis + AI conversion) | Yes (published components) | Full: colors + typography from published styles + node walk; spacing from auto-layout |
 | **Penpot** | Full (CSS-to-email converter) | Planned | Via Penpot's CSS export |
 | **Sketch** | Stub (token sync only) | No | Basic |
 | **Canva** | Stub (token sync only) | No | Basic |

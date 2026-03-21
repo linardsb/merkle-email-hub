@@ -55,17 +55,20 @@ Query parameters (`?node-id=...`, `?t=...`) are ignored — only the file key is
 
 ## Avoiding Figma Rate Limits (429 Errors)
 
-Figma enforces API rate limits. The Hub makes API calls during:
-- **Browse Files** — 1 API call
-- **Connect** — 1 API call (validates PAT + file access)
-- **Sync Tokens** — 2-3 API calls (file data + styles + style nodes)
-- **File Structure** — 1 API call
-- **Export Images** — 1 API call per batch of up to 100 nodes
+Figma enforces API rate limits **per account** (not per IP or token). Generating a new PAT does not reset the limit.
+
+| Plan | Approx. limit | Retry-After | Scope |
+|------|---------------|-------------|-------|
+| Starter/Free | ~3-5 calls/min | Up to 4+ days | Per Figma account |
+| Professional | Higher | Minutes to hours | Per account |
+
+The Hub makes API calls during:
+- **Browse Files** — 1 call
+- **Connect** — 1 call (validates PAT + file access)
+- **Sync Now** — 3-4 calls (file data + styles + structure + thumbnail export)
+- **File Structure (page load)** — 0 calls (served from DB cache)
+- **Thumbnails (page load)** — 0 calls (served from DB cache, populated during sync)
 - **Layout Analysis** — reuses cached file data
-
-### Rate Limit Thresholds
-
-Figma's rate limit is approximately **30 requests per minute** per PAT. The Hub batches image exports (up to 100 nodes per call) to minimize API usage.
 
 ### How to Avoid 429 Errors
 
@@ -76,13 +79,14 @@ Figma's rate limit is approximately **30 requests per minute** per PAT. The Hub 
 | Use "Sync Now" sparingly (once after connecting, then as needed) | Click "Sync Now" repeatedly |
 | Select only the frames you need for import | Select all frames in a large file |
 | Use the Mock provider for testing the UI flow | Use a real PAT for UI testing |
+| Use a different Figma account if rate-limited | Generate new PATs on the same account (doesn't help) |
 
 ### If You Hit a 429
 
-1. **Wait 60 seconds** — Figma's rate limit window resets
-2. Try the operation again (the Hub will show the actual error message)
-3. If it persists, wait 2-3 minutes — you may have exhausted a longer-window limit
-4. Check if other team members are using the same PAT (each PAT has its own limit)
+1. **Don't retry repeatedly** — each retry consumes quota and extends the lockout
+2. Check the error message for `Retry-After` duration
+3. **Options to unblock**: wait for the timer, use a **different Figma account** (share the file with it), or upgrade to Professional
+4. Your connection and encrypted token are saved — nothing is lost
 
 ## Common Errors and Solutions
 
@@ -99,17 +103,17 @@ Figma's rate limit is approximately **30 requests per minute** per PAT. The Hub 
 
 Once connected, you can:
 
-1. **Browse file structure** — Expand the tree to see pages, frames, and components
-2. **Extract design tokens** — Click "Sync Now" to pull spacing tokens. **Note:** Colors and typography currently only extract from published Figma styles. If your file uses direct fills/text properties (most community templates do), these will show as (0). Node-level extraction from the document tree is a planned enhancement — see `workflows/design-import-pipeline.md` for details
-3. **Import frames** — Select frames and click "Import Selected Frames" to generate email HTML via the Scaffolder AI agent
+1. **Browse file structure** — Expand the tree to see pages, frames, and components. Thumbnails for the top 100 frames are cached during sync and load instantly (zero Figma API calls)
+2. **Extract design tokens** — Click "Sync Now" to pull colors, typography, and spacing tokens. Colors and typography are extracted from both published styles and direct node properties (fills, text styles)
+3. **Import frames** — Select frames (click the thumbnail or checkbox) and click "Import Selected Frames" to generate email HTML via the Scaffolder AI agent
 4. **Extract components** — Pull individual Figma components into the Hub's component library
 
 ## Token Management
 
-- Tokens are stored encrypted — the Hub never displays or logs the full token
-- To rotate a PAT: delete the connection, generate a new PAT in Figma, and reconnect
+- Tokens are stored encrypted (Fernet + PBKDF2) — the Hub never displays or logs the full token
+- To rotate a PAT: use the **Refresh Token** button on the connection card (no need to delete and re-create)
 - Each connection stores its own token — multiple connections can use different PATs
-- If a team member leaves, revoke their PAT in Figma and reconnect affected files with a new PAT
+- If a team member leaves, revoke their PAT in Figma and refresh affected connections with a new PAT
 
 ## For Developers
 

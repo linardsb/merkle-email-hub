@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -12,7 +12,7 @@ import {
   Square,
   Loader2,
 } from "lucide-react";
-import { useDesignFileStructure, useExportImages } from "@/hooks/use-design-sync";
+import { useDesignFileStructure } from "@/hooks/use-design-sync";
 import type { DesignNode } from "@/types/design-sync";
 
 interface DesignFileBrowserProps {
@@ -52,22 +52,6 @@ function collectSelectableIds(node: DesignNode): string[] {
   for (const child of node.children) {
     ids.push(...collectSelectableIds(child));
   }
-  return ids;
-}
-
-/** Collect IDs of all visual nodes for thumbnail export */
-const THUMBNAIL_TYPES = new Set(["FRAME", "SECTION", "COMPONENT", "COMPONENT_SET", "INSTANCE", "GROUP"]);
-function collectFrameIds(nodes: DesignNode[]): string[] {
-  const ids: string[] = [];
-  function walk(node: DesignNode) {
-    if (THUMBNAIL_TYPES.has(node.type)) {
-      ids.push(node.id);
-    }
-    for (const child of node.children) {
-      walk(child);
-    }
-  }
-  for (const n of nodes) walk(n);
   return ids;
 }
 
@@ -141,21 +125,43 @@ function TreeNode({
           <span className="w-3.5 shrink-0" />
         )}
 
-        {/* Thumbnail or icon */}
+        {/* Thumbnail or icon — clicking thumbnail toggles selection */}
         {thumbnail ? (
-          <img
-            src={thumbnail}
-            alt={`Thumbnail for ${node.name}`}
-            className="h-24 w-32 shrink-0 rounded border border-card-border object-cover object-top bg-surface-sunken"
-          />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isSelectable) onToggleSelect(node);
+            }}
+            className={`h-24 w-32 shrink-0 overflow-hidden rounded border-2 bg-surface-sunken transition-colors ${
+              isSelected ? "border-interactive" : "border-card-border hover:border-foreground-muted"
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={thumbnail}
+              alt={node.name}
+              className="h-full w-full object-cover object-top"
+            />
+          </button>
         ) : (
           <Icon className={`h-4 w-4 shrink-0 ${isPage ? "text-foreground" : "text-foreground-muted"}`} />
         )}
 
-        {/* Node name */}
-        <span className={`truncate text-sm ${isPage ? "font-medium text-foreground" : "text-foreground"}`}>
-          {node.name}
-        </span>
+        {/* Node name — clickable to expand/collapse */}
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => onToggleExpand(node.id)}
+            className={`truncate text-sm text-left ${isPage ? "font-medium text-foreground" : "text-foreground"} hover:underline`}
+          >
+            {node.name}
+          </button>
+        ) : (
+          <span className={`truncate text-sm ${isPage ? "font-medium text-foreground" : "text-foreground"}`}>
+            {node.name}
+          </span>
+        )}
 
         {/* Dimensions */}
         {node.width !== null && node.height !== null && !isPage && (
@@ -192,53 +198,32 @@ export function DesignFileBrowser({
   onSelectionChange,
 }: DesignFileBrowserProps) {
   const { data: structure, isLoading, error } = useDesignFileStructure(connectionId);
-  const { trigger: exportImages } = useExportImages();
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [thumbnails, setThumbnails] = useState<Map<string, string>>(new Map());
-  const [thumbnailsLoaded, setThumbnailsLoaded] = useState(false);
 
   const selectedSet = new Set(selectedNodeIds);
+
+  // Thumbnails come directly from the file-structure response (cached during sync)
+  const thumbnails = useMemo(() => {
+    const map = new Map<string, string>();
+    if (structure?.thumbnails) {
+      for (const [nodeId, url] of Object.entries(structure.thumbnails)) {
+        map.set(nodeId, url);
+      }
+    }
+    return map;
+  }, [structure]);
 
   // Stable ref for use in callbacks (avoids recreating callback on every selection change)
   const selectedNodeIdsRef = useRef(selectedNodeIds);
   selectedNodeIdsRef.current = selectedNodeIds;
 
-  // Auto-expand pages on load
+  // Pages start collapsed — user expands what they need
   useEffect(() => {
     if (structure?.pages) {
-      setExpandedIds(new Set(structure.pages.map((p) => p.id)));
+      setExpandedIds(new Set());
     }
   }, [structure]);
-
-  // Fetch thumbnails for frame nodes
-  useEffect(() => {
-    if (!structure?.pages || thumbnailsLoaded) return;
-
-    const frameIds = collectFrameIds(structure.pages);
-    if (frameIds.length === 0) {
-      setThumbnailsLoaded(true);
-      return;
-    }
-
-    exportImages({
-      connection_id: connectionId,
-      node_ids: frameIds.slice(0, 15), // Conservative batch to avoid Figma rate limits
-      format: "png",
-      scale: 1,
-    })
-      .then((result) => {
-        const map = new Map<string, string>();
-        for (const img of result.images) {
-          map.set(img.node_id, img.url);
-        }
-        setThumbnails(map);
-      })
-      .catch(() => {
-        // Thumbnails are non-critical — fail silently
-      })
-      .finally(() => setThumbnailsLoaded(true));
-  }, [structure, connectionId, exportImages, thumbnailsLoaded]);
 
   const handleToggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {

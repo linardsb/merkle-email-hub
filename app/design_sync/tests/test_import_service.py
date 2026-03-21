@@ -170,6 +170,7 @@ class TestDesignSyncServiceImport:
         service._repo.get_connection = AsyncMock(return_value=conn)
         service._repo.create_import = AsyncMock(return_value=design_import)
         service._repo.update_import_status = AsyncMock()
+        service._repo.get_import = AsyncMock(return_value=design_import)
         service._verify_access = AsyncMock()  # type: ignore[method-assign]
 
         data = StartImportRequest(

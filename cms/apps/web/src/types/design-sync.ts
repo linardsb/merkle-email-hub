@@ -93,6 +93,7 @@ export interface DesignFileStructure {
   connection_id: number;
   file_name: string;
   pages: DesignNode[];
+  thumbnails: Record<string, string>;
 }
 
 // ── Components ──
