@@ -145,14 +145,8 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
     <!--[if mso]>
     <table role="presentation" cellpadding="0" cellspacing="0" width="600" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
     <![endif]-->
-    <div class="dark-bg" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="email_body">
-            <!-- Components go here -->
-          </td>
-        </tr>
-      </table>
+    <div class="dark-bg" data-slot="email_body" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      <!-- Components go here — all self-contained blocks (MSO wrapper + outer table) -->
     </div>
     <!--[if mso]>
     </td></tr></table>
@@ -600,37 +594,45 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
         "description": "Hybrid responsive 2-column layout. MSO ghost table + inline-block divs that stack on mobile.",
         "category": "structure",
         "html_source": """\
-<tr>
-  <td class="col2-bg" style="font-size: 0; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
-    <!--[if mso]>
-    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="300" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 1 content
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="300" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 2 content
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td></tr></table>
-    <![endif]-->
-  </td>
-</tr>""",
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" class="col2-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
+  <tr>
+    <td style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="300" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 1 content
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="300" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 2 content
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
         "css_source": None,
         "compatibility": _COMPAT_FULL,
         "slot_definitions": [
@@ -659,49 +661,57 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
         "description": "Hybrid responsive 3-column layout. MSO ghost table + inline-block divs that stack on mobile.",
         "category": "structure",
         "html_source": """\
-<tr>
-  <td class="col3-bg" style="font-size: 0; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
-    <!--[if mso]>
-    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="200" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 1 content
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="200" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 2 content
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="200" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_3" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 3 content
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td></tr></table>
-    <![endif]-->
-  </td>
-</tr>""",
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" class="col3-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
+  <tr>
+    <td style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="200" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 1 content
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="200" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 2 content
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="200" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_3" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 3 content
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
         "css_source": None,
         "compatibility": _COMPAT_FULL,
         "slot_definitions": [
@@ -736,61 +746,69 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
         "description": "Hybrid responsive 4-column layout. MSO ghost table + inline-block divs that stack on mobile.",
         "category": "structure",
         "html_source": """\
-<tr>
-  <td class="col4-bg" style="font-size: 0; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
-    <!--[if mso]>
-    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="150" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 1
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="150" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 2
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="150" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_3" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 3
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="150" valign="top">
-    <![endif]-->
-    <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="col_4" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Column 4
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td></tr></table>
-    <![endif]-->
-  </td>
-</tr>""",
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" class="col4-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
+  <tr>
+    <td style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="150" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 1
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="150" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 2
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="150" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_3" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 3
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="150" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 150px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="col_4" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Column 4
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
         "css_source": None,
         "compatibility": _COMPAT_FULL,
         "slot_definitions": [
@@ -831,37 +849,45 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
         "description": "RTL-trick reverse stacking layout. Image right on desktop, text stacks first on mobile.",
         "category": "structure",
         "html_source": """\
-<tr>
-  <td class="revcol-bg" dir="rtl" style="font-size: 0; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
-    <!--[if mso]>
-    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" dir="rtl" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="300" valign="top" dir="ltr">
-    <![endif]-->
-    <div class="column" dir="ltr" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="secondary_content" style="padding: 16px; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            <img src="https://via.placeholder.com/280x200" alt="Image" width="280" style="display: block; width: 100%; height: auto; border: 0;" />
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td><td width="300" valign="top" dir="ltr">
-    <![endif]-->
-    <div class="column" dir="ltr" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <tr>
-          <td data-slot="primary_content" style="padding: 16px; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
-            Primary content appears first on mobile
-          </td>
-        </tr>
-      </table>
-    </div>
-    <!--[if mso]>
-    </td></tr></table>
-    <![endif]-->
-  </td>
-</tr>""",
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" class="revcol-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
+  <tr>
+    <td dir="rtl" style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" dir="rtl" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="300" valign="top" dir="ltr">
+      <![endif]-->
+      <div class="column" dir="ltr" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="secondary_content" style="padding: 16px; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              <img src="https://via.placeholder.com/280x200" alt="Image" width="280" style="display: block; width: 100%; height: auto; border: 0;" />
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="300" valign="top" dir="ltr">
+      <![endif]-->
+      <div class="column" dir="ltr" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+          <tr>
+            <td data-slot="primary_content" style="padding: 16px; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+              Primary content appears first on mobile
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
         "css_source": None,
         "compatibility": _COMPAT_PARTIAL_SAMSUNG,
         "slot_definitions": [

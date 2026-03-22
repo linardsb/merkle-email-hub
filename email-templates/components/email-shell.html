@@ -119,15 +119,9 @@
     <!--[if mso]>
     <table role="presentation" cellpadding="0" cellspacing="0" width="600" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
     <![endif]-->
-    <div class="dark-bg" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-        <!-- Email content sections drop in here -->
-        <tr>
-          <td data-slot="email_body">
-            <!-- Components go here: preheader, logo-header, hero-block, column-layouts, article-cards, cta-buttons, spacers, dividers, footer, etc. -->
-          </td>
-        </tr>
-      </table>
+    <div class="dark-bg" data-slot="email_body" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      <!-- Components go here: logo-header, hero-block, column-layouts, article-cards, cta-buttons, spacers, dividers, footer, etc. -->
+      <!-- All components are self-contained blocks (MSO wrapper + outer table). -->
     </div>
     <!--[if mso]>
     </td></tr></table>

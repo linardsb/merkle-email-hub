@@ -546,9 +546,9 @@ ${headStyles}
 </head>
 <body>
 <center>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;">
+<div style="max-width:600px;margin:0 auto;">
 ${sectionHtml}
-</table>
+</div>
 </center>
 </body>
 </html>`;
