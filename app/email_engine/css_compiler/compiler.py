@@ -39,6 +39,20 @@ class CompilationResult:
     compile_time_ms: float
 
 
+@dataclass(frozen=True)
+class OptimizedCSS:
+    """Result of CSS optimization (stages 1-5 only, no inlining).
+
+    HTML contains optimized <style> blocks ready for external inliner (e.g. Maizzle/Juice).
+    """
+
+    html: str
+    removed_properties: list[str]
+    conversions: list[CSSConversion]
+    warnings: list[str]
+    optimize_time_ms: float
+
+
 class EmailCSSCompiler:
     """Email-specific CSS compiler with ontology-driven optimization.
 
@@ -72,6 +86,117 @@ class EmailCSSCompiler:
         """Run the full CSS compilation pipeline."""
         start = time.monotonic()
         original_size = len(html.encode("utf-8"))
+        stage_timings: dict[str, float] = {}
+
+        # Stages 1-5: Parse, Analyze, Transform, Eliminate, Optimize
+        t0 = time.monotonic()
+        html_no_styles, minified_blocks, removed, conversions, warnings = (
+            self._run_optimization_stages(html)
+        )
+        stage_timings["optimize"] = (time.monotonic() - t0) * 1000
+
+        # Stage 6: Inline — parse rules and apply as inline styles
+        t0 = time.monotonic()
+        all_rules: list[tuple[str, list[tuple[str, str]]]] = []
+        at_rules: list[str] = []  # @media etc. — keep in <style>
+        for block in minified_blocks:
+            rules = parse_css_rules(block)
+            all_rules.extend(rules)
+            # Preserve @-rules that can't be inlined
+            for line in block.split("}"):
+                stripped = line.strip()
+                if stripped.startswith("@"):
+                    at_rules.append(stripped + "}")
+
+        result_html = inline_styles(html_no_styles, all_rules)
+
+        # Re-inject @-rules that can't be inlined (e.g. @media)
+        if at_rules:
+            at_css = "\n".join(at_rules)
+            result_html = result_html.replace("</head>", f"<style>{at_css}</style></head>", 1)
+        stage_timings["inline"] = (time.monotonic() - t0) * 1000
+
+        # Stage 7: Output — sanitize
+        t0 = time.monotonic()
+        result_html = sanitize_html_xss(result_html)
+        compiled_size = len(result_html.encode("utf-8"))
+        stage_timings["sanitize"] = (time.monotonic() - t0) * 1000
+
+        compile_time = (time.monotonic() - start) * 1000
+
+        logger.info(
+            "css_compiler.compile_completed",
+            original_size=original_size,
+            compiled_size=compiled_size,
+            reduction_pct=round((1 - compiled_size / original_size) * 100, 1)
+            if original_size > 0
+            else 0,
+            removed_count=len(removed),
+            conversion_count=len(conversions),
+            target_clients=self._target_clients,
+            compile_time_ms=round(compile_time, 2),
+            **{f"stage_{k}_ms": round(v, 2) for k, v in stage_timings.items()},
+        )
+
+        return CompilationResult(
+            html=result_html,
+            original_size=original_size,
+            compiled_size=compiled_size,
+            removed_properties=removed,
+            conversions=conversions,
+            warnings=warnings,
+            compile_time_ms=round(compile_time, 2),
+        )
+
+    def optimize_css(self, html: str) -> OptimizedCSS:
+        """Run CSS optimization stages 1-5 only (no inlining).
+
+        Produces HTML with optimized <style> blocks, ready for an external
+        inliner like Maizzle/Juice to convert to inline styles. Skips stage 6
+        (BeautifulSoup inlining) and stage 7 (XSS sanitization — caller is
+        responsible for sanitizing after inlining).
+
+        Use this before sending HTML to the Maizzle sidecar: ontology-driven
+        optimization reduces CSS rules before Juice inlines them.
+        """
+        start = time.monotonic()
+
+        html_no_styles, minified_blocks, removed, conversions, warnings = (
+            self._run_optimization_stages(html)
+        )
+
+        # Re-inject optimized <style> blocks (NOT inlined)
+        if minified_blocks:
+            style_tags = "\n".join(
+                f"<style>{block}</style>" for block in minified_blocks if block.strip()
+            )
+            html_no_styles = html_no_styles.replace("</head>", f"{style_tags}</head>", 1)
+
+        optimize_time = (time.monotonic() - start) * 1000
+
+        logger.info(
+            "css_compiler.optimize_completed",
+            removed_count=len(removed),
+            conversion_count=len(conversions),
+            target_clients=self._target_clients,
+            optimize_time_ms=round(optimize_time, 2),
+        )
+
+        return OptimizedCSS(
+            html=html_no_styles,
+            removed_properties=removed,
+            conversions=conversions,
+            warnings=warnings,
+            optimize_time_ms=round(optimize_time, 2),
+        )
+
+    def _run_optimization_stages(
+        self, html: str
+    ) -> tuple[str, list[str], list[str], list[CSSConversion], list[str]]:
+        """Run stages 1-5: Parse, Analyze, Transform, Eliminate, Optimize.
+
+        Returns (html_without_styles, minified_css_blocks, removed, conversions, warnings).
+        """
         removed: list[str] = []
         conversions: list[CSSConversion] = []
         warnings: list[str] = []
@@ -91,59 +216,13 @@ class EmailCSSCompiler:
         # Stage 2+3+4 on inline styles
         html_no_styles = self._process_inline_styles(html_no_styles, removed, conversions, warnings)
 
-        # Stage 5: Optimize — Lightning CSS minification on each block
+        # Stage 5: Optimize — Lightning CSS minification
         minified_blocks: list[str] = []
         for block in optimized_css_blocks:
             minified = self._minify_css(block, warnings)
             minified_blocks.append(minified)
 
-        # Stage 6: Inline — parse rules and apply as inline styles
-        all_rules: list[tuple[str, list[tuple[str, str]]]] = []
-        at_rules: list[str] = []  # @media etc. — keep in <style>
-        for block in minified_blocks:
-            rules = parse_css_rules(block)
-            all_rules.extend(rules)
-            # Preserve @-rules that can't be inlined
-            for line in block.split("}"):
-                stripped = line.strip()
-                if stripped.startswith("@"):
-                    at_rules.append(stripped + "}")
-
-        result_html = inline_styles(html_no_styles, all_rules)
-
-        # Re-inject @-rules that can't be inlined (e.g. @media)
-        if at_rules:
-            at_css = "\n".join(at_rules)
-            result_html = result_html.replace("</head>", f"<style>{at_css}</style></head>", 1)
-
-        # Stage 7: Output — sanitize
-        result_html = sanitize_html_xss(result_html)
-        compiled_size = len(result_html.encode("utf-8"))
-
-        compile_time = (time.monotonic() - start) * 1000
-
-        logger.info(
-            "css_compiler.compile_completed",
-            original_size=original_size,
-            compiled_size=compiled_size,
-            reduction_pct=round((1 - compiled_size / original_size) * 100, 1)
-            if original_size > 0
-            else 0,
-            removed_count=len(removed),
-            conversion_count=len(conversions),
-            target_clients=self._target_clients,
-            compile_time_ms=round(compile_time, 2),
-        )
-
-        return CompilationResult(
-            html=result_html,
-            original_size=original_size,
-            compiled_size=compiled_size,
-            removed_properties=removed,
-            conversions=conversions,
-            warnings=warnings,
-            compile_time_ms=round(compile_time, 2),
-        )
+        return html_no_styles, minified_blocks, removed, conversions, warnings
 
     def _process_css_block(
         self, css_text: str

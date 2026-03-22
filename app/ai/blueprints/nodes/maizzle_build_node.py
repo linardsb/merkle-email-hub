@@ -1,8 +1,11 @@
 """Maizzle Build deterministic node — compiles email HTML via sidecar service."""
 
+from typing import cast
+
 import httpx
 
 from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType
+from app.ai.shared import sanitize_html_xss
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
@@ -12,8 +15,7 @@ logger = get_logger(__name__)
 class MaizzleBuildNode:
     """Deterministic node that compiles HTML through the Maizzle builder sidecar.
 
-    Uses the same httpx pattern as EmailEngineService._call_builder().
-    No database persistence — just compile and return.
+    Pipeline: optimize CSS (stages 1-5) → Maizzle build (Juice inlines) → sanitize.
     """
 
     @property
@@ -25,7 +27,7 @@ class MaizzleBuildNode:
         return "deterministic"
 
     async def execute(self, context: NodeContext) -> NodeResult:
-        """POST HTML to Maizzle builder and return compiled output."""
+        """Optimize CSS, POST to Maizzle builder, sanitize output."""
         if not context.html:
             return NodeResult(
                 status="failed",
@@ -33,9 +35,34 @@ class MaizzleBuildNode:
             )
 
         settings = get_settings()
+        source_html = context.html
+
+        # CSS optimization: run ontology-driven stages 1-5 before Maizzle inlines
+        raw_clients = context.metadata.get("target_clients")
+        target_clients_list: list[str] | None = None
+        if isinstance(raw_clients, list):
+            target_clients_list = list(cast("list[str]", raw_clients))
+
+        try:
+            from app.email_engine.css_compiler.compiler import EmailCSSCompiler
+
+            compiler = EmailCSSCompiler(target_clients=target_clients_list)
+            optimized = compiler.optimize_css(source_html)
+            source_html = optimized.html
+
+            logger.info(
+                "blueprint.maizzle_build.css_optimized",
+                removed_count=len(optimized.removed_properties),
+                conversion_count=len(optimized.conversions),
+                optimize_time_ms=optimized.optimize_time_ms,
+            )
+        except Exception as exc:
+            # CSS optimization is best-effort — proceed with unoptimized HTML
+            logger.warning("blueprint.maizzle_build.css_optimize_failed", error=str(exc))
+
         url = f"{settings.maizzle_builder_url}/build"
         payload: dict[str, object] = {
-            "source": context.html,
+            "source": source_html,
             "config": {},
             "production": False,
         }
@@ -67,6 +94,9 @@ class MaizzleBuildNode:
                 status="failed",
                 error=f"Build failed: {exc}",
             )
+
+        # Sanitize final output (stage 7 equivalent)
+        compiled_html = sanitize_html_xss(compiled_html)
 
         logger.info(
             "blueprint.maizzle_build.completed",

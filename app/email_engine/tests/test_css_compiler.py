@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
 from app.core.rate_limit import limiter
-from app.email_engine.css_compiler.compiler import CompilationResult, EmailCSSCompiler
+from app.email_engine.css_compiler.compiler import CompilationResult, EmailCSSCompiler, OptimizedCSS
 from app.email_engine.css_compiler.conversions import (
     CSSConversion,
     get_conversions_for_property,
@@ -359,6 +359,41 @@ class TestCompiler:
         result = compiler.compile(STYLE_HTML)
         assert isinstance(result, CompilationResult)
 
+    def test_optimize_css_returns_html_with_style_blocks(self) -> None:
+        """optimize_css() returns HTML with <style> blocks (not inlined)."""
+        compiler = EmailCSSCompiler(target_clients=["gmail_web"])
+        result = compiler.optimize_css(STYLE_HTML)
+        assert isinstance(result, OptimizedCSS)
+        assert isinstance(result.html, str)
+        assert "<style>" in result.html  # CSS stays in <style>, not inlined
+        assert result.optimize_time_ms >= 0
+
+    def test_optimize_css_preserves_mso_conditionals(self) -> None:
+        """MSO comments are preserved through optimization."""
+        compiler = EmailCSSCompiler(target_clients=["outlook_2019"])
+        result = compiler.optimize_css(MSO_HTML)
+        assert "<!--[if mso]>" in result.html
+
+    def test_optimize_css_resolves_variables(self) -> None:
+        """CSS variables are resolved during optimization."""
+        html = (
+            "<html><head><style>.x { color: var(--brand); }</style></head>"
+            "<body><div class='x'>Hi</div></body></html>"
+        )
+        compiler = EmailCSSCompiler(
+            target_clients=["gmail_web"], css_variables={"brand": "#ff0000"}
+        )
+        result = compiler.optimize_css(html)
+        assert "var(--brand)" not in result.html
+
+    def test_optimize_css_no_style_blocks(self) -> None:
+        """Handles HTML with no <style> blocks gracefully."""
+        compiler = EmailCSSCompiler(target_clients=["gmail_web"])
+        result = compiler.optimize_css(MINIMAL_HTML)
+        assert isinstance(result.html, str)
+        assert result.removed_properties == []
+        assert result.conversions == []
+
     def test_compile_tracks_removed_properties(self) -> None:
         """removed_properties list contains property names when properties are removed."""
         html = '<html><head></head><body><div style="display: flex">Content</div></body></html>'
@@ -391,6 +426,16 @@ class TestCompilerWithRemovals:
         compiler = EmailCSSCompiler(target_clients=["outlook_2019"])
         result = compiler.compile(html)
         assert len(result.removed_properties) > 0
+
+    def test_optimize_css_removes_unsupported(self) -> None:
+        """optimize_css() removes unsupported properties from <style> blocks."""
+        html = (
+            "<html><head><style>.x { display: flex; }</style></head>"
+            "<body><div class='x'>Hi</div></body></html>"
+        )
+        compiler = EmailCSSCompiler(target_clients=["outlook_2019"])
+        result = compiler.optimize_css(html)
+        assert any("display" in p for p in result.removed_properties)
 
     def test_removed_properties_tracked(self) -> None:
         """Removed properties are listed in result."""
@@ -425,6 +470,16 @@ class TestCompilerWithConversions:
         result = compiler.compile(html)
         assert len(result.conversions) > 0
         assert result.conversions[0].replacement_property == "display"
+
+    def test_optimize_css_applies_conversions(self) -> None:
+        """optimize_css() applies ontology conversions."""
+        html = (
+            "<html><head><style>.x { display: flex; }</style></head>"
+            "<body><div class='x'>Hi</div></body></html>"
+        )
+        compiler = EmailCSSCompiler(target_clients=["outlook_2019"])
+        result = compiler.optimize_css(html)
+        assert len(result.conversions) > 0
 
     def test_conversions_include_affected_clients(self) -> None:
         """CSSConversion.affected_clients is non-empty tuple."""
@@ -474,6 +529,29 @@ class TestService:
         assert resp.reduction_pct == 20.0
         assert len(resp.conversions) == 1
         assert resp.conversions[0].replacement_value == "block"
+
+
+class TestCompilerTelemetry:
+    """Tests for per-stage timing telemetry."""
+
+    @pytest.fixture(autouse=True)
+    def _mock_ontology(self) -> Generator[None]:
+        reg = _mock_registry(support_none=False)
+        with (
+            patch("app.email_engine.css_compiler.compiler.load_ontology", return_value=reg),
+            patch("app.email_engine.css_compiler.conversions.load_ontology", return_value=reg),
+        ):
+            yield
+
+    def test_compile_logs_stage_timings(self) -> None:
+        """compile() logs per-stage timing metrics."""
+        compiler = EmailCSSCompiler(target_clients=["gmail_web"])
+        with patch("app.email_engine.css_compiler.compiler.logger") as mock_logger:
+            compiler.compile(STYLE_HTML)
+            call_kwargs = mock_logger.info.call_args_list[-1].kwargs
+            assert "stage_optimize_ms" in call_kwargs
+            assert "stage_inline_ms" in call_kwargs
+            assert "stage_sanitize_ms" in call_kwargs
 
 
 # ── Route Tests ──

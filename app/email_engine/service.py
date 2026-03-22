@@ -12,6 +12,7 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.shared import sanitize_html_xss
 from app.auth.models import User
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -61,9 +62,12 @@ class EmailEngineService:
         await self.db.refresh(build)
 
         try:
+            # Optimize CSS before Maizzle inlining
+            optimized_html = self._optimize_css_for_build(data.source_html)
             compiled = await self._call_builder(
-                data.source_html, data.config_overrides, data.is_production
+                optimized_html, data.config_overrides, data.is_production
             )
+            compiled = sanitize_html_xss(compiled)
             build.compiled_html = compiled
             build.status = "success"
         except BuildServiceUnavailableError:
@@ -106,9 +110,11 @@ class EmailEngineService:
         """Execute a preview build without persisting."""
         logger.info("email_engine.preview_started")
         start = time.monotonic()
+        optimized_html = self._optimize_css_for_build(data.source_html)
         compiled = await self._call_builder(
-            data.source_html, data.config_overrides, is_production=False
+            optimized_html, data.config_overrides, is_production=False
         )
+        compiled = sanitize_html_xss(compiled)
         elapsed = (time.monotonic() - start) * 1000
         logger.info("email_engine.preview_completed", build_time_ms=elapsed)
         return PreviewResponse(compiled_html=compiled, build_time_ms=round(elapsed, 2))
@@ -192,6 +198,27 @@ class EmailEngineService:
             validation_errors=list(result.validation_errors),
             inject_time_ms=result.inject_time_ms,
         )
+
+    def _optimize_css_for_build(self, source_html: str) -> str:
+        """Run CSS optimization stages 1-5 before Maizzle inlining.
+
+        Best-effort — returns unmodified HTML on failure.
+        """
+        try:
+            from app.email_engine.css_compiler.compiler import EmailCSSCompiler
+
+            compiler = EmailCSSCompiler()
+            optimized = compiler.optimize_css(source_html)
+            logger.info(
+                "email_engine.css_optimized",
+                removed_count=len(optimized.removed_properties),
+                conversion_count=len(optimized.conversions),
+                optimize_time_ms=optimized.optimize_time_ms,
+            )
+            return optimized.html
+        except Exception as exc:
+            logger.warning("email_engine.css_optimize_failed", error=str(exc))
+            return source_html
 
     async def _call_builder(
         self, source_html: str, config_overrides: dict[str, object] | None, is_production: bool
