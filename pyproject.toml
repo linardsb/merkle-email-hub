@@ -40,6 +40,7 @@ dependencies = [
     "pycrdt-websocket>=0.15",
     "pyyaml>=6.0",
     "python-liquid>=1.12",
+    "beautifulsoup4>=4.12",
 ]
 
 [project.optional-dependencies]
