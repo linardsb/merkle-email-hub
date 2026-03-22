@@ -74,4 +74,68 @@ CLIENT_PROFILES: dict[str, RenderingProfile] = {
         browser="cr",
         emulator_id="outlook_web",
     ),
+    # ── Yahoo ──
+    "yahoo_web": RenderingProfile(
+        name="yahoo_web",
+        viewport_width=800,
+        viewport_height=900,
+        browser="cr",
+        emulator_id="yahoo_web",
+    ),
+    "yahoo_mobile": RenderingProfile(
+        name="yahoo_mobile",
+        viewport_width=375,
+        viewport_height=812,
+        browser="wk",
+        device="iPhone 13",
+        emulator_id="yahoo_mobile",
+    ),
+    # ── Samsung ──
+    "samsung_mail": RenderingProfile(
+        name="samsung_mail",
+        viewport_width=360,
+        viewport_height=780,
+        browser="cr",
+        emulator_id="samsung_mail",
+    ),
+    "samsung_mail_dark": RenderingProfile(
+        name="samsung_mail_dark",
+        viewport_width=360,
+        viewport_height=780,
+        browser="cr",
+        color_scheme="dark",
+        emulator_id="samsung_mail",
+    ),
+    # ── Outlook Desktop (Word engine — CSS preprocessing only) ──
+    "outlook_desktop": RenderingProfile(
+        name="outlook_desktop",
+        viewport_width=800,
+        viewport_height=900,
+        browser="cr",
+        emulator_id="outlook_desktop",
+    ),
+    # ── Thunderbird (Gecko) ──
+    "thunderbird": RenderingProfile(
+        name="thunderbird",
+        viewport_width=700,
+        viewport_height=900,
+        browser="ff",
+        emulator_id="thunderbird",
+    ),
+    # ── Android Gmail ──
+    "android_gmail": RenderingProfile(
+        name="android_gmail",
+        viewport_width=360,
+        viewport_height=780,
+        browser="cr",
+        emulator_id="android_gmail",
+    ),
+    "android_gmail_dark": RenderingProfile(
+        name="android_gmail_dark",
+        viewport_width=360,
+        viewport_height=780,
+        browser="cr",
+        color_scheme="dark",
+        emulator_id="android_gmail",
+    ),
 }

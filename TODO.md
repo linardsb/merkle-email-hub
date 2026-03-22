@@ -26,7 +26,7 @@
 
 ---
 
-## Phase 26 — Email Build Pipeline Performance & CSS Optimization
+## ~~Phase 26 — Email Build Pipeline Performance & CSS Optimization~~ DONE
 
 **What:** Eliminate redundant CSS processing in the email build pipeline, surface per-client CSS compatibility data in QA output, pre-compile template CSS at registration time, and consolidate CSS compilation into the Maizzle sidecar as a single-pass PostCSS pipeline. Four subtasks ordered by impact — each builds on the previous.
 **Why:** The current build pipeline processes CSS twice: Maizzle inlines via Juice, then `EmailCSSCompiler` re-inlines via BeautifulSoup. The BeautifulSoup inliner is O(rules × elements) and adds 1–5s on complex emails — the single largest bottleneck in a pipeline that's otherwise sub-second after the LLM passes. Fixing this unlocks near-instant deterministic builds. The CSS compatibility data already exists in the ontology but isn't surfaced per-build, leaving users to discover rendering failures post-send. Pre-compiling template CSS amortizes optimization cost across all builds using that template. Consolidating into the sidecar is the clean architectural end-state — one HTTP call, one CSS pass, Node.js-native tooling.
@@ -234,7 +234,7 @@
 - Add `make bench` target in Makefile — runs benchmark tests only (`pytest -m benchmark`)
 - Target: 50+ tests total across all test files
 **Verify:** `make test` passes (all new + existing tests). `make check` all green. `make bench` shows measurable improvement. `make eval-golden` passes (no regression in email output quality). Pipeline equivalence tests confirm identical output.
-- [ ] 26.5 Tests & documentation
+- [x] ~~26.5 Tests & documentation~~ DONE
 
 ---
 
@@ -287,7 +287,7 @@
 - Total profiles after this subtask: 6 (existing) + 8 (new) = 14 rendering profiles
 **Security:** Emulators are pure HTML-in → HTML-out string transforms. No network calls, no file system access. `sanitize_html_xss()` still runs after emulation. Samsung image proxy simulation uses URL parameter append only — no actual proxying.
 **Verify:** Each new emulator produces expected transforms: Yahoo class rewriting (`yiv` prefix), Samsung dark mode injection, Outlook Word CSS stripping (verify `display:flex` removed), Thunderbird preserves `<style>` blocks. Existing Gmail/Outlook.com emulators unchanged (regression test). All 14 profiles produce Playwright screenshots. `make test` passes.
-- [ ] 27.1 Expand email client emulators
+- [x] 27.1 Expand email client emulators ~~DONE~~
 
 ### 27.2 Rendering Confidence Scoring `[Backend]`
 **What:** Assign a per-client confidence score (0–100) to every local rendering preview, quantifying how faithful the emulated screenshot is expected to be relative to the real email client. Scores are derived from three signals: emulator rule coverage, ontology CSS support gaps, and historical calibration data (initially seed values, later updated by the calibration loop in 27.4).
@@ -481,7 +481,7 @@
 - Config: `RENDERING__SANDBOX_ENABLED: bool = False`, `RENDERING__SANDBOX_SMTP_HOST: str = "localhost"`, `RENDERING__SANDBOX_SMTP_PORT: int = 1025`, `RENDERING__SANDBOX_MAILPIT_URL: str = "http://localhost:8025"`, `RENDERING__SANDBOX_ROUNDCUBE_URL: str = "http://localhost:9080"`, `RENDERING__SANDBOX_PLAYWRIGHT_TIMEOUT_MS: int = 15000`
 **Security:** Sandbox is entirely local — SMTP to localhost, webmail on localhost. No emails leave the network. Sandbox endpoints admin-only. Email content sent to Mailpit is ephemeral (in-memory by default, configurable persistence). Docker Compose profiles ensure sandbox containers only run when explicitly started. Sandbox credentials (if Roundcube requires login) stored in environment variables, never in code.
 **Verify:** Start sandbox infrastructure (`docker compose --profile sandbox up`). Send email via sandbox endpoint → Mailpit receives it, screenshot captured. DOM diff between original and Mailpit-rendered HTML shows minimal changes (Mailpit is near-passthrough). Roundcube DOM diff shows sanitizer transforms (stripped some CSS, modified some attributes). Sandbox health endpoint reports both services healthy. Calibration loop uses sandbox results with 0.5× weight. `make test` passes (sandbox tests use mocked SMTP — no Docker dependency). `RENDERING__SANDBOX_ENABLED=false` → sandbox endpoints return 503.
-- [ ] 27.5 Headless email client sandbox
+- [x] 27.5 Headless email client sandbox ~~DONE~~
 
 ### 27.6 Frontend Rendering Dashboard & Tests `[Frontend + Full-Stack]`
 **What:** Unified rendering intelligence dashboard that surfaces emulator previews, confidence scores, calibration status, gate results, and sandbox DOM diffs in a single view. Plus comprehensive test suite for the entire Phase 27 pipeline.

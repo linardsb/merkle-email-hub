@@ -97,6 +97,14 @@ class TestClientProfiles:
             "outlook_dark",
             "mobile_ios",
             "outlook_web",
+            "yahoo_web",
+            "yahoo_mobile",
+            "samsung_mail",
+            "samsung_mail_dark",
+            "outlook_desktop",
+            "thunderbird",
+            "android_gmail",
+            "android_gmail_dark",
         }
         assert set(CLIENT_PROFILES.keys()) == expected
 

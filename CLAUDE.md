@@ -10,6 +10,7 @@ Centralised email platform with AI agents. FastAPI backend, Next.js 16 frontend,
 make dev             # Backend (:8891) + frontend (:3000)
 make check           # All checks (lint + types + tests + security)
 make test            # Backend unit tests
+make bench           # Performance benchmarks (CSS pipeline)
 make lint            # Format + lint (ruff)
 make types           # mypy + pyright
 make check-fe        # Frontend type-check + unit tests
@@ -64,19 +65,21 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 
 **Per-Agent Sanitization:** `sanitize_html_xss(html, profile=)` applies agent-specific nh3 allowlists. 10 profiles in `app/ai/shared.py`. `BaseAgentService.sanitization_profile` class attribute wires into `_post_process()`.
 
-**Email Client Emulators:** `app/rendering/local/emulators.py` — Gmail and Outlook.com sanitizer emulation for realistic local previews. Integrated via `RenderingProfile.emulator_id`.
+**Email Client Emulators:** `app/rendering/local/emulators.py` — 8 email client sanitizer emulators (Gmail Web, Outlook.com, Yahoo Web, Yahoo Mobile, Samsung Mail, Outlook Desktop/Word, Thunderbird, Android Gmail) with 14 rendering profiles in `profiles.py`. `EmulatorRule` chain-of-rules pattern with optional `confidence_impact` for future scoring. Integrated via `RenderingProfile.emulator_id`.
+
+**Headless Email Sandbox:** `app/rendering/sandbox/` — SMTP-based real sanitizer capture. Sends email via `aiosmtplib` to Mailpit, captures post-sanitizer DOM, computes structural `DOMDiff` (removed elements/attributes/CSS properties, modified styles). `SandboxProfile` registry (mailpit, roundcube). Playwright-based webmail capture for Roundcube. Docker Compose `sandbox` profile for Mailpit + Roundcube. Admin-only endpoints: `POST /sandbox/test`, `GET /sandbox/health`. Feature-flagged via `RENDERING__SANDBOX__ENABLED`.
 
 **Progressive Enhancement:** `TemplateAssembler` Step 11 applies `tier_strategy="progressive"` — wraps modern CSS in MSO conditionals with Word-engine fallback.
 
 ## Roadmap
 
-See `TODO.md` for details on upcoming phases. See `docs/TODO-completed.md` for detailed completion records of phases 0-25.
+See `TODO.md` for details on upcoming phases. See `docs/TODO-completed.md` for detailed completion records of phases 0-26.
 
 **Upcoming phases (priority order — highest differentiation first):**
-- **Phase 26** — Email Build Pipeline Performance & CSS Optimization (5 subtasks — 26.1 DONE: optimize_css pre-build pipeline; 26.2 DONE: per-build CSS compatibility audit in QA output; 26.3 DONE: template CSS precompilation with `TemplatePrecompiler` + marker-based skip in `MaizzleBuildNode`; 26.4 DONE: consolidated sidecar CSS pipeline with PostCSS plugin + Lightning CSS + ontology sync; 26.5 remaining: tests)
-- **Phase 27** — Email Client Rendering Fidelity & Pre-Send Testing (6 subtasks: expand emulators to 7 clients, rendering confidence scoring, pre-send rendering gate, emulator calibration loop, headless email sandbox, frontend rendering dashboard & tests)
+- ~~**Phase 26**~~ — Email Build Pipeline Performance & CSS Optimization — **ALL DONE** (5/5 subtasks — optimize_css pre-build pipeline, per-build CSS audit, template precompilation, consolidated sidecar CSS pipeline, tests & benchmarks)
+- **Phase 27** — Email Client Rendering Fidelity & Pre-Send Testing (2/6 done — 27.1 expand emulators DONE, 27.5 headless email sandbox DONE; remaining: rendering confidence scoring, pre-send rendering gate, emulator calibration loop, frontend rendering dashboard & tests)
 
-**Completed phases 0–25** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).
+**Completed phases 0–26** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).
 
 ## Compact instructions
 
