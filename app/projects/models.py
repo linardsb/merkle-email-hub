@@ -74,6 +74,12 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
         default=None,
         comment="Per-project export QA gate configuration (mode, blocking/warning checks)",
     )
+    require_approval_for_export: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Require approval before ESP export",
+    )
 
     client_org: Mapped[ClientOrg] = relationship(back_populates="projects")
 

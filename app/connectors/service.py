@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.connectors.adobe.service import AdobeConnectorService
+from app.connectors.approval_gate_schemas import ApprovalGateResult
 from app.connectors.braze.service import BrazeConnectorService
 from app.connectors.exceptions import ExportFailedError, UnsupportedConnectorError
 from app.connectors.models import ExportRecord
@@ -130,12 +131,17 @@ class ConnectorService:
 
     async def export(self, data: ExportRequest, user: User) -> ExportResponse:
         """Export an email build or template version to the specified ESP."""
-        # Admin-only override for skip_qa_gate
+        # Admin-only overrides
         if data.skip_qa_gate and user.role != "admin":
             raise ForbiddenError("Only admins can skip QA gate")
+        if data.skip_approval and user.role != "admin":
+            raise ForbiddenError("Only admins can skip approval gate")
 
         html = await self._resolve_html(data, user)
         provider = self._get_provider(data.connector_type)
+
+        # Shared project_id for all gate evaluations
+        gate_project_id = await self._resolve_project_id(data, user)
 
         # ── QA gate check (Phase 28.1) ──
         settings = get_settings()
@@ -146,7 +152,6 @@ class ConnectorService:
             from app.connectors.qa_gate_schemas import QAGateVerdict as QAVerdict
 
             qa_gate = ExportQAGate(self.db)
-            gate_project_id = await self._resolve_project_id(data, user)
             qa_gate_result = await qa_gate.evaluate(html, gate_project_id)
 
             if qa_gate_result.verdict == QAVerdict.BLOCK:
@@ -174,14 +179,12 @@ class ConnectorService:
             )
 
         # ── Rendering gate check (Phase 27.3) ──
-        settings = get_settings()
         if settings.rendering.gate_mode != "skip":
             from app.rendering.exceptions import RenderingGateBlockedError
             from app.rendering.gate import RenderingSendGate
             from app.rendering.gate_schemas import GateEvaluateRequest, GateVerdict
 
             gate = RenderingSendGate(self.db)
-            gate_project_id = await self._resolve_project_id(data, user)
             gate_result = await gate.evaluate(
                 GateEvaluateRequest(html=html, project_id=gate_project_id)
             )
@@ -203,6 +206,29 @@ class ConnectorService:
                     blocking_clients=gate_result.blocking_clients,
                     build_id=data.build_id,
                 )
+
+        # ── Approval gate check (Phase 28.2) ──
+        approval_result: ApprovalGateResult | None = None
+        if not data.skip_approval:
+            from app.connectors.approval_gate import ExportApprovalGate
+            from app.connectors.exceptions import ApprovalRequiredError
+
+            approval_gate = ExportApprovalGate(self.db)
+            approval_result = await approval_gate.evaluate(data.build_id, gate_project_id)
+
+            if not approval_result.passed and approval_result.required:
+                logger.warning(
+                    "connectors.export_approval_gate_blocked",
+                    reason=approval_result.reason,
+                    build_id=data.build_id,
+                )
+                raise ApprovalRequiredError(f"Approval required: {approval_result.reason}")
+        elif data.skip_approval:
+            logger.warning(
+                "connectors.export_approval_skipped",
+                user_id=user.id,
+                build_id=data.build_id,
+            )
 
         # Resolve credentials if a connection_id was provided
         credentials: dict[str, str] | None = None
@@ -244,6 +270,7 @@ class ConnectorService:
                 status="success",
                 external_id=external_id,
                 qa_gate_result=qa_gate_result,
+                approval_result=approval_result,
                 created_at=datetime.datetime.now(datetime.UTC),
             )
 
@@ -293,6 +320,7 @@ class ConnectorService:
             external_id=record.external_id,
             error_message=record.error_message,
             qa_gate_result=qa_gate_result,
+            approval_result=approval_result,
             created_at=record.created_at,  # pyright: ignore[reportArgumentType]
         )
 
@@ -321,10 +349,22 @@ class ConnectorService:
                 )
             )
 
-        can_export = qa_result.passed and (render_result is None or render_result.passed)
+        approval_result = None
+        if data.build_id is not None:
+            from app.connectors.approval_gate import ExportApprovalGate
+
+            approval_gate = ExportApprovalGate(self.db)
+            approval_result = await approval_gate.evaluate(data.build_id, data.project_id)
+
+        can_export = (
+            qa_result.passed
+            and (render_result is None or render_result.passed)
+            and (approval_result is None or approval_result.passed)
+        )
         return ExportPreCheckResponse(
             qa=qa_result,
             rendering=render_result,
+            approval=approval_result,
             can_export=can_export,
         )
 

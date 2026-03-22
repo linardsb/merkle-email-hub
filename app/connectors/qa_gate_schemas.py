@@ -6,6 +6,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from app.connectors.approval_gate_schemas import ApprovalGateResult
 from app.rendering.gate_schemas import GateResult
 
 
@@ -73,11 +74,13 @@ class ExportPreCheckRequest(BaseModel):
     html: str = Field(..., min_length=1, max_length=500_000)
     project_id: int | None = None
     target_clients: list[str] | None = None
+    build_id: int | None = None
 
 
 class ExportPreCheckResponse(BaseModel):
-    """Combined QA + rendering gate pre-check result."""
+    """Combined QA + rendering + approval gate pre-check result."""
 
     qa: QAGateResult
     rendering: GateResult | None = None
+    approval: ApprovalGateResult | None = None
     can_export: bool

@@ -29,3 +29,7 @@ class ESPConflictError(ConflictError):
 
 class ExportQAGateBlockedError(DomainValidationError):
     """Raised when QA gate blocks export in enforce mode."""
+
+
+class ApprovalRequiredError(DomainValidationError):
+    """Raised when approval is required but not yet granted."""

@@ -303,7 +303,7 @@
     - Integration: QA passes + rendering passes + approval pending → still blocked
 **Security:** Approval gate checks are read-only lookups. Override requires admin role. The approval state machine already has BOLA checks (`_verify_approval_access`). No new models or migrations needed — uses existing `ApprovalRequest.build_id` FK.
 **Verify:** Project with `require_approval=true`, no approval → export blocked with "No approval request submitted". Submit approval → export still blocked ("Approval pending"). Reviewer approves → export proceeds. Project without `require_approval` → export proceeds without approval. Admin `skip_approval=true` → proceeds with audit. Pre-check shows all three gate results. `make test` passes.
-- [ ] 28.2 Approval workflow → export integration
+- [x] ~~28.2 Approval workflow → export integration~~ DONE
 
 ### 28.3 Approval Frontend UI `[Frontend]`
 **What:** React components for the approval workflow — request approval, review/decide, feedback, and audit trail. Integrated into the workspace and export flow.

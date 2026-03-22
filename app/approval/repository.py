@@ -20,6 +20,17 @@ class ApprovalRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_latest_by_build_id(self, build_id: int) -> ApprovalRequest | None:
+        """Get the most recent approval request for a build."""
+        result = await self.db.execute(
+            select(ApprovalRequest)
+            .where(ApprovalRequest.build_id == build_id)
+            .where(ApprovalRequest.deleted_at.is_(None))
+            .order_by(ApprovalRequest.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
     async def list_by_project(self, project_id: int) -> list[ApprovalRequest]:
         result = await self.db.execute(
             select(ApprovalRequest)

@@ -47,6 +47,7 @@ class ProjectUpdate(BaseModel):
     status: str | None = Field(None, max_length=20)
     is_active: bool | None = None
     target_clients: list[ClientId] | None = None
+    require_approval_for_export: bool | None = None
 
 
 class ProjectResponse(ProjectBase):
@@ -57,6 +58,7 @@ class ProjectResponse(ProjectBase):
     target_clients: list[str] | None = None
     design_system: dict[str, Any] | None = None
     template_config: dict[str, Any] | None = None
+    require_approval_for_export: bool = False
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
