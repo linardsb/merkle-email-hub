@@ -94,17 +94,53 @@ export interface DefectAnnotationData {
 
 export type ClientProfile =
   | "gmail_web"
-  | "outlook_2019"
+  | "gmail_web_dark"
+  | "outlook_web"
+  | "outlook_web_dark"
   | "apple_mail"
-  | "outlook_dark"
-  | "mobile_ios";
+  | "apple_mail_dark"
+  | "mobile_ios"
+  | "mobile_ios_dark"
+  | "yahoo_web"
+  | "yahoo_mobile"
+  | "samsung_mail"
+  | "samsung_mail_dark"
+  | "outlook_desktop"
+  | "thunderbird";
 
 export const CLIENT_DISPLAY_NAMES: Record<ClientProfile, string> = {
   gmail_web: "Gmail Web",
-  outlook_2019: "Outlook 2019",
+  gmail_web_dark: "Gmail Web (Dark)",
+  outlook_web: "Outlook.com",
+  outlook_web_dark: "Outlook.com (Dark)",
   apple_mail: "Apple Mail",
-  outlook_dark: "Outlook Dark",
+  apple_mail_dark: "Apple Mail (Dark)",
   mobile_ios: "Mobile iOS",
+  mobile_ios_dark: "Mobile iOS (Dark)",
+  yahoo_web: "Yahoo Web",
+  yahoo_mobile: "Yahoo Mobile",
+  samsung_mail: "Samsung Mail",
+  samsung_mail_dark: "Samsung Mail (Dark)",
+  outlook_desktop: "Outlook Desktop",
+  thunderbird: "Thunderbird",
+};
+
+/** Approximate market share per client for summary bar segment widths. */
+export const CLIENT_MARKET_SHARE: Partial<Record<ClientProfile, number>> = {
+  gmail_web: 0.15,
+  gmail_web_dark: 0.15,
+  outlook_web: 0.05,
+  outlook_web_dark: 0.05,
+  apple_mail: 0.14,
+  apple_mail_dark: 0.14,
+  mobile_ios: 0.07,
+  mobile_ios_dark: 0.03,
+  yahoo_web: 0.04,
+  yahoo_mobile: 0.02,
+  samsung_mail: 0.03,
+  samsung_mail_dark: 0.02,
+  outlook_desktop: 0.07,
+  thunderbird: 0.04,
 };
 
 export type VisualQAEntityType = "component_version" | "golden_template";

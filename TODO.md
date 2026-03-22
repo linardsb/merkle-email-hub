@@ -6,9 +6,9 @@
 
 ---
 
-> **Completed phases (0–25):** See [docs/TODO-completed.md](docs/TODO-completed.md)
+> **Completed phases (0–26):** See [docs/TODO-completed.md](docs/TODO-completed.md)
 >
-> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA — Playwright rendering, ODiff baselines, VLM analysis agent #10, auto-fix pipeline, visual QA dashboard). Phase 18 (rendering resilience & property-based testing — chaos engine with 8 profiles, Hypothesis-based property testing with 10 invariants, resilience score integration, knowledge feedback loop). Phase 19 (Outlook transition advisor & email CSS compiler — Word-engine dependency analyzer, audience-aware migration planner, Lightning CSS 7-stage compiler with ontology-driven conversions). Phase 20 (Gmail AI intelligence & deliverability — Gemini summary predictor, schema.org auto-injection, deliverability scoring, BIMI readiness check). Phase 21 (real-time ontology sync & competitive intelligence — caniemail auto-sync, rendering change detector with 25 feature templates, competitive intelligence dashboard). Phase 22 (AI evolution infrastructure — capability registry, prompt template store, token budget manager, fallback chains, cost governor, cross-module integration tests + ADR-009). Phase 23 (multimodal protocol & MCP agent interface — 7 subtasks: content block protocol, adapter serialization, agent integration, MCP tool server with 17 tools, voice brief pipeline, frontend multimodal UI, tests & ADR-010; 197 tests). Phase 24 (real-time collaboration & visual builder — 9 subtasks: WebSocket infra, Yjs CRDT engine, collaborative cursor & presence, visual builder canvas & palette, property panels, bidirectional code↔builder sync, frontend integration, tests & docs, AI-powered HTML import with 10th agent). Phase 25 (platform ecosystem & advanced integrations — 15 subtasks: plugin architecture with manifest/discovery/registry, sandboxed execution & lifecycle, Tolgee multilingual campaigns, per-locale Maizzle builds, Kestra workflow orchestration, Penpot design-to-email pipeline, Typst QA report generator, ecosystem dashboard, template learning pipeline, automatic skill extraction, template-to-eval pipeline, deliverability intelligence, multi-variant campaign assembly).
+> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA — Playwright rendering, ODiff baselines, VLM analysis agent #10, auto-fix pipeline, visual QA dashboard). Phase 18 (rendering resilience & property-based testing — chaos engine with 8 profiles, Hypothesis-based property testing with 10 invariants, resilience score integration, knowledge feedback loop). Phase 19 (Outlook transition advisor & email CSS compiler — Word-engine dependency analyzer, audience-aware migration planner, Lightning CSS 7-stage compiler with ontology-driven conversions). Phase 20 (Gmail AI intelligence & deliverability — Gemini summary predictor, schema.org auto-injection, deliverability scoring, BIMI readiness check). Phase 21 (real-time ontology sync & competitive intelligence — caniemail auto-sync, rendering change detector with 25 feature templates, competitive intelligence dashboard). Phase 22 (AI evolution infrastructure — capability registry, prompt template store, token budget manager, fallback chains, cost governor, cross-module integration tests + ADR-009). Phase 23 (multimodal protocol & MCP agent interface — 7 subtasks: content block protocol, adapter serialization, agent integration, MCP tool server with 17 tools, voice brief pipeline, frontend multimodal UI, tests & ADR-010; 197 tests). Phase 24 (real-time collaboration & visual builder — 9 subtasks: WebSocket infra, Yjs CRDT engine, collaborative cursor & presence, visual builder canvas & palette, property panels, bidirectional code↔builder sync, frontend integration, tests & docs, AI-powered HTML import with 10th agent). Phase 25 (platform ecosystem & advanced integrations — 15 subtasks: plugin architecture with manifest/discovery/registry, sandboxed execution & lifecycle, Tolgee multilingual campaigns, per-locale Maizzle builds, Kestra workflow orchestration, Penpot design-to-email pipeline, Typst QA report generator, ecosystem dashboard, template learning pipeline, automatic skill extraction, template-to-eval pipeline, deliverability intelligence, multi-variant campaign assembly). Phase 26 (email build pipeline performance & CSS optimization — 5 subtasks: eliminate redundant CSS inlining, per-build CSS compatibility audit, template-level CSS precompilation, consolidated CSS pipeline in Maizzle sidecar, tests & documentation).
 
 ---
 
@@ -31,203 +31,6 @@
 > All 5 subtasks complete. See [docs/TODO-completed.md](docs/TODO-completed.md) for detailed completion records.
 > 26.1 Eliminate redundant CSS inlining, 26.2 Per-build CSS compatibility audit, 26.3 Template-level CSS precompilation, 26.4 Consolidated CSS pipeline in Maizzle sidecar, 26.5 Tests & documentation.
 
-PHASE_26_CUT_START
-  - Runs ontology analysis, conversions, eliminations on each block
-  - Runs Lightning CSS minification on each block
-  - Re-injects optimized `<style>` blocks into HTML (does NOT inline)
-  - Returns HTML ready for Maizzle to inline
-- Modify `MaizzleBuildNode.execute()` in `app/ai/blueprints/nodes/maizzle_build_node.py`:
-  - Before calling the Maizzle sidecar, call `EmailCSSCompiler.optimize_css()` on `context.html`
-  - Pass optimized HTML to Maizzle (Juice inlines the already-optimized CSS)
-  - After Maizzle returns, run only `sanitize_html_xss()` — skip the full `compile()` call
-  - Store `OptimizedCSS` metadata (removed_properties, conversions, warnings) in build result
-- Modify `EmailEngineService.build()` in `app/email_engine/service.py`:
-  - Same pattern for direct builds: `optimize_css()` → `_call_builder()` → `sanitize_html_xss()`
-  - Preserve `CompilationResult` contract — populate from `OptimizedCSS` + Maizzle build time
-- Modify `EmailCSSCompiler.compile()` — keep it working as-is for backward compatibility (CSS compilation API endpoint still uses the full 7-stage pipeline), but add deprecation log encouraging callers to use the optimized flow
-- Update `app/email_engine/css_compiler/__init__.py` exports to include `OptimizedCSS`, `optimize_css`
-**Security:** No new attack surface. `sanitize_html_xss()` still runs on final output. Ontology-driven property elimination is deterministic and already tested.
-**Verify:** Run `make test` — all existing CSS compiler tests pass unchanged. Build the same email with old flow vs new flow → identical HTML output (diff test). Measure build time on a 30-section email → confirm 1–5s reduction. `CompilationResult` fields populated correctly. `make check` all green.
-- [x] ~~26.1 Eliminate redundant CSS inlining~~ DONE
-
-### 26.2 Per-Build CSS Compatibility Audit in QA Output `[Backend + Frontend]`
-**What:** Surface the ontology-driven CSS compatibility data as a per-build QA check result. When a user runs QA or builds an email, the output includes a matrix showing which CSS properties survive in each target email client, which were converted to fallbacks, and which were removed. This catches rendering surprises *before* send — not after.
-**Why:** The ontology data and per-build conversion metadata already exist (from `CompilationResult.removed_properties` and `CompilationResult.conversions`). But this data is only logged — it never reaches the user. Users discover rendering failures by manually testing in Litmus/Email on Acid or worse, from recipient complaints. Surfacing the data per-build is practically free and directly actionable.
-**Implementation:**
-- Create `app/qa_engine/checks/css_audit.py` — `CSSAuditCheck`:
-  - `async run(html: str, config: QACheckConfig) -> QACheckResult`
-  - Accepts `target_clients: list[str]` from config (default: Gmail, Outlook, Apple Mail, Yahoo Mail, Samsung Mail)
-  - Calls `EmailCSSCompiler.optimize_css()` (from 26.1) to get `OptimizedCSS` with conversion metadata
-  - Builds per-client matrix: `dict[client_name, dict[property, SupportStatus]]` where `SupportStatus` is `supported | converted | removed | partial`
-  - Severity classification:
-    - `error` — property removed with no fallback in a tier-1 client (Gmail, Outlook)
-    - `warning` — property converted to fallback (may look different)
-    - `info` — property has partial support (works in some contexts)
-  - Output: `QACheckResult` with `details.compatibility_matrix`, `details.conversions`, `details.removed_properties`, `details.client_coverage_score` (0–100, percentage of CSS properties fully supported across all target clients)
-  - Score formula: `(fully_supported_count / total_property_count) * 100` per client, then average across targets
-- Register `css_audit` in `app/qa_engine/checks/__init__.py` — add to default check list (runs after `css_support` check)
-- Modify `app/qa_engine/service.py` — `QAEngineService.run_checks()`:
-  - Pass `compilation_result` (if available from prior build step) to `CSSAuditCheck` to avoid re-running the compiler
-  - If no compilation result available, `CSSAuditCheck` runs `optimize_css()` internally
-- Modify existing `CssSupportCheck` in `app/qa_engine/checks/css_support.py`:
-  - Add `engine_compatibility_summary` to its output — leverages `OntologyRegistry.engine_support()` for engine-level aggregation
-  - Keep existing per-property support check, add per-engine summary view
-- Frontend: Add CSS audit visualization to QA results panel:
-  - `cms/apps/web/src/components/qa/css-audit-panel.tsx` — new component:
-    - Collapsible client matrix table: rows = CSS properties, columns = target clients, cells = colored status (green/yellow/red)
-    - Conversion detail expandable: click a "converted" cell → shows original property, fallback property, reason
-    - Client coverage score bar: horizontal bar per client with percentage
-    - Filter: show all / errors only / warnings only
-  - Wire into existing QA results view — new tab "CSS Compatibility" alongside existing check results
-- Frontend types: add `CSSAuditResult`, `CompatibilityMatrix`, `ClientCoverageScore` to `cms/apps/web/src/types/qa.ts`
-**Security:** Read-only — displays existing ontology data. No new inputs or endpoints beyond the standard QA flow.
-**Verify:** Build an email with known unsupported properties (e.g., `border-radius` in Outlook Word engine) → CSS audit check shows `removed` status for Outlook with `error` severity. Build a simple email with only universally-supported properties → 100% coverage score. Frontend matrix renders correctly. `make test` and `make check-fe` pass.
-- [x] ~~26.2 Per-build CSS compatibility audit in QA output~~ DONE
-
-### 26.3 Template-Level CSS Precompilation `[Backend]`
-**What:** Pre-compile ontology-optimized CSS for each `GoldenTemplate` at registration/update time. Store the optimized CSS alongside the raw template HTML. At build time, the `TemplateAssembler` starts from pre-optimized HTML — the only CSS work remaining is token substitution (hex color swap, font swap) which is pure string replacement, not CSS parsing.
-**Why:** Golden templates have static CSS that doesn't change between builds. Running ontology analysis, Lightning CSS minification, and property elimination on the *same* CSS for every build is wasted computation. Pre-compiling amortizes this cost to template registration (happens once per template version). Build-time CSS work drops to O(token_count) string replacements — microseconds instead of hundreds of milliseconds. This compounds: 50 builds/day × 200ms savings = 10s/day per template. For platforms with dozens of templates and hundreds of daily builds, this is significant.
-**Implementation:**
-- Add columns to `GoldenTemplate` model in `app/ai/agents/scaffolder/templates.py`:
-  - `optimized_html: str | None` — HTML with pre-compiled CSS (ontology-optimized, Lightning CSS minified, CSS variables resolved)
-  - `optimized_at: datetime | None` — timestamp of last precompilation
-  - `optimized_for_clients: list[str] | None` — target client list used for optimization (if target clients change, re-optimize)
-  - `optimization_metadata: dict | None` — JSON: `{ removed_properties, conversions, compile_time_ms, original_size, optimized_size }`
-- Create `app/ai/agents/scaffolder/template_precompiler.py` — `TemplatePrecompiler`:
-  - `async precompile(template: GoldenTemplate, target_clients: list[str] | None = None) -> GoldenTemplate`:
-    - Uses `EmailCSSCompiler.optimize_css()` (from 26.1) on template HTML
-    - Default target clients: `["gmail", "outlook", "apple_mail", "yahoo_mail"]` (configurable via `CSS_OPTIMIZATION__DEFAULT_TARGETS`)
-    - Stores result in `optimized_html`, metadata in `optimization_metadata`
-    - Preserves slot placeholders, ESP tokens, builder annotations — optimization only touches CSS
-  - `async precompile_all(target_clients: list[str] | None = None) -> PrecompilationReport`:
-    - Batch precompile all registered templates
-    - Returns report: `{ total, succeeded, failed, total_size_reduction_bytes, avg_compile_time_ms }`
-  - `is_stale(template: GoldenTemplate, target_clients: list[str]) -> bool`:
-    - Returns True if `optimized_at` is None, or `optimized_for_clients` differs from current targets, or template HTML has been modified since `optimized_at`
-- Modify `TemplateRegistry` in `app/ai/agents/scaffolder/templates.py`:
-  - `register()` / `update()` — after saving template, trigger `TemplatePrecompiler.precompile()` asynchronously (fire-and-forget via `asyncio.create_task`)
-  - `get()` — if `optimized_html` is not None and not stale, return `optimized_html` as the build source
-  - Fallback: if `optimized_html` is None (first registration, migration), return raw HTML — pipeline still works, just slower
-- Modify `TemplateAssembler.assemble()` in `app/ai/agents/scaffolder/assembler.py`:
-  - Detect if input HTML is pre-optimized (check `template.optimized_html is not None`)
-  - If pre-optimized: skip the `optimize_css()` call in `MaizzleBuildNode` — set a flag `skip_css_optimization=True` on build context
-  - Assembler's 11 steps work identically on pre-optimized HTML (they operate on inline styles and HTML attributes, not `<style>` blocks)
-- Modify `MaizzleBuildNode.execute()`:
-  - Check `context.skip_css_optimization` — if True, skip `optimize_css()` call, pass HTML directly to Maizzle
-  - Maizzle still inlines CSS (slot fills may have added new `<style>` rules from components), but the bulk of template CSS is already optimized
-- Add management command / API endpoint:
-  - `POST /api/v1/templates/precompile` — admin-only, triggers batch precompilation of all templates
-  - Returns `PrecompilationReport` with per-template status
-- Alembic migration: add `optimized_html`, `optimized_at`, `optimized_for_clients`, `optimization_metadata` columns to `golden_templates` table (nullable, no data migration needed)
-**Security:** Pre-compiled HTML goes through the same `sanitize_html_xss()` pipeline as raw HTML. Admin-only precompile endpoint. No new user-facing inputs.
-**Verify:** Register a new template → `optimized_html` populated within 1s. Build email from pre-optimized template → identical output to non-optimized path (diff test). Build time measurably faster (skip CSS optimization stage). Modify template HTML → `is_stale()` returns True → next build triggers re-precompilation. `POST /api/v1/templates/precompile` returns report with all templates succeeded. `make test` passes. `make check` all green.
-- [x] ~~26.3 Template-level CSS precompilation~~ DONE
-
-### 26.4 Consolidated CSS Pipeline in Maizzle Sidecar `[Backend + Sidecar]`
-**What:** Move the ontology-driven CSS optimization into the Maizzle sidecar as a custom PostCSS plugin. The sidecar becomes the single CSS processing point: ontology elimination → property conversion → Lightning CSS minification → Juice inlining — all in one Node.js process, one HTTP call. The Python `EmailCSSCompiler` becomes a thin client that calls the sidecar and wraps the result.
-**Why:** This is the clean architectural end-state for the CSS pipeline. After 26.1 separated optimization from inlining, the two still run in different processes (Python optimization → HTTP → Node.js inlining). Merging them eliminates: (a) HTTP serialization overhead for the optimize step, (b) HTML re-parsing between stages, (c) process context switching. Node.js has superior CSS tooling — PostCSS, Lightning CSS (native npm package, no FFI), csstools/postcss-plugins. The ontology data is static JSON that can be loaded once at sidecar startup. Expected improvement: 100–300ms per build from eliminated HTTP round-trip + re-parsing.
-**Implementation:**
-- Create `services/maizzle-builder/postcss-email-optimize.js` — custom PostCSS plugin:
-  - `module.exports = (opts = {}) => { return { postcssPlugin: 'email-optimize', ... } }`
-  - Loads ontology support matrix from `services/maizzle-builder/data/ontology.json` at startup (copied from `app/email_engine/css_compiler/data/` at build time)
-  - `Declaration(decl, { result })` visitor:
-    - Looks up `decl.prop` in ontology for each target client in `opts.targetClients`
-    - If zero support + no fallback → `decl.remove()` + log to `result.messages`
-    - If fallback available → `decl.replaceWith(fallbackDecl)` + log conversion
-    - If partial support → keep, add warning to `result.messages`
-  - `AtRule(atRule)` visitor:
-    - Preserves `@media`, `@keyframes` — no elimination
-    - Removes `@charset`, `@layer` (no email client support)
-  - `OnceExit(root, { result })`:
-    - Collects all messages into `result.messages` with type `email-optimize` for structured reporting
-  - Export `removedProperties`, `conversions`, `warnings` arrays attached to result
-- Create `services/maizzle-builder/data/ontology.json`:
-  - Build script: `services/maizzle-builder/scripts/sync-ontology.js` — reads `app/email_engine/css_compiler/data/` YAML/JSON files → writes merged JSON
-  - Run as `npm run sync-ontology` (add to package.json scripts)
-  - Also runs as part of `make dev` setup
-- Modify `services/maizzle-builder/index.js`:
-  - Add `postcss-email-optimize` to the PostCSS plugin chain in Maizzle config
-  - New request field: `target_clients: string[]` (optional, default: `["gmail", "outlook", "apple_mail", "yahoo_mail"]`)
-  - New response fields: `optimization: { removed_properties, conversions, warnings, original_css_size, optimized_css_size }`
-  - Pipeline order: `postcss-email-optimize` → Maizzle transforms → Juice inline → minify (production)
-  - Lightning CSS: add `lightningcss` npm package for minification (replaces cssnano if present) — native Node, no Rust FFI
-- Modify `services/maizzle-builder/package.json`:
-  - Add dependencies: `postcss` (peer), `lightningcss`
-  - Add script: `"sync-ontology": "node scripts/sync-ontology.js"`
-- Modify `MaizzleBuildNode.execute()` in `app/ai/blueprints/nodes/maizzle_build_node.py`:
-  - Pass `target_clients` in sidecar request body
-  - Read `optimization` from sidecar response → populate `CompilationResult` metadata
-  - Remove call to `EmailCSSCompiler.optimize_css()` — sidecar handles it now
-  - Keep `sanitize_html_xss()` on output (Python-side security guarantee)
-- Modify `EmailEngineService._call_builder()` in `app/email_engine/service.py`:
-  - Same pattern: pass `target_clients`, read `optimization` from response
-  - Populate `CompilationResult` from sidecar `optimization` field
-- Modify `EmailCSSCompiler` in `app/email_engine/css_compiler/compiler.py`:
-  - Keep `compile()` for backward compatibility (CSS compilation API endpoint)
-  - Add `compile_via_sidecar(html, target_clients) -> CompilationResult` — thin wrapper that calls sidecar `/build` with CSS optimization enabled and maps response to `CompilationResult`
-  - `optimize_css()` (from 26.1) remains available for pre-compilation (26.3) and standalone use
-- Update `Makefile`:
-  - `make dev` — runs `npm run sync-ontology` in `services/maizzle-builder/` before starting sidecar
-  - `make sync-ontology` — standalone target for manual ontology sync
-- Update `services/maizzle-builder/Dockerfile` (if present):
-  - Add `COPY` for ontology data
-  - Add `RUN npm run sync-ontology` in build stage
-**Security:** Ontology data is read-only static configuration. No user input reaches the PostCSS plugin — it only processes CSS from trusted template sources. `sanitize_html_xss()` still runs in Python on final output. Sidecar remains internal (not exposed to public network).
-**Verify:** Build email via sidecar with `target_clients=["outlook"]` → response includes `optimization.removed_properties` listing Outlook-unsupported CSS. Build same email via old Python path → identical HTML output (diff test). Sidecar `/health` returns ontology version. `npm run sync-ontology` succeeds and produces valid JSON. `make test` passes (backend). `cd services/maizzle-builder && npm test` passes (sidecar). `make check` all green. Measure end-to-end build time → confirm 100–300ms improvement over 26.1 flow.
-- [x] ~~26.4 Consolidated CSS pipeline in Maizzle sidecar~~ DONE
-
-### 26.5 Tests & Documentation `[Full-Stack]`
-**What:** Comprehensive test suite for the entire Phase 26 pipeline, regression tests ensuring output equivalence with the pre-Phase-26 pipeline, and performance benchmarks.
-**Implementation:**
-- `app/email_engine/css_compiler/tests/test_optimize_css.py` — 15+ tests:
-  - `optimize_css()` returns correct `OptimizedCSS` structure
-  - Ontology-driven property removal (e.g., `border-radius` removed for Outlook Word engine)
-  - Fallback conversions applied (e.g., `flexbox` → `display: block`)
-  - Lightning CSS minification reduces size
-  - CSS variable resolution with fallbacks
-  - MSO conditional comments preserved through optimization
-  - Slot placeholders and ESP tokens untouched by CSS optimization
-  - Empty `<style>` blocks removed after optimization
-  - `@media` and `@keyframes` at-rules preserved
-  - Multiple `<style>` blocks handled independently
-- `app/qa_engine/checks/tests/test_css_audit.py` — 10+ tests:
-  - Audit check returns correct severity per property per client
-  - Coverage score calculation (100% for basic emails, <100% for modern CSS)
-  - Conversion details populated correctly
-  - Handles empty HTML gracefully
-  - Respects custom `target_clients` config
-  - Integration with `QAEngineService.run_checks()` — css_audit included in results
-- `app/ai/agents/scaffolder/tests/test_template_precompiler.py` — 10+ tests:
-  - Precompile populates `optimized_html` and metadata
-  - `is_stale()` returns True when template modified after optimization
-  - `is_stale()` returns True when target clients change
-  - Precompile preserves slot placeholders and builder annotations
-  - Batch `precompile_all()` returns correct report
-  - Build from pre-optimized template produces identical output to non-optimized (regression)
-  - Pre-optimized path skips CSS optimization stage (verified via mock/spy)
-- `services/maizzle-builder/tests/` — 10+ tests (Jest or Vitest):
-  - PostCSS plugin removes unsupported properties per ontology
-  - PostCSS plugin applies fallback conversions
-  - PostCSS plugin preserves @media rules
-  - Ontology sync script produces valid JSON
-  - `/build` response includes `optimization` field when `target_clients` provided
-  - `/build` without `target_clients` uses defaults
-  - End-to-end: HTML in → optimized + inlined HTML out
-- `app/email_engine/css_compiler/tests/test_pipeline_equivalence.py` — regression suite:
-  - 5 golden email templates (simple, complex, dark-mode-heavy, responsive, MSO-conditional)
-  - For each: build via old 7-stage `compile()` path AND new optimized path → `assert html_equal(old, new)`
-  - HTML comparison ignores whitespace differences, attribute ordering
-  - Guards against any behavioral regression from the pipeline reorder
-- `app/email_engine/css_compiler/tests/test_performance_benchmark.py` — performance suite:
-  - Benchmark `compile()` vs `optimize_css()` + Maizzle on 5/15/30-section emails
-  - Assert new path is at least 2× faster than old path for 30-section emails
-  - Log timing breakdowns for CI tracking
-  - Marked `@pytest.mark.benchmark` (not run in standard `make test`, run via `make bench`)
-- Add `make bench` target in Makefile — runs benchmark tests only (`pytest -m benchmark`)
-- Target: 50+ tests total across all test files
-**Verify:** `make test` passes (all new + existing tests). `make check` all green. `make bench` shows measurable improvement. `make eval-golden` passes (no regression in email output quality). Pipeline equivalence tests confirm identical output.
-- [x] ~~26.5 Tests & documentation~~ DONE
-
 ---
 
 ## Phase 27 — Email Client Rendering Fidelity & Pre-Send Testing
@@ -237,89 +40,15 @@ PHASE_26_CUT_START
 **Dependencies:** Phase 17 (visual regression & Playwright rendering), Phase 19 (CSS compiler & ontology), Phase 26 (optimized CSS pipeline & per-build CSS audit). The `RenderingService` multi-provider architecture, `EmailClientEmulator` chain-of-rules pattern, `ScreenshotBaseline` model, ODiff visual comparison, and ontology support matrix are all in place.
 **Design principle:** Emulators are approximations, not replacements. Every emulator publishes a confidence score derived from calibration data. The system is honest about what it can and cannot model locally — Word engine rendering is fundamentally impossible to emulate without Word itself, so Outlook desktop emulators focus on the *CSS preprocessing* stage (property stripping, shorthand expansion, VML injection) and report lower confidence for layout-dependent issues. External providers are the ground truth — local emulators are the fast, free alternative that gets better over time via calibration.
 
-### 27.1 Expand Email Client Emulators — Yahoo, Samsung, Outlook Desktop, Thunderbird, Android Gmail `[Backend]`
-**What:** Add 5 new `EmailClientEmulator` implementations covering the remaining high-market-share clients. Each emulator models the client's HTML/CSS sanitizer as a chain of transformation rules — the same pattern used by the existing Gmail and Outlook.com emulators.
-**Why:** Gmail Web and Outlook.com cover ~35% of the email market. Adding Yahoo Mail, Samsung Mail, Outlook desktop (Word engine CSS preprocessing), Thunderbird, and Android Gmail pushes coverage to ~85%. Each emulator doesn't need to be perfect — it needs to replicate the *sanitizer behavior* that determines which CSS/HTML survives to the rendering engine. The ontology already has the data (365 properties × 25 clients); emulators operationalize that data as DOM transforms.
-**Implementation:**
-- Add emulators to `app/rendering/local/emulators.py`:
-  - **Yahoo Mail emulator** (4 rules):
-    - `_yahoo_strip_style_blocks()` — Yahoo strips `<style>` blocks in some contexts (mobile) but not others (desktop webmail). Model worst-case: strip `<style>` for mobile Yahoo profile, keep for desktop Yahoo profile (2 profiles per client)
-    - `_yahoo_strip_unsupported_css()` — remove `position`, `float`, `overflow`, `clip-path` from inline styles (Yahoo's allowlist is smaller than Gmail's)
-    - `_yahoo_rewrite_classes()` — Yahoo prefixes classes with `yiv` + hash (similar to Gmail's `m_` prefix but different pattern): `.hero` → `.yiv1234567890_hero`
-    - `_yahoo_enforce_max_width()` — inject `max-width: 800px` on `<body>` (Yahoo's viewport constraint)
-  - **Samsung Mail emulator** (3 rules):
-    - `_samsung_strip_unsupported_css()` — remove `background-blend-mode`, `mix-blend-mode`, `filter`, `backdrop-filter`, `clip-path` (Samsung's Android WebView has partial CSS3 support)
-    - `_samsung_image_proxy()` — rewrite `<img src>` URLs to simulate Samsung's image proxy (adds `?samsung_proxy=1` parameter — does not actually proxy, but tests whether templates break with URL modification)
-    - `_samsung_dark_mode_inject()` — Samsung Mail applies `@media (prefers-color-scheme: dark)` system-level override — inject `color-scheme: dark` on `<html>` and force `background-color` / `color` inversion on `<body>` if no explicit dark mode styles exist
-  - **Outlook desktop emulator** (5 rules — CSS preprocessing only, not layout):
-    - `_outlook_word_strip_unsupported()` — bulk-remove CSS properties unsupported by Word engine: `display: flex|grid|inline-flex|inline-grid`, `position: fixed|sticky`, `float`, `box-shadow`, `text-shadow`, `border-radius`, `background-image` (gradients), `opacity`, `transform`, `transition`, `animation`, `filter`, `overflow`, `clip-path`, `object-fit`. Use ontology `properties_unsupported_by("outlook_2019")` for authoritative list
-    - `_outlook_word_shorthand_expand()` — expand all shorthand properties (margin, padding, border, background, font) to longhand — Word doesn't parse shorthand correctly for all properties
-    - `_outlook_word_max_width()` — inject `width: 100%; max-width: 600px` on outermost `<table>` (Word ignores `max-width` on `<div>`)
-    - `_outlook_word_conditional_process()` — process MSO conditional comments: extract `<!--[if mso]>` blocks, remove `<!--[if !mso]><!-->` blocks — simulate what Word actually sees
-    - `_outlook_word_vml_preserve()` — preserve VML blocks (`<v:*>` elements) — these render in Word but not in browsers, so Playwright screenshot won't show them (note in confidence metadata)
-  - **Thunderbird emulator** (2 rules):
-    - `_thunderbird_strip_unsupported()` — remove `position: sticky`, `backdrop-filter`, `clip-path` (Thunderbird uses Gecko, mostly standards-compliant but missing a few properties)
-    - `_thunderbird_preserve_style_blocks()` — no-op (Thunderbird respects `<style>` blocks — this documents the behavior)
-  - **Android Gmail emulator** (4 rules):
-    - Inherits all 6 Gmail Web rules via `_clone_rules("gmail_web")`
-    - `_android_gmail_viewport_override()` — override viewport to mobile width (360px), inject `<meta name="viewport" content="width=device-width">`
-    - `_android_gmail_dark_mode()` — Android Gmail applies system dark mode — inject `data-ogsc` and force `color-scheme: dark` on `<html>` if dark mode profile
-    - `_android_gmail_amp_strip()` — strip any `<html ⚡4email>` AMP content (Android Gmail handles AMP separately)
-- Add rendering profiles to `app/rendering/local/profiles.py`:
-  - `yahoo_web` — 800×900, Chromium, `emulator_id="yahoo_web"`
-  - `yahoo_mobile` — 375×812, WebKit, `emulator_id="yahoo_mobile"`, device="iPhone 13"
-  - `samsung_mail` — 360×780, Chromium, `emulator_id="samsung_mail"`
-  - `samsung_mail_dark` — 360×780, Chromium, `emulator_id="samsung_mail"`, `color_scheme="dark"`
-  - `outlook_desktop` — 800×900, Chromium, `emulator_id="outlook_desktop"` (Note: Playwright renders the CSS-preprocessed HTML — layout will approximate but not match Word engine)
-  - `thunderbird` — 700×900, Firefox (Gecko), `emulator_id="thunderbird"`
-  - `android_gmail` — 360×780, Chromium, `emulator_id="android_gmail"`
-  - `android_gmail_dark` — 360×780, Chromium, `emulator_id="android_gmail"`, `color_scheme="dark"`
-- Modify `get_emulator(client_id: str)` — register all 7 emulators in the emulator registry
-- Add `EmulatorRule` typing: `@dataclass class EmulatorRule: name: str, fn: Callable[[str], str], description: str, confidence_impact: float` — each rule declares how much confidence it removes (e.g., Word CSS stripping = high confidence, VML preservation = low confidence since Playwright can't render VML)
-- Total profiles after this subtask: 6 (existing) + 8 (new) = 14 rendering profiles
-**Security:** Emulators are pure HTML-in → HTML-out string transforms. No network calls, no file system access. `sanitize_html_xss()` still runs after emulation. Samsung image proxy simulation uses URL parameter append only — no actual proxying.
-**Verify:** Each new emulator produces expected transforms: Yahoo class rewriting (`yiv` prefix), Samsung dark mode injection, Outlook Word CSS stripping (verify `display:flex` removed), Thunderbird preserves `<style>` blocks. Existing Gmail/Outlook.com emulators unchanged (regression test). All 14 profiles produce Playwright screenshots. `make test` passes.
-- [x] 27.1 Expand email client emulators ~~DONE~~
+> **All subtasks complete (27.1–27.6):** See [docs/TODO-completed.md](docs/TODO-completed.md) for detailed completion records.
+> 27.1 Expand email client emulators (8 clients, 14 profiles, chain-of-rules with confidence_impact), 27.2 Rendering confidence scoring (4-signal scorer, GET /confidence/{client_id}, RENDERING__CONFIDENCE_ENABLED), 27.3 Pre-send rendering gate (RenderingSendGate service, GatePanel + GateClientRow + GateSummaryBadge frontend, wired into export + push-to-ESP dialogs, admin override), 27.4 Emulator calibration loop (EmulatorCalibrator with ODiff, EMA α=0.3, CalibrationSampler, RENDERING__CALIBRATION__ENABLED), 27.5 Headless email sandbox (SMTP-based Mailpit capture, DOMDiff, SandboxProfile registry, Playwright Roundcube, RENDERING__SANDBOX__ENABLED), 27.6 Frontend rendering dashboard & tests (RenderingDashboard with preview grid + confidence summary bar + gate status + calibration health panel, ConfidenceBar extracted as shared component, 14 client profiles, 27 frontend tests across 3 test files).
 
-### 27.2 Rendering Confidence Scoring `[Backend]`
-**What:** Assign a per-client confidence score (0–100) to every local rendering preview, quantifying how faithful the emulated screenshot is expected to be relative to the real email client. Scores are derived from three signals: emulator rule coverage, ontology CSS support gaps, and historical calibration data (initially seed values, later updated by the calibration loop in 27.4).
-**Why:** A local preview without a confidence score is a guess the user can't evaluate. "Here's what Gmail will look like" is less useful than "Here's what Gmail will look like — 94% confidence. The remaining 6% uncertainty is from: DOM restructuring we don't model, URL rewriting, and viewport clipping." Confidence scores let users make informed decisions: "92% confident for Gmail? Ship it. 68% confident for Outlook 2019? Send to Litmus first." This converts rendering testing from a binary pass/fail into a quantified risk assessment.
-**Implementation:**
-- Create `app/rendering/local/confidence.py` — `RenderingConfidenceScorer`:
-  - `score(html: str, profile: RenderingProfile) -> RenderingConfidence`:
-    - Returns `RenderingConfidence(score: float, breakdown: ConfidenceBreakdown, recommendations: list[str])`
-  - `ConfidenceBreakdown`:
-    - `emulator_coverage: float` — percentage of the client's known sanitizer behaviors that the emulator models (e.g., Gmail emulator covers 6/8 known behaviors = 75%)
-    - `css_compatibility: float` — percentage of CSS properties in the HTML that are fully supported by the target client (from ontology). High CSS compatibility = less emulator work = higher confidence
-    - `calibration_accuracy: float` — historical accuracy of this emulator vs ground truth (initial seed: 80% for Gmail, 75% for Outlook.com, 70% for Yahoo, 65% for Samsung, 50% for Outlook desktop, 85% for Thunderbird, 78% for Android Gmail)
-    - `layout_complexity: float` — penalty for complex layouts (nested tables >3 deep, flexbox/grid usage, absolute positioning) — more complex = more room for emulator divergence
-    - `known_blind_spots: list[str]` — behaviors the emulator cannot model (e.g., "Word table cell width calculation", "Gmail DOM restructuring", "Samsung image proxy URL rewriting")
-  - Scoring formula: `score = (emulator_coverage × 0.25 + css_compatibility × 0.25 + calibration_accuracy × 0.35 + (1.0 - layout_complexity) × 0.15) × 100`
-    - Calibration accuracy weighted highest because it's empirical ground truth
-    - Layout complexity is a penalty — simple emails get higher confidence
-  - `layout_complexity_score(html: str) -> float`:
-    - Counts: table nesting depth, flexbox/grid usage, absolute/fixed positioning, VML blocks, MSO conditionals, media query count
-    - Returns 0.0 (simple) to 1.0 (highly complex)
-    - Thresholds: nesting >3 = +0.2, flexbox = +0.15, VML = +0.1, media queries >5 = +0.1
-- Create `app/rendering/local/confidence_seeds.yaml` — initial calibration seeds:
-  - Per-emulator accuracy estimates based on known emulator rule coverage
-  - Updated by the calibration loop (27.4) — seeds are overwritten when real data is available
-  - Format: `{client_id: {accuracy: float, sample_count: int, last_calibrated: str, known_blind_spots: [str]}}`
-- Modify `LocalRenderingProvider.render()` in `app/rendering/local/runner.py`:
-  - After capturing screenshot, compute `RenderingConfidence` for the profile
-  - Attach to `RenderingScreenshot` result: add `confidence_score: float`, `confidence_breakdown: dict` fields
-- Modify `RenderingScreenshot` model in `app/rendering/models.py`:
-  - Add `confidence_score: float | None` — 0–100
-  - Add `confidence_breakdown: dict | None` — JSON serialized `ConfidenceBreakdown`
-  - Add `confidence_recommendations: list[str] | None` — actionable recommendations
-  - Alembic migration for new columns (nullable, no data migration)
-- Modify `app/rendering/routes.py` — `POST /api/v1/rendering/screenshots` response:
-  - Include `confidence_score` and `confidence_recommendations` per screenshot in response
-  - Add `GET /api/v1/rendering/confidence/{client_id}` — returns current confidence data for a client (seed + calibration history)
-- Modify `app/rendering/schemas.py` — add `RenderingConfidenceSchema`, `ConfidenceBreakdownSchema` to response models
-**Security:** Confidence scoring is read-only analysis — no new inputs or external calls. Seed data is developer-maintained YAML. Calibration data stored in database with standard access controls.
-**Verify:** Render a simple email (table layout, inline styles only) for Gmail → confidence >90%. Render a complex email (flexbox, VML, dark mode) for Outlook desktop → confidence <70% with "Word table cell width" in blind spots. Render for Thunderbird → confidence >85% (Gecko is standards-compliant). Confidence data appears in screenshot API response. `make test` passes.
+- [x] ~~27.1 Expand email client emulators~~ DONE
 - [x] ~~27.2 Rendering confidence scoring~~ DONE
+- [x] ~~27.3 Pre-send rendering gate~~ DONE
+- [x] ~~27.4 Emulator calibration loop~~ DONE
+- [x] ~~27.5 Headless email client sandbox~~ DONE
+- [x] ~~27.6 Frontend rendering dashboard & tests~~ DONE
 
 ### 27.3 Pre-Send Rendering Gate `[Backend + Frontend]`
 **What:** A configurable quality gate that evaluates rendering confidence across all target email clients before allowing ESP sync or export. If confidence drops below threshold for any high-priority client, the gate blocks the action and recommends specific remediation — either fix the HTML or validate with an external rendering provider.
@@ -371,109 +100,7 @@ PHASE_26_CUT_START
 - Alembic migration: add `rendering_gate_config` JSON column to `projects` table
 **Security:** Gate evaluation is read-only analysis. Override requires admin role. Override decisions logged to audit trail. No new external calls — gate uses existing local rendering pipeline. ESP sync still requires existing auth + rate limiting.
 **Verify:** Simple email with high confidence → gate passes for all clients. Email with flexbox (no MSO fallback) → gate blocks Outlook with "flexbox unsupported" reason and "Add MSO conditional" remediation. Override sync → proceeds with audit log entry. Gate mode `warn` → sync proceeds with warnings in response. Per-project threshold override works. Frontend gate panel renders correctly with traffic-light summary. `make test` and `make check-fe` pass.
-- [ ] 27.3 Pre-send rendering gate (frontend DONE — gate panel, hooks, types, wired into export + push-to-ESP dialogs; backend gate service + endpoints remaining)
-
-### 27.4 Emulator Calibration Loop — Local vs External Ground Truth `[Backend]`
-**What:** Automated feedback loop that compares local emulator screenshots against external provider (Litmus / Email on Acid) ground truth screenshots, computes per-emulator accuracy deltas, and adjusts confidence seed values. Runs on a sample of builds — not every build — to amortize external provider costs.
-**Why:** Emulator rules are hand-coded approximations of real client sanitizer behavior. Without calibration against ground truth, emulators silently drift as email clients update their sanitizers (Gmail changes its class rewriting algorithm, Outlook.com adds new dark mode attributes, Yahoo changes its CSS allowlist). The calibration loop catches this drift: if the Gmail emulator's output diverges from real Gmail screenshots by more than a threshold, it flags the emulator as degraded and lowers its confidence score. Over time, this data also identifies which specific emulator rules need updating — "Gmail class rewriting accuracy dropped 8% since March" is actionable intelligence.
-**Implementation:**
-- Create `app/rendering/calibration/calibrator.py` — `EmulatorCalibrator`:
-  - `async calibrate(html: str, client_id: str, local_screenshot: bytes, external_screenshot: bytes) -> CalibrationResult`:
-    - Runs ODiff visual comparison between local and external screenshots
-    - Returns `CalibrationResult(client_id: str, diff_percentage: float, diff_regions: list[Region], accuracy: float, regression: bool, regression_details: str | None)`
-    - Accuracy = `max(0, 100 - diff_percentage * 2)` — 0% diff = 100% accuracy, 50% diff = 0% accuracy (linear, capped)
-  - `async calibrate_batch(html: str, local_results: list[RenderingScreenshot], external_results: list[RenderingScreenshot]) -> list[CalibrationResult]`:
-    - Match local and external screenshots by client name
-    - Run calibration for each matched pair
-    - Handle mismatches (external provider has clients we don't emulate locally → skip, log)
-  - `async update_seeds(results: list[CalibrationResult]) -> None`:
-    - Read `confidence_seeds.yaml`
-    - For each result: exponential moving average update — `new_accuracy = 0.7 * old_accuracy + 0.3 * measured_accuracy`
-    - Update `sample_count` and `last_calibrated` timestamp
-    - Write back to YAML (or database table — see model below)
-    - If accuracy dropped >10% from previous value → log `calibration.regression_detected` warning
-- Create `app/rendering/calibration/models.py` — database persistence:
-  - `CalibrationRecord` SQLAlchemy model:
-    - `id`, `client_id`, `html_hash` (SHA-256 of input HTML), `local_diff_percentage`, `accuracy_score`, `diff_image` (optional — stored ODiff overlay PNG), `created_at`
-    - `external_provider: str` — "litmus" | "emailonacid" | "manual"
-    - `emulator_version: str` — hash of emulator rules at calibration time (detect if rules changed since calibration)
-  - `CalibrationSummary` SQLAlchemy model:
-    - `client_id` (unique), `current_accuracy`, `sample_count`, `last_calibrated`, `accuracy_trend` (last 10 values as JSON array), `known_blind_spots` (JSON array)
-    - Replaces YAML seeds once calibration data exists — scorer reads from DB first, falls back to YAML
-- Create `app/rendering/calibration/sampler.py` — `CalibrationSampler`:
-  - Determines which builds should be sent to external providers for calibration
-  - `should_calibrate(client_id: str) -> bool`:
-    - Rate-limited: max N calibrations per client per day (configurable: `RENDERING__CALIBRATION_RATE_PER_CLIENT_PER_DAY`, default 3)
-    - Priority: newly added emulators calibrate more frequently (sample_count < 10 → always calibrate)
-    - Staleness: if `last_calibrated` > 7 days ago → increase sampling rate to 2×
-    - Budget: total external API cost tracked — if monthly budget exceeded, stop calibrating (configurable: `RENDERING__CALIBRATION_MONTHLY_BUDGET`, default 0 = disabled)
-  - `select_builds_for_calibration(builds: list[Build]) -> list[Build]`:
-    - Selects diverse HTML samples — avoid calibrating on the same template repeatedly
-    - Prefers complex emails (higher layout_complexity_score) for calibration — they reveal more emulator gaps
-- Modify `RenderingService.submit_test()` in `app/rendering/service.py`:
-  - After external provider returns screenshots, check if this was a calibration-eligible build
-  - If so, run `EmulatorCalibrator.calibrate_batch()` with local + external screenshots
-  - Store `CalibrationRecord` entries
-  - Update `CalibrationSummary` via `update_seeds()`
-- Add API endpoints to `app/rendering/routes.py`:
-  - `GET /api/v1/rendering/calibration/summary` — current calibration state per client (accuracy, trend, last calibrated)
-  - `POST /api/v1/rendering/calibration/trigger` — admin-only, force calibration for specific clients on a given HTML
-  - `GET /api/v1/rendering/calibration/history/{client_id}` — calibration history for a client (last N records with diff percentages)
-- Add Alembic migration: `calibration_records` and `calibration_summaries` tables
-- Config: `RENDERING__CALIBRATION_ENABLED: bool = False`, `RENDERING__CALIBRATION_RATE_PER_CLIENT_PER_DAY: int = 3`, `RENDERING__CALIBRATION_MONTHLY_BUDGET: float = 0.0` (0 = disabled), `RENDERING__CALIBRATION_REGRESSION_THRESHOLD: float = 10.0` (percentage drop that triggers warning)
-**Security:** Calibration reads existing local + external screenshots — no new external API calls beyond what `RenderingService` already supports. Budget cap prevents runaway costs. Admin-only trigger endpoint. Calibration records stored with standard database access controls. HTML hashes stored instead of full HTML (privacy — don't persist email content in calibration records).
-**Verify:** Submit a rendering test with both local + Litmus screenshots → CalibrationRecord created with correct diff percentage. Accuracy seeds update via EMA formula. Force calibration via admin endpoint → works. Budget cap at $0 → no automatic calibrations run (only manual triggers). Accuracy regression >10% → warning logged. `GET /calibration/summary` returns per-client accuracy data. `make test` passes.
-- [x] 27.4 Emulator calibration loop
-
-### 27.5 Headless Email Client Sandbox — SMTP-Based Real Sanitizer Capture `[Backend + Infrastructure]`
-**What:** Optional self-hosted testing environment that sends emails via SMTP to a local mail server, then captures the *actual* sanitized HTML as rendered by webmail interfaces. This provides ground truth without depending on paid external providers, enabling unlimited calibration data at zero marginal cost.
-**Why:** External providers (Litmus, EoA) charge per-screenshot. The calibration loop (27.4) works with them but costs add up. A self-hosted sandbox eliminates this cost for the most common clients. The approach: send email to Mailpit (local SMTP), then use Playwright to open a self-hosted webmail client (Roundcube) and capture the rendered DOM. This isn't a perfect replica of Gmail's sanitizer — but it provides a baseline for CSS-level validation. The real value is for Thunderbird (which can be run headless) and for detecting *our own* pipeline regressions (did our MSO conditional generation break?). For Gmail/Outlook.com-specific behavior, the emulators (27.1) plus external provider calibration (27.4) remain the primary approach.
-**Implementation:**
-- Create `app/rendering/sandbox/` package:
-  - `sandbox.py` — `EmailSandbox`:
-    - `async send_and_capture(html: str, subject: str, profiles: list[SandboxProfile]) -> list[SandboxResult]`:
-      - Sends email via SMTP to Mailpit (configurable SMTP host/port)
-      - For each profile: opens webmail URL in Playwright, navigates to the sent email, extracts rendered DOM, captures screenshot
-      - Returns `SandboxResult(profile: str, rendered_html: str, screenshot: bytes, dom_diff: DOMDiff | None)`
-    - `async extract_rendered_dom(page: Page, profile: SandboxProfile) -> str`:
-      - Waits for email content to load (selector-based wait)
-      - Extracts innerHTML of the email content container
-      - This is the *post-sanitizer* HTML — the ground truth of what the webmail client did to the email
-    - `async compute_dom_diff(original_html: str, rendered_html: str) -> DOMDiff`:
-      - Structural diff between original and rendered HTML
-      - Categories: `removed_elements`, `removed_attributes`, `removed_css_properties`, `added_elements`, `modified_styles`
-      - This identifies exactly which sanitizer transforms the webmail applied
-  - `profiles.py` — `SandboxProfile`:
-    - `mailpit` — Mailpit's built-in HTML viewer (no sanitization — baseline)
-    - `roundcube` — Roundcube webmail (PHP-based, applies its own HTML sanitizer — closest to a generic webmail)
-    - `thunderbird_headless` — Thunderbird via `thunderbird --headless` with Playwright connection (if available)
-    - Each profile: `name`, `webmail_url`, `content_selector` (CSS selector for email content container), `login_required: bool`, `credentials: dict | None`
-  - `dom_diff.py` — `DOMDiff` computation:
-    - `DOMDiff` dataclass: `removed_elements: list[str]`, `removed_attributes: dict[str, list[str]]`, `removed_css_properties: dict[str, list[str]]`, `added_elements: list[str]`, `modified_styles: dict[str, tuple[str, str]]` (property → (before, after))
-    - Uses `lxml` for structural comparison — normalize whitespace, sort attributes, then tree diff
-    - CSS diff: parse inline `style=""` attributes on both sides, compare property sets
-  - `smtp.py` — `SandboxSMTP`:
-    - `async send(html: str, subject: str, from_addr: str, to_addr: str) -> str` (returns message ID)
-    - Uses `aiosmtplib` to send to local SMTP server
-    - Constructs proper MIME message with HTML content type, UTF-8 encoding
-    - Adds standard email headers (Date, Message-ID, MIME-Version)
-- Docker Compose additions (optional — only for sandbox testing):
-  - `services/mailpit/` — Mailpit container (SMTP + webmail UI) — lightweight, Go-based, ideal for testing
-  - `services/roundcube/` — Roundcube container (connects to Mailpit's IMAP) — optional, for webmail sanitizer testing
-  - Both behind `profiles: [sandbox]` in docker-compose — only start when explicitly requested
-- Add API endpoints to `app/rendering/routes.py`:
-  - `POST /api/v1/rendering/sandbox/test` — send email to sandbox, capture results (admin only)
-    - Request: `{ html, subject, profiles: ["mailpit", "roundcube"] }`
-    - Response: per-profile rendered HTML, screenshot, DOM diff
-  - `GET /api/v1/rendering/sandbox/health` — check sandbox infrastructure availability (Mailpit reachable, Roundcube reachable)
-- Integrate with calibration loop (27.4):
-  - `CalibrationSampler` can select sandbox as a zero-cost calibration source
-  - Sandbox results feed into `EmulatorCalibrator.calibrate()` with `external_provider="sandbox"`
-  - Lower calibration weight for sandbox (0.5×) vs real external providers (1.0×) — sandbox is less authoritative
-- Config: `RENDERING__SANDBOX_ENABLED: bool = False`, `RENDERING__SANDBOX_SMTP_HOST: str = "localhost"`, `RENDERING__SANDBOX_SMTP_PORT: int = 1025`, `RENDERING__SANDBOX_MAILPIT_URL: str = "http://localhost:8025"`, `RENDERING__SANDBOX_ROUNDCUBE_URL: str = "http://localhost:9080"`, `RENDERING__SANDBOX_PLAYWRIGHT_TIMEOUT_MS: int = 15000`
-**Security:** Sandbox is entirely local — SMTP to localhost, webmail on localhost. No emails leave the network. Sandbox endpoints admin-only. Email content sent to Mailpit is ephemeral (in-memory by default, configurable persistence). Docker Compose profiles ensure sandbox containers only run when explicitly started. Sandbox credentials (if Roundcube requires login) stored in environment variables, never in code.
-**Verify:** Start sandbox infrastructure (`docker compose --profile sandbox up`). Send email via sandbox endpoint → Mailpit receives it, screenshot captured. DOM diff between original and Mailpit-rendered HTML shows minimal changes (Mailpit is near-passthrough). Roundcube DOM diff shows sanitizer transforms (stripped some CSS, modified some attributes). Sandbox health endpoint reports both services healthy. Calibration loop uses sandbox results with 0.5× weight. `make test` passes (sandbox tests use mocked SMTP — no Docker dependency). `RENDERING__SANDBOX_ENABLED=false` → sandbox endpoints return 503.
-- [x] 27.5 Headless email client sandbox ~~DONE~~
+- [x] ~~27.3 Pre-send rendering gate~~ DONE
 
 ### 27.6 Frontend Rendering Dashboard & Tests `[Frontend + Full-Stack]`
 **What:** Unified rendering intelligence dashboard that surfaces emulator previews, confidence scores, calibration status, gate results, and sandbox DOM diffs in a single view. Plus comprehensive test suite for the entire Phase 27 pipeline.
@@ -553,7 +180,435 @@ PHASE_26_CUT_START
   - `cms/apps/web/src/hooks/__tests__/use-rendering.test.ts`
 - Target: 90+ tests total across all test files
 **Verify:** `make test` passes (80+ backend tests). `make check-fe` passes (10+ frontend tests). All 14 rendering profiles produce screenshots with confidence scores. Gate panel renders correctly in all states (pass/warn/block). Calibration dashboard shows per-client accuracy trends. DOM diff viewer highlights removed CSS properties. Dashboard responsive on mobile. `make check` all green.
-- [ ] 27.6 Frontend rendering dashboard & tests
+- [x] ~~27.6 Frontend rendering dashboard & tests~~ DONE
+
+---
+
+## Phase 28 — Export Quality Gates & Approval Workflow
+
+**What:** Wire QA enforcement and approval workflow into the export/push pipeline so that emails cannot be pushed to ESPs without passing quality checks and (optionally) approval. Currently QA is advisory-only, approval routes exist but aren't connected to export, and there's no approval UI in the frontend.
+**Why:** The platform has 14 QA checks, a rendering confidence scorer, and a full approval state machine — but none of these gate the actual export. A developer can push a failing email to Braze without any warning. This defeats the purpose of the entire QA pipeline. Wiring these together turns advisory checks into enforceable workflow steps. The approval workflow is critical for enterprise customers where a manager or legal reviewer must sign off before production sends.
+**Dependencies:** Phase 27.3 (rendering gate backend — provides the `RenderingSendGate` integration pattern). Existing: `app/qa_engine/service.py` (14 checks), `app/approval/` (models, service, routes), `app/connectors/service.py` (export flow), frontend export-dialog.tsx and push-to-esp-dialog.tsx.
+
+### 28.1 QA Enforcement in Export Flow `[Backend]`
+**What:** Make QA check results a configurable gate on the export/push pipeline. When QA enforcement is enabled, exports are blocked if critical checks fail, unless overridden by an admin.
+**Why:** Currently `ConnectorService.export()` calls the ESP provider directly — no QA validation. Users can push emails with broken links, accessibility failures, or spam-score violations to production. The rendering gate (27.3) blocks on rendering confidence, but QA check failures (HTML validation, spam score, link validation, etc.) are completely ignored during export. This subtask adds a parallel QA gate alongside the rendering gate.
+**Implementation:**
+- Create `app/connectors/qa_gate.py` — `ExportQAGate`:
+  - `async evaluate(html: str, project_id: int | None = None) -> QAGateResult`:
+    - Runs `QAEngineService.run_checks()` with project-specific config
+    - Classifies each check as `blocking` or `warning` based on `ExportQAConfig`
+    - Returns `QAGateResult(passed: bool, verdict: QAGateVerdict, blocking_failures: list[QACheckSummary], warnings: list[QACheckSummary])`
+  - `QAGateVerdict` enum: `pass`, `warn`, `block`
+  - `QACheckSummary`: `check_name: str`, `passed: bool`, `severity: str`, `details: str`, `remediation: str`
+- Create `app/connectors/qa_gate_config.py` — `ExportQAConfig`:
+  - `enabled: bool = True`
+  - `mode: Literal["enforce", "warn", "skip"] = "warn"` — same pattern as rendering gate
+  - `blocking_checks: list[str] = ["html_validation", "link_validation", "spam_score", "personalisation_syntax", "liquid_syntax"]` — checks that block export when failing
+  - `warning_checks: list[str] = ["accessibility", "dark_mode", "image_optimization", "file_size"]` — checks that produce warnings but don't block
+  - `ignored_checks: list[str] = []` — checks to skip entirely during export gate
+  - Stored per-project in `Project.export_qa_config` JSON column (nullable, falls back to global defaults)
+  - Global defaults in settings: `EXPORT__QA_GATE_MODE`, `EXPORT__QA_BLOCKING_CHECKS`
+- Modify `app/connectors/service.py` — `ConnectorService.export()`:
+  - After HTML resolution, before ESP provider call:
+    ```
+    1. Run QA gate: qa_result = await qa_gate.evaluate(html, project_id)
+    2. Run rendering gate: render_result = await render_gate.evaluate(html, target_clients, project_id)
+    3. If either gate blocks → raise ExportGateError with combined results
+    4. If either gate warns → attach warnings to ExportResponse
+    5. If both pass → proceed to ESP provider
+    ```
+  - Add `skip_qa_gate: bool = False` parameter (admin only, logged to audit)
+  - Add `qa_result` and `rendering_result` fields to `ExportResponse` for frontend display
+- Modify `app/connectors/schemas.py`:
+  - Add `QAGateResult` to `ExportResponse` (optional, populated when gate runs)
+  - Add `skip_qa_gate: bool = False` to `ExportRequest`
+  - Add `ExportGateError` response schema for 422 responses
+- Add API endpoint:
+  - `POST /api/v1/connectors/export/pre-check` — dry-run both gates without actually exporting (for the frontend to show gate results before user confirms)
+  - Request: `{ html: str, project_id: int, target_clients: list[str] | None }`
+  - Response: `{ qa: QAGateResult, rendering: GateResult, can_export: bool }`
+- Alembic migration: add `export_qa_config` JSON column to `projects` table
+- Frontend — modify `export-dialog.tsx` and `push-to-esp-dialog.tsx`:
+  - Before showing `GatePanel`, call `/connectors/export/pre-check` to get combined QA + rendering results
+  - Show QA failures alongside rendering confidence in the gate panel:
+    - Section 1: "QA Checks" — blocking failures (red), warnings (yellow), passes (green)
+    - Section 2: "Rendering Confidence" — existing gate panel content
+  - "Override" button (admin only) now overrides both QA and rendering gates
+  - If `mode=warn`: show warnings banner but allow "Continue" button
+- SWR hook:
+  - `cms/apps/web/src/hooks/use-export-gate.ts`:
+    - `useExportPreCheck()` — `POST /connectors/export/pre-check`
+    - Returns combined `{ qa, rendering, can_export }` result
+- Tests:
+  - `app/connectors/tests/test_qa_gate.py` — 15+ tests:
+    - Export with all QA passing → gate passes
+    - Export with blocking check failing → gate blocks in enforce mode
+    - Export with warning check failing → gate warns (doesn't block)
+    - Admin skip_qa_gate → bypasses with audit log
+    - Per-project config overrides (different blocking checks per project)
+    - Pre-check endpoint returns combined results without exporting
+    - Integration: QA blocks + rendering passes → still blocked
+  - `cms/apps/web/src/hooks/__tests__/use-export-gate.test.ts` — 5+ tests
+**Security:** QA gate is read-only analysis. Override requires admin role. Override decisions logged with user_id, timestamp, and gate results. No new external calls. `skip_qa_gate` parameter validated against user role server-side.
+**Verify:** Email with broken links → export blocked with "link_validation failed" and remediation. Email passing all checks → export proceeds. `mode=warn` → export proceeds with warnings in response. Admin override → proceeds with audit trail. Per-project config: disable spam_score blocking for testing project → spam-flagged email exports. Pre-check endpoint returns correct combined results. `make test` passes. `make check-fe` passes.
+- [ ] 28.1 QA enforcement in export flow
+
+### 28.2 Approval Workflow → Export Integration `[Backend]`
+**What:** Wire the existing approval state machine (`app/approval/`) into the export pipeline so that emails optionally require approval before ESP push. When approval is required, exports are blocked until an authorized reviewer approves the build.
+**Why:** Enterprise email workflows require sign-off before production sends. The approval system exists (models, service, routes, state machine with `pending → approved/rejected/revision_requested` transitions, audit trail) but is completely disconnected from the export flow. A developer can push to Braze without any approval. This subtask makes approval an optional gate in the export pipeline — when enabled per-project, the export flow checks approval status before proceeding.
+**Implementation:**
+- Create `app/connectors/approval_gate.py` — `ExportApprovalGate`:
+  - `async evaluate(build_id: int, user: User) -> ApprovalGateResult`:
+    - Checks if project has `require_approval_for_export: bool` enabled
+    - If not required → return `ApprovalGateResult(required=False, passed=True)`
+    - If required → look up `ApprovalRequest` for this build_id:
+      - No approval request → return `passed=False, reason="No approval request submitted"`
+      - Status `pending` → return `passed=False, reason="Approval pending review"`
+      - Status `revision_requested` → return `passed=False, reason="Revisions requested"`
+      - Status `rejected` → return `passed=False, reason="Approval rejected"`
+      - Status `approved` → return `passed=True, approved_by=reviewer, approved_at=timestamp`
+    - `ApprovalGateResult`: `required: bool`, `passed: bool`, `reason: str | None`, `approval_id: int | None`, `approved_by: str | None`, `approved_at: datetime | None`
+- Modify `app/connectors/service.py` — `ConnectorService.export()`:
+  - Add approval gate as third gate in the pipeline:
+    ```
+    1. QA gate (28.1)
+    2. Rendering gate (27.3)
+    3. Approval gate (28.2) — only if build_id provided (template_version exports skip approval)
+    4. ESP provider call
+    ```
+  - If approval gate blocks → raise `ApprovalRequiredError` with status and instructions
+  - Add `approval_result` to `ExportResponse`
+- Modify `app/approval/service.py`:
+  - Add `get_approval_for_build(build_id: int) -> ApprovalResponse | None` — lookup by build_id
+  - Add `is_approved(build_id: int) -> bool` — quick check for export gate
+- Add project-level config:
+  - Add `require_approval_for_export: bool = False` field to project settings
+  - Admin-only toggle via `PATCH /api/v1/projects/{id}` (existing endpoint)
+- Modify `app/connectors/schemas.py`:
+  - Add `ApprovalGateResult` to `ExportResponse`
+  - Add `skip_approval: bool = False` to `ExportRequest` (admin only)
+- Update pre-check endpoint (from 28.1):
+  - `/connectors/export/pre-check` response now includes `approval: ApprovalGateResult`
+  - Frontend shows approval status alongside QA and rendering gates
+- Tests:
+  - `app/connectors/tests/test_approval_gate.py` — 12+ tests:
+    - Project without approval required → gate passes (not required)
+    - Project with approval required, no request → gate blocks
+    - Approval pending → gate blocks
+    - Approval approved → gate passes
+    - Approval rejected → gate blocks
+    - Admin skip_approval → bypasses with audit
+    - Template version export (no build_id) → approval gate skipped
+    - Integration: QA passes + rendering passes + approval pending → still blocked
+**Security:** Approval gate checks are read-only lookups. Override requires admin role. The approval state machine already has BOLA checks (`_verify_approval_access`). No new models or migrations needed — uses existing `ApprovalRequest.build_id` FK.
+**Verify:** Project with `require_approval=true`, no approval → export blocked with "No approval request submitted". Submit approval → export still blocked ("Approval pending"). Reviewer approves → export proceeds. Project without `require_approval` → export proceeds without approval. Admin `skip_approval=true` → proceeds with audit. Pre-check shows all three gate results. `make test` passes.
+- [ ] 28.2 Approval workflow → export integration
+
+### 28.3 Approval Frontend UI `[Frontend]`
+**What:** React components for the approval workflow — request approval, review/decide, feedback, and audit trail. Integrated into the workspace and export flow.
+**Why:** The approval backend has 7 endpoints and a full state machine, but zero frontend UI. Users cannot request, review, or approve builds from the interface. This is the final piece to make approval usable.
+**Implementation:**
+- Create `cms/apps/web/src/components/approval/` package:
+  - `approval-request-dialog.tsx` — submit build for approval:
+    - Props: `buildId: number`, `projectId: number`, `onSubmitted: () => void`
+    - Dialog with "Submit for Approval" button
+    - Shows current build QA status summary (from pre-check)
+    - Optional note field for reviewer context
+    - Calls `POST /api/v1/approvals/` with `{ build_id, project_id }`
+    - Success → toast + close
+  - `approval-review-panel.tsx` — reviewer decision panel:
+    - Props: `approvalId: number`
+    - Shows build preview (iframe sandbox), QA results, rendering confidence
+    - Three action buttons: "Approve" (green), "Request Revisions" (yellow), "Reject" (red)
+    - Each action opens confirmation dialog with required `review_note` field
+    - Calls `POST /api/v1/approvals/{id}/decide` with `{ status, review_note }`
+    - State badge: pending (blue), approved (green), rejected (red), revision_requested (yellow)
+  - `approval-feedback-thread.tsx` — feedback conversation:
+    - Props: `approvalId: number`
+    - Shows chronological feedback thread (like comments)
+    - Input field with "Add Feedback" button
+    - Calls `POST /api/v1/approvals/{id}/feedback` and `GET /api/v1/approvals/{id}/feedback`
+    - Feedback types: `comment`, `suggestion`, `blocker` (color-coded)
+  - `approval-audit-trail.tsx` — audit log:
+    - Props: `approvalId: number`
+    - Shows timeline of all actions (created, decided, feedback added, overridden)
+    - Calls `GET /api/v1/approvals/{id}/audit`
+    - Each entry: actor name, action, timestamp, details
+  - `approval-status-badge.tsx` — reusable status indicator:
+    - Props: `status: ApprovalStatus`
+    - Color-coded badge: pending=blue, approved=green, rejected=red, revision_requested=amber
+  - `approval-list.tsx` — list of approvals for a project:
+    - Props: `projectId: number`
+    - Table with columns: Build, Status, Requested By, Reviewer, Date
+    - Filter by status
+    - Click row → opens review panel
+    - Calls `GET /api/v1/approvals/?project_id={id}`
+- SWR hooks — `cms/apps/web/src/hooks/use-approvals.ts`:
+  - `useApprovals(projectId)` — list approvals for project
+  - `useApproval(approvalId)` — single approval detail
+  - `useApprovalFeedback(approvalId)` — feedback thread
+  - `useApprovalAudit(approvalId)` — audit trail
+  - `useCreateApproval()` — submit for approval (SWRMutation)
+  - `useDecideApproval(approvalId)` — approve/reject/revise (SWRMutation)
+  - `useAddFeedback(approvalId)` — add feedback (SWRMutation)
+- Types — `cms/apps/web/src/types/approval.ts`:
+  - `ApprovalStatus`, `ApprovalRequest`, `ApprovalDecision`, `Feedback`, `AuditEntry`
+  - `ApprovalResponse`, `FeedbackResponse`, `AuditResponse`
+- Integration points:
+  - Workspace page (`projects/[id]/workspace/page.tsx`): add "Submit for Approval" button next to export button (shown when `require_approval` is enabled for project)
+  - Export dialog: show `ApprovalStatusBadge` in gate panel — if approval required and not approved, show "Approval Required" with link to submit
+  - Project settings: add "Require Approval for Export" toggle (admin only)
+  - Navigation: add "Approvals" tab in project workspace (badge with pending count)
+- Tests:
+  - `cms/apps/web/src/components/approval/__tests__/approval-review-panel.test.tsx` — 8+ tests:
+    - Renders pending approval with action buttons
+    - Approve action sends correct API call
+    - Reject action requires review_note
+    - Approved state shows green badge, no action buttons
+  - `cms/apps/web/src/hooks/__tests__/use-approvals.test.ts` — 5+ tests
+**Security:** Approval actions respect server-side RBAC (developer can submit, admin/designated reviewer can decide). Frontend hides action buttons based on user role. No client-side approval bypasses — all enforcement is backend.
+**Verify:** Developer submits build for approval → approval appears in list with "pending" status. Reviewer sees build preview + QA results. Reviewer approves → status changes to "approved", export unblocked. Reviewer requests revisions → developer sees feedback. Audit trail shows all actions with timestamps. Export dialog shows "Approval Required" when not yet approved. `make check-fe` passes.
+- [ ] 28.3 Approval frontend UI
+
+---
+
+## Phase 29 — Design Import Enhancements
+
+**What:** Enable template creation from a text brief without requiring a live Figma/Penpot design file, and complete the Penpot CSS-to-email converter so Penpot imports produce the same quality as Figma imports.
+**Why:** The current design sync flow requires a live design file connection (`connection_id` is mandatory in `StartImportRequest`). Users who have a written brief but no Figma file must either create a dummy connection or use the blueprint API directly (`POST /blueprints/run`). The brief-only path should be a first-class citizen in the UI. Additionally, Penpot imports are incomplete — the converter has color/typography extraction but the CSS-to-email HTML conversion is not wired into the import flow, so Penpot users get a degraded experience compared to Figma users.
+**Dependencies:** Existing: `app/design_sync/` (import pipeline, brief generator, import service), `app/ai/agents/scaffolder/` (can accept brief directly), `app/design_sync/penpot/converter.py` (partial implementation).
+
+### 29.2 Penpot CSS-to-Email Converter Integration `[Backend]`
+**What:** Wire the Penpot converter's CSS-to-email HTML generation into the design import flow so Penpot imports produce email-ready HTML with table-based layouts, inline styles, and MSO conditionals — matching the quality of Figma imports.
+**Why:** `app/design_sync/penpot/converter.py` has `convert_colors_to_palette()`, `convert_typography()`, `node_to_email_html()`, and `_group_into_rows()` — but the import pipeline (`DesignImportService.run_conversion()`) doesn't call the Penpot-specific converter. It uses the generic brief→Scaffolder path for all providers. The Penpot converter can produce initial HTML directly from the design tree, which can then be enhanced by the Scaffolder (richer than starting from a brief alone). This subtask integrates the converter as an optional pre-processing step for Penpot imports.
+**Implementation:**
+- Modify `app/design_sync/import_service.py` — `DesignImportService.run_conversion()`:
+  - After layout analysis, before Scaffolder call:
+    - If provider is `penpot` and `DESIGN_SYNC__PENPOT_CONVERTER_ENABLED`:
+      - Call `PenpotConverter.convert(structure_json, tokens)` → initial HTML
+      - Pass initial HTML to Scaffolder as `initial_html` parameter (existing blueprint input)
+      - Scaffolder enhances rather than generates from scratch
+    - If provider is `figma` or converter disabled: keep existing brief-only path
+  - This means Penpot imports get a head start with structural HTML from the design tree
+- Create `app/design_sync/penpot/converter_service.py` — `PenpotConverterService`:
+  - `async convert(structure: DesignFileStructure, tokens: ExtractedTokens, *, selected_nodes: list[str] | None = None) -> PenpotConversionResult`:
+    - Walks design tree for selected nodes (or all top-level frames)
+    - For each frame: `node_to_email_html()` → table-based HTML section
+    - Assembles sections into email skeleton (DOCTYPE, head with meta/style, body with wrapper table)
+    - Applies extracted tokens: colors → inline styles, typography → font stacks
+    - Adds MSO conditionals for Outlook compatibility
+    - Returns `PenpotConversionResult(html: str, sections: list[str], warnings: list[str])`
+  - `PenpotConversionResult`: `html: str`, `sections_count: int`, `warnings: list[str]` (e.g., "Unsupported SVG filter in node X — replaced with placeholder")
+- Enhance `app/design_sync/penpot/converter.py`:
+  - `node_to_email_html()` — improve existing implementation:
+    - Add `COMPONENT` and `INSTANCE` node type handling (currently only FRAME, TEXT, IMAGE, GROUP, VECTOR)
+    - Add `auto-layout` detection from Penpot node properties → flexbox-to-table conversion
+    - Add background color/image extraction from node fills
+    - Add border/border-radius extraction (with email-safe fallbacks)
+    - Add padding/margin from Penpot spacing properties
+  - `_group_into_rows()` — improve spatial grouping:
+    - Handle overlapping elements (z-index ordering)
+    - Detect hero images (full-width images above fold)
+    - Detect CTA buttons (small frames with centered text)
+- Config: `DESIGN_SYNC__PENPOT_CONVERTER_ENABLED: bool = False` (opt-in while stabilizing)
+- Tests:
+  - `app/design_sync/penpot/tests/test_converter_integration.py` — 15+ tests:
+    - Simple Penpot frame → valid email HTML with table layout
+    - Text nodes → `<td>` with inline font styles
+    - Image nodes → `<img>` with width/height attributes
+    - Grouped elements → multi-column table row
+    - Auto-layout frame → table with correct column widths
+    - Extracted tokens applied → correct colors and fonts in inline styles
+    - MSO conditionals present in output
+    - Converter disabled → falls back to brief-only path
+    - Integration: Penpot import with converter → Scaffolder receives initial_html → enhanced output
+  - Update `app/design_sync/penpot/tests/test_penpot_converter.py` — extend existing 14 tests
+**Security:** Converter output runs through `sanitize_html_xss()` before storage. No external calls — all conversion is local string manipulation. SVG content stripped (email-unsafe).
+**Verify:** Penpot design file with header + hero + 2-column content + footer → converter produces table-based HTML with correct structure. Scaffolder enhances with content and design tokens. QA checks pass on output. Converter disabled → brief-only path works as before. `make test` passes.
+- [ ] 29.2 Penpot CSS-to-email converter integration
+
+---
+
+## Phase 30 — End-to-End Testing & CI Quality
+
+**What:** Comprehensive Playwright e2e test suite covering all major user journeys, visual regression testing for rendering emulators, and multi-browser coverage. Transforms the current stub (single `example.spec.ts`) into a production-grade test suite.
+**Why:** The backend has 258+ unit tests and the frontend has 23 unit tests, but the e2e suite has exactly 1 test (a smoke test that clicks a link). No user journey is tested end-to-end through the browser. The rendering emulator system produces screenshots but there's no CI validation that they match expected output. The Playwright config only includes Chromium — the visual email builder relies on DOM APIs that may behave differently in Firefox/Safari. The existing CLI-based e2e testing (`.claude/commands/e2e-test.md`) provides exploratory coverage via `agent-browser` but is not automated in CI.
+**Dependencies:** Phase 28 (export gates, approval UI — tests will exercise these flows). Existing: `cms/apps/web/e2e/playwright.config.ts` (Chromium-only), `cms/apps/web/e2e/example.spec.ts`, `services/mock-esp/` (port 3002).
+
+### 30.1 Playwright E2E User Journey Suite `[Frontend + Full-Stack]`
+**What:** 20+ Playwright test scenarios covering the core user journeys: login, workspace, template building, QA review, export flow, approval workflow, design sync, collaboration, and ecosystem dashboard.
+**Why:** The CLI-based e2e testing guide (`.claude/commands/e2e-test.md`) covers 13 major journeys but requires manual execution via `agent-browser`. These same journeys need automated Playwright tests that run in CI on every PR. The current `example.spec.ts` only verifies that a page loads — it doesn't test any real user workflow.
+**Implementation:**
+- Create `cms/apps/web/e2e/fixtures/` — shared test fixtures:
+  - `auth.ts` — login fixture: authenticates via API (`POST /api/v1/auth/login`), stores session cookie, provides `authenticatedPage` fixture
+  - `project.ts` — creates test project via API, returns `projectId` for test isolation
+  - `template.ts` — creates test template via brief API (29.1) or seed data, returns `templateId`
+  - `mock-esp.ts` — ensures mock-esp service is running on port 3002
+- Create test files in `cms/apps/web/e2e/`:
+  - `auth.spec.ts` — 3 tests:
+    - Login with valid credentials → redirects to dashboard
+    - Login with invalid credentials → shows error message
+    - Logout → redirects to login page
+  - `dashboard.spec.ts` — 3 tests:
+    - Dashboard loads with project list
+    - Create new project → appears in list
+    - Search/filter projects
+  - `workspace.spec.ts` — 5 tests:
+    - Open project workspace → template list visible
+    - Select template → code editor loads with HTML
+    - Switch to visual builder tab → canvas renders preview
+    - Switch to preview tab → sandboxed iframe shows email
+    - QA panel shows check results
+  - `builder.spec.ts` — 5 tests:
+    - Component palette loads with available components
+    - Drag component from palette to canvas → component added
+    - Select component on canvas → property panel opens with correct tabs
+    - Edit property value → preview updates
+    - Undo/redo → canvas state reverts/reapplies
+  - `export.spec.ts` — 5 tests:
+    - Open export dialog → shows ESP tabs
+    - Select Braze → enter content block name → click export
+    - Gate panel appears with QA + rendering results
+    - Gate passes → export succeeds (mock ESP returns 200)
+    - Gate blocks (inject failing HTML) → export blocked with remediation
+  - `approval.spec.ts` — 4 tests:
+    - Submit build for approval → approval appears with "pending" status
+    - Reviewer opens approval → sees build preview + QA results
+    - Reviewer approves → status changes to "approved"
+    - Developer exports after approval → export proceeds
+  - `design-sync.spec.ts` — 3 tests:
+    - Open connect design dialog → select mock provider → connection created
+    - Browse file structure → select frames → generate brief
+    - Convert import → template created and appears in workspace
+  - `collaboration.spec.ts` — 2 tests:
+    - Two browser contexts open same template → presence indicators visible
+    - One user edits → other user sees change (CRDT sync)
+  - `ecosystem.spec.ts` — 2 tests:
+    - Navigate to ecosystem dashboard → tabs visible (plugins, workflows, reports)
+    - Open plugin manager → plugin list loads
+- Update `cms/apps/web/e2e/playwright.config.ts`:
+  - Add `globalSetup` for API-based test data seeding
+  - Add `globalTeardown` for cleanup
+  - Configure screenshot-on-failure: `use: { screenshot: 'only-on-failure' }`
+  - Add `timeout: 30000` per test (email builds can be slow)
+  - Keep single Chromium project for now (30.3 adds more browsers)
+- Update `Makefile`:
+  - `make e2e` — run full Playwright suite (headless)
+  - `make e2e-ui` — run with Playwright UI (interactive debug)
+  - `make e2e-report` — open last HTML report
+- Tests: 32+ test cases total across 9 spec files
+**Security:** Test fixtures use dedicated test user accounts. Mock ESP captures but doesn't forward. Test data isolated per run (unique project names). No real ESP credentials in tests.
+**Verify:** `make e2e` runs all 32+ tests in CI (headless Chromium). All pass on clean environment. Failures produce screenshots + traces. HTML report generated. `make e2e-ui` opens interactive runner. Tests complete in <5 minutes total.
+- [ ] 30.1 Playwright e2e user journey suite
+
+### 30.2 Visual Regression Testing in CI `[Full-Stack + CI]`
+**What:** Automated screenshot comparison for rendering emulator outputs. On each PR, the CI pipeline renders a set of reference emails through all 14 client profiles and compares against baseline screenshots using ODiff. Regressions flag the PR with a diff image.
+**Why:** The emulator system (27.1) produces screenshots via Playwright, and the calibration loop (27.4) compares against external providers — but there's no CI check that emulator outputs are *stable across code changes*. A refactor to the Gmail emulator rules could silently change all Gmail screenshots. Visual regression testing catches this: baseline screenshots are committed, and any deviation is flagged.
+**Implementation:**
+- Create `app/rendering/tests/visual_regression/` package:
+  - `baseline_generator.py` — `BaselineGenerator`:
+    - `async generate_baselines(templates: list[str], profiles: list[str], output_dir: Path) -> list[BaselineResult]`:
+      - For each template × profile: run emulator → capture screenshot → save as PNG
+      - Generates `baselines/{template_slug}/{profile_id}.png`
+      - Also generates `baselines/manifest.json` with template names, profile IDs, timestamps, emulator versions
+    - Reference templates: 5 golden templates selected for visual diversity:
+      - Simple text-only (minimal CSS)
+      - Hero image + CTA (common marketing pattern)
+      - Multi-column product grid (complex table layout)
+      - Dark mode enabled (tests dark mode emulation)
+      - Progressive enhancement (flexbox with MSO fallback)
+  - `regression_runner.py` — `VisualRegressionRunner`:
+    - `async run(baseline_dir: Path, profiles: list[str] | None = None) -> RegressionReport`:
+      - For each baseline: re-render template → compare with ODiff → compute diff percentage
+      - Threshold: 0.5% pixel difference (configurable via `RENDERING__VISUAL_REGRESSION_THRESHOLD`)
+      - Returns `RegressionReport(passed: bool, results: list[ComparisonResult])`
+    - `ComparisonResult`: `template: str`, `profile: str`, `diff_percentage: float`, `passed: bool`, `diff_image_path: Path | None` (generated only on failure)
+  - `conftest.py` — pytest fixtures:
+    - `@pytest.fixture` `visual_baselines` — loads baselines from committed directory
+    - `@pytest.fixture` `regression_runner` — initialized runner with default config
+- Baseline storage:
+  - `app/rendering/tests/visual_regression/baselines/` — committed to git (binary PNGs)
+  - `.gitattributes` entry: `*.png filter=lfs diff=lfs merge=lfs` (if Git LFS available) or direct commit for small baselines
+  - Baselines regenerated via `make rendering-baselines` (manual, reviewed before commit)
+- Makefile targets:
+  - `make rendering-baselines` — regenerate all baselines (manual, destructive)
+  - `make rendering-regression` — run visual regression tests (CI-safe)
+- CI integration (GitHub Actions or equivalent):
+  - Add `rendering-regression` step after `make test`
+  - On failure: upload diff images as artifacts
+  - PR comment with diff summary (optional, via `gh` CLI)
+- Tests:
+  - `app/rendering/tests/visual_regression/test_regression.py` — 5+ tests:
+    - All baselines match current output → passes
+    - Modified emulator rule → detects regression for affected clients
+    - New emulator rule with no baseline → skipped (not failed)
+    - Threshold override via config
+    - Diff images generated on failure
+  - Mark with `@pytest.mark.visual_regression` for selective execution
+**Security:** Baselines are static PNGs — no secrets. ODiff runs locally. No external calls.
+**Verify:** `make rendering-regression` passes on clean main branch. Intentionally modify Gmail emulator rule → regression detected for Gmail profiles with diff image. Restore rule → passes again. `make rendering-baselines` regenerates all baselines. `make test` still passes (visual regression tests excluded by default, only in `make rendering-regression`).
+- [ ] 30.2 Visual regression testing in CI
+
+### 30.3 Multi-Browser & CLI E2E Coverage `[Frontend + CI]`
+**What:** Extend Playwright configuration to run critical user journeys across Firefox and WebKit (Safari), and integrate the existing CLI-based e2e testing (`agent-browser`) as a complementary exploratory layer that can be triggered manually or on release branches.
+**Why:** The visual email builder uses DOM APIs (drag-and-drop, selection, contentEditable, clipboard) that behave differently across browser engines. The current Playwright config only tests Chromium. Firefox and WebKit have known differences in: CSS `user-select` behavior, drag-and-drop DataTransfer API, `contentEditable` cursor positioning, and flexbox rendering. Additionally, the CLI-based e2e test suite (`.claude/commands/e2e-test.md`) provides 13 exploratory journeys via `agent-browser` that complement automated Playwright tests — these should be documented as the exploratory testing strategy and made easy to run.
+**Implementation:**
+- Modify `cms/apps/web/e2e/playwright.config.ts`:
+  - Add Firefox project: `{ name: "firefox", use: { ...devices["Desktop Firefox"] } }`
+  - Add WebKit project: `{ name: "webkit", use: { ...devices["Desktop Safari"] } }`
+  - Keep Chromium as default for `make e2e`
+  - Add `make e2e-all-browsers` for full matrix (CI nightly or release gate)
+  - Configure per-browser test selection:
+    - `auth.spec.ts`, `dashboard.spec.ts`, `workspace.spec.ts` — run on all 3 browsers
+    - `builder.spec.ts` — run on all 3 browsers (most likely to have cross-browser issues)
+    - `export.spec.ts`, `approval.spec.ts` — Chromium only (API-heavy, less browser-dependent)
+    - `collaboration.spec.ts` — Chromium + Firefox (WebSocket behavior)
+  - Tag tests with `@chromium-only`, `@all-browsers` annotations via `test.describe`
+- Cross-browser test hardening:
+  - `builder.spec.ts` — add browser-specific workarounds:
+    - Firefox: use `page.dispatchEvent()` for drag-and-drop (Firefox's native DnD differs)
+    - WebKit: add explicit waits for `contentEditable` focus (Safari is slower)
+  - `collaboration.spec.ts` — add longer WebSocket connection timeout for Firefox
+- CLI e2e integration:
+  - Create `cms/apps/web/e2e/CLI_E2E_TESTING.md` — documents the existing CLI-based e2e approach:
+    - What it covers (13 user journeys)
+    - When to use (exploratory testing, pre-release validation, visual inspection)
+    - How to run (`/e2e-test` in Claude Code)
+    - How it complements Playwright (Playwright = regression, CLI = exploration)
+  - No code changes to the CLI e2e system — it already works
+- Makefile targets:
+  - `make e2e` — Chromium only (fast, default)
+  - `make e2e-firefox` — Firefox only
+  - `make e2e-webkit` — WebKit only
+  - `make e2e-all-browsers` — full matrix (Chromium + Firefox + WebKit)
+- CI integration:
+  - PR checks: `make e2e` (Chromium only — fast feedback)
+  - Nightly: `make e2e-all-browsers` (full matrix)
+  - Release gate: `make e2e-all-browsers` + manual CLI e2e review
+- Tests: existing 30.1 tests × 3 browsers where applicable = ~60 total test executions
+**Security:** Same as 30.1 — no new security surface. Browser binaries downloaded via `npx playwright install` (official Playwright registry).
+**Verify:** `make e2e-all-browsers` runs tests across Chromium, Firefox, and WebKit. Builder drag-and-drop works in all three. Collaboration presence works in Chromium + Firefox. Failures produce per-browser screenshots. CI nightly runs full matrix. `make e2e` (Chromium-only) still completes in <5 minutes.
+- [ ] 30.3 Multi-browser & CLI e2e coverage
+
+---
+
+## Execution Order
+
+| Order | Subtask | Depends On | Scope |
+|-------|---------|-----------|-------|
+| 1 | **27.3** Pre-send rendering gate backend | 27.1, 27.2 (done) | Backend |
+| 2 | **27.6** Frontend rendering dashboard & tests | 27.3 | Frontend + Tests |
+| 3 | **28.1** QA enforcement in export flow | 27.3 | Backend |
+| 4 | **28.2** Approval → export integration | 28.1 | Backend |
+| 5 | **28.3** Approval frontend UI | 28.2 | Frontend |
+| 6 | **29.1** Brief-only template creation | — | Backend + Frontend |
+| 7 | **29.2** Penpot converter integration | — | Backend |
+| 8 | **30.1** Playwright e2e suite | 28.3, 29.1 | Frontend + Full-Stack |
+| 9 | **30.2** Visual regression in CI | — | Full-Stack + CI |
+| 10 | **30.3** Multi-browser & CLI e2e | 30.1 | Frontend + CI |
+
+**Parallelizable:** 29.1 + 29.2 + 30.2 can run in parallel with 28.x. 30.1 should wait for 28.3 (approval UI) so it can test the full flow.
 
 ---
 
@@ -577,19 +632,19 @@ PHASE_26_CUT_START
 
 ## Success Criteria (Updated)
 
-| Metric | Phase 25 (Current) | Target (Phase 26) | Target (Phase 27) |
-|--------|--------------------|--------------------|---------------------|
-| Campaign build time | Under 1 hour (Kestra parallel pipelines) | Under 1 hour (faster deterministic CSS pipeline) | Under 1 hour (unchanged — rendering gate adds <2s) |
-| Cross-client rendering defects | Near-zero (property-tested + plugin checks) | Near-zero + pre-send CSS audit per client | Near-zero + pre-send rendering gate with per-client confidence |
-| QA checks | 16+ (plugin checks) | 17+ (CSS compatibility audit) | 17+ (unchanged — gate is workflow, not a check) |
-| CSS pipeline latency | 1–5s (dual inlining via BeautifulSoup + Juice) | <500ms (single-pass sidecar, no dual inlining) | <500ms (unchanged) |
-| Template CSS precompilation | N/A (re-optimized every build) | Amortized at registration (0ms CSS optimization at build time) | Amortized (unchanged) |
-| CSS compatibility visibility | Log-only (not user-facing) | Per-build audit matrix in QA UI with per-client coverage scores | Per-build audit + rendering confidence scores + gate traffic light |
-| Email CSS output size | Optimal per-client bundles | Optimal + pre-compiled template CSS | Optimal (unchanged) |
-| Ontology freshness | Real-time change detection + plugin extensions | Real-time + sidecar ontology sync | Real-time + emulator calibration drift detection |
-| Cloud AI API spend | Under £600/month (budget caps + plugin cost tracking) | Under £600/month (no change — Phase 26 is deterministic, zero LLM) | Under £600/month (no change — Phase 27 is deterministic, zero LLM) |
-| Email client emulators | 2 (Gmail Web, Outlook.com) | 2 (unchanged) | 7 (+ Yahoo, Samsung, Outlook desktop, Thunderbird, Android Gmail) |
-| Rendering profiles | 6 | 6 (unchanged) | 14 (+ 8 new client profiles incl. dark mode variants) |
-| Rendering confidence scoring | N/A (binary pass/fail) | N/A | Per-client 0–100 confidence with breakdown + recommendations |
-| Pre-send rendering gate | N/A | N/A | Configurable enforce/warn/skip with per-project thresholds |
-| Emulator calibration | N/A (hand-coded, no feedback) | N/A | Automated calibration loop vs Litmus/EoA + self-hosted sandbox |
+| Metric | Phase 26 (Current) | Target (Phase 27) | Target (Phase 28–30) |
+|--------|--------------------|--------------------|----------------------|
+| Campaign build time | Under 1 hour (faster deterministic CSS pipeline) | Under 1 hour (unchanged — rendering gate adds <2s) | Under 1 hour (unchanged) |
+| Cross-client rendering defects | Near-zero + pre-send CSS audit per client | Near-zero + pre-send rendering gate with per-client confidence | Near-zero + enforced QA + approval gates |
+| QA checks | 17+ (CSS compatibility audit) | 17+ (unchanged — gate is workflow, not a check) | 17+ (QA now enforced at export) |
+| CSS pipeline latency | <500ms (single-pass sidecar, no dual inlining) | <500ms (unchanged) | <500ms (unchanged) |
+| Template CSS precompilation | Amortized at registration (0ms CSS optimization at build time) | Amortized (unchanged) | Amortized (unchanged) |
+| CSS compatibility visibility | Per-build audit matrix in QA UI with per-client coverage scores | Per-build audit + rendering confidence scores + gate traffic light | Full gate panel: QA + rendering + approval status |
+| Email client emulators | 2 (unchanged) | 7 (+ Yahoo, Samsung, Outlook desktop, Thunderbird, Android Gmail) | 7 (unchanged) |
+| Rendering profiles | 6 (unchanged) | 14 (+ 8 new client profiles incl. dark mode variants) | 14 (unchanged) |
+| Rendering confidence scoring | N/A | Per-client 0–100 confidence with breakdown + recommendations | Per-client (unchanged, surfaced in dashboard) |
+| Pre-send rendering gate | N/A | Configurable enforce/warn/skip with per-project thresholds | Rendering + QA + approval gates in export pipeline |
+| Export quality enforcement | None (advisory QA only) | Rendering gate (optional) | QA gate + rendering gate + approval gate (configurable per-project) |
+| Approval workflow | Backend-only (no UI) | Backend-only (unchanged) | Full UI: request, review, decide, feedback, audit trail |
+| E2E test coverage | 1 smoke test (example.spec.ts) | 1 (unchanged) | 32+ Playwright scenarios + visual regression + 3 browsers |
+| Design import paths | Figma + Penpot (design file required) | Unchanged | + Brief-only path + enhanced Penpot converter |

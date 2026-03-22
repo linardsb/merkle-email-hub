@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { ClientGateResult } from "@/types/rendering-gate";
+import { ConfidenceBar } from "./confidence-bar";
 
 const TIER_LABELS: Record<string, string> = {
   tier_1: "Tier 1",
@@ -17,10 +18,6 @@ interface Props {
 export function GateClientRow({ result }: Props) {
   const [expanded, setExpanded] = useState(!result.passed);
   const hasDetails = result.blocking_reasons.length > 0 || result.remediation.length > 0;
-
-  const barColor = result.passed ? "bg-status-success" : "bg-status-danger";
-  const barWidth = Math.max(0, Math.min(100, result.confidence_score));
-  const thresholdLeft = Math.max(0, Math.min(100, result.threshold));
 
   return (
     <div className="rounded-md border border-card-border bg-card-bg">
@@ -47,20 +44,11 @@ export function GateClientRow({ result }: Props) {
         </span>
 
         {/* Confidence bar */}
-        <span className="relative flex-1">
-          <span className="block h-2 w-full rounded-full bg-surface-muted">
-            <span
-              className={`block h-2 rounded-full ${barColor} transition-all`}
-              style={{ width: `${barWidth}%` }}
-            />
-          </span>
-          {/* Threshold marker */}
-          <span
-            className="absolute top-0 h-2 w-0.5 bg-foreground-muted"
-            style={{ left: `${thresholdLeft}%` }}
-            title={`Threshold: ${result.threshold}%`}
-          />
-        </span>
+        <ConfidenceBar
+          score={result.confidence_score}
+          threshold={result.threshold}
+          size="sm"
+        />
 
         {/* Score */}
         <span className="w-14 shrink-0 text-right font-mono text-xs text-foreground-muted">

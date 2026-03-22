@@ -28,9 +28,10 @@ import { FailurePatternFilters } from "@/components/failure-patterns/filters";
 import { FailurePatternTable } from "@/components/failure-patterns/pattern-table";
 import { FailurePatternDetailDialog } from "@/components/failure-patterns/detail-dialog";
 import type { ScreenshotResult } from "@/types/rendering";
+import { RenderingDashboard } from "@/components/rendering/rendering-dashboard";
 import type { FailurePatternResponse } from "@/types/failure-patterns";
 
-type Tab = "tests" | "patterns";
+type Tab = "tests" | "patterns" | "dashboard";
 
 const AGENTS: string[] = [
   "scaffolder",
@@ -60,8 +61,9 @@ const QA_CHECKS: string[] = [
 export default function RenderingsPage() {
   const searchParams = useSearchParams();
 
+  const initialTab = searchParams.get("tab");
   const [tab, setTab] = useState<Tab>(
-    searchParams.get("tab") === "patterns" ? "patterns" : "tests"
+    initialTab === "patterns" ? "patterns" : initialTab === "dashboard" ? "dashboard" : "tests"
   );
 
   // --- Rendering Tests state ---
@@ -167,10 +169,24 @@ export default function RenderingsPage() {
         >
           {"Failure Patterns"}
         </button>
+        <button
+          onClick={() => setTab("dashboard")}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            tab === "dashboard"
+              ? "bg-interactive text-foreground-inverse"
+              : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
+          }`}
+        >
+          {"Dashboard"}
+        </button>
       </div>
 
       {/* Tab content */}
-      {tab === "tests" ? (
+      {tab === "dashboard" && (
+        <RenderingDashboard html={null} projectId={null} />
+      )}
+
+      {tab === "tests" && (
         <>
           {isLoading ? (
             <>
@@ -227,7 +243,9 @@ export default function RenderingsPage() {
             </>
           )}
         </>
-      ) : (
+      )}
+
+      {tab === "patterns" && (
         <>
           {fpLoading || fpStatsLoading ? (
             <>
