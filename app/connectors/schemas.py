@@ -4,6 +4,8 @@ import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.connectors.qa_gate_schemas import QAGateResult
+
 
 class ExportRequest(BaseModel):
     """Request to export an email build to an ESP."""
@@ -20,6 +22,7 @@ class ExportRequest(BaseModel):
         default=None,
         description="ESP connection ID — when provided, uses real credentials for the API call",
     )
+    skip_qa_gate: bool = Field(default=False, description="Admin override to skip QA gate")
 
     @model_validator(mode="after")
     def _require_at_least_one_source(self) -> "ExportRequest":
@@ -39,6 +42,7 @@ class ExportResponse(BaseModel):
     status: str
     external_id: str | None = None
     error_message: str | None = None
+    qa_gate_result: QAGateResult | None = None
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)

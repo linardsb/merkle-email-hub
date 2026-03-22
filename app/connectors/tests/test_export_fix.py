@@ -58,7 +58,10 @@ class TestConnectorServiceExport:
         user.id = 1
 
         data = ExportRequest(template_version_id=42, connector_type="braze")
-        response = await service.export(data, user)
+        with patch("app.connectors.service.get_settings") as mock_settings:
+            mock_settings.return_value.export.qa_gate_mode = "skip"
+            mock_settings.return_value.rendering.gate_mode = "skip"
+            response = await service.export(data, user)
 
         assert response.status == "success"
         assert response.template_version_id == 42
@@ -94,7 +97,10 @@ class TestConnectorServiceExport:
 
         with patch.object(service, "_resolve_html", AsyncMock(return_value="<html>ok</html>")):
             with patch("app.connectors.service.ExportRecord", return_value=mock_record):
-                response = await service.export(data, user)
+                with patch("app.connectors.service.get_settings") as mock_settings:
+                    mock_settings.return_value.export.qa_gate_mode = "skip"
+                    mock_settings.return_value.rendering.gate_mode = "skip"
+                    response = await service.export(data, user)
 
         assert response.status == "success"
 

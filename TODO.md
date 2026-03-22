@@ -252,7 +252,7 @@
   - `cms/apps/web/src/hooks/__tests__/use-export-gate.test.ts` — 5+ tests
 **Security:** QA gate is read-only analysis. Override requires admin role. Override decisions logged with user_id, timestamp, and gate results. No new external calls. `skip_qa_gate` parameter validated against user role server-side.
 **Verify:** Email with broken links → export blocked with "link_validation failed" and remediation. Email passing all checks → export proceeds. `mode=warn` → export proceeds with warnings in response. Admin override → proceeds with audit trail. Per-project config: disable spam_score blocking for testing project → spam-flagged email exports. Pre-check endpoint returns correct combined results. `make test` passes. `make check-fe` passes.
-- [ ] 28.1 QA enforcement in export flow
+- [x] ~~28.1 QA enforcement in export flow~~ DONE
 
 ### 28.2 Approval Workflow → Export Integration `[Backend]`
 **What:** Wire the existing approval state machine (`app/approval/`) into the export pipeline so that emails optionally require approval before ESP push. When approval is required, exports are blocked until an authorized reviewer approves the build.

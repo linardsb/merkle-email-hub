@@ -25,3 +25,7 @@ class InvalidESPCredentialsError(DomainValidationError):
 
 class ESPConflictError(ConflictError):
     """Raised when an ESP returns 409 for a duplicate resource."""
+
+
+class ExportQAGateBlockedError(DomainValidationError):
+    """Raised when QA gate blocks export in enforce mode."""

@@ -7,7 +7,7 @@ Environment variables use double-underscore nesting: DATABASE__URL, AUTH__JWT_SE
 from functools import lru_cache
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -529,6 +529,29 @@ class VariantsConfig(BaseModel):
     rate_limit_per_hour: int = 3
 
 
+class ExportConfig(BaseModel):
+    """Export pipeline gate settings."""
+
+    qa_gate_mode: str = "warn"  # enforce | warn | skip
+    qa_blocking_checks: list[str] = Field(
+        default_factory=lambda: [
+            "html_validation",
+            "link_validation",
+            "spam_score",
+            "personalisation_syntax",
+            "liquid_syntax",
+        ]
+    )
+    qa_warning_checks: list[str] = Field(
+        default_factory=lambda: [
+            "accessibility",
+            "dark_mode",
+            "image_optimization",
+            "file_size",
+        ]
+    )
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -594,6 +617,7 @@ class Settings(BaseSettings):
     kestra: KestraConfig = KestraConfig()
     reporting: ReportingConfig = ReportingConfig()
     briefs: BriefsConfig = BriefsConfig()
+    export: ExportConfig = ExportConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

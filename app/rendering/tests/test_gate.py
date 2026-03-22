@@ -354,6 +354,7 @@ async def test_connector_export_gate_block() -> None:
         patch("app.connectors.service.get_settings") as mock_settings,
         patch("app.rendering.gate.get_settings") as mock_gate_settings,
     ):
+        mock_settings.return_value.export.qa_gate_mode = "skip"
         mock_settings.return_value.rendering.gate_mode = "enforce"
         mock_gate_settings.return_value.rendering.gate_mode = "enforce"
         mock_gate_settings.return_value.rendering.gate_tier1_threshold = 99.0
@@ -387,6 +388,7 @@ async def test_connector_export_gate_block() -> None:
 async def test_connector_export_gate_skip() -> None:
     """Export with skip mode → no gate check, proceeds to export."""
     with patch("app.connectors.service.get_settings") as mock_settings:
+        mock_settings.return_value.export.qa_gate_mode = "skip"
         mock_settings.return_value.rendering.gate_mode = "skip"
 
         from app.connectors.service import ConnectorService

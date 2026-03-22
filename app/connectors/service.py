@@ -15,12 +15,17 @@ from app.connectors.braze.service import BrazeConnectorService
 from app.connectors.exceptions import ExportFailedError, UnsupportedConnectorError
 from app.connectors.models import ExportRecord
 from app.connectors.protocol import ConnectorProvider
+from app.connectors.qa_gate_schemas import (
+    ExportPreCheckRequest,
+    ExportPreCheckResponse,
+    QAGateResult,
+)
 from app.connectors.schemas import ExportRequest, ExportResponse
 from app.connectors.sfmc.service import SFMCConnectorService
 from app.connectors.sync_models import ESPConnection
 from app.connectors.taxi.service import TaxiConnectorService
 from app.core.config import get_settings
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.logging import get_logger
 from app.design_sync.crypto import decrypt_token
 from app.email_engine.models import EmailBuild
@@ -125,8 +130,48 @@ class ConnectorService:
 
     async def export(self, data: ExportRequest, user: User) -> ExportResponse:
         """Export an email build or template version to the specified ESP."""
+        # Admin-only override for skip_qa_gate
+        if data.skip_qa_gate and user.role != "admin":
+            raise ForbiddenError("Only admins can skip QA gate")
+
         html = await self._resolve_html(data, user)
         provider = self._get_provider(data.connector_type)
+
+        # ── QA gate check (Phase 28.1) ──
+        settings = get_settings()
+        qa_gate_result: QAGateResult | None = None
+        if settings.export.qa_gate_mode != "skip" and not data.skip_qa_gate:
+            from app.connectors.exceptions import ExportQAGateBlockedError
+            from app.connectors.qa_gate import ExportQAGate
+            from app.connectors.qa_gate_schemas import QAGateVerdict as QAVerdict
+
+            qa_gate = ExportQAGate(self.db)
+            gate_project_id = await self._resolve_project_id(data, user)
+            qa_gate_result = await qa_gate.evaluate(html, gate_project_id)
+
+            if qa_gate_result.verdict == QAVerdict.BLOCK:
+                logger.warning(
+                    "connectors.export_qa_gate_blocked",
+                    blocking_checks=[f.check_name for f in qa_gate_result.blocking_failures],
+                    build_id=data.build_id,
+                )
+                raise ExportQAGateBlockedError(
+                    f"QA gate blocked export: "
+                    f"{', '.join(f.check_name for f in qa_gate_result.blocking_failures)} failed"
+                )
+
+            if qa_gate_result.verdict == QAVerdict.WARN:
+                logger.info(
+                    "connectors.export_qa_gate_warning",
+                    blocking_checks=[f.check_name for f in qa_gate_result.blocking_failures],
+                    build_id=data.build_id,
+                )
+        elif data.skip_qa_gate:
+            logger.warning(
+                "connectors.export_qa_gate_skipped",
+                user_id=user.id,
+                build_id=data.build_id,
+            )
 
         # ── Rendering gate check (Phase 27.3) ──
         settings = get_settings()
@@ -198,6 +243,7 @@ class ConnectorService:
                 connector_type=data.connector_type,
                 status="success",
                 external_id=external_id,
+                qa_gate_result=qa_gate_result,
                 created_at=datetime.datetime.now(datetime.UTC),
             )
 
@@ -246,7 +292,40 @@ class ConnectorService:
             status=record.status,
             external_id=record.external_id,
             error_message=record.error_message,
+            qa_gate_result=qa_gate_result,
             created_at=record.created_at,  # pyright: ignore[reportArgumentType]
+        )
+
+    async def pre_check(
+        self,
+        data: ExportPreCheckRequest,
+    ) -> ExportPreCheckResponse:
+        """Dry-run QA + rendering gates without exporting."""
+        from app.connectors.qa_gate import ExportQAGate
+
+        qa_gate = ExportQAGate(self.db)
+        qa_result = await qa_gate.evaluate(data.html, data.project_id)
+
+        render_result = None
+        settings = get_settings()
+        if settings.rendering.gate_mode != "skip":
+            from app.rendering.gate import RenderingSendGate
+            from app.rendering.gate_schemas import GateEvaluateRequest
+
+            gate = RenderingSendGate(self.db)
+            render_result = await gate.evaluate(
+                GateEvaluateRequest(
+                    html=data.html,
+                    project_id=data.project_id,
+                    target_clients=data.target_clients,
+                )
+            )
+
+        can_export = qa_result.passed and (render_result is None or render_result.passed)
+        return ExportPreCheckResponse(
+            qa=qa_result,
+            rendering=render_result,
+            can_export=can_export,
         )
 
     async def import_and_annotate(

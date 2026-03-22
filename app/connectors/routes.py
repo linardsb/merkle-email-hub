@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
 from app.auth.models import User
+from app.connectors.qa_gate_schemas import ExportPreCheckRequest, ExportPreCheckResponse
 from app.connectors.schemas import ExportRequest, ExportResponse
 from app.connectors.service import ConnectorService
 from app.core.database import get_db
@@ -30,3 +31,16 @@ async def export_email(
     """Export a built email template to an ESP."""
     _ = request
     return await service.export(data, user=current_user)
+
+
+@router.post("/export/pre-check", response_model=ExportPreCheckResponse)
+@limiter.limit("10/minute")
+async def export_pre_check(
+    request: Request,
+    data: ExportPreCheckRequest,
+    service: ConnectorService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> ExportPreCheckResponse:
+    """Dry-run QA + rendering gates without exporting."""
+    _ = request
+    return await service.pre_check(data)
