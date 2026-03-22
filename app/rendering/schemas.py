@@ -108,6 +108,28 @@ class ScreenshotRequest(BaseModel):
     )
 
 
+class ConfidenceBreakdownSchema(BaseModel):
+    """Component scores for rendering confidence."""
+
+    emulator_coverage: float = Field(ge=0.0, le=1.0)
+    css_compatibility: float = Field(ge=0.0, le=1.0)
+    calibration_accuracy: float = Field(ge=0.0, le=1.0)
+    layout_complexity: float = Field(ge=0.0, le=1.0)
+    known_blind_spots: list[str] = []
+
+
+class ClientConfidenceResponse(BaseModel):
+    """Current confidence data for a specific client."""
+
+    client_id: str
+    accuracy: float
+    sample_count: int
+    last_calibrated: str
+    known_blind_spots: list[str] = []
+    emulator_rule_count: int
+    profiles: list[str] = []
+
+
 class ScreenshotClientResult(BaseModel):
     """Single client screenshot result with base64 image."""
 
@@ -115,6 +137,9 @@ class ScreenshotClientResult(BaseModel):
     image_base64: str
     viewport: str
     browser: str
+    confidence_score: float | None = None
+    confidence_breakdown: ConfidenceBreakdownSchema | None = None
+    confidence_recommendations: list[str] | None = None
 
 
 class ScreenshotResponse(BaseModel):

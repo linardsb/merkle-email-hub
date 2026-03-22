@@ -1,0 +1,78 @@
+# Initial calibration seeds for rendering confidence scoring.
+# Updated by the calibration loop (Phase 27.4) when real data is available.
+# accuracy: estimated fidelity of emulator vs real client (0.0-1.0)
+# sample_count: 0 = seed only, >0 = calibrated with real data
+# known_blind_spots: behaviors the emulator cannot model
+
+gmail_web:
+  accuracy: 0.80
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "DOM restructuring (div wrapping, attribute reordering)"
+    - "URL click-tracking rewriting"
+    - "Viewport clipping at 102KB"
+
+outlook_web:
+  accuracy: 0.75
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "data-ogsc/data-ogsb color inversion logic"
+    - "CSS specificity recalculation"
+    - "Conditional comment processing differences"
+
+yahoo_web:
+  accuracy: 0.70
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "Class prefix collision handling"
+    - "Embedded CSS scope isolation"
+    - "Mobile responsive breakpoint override"
+
+yahoo_mobile:
+  accuracy: 0.68
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "Class prefix collision handling"
+    - "Touch target size enforcement"
+    - "Image lazy-loading rewriting"
+
+samsung_mail:
+  accuracy: 0.65
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "Image proxy URL rewriting fidelity"
+    - "Auto dark mode color inversion algorithm"
+    - "OneUI-specific rendering quirks"
+
+outlook_desktop:
+  accuracy: 0.50
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "Word table cell width calculation"
+    - "VML rendering (Chromium cannot render VML)"
+    - "DPI scaling behavior"
+    - "Page break insertion for tall emails"
+    - "Font substitution and metric differences"
+
+thunderbird:
+  accuracy: 0.85
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "Gecko remote image blocking default"
+    - "Thunderbird-specific content policy filtering"
+
+android_gmail:
+  accuracy: 0.78
+  sample_count: 0
+  last_calibrated: "2026-03-22"
+  known_blind_spots:
+    - "DOM restructuring (shared with Gmail web)"
+    - "Android WebView rendering differences"
+    - "System dark mode interaction"

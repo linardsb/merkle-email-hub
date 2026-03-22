@@ -1,6 +1,11 @@
 """Feature-specific exceptions for rendering tests."""
 
-from app.core.exceptions import AppError, DomainValidationError, ServiceUnavailableError
+from app.core.exceptions import (
+    AppError,
+    DomainValidationError,
+    NotFoundError,
+    ServiceUnavailableError,
+)
 
 
 class RenderingTestNotFoundError(AppError):
@@ -45,3 +50,19 @@ class SandboxSMTPError(ServiceUnavailableError):
 
 class SandboxCaptureError(AppError):
     """Raised when Playwright DOM extraction from webmail fails."""
+
+
+class ClientNotFoundError(NotFoundError):
+    """Raised when a rendering client ID is not recognized."""
+
+
+class CalibrationError(AppError):
+    """Raised when calibration comparison fails."""
+
+
+class RenderingGateBlockedError(DomainValidationError):
+    """Raised when rendering gate blocks an export in enforce mode."""
+
+
+class InvalidGateConfigError(DomainValidationError):
+    """Raised when gate config values are invalid."""

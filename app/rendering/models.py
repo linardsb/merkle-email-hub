@@ -1,6 +1,8 @@
 """Database models for rendering tests."""
 
-from sqlalchemy import ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
+from typing import Any
+
+from sqlalchemy import JSON, Float, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -46,6 +48,9 @@ class RenderingScreenshot(Base, TimestampMixin):
     os: Mapped[str] = mapped_column(String(50), nullable=False, default="")
     category: Mapped[str] = mapped_column(String(50), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence_breakdown: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    confidence_recommendations: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
 
     rendering_test: Mapped["RenderingTest"] = relationship(back_populates="screenshots")
 

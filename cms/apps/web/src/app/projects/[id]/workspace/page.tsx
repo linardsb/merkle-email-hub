@@ -758,6 +758,7 @@ export default function WorkspacePage() {
         templateId={activeTemplate?.id ?? 0}
         templateName={activeTemplate?.name ?? "email"}
         projectId={projectId}
+        compiledHtml={compiledHtml}
       />
 
       {chatCollapsed && (

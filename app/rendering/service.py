@@ -11,15 +11,35 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
 from app.core.config import get_settings
+from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.core.resilience import CircuitBreaker
 from app.email_engine.models import EmailBuild
 from app.projects.service import ProjectService
+from app.rendering.calibration.calibrator import EmulatorCalibrator
+from app.rendering.calibration.repository import CalibrationRepository
+from app.rendering.calibration.schemas import (
+    CalibrationHistoryResponse,
+    CalibrationRecordResponse,
+    CalibrationSummaryListResponse,
+    CalibrationSummaryResponse,
+    CalibrationTriggerRequest,
+    CalibrationTriggerResponse,
+)
 from app.rendering.eoa.service import EoARenderingService
 from app.rendering.exceptions import (
+    CalibrationError,
+    ClientNotFoundError,
     RenderingProviderError,
     RenderingSubmitError,
     RenderingTestNotFoundError,
+)
+from app.rendering.gate import RenderingSendGate
+from app.rendering.gate_schemas import (
+    GateConfigUpdateRequest,
+    GateEvaluateRequest,
+    GateResult,
+    RenderingGateConfigSchema,
 )
 from app.rendering.litmus.service import LitmusRenderingService
 from app.rendering.local.service import LocalRenderingProvider
@@ -31,6 +51,7 @@ from app.rendering.schemas import (
     BaselineListResponse,
     BaselineResponse,
     BaselineUpdateRequest,
+    ClientConfidenceResponse,
     Region,
     RenderingComparisonRequest,
     RenderingComparisonResponse,
@@ -220,11 +241,12 @@ class RenderingService:
         screenshots = [
             ScreenshotClientResult(
                 client_name=str(r["client_name"]),
-                image_base64=base64.b64encode(
-                    r["image_bytes"]  # type: ignore[arg-type]
-                ).decode("ascii"),
+                image_base64=base64.b64encode(r["image_bytes"]).decode("ascii"),
                 viewport=str(r["viewport"]),
                 browser=str(r["browser"]),
+                confidence_score=r.get("confidence_score"),
+                confidence_breakdown=r.get("confidence_breakdown"),
+                confidence_recommendations=r.get("confidence_recommendations"),
             )
             for r in raw_results
         ]
@@ -233,6 +255,138 @@ class RenderingService:
             screenshots=screenshots,
             clients_rendered=len(screenshots),
             clients_failed=len(data.clients) - len(screenshots),
+        )
+
+    async def get_client_confidence(self, client_id: str) -> ClientConfidenceResponse:
+        """Get current confidence calibration data for an email client."""
+        from app.rendering.local.confidence import RenderingConfidenceScorer
+        from app.rendering.local.emulators import _EMULATORS
+        from app.rendering.local.profiles import CLIENT_PROFILES
+
+        emulator = _EMULATORS.get(client_id)
+        profiles = [name for name, p in CLIENT_PROFILES.items() if p.emulator_id == client_id]
+
+        if not emulator and not profiles:
+            raise ClientNotFoundError(f"Unknown rendering client: {client_id}")
+
+        scorer = RenderingConfidenceScorer()
+        seed = await scorer.get_seed_with_db(client_id, self.db)
+        rule_count = len(emulator.rules) if emulator else 0
+
+        return ClientConfidenceResponse(
+            client_id=client_id,
+            accuracy=seed.get("accuracy", 0.5),
+            sample_count=seed.get("sample_count", 0),
+            last_calibrated=seed.get("last_calibrated", ""),
+            known_blind_spots=seed.get("known_blind_spots", []),
+            emulator_rule_count=rule_count,
+            profiles=profiles,
+        )
+
+    async def get_calibration_summary(self) -> CalibrationSummaryListResponse:
+        """List calibration state for all clients."""
+        repo = CalibrationRepository(self.db)
+        summaries = await repo.list_summaries()
+        return CalibrationSummaryListResponse(
+            summaries=[
+                CalibrationSummaryResponse(
+                    client_id=s.client_id,
+                    current_accuracy=s.current_accuracy,
+                    sample_count=s.sample_count,
+                    accuracy_trend=list(s.accuracy_trend or []),
+                    known_blind_spots=list(s.known_blind_spots or []),
+                    last_provider=s.last_provider,
+                    last_calibrated=s.updated_at,  # pyright: ignore[reportArgumentType]
+                )
+                for s in summaries
+            ]
+        )
+
+    async def get_calibration_history(
+        self, client_id: str, *, limit: int = 20
+    ) -> CalibrationHistoryResponse:
+        """Get calibration record history for a client."""
+        repo = CalibrationRepository(self.db)
+        records = await repo.list_records(client_id, limit=limit)
+        total = await repo.count_records(client_id)
+        return CalibrationHistoryResponse(
+            client_id=client_id,
+            records=[
+                CalibrationRecordResponse(
+                    id=r.id,
+                    client_id=r.client_id,
+                    html_hash=r.html_hash,
+                    diff_percentage=r.diff_percentage,
+                    accuracy_score=r.accuracy_score,
+                    pixel_count=r.pixel_count,
+                    external_provider=r.external_provider,
+                    emulator_version=r.emulator_version,
+                    created_at=r.created_at,  # pyright: ignore[reportArgumentType]
+                )
+                for r in records
+            ],
+            total=total,
+        )
+
+    async def trigger_calibration(
+        self, data: CalibrationTriggerRequest
+    ) -> CalibrationTriggerResponse:
+        """Trigger a calibration run: render locally + capture externally + compare."""
+        logger.info(
+            "calibration.trigger_started",
+            client_ids=data.client_ids,
+            provider=data.external_provider,
+        )
+
+        try:
+            provider = LocalRenderingProvider()
+            raw_results = await provider.render_screenshots(data.html, data.client_ids)
+        except Exception as exc:
+            raise CalibrationError(f"Local screenshot rendering failed: {exc}") from exc
+
+        local_map: dict[str, bytes] = {str(r["client_name"]): r["image_bytes"] for r in raw_results}
+
+        external_map: dict[str, bytes] = {}
+        if data.external_provider == "sandbox":
+            try:
+                from app.rendering.sandbox.sandbox import send_and_capture
+
+                _, captures = await send_and_capture(
+                    html=data.html,
+                    subject="Calibration test",
+                    profile_names=data.client_ids,
+                )
+                for profile_name, _html, screenshot, _diff in captures:
+                    if screenshot:
+                        external_map[profile_name] = screenshot
+            except CalibrationError:
+                raise
+            except Exception as exc:
+                raise CalibrationError(f"Sandbox capture failed: {exc}") from exc
+        else:
+            logger.info(
+                "calibration.external_provider_not_implemented",
+                provider=data.external_provider,
+            )
+
+        calibrator = EmulatorCalibrator(self.db)
+        results = await calibrator.calibrate_batch(
+            html=data.html,
+            local_screenshots=local_map,
+            external_screenshots=external_map,
+            external_provider=data.external_provider,
+        )
+        await calibrator.update_seeds(results, external_provider=data.external_provider)
+
+        logger.info(
+            "calibration.trigger_completed",
+            records_created=len(results),
+            client_ids=data.client_ids,
+        )
+
+        return CalibrationTriggerResponse(
+            results=results,
+            records_created=len(results),
         )
 
     async def visual_diff(self, data: VisualDiffRequest) -> VisualDiffResponse:
@@ -339,6 +493,49 @@ class RenderingService:
             created_at=baseline.created_at,  # pyright: ignore[reportArgumentType]
             updated_at=baseline.updated_at,  # pyright: ignore[reportArgumentType]
         )
+
+    async def evaluate_gate(self, request: GateEvaluateRequest) -> GateResult:
+        """Evaluate rendering gate for given HTML."""
+        gate = RenderingSendGate(self.db)
+        return await gate.evaluate(request)
+
+    async def get_gate_config(self, project_id: int) -> RenderingGateConfigSchema:
+        """Get project-level gate configuration."""
+        gate = RenderingSendGate(self.db)
+        return await gate.resolve_config(project_id)
+
+    async def update_gate_config(
+        self,
+        project_id: int,
+        update: GateConfigUpdateRequest,
+    ) -> RenderingGateConfigSchema:
+        """Update project-level gate configuration (partial merge)."""
+        from app.projects.models import Project
+
+        result = await self.db.execute(select(Project).where(Project.id == project_id))
+        project = result.scalar_one_or_none()
+        if not project:
+            raise NotFoundError(f"Project {project_id} not found")
+
+        # Resolve current config from the already-loaded project (no second query)
+        gate = RenderingSendGate(self.db)
+        current = await gate.resolve_config(None)  # global defaults
+        if project.rendering_gate_config:
+            try:
+                current = RenderingGateConfigSchema.model_validate(project.rendering_gate_config)
+            except Exception:
+                logger.warning("gate.invalid_project_config", project_id=project_id)
+
+        # Merge update into current config
+        merged = current.model_dump()
+        update_data = update.model_dump(exclude_none=True)
+        merged.update(update_data)
+
+        # Validate merged config
+        validated = RenderingGateConfigSchema.model_validate(merged)
+        project.rendering_gate_config = validated.model_dump()
+        await self.db.commit()
+        return validated
 
     def _to_response(self, test: RenderingTest) -> RenderingTestResponse:
         """Transform a RenderingTest model to response schema."""

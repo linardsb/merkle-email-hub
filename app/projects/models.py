@@ -62,6 +62,12 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
         default=None,
         comment="Per-project template registry configuration (overrides, custom sections, disabled/preferred)",
     )
+    rendering_gate_config: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        default=None,
+        comment="Per-project rendering gate configuration (mode, thresholds, target clients)",
+    )
 
     client_org: Mapped[ClientOrg] = relationship(back_populates="projects")
 

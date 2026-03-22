@@ -5,10 +5,12 @@ from __future__ import annotations
 import tempfile
 import uuid
 from pathlib import Path
+from typing import Any
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.rendering.exceptions import ScreenshotRenderError, ScreenshotTimeoutError
+from app.rendering.local.confidence import RenderingConfidenceScorer
 from app.rendering.local.profiles import CLIENT_PROFILES
 from app.rendering.local.runner import capture_screenshot
 
@@ -36,7 +38,7 @@ class LocalRenderingProvider:
 
     async def render_screenshots(
         self, html: str, clients: list[str] | None = None
-    ) -> list[dict[str, str | bytes]]:
+    ) -> list[dict[str, Any]]:
         """Render HTML across client profiles, return list of results.
 
         Each result: {client_name, image_bytes, viewport, browser}.
@@ -44,8 +46,9 @@ class LocalRenderingProvider:
         settings = get_settings()
         max_clients = settings.rendering.screenshot_max_clients
         profile_names = (clients or list(CLIENT_PROFILES.keys()))[:max_clients]
+        scorer = RenderingConfidenceScorer() if settings.rendering.confidence_enabled else None
 
-        results: list[dict[str, str | bytes]] = []
+        results: list[dict[str, Any]] = []
         with tempfile.TemporaryDirectory(prefix="email_screenshots_") as tmpdir:
             output_dir = Path(tmpdir)
             for name in profile_names:
@@ -55,12 +58,20 @@ class LocalRenderingProvider:
                     continue
                 try:
                     image_bytes = await capture_screenshot(html, profile, output_dir)
+                    confidence = scorer.score(html, profile) if scorer else None
                     results.append(
                         {
                             "client_name": name,
                             "image_bytes": image_bytes,
                             "viewport": f"{profile.viewport_width}x{profile.viewport_height}",
                             "browser": profile.browser,
+                            "confidence_score": confidence.score if confidence else None,
+                            "confidence_breakdown": confidence.to_dict()["breakdown"]
+                            if confidence
+                            else None,
+                            "confidence_recommendations": confidence.recommendations
+                            if confidence
+                            else None,
                         }
                     )
                 except (ScreenshotRenderError, ScreenshotTimeoutError, OSError) as exc:

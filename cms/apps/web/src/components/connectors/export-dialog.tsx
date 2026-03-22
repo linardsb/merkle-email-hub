@@ -5,6 +5,7 @@ import { Download, Plug, Cloud, Palette, Mail, Loader2, CheckCircle2, XCircle } 
 import { toast } from "sonner";
 import { useEmailBuild } from "@/hooks/use-email";
 import { useExport } from "@/hooks/use-connectors";
+import { GatePanel } from "@/components/rendering/gate-panel";
 import type { ExportHistoryRecord, ConnectorPlatform } from "@/types/connectors";
 
 type DialogState = "idle" | "building" | "exporting" | "success" | "error";
@@ -109,6 +110,8 @@ export function ExportDialog({
 }: ExportDialogProps) {
   const [activeTab, setActiveTab] = useState<ConnectorTab>("raw_html");
   const [espStates, setEspStates] = useState<Record<string, EspState>>({});
+  const [showGate, setShowGate] = useState(false);
+  const [pendingExportCfg, setPendingExportCfg] = useState<ConnectorConfig | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const { trigger: triggerBuild } = useEmailBuild();
@@ -130,6 +133,8 @@ export function ExportDialog({
   useEffect(() => {
     if (!open) {
       setEspStates({});
+      setShowGate(false);
+      setPendingExportCfg(null);
     }
   }, [open]);
 
@@ -261,6 +266,20 @@ export function ExportDialog({
     [projectId, templateName, sourceHtml, triggerBuild, triggerExport, onExportComplete, updateEspState]
   );
 
+  const handleEspExportClick = useCallback((cfg: ConnectorConfig) => {
+    const state = espStatesRef.current[cfg.id] ?? initialEspState;
+    if (!state.name.trim()) return;
+    setPendingExportCfg(cfg);
+    setShowGate(true);
+  }, []);
+
+  const handleGateApproved = useCallback(() => {
+    setShowGate(false);
+    if (pendingExportCfg) {
+      handleEspExport(pendingExportCfg);
+    }
+  }, [pendingExportCfg, handleEspExport]);
+
   if (!open) return null;
 
   const activeConfig = ESP_CONNECTORS.find((c) => c.id === activeTab);
@@ -329,14 +348,24 @@ export function ExportDialog({
               )}
             </div>
           ) : activeConfig ? (
-            <EspTabContent
-              config={activeConfig}
-              state={getEspState(activeConfig.id)}
-              compiledHtml={compiledHtml}
-              onNameChange={(val) => updateEspState(activeConfig.id, { name: val })}
-              onExport={() => handleEspExport(activeConfig)}
-              onRetry={() => updateEspState(activeConfig.id, { dialogState: "idle", errorMessage: null })}
-            />
+            showGate && pendingExportCfg?.id === activeConfig.id ? (
+              <GatePanel
+                html={compiledHtml}
+                projectId={projectId}
+                onApproved={handleGateApproved}
+                onCancel={() => setShowGate(false)}
+                approveLabel={pendingExportCfg.exportButton}
+              />
+            ) : (
+              <EspTabContent
+                config={activeConfig}
+                state={getEspState(activeConfig.id)}
+                compiledHtml={compiledHtml}
+                onNameChange={(val) => updateEspState(activeConfig.id, { name: val })}
+                onExport={() => handleEspExportClick(activeConfig)}
+                onRetry={() => updateEspState(activeConfig.id, { dialogState: "idle", errorMessage: null })}
+              />
+            )
           ) : null}
         </div>
 

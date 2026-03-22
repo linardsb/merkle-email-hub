@@ -1,7 +1,7 @@
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 """REST API routes for rendering tests."""
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Path, Query, status
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,18 @@ from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.rendering.calibration.schemas import (
+    CalibrationHistoryResponse,
+    CalibrationSummaryListResponse,
+    CalibrationTriggerRequest,
+    CalibrationTriggerResponse,
+)
+from app.rendering.gate_schemas import (
+    GateConfigUpdateRequest,
+    GateEvaluateRequest,
+    GateResult,
+    RenderingGateConfigSchema,
+)
 from app.rendering.sandbox.schemas import (
     SandboxHealthResponse,
     SandboxTestRequest,
@@ -19,6 +31,7 @@ from app.rendering.schemas import (
     BaselineListResponse,
     BaselineResponse,
     BaselineUpdateRequest,
+    ClientConfidenceResponse,
     RenderingComparisonRequest,
     RenderingComparisonResponse,
     RenderingTestRequest,
@@ -111,6 +124,19 @@ async def render_screenshots(
     return await service.render_screenshots(data)
 
 
+@router.get("/confidence/{client_id}", response_model=ClientConfidenceResponse)
+@limiter.limit("30/minute")
+async def get_client_confidence(
+    request: Request,
+    client_id: str = Path(..., pattern=r"^[a-z][a-z0-9_]{1,50}$"),
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> ClientConfidenceResponse:
+    """Get current confidence calibration data for an email client."""
+    _ = request
+    return await service.get_client_confidence(client_id)
+
+
 @router.post("/visual-diff", response_model=VisualDiffResponse)
 @limiter.limit("10/minute")
 async def visual_diff(
@@ -174,3 +200,88 @@ async def sandbox_health(
     """Check sandbox infrastructure availability."""
     _ = request
     return await check_sandbox_health()
+
+
+# ── Calibration endpoints ──
+
+
+@router.get("/calibration/summary", response_model=CalibrationSummaryListResponse)
+@limiter.limit("30/minute")
+async def calibration_summary(
+    request: Request,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> CalibrationSummaryListResponse:
+    """Get calibration state for all email clients."""
+    _ = request
+    return await service.get_calibration_summary()
+
+
+@router.post("/calibration/trigger", response_model=CalibrationTriggerResponse)
+@limiter.limit("3/minute")
+async def calibration_trigger(
+    request: Request,
+    data: CalibrationTriggerRequest,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> CalibrationTriggerResponse:
+    """Trigger a calibration run for specified clients."""
+    _ = request
+    return await service.trigger_calibration(data)
+
+
+@router.get("/calibration/history/{client_id}", response_model=CalibrationHistoryResponse)
+@limiter.limit("30/minute")
+async def calibration_history(
+    request: Request,
+    client_id: str = Path(..., pattern=r"^[a-z][a-z0-9_]{1,50}$"),
+    limit: int = Query(20, ge=1, le=100),
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> CalibrationHistoryResponse:
+    """Get calibration history for a specific client."""
+    _ = request
+    return await service.get_calibration_history(client_id, limit=limit)
+
+
+# ── Gate endpoints (Phase 27.3) ──
+
+
+@router.post("/gate/evaluate", response_model=GateResult)
+@limiter.limit("10/minute")
+async def evaluate_gate(
+    request: Request,
+    data: GateEvaluateRequest,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> GateResult:
+    """Evaluate rendering gate for given HTML."""
+    _ = request
+    return await service.evaluate_gate(data)
+
+
+@router.get("/gate/config/{project_id}", response_model=RenderingGateConfigSchema)
+@limiter.limit("30/minute")
+async def get_gate_config(
+    request: Request,
+    project_id: int,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(get_current_user),  # noqa: B008
+) -> RenderingGateConfigSchema:
+    """Get project-level gate configuration."""
+    _ = request
+    return await service.get_gate_config(project_id)
+
+
+@router.put("/gate/config/{project_id}", response_model=RenderingGateConfigSchema)
+@limiter.limit("10/minute")
+async def update_gate_config(
+    request: Request,
+    project_id: int,
+    data: GateConfigUpdateRequest,
+    service: RenderingService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> RenderingGateConfigSchema:
+    """Update project-level gate configuration (admin only)."""
+    _ = request
+    return await service.update_gate_config(project_id, data)

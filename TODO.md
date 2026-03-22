@@ -28,18 +28,10 @@
 
 ## ~~Phase 26 — Email Build Pipeline Performance & CSS Optimization~~ DONE
 
-**What:** Eliminate redundant CSS processing in the email build pipeline, surface per-client CSS compatibility data in QA output, pre-compile template CSS at registration time, and consolidate CSS compilation into the Maizzle sidecar as a single-pass PostCSS pipeline. Four subtasks ordered by impact — each builds on the previous.
-**Why:** The current build pipeline processes CSS twice: Maizzle inlines via Juice, then `EmailCSSCompiler` re-inlines via BeautifulSoup. The BeautifulSoup inliner is O(rules × elements) and adds 1–5s on complex emails — the single largest bottleneck in a pipeline that's otherwise sub-second after the LLM passes. Fixing this unlocks near-instant deterministic builds. The CSS compatibility data already exists in the ontology but isn't surfaced per-build, leaving users to discover rendering failures post-send. Pre-compiling template CSS amortizes optimization cost across all builds using that template. Consolidating into the sidecar is the clean architectural end-state — one HTTP call, one CSS pass, Node.js-native tooling.
-**Dependencies:** Phase 19 (CSS compiler, ontology-driven conversions), Phase 25 (Maizzle sidecar, plugin QA checks). The ontology registry, Lightning CSS integration, and 7-stage compiler pipeline are all in place.
-**Design principle:** Measure before optimizing — add timing telemetry to each pipeline stage first. Each subtask must preserve the existing `CompilationResult` contract and pass all existing tests. No new feature flags — these are internal optimizations that don't change the external API.
+> All 5 subtasks complete. See [docs/TODO-completed.md](docs/TODO-completed.md) for detailed completion records.
+> 26.1 Eliminate redundant CSS inlining, 26.2 Per-build CSS compatibility audit, 26.3 Template-level CSS precompilation, 26.4 Consolidated CSS pipeline in Maizzle sidecar, 26.5 Tests & documentation.
 
-### 26.1 Eliminate Redundant CSS Inlining `[Backend]`
-**What:** Reorder the email build pipeline so `EmailCSSCompiler` runs its analyze/transform/eliminate/optimize stages on raw CSS *before* Maizzle inlines it, then skip the compiler's own inline stage (stage 6) entirely. Maizzle's Juice inliner handles the final CSS→inline conversion on already-optimized CSS. This eliminates the BeautifulSoup O(rules × elements) bottleneck — the single most expensive step in the deterministic pipeline.
-**Why:** Currently Maizzle inlines raw CSS via Juice, then `EmailCSSCompiler` extracts styles, optimizes, and re-inlines via BeautifulSoup. The BeautifulSoup inliner is quadratic — 100 CSS rules × 50 matching elements = 5,000 element updates. On complex emails (30+ sections, responsive + dark mode CSS), this adds 1–5s. Since Maizzle already does high-quality CSS inlining (specificity-aware, handles pseudo-classes), the Python inliner is redundant. Running ontology optimization *before* Maizzle means Maizzle inlines fewer, cleaner rules — faster on both sides.
-**Implementation:**
-- Add pipeline stage timing telemetry to `EmailCSSCompiler.compile()` — log `compile.stage_{name}_ms` for each of the 7 stages so we have before/after metrics
-- Create `EmailCSSCompiler.optimize_css(html: str, target_clients: list[str]) -> OptimizedCSS` — new public method that runs stages 1-5 only (parse → analyze → transform → eliminate → optimize) and returns `OptimizedCSS(html_with_optimized_styles: str, removed_properties: list, conversions: list, warnings: list)`
-  - Extracts `<style>` blocks via `extract_styles()`
+PHASE_26_CUT_START
   - Runs ontology analysis, conversions, eliminations on each block
   - Runs Lightning CSS minification on each block
   - Re-injects optimized `<style>` blocks into HTML (does NOT inline)
@@ -327,7 +319,7 @@
 - Modify `app/rendering/schemas.py` — add `RenderingConfidenceSchema`, `ConfidenceBreakdownSchema` to response models
 **Security:** Confidence scoring is read-only analysis — no new inputs or external calls. Seed data is developer-maintained YAML. Calibration data stored in database with standard access controls.
 **Verify:** Render a simple email (table layout, inline styles only) for Gmail → confidence >90%. Render a complex email (flexbox, VML, dark mode) for Outlook desktop → confidence <70% with "Word table cell width" in blind spots. Render for Thunderbird → confidence >85% (Gecko is standards-compliant). Confidence data appears in screenshot API response. `make test` passes.
-- [ ] 27.2 Rendering confidence scoring
+- [x] ~~27.2 Rendering confidence scoring~~ DONE
 
 ### 27.3 Pre-Send Rendering Gate `[Backend + Frontend]`
 **What:** A configurable quality gate that evaluates rendering confidence across all target email clients before allowing ESP sync or export. If confidence drops below threshold for any high-priority client, the gate blocks the action and recommends specific remediation — either fix the HTML or validate with an external rendering provider.
@@ -379,7 +371,7 @@
 - Alembic migration: add `rendering_gate_config` JSON column to `projects` table
 **Security:** Gate evaluation is read-only analysis. Override requires admin role. Override decisions logged to audit trail. No new external calls — gate uses existing local rendering pipeline. ESP sync still requires existing auth + rate limiting.
 **Verify:** Simple email with high confidence → gate passes for all clients. Email with flexbox (no MSO fallback) → gate blocks Outlook with "flexbox unsupported" reason and "Add MSO conditional" remediation. Override sync → proceeds with audit log entry. Gate mode `warn` → sync proceeds with warnings in response. Per-project threshold override works. Frontend gate panel renders correctly with traffic-light summary. `make test` and `make check-fe` pass.
-- [ ] 27.3 Pre-send rendering gate
+- [ ] 27.3 Pre-send rendering gate (frontend DONE — gate panel, hooks, types, wired into export + push-to-ESP dialogs; backend gate service + endpoints remaining)
 
 ### 27.4 Emulator Calibration Loop — Local vs External Ground Truth `[Backend]`
 **What:** Automated feedback loop that compares local emulator screenshots against external provider (Litmus / Email on Acid) ground truth screenshots, computes per-emulator accuracy deltas, and adjusts confidence seed values. Runs on a sample of builds — not every build — to amortize external provider costs.
@@ -431,7 +423,7 @@
 - Config: `RENDERING__CALIBRATION_ENABLED: bool = False`, `RENDERING__CALIBRATION_RATE_PER_CLIENT_PER_DAY: int = 3`, `RENDERING__CALIBRATION_MONTHLY_BUDGET: float = 0.0` (0 = disabled), `RENDERING__CALIBRATION_REGRESSION_THRESHOLD: float = 10.0` (percentage drop that triggers warning)
 **Security:** Calibration reads existing local + external screenshots — no new external API calls beyond what `RenderingService` already supports. Budget cap prevents runaway costs. Admin-only trigger endpoint. Calibration records stored with standard database access controls. HTML hashes stored instead of full HTML (privacy — don't persist email content in calibration records).
 **Verify:** Submit a rendering test with both local + Litmus screenshots → CalibrationRecord created with correct diff percentage. Accuracy seeds update via EMA formula. Force calibration via admin endpoint → works. Budget cap at $0 → no automatic calibrations run (only manual triggers). Accuracy regression >10% → warning logged. `GET /calibration/summary` returns per-client accuracy data. `make test` passes.
-- [ ] 27.4 Emulator calibration loop
+- [x] 27.4 Emulator calibration loop
 
 ### 27.5 Headless Email Client Sandbox — SMTP-Based Real Sanitizer Capture `[Backend + Infrastructure]`
 **What:** Optional self-hosted testing environment that sends emails via SMTP to a local mail server, then captures the *actual* sanitized HTML as rendered by webmail interfaces. This provides ground truth without depending on paid external providers, enabling unlimited calibration data at zero marginal cost.

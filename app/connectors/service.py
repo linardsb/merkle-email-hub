@@ -19,6 +19,7 @@ from app.connectors.schemas import ExportRequest, ExportResponse
 from app.connectors.sfmc.service import SFMCConnectorService
 from app.connectors.sync_models import ESPConnection
 from app.connectors.taxi.service import TaxiConnectorService
+from app.core.config import get_settings
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.design_sync.crypto import decrypt_token
@@ -107,10 +108,56 @@ class ConnectorService:
         logger.info("connectors.resolve_credentials_completed", connection_id=connection_id)
         return credentials
 
+    async def _resolve_project_id(self, data: ExportRequest, user: User) -> int | None:  # noqa: ARG002
+        """Extract project_id from build or connection for gate evaluation."""
+        if data.build_id:
+            result = await self.db.execute(
+                select(EmailBuild.project_id).where(EmailBuild.id == data.build_id)
+            )
+            row = result.scalar_one_or_none()
+            return row if row else None
+        if data.connection_id:
+            result = await self.db.execute(
+                select(ESPConnection.project_id).where(ESPConnection.id == data.connection_id)
+            )
+            return result.scalar_one_or_none()
+        return None
+
     async def export(self, data: ExportRequest, user: User) -> ExportResponse:
         """Export an email build or template version to the specified ESP."""
         html = await self._resolve_html(data, user)
         provider = self._get_provider(data.connector_type)
+
+        # ── Rendering gate check (Phase 27.3) ──
+        settings = get_settings()
+        if settings.rendering.gate_mode != "skip":
+            from app.rendering.exceptions import RenderingGateBlockedError
+            from app.rendering.gate import RenderingSendGate
+            from app.rendering.gate_schemas import GateEvaluateRequest, GateVerdict
+
+            gate = RenderingSendGate(self.db)
+            gate_project_id = await self._resolve_project_id(data, user)
+            gate_result = await gate.evaluate(
+                GateEvaluateRequest(html=html, project_id=gate_project_id)
+            )
+
+            if gate_result.verdict == GateVerdict.BLOCK:
+                logger.warning(
+                    "connectors.export_gate_blocked",
+                    blocking_clients=gate_result.blocking_clients,
+                    build_id=data.build_id,
+                )
+                raise RenderingGateBlockedError(
+                    f"Rendering gate blocked export: "
+                    f"{', '.join(gate_result.blocking_clients)} below confidence threshold"
+                )
+
+            if gate_result.verdict == GateVerdict.WARN:
+                logger.info(
+                    "connectors.export_gate_warning",
+                    blocking_clients=gate_result.blocking_clients,
+                    build_id=data.build_id,
+                )
 
         # Resolve credentials if a connection_id was provided
         credentials: dict[str, str] | None = None
