@@ -27,7 +27,9 @@ class SketchDesignSyncService:
         return ExtractedTokens()
 
     async def sync_tokens_and_structure(
-        self, file_ref: str, access_token: str  # noqa: ARG002
+        self,
+        file_ref: str,
+        access_token: str,  # noqa: ARG002
     ) -> tuple[ExtractedTokens, DesignFileStructure]:
         """Stub — returns empty tokens and structure."""
         return ExtractedTokens(), DesignFileStructure(file_name="")

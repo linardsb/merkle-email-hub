@@ -448,9 +448,7 @@ class DesignSyncService:
                 # Include cached thumbnails if available
                 raw_thumbs = snapshot.tokens_json.get("_thumbnails")
                 thumbs: dict[str, str] = (
-                    cast(dict[str, str], raw_thumbs)
-                    if isinstance(raw_thumbs, dict)
-                    else {}
+                    cast(dict[str, str], raw_thumbs) if isinstance(raw_thumbs, dict) else {}
                 )
                 return FileStructureResponse(
                     connection_id=connection_id,
@@ -608,9 +606,7 @@ class DesignSyncService:
         for nid in node_ids:
             url = cached_thumbs.get(nid)
             if url:
-                cached_images.append(
-                    ExportedImageResponse(node_id=nid, url=url, format="png")
-                )
+                cached_images.append(ExportedImageResponse(node_id=nid, url=url, format="png"))
             else:
                 uncached_ids.append(nid)
 
@@ -748,9 +744,16 @@ class DesignSyncService:
             if snapshot is not None:
                 try:
                     tokens = ExtractedTokens(
-                        colors=[ExtractedColor(**c) for c in snapshot.tokens_json.get("colors", [])],
-                        typography=[ExtractedTypography(**t) for t in snapshot.tokens_json.get("typography", [])],
-                        spacing=[ExtractedSpacing(**s) for s in snapshot.tokens_json.get("spacing", [])],
+                        colors=[
+                            ExtractedColor(**c) for c in snapshot.tokens_json.get("colors", [])
+                        ],
+                        typography=[
+                            ExtractedTypography(**t)
+                            for t in snapshot.tokens_json.get("typography", [])
+                        ],
+                        spacing=[
+                            ExtractedSpacing(**s) for s in snapshot.tokens_json.get("spacing", [])
+                        ],
                     )
                 except Exception:
                     tokens = None
@@ -981,7 +984,13 @@ class DesignSyncService:
         return ImportResponse.model_validate(design_import, from_attributes=True)
 
     async def _get_cached_structure(
-        self, conn_id: int, file_ref: str, access_token: str, provider: DesignSyncProvider, *, depth: int | None = 3
+        self,
+        conn_id: int,
+        file_ref: str,
+        access_token: str,
+        provider: DesignSyncProvider,
+        *,
+        depth: int | None = 3,
     ) -> DesignFileStructure:
         """Get file structure from cache if available, otherwise fetch live."""
         snapshot = await self._repo.get_latest_snapshot(conn_id)
@@ -1009,7 +1018,11 @@ class DesignSyncService:
             id=str(data.get("id", "")),
             name=str(data.get("name", "")),
             type=node_type,
-            children=[self._cached_dict_to_node(c) for c in data.get("children", []) if isinstance(c, dict)],
+            children=[
+                self._cached_dict_to_node(c)
+                for c in data.get("children", [])
+                if isinstance(c, dict)
+            ],
             width=data.get("width"),
             height=data.get("height"),
             x=data.get("x"),
