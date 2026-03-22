@@ -56,7 +56,7 @@
 - Update `app/email_engine/css_compiler/__init__.py` exports to include `OptimizedCSS`, `optimize_css`
 **Security:** No new attack surface. `sanitize_html_xss()` still runs on final output. Ontology-driven property elimination is deterministic and already tested.
 **Verify:** Run `make test` — all existing CSS compiler tests pass unchanged. Build the same email with old flow vs new flow → identical HTML output (diff test). Measure build time on a 30-section email → confirm 1–5s reduction. `CompilationResult` fields populated correctly. `make check` all green.
-- [ ] 26.1 Eliminate redundant CSS inlining
+- [x] ~~26.1 Eliminate redundant CSS inlining~~ DONE
 
 ### 26.2 Per-Build CSS Compatibility Audit in QA Output `[Backend + Frontend]`
 **What:** Surface the ontology-driven CSS compatibility data as a per-build QA check result. When a user runs QA or builds an email, the output includes a matrix showing which CSS properties survive in each target email client, which were converted to fallbacks, and which were removed. This catches rendering surprises *before* send — not after.
