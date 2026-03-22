@@ -13,13 +13,15 @@ import type {
 export function useEmailBuild() {
   return useSWRMutation<BuildResponse, ApiError, string, BuildRequest>(
     "/api/v1/email/build",
-    longMutationFetcher
+    longMutationFetcher,
+    { throwOnError: false }
   );
 }
 
 export function useEmailPreview() {
   return useSWRMutation<PreviewResponse, ApiError, string, PreviewRequest>(
     "/api/v1/email/preview",
-    longMutationFetcher
+    longMutationFetcher,
+    { throwOnError: false }
   );
 }
