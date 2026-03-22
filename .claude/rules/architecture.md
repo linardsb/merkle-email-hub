@@ -9,9 +9,9 @@ globs: "**/*.{py,ts,tsx}"
 
 projects (`/api/v1/projects`), email_engine (`/api/v1/email`), components (`/api/v1/components`), qa_engine (`/api/v1/qa`), connectors (`/api/v1/connectors`), approval (`/api/v1/approvals`), templates (`/api/v1/templates`), personas (`/api/v1/personas`), rendering (`/api/v1/rendering`), knowledge (`/api/v1/knowledge`), memory (`/memory`), blueprints (`/api/v1/blueprints`), ontology (`/api/v1/ontology`), design_sync (`/api/v1/design-sync`), workflows (`/api/v1/workflows` — Kestra orchestration, `KESTRA__ENABLED`), templates/upload (`/api/v1/templates/upload` — self-serve HTML upload pipeline, `TEMPLATES__UPLOAD_ENABLED`), skills (`/api/v1/skills` — skill extraction management, `SKILL_EXTRACTION__ENABLED`), reports (`/api/v1/reports` — Typst PDF reports, `REPORTING__ENABLED`), evals/templates (`/api/v1/evals/templates` — template-sourced eval case management, `TEMPLATES__UPLOAD_ENABLED`), variants (`/api/v1/agents/scaffolder/generate-variants` — multi-variant A/B campaign assembly, `VARIANTS__ENABLED`).
 
-## QA Gate (11 checks in `app/qa_engine/checks/`)
+## QA Gate (14 checks in `app/qa_engine/checks/`)
 
-html_validation, css_support, file_size, link_validation, spam_score, dark_mode, accessibility, fallback (MSO), image_optimization, brand_compliance, personalisation_syntax. Each: `async run(html, config) -> QACheckResult`. `deliverability` check integrates ISP-aware analysis via `deliverability_analyzer.py` (Gmail/Microsoft/Yahoo profiles from `data/isp_profiles.yaml`).
+html_validation, css_support, css_audit (per-build CSS compatibility matrix), file_size, link_validation, spam_score, dark_mode, accessibility, fallback (MSO), image_optimization, brand_compliance, personalisation_syntax, liquid_syntax. Each: `async run(html, config) -> QACheckResult`. `deliverability` check integrates ISP-aware analysis via `deliverability_analyzer.py` (Gmail/Microsoft/Yahoo profiles from `data/isp_profiles.yaml`).
 
 ## 9 AI Agents
 

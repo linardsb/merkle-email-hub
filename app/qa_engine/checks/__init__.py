@@ -1,10 +1,11 @@
-"""QA check implementations for the 13-point quality gate."""
+"""QA check implementations for the 14-point quality gate."""
 
 from typing import Protocol
 
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.checks.accessibility import AccessibilityCheck
 from app.qa_engine.checks.brand_compliance import BrandComplianceCheck
+from app.qa_engine.checks.css_audit import CSSAuditCheck
 from app.qa_engine.checks.css_support import CssSupportCheck
 from app.qa_engine.checks.dark_mode import DarkModeCheck
 from app.qa_engine.checks.deliverability import DeliverabilityCheck
@@ -30,6 +31,7 @@ class QACheckProtocol(Protocol):
 ALL_CHECKS: list[QACheckProtocol] = [
     HtmlValidationCheck(),
     CssSupportCheck(),
+    CSSAuditCheck(),
     FileSizeCheck(),
     LinkValidationCheck(),
     SpamScoreCheck(),

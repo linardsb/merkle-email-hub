@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Literal
 
 SlotType = Literal[
@@ -78,3 +79,8 @@ class GoldenTemplate:
     default_tokens: DefaultTokens | None = None
     source: Literal["builtin", "uploaded"] = "builtin"
     project_id: int | None = None  # project scope (None = global)
+    # Precompilation (26.3)
+    optimized_html: str | None = None
+    optimized_at: datetime | None = None
+    optimized_for_clients: tuple[str, ...] = ()
+    optimization_metadata: dict[str, object] = field(default_factory=dict)

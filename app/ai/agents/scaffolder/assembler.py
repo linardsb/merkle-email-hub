@@ -7,6 +7,7 @@ a GoldenTemplate and produces final HTML through role-based replacement.
 from __future__ import annotations
 
 import re
+from dataclasses import replace as dc_replace
 from html import escape as html_escape
 from typing import TYPE_CHECKING
 
@@ -39,10 +40,18 @@ class TemplateAssembler:
     ) -> None:
         self._registry = registry or get_template_registry()
         self._design_system = design_system
+        self._used_preoptimized = False
 
     def assemble(self, plan: EmailBuildPlan) -> str:
         """Assemble final HTML. 100% deterministic. Design-system-agnostic."""
         template = self._resolve_template(plan)
+
+        # Use pre-optimized HTML if available (26.3)
+        if template.optimized_html is not None:
+            template = dc_replace(template, html=template.optimized_html)
+            self._used_preoptimized = True
+        else:
+            self._used_preoptimized = False
 
         # Step 1: Fill slots
         fills = {sf.slot_id: sf.content for sf in plan.slot_fills}
@@ -115,6 +124,11 @@ class TemplateAssembler:
             color_roles=len(plan.design_tokens.colors),
         )
         return html
+
+    @property
+    def used_preoptimized(self) -> bool:
+        """Whether the last assemble() used pre-optimized template HTML."""
+        return self._used_preoptimized
 
     def _resolve_template(self, plan: EmailBuildPlan) -> GoldenTemplate:
         """Resolve template by name. Delegates to TemplateComposer for '__compose__'."""

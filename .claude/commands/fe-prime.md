@@ -30,8 +30,6 @@ Using jDocMunch (repo: `local/merkle-email-hub`):
 For TODO.md — search only for frontend-relevant phases:
 4. `search_sections({ "query": "upcoming phases", "doc_path": "TODO.md", "max_results": 5 })` → `get_section` on relevant matches
 
-**NEVER** read TODO.md or CLAUDE.md in full. **NEVER** call `get_document_outline` on TODO.md.
-
 ## Step 4: Assess Current State
 
 Use jCodeMunch to verify what's implemented:

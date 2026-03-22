@@ -90,7 +90,7 @@
 - Frontend types: add `CSSAuditResult`, `CompatibilityMatrix`, `ClientCoverageScore` to `cms/apps/web/src/types/qa.ts`
 **Security:** Read-only — displays existing ontology data. No new inputs or endpoints beyond the standard QA flow.
 **Verify:** Build an email with known unsupported properties (e.g., `border-radius` in Outlook Word engine) → CSS audit check shows `removed` status for Outlook with `error` severity. Build a simple email with only universally-supported properties → 100% coverage score. Frontend matrix renders correctly. `make test` and `make check-fe` pass.
-- [ ] 26.2 Per-build CSS compatibility audit in QA output
+- [x] ~~26.2 Per-build CSS compatibility audit in QA output~~ DONE
 
 ### 26.3 Template-Level CSS Precompilation `[Backend]`
 **What:** Pre-compile ontology-optimized CSS for each `GoldenTemplate` at registration/update time. Store the optimized CSS alongside the raw template HTML. At build time, the `TemplateAssembler` starts from pre-optimized HTML — the only CSS work remaining is token substitution (hex color swap, font swap) which is pure string replacement, not CSS parsing.
@@ -129,7 +129,7 @@
 - Alembic migration: add `optimized_html`, `optimized_at`, `optimized_for_clients`, `optimization_metadata` columns to `golden_templates` table (nullable, no data migration needed)
 **Security:** Pre-compiled HTML goes through the same `sanitize_html_xss()` pipeline as raw HTML. Admin-only precompile endpoint. No new user-facing inputs.
 **Verify:** Register a new template → `optimized_html` populated within 1s. Build email from pre-optimized template → identical output to non-optimized path (diff test). Build time measurably faster (skip CSS optimization stage). Modify template HTML → `is_stale()` returns True → next build triggers re-precompilation. `POST /api/v1/templates/precompile` returns report with all templates succeeded. `make test` passes. `make check` all green.
-- [ ] 26.3 Template-level CSS precompilation
+- [x] ~~26.3 Template-level CSS precompilation~~ DONE
 
 ### 26.4 Consolidated CSS Pipeline in Maizzle Sidecar `[Backend + Sidecar]`
 **What:** Move the ontology-driven CSS optimization into the Maizzle sidecar as a custom PostCSS plugin. The sidecar becomes the single CSS processing point: ontology elimination → property conversion → Lightning CSS minification → Juice inlining — all in one Node.js process, one HTTP call. The Python `EmailCSSCompiler` becomes a thin client that calls the sidecar and wraps the result.

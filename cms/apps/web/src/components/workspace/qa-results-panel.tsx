@@ -12,6 +12,7 @@ import {
 import { QACheckItem } from "./qa-check-item";
 import { QAOverrideDialog } from "./qa-override-dialog";
 import { VisualQAPanelTab } from "@/components/visual-qa/visual-qa-panel-tab";
+import { CSSAuditPanel } from "@/components/qa/CSSAuditPanel";
 import { ChaosTestPanel } from "@/components/qa/ChaosTestPanel";
 import { PropertyTestPanel } from "@/components/qa/PropertyTestPanel";
 import { OutlookAdvisorPanel } from "@/components/outlook/OutlookAdvisorPanel";
@@ -62,6 +63,10 @@ export function QAResultsPanel({
   );
   const passedChecks = useMemo(
     () => checks.filter((c) => c.passed),
+    [checks]
+  );
+  const cssAuditCheck = useMemo(
+    () => checks.find((c) => c.check_name === "css_audit"),
     [checks]
   );
   const overriddenNames = useMemo(
@@ -176,6 +181,13 @@ export function QAResultsPanel({
           </div>
         )}
       </div>
+
+      {/* CSS Compatibility Audit */}
+      {cssAuditCheck && (
+        <div className="border-t border-border px-4 py-3">
+          <CSSAuditPanel check={cssAuditCheck} />
+        </div>
+      )}
 
       {/* Visual QA section */}
       {html && entityType && entityId ? (

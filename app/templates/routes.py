@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.templates import get_template_registry
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.database import get_db
+from app.core.logging import get_logger
 from app.core.rate_limit import limiter
 from app.shared.schemas import PaginatedResponse, PaginationParams
 from app.templates.schemas import (
@@ -18,6 +20,8 @@ from app.templates.schemas import (
     VersionResponse,
 )
 from app.templates.service import TemplateService
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["templates"])
 
@@ -181,3 +185,39 @@ async def restore_version(
     """Restore template to a previous version (creates a new version with old content)."""
     _ = request
     return await service.restore_version(template_id, version_number, current_user)
+
+
+# -- Golden template precompilation --
+
+
+@router.post(
+    "/templates/precompile",
+    response_model=dict[str, object],
+    status_code=200,
+)
+@limiter.limit("2/minute")
+async def precompile_templates(
+    request: Request,
+    current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> dict[str, object]:
+    """Trigger batch precompilation of all golden templates. Admin only."""
+    _ = request
+    registry = get_template_registry()
+    report = registry.precompile_all()
+
+    logger.info(
+        "templates.precompile_endpoint",
+        user_id=current_user.id,
+        total=report.total,
+        succeeded=report.succeeded,
+        failed=report.failed,
+    )
+
+    return {
+        "total": report.total,
+        "succeeded": report.succeeded,
+        "failed": report.failed,
+        "total_size_reduction_bytes": report.total_size_reduction_bytes,
+        "avg_compile_time_ms": report.avg_compile_time_ms,
+        "errors": report.errors,
+    }

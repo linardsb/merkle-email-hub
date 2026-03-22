@@ -73,6 +73,28 @@ class TestMaizzleBuildNodeCSSOptimization:
         assert result.status == "success"
 
     @pytest.mark.asyncio
+    async def test_execute_skips_css_when_preoptimized(self, node: MaizzleBuildNode) -> None:
+        """CSS optimization is skipped when HTML contains preoptimized marker."""
+        from app.ai.templates.precompiler import CSS_PREOPTIMIZED_MARKER
+
+        html = (
+            CSS_PREOPTIMIZED_MARKER
+            + "<html><head><style>.hero{color:red}</style></head>"
+            + "<body><div class='hero'>Hello</div></body></html>"
+        )
+        context = NodeContext(html=html, metadata={})
+
+        with (
+            patch("app.email_engine.css_compiler.compiler.EmailCSSCompiler") as mock_compiler_cls,
+            _patch_httpx(),
+        ):
+            result = await node.execute(context)
+
+        assert result.status == "success"
+        # CSS compiler should NOT have been instantiated
+        mock_compiler_cls.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_execute_proceeds_when_css_optimization_fails(
         self, node: MaizzleBuildNode
     ) -> None:

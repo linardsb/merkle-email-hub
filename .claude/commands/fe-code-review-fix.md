@@ -15,23 +15,23 @@ Read the user's description. Classify:
 - **Code review finding**: style, architecture, security, performance, accessibility issue
 - **Test failure**: failing Vitest test that needs code or test fix
 - **Type error**: TypeScript compilation error
-- **Design system violation**: primitive colors, missing i18n, wrong tokens
+- **Design system violation**: primitive colors, wrong tokens
 
 ### 2. Reproduce / Locate
 
-**Use jCodeMunch for cross-file tracing** (repo: `local/merkle-email-hub-0ddab3c4`):
-- `search_symbols(query, kind="function")` to find related components/hooks without reading entire files
-- `find_references(symbol)` to trace where a component or hook is used
-- `get_file_outline(file)` to understand file structure before deciding what to read
-- `get_symbol(name)` to read just the specific component or function you need
+**jCodeMunch** (repo from `list_repos`) for cross-file tracing:
+- `search_symbols(query, kind)` — find related components/hooks
+- `find_references(symbol_name)` — trace where a component or hook is used
+- `get_file_outline(file_path)` — understand file structure before deciding what to read
+- `get_symbol(symbol_name)` — read just the specific component/function you need
 
 Only `Read` the full file when you need to edit it.
 
 **Direct diagnosis:**
-- For bugs: find the component or page. Trace page → components → hooks → types using jCodeMunch.
+- For bugs: find the component or page. Trace page → components → hooks → types.
 - For test failures: run `cd cms && pnpm --filter web test` and read output.
 - For type errors: run `cd cms && pnpm --filter @merkle-email-hub/web exec tsc --noEmit`.
-- For design issues: grep for primitive Tailwind colors or hardcoded strings.
+- For design issues: grep for primitive Tailwind colors.
 
 ### 3. Root Cause Analysis
 
@@ -41,26 +41,16 @@ Only `Read` the full file when you need to edit it.
 
 ### 4. Fix
 
-Apply the fix following project conventions:
+Apply the fix following project conventions. Don't over-engineer — fix the issue, nothing more.
 
 @_shared/tailwind-token-map.md
 @_shared/frontend-security.md
 
 **Key rules:**
 - Use semantic Tailwind tokens — NEVER primitive colors (`text-gray-500`, `bg-blue-600`)
-- i18n (`useTranslations`) is not yet active — use plain English strings for now
 - Use `authFetch` for API calls in client components, SWR hooks for data fetching
 - React 19: No setState in useEffect, no component defs inside components
 - Dialog for detail views (not Sheet). Widths: detail=28rem, forms=32rem
-- Don't over-engineer — fix the issue, nothing more
-
-**Security checks (scoped to files being fixed):**
-- No `(x as any)` casts — fix type declarations instead
-- No `dangerouslySetInnerHTML` without DOMPurify
-- API calls use `authFetch` (not raw `fetch` for authenticated endpoints)
-- Storage data (sessionStorage/localStorage) validated with runtime type guards
-- Token expiry from JWT `exp` claim, not hardcoded values
-- Only check the files you're fixing — full sweep is `/fe-validate`
 
 ### 5. Verify
 
@@ -79,7 +69,6 @@ cd cms && pnpm build
 
 Then grep for design system violations in changed files:
 - Primitive colors: `(text|bg|border|ring)-(gray|slate|zinc|red|blue|green|...)-\d`
-- Hardcoded strings in JSX (should use `t("key")`)
 
 Fix any issues introduced by the change. Repeat until all checks pass.
 

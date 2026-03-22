@@ -31,8 +31,8 @@ def mock_user() -> MagicMock:
 # ── Run Checks ──
 
 
-async def test_run_checks_returns_13_results(service):
-    """Running QA should execute all 13 checks and persist results."""
+async def test_run_checks_returns_14_results(service):
+    """Running QA should execute all 14 checks and persist results."""
     data = QARunRequest(html="<!DOCTYPE html><html><body>Hello</body></html>")
 
     qa_result = make_qa_result(id=1)
@@ -41,8 +41,8 @@ async def test_run_checks_returns_13_results(service):
 
     result = await service.run_checks(data)
 
-    assert result.checks_total == 13
-    assert len(result.checks) == 13
+    assert result.checks_total == 14
+    assert len(result.checks) == 14
     assert result.id == 1
     service.repository.create_result.assert_awaited_once()
     service.repository.create_checks.assert_awaited_once()

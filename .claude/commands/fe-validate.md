@@ -36,5 +36,4 @@ Only `Read` files when you need to fix a violation found above.
 
 ## Notes
 - No ESLint config exists yet — skip lint level until configured
-- i18n (`useTranslations`) is not yet active — skip i18n checks until adopted across components
 - Report results for each level. Do NOT auto-fix — use `/fe-code-review-fix` for targeted fixes

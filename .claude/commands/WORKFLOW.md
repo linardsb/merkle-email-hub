@@ -2,7 +2,7 @@
 
 ## Backend — New Feature
 ```
-/be-prime → /be-planning → /be-execute → /be-validate → /commit
+/be-prime → /be-planning → /be-execute → /be-ship → /commit
 ```
 
 ## Backend — Bug Fix / Code Review Fix
@@ -13,12 +13,18 @@ Skip prime/planning — go straight to diagnosis and fix. Use `/be-prime` first 
 
 ## Frontend — New Feature
 ```
-/fe-prime → /fe-planning → /fe-execute → /fe-validate → /commit
+/fe-prime → /fe-planning → /fe-execute → /fe-ship → /commit
 ```
+
+## Frontend — Bug Fix / Code Review Fix
+```
+/fe-code-review-fix → /fe-validate → /commit
+```
+Skip prime/planning — go straight to diagnosis and fix. Use `/fe-prime` first only if you need full context for a complex bug.
 
 ## Code Review (any stack)
 ```
-/review → /be-code-review-fix → /be-validate → /commit
+/review → /be-code-review-fix or /fe-code-review-fix → validate → /commit
 ```
 Review finds issues, fix resolves them, validate confirms, commit ships.
 
@@ -38,6 +44,7 @@ Optional: Run after feature implementation for pre-commit browser validation.
 | `/be-execute` | Execute plan step by step | After planning approval |
 | `/be-code-review-fix` | Diagnose and fix issues | Bugs, review findings, test failures, type errors |
 | `/be-validate` | Run all quality checks | After any code changes |
+| `/be-ship` | Full quality pipeline (validate→review→fix→validate) | Before committing a feature |
 
 ### Frontend
 | Command | Purpose | When to Use |
@@ -45,7 +52,9 @@ Optional: Run after feature implementation for pre-commit browser validation.
 | `/fe-prime` | Load full frontend context | Start of feature work |
 | `/fe-planning` | Create frontend plan | New features, multi-file changes |
 | `/fe-execute` | Execute frontend plan | After planning approval |
+| `/fe-code-review-fix` | Diagnose and fix issues | Bugs, review findings, test failures, type errors |
 | `/fe-validate` | Run frontend quality checks | After any code changes |
+| `/fe-ship` | Full quality pipeline (validate→review→fix→validate) | Before committing a feature |
 
 ### Cross-cutting
 | Command | Purpose | When to Use |

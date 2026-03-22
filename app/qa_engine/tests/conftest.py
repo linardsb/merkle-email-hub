@@ -19,7 +19,7 @@ def make_qa_result(**overrides: object) -> QAResult:
         "overall_score": 0.85,
         "passed": False,
         "checks_passed": 8,
-        "checks_total": 13,
+        "checks_total": 14,
         "created_at": now,
         "updated_at": now,
     }

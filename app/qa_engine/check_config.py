@@ -30,6 +30,7 @@ class QAProfileConfig(BaseModel):
 
     html_validation: QACheckConfig = Field(default_factory=QACheckConfig)
     css_support: QACheckConfig = Field(default_factory=QACheckConfig)
+    css_audit: QACheckConfig = Field(default_factory=QACheckConfig)
     file_size: QACheckConfig = Field(default_factory=QACheckConfig)
     link_validation: QACheckConfig = Field(default_factory=QACheckConfig)
     spam_score: QACheckConfig = Field(default_factory=QACheckConfig)

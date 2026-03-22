@@ -18,16 +18,16 @@ Read the user's description. Classify:
 
 ### 2. Reproduce / Locate
 
-**Use jCodeMunch for cross-file tracing** (repo: `local/merkle-email-hub-0ddab3c4`):
-- `search_symbols(query, kind="function")` to find related functions without reading entire files
-- `find_references(symbol)` to trace callers/callees across the codebase
-- `get_file_outline(file)` to understand file structure before deciding what to read
-- `get_symbol(name)` to read just the specific function you need
+**jCodeMunch** (repo from `list_repos`) for cross-file tracing:
+- `search_symbols(query, kind)` — find related functions/classes
+- `find_references(symbol_name)` — trace callers/callees across codebase
+- `get_file_outline(file_path)` — understand file structure before deciding what to read
+- `get_symbol(symbol_name)` — read just the specific function you need
 
 Only `Read` the full file when you need to edit it.
 
 **Direct diagnosis:**
-- For bugs: find the failing code path. Trace routes → service → repository using jCodeMunch.
+- For bugs: find the failing code path. Trace routes → service → repository.
 - For test failures: run the failing test, read the traceback.
 - For type errors: run `uv run pyright {file}` or `uv run mypy {file}` to get the exact error.
 - For lint errors: run `uv run ruff check {file}` to see violations.
@@ -40,21 +40,7 @@ Only `Read` the full file when you need to edit it.
 
 ### 4. Fix
 
-Apply the fix following project conventions:
-- All functions must have complete type annotations
-- Use `AppError` hierarchy for error handling (no bare exceptions)
-- Use structured logging: `logger.info("domain.action_state", key=value)`
-- Follow VSA layer separation (routes → service → repository)
-- Don't over-engineer — fix the issue, nothing more
-
-**Security checks (scoped to files being fixed):**
-- If touching routes: verify `Depends(get_current_user)` or `require_role()` and `@limiter.limit()` are present. Known exceptions: public auth endpoints (login/bootstrap/refresh), health checks, WebSocket endpoints (use manual JWT)
-- If touching error handling: use `AppError` hierarchy (auto-sanitized via middleware), never hardcode class names
-- If touching project-scoped resource access: verify `verify_project_access()` in service layer (not all endpoints are project-scoped)
-- If adding user input handling: validate via Pydantic schema, use `escape_like()` for SQL patterns
-- Only check the files/module being fixed — full sweep is `/be-validate`
-
-@_shared/python-anti-patterns.md
+Apply the fix following project conventions (see below). Don't over-engineer — fix the issue, nothing more. Verify against the backend security checklist for any routes you touch.
 
 ### 5. Verify
 
@@ -91,3 +77,7 @@ Summarise:
 - Don't add features — only fix the reported issue
 - If the fix requires architectural changes, flag it and suggest `/be-planning` instead
 - Run verification on every file you touch — never skip type checks
+
+@_shared/backend-conventions.md
+@_shared/backend-security-scoped.md
+@_shared/python-anti-patterns.md

@@ -6,6 +6,7 @@ import httpx
 
 from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType
 from app.ai.shared import sanitize_html_xss
+from app.ai.templates.precompiler import CSS_PREOPTIMIZED_MARKER
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
@@ -37,28 +38,34 @@ class MaizzleBuildNode:
         settings = get_settings()
         source_html = context.html
 
-        # CSS optimization: run ontology-driven stages 1-5 before Maizzle inlines
-        raw_clients = context.metadata.get("target_clients")
-        target_clients_list: list[str] | None = None
-        if isinstance(raw_clients, list):
-            target_clients_list = list(cast("list[str]", raw_clients))
+        # Skip CSS optimization if template was pre-optimized (26.3)
+        skip_css = CSS_PREOPTIMIZED_MARKER in source_html
+        if skip_css:
+            source_html = source_html.replace(CSS_PREOPTIMIZED_MARKER, "", 1)
+            logger.info("blueprint.maizzle_build.css_skipped_preoptimized")
+        else:
+            # CSS optimization: run ontology-driven stages 1-5 before Maizzle inlines
+            raw_clients = context.metadata.get("target_clients")
+            target_clients_list: list[str] | None = None
+            if isinstance(raw_clients, list):
+                target_clients_list = list(cast("list[str]", raw_clients))
 
-        try:
-            from app.email_engine.css_compiler.compiler import EmailCSSCompiler
+            try:
+                from app.email_engine.css_compiler.compiler import EmailCSSCompiler
 
-            compiler = EmailCSSCompiler(target_clients=target_clients_list)
-            optimized = compiler.optimize_css(source_html)
-            source_html = optimized.html
+                compiler = EmailCSSCompiler(target_clients=target_clients_list)
+                optimized = compiler.optimize_css(source_html)
+                source_html = optimized.html
 
-            logger.info(
-                "blueprint.maizzle_build.css_optimized",
-                removed_count=len(optimized.removed_properties),
-                conversion_count=len(optimized.conversions),
-                optimize_time_ms=optimized.optimize_time_ms,
-            )
-        except Exception as exc:
-            # CSS optimization is best-effort — proceed with unoptimized HTML
-            logger.warning("blueprint.maizzle_build.css_optimize_failed", error=str(exc))
+                logger.info(
+                    "blueprint.maizzle_build.css_optimized",
+                    removed_count=len(optimized.removed_properties),
+                    conversion_count=len(optimized.conversions),
+                    optimize_time_ms=optimized.optimize_time_ms,
+                )
+            except Exception as exc:
+                # CSS optimization is best-effort — proceed with unoptimized HTML
+                logger.warning("blueprint.maizzle_build.css_optimize_failed", error=str(exc))
 
         url = f"{settings.maizzle_builder_url}/build"
         payload: dict[str, object] = {

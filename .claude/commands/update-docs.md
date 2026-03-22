@@ -11,7 +11,6 @@ Use jDocMunch (repo: `local/merkle-email-hub`) to read only the sections that ma
 **TODO.md** — search for relevant phases:
 - `search_sections({ "query": "upcoming phases", "max_results": 5 })` → `get_section` on matches
 - `search_sections({ "query": "completed", "doc_path": "TODO.md", "max_results": 5 })` → `get_section` on matches
-- **NEVER** call `get_document_outline` on TODO.md. **NEVER** read TODO.md in full.
 
 **CLAUDE.md** — only the roadmap/architecture sections:
 - `search_sections({ "query": "roadmap", "doc_path": "CLAUDE.md" })` → `get_section`

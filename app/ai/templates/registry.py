@@ -18,6 +18,7 @@ from app.ai.templates.models import (
     TemplateMetadata,
     TemplateSlot,
 )
+from app.ai.templates.precompiler import PrecompilationReport, TemplatePrecompiler
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -67,6 +68,21 @@ class TemplateRegistry:
             )
 
         self._loaded = True
+
+        # Pre-compile CSS for all templates (26.3)
+        try:
+            precompiler = TemplatePrecompiler()
+            self._templates, report = precompiler.precompile_all(self._templates)
+            logger.info(
+                "templates.registry_precompiled",
+                succeeded=report.succeeded,
+                failed=report.failed,
+                total_reduction_bytes=report.total_size_reduction_bytes,
+            )
+        except Exception:
+            logger.warning("templates.registry_precompile_failed", exc_info=True)
+            # Non-fatal — templates work without precompilation
+
         logger.info("templates.registry_loaded", count=len(self._templates))
 
     def get(self, name: str) -> GoldenTemplate | None:
@@ -196,6 +212,19 @@ class TemplateRegistry:
         if name in self._templates:
             msg = f"Template '{name}' already exists in registry"
             raise ValueError(msg)
+
+        # Pre-compile CSS for uploaded template (26.3)
+        try:
+            precompiler = TemplatePrecompiler()
+            template = precompiler.precompile(template)
+        except Exception:
+            logger.warning(
+                "templates.uploaded_precompile_failed",
+                name=name,
+                exc_info=True,
+            )
+            # Non-fatal — template works without precompilation
+
         self._templates[name] = template
         logger.info("templates.uploaded_registered", name=name)
 
@@ -231,6 +260,16 @@ class TemplateRegistry:
             else:
                 result.append(t.metadata)
         return result
+
+    def precompile_all(
+        self,
+        target_clients: tuple[str, ...] | None = None,
+    ) -> PrecompilationReport:
+        """Re-precompile all templates. Used by admin endpoint."""
+        self._ensure_loaded()
+        precompiler = TemplatePrecompiler(target_clients=target_clients)
+        self._templates, report = precompiler.precompile_all(self._templates)
+        return report
 
     def names(self) -> list[str]:
         """Return all template names."""
