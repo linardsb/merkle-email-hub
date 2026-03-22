@@ -248,6 +248,51 @@ services:
           cpus: "0.25"
           memory: 128M
 
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"   # Web UI
+      - "1025:1025"   # SMTP
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_MAX_MESSAGES: 1000
+    profiles:
+      - sandbox
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  roundcube:
+    image: roundcube/roundcubemail:latest
+    ports:
+      - "9080:80"
+    environment:
+      ROUNDCUBEMAIL_DEFAULT_HOST: mailpit
+      ROUNDCUBEMAIL_DEFAULT_PORT: 1025
+      ROUNDCUBEMAIL_SMTP_SERVER: mailpit
+      ROUNDCUBEMAIL_SMTP_PORT: 1025
+    depends_on:
+      - mailpit
+    profiles:
+      - sandbox
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
 networks:
   coolify:
     external: true

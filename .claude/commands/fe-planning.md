@@ -5,7 +5,9 @@ Research the codebase and create a self-contained frontend implementation plan.
 ## Process
 
 1. **Understand the task** — Read the user's requirements carefully
-2. **Research existing code** — Only `Read` files you will list in "Files to Create/Modify".
+2. **Check memory** — Read relevant memory files for domain patterns, past feedback, and conventions before writing any code or plans.
+
+3. **Research existing code** — Read files you will modify AND discover related data assets.
 
    **jCodeMunch** (repo from `list_repos`):
    - `search_symbols(query, kind, file_pattern)` — find related components/hooks
@@ -18,8 +20,15 @@ Research the codebase and create a self-contained frontend implementation plan.
    - `search_sections(query, doc_path)` → `get_section(section_id)` for CLAUDE.md architecture context and TODO.md task context
    - `get_document_outline(doc_path)` for smaller docs (<50 sections) when you need full structure
 
-3. **Identify files to create/modify** — List every file that needs changes
-4. **Write the plan** — Step-by-step instructions that another agent can follow
+4. **Discover existing data assets** — Before writing test fixtures, mock data, or example code, check what already exists:
+   - `app/ai/templates/library/*.html` — 15 golden email templates (real production HTML)
+   - `app/components/data/seeds.py` — 21 seeded components (`COMPONENT_SEEDS`) with production HTML
+   - `cms/apps/web/src/types/` — existing TypeScript types and interfaces
+   - Existing test files in the feature area — reuse patterns, factories, fixtures
+   - **Read actual data** to verify structure and counts — never assume
+
+5. **Identify files to create/modify** — List every file that needs changes
+6. **Write the plan** — Step-by-step instructions that another agent can follow. All code examples must follow patterns found in existing codebase
 
 ## Plan Format
 

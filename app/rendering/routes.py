@@ -9,6 +9,12 @@ from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.rendering.sandbox.schemas import (
+    SandboxHealthResponse,
+    SandboxTestRequest,
+    SandboxTestResponse,
+)
+from app.rendering.sandbox.service import check_sandbox_health, run_sandbox_test
 from app.rendering.schemas import (
     BaselineListResponse,
     BaselineResponse,
@@ -145,3 +151,26 @@ async def update_baseline(
     """Create or update a baseline screenshot for an entity + client combination."""
     _ = request
     return await service.update_baseline(entity_type, entity_id, data, current_user.id)
+
+
+@router.post("/sandbox/test", response_model=SandboxTestResponse)
+@limiter.limit("5/minute")
+async def sandbox_test(
+    request: Request,
+    data: SandboxTestRequest,
+    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> SandboxTestResponse:
+    """Send email to sandbox, capture rendered DOM and screenshots."""
+    _ = request
+    return await run_sandbox_test(data)
+
+
+@router.get("/sandbox/health", response_model=SandboxHealthResponse)
+@limiter.limit("30/minute")
+async def sandbox_health(
+    request: Request,
+    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> SandboxHealthResponse:
+    """Check sandbox infrastructure availability."""
+    _ = request
+    return await check_sandbox_health()

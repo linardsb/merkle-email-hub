@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench help
 
 # === Local Development ===
 
@@ -42,7 +42,10 @@ docker-logs: ## Tail logs from all services
 # === Quality Checks ===
 
 test: ## Run backend unit tests
-	uv run pytest -v -m "not integration"
+	uv run pytest -v -m "not integration and not benchmark"
+
+bench: ## Run performance benchmark tests
+	uv run pytest -v -m benchmark --no-header -rN
 
 test-properties: ## Run property-based email invariant tests
 	QA_PROPERTY_TESTING__ENABLED=true uv run pytest app/qa_engine/property_testing/tests/ -v

@@ -41,6 +41,7 @@ dependencies = [
     "pyyaml>=6.0",
     "python-liquid>=1.12",
     "beautifulsoup4>=4.12",
+    "aiosmtplib>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -215,6 +216,7 @@ asyncio_mode = "auto"
 testpaths = ["app", "tests"]
 markers = [
     "integration: marks tests requiring real database (deselect with '-m \"not integration\"')",
+    "benchmark: Performance benchmark tests (run with: make bench)",
 ]
 
 [tool.pyright]

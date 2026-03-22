@@ -26,6 +26,7 @@ from app.email_engine.css_compiler.inliner import (
 )
 from app.email_engine.schemas import CSSCompileResponse
 from app.email_engine.service import EmailEngineService
+from app.email_engine.tests.conftest import make_mock_registry as _mock_registry
 from app.main import app
 
 BASE = "/api/v1/email"
@@ -49,45 +50,6 @@ def _make_user(role: str = "developer") -> User:
     u = User(email=f"{role}@test.com", hashed_password="x", role=role)
     u.id = 1
     return u
-
-
-# ── Ontology mock helpers ──
-
-
-def _mock_registry(
-    *,
-    support_none: bool = False,
-    has_fallback: bool = False,
-) -> MagicMock:
-    """Create a mock OntologyRegistry for testing."""
-    from app.knowledge.ontology.types import SupportLevel
-
-    reg = MagicMock()
-    prop = MagicMock()
-    prop.id = "display_flex"
-    prop.property_name = "display"
-    prop.value = "flex"
-    reg.find_property_by_name.return_value = prop
-
-    if support_none:
-        reg.get_support.return_value = SupportLevel.NONE
-    else:
-        reg.get_support.return_value = SupportLevel.FULL
-
-    if has_fallback:
-        fb = MagicMock()
-        fb.target_property_id = "display_block"
-        fb.client_ids = []
-        fb.technique = "Use display:block as fallback"
-        target_prop = MagicMock()
-        target_prop.property_name = "display"
-        target_prop.value = "block"
-        reg.get_property.return_value = target_prop
-        reg.fallbacks_for.return_value = [fb]
-    else:
-        reg.fallbacks_for.return_value = []
-
-    return reg
 
 
 # ── Conversion Tests ──

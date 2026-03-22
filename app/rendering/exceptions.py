@@ -33,3 +33,15 @@ class VisualDiffError(ServiceUnavailableError):
 
 class BaselineNotFoundError(AppError):
     """Raised when a screenshot baseline is not found."""
+
+
+class SandboxUnavailableError(ServiceUnavailableError):
+    """Raised when sandbox infrastructure (Mailpit/Roundcube) is unreachable."""
+
+
+class SandboxSMTPError(ServiceUnavailableError):
+    """Raised when SMTP send to sandbox mail server fails."""
+
+
+class SandboxCaptureError(AppError):
+    """Raised when Playwright DOM extraction from webmail fails."""
