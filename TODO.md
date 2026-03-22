@@ -182,7 +182,7 @@
   - Add `RUN npm run sync-ontology` in build stage
 **Security:** Ontology data is read-only static configuration. No user input reaches the PostCSS plugin — it only processes CSS from trusted template sources. `sanitize_html_xss()` still runs in Python on final output. Sidecar remains internal (not exposed to public network).
 **Verify:** Build email via sidecar with `target_clients=["outlook"]` → response includes `optimization.removed_properties` listing Outlook-unsupported CSS. Build same email via old Python path → identical HTML output (diff test). Sidecar `/health` returns ontology version. `npm run sync-ontology` succeeds and produces valid JSON. `make test` passes (backend). `cd services/maizzle-builder && npm test` passes (sidecar). `make check` all green. Measure end-to-end build time → confirm 100–300ms improvement over 26.1 flow.
-- [ ] 26.4 Consolidated CSS pipeline in Maizzle sidecar
+- [x] ~~26.4 Consolidated CSS pipeline in Maizzle sidecar~~ DONE
 
 ### 26.5 Tests & Documentation `[Full-Stack]`
 **What:** Comprehensive test suite for the entire Phase 26 pipeline, regression tests ensuring output equivalence with the pre-Phase-26 pipeline, and performance benchmarks.

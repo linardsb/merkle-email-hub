@@ -7,11 +7,19 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "sync-ontology": "node scripts/sync-ontology.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@maizzle/framework": "^5.0.0",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "js-yaml": "^4.1.0",
+    "lightningcss": "^1.28.0",
+    "postcss": "^8.4.49"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -5,7 +5,10 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --production
 
+COPY scripts/ ./scripts/
+COPY postcss-email-optimize.js ./
 COPY index.js ./
+COPY data/ ./data/
 
 EXPOSE 3001
 

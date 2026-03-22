@@ -43,4 +43,4 @@ Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `jud
 
 ## Maizzle Sidecar
 
-`services/maizzle-builder/` — POST /build, POST /preview, GET /health.
+`services/maizzle-builder/` — POST /build (+ `target_clients` → `optimization` metadata), POST /preview, GET /health (+ `ontology_version`). Consolidated CSS pipeline: `postcss-email-optimize.js` PostCSS plugin (ontology-driven elimination/conversion) + Lightning CSS minification, runs before Maizzle/Juice inlining. Ontology synced via `scripts/sync-ontology.js` (`make sync-ontology`).

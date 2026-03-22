@@ -7,6 +7,7 @@ service via HTTP.
 from __future__ import annotations
 
 import time
+from typing import Any
 
 import httpx
 from sqlalchemy import select
@@ -62,12 +63,19 @@ class EmailEngineService:
         await self.db.refresh(build)
 
         try:
-            # Optimize CSS before Maizzle inlining
-            optimized_html = self._optimize_css_for_build(data.source_html)
-            compiled = await self._call_builder(
-                optimized_html, data.config_overrides, data.is_production
+            compiled, optimization = await self._call_builder(
+                data.source_html,
+                data.config_overrides,
+                data.is_production,
+                target_clients=settings.email_engine.css_compiler_target_clients,
             )
             compiled = sanitize_html_xss(compiled)
+            if optimization:
+                logger.info(
+                    "email_engine.css_optimized",
+                    removed_count=len(optimization.get("removed_properties", [])),
+                    conversion_count=len(optimization.get("conversions", [])),
+                )
             build.compiled_html = compiled
             build.status = "success"
         except BuildServiceUnavailableError:
@@ -110,9 +118,11 @@ class EmailEngineService:
         """Execute a preview build without persisting."""
         logger.info("email_engine.preview_started")
         start = time.monotonic()
-        optimized_html = self._optimize_css_for_build(data.source_html)
-        compiled = await self._call_builder(
-            optimized_html, data.config_overrides, is_production=False
+        compiled, _optimization = await self._call_builder(
+            data.source_html,
+            data.config_overrides,
+            is_production=False,
+            target_clients=settings.email_engine.css_compiler_target_clients,
         )
         compiled = sanitize_html_xss(compiled)
         elapsed = (time.monotonic() - start) * 1000
@@ -199,42 +209,28 @@ class EmailEngineService:
             inject_time_ms=result.inject_time_ms,
         )
 
-    def _optimize_css_for_build(self, source_html: str) -> str:
-        """Run CSS optimization stages 1-5 before Maizzle inlining.
-
-        Best-effort — returns unmodified HTML on failure.
-        """
-        try:
-            from app.email_engine.css_compiler.compiler import EmailCSSCompiler
-
-            compiler = EmailCSSCompiler()
-            optimized = compiler.optimize_css(source_html)
-            logger.info(
-                "email_engine.css_optimized",
-                removed_count=len(optimized.removed_properties),
-                conversion_count=len(optimized.conversions),
-                optimize_time_ms=optimized.optimize_time_ms,
-            )
-            return optimized.html
-        except Exception as exc:
-            logger.warning("email_engine.css_optimize_failed", error=str(exc))
-            return source_html
-
     async def _call_builder(
-        self, source_html: str, config_overrides: dict[str, object] | None, is_production: bool
-    ) -> str:
-        """Call the Maizzle builder sidecar service."""
-        payload = {
+        self,
+        source_html: str,
+        config_overrides: dict[str, object] | None,
+        is_production: bool,
+        target_clients: list[str] | None = None,
+    ) -> tuple[str, dict[str, Any] | None]:
+        """Call the Maizzle builder sidecar. Returns (html, optimization_metadata)."""
+        payload: dict[str, object] = {
             "source": source_html,
             "config": config_overrides or {},
             "production": is_production,
         }
+        if target_clients:
+            payload["target_clients"] = target_clients
+
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(f"{MAIZZLE_BUILDER_URL}/build", json=payload)
                 response.raise_for_status()
                 result = response.json()
-                return str(result["html"])
+                return str(result["html"]), result.get("optimization")
         except httpx.ConnectError as exc:
             raise BuildServiceUnavailableError("Cannot connect to maizzle-builder service") from exc
         except httpx.HTTPStatusError as exc:

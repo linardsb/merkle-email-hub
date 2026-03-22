@@ -1,0 +1,4337 @@
+{
+  "version": "2026-03-22T11:00:00.882Z",
+  "client_ids": [
+    "outlook_2016_win",
+    "outlook_2019_win",
+    "outlook_365_win",
+    "outlook_mac",
+    "outlook_ios",
+    "outlook_android",
+    "outlook_web",
+    "gmail_web",
+    "gmail_ios",
+    "gmail_android",
+    "apple_mail_macos",
+    "apple_mail_ios",
+    "yahoo_web",
+    "yahoo_ios",
+    "yahoo_android",
+    "samsung_mail",
+    "thunderbird",
+    "aol_web",
+    "protonmail_web",
+    "hey_web",
+    "fastmail_web",
+    "comcast_web",
+    "t_online_web",
+    "gmx_web",
+    "windows_mail"
+  ],
+  "properties_by_name": {
+    "display": [
+      {
+        "id": "display_block",
+        "value": "block",
+        "category": "layout"
+      },
+      {
+        "id": "display_inline",
+        "value": "inline",
+        "category": "layout"
+      },
+      {
+        "id": "display_inline_block",
+        "value": "inline-block",
+        "category": "layout"
+      },
+      {
+        "id": "display_none",
+        "value": "none",
+        "category": "layout"
+      },
+      {
+        "id": "display_table",
+        "value": "table",
+        "category": "layout"
+      },
+      {
+        "id": "display_table_cell",
+        "value": "table-cell",
+        "category": "layout"
+      },
+      {
+        "id": "display_table_row",
+        "value": "table-row",
+        "category": "layout"
+      },
+      {
+        "id": "display_flex",
+        "value": "flex",
+        "category": "flexbox"
+      },
+      {
+        "id": "display_inline_flex",
+        "value": "inline-flex",
+        "category": "flexbox"
+      },
+      {
+        "id": "display_grid",
+        "value": "grid",
+        "category": "grid"
+      },
+      {
+        "id": "display_inline_grid",
+        "value": "inline-grid",
+        "category": "grid"
+      },
+      {
+        "id": "display_table_element",
+        "value": "table",
+        "category": "table"
+      },
+      {
+        "id": "display_table_row_element",
+        "value": "table-row",
+        "category": "table"
+      },
+      {
+        "id": "display_table_cell_element",
+        "value": "table-cell",
+        "category": "table"
+      },
+      {
+        "id": "display_table_caption",
+        "value": "table-caption",
+        "category": "table"
+      },
+      {
+        "id": "display_table_row_group",
+        "value": "table-row-group",
+        "category": "table"
+      },
+      {
+        "id": "display_table_header_group",
+        "value": "table-header-group",
+        "category": "table"
+      },
+      {
+        "id": "display_table_footer_group",
+        "value": "table-footer-group",
+        "category": "table"
+      }
+    ],
+    "position": [
+      {
+        "id": "position_relative",
+        "value": "relative",
+        "category": "layout"
+      },
+      {
+        "id": "position_absolute",
+        "value": "absolute",
+        "category": "layout"
+      },
+      {
+        "id": "position_fixed",
+        "value": "fixed",
+        "category": "layout"
+      },
+      {
+        "id": "position_sticky",
+        "value": "sticky",
+        "category": "layout"
+      }
+    ],
+    "float": [
+      {
+        "id": "float_left",
+        "value": "left",
+        "category": "layout"
+      },
+      {
+        "id": "float_right",
+        "value": "right",
+        "category": "layout"
+      }
+    ],
+    "clear": [
+      {
+        "id": "clear",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "overflow": [
+      {
+        "id": "overflow_hidden",
+        "value": "hidden",
+        "category": "layout"
+      },
+      {
+        "id": "overflow_auto",
+        "value": "auto",
+        "category": "layout"
+      },
+      {
+        "id": "overflow_visible",
+        "value": "visible",
+        "category": "layout"
+      }
+    ],
+    "z-index": [
+      {
+        "id": "z_index",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "visibility": [
+      {
+        "id": "visibility",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "clip": [
+      {
+        "id": "clip",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "clip-path": [
+      {
+        "id": "clip_path",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "width": [
+      {
+        "id": "width",
+        "value": null,
+        "category": "layout"
+      },
+      {
+        "id": "width_box",
+        "value": null,
+        "category": "box_model"
+      },
+      {
+        "id": "table_width",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "min-width": [
+      {
+        "id": "min_width",
+        "value": null,
+        "category": "layout"
+      },
+      {
+        "id": "min_width_box",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "max-width": [
+      {
+        "id": "max_width",
+        "value": null,
+        "category": "layout"
+      },
+      {
+        "id": "max_width_box",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "height": [
+      {
+        "id": "height",
+        "value": null,
+        "category": "layout"
+      },
+      {
+        "id": "height_box",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "min-height": [
+      {
+        "id": "min_height",
+        "value": null,
+        "category": "layout"
+      },
+      {
+        "id": "min_height_box",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "max-height": [
+      {
+        "id": "max_height",
+        "value": null,
+        "category": "layout"
+      },
+      {
+        "id": "max_height_box",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "object-fit": [
+      {
+        "id": "object_fit",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "aspect-ratio": [
+      {
+        "id": "aspect_ratio",
+        "value": null,
+        "category": "layout"
+      }
+    ],
+    "margin": [
+      {
+        "id": "margin",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-top": [
+      {
+        "id": "margin_top",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-right": [
+      {
+        "id": "margin_right",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-bottom": [
+      {
+        "id": "margin_bottom",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-left": [
+      {
+        "id": "margin_left",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-inline": [
+      {
+        "id": "margin_inline",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-block": [
+      {
+        "id": "margin_block",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-inline-start": [
+      {
+        "id": "margin_inline_start",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-inline-end": [
+      {
+        "id": "margin_inline_end",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-block-start": [
+      {
+        "id": "margin_block_start",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "margin-block-end": [
+      {
+        "id": "margin_block_end",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding": [
+      {
+        "id": "padding",
+        "value": null,
+        "category": "box_model"
+      },
+      {
+        "id": "table_cell_padding",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "padding-top": [
+      {
+        "id": "padding_top",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-right": [
+      {
+        "id": "padding_right",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-bottom": [
+      {
+        "id": "padding_bottom",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-left": [
+      {
+        "id": "padding_left",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-inline": [
+      {
+        "id": "padding_inline",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-block": [
+      {
+        "id": "padding_block",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-inline-start": [
+      {
+        "id": "padding_inline_start",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-inline-end": [
+      {
+        "id": "padding_inline_end",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-block-start": [
+      {
+        "id": "padding_block_start",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "padding-block-end": [
+      {
+        "id": "padding_block_end",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "box-sizing": [
+      {
+        "id": "box_sizing",
+        "value": null,
+        "category": "box_model"
+      },
+      {
+        "id": "box_sizing_border_box",
+        "value": "border-box",
+        "category": "box_model"
+      },
+      {
+        "id": "box_sizing_content_box",
+        "value": "content-box",
+        "category": "box_model"
+      }
+    ],
+    "vertical-align": [
+      {
+        "id": "vertical_align",
+        "value": null,
+        "category": "box_model"
+      },
+      {
+        "id": "vertical_align_top",
+        "value": "top",
+        "category": "box_model"
+      },
+      {
+        "id": "vertical_align_middle",
+        "value": "middle",
+        "category": "box_model"
+      },
+      {
+        "id": "vertical_align_bottom",
+        "value": "bottom",
+        "category": "box_model"
+      },
+      {
+        "id": "vertical_align_baseline",
+        "value": "baseline",
+        "category": "box_model"
+      },
+      {
+        "id": "vertical_align_table",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "direction": [
+      {
+        "id": "direction_ltr",
+        "value": "ltr",
+        "category": "box_model"
+      },
+      {
+        "id": "direction_rtl",
+        "value": "rtl",
+        "category": "box_model"
+      }
+    ],
+    "writing-mode": [
+      {
+        "id": "writing_mode",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "unicode-bidi": [
+      {
+        "id": "unicode_bidi",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "inline-size": [
+      {
+        "id": "inline_size",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "block-size": [
+      {
+        "id": "block_size",
+        "value": null,
+        "category": "box_model"
+      }
+    ],
+    "font-family": [
+      {
+        "id": "font_family",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-size": [
+      {
+        "id": "font_size",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-weight": [
+      {
+        "id": "font_weight",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-style": [
+      {
+        "id": "font_style",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-variant": [
+      {
+        "id": "font_variant",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-variant-numeric": [
+      {
+        "id": "font_variant_numeric",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "line-height": [
+      {
+        "id": "line_height",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "letter-spacing": [
+      {
+        "id": "letter_spacing",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "word-spacing": [
+      {
+        "id": "word_spacing",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-align": [
+      {
+        "id": "text_align",
+        "value": null,
+        "category": "typography"
+      },
+      {
+        "id": "text_align_center",
+        "value": "center",
+        "category": "typography"
+      }
+    ],
+    "text-align-last": [
+      {
+        "id": "text_align_last",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-justify": [
+      {
+        "id": "text_justify",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-decoration": [
+      {
+        "id": "text_decoration",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-decoration-color": [
+      {
+        "id": "text_decoration_color",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-decoration-style": [
+      {
+        "id": "text_decoration_style",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-decoration-thickness": [
+      {
+        "id": "text_decoration_thickness",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-underline-offset": [
+      {
+        "id": "text_underline_offset",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-transform": [
+      {
+        "id": "text_transform",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-indent": [
+      {
+        "id": "text_indent",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-overflow": [
+      {
+        "id": "text_overflow",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-shadow": [
+      {
+        "id": "text_shadow",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "white-space": [
+      {
+        "id": "white_space",
+        "value": null,
+        "category": "typography"
+      },
+      {
+        "id": "white_space_nowrap",
+        "value": "nowrap",
+        "category": "typography"
+      }
+    ],
+    "word-break": [
+      {
+        "id": "word_break",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "word-wrap": [
+      {
+        "id": "word_wrap",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "overflow-wrap": [
+      {
+        "id": "overflow_wrap",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "hyphens": [
+      {
+        "id": "hyphens",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-display": [
+      {
+        "id": "font_display",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "@font-face": [
+      {
+        "id": "font_face",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "-webkit-font-smoothing": [
+      {
+        "id": "webkit_font_smoothing",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "-moz-osx-font-smoothing": [
+      {
+        "id": "moz_osx_font_smoothing",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-feature-settings": [
+      {
+        "id": "font_feature_settings",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-size-adjust": [
+      {
+        "id": "font_size_adjust",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "text-rendering": [
+      {
+        "id": "text_rendering",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "columns": [
+      {
+        "id": "columns",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "column-count": [
+      {
+        "id": "column_count",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "column-gap": [
+      {
+        "id": "column_gap",
+        "value": null,
+        "category": "typography"
+      },
+      {
+        "id": "column_gap_flex",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "column-rule": [
+      {
+        "id": "column_rule",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "column-width": [
+      {
+        "id": "column_width",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "column-fill": [
+      {
+        "id": "column_fill",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "column-span": [
+      {
+        "id": "column_span",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "quotes": [
+      {
+        "id": "quotes",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "content": [
+      {
+        "id": "content",
+        "value": null,
+        "category": "typography"
+      },
+      {
+        "id": "list_content_counter",
+        "value": "counter()",
+        "category": "list"
+      }
+    ],
+    "counter-reset": [
+      {
+        "id": "counter_reset",
+        "value": null,
+        "category": "typography"
+      },
+      {
+        "id": "list_counter_reset",
+        "value": null,
+        "category": "list"
+      }
+    ],
+    "counter-increment": [
+      {
+        "id": "counter_increment",
+        "value": null,
+        "category": "typography"
+      },
+      {
+        "id": "list_counter_increment",
+        "value": null,
+        "category": "list"
+      }
+    ],
+    "tab-size": [
+      {
+        "id": "tab_size",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "font-kerning": [
+      {
+        "id": "font_kerning",
+        "value": null,
+        "category": "typography"
+      }
+    ],
+    "color": [
+      {
+        "id": "color",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "rgba",
+        "value": "rgba()",
+        "category": "color_background"
+      },
+      {
+        "id": "hsla",
+        "value": "hsla()",
+        "category": "color_background"
+      },
+      {
+        "id": "current_color",
+        "value": "currentColor",
+        "category": "color_background"
+      },
+      {
+        "id": "color_inherit",
+        "value": "inherit",
+        "category": "color_background"
+      },
+      {
+        "id": "color_initial",
+        "value": "initial",
+        "category": "color_background"
+      },
+      {
+        "id": "dm_color_revert",
+        "value": "revert",
+        "category": "dark_mode"
+      }
+    ],
+    "background-color": [
+      {
+        "id": "background_color",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "background-image": [
+      {
+        "id": "background_image",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "background_image_linear_gradient",
+        "value": "linear-gradient",
+        "category": "color_background"
+      },
+      {
+        "id": "background_image_radial_gradient",
+        "value": "radial-gradient",
+        "category": "color_background"
+      },
+      {
+        "id": "background_image_conic_gradient",
+        "value": "conic-gradient",
+        "category": "color_background"
+      }
+    ],
+    "background-repeat": [
+      {
+        "id": "background_repeat",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "background-position": [
+      {
+        "id": "background_position",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "background-size": [
+      {
+        "id": "background_size",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "background_size_cover",
+        "value": "cover",
+        "category": "color_background"
+      },
+      {
+        "id": "background_size_contain",
+        "value": "contain",
+        "category": "color_background"
+      }
+    ],
+    "background-clip": [
+      {
+        "id": "background_clip",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "background_clip_text",
+        "value": "text",
+        "category": "color_background"
+      }
+    ],
+    "background-origin": [
+      {
+        "id": "background_origin",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "background-attachment": [
+      {
+        "id": "background_attachment",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "background": [
+      {
+        "id": "background",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "dm_background_revert",
+        "value": "revert",
+        "category": "dark_mode"
+      }
+    ],
+    "opacity": [
+      {
+        "id": "opacity",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "mix-blend-mode": [
+      {
+        "id": "mix_blend_mode",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "isolation": [
+      {
+        "id": "isolation",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "filter": [
+      {
+        "id": "filter",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "filter_blur",
+        "value": "blur()",
+        "category": "color_background"
+      },
+      {
+        "id": "filter_brightness",
+        "value": "brightness()",
+        "category": "color_background"
+      },
+      {
+        "id": "filter_grayscale",
+        "value": "grayscale()",
+        "category": "color_background"
+      },
+      {
+        "id": "filter_contrast",
+        "value": "contrast()",
+        "category": "color_background"
+      },
+      {
+        "id": "filter_saturate",
+        "value": "saturate()",
+        "category": "color_background"
+      },
+      {
+        "id": "filter_drop_shadow",
+        "value": "drop-shadow()",
+        "category": "color_background"
+      }
+    ],
+    "backdrop-filter": [
+      {
+        "id": "backdrop_filter",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "accent-color": [
+      {
+        "id": "accent_color",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "color-scheme": [
+      {
+        "id": "color_scheme",
+        "value": null,
+        "category": "color_background"
+      },
+      {
+        "id": "dm_color_scheme",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "forced-colors": [
+      {
+        "id": "forced_colors",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "-webkit-text-fill-color": [
+      {
+        "id": "webkit_text_fill_color",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "-webkit-text-stroke": [
+      {
+        "id": "webkit_text_stroke",
+        "value": null,
+        "category": "color_background"
+      }
+    ],
+    "border": [
+      {
+        "id": "border",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-width": [
+      {
+        "id": "border_width",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-style": [
+      {
+        "id": "border_style",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-color": [
+      {
+        "id": "border_color",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-top": [
+      {
+        "id": "border_top",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-right": [
+      {
+        "id": "border_right",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-bottom": [
+      {
+        "id": "border_bottom",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-left": [
+      {
+        "id": "border_left",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-top-width": [
+      {
+        "id": "border_top_width",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-right-width": [
+      {
+        "id": "border_right_width",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-bottom-width": [
+      {
+        "id": "border_bottom_width",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-left-width": [
+      {
+        "id": "border_left_width",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-radius": [
+      {
+        "id": "border_radius",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-top-left-radius": [
+      {
+        "id": "border_top_left_radius",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-top-right-radius": [
+      {
+        "id": "border_top_right_radius",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-bottom-left-radius": [
+      {
+        "id": "border_bottom_left_radius",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-bottom-right-radius": [
+      {
+        "id": "border_bottom_right_radius",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "border-collapse": [
+      {
+        "id": "border_collapse",
+        "value": null,
+        "category": "border_shadow"
+      },
+      {
+        "id": "border_collapse_table",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "border-spacing": [
+      {
+        "id": "border_spacing",
+        "value": null,
+        "category": "border_shadow"
+      },
+      {
+        "id": "border_spacing_table",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "border-image": [
+      {
+        "id": "border_image",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "box-shadow": [
+      {
+        "id": "box_shadow",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "outline": [
+      {
+        "id": "outline",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "outline-offset": [
+      {
+        "id": "outline_offset",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "outline-color": [
+      {
+        "id": "outline_color",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "outline-style": [
+      {
+        "id": "outline_style",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "outline-width": [
+      {
+        "id": "outline_width",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "box-decoration-break": [
+      {
+        "id": "box_decoration_break",
+        "value": null,
+        "category": "border_shadow"
+      }
+    ],
+    "flex-direction": [
+      {
+        "id": "flex_direction",
+        "value": null,
+        "category": "flexbox"
+      },
+      {
+        "id": "flex_direction_row",
+        "value": "row",
+        "category": "flexbox"
+      },
+      {
+        "id": "flex_direction_column",
+        "value": "column",
+        "category": "flexbox"
+      }
+    ],
+    "flex-wrap": [
+      {
+        "id": "flex_wrap",
+        "value": null,
+        "category": "flexbox"
+      },
+      {
+        "id": "flex_wrap_wrap",
+        "value": "wrap",
+        "category": "flexbox"
+      },
+      {
+        "id": "flex_wrap_nowrap",
+        "value": "nowrap",
+        "category": "flexbox"
+      }
+    ],
+    "flex-flow": [
+      {
+        "id": "flex_flow",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "justify-content": [
+      {
+        "id": "justify_content",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "align-items": [
+      {
+        "id": "align_items",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "align-content": [
+      {
+        "id": "align_content",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "align-self": [
+      {
+        "id": "align_self",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "flex-grow": [
+      {
+        "id": "flex_grow",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "flex-shrink": [
+      {
+        "id": "flex_shrink",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "flex-basis": [
+      {
+        "id": "flex_basis",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "flex": [
+      {
+        "id": "flex",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "order": [
+      {
+        "id": "order",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "gap": [
+      {
+        "id": "gap_flex",
+        "value": null,
+        "category": "flexbox"
+      },
+      {
+        "id": "gap_grid",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "row-gap": [
+      {
+        "id": "row_gap_flex",
+        "value": null,
+        "category": "flexbox"
+      }
+    ],
+    "grid-template-columns": [
+      {
+        "id": "grid_template_columns",
+        "value": null,
+        "category": "grid"
+      },
+      {
+        "id": "fr_unit",
+        "value": "fr",
+        "category": "grid"
+      },
+      {
+        "id": "minmax_function",
+        "value": "minmax()",
+        "category": "grid"
+      },
+      {
+        "id": "repeat_function",
+        "value": "repeat()",
+        "category": "grid"
+      },
+      {
+        "id": "auto_fill",
+        "value": "auto-fill",
+        "category": "grid"
+      }
+    ],
+    "grid-template-rows": [
+      {
+        "id": "grid_template_rows",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-template-areas": [
+      {
+        "id": "grid_template_areas",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-template": [
+      {
+        "id": "grid_template",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-column": [
+      {
+        "id": "grid_column",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-row": [
+      {
+        "id": "grid_row",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-area": [
+      {
+        "id": "grid_area",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-gap": [
+      {
+        "id": "grid_gap",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-auto-columns": [
+      {
+        "id": "grid_auto_columns",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-auto-rows": [
+      {
+        "id": "grid_auto_rows",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-auto-flow": [
+      {
+        "id": "grid_auto_flow",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "justify-items": [
+      {
+        "id": "justify_items_grid",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "place-items": [
+      {
+        "id": "place_items",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "place-content": [
+      {
+        "id": "place_content",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "place-self": [
+      {
+        "id": "place_self",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-column-start": [
+      {
+        "id": "grid_column_start",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-column-end": [
+      {
+        "id": "grid_column_end",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-row-start": [
+      {
+        "id": "grid_row_start",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "grid-row-end": [
+      {
+        "id": "grid_row_end",
+        "value": null,
+        "category": "grid"
+      }
+    ],
+    "table-layout": [
+      {
+        "id": "table_layout",
+        "value": null,
+        "category": "table"
+      },
+      {
+        "id": "table_layout_fixed",
+        "value": "fixed",
+        "category": "table"
+      }
+    ],
+    "caption-side": [
+      {
+        "id": "caption_side",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "empty-cells": [
+      {
+        "id": "empty_cells",
+        "value": null,
+        "category": "table"
+      }
+    ],
+    "transform": [
+      {
+        "id": "transform",
+        "value": null,
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_translate",
+        "value": "translate()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_translatex",
+        "value": "translateX()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_translatey",
+        "value": "translateY()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_rotate",
+        "value": "rotate()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_scale",
+        "value": "scale()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_skew",
+        "value": "skew()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_skewx",
+        "value": "skewX()",
+        "category": "transform_animation"
+      },
+      {
+        "id": "transform_skewy",
+        "value": "skewY()",
+        "category": "transform_animation"
+      }
+    ],
+    "translate": [
+      {
+        "id": "translate",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "rotate": [
+      {
+        "id": "rotate",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "scale": [
+      {
+        "id": "scale",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transform-origin": [
+      {
+        "id": "transform_origin",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transform-style": [
+      {
+        "id": "transform_style",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "perspective": [
+      {
+        "id": "perspective",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "perspective-origin": [
+      {
+        "id": "perspective_origin",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "backface-visibility": [
+      {
+        "id": "backface_visibility",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transition": [
+      {
+        "id": "transition",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transition-property": [
+      {
+        "id": "transition_property",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transition-duration": [
+      {
+        "id": "transition_duration",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transition-timing-function": [
+      {
+        "id": "transition_timing_function",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "transition-delay": [
+      {
+        "id": "transition_delay",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation": [
+      {
+        "id": "animation",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-name": [
+      {
+        "id": "animation_name",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-duration": [
+      {
+        "id": "animation_duration",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-timing-function": [
+      {
+        "id": "animation_timing_function",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-delay": [
+      {
+        "id": "animation_delay",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-iteration-count": [
+      {
+        "id": "animation_iteration_count",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-direction": [
+      {
+        "id": "animation_direction",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "animation-fill-mode": [
+      {
+        "id": "animation_fill_mode",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "@keyframes": [
+      {
+        "id": "keyframes",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    "will-change": [
+      {
+        "id": "will_change",
+        "value": null,
+        "category": "transform_animation"
+      }
+    ],
+    ":hover": [
+      {
+        "id": "pseudo_hover",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":focus": [
+      {
+        "id": "pseudo_focus",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":focus-visible": [
+      {
+        "id": "pseudo_focus_visible",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":focus-within": [
+      {
+        "id": "pseudo_focus_within",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":active": [
+      {
+        "id": "pseudo_active",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":visited": [
+      {
+        "id": "pseudo_visited",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":first-child": [
+      {
+        "id": "pseudo_first_child",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":last-child": [
+      {
+        "id": "pseudo_last_child",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":nth-child()": [
+      {
+        "id": "pseudo_nth_child",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":nth-of-type()": [
+      {
+        "id": "pseudo_nth_of_type",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":first-of-type": [
+      {
+        "id": "pseudo_first_of_type",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":last-of-type": [
+      {
+        "id": "pseudo_last_of_type",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":not()": [
+      {
+        "id": "pseudo_not",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":is()": [
+      {
+        "id": "pseudo_is",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":where()": [
+      {
+        "id": "pseudo_where",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    ":has()": [
+      {
+        "id": "pseudo_has",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::before": [
+      {
+        "id": "pseudo_before",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::after": [
+      {
+        "id": "pseudo_after",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::first-line": [
+      {
+        "id": "pseudo_first_line",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::first-letter": [
+      {
+        "id": "pseudo_first_letter",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::placeholder": [
+      {
+        "id": "pseudo_placeholder",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::selection": [
+      {
+        "id": "pseudo_selection",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "::marker": [
+      {
+        "id": "pseudo_marker",
+        "value": null,
+        "category": "selector"
+      },
+      {
+        "id": "list_marker",
+        "value": null,
+        "category": "list"
+      }
+    ],
+    "[attribute]": [
+      {
+        "id": "attr_selector",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "[attribute=value]": [
+      {
+        "id": "attr_equals",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "[attribute~=value]": [
+      {
+        "id": "attr_contains_word",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "[attribute^=value]": [
+      {
+        "id": "attr_starts_with",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "[attribute$=value]": [
+      {
+        "id": "attr_ends_with",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "[attribute*=value]": [
+      {
+        "id": "attr_contains",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "[attribute|=value]": [
+      {
+        "id": "attr_dash_match",
+        "value": null,
+        "category": "selector"
+      }
+    ],
+    "@media": [
+      {
+        "id": "media_screen",
+        "value": "screen",
+        "category": "media_query"
+      },
+      {
+        "id": "media_print",
+        "value": "print",
+        "category": "media_query"
+      },
+      {
+        "id": "media_max_width",
+        "value": "max-width",
+        "category": "media_query"
+      },
+      {
+        "id": "media_min_width",
+        "value": "min-width",
+        "category": "media_query"
+      },
+      {
+        "id": "media_prefers_color_scheme",
+        "value": "prefers-color-scheme",
+        "category": "media_query"
+      },
+      {
+        "id": "media_prefers_reduced_motion",
+        "value": "prefers-reduced-motion",
+        "category": "media_query"
+      },
+      {
+        "id": "media_hover",
+        "value": "hover",
+        "category": "media_query"
+      },
+      {
+        "id": "media_pointer",
+        "value": "pointer",
+        "category": "media_query"
+      },
+      {
+        "id": "media_orientation",
+        "value": "orientation",
+        "category": "media_query"
+      },
+      {
+        "id": "media_resolution",
+        "value": "resolution",
+        "category": "media_query"
+      },
+      {
+        "id": "media_aspect_ratio",
+        "value": "aspect-ratio",
+        "category": "media_query"
+      },
+      {
+        "id": "media_prefers_contrast",
+        "value": "prefers-contrast",
+        "category": "media_query"
+      },
+      {
+        "id": "media_forced_colors",
+        "value": "forced-colors",
+        "category": "media_query"
+      },
+      {
+        "id": "media_all",
+        "value": "all",
+        "category": "media_query"
+      },
+      {
+        "id": "media_max_device_width",
+        "value": "max-device-width",
+        "category": "media_query"
+      },
+      {
+        "id": "dm_prefers_color_scheme_dark",
+        "value": "prefers-color-scheme: dark",
+        "category": "dark_mode"
+      },
+      {
+        "id": "dm_prefers_color_scheme_light",
+        "value": "prefers-color-scheme: light",
+        "category": "dark_mode"
+      }
+    ],
+    "@supports": [
+      {
+        "id": "supports",
+        "value": null,
+        "category": "media_query"
+      }
+    ],
+    "[data-ogsc]": [
+      {
+        "id": "dm_data_ogsc",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "[data-ogsb]": [
+      {
+        "id": "dm_data_ogsb",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "-webkit-transform": [
+      {
+        "id": "dm_webkit_transform_hack",
+        "value": "translateZ(0)",
+        "category": "dark_mode"
+      }
+    ],
+    "meta[name=color-scheme]": [
+      {
+        "id": "dm_meta_color_scheme",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "mso-dark-mode-override": [
+      {
+        "id": "dm_mso_dark_mode_override",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "meta[name=supported-color-schemes]": [
+      {
+        "id": "dm_supported_color_schemes",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "color-adjust": [
+      {
+        "id": "dm_color_adjust",
+        "value": null,
+        "category": "dark_mode"
+      }
+    ],
+    "list-style-type": [
+      {
+        "id": "list_style_type",
+        "value": null,
+        "category": "list"
+      },
+      {
+        "id": "list_style_type_none",
+        "value": "none",
+        "category": "list"
+      },
+      {
+        "id": "list_style_type_decimal",
+        "value": "decimal",
+        "category": "list"
+      },
+      {
+        "id": "list_style_type_disc",
+        "value": "disc",
+        "category": "list"
+      }
+    ],
+    "list-style-position": [
+      {
+        "id": "list_style_position",
+        "value": null,
+        "category": "list"
+      }
+    ],
+    "list-style-image": [
+      {
+        "id": "list_style_image",
+        "value": null,
+        "category": "list"
+      }
+    ],
+    "list-style": [
+      {
+        "id": "list_style",
+        "value": null,
+        "category": "list"
+      }
+    ],
+    "cursor": [
+      {
+        "id": "cursor",
+        "value": null,
+        "category": "other"
+      },
+      {
+        "id": "cursor_pointer",
+        "value": "pointer",
+        "category": "other"
+      }
+    ],
+    "pointer-events": [
+      {
+        "id": "pointer_events",
+        "value": null,
+        "category": "other"
+      },
+      {
+        "id": "pointer_events_none",
+        "value": "none",
+        "category": "other"
+      }
+    ],
+    "user-select": [
+      {
+        "id": "user_select",
+        "value": null,
+        "category": "other"
+      },
+      {
+        "id": "user_select_none",
+        "value": "none",
+        "category": "other"
+      }
+    ],
+    "resize": [
+      {
+        "id": "resize",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "scroll-behavior": [
+      {
+        "id": "scroll_behavior",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "touch-action": [
+      {
+        "id": "touch_action",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "appearance": [
+      {
+        "id": "appearance",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "-webkit-appearance": [
+      {
+        "id": "webkit_appearance",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "contain": [
+      {
+        "id": "contain",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "content-visibility": [
+      {
+        "id": "content_visibility",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "print-color-adjust": [
+      {
+        "id": "print_color_adjust",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "image-rendering": [
+      {
+        "id": "image_rendering",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "shape-outside": [
+      {
+        "id": "shape_outside",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "shape-margin": [
+      {
+        "id": "shape_margin",
+        "value": null,
+        "category": "other"
+      }
+    ],
+    "all": [
+      {
+        "id": "all",
+        "value": null,
+        "category": "other"
+      }
+    ]
+  },
+  "support_lookup": {
+    "display_flex::outlook_2016_win": "none",
+    "display_flex::outlook_2019_win": "none",
+    "display_flex::outlook_365_win": "none",
+    "display_flex::gmail_web": "none",
+    "display_flex::outlook_web": "none",
+    "display_flex::yahoo_web": "none",
+    "display_flex::aol_web": "none",
+    "display_flex::protonmail_web": "none",
+    "display_flex::comcast_web": "none",
+    "display_flex::t_online_web": "none",
+    "display_flex::gmx_web": "none",
+    "flex_direction::outlook_2016_win": "none",
+    "flex_direction::outlook_2019_win": "none",
+    "flex_direction::outlook_365_win": "none",
+    "flex_direction::gmail_web": "none",
+    "flex_direction::outlook_web": "none",
+    "flex_direction::yahoo_web": "none",
+    "flex_direction::aol_web": "none",
+    "flex_direction::protonmail_web": "none",
+    "flex_direction::comcast_web": "none",
+    "flex_direction::t_online_web": "none",
+    "flex_direction::gmx_web": "none",
+    "flex_wrap::outlook_2016_win": "none",
+    "flex_wrap::outlook_2019_win": "none",
+    "flex_wrap::outlook_365_win": "none",
+    "flex_wrap::gmail_web": "none",
+    "flex_wrap::outlook_web": "none",
+    "flex_wrap::yahoo_web": "none",
+    "flex_wrap::aol_web": "none",
+    "flex_wrap::protonmail_web": "none",
+    "flex_wrap::comcast_web": "none",
+    "flex_wrap::t_online_web": "none",
+    "flex_wrap::gmx_web": "none",
+    "justify_content::outlook_2016_win": "none",
+    "justify_content::outlook_2019_win": "none",
+    "justify_content::outlook_365_win": "none",
+    "justify_content::gmail_web": "none",
+    "justify_content::outlook_web": "none",
+    "justify_content::yahoo_web": "none",
+    "justify_content::aol_web": "none",
+    "justify_content::protonmail_web": "none",
+    "justify_content::comcast_web": "none",
+    "justify_content::t_online_web": "none",
+    "justify_content::gmx_web": "none",
+    "align_items::outlook_2016_win": "none",
+    "align_items::outlook_2019_win": "none",
+    "align_items::outlook_365_win": "none",
+    "align_items::gmail_web": "none",
+    "align_items::outlook_web": "none",
+    "align_items::yahoo_web": "none",
+    "align_items::aol_web": "none",
+    "align_items::protonmail_web": "none",
+    "align_items::comcast_web": "none",
+    "align_items::t_online_web": "none",
+    "align_items::gmx_web": "none",
+    "align_self::outlook_2016_win": "none",
+    "align_self::outlook_2019_win": "none",
+    "align_self::outlook_365_win": "none",
+    "align_self::gmail_web": "none",
+    "align_self::outlook_web": "none",
+    "align_self::yahoo_web": "none",
+    "align_self::aol_web": "none",
+    "align_self::protonmail_web": "none",
+    "flex_grow::outlook_2016_win": "none",
+    "flex_grow::outlook_2019_win": "none",
+    "flex_grow::outlook_365_win": "none",
+    "flex_grow::gmail_web": "none",
+    "flex_grow::outlook_web": "none",
+    "flex_grow::yahoo_web": "none",
+    "flex_grow::aol_web": "none",
+    "flex_grow::protonmail_web": "none",
+    "flex_shrink::outlook_2016_win": "none",
+    "flex_shrink::outlook_2019_win": "none",
+    "flex_shrink::outlook_365_win": "none",
+    "flex_shrink::gmail_web": "none",
+    "flex_shrink::outlook_web": "none",
+    "flex_shrink::yahoo_web": "none",
+    "flex_shrink::aol_web": "none",
+    "flex_shrink::protonmail_web": "none",
+    "flex_basis::outlook_2016_win": "none",
+    "flex_basis::outlook_2019_win": "none",
+    "flex_basis::outlook_365_win": "none",
+    "flex_basis::gmail_web": "none",
+    "flex_basis::outlook_web": "none",
+    "flex_basis::yahoo_web": "none",
+    "flex_basis::aol_web": "none",
+    "flex_basis::protonmail_web": "none",
+    "order::outlook_2016_win": "none",
+    "order::outlook_2019_win": "none",
+    "order::outlook_365_win": "none",
+    "order::gmail_web": "none",
+    "order::outlook_web": "none",
+    "order::yahoo_web": "none",
+    "order::aol_web": "none",
+    "order::protonmail_web": "none",
+    "display_grid::outlook_2016_win": "none",
+    "display_grid::outlook_2019_win": "none",
+    "display_grid::outlook_365_win": "none",
+    "display_grid::gmail_web": "none",
+    "display_grid::outlook_web": "none",
+    "display_grid::yahoo_web": "none",
+    "display_grid::aol_web": "none",
+    "display_grid::protonmail_web": "none",
+    "display_grid::comcast_web": "none",
+    "display_grid::t_online_web": "none",
+    "display_grid::gmx_web": "none",
+    "grid_template_columns::outlook_2016_win": "none",
+    "grid_template_columns::outlook_2019_win": "none",
+    "grid_template_columns::outlook_365_win": "none",
+    "grid_template_columns::gmail_web": "none",
+    "grid_template_columns::outlook_web": "none",
+    "grid_template_columns::yahoo_web": "none",
+    "grid_template_columns::aol_web": "none",
+    "grid_template_columns::protonmail_web": "none",
+    "grid_template_columns::comcast_web": "none",
+    "grid_template_columns::t_online_web": "none",
+    "grid_template_columns::gmx_web": "none",
+    "grid_template_rows::outlook_2016_win": "none",
+    "grid_template_rows::outlook_2019_win": "none",
+    "grid_template_rows::outlook_365_win": "none",
+    "grid_template_rows::gmail_web": "none",
+    "grid_template_rows::outlook_web": "none",
+    "grid_template_rows::yahoo_web": "none",
+    "grid_template_rows::aol_web": "none",
+    "grid_template_rows::protonmail_web": "none",
+    "grid_template_rows::comcast_web": "none",
+    "grid_template_rows::t_online_web": "none",
+    "grid_template_rows::gmx_web": "none",
+    "grid_column::outlook_2016_win": "none",
+    "grid_column::outlook_2019_win": "none",
+    "grid_column::outlook_365_win": "none",
+    "grid_column::gmail_web": "none",
+    "grid_column::outlook_web": "none",
+    "grid_column::yahoo_web": "none",
+    "grid_column::aol_web": "none",
+    "grid_column::protonmail_web": "none",
+    "grid_row::outlook_2016_win": "none",
+    "grid_row::outlook_2019_win": "none",
+    "grid_row::outlook_365_win": "none",
+    "grid_row::gmail_web": "none",
+    "grid_row::outlook_web": "none",
+    "grid_row::yahoo_web": "none",
+    "grid_row::aol_web": "none",
+    "grid_row::protonmail_web": "none",
+    "gap::outlook_2016_win": "none",
+    "gap::outlook_2019_win": "none",
+    "gap::outlook_365_win": "none",
+    "gap::gmail_web": "none",
+    "gap::outlook_web": "none",
+    "gap::yahoo_web": "none",
+    "gap::aol_web": "none",
+    "gap::protonmail_web": "none",
+    "gap::comcast_web": "none",
+    "gap::t_online_web": "none",
+    "gap::gmx_web": "none",
+    "row_gap::outlook_2016_win": "none",
+    "row_gap::outlook_2019_win": "none",
+    "row_gap::outlook_365_win": "none",
+    "row_gap::gmail_web": "none",
+    "row_gap::outlook_web": "none",
+    "row_gap::yahoo_web": "none",
+    "row_gap::aol_web": "none",
+    "row_gap::protonmail_web": "none",
+    "column_gap::outlook_2016_win": "none",
+    "column_gap::outlook_2019_win": "none",
+    "column_gap::outlook_365_win": "none",
+    "column_gap::gmail_web": "none",
+    "column_gap::outlook_web": "none",
+    "column_gap::yahoo_web": "none",
+    "column_gap::aol_web": "none",
+    "column_gap::protonmail_web": "none",
+    "grid_auto_flow::outlook_2016_win": "none",
+    "grid_auto_flow::outlook_2019_win": "none",
+    "grid_auto_flow::outlook_365_win": "none",
+    "grid_auto_flow::gmail_web": "none",
+    "grid_auto_flow::outlook_web": "none",
+    "grid_auto_flow::yahoo_web": "none",
+    "grid_auto_flow::aol_web": "none",
+    "grid_auto_flow::protonmail_web": "none",
+    "position_fixed::outlook_2016_win": "none",
+    "position_fixed::outlook_2019_win": "none",
+    "position_fixed::outlook_365_win": "none",
+    "position_fixed::gmail_web": "none",
+    "position_fixed::outlook_web": "none",
+    "position_fixed::yahoo_web": "none",
+    "position_fixed::aol_web": "none",
+    "position_fixed::protonmail_web": "none",
+    "position_fixed::hey_web": "none",
+    "position_fixed::fastmail_web": "none",
+    "position_fixed::comcast_web": "none",
+    "position_fixed::t_online_web": "none",
+    "position_fixed::gmx_web": "none",
+    "position_sticky::outlook_2016_win": "none",
+    "position_sticky::outlook_2019_win": "none",
+    "position_sticky::outlook_365_win": "none",
+    "position_sticky::gmail_web": "none",
+    "position_sticky::outlook_web": "none",
+    "position_sticky::yahoo_web": "none",
+    "position_sticky::aol_web": "none",
+    "position_sticky::protonmail_web": "none",
+    "position_sticky::hey_web": "none",
+    "position_sticky::fastmail_web": "none",
+    "position_sticky::comcast_web": "none",
+    "position_sticky::t_online_web": "none",
+    "position_sticky::gmx_web": "none",
+    "position_absolute::outlook_2016_win": "partial",
+    "position_absolute::outlook_2019_win": "partial",
+    "position_absolute::outlook_365_win": "partial",
+    "position_absolute::gmail_web": "none",
+    "position_absolute::outlook_web": "partial",
+    "position_absolute::yahoo_web": "partial",
+    "position_absolute::protonmail_web": "none",
+    "position_absolute::comcast_web": "none",
+    "position_absolute::t_online_web": "none",
+    "position_absolute::gmx_web": "none",
+    "position_relative::outlook_2016_win": "partial",
+    "position_relative::outlook_2019_win": "partial",
+    "position_relative::outlook_365_win": "partial",
+    "position_relative::gmail_web": "none",
+    "position_relative::protonmail_web": "none",
+    "border_radius::outlook_2016_win": "partial",
+    "border_radius::outlook_2019_win": "partial",
+    "border_radius::outlook_365_win": "partial",
+    "box_shadow::outlook_2016_win": "none",
+    "box_shadow::outlook_2019_win": "none",
+    "box_shadow::outlook_365_win": "none",
+    "box_shadow::yahoo_web": "partial",
+    "box_shadow::protonmail_web": "none",
+    "box_shadow::comcast_web": "partial",
+    "box_shadow::t_online_web": "partial",
+    "box_shadow::gmx_web": "partial",
+    "box_sizing::outlook_2016_win": "partial",
+    "box_sizing::outlook_2019_win": "partial",
+    "box_sizing::outlook_365_win": "partial",
+    "outline::outlook_2016_win": "none",
+    "outline::outlook_2019_win": "none",
+    "outline::outlook_365_win": "none",
+    "background_size::outlook_2016_win": "none",
+    "background_size::outlook_2019_win": "none",
+    "background_size::outlook_365_win": "none",
+    "background_size::outlook_web": "partial",
+    "background_size_cover::outlook_2016_win": "none",
+    "background_size_cover::outlook_2019_win": "none",
+    "background_size_cover::outlook_365_win": "none",
+    "background_size_cover::outlook_web": "partial",
+    "background_size_contain::outlook_2016_win": "none",
+    "background_size_contain::outlook_2019_win": "none",
+    "background_size_contain::outlook_365_win": "none",
+    "background_size_contain::outlook_web": "partial",
+    "background_image_linear_gradient::outlook_2016_win": "none",
+    "background_image_linear_gradient::outlook_2019_win": "none",
+    "background_image_linear_gradient::outlook_365_win": "none",
+    "background_image_linear_gradient::gmail_web": "partial",
+    "background_image_linear_gradient::outlook_web": "partial",
+    "background_image_linear_gradient::yahoo_web": "partial",
+    "background_image_linear_gradient::protonmail_web": "none",
+    "background_image_radial_gradient::outlook_2016_win": "none",
+    "background_image_radial_gradient::outlook_2019_win": "none",
+    "background_image_radial_gradient::outlook_365_win": "none",
+    "background_image_radial_gradient::gmail_web": "partial",
+    "background_image_radial_gradient::outlook_web": "partial",
+    "background_image_radial_gradient::yahoo_web": "partial",
+    "background_image_radial_gradient::protonmail_web": "none",
+    "background_image::outlook_2016_win": "partial",
+    "background_image::outlook_2019_win": "partial",
+    "background_image::outlook_365_win": "partial",
+    "background_image::gmail_web": "partial",
+    "background_image::protonmail_web": "partial",
+    "background_position::outlook_2016_win": "none",
+    "background_position::outlook_2019_win": "none",
+    "background_position::outlook_365_win": "none",
+    "background_repeat::outlook_2016_win": "none",
+    "background_repeat::outlook_2019_win": "none",
+    "background_repeat::outlook_365_win": "none",
+    "background_clip::outlook_2016_win": "none",
+    "background_clip::outlook_2019_win": "none",
+    "background_clip::outlook_365_win": "none",
+    "background_clip::gmail_web": "none",
+    "background_clip::outlook_web": "none",
+    "background_clip::yahoo_web": "none",
+    "background_clip::protonmail_web": "none",
+    "background_blend_mode::outlook_2016_win": "none",
+    "background_blend_mode::outlook_2019_win": "none",
+    "background_blend_mode::outlook_365_win": "none",
+    "background_blend_mode::gmail_web": "none",
+    "background_blend_mode::outlook_web": "none",
+    "background_blend_mode::yahoo_web": "none",
+    "background_blend_mode::protonmail_web": "none",
+    "opacity::outlook_2016_win": "none",
+    "opacity::outlook_2019_win": "none",
+    "opacity::outlook_365_win": "none",
+    "opacity::protonmail_web": "partial",
+    "mix_blend_mode::outlook_2016_win": "none",
+    "mix_blend_mode::outlook_2019_win": "none",
+    "mix_blend_mode::outlook_365_win": "none",
+    "mix_blend_mode::gmail_web": "none",
+    "mix_blend_mode::outlook_web": "none",
+    "mix_blend_mode::yahoo_web": "none",
+    "mix_blend_mode::aol_web": "none",
+    "mix_blend_mode::protonmail_web": "none",
+    "backdrop_filter::outlook_2016_win": "none",
+    "backdrop_filter::outlook_2019_win": "none",
+    "backdrop_filter::outlook_365_win": "none",
+    "backdrop_filter::gmail_web": "none",
+    "backdrop_filter::outlook_web": "none",
+    "backdrop_filter::yahoo_web": "none",
+    "backdrop_filter::aol_web": "none",
+    "backdrop_filter::protonmail_web": "none",
+    "backdrop_filter::hey_web": "none",
+    "backdrop_filter::comcast_web": "none",
+    "backdrop_filter::t_online_web": "none",
+    "backdrop_filter::gmx_web": "none",
+    "filter::outlook_2016_win": "none",
+    "filter::outlook_2019_win": "none",
+    "filter::outlook_365_win": "none",
+    "filter::gmail_web": "none",
+    "filter::outlook_web": "none",
+    "filter::yahoo_web": "none",
+    "filter::aol_web": "none",
+    "filter::protonmail_web": "none",
+    "filter::hey_web": "partial",
+    "filter::comcast_web": "none",
+    "filter::t_online_web": "none",
+    "filter::gmx_web": "none",
+    "filter_blur::outlook_2016_win": "none",
+    "filter_blur::outlook_2019_win": "none",
+    "filter_blur::outlook_365_win": "none",
+    "filter_blur::gmail_web": "none",
+    "filter_blur::outlook_web": "none",
+    "filter_blur::yahoo_web": "none",
+    "filter_blur::protonmail_web": "none",
+    "filter_grayscale::outlook_2016_win": "none",
+    "filter_grayscale::outlook_2019_win": "none",
+    "filter_grayscale::outlook_365_win": "none",
+    "filter_grayscale::gmail_web": "none",
+    "filter_grayscale::outlook_web": "none",
+    "filter_grayscale::yahoo_web": "none",
+    "filter_grayscale::protonmail_web": "none",
+    "filter_drop_shadow::outlook_2016_win": "none",
+    "filter_drop_shadow::outlook_2019_win": "none",
+    "filter_drop_shadow::outlook_365_win": "none",
+    "filter_drop_shadow::gmail_web": "none",
+    "filter_drop_shadow::outlook_web": "none",
+    "filter_drop_shadow::yahoo_web": "none",
+    "filter_drop_shadow::protonmail_web": "none",
+    "clip_path::outlook_2016_win": "none",
+    "clip_path::outlook_2019_win": "none",
+    "clip_path::outlook_365_win": "none",
+    "clip_path::gmail_web": "none",
+    "clip_path::outlook_web": "none",
+    "clip_path::yahoo_web": "none",
+    "clip_path::aol_web": "none",
+    "clip_path::protonmail_web": "none",
+    "clip_path::comcast_web": "none",
+    "clip_path::t_online_web": "none",
+    "clip_path::gmx_web": "none",
+    "transform::outlook_2016_win": "none",
+    "transform::outlook_2019_win": "none",
+    "transform::outlook_365_win": "none",
+    "transform::gmail_web": "none",
+    "transform::outlook_web": "none",
+    "transform::yahoo_web": "none",
+    "transform::aol_web": "none",
+    "transform::protonmail_web": "none",
+    "transform::comcast_web": "none",
+    "transform::t_online_web": "none",
+    "transform::gmx_web": "none",
+    "transform_origin::outlook_2016_win": "none",
+    "transform_origin::outlook_2019_win": "none",
+    "transform_origin::outlook_365_win": "none",
+    "transform_origin::gmail_web": "none",
+    "transform_origin::outlook_web": "none",
+    "transform_origin::yahoo_web": "none",
+    "transform_origin::protonmail_web": "none",
+    "transition::outlook_2016_win": "none",
+    "transition::outlook_2019_win": "none",
+    "transition::outlook_365_win": "none",
+    "transition::gmail_web": "none",
+    "transition::outlook_web": "none",
+    "transition::yahoo_web": "none",
+    "transition::aol_web": "none",
+    "transition::protonmail_web": "none",
+    "transition::comcast_web": "none",
+    "transition::t_online_web": "none",
+    "transition::gmx_web": "none",
+    "animation::outlook_2016_win": "none",
+    "animation::outlook_2019_win": "none",
+    "animation::outlook_365_win": "none",
+    "animation::gmail_web": "none",
+    "animation::outlook_web": "none",
+    "animation::yahoo_web": "none",
+    "animation::aol_web": "none",
+    "animation::protonmail_web": "none",
+    "animation::comcast_web": "none",
+    "animation::t_online_web": "none",
+    "animation::gmx_web": "none",
+    "keyframes::outlook_2016_win": "none",
+    "keyframes::outlook_2019_win": "none",
+    "keyframes::outlook_365_win": "none",
+    "keyframes::gmail_web": "none",
+    "keyframes::outlook_web": "none",
+    "keyframes::yahoo_web": "none",
+    "keyframes::aol_web": "none",
+    "keyframes::protonmail_web": "none",
+    "keyframes::comcast_web": "none",
+    "keyframes::t_online_web": "none",
+    "keyframes::gmx_web": "none",
+    "will_change::outlook_2016_win": "none",
+    "will_change::outlook_2019_win": "none",
+    "will_change::outlook_365_win": "none",
+    "will_change::gmail_web": "none",
+    "will_change::outlook_web": "none",
+    "will_change::yahoo_web": "none",
+    "will_change::protonmail_web": "none",
+    "max_width::outlook_2016_win": "partial",
+    "max_width::outlook_2019_win": "partial",
+    "max_width::outlook_365_win": "partial",
+    "max_height::outlook_2016_win": "partial",
+    "max_height::outlook_2019_win": "partial",
+    "max_height::outlook_365_win": "partial",
+    "min_width::outlook_2016_win": "partial",
+    "min_width::outlook_2019_win": "partial",
+    "min_width::outlook_365_win": "partial",
+    "min_height::outlook_2016_win": "partial",
+    "min_height::outlook_2019_win": "partial",
+    "min_height::outlook_365_win": "partial",
+    "overflow_hidden::outlook_2016_win": "partial",
+    "overflow_hidden::outlook_2019_win": "partial",
+    "overflow_hidden::outlook_365_win": "partial",
+    "overflow_auto::outlook_2016_win": "none",
+    "overflow_auto::outlook_2019_win": "none",
+    "overflow_auto::outlook_365_win": "none",
+    "overflow_scroll::outlook_2016_win": "none",
+    "overflow_scroll::outlook_2019_win": "none",
+    "overflow_scroll::outlook_365_win": "none",
+    "object_fit::outlook_2016_win": "none",
+    "object_fit::outlook_2019_win": "none",
+    "object_fit::outlook_365_win": "none",
+    "object_fit::gmail_web": "partial",
+    "object_fit::outlook_web": "partial",
+    "object_fit::protonmail_web": "none",
+    "object_position::outlook_2016_win": "none",
+    "object_position::outlook_2019_win": "none",
+    "object_position::outlook_365_win": "none",
+    "object_position::gmail_web": "partial",
+    "object_position::protonmail_web": "none",
+    "aspect_ratio::outlook_2016_win": "none",
+    "aspect_ratio::outlook_2019_win": "none",
+    "aspect_ratio::outlook_365_win": "none",
+    "aspect_ratio::gmail_web": "none",
+    "aspect_ratio::outlook_web": "none",
+    "aspect_ratio::yahoo_web": "none",
+    "aspect_ratio::protonmail_web": "none",
+    "display_inline_block::outlook_2016_win": "partial",
+    "display_inline_block::outlook_2019_win": "partial",
+    "display_inline_block::outlook_365_win": "partial",
+    "display_table::outlook_2016_win": "partial",
+    "display_table::outlook_2019_win": "partial",
+    "display_table::outlook_365_win": "partial",
+    "display_none::outlook_2016_win": "partial",
+    "display_none::outlook_2019_win": "partial",
+    "display_none::outlook_365_win": "partial",
+    "text_shadow::outlook_2016_win": "partial",
+    "text_shadow::outlook_2019_win": "partial",
+    "text_shadow::outlook_365_win": "partial",
+    "text_shadow::protonmail_web": "none",
+    "text_overflow::outlook_2016_win": "none",
+    "text_overflow::outlook_2019_win": "none",
+    "text_overflow::outlook_365_win": "none",
+    "word_break::outlook_2016_win": "partial",
+    "word_break::outlook_2019_win": "partial",
+    "word_break::outlook_365_win": "partial",
+    "overflow_wrap::outlook_2016_win": "partial",
+    "overflow_wrap::outlook_2019_win": "partial",
+    "overflow_wrap::outlook_365_win": "partial",
+    "text_decoration_style::outlook_2016_win": "none",
+    "text_decoration_style::outlook_2019_win": "none",
+    "text_decoration_style::outlook_365_win": "none",
+    "text_decoration_style::gmail_web": "partial",
+    "text_decoration_color::outlook_2016_win": "none",
+    "text_decoration_color::outlook_2019_win": "none",
+    "text_decoration_color::outlook_365_win": "none",
+    "text_decoration_thickness::outlook_2016_win": "none",
+    "text_decoration_thickness::outlook_2019_win": "none",
+    "text_decoration_thickness::outlook_365_win": "none",
+    "writing_mode::outlook_2016_win": "none",
+    "writing_mode::outlook_2019_win": "none",
+    "writing_mode::outlook_365_win": "none",
+    "writing_mode::gmail_web": "none",
+    "writing_mode::protonmail_web": "none",
+    "text_orientation::outlook_2016_win": "none",
+    "text_orientation::outlook_2019_win": "none",
+    "text_orientation::outlook_365_win": "none",
+    "text_orientation::gmail_web": "none",
+    "hyphens::outlook_2016_win": "none",
+    "hyphens::outlook_2019_win": "none",
+    "hyphens::outlook_365_win": "none",
+    "hyphens::gmail_web": "none",
+    "font_face::outlook_2016_win": "none",
+    "font_face::outlook_2019_win": "none",
+    "font_face::outlook_365_win": "none",
+    "font_face::gmail_web": "partial",
+    "font_face::outlook_web": "partial",
+    "font_face::yahoo_web": "partial",
+    "font_face::protonmail_web": "none",
+    "font_feature_settings::outlook_2016_win": "none",
+    "font_feature_settings::outlook_2019_win": "none",
+    "font_feature_settings::outlook_365_win": "none",
+    "font_feature_settings::gmail_web": "none",
+    "font_variant::outlook_2016_win": "partial",
+    "font_variant::outlook_2019_win": "partial",
+    "font_variant::outlook_365_win": "partial",
+    "letter_spacing::outlook_2016_win": "partial",
+    "line_clamp::outlook_2016_win": "none",
+    "line_clamp::outlook_2019_win": "none",
+    "line_clamp::outlook_365_win": "none",
+    "line_clamp::gmail_web": "none",
+    "line_clamp::outlook_web": "none",
+    "line_clamp::yahoo_web": "none",
+    "line_clamp::protonmail_web": "none",
+    "media_max_width::outlook_2016_win": "none",
+    "media_max_width::outlook_2019_win": "none",
+    "media_max_width::outlook_365_win": "none",
+    "media_max_width::gmail_web": "partial",
+    "media_max_width::outlook_web": "partial",
+    "media_max_width::yahoo_web": "partial",
+    "media_max_width::protonmail_web": "none",
+    "media_max_width::comcast_web": "none",
+    "media_max_width::t_online_web": "none",
+    "media_max_width::gmx_web": "none",
+    "media_min_width::outlook_2016_win": "none",
+    "media_min_width::outlook_2019_win": "none",
+    "media_min_width::outlook_365_win": "none",
+    "media_min_width::gmail_web": "partial",
+    "media_min_width::outlook_web": "partial",
+    "media_min_width::yahoo_web": "partial",
+    "media_min_width::protonmail_web": "none",
+    "media_min_width::comcast_web": "none",
+    "media_min_width::t_online_web": "none",
+    "media_min_width::gmx_web": "none",
+    "media_prefers_color_scheme::outlook_2016_win": "none",
+    "media_prefers_color_scheme::outlook_2019_win": "none",
+    "media_prefers_color_scheme::outlook_365_win": "none",
+    "media_prefers_color_scheme::gmail_web": "none",
+    "media_prefers_color_scheme::outlook_web": "partial",
+    "media_prefers_color_scheme::yahoo_web": "none",
+    "media_prefers_color_scheme::aol_web": "none",
+    "media_prefers_color_scheme::protonmail_web": "none",
+    "media_prefers_color_scheme::comcast_web": "none",
+    "media_prefers_color_scheme::t_online_web": "none",
+    "media_prefers_color_scheme::gmx_web": "none",
+    "media_prefers_reduced_motion::outlook_2016_win": "none",
+    "media_prefers_reduced_motion::outlook_2019_win": "none",
+    "media_prefers_reduced_motion::outlook_365_win": "none",
+    "media_prefers_reduced_motion::gmail_web": "none",
+    "media_prefers_reduced_motion::outlook_web": "none",
+    "media_prefers_reduced_motion::yahoo_web": "none",
+    "media_prefers_reduced_motion::protonmail_web": "none",
+    "media_hover::outlook_2016_win": "none",
+    "media_hover::outlook_2019_win": "none",
+    "media_hover::outlook_365_win": "none",
+    "media_hover::gmail_web": "none",
+    "media_hover::outlook_web": "none",
+    "media_hover::yahoo_web": "none",
+    "media_hover::protonmail_web": "none",
+    "supports::outlook_2016_win": "none",
+    "supports::outlook_2019_win": "none",
+    "supports::outlook_365_win": "none",
+    "supports::gmail_web": "none",
+    "supports::outlook_web": "none",
+    "supports::yahoo_web": "none",
+    "supports::aol_web": "none",
+    "supports::protonmail_web": "none",
+    "supports::comcast_web": "none",
+    "supports::t_online_web": "none",
+    "supports::gmx_web": "none",
+    "pseudo_hover::outlook_2016_win": "partial",
+    "pseudo_hover::outlook_2019_win": "partial",
+    "pseudo_hover::outlook_365_win": "partial",
+    "pseudo_hover::gmail_web": "none",
+    "pseudo_hover::outlook_web": "partial",
+    "pseudo_hover::yahoo_web": "partial",
+    "pseudo_hover::protonmail_web": "none",
+    "pseudo_hover::comcast_web": "none",
+    "pseudo_hover::t_online_web": "none",
+    "pseudo_hover::gmx_web": "none",
+    "pseudo_before::outlook_2016_win": "none",
+    "pseudo_before::outlook_2019_win": "none",
+    "pseudo_before::outlook_365_win": "none",
+    "pseudo_before::gmail_web": "none",
+    "pseudo_before::outlook_web": "none",
+    "pseudo_before::yahoo_web": "partial",
+    "pseudo_before::aol_web": "partial",
+    "pseudo_before::protonmail_web": "none",
+    "pseudo_before::comcast_web": "none",
+    "pseudo_before::t_online_web": "none",
+    "pseudo_before::gmx_web": "none",
+    "pseudo_after::outlook_2016_win": "none",
+    "pseudo_after::outlook_2019_win": "none",
+    "pseudo_after::outlook_365_win": "none",
+    "pseudo_after::gmail_web": "none",
+    "pseudo_after::outlook_web": "none",
+    "pseudo_after::yahoo_web": "partial",
+    "pseudo_after::aol_web": "partial",
+    "pseudo_after::protonmail_web": "none",
+    "pseudo_after::comcast_web": "none",
+    "pseudo_after::t_online_web": "none",
+    "pseudo_after::gmx_web": "none",
+    "pseudo_nth_child::outlook_2016_win": "none",
+    "pseudo_nth_child::outlook_2019_win": "none",
+    "pseudo_nth_child::outlook_365_win": "none",
+    "pseudo_nth_child::gmail_web": "none",
+    "pseudo_nth_child::outlook_web": "none",
+    "pseudo_nth_child::yahoo_web": "none",
+    "pseudo_nth_child::aol_web": "none",
+    "pseudo_nth_child::protonmail_web": "none",
+    "pseudo_nth_child::comcast_web": "none",
+    "pseudo_nth_child::t_online_web": "none",
+    "pseudo_nth_child::gmx_web": "none",
+    "pseudo_first_child::outlook_2016_win": "none",
+    "pseudo_first_child::outlook_2019_win": "none",
+    "pseudo_first_child::outlook_365_win": "none",
+    "pseudo_first_child::gmail_web": "none",
+    "pseudo_first_child::outlook_web": "none",
+    "pseudo_first_child::yahoo_web": "partial",
+    "pseudo_first_child::protonmail_web": "none",
+    "pseudo_first_child::comcast_web": "none",
+    "pseudo_first_child::gmx_web": "none",
+    "pseudo_last_child::outlook_2016_win": "none",
+    "pseudo_last_child::outlook_2019_win": "none",
+    "pseudo_last_child::outlook_365_win": "none",
+    "pseudo_last_child::gmail_web": "none",
+    "pseudo_last_child::outlook_web": "none",
+    "pseudo_last_child::yahoo_web": "partial",
+    "pseudo_last_child::protonmail_web": "none",
+    "pseudo_last_child::comcast_web": "none",
+    "pseudo_last_child::gmx_web": "none",
+    "pseudo_not::outlook_2016_win": "none",
+    "pseudo_not::outlook_2019_win": "none",
+    "pseudo_not::outlook_365_win": "none",
+    "pseudo_not::gmail_web": "none",
+    "pseudo_not::outlook_web": "partial",
+    "pseudo_not::protonmail_web": "none",
+    "pseudo_placeholder::outlook_2016_win": "none",
+    "pseudo_placeholder::outlook_2019_win": "none",
+    "pseudo_placeholder::outlook_365_win": "none",
+    "pseudo_placeholder::gmail_web": "none",
+    "pseudo_placeholder::outlook_web": "none",
+    "pseudo_placeholder::protonmail_web": "none",
+    "pseudo_focus::outlook_2016_win": "none",
+    "pseudo_focus::outlook_2019_win": "none",
+    "pseudo_focus::outlook_365_win": "none",
+    "pseudo_focus::gmail_web": "none",
+    "pseudo_focus::outlook_web": "partial",
+    "pseudo_focus::yahoo_web": "partial",
+    "pseudo_focus::protonmail_web": "none",
+    "pseudo_active::outlook_2016_win": "none",
+    "pseudo_active::outlook_2019_win": "none",
+    "pseudo_active::outlook_365_win": "none",
+    "pseudo_active::gmail_web": "none",
+    "pseudo_active::outlook_web": "partial",
+    "pseudo_active::protonmail_web": "none",
+    "pseudo_visited::outlook_2016_win": "none",
+    "pseudo_visited::outlook_2019_win": "none",
+    "pseudo_visited::outlook_365_win": "none",
+    "pseudo_visited::gmail_web": "none",
+    "pseudo_visited::protonmail_web": "none",
+    "selector_attribute::outlook_2016_win": "none",
+    "selector_attribute::outlook_2019_win": "none",
+    "selector_attribute::outlook_365_win": "none",
+    "selector_attribute::gmail_web": "none",
+    "selector_attribute::protonmail_web": "none",
+    "selector_class::gmail_web": "partial",
+    "selector_child_combinator::outlook_2016_win": "partial",
+    "selector_child_combinator::outlook_2019_win": "partial",
+    "selector_child_combinator::outlook_365_win": "partial",
+    "selector_child_combinator::gmail_web": "none",
+    "selector_child_combinator::protonmail_web": "none",
+    "selector_adjacent_sibling::outlook_2016_win": "none",
+    "selector_adjacent_sibling::outlook_2019_win": "none",
+    "selector_adjacent_sibling::outlook_365_win": "none",
+    "selector_adjacent_sibling::gmail_web": "none",
+    "selector_adjacent_sibling::protonmail_web": "none",
+    "selector_general_sibling::outlook_2016_win": "none",
+    "selector_general_sibling::outlook_2019_win": "none",
+    "selector_general_sibling::outlook_365_win": "none",
+    "selector_general_sibling::gmail_web": "none",
+    "selector_general_sibling::protonmail_web": "none",
+    "column_count::outlook_2016_win": "none",
+    "column_count::outlook_2019_win": "none",
+    "column_count::outlook_365_win": "none",
+    "column_count::gmail_web": "none",
+    "column_count::outlook_web": "none",
+    "column_count::yahoo_web": "none",
+    "column_count::protonmail_web": "none",
+    "column_width::outlook_2016_win": "none",
+    "column_width::outlook_2019_win": "none",
+    "column_width::outlook_365_win": "none",
+    "column_width::gmail_web": "none",
+    "column_width::outlook_web": "none",
+    "column_width::yahoo_web": "none",
+    "column_width::protonmail_web": "none",
+    "column_rule::outlook_2016_win": "none",
+    "column_rule::outlook_2019_win": "none",
+    "column_rule::outlook_365_win": "none",
+    "column_rule::gmail_web": "none",
+    "column_rule::outlook_web": "none",
+    "column_rule::yahoo_web": "none",
+    "column_rule::protonmail_web": "none",
+    "column_span::outlook_2016_win": "none",
+    "column_span::outlook_2019_win": "none",
+    "column_span::outlook_365_win": "none",
+    "column_span::gmail_web": "none",
+    "column_span::outlook_web": "none",
+    "column_span::yahoo_web": "none",
+    "column_span::protonmail_web": "none",
+    "color_scheme::outlook_2016_win": "none",
+    "color_scheme::outlook_2019_win": "none",
+    "color_scheme::outlook_365_win": "none",
+    "color_scheme::gmail_web": "none",
+    "color_scheme::gmail_android": "partial",
+    "color_scheme::outlook_web": "partial",
+    "color_scheme::outlook_android": "partial",
+    "color_scheme::yahoo_web": "none",
+    "color_scheme::protonmail_web": "none",
+    "color_scheme::comcast_web": "none",
+    "color_scheme::t_online_web": "none",
+    "color_scheme::gmx_web": "none",
+    "border_spacing::outlook_2016_win": "partial",
+    "border_spacing::outlook_2019_win": "partial",
+    "border_spacing::outlook_365_win": "partial",
+    "border_collapse::outlook_2016_win": "partial",
+    "border_collapse::outlook_2019_win": "partial",
+    "border_collapse::outlook_365_win": "partial",
+    "caption_side::outlook_2016_win": "none",
+    "caption_side::outlook_2019_win": "none",
+    "caption_side::outlook_365_win": "none",
+    "empty_cells::outlook_2016_win": "partial",
+    "empty_cells::outlook_2019_win": "partial",
+    "empty_cells::outlook_365_win": "partial",
+    "list_style_type::outlook_2016_win": "partial",
+    "list_style_type::outlook_2019_win": "partial",
+    "list_style_type::outlook_365_win": "partial",
+    "list_style_type::gmail_web": "partial",
+    "list_style_position::outlook_2016_win": "partial",
+    "list_style_position::outlook_2019_win": "partial",
+    "list_style_position::outlook_365_win": "partial",
+    "list_style_image::outlook_2016_win": "none",
+    "list_style_image::outlook_2019_win": "none",
+    "list_style_image::outlook_365_win": "none",
+    "list_style_image::gmail_web": "none",
+    "list_style_image::protonmail_web": "none",
+    "cursor::outlook_2016_win": "none",
+    "cursor::outlook_2019_win": "none",
+    "cursor::outlook_365_win": "none",
+    "cursor::gmail_web": "none",
+    "cursor::outlook_web": "partial",
+    "cursor::protonmail_web": "none",
+    "resize::outlook_2016_win": "none",
+    "resize::outlook_2019_win": "none",
+    "resize::outlook_365_win": "none",
+    "resize::gmail_web": "none",
+    "resize::outlook_web": "none",
+    "resize::yahoo_web": "none",
+    "resize::protonmail_web": "none",
+    "pointer_events::outlook_2016_win": "none",
+    "pointer_events::outlook_2019_win": "none",
+    "pointer_events::outlook_365_win": "none",
+    "pointer_events::gmail_web": "none",
+    "pointer_events::protonmail_web": "none",
+    "user_select::outlook_2016_win": "none",
+    "user_select::outlook_2019_win": "none",
+    "user_select::outlook_365_win": "none",
+    "user_select::gmail_web": "none",
+    "user_select::protonmail_web": "none",
+    "scroll_behavior::outlook_2016_win": "none",
+    "scroll_behavior::outlook_2019_win": "none",
+    "scroll_behavior::outlook_365_win": "none",
+    "scroll_behavior::gmail_web": "none",
+    "scroll_behavior::outlook_web": "none",
+    "scroll_behavior::yahoo_web": "none",
+    "scroll_behavior::protonmail_web": "none",
+    "content::outlook_2016_win": "none",
+    "content::outlook_2019_win": "none",
+    "content::outlook_365_win": "none",
+    "content::gmail_web": "none",
+    "content::outlook_web": "none",
+    "content::protonmail_web": "none",
+    "counter_reset::outlook_2016_win": "none",
+    "counter_reset::outlook_2019_win": "none",
+    "counter_reset::outlook_365_win": "none",
+    "counter_reset::gmail_web": "none",
+    "counter_reset::outlook_web": "none",
+    "counter_reset::protonmail_web": "none",
+    "counter_increment::outlook_2016_win": "none",
+    "counter_increment::outlook_2019_win": "none",
+    "counter_increment::outlook_365_win": "none",
+    "counter_increment::gmail_web": "none",
+    "counter_increment::outlook_web": "none",
+    "counter_increment::protonmail_web": "none",
+    "appearance::outlook_2016_win": "none",
+    "appearance::outlook_2019_win": "none",
+    "appearance::outlook_365_win": "none",
+    "appearance::gmail_web": "none",
+    "appearance::protonmail_web": "none",
+    "touch_action::outlook_2016_win": "none",
+    "touch_action::outlook_2019_win": "none",
+    "touch_action::outlook_365_win": "none",
+    "touch_action::gmail_web": "none",
+    "touch_action::protonmail_web": "none",
+    "css_variables::outlook_2016_win": "none",
+    "css_variables::outlook_2019_win": "none",
+    "css_variables::outlook_365_win": "none",
+    "css_variables::gmail_web": "none",
+    "css_variables::outlook_web": "none",
+    "css_variables::yahoo_web": "none",
+    "css_variables::aol_web": "none",
+    "css_variables::protonmail_web": "none",
+    "css_variables::comcast_web": "none",
+    "css_variables::t_online_web": "none",
+    "css_variables::gmx_web": "none",
+    "calc::outlook_2016_win": "none",
+    "calc::outlook_2019_win": "none",
+    "calc::outlook_365_win": "none",
+    "calc::gmail_web": "none",
+    "calc::outlook_web": "partial",
+    "calc::yahoo_web": "partial",
+    "calc::protonmail_web": "none",
+    "calc::comcast_web": "none",
+    "calc::t_online_web": "none",
+    "calc::gmx_web": "none",
+    "clamp::outlook_2016_win": "none",
+    "clamp::outlook_2019_win": "none",
+    "clamp::outlook_365_win": "none",
+    "clamp::gmail_web": "none",
+    "clamp::outlook_web": "none",
+    "clamp::yahoo_web": "none",
+    "clamp::protonmail_web": "none",
+    "clamp::comcast_web": "none",
+    "clamp::gmx_web": "none",
+    "svg_inline::outlook_2016_win": "none",
+    "svg_inline::outlook_2019_win": "none",
+    "svg_inline::outlook_365_win": "none",
+    "svg_inline::gmail_web": "none",
+    "svg_inline::outlook_web": "none",
+    "svg_inline::yahoo_web": "partial",
+    "svg_inline::aol_web": "none",
+    "svg_inline::protonmail_web": "none",
+    "svg_inline::comcast_web": "none",
+    "svg_inline::t_online_web": "none",
+    "svg_inline::gmx_web": "none",
+    "svg_background::outlook_2016_win": "none",
+    "svg_background::outlook_2019_win": "none",
+    "svg_background::outlook_365_win": "none",
+    "svg_background::gmail_web": "none",
+    "svg_background::outlook_web": "none",
+    "svg_background::yahoo_web": "none",
+    "svg_background::protonmail_web": "none",
+    "html5_video::outlook_2016_win": "none",
+    "html5_video::outlook_2019_win": "none",
+    "html5_video::outlook_365_win": "none",
+    "html5_video::gmail_web": "none",
+    "html5_video::gmail_android": "none",
+    "html5_video::gmail_ios": "none",
+    "html5_video::outlook_web": "none",
+    "html5_video::outlook_android": "none",
+    "html5_video::yahoo_web": "none",
+    "html5_video::yahoo_android": "none",
+    "html5_video::aol_web": "none",
+    "html5_video::protonmail_web": "none",
+    "html5_video::samsung_mail": "none",
+    "html5_video::thunderbird": "partial",
+    "html5_video::hey_web": "none",
+    "html5_video::fastmail_web": "none",
+    "html5_video::comcast_web": "none",
+    "html5_video::t_online_web": "none",
+    "html5_video::gmx_web": "none",
+    "html5_audio::outlook_2016_win": "none",
+    "html5_audio::outlook_2019_win": "none",
+    "html5_audio::outlook_365_win": "none",
+    "html5_audio::gmail_web": "none",
+    "html5_audio::outlook_web": "none",
+    "html5_audio::yahoo_web": "none",
+    "html5_audio::protonmail_web": "none",
+    "html5_audio::comcast_web": "none",
+    "html5_audio::t_online_web": "none",
+    "html5_audio::gmx_web": "none",
+    "html5_semantic::outlook_2016_win": "partial",
+    "html5_semantic::outlook_2019_win": "partial",
+    "html5_semantic::outlook_365_win": "partial",
+    "html5_semantic::gmail_web": "partial",
+    "picture_element::outlook_2016_win": "none",
+    "picture_element::outlook_2019_win": "none",
+    "picture_element::outlook_365_win": "none",
+    "picture_element::gmail_web": "none",
+    "picture_element::outlook_web": "none",
+    "picture_element::yahoo_web": "partial",
+    "picture_element::protonmail_web": "none",
+    "srcset::outlook_2016_win": "none",
+    "srcset::outlook_2019_win": "none",
+    "srcset::outlook_365_win": "none",
+    "srcset::gmail_web": "none",
+    "srcset::outlook_web": "none",
+    "srcset::yahoo_web": "partial",
+    "srcset::protonmail_web": "none",
+    "form_elements::outlook_2016_win": "none",
+    "form_elements::outlook_2019_win": "none",
+    "form_elements::outlook_365_win": "none",
+    "form_elements::gmail_web": "none",
+    "form_elements::outlook_web": "none",
+    "form_elements::yahoo_web": "none",
+    "form_elements::aol_web": "none",
+    "form_elements::protonmail_web": "none",
+    "form_elements::samsung_mail": "none",
+    "form_elements::hey_web": "none",
+    "form_elements::fastmail_web": "none",
+    "form_elements::comcast_web": "none",
+    "form_elements::t_online_web": "none",
+    "form_elements::gmx_web": "none",
+    "background_color::protonmail_web": "partial",
+    "float::protonmail_web": "none",
+    "float::gmail_web": "partial",
+    "float::outlook_2016_win": "partial",
+    "float::outlook_2019_win": "partial",
+    "float::outlook_365_win": "partial",
+    "clear::protonmail_web": "none",
+    "clear::outlook_2016_win": "partial",
+    "clear::outlook_2019_win": "partial",
+    "clear::outlook_365_win": "partial",
+    "z_index::protonmail_web": "none",
+    "z_index::outlook_2016_win": "none",
+    "z_index::outlook_2019_win": "none",
+    "z_index::outlook_365_win": "none",
+    "z_index::gmail_web": "none",
+    "important_declaration::yahoo_web": "partial",
+    "important_declaration::aol_web": "partial",
+    "style_tag::gmail_web": "partial",
+    "style_tag::protonmail_web": "partial",
+    "link_stylesheet::outlook_2016_win": "none",
+    "link_stylesheet::outlook_2019_win": "none",
+    "link_stylesheet::outlook_365_win": "none",
+    "link_stylesheet::gmail_web": "none",
+    "link_stylesheet::outlook_web": "none",
+    "link_stylesheet::yahoo_web": "none",
+    "link_stylesheet::aol_web": "none",
+    "link_stylesheet::protonmail_web": "none",
+    "link_stylesheet::hey_web": "none",
+    "link_stylesheet::fastmail_web": "none",
+    "link_stylesheet::comcast_web": "none",
+    "link_stylesheet::t_online_web": "none",
+    "link_stylesheet::gmx_web": "none",
+    "javascript::outlook_2016_win": "none",
+    "javascript::outlook_2019_win": "none",
+    "javascript::outlook_365_win": "none",
+    "javascript::outlook_mac": "none",
+    "javascript::outlook_ios": "none",
+    "javascript::outlook_android": "none",
+    "javascript::outlook_web": "none",
+    "javascript::gmail_web": "none",
+    "javascript::gmail_ios": "none",
+    "javascript::gmail_android": "none",
+    "javascript::apple_mail_macos": "none",
+    "javascript::apple_mail_ios": "none",
+    "javascript::yahoo_web": "none",
+    "javascript::yahoo_ios": "none",
+    "javascript::yahoo_android": "none",
+    "javascript::samsung_mail": "none",
+    "javascript::thunderbird": "none",
+    "javascript::aol_web": "none",
+    "javascript::protonmail_web": "none",
+    "javascript::hey_web": "none",
+    "javascript::fastmail_web": "none",
+    "javascript::comcast_web": "none",
+    "javascript::t_online_web": "none",
+    "javascript::gmx_web": "none",
+    "webp::outlook_2016_win": "none",
+    "webp::outlook_2019_win": "none",
+    "webp::outlook_365_win": "partial",
+    "avif::outlook_2016_win": "none",
+    "avif::outlook_2019_win": "none",
+    "avif::outlook_365_win": "none",
+    "avif::gmail_web": "partial",
+    "avif::outlook_web": "none",
+    "avif::yahoo_web": "partial",
+    "avif::protonmail_web": "partial",
+    "unit_rem::outlook_2016_win": "none",
+    "unit_rem::outlook_2019_win": "none",
+    "unit_rem::outlook_365_win": "none",
+    "unit_rem::gmail_web": "partial",
+    "unit_rem::protonmail_web": "partial",
+    "unit_em::outlook_2016_win": "partial",
+    "unit_vw::outlook_2016_win": "none",
+    "unit_vw::outlook_2019_win": "none",
+    "unit_vw::outlook_365_win": "none",
+    "unit_vw::gmail_web": "none",
+    "unit_vw::outlook_web": "partial",
+    "unit_vw::yahoo_web": "partial",
+    "unit_vw::protonmail_web": "none",
+    "unit_vh::outlook_2016_win": "none",
+    "unit_vh::outlook_2019_win": "none",
+    "unit_vh::outlook_365_win": "none",
+    "unit_vh::gmail_web": "none",
+    "unit_vh::outlook_web": "none",
+    "unit_vh::yahoo_web": "none",
+    "unit_vh::protonmail_web": "none",
+    "unit_ch::outlook_2016_win": "none",
+    "unit_ch::outlook_2019_win": "none",
+    "unit_ch::outlook_365_win": "none",
+    "unit_ch::gmail_web": "none",
+    "unit_ch::protonmail_web": "none",
+    "unit_percent::outlook_2016_win": "partial"
+  },
+  "fallbacks_by_source": {
+    "display_flex": [
+      {
+        "target_property_name": "display",
+        "target_value": "table",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "outlook_web",
+          "yahoo_web"
+        ],
+        "technique": "table_layout"
+      }
+    ],
+    "display_grid": [
+      {
+        "target_property_name": "display",
+        "target_value": "table",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "yahoo_web"
+        ],
+        "technique": "table_layout"
+      }
+    ],
+    "display_inline_block": [
+      {
+        "target_property_name": "display",
+        "target_value": "table-cell",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "table_layout"
+      }
+    ],
+    "position_fixed": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "position_sticky": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "remove"
+      },
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "table_layout"
+      }
+    ],
+    "position_absolute": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_conditional"
+      }
+    ],
+    "gap": [
+      {
+        "target_property_name": "margin",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "margin_on_children"
+      }
+    ],
+    "max_width": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "overflow_hidden": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_conditional"
+      }
+    ],
+    "float": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "yahoo_web"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "font_face": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "font_stack"
+      }
+    ],
+    "text_shadow": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "word_break": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web"
+        ],
+        "technique": "html_element"
+      }
+    ],
+    "letter_spacing": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      },
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      }
+    ],
+    "line_height": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      },
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      }
+    ],
+    "linear_gradient": [
+      {
+        "target_property_name": "background-color",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "solid_color_fallback"
+      }
+    ],
+    "radial_gradient": [
+      {
+        "target_property_name": "background-color",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "solid_color_fallback"
+      }
+    ],
+    "rgba": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win"
+        ],
+        "technique": "solid_color_fallback"
+      }
+    ],
+    "opacity": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_conditional"
+      }
+    ],
+    "background_size": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "vml"
+      }
+    ],
+    "background_image": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "vml"
+      }
+    ],
+    "mix_blend_mode": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "filter_blur": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "backdrop_filter": [
+      {
+        "target_property_name": "background-color",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "solid_color_fallback"
+      }
+    ],
+    "border_radius": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "vml"
+      }
+    ],
+    "box_shadow": [
+      {
+        "target_property_name": "border",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "border_fallback"
+      }
+    ],
+    "outline": [
+      {
+        "target_property_name": "border",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "gmail_web"
+        ],
+        "technique": "border_fallback"
+      }
+    ],
+    "box_decoration_break": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "transform": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "transition": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "animation": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "transform_scale": [
+      {
+        "target_property_name": "width",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "transform_rotate": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "vml"
+      }
+    ],
+    "pseudo_hover": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_android"
+        ],
+        "technique": "remove"
+      }
+    ],
+    "pseudo_nth_child": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "class_names"
+      }
+    ],
+    "pseudo_before_after": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "html_element"
+      }
+    ],
+    "pseudo_has": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web",
+          "apple_mail"
+        ],
+        "technique": "class_names"
+      }
+    ],
+    "attribute_selector": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android"
+        ],
+        "technique": "class_names"
+      }
+    ],
+    "media_query": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "fluid_hybrid"
+      }
+    ],
+    "prefers_color_scheme": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "class_names"
+      }
+    ],
+    "supports_at_rule": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "always_include_fallback"
+      }
+    ],
+    "color_scheme": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android"
+        ],
+        "technique": "meta_tag"
+      }
+    ],
+    "dark_mode_auto_inversion": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_ios",
+          "outlook_android",
+          "outlook_web",
+          "apple_mail",
+          "apple_mail_ios"
+        ],
+        "technique": "transparent_png"
+      }
+    ],
+    "mso_dark_mode": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_conditional"
+      }
+    ],
+    "table_layout_fixed": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "border_collapse": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "border_spacing": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "object_fit": [
+      {
+        "target_property_name": "overflow",
+        "target_value": "hidden",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "yahoo_web"
+        ],
+        "technique": "overflow_clip"
+      }
+    ],
+    "aspect_ratio": [
+      {
+        "target_property_name": "padding-bottom",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "padding_hack"
+      }
+    ],
+    "clip_path": [
+      {
+        "target_property_name": "overflow",
+        "target_value": "hidden",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "overflow_clip"
+      }
+    ],
+    "css_columns": [
+      {
+        "target_property_name": "display",
+        "target_value": "table",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "table_layout"
+      }
+    ],
+    "calc": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "yahoo_web"
+        ],
+        "technique": "fixed_values"
+      }
+    ],
+    "css_custom_properties": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "static_values"
+      },
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "static_values"
+      }
+    ],
+    "margin": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      }
+    ],
+    "padding": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      }
+    ],
+    "vertical_align": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_property"
+      }
+    ],
+    "css_layout": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_conditional"
+      }
+    ],
+    "min_height": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "writing_mode": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "pre_rendered_image"
+      }
+    ],
+    "appearance": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web",
+          "outlook_web"
+        ],
+        "technique": "html_element"
+      }
+    ],
+    "text_overflow_ellipsis": [
+      {
+        "target_property_name": "width",
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "yahoo_web"
+        ],
+        "technique": "fixed_values"
+      }
+    ],
+    "currentcolor": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android"
+        ],
+        "technique": "static_values"
+      }
+    ],
+    "inherit_keyword": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win",
+          "gmail_web",
+          "gmail_android",
+          "yahoo_web"
+        ],
+        "technique": "static_values"
+      }
+    ],
+    "list_style": [
+      {
+        "target_property_name": "display",
+        "target_value": "table",
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "table_layout"
+      }
+    ],
+    "margin_auto": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "html_attribute"
+      }
+    ],
+    "display_none": [
+      {
+        "target_property_name": null,
+        "target_value": null,
+        "client_ids": [
+          "outlook_2016_win",
+          "outlook_2019_win",
+          "outlook_365_win"
+        ],
+        "technique": "mso_conditional"
+      }
+    ]
+  }
+}

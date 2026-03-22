@@ -1,8 +1,10 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo help
 
 # === Local Development ===
 
 dev: ## Start backend + frontend in parallel
+	@echo "Syncing ontology to sidecar..."
+	@cd services/maizzle-builder && npm run sync-ontology 2>/dev/null || echo "Ontology sync skipped (run npm install in services/maizzle-builder first)"
 	@echo "Starting backend on :8891 and frontend on :3000..."
 	@(uv run uvicorn app.main:app --reload --port 8891 &) && \
 	(cd cms && pnpm --filter web dev)
@@ -98,6 +100,9 @@ ontology-sync: ## Sync ontology from Can I Email
 
 ontology-sync-dry: ## Sync ontology (dry run — show diff without writing)
 	uv run python -m app.knowledge.ontology.sync.cli --dry-run
+
+sync-ontology: ## Sync ontology data to sidecar (YAML → JSON)
+	cd services/maizzle-builder && npm run sync-ontology
 
 # === Eval Pipeline ===
 
