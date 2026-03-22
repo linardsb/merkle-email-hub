@@ -72,8 +72,8 @@ Backend: `app/` (VSA features) — `core/`, `shared/`, `auth/`, `ai/` (agents + 
 See `TODO.md` for details on upcoming phases. See `docs/TODO-completed.md` for detailed completion records of phases 0-23.
 
 **Upcoming phases (priority order — highest differentiation first):**
-- ~~**Phase 24**~~ — Real-Time Collaboration & Visual Builder — **ALL DONE** (9/9 subtasks)
-- ~~**Phase 25**~~ — Platform Ecosystem & Advanced Integrations — **ALL DONE** (15/15 subtasks)
+- **Phase 26** — Email Build Pipeline Performance & CSS Optimization (5 subtasks: eliminate dual CSS inlining, per-build CSS audit in QA, template CSS precompilation, consolidated sidecar CSS pipeline, tests & docs)
+- **Phase 27** — Email Client Rendering Fidelity & Pre-Send Testing (6 subtasks: expand emulators to 7 clients, rendering confidence scoring, pre-send rendering gate, emulator calibration loop, headless email sandbox, frontend rendering dashboard & tests)
 
 **Completed phases 0–25** — see `docs/TODO-completed.md` for details (use jDocMunch `search_sections`).
 
