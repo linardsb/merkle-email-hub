@@ -10,6 +10,8 @@ from app.ai.templates.models import (
     TemplateMetadata,
     TemplateSlot,
 )
+from app.templates.upload.analyzer import WrapperInfo
+from app.templates.upload.wrapper_utils import inject_centering_wrapper
 
 
 class TemplateBuilder:
@@ -25,8 +27,13 @@ class TemplateBuilder:
         sections: list[str],
         name: str | None = None,
         description: str | None = None,
+        wrapper: WrapperInfo | None = None,
     ) -> GoldenTemplate:
         """Create GoldenTemplate with uploaded_ namespace prefix."""
+        # Ensure centering wrapper is present if metadata says one existed
+        if wrapper is not None:
+            sanitized_html = self._ensure_wrapper(sanitized_html, wrapper)
+
         # Generate name from content hash if not provided
         html_hash = hashlib.sha256(sanitized_html.encode()).hexdigest()[:6]
         template_name = name or f"uploaded_{layout_type}_{html_hash}"
@@ -53,6 +60,23 @@ class TemplateBuilder:
             description=desc,
         )
 
+        # Serialize wrapper info for storage
+        wrapper_metadata: dict[str, str | None] | None = None
+        if wrapper is not None:
+            wrapper_metadata = {
+                "tag": wrapper.tag,
+                "width": wrapper.width,
+                "align": wrapper.align,
+                "style": wrapper.style,
+                "bgcolor": wrapper.bgcolor,
+                "cellpadding": wrapper.cellpadding,
+                "cellspacing": wrapper.cellspacing,
+                "border": wrapper.border,
+                "role": wrapper.role,
+                "inner_td_style": wrapper.inner_td_style,
+                "mso_wrapper": wrapper.mso_wrapper,
+            }
+
         return GoldenTemplate(
             metadata=metadata,
             html=sanitized_html,
@@ -60,4 +84,20 @@ class TemplateBuilder:
             default_tokens=tokens,
             source="uploaded",
             project_id=None,
+            wrapper_metadata=wrapper_metadata,
+        )
+
+    @staticmethod
+    def _ensure_wrapper(html: str, wrapper: WrapperInfo) -> str:
+        """Ensure centering wrapper is present in HTML.
+
+        If the HTML already has centering (detected by inject_centering_wrapper),
+        returns it unchanged. Otherwise, injects a centering wrapper
+        using the metadata from the original import.
+        """
+        width = int(wrapper.width) if wrapper.width and wrapper.width.isdigit() else 600
+        return inject_centering_wrapper(
+            html,
+            width=width,
+            mso_wrapper=wrapper.mso_wrapper,
         )

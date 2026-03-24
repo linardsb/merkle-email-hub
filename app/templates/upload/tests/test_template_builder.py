@@ -132,3 +132,81 @@ class TestTemplateBuilder:
             description="My custom description",
         )
         assert tmpl.metadata.description == "My custom description"
+
+    def test_wrapper_metadata_stored(self) -> None:
+        """Wrapper metadata is persisted on GoldenTemplate."""
+        from app.templates.upload.analyzer import WrapperInfo
+
+        wrapper = WrapperInfo(
+            tag="table",
+            width="600",
+            align="center",
+            bgcolor="#ffffff",
+        )
+        tmpl = TemplateBuilder().build(
+            sanitized_html="<html><body><table width='600'><tr><td>Hi</td></tr></table></body></html>",
+            slots=self._make_slots(),
+            tokens=self._make_tokens(),
+            layout_type="promotional",
+            column_count=1,
+            sections=["hero"],
+            wrapper=wrapper,
+        )
+        assert tmpl.wrapper_metadata is not None
+        assert tmpl.wrapper_metadata["width"] == "600"
+        assert tmpl.wrapper_metadata["align"] == "center"
+        assert tmpl.wrapper_metadata["bgcolor"] == "#ffffff"
+
+    def test_no_wrapper_metadata_when_none(self) -> None:
+        """No wrapper -> wrapper_metadata is None."""
+        tmpl = TemplateBuilder().build(
+            sanitized_html="<html><body>Test</body></html>",
+            slots=self._make_slots(),
+            tokens=self._make_tokens(),
+            layout_type="newsletter",
+            column_count=1,
+            sections=["body"],
+        )
+        assert tmpl.wrapper_metadata is None
+
+    def test_ensure_wrapper_adds_centering(self) -> None:
+        """HTML without centering gets wrapper injected."""
+        from app.templates.upload.analyzer import WrapperInfo
+
+        wrapper = WrapperInfo(tag="table", width="600", align="center")
+        html = "<html><body><table width='600'><tr><td>Content</td></tr></table></body></html>"
+        tmpl = TemplateBuilder().build(
+            sanitized_html=html,
+            slots=(),
+            tokens=self._make_tokens(),
+            layout_type="promotional",
+            column_count=1,
+            sections=["content"],
+            wrapper=wrapper,
+        )
+        assert "max-width: 600px" in tmpl.html
+        assert "margin: 0 auto" in tmpl.html
+
+    def test_ensure_wrapper_no_double_wrap(self) -> None:
+        """HTML that already has centering is not double-wrapped."""
+        from app.templates.upload.analyzer import WrapperInfo
+
+        wrapper = WrapperInfo(tag="table", width="600", align="center")
+        html = (
+            "<html><body>"
+            '<table width="600" align="center"><tr><td>'
+            '<table width="600"><tr><td>Content</td></tr></table>'
+            "</td></tr></table>"
+            "</body></html>"
+        )
+        tmpl = TemplateBuilder().build(
+            sanitized_html=html,
+            slots=(),
+            tokens=self._make_tokens(),
+            layout_type="promotional",
+            column_count=1,
+            sections=["content"],
+            wrapper=wrapper,
+        )
+        # Should not add a second wrapper
+        assert tmpl.html.count("margin: 0 auto") <= 1

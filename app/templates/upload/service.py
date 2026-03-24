@@ -206,6 +206,7 @@ class TemplateUploadService:
             sections=section_names,
             name=name,
             description=description,
+            wrapper=analysis.wrapper,
         )
 
         # Register in TemplateRegistry
