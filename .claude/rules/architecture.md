@@ -41,6 +41,24 @@ Binary pass/fail LLM judges calibrated via TPR/TNR. Key files: `runner.py`, `jud
 
 **Consistency Enforcement (11.25.5):** `app/qa_engine/repair/brand.py` — `BrandRepair` stage 8 in repair pipeline. Deterministic off-palette color correction (Euclidean RGB distance), footer legal text injection, logo URL correction. `RepairPipeline` accepts `design_system`. E2e test: design system → pipeline → repair → QA validation.
 
+## Frontend (`cms/`)
+
+**Builder:** `components/builder/` — visual email builder with DnD component palette, sortable canvas, sandboxed preview, undo/redo. `panels/` — property panel (Content/Style/Responsive/Advanced tabs, palette-restricted color picker, slot editors, design system token overrides, responsive toggles, MSO conditional, HTML attribute editor). `hooks/use-builder.ts` — state reducer + HTML assembler (slot fills, 13-token CSS overrides, dark mode CSS, MSO ghost tables, scoped section CSS, URI/CSS sanitization).
+
+**Builder Sync:** `lib/builder-sync/` — bidirectional code↔builder sync. `ast-mapper.ts` HTML parser with ESP token preservation (Liquid/Handlebars/AMPscript/ERB), structural ESP internalization, dynamic column group detection, `parseInlineStyle` quote-aware CSS parser. `sync-engine.ts` debounced sync (builder wins). `section-markers.ts` + `annotation-utils.ts` for section merge/split/unwrap/rename.
+
+**Collaboration:** `components/collaboration/` — presence panel, collaboration banner, conflict resolver, remote cursor styles. `hooks/use-presence.ts` — awareness state + follow mode.
+
+**Tolgee TMS:** `hooks/use-tolgee.ts` — SWR hooks for connection, languages, sync, pull, locale build. `components/tolgee/` — translation key panel, side-by-side locale preview, per-locale QA matrix, in-context overlay, connection dialog.
+
+**Design System:** `types/design-system-config.ts` — DesignSystemConfig + palette swatch extraction.
+
+**Ecosystem:** `components/ecosystem/` — unified dashboard (overview quadrants, plugin manager, workflow execution with Gantt timeline, report generator with PDF preview, Penpot connection browser). SWR hooks: `use-plugins`, `use-workflows`, `use-reports`, `use-penpot`. Route: `/ecosystem`.
+
+**Rendering:** `components/rendering/` — pre-send rendering gate (traffic-light badge, per-client confidence bars, admin override) + dashboard (preview grid for 14 clients, confidence summary, calibration health panel). `hooks/use-rendering-gate.ts`, `hooks/use-rendering-dashboard.ts`. Wired into export dialog + push-to-ESP dialog. Dashboard tab on `/renderings`.
+
+**Approvals:** `components/approvals/` — approval request dialog, gate panel (blocks export/push), status badge, decision bar, feedback panel, audit timeline, version compare. `hooks/use-approvals.ts` (8 SWR hooks). `hooks/use-export-pre-check.ts` — combined QA + rendering + approval pre-check. List page `/approvals`, detail page `/approvals/[id]`.
+
 ## Maizzle Sidecar
 
 `services/maizzle-builder/` — POST /build (+ `target_clients` → `optimization` metadata), POST /preview, GET /health (+ `ontology_version`). Consolidated CSS pipeline: `postcss-email-optimize.js` PostCSS plugin (ontology-driven elimination/conversion) + Lightning CSS minification, runs before Maizzle/Juice inlining. Ontology synced via `scripts/sync-ontology.js` (`make sync-ontology`).

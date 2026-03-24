@@ -2668,3 +2668,122 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - [x] ~~25.14 Multi-variant campaign assembly~~ **DONE**
 
 ---
+
+## Phase 27 — Email Client Rendering Fidelity & Pre-Send Testing
+
+### 27.1 Expand Email Client Emulators `[Backend]` — DONE
+- Extended `EmailClientEmulator` chain-of-rules system from 2 emulators (Gmail, Outlook.com) to 8 clients / 14 profiles
+- New emulators: Yahoo Mail (class rewriting), Samsung Mail (dark mode), Apple Mail, Thunderbird, Outlook desktop (Word CSS stripping), Android Gmail, Outlook.com dark mode
+- Each rule publishes `confidence_impact` used by scoring in 27.2
+- [x] ~~27.1 Expand email client emulators~~ DONE
+
+### 27.2 Rendering Confidence Scoring `[Backend]` — DONE
+- 4-signal confidence scorer combining emulator rule coverage, layout complexity, calibration history, and CSS feature support
+- `GET /api/v1/rendering/confidence/{client_id}` endpoint
+- Config: `RENDERING__CONFIDENCE_ENABLED`
+- [x] ~~27.2 Rendering confidence scoring~~ DONE
+
+### 27.3 Pre-Send Rendering Gate `[Backend + Frontend]` — DONE
+- `app/rendering/gate.py` — `RenderingSendGate` with `evaluate()` returning `GateResult` (per-client confidence vs tiered thresholds, blocking reasons, remediation suggestions)
+- `app/rendering/gate_config.py` — per-project config with 3 gate modes (enforce/warn/skip), 3-tier thresholds (85%/70%/60%)
+- Frontend: `GatePanel` (traffic-light summary), `GateClientRow` (per-client confidence bar with threshold line), `GateSummaryBadge`
+- Wired into export dialog + push-to-ESP dialog; admin override with audit logging
+- Alembic migration: `rendering_gate_config` JSON column on `projects`
+- [x] ~~27.3 Pre-send rendering gate~~ DONE
+
+### 27.4 Emulator Calibration Loop `[Backend]` — DONE
+- `EmulatorCalibrator` comparing local screenshots against Litmus/EoA ground truth via ODiff
+- EMA accuracy tracking (alpha=0.3), regression detection (>10% drop), budget cap enforcement
+- `CalibrationSampler` selecting diverse HTML samples for calibration runs
+- Config: `RENDERING__CALIBRATION__ENABLED`
+- [x] ~~27.4 Emulator calibration loop~~ DONE
+
+### 27.5 Headless Email Client Sandbox `[Backend]` — DONE
+- SMTP-based Mailpit capture pipeline: send email via SMTP, capture rendered DOM, compare with `DOMDiff`
+- `SandboxProfile` registry for real client environments
+- Playwright Roundcube integration for webmail DOM extraction
+- Sandbox results weighted at 0.5x in confidence scoring
+- Config: `RENDERING__SANDBOX__ENABLED`
+- [x] ~~27.5 Headless email client sandbox~~ DONE
+
+### 27.6 Frontend Rendering Dashboard & Tests `[Frontend + Full-Stack]` — DONE
+- `cms/apps/web/src/components/rendering/rendering-dashboard.tsx` — preview grid (14 client profiles, 4-col responsive), confidence summary bar (weighted by market share), gate status panel, calibration health panel (sparkline trends, recalibrate buttons)
+- `cms/apps/web/src/components/rendering/confidence-bar.tsx` — reusable component extracted for shared use
+- `cms/apps/web/src/hooks/use-rendering-dashboard.ts` — SWR hooks for previews, gate evaluation, calibration summary/history
+- 27 frontend tests across 3 test files; 90+ backend tests across Phase 27 modules
+- [x] ~~27.6 Frontend rendering dashboard & tests~~ DONE
+
+---
+
+## Phase 28 — Export Quality Gates & Approval Workflow
+
+### 28.1 QA Enforcement in Export Flow `[Backend]` — DONE
+- `app/connectors/qa_gate.py` — `ExportQAGate` running 14 QA checks with per-project blocking/warning/ignored classification
+- `app/connectors/qa_gate_config.py` — `ExportQAConfig` (enforce/warn/skip modes, configurable blocking checks list)
+- Pre-check endpoint: `POST /api/v1/connectors/export/pre-check` returning combined QA + rendering gate results
+- Export pipeline: QA gate → rendering gate → ESP provider, with `skip_qa_gate` admin override + audit
+- Frontend: export-dialog.tsx and push-to-esp-dialog.tsx updated with QA failure/warning sections alongside rendering confidence
+- `cms/apps/web/src/hooks/use-export-pre-check.ts` — combined pre-check SWR hook
+- Alembic migration: `export_qa_config` JSON column on `projects`; 15+ backend tests, 5+ frontend tests
+- [x] ~~28.1 QA enforcement in export flow~~ DONE
+
+### 28.2 Approval Workflow → Export Integration `[Backend]` — DONE
+- `app/connectors/approval_gate.py` — `ExportApprovalGate` checking `ApprovalRequest` status for build, third gate in export pipeline (QA → rendering → approval → ESP)
+- Per-project `require_approval_for_export` toggle, `ApprovalRequiredError` on unapproved builds
+- `app/approval/service.py` extended with `get_approval_for_build()` and `is_approved()` methods
+- Pre-check endpoint returns approval status alongside QA and rendering results; `skip_approval` admin override; 12+ tests
+- [x] ~~28.2 Approval workflow → export integration~~ DONE
+
+### 28.3 Approval Frontend UI `[Frontend]` — DONE
+- `cms/apps/web/src/components/approvals/` — `approval-request-dialog.tsx` (submit for review with QA summary + note), `approval-gate-panel.tsx` (reviewer decision panel with preview/QA/rendering, approve/revise/reject actions), feedback thread, audit timeline, status badge, version compare
+- `cms/apps/web/src/hooks/use-approvals.ts` — 8 SWR hooks (list, detail, feedback, audit, create, decide, add feedback, useApprovalStatus)
+- `cms/apps/web/src/types/approval.ts` — ApprovalStatus, ApprovalRequest, ApprovalDecision, Feedback, AuditEntry types
+- Integrated into workspace page (submit button), export dialog (gate panel), project settings (require approval toggle)
+- List page `/approvals`, detail page `/approvals/[id]`; 8+ review panel tests, 5+ hook tests
+- [x] ~~28.3 Approval frontend UI~~ DONE
+
+---
+
+## Phase 29 — Design Import Enhancements
+
+### 29.1 Brief-Only Template Creation `[Backend + Frontend]` — DONE
+- Brief-only template creation path — allows users to create templates from a text brief without requiring a live Figma/Penpot design file connection
+- [x] ~~29.1 Brief-only template creation~~ DONE
+
+### 29.2 Penpot CSS-to-Email Converter Integration `[Backend]` — DONE
+- `app/design_sync/penpot/converter_service.py` — `PenpotConverterService.convert()` walking design tree, producing table-based email HTML with inline styles and MSO conditionals
+- Enhanced `app/design_sync/penpot/converter.py` — `node_to_email_html()` with COMPONENT/INSTANCE handling, auto-layout→table conversion, background/border/padding extraction; `_group_into_rows()` with overlap handling, hero image detection, CTA button detection
+- `app/design_sync/import_service.py` — Penpot imports pass initial HTML to Scaffolder as `initial_html` for enhancement (vs generating from brief alone)
+- Config: `DESIGN_SYNC__PENPOT_CONVERTER_ENABLED`; 15+ integration tests in `app/design_sync/penpot/tests/test_converter_integration.py`
+- [x] ~~29.2 Penpot CSS-to-email converter integration~~ DONE
+
+---
+
+## Phase 30 — End-to-End Testing & CI Quality
+
+### 30.1 Playwright E2E User Journey Suite `[Frontend + Full-Stack]` — DONE
+- 9 spec files in `cms/apps/web/e2e/`: auth (3 tests), dashboard (3), workspace (5), builder (5), export (5), approval (4), design-sync (3), collaboration (2), ecosystem (2) — 32+ test cases total
+- Shared fixtures: `cms/apps/web/e2e/fixtures/` (auth, project, template, mock-esp)
+- `cms/apps/web/e2e/global-setup.ts` + `global-teardown.ts` for API-based test data seeding/cleanup
+- `cms/apps/web/playwright.config.ts` — screenshot-on-failure, 30s timeout, HTML report
+- Makefile: `make e2e` (headless), `make e2e-ui` (interactive), `make e2e-report` (open HTML report)
+- [x] ~~30.1 Playwright e2e user journey suite~~ DONE
+
+### 30.2 Visual Regression Testing in CI `[Full-Stack + CI]` — DONE
+- `app/rendering/tests/visual_regression/` — `BaselineGenerator` (5 golden templates x 14 profiles), `VisualRegressionRunner` (ODiff comparison, 0.5% pixel diff threshold)
+- Baselines committed in `app/rendering/tests/visual_regression/baselines/` with manifest.json
+- `.gitattributes` for PNG handling
+- Makefile: `make rendering-baselines` (regenerate), `make rendering-regression` (CI-safe comparison)
+- Tests marked `@pytest.mark.visual_regression` for selective execution; 5+ regression tests
+- [x] ~~30.2 Visual regression testing in CI~~ DONE
+
+### 30.3 Multi-Browser & CLI E2E Coverage `[Frontend + CI]` — DONE
+- `cms/apps/web/playwright.config.ts` extended with Firefox and WebKit projects
+- Browser-specific test selection: builder/workspace/auth on all 3 browsers, export/approval Chromium-only, collaboration Chromium+Firefox
+- Cross-browser hardening: Firefox DnD workarounds, WebKit contentEditable waits
+- `cms/apps/web/e2e/CLI_E2E_TESTING.md` — documents CLI-based exploratory e2e (13 journeys via agent-browser)
+- Makefile: `make e2e-all-browsers` (full Chromium+Firefox+WebKit matrix), `make e2e-firefox`, `make e2e-webkit`
+- CI: PR checks = Chromium-only, nightly = full matrix, release gate = full matrix + manual CLI review
+- [x] ~~30.3 Multi-browser & CLI e2e coverage~~ DONE
+
+---
