@@ -12,7 +12,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -235,9 +235,7 @@ async def _seed_components(db: AsyncSession, user: User) -> int:
     return created + updated
 
 
-async def _seed_design_connections(
-    db: AsyncSession, project: Project, user: User
-) -> int:
+async def _seed_design_connections(db: AsyncSession, project: Project, user: User) -> int:
     """Seed demo design connections with token snapshots."""
     result = await db.execute(
         select(DesignConnection).where(DesignConnection.project_id == project.id)

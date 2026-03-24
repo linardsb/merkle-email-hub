@@ -170,7 +170,7 @@
 
 ### In Progress
 
-**Phase 25:** Platform Ecosystem & Advanced Integrations — 25.9 tests & docs, 25.12 template-to-eval pipeline, 25.14 multi-variant campaign assembly, 25.15 tests for 25.10–25.14.
+**Phase 31:** HTML Import Fidelity & Preview Accuracy — 31.1–31.5 done (Maizzle passthrough, inline CSS ontology pipeline, wrapper metadata preservation, wrapper reconstruction on assembly, dark mode text safety & sandbox fix). Remaining: 31.6 typography/spacing tokens, 31.7 image asset import, 31.8 integration tests.
 
 ### Infrastructure Built
 

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Eye, Loader2 } from "lucide-react";
 import type { Viewport } from "./preview-toolbar";
+import { ensureDarkModeContrast } from "@/lib/dark-mode-contrast";
 
 const VIEWPORT_WIDTHS: Record<Viewport, number | null> = {
   desktop: null,
@@ -40,20 +41,23 @@ export function PreviewIframe({
     if (!compiledHtml) return null;
     if (!darkMode) return compiledHtml;
 
+    // Fix dark-on-dark text visibility before injecting dark mode styles
+    const safeHtml = ensureDarkModeContrast(compiledHtml);
+
     // Inject dark mode meta + style to trigger @media (prefers-color-scheme: dark) in email HTML
-    if (compiledHtml.includes("</head>")) {
-      return compiledHtml.replace(
+    if (safeHtml.includes("</head>")) {
+      return safeHtml.replace(
         "</head>",
-        `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`
+        `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`,
       );
     }
-    if (compiledHtml.includes("<head>")) {
-      return compiledHtml.replace(
+    if (safeHtml.includes("<head>")) {
+      return safeHtml.replace(
         "<head>",
-        `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`
+        `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`,
       );
     }
-    return `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n${compiledHtml}`;
+    return `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n${safeHtml}`;
   }, [compiledHtml, darkMode]);
 
   const viewportWidth = viewportWidthOverride ?? VIEWPORT_WIDTHS[viewport];

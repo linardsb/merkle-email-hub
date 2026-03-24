@@ -94,7 +94,7 @@ export function ApprovalPreview({ compiledHtml }: ApprovalPreviewProps) {
         >
           <iframe
             srcDoc={htmlWithDarkMode}
-            sandbox=""
+            sandbox="allow-same-origin"
             title={"Preview"}
             className="h-[800px] w-full border-0"
           />

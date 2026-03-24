@@ -65,11 +65,11 @@
 
 > Fix the 8 root causes that break imported pre-compiled email HTML: Maizzle double-processing, inline CSS not compiled through ontology, lost centering wrappers, dark mode text visibility, sandbox image blocking, wrapper metadata loss during section detection, incomplete typography/spacing token extraction, and missing image asset import.
 
-- [ ] 31.1 Maizzle passthrough for pre-compiled HTML
-- [ ] 31.2 Inline CSS compilation via ontology pipeline
-- [ ] 31.3 Preserve wrapper table metadata in section analyzer
-- [ ] 31.4 Wrapper reconstruction on template assembly
-- [ ] 31.5 Preview iframe dark mode text safety & sandbox fix
+- [x] ~~31.1 Maizzle passthrough for pre-compiled HTML~~ DONE
+- [x] ~~31.2 Inline CSS compilation via ontology pipeline~~ DONE
+- [x] ~~31.3 Preserve wrapper table metadata in section analyzer~~ DONE
+- [x] ~~31.4 Wrapper reconstruction on template assembly~~ DONE
+- [x] ~~31.5 Preview iframe dark mode text safety & sandbox fix~~ DONE
 - [ ] 31.6 Enriched typography & spacing token pipeline
 - [ ] 31.7 Image asset import & dimension preservation
 - [ ] 31.8 Tests & integration verification
@@ -97,7 +97,7 @@
   - Add `passthrough: bool = False` to `PreviewResponse` and `BuildResponse` schemas so the frontend can display a "passthrough" indicator if desired
 **Security:** No security surface change. `sanitize_html_xss()` still runs in Python after the sidecar returns (line 127 in `service.py`). The sidecar passthrough skips Maizzle transforms but preserves the ontology-driven CSS optimization and the Python-side XSS sanitization. Pre-compiled HTML detection is read-only string analysis — no eval, no dynamic execution.
 **Verify:** Paste pre-compiled email HTML (with inline styles, table layout, `<!DOCTYPE>`) into editor → press Ctrl+S → preview shows HTML faithfully without style scrambling. Same HTML sent to `/build` → response includes `passthrough: true`. Maizzle template HTML (with `<extends>`, Tailwind classes) → `passthrough: false`, normal Maizzle pipeline runs. CSS optimization still works on passthrough (unsupported properties removed from `<style>` blocks). `cd services/maizzle-builder && npm test` passes. `make test` passes.
-- [ ] 31.1 Maizzle passthrough for pre-compiled HTML
+- [x] ~~31.1 Maizzle passthrough for pre-compiled HTML~~ DONE
 
 ### 31.2 Inline CSS Compilation via Ontology Pipeline `[Backend + Sidecar]`
 **What:** Route pre-compiled email HTML through proper CSS parsing and the ontology support matrix so that every CSS declaration — both in `<style>` blocks and inline `style=""` attributes — is parsed with a real CSS parser (not regex), analyzed against target email clients, optimized, shorthand-expanded, and **font-family stacks resolved per target client**. Replace the current regex-based `style=""` parsing (`_INLINE_STYLE_RE` + `line.split(":")`) with PostCSS synthetic stylesheet approach in the sidecar and CSSTree/Lightning CSS in the Python compiler. Add a client-specific font resolution layer that validates font-family values against each target client's supported font list and injects appropriate system font fallbacks.
@@ -263,7 +263,7 @@ A new resolution step that runs after shorthand expansion and ontology optimizat
 
 **Security:** PostCSS and Lightning CSS are deterministic parsers — no eval, no code execution from CSS content. `htmlparser2` is a well-audited streaming parser used by Cheerio (millions of weekly downloads). Ontology data is static JSON. The compiler's output still passes through `sanitize_html_xss()`. No new input paths — same HTML that already went through XSS sanitization.
 **Verify:** Import email with `font: 700 32px/40px Inter, sans-serif` → shorthand expanded to 4 individual properties, all visible in token extraction. Import email with `display: flex` → `removed_properties` includes it. Import email with `padding: 16px 32px` → expanded to 4 longhand properties, spacing tokens capture individual sides. Import email with `url(https://example.com)` in background → colon in URL doesn't break parser. Import email with `@media (max-width: 600px)` responsive rules → `responsive_breakpoints: ["600px"]` in optimization preview, media query preserved in output. Import email with `font-family: Inter, sans-serif` into project with `DesignSystem.typography.heading_font = "Montserrat"` → token diff shows `heading font: Inter → Montserrat (will_replace)`. Import with Outlook Desktop in target clients → `mso-font-alt: Arial` added to Inter elements, fallback stack includes `Arial, Helvetica, sans-serif`. Import into project with no design system → tokens stored as-is from HTML, no mapping. Import email with only email-safe CSS → no removals, no conversions. Sidecar (Layer A) and Python compiler (Layer B) produce equivalent optimization results. `cd services/maizzle-builder && npm test` passes. `make test` passes.
-- [ ] 31.2 Inline CSS compilation via ontology pipeline
+- [x] ~~31.2 Inline CSS compilation via ontology pipeline~~ DONE
 
 ### 31.3 Preserve Wrapper Table Metadata in Section Analyzer `[Backend]`
 **What:** Modify the `TemplateAnalyzer._detect_sections()` method to preserve the outer centering wrapper table's attributes (width, align, style, bgcolor, cellpadding, cellspacing) as structured metadata when it unwraps the single-wrapper pattern to extract inner section tables. Currently, when the analyzer finds `<table wrapper><tr><td><table section1/><table section2/>...` it replaces the wrapper with the inner tables, irreversibly losing the centering context (width="600", align="center", max-width styles).
@@ -304,7 +304,7 @@ A new resolution step that runs after shorthand expansion and ontology optimizat
   - Add `wrapper: WrapperPreview | None = None` to `AnalysisPreview`
 **Security:** Read-only metadata extraction from already-sanitized HTML. No new input paths. The MSO wrapper content is extracted from `sanitized_html` (already passed through `sanitize_html_xss()`).
 **Verify:** Upload email HTML with `<table width="600" align="center">` wrapper → analysis preview includes `wrapper.width="600"`, `wrapper.align="center"`. Upload email with `<td style="max-width: 600px; margin: 0 auto;">` → `wrapper.inner_td_style` captured. Upload email with MSO conditional wrapper → `wrapper.mso_wrapper` contains the `<!--[if mso]>` block. Upload email with no wrapper (multiple top-level tables) → `wrapper` is null. `make test` passes.
-- [ ] 31.3 Preserve wrapper table metadata in section analyzer
+- [x] ~~31.3 Preserve wrapper table metadata in section analyzer~~ DONE
 
 ### 31.4 Wrapper Reconstruction on Template Assembly `[Backend]`
 **What:** Modify the `TemplateBuilder` and the workspace preview flow to reconstruct the outer centering wrapper around section HTML when the template was imported with wrapper metadata (from 31.2). The wrapper is re-injected so that the assembled template renders centered at the correct width, matching the original imported email.
@@ -338,7 +338,7 @@ A new resolution step that runs after shorthand expansion and ontology optimizat
   - These utilities can be called independently from the template upload flow (e.g., by the design sync import service)
 **Security:** Wrapper reconstruction uses hardcoded centering patterns — no user input in the wrapper HTML structure. Width value comes from the original imported template (already sanitized). `ensure_wrapper()` only adds structural wrapper elements (table, div, MSO conditional) — no scripts, no event handlers. Output still passes through `sanitize_html_xss()`.
 **Verify:** Import email with `width="600" align="center"` wrapper → stored template retains centering → preview shows centered at 600px. Import email where wrapper was lost during processing → `ensure_wrapper()` adds centering → preview shows centered. Import email with MSO conditional wrapper → original MSO block preserved verbatim. Import email that already has centering → no double-wrapping. `make test` passes.
-- [ ] 31.4 Wrapper reconstruction on template assembly
+- [x] ~~31.4 Wrapper reconstruction on template assembly~~ DONE
 
 ### 31.5 Preview Iframe Dark Mode Text Safety & Sandbox Fix `[Frontend]`
 **What:** Fix two issues in the preview iframe component: (1) dark mode injection makes text with hardcoded dark colors invisible by not providing sufficient contrast safety, and (2) `sandbox=""` (maximum restriction) may block loading external images. Add contrast-safety CSS injection when dark mode is active, and relax sandbox to allow image loading.
@@ -398,7 +398,7 @@ A new resolution step that runs after shorthand expansion and ontology optimizat
     - Note: `allow-same-origin` without `allow-scripts` is safe — the iframe content cannot execute JavaScript, so same-origin access cannot be exploited
 **Security:** `sandbox="allow-same-origin"` without `allow-scripts` is explicitly safe — the iframe content has no script execution capability, so same-origin access cannot be used for XSS or data exfiltration. The dark mode contrast fix only modifies inline `color` CSS values — no script injection. The regex operates on the already-XSS-sanitized compiled HTML.
 **Verify:** Import email with dark nav links (`color:#101828`) + dark mode sections → toggle dark mode → nav links remain readable (light color applied). Toggle dark mode off → original colors restored. External placeholder images (`placehold.co`, `via.placeholder.com`) load in preview. Sandbox still blocks: JavaScript execution (test with `<script>alert(1)</script>` in HTML — no alert). `make check-fe` passes.
-- [ ] 31.5 Preview iframe dark mode text safety & sandbox fix
+- [x] ~~31.5 Preview iframe dark mode text safety & sandbox fix~~ DONE
 
 ### 31.6 Enriched Typography & Spacing Token Pipeline `[Backend]`
 **What:** Expand the token extraction to capture font-weight, line-height, letter-spacing, link/accent/muted color roles, responsive (mobile) design tokens, and **pixel-precise spacing from Figma layout data** from imported HTML and design sync. Leverage the shorthand-expanded CSS from 31.2 (where `font: 700 32px/40px Inter` is already split into individual properties) for accurate extraction. Extend the `DesignNode` data model to carry Figma auto-layout spacing (padding, itemSpacing, gap) and actual typography properties (font_family, font_size, font_weight, line_height) — replacing the current height-as-font-size proxy. Add font-size, line-height, font-weight, and **per-section/per-element spacing** replacement steps to the `TemplateAssembler` so that exported HTML matches the Figma design in exact dimensions.

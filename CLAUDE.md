@@ -57,7 +57,7 @@ For full architecture details see `.claude/docs/architecture-deep-dive.md`. For 
 
 See `TODO.md` for details. See `docs/TODO-completed.md` for completed phases 0-30.
 
-Phases 0–30 complete. **Phase 31** (HTML Import Fidelity & Preview Accuracy) is current.
+Phases 0–30 complete. **Phase 31** (HTML Import Fidelity & Preview Accuracy) is current — 31.1–31.5 done (Maizzle passthrough, CSS ontology pipeline, wrapper metadata capture, wrapper reconstruction, dark mode text safety & sandbox fix). Remaining: 31.6–31.8.
 
 ## Compact instructions
 

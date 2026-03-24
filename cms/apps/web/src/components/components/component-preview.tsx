@@ -63,7 +63,7 @@ export function ComponentPreview({
     >
       <iframe
         srcDoc={srcdoc}
-        sandbox=""
+        sandbox="allow-same-origin"
         title={"Preview"}
         className={`h-full w-full border-0 ${darkMode ? "bg-[#121212]" : "bg-white"}`}
         style={{ pointerEvents: interactive ? "auto" : "none" }}

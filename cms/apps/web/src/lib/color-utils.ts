@@ -44,6 +44,33 @@ export function colorDistance(hex1: string, hex2: string): number {
   return Math.sqrt((c1.r - c2.r) ** 2 + (c1.g - c2.g) ** 2 + (c1.b - c2.b) ** 2);
 }
 
+/** Normalize 3-digit hex to 6-digit (e.g. #abc -> #aabbcc). */
+function normalizeHex(hex: string): string {
+  const h = hex.replace(/^#/, "");
+  if (h.length === 3) {
+    return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+  }
+  return `#${h}`;
+}
+
+/**
+ * WCAG 2.1 relative luminance (0 = black, 1 = white).
+ * Accepts 3-digit or 6-digit hex with optional leading #.
+ */
+export function relativeLuminance(hex: string): number {
+  const rgb = hexToRgb(normalizeHex(hex));
+  if (!rgb) return 0;
+  const [rs, gs, bs] = [rgb.r / 255, rgb.g / 255, rgb.b / 255].map((c) =>
+    c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
+  );
+  return 0.2126 * rs! + 0.7152 * gs! + 0.0722 * bs!;
+}
+
+/** True when the color would be hard to read on a dark (#121212) background. */
+export function isDarkColor(hex: string): boolean {
+  return relativeLuminance(hex) < 0.3;
+}
+
 /** Count occurrences of a hex value in HTML string (case-insensitive). */
 export function countHexOccurrences(html: string, hex: string): number {
   const normalized = hex.toLowerCase().replace(/^#/, "");
