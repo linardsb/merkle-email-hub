@@ -45,6 +45,11 @@ _PENPOT_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
 }
 
 
+def _float_or_none(val: object) -> float | None:
+    """Convert a value to float if numeric, otherwise None."""
+    return float(val) if isinstance(val, (int, float)) else None
+
+
 def extract_file_id(url: str) -> str:
     """Extract Penpot file UUID from a URL."""
     match = _PENPOT_URL_RE.search(url)
@@ -336,6 +341,58 @@ class PenpotDesignSyncService:
                         self._obj_to_node(str(child_id), child_obj, all_objects, depth=child_depth),
                     )
 
+        # Auto-layout spacing
+        padding_top = padding_right = padding_bottom = padding_left = None
+        item_spacing_val = counter_axis_spacing_val = None
+        layout_mode_val: str | None = None
+        layout = obj.get("layout")
+        if layout in ("flex", "grid"):
+            pad = obj.get("layout-padding", {})
+            if isinstance(pad, dict):
+                padding_top = _float_or_none(pad.get("p1") or pad.get("top"))
+                padding_right = _float_or_none(pad.get("p2") or pad.get("right"))
+                padding_bottom = _float_or_none(pad.get("p3") or pad.get("bottom"))
+                padding_left = _float_or_none(pad.get("p4") or pad.get("left"))
+            gap = obj.get("layout-gap", {})
+            if isinstance(gap, dict):
+                item_spacing_val = _float_or_none(gap.get("row-gap"))
+                counter_axis_spacing_val = _float_or_none(gap.get("column-gap"))
+            flex_dir = obj.get("layout-flex-dir", "column")
+            layout_mode_val = "VERTICAL" if flex_dir == "column" else "HORIZONTAL"
+
+        # TEXT node typography
+        dn_font_family: str | None = None
+        dn_font_size: float | None = None
+        dn_font_weight: int | None = None
+        dn_line_height_px: float | None = None
+        dn_letter_spacing_px: float | None = None
+        if node_type_str == "text":
+            content_data = obj.get("content", {})
+            paragraphs = content_data.get("children", []) if isinstance(content_data, dict) else []
+            for para in paragraphs:
+                for span in para.get("children", []):
+                    raw_ff = span.get("font-family")
+                    if dn_font_family is None and isinstance(raw_ff, str):
+                        dn_font_family = raw_ff
+                    raw_fs = span.get("font-size")
+                    if raw_fs is not None and dn_font_size is None:
+                        dn_font_size = float(raw_fs) if isinstance(raw_fs, (int, float)) else None
+                    raw_fw = span.get("font-weight")
+                    if raw_fw is not None and dn_font_weight is None:
+                        try:
+                            dn_font_weight = (
+                                int(float(raw_fw))
+                                if isinstance(raw_fw, (int, float, str))
+                                else None
+                            )
+                        except (ValueError, TypeError):
+                            pass
+                    raw_lh = span.get("line-height")
+                    if raw_lh is not None and dn_line_height_px is None:
+                        dn_line_height_px = (
+                            float(raw_lh) if isinstance(raw_lh, (int, float)) else None
+                        )
+
         # Extract fill color for converter pipeline
         fill_color: str | None = None
         text_color_hex: str | None = None
@@ -362,6 +419,18 @@ class PenpotDesignSyncService:
             text_content=text_content,
             fill_color=fill_color,
             text_color=text_color_hex,
+            padding_top=padding_top,
+            padding_right=padding_right,
+            padding_bottom=padding_bottom,
+            padding_left=padding_left,
+            item_spacing=item_spacing_val,
+            counter_axis_spacing=counter_axis_spacing_val,
+            layout_mode=layout_mode_val,
+            font_family=dn_font_family,
+            font_size=dn_font_size,
+            font_weight=dn_font_weight,
+            line_height_px=dn_line_height_px,
+            letter_spacing_px=dn_letter_spacing_px,
         )
 
     def _extract_components(self, file_data: dict[str, Any]) -> list[DesignComponent]:

@@ -70,7 +70,7 @@
 - [x] ~~31.3 Preserve wrapper table metadata in section analyzer~~ DONE
 - [x] ~~31.4 Wrapper reconstruction on template assembly~~ DONE
 - [x] ~~31.5 Preview iframe dark mode text safety & sandbox fix~~ DONE
-- [ ] 31.6 Enriched typography & spacing token pipeline
+- [x] ~~31.6 Enriched typography & spacing token pipeline~~ DONE
 - [ ] 31.7 Image asset import & dimension preservation
 - [ ] 31.8 Tests & integration verification
 
@@ -592,7 +592,7 @@ Additionally, color role detection is too coarse, and responsive `@media` rules 
 - *Responsive from HTML:* Import email with `@media (max-width: 600px) { h1 { font-size: 24px } }` → `responsive: {mobile_heading_size: "24px"}`, `responsive_breakpoints: ("600px",)`.
 - *Design system overrides:* Apply design system with `font_sizes: {heading: "28px", body: "14px"}` → assembled HTML has `font-size: 28px` on headings, `14px` on body. Apply with `responsive: {mobile_heading_size: "22px"}` → `@media` block updated. If no `@media` existed, one is generated.
 - *Color roles:* Link colors extracted as `link` role (not generic `text`). `make test` passes.
-- [ ] 31.6 Enriched typography & spacing token pipeline
+- [x] ~~31.6 Enriched typography & spacing token pipeline~~ DONE
 
 ### 31.7 Image Asset Import & Dimension Preservation `[Backend]`
 **What:** Add image asset downloading and re-hosting to the template upload pipeline, matching what the design-sync import service already does. Extract image dimensions (width/height) from `<img>` tags and store them as structured metadata alongside the template, so that images are reliably served from the hub's asset storage and their dimensions are preserved for layout fidelity.

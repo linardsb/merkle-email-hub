@@ -85,6 +85,11 @@ class DesignSystemMapper:
             fonts=mapped_fonts,
             font_sizes=mapped_sizes,
             spacing=mapped_spacing,
+            font_weights=dict(extracted.font_weights),
+            line_heights=dict(extracted.line_heights),
+            letter_spacings=dict(extracted.letter_spacings),
+            responsive=dict(extracted.responsive),
+            responsive_breakpoints=extracted.responsive_breakpoints,
         )
 
     def generate_diff(self, extracted: DefaultTokens, _mapped: DefaultTokens) -> list[TokenDiff]:
@@ -123,6 +128,18 @@ class DesignSystemMapper:
                 diffs.append(TokenDiff("spacing", role, ext_val, ds_val, "compatible"))
             else:
                 diffs.append(TokenDiff("spacing", role, ext_val, ds_val, "will_replace"))
+
+        # Font weights
+        for role, ext_val in extracted.font_weights.items():
+            diffs.append(TokenDiff("font-weight", role, ext_val, "", "no_override"))
+
+        # Line heights
+        for role, ext_val in extracted.line_heights.items():
+            diffs.append(TokenDiff("line-height", role, ext_val, "", "no_override"))
+
+        # Letter spacings
+        for role, ext_val in extracted.letter_spacings.items():
+            diffs.append(TokenDiff("letter-spacing", role, ext_val, "", "no_override"))
 
         return diffs
 

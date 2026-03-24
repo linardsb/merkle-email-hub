@@ -97,3 +97,43 @@ class TestMapTokensWithDesignSystem:
         font_diffs = [d for d in diff if d.role == "custom_role"]
         assert len(font_diffs) == 1
         assert font_diffs[0].action == "no_override"
+
+
+class TestNewFieldMapping:
+    def test_font_weights_passed_through(self) -> None:
+        """font_weights preserved through map_tokens."""
+        tokens = DefaultTokens(font_weights={"heading": "700", "body": "400"})
+        mapper = DesignSystemMapper(None)
+        result = mapper.map_tokens(tokens)
+        assert result.font_weights == {"heading": "700", "body": "400"}
+
+    def test_line_heights_passed_through(self) -> None:
+        tokens = DefaultTokens(line_heights={"heading": "40px"})
+        mapper = DesignSystemMapper(None)
+        result = mapper.map_tokens(tokens)
+        assert result.line_heights == {"heading": "40px"}
+
+    def test_responsive_passed_through(self) -> None:
+        tokens = DefaultTokens(
+            responsive={"mobile_heading_size": "24px"},
+            responsive_breakpoints=("600px",),
+        )
+        mapper = DesignSystemMapper(None)
+        result = mapper.map_tokens(tokens)
+        assert result.responsive == {"mobile_heading_size": "24px"}
+        assert result.responsive_breakpoints == ("600px",)
+
+    def test_diff_includes_new_fields(self) -> None:
+        """generate_diff includes font-weight and line-height rows."""
+        ds = _make_design_system()
+        tokens = DefaultTokens(
+            font_weights={"heading": "700"},
+            line_heights={"body": "26px"},
+            letter_spacings={"heading": "0.5px"},
+        )
+        mapper = DesignSystemMapper(ds)
+        diff = mapper.generate_diff(tokens, mapper.map_tokens(tokens))
+        properties = {d.property for d in diff}
+        assert "font-weight" in properties
+        assert "line-height" in properties
+        assert "letter-spacing" in properties

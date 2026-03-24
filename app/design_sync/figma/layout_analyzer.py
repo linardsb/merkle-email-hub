@@ -41,6 +41,10 @@ class TextBlock:
     content: str
     font_size: float | None = None
     is_heading: bool = False
+    font_family: str | None = None
+    font_weight: int | None = None
+    line_height: float | None = None
+    letter_spacing: float | None = None
 
 
 @dataclass(frozen=True)
@@ -80,6 +84,12 @@ class EmailSection:
     buttons: list[ButtonElement] = field(default_factory=list[ButtonElement])
     spacing_after: float | None = None
     bg_color: str | None = None
+    padding_top: float | None = None
+    padding_right: float | None = None
+    padding_bottom: float | None = None
+    padding_left: float | None = None
+    item_spacing: float | None = None
+    element_gaps: tuple[float, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -91,6 +101,7 @@ class DesignLayoutDescription:
     sections: list[EmailSection] = field(default_factory=list[EmailSection])
     total_text_blocks: int = 0
     total_images: int = 0
+    spacing_map: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
 # ── Name-based section detection ──
@@ -162,6 +173,11 @@ def analyze_layout(structure: DesignFileStructure) -> DesignLayoutDescription:
                 images=images,
                 buttons=buttons,
                 bg_color=node.fill_color,
+                padding_top=node.padding_top,
+                padding_right=node.padding_right,
+                padding_bottom=node.padding_bottom,
+                padding_left=node.padding_left,
+                item_spacing=node.item_spacing,
             )
         )
 
@@ -174,12 +190,15 @@ def analyze_layout(structure: DesignFileStructure) -> DesignLayoutDescription:
     total_text_blocks = sum(len(s.texts) for s in sections)
     total_images = sum(len(s.images) for s in sections)
 
+    spacing_map = generate_spacing_map(sections)
+
     return DesignLayoutDescription(
         file_name=structure.file_name,
         overall_width=overall_width,
         sections=sections,
         total_text_blocks=total_text_blocks,
         total_images=total_images,
+        spacing_map=spacing_map,
     )
 
 
@@ -327,13 +346,17 @@ def _extract_texts(node: DesignNode) -> list[TextBlock]:
 def _walk_for_texts(node: DesignNode, results: list[TextBlock]) -> None:
     """Walk tree collecting TEXT nodes."""
     if node.type == DesignNodeType.TEXT and node.text_content:
-        # Use height as a proxy for font size
+        # Use actual font_size from design tool; fall back to bounding box height
         results.append(
             TextBlock(
                 node_id=node.id,
                 content=node.text_content,
-                font_size=node.height,
+                font_size=node.font_size if node.font_size is not None else node.height,
                 is_heading=False,
+                font_family=node.font_family,
+                font_weight=node.font_weight,
+                line_height=node.line_height_px,
+                letter_spacing=node.letter_spacing_px,
             )
         )
     for child in node.children:
@@ -454,6 +477,10 @@ def _detect_content_hierarchy(texts: list[TextBlock]) -> list[TextBlock]:
             content=t.content,
             font_size=t.font_size,
             is_heading=t.font_size is not None and t.font_size >= threshold,
+            font_family=t.font_family,
+            font_weight=t.font_weight,
+            line_height=t.line_height,
+            letter_spacing=t.letter_spacing,
         )
         for t in texts
     ]
@@ -488,8 +515,45 @@ def _calculate_spacing(sections: list[EmailSection]) -> list[EmailSection]:
                 buttons=section.buttons,
                 spacing_after=spacing,
                 bg_color=section.bg_color,
+                padding_top=section.padding_top,
+                padding_right=section.padding_right,
+                padding_bottom=section.padding_bottom,
+                padding_left=section.padding_left,
+                item_spacing=section.item_spacing,
+                element_gaps=_compute_element_gaps(section),
             )
         )
+    return result
+
+
+def _compute_element_gaps(section: EmailSection) -> tuple[float, ...]:
+    """Compute gaps between consecutive elements using auto-layout item_spacing."""
+    if section.item_spacing is not None:
+        n_children = len(section.texts) + len(section.images) + len(section.buttons)
+        if n_children > 1:
+            return tuple(section.item_spacing for _ in range(n_children - 1))
+    return ()
+
+
+def generate_spacing_map(sections: list[EmailSection]) -> dict[str, dict[str, float]]:
+    """Build per-section spacing specification from layout analysis."""
+    result: dict[str, dict[str, float]] = {}
+    for section in sections:
+        entry: dict[str, float] = {}
+        if section.padding_top is not None:
+            entry["padding_top"] = section.padding_top
+        if section.padding_right is not None:
+            entry["padding_right"] = section.padding_right
+        if section.padding_bottom is not None:
+            entry["padding_bottom"] = section.padding_bottom
+        if section.padding_left is not None:
+            entry["padding_left"] = section.padding_left
+        if section.item_spacing is not None:
+            entry["item_spacing"] = section.item_spacing
+        if section.spacing_after is not None:
+            entry["spacing_after"] = section.spacing_after
+        if entry:
+            result[section.node_id] = entry
     return result
 
 

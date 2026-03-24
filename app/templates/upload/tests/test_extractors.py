@@ -112,6 +112,87 @@ class TestSlotExtractor:
         assert result[0].slot_type == "body"
 
 
+class TestTokenExtractorTypography:
+    def test_font_weight_extraction(self) -> None:
+        """HTML with font-weight on headings -> font_weights populated."""
+        info = TokenInfo(
+            colors={},
+            fonts={},
+            font_sizes={},
+            spacing={},
+            font_weights={"heading": ["700", "700"], "body": ["400"]},
+            line_heights={"heading": ["40px"], "body": ["26px"]},
+            letter_spacings={"all": ["0.5px"]},
+        )
+        tokens = TokenExtractor().extract(info)
+        assert tokens.font_weights.get("heading") == "700"
+        assert tokens.font_weights.get("body") == "400"
+
+    def test_line_height_extraction(self) -> None:
+        """Line heights assigned by role."""
+        info = TokenInfo(
+            colors={},
+            fonts={},
+            font_sizes={},
+            spacing={},
+            line_heights={"heading": ["40px", "40px"], "body": ["26px"]},
+        )
+        tokens = TokenExtractor().extract(info)
+        assert tokens.line_heights.get("heading") == "40px"
+        assert tokens.line_heights.get("body") == "26px"
+
+    def test_letter_spacing_extraction(self) -> None:
+        info = TokenInfo(
+            colors={},
+            fonts={},
+            font_sizes={},
+            spacing={},
+            letter_spacings={"all": ["0.5px", "0.5px", "1px"]},
+        )
+        tokens = TokenExtractor().extract(info)
+        assert tokens.letter_spacings.get("heading") == "0.5px"
+
+    def test_responsive_extraction(self) -> None:
+        """Responsive tokens from media queries."""
+        info = TokenInfo(
+            colors={},
+            fonts={},
+            font_sizes={},
+            spacing={},
+            responsive={"600px": {"font_sizes": ["24px", "14px"], "spacing": ["16px"]}},
+            responsive_breakpoints=["600px"],
+        )
+        tokens = TokenExtractor().extract(info)
+        assert tokens.responsive.get("breakpoint") == "600px"
+        assert tokens.responsive.get("mobile_heading_size") == "24px"
+        assert tokens.responsive_breakpoints == ("600px",)
+
+    def test_color_roles_from_links(self) -> None:
+        """Link color role extracted from <a> elements."""
+        info = TokenInfo(
+            colors={
+                "background": ["#FFFFFF"],
+                "text": ["#333333"],
+                "all": ["#FFFFFF", "#333333", "#0066CC"],
+            },
+            fonts={},
+            font_sizes={},
+            spacing={},
+            color_roles={"link": ["#0066CC", "#0066CC"]},
+        )
+        tokens = TokenExtractor().extract(info)
+        assert tokens.colors.get("link") == "#0066CC"
+
+    def test_empty_new_fields(self) -> None:
+        """Empty new fields -> empty dicts in DefaultTokens."""
+        info = TokenInfo(colors={}, fonts={}, font_sizes={}, spacing={})
+        tokens = TokenExtractor().extract(info)
+        assert tokens.font_weights == {}
+        assert tokens.line_heights == {}
+        assert tokens.letter_spacings == {}
+        assert tokens.responsive == {}
+
+
 class TestTokenExtractor:
     def test_color_role_assignment(self) -> None:
         """Most common bg -> background role, text -> text role."""

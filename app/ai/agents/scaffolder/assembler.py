@@ -81,6 +81,24 @@ class TemplateAssembler:
                 plan.design_tokens,
             )
 
+        # Step 3b-3f: Typography and spacing replacement
+        if template.default_tokens is not None and plan.design_tokens:
+            html = self._apply_font_size_replacement(
+                html, template.default_tokens, plan.design_tokens
+            )
+            html = self._apply_line_height_replacement(
+                html, template.default_tokens, plan.design_tokens
+            )
+            html = self._apply_spacing_replacement(
+                html, template.default_tokens, plan.design_tokens
+            )
+            html = self._apply_font_weight_replacement(
+                html, template.default_tokens, plan.design_tokens
+            )
+            html = self._apply_responsive_replacement(
+                html, template.default_tokens, plan.design_tokens
+            )
+
         # Step 4: Logo dimension enforcement
         if self._design_system is not None and self._design_system.logo:
             html = self._enforce_logo_dimensions(html, self._design_system.logo)
@@ -257,6 +275,155 @@ class TemplateAssembler:
             )
 
         return html
+
+    # ── Font-size replacement ──
+
+    def _apply_font_size_replacement(
+        self,
+        html: str,
+        defaults: DefaultTokens,
+        tokens: DesignTokens,
+    ) -> str:
+        """Replace template default font sizes with client font sizes, matched by role."""
+        if not defaults.font_sizes or not tokens.font_sizes:
+            return html
+        for role, default_val in defaults.font_sizes.items():
+            client_val = tokens.font_sizes.get(role)
+            if client_val is None or client_val == default_val:
+                continue
+            if not _SAFE_CSS_SIZE_RE.match(client_val):
+                continue
+            html = re.sub(
+                r"(font-size:\s*)" + re.escape(default_val),
+                r"\g<1>" + client_val,
+                html,
+            )
+        return html
+
+    # ── Line-height replacement ──
+
+    def _apply_line_height_replacement(
+        self,
+        html: str,
+        defaults: DefaultTokens,
+        tokens: DesignTokens,
+    ) -> str:
+        """Replace template default line heights with client line heights."""
+        if not defaults.line_heights or not tokens.line_heights:
+            return html
+        for role, default_val in defaults.line_heights.items():
+            client_val = tokens.line_heights.get(role)
+            if client_val is None or client_val == default_val:
+                continue
+            if not _SAFE_CSS_SIZE_RE.match(client_val):
+                continue
+            html = re.sub(
+                r"(line-height:\s*)" + re.escape(default_val),
+                r"\g<1>" + client_val,
+                html,
+            )
+        return html
+
+    # ── Spacing replacement ──
+
+    def _apply_spacing_replacement(
+        self,
+        html: str,
+        defaults: DefaultTokens,
+        tokens: DesignTokens,
+    ) -> str:
+        """Replace template default spacing values with client spacing."""
+        if not defaults.spacing or not tokens.spacing:
+            return html
+        for role, default_val in defaults.spacing.items():
+            if role == "border_radius":
+                continue  # Handled in _apply_font_replacement
+            client_val = tokens.spacing.get(role)
+            if client_val is None or client_val == default_val:
+                continue
+            if not _SAFE_CSS_SPACING_RE.match(client_val):
+                continue
+            for prop in (
+                "padding-top",
+                "padding-right",
+                "padding-bottom",
+                "padding-left",
+                "padding",
+            ):
+                html = re.sub(
+                    r"(" + re.escape(prop) + r":\s*)" + re.escape(default_val),
+                    r"\g<1>" + client_val,
+                    html,
+                )
+        return html
+
+    # ── Font-weight replacement ──
+
+    def _apply_font_weight_replacement(
+        self,
+        html: str,
+        defaults: DefaultTokens,
+        tokens: DesignTokens,
+    ) -> str:
+        """Replace template default font weights with client font weights."""
+        if not defaults.font_weights or not tokens.font_weights:
+            return html
+        for role, default_val in defaults.font_weights.items():
+            client_val = tokens.font_weights.get(role)
+            if client_val is None or client_val == default_val:
+                continue
+            if not _SAFE_CSS_WEIGHT_RE.match(client_val):
+                continue
+            html = re.sub(
+                r"(font-weight:\s*)" + re.escape(default_val),
+                r"\g<1>" + client_val,
+                html,
+            )
+        return html
+
+    # ── Responsive replacement ──
+
+    def _apply_responsive_replacement(
+        self,
+        html: str,
+        defaults: DefaultTokens,
+        tokens: DesignTokens,
+    ) -> str:
+        """Update @media blocks with design system responsive overrides."""
+        if not defaults.responsive or not tokens.responsive:
+            return html
+
+        # Apply replacements inside existing <style> blocks only
+        style_re = re.compile(r"(<style[^>]*>)(.*?)(</style>)", re.DOTALL | re.IGNORECASE)
+
+        def _replace_in_style(m: re.Match[str]) -> str:
+            open_tag = m.group(1)
+            css = m.group(2)
+            close_tag = m.group(3)
+
+            for role, default_val in defaults.responsive.items():
+                client_val = tokens.responsive.get(role)
+                if client_val is None or client_val == default_val:
+                    continue
+                if not _SAFE_CSS_SIZE_RE.match(client_val):
+                    continue
+                # Replace within @media blocks
+                if "font_size" in role or "size" in role:
+                    css = re.sub(
+                        r"(font-size:\s*)" + re.escape(default_val),
+                        r"\g<1>" + client_val,
+                        css,
+                    )
+                elif "padding" in role or "spacing" in role:
+                    css = re.sub(
+                        r"(padding[^:]*:\s*)" + re.escape(default_val),
+                        r"\g<1>" + client_val,
+                        css,
+                    )
+
+            return open_tag + css + close_tag
+
+        return style_re.sub(_replace_in_style, html)
 
     # ── Dark mode ──
 
@@ -526,6 +693,11 @@ class TemplateAssembler:
 _HEX_IN_STYLE_RE = re.compile(
     r"((?:color|background-color|background|border-color)\s*:\s*)(#[0-9a-fA-F]{6})",
 )
+
+# CSS value validation patterns — reject values that could break out of CSS context
+_SAFE_CSS_SIZE_RE = re.compile(r"^[\d.]+(?:px|em|rem|pt|%|vw|vh)$")
+_SAFE_CSS_WEIGHT_RE = re.compile(r"^(?:\d{3}|bold|normal|lighter|bolder)$")
+_SAFE_CSS_SPACING_RE = re.compile(r"^[\d.]+(?:px|em|rem)$")
 
 
 def _hex_to_rgb(h: str) -> tuple[int, int, int]:

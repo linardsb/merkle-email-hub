@@ -66,6 +66,11 @@ class DefaultTokens:
     fonts: dict[str, str] = field(default_factory=dict[str, str])
     font_sizes: dict[str, str] = field(default_factory=dict[str, str])
     spacing: dict[str, str] = field(default_factory=dict[str, str])
+    font_weights: dict[str, str] = field(default_factory=dict[str, str])
+    line_heights: dict[str, str] = field(default_factory=dict[str, str])
+    letter_spacings: dict[str, str] = field(default_factory=dict[str, str])
+    responsive: dict[str, str] = field(default_factory=dict[str, str])
+    responsive_breakpoints: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -70,6 +70,11 @@ def _rgba_to_hex(r: float, g: float, b: float) -> str:
     return f"#{round(r * 255):02X}{round(g * 255):02X}{round(b * 255):02X}"
 
 
+def _float_or_none(val: Any) -> float | None:
+    """Convert a value to float if numeric, otherwise None."""
+    return float(val) if isinstance(val, (int, float)) else None
+
+
 class FigmaDesignSyncService:
     """Real Figma API integration."""
 
@@ -512,6 +517,44 @@ class FigmaDesignSyncService:
             if isinstance(raw_chars, str) and raw_chars.strip():
                 text_content = raw_chars.strip()
 
+        # Auto-layout properties (frames with auto-layout)
+        padding_top: float | None = None
+        padding_right: float | None = None
+        padding_bottom: float | None = None
+        padding_left: float | None = None
+        item_spacing: float | None = None
+        counter_axis_spacing: float | None = None
+        layout_mode_str: str | None = None
+        if raw_type == "FRAME":
+            layout_mode_str = node_data.get("layoutMode")
+            if layout_mode_str and layout_mode_str != "NONE":
+                padding_top = _float_or_none(node_data.get("paddingTop"))
+                padding_right = _float_or_none(node_data.get("paddingRight"))
+                padding_bottom = _float_or_none(node_data.get("paddingBottom"))
+                padding_left = _float_or_none(node_data.get("paddingLeft"))
+                item_spacing = _float_or_none(node_data.get("itemSpacing"))
+                counter_axis_spacing = _float_or_none(node_data.get("counterAxisSpacing"))
+
+        # TEXT node typography
+        dn_font_family: str | None = None
+        dn_font_size: float | None = None
+        dn_font_weight: int | None = None
+        dn_line_height_px: float | None = None
+        dn_letter_spacing_px: float | None = None
+        if node_type == DesignNodeType.TEXT:
+            style = node_data.get("style", {})
+            if isinstance(style, dict):
+                raw_ff = style.get("fontFamily")
+                dn_font_family = str(raw_ff) if isinstance(raw_ff, str) else None
+                raw_fs = style.get("fontSize")
+                dn_font_size = float(raw_fs) if isinstance(raw_fs, (int, float)) else None
+                raw_fw = style.get("fontWeight")
+                dn_font_weight = int(raw_fw) if isinstance(raw_fw, (int, float)) else None
+                raw_lh = style.get("lineHeightPx")
+                dn_line_height_px = float(raw_lh) if isinstance(raw_lh, (int, float)) else None
+                raw_ls = style.get("letterSpacing")
+                dn_letter_spacing_px = float(raw_ls) if isinstance(raw_ls, (int, float)) else None
+
         # Extract fill colors for the converter pipeline
         fill_color: str | None = None
         text_color_hex: str | None = None
@@ -555,6 +598,18 @@ class FigmaDesignSyncService:
             text_content=text_content,
             fill_color=fill_color,
             text_color=text_color_hex,
+            padding_top=padding_top,
+            padding_right=padding_right,
+            padding_bottom=padding_bottom,
+            padding_left=padding_left,
+            item_spacing=item_spacing,
+            counter_axis_spacing=counter_axis_spacing,
+            layout_mode=layout_mode_str,
+            font_family=dn_font_family,
+            font_size=dn_font_size,
+            font_weight=dn_font_weight,
+            line_height_px=dn_line_height_px,
+            letter_spacing_px=dn_letter_spacing_px,
         )
 
     async def list_components(self, file_ref: str, access_token: str) -> list[DesignComponent]:

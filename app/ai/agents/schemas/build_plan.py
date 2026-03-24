@@ -44,6 +44,10 @@ class DesignTokens:
     fonts: dict[str, str] = field(default_factory=dict[str, str])
     font_sizes: dict[str, str] = field(default_factory=dict[str, str])
     spacing: dict[str, str] = field(default_factory=dict[str, str])
+    font_weights: dict[str, str] = field(default_factory=dict[str, str])
+    line_heights: dict[str, str] = field(default_factory=dict[str, str])
+    letter_spacings: dict[str, str] = field(default_factory=dict[str, str])
+    responsive: dict[str, str] = field(default_factory=dict[str, str])
     button_style: Literal["filled", "outlined", "text"] = "filled"
     source: Literal["design_system", "llm_generated", "brief_extracted"] = "llm_generated"
     locked_roles: tuple[str, ...] = ()

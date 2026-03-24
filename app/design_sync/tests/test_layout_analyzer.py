@@ -916,6 +916,163 @@ class TestLayoutOverallWidth:
         assert layout.overall_width == 600.0
 
 
+class TestTypographyFromDesignNode:
+    def test_actual_font_size_used(self) -> None:
+        """TextBlock uses DesignNode.font_size (actual), not bounding box height."""
+        structure = DesignFileStructure(
+            file_name="Test",
+            pages=[
+                DesignNode(
+                    id="p1",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Content",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=200,
+                            children=[
+                                DesignNode(
+                                    id="t1",
+                                    name="text",
+                                    type=DesignNodeType.TEXT,
+                                    x=20,
+                                    y=20,
+                                    width=560,
+                                    height=50,  # bounding box
+                                    text_content="Hello World",
+                                    font_size=32.0,  # actual font size
+                                    font_family="Inter",
+                                    font_weight=700,
+                                    line_height_px=40.0,
+                                    letter_spacing_px=0.5,
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        )
+        layout = analyze_layout(structure)
+        text = layout.sections[0].texts[0]
+        assert text.font_size == 32.0  # actual, not 50 (height)
+        assert text.font_family == "Inter"
+        assert text.font_weight == 700
+        assert text.line_height == 40.0
+        assert text.letter_spacing == 0.5
+
+    def test_fallback_to_height_without_font_size(self) -> None:
+        """TextBlock falls back to bounding box height when font_size is None."""
+        structure = DesignFileStructure(
+            file_name="Test",
+            pages=[
+                DesignNode(
+                    id="p1",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Content",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=200,
+                            children=[
+                                DesignNode(
+                                    id="t1",
+                                    name="text",
+                                    type=DesignNodeType.TEXT,
+                                    x=20,
+                                    y=20,
+                                    width=560,
+                                    height=20,
+                                    text_content="Legacy text",
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        )
+        layout = analyze_layout(structure)
+        text = layout.sections[0].texts[0]
+        assert text.font_size == 20.0  # falls back to height
+
+
+class TestSectionSpacingFromDesignNode:
+    def test_padding_captured(self) -> None:
+        """EmailSection captures padding from DesignNode auto-layout."""
+        structure = DesignFileStructure(
+            file_name="Test",
+            pages=[
+                DesignNode(
+                    id="p1",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Content",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=200,
+                            padding_top=32.0,
+                            padding_right=24.0,
+                            padding_bottom=32.0,
+                            padding_left=24.0,
+                            item_spacing=16.0,
+                        ),
+                    ],
+                )
+            ],
+        )
+        layout = analyze_layout(structure)
+        section = layout.sections[0]
+        assert section.padding_top == 32.0
+        assert section.padding_right == 24.0
+        assert section.item_spacing == 16.0
+
+
+class TestGenerateSpacingMap:
+    def test_spacing_map_generated(self) -> None:
+        """generate_spacing_map produces per-section dict."""
+        structure = DesignFileStructure(
+            file_name="Test",
+            pages=[
+                DesignNode(
+                    id="p1",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Content",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=200,
+                            padding_top=32.0,
+                            item_spacing=16.0,
+                        ),
+                    ],
+                )
+            ],
+        )
+        layout = analyze_layout(structure)
+        assert "f1" in layout.spacing_map
+        assert layout.spacing_map["f1"]["padding_top"] == 32.0
+        assert layout.spacing_map["f1"]["item_spacing"] == 16.0
+
+
 class TestSortByYPosition:
     def test_sections_sorted_top_to_bottom(self) -> None:
         structure = make_email_structure()

@@ -74,6 +74,20 @@ class DesignNode:
     text_content: str | None = None
     fill_color: str | None = None  # Background/fill hex from design tool
     text_color: str | None = None  # Text fill color hex (TEXT nodes only)
+    # Auto-layout spacing (Figma/Penpot frames)
+    padding_top: float | None = None
+    padding_right: float | None = None
+    padding_bottom: float | None = None
+    padding_left: float | None = None
+    item_spacing: float | None = None
+    counter_axis_spacing: float | None = None
+    layout_mode: str | None = None  # "HORIZONTAL", "VERTICAL", or None
+    # Typography (TEXT nodes — actual values, not bounding box)
+    font_family: str | None = None
+    font_size: float | None = None
+    font_weight: int | None = None
+    line_height_px: float | None = None
+    letter_spacing_px: float | None = None
 
 
 @dataclass(frozen=True)

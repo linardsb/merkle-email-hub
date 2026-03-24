@@ -46,6 +46,12 @@ class TokenInfo:
     fonts: dict[str, list[str]] = field(default_factory=lambda: {})
     font_sizes: dict[str, list[str]] = field(default_factory=lambda: {})
     spacing: dict[str, list[str]] = field(default_factory=lambda: {})
+    font_weights: dict[str, list[str]] = field(default_factory=lambda: {})
+    line_heights: dict[str, list[str]] = field(default_factory=lambda: {})
+    letter_spacings: dict[str, list[str]] = field(default_factory=lambda: {})
+    color_roles: dict[str, list[str]] = field(default_factory=lambda: {})
+    responsive: dict[str, dict[str, list[str]]] = field(default_factory=lambda: {})
+    responsive_breakpoints: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -411,6 +417,10 @@ class TemplateAnalyzer:
         font_pattern = re.compile(r"font-family:\s*([^;]+)")
         font_size_pattern = re.compile(r"font-size:\s*(\d+(?:px|em|rem|pt))")
         padding_pattern = re.compile(r"padding[^:]*:\s*(\d+(?:px|em|rem))")
+        font_weight_pattern = re.compile(r"font-weight:\s*(\d{3}|bold|normal|lighter|bolder)")
+        line_height_pattern = re.compile(r"line-height:\s*([\d.]+(?:px|em|rem|%)?)")
+        letter_spacing_pattern = re.compile(r"letter-spacing:\s*(-?[\d.]+(?:px|em|rem)?)")
+        padding_side_pattern = re.compile(r"padding-(top|right|bottom|left):\s*(\d+(?:px|em|rem))")
 
         bg_colors: list[str] = []
         text_colors: list[str] = []
@@ -419,6 +429,17 @@ class TemplateAnalyzer:
         fonts_body: list[str] = []
         font_sizes: list[str] = []
         spacings: list[str] = []
+        font_weights_heading: list[str] = []
+        font_weights_body: list[str] = []
+        line_heights_heading: list[str] = []
+        line_heights_body: list[str] = []
+        letter_spacings_all: list[str] = []
+        color_roles: dict[str, list[str]] = {
+            "link": [],
+            "heading_text": [],
+            "muted": [],
+            "accent": [],
+        }
 
         for elem in tree.iter():
             if not isinstance(elem, HtmlElement):
@@ -426,6 +447,8 @@ class TemplateAnalyzer:
             style = elem.get("style", "")
             if not style:
                 continue
+
+            tag = elem.tag
 
             # Colors
             for match in hex_pattern.finditer(style):
@@ -440,7 +463,6 @@ class TemplateAnalyzer:
             # Fonts
             for match in font_pattern.finditer(style):
                 font_stack = match.group(1).strip().strip(";").strip("'\"")
-                tag = elem.tag
                 if tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
                     fonts_heading.append(font_stack)
                 else:
@@ -450,9 +472,57 @@ class TemplateAnalyzer:
             for match in font_size_pattern.finditer(style):
                 font_sizes.append(match.group(1))
 
-            # Spacing
+            # Spacing (shorthand)
             for match in padding_pattern.finditer(style):
                 spacings.append(match.group(1))
+
+            # Per-side padding (longhand from 31.2 expansion)
+            for match in padding_side_pattern.finditer(style):
+                spacings.append(match.group(2))
+
+            # Font weights — classify by tag
+            for match in font_weight_pattern.finditer(style):
+                val = match.group(1)
+                if tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                    font_weights_heading.append(val)
+                else:
+                    font_weights_body.append(val)
+
+            # Line heights
+            for match in line_height_pattern.finditer(style):
+                val = match.group(1)
+                if tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                    line_heights_heading.append(val)
+                else:
+                    line_heights_body.append(val)
+
+            # Letter spacing
+            for match in letter_spacing_pattern.finditer(style):
+                letter_spacings_all.append(match.group(1))
+
+            # Color roles by element context
+            if tag == "a":
+                for m in hex_pattern.finditer(style):
+                    prefix = style.lower()[: m.start()]
+                    if "color" in prefix:
+                        color_roles["link"].append(m.group().upper())
+
+        # Responsive extraction from <style> blocks
+        responsive: dict[str, dict[str, list[str]]] = {}
+        breakpoints: list[str] = []
+        media_pattern = re.compile(r"@media[^{]*max-width:\s*(\d+px)[^{]*\{(.*?)\}", re.DOTALL)
+        for style_el in tree.iter("style"):
+            text = style_el.text or ""
+            for m in media_pattern.finditer(text):
+                bp = m.group(1)
+                if bp not in breakpoints:
+                    breakpoints.append(bp)
+                block = m.group(2)
+                bp_tokens: dict[str, list[str]] = responsive.setdefault(bp, {})
+                for fs_m in font_size_pattern.finditer(block):
+                    bp_tokens.setdefault("font_sizes", []).append(fs_m.group(1))
+                for sp_m in padding_pattern.finditer(block):
+                    bp_tokens.setdefault("spacing", []).append(sp_m.group(1))
 
         return TokenInfo(
             colors={
@@ -466,6 +536,18 @@ class TemplateAnalyzer:
             },
             font_sizes={"all": font_sizes},
             spacing={"padding": spacings},
+            font_weights={
+                "heading": font_weights_heading,
+                "body": font_weights_body,
+            },
+            line_heights={
+                "heading": line_heights_heading,
+                "body": line_heights_body,
+            },
+            letter_spacings={"all": letter_spacings_all},
+            color_roles=color_roles,
+            responsive=responsive,
+            responsive_breakpoints=breakpoints,
         )
 
     def _detect_esp_platform(self, html: str) -> str | None:
