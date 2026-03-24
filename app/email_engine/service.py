@@ -70,6 +70,10 @@ class EmailEngineService:
                 data.is_production,
                 target_clients=settings.email_engine.css_compiler_target_clients,
             )
+            if passthrough:
+                compiled = self._passthrough_validation(
+                    compiled, settings.email_engine.css_compiler_target_clients
+                )
             compiled = sanitize_html_xss(compiled)
             if optimization:
                 logger.info(
@@ -129,6 +133,10 @@ class EmailEngineService:
             is_production=False,
             target_clients=settings.email_engine.css_compiler_target_clients,
         )
+        if passthrough:
+            compiled = self._passthrough_validation(
+                compiled, settings.email_engine.css_compiler_target_clients
+            )
         compiled = sanitize_html_xss(compiled)
         elapsed = (time.monotonic() - start) * 1000
         logger.info(
@@ -217,6 +225,24 @@ class EmailEngineService:
             validation_errors=list(result.validation_errors),
             inject_time_ms=result.inject_time_ms,
         )
+
+    @staticmethod
+    def _passthrough_validation(html: str, target_clients: list[str]) -> str:
+        """Run lightweight Python CSS compiler validation on passthrough HTML.
+
+        Defense-in-depth second pass: the sidecar handles the heavy lifting,
+        Python catches edge cases the sidecar may miss.
+        """
+        from app.email_engine.css_compiler.compiler import EmailCSSCompiler
+
+        compiler = EmailCSSCompiler(target_clients=target_clients)
+        result = compiler.optimize_css(html)
+        logger.info(
+            "email_engine.passthrough_validation",
+            removed_count=len(result.removed_properties),
+            conversion_count=len(result.conversions),
+        )
+        return result.html
 
     async def _call_builder(
         self,

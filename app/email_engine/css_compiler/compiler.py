@@ -20,10 +20,11 @@ from .conversions import (
     should_remove_property,
 )
 from .inliner import extract_styles, inline_styles, parse_css_rules
+from .shorthand import expand_shorthands
 
 logger = get_logger(__name__)
 
-_INLINE_STYLE_RE = re.compile(r'style\s*=\s*"([^"]*)"', re.IGNORECASE)
+_INLINE_STYLE_RE = re.compile(r"""style\s*=\s*["']([^"']*)["']""", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -236,14 +237,30 @@ class EmailCSSCompiler:
         if self._css_variables:
             css_text = resolve_css_variables(css_text, self._css_variables)
 
-        # Process each declaration
+        # Expand shorthands before processing
+        css_text = expand_shorthands(css_text)
+
+        # Parse with Lightning CSS via dummy rule wrapper for correct colon handling
+        wrapped = f".__dummy {{ {css_text} }}"
+        try:
+            parser_flags = lightningcss.calc_parser_flags(nesting=True)
+            parsed = lightningcss.process_stylesheet(
+                wrapped,
+                filename="block.css",
+                parser_flags=parser_flags,
+                minify=False,
+            )
+            # Extract declarations from parsed output
+            inner = re.sub(r"__dummy\s*\{(.*)\}", r"\1", parsed, flags=re.DOTALL).strip()
+        except Exception:
+            inner = css_text  # Fallback to original on parse error
+
+        # Process each declaration through ontology
         lines: list[str] = []
-        for line in css_text.split(";"):
+        for line in inner.split(";"):
             line = line.strip()
             if not line or ":" not in line:
-                lines.append(line)
                 continue
-
             prop, val = line.split(":", 1)
             prop = prop.strip()
             val = val.strip()
@@ -259,7 +276,6 @@ class EmailCSSCompiler:
             )
             if prop_conversions:
                 conversions.extend(prop_conversions)
-                # Apply first conversion, keep original as fallback comment
                 first = prop_conversions[0]
                 replacement = (
                     f"{first.replacement_property}: {first.replacement_value}"
@@ -270,7 +286,7 @@ class EmailCSSCompiler:
             else:
                 lines.append(f"{prop}: {val}")
 
-        return "; ".join(part for part in lines if part), removed, conversions, warnings
+        return "; ".join(lines), removed, conversions, warnings
 
     def _process_inline_styles(
         self,

@@ -1,0 +1,37 @@
+# Email client font support matrix
+# "system" = only pre-installed system fonts
+# "all" = all fonts (via <link> or @import)
+# list = specific supported fonts
+clients:
+  outlook_2016_win: &outlook_desktop
+    type: system
+    fonts: [Arial, Helvetica, Georgia, "Times New Roman", Verdana, Tahoma,
+            "Trebuchet MS", "Courier New", "Comic Sans MS", Impact, "Lucida Console"]
+    requires_mso_font_alt: true
+  outlook_2019_win: *outlook_desktop
+  outlook_365_win: *outlook_desktop
+  outlook_mac:
+    type: all
+    requires_mso_font_alt: false
+  gmail_web:
+    type: all
+    requires_link_tag: true
+  gmail_ios: { type: all }
+  gmail_android: { type: all }
+  apple_mail: { type: all }
+  yahoo_web: { type: all }
+  yahoo_mobile: { type: system }
+  samsung_mail: { type: system_plus_google }
+  thunderbird: { type: all }
+
+fallback_map:
+  Inter: [Arial, Helvetica, sans-serif]
+  Roboto: [Arial, Helvetica, sans-serif]
+  "Open Sans": [Arial, Helvetica, sans-serif]
+  Lato: [Arial, Helvetica, sans-serif]
+  Montserrat: [Verdana, Geneva, sans-serif]
+  "Playfair Display": [Georgia, "Times New Roman", serif]
+  Merriweather: [Georgia, "Times New Roman", serif]
+  Poppins: [Arial, Helvetica, sans-serif]
+  Raleway: [Verdana, Geneva, sans-serif]
+  "Source Sans Pro": [Arial, Helvetica, sans-serif]

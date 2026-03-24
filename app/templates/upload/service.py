@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -14,6 +15,7 @@ from app.ai.templates.models import DefaultTokens, TemplateSlot
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.templates.upload.analyzer import AnalysisResult, TemplateAnalyzer
+from app.templates.upload.design_system_mapper import DesignSystemMapper, TokenDiff
 from app.templates.upload.exceptions import (
     TemplateAlreadyConfirmedError,
     TemplateTooLargeError,
@@ -25,9 +27,11 @@ from app.templates.upload.repository import TemplateUploadRepository
 from app.templates.upload.schemas import (
     AnalysisPreview,
     ConfirmRequest,
+    CSSOptimizationPreview,
     SectionPreview,
     SlotPreview,
     TemplateUploadResponse,
+    TokenDiffPreview,
     TokenPreview,
     UploadStatus,
 )
@@ -36,6 +40,17 @@ from app.templates.upload.template_builder import TemplateBuilder
 from app.templates.upload.token_extractor import TokenExtractor
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class _CSSOptimizationResult:
+    """Internal result from CSS compilation pass."""
+
+    compiled_html: str | None = None
+    removed_properties: list[str] = field(default_factory=lambda: list[str]())
+    conversions: list[Any] = field(default_factory=lambda: list[Any]())
+    warnings: list[str] = field(default_factory=lambda: list[str]())
+    shorthand_expansions: int = 0
 
 
 class TemplateUploadService:
@@ -77,10 +92,18 @@ class TemplateUploadService:
         # Sanitize HTML
         sanitized = sanitize_html_xss(html_content, profile="import_annotator")
 
+        # Run CSS compilation to expand shorthands and optimize
+        css_optimization = self._compile_css(sanitized, project_id)
+        if css_optimization.compiled_html:
+            sanitized = css_optimization.compiled_html
+
         # Run analysis
         analysis = self._analyzer.analyze(sanitized)
         slots = self._slot_extractor.extract(analysis.slots, analysis.sections)
         tokens = self._token_extractor.extract(analysis.tokens)
+
+        # Map tokens against design system
+        token_diff = await self._map_design_system_tokens(tokens, project_id)
 
         # Generate suggested name
         html_hash = hashlib.sha256(sanitized.encode()).hexdigest()[:6]
@@ -96,6 +119,29 @@ class TemplateUploadService:
         analysis_dict = self._serialize_analysis(
             analysis, slots, tokens, suggested_name, suggested_desc
         )
+        analysis_dict["css_optimization"] = {
+            "removed_properties": css_optimization.removed_properties,
+            "conversions": [
+                {
+                    "original": f"{c.original_property}: {c.original_value}",
+                    "replacement": f"{c.replacement_property}: {c.replacement_value}",
+                    "reason": c.reason,
+                }
+                for c in css_optimization.conversions
+            ],
+            "warnings": css_optimization.warnings,
+            "shorthand_expansions": css_optimization.shorthand_expansions,
+        }
+        analysis_dict["token_diff"] = [
+            {
+                "property": d.property,
+                "role": d.role,
+                "imported_value": d.imported_value,
+                "design_system_value": d.design_system_value,
+                "action": d.action,
+            }
+            for d in token_diff
+        ]
 
         # Store pending upload
         upload = TemplateUpload(
@@ -282,6 +328,10 @@ class TemplateUploadService:
 
     def _build_preview(self, upload_id: int, data: dict[str, Any]) -> AnalysisPreview:
         """Build AnalysisPreview from stored JSON data."""
+        css_opt_data = data.get("css_optimization")
+        css_optimization = CSSOptimizationPreview(**css_opt_data) if css_opt_data else None
+        token_diff = [TokenDiffPreview(**d) for d in data.get("token_diff", [])]
+
         return AnalysisPreview(
             upload_id=upload_id,
             sections=[SectionPreview(**s) for s in data.get("sections", [])],
@@ -293,4 +343,48 @@ class TemplateUploadService:
             complexity_score=data.get("complexity_score", 0),
             suggested_name=data.get("suggested_name", ""),
             suggested_description=data.get("suggested_description", ""),
+            css_optimization=css_optimization,
+            token_diff=token_diff,
         )
+
+    def _compile_css(self, sanitized: str, _project_id: int | None) -> _CSSOptimizationResult:
+        """Run CSS compilation on sanitized HTML."""
+        from app.email_engine.css_compiler import EmailCSSCompiler
+
+        try:
+            target_clients = get_settings().email_engine.css_compiler_target_clients
+            compiler = EmailCSSCompiler(target_clients=target_clients)
+            result = compiler.optimize_css(sanitized)
+            return _CSSOptimizationResult(
+                compiled_html=result.html,
+                removed_properties=result.removed_properties,
+                conversions=result.conversions,
+                warnings=result.warnings,
+                shorthand_expansions=0,  # tracked at sidecar level
+            )
+        except Exception:
+            logger.warning("template_upload.css_compilation_failed", exc_info=True)
+            return _CSSOptimizationResult(compiled_html=None)
+
+    async def _map_design_system_tokens(
+        self, tokens: DefaultTokens, project_id: int | None
+    ) -> list[TokenDiff]:
+        """Map extracted tokens against project design system."""
+        if not project_id:
+            return []
+        try:
+            from sqlalchemy import select
+
+            from app.projects.design_system import DesignSystem
+            from app.projects.models import Project
+
+            result = await self.db.execute(
+                select(Project.design_system).where(Project.id == project_id)
+            )
+            ds_json = result.scalar_one_or_none()
+            ds = DesignSystem(**ds_json) if ds_json else None
+            mapper = DesignSystemMapper(ds)
+            return mapper.generate_diff(tokens, mapper.map_tokens(tokens))
+        except Exception:
+            logger.warning("template_upload.design_system_mapping_failed", exc_info=True)
+            return []

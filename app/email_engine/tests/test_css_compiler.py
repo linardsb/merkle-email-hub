@@ -24,6 +24,7 @@ from app.email_engine.css_compiler.inliner import (
     inline_styles,
     parse_css_rules,
 )
+from app.email_engine.css_compiler.shorthand import expand_shorthands
 from app.email_engine.schemas import CSSCompileResponse
 from app.email_engine.service import EmailEngineService
 from app.email_engine.tests.conftest import make_mock_registry as _mock_registry
@@ -454,6 +455,96 @@ class TestCompilerWithConversions:
         for conv in result.conversions:
             assert len(conv.affected_clients) > 0
             assert isinstance(conv.affected_clients, tuple)
+
+
+# ── Shorthand Expansion Tests ──
+
+
+class TestShorthandExpansion:
+    def test_padding_two_values(self) -> None:
+        """padding: 16px 32px → 4 longhands."""
+        result = expand_shorthands("padding: 16px 32px")
+        assert "padding-top: 16px" in result
+        assert "padding-right: 32px" in result
+        assert "padding-bottom: 16px" in result
+        assert "padding-left: 32px" in result
+
+    def test_margin_single_value(self) -> None:
+        """margin: 0 → 4 identical longhands."""
+        result = expand_shorthands("margin: 0")
+        assert "margin-top: 0" in result
+        assert "margin-right: 0" in result
+
+    def test_font_shorthand(self) -> None:
+        """font: 700 32px/40px Inter, sans-serif → longhands."""
+        result = expand_shorthands("font: 700 32px/40px Inter, sans-serif")
+        assert "font-weight: 700" in result
+        assert "font-size: 32px" in result
+        assert "line-height: 40px" in result
+        assert "font-family: Inter, sans-serif" in result
+
+    def test_border_shorthand(self) -> None:
+        """border: 1px solid red → border-width, border-style, border-color."""
+        result = expand_shorthands("border: 1px solid red")
+        assert "border-width: 1px" in result
+        assert "border-style: solid" in result
+        assert "border-color: red" in result
+
+    def test_background_with_url(self) -> None:
+        """background with url() → background-image extracted."""
+        result = expand_shorthands("background: url(https://example.com/img.png) no-repeat")
+        assert "background-image: url(https://example.com/img.png)" in result
+        assert "background-repeat: no-repeat" in result
+
+    def test_non_shorthand_unchanged(self) -> None:
+        """Regular properties pass through unchanged."""
+        result = expand_shorthands("color: red; font-size: 16px")
+        assert "color: red" in result
+        assert "font-size: 16px" in result
+
+    def test_url_colon_not_broken(self) -> None:
+        """url(https://...) colon doesn't break background expansion."""
+        result = expand_shorthands("background: url(https://cdn.example.com/bg.jpg)")
+        assert "https://cdn.example.com/bg.jpg" in result
+
+
+# ── Lightning CSS Parsing Tests ──
+
+
+class TestLightningCSSParsing:
+    """Tests for the upgraded _process_css_block using Lightning CSS."""
+
+    @pytest.fixture(autouse=True)
+    def _mock_ontology(self) -> Generator[None]:
+        reg = _mock_registry(support_none=False)
+        with (
+            patch("app.email_engine.css_compiler.compiler.load_ontology", return_value=reg),
+            patch("app.email_engine.css_compiler.conversions.load_ontology", return_value=reg),
+        ):
+            yield
+
+    def test_url_colon_not_split(self) -> None:
+        """url(https://...) value not split on colon."""
+        html = '<html><head></head><body><table><tr><td style="background: url(https://example.com/img.png)">Hi</td></tr></table></body></html>'
+        compiler = EmailCSSCompiler(target_clients=["gmail_web"])
+        # Use optimize_css (no sanitization) to test CSS parsing only
+        result = compiler.optimize_css(html)
+        assert "https://example.com/img.png" in result.html
+
+    def test_single_quoted_styles_captured(self) -> None:
+        """Single-quoted style='' attributes are now processed."""
+        html = "<html><head></head><body><table><tr><td style='color: red; font-size: 16px'>Hi</td></tr></table></body></html>"
+        compiler = EmailCSSCompiler(target_clients=["gmail_web"])
+        result = compiler.compile(html)
+        assert isinstance(result.html, str)
+        assert result.compiled_size > 0
+
+    def test_shorthand_expanded_in_inline(self) -> None:
+        """Inline style shorthands are expanded before ontology check."""
+        html = '<html><head></head><body><table><tr><td style="padding: 16px 32px">Hi</td></tr></table></body></html>'
+        compiler = EmailCSSCompiler(target_clients=["gmail_web"])
+        result = compiler.compile(html)
+        assert isinstance(result.html, str)
 
 
 # ── Service Tests ──

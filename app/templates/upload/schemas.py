@@ -45,6 +45,36 @@ class SectionPreview(BaseModel):
     layout_type: str
 
 
+class CSSConversionPreview(BaseModel):
+    """Preview of a single CSS conversion."""
+
+    original: str
+    replacement: str
+    reason: str
+
+
+class CSSOptimizationPreview(BaseModel):
+    """Preview of CSS optimization results."""
+
+    removed_properties: list[str] = Field(default_factory=list)
+    conversions: list[CSSConversionPreview] = Field(
+        default_factory=lambda: list[CSSConversionPreview]()
+    )
+    warnings: list[str] = Field(default_factory=list)
+    shorthand_expansions: int = 0
+    responsive_breakpoints: list[str] = Field(default_factory=list)
+
+
+class TokenDiffPreview(BaseModel):
+    """Preview of how an imported token maps to the design system."""
+
+    property: str
+    role: str
+    imported_value: str
+    design_system_value: str
+    action: str  # "will_replace", "compatible", "no_override"
+
+
 class AnalysisPreview(BaseModel):
     """Full analysis preview returned after upload."""
 
@@ -58,6 +88,8 @@ class AnalysisPreview(BaseModel):
     complexity_score: int
     suggested_name: str
     suggested_description: str
+    css_optimization: CSSOptimizationPreview | None = None
+    token_diff: list[TokenDiffPreview] = Field(default_factory=lambda: list[TokenDiffPreview]())
 
 
 class ConfirmRequest(BaseModel):

@@ -14,6 +14,9 @@ import postcss from "postcss";
 import emailOptimize, { loadOntology } from "./postcss-email-optimize.js";
 import { transform } from "lightningcss";
 import { isPreCompiledEmail } from "./precompiled-detect.js";
+import { parseDocument } from "htmlparser2";
+import { findAll } from "domutils";
+import render_dom from "dom-serializer";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -73,6 +76,55 @@ async function optimizeCss(html, targetClients) {
   return { optimizedHtml: result, optimization: { removed_properties: allRemoved, conversions: allConversions, warnings: allWarnings, original_css_size: origSize, optimized_css_size: optSize } };
 }
 
+async function optimizeInlineStyles(html, targetClients) {
+  const dom = parseDocument(html, { decodeEntities: false });
+  const elements = [];
+  let idx = 0;
+  findAll((node) => {
+    if (node.attribs && node.attribs.style) {
+      elements.push({ node, index: idx++ });
+      return true;
+    }
+    return false;
+  }, dom.children);
+
+  if (elements.length === 0) {
+    return { html, inline_removed: [], inline_conversions: [], shorthand_expansions: 0, responsive: [] };
+  }
+
+  // Build synthetic stylesheet from inline styles
+  const rules = elements.map(({ node, index: i }) =>
+    `.__inline_${i} { ${node.attribs.style} }`
+  ).join('\n');
+
+  // Run through PostCSS with ontology plugin
+  const result = await postcss([emailOptimize({ targetClients })])
+    .process(rules, { from: 'inline-styles.css' });
+
+  // Extract processed declarations back to elements
+  result.root.walkRules((rule) => {
+    const match = rule.selector.match(/__inline_(\d+)/);
+    if (!match) return;
+    const i = parseInt(match[1], 10);
+    const el = elements.find(e => e.index === i);
+    if (!el) return;
+    const decls = [];
+    rule.walkDecls((decl) => decls.push(`${decl.prop}: ${decl.value}`));
+    el.node.attribs.style = decls.join('; ');
+  });
+
+  const optimizedHtml = render_dom(dom, { decodeEntities: false });
+  const opt = result.emailOptimization || {};
+
+  return {
+    html: optimizedHtml,
+    inline_removed: opt.removed_properties || [],
+    inline_conversions: opt.conversions || [],
+    shorthand_expansions: opt.shorthand_expansions || 0,
+    responsive: opt.responsive || [],
+  };
+}
+
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "maizzle-builder", ontology_version: ontologyVersion });
 });
@@ -94,6 +146,27 @@ app.post("/build", async (req, res) => {
     const passthrough = isPreCompiledEmail(html);
 
     if (passthrough) {
+      // Optimize inline styles on passthrough emails
+      if (ontologyVersion && target_clients?.length) {
+        const inlineResult = await optimizeInlineStyles(html, target_clients);
+        html = inlineResult.html;
+        if (optimization) {
+          optimization.removed_properties.push(...inlineResult.inline_removed);
+          optimization.conversions.push(...inlineResult.inline_conversions);
+          optimization.shorthand_expansions = (optimization.shorthand_expansions || 0) + inlineResult.shorthand_expansions;
+          optimization.responsive = [...(optimization.responsive || []), ...inlineResult.responsive];
+        } else {
+          optimization = {
+            removed_properties: inlineResult.inline_removed,
+            conversions: inlineResult.inline_conversions,
+            warnings: [],
+            shorthand_expansions: inlineResult.shorthand_expansions,
+            responsive: inlineResult.responsive,
+            original_css_size: 0,
+            optimized_css_size: 0,
+          };
+        }
+      }
       res.json({
         html,
         build_time_ms: Date.now() - start,
@@ -140,6 +213,26 @@ app.post("/preview", async (req, res) => {
     const passthrough = isPreCompiledEmail(html);
 
     if (passthrough) {
+      if (ontologyVersion && target_clients?.length) {
+        const inlineResult = await optimizeInlineStyles(html, target_clients);
+        html = inlineResult.html;
+        if (optimization) {
+          optimization.removed_properties.push(...inlineResult.inline_removed);
+          optimization.conversions.push(...inlineResult.inline_conversions);
+          optimization.shorthand_expansions = (optimization.shorthand_expansions || 0) + inlineResult.shorthand_expansions;
+          optimization.responsive = [...(optimization.responsive || []), ...inlineResult.responsive];
+        } else {
+          optimization = {
+            removed_properties: inlineResult.inline_removed,
+            conversions: inlineResult.inline_conversions,
+            warnings: [],
+            shorthand_expansions: inlineResult.shorthand_expansions,
+            responsive: inlineResult.responsive,
+            original_css_size: 0,
+            optimized_css_size: 0,
+          };
+        }
+      }
       res.json({
         html,
         build_time_ms: Date.now() - start,
