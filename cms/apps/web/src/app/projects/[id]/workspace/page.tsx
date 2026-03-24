@@ -44,6 +44,7 @@ import { ImageGenDialog } from "@/components/workspace/image-gen/image-gen-dialo
 import { CompatibilityBriefDialog } from "@/components/workspace/compatibility-brief-dialog";
 import { BlueprintRunDialog } from "@/components/workspace/blueprint-run-dialog";
 import { PushToESPDialog } from "@/components/connectors/push-to-esp-dialog";
+import { ApprovalRequestDialog } from "@/components/approvals/approval-request-dialog";
 import { CommandPalette } from "@/components/workspace/command-palette";
 import { useWorkspaceShortcuts } from "@/hooks/use-workspace-shortcuts";
 import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
@@ -106,6 +107,16 @@ export default function WorkspacePage() {
   const activeTemplate =
     templates.find((tpl) => tpl.id === activeTemplateId) ?? null;
 
+  // Sync activeTemplateId when URL param changes (e.g. after design sync import)
+  useEffect(() => {
+    if (templateIdParam) {
+      const paramId = Number(templateIdParam);
+      if (paramId !== activeTemplateId) {
+        setActiveTemplateId(paramId);
+      }
+    }
+  }, [templateIdParam]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-select first template when templates load and none selected
   useEffect(() => {
     const first = templates[0];
@@ -150,6 +161,10 @@ export default function WorkspacePage() {
 
   // ── Push to ESP State ──
   const [pushDialogOpen, setPushDialogOpen] = useState(false);
+
+  // ── Approval State ──
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [lastBuildId, setLastBuildId] = useState<number | null>(null);
 
   // ── Design Reference Panel ──
   const [designRefOpen, setDesignRefOpen] = useState(false);
@@ -215,13 +230,17 @@ export default function WorkspacePage() {
         const sanitized = sanitizeHtml(stripAnnotations(latestVersion.html_source));
         triggerPreview({ source_html: sanitized })
           .then((r) => {
-            if (r) {
+            if (r?.compiled_html) {
               setCompiledHtml(r.compiled_html);
               setBuildTimeMs(r.build_time_ms);
+            } else {
+              // Compile returned no result — show raw HTML as fallback
+              setCompiledHtml(sanitized);
             }
           })
           .catch(() => {
-            /* compile failed silently */
+            // Compile failed — show raw HTML so preview isn't blank
+            setCompiledHtml(sanitized);
           });
       }
     }
@@ -260,11 +279,29 @@ export default function WorkspacePage() {
   );
 
   const handleSave = useCallback(async () => {
-    if (!activeTemplateId || !isDirty || isSaving) return;
+    if (!activeTemplateId || isSaving) return;
+
+    const sanitized = sanitizeHtml(stripAnnotations(editorContent));
+
+    // Always compile preview on Ctrl+S
+    triggerPreview({ source_html: sanitized })
+      .then((r) => {
+        if (r?.compiled_html) {
+          setCompiledHtml(r.compiled_html);
+          setBuildTimeMs(r.build_time_ms);
+        } else {
+          setCompiledHtml(sanitized);
+        }
+      })
+      .catch(() => {
+        setCompiledHtml(sanitized);
+      });
+
+    // Only persist if there are unsaved changes
+    if (!isDirty) return;
 
     setSaveStatus("saving");
     try {
-      const sanitized = sanitizeHtml(stripAnnotations(editorContent));
       const result = await saveVersion({ html_source: sanitized });
       if (result) {
         setSavedContent(editorContent);
@@ -277,18 +314,6 @@ export default function WorkspacePage() {
         // Auto-clear "saved" indicator after 3s
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), 3000);
-
-        // Auto-compile after successful save
-        triggerPreview({ source_html: sanitized })
-          .then((r) => {
-            if (r) {
-              setCompiledHtml(r.compiled_html);
-              setBuildTimeMs(r.build_time_ms);
-            }
-          })
-          .catch(() => {
-            /* save succeeded, silently fail preview */
-          });
       }
     } catch {
       setSaveStatus("error");
@@ -441,6 +466,24 @@ export default function WorkspacePage() {
     toast.success("HTML downloaded");
   }, [editorContent, activeTemplate?.name]);
 
+  // ── Export Complete Handler (captures build ID) ──
+  const handleExportComplete = useCallback(
+    (record: Parameters<typeof addRecord>[0]) => {
+      if (record.build_id) setLastBuildId(record.build_id);
+      addRecord(record);
+    },
+    [addRecord],
+  );
+
+  // ── Submit for Approval Handler ──
+  const handleSubmitForApproval = useCallback(() => {
+    if (!compiledHtml?.trim()) {
+      toast.error("Compile the template first before submitting for approval");
+      return;
+    }
+    setApprovalDialogOpen(true);
+  }, [compiledHtml]);
+
   // ── Push to ESP Handler ──
   const handlePushToESP = useCallback(() => {
     if (!compiledHtml?.trim()) {
@@ -523,17 +566,13 @@ export default function WorkspacePage() {
     if (target.cursor.line === lastFollowLineRef.current) return;
     lastFollowLineRef.current = target.cursor.line;
 
-    const view = editorBridge.editorRef.current?.getView?.();
-    if (!view) return;
+    const editor = editorBridge.editorRef.current?.getEditor?.();
+    if (!editor) return;
 
-    const lineNum = Math.min(target.cursor.line, view.state.doc.lines);
-    const line = view.state.doc.line(lineNum);
-    // Dynamic import to avoid pulling @codemirror/view into page bundle
-    import("@codemirror/view").then(({ EditorView: EV }) => {
-      view.dispatch({
-        effects: EV.scrollIntoView(line.from, { y: "center" }),
-      });
-    });
+    const model = editor.getModel();
+    if (!model) return;
+    const lineNum = Math.min(target.cursor.line, model.getLineCount());
+    editor.revealLineInCenter(lineNum);
   }, [followTarget, collaborators, editorBridge.editorRef]);
 
   // ── Render ──
@@ -577,6 +616,7 @@ export default function WorkspacePage() {
         }}
         onExport={handleExport}
         onPushToESP={handlePushToESP}
+        onSubmitForApproval={handleSubmitForApproval}
         brandViolations={brandViolations}
         onGenerateImage={() => setImageGenOpen(true)}
         collaborators={collaborators}
@@ -591,6 +631,7 @@ export default function WorkspacePage() {
             onRunQA={handleRunQA}
             onExport={handleExport}
             onPushToESP={handlePushToESP}
+            onSubmitForApproval={handleSubmitForApproval}
             onGenerateImage={() => setImageGenOpen(true)}
             onToggleQAPanel={handleToggleQAPanel}
             onDesignRefToggle={(open) => {
@@ -620,7 +661,7 @@ export default function WorkspacePage() {
                   onBrandViolationsChange={setBrandViolations}
                   onCursorOffsetChange={(offset) => { cursorOffsetRef.current = offset; }}
                   onSelectionChange={setHasEditorSelection}
-                  collaborative={collabDoc && awareness ? {
+                  collaborative={collabDoc && awareness && collabStatus === "connected" ? {
                     doc: collabDoc,
                     awareness,
                     user: { name: "You", color: getCursorColor(collabDoc.clientID), role: "developer" },
@@ -727,7 +768,8 @@ export default function WorkspacePage() {
         projectId={projectId}
         templateName={activeTemplate?.name ?? "email"}
         sourceHtml={editorContent}
-        onExportComplete={addRecord}
+        buildId={lastBuildId}
+        onExportComplete={handleExportComplete}
       />
 
       <ImageGenDialog
@@ -759,6 +801,18 @@ export default function WorkspacePage() {
         templateName={activeTemplate?.name ?? "email"}
         projectId={projectId}
         compiledHtml={compiledHtml}
+        buildId={lastBuildId}
+      />
+
+      <ApprovalRequestDialog
+        open={approvalDialogOpen}
+        onOpenChange={setApprovalDialogOpen}
+        buildId={lastBuildId}
+        projectId={projectId}
+        compiledHtml={compiledHtml}
+        onSubmitted={() => {
+          setApprovalDialogOpen(false);
+        }}
       />
 
       {chatCollapsed && (

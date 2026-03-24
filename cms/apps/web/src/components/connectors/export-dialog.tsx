@@ -5,8 +5,12 @@ import { Download, Plug, Cloud, Palette, Mail, Loader2, CheckCircle2, XCircle } 
 import { toast } from "sonner";
 import { useEmailBuild } from "@/hooks/use-email";
 import { useExport } from "@/hooks/use-connectors";
+import { useExportPreCheck } from "@/hooks/use-export-pre-check";
 import { GatePanel } from "@/components/rendering/gate-panel";
+import { ApprovalGatePanel } from "@/components/approvals/approval-gate-panel";
+import { ApprovalRequestDialog } from "@/components/approvals/approval-request-dialog";
 import type { ExportHistoryRecord, ConnectorPlatform } from "@/types/connectors";
+import type { ExportPreCheckResponse } from "@/types/approval";
 
 type DialogState = "idle" | "building" | "exporting" | "success" | "error";
 type ConnectorTab = "raw_html" | "braze" | "sfmc" | "adobe_campaign" | "taxi";
@@ -96,6 +100,7 @@ interface ExportDialogProps {
   projectId: number;
   templateName: string;
   sourceHtml: string;
+  buildId?: number | null;
   onExportComplete?: (record: ExportHistoryRecord) => void;
 }
 
@@ -106,16 +111,20 @@ export function ExportDialog({
   projectId,
   templateName,
   sourceHtml,
+  buildId,
   onExportComplete,
 }: ExportDialogProps) {
   const [activeTab, setActiveTab] = useState<ConnectorTab>("raw_html");
   const [espStates, setEspStates] = useState<Record<string, EspState>>({});
   const [showGate, setShowGate] = useState(false);
   const [pendingExportCfg, setPendingExportCfg] = useState<ConnectorConfig | null>(null);
+  const [preCheckResult, setPreCheckResult] = useState<ExportPreCheckResponse | null>(null);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const { trigger: triggerBuild } = useEmailBuild();
   const { trigger: triggerExport } = useExport();
+  const { trigger: triggerPreCheck } = useExportPreCheck();
 
   const espStatesRef = useRef(espStates);
   espStatesRef.current = espStates;
@@ -135,6 +144,8 @@ export function ExportDialog({
       setEspStates({});
       setShowGate(false);
       setPendingExportCfg(null);
+      setPreCheckResult(null);
+      setApprovalDialogOpen(false);
     }
   }, [open]);
 
@@ -266,19 +277,46 @@ export function ExportDialog({
     [projectId, templateName, sourceHtml, triggerBuild, triggerExport, onExportComplete, updateEspState]
   );
 
-  const handleEspExportClick = useCallback((cfg: ConnectorConfig) => {
-    const state = espStatesRef.current[cfg.id] ?? initialEspState;
-    if (!state.name.trim()) return;
-    setPendingExportCfg(cfg);
-    setShowGate(true);
-  }, []);
+  const handleEspExportClick = useCallback(
+    async (cfg: ConnectorConfig) => {
+      const state = espStatesRef.current[cfg.id] ?? initialEspState;
+      if (!state.name.trim() || !compiledHtml) return;
+      setPendingExportCfg(cfg);
+
+      // Run pre-check to determine if approval is needed
+      try {
+        const result = await triggerPreCheck({
+          html: compiledHtml,
+          project_id: projectId,
+          ...(buildId ? { build_id: buildId } : {}),
+        });
+        setPreCheckResult(result);
+
+        if (result.approval?.required && !result.approval.passed) {
+          // Show gate panel area — approval gate will block
+          setShowGate(true);
+          return;
+        }
+      } catch {
+        // Pre-check failed — proceed to rendering gate only
+      }
+
+      setShowGate(true);
+    },
+    [compiledHtml, projectId, buildId, triggerPreCheck],
+  );
 
   const handleGateApproved = useCallback(() => {
+    // Block if approval is required but not passed
+    if (preCheckResult?.approval?.required && !preCheckResult.approval.passed) {
+      toast.warning("Approval required before export");
+      return;
+    }
     setShowGate(false);
     if (pendingExportCfg) {
       handleEspExport(pendingExportCfg);
     }
-  }, [pendingExportCfg, handleEspExport]);
+  }, [pendingExportCfg, handleEspExport, preCheckResult]);
 
   if (!open) return null;
 
@@ -349,13 +387,21 @@ export function ExportDialog({
             </div>
           ) : activeConfig ? (
             showGate && pendingExportCfg?.id === activeConfig.id ? (
-              <GatePanel
-                html={compiledHtml}
-                projectId={projectId}
-                onApproved={handleGateApproved}
-                onCancel={() => setShowGate(false)}
-                approveLabel={pendingExportCfg.exportButton}
-              />
+              <div className="space-y-4">
+                {preCheckResult?.approval?.required && (
+                  <ApprovalGatePanel
+                    approvalResult={preCheckResult.approval}
+                    onRequestApproval={() => setApprovalDialogOpen(true)}
+                  />
+                )}
+                <GatePanel
+                  html={compiledHtml}
+                  projectId={projectId}
+                  onApproved={handleGateApproved}
+                  onCancel={() => setShowGate(false)}
+                  approveLabel={pendingExportCfg.exportButton}
+                />
+              </div>
             ) : (
               <EspTabContent
                 config={activeConfig}
@@ -380,6 +426,18 @@ export function ExportDialog({
           </button>
         </div>
       </div>
+
+      <ApprovalRequestDialog
+        open={approvalDialogOpen}
+        onOpenChange={setApprovalDialogOpen}
+        buildId={buildId ?? null}
+        projectId={projectId}
+        compiledHtml={compiledHtml}
+        onSubmitted={() => {
+          setApprovalDialogOpen(false);
+          toast.success("Approval request submitted — export will be available after review");
+        }}
+      />
     </dialog>
   );
 }

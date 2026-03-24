@@ -11,8 +11,12 @@ import {
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useESPConnections, usePushToESP } from "@/hooks/use-esp-sync";
+import { useExportPreCheck } from "@/hooks/use-export-pre-check";
 import { ESP_LABELS } from "@/types/esp-sync";
 import { GatePanel } from "@/components/rendering/gate-panel";
+import { ApprovalGatePanel } from "@/components/approvals/approval-gate-panel";
+import { ApprovalRequestDialog } from "@/components/approvals/approval-request-dialog";
+import type { ExportPreCheckResponse } from "@/types/approval";
 
 interface PushToESPDialogProps {
   open: boolean;
@@ -21,6 +25,7 @@ interface PushToESPDialogProps {
   templateName: string;
   projectId: number;
   compiledHtml: string | null;
+  buildId?: number | null;
 }
 
 export function PushToESPDialog({
@@ -30,17 +35,23 @@ export function PushToESPDialog({
   templateName,
   projectId,
   compiledHtml,
+  buildId,
 }: PushToESPDialogProps) {
   const { data: connections } = useESPConnections();
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const [showGate, setShowGate] = useState(false);
+  const [preCheckResult, setPreCheckResult] = useState<ExportPreCheckResponse | null>(null);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const { trigger: triggerPreCheck } = useExportPreCheck();
 
   // Reset selection when dialog opens
   const [prevOpen, setPrevOpen] = useState(false);
   if (open && !prevOpen) {
     setSelectedId(null);
     setShowGate(false);
+    setPreCheckResult(null);
+    setApprovalDialogOpen(false);
   }
   if (open !== prevOpen) {
     setPrevOpen(open);
@@ -54,12 +65,30 @@ export function PushToESPDialog({
   const selectedConnection = projectConnections.find((c) => c.id === selectedId) ?? null;
   const { trigger, isMutating } = usePushToESP(selectedId);
 
-  const handlePushClick = () => {
-    if (!selectedId || !selectedConnection) return;
+  const handlePushClick = async () => {
+    if (!selectedId || !selectedConnection || !compiledHtml) return;
+
+    // Run pre-check to determine if approval is needed
+    try {
+      const result = await triggerPreCheck({
+        html: compiledHtml,
+        project_id: projectId,
+        ...(buildId ? { build_id: buildId } : {}),
+      });
+      setPreCheckResult(result);
+    } catch {
+      // Pre-check failed — proceed to rendering gate only
+    }
+
     setShowGate(true);
   };
 
   const handleGateApproved = async () => {
+    // Block if approval is required but not passed
+    if (preCheckResult?.approval?.required && !preCheckResult.approval.passed) {
+      toast.warning("Approval required before push");
+      return;
+    }
     setShowGate(false);
     if (!selectedId || !selectedConnection) return;
     try {
@@ -83,13 +112,21 @@ export function PushToESPDialog({
         </DialogHeader>
 
         {showGate ? (
-          <GatePanel
-            html={compiledHtml}
-            projectId={projectId}
-            onApproved={handleGateApproved}
-            onCancel={() => setShowGate(false)}
-            approveLabel="Push Template"
-          />
+          <div className="space-y-4">
+            {preCheckResult?.approval?.required && (
+              <ApprovalGatePanel
+                approvalResult={preCheckResult.approval}
+                onRequestApproval={() => setApprovalDialogOpen(true)}
+              />
+            )}
+            <GatePanel
+              html={compiledHtml}
+              projectId={projectId}
+              onApproved={handleGateApproved}
+              onCancel={() => setShowGate(false)}
+              approveLabel="Push Template"
+            />
+          </div>
         ) : (
           <>
             {projectConnections.length === 0 ? (
@@ -156,6 +193,18 @@ export function PushToESPDialog({
           </>
         )}
       </DialogContent>
+
+      <ApprovalRequestDialog
+        open={approvalDialogOpen}
+        onOpenChange={setApprovalDialogOpen}
+        buildId={buildId ?? null}
+        projectId={projectId}
+        compiledHtml={compiledHtml}
+        onSubmitted={() => {
+          setApprovalDialogOpen(false);
+          toast.success("Approval request submitted — push will be available after review");
+        }}
+      />
     </Dialog>
   );
 }
