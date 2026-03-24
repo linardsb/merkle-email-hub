@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from app.core.logging import get_logger
 from app.design_sync.protocol import (
@@ -14,6 +15,9 @@ from app.design_sync.protocol import (
     ExtractedTypography,
 )
 from app.projects.design_system import BrandPalette, Typography
+
+if TYPE_CHECKING:
+    from app.design_sync.figma.layout_analyzer import EmailSection, TextBlock
 
 logger = get_logger(__name__)
 
@@ -42,6 +46,8 @@ class _NodeProps:
     border_color: str | None = None
     border_width: float = 0
     layout_direction: str | None = None  # "row" | "column" | None
+    line_height_px: float | None = None
+    letter_spacing_px: float | None = None
 
 
 def _sanitize_css_value(value: str) -> str:
@@ -202,6 +208,12 @@ def node_to_email_html(
     props_map: dict[str, _NodeProps] | None = None,
     parent_bg: str | None = None,
     parent_font: str | None = None,
+    section_map: dict[str, EmailSection] | None = None,
+    button_ids: set[str] | None = None,
+    text_meta: dict[str, TextBlock] | None = None,
+    current_section: EmailSection | None = None,
+    body_font_size: float = 16.0,
+    _depth: int = 0,
 ) -> str:
     """Convert a DesignNode tree to email-safe HTML (table layout).
 
@@ -214,6 +226,12 @@ def node_to_email_html(
         props_map: Optional supplementary visual properties keyed by node ID.
         parent_bg: Inherited background color from parent frame for contrast.
         parent_font: Inherited font-family from parent frame for inline styles.
+        section_map: Node ID → EmailSection from layout analysis.
+        button_ids: Node IDs identified as buttons by layout analysis.
+        text_meta: Node ID → TextBlock metadata from layout analysis.
+        current_section: The enclosing EmailSection (for context propagation).
+        body_font_size: Base body font size in px (default 16).
+        _depth: Internal nesting depth counter for guard.
     """
     pad = "  " * indent
     props = props_map.get(node.id) if props_map else None
@@ -250,7 +268,8 @@ def node_to_email_html(
         node_id_attr = f' data-node-id="{html.escape(node.id)}"'
         return (
             f'{pad}<img src="" alt="{alt}"{node_id_attr}{w}{h}'
-            f' style="display:block;border:0;width:100%;height:auto;" />'
+            f' style="display:block;border:0;outline:none;text-decoration:none;'
+            f'-ms-interpolation-mode:bicubic;width:100%;height:auto;" />'
         )
 
     # Frame/Group/Component/Instance → table with rows
@@ -260,11 +279,21 @@ def node_to_email_html(
         DesignNodeType.COMPONENT,
         DesignNodeType.INSTANCE,
     ):
+        # Look up section data from layout analysis
+        section = current_section
+        if section_map and node.id in section_map:
+            section = section_map[node.id]
+
         # Nested frames use 100% to fill parent; the converter_service wraps
         # top-level frames in <tr><td>, so 100% is correct at every level.
         width_attr = ' width="100%"'
         bgcolor_attr = ""
-        style_parts: list[str] = []
+        # MSO reset styles on every <table>
+        style_parts: list[str] = [
+            "border-collapse:collapse",
+            "mso-table-lspace:0pt",
+            "mso-table-rspace:0pt",
+        ]
         # Track the effective background for child text contrast
         effective_bg = parent_bg
 
@@ -297,7 +326,36 @@ def node_to_email_html(
                     f"{int(props.padding_bottom)}px {int(props.padding_left)}px"
                 )
 
-        style_attr = f' style="{";".join(style_parts)}"' if style_parts else ""
+        # Nesting depth guard — flatten beyond depth 6
+        if _depth > 6:
+            logger.warning(
+                "design_sync.nesting_depth_exceeded",
+                node_id=node.id,
+                node_name=node.name,
+                depth=_depth,
+            )
+            flat_lines: list[str] = []
+            for child in node.children:
+                child_html = node_to_email_html(
+                    child,
+                    indent=indent + 1,
+                    props_map=props_map,
+                    parent_bg=effective_bg,
+                    parent_font=effective_font,
+                    section_map=section_map,
+                    button_ids=button_ids,
+                    text_meta=text_meta,
+                    current_section=section,
+                    body_font_size=body_font_size,
+                    _depth=_depth + 1,
+                )
+                if child.type != DesignNodeType.TEXT:
+                    flat_lines.append(f"{pad}<tr><td>{child_html}</td></tr>")
+                else:
+                    flat_lines.append(f"{pad}<tr>{child_html}</tr>")
+            return "\n".join(flat_lines) if flat_lines else ""
+
+        style_attr = f' style="{";".join(style_parts)}"'
         lines = [
             f"{pad}<table{width_attr}{bgcolor_attr}{style_attr}"
             f' cellpadding="0" cellspacing="0" border="0" role="presentation">'
@@ -316,6 +374,12 @@ def node_to_email_html(
                         props_map=props_map,
                         parent_bg=effective_bg,
                         parent_font=effective_font,
+                        section_map=section_map,
+                        button_ids=button_ids,
+                        text_meta=text_meta,
+                        current_section=section,
+                        body_font_size=body_font_size,
+                        _depth=_depth + 1,
                     )
                     if child.type != DesignNodeType.TEXT:
                         font_style = (

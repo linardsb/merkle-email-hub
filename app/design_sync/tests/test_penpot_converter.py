@@ -490,9 +490,13 @@ class TestFrameWidthAndFont:
             text_color="#000000",
             body_font="Arial, Helvetica, sans-serif",
             sections="",
+            container_width=600,
         )
         # The non-MSO main table should have width="600"
-        assert 'width="600" style="margin:0 auto;max-width:600px' in html
+        assert 'width="600"' in html
+        assert "max-width:600px" in html
+        assert "mso-table-lspace:0pt" in html
+        assert "mso-table-rspace:0pt" in html
 
     def test_email_skeleton_body_has_inline_font(self) -> None:
         """<body> tag includes font-family: in inline style."""
@@ -504,6 +508,7 @@ class TestFrameWidthAndFont:
             text_color="#000000",
             body_font="Inter, Arial, Helvetica, sans-serif",
             sections="",
+            container_width=600,
         )
         assert "font-family:Inter, Arial, Helvetica, sans-serif;" in html
 
@@ -520,6 +525,7 @@ class TestConverterNoDivOrP:
             text_color="#000000",
             body_font="Arial, Helvetica, sans-serif",
             sections="<tr><td>Content</td></tr>",
+            container_width=600,
         )
         assert "<div" not in html
         assert "<p" not in html
@@ -731,3 +737,319 @@ class TestSanitizeWebTagsForEmail:
         assert "<div" in result
         assert "text-align:center" in result
         assert "wrap" in result
+
+
+class TestEmailSkeletonMetaTags:
+    def test_format_detection_meta(self) -> None:
+        from app.design_sync.converter_service import EMAIL_SKELETON
+
+        html = EMAIL_SKELETON.format(
+            style_block="<style></style>",
+            bg_color="#ffffff",
+            text_color="#000000",
+            body_font="Arial, Helvetica, sans-serif",
+            sections="",
+            container_width=600,
+        )
+        assert '<meta name="format-detection"' in html
+        assert '<meta name="x-apple-disable-message-reformatting">' in html
+
+    def test_mso_reset_in_style_block(self) -> None:
+        from app.design_sync.converter_service import DesignConverterService
+        from app.design_sync.protocol import DesignFileStructure, ExtractedTokens
+
+        structure = DesignFileStructure(
+            file_name="test.fig",
+            pages=[
+                DesignNode(
+                    id="page",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Section",
+                            type=DesignNodeType.FRAME,
+                            width=600,
+                            children=[],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        result = DesignConverterService().convert(structure, ExtractedTokens())
+        assert "border-collapse: collapse" in result.html
+        assert "mso-table-lspace: 0pt" in result.html
+        assert "-ms-interpolation-mode: bicubic" in result.html
+
+
+class TestInlineMSOStyles:
+    def test_table_has_mso_resets(self) -> None:
+        """Every <table> in converter output has MSO reset inline styles."""
+        node = DesignNode(
+            id="1",
+            name="Section",
+            type=DesignNodeType.FRAME,
+            width=600,
+            children=[],
+        )
+        result = node_to_email_html(node)
+        assert "border-collapse:collapse" in result
+        assert "mso-table-lspace:0pt" in result
+        assert "mso-table-rspace:0pt" in result
+
+    def test_image_has_mso_resets(self) -> None:
+        """<img> tags include MSO-safe inline styles."""
+        node = DesignNode(id="2", name="Photo", type=DesignNodeType.IMAGE, width=600, height=300)
+        result = node_to_email_html(node)
+        assert "-ms-interpolation-mode:bicubic" in result
+        assert "outline:none" in result
+        assert "text-decoration:none" in result
+
+
+class TestNestingDepthGuard:
+    def test_depth_exceeding_6_flattens(self) -> None:
+        """Deeply nested frames are flattened beyond depth 6."""
+        # Build 8-level deep nesting
+        deepest = DesignNode(
+            id="t-deep",
+            name="deep-text",
+            type=DesignNodeType.TEXT,
+            text_content="deep",
+            y=0,
+        )
+        current = deepest
+        for i in range(8):
+            current = DesignNode(
+                id=f"f{i}",
+                name=f"Frame-{i}",
+                type=DesignNodeType.FRAME,
+                width=600,
+                children=[current],
+            )
+        result = node_to_email_html(current)
+        # Should still contain the text
+        assert "deep" in result
+        # Count <table> tags — should be capped (not 8 nested tables)
+        table_count = result.count("<table")
+        assert table_count <= 7  # depth 0-6 = 7 tables max
+
+
+class TestLayoutAnalyzerIntegration:
+    def test_convert_populates_layout(self) -> None:
+        """convert() returns ConversionResult with layout data."""
+        from app.design_sync.converter_service import DesignConverterService
+        from app.design_sync.protocol import DesignFileStructure, ExtractedTokens
+
+        structure = DesignFileStructure(
+            file_name="test.fig",
+            pages=[
+                DesignNode(
+                    id="page",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Header",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=80,
+                            children=[],
+                        ),
+                        DesignNode(
+                            id="f2",
+                            name="Content",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=100,
+                            width=600,
+                            height=200,
+                            children=[
+                                DesignNode(
+                                    id="t1",
+                                    name="Body",
+                                    type=DesignNodeType.TEXT,
+                                    text_content="Hello",
+                                    y=0,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        result = DesignConverterService().convert(structure, ExtractedTokens())
+        assert result.layout is not None
+        assert len(result.layout.sections) == 2
+        assert result.sections_count == 2
+
+    def test_container_width_from_layout(self) -> None:
+        """Container width derived from layout.overall_width."""
+        from app.design_sync.converter_service import DesignConverterService
+        from app.design_sync.protocol import DesignFileStructure, ExtractedTokens
+
+        structure = DesignFileStructure(
+            file_name="test.fig",
+            pages=[
+                DesignNode(
+                    id="page",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Section",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=700,
+                            height=200,
+                            children=[],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        result = DesignConverterService().convert(structure, ExtractedTokens())
+        assert 'width="700"' in result.html
+        assert "max-width:700px" in result.html
+
+    def test_container_width_clamped(self) -> None:
+        """Container width > 800 is clamped to 800."""
+        from app.design_sync.converter_service import DesignConverterService
+        from app.design_sync.protocol import DesignFileStructure, ExtractedTokens
+
+        structure = DesignFileStructure(
+            file_name="test.fig",
+            pages=[
+                DesignNode(
+                    id="page",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Section",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=1200,
+                            height=200,
+                            children=[],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        result = DesignConverterService().convert(structure, ExtractedTokens())
+        assert 'width="800"' in result.html
+        assert "max-width:800px" in result.html
+
+
+class TestBuildPropsMapFromNodes:
+    def test_extracts_all_fields(self) -> None:
+        """_build_props_map_from_nodes extracts full DesignNode properties."""
+        from app.design_sync.converter_service import DesignConverterService
+
+        frames = [
+            DesignNode(
+                id="f1",
+                name="Section",
+                type=DesignNodeType.FRAME,
+                width=600,
+                padding_top=24.0,
+                padding_right=16.0,
+                padding_bottom=24.0,
+                padding_left=16.0,
+                layout_mode="HORIZONTAL",
+                children=[
+                    DesignNode(
+                        id="t1",
+                        name="Text",
+                        type=DesignNodeType.TEXT,
+                        font_family="Inter",
+                        font_size=18.0,
+                        font_weight=700,
+                        line_height_px=24.0,
+                        letter_spacing_px=0.5,
+                        text_content="Hello",
+                    ),
+                ],
+            ),
+        ]
+        svc = DesignConverterService()
+        props = svc._build_props_map_from_nodes(frames)
+
+        assert "f1" in props
+        assert props["f1"].padding_top == 24.0
+        assert props["f1"].padding_right == 16.0
+        assert props["f1"].layout_direction == "row"
+
+        assert "t1" in props
+        assert props["t1"].font_family == "Inter"
+        assert props["t1"].font_size == 18.0
+        assert props["t1"].font_weight == "700"
+        assert props["t1"].line_height_px == 24.0
+        assert props["t1"].letter_spacing_px == 0.5
+
+    def test_vertical_layout_direction(self) -> None:
+        from app.design_sync.converter_service import DesignConverterService
+
+        frames = [
+            DesignNode(
+                id="f1",
+                name="Stack",
+                type=DesignNodeType.FRAME,
+                width=600,
+                layout_mode="VERTICAL",
+            ),
+        ]
+        svc = DesignConverterService()
+        props = svc._build_props_map_from_nodes(frames)
+        assert props["f1"].layout_direction == "column"
+
+
+class TestInterSectionSpacer:
+    def test_spacer_row_when_spacing_after(self) -> None:
+        """Sections with spacing_after > 0 produce spacer <tr> rows."""
+        from app.design_sync.converter_service import DesignConverterService
+        from app.design_sync.protocol import DesignFileStructure, ExtractedTokens
+
+        structure = DesignFileStructure(
+            file_name="test.fig",
+            pages=[
+                DesignNode(
+                    id="page",
+                    name="Page",
+                    type=DesignNodeType.PAGE,
+                    children=[
+                        DesignNode(
+                            id="f1",
+                            name="Header",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=80,
+                            children=[],
+                        ),
+                        DesignNode(
+                            id="f2",
+                            name="Content",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=120,  # 40px gap from header bottom (80)
+                            width=600,
+                            height=200,
+                            children=[],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        result = DesignConverterService().convert(structure, ExtractedTokens())
+        assert "mso-line-height-rule:exactly" in result.html
+        assert 'aria-hidden="true"' in result.html
