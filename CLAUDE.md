@@ -43,6 +43,8 @@ make rendering-regression # Run visual regression tests vs baselines
 
 **Config:** Nested Pydantic settings, `env_nested_delimiter="__"` (e.g. `DATABASE__URL`, `AI__PROVIDER`).
 
+**Plans:** Implementation plans in `.agents/plans/` must not exceed 700 lines. Use compact descriptions, tables, and `file:line` references — not full code blocks.
+
 ## Architecture
 
 Backend: `app/` (VSA features). Frontend: `cms/`. Sidecars: `services/maizzle-builder/`, `services/mock-esp/`. Migrations: `alembic/`.
@@ -61,7 +63,7 @@ Phases 0–31 complete. **Phase 31** (HTML Import Fidelity & Preview Accuracy) *
 
 **Phase 32** (Agent Email Rendering Intelligence) — centralized client matrix, agent knowledge lookup, content rendering awareness, import annotator depth, cross-agent learning, eval-driven skill updates, visual QA feedback loop. **Next — independent of Phase 33.**
 
-**Phase 33** (Design Token Pipeline Overhaul — Figma → Email HTML) — Figma Variables API, opacity compositing, token validation layer, typography pipeline (line-height/letter-spacing/font mapping), spacing tokens & auto-layout→table, multi-column proportional widths, semantic HTML (headings/paragraphs/buttons), dark mode extraction, gradient fallbacks, Scaffolder integration. **Next — independent of Phase 32, recommended to start first (upstream fixes).**
+**Phase 33** (Design Token Pipeline Refactor — continues Phase 31.5–31.6) — refactor existing `converter.py`/`converter_service.py` to use rich layout data Phase 31.6 already extracts but converter ignores. **33.0 DONE** (layout analyzer wired into converter, `_build_props_map_from_nodes()` extracts all fields, MSO reset styles on tables/images/skeleton, `ConversionResult.layout`, dynamic container width, inter-section spacers, nesting depth guard). **33.1 DONE** (Figma Variables API with alias resolution + depth guard, `_rgba_to_hex_with_opacity()` alpha compositing, gradient midpoint extraction, stroke/fill separation, `ExtractedVariable` dataclass, `ExtractedTokens` extended with `variables_source`/`modes`/`stroke_colors`/`variables`). Remaining: token validation (33.2), typography pipeline (33.3), spacing tokens (33.4), multi-column widths (33.5), semantic HTML (33.6), dark mode extraction (33.7), Scaffolder integration (33.8), builder annotations (33.9), image assets (33.10), tests (33.11). 10 subtasks remaining (33.2–33.11). **Next — independent of Phase 32, recommended to start first (upstream fixes).**
 
 ## Compact instructions
 

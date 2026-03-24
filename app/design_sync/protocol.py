@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @dataclass(frozen=True)
@@ -37,12 +37,28 @@ class ExtractedSpacing:
 
 
 @dataclass(frozen=True)
+class ExtractedVariable:
+    """A design variable from the Figma Variables API."""
+
+    name: str
+    collection: str
+    type: str  # "COLOR", "FLOAT", "STRING", "BOOLEAN"
+    values_by_mode: dict[str, Any]
+    is_alias: bool = False
+    alias_path: str | None = None
+
+
+@dataclass(frozen=True)
 class ExtractedTokens:
     """All design tokens extracted from a design file."""
 
     colors: list[ExtractedColor] = field(default_factory=list[ExtractedColor])
     typography: list[ExtractedTypography] = field(default_factory=list[ExtractedTypography])
     spacing: list[ExtractedSpacing] = field(default_factory=list[ExtractedSpacing])
+    variables_source: bool = False
+    modes: dict[str, str] | None = None
+    stroke_colors: list[ExtractedColor] = field(default_factory=list[ExtractedColor])
+    variables: list[ExtractedVariable] = field(default_factory=list[ExtractedVariable])
 
 
 class DesignNodeType(StrEnum):

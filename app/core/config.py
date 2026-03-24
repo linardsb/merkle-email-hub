@@ -331,6 +331,8 @@ class DesignSyncConfig(BaseModel):
     penpot_request_timeout: float = 30.0
     penpot_converter_enabled: bool = False  # DESIGN_SYNC__PENPOT_CONVERTER_ENABLED
     converter_enabled: bool = True  # DESIGN_SYNC__CONVERTER_ENABLED (provider-agnostic)
+    figma_variables_enabled: bool = True  # DESIGN_SYNC__FIGMA_VARIABLES_ENABLED
+    opacity_composite_bg: str = "#FFFFFF"  # Background hex for alpha compositing
 
 
 class ESPSyncConfig(BaseModel):

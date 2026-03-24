@@ -9,6 +9,7 @@ from typing import Any, cast
 
 import httpx
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.design_sync.exceptions import SyncFailedError
 from app.design_sync.protocol import (
@@ -22,6 +23,7 @@ from app.design_sync.protocol import (
     ExtractedSpacing,
     ExtractedTokens,
     ExtractedTypography,
+    ExtractedVariable,
 )
 
 logger = get_logger(__name__)
@@ -30,6 +32,7 @@ _FIGMA_FILE_KEY_RE = re.compile(r"figma\.com/(?:design|file|proto|board|embed)/(
 _FIGMA_API = "https://api.figma.com"
 _TIMEOUT = 60.0
 _MAX_WALK_DEPTH = 500
+_MAX_ALIAS_DEPTH = 10
 
 _FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
     "DOCUMENT": DesignNodeType.OTHER,
@@ -68,6 +71,51 @@ def extract_file_key(url: str) -> str:
 def _rgba_to_hex(r: float, g: float, b: float) -> str:
     """Convert Figma RGBA floats (0-1) to hex string."""
     return f"#{round(r * 255):02X}{round(g * 255):02X}{round(b * 255):02X}"
+
+
+def _rgba_to_hex_with_opacity(
+    r: float,
+    g: float,
+    b: float,
+    fill_alpha: float = 1.0,
+    node_opacity: float = 1.0,
+    bg_hex: str = "#FFFFFF",
+) -> str:
+    """Convert RGBA + node opacity to composited hex against a background."""
+    eff_alpha = fill_alpha * node_opacity
+    if eff_alpha >= 0.999:
+        return _rgba_to_hex(r, g, b)
+    # Parse background hex (fall back to white on malformed input)
+    try:
+        _bg_r = int(bg_hex[1:3], 16)
+        _bg_g = int(bg_hex[3:5], 16)
+        _bg_b = int(bg_hex[5:7], 16)
+    except (ValueError, IndexError):
+        _bg_r, _bg_g, _bg_b = 255, 255, 255
+    bg_r = _bg_r / 255.0
+    bg_g = _bg_g / 255.0
+    bg_b = _bg_b / 255.0
+    # Alpha-composite each channel
+    final_r = r * eff_alpha + bg_r * (1 - eff_alpha)
+    final_g = g * eff_alpha + bg_g * (1 - eff_alpha)
+    final_b = b * eff_alpha + bg_b * (1 - eff_alpha)
+    return _rgba_to_hex(final_r, final_g, final_b)
+
+
+def _gradient_midpoint_hex(gradient_stops: list[dict[str, Any]]) -> str | None:
+    """Average RGB of first and last gradient stop. Returns None if < 2 stops."""
+    if len(gradient_stops) < 2:
+        return None
+    first = gradient_stops[0].get("color")
+    last = gradient_stops[-1].get("color")
+    if not isinstance(first, dict) or not isinstance(last, dict):
+        return None
+    first_d = cast(dict[str, Any], first)
+    last_d = cast(dict[str, Any], last)
+    avg_r = (float(first_d.get("r", 0)) + float(last_d.get("r", 0))) / 2
+    avg_g = (float(first_d.get("g", 0)) + float(last_d.get("g", 0))) / 2
+    avg_b = (float(first_d.get("b", 0)) + float(last_d.get("b", 0))) / 2
+    return _rgba_to_hex(avg_r, avg_g, avg_b)
 
 
 def _float_or_none(val: Any) -> float | None:
@@ -187,7 +235,36 @@ class FigmaDesignSyncService:
         file_data: dict[str, Any] = file_resp.json()
         styles_data: dict[str, Any] = styles_resp.json() if styles_resp.status_code == 200 else {}
 
-        colors = self._parse_colors(file_data, styles_data)
+        settings = get_settings()
+        bg_hex = settings.design_sync.opacity_composite_bg
+
+        # Variables-first token extraction
+        var_colors: list[ExtractedColor] = []
+        var_variables: list[ExtractedVariable] = []
+        var_modes: dict[str, str] = {}
+        variables_source = False
+
+        if settings.design_sync.figma_variables_enabled:
+            try:
+                raw_vars = await self._fetch_variables(file_ref, access_token)
+                if raw_vars is not None:
+                    var_colors, _var_typography, var_variables, var_modes = self._parse_variables(
+                        raw_vars, bg_hex=bg_hex
+                    )
+                    if var_colors:
+                        variables_source = True
+            except SyncFailedError:
+                raise
+            except Exception:
+                logger.warning("design_sync.figma.variables_parse_failed", exc_info=True)
+
+        # Styles/node-walk fallback (or supplement)
+        if variables_source:
+            colors = var_colors
+            stroke_colors: list[ExtractedColor] = []
+        else:
+            colors, stroke_colors = self._parse_colors(file_data, styles_data, bg_hex=bg_hex)
+
         typography = self._parse_typography(file_data, styles_data)
         spacing = self._parse_spacing(file_data)
 
@@ -196,9 +273,18 @@ class FigmaDesignSyncService:
             colors=len(colors),
             typography=len(typography),
             spacing=len(spacing),
+            variables_source=variables_source,
         )
 
-        tokens = ExtractedTokens(colors=colors, typography=typography, spacing=spacing)
+        tokens = ExtractedTokens(
+            colors=colors,
+            typography=typography,
+            spacing=spacing,
+            variables_source=variables_source,
+            modes=var_modes if var_modes else None,
+            stroke_colors=stroke_colors if not variables_source else [],
+            variables=var_variables,
+        )
 
         # Parse file structure from the same response (no extra API call)
         file_name = str(file_data.get("name", "Untitled"))
@@ -214,14 +300,208 @@ class FigmaDesignSyncService:
 
         return tokens, structure
 
+    async def _fetch_variables(self, file_ref: str, access_token: str) -> dict[str, Any] | None:
+        """Fetch local and published variables from the Figma Variables API."""
+        headers = {"X-Figma-Token": access_token}
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            local_resp = await client.get(
+                f"{_FIGMA_API}/v1/files/{file_ref}/variables/local",
+                headers=headers,
+            )
+            if local_resp.status_code == 403:
+                logger.info("design_sync.figma.variables_not_available", reason="403")
+                return None
+            if local_resp.status_code == 429:
+                retry_after = local_resp.headers.get("Retry-After", "60")
+                raise SyncFailedError(
+                    f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+                )
+            if local_resp.status_code != 200:
+                logger.warning(
+                    "design_sync.figma.variables_fetch_failed",
+                    status=local_resp.status_code,
+                )
+                return None
+
+            pub_resp = await client.get(
+                f"{_FIGMA_API}/v1/files/{file_ref}/variables/published",
+                headers=headers,
+            )
+            if pub_resp.status_code == 429:
+                retry_after = pub_resp.headers.get("Retry-After", "60")
+                raise SyncFailedError(
+                    f"Figma API rate limit exceeded. Try again in {retry_after} seconds."
+                )
+
+        local_json: dict[str, Any] = local_resp.json()
+        pub_json: dict[str, Any] = pub_resp.json() if pub_resp.status_code == 200 else {}
+        return {"local": local_json, "published": pub_json}
+
+    def _resolve_variable_alias(
+        self,
+        value: Any,
+        variables_by_id: dict[str, dict[str, Any]],
+        mode_id: str,
+        depth: int = 0,
+    ) -> Any:
+        """Walk alias chain to resolve a variable value."""
+        if depth >= _MAX_ALIAS_DEPTH:
+            logger.warning("design_sync.figma.alias_depth_exceeded", depth=depth)
+            return None
+        if not isinstance(value, dict):
+            return value
+        value_d = cast(dict[str, Any], value)
+        if value_d.get("type") != "VARIABLE_ALIAS":
+            return value
+        target_id = str(value_d.get("id", ""))
+        target_var = variables_by_id.get(target_id)
+        if not target_var:
+            return None
+        values_by_mode = target_var.get("valuesByMode", {})
+        resolved = values_by_mode.get(mode_id)
+        if resolved is None:
+            # Fall back to first available mode
+            for v in values_by_mode.values():
+                resolved = v
+                break
+        if resolved is None:
+            return None
+        return self._resolve_variable_alias(resolved, variables_by_id, mode_id, depth + 1)
+
+    def _parse_variables(
+        self, raw: dict[str, Any], bg_hex: str = "#FFFFFF"
+    ) -> tuple[
+        list[ExtractedColor], list[ExtractedTypography], list[ExtractedVariable], dict[str, str]
+    ]:
+        """Parse Variables API response into colors, typography (future), variables, and modes."""
+        colors: list[ExtractedColor] = []
+        seen_hex: set[str] = set()
+        variables: list[ExtractedVariable] = []
+        global_modes: dict[str, str] = {}
+
+        local_raw = raw.get("local", {})
+        local_meta: dict[str, Any] = (
+            cast(dict[str, Any], cast(dict[str, Any], local_raw).get("meta", {}))
+            if isinstance(local_raw, dict)
+            else {}
+        )
+        meta_d = cast(dict[str, Any], local_meta) if isinstance(local_meta, dict) else {}  # type: ignore[redundant-cast]
+        collections: dict[str, Any] = cast(dict[str, Any], meta_d.get("variableCollections", {}))
+        all_variables: dict[str, Any] = cast(dict[str, Any], meta_d.get("variables", {}))
+
+        # Build mode name lookup from collections
+        mode_name_map: dict[str, str] = {}  # mode_id -> mode_name
+        for coll_raw in collections.values():
+            if not isinstance(coll_raw, dict):
+                continue
+            coll_d = cast(dict[str, Any], coll_raw)
+            for mode in cast(list[Any], coll_d.get("modes", [])):
+                if isinstance(mode, dict):
+                    mode_d = cast(dict[str, Any], mode)
+                    mid = str(mode_d.get("modeId", ""))
+                    mname = str(mode_d.get("name", mid))
+                    mode_name_map[mid] = mname
+
+        # Use first collection's modes as global_modes
+        for coll_raw in collections.values():
+            if isinstance(coll_raw, dict):
+                coll_d = cast(dict[str, Any], coll_raw)
+                for mode in cast(list[Any], coll_d.get("modes", [])):
+                    if isinstance(mode, dict):
+                        mode_d = cast(dict[str, Any], mode)
+                        mid = str(mode_d.get("modeId", ""))
+                        mname = str(mode_d.get("name", mid))
+                        global_modes[mname] = mid
+                break
+
+        # Default mode: first in global_modes
+        default_mode_id = next(iter(global_modes.values()), "")
+
+        for var_id, var_data_raw in all_variables.items():
+            if not isinstance(var_data_raw, dict):
+                continue
+            var_data = cast(dict[str, Any], var_data_raw)
+            var_name = str(var_data.get("name", var_id))
+            resolved_type = str(var_data.get("resolvedType", ""))
+            collection_id = str(var_data.get("variableCollectionId", ""))
+            coll_name = ""
+            coll_data = collections.get(collection_id)
+            if isinstance(coll_data, dict):
+                coll_name = str(cast(dict[str, Any], coll_data).get("name", ""))
+
+            values_by_mode_raw: dict[str, Any] = cast(
+                dict[str, Any], var_data.get("valuesByMode", {})
+            )
+            resolved_values: dict[str, Any] = {}
+            is_alias = False
+            alias_path: str | None = None
+
+            for mid, val in values_by_mode_raw.items():
+                mname = mode_name_map.get(mid, mid)
+                if (
+                    isinstance(val, dict)
+                    and cast(dict[str, Any], val).get("type") == "VARIABLE_ALIAS"
+                ):
+                    is_alias = True
+                    target_id_str = str(cast(dict[str, Any], val).get("id", ""))
+                    target_var_raw = all_variables.get(target_id_str)
+                    if isinstance(target_var_raw, dict):
+                        alias_path = str(
+                            cast(dict[str, Any], target_var_raw).get("name", target_id_str)
+                        )
+                resolved = self._resolve_variable_alias(val, all_variables, mid)
+                resolved_values[mname] = resolved
+
+            # Strip leading "color/" prefix from display name
+            display_name = var_name
+            if display_name.lower().startswith("color/"):
+                display_name = display_name[6:]
+
+            variables.append(
+                ExtractedVariable(
+                    name=display_name,
+                    collection=coll_name,
+                    type=resolved_type,
+                    values_by_mode=resolved_values,
+                    is_alias=is_alias,
+                    alias_path=alias_path,
+                )
+            )
+
+            # COLOR variables → extract into colors palette
+            if resolved_type == "COLOR":
+                default_val = self._resolve_variable_alias(
+                    values_by_mode_raw.get(default_mode_id), all_variables, default_mode_id
+                )
+                if isinstance(default_val, dict):
+                    dv = cast(dict[str, Any], default_val)
+                    r = float(dv.get("r", 0))
+                    g = float(dv.get("g", 0))
+                    b = float(dv.get("b", 0))
+                    a = float(dv.get("a", 1.0))
+                    hex_val = _rgba_to_hex_with_opacity(r, g, b, fill_alpha=a, bg_hex=bg_hex)
+                    if hex_val not in seen_hex:
+                        seen_hex.add(hex_val)
+                        colors.append(ExtractedColor(name=display_name, hex=hex_val, opacity=a))
+
+        # Typography from Variables is future work (33.3)
+        return colors, [], variables, global_modes
+
     def _parse_colors(
         self,
         file_data: dict[str, Any],
         styles_data: dict[str, Any],  # noqa: ARG002
-    ) -> list[ExtractedColor]:
-        """Extract colour tokens from published styles + node walk fallback."""
+        *,
+        bg_hex: str = "#FFFFFF",
+    ) -> tuple[list[ExtractedColor], list[ExtractedColor]]:
+        """Extract colour tokens from published styles + node walk fallback.
+
+        Returns (fill_colors, stroke_colors).
+        """
         colors: list[ExtractedColor] = []
         seen_hex: set[str] = set()
+        stroke_colors: list[ExtractedColor] = []
+        seen_stroke_hex: set[str] = set()
 
         # Phase 1: Published styles (better names, take priority)
         raw_styles = file_data.get("styles", {})
@@ -244,19 +524,28 @@ class FigmaDesignSyncService:
                         color_raw = fill_d["color"]
                         if isinstance(color_raw, dict):
                             c = cast(dict[str, Any], color_raw)
-                            hex_val = _rgba_to_hex(
+                            opacity = float(c.get("a", 1.0))
+                            hex_val = _rgba_to_hex_with_opacity(
                                 float(c.get("r", 0)),
                                 float(c.get("g", 0)),
                                 float(c.get("b", 0)),
+                                fill_alpha=opacity,
+                                bg_hex=bg_hex,
                             )
-                            opacity = float(c.get("a", 1.0))
                             seen_hex.add(hex_val)
                             colors.append(ExtractedColor(name=name, hex=hex_val, opacity=opacity))
 
         # Phase 2: Node walk (picks up unstyled colors, skips duplicates via seen_hex)
-        self._walk_for_colors(file_data.get("document", {}), colors, seen_hex)
+        self._walk_for_colors(
+            file_data.get("document", {}),
+            colors,
+            seen_hex,
+            stroke_colors=stroke_colors,
+            seen_stroke_hex=seen_stroke_hex,
+            bg_hex=bg_hex,
+        )
 
-        return colors
+        return colors, stroke_colors
 
     def _parse_typography(
         self,
@@ -332,41 +621,110 @@ class FigmaDesignSyncService:
         colors: list[ExtractedColor],
         seen_hex: set[str],
         depth: int = 0,
+        *,
+        stroke_colors: list[ExtractedColor] | None = None,
+        seen_stroke_hex: set[str] | None = None,
+        bg_hex: str = "#FFFFFF",
     ) -> None:
-        """Recursively extract SOLID fill/stroke colors from every node."""
+        """Recursively extract fill/stroke colors from every node."""
         if depth >= _MAX_WALK_DEPTH or not isinstance(node, dict):
             return
         node_d = cast(dict[str, Any], node)
+        node_opacity = float(node_d.get("opacity", 1.0))
+        node_name = str(node_d.get("name", ""))
 
-        for prop in ("fills", "strokes"):
-            raw_list = node_d.get(prop)
-            if not isinstance(raw_list, list):
-                continue
-            for fill_item in cast(list[Any], raw_list):  # type: ignore[redundant-cast]
+        if stroke_colors is None:
+            stroke_colors = []
+        if seen_stroke_hex is None:
+            seen_stroke_hex = set()
+
+        # Fills — extract all gradient midpoints, then topmost visible solid
+        raw_fills = node_d.get("fills")
+        if isinstance(raw_fills, list):
+            fills_list = cast(list[Any], raw_fills)  # type: ignore[redundant-cast]
+            # Pass 1: gradient midpoints (all of them)
+            for fill_item in fills_list:
                 if not isinstance(fill_item, dict):
                     continue
                 fill_d = cast(dict[str, Any], fill_item)
+                if fill_d.get("visible") is False:
+                    continue
+                if fill_d.get("type") == "GRADIENT_LINEAR":
+                    stops = fill_d.get("gradientStops", [])
+                    if isinstance(stops, list):
+                        midpoint = _gradient_midpoint_hex(cast(list[dict[str, Any]], stops))
+                        if midpoint and midpoint not in seen_hex:
+                            seen_hex.add(midpoint)
+                            gname = f"{node_name} (gradient midpoint)" if node_name else midpoint
+                            colors.append(ExtractedColor(name=gname, hex=midpoint, opacity=1.0))
+
+            # Pass 2: topmost visible solid (last in array = topmost in Figma)
+            for fill_item in reversed(fills_list):
+                if not isinstance(fill_item, dict):
+                    continue
+                fill_d = cast(dict[str, Any], fill_item)
+                if fill_d.get("visible") is False:
+                    continue
                 if fill_d.get("type") != "SOLID":
                     continue
                 color_raw = fill_d.get("color")
                 if not isinstance(color_raw, dict):
                     continue
                 c = cast(dict[str, Any], color_raw)
-                alpha = float(c.get("a", 1.0))
-                if alpha < 0.01:
+                fill_alpha = float(c.get("a", 1.0))
+                if fill_alpha * node_opacity < 0.01:
                     continue
-                hex_val = _rgba_to_hex(
+                hex_val = _rgba_to_hex_with_opacity(
                     float(c.get("r", 0)),
                     float(c.get("g", 0)),
                     float(c.get("b", 0)),
+                    fill_alpha=fill_alpha,
+                    node_opacity=node_opacity,
+                    bg_hex=bg_hex,
                 )
-                if hex_val in seen_hex:
+                if hex_val not in seen_hex:
+                    seen_hex.add(hex_val)
+                    colors.append(ExtractedColor(name=hex_val, hex=hex_val, opacity=fill_alpha))
+                break  # Topmost visible solid only
+
+        # Strokes — separate list
+        raw_strokes = node_d.get("strokes")
+        if isinstance(raw_strokes, list):
+            for stroke_item in cast(list[Any], raw_strokes):  # type: ignore[redundant-cast]
+                if not isinstance(stroke_item, dict):
                     continue
-                seen_hex.add(hex_val)
-                colors.append(ExtractedColor(name=hex_val, hex=hex_val, opacity=alpha))
+                stroke_d = cast(dict[str, Any], stroke_item)
+                if stroke_d.get("type") != "SOLID":
+                    continue
+                color_raw = stroke_d.get("color")
+                if not isinstance(color_raw, dict):
+                    continue
+                c = cast(dict[str, Any], color_raw)
+                alpha = float(c.get("a", 1.0))
+                if alpha < 0.01:
+                    continue
+                hex_val = _rgba_to_hex_with_opacity(
+                    float(c.get("r", 0)),
+                    float(c.get("g", 0)),
+                    float(c.get("b", 0)),
+                    fill_alpha=alpha,
+                    node_opacity=node_opacity,
+                    bg_hex=bg_hex,
+                )
+                if hex_val not in seen_stroke_hex:
+                    seen_stroke_hex.add(hex_val)
+                    stroke_colors.append(ExtractedColor(name=hex_val, hex=hex_val, opacity=alpha))
 
         for child in node_d.get("children", []):
-            self._walk_for_colors(child, colors, seen_hex, depth + 1)
+            self._walk_for_colors(
+                child,
+                colors,
+                seen_hex,
+                depth + 1,
+                stroke_colors=stroke_colors,
+                seen_stroke_hex=seen_stroke_hex,
+                bg_hex=bg_hex,
+            )
 
     def _walk_for_typography(
         self,
@@ -558,22 +916,32 @@ class FigmaDesignSyncService:
         # Extract fill colors for the converter pipeline
         fill_color: str | None = None
         text_color_hex: str | None = None
+        node_opacity = float(node_data.get("opacity", 1.0))
         raw_fills = node_data.get("fills", [])
         if isinstance(raw_fills, list):
-            for fill_item in raw_fills:
-                if isinstance(fill_item, dict) and fill_item.get("type") == "SOLID":
-                    c = fill_item.get("color", {})
-                    if isinstance(c, dict):
-                        hex_val = _rgba_to_hex(
-                            float(c.get("r", 0)),
-                            float(c.get("g", 0)),
-                            float(c.get("b", 0)),
-                        )
-                        if node_type == DesignNodeType.TEXT:
-                            text_color_hex = hex_val
-                        else:
-                            fill_color = hex_val
-                        break
+            for fill_item in reversed(cast(list[Any], raw_fills)):  # type: ignore[redundant-cast]
+                if not isinstance(fill_item, dict):
+                    continue
+                fi_d = cast(dict[str, Any], fill_item)
+                if fi_d.get("visible") is False:
+                    continue
+                if fi_d.get("type") != "SOLID":
+                    continue
+                c = fi_d.get("color", {})
+                if isinstance(c, dict):
+                    c_d = cast(dict[str, Any], c)
+                    hex_val = _rgba_to_hex_with_opacity(
+                        float(c_d.get("r", 0)),
+                        float(c_d.get("g", 0)),
+                        float(c_d.get("b", 0)),
+                        fill_alpha=float(c_d.get("a", 1.0)),
+                        node_opacity=node_opacity,
+                    )
+                    if node_type == DesignNodeType.TEXT:
+                        text_color_hex = hex_val
+                    else:
+                        fill_color = hex_val
+                    break
 
         children: list[DesignNode] = []
         # Only recurse if we haven't hit the depth limit

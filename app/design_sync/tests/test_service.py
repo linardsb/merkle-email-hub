@@ -13,7 +13,12 @@ from app.design_sync.exceptions import (
     SyncFailedError,
     UnsupportedProviderError,
 )
-from app.design_sync.figma.service import FigmaDesignSyncService, extract_file_key
+from app.design_sync.figma.service import (
+    FigmaDesignSyncService,
+    _gradient_midpoint_hex,
+    _rgba_to_hex_with_opacity,
+    extract_file_key,
+)
 from app.design_sync.models import DesignImport
 from app.design_sync.protocol import (
     DesignComponent,
@@ -965,12 +970,12 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors = figma_service._parse_colors(file_data, {})
+        colors, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 1
         assert colors[0].hex == "#3366CC"
         assert colors[0].name == "#3366CC"
 
-    # 2. Colors from strokes
+    # 2. Colors from strokes → separate list
     def test_colors_from_strokes(self, figma_service: FigmaDesignSyncService) -> None:
         file_data = self._make_file_data(
             document={
@@ -983,9 +988,10 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors = figma_service._parse_colors(file_data, {})
-        assert len(colors) == 1
-        assert colors[0].hex == "#FF0000"
+        colors, stroke_colors = figma_service._parse_colors(file_data, {})
+        assert len(colors) == 0
+        assert len(stroke_colors) == 1
+        assert stroke_colors[0].hex == "#FF0000"
 
     # 3. Transparent fills skipped
     def test_transparent_fills_skipped(self, figma_service: FigmaDesignSyncService) -> None:
@@ -1000,18 +1006,25 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors = figma_service._parse_colors(file_data, {})
+        colors, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 0
 
-    # 4. Gradient fills skipped
-    def test_gradient_fills_skipped(self, figma_service: FigmaDesignSyncService) -> None:
+    # 4. Gradient fills extract midpoint
+    def test_gradient_fills_extract_midpoint(self, figma_service: FigmaDesignSyncService) -> None:
         file_data = self._make_file_data(
             document={
                 "children": [
                     {
                         "type": "FRAME",
+                        "name": "Hero",
                         "fills": [
-                            {"type": "GRADIENT_LINEAR", "color": {"r": 1, "g": 0, "b": 0, "a": 1}},
+                            {
+                                "type": "GRADIENT_LINEAR",
+                                "gradientStops": [
+                                    {"color": {"r": 1, "g": 0, "b": 0, "a": 1}},
+                                    {"color": {"r": 0, "g": 0, "b": 1, "a": 1}},
+                                ],
+                            },
                             self._solid_fill(0.0, 0.0, 1.0),
                         ],
                         "children": [],
@@ -1019,9 +1032,12 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors = figma_service._parse_colors(file_data, {})
-        assert len(colors) == 1
-        assert colors[0].hex == "#0000FF"
+        colors, _ = figma_service._parse_colors(file_data, {})
+        # Should have gradient midpoint + the solid blue (topmost visible solid)
+        midpoints = [c for c in colors if "(gradient midpoint)" in c.name]
+        assert len(midpoints) == 1
+        assert midpoints[0].hex == "#800080"
+        assert "Hero" in midpoints[0].name
 
     # 5. Published style takes priority over node-walked
     def test_published_style_priority(self, figma_service: FigmaDesignSyncService) -> None:
@@ -1040,7 +1056,7 @@ class TestNodeWalkExtraction:
                 "style_1": {"styleType": "FILL", "name": "Brand Blue"},
             },
         )
-        colors = figma_service._parse_colors(file_data, {})
+        colors, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 1
         assert colors[0].name == "Brand Blue"
         assert colors[0].hex == "#3366CC"
@@ -1155,7 +1171,7 @@ class TestNodeWalkExtraction:
                 "style_1": {"styleType": "FILL", "name": "Brand Blue"},
             },
         )
-        colors = figma_service._parse_colors(file_data, {})
+        colors, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 2
         assert colors[0].name == "Brand Blue"
         assert colors[0].hex == "#3366CC"
@@ -1165,9 +1181,10 @@ class TestNodeWalkExtraction:
     # 10. Empty document → empty lists
     def test_empty_document(self, figma_service: FigmaDesignSyncService) -> None:
         file_data = self._make_file_data(document={})
-        colors = figma_service._parse_colors(file_data, {})
+        colors, stroke_colors = figma_service._parse_colors(file_data, {})
         typography = figma_service._parse_typography(file_data, {})
         assert colors == []
+        assert stroke_colors == []
         assert typography == []
 
     # 11. Deeply nested colors extracted
@@ -1198,6 +1215,233 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors = figma_service._parse_colors(file_data, {})
+        colors, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 1
         assert colors[0].hex == "#00FF00"
+
+
+# ── Opacity Compositing Tests ──
+
+
+class TestOpacityCompositing:
+    """Test alpha compositing for fill/node opacity."""
+
+    def test_fully_opaque(self) -> None:
+        assert _rgba_to_hex_with_opacity(0, 0, 1) == "#0000FF"
+
+    def test_fill_alpha_half_blue_on_white(self) -> None:
+        assert _rgba_to_hex_with_opacity(0, 0, 1, fill_alpha=0.5) == "#8080FF"
+
+    def test_node_opacity_half_blue_on_white(self) -> None:
+        assert _rgba_to_hex_with_opacity(0, 0, 1, node_opacity=0.5) == "#8080FF"
+
+    def test_combined_half_half(self) -> None:
+        # 0.5 * 0.5 = 0.25 effective alpha
+        assert _rgba_to_hex_with_opacity(0, 0, 1, fill_alpha=0.5, node_opacity=0.5) == "#BFBFFF"
+
+    def test_custom_bg_half_black_on_red(self) -> None:
+        assert _rgba_to_hex_with_opacity(0, 0, 0, fill_alpha=0.5, bg_hex="#FF0000") == "#800000"
+
+    def test_malformed_bg_hex_falls_back_to_white(self) -> None:
+        # Invalid bg_hex should fall back to #FFFFFF (same result as default)
+        assert _rgba_to_hex_with_opacity(0, 0, 1, fill_alpha=0.5, bg_hex="invalid") == "#8080FF"
+        assert _rgba_to_hex_with_opacity(0, 0, 1, fill_alpha=0.5, bg_hex="#FFF") == "#8080FF"
+
+    def test_gradient_midpoint_red_blue(self) -> None:
+        stops = [
+            {"color": {"r": 1, "g": 0, "b": 0, "a": 1}},
+            {"color": {"r": 0, "g": 0, "b": 1, "a": 1}},
+        ]
+        assert _gradient_midpoint_hex(stops) == "#800080"
+
+    def test_gradient_insufficient_stops(self) -> None:
+        stops = [{"color": {"r": 1, "g": 0, "b": 0, "a": 1}}]
+        assert _gradient_midpoint_hex(stops) is None
+
+
+# ── Figma Variables API Tests ──
+
+
+class TestFigmaVariablesAPI:
+    """Test Variables API parsing and fetch behavior."""
+
+    @pytest.fixture
+    def figma_service(self) -> FigmaDesignSyncService:
+        return FigmaDesignSyncService()
+
+    def _make_variables_response(
+        self,
+        variables: dict[str, Any] | None = None,
+        collections: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "local": {
+                "meta": {
+                    "variableCollections": collections or {},
+                    "variables": variables or {},
+                }
+            },
+            "published": {},
+        }
+
+    def test_parse_color_variable(self, figma_service: FigmaDesignSyncService) -> None:
+        raw = self._make_variables_response(
+            collections={
+                "coll1": {
+                    "name": "Brand",
+                    "modes": [{"modeId": "m1", "name": "Light"}],
+                }
+            },
+            variables={
+                "var1": {
+                    "name": "color/primary",
+                    "resolvedType": "COLOR",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {
+                        "m1": {"r": 0.2, "g": 0.4, "b": 0.8, "a": 1.0},
+                    },
+                }
+            },
+        )
+        colors, _, variables, modes = figma_service._parse_variables(raw)
+        assert len(colors) == 1
+        assert colors[0].hex == "#3366CC"
+        assert colors[0].name == "primary"  # "color/" prefix stripped
+        assert len(variables) == 1
+        assert variables[0].collection == "Brand"
+        assert modes == {"Light": "m1"}
+
+    def test_parse_alias_variable(self, figma_service: FigmaDesignSyncService) -> None:
+        raw = self._make_variables_response(
+            collections={
+                "coll1": {
+                    "name": "Tokens",
+                    "modes": [{"modeId": "m1", "name": "Default"}],
+                }
+            },
+            variables={
+                "var_base": {
+                    "name": "blue-500",
+                    "resolvedType": "COLOR",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {
+                        "m1": {"r": 0, "g": 0, "b": 1, "a": 1.0},
+                    },
+                },
+                "var_alias": {
+                    "name": "color/primary",
+                    "resolvedType": "COLOR",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {
+                        "m1": {"type": "VARIABLE_ALIAS", "id": "var_base"},
+                    },
+                },
+            },
+        )
+        colors, _, variables, _ = figma_service._parse_variables(raw)
+        alias_vars = [v for v in variables if v.is_alias]
+        assert len(alias_vars) == 1
+        assert alias_vars[0].alias_path == "blue-500"
+        # Colors should include the resolved blue from both base and alias (deduped)
+        blue_colors = [c for c in colors if c.hex == "#0000FF"]
+        assert len(blue_colors) >= 1
+
+    def test_semitransparent_color_variable(self, figma_service: FigmaDesignSyncService) -> None:
+        raw = self._make_variables_response(
+            collections={
+                "coll1": {
+                    "name": "Colors",
+                    "modes": [{"modeId": "m1", "name": "Default"}],
+                }
+            },
+            variables={
+                "var1": {
+                    "name": "overlay",
+                    "resolvedType": "COLOR",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {
+                        "m1": {"r": 0, "g": 0, "b": 1, "a": 0.5},
+                    },
+                }
+            },
+        )
+        colors, _, _, _ = figma_service._parse_variables(raw)
+        assert len(colors) == 1
+        assert colors[0].hex == "#8080FF"  # Blue 50% on white
+
+    @pytest.mark.asyncio
+    async def test_fetch_403_returns_none(self, figma_service: FigmaDesignSyncService) -> None:
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+
+        with patch("app.design_sync.figma.service.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_client
+
+            result = await figma_service._fetch_variables("abc123", "token")
+
+        assert result is None
+
+    def test_circular_alias_depth_guard(self, figma_service: FigmaDesignSyncService) -> None:
+        raw = self._make_variables_response(
+            collections={
+                "coll1": {
+                    "name": "Loop",
+                    "modes": [{"modeId": "m1", "name": "Default"}],
+                }
+            },
+            variables={
+                "var_a": {
+                    "name": "A",
+                    "resolvedType": "COLOR",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {
+                        "m1": {"type": "VARIABLE_ALIAS", "id": "var_b"},
+                    },
+                },
+                "var_b": {
+                    "name": "B",
+                    "resolvedType": "COLOR",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {
+                        "m1": {"type": "VARIABLE_ALIAS", "id": "var_a"},
+                    },
+                },
+            },
+        )
+        colors, _, variables, _ = figma_service._parse_variables(raw)
+        # Should not crash — circular aliases resolve to None, no colors extracted
+        assert len(colors) == 0
+        assert len(variables) == 2
+
+    def test_non_color_vars_skip_palette(self, figma_service: FigmaDesignSyncService) -> None:
+        raw = self._make_variables_response(
+            collections={
+                "coll1": {
+                    "name": "Sizing",
+                    "modes": [{"modeId": "m1", "name": "Default"}],
+                }
+            },
+            variables={
+                "var1": {
+                    "name": "border-radius",
+                    "resolvedType": "FLOAT",
+                    "variableCollectionId": "coll1",
+                    "valuesByMode": {"m1": 8},
+                }
+            },
+        )
+        colors, _, variables, _ = figma_service._parse_variables(raw)
+        assert len(colors) == 0
+        assert len(variables) == 1
+        assert variables[0].type == "FLOAT"
+
+    def test_empty_variables_response(self, figma_service: FigmaDesignSyncService) -> None:
+        raw = self._make_variables_response()
+        colors, _, variables, modes = figma_service._parse_variables(raw)
+        assert colors == []
+        assert variables == []
+        assert modes == {}
