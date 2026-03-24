@@ -3,11 +3,13 @@
 import { useMemo } from "react";
 import { Eye } from "lucide-react";
 
+const DARK_MODE_META = `<meta name="color-scheme" content="dark">`;
 const DARK_MODE_STYLE = `<style id="component-dark-mode">
 :root { color-scheme: dark !important; }
 @media (prefers-color-scheme: light) {
   :root { color-scheme: dark !important; }
 }
+body { background-color: #121212 !important; }
 </style>`;
 
 interface ComponentPreviewProps {
@@ -28,9 +30,18 @@ export function ComponentPreview({
     if (!darkMode) return html;
 
     if (html.includes("</head>")) {
-      return html.replace("</head>", `${DARK_MODE_STYLE}\n</head>`);
+      return html.replace(
+        "</head>",
+        `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n</head>`
+      );
     }
-    return `${DARK_MODE_STYLE}\n${html}`;
+    if (html.includes("<head>")) {
+      return html.replace(
+        "<head>",
+        `<head>\n${DARK_MODE_META}\n${DARK_MODE_STYLE}`
+      );
+    }
+    return `${DARK_MODE_META}\n${DARK_MODE_STYLE}\n${html}`;
   }, [html, darkMode]);
 
   if (!srcdoc) {
@@ -54,7 +65,7 @@ export function ComponentPreview({
         srcDoc={srcdoc}
         sandbox=""
         title={"Preview"}
-        className="h-full w-full border-0 bg-white"
+        className={`h-full w-full border-0 ${darkMode ? "bg-[#121212]" : "bg-white"}`}
         style={{ pointerEvents: interactive ? "auto" : "none" }}
       />
     </div>

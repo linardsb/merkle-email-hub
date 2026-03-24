@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertTriangle, WrapText } from "lucide-react";
+import { AlertTriangle, WrapText, Palette } from "lucide-react";
 import { SaveIndicator, type SaveStatus } from "../save-indicator";
+import { EDITOR_THEMES } from "./editor-themes";
 
 interface EditorToolbarProps {
   line: number;
@@ -10,6 +11,8 @@ interface EditorToolbarProps {
   wordWrapEnabled: boolean;
   saveStatus: SaveStatus;
   onToggleWordWrap: () => void;
+  editorThemeId?: string;
+  onEditorThemeChange?: (themeId: string) => void;
 }
 
 export function EditorToolbar({
@@ -19,6 +22,8 @@ export function EditorToolbar({
   wordWrapEnabled,
   saveStatus,
   onToggleWordWrap,
+  editorThemeId,
+  onEditorThemeChange,
 }: EditorToolbarProps) {
   return (
     <div className="flex h-8 items-center justify-between border-b border-border bg-card px-3 text-xs text-muted-foreground">
@@ -34,6 +39,23 @@ export function EditorToolbar({
 
       <div className="flex items-center gap-2">
         <span>{`Ln ${line}, Col ${col}`}</span>
+
+        {onEditorThemeChange && (
+          <div className="flex items-center gap-1">
+            <Palette className="h-3.5 w-3.5" />
+            <select
+              value={editorThemeId}
+              onChange={(e) => onEditorThemeChange(e.target.value)}
+              className="h-6 rounded border border-border bg-card px-1 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
+            >
+              {EDITOR_THEMES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <button
           type="button"

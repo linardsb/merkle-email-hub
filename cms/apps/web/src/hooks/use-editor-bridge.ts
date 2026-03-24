@@ -1,30 +1,11 @@
 "use client";
 
 import { useCallback, useRef, type RefObject } from "react";
-import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
-import { StateEffect, StateField } from "@codemirror/state";
-
-/** Effect to set/clear highlights. */
-const setHighlights = StateEffect.define<DecorationSet>();
-
-/** StateField to store highlight decorations (added to CodeMirror extensions). */
-export const highlightField = StateField.define<DecorationSet>({
-  create: () => Decoration.none,
-  update(value, tr) {
-    for (const e of tr.effects) {
-      if (e.is(setHighlights)) return e.value;
-    }
-    return value.map(tr.changes);
-  },
-  provide: (f) => EditorView.decorations.from(f),
-});
-
-const highlightMark = Decoration.mark({ class: "cm-token-highlight" });
-const spotlightMark = Decoration.mark({ class: "cm-token-spotlight" });
+import type { editor as monacoEditor } from "monaco-editor";
 
 /** Handle type exposed by CodeEditor via useImperativeHandle. */
 export interface CodeEditorHandle {
-  getView(): EditorView | null;
+  getEditor(): monacoEditor.IStandaloneCodeEditor | null;
 }
 
 export interface EditorBridge {
@@ -48,16 +29,21 @@ export interface EditorBridge {
   editorRef: RefObject<CodeEditorHandle | null>;
 }
 
+/** Module-level decoration IDs for deltaDecorations. */
+let activeDecorations: string[] = [];
+
 export function useEditorBridge(): EditorBridge {
   const editorRef = useRef<CodeEditorHandle | null>(null);
 
-  const getView = useCallback((): EditorView | null => {
-    return editorRef.current?.getView() ?? null;
+  const getEditor = useCallback((): monacoEditor.IStandaloneCodeEditor | null => {
+    return editorRef.current?.getEditor() ?? null;
   }, []);
 
   const findMatches = useCallback(
-    (view: EditorView, text: string): Array<{ from: number; to: number }> => {
-      const docLower = view.state.doc.toString().toLowerCase();
+    (editor: monacoEditor.IStandaloneCodeEditor, text: string): Array<{ from: number; to: number }> => {
+      const model = editor.getModel();
+      if (!model) return [];
+      const docLower = model.getValue().toLowerCase();
       const lower = text.toLowerCase();
       const matches: Array<{ from: number; to: number }> = [];
       let idx = 0;
@@ -74,134 +60,183 @@ export function useEditorBridge(): EditorBridge {
 
   const insertAtCursor = useCallback(
     (cssText: string) => {
-      const view = getView();
-      if (!view) return;
-      const pos = view.state.selection.main.head;
-      view.dispatch({
-        changes: { from: pos, to: pos, insert: cssText },
-        selection: { anchor: pos + cssText.length },
-      });
-      view.focus();
+      const editor = getEditor();
+      if (!editor) return;
+      const position = editor.getPosition();
+      if (!position) return;
+      editor.executeEdits("editor-bridge", [{
+        range: {
+          startLineNumber: position.lineNumber, startColumn: position.column,
+          endLineNumber: position.lineNumber, endColumn: position.column,
+        },
+        text: cssText,
+      }]);
+      editor.focus();
     },
-    [getView],
+    [getEditor],
   );
 
   const findAndHighlight = useCallback(
     (searchText: string) => {
-      const view = getView();
-      if (!view) return;
-      const matches = findMatches(view, searchText);
+      const editor = getEditor();
+      if (!editor) return;
+      const model = editor.getModel();
+      if (!model) return;
+      const matches = findMatches(editor, searchText);
       const first = matches[0];
       if (!first) return;
-      const decorations = Decoration.set(
-        matches.map((m) => highlightMark.range(m.from, m.to)),
-      );
-      view.dispatch({
-        effects: setHighlights.of(decorations),
-        selection: { anchor: first.from },
-        scrollIntoView: true,
+      const decorations = matches.map((m) => {
+        const startPos = model.getPositionAt(m.from);
+        const endPos = model.getPositionAt(m.to);
+        return {
+          range: {
+            startLineNumber: startPos.lineNumber, startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+          },
+          options: { className: "monaco-token-highlight" },
+        };
       });
+      activeDecorations = editor.deltaDecorations(activeDecorations, decorations);
+      const firstPos = model.getPositionAt(first.from);
+      editor.revealPositionInCenter(firstPos);
     },
-    [getView, findMatches],
+    [getEditor, findMatches],
   );
 
   const clearHighlights = useCallback(() => {
-    const view = getView();
-    if (!view) return;
-    view.dispatch({ effects: setHighlights.of(Decoration.none) });
-  }, [getView]);
+    const editor = getEditor();
+    if (!editor) return;
+    activeDecorations = editor.deltaDecorations(activeDecorations, []);
+  }, [getEditor]);
 
   const replaceInSelection = useCallback(
     (newHex: string) => {
-      const view = getView();
-      if (!view) return;
-      const { from, to } = view.state.selection.main;
-      if (from === to) return;
-      const selectedText = view.state.sliceDoc(from, to);
+      const editor = getEditor();
+      if (!editor) return;
+      const model = editor.getModel();
+      const selection = editor.getSelection();
+      if (!model || !selection || selection.isEmpty()) return;
+      const selectedText = model.getValueInRange(selection);
       const replaced = selectedText.replace(/#[a-f\d]{6}/gi, newHex);
       if (replaced !== selectedText) {
-        view.dispatch({ changes: { from, to, insert: replaced } });
+        editor.executeEdits("editor-bridge", [{ range: selection, text: replaced }]);
       }
     },
-    [getView],
+    [getEditor],
   );
 
   const insertAtOffset = useCallback(
     (offset: number, text: string) => {
-      const view = getView();
-      if (!view) return;
-      view.dispatch({ changes: { from: offset, to: offset, insert: text } });
-      view.focus();
+      const editor = getEditor();
+      if (!editor) return;
+      const model = editor.getModel();
+      if (!model) return;
+      const position = model.getPositionAt(offset);
+      editor.executeEdits("editor-bridge", [{
+        range: {
+          startLineNumber: position.lineNumber, startColumn: position.column,
+          endLineNumber: position.lineNumber, endColumn: position.column,
+        },
+        text,
+      }]);
+      editor.focus();
     },
-    [getView],
+    [getEditor],
   );
 
   const replaceAll = useCallback(
     (oldHex: string, newHex: string) => {
-      const view = getView();
-      if (!view) return;
-      const matches = findMatches(view, oldHex);
+      const editor = getEditor();
+      if (!editor) return;
+      const matches = findMatches(editor, oldHex);
       if (matches.length === 0) return;
-      const changes = [...matches].reverse().map((m) => ({
-        from: m.from,
-        to: m.to,
-        insert: newHex,
-      }));
-      view.dispatch({ changes });
+      const model = editor.getModel();
+      if (!model) return;
+      const edits = [...matches].reverse().map((m) => {
+        const startPos = model.getPositionAt(m.from);
+        const endPos = model.getPositionAt(m.to);
+        return {
+          range: {
+            startLineNumber: startPos.lineNumber, startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+          },
+          text: newHex,
+        };
+      });
+      editor.executeEdits("editor-bridge", edits);
     },
-    [getView, findMatches],
+    [getEditor, findMatches],
   );
 
   const insertCssVariablesBlock = useCallback(
     (block: string) => {
-      const view = getView();
-      if (!view) return;
-      const doc = view.state.doc.toString();
+      const editor = getEditor();
+      if (!editor) return;
+      const model = editor.getModel();
+      if (!model) return;
+      const doc = model.getValue();
       const styleMatch = doc.match(/<style[^>]*>/i);
       if (styleMatch && styleMatch.index !== undefined) {
-        const insertPos = styleMatch.index + styleMatch[0].length;
-        view.dispatch({
-          changes: { from: insertPos, to: insertPos, insert: `\n${block}\n` },
-        });
+        const insertOffset = styleMatch.index + styleMatch[0].length;
+        const pos = model.getPositionAt(insertOffset);
+        editor.executeEdits("editor-bridge", [{
+          range: {
+            startLineNumber: pos.lineNumber, startColumn: pos.column,
+            endLineNumber: pos.lineNumber, endColumn: pos.column,
+          },
+          text: `\n${block}\n`,
+        }]);
       } else {
         const headMatch = doc.match(/<head[^>]*>/i);
         if (headMatch && headMatch.index !== undefined) {
-          const insertPos = headMatch.index + headMatch[0].length;
-          view.dispatch({
-            changes: {
-              from: insertPos,
-              to: insertPos,
-              insert: `\n<style>\n${block}\n</style>\n`,
+          const insertOffset = headMatch.index + headMatch[0].length;
+          const pos = model.getPositionAt(insertOffset);
+          editor.executeEdits("editor-bridge", [{
+            range: {
+              startLineNumber: pos.lineNumber, startColumn: pos.column,
+              endLineNumber: pos.lineNumber, endColumn: pos.column,
             },
-          });
+            text: `\n<style>\n${block}\n</style>\n`,
+          }]);
         } else {
-          const pos = view.state.selection.main.head;
-          view.dispatch({
-            changes: {
-              from: pos,
-              to: pos,
-              insert: `<style>\n${block}\n</style>\n`,
+          const position = editor.getPosition();
+          if (!position) return;
+          editor.executeEdits("editor-bridge", [{
+            range: {
+              startLineNumber: position.lineNumber, startColumn: position.column,
+              endLineNumber: position.lineNumber, endColumn: position.column,
             },
-          });
+            text: `<style>\n${block}\n</style>\n`,
+          }]);
         }
       }
-      view.focus();
+      editor.focus();
     },
-    [getView],
+    [getEditor],
   );
 
   const spotlight = useCallback(
     (searchText: string) => {
-      const view = getView();
-      if (!view) return;
-      const matches = findMatches(view, searchText);
+      const editor = getEditor();
+      if (!editor) return;
+      const model = editor.getModel();
+      if (!model) return;
+      const matches = findMatches(editor, searchText);
       if (matches.length === 0) return;
-      const decorations = Decoration.set(
-        matches.map((m) => spotlightMark.range(m.from, m.to)),
-      );
-      view.dispatch({ effects: setHighlights.of(decorations) });
+      const decorations = matches.map((m) => {
+        const startPos = model.getPositionAt(m.from);
+        const endPos = model.getPositionAt(m.to);
+        return {
+          range: {
+            startLineNumber: startPos.lineNumber, startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber, endColumn: endPos.column,
+          },
+          options: { className: "monaco-token-spotlight" },
+        };
+      });
+      activeDecorations = editor.deltaDecorations(activeDecorations, decorations);
     },
-    [getView, findMatches],
+    [getEditor, findMatches],
   );
 
   return {

@@ -1,10 +1,10 @@
 /**
- * Yjs <-> CodeMirror 6 binding for collaborative editing.
- * Wraps y-codemirror.next with Hub-specific configuration.
+ * Yjs <-> Monaco Editor binding for collaborative editing.
+ * Wraps y-monaco with Hub-specific configuration.
  */
 import * as Y from "yjs";
-import { yCollab } from "y-codemirror.next";
-import type { Extension } from "@codemirror/state";
+import { MonacoBinding } from "y-monaco";
+import type { editor as monacoEditor } from "monaco-editor";
 import type { Awareness } from "y-protocols/awareness";
 import type { CollabUser } from "./awareness";
 import { setLocalUser } from "./awareness";
@@ -21,30 +21,22 @@ export interface CollaborativeEditorConfig {
 }
 
 /**
- * Creates a CodeMirror extension for collaborative editing.
+ * Creates a y-monaco binding for collaborative editing.
  *
- * This replaces CodeMirror's built-in undo/redo with Y.UndoManager
- * which tracks per-user operations for collaborative undo.
+ * y-monaco manages two-way sync between Y.Text and the Monaco model,
+ * remote cursor decorations, and undo/redo via Y.UndoManager.
  */
-export function createCollabExtension(
+export function createCollabBinding(
   config: CollaborativeEditorConfig,
-): Extension {
+  editor: monacoEditor.IStandaloneCodeEditor,
+): { dispose: () => void } {
   const { doc, awareness, user, fieldName = "content" } = config;
-
-  // Get or create the shared Y.Text type
   const ytext = doc.getText(fieldName);
-
-  // Set local user awareness
   setLocalUser(awareness, user);
-
-  // Create undo manager scoped to this user's operations
-  const undoManager = new Y.UndoManager(ytext);
-
-  // y-codemirror.next provides:
-  // - Two-way binding between Y.Text and CodeMirror
-  // - Remote cursor decorations (colored cursors for each peer)
-  // - Integration with Y.UndoManager for collaborative undo/redo
-  return yCollab(ytext, awareness, { undoManager });
+  const model = editor.getModel();
+  if (!model) throw new Error("Editor model not available");
+  const binding = new MonacoBinding(ytext, model, new Set([editor]), awareness);
+  return { dispose: () => binding.destroy() };
 }
 
 /**

@@ -23,6 +23,35 @@ interface DesignFileBrowserProps {
 
 const SELECTABLE_TYPES = new Set(["FRAME", "GROUP", "COMPONENT", "COMPONENT_SET", "INSTANCE", "SECTION"]);
 
+/** Generic Figma node names that carry no semantic meaning */
+const GENERIC_NAMES = new Set([
+  "mj-wrapper", "mj-section", "mj-column", "mj-body", "mj-hero",
+  "wrapper", "frame", "group", "section", "component", "row", "container",
+]);
+
+/**
+ * Infer a meaningful section label for children of an email wrapper frame.
+ * Mirrors the backend layout_analyzer classification logic.
+ */
+function inferSectionLabel(
+  node: DesignNode,
+  index: number,
+  total: number,
+): string | null {
+  const rawName = node.name.toLowerCase().trim();
+  if (!GENERIC_NAMES.has(rawName) && !rawName.startsWith("frame ")) return null;
+
+  const h = node.height ?? 0;
+  if (h <= 30) return "Spacer";
+  if (h > 30 && h <= 60) return "Divider";
+  if (index === 0) return "Header / Navigation";
+  if (index === total - 1) return "Footer";
+  if (index === total - 2 && h <= 150) return "Social Links";
+  if (index === 1 && h >= 300) return "Hero Section";
+  if (h > 60 && h <= 150) return "CTA Module";
+  return "Content Module";
+}
+
 function getNodeIcon(type: string) {
   switch (type) {
     case "PAGE":
@@ -63,6 +92,10 @@ interface TreeNodeProps {
   thumbnails: Map<string, string>;
   onToggleExpand: (id: string) => void;
   onToggleSelect: (node: DesignNode) => void;
+  /** Index among siblings — used for section label inference */
+  siblingIndex?: number;
+  /** Total sibling count */
+  siblingCount?: number;
 }
 
 function TreeNode({
@@ -73,6 +106,8 @@ function TreeNode({
   thumbnails,
   onToggleExpand,
   onToggleSelect,
+  siblingIndex,
+  siblingCount,
 }: TreeNodeProps) {
   const Icon = getNodeIcon(node.type);
   const hasChildren = node.children.length > 0;
@@ -81,6 +116,13 @@ function TreeNode({
   const isSelected = selectedIds.has(node.id);
   const isPage = node.type === "PAGE" || node.type === "CANVAS";
   const thumbnail = thumbnails.get(node.id);
+
+  // Infer a meaningful display name for generic section nodes
+  const sectionLabel =
+    siblingIndex !== undefined && siblingCount !== undefined
+      ? inferSectionLabel(node, siblingIndex, siblingCount)
+      : null;
+  const displayName = sectionLabel ?? node.name;
 
   // Check partial selection (some children selected, not all)
   const selectableChildren = collectSelectableIds(node);
@@ -155,11 +197,11 @@ function TreeNode({
             onClick={() => onToggleExpand(node.id)}
             className={`truncate text-sm text-left ${isPage ? "font-medium text-foreground" : "text-foreground"} hover:underline`}
           >
-            {node.name}
+            {displayName}
           </button>
         ) : (
           <span className={`truncate text-sm ${isPage ? "font-medium text-foreground" : "text-foreground"}`}>
-            {node.name}
+            {displayName}
           </span>
         )}
 
@@ -174,18 +216,28 @@ function TreeNode({
       {/* Children */}
       {hasChildren && isExpanded && (
         <div>
-          {node.children.map((child) => (
-            <TreeNode
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              selectedIds={selectedIds}
-              expandedIds={expandedIds}
-              thumbnails={thumbnails}
-              onToggleExpand={onToggleExpand}
-              onToggleSelect={onToggleSelect}
-            />
-          ))}
+          {node.children.map((child, idx) => {
+            // Pass sibling context so children of email wrappers get section labels
+            const isEmailWrapper =
+              !isPage &&
+              node.children.length >= 2 &&
+              (node.height ?? 0) > 500 &&
+              (node.width ?? 0) >= 500;
+            return (
+              <TreeNode
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                selectedIds={selectedIds}
+                expandedIds={expandedIds}
+                thumbnails={thumbnails}
+                onToggleExpand={onToggleExpand}
+                onToggleSelect={onToggleSelect}
+                siblingIndex={isEmailWrapper ? idx : undefined}
+                siblingCount={isEmailWrapper ? node.children.length : undefined}
+              />
+            );
+          })}
         </div>
       )}
     </div>

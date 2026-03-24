@@ -97,13 +97,14 @@
   }
 }
 
-/* CodeMirror token highlight decorations (design reference panel) */
-.cm-token-highlight {
-  background-color: oklch(0.85 0.15 85 / 0.4);
-  outline: 1px solid oklch(0.7 0.15 85);
+/* Monaco token highlight decorations (design reference panel) */
+.monaco-token-highlight {
+  background-color: rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.6);
 }
 
-.cm-token-spotlight {
-  background-color: oklch(0.85 0.15 250 / 0.3);
+.monaco-token-spotlight {
+  background-color: rgba(147, 130, 255, 0.2);
+  border-bottom: 2px solid rgba(147, 130, 255, 0.6);
 }
 
