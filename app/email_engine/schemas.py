@@ -32,6 +32,7 @@ class BuildResponse(BaseModel):
     compiled_html: str | None = None
     error_message: str | None = None
     is_production: bool
+    passthrough: bool = False
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -42,6 +43,7 @@ class PreviewResponse(BaseModel):
 
     compiled_html: str
     build_time_ms: float
+    passthrough: bool = False
 
 
 class CSSCompileRequest(BaseModel):

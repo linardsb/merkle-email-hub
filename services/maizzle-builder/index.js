@@ -13,6 +13,7 @@ import { render } from "@maizzle/framework";
 import postcss from "postcss";
 import emailOptimize, { loadOntology } from "./postcss-email-optimize.js";
 import { transform } from "lightningcss";
+import { isPreCompiledEmail } from "./precompiled-detect.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,6 +91,18 @@ app.post("/build", async (req, res) => {
       optimization = r.optimization;
     }
 
+    const passthrough = isPreCompiledEmail(html);
+
+    if (passthrough) {
+      res.json({
+        html,
+        build_time_ms: Date.now() - start,
+        passthrough: true,
+        ...(optimization && { optimization }),
+      });
+      return;
+    }
+
     const maizzleConfig = { ...config, build: { content: [], ...(config.build || {}) } };
     if (production) {
       maizzleConfig.inlineCSS = { enabled: true };
@@ -98,7 +111,12 @@ app.post("/build", async (req, res) => {
     }
 
     const rendered = await render(html, { maizzle: maizzleConfig });
-    res.json({ html: rendered.html, build_time_ms: Date.now() - start, ...(optimization && { optimization }) });
+    res.json({
+      html: rendered.html,
+      build_time_ms: Date.now() - start,
+      passthrough: false,
+      ...(optimization && { optimization }),
+    });
   } catch (err) {
     console.error("Build failed:", err.message);
     res.status(500).json({ error: "Build failed", detail: err.message, build_time_ms: Date.now() - start });
@@ -119,8 +137,25 @@ app.post("/preview", async (req, res) => {
       optimization = r.optimization;
     }
 
+    const passthrough = isPreCompiledEmail(html);
+
+    if (passthrough) {
+      res.json({
+        html,
+        build_time_ms: Date.now() - start,
+        passthrough: true,
+        ...(optimization && { optimization }),
+      });
+      return;
+    }
+
     const rendered = await render(html, { maizzle: { ...config, inlineCSS: { enabled: true }, prettify: true } });
-    res.json({ html: rendered.html, build_time_ms: Date.now() - start, ...(optimization && { optimization }) });
+    res.json({
+      html: rendered.html,
+      build_time_ms: Date.now() - start,
+      passthrough: false,
+      ...(optimization && { optimization }),
+    });
   } catch (err) {
     console.error("Preview failed:", err.message);
     res.status(500).json({ error: "Preview failed", detail: err.message, build_time_ms: Date.now() - start });

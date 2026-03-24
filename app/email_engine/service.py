@@ -62,8 +62,9 @@ class EmailEngineService:
         await self.db.commit()
         await self.db.refresh(build)
 
+        passthrough = False
         try:
-            compiled, optimization = await self._call_builder(
+            compiled, optimization, passthrough = await self._call_builder(
                 data.source_html,
                 data.config_overrides,
                 data.is_production,
@@ -76,6 +77,8 @@ class EmailEngineService:
                     removed_count=len(optimization.get("removed_properties", [])),
                     conversion_count=len(optimization.get("conversions", [])),
                 )
+            if passthrough:
+                logger.info("email_engine.build_passthrough", build_id=build.id)
             build.compiled_html = compiled
             build.status = "success"
         except BuildServiceUnavailableError:
@@ -98,7 +101,9 @@ class EmailEngineService:
             await self.db.refresh(build)
 
         logger.info("email_engine.build_completed", build_id=build.id, status=build.status)
-        return BuildResponse.model_validate(build)
+        response = BuildResponse.model_validate(build)
+        response.passthrough = passthrough
+        return response
 
     async def get_build(self, build_id: int, user: User) -> BuildResponse:
         """Get a build by ID. Verifies user has access to the build's project."""
@@ -118,7 +123,7 @@ class EmailEngineService:
         """Execute a preview build without persisting."""
         logger.info("email_engine.preview_started")
         start = time.monotonic()
-        compiled, _optimization = await self._call_builder(
+        compiled, _optimization, passthrough = await self._call_builder(
             data.source_html,
             data.config_overrides,
             is_production=False,
@@ -126,8 +131,12 @@ class EmailEngineService:
         )
         compiled = sanitize_html_xss(compiled)
         elapsed = (time.monotonic() - start) * 1000
-        logger.info("email_engine.preview_completed", build_time_ms=elapsed)
-        return PreviewResponse(compiled_html=compiled, build_time_ms=round(elapsed, 2))
+        logger.info(
+            "email_engine.preview_completed", build_time_ms=elapsed, passthrough=passthrough
+        )
+        return PreviewResponse(
+            compiled_html=compiled, build_time_ms=round(elapsed, 2), passthrough=passthrough
+        )
 
     def compile_css(
         self,
@@ -215,8 +224,8 @@ class EmailEngineService:
         config_overrides: dict[str, object] | None,
         is_production: bool,
         target_clients: list[str] | None = None,
-    ) -> tuple[str, dict[str, Any] | None]:
-        """Call the Maizzle builder sidecar. Returns (html, optimization_metadata)."""
+    ) -> tuple[str, dict[str, Any] | None, bool]:
+        """Call the Maizzle builder sidecar. Returns (html, optimization_metadata, passthrough)."""
         payload: dict[str, object] = {
             "source": source_html,
             "config": config_overrides or {},
@@ -230,7 +239,11 @@ class EmailEngineService:
                 response = await client.post(f"{MAIZZLE_BUILDER_URL}/build", json=payload)
                 response.raise_for_status()
                 result = response.json()
-                return str(result["html"]), result.get("optimization")
+                return (
+                    str(result["html"]),
+                    result.get("optimization"),
+                    bool(result.get("passthrough", False)),
+                )
         except httpx.ConnectError as exc:
             raise BuildServiceUnavailableError("Cannot connect to maizzle-builder service") from exc
         except httpx.HTTPStatusError as exc:
