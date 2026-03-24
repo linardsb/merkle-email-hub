@@ -75,6 +75,23 @@ class ComplexityInfo:
 
 
 @dataclass
+class WrapperInfo:
+    """Preserved metadata from the outer centering wrapper table."""
+
+    tag: str  # "table" or "div"
+    width: str | None = None
+    align: str | None = None
+    style: str | None = None
+    bgcolor: str | None = None
+    cellpadding: str | None = None
+    cellspacing: str | None = None
+    border: str | None = None
+    role: str | None = None
+    inner_td_style: str | None = None
+    mso_wrapper: str | None = None
+
+
+@dataclass
 class AnalysisResult:
     """Complete analysis output."""
 
@@ -84,6 +101,7 @@ class AnalysisResult:
     esp_platform: str | None
     complexity: ComplexityInfo
     layout_type: str
+    wrapper: WrapperInfo | None = None
 
 
 # ── ESP detection patterns ──
@@ -108,6 +126,11 @@ _FOOTER_KEYWORDS = {"footer", "unsubscribe", "copyright", "legal", "address"}
 _CTA_KEYWORDS = {"button", "cta", "call-to-action"}
 _DIVIDER_KEYWORDS = {"divider", "spacer", "separator"}
 
+_MSO_WRAPPER_RE = re.compile(
+    r"(<!--\[if\s+mso\]>.*?<table[^>]*>.*?<tr>.*?<td[^>]*>.*?<!\[endif\]-->)",
+    re.DOTALL | re.IGNORECASE,
+)
+
 
 class TemplateAnalyzer:
     """Analyzes raw HTML to extract template structure without LLM calls."""
@@ -115,7 +138,7 @@ class TemplateAnalyzer:
     def analyze(self, sanitized_html: str) -> AnalysisResult:
         """Run full analysis pipeline."""
         tree = lxml_html.fromstring(sanitized_html)
-        sections = self._detect_sections(tree)
+        sections, wrapper_info = self._detect_sections(tree, sanitized_html)
         slots = self._extract_slots(tree, sections)
         tokens = self._extract_tokens(tree)
         esp = self._detect_esp_platform(sanitized_html)
@@ -136,11 +159,15 @@ class TemplateAnalyzer:
             esp_platform=esp,
             complexity=complexity,
             layout_type=layout,
+            wrapper=wrapper_info,
         )
 
-    def _detect_sections(self, tree: HtmlElement) -> list[SectionInfo]:
+    def _detect_sections(
+        self, tree: HtmlElement, raw_html: str
+    ) -> tuple[list[SectionInfo], WrapperInfo | None]:
         """Detect top-level structural sections in the email template."""
         sections: list[SectionInfo] = []
+        wrapper_info: WrapperInfo | None = None
         body = tree.find(".//body")
         root = body if body is not None else tree
 
@@ -164,6 +191,8 @@ class TemplateAnalyzer:
             wrapper = candidates[0]
             inner_tables = wrapper.findall(".//tr/td/table")
             if len(inner_tables) >= 2:
+                # Extract wrapper metadata before discarding
+                wrapper_info = self._extract_wrapper_info(wrapper, raw_html)
                 candidates = inner_tables
 
         for idx, elem in enumerate(candidates):
@@ -193,7 +222,39 @@ class TemplateAnalyzer:
                 )
             )
 
-        return sections
+        return sections, wrapper_info
+
+    def _extract_wrapper_info(self, wrapper: HtmlElement, raw_html: str) -> WrapperInfo:
+        """Extract centering metadata from wrapper table before discarding it."""
+        # Find the <td> child that contains the inner tables
+        inner_td = wrapper.find(".//tr/td")
+        inner_td_style = inner_td.get("style") if inner_td is not None else None
+
+        # Search for MSO conditional wrapper in raw HTML *before* the wrapper table.
+        # lxml strips comments, so we must regex the raw string. Only search the
+        # portion before the wrapper <table> to avoid matching inner MSO ghost
+        # tables (e.g. column-layout ghost tables inside sections).
+        mso_wrapper: str | None = None
+        source_line = wrapper.sourceline
+        if source_line is not None:
+            # sourceline is 1-based; grab everything before that line
+            prefix = "\n".join(raw_html.splitlines()[: source_line - 1])
+            mso_match = _MSO_WRAPPER_RE.search(prefix)
+            mso_wrapper = mso_match.group(1) if mso_match else None
+
+        return WrapperInfo(
+            tag=str(wrapper.tag),
+            width=wrapper.get("width"),
+            align=wrapper.get("align"),
+            style=wrapper.get("style"),
+            bgcolor=wrapper.get("bgcolor"),
+            cellpadding=wrapper.get("cellpadding"),
+            cellspacing=wrapper.get("cellspacing"),
+            border=wrapper.get("border"),
+            role=wrapper.get("role"),
+            inner_td_style=inner_td_style,
+            mso_wrapper=mso_wrapper,
+        )
 
     def _classify_component(self, elem: HtmlElement, idx: int, total: int) -> str:
         """Classify a section element into a component type."""
@@ -212,10 +273,10 @@ class TemplateAnalyzer:
         if any(kw in combined for kw in _DIVIDER_KEYWORDS):
             return "divider"
 
-        # Check for multi-column layout
-        tds = elem.findall(".//tr/td")
-        if len(tds) >= 2:
-            return "columns"
+        # Check for multi-column layout (2+ columns in any single row)
+        for row in elem.findall(".//tr"):
+            if len(row.findall("td")) >= 2:
+                return "columns"
 
         # Check for large image (hero heuristic)
         imgs = elem.findall(".//img")

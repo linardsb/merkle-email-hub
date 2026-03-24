@@ -75,6 +75,22 @@ class TokenDiffPreview(BaseModel):
     action: str  # "will_replace", "compatible", "no_override"
 
 
+class WrapperPreview(BaseModel):
+    """Preserved metadata from the outer centering wrapper table."""
+
+    tag: str
+    width: str | None = None
+    align: str | None = None
+    style: str | None = None
+    bgcolor: str | None = None
+    cellpadding: str | None = None
+    cellspacing: str | None = None
+    border: str | None = None
+    role: str | None = None
+    inner_td_style: str | None = None
+    mso_wrapper: str | None = None
+
+
 class AnalysisPreview(BaseModel):
     """Full analysis preview returned after upload."""
 
@@ -90,6 +106,7 @@ class AnalysisPreview(BaseModel):
     suggested_description: str
     css_optimization: CSSOptimizationPreview | None = None
     token_diff: list[TokenDiffPreview] = Field(default_factory=lambda: list[TokenDiffPreview]())
+    wrapper: WrapperPreview | None = None
 
 
 class ConfirmRequest(BaseModel):

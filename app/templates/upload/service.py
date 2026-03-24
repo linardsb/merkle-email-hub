@@ -34,6 +34,7 @@ from app.templates.upload.schemas import (
     TokenDiffPreview,
     TokenPreview,
     UploadStatus,
+    WrapperPreview,
 )
 from app.templates.upload.slot_extractor import SlotExtractor
 from app.templates.upload.template_builder import TemplateBuilder
@@ -324,6 +325,23 @@ class TemplateUploadService:
             "complexity_score": analysis.complexity.score,
             "suggested_name": suggested_name,
             "suggested_description": suggested_desc,
+            "wrapper": (
+                {
+                    "tag": analysis.wrapper.tag,
+                    "width": analysis.wrapper.width,
+                    "align": analysis.wrapper.align,
+                    "style": analysis.wrapper.style,
+                    "bgcolor": analysis.wrapper.bgcolor,
+                    "cellpadding": analysis.wrapper.cellpadding,
+                    "cellspacing": analysis.wrapper.cellspacing,
+                    "border": analysis.wrapper.border,
+                    "role": analysis.wrapper.role,
+                    "inner_td_style": analysis.wrapper.inner_td_style,
+                    "mso_wrapper": analysis.wrapper.mso_wrapper,
+                }
+                if analysis.wrapper
+                else None
+            ),
         }
 
     def _build_preview(self, upload_id: int, data: dict[str, Any]) -> AnalysisPreview:
@@ -331,6 +349,8 @@ class TemplateUploadService:
         css_opt_data = data.get("css_optimization")
         css_optimization = CSSOptimizationPreview(**css_opt_data) if css_opt_data else None
         token_diff = [TokenDiffPreview(**d) for d in data.get("token_diff", [])]
+        wrapper_data = data.get("wrapper")
+        wrapper = WrapperPreview(**wrapper_data) if wrapper_data else None
 
         return AnalysisPreview(
             upload_id=upload_id,
@@ -345,6 +365,7 @@ class TemplateUploadService:
             suggested_description=data.get("suggested_description", ""),
             css_optimization=css_optimization,
             token_diff=token_diff,
+            wrapper=wrapper,
         )
 
     def _compile_css(self, sanitized: str, _project_id: int | None) -> _CSSOptimizationResult:
