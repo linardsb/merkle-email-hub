@@ -79,6 +79,7 @@ class EmailSection:
     images: list[ImagePlaceholder] = field(default_factory=list[ImagePlaceholder])
     buttons: list[ButtonElement] = field(default_factory=list[ButtonElement])
     spacing_after: float | None = None
+    bg_color: str | None = None
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,7 @@ def analyze_layout(structure: DesignFileStructure) -> DesignLayoutDescription:
                 texts=texts,
                 images=images,
                 buttons=buttons,
+                bg_color=node.fill_color,
             )
         )
 
@@ -191,12 +193,31 @@ def _find_primary_page(pages: list[DesignNode]) -> DesignNode:
 
 
 def _get_section_candidates(page: DesignNode) -> list[DesignNode]:
-    """Get top-level frames from a page as section candidates."""
-    return [
+    """Get top-level frames from a page as section candidates.
+
+    When a single large wrapper frame is found (e.g. a full email design),
+    use its children as section candidates instead of treating the wrapper
+    as one section.
+    """
+    top_frames = [
         child
         for child in page.children
         if child.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.GROUP)
     ]
+
+    # If there's exactly one tall frame with multiple children, unwrap it —
+    # it's likely a full-email wrapper (e.g. "EmailLove" containing mj-wrappers)
+    if len(top_frames) == 1:
+        wrapper = top_frames[0]
+        inner = [
+            child
+            for child in wrapper.children
+            if child.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.GROUP)
+        ]
+        if len(inner) >= 2:
+            return inner
+
+    return top_frames
 
 
 def _classify_by_name(name: str) -> EmailSectionType:
@@ -210,24 +231,45 @@ def _classify_by_name(name: str) -> EmailSectionType:
 
 
 def _classify_by_position(
-    node: DesignNode,  # noqa: ARG001
+    node: DesignNode,
     index: int,
     total: int,
     has_large_image: bool,
 ) -> EmailSectionType:
-    """Fallback: classify by position when name doesn't match.
+    """Fallback: classify by position + dimensions when name doesn't match.
 
-    - First frame -> HEADER
-    - Last frame -> FOOTER
-    - Frame with single large IMAGE child -> HERO
-    - Otherwise -> CONTENT
+    Uses height, position, and child content to infer section type.
     """
+    height = node.height or 0
+
+    # Very short sections are spacers/dividers
+    if height <= 30:
+        return EmailSectionType.SPACER
+    if 30 < height <= 60:
+        return EmailSectionType.DIVIDER
+
+    # First section is header/nav
     if index == 0:
         return EmailSectionType.HEADER
+
+    # Last section is footer
     if index == total - 1:
         return EmailSectionType.FOOTER
-    if has_large_image:
+
+    # Second-to-last short section is often social links
+    if index == total - 2 and height <= 150:
+        return EmailSectionType.SOCIAL
+
+    # Tall section near the top with or without large image → hero
+    if index == 1 and height >= 300:
         return EmailSectionType.HERO
+    if has_large_image and height >= 300:
+        return EmailSectionType.HERO
+
+    # Short section with button-sized height → CTA
+    if 60 < height <= 150:
+        return EmailSectionType.CTA
+
     return EmailSectionType.CONTENT
 
 
@@ -445,6 +487,7 @@ def _calculate_spacing(sections: list[EmailSection]) -> list[EmailSection]:
                 images=section.images,
                 buttons=section.buttons,
                 spacing_after=spacing,
+                bg_color=section.bg_color,
             )
         )
     return result

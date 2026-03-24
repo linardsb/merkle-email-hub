@@ -369,6 +369,7 @@ class AnalyzedSectionResponse(BaseModel):
     images: list[ImagePlaceholderResponse] = Field(default_factory=list[ImagePlaceholderResponse])
     buttons: list[ButtonElementResponse] = Field(default_factory=list[ButtonElementResponse])
     spacing_after: float | None = None
+    bg_color: str | None = None
 
 
 class LayoutAnalysisResponse(BaseModel):

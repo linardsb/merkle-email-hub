@@ -29,6 +29,11 @@ class ScaffolderRequest(BaseModel):
         default=None,
         description="Figma design context: image URLs, layout analysis, design tokens",
     )
+    initial_html: str = Field(
+        default="",
+        max_length=50000,
+        description="Pre-generated HTML skeleton for the Scaffolder to enhance (e.g. from Penpot converter)",
+    )
 
 
 class ScaffolderResponse(BaseModel):

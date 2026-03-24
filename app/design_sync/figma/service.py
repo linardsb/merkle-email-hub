@@ -512,6 +512,26 @@ class FigmaDesignSyncService:
             if isinstance(raw_chars, str) and raw_chars.strip():
                 text_content = raw_chars.strip()
 
+        # Extract fill colors for the converter pipeline
+        fill_color: str | None = None
+        text_color_hex: str | None = None
+        raw_fills = node_data.get("fills", [])
+        if isinstance(raw_fills, list):
+            for fill_item in raw_fills:
+                if isinstance(fill_item, dict) and fill_item.get("type") == "SOLID":
+                    c = fill_item.get("color", {})
+                    if isinstance(c, dict):
+                        hex_val = _rgba_to_hex(
+                            float(c.get("r", 0)),
+                            float(c.get("g", 0)),
+                            float(c.get("b", 0)),
+                        )
+                        if node_type == DesignNodeType.TEXT:
+                            text_color_hex = hex_val
+                        else:
+                            fill_color = hex_val
+                        break
+
         children: list[DesignNode] = []
         # Only recurse if we haven't hit the depth limit
         if max_depth is None or current_depth < max_depth:
@@ -533,6 +553,8 @@ class FigmaDesignSyncService:
             x=x,
             y=y,
             text_content=text_content,
+            fill_color=fill_color,
+            text_color=text_color_hex,
         )
 
     async def list_components(self, file_ref: str, access_token: str) -> list[DesignComponent]:

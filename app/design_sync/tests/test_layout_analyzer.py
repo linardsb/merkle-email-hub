@@ -347,7 +347,12 @@ class TestPositionBasedFallback:
 
 class TestColumnDetection:
     def test_two_column(self) -> None:
-        """Two sibling frames at same y -> TWO_COLUMN."""
+        """Two sibling frames at same y -> TWO_COLUMN.
+
+        Uses two top-level frames so the wrapper-unwrap heuristic doesn't
+        collapse the structure (single wrapper with >=2 inner frames gets
+        unwrapped into separate sections).
+        """
         structure = DesignFileStructure(
             file_name="Test",
             pages=[
@@ -357,11 +362,20 @@ class TestColumnDetection:
                     type=DesignNodeType.PAGE,
                     children=[
                         DesignNode(
+                            id="header",
+                            name="Header",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=80,
+                        ),
+                        DesignNode(
                             id="row",
                             name="Content Row",
                             type=DesignNodeType.FRAME,
                             x=0,
-                            y=0,
+                            y=80,
                             width=600,
                             height=200,
                             children=[
@@ -390,10 +404,15 @@ class TestColumnDetection:
             ],
         )
         layout = analyze_layout(structure)
-        assert layout.sections[0].column_layout == ColumnLayout.TWO_COLUMN
-        assert layout.sections[0].column_count == 2
+        # Second section (Content Row) should detect 2-column layout
+        assert layout.sections[1].column_layout == ColumnLayout.TWO_COLUMN
+        assert layout.sections[1].column_count == 2
 
     def test_three_column(self) -> None:
+        """Three sibling frames at same y -> THREE_COLUMN.
+
+        Uses two top-level frames to prevent single-wrapper unwrapping.
+        """
         structure = DesignFileStructure(
             file_name="Test",
             pages=[
@@ -403,11 +422,20 @@ class TestColumnDetection:
                     type=DesignNodeType.PAGE,
                     children=[
                         DesignNode(
+                            id="header",
+                            name="Header",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=80,
+                        ),
+                        DesignNode(
                             id="row",
                             name="Content Row",
                             type=DesignNodeType.FRAME,
                             x=0,
-                            y=0,
+                            y=80,
                             width=600,
                             height=200,
                             children=[
@@ -445,7 +473,7 @@ class TestColumnDetection:
             ],
         )
         layout = analyze_layout(structure)
-        assert layout.sections[0].column_layout == ColumnLayout.THREE_COLUMN
+        assert layout.sections[1].column_layout == ColumnLayout.THREE_COLUMN
 
     def test_single_column_vertical_stack(self) -> None:
         """Children stacked vertically -> SINGLE."""
@@ -786,7 +814,10 @@ class TestBriefGeneratorFull:
         assert "# Campaign Email Brief" in brief
 
     def test_two_column_brief(self) -> None:
-        """2-column section -> '2-column' in brief."""
+        """2-column section -> '2-column' in brief.
+
+        Uses two top-level frames to prevent single-wrapper unwrapping.
+        """
         structure = DesignFileStructure(
             file_name="Test",
             pages=[
@@ -796,11 +827,20 @@ class TestBriefGeneratorFull:
                     type=DesignNodeType.PAGE,
                     children=[
                         DesignNode(
+                            id="header",
+                            name="Header",
+                            type=DesignNodeType.FRAME,
+                            x=0,
+                            y=0,
+                            width=600,
+                            height=80,
+                        ),
+                        DesignNode(
                             id="row",
                             name="Content Row",
                             type=DesignNodeType.FRAME,
                             x=0,
-                            y=0,
+                            y=80,
                             width=600,
                             height=200,
                             children=[

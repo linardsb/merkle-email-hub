@@ -71,6 +71,14 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
             from app.ai.agents.scaffolder.prompt import build_design_context_section
 
             message += "\n\n" + build_design_context_section(req.design_context)
+        if req.initial_html:
+            message += (
+                "\n\n## Initial HTML Skeleton\n\n"
+                "Below is a pre-generated HTML skeleton from the design file. "
+                "Use this as a structural starting point and enhance it with "
+                "proper content, styling, and email client compatibility:\n\n"
+                f"```html\n{req.initial_html}\n```"
+            )
         return message
 
     def _post_process(self, raw_content: str) -> str:

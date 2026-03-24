@@ -321,7 +321,12 @@ class TemplateAssembler:
                     f'font-size:12px;text-decoration:none;">{link.platform.title()}</a>'
                 )
 
-        social_html = '<div style="text-align:center;padding:16px 0;">' + "".join(parts) + "</div>"
+        social_html = (
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+            '<tr><td style="text-align:center;padding:16px 0;">'
+            + "".join(parts)
+            + "</td></tr></table>"
+        )
 
         if 'data-slot="social_links"' in html or "data-slot='social_links'" in html:
             pattern = re.compile(

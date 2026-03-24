@@ -91,8 +91,28 @@ def build_system_prompt(
 
 
 def build_design_context_section(design_context: dict[str, object]) -> str:
-    """Build a prompt section from Figma design context."""
-    parts: list[str] = ["## Design Reference (Figma Import)\n"]
+    """Build a prompt section from design import context."""
+    parts: list[str] = ["## Design Reference (Import)\n"]
+
+    # Structural enforcement for design imports
+    parts.append(
+        "**CRITICAL — Email HTML structure requirements:**\n"
+        '- Use `<table role="presentation">` for ALL structural layout — NEVER `<div>` or `<p>` for layout\n'
+        '- Use `<p style="margin:0 0 10px 0;">` for text content inside `<td>` cells '
+        "(accessibility — screen readers navigate by paragraphs)\n"
+        "- Use `<h1>`-`<h6>` with inline styles for headings inside `<td>` cells "
+        "(screen readers scan by headings)\n"
+        "- NEVER use `<div>` or `<p>` with layout CSS (width, max-width, display:flex, float)\n"
+        '- `<div>` allowed ONLY for: `role="article"` wrapper, MSO hybrid columns '
+        "(inside conditionals), simple text-align wrappers inside `<td>`\n"
+        "- Multi-column layout: `<table>` with ghost table MSO pattern — NEVER div-based columns\n"
+        "- Every section structure: `<table>` > `<tr>` > `<td>` > semantic content "
+        "(`<p>`, `<h1>`-`<h6>`, `<a>`, `<img>`)\n"
+        "- Spacing: padding on `<td>` only (universal). margin:0 reset on every `<p>` and heading\n"
+        "- All styles inline on every element including `font-family` on EVERY `<td>` and heading\n"
+        "- MSO conditional wrappers around the 600px container\n"
+        '- Main email container: `width="600"` HTML attribute + `max-width:600px` CSS\n'
+    )
 
     layout = design_context.get("layout_summary")
     if layout:
@@ -100,19 +120,57 @@ def build_design_context_section(design_context: dict[str, object]) -> str:
 
     image_urls = design_context.get("image_urls", {})
     if isinstance(image_urls, dict) and image_urls:
-        parts.append("**Available images (use as img src):**")
+        parts.append(
+            "**IMPORTANT — Use these EXACT image URLs in <img> tags. "
+            "Do NOT use placeholder URLs (placehold.co, via.placeholder, etc). "
+            "These are real images exported from the design:**"
+        )
         for node_id, url in image_urls.items():
-            parts.append(f"- `{node_id}`: `{url}`")
+            parts.append(f"- Section `{node_id}`: `{url}`")
         parts.append("")
 
     tokens = design_context.get("design_tokens")
     if tokens and isinstance(tokens, dict):
         colors = tokens.get("colors", [])
         if isinstance(colors, list) and colors:
+            # Compute palette roles from colors
+            from app.design_sync.converter import convert_colors_to_palette
+            from app.design_sync.protocol import ExtractedColor
+
+            extracted = [
+                ExtractedColor(
+                    name=str(c.get("name", "")),
+                    hex=str(c.get("hex", "")),
+                )
+                for c in colors
+                if isinstance(c, dict)
+            ]
+            palette = convert_colors_to_palette(extracted)
+            parts.append(
+                f"**Color roles (computed from design):**\n"
+                f"- Background: `{palette.background}` — use on body/section backgrounds\n"
+                f"- Text: `{palette.text}` — use for body copy (MUST contrast with background)\n"
+                f"- Primary: `{palette.primary}` — use for headings\n"
+                f"- Accent: `{palette.accent}` — use for CTA buttons\n"
+                f"- Link: `{palette.link}` — use for hyperlinks\n"
+            )
+
+            from app.design_sync.converter import _relative_luminance
+
+            if _relative_luminance(palette.background) < 0.3:
+                parts.append(
+                    f"\n**DARK BACKGROUND DETECTED — Text color rules:**\n"
+                    f"- ALL body text MUST use `{palette.text}` (light color)\n"
+                    f"- ALL headings MUST use `{palette.text}` or `#ffffff`\n"
+                    "- NEVER use #000000, #111111, #222222, #333333, #444444, #666666\n"
+                    "- Links: use light blue (#99ccff) not default blue (#0000ee)\n"
+                )
+
+            # Also include raw color list for reference
             color_list = ", ".join(
                 f"{c.get('name', '?')}: {c.get('hex', '?')}" for c in colors if isinstance(c, dict)
             )
-            parts.append(f"**Brand colors:** {color_list}")
+            parts.append(f"**All brand colors:** {color_list}")
         typography = tokens.get("typography", [])
         if isinstance(typography, list) and typography:
             typo_dicts: list[dict[str, object]] = [t for t in typography if isinstance(t, dict)]
@@ -121,6 +179,45 @@ def build_design_context_section(design_context: dict[str, object]) -> str:
                 for t in typo_dicts
             )
             parts.append(f"**Typography:** {font_list}")
+            # Extract primary body and heading fonts for explicit inline instruction
+            body_fonts = [
+                t
+                for t in typo_dicts
+                if any(
+                    kw in str(t.get("name", "")).lower()
+                    for kw in ("body", "text", "paragraph", "regular")
+                )
+            ]
+            heading_fonts = [
+                t
+                for t in typo_dicts
+                if any(
+                    kw in str(t.get("name", "")).lower() for kw in ("heading", "title", "h1", "h2")
+                )
+            ]
+            body_family = str(body_fonts[0].get("family", "")) if body_fonts else ""
+            heading_family = str(heading_fonts[0].get("family", "")) if heading_fonts else ""
+            if body_family or heading_family:
+                parts.append(
+                    "\n**INLINE FONT REQUIREMENT — Apply these font-family stacks on EVERY element:**"
+                )
+                if body_family:
+                    stack = (
+                        f"{body_family}, Arial, Helvetica, sans-serif"
+                        if "," not in body_family
+                        else body_family
+                    )
+                    parts.append(f"- Body text `<td>`: `font-family: {stack};`")
+                if heading_family:
+                    stack = (
+                        f"{heading_family}, Arial, Helvetica, sans-serif"
+                        if "," not in heading_family
+                        else heading_family
+                    )
+                    parts.append(f"- Headings `<h1>`, `<h2>`: `font-family: {stack};`")
+                parts.append(
+                    "- Do NOT rely on `<style>` blocks or inheritance — inline on every element"
+                )
 
     source = design_context.get("source_file")
     if source:

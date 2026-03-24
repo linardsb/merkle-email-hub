@@ -1126,6 +1126,7 @@ def _layout_to_response(
                 for btn in s.buttons
             ],
             spacing_after=s.spacing_after,
+            bg_color=s.bg_color,
         )
         for s in layout.sections
     ]

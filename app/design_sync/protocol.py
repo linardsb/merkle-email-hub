@@ -72,6 +72,8 @@ class DesignNode:
     x: float | None = None
     y: float | None = None
     text_content: str | None = None
+    fill_color: str | None = None  # Background/fill hex from design tool
+    text_color: str | None = None  # Text fill color hex (TEXT nodes only)
 
 
 @dataclass(frozen=True)

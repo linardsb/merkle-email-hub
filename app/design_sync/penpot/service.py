@@ -336,6 +336,20 @@ class PenpotDesignSyncService:
                         self._obj_to_node(str(child_id), child_obj, all_objects, depth=child_depth),
                     )
 
+        # Extract fill color for converter pipeline
+        fill_color: str | None = None
+        text_color_hex: str | None = None
+        fills = obj.get("fills", [])
+        if isinstance(fills, list):
+            for fill in fills:
+                if isinstance(fill, dict) and fill.get("fill-color"):
+                    hex_val = str(fill["fill-color"])
+                    if node_type_str == "text":
+                        text_color_hex = hex_val
+                    else:
+                        fill_color = hex_val
+                    break
+
         return DesignNode(
             id=obj_id,
             name=obj.get("name", ""),
@@ -346,6 +360,8 @@ class PenpotDesignSyncService:
             x=x,
             y=y,
             text_content=text_content,
+            fill_color=fill_color,
+            text_color=text_color_hex,
         )
 
     def _extract_components(self, file_data: dict[str, Any]) -> list[DesignComponent]:

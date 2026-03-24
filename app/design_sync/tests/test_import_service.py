@@ -14,6 +14,7 @@ from app.design_sync.exceptions import ImportNotFoundError, ImportStateError
 from app.design_sync.import_service import DesignImportService
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
+    AnalyzedSectionResponse,
     ConvertImportRequest,
     DesignContextSchema,
     StartImportRequest,
@@ -336,6 +337,120 @@ class TestDesignImportServiceOrchestrator:
         result = svc._collect_image_node_ids(layout)
         assert result == ["1:1", "2:1"]
 
+    def test_collect_image_node_ids_fallback_to_section_frames(self) -> None:
+        """When no IMAGE nodes exist, fall back to section frame node IDs."""
+        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+
+        layout = MagicMock(spec=["sections"])
+        section = MagicMock()
+        section.images = []
+        section.node_id = "frame:1"
+        layout.sections = [section]
+
+        result = svc._collect_image_node_ids(layout)
+        assert result == ["frame:1"]
+
+    def test_collect_image_node_ids_appends_selected(self) -> None:
+        """Selected top-level nodes are appended (deduped) for full-email renders."""
+        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+
+        layout = MagicMock(spec=["sections"])
+        img = MagicMock()
+        img.node_id = "1:1"
+        section = MagicMock()
+        section.images = [img]
+        layout.sections = [section]
+
+        result = svc._collect_image_node_ids(layout, selected_node_ids=["1:1", "top:1"])
+        assert result == ["1:1", "top:1"]  # "1:1" not duplicated
+
+    def test_fill_image_urls_single(self) -> None:
+        html = '<img src="" alt="Logo" data-node-id="1:2" width="200" style="display:block;" />'
+        filled = DesignImportService._fill_image_urls(
+            html, {"1:2": "/api/v1/design-sync/assets/5/1_2.png"}
+        )
+        assert 'src="/api/v1/design-sync/assets/5/1_2.png"' in filled
+        assert 'src=""' not in filled
+
+    def test_fill_image_urls_multiple(self) -> None:
+        html = (
+            '<img src="" alt="Logo" data-node-id="1:2" width="200" />\n'
+            '<img src="" alt="Hero" data-node-id="3:4" width="600" />'
+        )
+        urls = {"1:2": "/assets/1_2.png", "3:4": "/assets/3_4.png"}
+        filled = DesignImportService._fill_image_urls(html, urls)
+        assert 'src="/assets/1_2.png"' in filled
+        assert 'src="/assets/3_4.png"' in filled
+        assert 'src=""' not in filled
+
+    def test_fill_image_urls_unmatched_preserved(self) -> None:
+        """Images without a matching node_id in the map keep src=""."""
+        html = '<img src="" alt="Unknown" data-node-id="9:9" width="100" />'
+        filled = DesignImportService._fill_image_urls(html, {"1:2": "/assets/1_2.png"})
+        assert 'src=""' in filled
+
+    def test_fill_image_urls_non_self_closing(self) -> None:
+        """img tags without trailing slash should also be matched."""
+        html = '<img src="" alt="Logo" data-node-id="1:2" width="200">'
+        filled = DesignImportService._fill_image_urls(
+            html, {"1:2": "/api/v1/design-sync/assets/5/1_2.png"}
+        )
+        assert 'src="/api/v1/design-sync/assets/5/1_2.png"' in filled
+        assert 'src=""' not in filled
+
+    def test_fill_image_urls_empty_map(self) -> None:
+        html = '<img src="" alt="Logo" data-node-id="1:2" width="200" />'
+        filled = DesignImportService._fill_image_urls(html, {})
+        assert filled == html
+
+    def test_fix_orphaned_footer_moves_content_inside(self) -> None:
+        """Footer content after </table> should be moved inside the wrapper."""
+        html = (
+            "<html><body>"
+            '<table role="presentation" style="margin:0 auto;max-width:600px;">'
+            "<tr><td>Content</td></tr>"
+            "</table>"
+            '\n<div style="text-align:center;">'
+            '<a href="#">Unsubscribe</a>'
+            "</div>\n"
+            "<!--[if mso]>\n</td></tr></table>\n<![endif]-->"
+            "</div></body></html>"
+        )
+        response = ScaffolderResponse(html=html, model="test", confidence=0.9, qa_passed=True)
+        fixed = DesignImportService._fix_orphaned_footer(response)
+        # Footer should now be inside the table
+        assert fixed.html.index("Unsubscribe") < fixed.html.index("</table>")
+
+    def test_fix_orphaned_footer_indented_mso(self) -> None:
+        """MSO conditional with indentation should still be detected."""
+        html = (
+            "<html><body>"
+            '<table role="presentation">'
+            "<tr><td>Content</td></tr>"
+            "</table>"
+            '\n<p style="text-align:center;">Footer</p>\n'
+            "<!--[if mso]>\n  </td>\n  </tr>\n  </table>\n<![endif]-->"
+            "</div></body></html>"
+        )
+        response = ScaffolderResponse(html=html, model="test", confidence=0.9, qa_passed=True)
+        fixed = DesignImportService._fix_orphaned_footer(response)
+        assert fixed.html.index("Footer") < fixed.html.index("</table>")
+
+    def test_fix_orphaned_footer_noop_when_correct(self) -> None:
+        """Properly structured HTML should not be modified."""
+        html = (
+            "<html><body>"
+            '<table role="presentation">'
+            "<tr><td>Content</td></tr>"
+            '<tr><td><a href="#">Unsubscribe</a></td></tr>'
+            "</table>\n"
+            "<!--[if mso]>\n</td></tr></table>\n<![endif]-->"
+            "</div></body></html>"
+        )
+        response = ScaffolderResponse(html=html, model="test", confidence=0.9, qa_passed=True)
+        fixed = DesignImportService._fix_orphaned_footer(response)
+        assert fixed.html == html
+
     def test_build_design_context(self) -> None:
         svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
         conn = _make_connection(conn_id=5)
@@ -521,3 +636,73 @@ class TestDesignImportServiceOrchestrator:
         ):
             # Should not raise
             await svc.run_conversion(999)
+
+    def test_placeholder_images_replaced_broad(self) -> None:
+        """images.placeholder.com URL should be replaced by asset URL."""
+        html = '<img src="https://images.placeholder.com/600x400" alt="Hero" />'
+        response = ScaffolderResponse(html=html, model="test", confidence=0.9, qa_passed=True)
+        fixed = DesignImportService._inject_asset_urls(response, {"1:1": "/assets/hero.png"})
+        assert "images.placeholder.com" not in fixed.html
+        assert 'src="/assets/hero.png"' in fixed.html
+
+    def test_bg_color_in_response_schema(self) -> None:
+        """AnalyzedSectionResponse with bg_color serializes correctly."""
+        section = AnalyzedSectionResponse(
+            section_type="hero",
+            node_id="1:1",
+            node_name="Hero",
+            bg_color="#1a1a2e",
+        )
+        assert section.bg_color == "#1a1a2e"
+        data = section.model_dump()
+        assert data["bg_color"] == "#1a1a2e"
+
+    def test_contrast_fix_dark_bg(self) -> None:
+        """HTML with dark bgcolor + dark text color should be fixed to white."""
+        html = '<table bgcolor="#1a1a2e"><tr><td style="color:#000000;">text</td></tr></table>'
+        fixed = DesignImportService._fix_text_contrast(html)
+        assert "color:#ffffff" in fixed
+        assert "color:#000000" not in fixed.lower()
+
+    def test_contrast_fix_light_bg_unchanged(self) -> None:
+        """HTML with light bgcolor + dark text should remain unchanged."""
+        html = '<table bgcolor="#ffffff"><tr><td style="color:#000000;">text</td></tr></table>'
+        fixed = DesignImportService._fix_text_contrast(html)
+        assert "color:#000000" in fixed
+
+    def test_contrast_fix_mixed_layout_scoped(self) -> None:
+        """Dark-bg fix must NOT bleed into light-bg sections."""
+        html = (
+            '<table bgcolor="#1a1a2e"><tr><td style="color:#000000;">dark section</td></tr></table>'
+            '<table bgcolor="#ffffff"><tr><td style="color:#000000;">light section</td></tr></table>'
+        )
+        fixed = DesignImportService._fix_text_contrast(html)
+        # Dark section: black text → white
+        assert 'color:#ffffff;">dark section' in fixed
+        # Light section: black text stays black
+        assert 'color:#000000;">light section' in fixed
+
+    def test_inject_asset_urls_placeholder_uses_full_pool(self) -> None:
+        """Strategy 3 replaces placeholder URLs even when Strategy 2 consumed pool."""
+        # Strategy 2 will consume the pool on empty src="" tags
+        # Strategy 3 should still replace via.placeholder using the FULL url list
+        html = '<img src="" alt="A" /><img src="https://via.placeholder.com/600x400" alt="B" />'
+        response = ScaffolderResponse(html=html, model="test", confidence=0.9, qa_passed=True)
+        fixed = DesignImportService._inject_asset_urls(response, {"1:1": "/assets/hero.png"})
+        assert "via.placeholder.com" not in fixed.html
+        assert 'src="/assets/hero.png"' in fixed.html
+
+    def test_placeholder_cycling(self) -> None:
+        """Multiple placeholder URLs cycle through available assets."""
+        html = (
+            '<img src="https://via.placeholder.com/600x400" alt="A" />'
+            '<img src="https://placehold.co/300x200" alt="B" />'
+        )
+        response = ScaffolderResponse(html=html, model="test", confidence=0.9, qa_passed=True)
+        fixed = DesignImportService._inject_asset_urls(
+            response, {"1:1": "/assets/hero.png", "2:1": "/assets/logo.png"}
+        )
+        assert "via.placeholder.com" not in fixed.html
+        assert "placehold.co" not in fixed.html
+        assert "/assets/hero.png" in fixed.html
+        assert "/assets/logo.png" in fixed.html

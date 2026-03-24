@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.design_sync.converter import _relative_luminance, convert_colors_to_palette
 from app.design_sync.figma.layout_analyzer import (
     ColumnLayout,
     DesignLayoutDescription,
@@ -71,8 +72,17 @@ def generate_brief(
 def _format_section(section: EmailSection, index: int, asset_url_prefix: str) -> str:
     """Format a single section as markdown."""
     lines: list[str] = []
-    lines.append(f"### {index}. {section.section_type.value.title()}")
+    section_label = _section_label(section, index)
+    lines.append(f"### {section_label}")
     lines.append(f"- Layout: {_describe_layout(section)}")
+    if section.height:
+        lines.append(f"- Height: {section.height:.0f}px")
+    if section.bg_color:
+        lines.append(f"- Background: {section.bg_color}")
+        is_dark = _relative_luminance(section.bg_color) < 0.5
+        lines.append(
+            f"- Theme: {'dark background — use light/white text' if is_dark else 'light background'}"
+        )
 
     # Images
     for img in section.images:
@@ -80,7 +90,9 @@ def _format_section(section: EmailSection, index: int, asset_url_prefix: str) ->
         if img.width and img.height:
             dims = f" {img.width:.0f}x{img.height:.0f}"
         if asset_url_prefix:
-            lines.append(f"- Image: [{img.node_name}]({asset_url_prefix}/{img.node_name}){dims}")
+            # Use sanitized node_id as filename (matches asset storage convention)
+            safe_id = img.node_id.replace(":", "_")
+            lines.append(f"- Image: [{img.node_name}]({asset_url_prefix}/{safe_id}.png){dims}")
         else:
             lines.append(f"- Image: {img.node_name}{dims}")
 
@@ -98,6 +110,48 @@ def _format_section(section: EmailSection, index: int, asset_url_prefix: str) ->
     return "\n".join(lines) + "\n"
 
 
+_SECTION_DISPLAY_NAMES: dict[str, str] = {
+    "header": "Header / Navigation",
+    "preheader": "Pre-header",
+    "hero": "Hero Section",
+    "content": "Content Module",
+    "cta": "CTA Module",
+    "footer": "Footer",
+    "social": "Social Links",
+    "divider": "Divider",
+    "spacer": "Spacer",
+    "nav": "Navigation Bar",
+    "unknown": "Section",
+}
+
+
+def _section_label(section: EmailSection, index: int) -> str:
+    """Build a human-readable section label like '1. Hero Section' or '3. Content Module 2'."""
+    display = _SECTION_DISPLAY_NAMES.get(section.section_type.value, "Section")
+
+    # Use the original node name if it's meaningful (not generic like "mj-wrapper")
+    raw_name = section.node_name.lower().strip()
+    generic_names = {
+        "mj-wrapper",
+        "mj-section",
+        "mj-column",
+        "mj-body",
+        "mj-hero",
+        "wrapper",
+        "frame",
+        "group",
+        "section",
+        "component",
+        "row",
+        "container",
+    }
+    if raw_name not in generic_names and not raw_name.startswith("frame "):
+        # Node has a meaningful name from the designer — prefer it
+        display = section.node_name
+
+    return f"{index}. {display}"
+
+
 def _describe_layout(section: EmailSection) -> str:
     """Describe the column layout of a section."""
     if section.column_layout == ColumnLayout.SINGLE:
@@ -110,12 +164,19 @@ def _describe_layout(section: EmailSection) -> str:
 
 
 def _format_tokens(tokens: ExtractedTokens) -> str:
-    """Format design tokens as markdown."""
+    """Format design tokens as markdown with color role annotations."""
     lines: list[str] = ["## Design Tokens"]
 
     if tokens.colors:
+        palette = convert_colors_to_palette(tokens.colors)
+        lines.append(f"- Background: {palette.background}")
+        lines.append(f"- Text: {palette.text}")
+        lines.append(f"- Primary: {palette.primary}")
+        lines.append(f"- Accent/CTA: {palette.accent}")
+        lines.append(f"- Link: {palette.link}")
+        # Also list raw colors for reference
         color_strs = [f"{c.name} {c.hex}" for c in tokens.colors[:6]]
-        lines.append(f"- Colors: {', '.join(color_strs)}")
+        lines.append(f"- All colors: {', '.join(color_strs)}")
 
     if tokens.typography:
         type_strs = [f"{t.family} {t.size:.0f}px ({t.name})" for t in tokens.typography[:4]]
@@ -131,13 +192,14 @@ def _format_tokens(tokens: ExtractedTokens) -> str:
 
 
 def _format_spacing(sections: list[EmailSection]) -> str:
-    """Format section spacing as markdown."""
+    """Format section spacing as markdown. Omits section when all values are zero."""
     pairs: list[str] = []
     for i in range(len(sections) - 1):
-        if sections[i].spacing_after is not None:
+        spacing = sections[i].spacing_after
+        if spacing is not None and spacing > 0:
             from_name = sections[i].section_type.value.title()
             to_name = sections[i + 1].section_type.value.title()
-            pairs.append(f"- {from_name} → {to_name}: {sections[i].spacing_after:.0f}px")
+            pairs.append(f"- {from_name} → {to_name}: {spacing:.0f}px")
 
     if not pairs:
         return ""
