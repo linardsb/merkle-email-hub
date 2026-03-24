@@ -166,6 +166,13 @@ SEED_MANIFEST: list[SeedEntry] = [
         description="CSS subset differences, dark mode forced colors, class/id renaming, and safe styles.",
         tags=["outlook-web", "office-365", "dark-mode", "quirks"],
     ),
+    SeedEntry(
+        filename="client_quirks/outlook-new-windows.md",
+        domain="client_quirks",
+        title="New Outlook for Windows Rendering Quirks",
+        description="Chromium-based New Outlook: MSO conditional invisibility, CSS sanitization, dark mode via data-ogsc/ogsb, viewport behavior, migration from classic Outlook.",
+        tags=["outlook", "new-outlook", "chromium", "dark-mode", "quirks"],
+    ),
     # --- Agent References (9 documents) ---
     # L4 deep-reference docs used by agents via SKILL.md l4_sources pointers.
     # Symlinked from docs/SKILL_*.md into seeds/agent_references/.

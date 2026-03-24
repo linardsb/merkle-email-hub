@@ -1,3 +1,13 @@
+---
+priority: 3
+---
+
+> **Deprecation Notice (Phase 32 prep):** Client-specific facts in this file
+> will be superseded by the centralized ClientMatrix (Phase 32.1) and the
+> `lookup_client_support` tool (Phase 32.4). This file is retained as a
+> fallback reference. Priority demoted to 3 (supplementary) — only loaded
+> when token budget allows.
+
 <!-- L4 source: docs/SKILL_html-email-css-dom-reference.md -->
 # CSS Support Matrix for Email Clients
 

@@ -22,12 +22,14 @@ from app.templates.upload.exceptions import (
     UploadNotFoundError,
     UploadRateLimitError,
 )
+from app.templates.upload.image_importer import ImageImporter, ImportedImage
 from app.templates.upload.models import TemplateUpload
 from app.templates.upload.repository import TemplateUploadRepository
 from app.templates.upload.schemas import (
     AnalysisPreview,
     ConfirmRequest,
     CSSOptimizationPreview,
+    ImagePreview,
     SectionPreview,
     SlotPreview,
     TemplateUploadResponse,
@@ -65,6 +67,7 @@ class TemplateUploadService:
         self._token_extractor = TokenExtractor()
         self._builder = TemplateBuilder()
         self._eval_gen = TemplateEvalGenerator()
+        self._image_importer = ImageImporter()
         self._settings = get_settings().templates
 
     async def upload_and_analyze(
@@ -97,6 +100,28 @@ class TemplateUploadService:
         css_optimization = self._compile_css(sanitized, project_id)
         if css_optimization.compiled_html:
             sanitized = css_optimization.compiled_html
+
+        # Create pending upload record early to get upload.id for image storage
+        upload = TemplateUpload(
+            user_id=user_id,
+            project_id=project_id,
+            status="pending_review",
+            original_html=html_content,
+            sanitized_html=sanitized,
+            analysis_json={},
+            file_size_bytes=file_size,
+            esp_platform=None,
+        )
+        upload = await self._repo.create(upload)
+        await self.db.flush()
+
+        # Import external images (needs upload.id for storage path)
+        imported_images: list[ImportedImage] = []
+        if self._settings.import_images:
+            sanitized, imported_images = await self._image_importer.import_images(
+                sanitized,
+                upload_id=upload.id,
+            )
 
         # Run analysis
         analysis = self._analyzer.analyze(sanitized)
@@ -143,19 +168,24 @@ class TemplateUploadService:
             }
             for d in token_diff
         ]
+        analysis_dict["images"] = [
+            {
+                "original_url": img.original_url,
+                "hub_url": img.hub_url,
+                "display_width": img.display_width,
+                "display_height": img.display_height,
+                "intrinsic_width": img.intrinsic_width,
+                "intrinsic_height": img.intrinsic_height,
+                "alt": img.alt,
+                "file_size_bytes": img.file_size_bytes,
+            }
+            for img in imported_images
+        ]
 
-        # Store pending upload
-        upload = TemplateUpload(
-            user_id=user_id,
-            project_id=project_id,
-            status="pending_review",
-            original_html=html_content,
-            sanitized_html=sanitized,
-            analysis_json=analysis_dict,
-            file_size_bytes=file_size,
-            esp_platform=analysis.esp_platform,
-        )
-        upload = await self._repo.create(upload)
+        # Update the upload record with final data
+        upload.sanitized_html = sanitized
+        upload.analysis_json = analysis_dict
+        upload.esp_platform = analysis.esp_platform
         await self.db.commit()
 
         logger.info(
@@ -163,6 +193,7 @@ class TemplateUploadService:
             upload_id=upload.id,
             sections=len(analysis.sections),
             slots=len(slots),
+            images=len(imported_images),
             esp=analysis.esp_platform,
         )
 
@@ -319,6 +350,9 @@ class TemplateUploadService:
                 "fonts": dict(tokens.fonts),
                 "font_sizes": dict(tokens.font_sizes),
                 "spacing": dict(tokens.spacing),
+                "font_weights": dict(tokens.font_weights),
+                "line_heights": dict(tokens.line_heights),
+                "letter_spacings": dict(tokens.letter_spacings),
             },
             "esp_platform": analysis.esp_platform,
             "layout_type": analysis.layout_type,
@@ -352,6 +386,7 @@ class TemplateUploadService:
         token_diff = [TokenDiffPreview(**d) for d in data.get("token_diff", [])]
         wrapper_data = data.get("wrapper")
         wrapper = WrapperPreview(**wrapper_data) if wrapper_data else None
+        images = [ImagePreview(**i) for i in data.get("images", [])]
 
         return AnalysisPreview(
             upload_id=upload_id,
@@ -367,6 +402,7 @@ class TemplateUploadService:
             css_optimization=css_optimization,
             token_diff=token_diff,
             wrapper=wrapper,
+            images=images,
         )
 
     def _compile_css(self, sanitized: str, _project_id: int | None) -> _CSSOptimizationResult:

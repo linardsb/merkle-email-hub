@@ -17,6 +17,7 @@ from app.design_sync.schemas import (
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionDeleteRequest,
+    ConnectionLinkProjectRequest,
     ConnectionResponse,
     ConnectionSyncRequest,
     ConnectionUpdateTokenRequest,
@@ -155,6 +156,23 @@ async def refresh_connection_token(
     """Refresh the access token for a design connection."""
     _ = request
     return await service.refresh_token(connection_id, data.access_token, current_user)
+
+
+@router.patch(
+    "/connections/{connection_id}/project",
+    response_model=ConnectionResponse,
+)
+@limiter.limit("10/minute")
+async def link_connection_to_project(
+    connection_id: int,
+    request: Request,
+    data: ConnectionLinkProjectRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> ConnectionResponse:
+    """Link or unlink a design connection to a project."""
+    _ = request
+    return await service.link_connection_to_project(connection_id, data.project_id, current_user)
 
 
 # ── Phase 12.1: File Structure, Components, Image Export ──

@@ -59,6 +59,9 @@ class TestResolveClientId:
         assert resolve_client_id("outlook", "windows") == "outlook_2019_win"
         assert resolve_client_id("apple-mail", "ios") == "apple_mail_ios"
 
+    def test_new_outlook_windows(self) -> None:
+        assert resolve_client_id("new-outlook", "windows") == "outlook_new_win"
+
     def test_unknown_client(self) -> None:
         assert resolve_client_id("unknown-client", "desktop") is None
 

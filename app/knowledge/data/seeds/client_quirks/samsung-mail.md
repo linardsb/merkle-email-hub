@@ -92,7 +92,44 @@ Samsung Mail's viewport handling can be inconsistent across device models and On
 </table>
 ```
 
-On foldable Samsung devices (Galaxy Z Fold, Z Flip), the viewport changes dramatically between folded and unfolded states. Emails should use fluid widths that adapt to any viewport between 280px and 600px+.
+### Foldable Device Behavior (Galaxy Z Fold / Z Flip)
+
+Samsung foldable devices present unique viewport challenges for email rendering:
+
+**Galaxy Z Fold (unfolded → folded):**
+- Unfolded inner display: ~717px CSS width (varies by model)
+- Folded cover screen: ~280px CSS width
+- Transition between states triggers a viewport resize — emails re-render live
+- Content must adapt fluidly between 280px and 717px without media queries as a safety net
+
+**Galaxy Z Flip:**
+- Unfolded: standard ~360px mobile viewport
+- Flex Mode (half-folded): viewport splits into two halves (~360px × ~320px visible area)
+- Samsung Mail does NOT reliably reflow emails in Flex Mode — content may be clipped
+
+**One UI version differences:**
+- One UI 5.x (Android 13): viewport reporting is inconsistent; some versions report physical pixels instead of CSS pixels
+- One UI 6.x (Android 14): improved viewport reporting; `meta viewport` tag respected more reliably
+- One UI 7.x (Android 15): experimental foldable-aware CSS features in Samsung Internet but NOT in Samsung Mail's WebView
+
+**Recommended approach:**
+
+```html
+<!-- Fluid wrapper that works across all fold states -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+       style="max-width: 600px; min-width: 280px; margin: 0 auto;">
+  <tr>
+    <td style="padding: 0 16px; width: 100%;">
+      <!-- Content adapts between 280px and 600px+ -->
+    </td>
+  </tr>
+</table>
+```
+
+- NEVER use fixed-width tables (e.g., `width="600"`) — these overflow on folded screens
+- Use `max-width` + `width: 100%` for fluid behavior
+- Images: use `max-width: 100%; height: auto;` to prevent overflow on narrow fold states
+- Test on both folded and unfolded states if Samsung is >5% of your audience
 
 ## Media Query Support
 

@@ -97,7 +97,7 @@ class TestListEmailClientsEndpoint:
         assert resp.status_code == 200
         data: list[dict[str, object]] = resp.json()
         assert isinstance(data, list)
-        assert len(data) == 25  # 25 clients in ontology
+        assert len(data) == 26  # 26 clients in ontology
 
     def test_response_shape(self, authenticated_client: TestClient) -> None:
         """Each client has required fields with correct types."""

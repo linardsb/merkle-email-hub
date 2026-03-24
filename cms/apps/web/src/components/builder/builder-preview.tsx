@@ -34,7 +34,7 @@ export function BuilderPreview({ assembledHtml, zoom }: BuilderPreviewProps) {
           title="Email preview"
           srcDoc={assembledHtml}
           sandbox=""
-          className="w-full border border-border bg-background"
+          className="w-full border border-border bg-white"
           style={{ minHeight: 600, pointerEvents: "none" }}
         />
       </div>

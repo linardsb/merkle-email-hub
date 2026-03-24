@@ -62,6 +62,12 @@ class ConnectionUpdateTokenRequest(BaseModel):
     access_token: str = Field(..., min_length=1, description="New provider access token / PAT")
 
 
+class ConnectionLinkProjectRequest(BaseModel):
+    """Request to link/unlink a connection to a project."""
+
+    project_id: int | None = Field(None, description="Project ID to link (null to unlink)")
+
+
 # ── Responses ──
 
 

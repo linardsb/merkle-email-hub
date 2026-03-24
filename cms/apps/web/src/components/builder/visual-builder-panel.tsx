@@ -21,8 +21,68 @@ import { BuilderToolbar, DEVICE_WIDTHS, type DevicePreview, type ClientPreview }
 import { BuilderOnboarding } from "@/components/workspace/builder-onboarding";
 import { ImportDialog } from "./import-dialog";
 
-/** Convert a parsed SectionNode to a BuilderSection with sensible defaults */
-function sectionNodeToBuilderSection(node: SectionNode): BuilderSection {
+/**
+ * Infer minimal SlotDefinition[] from data-slot-name elements in HTML.
+ * Fallback when component metadata is unavailable (e.g. componentId=0).
+ * @internal Exported for testing only.
+ */
+export function inferSlotDefinitions(htmlFragment: string): SlotDefinition[] {
+  const temp = document.createElement("div");
+  temp.innerHTML = htmlFragment;
+  const slotEls = temp.querySelectorAll("[data-slot-name]");
+  const seen = new Set<string>();
+  const defs: SlotDefinition[] = [];
+  for (const el of slotEls) {
+    const slotId = el.getAttribute("data-slot-name");
+    if (!slotId || seen.has(slotId)) continue;
+    seen.add(slotId);
+    // Determine slot type from element
+    const tag = el.tagName.toLowerCase();
+    let slotType: SlotDefinition["slot_type"] = "body";
+    if (tag === "a") slotType = "cta";
+    else if (tag === "img") slotType = "image";
+    else if (tag === "h1" || tag === "h2" || tag === "h3") slotType = "headline";
+    defs.push({
+      slot_id: slotId,
+      slot_type: slotType,
+      selector: `[data-slot-name="${slotId}"]`,
+      required: false,
+      max_chars: null,
+      placeholder: el.innerHTML,
+      label: slotId.replace(/_/g, " "),
+    });
+  }
+  return defs;
+}
+
+/**
+ * Convert a parsed SectionNode to a BuilderSection with sensible defaults.
+ * @internal Exported for testing only.
+ */
+export function sectionNodeToBuilderSection(
+  node: SectionNode,
+  versionCache?: Map<number, VersionResponse>,
+): BuilderSection {
+  // Try to resolve slot definitions from cached component metadata
+  let slotDefinitions: SlotDefinition[] = [];
+  let defaultTokens: DefaultTokens | null = null;
+
+  if (node.componentId > 0 && versionCache?.has(node.componentId)) {
+    const version = versionCache.get(node.componentId);
+    const versionObj = version as Record<string, unknown> | undefined;
+    if (versionObj && Array.isArray(versionObj["slot_definitions"])) {
+      slotDefinitions = versionObj["slot_definitions"] as SlotDefinition[];
+    }
+    if (versionObj?.["default_tokens"] && typeof versionObj["default_tokens"] === "object") {
+      defaultTokens = versionObj["default_tokens"] as DefaultTokens;
+    }
+  }
+
+  // Fallback: infer slot definitions from data-slot-name attributes in HTML
+  if (slotDefinitions.length === 0) {
+    slotDefinitions = inferSlotDefinitions(node.htmlFragment);
+  }
+
   return {
     id: node.id,
     componentId: node.componentId,
@@ -33,8 +93,8 @@ function sectionNodeToBuilderSection(node: SectionNode): BuilderSection {
     css: null,
     slotFills: node.slotValues,
     tokenOverrides: node.styleOverrides,
-    slotDefinitions: [],
-    defaultTokens: null,
+    slotDefinitions,
+    defaultTokens,
     responsive: { ...DEFAULT_RESPONSIVE },
     advanced: { ...DEFAULT_ADVANCED },
   };
@@ -128,39 +188,7 @@ export function VisualBuilderPanel({
     }
   }, [assembledHtml, onCodeChange]);
 
-  // Apply synced sections from code editor (split mode)
-  // Guard: compare IDs to avoid feedback loops (builder -> code -> parse -> builder)
-  const lastSyncedIdsRef = useRef<string>("");
-  useEffect(() => {
-    if (!syncedSections || syncedSections.length === 0) return;
-    const incomingIds = syncedSections.map((s) => s.id).join(",");
-    if (incomingIds === lastSyncedIdsRef.current) return;
-    lastSyncedIdsRef.current = incomingIds;
-    const builderSections = syncedSections.map(sectionNodeToBuilderSection);
-    setSections(builderSections);
-  }, [syncedSections, setSections]);
-
-  // Emit SectionNode[] to parent when builder sections change (split mode sync)
-  const lastEmittedSectionIdsRef = useRef<string>("");
-  useEffect(() => {
-    if (!onSectionsChange || sections.length === 0) return;
-    // Guard against feedback loop: don't re-emit sections we just received
-    const currentIds = sections.map((s) => s.id).join(",");
-    if (currentIds === lastEmittedSectionIdsRef.current) return;
-    if (currentIds === lastSyncedIdsRef.current) return;
-    lastEmittedSectionIdsRef.current = currentIds;
-    const nodes: SectionNode[] = sections.map((s) => ({
-      id: s.id,
-      componentId: s.componentId,
-      componentName: s.componentName,
-      slotValues: { ...s.slotFills },
-      styleOverrides: {},
-      htmlFragment: s.html,
-    }));
-    onSectionsChange(nodes);
-  }, [sections, onSectionsChange]);
-
-  // Fetch component version HTML on drop
+  // Fetch component version HTML (used by both sync and palette drop)
   const fetchComponentHtml = useCallback(
     async (componentId: number): Promise<VersionResponse | null> => {
       const cached = htmlCacheRef.current.get(componentId);
@@ -188,6 +216,53 @@ export function VisualBuilderPanel({
     },
     []
   );
+
+  // Apply synced sections from code editor (split mode)
+  // Guard: compare IDs to avoid feedback loops (builder -> code -> parse -> builder)
+  const lastSyncedIdsRef = useRef<string>("");
+  useEffect(() => {
+    if (!syncedSections || syncedSections.length === 0) return;
+    const incomingIds = syncedSections.map((s) => s.id).join(",");
+    if (incomingIds === lastSyncedIdsRef.current) return;
+    lastSyncedIdsRef.current = incomingIds;
+
+    // Prefetch component metadata for known components, then convert
+    let cancelled = false;
+    (async () => {
+      const unknownIds = syncedSections
+        .filter((s) => s.componentId > 0 && !htmlCacheRef.current.has(s.componentId))
+        .map((s) => s.componentId);
+      // Deduplicate
+      const uniqueIds = [...new Set(unknownIds)];
+      await Promise.all(uniqueIds.map((id) => fetchComponentHtml(id)));
+      if (cancelled) return;
+      const builderSections = syncedSections.map((s) =>
+        sectionNodeToBuilderSection(s, htmlCacheRef.current),
+      );
+      setSections(builderSections);
+    })();
+    return () => { cancelled = true; };
+  }, [syncedSections, setSections, fetchComponentHtml]);
+
+  // Emit SectionNode[] to parent when builder sections change (split mode sync)
+  const lastEmittedSectionIdsRef = useRef<string>("");
+  useEffect(() => {
+    if (!onSectionsChange || sections.length === 0) return;
+    // Guard against feedback loop: don't re-emit sections we just received
+    const currentIds = sections.map((s) => s.id).join(",");
+    if (currentIds === lastEmittedSectionIdsRef.current) return;
+    if (currentIds === lastSyncedIdsRef.current) return;
+    lastEmittedSectionIdsRef.current = currentIds;
+    const nodes: SectionNode[] = sections.map((s) => ({
+      id: s.id,
+      componentId: s.componentId,
+      componentName: s.componentName,
+      slotValues: { ...s.slotFills },
+      styleOverrides: {},
+      htmlFragment: s.html,
+    }));
+    onSectionsChange(nodes);
+  }, [sections, onSectionsChange]);
 
   // Handle palette drop
   const handleExternalDrop = useCallback(

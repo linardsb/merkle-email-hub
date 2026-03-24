@@ -16,7 +16,7 @@ class TestLoadOntology:
         self.registry = load_ontology()
 
     def test_client_count(self) -> None:
-        assert len(self.registry.clients) >= 25
+        assert len(self.registry.clients) >= 26
 
     def test_property_count(self) -> None:
         assert len(self.registry.properties) >= 300
@@ -41,6 +41,13 @@ class TestClientIndex:
         assert client.engine == ClientEngine.WORD
         assert client.family == "outlook"
 
+    def test_new_outlook_client(self) -> None:
+        client = self.registry.get_client("outlook_new_win")
+        assert client is not None
+        assert client.engine == ClientEngine.CUSTOM
+        assert client.family == "outlook"
+        assert client.platform == "windows"
+
     def test_unknown_client(self) -> None:
         assert self.registry.get_client("nonexistent") is None
 
@@ -48,7 +55,7 @@ class TestClientIndex:
         ids = self.registry.client_ids()
         assert "gmail_web" in ids
         assert "apple_mail_ios" in ids
-        assert len(ids) >= 25
+        assert len(ids) >= 26
 
 
 class TestPropertyIndex:

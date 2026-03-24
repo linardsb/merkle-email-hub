@@ -515,6 +515,11 @@ class TemplatesUploadConfig(BaseModel):
     max_uploads_per_hour: int = 5  # TEMPLATES__MAX_UPLOADS_PER_HOUR
     auto_knowledge_inject: bool = True  # TEMPLATES__AUTO_KNOWLEDGE_INJECT
     auto_eval_generate: bool = True  # TEMPLATES__AUTO_EVAL_GENERATE
+    import_images: bool = True  # TEMPLATES__IMPORT_IMAGES
+    max_image_download_size: int = 5 * 1024 * 1024  # 5MB per image
+    max_images_per_template: int = 50
+    image_download_timeout: float = 5.0  # Per-image timeout
+    image_storage_path: str = "data/upload-assets"
 
 
 class BriefsConfig(BaseModel):

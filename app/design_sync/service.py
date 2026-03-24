@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -94,7 +94,7 @@ if get_settings().design_sync.penpot_enabled:
 if get_settings().environment == "development":
     from app.design_sync.mock.service import MockDesignSyncService
 
-    SUPPORTED_PROVIDERS["mock"] = MockDesignSyncService
+    SUPPORTED_PROVIDERS["mock"] = MockDesignSyncService  # type: ignore[assignment]  # structural Protocol subtype
 
 
 class DesignSyncService:
@@ -291,7 +291,7 @@ class DesignSyncService:
                 conn.file_ref, access_token
             )
 
-            structure_cache = {
+            structure_cache: dict[str, Any] = {
                 "file_name": structure.file_name,
                 "pages": [self._serialize_node(p) for p in structure.pages],
             }
@@ -369,6 +369,32 @@ class DesignSyncService:
         )
 
         project_name = await self._get_project_name(conn.project_id)
+        return ConnectionResponse.from_model(conn, project_name=project_name)
+
+    async def link_connection_to_project(
+        self, connection_id: int, project_id: int | None, user: User
+    ) -> ConnectionResponse:
+        """Link or unlink a connection to a project."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        # Verify access to current project if linked
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+        # Verify access to target project
+        if project_id is not None:
+            await self._verify_access(project_id, user)
+
+        conn.project_id = project_id
+        await self.db.commit()
+
+        logger.info(
+            "design_sync.connection_linked",
+            connection_id=connection_id,
+            project_id=project_id,
+        )
+
+        project_name = await self._get_project_name(project_id)
         return ConnectionResponse.from_model(conn, project_name=project_name)
 
     async def get_tokens(self, connection_id: int, user: User) -> DesignTokensResponse:
@@ -500,7 +526,13 @@ class DesignSyncService:
             "text_content": node.text_content,
         }
 
-    _THUMBNAIL_NODE_TYPES = {"FRAME", "COMPONENT", "INSTANCE", "GROUP", "SECTION"}
+    _THUMBNAIL_NODE_TYPES: ClassVar[set[str]] = {
+        "FRAME",
+        "COMPONENT",
+        "INSTANCE",
+        "GROUP",
+        "SECTION",
+    }
     _MAX_THUMBNAIL_CACHE = 100  # Single Figma API call (100 IDs per batch)
 
     def _collect_top_frame_ids(self, pages: list[dict[str, Any]]) -> list[str]:

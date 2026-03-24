@@ -13,7 +13,7 @@ class TestSeedManifest:
     """Validate seed manifest structure and completeness."""
 
     def test_manifest_is_not_empty(self) -> None:
-        assert len(SEED_MANIFEST) == 29
+        assert len(SEED_MANIFEST) == 30
 
     def test_all_entries_are_seed_entry(self) -> None:
         for entry in SEED_MANIFEST:
@@ -49,7 +49,7 @@ class TestSeedManifest:
             counts[entry.domain] = counts.get(entry.domain, 0) + 1
         assert counts["css_support"] == 8
         assert counts["best_practices"] == 6
-        assert counts["client_quirks"] == 6
+        assert counts["client_quirks"] == 7
 
 
 class TestSeedFiles:

@@ -93,7 +93,25 @@ export function useDeleteDesignConnection() {
 export function useSyncDesignConnection() {
   return useSWRMutation<DesignConnection, Error, string, { id: number }>(
     "/api/v1/design-sync/connections/sync",
-    mutationFetcher,
+    longMutationFetcher,
+  );
+}
+
+export function useLinkConnectionToProject(connectionId: number | null) {
+  return useSWRMutation<DesignConnection, Error, string | null, { project_id: number | null }>(
+    connectionId ? `/api/v1/design-sync/connections/${connectionId}/project` : null,
+    async (url: string, { arg }: { arg: { project_id: number | null } }) => {
+      const res = await authFetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(arg),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new ApiError(res.status, body.error ?? "Failed to link project", body.type);
+      }
+      return res.json();
+    },
   );
 }
 

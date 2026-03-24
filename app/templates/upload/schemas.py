@@ -34,6 +34,10 @@ class TokenPreview(BaseModel):
     fonts: dict[str, str] = Field(default_factory=dict)
     font_sizes: dict[str, str] = Field(default_factory=dict)
     spacing: dict[str, str] = Field(default_factory=dict)
+    # Enriched typography (Phase 31.6)
+    font_weights: dict[str, str] = Field(default_factory=dict)
+    line_heights: dict[str, str] = Field(default_factory=dict)
+    letter_spacings: dict[str, str] = Field(default_factory=dict)
 
 
 class SectionPreview(BaseModel):
@@ -91,6 +95,19 @@ class WrapperPreview(BaseModel):
     mso_wrapper: str | None = None
 
 
+class ImagePreview(BaseModel):
+    """Preview of an imported image asset."""
+
+    original_url: str
+    hub_url: str
+    display_width: int | None = None
+    display_height: int | None = None
+    intrinsic_width: int = 0
+    intrinsic_height: int = 0
+    alt: str = ""
+    file_size_bytes: int = 0
+
+
 class AnalysisPreview(BaseModel):
     """Full analysis preview returned after upload."""
 
@@ -107,6 +124,7 @@ class AnalysisPreview(BaseModel):
     css_optimization: CSSOptimizationPreview | None = None
     token_diff: list[TokenDiffPreview] = Field(default_factory=lambda: list[TokenDiffPreview]())
     wrapper: WrapperPreview | None = None
+    images: list[ImagePreview] = Field(default_factory=lambda: list[ImagePreview]())
 
 
 class ConfirmRequest(BaseModel):

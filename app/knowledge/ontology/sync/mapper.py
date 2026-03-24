@@ -22,6 +22,7 @@ CLIENT_MAP: dict[tuple[str, str], str] = {
     ("outlook", "windows-mail"): "outlook_windows_mail",
     ("outlook", "macos"): "outlook_macos",
     ("outlook", "outlook-com"): "outlook_com",
+    ("new-outlook", "windows"): "outlook_new_win",
     ("outlook", "ios"): "outlook_ios",
     ("outlook", "android"): "outlook_android",
     ("yahoo", "desktop-webmail"): "yahoo_web",

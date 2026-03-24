@@ -338,3 +338,81 @@ class TestWrapperPreservation:
         assert result.wrapper is not None
         # No MSO wrapper before the <table> — the MSO is inside a section
         assert result.wrapper.mso_wrapper is None
+
+    def test_wrapper_with_intermediate_div(self, analyzer: TemplateAnalyzer) -> None:
+        """Sections inside <div> between <td> and inner tables must be detected."""
+        html = """
+<html>
+<body>
+<table width="600" align="center" cellpadding="0" cellspacing="0" border="0">
+  <tr><td>
+    <div style="max-width: 600px; margin: 0 auto;">
+      <table width="600">
+        <tr><td><img src="logo.png" width="150" height="50"></td></tr>
+      </table>
+      <table width="600">
+        <tr><td><h1 style="font-size: 24px;">Hello World</h1></td></tr>
+      </table>
+      <table width="600">
+        <tr><td style="font-size: 12px;">Footer text</td></tr>
+      </table>
+    </div>
+  </td></tr>
+</table>
+</body>
+</html>
+"""
+        result = analyzer.analyze(html)
+        assert result.wrapper is not None
+        assert result.wrapper.width == "600"
+        assert len(result.sections) >= 2
+
+    def test_wrapper_with_center_tag(self, analyzer: TemplateAnalyzer) -> None:
+        """Sections inside <center> between <td> and inner tables must be detected."""
+        html = """
+<html>
+<body>
+<table width="600" align="center" cellpadding="0" cellspacing="0" border="0">
+  <tr><td>
+    <center>
+      <table width="600">
+        <tr><td><img src="logo.png" width="150" height="50"></td></tr>
+      </table>
+      <table width="600">
+        <tr><td><h1 style="font-size: 24px;">Content</h1></td></tr>
+      </table>
+    </center>
+  </td></tr>
+</table>
+</body>
+</html>
+"""
+        result = analyzer.analyze(html)
+        assert result.wrapper is not None
+        assert len(result.sections) >= 2
+
+    def test_wrapper_with_nested_div_layers(self, analyzer: TemplateAnalyzer) -> None:
+        """Sections nested multiple levels deep must still be detected."""
+        html = """
+<html>
+<body>
+<table width="600" align="center" cellpadding="0" cellspacing="0" border="0">
+  <tr><td>
+    <div>
+      <section>
+        <table width="600">
+          <tr><td>Section 1</td></tr>
+        </table>
+        <table width="600">
+          <tr><td>Section 2</td></tr>
+        </table>
+      </section>
+    </div>
+  </td></tr>
+</table>
+</body>
+</html>
+"""
+        result = analyzer.analyze(html)
+        assert result.wrapper is not None
+        assert len(result.sections) >= 2

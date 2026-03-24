@@ -23,7 +23,9 @@ import {
   useDesignConnections,
   useSyncDesignConnection,
   useRefreshConnectionToken,
+  useLinkConnectionToProject,
 } from "@/hooks/use-design-sync";
+import { useProjects } from "@/hooks/use-projects";
 import type { DesignProvider } from "@/types/design-sync";
 
 type ProviderFilter = "all" | DesignProvider;
@@ -39,6 +41,30 @@ export default function DesignSyncPage() {
   const { data: connections, error, isLoading } = useDesignConnections();
   const { trigger: syncConnection } = useSyncDesignConnection();
   const { mutate } = useSWRConfig();
+  const { data: projectsData } = useProjects({ pageSize: 100 });
+  const [linkingConnId, setLinkingConnId] = useState<number | null>(null);
+  const { trigger: linkProject } = useLinkConnectionToProject(linkingConnId);
+
+  const projectOptions = projectsData?.items?.map((p) => ({ id: p.id, name: p.name })) ?? [];
+
+  const handleLinkProject = useCallback(async (connectionId: number, projectId: number | null) => {
+    setLinkingConnId(connectionId);
+    try {
+      // Need a small delay for the hook key to update
+      await new Promise((r) => setTimeout(r, 0));
+      await linkProject({ project_id: projectId });
+      await mutate(
+        (key: unknown) => typeof key === "string" && key.startsWith("/api/v1/design-sync"),
+        undefined,
+        { revalidate: true },
+      );
+      toast.success(projectId ? "Connection linked to project" : "Connection unlinked from project");
+    } catch {
+      toast.error("Failed to link project");
+    } finally {
+      setLinkingConnId(null);
+    }
+  }, [linkProject, mutate]);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [syncingId, setSyncingId] = useState<number | null>(null);
@@ -255,6 +281,8 @@ export default function DesignSyncPage() {
               onImport={() => openImportDialog(conn.id, conn.name, "import")}
               onExtractComponents={() => openImportDialog(conn.id, conn.name, "components")}
               onRefreshToken={() => openRefreshTokenDialog(conn.id)}
+              onLinkProject={(projectId) => handleLinkProject(conn.id, projectId)}
+              projects={projectOptions}
             />
           ))}
         </div>

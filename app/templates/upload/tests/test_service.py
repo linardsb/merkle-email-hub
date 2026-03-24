@@ -67,6 +67,7 @@ def _make_upload_model(
         "complexity_score": 10,
         "suggested_name": "uploaded_promotional_abc123",
         "suggested_description": "Test template",
+        "images": [],
     }
     upload.file_size_bytes = len(SIMPLE_HTML.encode())
     upload.esp_platform = None

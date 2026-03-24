@@ -2787,3 +2787,64 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - [x] ~~30.3 Multi-browser & CLI e2e coverage~~ DONE
 
 ---
+
+## Phase 31 — HTML Import Fidelity & Preview Accuracy
+
+### 31.1 Maizzle Passthrough for Pre-Compiled HTML `[Backend + Sidecar]` — DONE
+- `services/maizzle-builder/precompiled-detect.js` — `isPreCompiledEmail(source)` with 4 heuristics (no Maizzle syntax, inline styles ≥3, table layout ≥2, document shell)
+- `/build` and `/preview` handlers skip `render()` for pre-compiled HTML, return `passthrough: true`
+- CSS optimization (PostCSS ontology plugin + Lightning CSS) still runs on passthrough
+- `app/email_engine/schemas.py` — `passthrough: bool` on `PreviewResponse`/`BuildResponse`
+- [x] ~~31.1 Maizzle passthrough for pre-compiled HTML~~ DONE
+
+### 31.2 Inline CSS Compilation via Ontology Pipeline `[Backend + Sidecar]` — DONE
+- Layer A (Sidecar): `optimizeInlineStyles()` wraps inline `style=""` in synthetic PostCSS selectors for proper CSS parsing; shorthand expansion (`font`, `padding`, `margin`, `background`, `border`); media query responsive token extraction
+- Layer B (Python): `EmailCSSCompiler._process_css_block()` replaced regex `line.split(":")` with Lightning CSS `process_stylesheet()`
+- Layer C: `DesignSystemMapper` maps imported font/color/spacing tokens against project design system; `TokenDiff` preview in upload API response
+- [x] ~~31.2 Inline CSS compilation via ontology pipeline~~ DONE
+
+### 31.3 Preserve Wrapper Table Metadata in Section Analyzer `[Backend]` — DONE
+- `app/templates/upload/analyzer.py` — `WrapperInfo` dataclass (tag, width, align, style, bgcolor, cellpadding, cellspacing, border, role, inner_td_style, mso_wrapper)
+- `TemplateAnalyzer._detect_wrapper()` extracts outer centering table metadata before section unwrapping
+- `AnalysisResult.wrapper: WrapperInfo | None` — None when no single-wrapper pattern detected
+- [x] ~~31.3 Preserve wrapper table metadata in section analyzer~~ DONE
+
+### 31.4 Wrapper Reconstruction on Template Assembly `[Backend]` — DONE
+- `app/templates/upload/wrapper_utils.py` — `detect_centering()` and `inject_centering_wrapper()` with MSO ghost table support
+- `TemplateBuilder.build()` calls `ensure_wrapper()` when `WrapperInfo` present; stores `wrapper_metadata` dict on `GoldenTemplate`
+- Idempotent — no double-wrapping on already-centered HTML
+- [x] ~~31.4 Wrapper reconstruction on template assembly~~ DONE
+
+### 31.5 Preview Iframe Dark Mode Text Safety & Sandbox Fix `[Frontend]` — DONE
+- `cms/apps/web/src/lib/dark-mode-contrast.ts` — `ensureDarkModeContrast()` replaces dark inline colors (luminance < 0.3) with `#e5e5e5 !important`
+- `cms/apps/web/src/lib/color-utils.ts` — `relativeLuminance()` WCAG 2.1 formula, `isDarkColor()` threshold check
+- `preview-iframe.tsx` — `sandbox="allow-same-origin"` (blocks scripts, allows image loading); dark mode contrast injection before srcdoc write
+- [x] ~~31.5 Preview iframe dark mode text safety & sandbox fix~~ DONE
+
+### 31.6 Enriched Typography & Spacing Token Pipeline `[Backend]` — DONE
+- `TokenInfo` extended with `font_weights`, `line_heights`, `letter_spacings`, `color_roles` buckets
+- `TokenExtractor.extract()` resolves enriched typography roles from multi-occurrence voting
+- `TemplateAssembler` — 4 new replacement steps: `_apply_font_size_replacement()`, `_apply_line_height_replacement()`, `_apply_font_weight_replacement()`, `_apply_spacing_replacement()`
+- `DesignNode` extended with `font_family`, `font_size`, `font_weight`, `line_height`, `item_spacing`, `padding_*` from Figma auto-layout
+- [x] ~~31.6 Enriched typography & spacing token pipeline~~ DONE
+
+### 31.7 Image Asset Import & Dimension Preservation `[Backend]` — DONE
+- `app/templates/upload/image_importer.py` — `ImageImporter` with HTTP download, content-type validation, dimension detection (Pillow), `<img>` src rewriting to hub-hosted URLs
+- `ImportedImage` dataclass with original_url, hub_url, display/intrinsic dimensions, alt, file_size
+- `TemplateUploadService.upload_and_analyze()` — image import step between CSS optimization and analysis
+- `ImagePreview` schema for API response; `AnalysisPreview.images` list
+- 11 tests covering download, dimension detection, rewriting, error handling
+- [x] ~~31.7 Image asset import & dimension preservation~~ DONE
+
+### 31.8 Tests & Integration Verification `[Full-Stack]` — DONE
+- `TokenPreview` schema fix — added `font_weights`, `line_heights`, `letter_spacings` fields; `_serialize_analysis()` updated
+- `test_analyzer_wrapper.py` — 6 tests (center tag, inner td style, multi-table no wrapper)
+- `test_token_extractor_enriched.py` — 8 tests (font weights, line heights, letter spacings, color roles, backward compat)
+- `test_template_builder_wrapper.py` — 4 tests (centering, metadata storage, MSO wrapper, no-wrapper)
+- `passthrough.test.js` — 2 extended tests (newsletter detection, all 13 golden templates sweep)
+- `preview-iframe.test.tsx` — 4 tests (sandbox attribute, compile prompt, loading spinner)
+- `import-fidelity.spec.ts` — 3 E2E tests (paste+preview, sandbox security, dark mode toggle)
+- `pre-compiled-email.html` — E2E fixture from `promotional_hero` golden template
+- [x] ~~31.8 Tests & integration verification~~ DONE
+
+---

@@ -6,6 +6,8 @@ Outlook.com (formerly Hotmail) and Office 365 Outlook on the web share a renderi
 
 The distinction is critical: code that works in Outlook Windows (MSO conditionals, VML) is invisible to Outlook on the web because it runs in a browser context. Conversely, CSS properties like `border-radius` and `background-image` that are unsupported in Outlook Windows work correctly in Outlook on the web. Developers must account for both rendering contexts when targeting the Outlook family.
 
+> **See also:** [outlook-new-windows.md](outlook-new-windows.md) for the "New Outlook" desktop app, which shares this rendering engine but has desktop-specific viewport and dark mode behavior.
+
 ## CSS Sanitization and Safe Styles
 
 Outlook on the web processes email HTML through a sanitizer that whitelists specific CSS properties and strips everything else. The sanitizer operates at the inline style level and the embedded stylesheet level.

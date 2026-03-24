@@ -195,7 +195,7 @@ class TemplateAnalyzer:
         # If we found a single wrapper table, look inside it for nested tables as sections
         if len(candidates) == 1 and candidates[0].tag == "table":
             wrapper = candidates[0]
-            inner_tables = wrapper.findall(".//tr/td/table")
+            inner_tables = wrapper.findall(".//tr/td//table")
             if len(inner_tables) >= 2:
                 # Extract wrapper metadata before discarding
                 wrapper_info = self._extract_wrapper_info(wrapper, raw_html)

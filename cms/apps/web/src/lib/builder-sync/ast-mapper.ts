@@ -265,6 +265,17 @@ function isContentElement(el: Element): boolean {
 }
 
 /**
+ * Detect email "hidden helper" elements (preheader text, tracking pixels)
+ * that should not count as content children when finding the content root.
+ * These use inline display:none. Responsive-hidden sections use class-based
+ * @media hiding and are NOT filtered.
+ */
+function isHiddenHelperElement(el: Element): boolean {
+  const style = el.getAttribute("style") ?? "";
+  return /display\s*:\s*none/i.test(style);
+}
+
+/**
  * Find the content root — the deepest element whose direct children
  * represent logical email sections.
  *
@@ -296,7 +307,9 @@ export function findContentRoot(
       }
     }
 
-    const children = Array.from(current.children).filter(isContentElement);
+    const children = Array.from(current.children).filter(
+      (el) => isContentElement(el) && !isHiddenHelperElement(el)
+    );
 
     if (children.length === 0) {
       // No children — return deepest reached if allowed

@@ -511,6 +511,17 @@ function assembleDocument(
         }
       }
 
+      // Ensure body has background-color for preview (email clients default to white)
+      const bodyStyle = doc.body.getAttribute("style") ?? "";
+      if (!/background(-color)?\s*:/i.test(bodyStyle)) {
+        doc.body.setAttribute(
+          "style",
+          bodyStyle
+            ? `${bodyStyle}; background-color:#ffffff;`
+            : "background-color:#ffffff;"
+        );
+      }
+
       // Reconstruct with doctype
       let doctypeStr = "";
       if (doc.doctype) {

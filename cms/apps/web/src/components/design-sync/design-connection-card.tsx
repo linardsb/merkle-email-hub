@@ -11,6 +11,11 @@ const PROVIDER_LABELS: Record<string, string> = {
   canva: "Canva",
 };
 
+interface ProjectOption {
+  id: number;
+  name: string;
+}
+
 interface DesignConnectionCardProps {
   connection: DesignConnection;
   selected: boolean;
@@ -21,6 +26,8 @@ interface DesignConnectionCardProps {
   onImport: () => void;
   onExtractComponents: () => void;
   onRefreshToken?: () => void;
+  onLinkProject?: (projectId: number | null) => void;
+  projects?: ProjectOption[];
 }
 
 export function DesignConnectionCard({
@@ -33,6 +40,8 @@ export function DesignConnectionCard({
   onImport,
   onExtractComponents,
   onRefreshToken,
+  onLinkProject,
+  projects,
 }: DesignConnectionCardProps) {
   const lastSynced = connection.last_synced_at
     ? new Date(connection.last_synced_at).toLocaleDateString("en-US", {
@@ -81,12 +90,41 @@ export function DesignConnectionCard({
 
       {/* Meta row */}
       <div className="mt-3 flex items-center gap-4 text-xs text-foreground-muted">
-        {connection.project_name && (
+        {connection.project_id && connection.project_name ? (
           <span className="flex items-center gap-1">
             <FolderOpen className="h-3.5 w-3.5" />
             {connection.project_name}
+            {onLinkProject && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLinkProject(null);
+                }}
+                className="ml-1 text-foreground-muted hover:text-foreground"
+                title="Unlink project"
+              >
+                {"×"}
+              </button>
+            )}
           </span>
-        )}
+        ) : onLinkProject && projects && projects.length > 0 ? (
+          <span className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <FolderOpen className="h-3.5 w-3.5 text-status-warning" />
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) onLinkProject(Number(e.target.value));
+              }}
+              className="rounded border border-border bg-card-bg px-1.5 py-0.5 text-xs text-foreground"
+            >
+              <option value="">{"Link to project…"}</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </span>
+        ) : null}
         {lastSynced && (
           <span>{`Synced ${lastSynced}`}</span>
         )}

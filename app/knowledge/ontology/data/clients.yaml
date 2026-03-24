@@ -115,6 +115,26 @@ clients:
       rendering engine.
     tags: [webmail, enterprise]
 
+  - id: outlook_new_win
+    name: "New Outlook for Windows"
+    family: outlook
+    platform: windows
+    engine: custom
+    market_share: 5.0
+    notes: >-
+      Chromium-based desktop app replacing classic Outlook for Windows (Microsoft
+      deprecating classic Outlook October 2026). Shares the Outlook.com/OWA
+      rendering engine — NOT the Word engine. Supports CSS background images,
+      border-radius, and max-width (unlike Word-based Outlook). Strips flexbox,
+      grid, position, and float identically to outlook_web. Key differences from
+      outlook_web: resizable desktop window (not browser tab) creates different
+      viewport behavior, local image cache + proxy hybrid for image handling,
+      and OS-level dark mode integration via Windows system settings. MSO
+      conditional comments are ignored — do NOT wrap layout in <!--[if mso]>
+      blocks for this client. Test alongside classic Outlook 365 during the
+      transition period.
+    tags: [desktop, enterprise, transition]
+
   # ─── Gmail Family ─────────────────────────────────────────────────────────────
 
   - id: gmail_web

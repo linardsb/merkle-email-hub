@@ -57,7 +57,11 @@ For full architecture details see `.claude/docs/architecture-deep-dive.md`. For 
 
 See `TODO.md` for details. See `docs/TODO-completed.md` for completed phases 0-30.
 
-Phases 0–30 complete. **Phase 31** (HTML Import Fidelity & Preview Accuracy) is current — 31.1–31.6 done (Maizzle passthrough, CSS ontology pipeline, wrapper metadata capture, wrapper reconstruction, dark mode text safety & sandbox fix, enriched typography & spacing token pipeline). Remaining: 31.7–31.8.
+Phases 0–31 complete. **Phase 31** (HTML Import Fidelity & Preview Accuracy) **ALL DONE** (8/8 subtasks — Maizzle passthrough, CSS ontology pipeline, wrapper metadata capture, wrapper reconstruction, dark mode text safety & sandbox fix, enriched typography & spacing token pipeline, image asset import & dimension preservation, tests & integration verification).
+
+**Phase 32** (Agent Email Rendering Intelligence) — centralized client matrix, agent knowledge lookup, content rendering awareness, import annotator depth, cross-agent learning, eval-driven skill updates, visual QA feedback loop. **Next — independent of Phase 33.**
+
+**Phase 33** (Design Token Pipeline Overhaul — Figma → Email HTML) — Figma Variables API, opacity compositing, token validation layer, typography pipeline (line-height/letter-spacing/font mapping), spacing tokens & auto-layout→table, multi-column proportional widths, semantic HTML (headings/paragraphs/buttons), dark mode extraction, gradient fallbacks, Scaffolder integration. **Next — independent of Phase 32, recommended to start first (upstream fixes).**
 
 ## Compact instructions
 

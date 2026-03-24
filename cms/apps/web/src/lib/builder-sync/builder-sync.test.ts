@@ -58,6 +58,31 @@ ${contentRows}
 </html>`;
 }
 
+/** Imported email with preheader, centering wrapper, and MSO conditionals */
+function importedDoc(sectionTables: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<style>
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1a1a2e !important; }
+    .dark-text { color: #e5e5e5 !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;">
+<div role="article" style="font-size:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;">Preheader text</div>
+  <!--[if mso]><table width="600" align="center"><tr><td><![endif]-->
+  <div style="max-width:600px;margin:0 auto;">
+${sectionTables}
+  </div>
+  <!--[if mso]></td></tr></table><![endif]-->
+</div>
+</body>
+</html>`;
+}
+
 /** Column layout: columns as sibling elements inside a wrapper */
 function columnDoc(columnContent: string): string {
   return `<!DOCTYPE html>
@@ -1171,5 +1196,55 @@ describe("BuilderSyncEngine", () => {
     expect(engine["templateShell"]).toContain('lang="en"');
 
     engine.dispose();
+  });
+});
+
+// ── Import fidelity: preheader / centering / MSO ──
+
+describe("import fidelity — preheader + centering wrapper", () => {
+  const twoSections = `<table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#ffffff;padding:20px;"><h1>Header</h1></td></tr></table>
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#f5f5f5;padding:20px;"><p>Body content</p></td></tr></table>`;
+
+  it("skips preheader div when finding content root", () => {
+    const html = importedDoc(twoSections);
+    const sections = htmlToSections(html);
+    // Should find 2 sections (the two tables), not treat preheader as a section
+    expect(sections!.length).toBe(2);
+  });
+
+  it("preserves centering wrapper in roundtrip", () => {
+    const html = importedDoc(twoSections);
+    const sections = htmlToSections(html);
+    const reassembled = sectionsToHtml(sections!, html);
+    expect(reassembled).toContain("max-width:600px");
+    expect(reassembled).toContain("margin:0 auto");
+    expect(reassembled).toContain("font-family:");
+    expect(reassembled).toContain("display:none");
+  });
+
+  it("preserves MSO conditionals in roundtrip", () => {
+    const html = importedDoc(twoSections);
+    const sections = htmlToSections(html);
+    const reassembled = sectionsToHtml(sections!, html);
+    expect(reassembled).toContain("[if mso]");
+  });
+
+  it("does not skip class-based hidden elements", () => {
+    // Mobile-only content uses class-based hiding, not inline display:none
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div role="article">
+  <div class="mobile-only" style="font-size:0;line-height:0;">Mobile nav</div>
+  <table width="100%"><tr><td>Section 1</td></tr></table>
+  <table width="100%"><tr><td>Section 2</td></tr></table>
+</div>
+</body>
+</html>`;
+    const sections = htmlToSections(html);
+    // The mobile-only div (no display:none) should count as a content child,
+    // so content root should be div[role=article] with 3 children
+    expect(sections!.length).toBe(3);
   });
 });
