@@ -153,6 +153,18 @@ class DesignImportService:
                         extracted_tokens = (
                             self._tokens_to_protocol(tokens) if tokens else ExtractedTokens()
                         )
+
+                        # Validate tokens before converter consumption
+                        from app.design_sync.token_transforms import validate_and_transform
+
+                        extracted_tokens, token_warnings = validate_and_transform(extracted_tokens)
+                        if token_warnings:
+                            logger.info(
+                                "design_sync.import_token_warnings",
+                                import_id=import_id,
+                                count=len(token_warnings),
+                            )
+
                         # Pass raw_file_data only for Penpot (has richer props)
                         raw_data = (
                             design_import.structure_json if conn.provider == "penpot" else None

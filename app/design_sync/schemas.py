@@ -152,6 +152,7 @@ class DesignTokensResponse(BaseModel):
     typography: list[DesignTypographyResponse]
     spacing: list[DesignSpacingResponse]
     extracted_at: datetime.datetime
+    warnings: list[str] | None = None
 
 
 # ── File Structure Responses ──

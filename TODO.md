@@ -697,7 +697,7 @@
 
 - [x] ~~33.0 Wire layout analyzer into converter (prerequisite for 33.4–33.9)~~ DONE
 - [x] ~~33.1 Figma Variables API + opacity compositing~~ DONE
-- [ ] 33.2 Email-safe token transforms & validation layer
+- [x] ~~33.2 Email-safe token transforms & validation layer~~ DONE
 - [ ] 33.3 Typography pipeline: line-height, letter-spacing, font mapping
 - [ ] 33.4 Spacing token pipeline & auto-layout → table mapping
 - [ ] 33.5 Multi-column layout & proportional width calculation

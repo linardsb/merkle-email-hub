@@ -291,6 +291,11 @@ class DesignSyncService:
                 conn.file_ref, access_token
             )
 
+            # Validate and transform tokens to email-safe values
+            from app.design_sync.token_transforms import validate_and_transform
+
+            tokens, token_warnings = validate_and_transform(tokens)
+
             structure_cache: dict[str, Any] = {
                 "file_name": structure.file_name,
                 "pages": [self._serialize_node(p) for p in structure.pages],
@@ -316,6 +321,17 @@ class DesignSyncService:
             tokens_dict["_file_structure"] = structure_cache
             if thumbnail_cache:
                 tokens_dict["_thumbnails"] = thumbnail_cache
+            if token_warnings:
+                tokens_dict["_token_warnings"] = [
+                    {
+                        "level": w.level,
+                        "field": w.field,
+                        "message": w.message,
+                        "original_value": w.original_value,
+                        "fixed_value": w.fixed_value,
+                    }
+                    for w in token_warnings
+                ]
             await self._repo.save_snapshot(conn.id, tokens_dict)
             await self._repo.update_status(conn, "connected")
 
@@ -423,6 +439,16 @@ class DesignSyncService:
         spacing_list: list[dict[str, Any]] = [
             s for s in tj.get("spacing", []) if isinstance(s, dict)
         ]
+        # Extract token warnings from snapshot (stored by sync_connection)
+        raw_warnings = tj.get("_token_warnings", [])
+        warning_strings: list[str] | None = None
+        if raw_warnings:
+            warning_strings = [
+                f"[{w.get('level', 'info')}] {w.get('field', '?')}: {w.get('message', '')}"
+                for w in raw_warnings
+                if isinstance(w, dict)
+            ]
+
         return DesignTokensResponse(
             connection_id=connection_id,
             colors=[
@@ -448,6 +474,7 @@ class DesignSyncService:
                 for s in spacing_list
             ],
             extracted_at=snapshot.extracted_at,
+            warnings=warning_strings or None,
         )
 
     # ── Phase 12.1: File Structure, Components, Image Export ──
