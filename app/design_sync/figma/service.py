@@ -52,6 +52,24 @@ _FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
     "REGULAR_POLYGON": DesignNodeType.VECTOR,
 }
 
+# Figma text property maps
+_TEXT_CASE_MAP: dict[str, str] = {"UPPER": "uppercase", "LOWER": "lowercase", "TITLE": "capitalize"}
+_TEXT_DEC_MAP: dict[str, str] = {"UNDERLINE": "underline", "STRIKETHROUGH": "line-through"}
+
+
+def _parse_letter_spacing(style_dict: dict[str, Any], font_size: float) -> float | None:
+    """Parse Figma letterSpacing to px value."""
+    raw = style_dict.get("letterSpacing", {})
+    if isinstance(raw, dict):
+        if raw.get("unit") == "PIXELS":
+            val = raw.get("value")
+            return float(val) if isinstance(val, (int, float)) else None
+        if raw.get("unit") == "PERCENT" and font_size:
+            return round(font_size * float(raw.get("value", 0)) / 100, 1)
+    elif isinstance(raw, (int, float)):
+        return float(raw)
+    return None
+
 
 def extract_file_key(url: str) -> str:
     """Extract the Figma file key from a URL.
@@ -581,6 +599,9 @@ class FigmaDesignSyncService:
                             weight=weight,
                             size=size,
                             line_height=float(tp.get("lineHeightPx", 24)),
+                            letter_spacing=_parse_letter_spacing(tp, size),
+                            text_transform=_TEXT_CASE_MAP.get(str(tp.get("textCase", ""))),
+                            text_decoration=_TEXT_DEC_MAP.get(str(tp.get("textDecoration", ""))),
                         )
                     )
 
@@ -758,6 +779,9 @@ class FigmaDesignSyncService:
                                 weight=weight,
                                 size=size,
                                 line_height=line_height,
+                                letter_spacing=_parse_letter_spacing(s, size),
+                                text_transform=_TEXT_CASE_MAP.get(str(s.get("textCase", ""))),
+                                text_decoration=_TEXT_DEC_MAP.get(str(s.get("textDecoration", ""))),
                             )
                         )
 
@@ -899,6 +923,8 @@ class FigmaDesignSyncService:
         dn_font_weight: int | None = None
         dn_line_height_px: float | None = None
         dn_letter_spacing_px: float | None = None
+        dn_text_transform: str | None = None
+        dn_text_decoration: str | None = None
         if node_type == DesignNodeType.TEXT:
             style = node_data.get("style", {})
             if isinstance(style, dict):
@@ -910,8 +936,9 @@ class FigmaDesignSyncService:
                 dn_font_weight = int(raw_fw) if isinstance(raw_fw, (int, float)) else None
                 raw_lh = style.get("lineHeightPx")
                 dn_line_height_px = float(raw_lh) if isinstance(raw_lh, (int, float)) else None
-                raw_ls = style.get("letterSpacing")
-                dn_letter_spacing_px = float(raw_ls) if isinstance(raw_ls, (int, float)) else None
+                dn_letter_spacing_px = _parse_letter_spacing(style, dn_font_size or 16.0)
+                dn_text_transform = _TEXT_CASE_MAP.get(str(style.get("textCase", "")))
+                dn_text_decoration = _TEXT_DEC_MAP.get(str(style.get("textDecoration", "")))
 
         # Extract fill colors for the converter pipeline
         fill_color: str | None = None
@@ -978,6 +1005,8 @@ class FigmaDesignSyncService:
             font_weight=dn_font_weight,
             line_height_px=dn_line_height_px,
             letter_spacing_px=dn_letter_spacing_px,
+            text_transform=dn_text_transform,
+            text_decoration=dn_text_decoration,
         )
 
     async def list_components(self, file_ref: str, access_token: str) -> list[DesignComponent]:

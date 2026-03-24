@@ -466,6 +466,9 @@ class DesignSyncService:
                     weight=str(t["weight"]),
                     size=float(t["size"]),
                     lineHeight=float(t.get("line_height", t.get("lineHeight", 24))),
+                    letterSpacing=t.get("letter_spacing", t.get("letterSpacing")),
+                    textTransform=t.get("text_transform", t.get("textTransform")),
+                    textDecoration=t.get("text_decoration", t.get("textDecoration")),
                 )
                 for t in typography_list
             ],

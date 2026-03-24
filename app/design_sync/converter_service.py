@@ -240,6 +240,8 @@ class DesignConverterService:
                 or node.layout_mode
                 or node.line_height_px
                 or node.letter_spacing_px
+                or node.text_transform
+                or node.text_decoration
             )
             if has_data:
                 props[node.id] = _NodeProps(
@@ -260,6 +262,8 @@ class DesignConverterService:
                     ),
                     line_height_px=node.line_height_px,
                     letter_spacing_px=node.letter_spacing_px,
+                    text_transform=node.text_transform,
+                    text_decoration=node.text_decoration,
                 )
             for child in node.children:
                 _walk(child)

@@ -436,7 +436,60 @@ def _validate_typography(
         )
         line_height = converted
 
-    return replace(typo, family=family, weight=weight, line_height=line_height)
+    # Letter spacing validation
+    letter_spacing = typo.letter_spacing
+    if letter_spacing is not None:
+        if abs(letter_spacing) > 50:
+            warnings.append(
+                TokenWarning(
+                    level="warning",
+                    field=f"typography[{typo.name}].letter_spacing",
+                    message=f"Letter spacing {letter_spacing}px seems extreme",
+                    original_value=str(letter_spacing),
+                    fixed_value=str(max(-50.0, min(50.0, letter_spacing))),
+                )
+            )
+            letter_spacing = max(-50.0, min(50.0, letter_spacing))
+
+    # Text transform validation
+    text_transform = typo.text_transform
+    _VALID_TRANSFORMS = {"uppercase", "lowercase", "capitalize"}
+    if text_transform is not None and text_transform not in _VALID_TRANSFORMS:
+        warnings.append(
+            TokenWarning(
+                level="warning",
+                field=f"typography[{typo.name}].text_transform",
+                message=f"Unknown text-transform '{text_transform}', dropping",
+                original_value=text_transform,
+                fixed_value="None",
+            )
+        )
+        text_transform = None
+
+    # Text decoration validation
+    text_decoration = typo.text_decoration
+    _VALID_DECORATIONS = {"underline", "line-through"}
+    if text_decoration is not None and text_decoration not in _VALID_DECORATIONS:
+        warnings.append(
+            TokenWarning(
+                level="warning",
+                field=f"typography[{typo.name}].text_decoration",
+                message=f"Unknown text-decoration '{text_decoration}', dropping",
+                original_value=text_decoration,
+                fixed_value="None",
+            )
+        )
+        text_decoration = None
+
+    return replace(
+        typo,
+        family=family,
+        weight=weight,
+        line_height=line_height,
+        letter_spacing=letter_spacing,
+        text_transform=text_transform,
+        text_decoration=text_decoration,
+    )
 
 
 def _validate_spacing(spacing: ExtractedSpacing, warnings: list[TokenWarning]) -> ExtractedSpacing:

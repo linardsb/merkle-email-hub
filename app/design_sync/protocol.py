@@ -26,6 +26,9 @@ class ExtractedTypography:
     weight: str
     size: float
     line_height: float
+    letter_spacing: float | None = None
+    text_transform: str | None = None  # uppercase|lowercase|capitalize|None
+    text_decoration: str | None = None  # underline|line-through|None
 
 
 @dataclass(frozen=True)
@@ -104,6 +107,8 @@ class DesignNode:
     font_weight: int | None = None
     line_height_px: float | None = None
     letter_spacing_px: float | None = None
+    text_transform: str | None = None  # uppercase|lowercase|capitalize|None (TEXT nodes only)
+    text_decoration: str | None = None  # underline|line-through|None (TEXT nodes only)
 
 
 @dataclass(frozen=True)

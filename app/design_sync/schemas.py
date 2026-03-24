@@ -135,6 +135,9 @@ class DesignTypographyResponse(BaseModel):
     weight: str
     size: float
     lineHeight: float
+    letterSpacing: float | None = None
+    textTransform: str | None = None
+    textDecoration: str | None = None
 
 
 class DesignSpacingResponse(BaseModel):

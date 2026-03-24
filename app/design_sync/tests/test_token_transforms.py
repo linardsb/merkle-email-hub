@@ -185,6 +185,65 @@ class TestTypographyValidation:
         assert result.typography[0].line_height == 24.0  # 16 * 1.5 default
 
 
+class TestTypographyNewFields:
+    def test_letter_spacing_extreme_clamped(self) -> None:
+        tokens = ExtractedTokens(
+            typography=[ExtractedTypography("H", "Arial", "700", 32, 38, letter_spacing=100.0)]
+        )
+        result, warnings = validate_and_transform(tokens)
+        assert result.typography[0].letter_spacing == 50.0
+        assert any(w.field == "typography[H].letter_spacing" for w in warnings)
+
+    def test_letter_spacing_negative_extreme_clamped(self) -> None:
+        tokens = ExtractedTokens(
+            typography=[ExtractedTypography("H", "Arial", "700", 32, 38, letter_spacing=-100.0)]
+        )
+        result, _warnings = validate_and_transform(tokens)
+        assert result.typography[0].letter_spacing == -50.0
+
+    def test_text_transform_valid(self) -> None:
+        tokens = ExtractedTokens(
+            typography=[
+                ExtractedTypography("H", "Arial", "700", 32, 38, text_transform="uppercase")
+            ]
+        )
+        result, _warnings = validate_and_transform(tokens)
+        assert result.typography[0].text_transform == "uppercase"
+
+    def test_text_transform_invalid_dropped(self) -> None:
+        tokens = ExtractedTokens(
+            typography=[
+                ExtractedTypography("H", "Arial", "700", 32, 38, text_transform="SUPERCASE")
+            ]
+        )
+        result, warnings = validate_and_transform(tokens)
+        assert result.typography[0].text_transform is None
+        assert any(w.field == "typography[H].text_transform" for w in warnings)
+
+    def test_text_decoration_valid(self) -> None:
+        tokens = ExtractedTokens(
+            typography=[
+                ExtractedTypography("H", "Arial", "700", 32, 38, text_decoration="underline")
+            ]
+        )
+        result, _warnings = validate_and_transform(tokens)
+        assert result.typography[0].text_decoration == "underline"
+
+    def test_text_decoration_invalid_dropped(self) -> None:
+        tokens = ExtractedTokens(
+            typography=[ExtractedTypography("H", "Arial", "700", 32, 38, text_decoration="blink")]
+        )
+        result, _warnings = validate_and_transform(tokens)
+        assert result.typography[0].text_decoration is None
+
+    def test_new_fields_none_by_default(self) -> None:
+        tokens = ExtractedTokens(typography=[ExtractedTypography("Body", "Arial", "400", 16, 24)])
+        result, _warnings = validate_and_transform(tokens)
+        assert result.typography[0].letter_spacing is None
+        assert result.typography[0].text_transform is None
+        assert result.typography[0].text_decoration is None
+
+
 class TestSpacingValidation:
     def test_negative_spacing_errors(self) -> None:
         tokens = ExtractedTokens(spacing=[ExtractedSpacing(name="gap", value=-5)])

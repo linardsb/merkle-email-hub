@@ -56,6 +56,13 @@ class Typography(BaseModel):
         max_length=500,
     )
     base_size: str = Field(default="16px", pattern=r"^\d+px$")
+    heading_line_height: str | None = Field(default=None, pattern=r"^\d+px$")
+    body_line_height: str | None = Field(default=None, pattern=r"^\d+px$")
+    heading_letter_spacing: str | None = Field(default=None, pattern=r"^-?\d+(\.\d+)?px$")
+    body_letter_spacing: str | None = Field(default=None, pattern=r"^-?\d+(\.\d+)?px$")
+    heading_text_transform: str | None = Field(
+        default=None, pattern=r"^(uppercase|lowercase|capitalize)$"
+    )
 
 
 class LogoConfig(BaseModel):

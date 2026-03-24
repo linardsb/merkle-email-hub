@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.design_sync.converter import (
+    _font_stack,
     _group_into_rows,
     _NodeProps,
     _sanitize_css_value,
@@ -98,6 +99,45 @@ class TestConvertTypography:
     def test_empty(self) -> None:
         typo = convert_typography([])
         assert typo.heading_font == "Arial, Helvetica, sans-serif"
+
+    def test_typography_line_height_and_letter_spacing(self) -> None:
+        styles = [
+            ExtractedTypography(
+                "Heading",
+                "Inter",
+                "700",
+                32.0,
+                38.4,
+                letter_spacing=-0.5,
+                text_transform="uppercase",
+            ),
+            ExtractedTypography("Body", "Roboto", "400", 16.0, 24.0, letter_spacing=0.0),
+        ]
+        t = convert_typography(styles)
+        assert t.heading_line_height == "38px"
+        assert t.body_line_height == "24px"
+        assert t.heading_letter_spacing == "-0.5px"
+        assert t.body_letter_spacing is None  # 0.0 maps to None
+        assert t.heading_text_transform == "uppercase"
+
+
+class TestFontStack:
+    def test_yaml_fallback_inter(self) -> None:
+        assert _font_stack("Inter") == "Inter, Arial, Helvetica, sans-serif"
+
+    def test_yaml_fallback_playfair(self) -> None:
+        result = _font_stack("Playfair Display")
+        assert "Georgia" in result
+        assert "serif" in result
+
+    def test_unknown_font_default(self) -> None:
+        assert _font_stack("UnknownFont") == "UnknownFont, Arial, Helvetica, sans-serif"
+
+    def test_already_has_comma(self) -> None:
+        assert _font_stack("Inter, Arial") == "Inter, Arial"
+
+    def test_generic_keyword(self) -> None:
+        assert _font_stack("sans-serif") == "sans-serif"
 
 
 class TestNodeToEmailHtml:
@@ -197,7 +237,7 @@ class TestNodeToEmailHtml:
         result = node_to_email_html(node, props_map=props_map)
         assert "Inter" in result
         assert "font-size:24px" in result
-        assert "font-weight:700" in result
+        assert "font-weight:bold" in result
         assert "Styled" in result
 
     def test_props_map_bg_color(self) -> None:
@@ -288,6 +328,63 @@ class TestNodeToEmailHtml:
         result = node_to_email_html(node)
         assert "<script>" not in result
         assert "&lt;script&gt;" in result
+
+    def test_font_weight_mapping_in_html(self) -> None:
+        """Font weight 300→normal, 600→bold in inline styles."""
+        node = DesignNode(
+            id="t1",
+            name="Text",
+            type=DesignNodeType.TEXT,
+            text_content="Hello",
+            width=100,
+            height=20,
+        )
+        props = _NodeProps(font_weight="300", font_size=16.0, line_height_px=24.0)
+        result = node_to_email_html(node, props_map={"t1": props})
+        assert "font-weight:normal" in result
+        assert "line-height:24px" in result
+        assert "mso-line-height-rule:exactly" in result
+
+    def test_mso_font_alt_for_web_font(self) -> None:
+        """Web fonts get mso-font-alt for Outlook fallback."""
+        node = DesignNode(
+            id="t1",
+            name="Text",
+            type=DesignNodeType.TEXT,
+            text_content="Hi",
+            width=100,
+            height=20,
+        )
+        props = _NodeProps(font_family="Inter", font_size=16.0)
+        result = node_to_email_html(node, props_map={"t1": props})
+        assert "mso-font-alt:Arial" in result
+
+    def test_text_transform_and_decoration(self) -> None:
+        node = DesignNode(
+            id="t1",
+            name="Text",
+            type=DesignNodeType.TEXT,
+            text_content="Hello",
+            width=100,
+            height=20,
+        )
+        props = _NodeProps(font_size=16.0, text_transform="uppercase", text_decoration="underline")
+        result = node_to_email_html(node, props_map={"t1": props})
+        assert "text-transform:uppercase" in result
+        assert "text-decoration:underline" in result
+
+    def test_letter_spacing_in_html(self) -> None:
+        node = DesignNode(
+            id="t1",
+            name="Text",
+            type=DesignNodeType.TEXT,
+            text_content="Spaced",
+            width=100,
+            height=20,
+        )
+        props = _NodeProps(font_size=16.0, letter_spacing_px=0.5)
+        result = node_to_email_html(node, props_map={"t1": props})
+        assert "letter-spacing:0.5px" in result
 
 
 class TestSanitizeCssValue:

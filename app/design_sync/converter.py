@@ -5,7 +5,10 @@ from __future__ import annotations
 import html
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+import yaml
 
 from app.core.logging import get_logger
 from app.design_sync.protocol import (
@@ -20,6 +23,21 @@ if TYPE_CHECKING:
     from app.design_sync.figma.layout_analyzer import EmailSection, TextBlock
 
 logger = get_logger(__name__)
+
+# ── YAML-backed font fallback data ──
+_FONT_DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "email_client_fonts.yaml"
+_FONT_DATA: dict[str, Any] = (
+    yaml.safe_load(_FONT_DATA_PATH.read_text()) if _FONT_DATA_PATH.exists() else {}
+)
+_FALLBACK_MAP: dict[str, list[str]] = _FONT_DATA.get("fallback_map", {})
+
+# Figma text property maps
+_TEXT_CASE_MAP: dict[str, str] = {
+    "UPPER": "uppercase",
+    "LOWER": "lowercase",
+    "TITLE": "capitalize",
+}
+_TEXT_DEC_MAP: dict[str, str] = {"UNDERLINE": "underline", "STRIKETHROUGH": "line-through"}
 
 # Design node type → HTML element mapping for email
 _NODE_HTML_MAP: dict[DesignNodeType, str] = {
@@ -48,6 +66,8 @@ class _NodeProps:
     layout_direction: str | None = None  # "row" | "column" | None
     line_height_px: float | None = None
     letter_spacing_px: float | None = None
+    text_transform: str | None = None
+    text_decoration: str | None = None
 
 
 def _sanitize_css_value(value: str) -> str:
@@ -148,6 +168,22 @@ def convert_colors_to_palette(colors: list[ExtractedColor]) -> BrandPalette:
     )
 
 
+def _font_stack(family: str) -> str:
+    """Build email-safe CSS font stack using data/email_client_fonts.yaml."""
+    family_clean = family.strip("'\"").strip()
+    if "," in family_clean:
+        return family_clean
+    # Look up YAML fallback map (case-insensitive)
+    for mapped_name, chain in _FALLBACK_MAP.items():
+        if mapped_name.strip("'\"").lower() == family_clean.lower():
+            return f"{family_clean}, {', '.join(str(f) for f in chain)}"
+    # Generic family keywords
+    if family_clean.lower() in {"sans-serif", "serif", "monospace", "cursive", "fantasy"}:
+        return family_clean
+    # Unknown font — default sans-serif chain
+    return f"{family_clean}, Arial, Helvetica, sans-serif"
+
+
 def convert_typography(styles: list[ExtractedTypography]) -> Typography:
     """Map extracted typography to Typography design system model.
 
@@ -174,25 +210,25 @@ def convert_typography(styles: list[ExtractedTypography]) -> Typography:
     if body_style is None:
         body_style = min(styles, key=lambda s: s.size)
 
-    def _font_stack(family: str) -> str:
-        """Build email-safe CSS font stack."""
-        safe_fallbacks = {
-            "sans-serif": "Arial, Helvetica, sans-serif",
-            "serif": "Georgia, Times New Roman, serif",
-            "monospace": "Courier New, monospace",
-        }
-        family_clean = family.strip("'\"")
-        if "," in family_clean:
-            return family_clean
-        for generic, fallback in safe_fallbacks.items():
-            if generic in family_clean.lower():
-                return fallback
-        return f"{family_clean}, Arial, Helvetica, sans-serif"
+    def _px_or_none(val: float | None) -> str | None:
+        if val is None:
+            return None
+        return f"{round(val)}px"
+
+    def _spacing_px_or_none(val: float | None) -> str | None:
+        if val is None or val == 0.0:
+            return None
+        return f"{round(val, 1)}px"
 
     return Typography(
         heading_font=_font_stack(heading_style.family),
         body_font=_font_stack(body_style.family),
         base_size=f"{int(body_style.size)}px",
+        heading_line_height=_px_or_none(heading_style.line_height),
+        body_line_height=_px_or_none(body_style.line_height),
+        heading_letter_spacing=_spacing_px_or_none(heading_style.letter_spacing),
+        body_letter_spacing=_spacing_px_or_none(body_style.letter_spacing),
+        heading_text_transform=heading_style.text_transform,
     )
 
 
@@ -242,16 +278,29 @@ def node_to_email_html(
         extra_style = ""
         if props:
             if props.font_family:
-                # Sanitize: strip anything that could break out of a CSS value
                 safe_family = _sanitize_css_value(props.font_family)
                 if safe_family:
-                    font_family = f"{safe_family},Arial,Helvetica,sans-serif"
+                    font_family = _font_stack(safe_family)
             if props.font_size:
                 extra_style += f"font-size:{int(props.font_size)}px;"
             if props.font_weight:
-                safe_weight = _sanitize_css_value(props.font_weight)
-                if safe_weight:
-                    extra_style += f"font-weight:{safe_weight};"
+                # Map to email-safe weight: >=500 → bold, <500 → normal
+                try:
+                    weight_num = int(props.font_weight)
+                    mapped = "bold" if weight_num >= 500 else "normal"
+                except (ValueError, TypeError):
+                    mapped = "bold" if str(props.font_weight).lower() == "bold" else "normal"
+                extra_style += f"font-weight:{mapped};"
+            if props.line_height_px:
+                lh = round(props.line_height_px)
+                extra_style += f"line-height:{lh}px;mso-line-height-rule:exactly;"
+            if props.letter_spacing_px:
+                ls = round(props.letter_spacing_px, 1)
+                extra_style += f"letter-spacing:{ls}px;"
+            if props.text_transform:
+                extra_style += f"text-transform:{_sanitize_css_value(props.text_transform)};"
+            if props.text_decoration:
+                extra_style += f"text-decoration:{_sanitize_css_value(props.text_decoration)};"
         # Color priority: node.text_color (from design) > contrast auto > none
         if node.text_color:
             safe_text_color = _sanitize_css_value(node.text_color)
@@ -259,7 +308,15 @@ def node_to_email_html(
                 extra_style += f"color:{safe_text_color};"
         elif parent_bg:
             extra_style += f"color:{_contrasting_text_color(parent_bg)};"
-        return f'{pad}<td style="font-family:{font_family};{extra_style}">{content}</td>'
+        # MSO font-alt for Outlook fallback
+        mso_alt = ""
+        if font_family:
+            primary = font_family.split(",")[0].strip().strip("'\"")
+            for mapped_name, chain in _FALLBACK_MAP.items():
+                if mapped_name.strip("'\"").lower() == primary.lower() and chain:
+                    mso_alt = f"mso-font-alt:{chain[0]};"
+                    break
+        return f'{pad}<td style="font-family:{font_family};{mso_alt}{extra_style}">{content}</td>'
 
     if node.type == DesignNodeType.IMAGE:
         w = f' width="{int(node.width)}"' if node.width else ""
