@@ -1,6 +1,9 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers help
 
 # === Local Development ===
+
+up: ## Bootstrap dev env after restart (Docker + DB + migrations + seed)
+	@./scripts/startup.sh
 
 dev: ## Start backend + frontend in parallel
 	@echo "Syncing ontology to sidecar..."
@@ -42,10 +45,16 @@ docker-logs: ## Tail logs from all services
 # === Quality Checks ===
 
 test: ## Run backend unit tests
-	uv run pytest -v -m "not integration and not benchmark"
+	uv run pytest -v -m "not integration and not benchmark and not visual_regression"
 
 bench: ## Run performance benchmark tests
 	uv run pytest -v -m benchmark --no-header -rN
+
+rendering-baselines: ## Regenerate visual regression baselines (manual, destructive)
+	uv run python -c "import asyncio; from app.rendering.tests.visual_regression.baseline_generator import BaselineGenerator; asyncio.run(BaselineGenerator().generate_baselines())"
+
+rendering-regression: ## Run visual regression tests against baselines
+	uv run pytest app/rendering/tests/visual_regression/ -v -m visual_regression
 
 test-properties: ## Run property-based email invariant tests
 	QA_PROPERTY_TESTING__ENABLED=true uv run pytest app/qa_engine/property_testing/tests/ -v
@@ -72,6 +81,18 @@ e2e: ## Run all e2e tests
 
 e2e-ui: ## Open Playwright UI mode
 	cd cms && pnpm --filter web e2e:ui
+
+e2e-report: ## Open last Playwright HTML report
+	cd cms && pnpm --filter web exec playwright show-report
+
+e2e-firefox: ## Run e2e tests on Firefox
+	cd cms && BROWSER=firefox pnpm --filter web e2e
+
+e2e-webkit: ## Run e2e tests on WebKit (Safari)
+	cd cms && BROWSER=webkit pnpm --filter web e2e
+
+e2e-all-browsers: ## Run e2e tests on all browsers (Chromium + Firefox + WebKit)
+	cd cms && BROWSER=all pnpm --filter web e2e
 
 # === SDK ===
 

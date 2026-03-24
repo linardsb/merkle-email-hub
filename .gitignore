@@ -70,3 +70,9 @@ app/ai/agents/evals/data/uploaded_golden/*.json
 
 # Session handoff (transient, not committed)
 HANDOFF.md
+
+# Playwright E2E auth state (generated at runtime)
+.e2e-auth-state
+
+# Visual regression diff images (generated on failure)
+app/rendering/tests/visual_regression/baselines/_diffs/
