@@ -150,8 +150,20 @@ class RecoveryRouterNode:
         if not structured:
             return self._legacy_route(context)
 
-        # Already sorted by priority from QA gate
-        target = structured[0].suggested_agent
+        # Adaptive fixer selection via outcome ledger (if available)
+        recovery_outcome_repo = context.metadata.get("recovery_outcome_repo")
+        if recovery_outcome_repo is not None:
+            from app.ai.recovery_outcomes import select_best_fixer
+
+            target = await select_best_fixer(
+                check_name=structured[0].check_name,
+                default_agent=structured[0].suggested_agent,
+                project_id=context.metadata.get("project_id"),
+                repo=recovery_outcome_repo,
+            )
+        else:
+            # Already sorted by priority from QA gate
+            target = structured[0].suggested_agent
 
         # --- Enhanced cycle detection ---
         history = context.metadata.get("handoff_history", [])

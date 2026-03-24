@@ -217,6 +217,7 @@ testpaths = ["app", "tests"]
 markers = [
     "integration: marks tests requiring real database (deselect with '-m \"not integration\"')",
     "benchmark: Performance benchmark tests (run with: make bench)",
+    "visual_regression: Visual regression tests requiring Playwright + ODiff (run with: make rendering-regression)",
 ]
 
 [tool.pyright]

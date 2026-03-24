@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,8 @@ from app.components.models import Component, ComponentVersion
 from app.core.config import get_settings
 from app.core.database import AsyncSessionLocal, engine
 from app.core.logging import get_logger
+from app.design_sync.crypto import encrypt_token
+from app.design_sync.models import DesignConnection, DesignTokenSnapshot
 from app.projects.models import ClientOrg, Project, ProjectMember
 from app.qa_engine.models import QAResult  # noqa: F401 — ensures metadata for FK resolution
 
@@ -232,6 +235,94 @@ async def _seed_components(db: AsyncSession, user: User) -> int:
     return created + updated
 
 
+async def _seed_design_connections(
+    db: AsyncSession, project: Project, user: User
+) -> int:
+    """Seed demo design connections with token snapshots."""
+    result = await db.execute(
+        select(DesignConnection).where(DesignConnection.project_id == project.id)
+    )
+    existing = result.scalars().all()
+    if existing:
+        logger.info("seed.design_connections_exist", count=len(existing))
+        return len(existing)
+
+    demo_token = "demo-figma-token-not-real"
+    encrypted = encrypt_token(demo_token)
+    now = datetime.utcnow()
+
+    connections_data = [
+        {
+            "name": "Summer Campaign — Brand Kit",
+            "provider": "figma",
+            "file_ref": "abc123XYZdef456",
+            "file_url": "https://www.figma.com/file/abc123XYZdef456/Summer-Campaign-Brand-Kit",
+            "status": "connected",
+            "last_synced_at": now,
+        },
+        {
+            "name": "Email Component Library",
+            "provider": "figma",
+            "file_ref": "ghi789JKLmno012",
+            "file_url": "https://www.figma.com/file/ghi789JKLmno012/Email-Component-Library",
+            "status": "connected",
+            "last_synced_at": now,
+        },
+        {
+            "name": "Newsletter Layout — Penpot",
+            "provider": "penpot",
+            "file_ref": "penpot-proj-001/file-001",
+            "file_url": "https://design.penpot.app/#/view/penpot-proj-001/file-001",
+            "status": "connected",
+            "last_synced_at": now,
+        },
+    ]
+
+    created = 0
+    for data in connections_data:
+        conn = DesignConnection(
+            name=data["name"],
+            provider=data["provider"],
+            file_ref=data["file_ref"],
+            file_url=data["file_url"],
+            encrypted_token=encrypted,
+            token_last4=demo_token[-4:],
+            status=data["status"],
+            last_synced_at=data["last_synced_at"],
+            project_id=project.id,
+            created_by_id=user.id,
+        )
+        db.add(conn)
+        await db.flush()
+
+        # Add a token snapshot for each connection
+        snapshot = DesignTokenSnapshot(
+            connection_id=conn.id,
+            tokens_json={
+                "colors": {
+                    "primary": "#2563EB",
+                    "secondary": "#7C3AED",
+                    "accent": "#F59E0B",
+                    "background": "#FFFFFF",
+                    "text": "#1F2937",
+                },
+                "typography": {
+                    "heading": "Inter, sans-serif",
+                    "body": "Inter, sans-serif",
+                    "base_size": 16,
+                },
+                "spacing": {"section": "32px", "element": "16px"},
+            },
+            extracted_at=now,
+        )
+        db.add(snapshot)
+        created += 1
+
+    await db.flush()
+    logger.info("seed.design_connections_created", count=created)
+    return created
+
+
 async def seed_all() -> None:
     """Run the full idempotent seed pipeline."""
     settings = get_settings()
@@ -246,6 +337,7 @@ async def seed_all() -> None:
             org = await _seed_client_org(db)
             project = await _seed_project(db, org, user)
             comp_count = await _seed_components(db, user)
+            design_count = await _seed_design_connections(db, project, user)
 
             await db.commit()
 
@@ -254,6 +346,7 @@ async def seed_all() -> None:
             print(f"  Client org: {org.name} (id={org.id})")
             print(f"  Project: {project.name} (id={project.id})")
             print(f"  Components seeded: {comp_count}")
+            print(f"  Design connections: {design_count}")
             print(
                 "\nLogin: email=admin@email-hub.dev (password from AUTH__DEMO_USER_PASSWORD env var)"
             )

@@ -240,6 +240,7 @@ class RenderingConfig(BaseModel):
     screenshot_npx_path: str = "npx"
     visual_diff_enabled: bool = False
     visual_diff_threshold: float = 0.01  # 1% pixel diff triggers regression
+    visual_regression_threshold: float = 0.5  # % pixel diff that flags regression
     confidence_enabled: bool = True
     sandbox: SandboxConfig = SandboxConfig()
     calibration: CalibrationConfig = CalibrationConfig()
@@ -328,6 +329,8 @@ class DesignSyncConfig(BaseModel):
     penpot_enabled: bool = False
     penpot_base_url: str = "http://localhost:9001"
     penpot_request_timeout: float = 30.0
+    penpot_converter_enabled: bool = False  # DESIGN_SYNC__PENPOT_CONVERTER_ENABLED
+    converter_enabled: bool = True  # DESIGN_SYNC__CONVERTER_ENABLED (provider-agnostic)
 
 
 class ESPSyncConfig(BaseModel):
@@ -412,6 +415,10 @@ class BlueprintConfig(BaseModel):
     judge_on_retry: bool = False  # When True, run LLM judge on recovery retries (iteration > 0)
     checkpoints_enabled: bool = False  # Opt-in checkpoint persistence (backward compatible)
     checkpoint_retention_days: int = 7  # Auto-cleanup age limit for old checkpoints
+    recovery_ledger_enabled: bool = False  # Adaptive recovery routing from outcome history
+    correction_examples_enabled: bool = False  # Few-shot correction examples on retries
+    judge_aggregation_enabled: bool = False  # Judge verdict aggregation → prompt patching
+    confidence_calibration_enabled: bool = False  # Per-agent confidence calibration
 
 
 class EvalConfig(BaseModel):

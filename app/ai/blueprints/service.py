@@ -128,6 +128,33 @@ class BlueprintService:
 
             routing_history_repo = RoutingHistoryRepository(db)
 
+        # Wire recovery outcome repo (opt-in via config)
+        recovery_outcome_repo = None
+        if settings.blueprint.recovery_ledger_enabled and db is not None:
+            from app.ai.recovery_outcomes import RecoveryOutcomeRepository
+
+            recovery_outcome_repo = RecoveryOutcomeRepository(db)
+
+        # Pre-compute confidence calibrations (opt-in via config)
+        confidence_calibrations = None
+        if settings.blueprint.confidence_calibration_enabled and db is not None:
+            from app.ai.agents.skills_routes import AGENT_NAMES
+            from app.ai.confidence_calibration import (
+                MIN_CALIBRATION_SAMPLES,
+                compute_calibration,
+            )
+
+            calibrations = {}
+            for agent in AGENT_NAMES:
+                try:
+                    cal = await compute_calibration(agent, project_id, db)
+                    if cal.sample_count >= MIN_CALIBRATION_SAMPLES:
+                        calibrations[f"{agent}_node"] = cal
+                except Exception:
+                    logger.debug("blueprint.calibration_compute_failed", agent=agent, exc_info=True)
+            if calibrations:
+                confidence_calibrations = calibrations
+
         engine = BlueprintEngine(
             definition,
             component_resolver=component_resolver,
@@ -139,6 +166,8 @@ class BlueprintService:
             design_system=design_system,
             checkpoint_store=checkpoint_store,
             routing_history_repo=routing_history_repo,
+            recovery_outcome_repo=recovery_outcome_repo,
+            confidence_calibrations=confidence_calibrations,
         )
 
         return engine, definition, project_id, audience_profile
