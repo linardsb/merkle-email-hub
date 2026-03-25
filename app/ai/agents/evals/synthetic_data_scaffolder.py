@@ -1,5 +1,4 @@
-"""
-Synthetic test data for the Scaffolder agent.
+"""Synthetic test data for the Scaffolder agent.
 
 Each test case is a tuple of (dimensions, brief, expected_challenges).
 Briefs use realistic campaign language. Expected challenges guide evaluation.

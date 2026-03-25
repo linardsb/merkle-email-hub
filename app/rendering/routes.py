@@ -47,7 +47,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1/rendering", tags=["rendering"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> RenderingService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> RenderingService:
     return RenderingService(db)
 
 
@@ -56,8 +56,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> RenderingService:  # noqa
 async def submit_rendering_test(
     request: Request,
     data: RenderingTestRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> RenderingTestResponse:
     """Submit a new cross-client rendering test."""
     _ = request
@@ -68,12 +68,12 @@ async def submit_rendering_test(
 @limiter.limit("30/minute")
 async def list_rendering_tests(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     build_id: int | None = Query(None),
     template_version_id: int | None = Query(None),
     test_status: str | None = Query(None, alias="status"),
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[RenderingTestResponse]:
     """List rendering tests with optional filters."""
     _ = request
@@ -90,8 +90,8 @@ async def list_rendering_tests(
 async def get_rendering_test(
     request: Request,
     test_id: int,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> RenderingTestResponse:
     """Get a rendering test by ID with all screenshots."""
     _ = request
@@ -103,8 +103,8 @@ async def get_rendering_test(
 async def compare_rendering_tests(
     request: Request,
     data: RenderingComparisonRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> RenderingComparisonResponse:
     """Compare two rendering tests for visual regression detection."""
     _ = request
@@ -116,8 +116,8 @@ async def compare_rendering_tests(
 async def render_screenshots(
     request: Request,
     data: ScreenshotRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> ScreenshotResponse:
     """Render email HTML across simulated email client viewports."""
     _ = request
@@ -129,8 +129,8 @@ async def render_screenshots(
 async def get_client_confidence(
     request: Request,
     client_id: str = Path(..., pattern=r"^[a-z][a-z0-9_]{1,50}$"),
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> ClientConfidenceResponse:
     """Get current confidence calibration data for an email client."""
     _ = request
@@ -142,8 +142,8 @@ async def get_client_confidence(
 async def visual_diff(
     request: Request,
     data: VisualDiffRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> VisualDiffResponse:
     """Compare two images for visual differences using ODiff."""
     _ = request
@@ -156,8 +156,8 @@ async def list_baselines(
     request: Request,
     entity_type: str,
     entity_id: int,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> BaselineListResponse:
     """List all stored baselines for a given entity."""
     _ = request
@@ -171,8 +171,8 @@ async def update_baseline(
     entity_type: str,
     entity_id: int,
     data: BaselineUpdateRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> BaselineResponse:
     """Create or update a baseline screenshot for an entity + client combination."""
     _ = request
@@ -184,7 +184,7 @@ async def update_baseline(
 async def sandbox_test(
     request: Request,
     data: SandboxTestRequest,
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    _current_user: User = Depends(require_role("admin")),
 ) -> SandboxTestResponse:
     """Send email to sandbox, capture rendered DOM and screenshots."""
     _ = request
@@ -195,7 +195,7 @@ async def sandbox_test(
 @limiter.limit("30/minute")
 async def sandbox_health(
     request: Request,
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    _current_user: User = Depends(require_role("admin")),
 ) -> SandboxHealthResponse:
     """Check sandbox infrastructure availability."""
     _ = request
@@ -209,8 +209,8 @@ async def sandbox_health(
 @limiter.limit("30/minute")
 async def calibration_summary(
     request: Request,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> CalibrationSummaryListResponse:
     """Get calibration state for all email clients."""
     _ = request
@@ -222,8 +222,8 @@ async def calibration_summary(
 async def calibration_trigger(
     request: Request,
     data: CalibrationTriggerRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> CalibrationTriggerResponse:
     """Trigger a calibration run for specified clients."""
     _ = request
@@ -236,8 +236,8 @@ async def calibration_history(
     request: Request,
     client_id: str = Path(..., pattern=r"^[a-z][a-z0-9_]{1,50}$"),
     limit: int = Query(20, ge=1, le=100),
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> CalibrationHistoryResponse:
     """Get calibration history for a specific client."""
     _ = request
@@ -252,8 +252,8 @@ async def calibration_history(
 async def evaluate_gate(
     request: Request,
     data: GateEvaluateRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> GateResult:
     """Evaluate rendering gate for given HTML."""
     _ = request
@@ -265,8 +265,8 @@ async def evaluate_gate(
 async def get_gate_config(
     request: Request,
     project_id: int,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> RenderingGateConfigSchema:
     """Get project-level gate configuration."""
     _ = request
@@ -279,8 +279,8 @@ async def update_gate_config(
     request: Request,
     project_id: int,
     data: GateConfigUpdateRequest,
-    service: RenderingService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: RenderingService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> RenderingGateConfigSchema:
     """Update project-level gate configuration (admin only)."""
     _ = request

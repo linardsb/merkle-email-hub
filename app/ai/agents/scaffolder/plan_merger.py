@@ -200,7 +200,6 @@ def merge_content(
 
 def _inject_alt_text(content: str, alt_text: str) -> str:
     """Inject or replace alt attribute in img tags within slot content."""
-
     if "<img" not in content:
         return content
 
@@ -216,7 +215,6 @@ def _inject_alt_text(content: str, alt_text: str) -> str:
 
 def _fix_heading_level(content: str, target_level: int) -> str:
     """Replace heading tags with the target level."""
-
     pattern = re.compile(r"<(/?)[hH]([1-6])(\b[^>]*>)")
     return pattern.sub(
         lambda m: f"<{m.group(1)}h{target_level}{m.group(3)}",

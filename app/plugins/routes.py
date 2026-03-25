@@ -37,8 +37,8 @@ def _to_response(instance: PluginInstance) -> PluginInfoResponse:
 @router.get("", response_model=PluginListResponse)
 @limiter.limit("60/minute")
 async def list_plugins(
-    request: Request,  # noqa: ARG001
-    _user: User = Depends(_admin),  # noqa: B008
+    request: Request,
+    _user: User = Depends(_admin),
 ) -> PluginListResponse:
     """List all discovered plugins with status."""
     registry = get_plugin_registry()
@@ -49,8 +49,8 @@ async def list_plugins(
 @router.get("/health", response_model=PluginHealthSummaryResponse)
 @limiter.limit("60/minute")
 async def all_plugins_health(
-    request: Request,  # noqa: ARG001
-    _user: User = Depends(_admin),  # noqa: B008
+    request: Request,
+    _user: User = Depends(_admin),
 ) -> PluginHealthSummaryResponse:
     """Health summary for all plugins."""
     registry = get_plugin_registry()
@@ -88,9 +88,9 @@ async def all_plugins_health(
 @router.get("/{plugin_name}", response_model=PluginInfoResponse)
 @limiter.limit("60/minute")
 async def get_plugin(
-    request: Request,  # noqa: ARG001
+    request: Request,
     plugin_name: str,
-    _user: User = Depends(_admin),  # noqa: B008
+    _user: User = Depends(_admin),
 ) -> PluginInfoResponse:
     """Get details for a specific plugin."""
     registry = get_plugin_registry()
@@ -100,9 +100,9 @@ async def get_plugin(
 @router.get("/{plugin_name}/health", response_model=PluginHealthResponse)
 @limiter.limit("60/minute")
 async def plugin_health(
-    request: Request,  # noqa: ARG001
+    request: Request,
     plugin_name: str,
-    _user: User = Depends(_admin),  # noqa: B008
+    _user: User = Depends(_admin),
 ) -> PluginHealthResponse:
     """Health check for a specific plugin."""
     registry = get_plugin_registry()
@@ -121,9 +121,9 @@ async def plugin_health(
 @router.post("/{plugin_name}/restart", status_code=status.HTTP_200_OK)
 @limiter.limit("10/minute")
 async def restart_plugin(
-    request: Request,  # noqa: ARG001
+    request: Request,
     plugin_name: str,
-    _user: User = Depends(_admin),  # noqa: B008
+    _user: User = Depends(_admin),
 ) -> PluginInfoResponse:
     """Restart a plugin (shutdown -> startup)."""
     from app.plugins.lifecycle import PluginLifecycleManager
@@ -141,9 +141,9 @@ async def restart_plugin(
 @router.post("/{plugin_name}/enable", status_code=status.HTTP_200_OK)
 @limiter.limit("10/minute")
 async def enable_plugin(
-    request: Request,  # noqa: ARG001
+    request: Request,
     plugin_name: str,
-    _user: User = Depends(_admin),  # noqa: B008
+    _user: User = Depends(_admin),
 ) -> PluginInfoResponse:
     """Enable a disabled plugin."""
     registry = get_plugin_registry()
@@ -154,9 +154,9 @@ async def enable_plugin(
 @router.post("/{plugin_name}/disable", status_code=status.HTTP_200_OK)
 @limiter.limit("10/minute")
 async def disable_plugin(
-    request: Request,  # noqa: ARG001
+    request: Request,
     plugin_name: str,
-    _user: User = Depends(_admin),  # noqa: B008
+    _user: User = Depends(_admin),
 ) -> PluginInfoResponse:
     """Disable a plugin without removing it."""
     registry = get_plugin_registry()
@@ -167,9 +167,9 @@ async def disable_plugin(
 @router.delete("/{plugin_name}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def delete_plugin(
-    request: Request,  # noqa: ARG001
+    request: Request,
     plugin_name: str,
-    _user: User = Depends(_admin),  # noqa: B008
+    _user: User = Depends(_admin),
 ) -> None:
     """Unregister and remove a plugin."""
     registry = get_plugin_registry()

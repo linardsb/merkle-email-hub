@@ -121,7 +121,7 @@ class ConnectorService:
                 select(EmailBuild.project_id).where(EmailBuild.id == data.build_id)
             )
             row = result.scalar_one_or_none()
-            return row if row else None
+            return row or None
         if data.connection_id:
             result = await self.db.execute(
                 select(ESPConnection.project_id).where(ESPConnection.id == data.connection_id)

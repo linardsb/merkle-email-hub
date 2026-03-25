@@ -14,7 +14,7 @@ class GraphEntity:
     name: str
     entity_type: str  # e.g. "email_client", "css_property", "technique"
     description: str = ""
-    properties: dict[str, object] = field(default_factory=lambda: {})
+    properties: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ class GraphRelationship:
     source_id: str
     target_id: str
     relationship_type: str  # e.g. "supports", "breaks_in", "workaround_for"
-    properties: dict[str, object] = field(default_factory=lambda: {})
+    properties: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

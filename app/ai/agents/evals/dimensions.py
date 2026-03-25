@@ -1,5 +1,4 @@
-"""
-Evaluation dimensions for each agent.
+"""Evaluation dimensions for each agent.
 
 Following the generate-synthetic-data methodology:
 - Define failure-prone axes of variation

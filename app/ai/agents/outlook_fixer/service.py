@@ -146,7 +146,7 @@ class OutlookFixerService(CRAGMixin, BaseAgentService):
         )
 
         return OutlookFixerResponse(
-            html=req.html if req.html else "",
+            html=req.html or "",
             model=model_id,
             confidence=diagnostic.confidence,
             skills_loaded=relevant_skills,

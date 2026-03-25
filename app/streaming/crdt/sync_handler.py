@@ -72,13 +72,12 @@ class YjsSyncHandler:
 
         if sync_type == SyncMessageType.STEP1:
             return await self._handle_step1(room_id, payload)
-        elif sync_type == SyncMessageType.STEP2:
+        if sync_type == SyncMessageType.STEP2:
             return await self._handle_step2(db, room_id, client_id, payload)
-        elif sync_type == SyncMessageType.UPDATE:
+        if sync_type == SyncMessageType.UPDATE:
             return await self._handle_update(db, room_id, client_id, payload)
-        else:
-            logger.warning("crdt.sync.unknown_type", sync_type=sync_type, room_id=room_id)
-            return [], []
+        logger.warning("crdt.sync.unknown_type", sync_type=sync_type, room_id=room_id)
+        return [], []
 
     async def _handle_step1(
         self,

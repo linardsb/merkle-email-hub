@@ -187,7 +187,6 @@ class DarkModeNode:
         model: str,
     ) -> NodeResult:
         """Execute in structured mode: analyze plan, return decisions, merge."""
-
         plan = context.build_plan
         assert plan is not None  # noqa: S101
 
@@ -265,7 +264,6 @@ class DarkModeNode:
 
     def _parse_decisions(self, raw_content: str) -> DarkModeDecisions:
         """Parse LLM response into DarkModeDecisions."""
-
         content = raw_content.strip()
         if "```json" in content:
             start = content.index("```json") + 7

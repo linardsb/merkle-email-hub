@@ -45,7 +45,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> KnowledgeService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> KnowledgeService:
     """Dependency to create KnowledgeService with request-scoped session."""
     return KnowledgeService(db)
 
@@ -85,14 +85,14 @@ def _detect_source_type(content_type: str | None) -> str:
 @limiter.limit("10/minute")
 async def upload_document(
     request: Request,
-    file: UploadFile = File(...),  # noqa: B008
+    file: UploadFile = File(...),
     domain: str = Form(...),
     language: str = Form(default="en"),
     metadata_json: str | None = Form(default=None),
     title: str | None = Form(default=None),
     description: str | None = Form(default=None),
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> DocumentResponse:
     """Upload and ingest a document into the knowledge base."""
     _ = request
@@ -147,12 +147,12 @@ async def upload_document(
 @limiter.limit("30/minute")
 async def list_documents(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     domain: str | None = Query(None, max_length=50),
     document_status: str | None = Query(None, alias="status", max_length=20),
     tag: str | None = Query(None, max_length=100),
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[DocumentResponse]:
     """List documents with pagination and optional filtering."""
     _ = request
@@ -164,8 +164,8 @@ async def list_documents(
 async def get_document(
     request: Request,
     document_id: int,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> DocumentResponse:
     """Get a document by its database ID."""
     _ = request
@@ -178,8 +178,8 @@ async def update_document(
     request: Request,
     document_id: int,
     body: DocumentUpdate,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> DocumentResponse:
     """Update document metadata (title, description, domain, language)."""
     _ = request
@@ -191,8 +191,8 @@ async def update_document(
 async def download_document(
     request: Request,
     document_id: int,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> FileResponse:
     """Download the original uploaded file."""
     _ = request
@@ -217,8 +217,8 @@ async def download_document(
 async def get_document_content(
     request: Request,
     document_id: int,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> DocumentContentResponse:
     """Get extracted text chunks for a document."""
     _ = request
@@ -230,8 +230,8 @@ async def get_document_content(
 async def delete_document(
     request: Request,
     document_id: int,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> None:
     """Delete a document and its chunks."""
     _ = request
@@ -242,8 +242,8 @@ async def delete_document(
 @limiter.limit("30/minute")
 async def list_domains(
     request: Request,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> DomainListResponse:
     """List all unique document domains."""
     _ = request
@@ -259,8 +259,8 @@ async def list_domains(
 @limiter.limit("30/minute")
 async def list_tags(
     request: Request,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> TagListResponse:
     """List all tags."""
     _ = request
@@ -272,8 +272,8 @@ async def list_tags(
 async def create_tag(
     request: Request,
     body: TagCreate,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> TagResponse:
     """Create a new tag."""
     _ = request
@@ -288,8 +288,8 @@ async def create_tag(
 async def delete_tag(
     request: Request,
     tag_id: int,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> None:
     """Delete a tag (CASCADE removes document associations)."""
     _ = request
@@ -305,8 +305,8 @@ async def add_tags_to_document(
     request: Request,
     document_id: int,
     body: DocumentTagRequest,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> DocumentResponse:
     """Add tags to a document."""
     _ = request
@@ -322,8 +322,8 @@ async def remove_tag_from_document(
     request: Request,
     document_id: int,
     tag_id: int,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> DocumentResponse:
     """Remove a tag from a document."""
     _ = request
@@ -340,8 +340,8 @@ async def remove_tag_from_document(
 async def search_knowledge(
     request: Request,
     body: SearchRequest,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> SearchResponse:
     """Search the knowledge base with hybrid vector + fulltext search."""
     _ = request
@@ -353,8 +353,8 @@ async def search_knowledge(
 async def search_knowledge_routed(
     request: Request,
     body: SearchRequest,
-    service: KnowledgeService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: KnowledgeService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> SearchResponse:
     """Search with intent-based query routing."""
     _ = request
@@ -383,8 +383,8 @@ def _get_graph_provider() -> CogneeGraphProvider | None:
 async def search_graph(
     request: Request,
     body: GraphSearchRequest,
-    _current_user: User = Depends(get_current_user),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> GraphSearchResponse:
     """Search the knowledge graph for entity-relationship results."""
     _ = request

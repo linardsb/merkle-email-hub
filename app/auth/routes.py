@@ -35,7 +35,7 @@ REFRESH_TOKEN_TTL_SECONDS = 604800
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> AuthService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     """Dependency to create AuthService with request-scoped session."""
     return AuthService(db)
 
@@ -44,7 +44,7 @@ def get_service(db: AsyncSession = Depends(get_db)) -> AuthService:  # noqa: B00
 @limiter.limit("5/minute")
 async def bootstrap(
     request: Request,
-    service: AuthService = Depends(get_service),  # noqa: B008
+    service: AuthService = Depends(get_service),
 ) -> LoginResponse:
     """Bootstrap first admin user (dev only, zero-users guard, no auth required).
 
@@ -61,7 +61,7 @@ async def bootstrap(
 async def login(
     request: Request,
     body: LoginRequest,
-    service: AuthService = Depends(get_service),  # noqa: B008
+    service: AuthService = Depends(get_service),
 ) -> LoginResponse:
     """Authenticate user with email and password. Returns JWT tokens."""
     _ = request
@@ -73,7 +73,7 @@ async def login(
 async def refresh_token(
     request: Request,
     body: RefreshRequest,
-    service: AuthService = Depends(get_service),  # noqa: B008
+    service: AuthService = Depends(get_service),
 ) -> RefreshResponse:
     """Exchange a valid refresh token for a new access token."""
     _ = request
@@ -97,8 +97,8 @@ async def refresh_token(
 @limiter.limit("10/minute")
 async def logout(
     request: Request,
-    current_user: User = Depends(get_current_user),  # noqa: B008
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),  # noqa: B008
+    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> None:
     """Revoke the current access token, effectively logging out."""
     _ = request
@@ -116,8 +116,8 @@ async def logout(
 async def reset_password(
     request: Request,
     body: PasswordResetRequest,
-    service: AuthService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: AuthService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> None:
     """Reset a user's password (admin only)."""
     _ = request
@@ -128,8 +128,8 @@ async def reset_password(
 @limiter.limit("5/minute")
 async def seed_demo_users(
     request: Request,
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
-    service: AuthService = Depends(get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin")),
+    service: AuthService = Depends(get_service),
 ) -> list[UserResponse]:
     """Seed demo users (development only, admin-only, no-op if users exist)."""
     _ = request
@@ -150,8 +150,8 @@ async def list_users(
     search: str | None = Query(None),
     role: str | None = Query(None),
     is_active: bool | None = Query(None),
-    _admin: User = Depends(require_role("admin")),  # noqa: B008
-    service: AuthService = Depends(get_service),  # noqa: B008
+    _admin: User = Depends(require_role("admin")),
+    service: AuthService = Depends(get_service),
 ) -> PaginatedResponse[UserDetailResponse]:
     """List all users with pagination and filters (admin only)."""
     _ = request
@@ -169,8 +169,8 @@ async def list_users(
 async def get_user(
     request: Request,
     user_id: int,
-    _admin: User = Depends(require_role("admin")),  # noqa: B008
-    service: AuthService = Depends(get_service),  # noqa: B008
+    _admin: User = Depends(require_role("admin")),
+    service: AuthService = Depends(get_service),
 ) -> UserDetailResponse:
     """Get a single user by ID (admin only)."""
     _ = request
@@ -182,8 +182,8 @@ async def get_user(
 async def create_user(
     request: Request,
     body: CreateUserRequest,
-    _admin: User = Depends(require_role("admin")),  # noqa: B008
-    service: AuthService = Depends(get_service),  # noqa: B008
+    _admin: User = Depends(require_role("admin")),
+    service: AuthService = Depends(get_service),
 ) -> UserDetailResponse:
     """Create a new user (admin only)."""
     _ = request
@@ -196,8 +196,8 @@ async def update_user(
     request: Request,
     user_id: int,
     body: UpdateUserRequest,
-    _admin: User = Depends(require_role("admin")),  # noqa: B008
-    service: AuthService = Depends(get_service),  # noqa: B008
+    _admin: User = Depends(require_role("admin")),
+    service: AuthService = Depends(get_service),
 ) -> UserDetailResponse:
     """Update a user's profile (admin only)."""
     _ = request
@@ -212,8 +212,8 @@ async def update_user(
 async def delete_user_data(
     request: Request,
     user_id: int,
-    current_user: User = Depends(require_role("admin")),  # noqa: B008
-    service: AuthService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("admin")),
+    service: AuthService = Depends(get_service),
 ) -> None:
     """Delete user data for GDPR right-to-erasure compliance.
 

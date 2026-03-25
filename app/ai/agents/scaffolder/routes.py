@@ -23,10 +23,10 @@ router = APIRouter(prefix="/api/v1/agents/scaffolder", tags=["agents"])
 @router.post("/generate", response_model=None)
 @limiter.limit("5/minute")
 async def generate_email(
-    request: Request,  # noqa: ARG001 — required by @limiter.limit
+    request: Request,
     body: ScaffolderRequest,
-    service: ScaffolderService = Depends(get_scaffolder_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: ScaffolderService = Depends(get_scaffolder_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> ScaffolderResponse | StreamingResponse:
     """Generate Maizzle email HTML from a campaign brief.
 

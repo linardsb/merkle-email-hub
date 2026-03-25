@@ -30,8 +30,8 @@ def get_service() -> WorkflowService:
 @limiter.limit("30/minute")
 async def list_workflows(
     request: Request,
-    service: WorkflowService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: WorkflowService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> WorkflowListResponse:
     """List available workflow templates and custom workflows."""
     _ = request
@@ -47,8 +47,8 @@ async def list_workflows(
 async def trigger_workflow(
     request: Request,
     data: WorkflowTriggerRequest,
-    service: WorkflowService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: WorkflowService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> WorkflowStatusResponse:
     """Trigger a workflow execution with inputs."""
     _ = request
@@ -60,8 +60,8 @@ async def trigger_workflow(
 async def get_flow_definition(
     request: Request,
     flow_id: str,
-    service: WorkflowService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: WorkflowService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Get a workflow definition."""
     _ = request
@@ -78,8 +78,8 @@ async def get_flow_definition(
 async def create_custom_flow(
     request: Request,
     data: FlowCreateRequest,
-    service: WorkflowService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: WorkflowService = Depends(get_service),
+    current_user: User = Depends(require_role("admin")),
 ) -> dict[str, Any]:
     """Create a custom workflow from YAML definition. Admin only."""
     _ = request
@@ -92,8 +92,8 @@ async def create_custom_flow(
 async def get_execution_status(
     request: Request,
     execution_id: str,
-    service: WorkflowService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: WorkflowService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> WorkflowStatusResponse:
     """Get workflow execution status and task run details."""
     _ = request
@@ -105,8 +105,8 @@ async def get_execution_status(
 async def get_execution_logs(
     request: Request,
     execution_id: str,
-    service: WorkflowService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: WorkflowService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> ExecutionLogsResponse:
     """Get execution log entries."""
     _ = request

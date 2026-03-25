@@ -170,7 +170,7 @@ class TestSearchComponentsRouting:
         class FakeClassified:
             intent: str = "template"
             confidence: float = 0.9
-            extracted_entities: list[FakeEntity] = field(default_factory=lambda: [])
+            extracted_entities: list[FakeEntity] = field(default_factory=list)
 
         ents = [FakeEntity(t, r, o) for t, r, o in (entities or [])]
         return FakeClassified(extracted_entities=ents)

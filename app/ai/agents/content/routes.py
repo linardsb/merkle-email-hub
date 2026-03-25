@@ -23,10 +23,10 @@ router = APIRouter(prefix="/api/v1/agents/content", tags=["agents"])
 @router.post("/generate", response_model=None)
 @limiter.limit("5/minute")
 async def generate_content(
-    request: Request,  # noqa: ARG001 — required by @limiter.limit
+    request: Request,
     body: ContentRequest,
-    service: ContentService = Depends(get_content_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: ContentService = Depends(get_content_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> ContentResponse | StreamingResponse:
     """Generate or refine email marketing copy.
 

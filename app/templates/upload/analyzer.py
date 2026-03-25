@@ -42,15 +42,15 @@ class SlotInfo:
 class TokenInfo:
     """Raw extracted token data from inline styles."""
 
-    colors: dict[str, list[str]] = field(default_factory=lambda: {})
-    fonts: dict[str, list[str]] = field(default_factory=lambda: {})
-    font_sizes: dict[str, list[str]] = field(default_factory=lambda: {})
-    spacing: dict[str, list[str]] = field(default_factory=lambda: {})
-    font_weights: dict[str, list[str]] = field(default_factory=lambda: {})
-    line_heights: dict[str, list[str]] = field(default_factory=lambda: {})
-    letter_spacings: dict[str, list[str]] = field(default_factory=lambda: {})
-    color_roles: dict[str, list[str]] = field(default_factory=lambda: {})
-    responsive: dict[str, dict[str, list[str]]] = field(default_factory=lambda: {})
+    colors: dict[str, list[str]] = field(default_factory=dict)
+    fonts: dict[str, list[str]] = field(default_factory=dict)
+    font_sizes: dict[str, list[str]] = field(default_factory=dict)
+    spacing: dict[str, list[str]] = field(default_factory=dict)
+    font_weights: dict[str, list[str]] = field(default_factory=dict)
+    line_heights: dict[str, list[str]] = field(default_factory=dict)
+    letter_spacings: dict[str, list[str]] = field(default_factory=dict)
+    color_roles: dict[str, list[str]] = field(default_factory=dict)
+    responsive: dict[str, dict[str, list[str]]] = field(default_factory=dict)
     responsive_breakpoints: list[str] = field(default_factory=list)
 
 
@@ -182,9 +182,7 @@ class TemplateAnalyzer:
         for child in root:
             if not isinstance(child, HtmlElement):
                 continue
-            if child.tag == "table":
-                candidates.append(child)
-            elif child.tag in ("div", "section", "header", "footer", "main"):
+            if child.tag == "table" or child.tag in ("div", "section", "header", "footer", "main"):
                 candidates.append(child)
             elif child.tag == "center":
                 # Common wrapper — look inside for tables

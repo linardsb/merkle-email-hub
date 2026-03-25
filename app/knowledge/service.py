@@ -114,7 +114,7 @@ class KnowledgeService:
         """
         settings = get_settings()
         start = time.monotonic()
-        title = upload.title if upload.title else Path(filename).stem
+        title = upload.title or Path(filename).stem
         logger.info(
             "knowledge.ingest.started",
             filename=filename,
@@ -178,7 +178,7 @@ class KnowledgeService:
                     )
                     # Merge: prefer new summary over 16.3 basic summary
                     summaries: list[str | None] = [
-                        cs.summary if cs.summary else html_results[i].summary
+                        cs.summary or html_results[i].summary
                         for i, cs in enumerate(chunk_summaries)
                     ]
                     # Embed summaries when available, otherwise raw content

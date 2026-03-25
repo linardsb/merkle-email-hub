@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-24
+> Last updated: 2026-03-25
 
 ### Completed
 
@@ -177,8 +177,14 @@
 | 33.6 | Semantic HTML Generation | `_determine_heading_level()` font-size-ratio→h1/h2/h3; `_render_semantic_text()` wraps TEXT in `<h1>`–`<h3>` or `<p style="margin:0 0 10px 0;">` inside `<td>`; multi-line TEXT→multiple `<p>` tags; `_render_button()` bulletproof `<a>` with VML `<v:roundrect>` fallback for Outlook; `_validate_button_contrast()` WCAG AA warning; 44px min touch target; `body_font_size` from `convert_typography()` |
 | 33.7 | Dark Mode Token Extraction & Gradient Fallbacks | `ExtractedGradient` dataclass with frozen tuple stops; dark mode variable detection from Figma Variables API modes; `_compute_gradient_angle()` + `_parse_gradient_stops()`; `_validate_gradient()` angle clamping + stop hex validation; `_apply_magic_colors()` #000→#010101/#FFF→#FEFEFE for Outlook dark mode safety; `_validate_dark_mode_contrast()` WCAG AA 4.5:1; `_gradient_to_css()` with `_sanitize_css_value()`; `gradients_map` threaded through `node_to_email_html()` + `_render_multi_column_row()`; `dark_mode_style_block()` 3-tier CSS; `dark_mode_meta_tags()`; `DesignGradientResponse`/`DesignGradientStopResponse` schemas; 23 tests |
 | 33.8 | Design Context Enrichment & Scaffolder Integration | `_build_design_context()` enriched with `line_height`/`letter_spacing`/`text_transform` + `token_warnings`; `_tokens_to_protocol()` preserves `letter_spacing`/`text_transform`/`text_decoration`; `_layout_to_design_nodes()` creates TEXT children with full typography + section `height`/`width`/`item_spacing`; `TextBlockResponse` extended with `font_family`/`font_weight`/`line_height`/`letter_spacing`; `get_previous_snapshot()` repo method; `TokenDiffEntry`/`TokenDiffResponse` schemas; `get_token_diff()` service + `_compute_token_diff()` diff engine; `GET /connections/{id}/tokens/diff` endpoint; frontend `DesignTokens` extended with `dark_colors`/`gradients`/`warnings`/`compatibility_hints`; `useTokenDiff` hook; `DesignTokensView` dark mode swatches, gradient previews, token warnings, diff badges, enriched typography; 8 new tests (467 design_sync total) |
+| 33.9 | Builder Annotations for Visual Builder Sync | `_next_slot_name()` dedup helper for unique slot IDs per section; `slot_counter: dict[str, int]` threaded through `node_to_email_html()`/`_render_semantic_text()`/`_render_button()`/`_render_multi_column_row()`; `data-slot-name` on headings/body `<p>`/images/CTA `<a>` tags; `data-component-name` with `html.escape()` on section root `<table>`; `data-section-id="section_{idx}"` on `<tr>` wrapper; backward compatible when `slot_counter=None`; 15 new tests (498 design_sync total) |
+| 33.10 | Image Asset Import for Design Sync Pipeline | `max-width:{w}px` responsive style on IMAGE nodes in `converter.py`; `ConversionResult.images: list[dict[str, str]]` field (frozen dataclass); `converter_image_urls` extraction + `_fill_image_urls()` wiring in `import_service.py` step 5.6–5.7; image metadata persisted in `structure_json["images"]` via `dataclasses.replace()`; `ImportedImageResponse` Pydantic schema; existing `DesignAssetService.download_and_store()` + `_fill_image_urls()` + asset serving endpoint reused (no new endpoints); 16 new tests (514 design_sync total) |
 
 ### Recently Completed
+
+**Phase 33.10:** Image Asset Import for Design Sync Pipeline — `max-width:{w}px` responsive IMAGE styles; `ConversionResult.images` metadata field; `converter_image_urls` + `_fill_image_urls()` wiring verified; image metadata persisted in `structure_json["images"]`; `ImportedImageResponse` schema; reuses existing `DesignAssetService` + asset serving endpoint; 16 new tests (514 design_sync total).
+
+**Phase 33.9:** Builder Annotations for Visual Builder Sync — `_next_slot_name()` dedup helper; `slot_counter` threaded through converter pipeline; `data-slot-name` on headings/body/images/CTAs; `data-component-name` on section root `<table>` (html-escaped); `data-section-id` on `<tr>` wrapper; backward compatible; 15 new tests (498 design_sync total).
 
 **Phase 33.8:** Design Context Enrichment & Scaffolder Integration — `_build_design_context()` enriched with `line_height`/`letter_spacing`/`text_transform` + `token_warnings`; `_layout_to_design_nodes()` creates TEXT children with full typography data + section height/width/item_spacing; `_tokens_to_protocol()` preserves all typography fields; `TextBlockResponse` extended; token diff endpoint (`GET /tokens/diff`) with `TokenDiffEntry`/`TokenDiffResponse`; frontend shows dark mode swatches, gradient previews, token warnings banner, diff badges, enriched typography details; 8 new tests (467 design_sync total).
 
@@ -202,7 +208,7 @@
 
 ### Up Next
 
-**Phase 33.9–33.11** (Design Token Pipeline — remaining 3 subtasks: builder annotations, image asset import, tests) and **Phase 32** (Agent Email Rendering Intelligence). See `TODO.md` for details.
+**Phase 33.11** (Design Token Pipeline — remaining 1 subtask: tests & integration verification) and **Phase 32** (Agent Email Rendering Intelligence). See `TODO.md` for details.
 
 ### Infrastructure Built
 

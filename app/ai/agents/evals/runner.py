@@ -1,6 +1,5 @@
 # pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownMemberType=false
-"""
-Eval runner — executes synthetic test cases against agents and collects traces.
+"""Eval runner — executes synthetic test cases against agents and collects traces.
 
 Usage:
     python -m app.ai.agents.evals.runner --agent scaffolder --output traces/

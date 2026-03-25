@@ -39,7 +39,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1/qa", tags=["qa-engine"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:
     return QAEngineService(db)
 
 
@@ -53,8 +53,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:  # noqa:
 async def run_property_test(
     request: Request,
     data: PropertyTestRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> PropertyTestResponse:
     """Generate random email configurations and verify invariants hold."""
     _ = request
@@ -71,8 +71,8 @@ async def run_property_test(
 async def run_chaos_test(
     request: Request,
     data: ChaosTestRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ChaosTestResponse:
     """Apply controlled email client degradations and measure QA resilience."""
     _ = request
@@ -89,8 +89,8 @@ async def run_chaos_test(
 async def run_outlook_analysis(
     request: Request,
     data: OutlookAnalysisRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> OutlookAnalysisResponse:
     """Scan email HTML for VML shapes, ghost tables, MSO conditionals, and other Word-engine dependencies."""
     _ = request
@@ -107,8 +107,8 @@ async def run_outlook_analysis(
 async def run_outlook_modernize(
     request: Request,
     data: OutlookModernizeRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> OutlookModernizeResponse:
     """Apply safe modernizations to remove Outlook Word-engine hacks based on target mode."""
     _ = request
@@ -129,8 +129,8 @@ async def run_outlook_modernize(
 async def outlook_migration_plan(
     request: Request,
     data: MigrationPlanRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> MigrationPlanResponse:
     """Generate audience-aware Outlook migration plan."""
     _ = request
@@ -147,8 +147,8 @@ async def outlook_migration_plan(
 async def run_deliverability_score(
     request: Request,
     data: DeliverabilityScoreRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> DeliverabilityScoreResponse:
     """Score email deliverability across 4 dimensions (content, hygiene, auth, engagement)."""
     _ = request
@@ -165,8 +165,8 @@ async def run_deliverability_score(
 async def gmail_predict(
     request: Request,
     data: GmailPredictRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> GmailPredictResponse:
     """Predict how Gmail's AI will summarize this email."""
     _ = request
@@ -183,8 +183,8 @@ async def gmail_predict(
 async def gmail_optimize(
     request: Request,
     data: GmailOptimizeRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> GmailOptimizeResponse:
     """Suggest subject/preview text optimizations for better AI summaries."""
     _ = request
@@ -201,8 +201,8 @@ async def gmail_optimize(
 async def run_bimi_check(
     request: Request,
     data: BIMICheckRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> BIMICheckResponse:
     """Check DMARC policy, BIMI DNS record, SVG logo format, and CMC status."""
     _ = request
@@ -214,8 +214,8 @@ async def run_bimi_check(
 async def run_qa_checks(
     request: Request,
     data: QARunRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> QAResultResponse:
     """Run all 10 QA checks against compiled email HTML."""
     _ = request
@@ -230,8 +230,8 @@ async def get_latest_qa_result(
     request: Request,
     build_id: int | None = Query(None),
     template_version_id: int | None = Query(None),
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> QAResultResponse:
     """Get the latest QA result for a build or template version."""
     _ = request
@@ -245,8 +245,8 @@ async def get_latest_qa_result(
 async def get_qa_result(
     request: Request,
     result_id: int,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> QAResultResponse:
     """Get a QA result by ID with all checks and override info."""
     _ = request
@@ -257,12 +257,12 @@ async def get_qa_result(
 @limiter.limit("30/minute")
 async def list_qa_results(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     build_id: int | None = Query(None),
     template_version_id: int | None = Query(None),
     passed: bool | None = Query(None),
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[QAResultResponse]:
     """List QA results with optional filters."""
     _ = request
@@ -281,8 +281,8 @@ async def override_qa_result(
     request: Request,
     result_id: int,
     data: QAOverrideRequest,
-    service: QAEngineService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: QAEngineService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> QAOverrideResponse:
     """Override failing QA checks with justification. Requires developer+ role."""
     _ = request

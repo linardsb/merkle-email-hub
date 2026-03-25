@@ -1,5 +1,4 @@
-"""
-Synthetic test data for the Content agent.
+"""Synthetic test data for the Content agent.
 
 Each test case provides realistic input text, operation, and constraints.
 Spam trigger words sourced from real blocklists (Mailmeteor, Moosend, HubSpot).

@@ -24,7 +24,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1/components", tags=["components"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ComponentService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> ComponentService:
     return ComponentService(db)
 
 
@@ -32,11 +32,11 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ComponentService:  # noqa
 @limiter.limit("30/minute")
 async def list_components(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     category: str | None = Query(None, max_length=50),
     search: str | None = Query(None, max_length=200),
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[ComponentResponse]:
     """List email components."""
     _ = request
@@ -48,8 +48,8 @@ async def list_components(
 async def get_component(
     request: Request,
     component_id: int,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> ComponentResponse:
     """Get a component by ID."""
     _ = request
@@ -61,8 +61,8 @@ async def get_component(
 async def create_component(
     request: Request,
     data: ComponentCreate,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ComponentResponse:
     """Create a new email component with initial version."""
     _ = request
@@ -75,8 +75,8 @@ async def update_component(
     request: Request,
     component_id: int,
     data: ComponentUpdate,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> ComponentResponse:
     """Update component metadata."""
     _ = request
@@ -88,8 +88,8 @@ async def update_component(
 async def delete_component(
     request: Request,
     component_id: int,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> None:
     """Delete a component and all its versions."""
     _ = request
@@ -101,8 +101,8 @@ async def delete_component(
 async def list_versions(
     request: Request,
     component_id: int,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> list[VersionResponse]:
     """List all versions of a component."""
     _ = request
@@ -117,8 +117,8 @@ async def create_version(
     request: Request,
     component_id: int,
     data: VersionCreate,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> VersionResponse:
     """Create a new version of a component."""
     _ = request
@@ -135,8 +135,8 @@ async def run_component_qa(
     request: Request,
     component_id: int,
     version_number: int,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _user: User = Depends(require_role("developer")),
 ) -> ComponentCompatibilityResponse:
     """Run QA checks on a component version and generate compatibility data."""
     _ = request
@@ -149,8 +149,8 @@ async def assign_design_origin(
     request: Request,
     component_id: int,
     data: AssignDesignOriginRequest,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> ComponentResponse:
     """Assign a design component to a Hub component."""
     _ = request
@@ -166,8 +166,8 @@ async def assign_design_origin(
 async def get_component_compatibility(
     request: Request,
     component_id: int,
-    service: ComponentService = Depends(get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: ComponentService = Depends(get_service),
+    _user: User = Depends(get_current_user),
 ) -> ComponentCompatibilityResponse:
     """Get aggregated compatibility badge data for a component."""
     _ = request

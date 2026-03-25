@@ -85,7 +85,7 @@ class VisualQANode:
 
         # Resolve VLM model
         visual_qa_model = settings.ai.visual_qa_model
-        model = visual_qa_model if visual_qa_model else resolve_model("standard")
+        model = visual_qa_model or resolve_model("standard")
         provider_name = settings.ai.provider
 
         relevant_skills = detect_relevant_skills(context.html)

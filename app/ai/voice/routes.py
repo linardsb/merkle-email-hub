@@ -64,8 +64,8 @@ def _brief_to_response(brief: EmailBrief) -> EmailBriefResponse:
 async def transcribe_audio(
     request: Request,
     body: VoiceTranscribeRequest,
-    _user: User = Depends(get_current_user),  # noqa: B008
-    service: VoiceBriefService = Depends(get_voice_service),  # noqa: B008
+    _user: User = Depends(get_current_user),
+    service: VoiceBriefService = Depends(get_voice_service),
 ) -> TranscriptResponse:
     """Transcribe audio to text. Returns transcript only."""
     _ = request
@@ -78,8 +78,8 @@ async def transcribe_audio(
 async def extract_voice_brief(
     request: Request,
     body: VoiceBriefRequest,
-    _user: User = Depends(get_current_user),  # noqa: B008
-    service: VoiceBriefService = Depends(get_voice_service),  # noqa: B008
+    _user: User = Depends(get_current_user),
+    service: VoiceBriefService = Depends(get_voice_service),
 ) -> VoiceBriefResponse:
     """Transcribe audio and extract structured email brief."""
     _ = request
@@ -96,9 +96,9 @@ async def extract_voice_brief(
 async def run_voice_pipeline(
     request: Request,
     body: VoiceRunRequest,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
-    service: VoiceBriefService = Depends(get_voice_service),  # noqa: B008
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    service: VoiceBriefService = Depends(get_voice_service),
 ) -> dict[str, object]:
     """Full pipeline: transcribe → extract brief → execute blueprint run."""
     _ = request

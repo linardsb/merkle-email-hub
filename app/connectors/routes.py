@@ -16,7 +16,7 @@ from app.core.rate_limit import limiter
 router = APIRouter(prefix="/api/v1/connectors", tags=["connectors"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ConnectorService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> ConnectorService:
     return ConnectorService(db)
 
 
@@ -25,8 +25,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ConnectorService:  # noqa
 async def export_email(
     request: Request,
     data: ExportRequest,
-    service: ConnectorService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ConnectorService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ExportResponse:
     """Export a built email template to an ESP."""
     _ = request
@@ -38,8 +38,8 @@ async def export_email(
 async def export_pre_check(
     request: Request,
     data: ExportPreCheckRequest,
-    service: ConnectorService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ConnectorService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> ExportPreCheckResponse:
     """Dry-run QA + rendering gates without exporting."""
     _ = request

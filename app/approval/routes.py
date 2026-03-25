@@ -22,7 +22,7 @@ from app.core.rate_limit import limiter
 router = APIRouter(prefix="/api/v1/approvals", tags=["approvals"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ApprovalService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> ApprovalService:
     return ApprovalService(db)
 
 
@@ -31,8 +31,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ApprovalService:  # noqa:
 async def list_approvals(
     request: Request,
     project_id: int | None = None,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> list[ApprovalResponse]:
     """List approval requests, optionally filtered by project."""
     _ = request
@@ -46,8 +46,8 @@ async def list_approvals(
 async def create_approval(
     request: Request,
     data: ApprovalCreate,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ApprovalResponse:
     """Submit an email build for client approval."""
     _ = request
@@ -59,8 +59,8 @@ async def create_approval(
 async def get_approval(
     request: Request,
     approval_id: int,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ApprovalResponse:
     """Get an approval request by ID."""
     _ = request
@@ -73,8 +73,8 @@ async def decide_approval(
     request: Request,
     approval_id: int,
     decision: ApprovalDecision,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ApprovalResponse:
     """Approve, reject, or request revision on an approval."""
     _ = request
@@ -89,8 +89,8 @@ async def add_feedback(
     request: Request,
     approval_id: int,
     data: FeedbackCreate,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> FeedbackResponse:
     """Add feedback to an approval request."""
     _ = request
@@ -102,8 +102,8 @@ async def add_feedback(
 async def list_feedback(
     request: Request,
     approval_id: int,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> list[FeedbackResponse]:
     """List feedback for an approval request."""
     _ = request
@@ -115,8 +115,8 @@ async def list_feedback(
 async def get_audit_trail(
     request: Request,
     approval_id: int,
-    service: ApprovalService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ApprovalService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> list[AuditResponse]:
     """Get the audit trail for an approval request."""
     _ = request

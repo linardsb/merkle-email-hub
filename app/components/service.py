@@ -196,7 +196,6 @@ class ComponentService:
 
     async def _get_or_404(self, component_id: int) -> Component:
         """Get component or raise 404."""
-
         component = await self.repository.get(component_id)
         if not component:
             raise ComponentNotFoundError(f"Component {component_id} not found")

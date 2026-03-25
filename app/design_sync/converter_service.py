@@ -72,6 +72,7 @@ class ConversionResult:
     warnings: list[str] = field(default_factory=list)
     layout: DesignLayoutDescription | None = None
     compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
+    images: list[dict[str, str]] = field(default_factory=list)
 
 
 # Backward-compatible alias
@@ -215,8 +216,9 @@ class DesignConverterService:
 
         # Convert each frame to HTML section
         section_parts: list[str] = []
-        for frame in frames:
+        for idx, frame in enumerate(frames):
             self._collect_vector_warnings(frame, warnings)
+            slot_counter: dict[str, int] = {}
             section_html = node_to_email_html(
                 frame,
                 indent=1,
@@ -227,8 +229,11 @@ class DesignConverterService:
                 body_font_size=body_font_size,
                 compat=compat,
                 gradients_map=gradients_map or None,
+                slot_counter=slot_counter,
             )
-            section_parts.append(f"<tr><td>\n{section_html}\n</td></tr>")
+            section_parts.append(
+                f'<tr data-section-id="section_{idx}"><td>\n{section_html}\n</td></tr>'
+            )
 
             # Inter-section spacer from layout analysis
             frame_section = sections_by_node_id.get(frame.id)

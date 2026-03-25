@@ -318,6 +318,14 @@ class DownloadAssetsResponse(BaseModel):
     skipped: int = Field(description="Count of failed downloads")
 
 
+class ImportedImageResponse(BaseModel):
+    """Image asset imported from a design file and stored locally."""
+
+    node_id: str
+    filename: str
+    hub_url: str
+
+
 # ── Design Imports ──
 
 IMPORT_STATUSES = {"pending", "extracting", "converting", "completed", "failed", "cancelled"}

@@ -35,7 +35,6 @@ class CircuitState(Enum):
 class CircuitOpenError(Exception):
     """Raised when circuit is open and request is rejected."""
 
-    pass
 
 
 class CircuitBreaker:

@@ -29,8 +29,8 @@ router = APIRouter(prefix="/api/v1/ontology", tags=["ontology"])
 @router.get("/clients", response_model=list[EmailClientResponse])
 @limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def list_email_clients(
-    request: Request,  # noqa: ARG001
-    current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[EmailClientResponse]:
     """List all email clients from the ontology registry."""
     from app.knowledge.ontology.registry import load_ontology
@@ -65,8 +65,8 @@ def _to_response(f: CapabilityFeasibility) -> CapabilityFeasibilityResponse:
 @router.get("/competitive-report", response_model=CompetitiveReportResponse)
 @limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_competitive_report(
-    request: Request,  # noqa: ARG001
-    current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
     client_ids: Annotated[list[str], Query()] = [],  # noqa: B006
     competitor_id: Annotated[str | None, Query()] = None,
 ) -> CompetitiveReportResponse:
@@ -96,8 +96,8 @@ async def get_competitive_report(
 @router.get("/competitive-report/text", response_model=CompetitiveReportTextResponse)
 @limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_competitive_report_text(
-    request: Request,  # noqa: ARG001
-    current_user: Annotated[User, Depends(get_current_user)],  # noqa: ARG001
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> CompetitiveReportTextResponse:
     """Get full competitive landscape report as formatted text."""
     from app.ai.blueprints.competitor_context import format_full_competitive_report
@@ -108,8 +108,8 @@ async def get_competitive_report_text(
 @router.post("/sync", response_model=SyncReportResponse)
 @limiter.limit("2/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def trigger_sync(
-    request: Request,  # noqa: ARG001
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    request: Request,
+    _current_user: User = Depends(require_role("admin")),
     dry_run: bool = True,
 ) -> SyncReportResponse:
     """Manually trigger a Can I Email ontology sync.
@@ -149,7 +149,7 @@ async def trigger_sync(
 @router.get("/sync-status", response_model=SyncStatusResponse)
 @limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_sync_status(
-    request: Request,  # noqa: ARG001
+    request: Request,
     _current_user: Annotated[User, Depends(get_current_user)],
 ) -> SyncStatusResponse:
     """Get the last sync status and report."""

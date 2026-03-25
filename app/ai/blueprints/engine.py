@@ -275,7 +275,6 @@ class BlueprintEngine:
 
         Shared by :meth:`run` (from entry) and :meth:`resume` (from checkpoint).
         """
-
         current_node_name = start_node
         steps = 0
 
@@ -404,12 +403,11 @@ class BlueprintEngine:
                             ],
                         )
                         break
-                    else:
-                        logger.info(
-                            "blueprint.inline_judge_approved",
-                            agent=agent_name,
-                            run_id=run.run_id,
-                        )
+                    logger.info(
+                        "blueprint.inline_judge_approved",
+                        agent=agent_name,
+                        run_id=run.run_id,
+                    )
 
             # Record progress
             run.progress.append(

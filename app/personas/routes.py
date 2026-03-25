@@ -15,7 +15,7 @@ from app.personas.service import PersonaService
 router = APIRouter(prefix="/api/v1/personas", tags=["personas"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> PersonaService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> PersonaService:
     return PersonaService(db)
 
 
@@ -23,8 +23,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> PersonaService:  # noqa: 
 @limiter.limit("30/minute")
 async def list_personas(
     request: Request,
-    service: PersonaService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: PersonaService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> list[PersonaResponse]:
     """List all test personas."""
     _ = request
@@ -36,8 +36,8 @@ async def list_personas(
 async def get_persona(
     request: Request,
     persona_id: int,
-    service: PersonaService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: PersonaService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PersonaResponse:
     """Get a persona by ID."""
     _ = request
@@ -49,8 +49,8 @@ async def get_persona(
 async def create_persona(
     request: Request,
     data: PersonaCreate,
-    service: PersonaService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: PersonaService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> PersonaResponse:
     """Create a custom test persona."""
     _ = request

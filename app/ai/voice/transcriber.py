@@ -67,7 +67,7 @@ class WhisperAPITranscriber:
                 file=(f"audio.{ext}", io.BytesIO(audio), media_type),
                 response_format="verbose_json",
                 timestamp_granularities=["segment"],
-                language=language if language else NOT_GIVEN,
+                language=language or NOT_GIVEN,
             )
         except TranscriptionError:
             raise

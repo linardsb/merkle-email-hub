@@ -1,5 +1,4 @@
-"""
-Synthetic test data for the Dark Mode agent.
+"""Synthetic test data for the Dark Mode agent.
 
 Each test case includes real-world HTML input that the agent must enhance
 with dark mode support. HTML patterns sourced from production email templates

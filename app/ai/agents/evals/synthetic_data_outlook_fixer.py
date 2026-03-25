@@ -1,5 +1,4 @@
-"""
-Synthetic test data for the Outlook Fixer agent.
+"""Synthetic test data for the Outlook Fixer agent.
 
 Each test case provides HTML with a specific Outlook rendering issue.
 The agent must fix the issue while preserving everything else.

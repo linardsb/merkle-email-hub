@@ -88,8 +88,7 @@ class VoiceBriefExtractor:
             content = result.content.strip()
             if content.startswith("```"):
                 content = content.split("\n", 1)[1] if "\n" in content else content[3:]
-                if content.endswith("```"):
-                    content = content[:-3]
+                content = content.removesuffix("```")
                 content = content.strip()
 
             data: dict[str, Any] = json.loads(content)

@@ -20,7 +20,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1/items", tags=["items"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ItemService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> ItemService:
     """Dependency to create ItemService with request-scoped session."""
     return ItemService(db)
 
@@ -29,12 +29,12 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ItemService:  # noqa: B00
 @limiter.limit("30/minute")
 async def list_items(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     search: str | None = Query(None, max_length=200),
     active_only: bool = Query(default=True),
     status: str | None = Query(None, max_length=20),
-    service: ItemService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ItemService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[ItemResponse]:
     """List items with pagination and optional filters."""
     _ = request
@@ -48,8 +48,8 @@ async def list_items(
 async def get_item(
     request: Request,
     item_id: int,
-    service: ItemService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ItemService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> ItemResponse:
     """Get an item by database ID."""
     _ = request
@@ -61,8 +61,8 @@ async def get_item(
 async def create_item(
     request: Request,
     data: ItemCreate,
-    service: ItemService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: ItemService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> ItemResponse:
     """Create a new item."""
     _ = request
@@ -75,8 +75,8 @@ async def update_item(
     request: Request,
     item_id: int,
     data: ItemUpdate,
-    service: ItemService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: ItemService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> ItemResponse:
     """Update an existing item."""
     _ = request
@@ -88,8 +88,8 @@ async def update_item(
 async def delete_item(
     request: Request,
     item_id: int,
-    service: ItemService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: ItemService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> None:
     """Delete an item by database ID."""
     _ = request

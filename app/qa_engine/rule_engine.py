@@ -536,12 +536,7 @@ def _check_text_content(
             negate = pattern.startswith("!")
             p = pattern[1:] if negate else pattern
             match = bool(re.search(p, text))
-            if negate and match:
-                if len(issues) < cap:
-                    issues.append(rule.message)
-                total += deduction
-                break
-            elif not negate and not match:
+            if (negate and match) or (not negate and not match):
                 if len(issues) < cap:
                     issues.append(rule.message)
                 total += deduction

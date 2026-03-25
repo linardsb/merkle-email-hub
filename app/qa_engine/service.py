@@ -582,7 +582,6 @@ class QAEngineService:
 
     def _analysis_to_response(self, analysis: OutlookAnalysis) -> OutlookAnalysisResponse:
         """Convert OutlookAnalysis dataclass to response schema."""
-
         return OutlookAnalysisResponse(
             dependencies=[
                 OutlookDependencySchema(

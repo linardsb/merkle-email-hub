@@ -247,7 +247,6 @@ class CodeReviewerNode:
 
     def _parse_review_decisions(self, raw_content: str) -> CodeReviewDecisions:
         """Parse LLM response into CodeReviewDecisions."""
-
         content = raw_content.strip()
         if "```json" in content:
             start = content.index("```json") + 7

@@ -144,6 +144,7 @@ class DesignImportService:
 
                 # 5.5 Design converter pre-processing (provider-agnostic)
                 initial_html = ""
+                conversion = None
                 if get_settings().design_sync.converter_enabled:
                     try:
                         from app.design_sync.converter_service import (
@@ -210,11 +211,28 @@ class DesignImportService:
                         # Fall back to brief-only path
 
                 # 5.6 Fill image URLs into converter HTML skeleton
-                if initial_html and isinstance(design_context.get("image_urls"), dict):
-                    initial_html = self._fill_image_urls(
-                        initial_html,
-                        design_context["image_urls"],  # type: ignore[arg-type]
-                    )
+                _ctx_urls = design_context.get("image_urls")
+                converter_image_urls: dict[str, str] = (
+                    _ctx_urls if isinstance(_ctx_urls, dict) else {}  # type: ignore[assignment]
+                )
+                if initial_html and converter_image_urls:
+                    initial_html = self._fill_image_urls(initial_html, converter_image_urls)
+
+                # 5.7 Attach image metadata to conversion result
+                if converter_image_urls and asset_response is not None:
+                    from dataclasses import replace as _dc_replace
+
+                    image_meta = [
+                        {
+                            "node_id": asset.node_id,
+                            "filename": asset.filename,
+                            "hub_url": url,
+                        }
+                        for asset in asset_response.assets
+                        if (url := converter_image_urls.get(asset.node_id)) is not None
+                    ]
+                    if image_meta and conversion is not None:
+                        conversion = _dc_replace(conversion, images=image_meta)
 
                 # 6. Call Scaffolder
                 scaffolder_response = await self._call_scaffolder(
@@ -260,16 +278,19 @@ class DesignImportService:
                 )
 
                 # 8. Mark complete
+                completion_json: dict[str, object] = {
+                    **(design_import.structure_json or {}),
+                    "scaffolder_model": scaffolder_response.model,
+                    "qa_passed": scaffolder_response.qa_passed,
+                    "confidence": scaffolder_response.confidence,
+                }
+                if conversion is not None and conversion.images:
+                    completion_json["images"] = conversion.images
                 await repo.update_import_status(
                     design_import,
                     "completed",
                     result_template_id=template_id,
-                    structure_json={
-                        **(design_import.structure_json or {}),
-                        "scaffolder_model": scaffolder_response.model,
-                        "qa_passed": scaffolder_response.qa_passed,
-                        "confidence": scaffolder_response.confidence,
-                    },
+                    structure_json=completion_json,
                 )
 
                 logger.info(

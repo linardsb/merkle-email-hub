@@ -189,7 +189,7 @@ class ChunkSummarizer:
             response.raise_for_status()
             data = response.json()
             summary: str = data["choices"][0]["message"]["content"].strip()
-            return summary if summary else None
+            return summary or None
         except Exception:
             logger.warning(
                 "knowledge.summarizer.llm_failed",

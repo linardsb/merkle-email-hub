@@ -26,7 +26,7 @@ class Transcript:
     text: str
     language: str
     duration_seconds: float
-    segments: list[TranscriptSegment] = field(default_factory=lambda: [])
+    segments: list[TranscriptSegment] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,7 +35,7 @@ class SectionBrief:
 
     type: str  # hero, content_block, cta, footer, etc.
     description: str
-    content_hints: list[str] = field(default_factory=lambda: [])
+    content_hints: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +47,7 @@ class EmailBrief:
     tone: str
     cta_text: str | None = None
     audience: str | None = None
-    constraints: list[str] = field(default_factory=lambda: [])
+    constraints: list[str] = field(default_factory=list)
     raw_transcript: str = ""
 
 
@@ -70,7 +70,7 @@ class TranscriptResponse(BaseModel):
     text: str
     language: str
     duration_seconds: float
-    segments: list[dict[str, float | str]] = Field(default_factory=lambda: [])
+    segments: list[dict[str, float | str]] = Field(default_factory=list)
 
 
 class VoiceBriefRequest(BaseModel):
@@ -89,7 +89,7 @@ class EmailBriefResponse(BaseModel):
     tone: str
     cta_text: str | None = None
     audience: str | None = None
-    constraints: list[str] = Field(default_factory=lambda: [])
+    constraints: list[str] = Field(default_factory=list)
 
 
 class VoiceBriefResponse(BaseModel):
@@ -109,6 +109,6 @@ class VoiceRunRequest(BaseModel):
     blueprint_name: str = Field(default="campaign", description="Blueprint to execute")
     project_id: int | None = Field(default=None, description="Project for design system context")
     persona_ids: list[int] = Field(
-        default_factory=lambda: [], description="Target audience personas"
+        default_factory=list, description="Target audience personas"
     )
     template_id: int | None = Field(default=None, description="Existing template to version")

@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["templates"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> TemplateService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> TemplateService:
     return TemplateService(db)
 
 
@@ -41,11 +41,11 @@ def get_service(db: AsyncSession = Depends(get_db)) -> TemplateService:  # noqa:
 async def list_templates(
     request: Request,
     project_id: int,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     search: str | None = Query(None, max_length=200),
     status_filter: str | None = Query(None, alias="status", pattern=r"^(draft|active|archived)$"),
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[TemplateResponse]:
     """List templates in a project."""
     _ = request
@@ -64,8 +64,8 @@ async def create_template(
     request: Request,
     project_id: int,
     data: TemplateCreate,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> TemplateResponse:
     """Create a new template in a project."""
     _ = request
@@ -80,8 +80,8 @@ async def create_template(
 async def get_template(
     request: Request,
     template_id: int,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> TemplateResponse:
     """Get a template by ID. Verifies project access."""
     _ = request
@@ -94,8 +94,8 @@ async def update_template(
     request: Request,
     template_id: int,
     data: TemplateUpdate,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> TemplateResponse:
     """Update template metadata."""
     _ = request
@@ -107,8 +107,8 @@ async def update_template(
 async def delete_template(
     request: Request,
     template_id: int,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> None:
     """Soft delete a template."""
     _ = request
@@ -128,8 +128,8 @@ async def create_version(
     request: Request,
     template_id: int,
     data: VersionCreate,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> VersionResponse:
     """Save a new version of the template (each save = new version)."""
     _ = request
@@ -144,8 +144,8 @@ async def create_version(
 async def list_versions(
     request: Request,
     template_id: int,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> list[VersionResponse]:
     """List all versions of a template (newest first)."""
     _ = request
@@ -161,8 +161,8 @@ async def get_version(
     request: Request,
     template_id: int,
     version_number: int,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> VersionResponse:
     """Get a specific version of a template."""
     _ = request
@@ -179,8 +179,8 @@ async def restore_version(
     request: Request,
     template_id: int,
     version_number: int,
-    service: TemplateService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: TemplateService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> VersionResponse:
     """Restore template to a previous version (creates a new version with old content)."""
     _ = request
@@ -198,7 +198,7 @@ async def restore_version(
 @limiter.limit("2/minute")
 async def precompile_templates(
     request: Request,
-    current_user: User = Depends(require_role("admin")),  # noqa: B008
+    current_user: User = Depends(require_role("admin")),
 ) -> dict[str, object]:
     """Trigger batch precompilation of all golden templates. Admin only."""
     _ = request

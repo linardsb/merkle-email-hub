@@ -512,10 +512,12 @@ class TestFillColorFromNode:
         assert "color:#ffffff;" in result
 
     def test_image_responsive_styles(self) -> None:
-        """Image nodes include width:100%;height:auto for responsiveness."""
+        """Image nodes include width:100%;max-width;height:auto for responsiveness."""
         node = DesignNode(id="ri1", name="Hero", type=DesignNodeType.IMAGE, width=600, height=300)
         result = node_to_email_html(node)
-        assert "width:100%;height:auto;" in result
+        assert "width:100%;" in result
+        assert "max-width:600px;" in result
+        assert "height:auto;" in result
 
     def test_props_map_overrides_fill_color(self) -> None:
         """props_map bg_color takes precedence over node.fill_color."""

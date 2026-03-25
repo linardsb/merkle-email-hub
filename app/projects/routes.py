@@ -32,7 +32,7 @@ from app.shared.schemas import PaginatedResponse, PaginationParams
 router = APIRouter(prefix="/api/v1", tags=["projects"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> ProjectService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> ProjectService:
     return ProjectService(db)
 
 
@@ -43,9 +43,9 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ProjectService:  # noqa: 
 @limiter.limit("30/minute")
 async def list_orgs(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    pagination: PaginationParams = Depends(),
+    service: ProjectService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[ClientOrgResponse]:
     """List client organizations."""
     _ = request
@@ -57,8 +57,8 @@ async def list_orgs(
 async def create_org(
     request: Request,
     data: ClientOrgCreate,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    _current_user: User = Depends(require_role("admin")),
 ) -> ClientOrgResponse:
     """Create a new client organization."""
     _ = request
@@ -72,11 +72,11 @@ async def create_org(
 @limiter.limit("30/minute")
 async def list_projects(
     request: Request,
-    pagination: PaginationParams = Depends(),  # noqa: B008
+    pagination: PaginationParams = Depends(),
     client_org_id: int | None = Query(None),
     search: str | None = Query(None, max_length=200),
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    _current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[ProjectResponse]:
     """List projects with optional client org filter."""
     _ = request
@@ -88,8 +88,8 @@ async def list_projects(
 async def get_project(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ProjectResponse:
     """Get a project by ID. Validates user has access."""
     _ = request
@@ -101,8 +101,8 @@ async def get_project(
 async def list_project_members(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> list[ProjectMemberResponse]:
     """List members of a project. Requires project access."""
     _ = request
@@ -115,8 +115,8 @@ async def list_project_members(
 async def create_project(
     request: Request,
     data: ProjectCreate,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ProjectResponse:
     """Create a new project."""
     _ = request
@@ -129,8 +129,8 @@ async def update_project(
     request: Request,
     project_id: int,
     data: ProjectUpdate,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ProjectResponse:
     """Update a project."""
     _ = request
@@ -142,8 +142,8 @@ async def update_project(
 async def regenerate_onboarding_brief(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """Regenerate the client-specific compatibility subgraph for this project."""
     _ = request
@@ -171,8 +171,8 @@ async def regenerate_onboarding_brief(
 async def get_compatibility_brief(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> CompatibilityBriefResponse:
     """Return structured compatibility brief for project's target clients."""
     _ = request
@@ -230,8 +230,8 @@ async def get_compatibility_brief(
 async def get_design_system(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Get the design system for a project."""
     _ = request
@@ -247,8 +247,8 @@ async def update_design_system(
     request: Request,
     project_id: int,
     data: DesignSystem,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> dict[str, Any]:
     """Set or update the design system for a project."""
     _ = request
@@ -261,8 +261,8 @@ async def update_design_system(
 async def delete_design_system(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> None:
     """Remove the design system from a project."""
     _ = request
@@ -277,8 +277,8 @@ async def delete_design_system(
 async def get_template_config(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Get the template configuration for a project."""
     _ = request
@@ -294,8 +294,8 @@ async def update_template_config(
     request: Request,
     project_id: int,
     data: ProjectTemplateConfig,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> dict[str, Any]:
     """Set or update the template configuration for a project."""
     _ = request
@@ -311,8 +311,8 @@ async def update_template_config(
 async def delete_template_config(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> None:
     """Remove the template configuration from a project."""
     _ = request
@@ -324,8 +324,8 @@ async def delete_template_config(
 async def delete_project(
     request: Request,
     project_id: int,
-    service: ProjectService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: ProjectService = Depends(get_service),
+    current_user: User = Depends(require_role("admin")),
 ) -> None:
     """Delete a project."""
     _ = request

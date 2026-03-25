@@ -28,7 +28,7 @@ from app.email_engine.service import EmailEngineService
 router = APIRouter(prefix="/api/v1/email", tags=["email-engine"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> EmailEngineService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> EmailEngineService:
     return EmailEngineService(db)
 
 
@@ -37,8 +37,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> EmailEngineService:  # no
 async def build_email(
     request: Request,
     data: BuildRequest,
-    service: EmailEngineService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: EmailEngineService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> BuildResponse:
     """Build an email template using Maizzle."""
     _ = request
@@ -50,8 +50,8 @@ async def build_email(
 async def get_build(
     request: Request,
     build_id: int,
-    service: EmailEngineService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: EmailEngineService = Depends(get_service),
+    current_user: User = Depends(get_current_user),
 ) -> BuildResponse:
     """Get a build by ID."""
     _ = request
@@ -63,8 +63,8 @@ async def get_build(
 async def preview_email(
     request: Request,
     data: PreviewRequest,
-    service: EmailEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: EmailEngineService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> PreviewResponse:
     """Preview-build an email template (not persisted)."""
     _ = request
@@ -76,8 +76,8 @@ async def preview_email(
 async def compile_css(
     request: Request,
     data: CSSCompileRequest,
-    service: EmailEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: EmailEngineService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> CSSCompileResponse:
     """Compile and optimize CSS for email clients."""
     _ = request
@@ -96,8 +96,8 @@ async def compile_css(
 async def inject_schema(
     request: Request,
     data: SchemaInjectRequest,
-    service: EmailEngineService = Depends(get_service),  # noqa: B008
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: EmailEngineService = Depends(get_service),
+    _current_user: User = Depends(require_role("developer")),
 ) -> SchemaInjectResponse:
     """Inject schema.org JSON-LD markup into email HTML based on detected intent."""
     _ = request
@@ -116,7 +116,7 @@ async def inject_schema(
 async def import_annotate(
     request: Request,
     data: ImportAnnotateRequest,
-    _current_user: User = Depends(require_role("developer")),  # noqa: B008
+    _current_user: User = Depends(require_role("developer")),
 ) -> ImportAnnotateResponse:
     """Annotate imported email HTML with section boundaries for the visual builder."""
     _ = request

@@ -16,37 +16,31 @@ logger = get_logger(__name__)
 class AppError(Exception):
     """Base exception for all application errors."""
 
-    pass
 
 
 class NotFoundError(AppError):
     """Resource not found (404)."""
 
-    pass
 
 
 class DomainValidationError(AppError):
     """Business rule validation failure (422)."""
 
-    pass
 
 
 class ForbiddenError(AppError):
     """Access denied (403)."""
 
-    pass
 
 
 class ConflictError(AppError):
     """Resource conflict, e.g. duplicate entry (409)."""
 
-    pass
 
 
 class ServiceUnavailableError(AppError):
     """External dependency unavailable (503)."""
 
-    pass
 
 
 # ── Exception Handlers ──

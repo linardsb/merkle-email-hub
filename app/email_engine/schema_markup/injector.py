@@ -58,7 +58,7 @@ class InjectionResult:
     injected: bool
     intent_type: str
     confidence: float
-    schema_types: list[str] = field(default_factory=lambda: [])
+    schema_types: list[str] = field(default_factory=list)
     validation_errors: tuple[str, ...] = ()
     inject_time_ms: float = 0.0
 

@@ -37,7 +37,6 @@ AsyncSessionLocal = async_sessionmaker(
 class Base(DeclarativeBase):
     """Base class for all database models."""
 
-    pass
 
 
 @asynccontextmanager

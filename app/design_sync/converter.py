@@ -310,6 +310,13 @@ def _determine_heading_level(
     return None
 
 
+def _next_slot_name(counter: dict[str, int], slot_type: str) -> str:
+    """Generate unique slot name: 'body', 'body_2', 'body_3', etc."""
+    count = counter.get(slot_type, 0) + 1
+    counter[slot_type] = count
+    return slot_type if count == 1 else f"{slot_type}_{count}"
+
+
 def _render_semantic_text(
     *,
     content: str,
@@ -319,25 +326,35 @@ def _render_semantic_text(
     pad: str,
     is_heading: bool,
     heading_level: int | None,
+    slot_counter: dict[str, int] | None = None,
 ) -> str:
     """Render a TEXT node as semantic HTML (<h1>-<h3> or <p>) inside <td>."""
     if is_heading and heading_level is not None:
         tag = f"h{heading_level}"
+        slot_attr = ""
+        if slot_counter is not None:
+            slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "heading")}"'
         inner_style = f"margin:0;font-family:{font_family};{mso_alt}{extra_style}"
-        return f'{pad}<td><{tag} style="{inner_style}">{content}</{tag}></td>'
+        return f'{pad}<td><{tag}{slot_attr} style="{inner_style}">{content}</{tag}></td>'
 
     # Body text -> <p> (split multi-line on \n)
     lines = content.split("\n") if "\n" in content else [content]
     if len(lines) == 1:
+        slot_attr = ""
+        if slot_counter is not None:
+            slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "body")}"'
         p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
-        return f'{pad}<td><p style="{p_style}">{content}</p></td>'
+        return f'{pad}<td><p{slot_attr} style="{p_style}">{content}</p></td>'
 
     # Multi-line -> multiple <p> tags
     p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
     p_parts: list[str] = []
     for line in lines:
         if line.strip():
-            p_parts.append(f'<p style="{p_style}">{line}</p>')
+            slot_attr = ""
+            if slot_counter is not None:
+                slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "body")}"'
+            p_parts.append(f'<p{slot_attr} style="{p_style}">{line}</p>')
     inner = "".join(p_parts)
     return f"{pad}<td>{inner}</td>"
 
@@ -370,6 +387,7 @@ def _render_button(
     *,
     pad: str,
     props: _NodeProps | None,
+    slot_counter: dict[str, int] | None = None,
 ) -> str:
     """Render a button-like COMPONENT/FRAME as a bulletproof <a> with VML fallback."""
     text_children = [c for c in node.children if c.type == DesignNodeType.TEXT and c.text_content]
@@ -402,6 +420,10 @@ def _render_button(
     v_pad = max(8, (height - font_size) // 2)
     h_pad = 24
 
+    slot_attr = ""
+    if slot_counter is not None:
+        slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "cta")}"'
+
     parts = [
         f'{pad}<td align="center">',
         (
@@ -413,7 +435,7 @@ def _render_button(
         f"{pad}    <tr>",
         (f'{pad}      <td style="border-radius:{border_radius};background-color:{bg_color};">'),
         (
-            f'{pad}        <a href="#" style="display:inline-block;'
+            f'{pad}        <a href="#"{slot_attr} style="display:inline-block;'
             f"padding:{v_pad}px {h_pad}px;"
             f"font-family:{font_family};font-size:{font_size}px;"
             f"color:{text_color};text-decoration:none;"
@@ -459,6 +481,7 @@ def node_to_email_html(
     gradients_map: dict[str, ExtractedGradient] | None = None,
     _depth: int = 0,
     container_width: int = 600,
+    slot_counter: dict[str, int] | None = None,
 ) -> str:
     """Convert a DesignNode tree to email-safe HTML (table layout).
 
@@ -480,6 +503,7 @@ def node_to_email_html(
         gradients_map: Node name → ExtractedGradient for gradient CSS.
         _depth: Internal nesting depth counter for guard.
         container_width: Available width in px for column calculations.
+        slot_counter: Shared per-section counter for unique data-slot-name attrs.
     """
     pad = "  " * indent
     props = props_map.get(node.id) if props_map else None
@@ -558,17 +582,24 @@ def node_to_email_html(
             pad=pad,
             is_heading=is_heading,
             heading_level=heading_level,
+            slot_counter=slot_counter,
         )
 
     if node.type == DesignNodeType.IMAGE:
-        w = f' width="{int(node.width)}"' if node.width else ""
-        h = f' height="{int(node.height)}"' if node.height else ""
+        w_val = int(node.width) if node.width else None
+        h_val = int(node.height) if node.height else None
+        w = f' width="{w_val}"' if w_val else ""
+        h = f' height="{h_val}"' if h_val else ""
         alt = html.escape(node.name or "")
         node_id_attr = f' data-node-id="{html.escape(node.id)}"'
+        slot_attr = ""
+        if slot_counter is not None:
+            slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "image")}"'
+        max_w = f"max-width:{w_val}px;" if w_val else ""
         return (
-            f'{pad}<img src="" alt="{alt}"{node_id_attr}{w}{h}'
+            f'{pad}<img src="" alt="{alt}"{node_id_attr}{slot_attr}{w}{h}'
             f' style="display:block;border:0;outline:none;text-decoration:none;'
-            f'-ms-interpolation-mode:bicubic;width:100%;height:auto;" />'
+            f'-ms-interpolation-mode:bicubic;width:100%;{max_w}height:auto;" />'
         )
 
     # Button detection: node is in button_ids from layout analysis
@@ -577,6 +608,7 @@ def node_to_email_html(
             node,
             pad=pad,
             props=props,
+            slot_counter=slot_counter,
         )
 
     # Frame/Group/Component/Instance → table with rows
@@ -667,6 +699,7 @@ def node_to_email_html(
                     gradients_map=gradients_map,
                     _depth=_depth + 1,
                     container_width=container_width,
+                    slot_counter=slot_counter,
                 )
                 if child.type != DesignNodeType.TEXT:
                     flat_lines.append(f"{pad}<tr><td>{child_html}</td></tr>")
@@ -675,8 +708,11 @@ def node_to_email_html(
             return "\n".join(flat_lines) if flat_lines else ""
 
         style_attr = f' style="{";".join(style_parts)}"'
+        component_attr = ""
+        if _depth == 0 and slot_counter is not None:
+            component_attr = f' data-component-name="{html.escape(node.name or "")}"'
         lines = [
-            f"{pad}<table{width_attr}{bgcolor_attr}{style_attr}"
+            f"{pad}<table{width_attr}{bgcolor_attr}{component_attr}{style_attr}"
             f' cellpadding="0" cellspacing="0" border="0" role="presentation">'
         ]
 
@@ -757,6 +793,7 @@ def node_to_email_html(
                         gradients_map=gradients_map,
                         _depth=_depth,
                         container_width=effective_width,
+                        slot_counter=slot_counter,
                     )
                     lines.extend(mc_lines)
                     continue
@@ -779,6 +816,7 @@ def node_to_email_html(
                         gradients_map=gradients_map,
                         _depth=_depth + 1,
                         container_width=container_width,
+                        slot_counter=slot_counter,
                     )
 
                     if child.type != DesignNodeType.TEXT:
@@ -1084,6 +1122,7 @@ def _render_multi_column_row(
     gradients_map: dict[str, ExtractedGradient] | None,
     _depth: int,
     container_width: int,
+    slot_counter: dict[str, int] | None = None,
 ) -> list[str]:
     """Render a multi-column row using hybrid inline-block + MSO ghost table.
 
@@ -1159,6 +1198,7 @@ def _render_multi_column_row(
             gradients_map=gradients_map,
             _depth=_depth + 1,
             container_width=col_width,
+            slot_counter=slot_counter,
         )
 
         if child.type == DesignNodeType.TEXT:

@@ -24,7 +24,7 @@ from app.core.rate_limit import limiter
 router = APIRouter(prefix="/api/v1/briefs", tags=["briefs"])
 
 
-def get_service(db: AsyncSession = Depends(get_db)) -> BriefService:  # noqa: B008
+def get_service(db: AsyncSession = Depends(get_db)) -> BriefService:
     return BriefService(db)
 
 
@@ -36,8 +36,8 @@ def get_service(db: AsyncSession = Depends(get_db)) -> BriefService:  # noqa: B0
 async def create_connection(
     request: Request,
     data: ConnectionCreateRequest,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ConnectionResponse:
     """Create a new brief connection to a project management platform."""
     _ = request
@@ -48,8 +48,8 @@ async def create_connection(
 @limiter.limit("30/minute")
 async def list_connections(
     request: Request,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("viewer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
 ) -> list[ConnectionResponse]:
     """List all brief connections."""
     _ = request
@@ -61,8 +61,8 @@ async def list_connections(
 async def delete_connection(
     request: Request,
     data: ConnectionDeleteRequest,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("admin")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("admin")),
 ) -> dict[str, bool]:
     """Delete a brief connection."""
     _ = request
@@ -75,8 +75,8 @@ async def delete_connection(
 async def sync_connection(
     request: Request,
     data: ConnectionSyncRequest,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ConnectionResponse:
     """Trigger a sync for a brief connection."""
     _ = request
@@ -91,8 +91,8 @@ async def sync_connection(
 async def list_items_for_connection(
     connection_id: int,
     request: Request,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("viewer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
 ) -> list[BriefItemResponse]:
     """List items for a specific connection."""
     _ = request
@@ -106,8 +106,8 @@ async def list_items(
     platform: str | None = Query(default=None, description="Filter by platform"),
     status: str | None = Query(default=None, description="Filter by status"),
     search: str | None = Query(default=None, max_length=200, description="Search by title"),
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("viewer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
 ) -> list[BriefItemResponse]:
     """List all brief items with optional filters."""
     _ = request
@@ -119,8 +119,8 @@ async def list_items(
 async def get_item_detail(
     item_id: int,
     request: Request,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("viewer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
 ) -> BriefDetailResponse:
     """Get item detail with description, resources, and attachments."""
     _ = request
@@ -135,8 +135,8 @@ async def get_item_detail(
 async def import_items(
     request: Request,
     data: ImportRequest,
-    service: BriefService = Depends(get_service),  # noqa: B008
-    current_user: User = Depends(require_role("developer")),  # noqa: B008
+    service: BriefService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
 ) -> ImportResponse:
     """Import brief items into a project."""
     _ = request

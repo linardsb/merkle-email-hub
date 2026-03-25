@@ -5,6 +5,12 @@
 /be-prime → /be-planning → /be-execute → /be-ship → /commit
 ```
 
+## Backend — New Feature (Fast Path)
+```
+/parallel-plan → /preflight-check → /be-execute → /be-ship → /commit
+```
+`/parallel-plan` replaces `/be-prime` + `/be-planning` with parallel agents (research, test scout, pyright baseline run concurrently). `/preflight-check` scans the plan's target files for hardcoded assertions, tuple unpacking, and fragile patterns before execution.
+
 ## Backend — Bug Fix / Code Review Fix
 ```
 /be-code-review-fix → /be-validate → /commit
@@ -15,6 +21,12 @@ Skip prime/planning — go straight to diagnosis and fix. Use `/be-prime` first 
 ```
 /fe-prime → /fe-planning → /fe-execute → /fe-ship → /commit
 ```
+
+## Frontend — New Feature (Fast Path)
+```
+/fe-parallel-plan → /fe-preflight-check → /fe-execute → /fe-ship → /commit
+```
+`/fe-parallel-plan` replaces `/fe-prime` + `/fe-planning` with parallel agents (research, test scout, tsc baseline run concurrently). `/fe-preflight-check` scans for hardcoded assertions, snapshot tests, stale mocks, and `as any` casts before execution.
 
 ## Frontend — Bug Fix / Code Review Fix
 ```
@@ -55,6 +67,14 @@ Optional: Run after feature implementation for pre-commit browser validation.
 | `/fe-code-review-fix` | Diagnose and fix issues | Bugs, review findings, test failures, type errors |
 | `/fe-validate` | Run frontend quality checks | After any code changes |
 | `/fe-ship` | Full quality pipeline (validate→review→fix→validate) | Before committing a feature |
+
+### Accelerators
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `/parallel-plan` | Parallel research + test scout + planning | Replaces `/be-prime` → `/be-planning` for new features |
+| `/preflight-check` | Scan plan files for fragile patterns (backend) | Before `/be-execute` to prevent fix cycles |
+| `/fe-parallel-plan` | Parallel research + test scout + planning (frontend) | Replaces `/fe-prime` → `/fe-planning` for new features |
+| `/fe-preflight-check` | Scan plan files for fragile patterns (frontend) | Before `/fe-execute` to prevent fix cycles |
 
 ### Cross-cutting
 | Command | Purpose | When to Use |

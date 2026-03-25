@@ -993,8 +993,8 @@
 - [x] ~~33.6 Semantic HTML generation (headings, paragraphs, buttons)~~ DONE
 - [x] ~~33.7 Dark mode token extraction & gradient fallbacks~~ DONE
 - [x] ~~33.8 Design context enrichment & Scaffolder integration~~ DONE
-- [ ] 33.9 Builder annotations for visual builder sync
-- [ ] 33.10 Image asset import for design sync pipeline
+- [x] ~~33.9 Builder annotations for visual builder sync~~ DONE
+- [x] ~~33.10 Image asset import for design sync pipeline~~ DONE
 - [ ] 33.11 Tests & integration verification
 
 ### 33.0 Wire Layout Analyzer into Converter `[Backend]`
@@ -1595,7 +1595,7 @@
 **Security:** Token warnings are system-generated strings, not user input. No XSS risk in frontend display (React auto-escapes).
 **Verify:** Scaffolder receives typography with line_height and letter_spacing in design context. `_layout_to_design_nodes()` produces nodes with font_family, font_size, text_content populated. Frontend shows dark mode swatches when available. Token diff after re-sync shows changed colors. Token warnings visible in UI. `make check-fe` passes. `make test` passes.
 
-### 33.9 Builder Annotations for Visual Builder Sync `[Backend + Frontend]`
+### ~~33.9 Builder Annotations for Visual Builder Sync~~ DONE `[Backend]`
 **What:** Add `data-section-id`, `data-component-name`, and `data-slot-name` attributes to the HTML output of `node_to_email_html()` and `DesignConverterService.convert()`. These annotations are what the frontend builder sync (`ast-mapper.ts` → `visual-builder-panel.tsx`) uses to populate slot definitions, render actual content instead of placeholders, and enable drag-and-drop editing of imported designs.
 **Why:** Phase 31 fixed slot definition inference for the HTML upload/paste path (via `inferSlotDefinitions()` fallback in `visual-builder-panel.tsx`). But the Figma design sync pipeline produces HTML without any builder annotations. The frontend sync engine's Strategy 1 (annotated HTML with `data-section-id`) never matches — it falls through to Strategy 2 (structural content-root analysis), which produces `SectionNode` objects with `componentId=0` and empty `slotValues`. The `sectionNodeToBuilderSection()` function then calls `inferSlotDefinitions()` on the HTML fragment, but since the converter emits bare `<td>` elements (no `data-slot-name` attributes), inference returns `[]` → slot fills are never applied → the visual builder shows "Body content goes here" placeholders instead of the actual Figma content. The fix is to annotate the converter output at generation time, so the builder sync path works end-to-end without relying on fallback inference.
 **Implementation:**

@@ -21,17 +21,17 @@ from app.reporting.service import ReportingService
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> ReportingService:  # noqa: B008
+def _get_service(db: AsyncSession = Depends(get_db)) -> ReportingService:
     return ReportingService(db)
 
 
 @router.post("/qa", response_model=ReportResponse)
 @limiter.limit("5/minute")
 async def generate_qa_report(
-    request: Request,  # noqa: ARG001
+    request: Request,
     data: QAReportRequest,
-    service: ReportingService = Depends(_get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ReportingService = Depends(_get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ReportResponse:
     """Generate a full QA report PDF with all check results."""
     return await service.generate_qa_report(data, current_user)
@@ -40,10 +40,10 @@ async def generate_qa_report(
 @router.post("/approval", response_model=ReportResponse)
 @limiter.limit("5/minute")
 async def generate_approval_package(
-    request: Request,  # noqa: ARG001
+    request: Request,
     data: ApprovalPackageRequest,
-    service: ReportingService = Depends(_get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ReportingService = Depends(_get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ReportResponse:
     """Generate a client-facing approval package PDF."""
     return await service.generate_approval_package(data, current_user)
@@ -52,10 +52,10 @@ async def generate_approval_package(
 @router.post("/regression", response_model=ReportResponse)
 @limiter.limit("5/minute")
 async def generate_regression_report(
-    request: Request,  # noqa: ARG001
+    request: Request,
     data: RegressionReportRequest,
-    service: ReportingService = Depends(_get_service),  # noqa: B008
-    current_user: User = Depends(get_current_user),  # noqa: B008
+    service: ReportingService = Depends(_get_service),
+    current_user: User = Depends(get_current_user),
 ) -> ReportResponse:
     """Generate a visual regression comparison PDF."""
     return await service.generate_regression_report(data, current_user)
@@ -64,10 +64,10 @@ async def generate_regression_report(
 @router.get("/{report_id}", response_model=ReportDownloadResponse)
 @limiter.limit("20/minute")
 async def get_report(
-    request: Request,  # noqa: ARG001
+    request: Request,
     report_id: str,
-    service: ReportingService = Depends(_get_service),  # noqa: B008
-    _user: User = Depends(get_current_user),  # noqa: B008
+    service: ReportingService = Depends(_get_service),
+    _user: User = Depends(get_current_user),
 ) -> ReportDownloadResponse:
     """Retrieve a previously generated report by ID (cached in Redis)."""
     return await service.get_report(report_id)

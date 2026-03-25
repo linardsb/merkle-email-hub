@@ -55,7 +55,6 @@ class _ResilientLLMProvider:
 class ProviderNotFoundError(KeyError):
     """Raised when a requested provider is not registered."""
 
-    pass
 
 
 class ProviderRegistry:

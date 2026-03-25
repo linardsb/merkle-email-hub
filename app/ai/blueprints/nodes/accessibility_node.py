@@ -221,7 +221,6 @@ class AccessibilityNode:
         model: str,
     ) -> NodeResult:
         """Execute in structured mode: analyze plan, return decisions, merge."""
-
         plan = context.build_plan
         assert plan is not None  # noqa: S101
 
@@ -293,7 +292,6 @@ class AccessibilityNode:
 
     def _parse_decisions(self, raw_content: str) -> AccessibilityDecisions:
         """Parse LLM response into AccessibilityDecisions."""
-
         content = raw_content.strip()
         if "```json" in content:
             start = content.index("```json") + 7

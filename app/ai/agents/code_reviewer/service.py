@@ -394,7 +394,7 @@ class CodeReviewService(BaseAgentService):
                 improved_count=len(improved),
             )
 
-        return improved if improved else None
+        return improved or None
 
     def _merge_retry_results(
         self,

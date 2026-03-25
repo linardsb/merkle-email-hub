@@ -25,19 +25,19 @@ router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 _admin = require_role("admin")
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> SkillExtractionService:  # noqa: B008
+def _get_service(db: AsyncSession = Depends(get_db)) -> SkillExtractionService:
     return SkillExtractionService(db)
 
 
 @router.get("/amendments/pending", response_model=AmendmentListResponse)
 @limiter.limit("60/minute")
 async def list_pending_amendments(
-    request: Request,  # noqa: ARG001
+    request: Request,
     agent_name: str | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    _user: User = Depends(_admin),  # noqa: B008
-    service: SkillExtractionService = Depends(_get_service),  # noqa: B008
+    _user: User = Depends(_admin),
+    service: SkillExtractionService = Depends(_get_service),
 ) -> AmendmentListResponse:
     """List pending skill amendments from template uploads."""
     amendments, total = await service.list_pending(
@@ -49,11 +49,11 @@ async def list_pending_amendments(
 @router.post("/amendments/{amendment_id}/approve")
 @limiter.limit("10/minute")
 async def approve_amendment(
-    request: Request,  # noqa: ARG001
+    request: Request,
     amendment_id: str,
     body: AmendmentActionRequest | None = None,
-    _user: User = Depends(_admin),  # noqa: B008
-    service: SkillExtractionService = Depends(_get_service),  # noqa: B008
+    _user: User = Depends(_admin),
+    service: SkillExtractionService = Depends(_get_service),
 ) -> AmendmentReport:
     """Approve and apply a skill amendment."""
     reason = body.reason if body else ""
@@ -63,11 +63,11 @@ async def approve_amendment(
 @router.post("/amendments/{amendment_id}/reject")
 @limiter.limit("10/minute")
 async def reject_amendment(
-    request: Request,  # noqa: ARG001
+    request: Request,
     amendment_id: str,
     body: AmendmentActionRequest | None = None,
-    _user: User = Depends(_admin),  # noqa: B008
-    service: SkillExtractionService = Depends(_get_service),  # noqa: B008
+    _user: User = Depends(_admin),
+    service: SkillExtractionService = Depends(_get_service),
 ) -> StatusResponse:
     """Reject a skill amendment."""
     reason = body.reason if body else ""
@@ -78,10 +78,10 @@ async def reject_amendment(
 @router.post("/amendments/batch", response_model=BatchAmendmentResponse)
 @limiter.limit("5/minute")
 async def batch_amendments(
-    request: Request,  # noqa: ARG001
+    request: Request,
     body: BatchAmendmentRequest,
-    _user: User = Depends(_admin),  # noqa: B008
-    service: SkillExtractionService = Depends(_get_service),  # noqa: B008
+    _user: User = Depends(_admin),
+    service: SkillExtractionService = Depends(_get_service),
 ) -> BatchAmendmentResponse:
     """Approve or reject multiple amendments at once."""
     actions = body.actions

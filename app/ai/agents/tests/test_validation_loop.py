@@ -12,7 +12,6 @@ from app.ai.agents.validation_loop import CRAGMixin
 class _FakeAgent(CRAGMixin):
     """Minimal agent stub for testing the mixin."""
 
-    pass
 
 
 def _make_settings(

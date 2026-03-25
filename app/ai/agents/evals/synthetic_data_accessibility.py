@@ -1,5 +1,4 @@
-"""
-Synthetic test data for the Accessibility Auditor agent.
+"""Synthetic test data for the Accessibility Auditor agent.
 
 Each test case provides HTML with specific accessibility violations.
 The agent must fix the violations while preserving visual design.

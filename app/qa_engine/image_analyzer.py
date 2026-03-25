@@ -165,8 +165,7 @@ def _calc_data_uri_bytes(src: str) -> int:
         # Base64: every 4 chars encode 3 bytes, minus padding
         padding = payload.count("=")
         return max(0, (len(payload) * 3) // 4 - padding)
-    else:
-        return len(payload.encode("utf-8", errors="replace"))
+    return len(payload.encode("utf-8", errors="replace"))
 
 
 def _parse_image_element(img_el: HtmlElement) -> ImageInfo:

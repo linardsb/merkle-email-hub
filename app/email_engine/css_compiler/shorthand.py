@@ -97,7 +97,7 @@ def _expand_border(val: str) -> list[tuple[str, str]]:
             result.append(("border-style", token))
         else:
             result.append(("border-color", token))
-    return result if result else [("border", val)]
+    return result or [("border", val)]
 
 
 def _expand_background(val: str) -> list[tuple[str, str]] | None:
@@ -120,7 +120,7 @@ def _expand_background(val: str) -> list[tuple[str, str]] | None:
     if pos_match:
         result.append(("background-position", pos_match.group(1)))
 
-    return result if result else None
+    return result or None
 
 
 _FONT_RE = re.compile(

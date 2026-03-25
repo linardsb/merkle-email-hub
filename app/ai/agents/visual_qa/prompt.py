@@ -84,12 +84,8 @@ def detect_relevant_skills(html: str) -> list[str]:
     relevant: list[str] = []
     html_lower = html.lower()
     for skill_key in SKILL_FILES:
-        if "mso" in skill_key and ("mso-" in html_lower or "<!--[if" in html_lower):
-            relevant.append(skill_key)
-        elif "dark" in skill_key and (
+        if ("mso" in skill_key and ("mso-" in html_lower or "<!--[if" in html_lower)) or ("dark" in skill_key and (
             "prefers-color-scheme" in html_lower or "data-ogsc" in html_lower
-        ):
-            relevant.append(skill_key)
-        elif "layout" in skill_key:
+        )) or "layout" in skill_key:
             relevant.append(skill_key)
     return relevant

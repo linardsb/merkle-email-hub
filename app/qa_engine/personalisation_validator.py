@@ -592,7 +592,7 @@ def analyze_personalisation(raw_html: str) -> PersonalisationAnalysis:
             )
 
     return PersonalisationAnalysis(
-        detected_platforms=all_platforms if all_platforms else [primary_platform],
+        detected_platforms=all_platforms or [primary_platform],
         primary_platform=primary_platform,
         tags=tags,
         total_tags=len(tags),

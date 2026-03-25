@@ -233,39 +233,38 @@ class ComponentExtractor:
                 "version_number": version.version_number,
                 "is_new": False,
             }
-        else:
-            # Create new component + v1
-            from app.components.schemas import ComponentCreate
+        # Create new component + v1
+        from app.components.schemas import ComponentCreate
 
-            slug = slugify(component.name)
-            slug = await self._ensure_unique_slug(slug)
+        slug = slugify(component.name)
+        slug = await self._ensure_unique_slug(slug)
 
-            create_data = ComponentCreate(
-                name=component.name,
-                slug=slug,
-                description=component.description or f"Extracted from Figma: {component.name}",
-                category=category,
-                html_source=html_source or "<!-- pending -->",
-            )
-            new_component = await self._component_repo.create(create_data, user_id)
+        create_data = ComponentCreate(
+            name=component.name,
+            slug=slug,
+            description=component.description or f"Extracted from Figma: {component.name}",
+            category=category,
+            html_source=html_source or "<!-- pending -->",
+        )
+        new_component = await self._component_repo.create(create_data, user_id)
 
-            # Update v1's compatibility with Figma origin
-            if new_component.versions:
-                v1 = new_component.versions[0]
-                v1.compatibility = figma_origin
-                await self._db.flush()
+        # Update v1's compatibility with Figma origin
+        if new_component.versions:
+            v1 = new_component.versions[0]
+            v1.compatibility = figma_origin
+            await self._db.flush()
 
-            if preview_url:
-                await self._store_preview_asset(import_id, component, preview_url, category)
+        if preview_url:
+            await self._store_preview_asset(import_id, component, preview_url, category)
 
-            return {
-                "figma_component_id": component.component_id,
-                "name": component.name,
-                "category": category,
-                "component_id": new_component.id,
-                "version_number": 1,
-                "is_new": True,
-            }
+        return {
+            "figma_component_id": component.component_id,
+            "name": component.name,
+            "category": category,
+            "component_id": new_component.id,
+            "version_number": 1,
+            "is_new": True,
+        }
 
     async def _generate_html(self, component: DesignComponent, category: str) -> str:
         """Generate component HTML via the Scaffolder agent."""
@@ -278,7 +277,7 @@ class ComponentExtractor:
 
         try:
             response = await scaffolder.generate(request)
-            html = response.html if response.html else ""
+            html = response.html or ""
             return sanitize_html_xss(html)
         except Exception:
             logger.exception(

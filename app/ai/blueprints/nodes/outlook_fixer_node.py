@@ -158,7 +158,6 @@ class OutlookFixerNode:
         model: str,
     ) -> NodeResult:
         """Execute in diagnostic mode: report MSO issues without modifying HTML."""
-
         relevant_skills = detect_relevant_skills(context.html or "")
         system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
 
@@ -223,7 +222,6 @@ class OutlookFixerNode:
 
     def _parse_diagnostic(self, raw_content: str) -> OutlookDiagnostic:
         """Parse LLM response into OutlookDiagnostic."""
-
         content = raw_content.strip()
         if "```json" in content:
             start = content.index("```json") + 7

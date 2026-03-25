@@ -43,10 +43,10 @@ router = APIRouter(prefix="/api/v1/blueprints", tags=["blueprints"])
 )
 @limiter.limit("3/minute")
 async def run_blueprint(
-    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    request: Request,
     body: BlueprintRunRequest,
-    current_user: User = Depends(get_current_user),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> BlueprintRunResponse:
     """Execute a named blueprint and return the full run result.
 
@@ -63,10 +63,10 @@ async def run_blueprint(
 )
 @limiter.limit("3/minute")
 async def resume_blueprint(
-    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    request: Request,
     body: BlueprintResumeRequest,
-    current_user: User = Depends(get_current_user),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> BlueprintRunResponse:
     """Resume a blueprint run from its latest checkpoint."""
     service = get_blueprint_service()
@@ -109,13 +109,13 @@ def _build_failure_pattern_query(
 )
 @limiter.limit("30/minute")
 async def get_failure_pattern_stats(
-    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    request: Request,
     project_id: int | None = None,
     agent_name: str | None = None,
     qa_check: str | None = None,
     client_id: str | None = None,
-    db: AsyncSession = Depends(get_db),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> FailurePatternStats:
     """Aggregated failure pattern statistics with optional filters."""
     base = _build_failure_pattern_query(project_id, agent_name, qa_check, client_id)
@@ -185,15 +185,15 @@ async def get_failure_pattern_stats(
 )
 @limiter.limit("30/minute")
 async def list_failure_patterns(
-    request: Request,  # noqa: ARG001 — required by slowapi @limiter.limit
+    request: Request,
     project_id: int | None = None,
     agent_name: str | None = None,
     qa_check: str | None = None,
     client_id: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),  # noqa: B008
-    _current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> FailurePatternListResponse:
     """List failure patterns from blueprint runs with optional filters."""
     query = _build_failure_pattern_query(project_id, agent_name, qa_check, client_id)
@@ -256,10 +256,10 @@ async def list_failure_patterns(
 )
 @limiter.limit("30/minute")
 async def list_run_checkpoints(
-    request: Request,  # noqa: ARG001
+    request: Request,
     run_id: str,
-    _current_user: User = Depends(get_current_user),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> CheckpointListResponse:
     """List all checkpoints for a blueprint run, ordered by node_index."""
     stmt = (
@@ -339,13 +339,13 @@ def _checkpoint_to_run_record(
 )
 @limiter.limit("30/minute")
 async def list_blueprint_runs(
-    request: Request,  # noqa: ARG001
+    request: Request,
     project_id: int,
     status: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(get_current_user),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> BlueprintRunListResponse:
     """List blueprint runs for a project, derived from checkpoint data."""
     from app.projects.service import ProjectService
@@ -404,10 +404,10 @@ async def list_blueprint_runs(
 )
 @limiter.limit("30/minute")
 async def get_blueprint_run(
-    request: Request,  # noqa: ARG001
+    request: Request,
     run_id: int,
-    _current_user: User = Depends(get_current_user),  # noqa: B008
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    _current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> BlueprintRunRecord:
     """Get a single blueprint run detail by checkpoint ID."""
     # The frontend uses a numeric ID (first checkpoint ID for the run)

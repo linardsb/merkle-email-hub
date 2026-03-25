@@ -22,7 +22,7 @@ router = APIRouter(prefix="/memory", tags=["memory"])
 settings = get_settings()
 
 
-def _get_service(db: AsyncSession = Depends(get_db)) -> MemoryService:  # noqa: B008
+def _get_service(db: AsyncSession = Depends(get_db)) -> MemoryService:
     """Build MemoryService with embedding provider from settings."""
     provider = get_embedding_provider(settings)
     return MemoryService(db, provider)
@@ -31,10 +31,10 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> MemoryService:  # noqa: 
 @router.post("/", response_model=MemoryResponse, status_code=201)
 @limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def store_memory(
-    request: Request,  # noqa: ARG001
+    request: Request,
     data: MemoryCreate,
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
-    service: MemoryService = Depends(_get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin", "developer")),
+    service: MemoryService = Depends(_get_service),
 ) -> MemoryResponse:
     """Store a new agent memory entry."""
     entry = await service.store(data)
@@ -44,10 +44,10 @@ async def store_memory(
 @router.post("/search", response_model=list[MemoryResponse])
 @limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def search_memories(
-    request: Request,  # noqa: ARG001
+    request: Request,
     data: MemorySearch,
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
-    service: MemoryService = Depends(_get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin", "developer")),
+    service: MemoryService = Depends(_get_service),
 ) -> list[MemoryResponse]:
     """Search memories by similarity."""
     results = await service.recall(
@@ -68,10 +68,10 @@ async def search_memories(
 @router.get("/{memory_id}", response_model=MemoryResponse)
 @limiter.limit("30/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def get_memory(
-    request: Request,  # noqa: ARG001
+    request: Request,
     memory_id: int,
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
-    service: MemoryService = Depends(_get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin", "developer")),
+    service: MemoryService = Depends(_get_service),
 ) -> MemoryResponse:
     """Get a specific memory entry."""
     entry = await service.get_by_id(memory_id)
@@ -81,10 +81,10 @@ async def get_memory(
 @router.delete("/{memory_id}", status_code=204)
 @limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def delete_memory(
-    request: Request,  # noqa: ARG001
+    request: Request,
     memory_id: int,
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
-    service: MemoryService = Depends(_get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin", "developer")),
+    service: MemoryService = Depends(_get_service),
 ) -> None:
     """Delete a memory entry."""
     await service.delete(memory_id)
@@ -93,10 +93,10 @@ async def delete_memory(
 @router.post("/promote", response_model=MemoryResponse, status_code=201)
 @limiter.limit("10/minute")  # pyright: ignore[reportUntypedFunctionDecorator,reportUnknownMemberType]
 async def promote_dcg_note(
-    request: Request,  # noqa: ARG001
+    request: Request,
     data: MemoryPromote,
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
-    service: MemoryService = Depends(_get_service),  # noqa: B008
+    _current_user: User = Depends(require_role("admin", "developer")),
+    service: MemoryService = Depends(_get_service),
 ) -> MemoryResponse:
     """Promote a DCG note into Hub memory (4.9.7 bridge)."""
     entry = await service.promote_from_dcg(data)

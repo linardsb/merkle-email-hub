@@ -23,10 +23,10 @@ router = APIRouter(prefix="/api/v1/agents/dark-mode", tags=["agents"])
 @router.post("/process", response_model=None)
 @limiter.limit("5/minute")
 async def process_dark_mode(
-    request: Request,  # noqa: ARG001 — required by @limiter.limit
+    request: Request,
     body: DarkModeRequest,
-    service: DarkModeService = Depends(get_dark_mode_service),  # noqa: B008
-    _current_user: User = Depends(require_role("admin", "developer")),  # noqa: B008
+    service: DarkModeService = Depends(get_dark_mode_service),
+    _current_user: User = Depends(require_role("admin", "developer")),
 ) -> DarkModeResponse | StreamingResponse:
     """Enhance email HTML with dark mode support.
 
