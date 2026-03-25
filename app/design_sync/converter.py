@@ -284,6 +284,156 @@ def _contrasting_text_color(bg_hex: str) -> str:
     return "#ffffff" if _relative_luminance(bg_hex) < 0.5 else "#000000"
 
 
+def _determine_heading_level(
+    font_size: float,
+    body_font_size: float,
+) -> int | None:
+    """Return heading level (1-3) based on font size ratio, or None for body text."""
+    if body_font_size <= 0:
+        return None
+    ratio = font_size / body_font_size
+    if ratio >= 2.0:
+        return 1
+    if ratio >= 1.5:
+        return 2
+    if ratio >= 1.2:
+        return 3
+    return None
+
+
+def _render_semantic_text(
+    *,
+    content: str,
+    font_family: str,
+    extra_style: str,
+    mso_alt: str,
+    pad: str,
+    is_heading: bool,
+    heading_level: int | None,
+) -> str:
+    """Render a TEXT node as semantic HTML (<h1>-<h3> or <p>) inside <td>."""
+    if is_heading and heading_level is not None:
+        tag = f"h{heading_level}"
+        inner_style = f"margin:0;font-family:{font_family};{mso_alt}{extra_style}"
+        return f'{pad}<td><{tag} style="{inner_style}">{content}</{tag}></td>'
+
+    # Body text -> <p> (split multi-line on \n)
+    lines = content.split("\n") if "\n" in content else [content]
+    if len(lines) == 1:
+        p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
+        return f'{pad}<td><p style="{p_style}">{content}</p></td>'
+
+    # Multi-line -> multiple <p> tags
+    p_parts: list[str] = []
+    for line in lines:
+        if line.strip():
+            p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
+            p_parts.append(f'<p style="{p_style}">{line}</p>')
+    inner = "".join(p_parts)
+    return f"{pad}<td>{inner}</td>"
+
+
+def _validate_button_contrast(
+    bg_hex: str,
+    text_hex: str,
+    font_size_px: int,
+) -> None:
+    """Log a warning if button text/background contrast is below WCAG AA."""
+    try:
+        bg_lum = _relative_luminance(bg_hex)
+        text_lum = _relative_luminance(text_hex)
+        ratio = _contrast_ratio(bg_lum, text_lum)
+    except (ValueError, TypeError):
+        return
+    threshold = 3.0 if font_size_px >= 18 else 4.5
+    if ratio < threshold:
+        logger.warning(
+            "design_sync.button_contrast_low",
+            bg=bg_hex,
+            text=text_hex,
+            ratio=round(ratio, 2),
+            threshold=threshold,
+        )
+
+
+def _render_button(
+    node: DesignNode,
+    *,
+    pad: str,
+    props: _NodeProps | None,
+) -> str:
+    """Render a button-like COMPONENT/FRAME as a bulletproof <a> with VML fallback."""
+    text_children = [c for c in node.children if c.type == DesignNodeType.TEXT and c.text_content]
+    if not text_children:
+        return ""
+    button_text = html.escape(text_children[0].text_content or "")
+
+    width = int(node.width) if node.width else 200
+    height = max(int(node.height) if node.height else 44, 44)
+
+    bg_color = node.fill_color or (props.bg_color if props else None) or "#0066cc"
+    bg_color = _sanitize_css_value(bg_color) or "#0066cc"
+
+    text_color = text_children[0].text_color or _contrasting_text_color(bg_color)
+    text_color = _sanitize_css_value(text_color) or "#ffffff"
+
+    font_family = "Arial,Helvetica,sans-serif"
+    child_props_font = text_children[0].font_family
+    if child_props_font:
+        font_family = _font_stack(_sanitize_css_value(child_props_font) or "Arial")
+
+    font_size = int(text_children[0].font_size or 16)
+
+    _validate_button_contrast(bg_color, text_color, font_size)
+
+    border_radius = "4px"
+    shortest_side = min(width, height)
+    arcsize_pct = round((4 / shortest_side) * 100) if shortest_side > 0 else 8
+
+    v_pad = max(8, (height - font_size) // 2)
+    h_pad = 24
+
+    parts = [
+        f'{pad}<td align="center">',
+        (
+            f"{pad}  "
+            f'<table role="presentation" cellpadding="0" cellspacing="0" border="0"'
+            ' style="border-collapse:collapse;'
+            'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
+        ),
+        f"{pad}    <tr>",
+        (f'{pad}      <td style="border-radius:{border_radius};background-color:{bg_color};">'),
+        (
+            f'{pad}        <a href="#" style="display:inline-block;'
+            f"padding:{v_pad}px {h_pad}px;"
+            f"font-family:{font_family};font-size:{font_size}px;"
+            f"color:{text_color};text-decoration:none;"
+            f'mso-line-height-rule:exactly;">{button_text}</a>'
+        ),
+        f"{pad}      </td>",
+        f"{pad}    </tr>",
+        f"{pad}  </table>",
+        f"{pad}  <!--[if mso]>",
+        (
+            f'{pad}  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"'
+            f' style="width:{width}px;height:{height}px;"'
+            f' arcsize="{arcsize_pct}%"'
+            f' fillcolor="{bg_color}" stroke="f">'
+        ),
+        (f'{pad}    <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">'),
+        (
+            f'{pad}      <center style="font-family:Arial,sans-serif;'
+            f"font-size:{font_size}px;"
+            f'color:{text_color};">{button_text}</center>'
+        ),
+        f"{pad}    </v:textbox>",
+        f"{pad}  </v:roundrect>",
+        f"{pad}  <![endif]-->",
+        f"{pad}</td>",
+    ]
+    return "\n".join(parts)
+
+
 def node_to_email_html(
     node: DesignNode,
     *,
@@ -298,6 +448,7 @@ def node_to_email_html(
     body_font_size: float = 16.0,
     compat: ConverterCompatibility | None = None,
     _depth: int = 0,
+    container_width: int = 600,
 ) -> str:
     """Convert a DesignNode tree to email-safe HTML (table layout).
 
@@ -369,7 +520,32 @@ def node_to_email_html(
                 if mapped_name.strip("'\"").lower() == primary.lower() and chain:
                     mso_alt = f"mso-font-alt:{chain[0]};"
                     break
-        return f'{pad}<td style="font-family:{font_family};{mso_alt}{extra_style}">{content}</td>'
+        # Ensure mso-line-height-rule on elements with line-height
+        if "line-height:" in extra_style and "mso-line-height-rule" not in extra_style:
+            extra_style += "mso-line-height-rule:exactly;"
+
+        # Determine semantic role from layout analysis
+        is_heading = False
+        heading_level: int | None = None
+        if text_meta and node.id in text_meta:
+            tb = text_meta[node.id]
+            is_heading = tb.is_heading
+        if is_heading:
+            font_size_val = (props.font_size if props else None) or node.font_size or 16.0
+            heading_level = _determine_heading_level(font_size_val, body_font_size)
+            if heading_level is None:
+                # is_heading from analyzer but ratio too small — default h3
+                heading_level = 3
+
+        return _render_semantic_text(
+            content=content,
+            font_family=font_family,
+            extra_style=extra_style,
+            mso_alt=mso_alt,
+            pad=pad,
+            is_heading=is_heading,
+            heading_level=heading_level,
+        )
 
     if node.type == DesignNodeType.IMAGE:
         w = f' width="{int(node.width)}"' if node.width else ""
@@ -380,6 +556,14 @@ def node_to_email_html(
             f'{pad}<img src="" alt="{alt}"{node_id_attr}{w}{h}'
             f' style="display:block;border:0;outline:none;text-decoration:none;'
             f'-ms-interpolation-mode:bicubic;width:100%;height:auto;" />'
+        )
+
+    # Button detection: node is in button_ids from layout analysis
+    if button_ids and node.id in button_ids:
+        return _render_button(
+            node,
+            pad=pad,
+            props=props,
         )
 
     # Frame/Group/Component/Instance → table with rows
@@ -459,6 +643,7 @@ def node_to_email_html(
                     body_font_size=body_font_size,
                     compat=compat,
                     _depth=_depth + 1,
+                    container_width=container_width,
                 )
                 if child.type != DesignNodeType.TEXT:
                     flat_lines.append(f"{pad}<tr><td>{child_html}</td></tr>")
@@ -511,10 +696,12 @@ def node_to_email_html(
                     f'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
                 )
 
+            gap_px = int(gap)
+            effective_width = int(node.width) if node.width else container_width
+
             for row_idx, row in enumerate(rows):
                 # Insert vertical spacer between rows (not before first)
                 if row_idx > 0 and gap > 0 and layout_dir in ("column", None):
-                    gap_px = int(gap)
                     lines.append(
                         f'{pad}    <tr><td style="height:{gap_px}px;'
                         f"font-size:1px;line-height:1px;"
@@ -522,6 +709,35 @@ def node_to_email_html(
                         f'aria-hidden="true">&nbsp;</td></tr>'
                     )
 
+                # Multi-column row: use hybrid inline-block + MSO ghost table
+                if len(row) > 1:
+                    col_widths = _calculate_column_widths(
+                        row,
+                        effective_width,
+                        gap=gap_px,
+                    )
+                    mc_indent = indent + (2 if has_padding else 1)
+                    mc_lines = _render_multi_column_row(
+                        row,
+                        column_widths=col_widths,
+                        gap=gap_px,
+                        indent=mc_indent,
+                        props_map=props_map,
+                        parent_bg=effective_bg,
+                        parent_font=effective_font,
+                        section_map=section_map,
+                        button_ids=button_ids,
+                        text_meta=text_meta,
+                        current_section=section,
+                        body_font_size=body_font_size,
+                        compat=compat,
+                        _depth=_depth,
+                        container_width=effective_width,
+                    )
+                    lines.extend(mc_lines)
+                    continue
+
+                # Single-column row: existing rendering
                 lines.append(f"{pad}    <tr>")
                 for cell_idx, child in enumerate(row):
                     child_html = node_to_email_html(
@@ -537,6 +753,7 @@ def node_to_email_html(
                         body_font_size=body_font_size,
                         compat=compat,
                         _depth=_depth + 1,
+                        container_width=container_width,
                     )
 
                     if child.type != DesignNodeType.TEXT:
@@ -693,11 +910,16 @@ def sanitize_web_tags_for_email(html_str: str) -> str:
 
 def _group_into_rows(
     nodes: list[DesignNode],
-    tolerance: float = 10.0,
+    tolerance: float = 20.0,
     *,
     parent_width: float | None = None,
 ) -> list[list[DesignNode]]:
     """Group sibling nodes into rows based on y-position proximity.
+
+    Handles three cases for y-position data:
+    - All y=None: treat as single horizontal row (auto-layout without positions).
+    - All y known: sort+group by y-position proximity (tolerance default 20px).
+    - Mixed: group y-known nodes normally, append y=None nodes to last row.
 
     Hero image detection: a single IMAGE node spanning >=80% of
     the parent width gets its own row regardless of y-tolerance.
@@ -705,7 +927,15 @@ def _group_into_rows(
     if not nodes:
         return []
 
-    sorted_nodes = sorted(nodes, key=lambda n: (n.y or 0, n.x or 0))
+    # Partition into y-known and y-unknown
+    y_known = [n for n in nodes if n.y is not None]
+    y_unknown = [n for n in nodes if n.y is None]
+
+    # All y=None → single horizontal row (auto-layout assumption)
+    if not y_known:
+        return [nodes]
+
+    sorted_nodes = sorted(y_known, key=lambda n: (n.y or 0, n.x or 0))
     rows: list[list[DesignNode]] = [[sorted_nodes[0]]]
 
     for node in sorted_nodes[1:]:
@@ -715,6 +945,10 @@ def _group_into_rows(
             rows[-1].append(node)
         else:
             rows.append([node])
+
+    # Mixed: append y-unknown nodes to the last row
+    if y_unknown:
+        rows[-1].extend(y_unknown)
 
     # Sort each row by x-position (left to right)
     for row in rows:
@@ -744,3 +978,179 @@ def _group_into_rows(
         rows = final_rows
 
     return rows
+
+
+def _calculate_column_widths(
+    children: list[DesignNode],
+    container_width: float,
+    gap: float = 0,
+) -> list[int]:
+    """Calculate proportional pixel widths for multi-column children.
+
+    Args:
+        children: Column child nodes (must have len >= 1).
+        container_width: Available parent width in pixels.
+        gap: Gap between columns in pixels.
+
+    Returns:
+        List of integer pixel widths, one per child. Last column absorbs rounding.
+    """
+    n = len(children)
+    if n == 0:
+        return []
+    if n == 1:
+        return [int(container_width)]
+
+    total_gap = gap * (n - 1)
+    avail = max(container_width - total_gap, n)  # at least 1px per column
+
+    known = [(i, c.width) for i, c in enumerate(children) if c.width is not None]
+    unknown_indices = [i for i, c in enumerate(children) if c.width is None]
+
+    widths = [0] * n
+
+    if len(known) == n:
+        # All children have widths — proportional distribution
+        total_child_w = sum(w for _, w in known)
+        if total_child_w > 0:
+            for i, w in known:
+                widths[i] = round(avail * (w / total_child_w))
+        else:
+            per = int(avail / n)
+            widths = [per] * n
+    elif not known:
+        # No children have widths — equal distribution
+        per = int(avail / n)
+        widths = [per] * n
+    else:
+        # Mixed: proportional for known, split remainder for unknown
+        total_known_w = sum(w for _, w in known)
+        if total_known_w > 0:
+            for i, w in known:
+                widths[i] = round(avail * (w / total_known_w) * (len(known) / n))
+        used = sum(widths[i] for i, _ in known)
+        remainder = int(avail) - used
+        if unknown_indices:
+            per_unknown = remainder // len(unknown_indices)
+            for i in unknown_indices:
+                widths[i] = per_unknown
+
+    # Last column absorbs rounding error
+    widths[-1] = int(avail) - sum(widths[:-1])
+
+    return widths
+
+
+def _render_multi_column_row(
+    children: list[DesignNode],
+    *,
+    column_widths: list[int],
+    gap: int,
+    indent: int,
+    props_map: dict[str, _NodeProps] | None,
+    parent_bg: str | None,
+    parent_font: str | None,
+    section_map: dict[str, EmailSection] | None,
+    button_ids: set[str] | None,
+    text_meta: dict[str, TextBlock] | None,
+    current_section: EmailSection | None,
+    body_font_size: float,
+    compat: ConverterCompatibility | None,
+    _depth: int,
+    container_width: int,
+) -> list[str]:
+    """Render a multi-column row using hybrid inline-block + MSO ghost table.
+
+    Returns a list of HTML lines forming a single ``<tr>`` with columns rendered
+    as ``display:inline-block`` divs for modern clients and an MSO ghost table
+    for Outlook.
+    """
+    pad = "  " * indent
+    inner_pad = "  " * (indent + 1)
+    col_pad = "  " * (indent + 2)
+    lines: list[str] = []
+
+    # Compatibility warning for display:inline-block (once per row)
+    if compat:
+        compat.check_and_warn(
+            "display",
+            value="inline-block",
+            context="Multi-column layout",
+        )
+
+    # Open outer <tr><td>
+    lines.append(f"{pad}<tr>")
+    lines.append(
+        f'{inner_pad}<td style="font-size:0;text-align:center;mso-line-height-rule:exactly;">'
+    )
+
+    # Open MSO ghost table
+    lines.append(
+        f"{inner_pad}<!--[if mso]>"
+        f'<table role="presentation" width="{container_width}"'
+        f' cellpadding="0" cellspacing="0" border="0"'
+        f' style="border-collapse:collapse;mso-table-lspace:0pt;'
+        f'mso-table-rspace:0pt;">'
+        f"<tr><![endif]-->"
+    )
+
+    for col_idx, (child, col_width) in enumerate(zip(children, column_widths, strict=True)):
+        # MSO spacer between columns
+        if col_idx > 0 and gap > 0:
+            lines.append(f'{inner_pad}<!--[if mso]><td width="{gap}"></td><![endif]-->')
+
+        # MSO column open
+        lines.append(f'{inner_pad}<!--[if mso]><td width="{col_width}" valign="top"><![endif]-->')
+
+        # Modern wrapper div
+        lines.append(
+            f'{inner_pad}<div class="column" style="display:inline-block;'
+            f"max-width:{col_width}px;width:100%;vertical-align:top;"
+            f'">'
+        )
+
+        # Inner table
+        lines.append(
+            f'{col_pad}<table role="presentation" width="100%"'
+            f' cellpadding="0" cellspacing="0" border="0"'
+            f' style="border-collapse:collapse;mso-table-lspace:0pt;'
+            f'mso-table-rspace:0pt;">'
+        )
+
+        # Recurse into child
+        child_html = node_to_email_html(
+            child,
+            indent=indent + 3,
+            props_map=props_map,
+            parent_bg=parent_bg,
+            parent_font=parent_font,
+            section_map=section_map,
+            button_ids=button_ids,
+            text_meta=text_meta,
+            current_section=current_section,
+            body_font_size=body_font_size,
+            compat=compat,
+            _depth=_depth + 1,
+            container_width=col_width,
+        )
+
+        if child.type == DesignNodeType.TEXT:
+            lines.append(f"{col_pad}  <tr>{child_html}</tr>")
+        else:
+            lines.append(f"{col_pad}  <tr><td>{child_html}</td></tr>")
+
+        # Close inner table + div
+        lines.append(f"{col_pad}</table>")
+        lines.append(f"{inner_pad}</div>")
+
+        # MSO column close
+        lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
+
+    # Close MSO ghost table
+    lines.append(f"{inner_pad}<!--[if mso]></tr></table><![endif]-->")
+
+    # Close outer </td></tr>
+    lines.append(f"{inner_pad}</td>")
+    lines.append(f"{pad}</tr>")
+
+    return lines

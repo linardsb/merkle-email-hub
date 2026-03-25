@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.design_sync.converter import (
+    _calculate_column_widths,
     _font_stack,
     _group_into_rows,
     _NodeProps,
@@ -1152,3 +1153,230 @@ class TestInterSectionSpacer:
         result = DesignConverterService().convert(structure, ExtractedTokens())
         assert "mso-line-height-rule:exactly" in result.html
         assert 'aria-hidden="true"' in result.html
+
+
+class TestMultiColumnLayout:
+    def test_two_column_horizontal_proportional_widths(self) -> None:
+        """HORIZONTAL frame with two children produces ghost table with proportional widths."""
+        node = DesignNode(
+            id="p1",
+            name="Row",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="HORIZONTAL",
+            children=[
+                DesignNode(id="c1", name="Left", type=DesignNodeType.FRAME, width=200, children=[]),
+                DesignNode(
+                    id="c2", name="Right", type=DesignNodeType.FRAME, width=400, children=[]
+                ),
+            ],
+        )
+        result = node_to_email_html(node, container_width=600)
+        assert "max-width:200px" in result
+        assert "max-width:400px" in result
+        assert '<td width="200"' in result
+        assert '<td width="400"' in result
+        assert "display:inline-block" in result
+        assert "vertical-align:top" in result
+        assert 'cellpadding="0" cellspacing="0"' in result
+        assert "mso-table-lspace:0pt" in result
+        assert "mso-table-rspace:0pt" in result
+
+    def test_three_equal_columns(self) -> None:
+        node = DesignNode(
+            id="p1",
+            name="Row",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="HORIZONTAL",
+            children=[
+                DesignNode(
+                    id=f"c{i}", name=f"Col{i}", type=DesignNodeType.FRAME, width=200, children=[]
+                )
+                for i in range(3)
+            ],
+        )
+        result = node_to_email_html(node, container_width=600)
+        assert result.count("max-width:200px") == 3
+        assert result.count('<td width="200"') == 3
+
+    def test_horizontal_with_gap(self) -> None:
+        node = DesignNode(
+            id="p1",
+            name="Row",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="HORIZONTAL",
+            item_spacing=20,
+            children=[
+                DesignNode(id="c1", name="Left", type=DesignNodeType.FRAME, width=280, children=[]),
+                DesignNode(
+                    id="c2", name="Right", type=DesignNodeType.FRAME, width=280, children=[]
+                ),
+            ],
+        )
+        result = node_to_email_html(node, container_width=600)
+        assert '<td width="20">' in result
+
+    def test_single_child_no_multi_column(self) -> None:
+        node = DesignNode(
+            id="p1",
+            name="Row",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="HORIZONTAL",
+            children=[
+                DesignNode(id="c1", name="Only", type=DesignNodeType.FRAME, width=600, children=[]),
+            ],
+        )
+        result = node_to_email_html(node, container_width=600)
+        assert "<!--[if mso]>" not in result or result.count("<!--[if mso]>") == 0
+        assert 'class="column"' not in result
+
+    def test_vertical_layout_each_child_own_row(self) -> None:
+        node = DesignNode(
+            id="p1",
+            name="Stack",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="VERTICAL",
+            children=[
+                DesignNode(
+                    id=f"c{i}", name=f"Row{i}", type=DesignNodeType.FRAME, width=600, children=[]
+                )
+                for i in range(3)
+            ],
+        )
+        result = node_to_email_html(node, container_width=600)
+        assert result.count("<tr>") >= 3
+        assert 'class="column"' not in result
+
+    def test_unknown_widths_distribute_equally(self) -> None:
+        node = DesignNode(
+            id="p1",
+            name="Row",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="HORIZONTAL",
+            children=[
+                DesignNode(id="c1", name="A", type=DesignNodeType.FRAME, children=[]),
+                DesignNode(id="c2", name="B", type=DesignNodeType.FRAME, children=[]),
+            ],
+        )
+        result = node_to_email_html(node, container_width=600)
+        assert "max-width:300px" in result
+        assert result.count("max-width:300px") == 2
+
+    def test_no_nested_mso_conditionals(self) -> None:
+        inner_row = DesignNode(
+            id="inner",
+            name="InnerRow",
+            type=DesignNodeType.FRAME,
+            width=400,
+            layout_mode="HORIZONTAL",
+            children=[
+                DesignNode(id="ic1", name="IC1", type=DesignNodeType.FRAME, width=200, children=[]),
+                DesignNode(id="ic2", name="IC2", type=DesignNodeType.FRAME, width=200, children=[]),
+            ],
+        )
+        outer = DesignNode(
+            id="outer",
+            name="OuterRow",
+            type=DesignNodeType.FRAME,
+            width=600,
+            layout_mode="HORIZONTAL",
+            children=[
+                DesignNode(id="oc1", name="OC1", type=DesignNodeType.FRAME, width=200, children=[]),
+                inner_row,
+            ],
+        )
+        result = node_to_email_html(outer, container_width=600)
+        opens = result.count("<!--[if mso]>")
+        closes = result.count("<![endif]-->")
+        assert opens == closes, f"Unbalanced MSO: {opens} opens vs {closes} closes"
+        depth = 0
+        max_depth = 0
+        for line in result.split("\n"):
+            if "<!--[if mso]>" in line:
+                depth += 1
+                max_depth = max(max_depth, depth)
+            if "<![endif]-->" in line:
+                depth -= 1
+        assert max_depth <= 1, f"Nested MSO conditionals detected (max depth {max_depth})"
+
+
+class TestGroupIntoRowsExtended:
+    def test_y_tolerance_20px(self) -> None:
+        nodes = [
+            DesignNode(id="1", name="A", type=DesignNodeType.TEXT, x=0, y=0),
+            DesignNode(id="2", name="B", type=DesignNodeType.TEXT, x=200, y=15),
+        ]
+        rows = _group_into_rows(nodes)
+        assert len(rows) == 1
+        assert len(rows[0]) == 2
+
+    def test_all_y_none_single_row(self) -> None:
+        nodes = [
+            DesignNode(id="1", name="A", type=DesignNodeType.TEXT),
+            DesignNode(id="2", name="B", type=DesignNodeType.TEXT),
+            DesignNode(id="3", name="C", type=DesignNodeType.TEXT),
+        ]
+        rows = _group_into_rows(nodes)
+        assert len(rows) == 1
+        assert len(rows[0]) == 3
+
+    def test_mixed_y_known_unknown(self) -> None:
+        nodes = [
+            DesignNode(id="1", name="A", type=DesignNodeType.TEXT, y=0),
+            DesignNode(id="2", name="B", type=DesignNodeType.TEXT, y=50),
+            DesignNode(id="3", name="C", type=DesignNodeType.TEXT),
+        ]
+        rows = _group_into_rows(nodes)
+        assert len(rows) == 2
+        assert any(n.id == "3" for n in rows[-1])
+
+
+class TestCalculateColumnWidths:
+    def test_proportional_widths(self) -> None:
+        children = [
+            DesignNode(id="1", name="A", type=DesignNodeType.FRAME, width=200),
+            DesignNode(id="2", name="B", type=DesignNodeType.FRAME, width=400),
+        ]
+        widths = _calculate_column_widths(children, 600, gap=0)
+        assert widths == [200, 400]
+
+    def test_equal_distribution(self) -> None:
+        children = [
+            DesignNode(id="1", name="A", type=DesignNodeType.FRAME),
+            DesignNode(id="2", name="B", type=DesignNodeType.FRAME),
+        ]
+        widths = _calculate_column_widths(children, 600, gap=0)
+        assert widths == [300, 300]
+
+    def test_gap_subtracted(self) -> None:
+        children = [
+            DesignNode(id="1", name="A", type=DesignNodeType.FRAME, width=200),
+            DesignNode(id="2", name="B", type=DesignNodeType.FRAME, width=200),
+        ]
+        widths = _calculate_column_widths(children, 600, gap=20)
+        assert sum(widths) == 580
+        assert widths[0] == 290
+        assert widths[1] == 290
+
+    def test_rounding_absorb_last(self) -> None:
+        children = [
+            DesignNode(id="1", name="A", type=DesignNodeType.FRAME, width=100),
+            DesignNode(id="2", name="B", type=DesignNodeType.FRAME, width=100),
+            DesignNode(id="3", name="C", type=DesignNodeType.FRAME, width=100),
+        ]
+        widths = _calculate_column_widths(children, 600, gap=0)
+        assert sum(widths) == 600
+
+    def test_extreme_gap_no_negative_widths(self) -> None:
+        children = [
+            DesignNode(id="1", name="A", type=DesignNodeType.FRAME, width=100),
+            DesignNode(id="2", name="B", type=DesignNodeType.FRAME, width=100),
+        ]
+        widths = _calculate_column_widths(children, 200, gap=300)
+        assert all(w >= 0 for w in widths), f"Negative widths: {widths}"
+        assert sum(widths) >= 2

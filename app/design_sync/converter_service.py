@@ -138,6 +138,15 @@ class DesignConverterService:
         else:
             props_map = self._build_props_map_from_nodes(frames)
 
+        # Compute body font size from typography tokens for heading detection
+        typography = convert_typography(tokens.typography)
+        body_font_size = 16.0
+        if typography.base_size:
+            try:
+                body_font_size = float(typography.base_size.replace("px", ""))
+            except (ValueError, TypeError):
+                pass
+
         # Convert each frame to HTML section
         section_parts: list[str] = []
         for frame in frames:
@@ -149,6 +158,7 @@ class DesignConverterService:
                 section_map=sections_by_node_id,
                 button_ids=button_node_ids,
                 text_meta=text_meta,
+                body_font_size=body_font_size,
                 compat=compat,
             )
             section_parts.append(f"<tr><td>\n{section_html}\n</td></tr>")
@@ -170,7 +180,6 @@ class DesignConverterService:
         bg_color = _sanitize_css_value(palette.background) or "#ffffff"
         text_color = _sanitize_css_value(palette.text) or "#000000"
 
-        typography = convert_typography(tokens.typography)
         safe_body_font = _sanitize_css_value(typography.body_font)
         style_block = (
             "<style>\n"
