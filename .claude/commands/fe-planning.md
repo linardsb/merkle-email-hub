@@ -60,7 +60,8 @@ For files in this plan only:
 Full codebase security sweep is `/fe-validate`.
 
 ## Verification
-- [ ] `make check-fe` passes (TypeScript + tests)
+- [ ] `make check-fe` passes (ESLint + Prettier + TypeScript + tests)
+- [ ] No ESLint errors (`pnpm --filter web lint`)
 - [ ] No TypeScript errors
 - [ ] Semantic Tailwind tokens only (no primitive colors)
 - [ ] Auth/RBAC works correctly

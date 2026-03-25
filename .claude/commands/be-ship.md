@@ -6,7 +6,7 @@ Use after completing a feature implementation (`/be-execute`) to catch and fix a
 
 ## Phase 1: Initial Validation
 
-Run `/be-validate` (all 6 levels). If everything passes cleanly, proceed. If there are failures, fix them before moving on.
+Run `/be-validate` (all 8 levels: 26-rule lint, types, tests, security, migration safety, secret detection, conventions, security conventions). If everything passes cleanly, proceed. If there are failures, fix them before moving on.
 
 ## Phase 2: Code Review
 

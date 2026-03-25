@@ -72,6 +72,8 @@ exclude = [
     "venv",
     "__pycache__",
     ".mypy_cache",
+    ".claude/worktrees",
+    "email-templates",
 ]
 
 [tool.ruff.lint]
@@ -89,35 +91,64 @@ select = [
     "RUF",    # Ruff-specific rules
     "ARG",    # flake8-unused-arguments
     "PTH",    # flake8-use-pathlib
+    "SIM",    # flake8-simplify — unnecessary if/else, ternary, comprehension
+    "PERF",   # perflint — unnecessary list()/copy in loops
+    "T20",    # flake8-print — stray print() in app code
+    "PIE",    # flake8-pie — unnecessary pass, duplicate defaults
+    "PGH",    # pygrep-hooks — blanket type:ignore, blanket noqa
+    "RET",    # flake8-return — simplify return/else patterns
+    "FURB",   # refurb — Python 3.12+ modernization
+    "FBT",    # flake8-boolean-trap — boolean positional args
+    "D",      # pydocstyle — docstring formatting (missing-docstring rules ignored below)
 ]
 
 ignore = [
     "S311",   # Standard random is fine for non-crypto use
     "E501",   # Line too long (formatter handles this)
+    "D100",   # Missing module docstring (enforce incrementally)
+    "D101",   # Missing class docstring (enforce incrementally)
+    "D102",   # Missing method docstring (enforce incrementally)
+    "D103",   # Missing function docstring (enforce incrementally)
+    "D104",   # Missing public package docstring
+    "D105",   # Missing magic method docstring
+    "D106",   # Missing nested class docstring
+    "D107",   # Missing __init__ docstring
+    "D203",   # One blank line before class docstring (conflicts with D211)
+    "D213",   # Multi-line summary second line (conflicts with D212)
+    "RET504", # Unnecessary assignment before return (readability)
+    "FBT001", # Boolean positional arg in function definition
+    "FBT002", # Boolean default value in function definition
+    "FBT003", # Boolean positional value in call (stdlib uses this pattern)
+    "PERF401", # manual-list-comprehension — too many existing uses
+    "SIM117",  # multiple-with-statements — readability preference
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108"]
-"test_*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108"]
-"**/tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108"]
-"__init__.py" = ["F401"]
-"scripts/**/*.py" = ["T201"]
-"app/core/health.py" = ["B008", "ARG001"]
-"app/auth/routes.py" = ["ARG001"]
-"app/example/routes.py" = ["ARG001"]
-
-"app/ai/routes.py" = ["B008", "ARG001"]
-
-
-"app/knowledge/routes.py" = ["ARG001"]
-"app/design_sync/routes.py" = ["B008", "ARG001"]
+"tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108", "FBT", "SIM", "PERF", "RET"]
+"test_*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108", "FBT", "SIM", "PERF", "RET"]
+"**/tests/**/*.py" = ["S101", "ANN", "ARG001", "ARG002", "D", "E731", "S105", "S106", "S108", "FBT", "SIM", "PERF", "RET"]
+"__init__.py" = ["F401", "D"]
+"scripts/**/*.py" = ["T201", "D"]
+"conftest.py" = ["D", "ANN", "FBT"]
+"**/conftest.py" = ["D", "ANN", "FBT"]
+# Routes: FastAPI Depends() triggers B008, unused DI args trigger ARG001
+"app/*/routes.py" = ["B008", "ARG001", "D"]
+"app/core/health.py" = ["B008", "ARG001", "D"]
+"app/example/routes.py" = ["ARG001", "D"]
+"app/ai/routes.py" = ["B008", "ARG001", "D"]
 "app/design_sync/figma/service.py" = ["ANN401"]
 # MCP tool modules: ctx is required by FastMCP convention, unused args are part of public tool API
-"app/mcp/tools/**/*.py" = ["ARG001"]
+"app/mcp/tools/**/*.py" = ["ARG001", "D"]
 "app/mcp/formatting.py" = ["ANN401"]
 "app/mcp/resources.py" = ["ANN401"]
-
 "app/core/rate_limit.py" = ["B008"]
+# Mock/stub provider services: unused interface args are part of the protocol
+"app/design_sync/mock/**/*.py" = ["ARG001", "ARG002"]
+"app/design_sync/canva/**/*.py" = ["ARG001", "ARG002"]
+"app/design_sync/sketch/**/*.py" = ["ARG001", "ARG002"]
+"app/seed_demo.py" = ["S105", "T20"]  # Demo seed: intentional passwords + print statements
+# Migrations: auto-generated, no lint value
+"alembic/**/*.py" = ["D", "ANN", "T20", "E501", "RUF", "SIM", "PERF", "RET", "PIE", "FBT", "FURB", "PGH"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -126,6 +157,9 @@ line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.mypy]
 python_version = "3.12"
@@ -231,7 +265,7 @@ exclude = [
 ]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
-reportUnusedFunction = "none"
-reportPrivateUsage = "none"
+reportUnusedFunction = "warning"
+reportPrivateUsage = "warning"
 reportMissingTypeStubs = "none"
 reportUnknownLambdaType = "none"

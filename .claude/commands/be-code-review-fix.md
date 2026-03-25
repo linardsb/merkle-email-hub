@@ -47,9 +47,12 @@ Apply the fix following project conventions (see below). Don't over-engineer —
 Run the validation pyramid on affected files:
 
 ```bash
-# Format + lint
+# Format + lint (26 rule sets: security, simplify, performance, docstrings, etc.)
 uv run ruff format {files}
 uv run ruff check --fix {files}
+
+# Security-specific lint
+uv run ruff check {files} --select=S --ignore=S311 --no-fix
 
 # Type check
 uv run pyright {files}
@@ -59,6 +62,8 @@ uv run mypy {files}
 uv run pytest {test_file} -v
 uv run pytest -v -m "not integration"
 ```
+
+**NEVER** use `--unsafe-fixes` or run `ruff check --fix .` on the entire repo — only lint files you're actively changing.
 
 Fix any issues introduced by the change. Repeat until all checks pass.
 

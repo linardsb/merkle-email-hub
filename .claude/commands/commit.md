@@ -32,17 +32,25 @@ Review changes, scan for secrets, stage explicitly, and create a conventional co
 
 - STOP if any of these files appear in the changes: `.env`, `*.pem`, `*.key`, `credentials.*`, `secrets.*`
 - Warn the user and ask for confirmation before proceeding
-- Run a quick security lint on staged Python files (Bandit-level checks via ruff):
+- Run full lint on staged Python files (26 rule sets including security):
+  ```bash
+  git diff --cached --name-only --diff-filter=ACMR | grep '\.py$' | xargs -r uv run ruff check --no-fix
+  ```
+  If violations found, STOP and report them. Do not commit until resolved or user explicitly approves.
+- Run security-specific lint separately to highlight Bandit findings:
   ```bash
   git diff --cached --name-only --diff-filter=ACMR | grep '\.py$' | xargs -r uv run ruff check --select=S --no-fix
   ```
-  If violations found, STOP and report them. Do not commit until resolved or user explicitly approves.
-- For frontend changes, run quick pattern scan on staged `.ts`/`.tsx` files:
+- For frontend changes, run ESLint on staged files:
+  ```bash
+  git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx)$' | head -1 > /dev/null && cd cms && pnpm --filter web lint 2>/dev/null
+  ```
+  Also scan for high-risk patterns:
   ```bash
   git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx)$' | xargs -r grep -n 'dangerouslySetInnerHTML\|localStorage.*token\|localStorage.*auth\|eval('
   ```
   If violations found, WARN the user (soft gate — report but allow commit if user confirms).
-- **Note:** These inline checks work even WITHOUT a pre-commit hook installed.
+- **Note:** These inline checks work even WITHOUT a pre-commit hook installed. With `make install-hooks`, pre-commit runs ruff format+lint, detect-secrets, and conventional commit validation automatically.
 
 ### 3. Stage files
 

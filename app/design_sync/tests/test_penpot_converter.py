@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import pytest
+
 from app.design_sync.converter import (
     _calculate_column_widths,
+    _determine_heading_level,
     _font_stack,
     _group_into_rows,
     _NodeProps,
     _sanitize_css_value,
+    _validate_button_contrast,
     convert_colors_to_palette,
     convert_typography,
     node_to_email_html,
     sanitize_web_tags_for_email,
 )
+from app.design_sync.figma.layout_analyzer import TextBlock
 from app.design_sync.protocol import (
     DesignNode,
     DesignNodeType,
@@ -1380,3 +1385,248 @@ class TestCalculateColumnWidths:
         widths = _calculate_column_widths(children, 200, gap=300)
         assert all(w >= 0 for w in widths), f"Negative widths: {widths}"
         assert sum(widths) >= 2
+
+
+class TestSemanticHTMLGeneration:
+    """Tests for 33.6 semantic HTML generation."""
+
+    def test_heading_text_gets_h1(self) -> None:
+        """TEXT with font_size=32 (2x body 16) -> <h1> inside <td>."""
+        node = DesignNode(
+            id="t1",
+            name="Title",
+            type=DesignNodeType.TEXT,
+            text_content="Big Title",
+            font_size=32.0,
+            y=0,
+        )
+        text_meta = {
+            "t1": TextBlock(
+                node_id="t1",
+                content="Big Title",
+                font_size=32.0,
+                is_heading=True,
+            ),
+        }
+        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        assert "<h1" in result
+        assert "margin:0;" in result
+        assert "Big Title" in result
+        assert "<td>" in result
+
+    def test_heading_text_gets_h2(self) -> None:
+        """TEXT with font_size=24 (1.5x body 16) -> <h2>."""
+        node = DesignNode(
+            id="t1",
+            name="Subtitle",
+            type=DesignNodeType.TEXT,
+            text_content="Subtitle",
+            font_size=24.0,
+            y=0,
+        )
+        text_meta = {
+            "t1": TextBlock(
+                node_id="t1",
+                content="Subtitle",
+                font_size=24.0,
+                is_heading=True,
+            ),
+        }
+        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        assert "<h2" in result
+
+    def test_heading_text_gets_h3(self) -> None:
+        """TEXT with font_size=20 (1.25x body 16) -> <h3>."""
+        node = DesignNode(
+            id="t1",
+            name="Section",
+            type=DesignNodeType.TEXT,
+            text_content="Section",
+            font_size=20.0,
+            y=0,
+        )
+        text_meta = {
+            "t1": TextBlock(
+                node_id="t1",
+                content="Section",
+                font_size=20.0,
+                is_heading=True,
+            ),
+        }
+        result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
+        assert "<h3" in result
+
+    def test_body_text_gets_p(self) -> None:
+        """TEXT at body size -> <p> with margin reset."""
+        node = DesignNode(
+            id="t1",
+            name="Body",
+            type=DesignNodeType.TEXT,
+            text_content="Body text here",
+            font_size=16.0,
+            y=0,
+        )
+        result = node_to_email_html(node, body_font_size=16.0)
+        assert "<p" in result
+        assert "margin:0 0 10px 0" in result
+        assert "Body text here" in result
+
+    def test_body_text_no_text_meta_still_p(self) -> None:
+        """TEXT without text_meta -> <p> (default body)."""
+        node = DesignNode(
+            id="t1",
+            name="Text",
+            type=DesignNodeType.TEXT,
+            text_content="Fallback",
+            y=0,
+        )
+        result = node_to_email_html(node)
+        assert "<p" in result
+        assert "margin:0 0 10px 0" in result
+
+    def test_multiline_text_splits_to_p_tags(self) -> None:
+        """Multi-line TEXT -> multiple <p> tags."""
+        node = DesignNode(
+            id="t1",
+            name="Multi",
+            type=DesignNodeType.TEXT,
+            text_content="Line one\nLine two\nLine three",
+            y=0,
+        )
+        result = node_to_email_html(node)
+        assert result.count("<p") == 3
+
+    def test_button_renders_bulletproof(self) -> None:
+        """COMPONENT in button_ids -> <a> button with VML fallback."""
+        node = DesignNode(
+            id="btn1",
+            name="CTA Button",
+            type=DesignNodeType.COMPONENT,
+            width=200,
+            height=48,
+            fill_color="#0066cc",
+            children=[
+                DesignNode(
+                    id="btn1_text",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Shop Now",
+                    text_color="#ffffff",
+                    font_size=16.0,
+                    y=0,
+                ),
+            ],
+        )
+        result = node_to_email_html(node, button_ids={"btn1"})
+        assert '<a href="#"' in result
+        assert "Shop Now" in result
+        assert "v:roundrect" in result
+        assert 'role="presentation"' in result
+        assert "background-color:#0066cc" in result
+
+    def test_button_min_height_44(self) -> None:
+        """Button with small height gets clamped to 44px touch target."""
+        node = DesignNode(
+            id="btn1",
+            name="Small Btn",
+            type=DesignNodeType.COMPONENT,
+            width=120,
+            height=30,
+            fill_color="#333333",
+            children=[
+                DesignNode(
+                    id="btn1_text",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Go",
+                    text_color="#ffffff",
+                    font_size=14.0,
+                    y=0,
+                ),
+            ],
+        )
+        result = node_to_email_html(node, button_ids={"btn1"})
+        assert "height:44px" in result
+
+    def test_button_not_in_ids_renders_as_table(self) -> None:
+        """COMPONENT not in button_ids -> normal table rendering."""
+        node = DesignNode(
+            id="comp1",
+            name="Card",
+            type=DesignNodeType.COMPONENT,
+            width=300,
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Text",
+                    type=DesignNodeType.TEXT,
+                    text_content="Not a button",
+                    y=0,
+                ),
+            ],
+        )
+        result = node_to_email_html(node, button_ids=set())
+        assert "v:roundrect" not in result
+        assert "<table" in result
+
+    def test_heading_has_mso_line_height(self) -> None:
+        """Headings with line-height get mso-line-height-rule:exactly."""
+        node = DesignNode(
+            id="t1",
+            name="H1",
+            type=DesignNodeType.TEXT,
+            text_content="Heading",
+            font_size=32.0,
+            line_height_px=38.0,
+            y=0,
+        )
+        text_meta = {
+            "t1": TextBlock(
+                node_id="t1",
+                content="Heading",
+                font_size=32.0,
+                is_heading=True,
+            ),
+        }
+        props_map = {"t1": _NodeProps(line_height_px=38.0)}
+        result = node_to_email_html(
+            node,
+            text_meta=text_meta,
+            body_font_size=16.0,
+            props_map=props_map,
+        )
+        assert "mso-line-height-rule:exactly" in result
+        assert "<h1" in result
+
+
+class TestDetermineHeadingLevel:
+    """Unit tests for _determine_heading_level."""
+
+    def test_h1_at_2x(self) -> None:
+        assert _determine_heading_level(32.0, 16.0) == 1
+
+    def test_h2_at_1_5x(self) -> None:
+        assert _determine_heading_level(24.0, 16.0) == 2
+
+    def test_h3_at_1_2x(self) -> None:
+        assert _determine_heading_level(20.0, 16.0) == 3
+
+    def test_body_below_1_2x(self) -> None:
+        assert _determine_heading_level(16.0, 16.0) is None
+
+    def test_zero_body_returns_none(self) -> None:
+        assert _determine_heading_level(32.0, 0.0) is None
+
+
+class TestButtonContrastValidation:
+    """Tests for button contrast warning."""
+
+    def test_low_contrast_logs_warning(self, capsys: pytest.CaptureFixture[str]) -> None:
+        _validate_button_contrast("#cccccc", "#dddddd", 16)
+        captured = capsys.readouterr()
+        assert "button_contrast_low" in captured.out
+
+    def test_high_contrast_no_warning(self, capsys: pytest.CaptureFixture[str]) -> None:
+        _validate_button_contrast("#000000", "#ffffff", 16)
+        captured = capsys.readouterr()
+        assert "button_contrast_low" not in captured.out

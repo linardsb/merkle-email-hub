@@ -57,6 +57,10 @@ Apply the fix following project conventions. Don't over-engineer — fix the iss
 Run the validation pyramid on affected code:
 
 ```bash
+# Lint + format (ESLint: security, a11y, React hooks + Prettier with Tailwind class sorting)
+cd cms && pnpm --filter web lint:fix
+cd cms && pnpm --filter web format
+
 # Type check
 cd cms && pnpm --filter @merkle-email-hub/web exec tsc --noEmit
 

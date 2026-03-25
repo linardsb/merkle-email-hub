@@ -11,6 +11,7 @@ Execute a frontend implementation plan step by step.
 - Only check the files you're changing — full sweep is `/fe-validate`
 
 ## Rules
+- Run `cd cms && pnpm --filter web lint:fix && pnpm --filter web format` after creating/modifying frontend files (ESLint: security, a11y, React hooks + Prettier with Tailwind class sorting)
 - Use semantic Tailwind tokens (not primitive colors like `text-gray-500`)
 - Follow React 19 patterns (no setState in useEffect, no component defs inside components)
 - Use `authFetch` for API calls, SWR for data fetching

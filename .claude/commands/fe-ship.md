@@ -6,7 +6,7 @@ Use after completing a feature implementation (`/fe-execute`) to catch and fix a
 
 ## Phase 1: Initial Validation
 
-Run `/fe-validate` (all 4 levels). If everything passes cleanly, proceed. If there are failures, fix them before moving on.
+Run `/fe-validate` (all 5 levels: lint+format, TypeScript, build, design system, security). If everything passes cleanly, proceed. If there are failures, fix them before moving on.
 
 ## Phase 2: Code Review
 

@@ -1,10 +1,13 @@
 # Backend Validate — Run All Quality Checks
 
-## Level 1: Format + Lint
+## Level 1: Format + Lint (26 rule sets — scoped to changed files only)
 ```bash
 uv run ruff format .
 uv run ruff check --fix .
 ```
+Ruff enforces 26 rule sets: pycodestyle, pyflakes, isort, bugbear, comprehensions, pyupgrade, annotations, bandit, datetimez, pathlib, simplify, perflint, print, pie, pygrep-hooks, return, refurb, boolean-trap, pydocstyle (Google convention).
+
+**IMPORTANT:** Do NOT run `--unsafe-fixes` — it can move imports that break SQLAlchemy/Pydantic at runtime. Only use `--fix` for safe auto-fixes.
 
 ## Level 2: Type Checking
 ```bash
@@ -21,6 +24,19 @@ uv run pytest -v -m "not integration"
 ```bash
 uv run ruff check app/ --select=S --ignore=S311 --no-fix
 ```
+
+## Level 4b: Migration Safety (if migrations changed)
+```bash
+# Only run if alembic/versions/ has changed files
+git diff --name-only | grep 'alembic/versions/.*\.py$' | xargs -I{} squawk --reporter=compact {} 2>/dev/null || true
+```
+Skip if `squawk` is not installed or no migrations changed. Catches unsafe DDL (missing NOT VALID, lock-heavy operations).
+
+## Level 4c: Secret Detection (on changed files only)
+```bash
+git diff --cached --name-only --diff-filter=ACM | xargs detect-secrets scan --baseline .secrets.baseline 2>/dev/null || true
+```
+Skip if `detect-secrets` is not installed.
 
 ## Level 5: Convention Checks (via jCodeMunch — no file reads)
 

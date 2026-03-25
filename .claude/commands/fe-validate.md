@@ -1,17 +1,25 @@
 # Frontend Validate — Run All Frontend Quality Checks
 
-## Level 1: TypeScript
+## Level 1: Lint + Format
+```bash
+cd cms && pnpm --filter web lint
+cd cms && pnpm --filter web format:check
+```
+ESLint (security, a11y, React hooks, import hygiene) + Prettier (formatting, Tailwind class sorting).
+If lint fails, auto-fix with `cd cms && pnpm --filter web lint:fix && pnpm --filter web format`.
+
+## Level 2: TypeScript
 ```bash
 cd cms && pnpm --filter @merkle-email-hub/web exec tsc --noEmit
 ```
 
-## Level 2: Build
+## Level 3: Build
 ```bash
 cd cms && pnpm build
 ```
 This runs turbo build across all packages (SDK + web). Catches TypeScript errors, import issues, and SSR problems.
 
-## Level 3: Design System (via jCodeMunch — no full grep scans)
+## Level 4: Design System (via jCodeMunch — no full grep scans)
 
 Use jCodeMunch to find design system violations efficiently:
 1. `search_text({ "query": "text-gray-", "file_pattern": "*.tsx" })` — primitive color usage
@@ -23,7 +31,7 @@ Should use semantic tokens (`text-foreground`, `bg-card`, `border-border`, etc.)
 
 Fallback: Grep for `(text|bg|border|ring)-(gray|slate|zinc|red|blue|green)-\d` in `cms/apps/web/src/**/*.tsx`
 
-## Level 4: Security
+## Level 5: Security
 
 Use jCodeMunch to locate violations without reading full files:
 1. `search_text({ "query": "as any", "file_pattern": "*.ts" })` — flag new instances (currently 0 in codebase — this is a guard rail)
@@ -35,5 +43,5 @@ Use jCodeMunch to locate violations without reading full files:
 Only `Read` files when you need to fix a violation found above.
 
 ## Notes
-- No ESLint config exists yet — skip lint level until configured
-- Report results for each level. Do NOT auto-fix — use `/fe-code-review-fix` for targeted fixes
+- ESLint config: `cms/apps/web/eslint.config.mjs` — Prettier config: `cms/.prettierrc.json`
+- Report results for each level. Do NOT auto-fix convention violations — use `/fe-code-review-fix` for targeted fixes

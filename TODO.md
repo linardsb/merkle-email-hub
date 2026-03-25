@@ -70,7 +70,7 @@
 
 ## Phase 32 — Agent Email Rendering Intelligence
 
-> Upgrade all 11 AI agents from distributed, duplicated email knowledge to a unified rendering intelligence layer: centralized client matrix, runtime knowledge lookup, cross-agent learning, content-aware rendering constraints, deeper import skills, and eval-driven skill evolution.
+> Upgrade all 11 AI agents from distributed, duplicated email knowledge to a unified rendering intelligence layer: centralized client matrix, runtime knowledge lookup, cross-agent learning, content-aware rendering constraints, deeper import skills, eval-driven skill evolution, MCP integration for IDE-native agent access, skill versioning for safe automated updates, and per-client skill overlays for multi-tenant customization.
 
 - [ ] 32.1 Centralized email client rendering matrix
 - [ ] 32.2 Content agent email rendering awareness
@@ -80,6 +80,9 @@
 - [ ] 32.6 Eval-driven skill file updates
 - [ ] 32.7 Visual QA feedback loop tightening
 - [ ] 32.8 Tests & integration verification
+- [ ] 32.9 MCP server exposure for agent tools
+- [ ] 32.10 Skill versioning with rollback
+- [ ] 32.11 Per-client skill overlays
 
 ### 32.1 Centralized Email Client Rendering Matrix `[Backend + Data]`
 **What:** Create a single authoritative `data/email-client-matrix.yaml` file that defines every email client's rendering engine, CSS property support, dark mode behavior, known bugs, size limits, and quirks. Replace the 5+ duplicated client-compatibility references scattered across agent L3 skill files (`client_compatibility.md`, `client_behavior.md`, `email_client_engines.md`, `css_client_support.md`, `dom_rendering_reference.md`) with a loader that reads from this matrix. Integrate with the existing ontology sync pipeline so the matrix stays current with CanIEmail data.
@@ -685,6 +688,291 @@
 **Security:** Tests only. No production code changes. Mock data contains no real credentials or PII. VLM calls in visual QA tests use test fixtures (pre-captured screenshots), not live rendering.
 **Verify:** `make test` passes (all new test files). `make check` all green. `make bench` shows no performance regression in non-visual-QA code paths. Agent prompt token counts with tool access < agent prompt token counts with full L3 skill files (measured via test). Cross-agent insight recall latency < 50ms (semantic memory query). Client matrix lookup latency < 1ms.
 
+### 32.9 MCP Server Exposure for Agent Tools `[Backend + Integration]`
+**What:** Expose all 9 production agents as MCP (Model Context Protocol) tools via a stdio-based MCP server, so coding agents (Claude Code, Cursor, Windsurf) can invoke email generation, dark mode processing, accessibility fixes, and code review directly from the IDE without going through the REST API. Package as `email-hub-mcp` binary alongside the existing FastAPI server.
+**Why:** The current integration surface is REST-only — developers must use the web UI or make API calls. Coding agents like Claude Code already support MCP tool calling natively. When a developer is editing an email template in their IDE, they should be able to ask their coding agent "fix Outlook rendering" and have it call the Outlook Fixer agent directly, receiving structured results in-context. This eliminates the tab-switch to the web UI, enables agent-to-agent composition (Claude Code orchestrating email-hub agents as tools), and opens the door for community integrations. The pattern is proven: Context Hub (open-source doc platform) uses exactly this architecture — CLI + MCP server exposing search/get/annotate tools via `@modelcontextprotocol/sdk`, with Zod schema validation and structured error responses. Email-hub can follow the same pattern but expose domain-specific agent tools instead of doc retrieval.
+**Implementation:**
+- Create `app/mcp/server.py`:
+  - Use `mcp` Python SDK (`pip install mcp`) with stdio transport
+  - Redirect stdout to stderr (MCP uses stdout for JSON-RPC — all logging must go to stderr)
+  - Register one tool per agent:
+    ```python
+    @server.tool("email_scaffold", "Generate Maizzle email HTML from a campaign brief")
+    async def handle_scaffold(brief: str, brand: str | None = None,
+                               output_mode: str = "html") -> ToolResult:
+        service = get_scaffolder_service()
+        request = ScaffolderRequest(brief=brief, brand_voice=brand, output_mode=output_mode)
+        result = await service.run(request)
+        return text_result({"html": result.html, "confidence": result.confidence,
+                           "qa_passed": result.qa_passed, "warnings": result.warnings})
+
+    @server.tool("email_dark_mode", "Generate dark mode styles for email HTML")
+    async def handle_dark_mode(html: str, target_clients: list[str] | None = None) -> ToolResult:
+        ...
+
+    @server.tool("email_content", "Generate email copy: subject lines, CTAs, body text")
+    async def handle_content(operation: str, text: str, tone: str | None = None,
+                              num_alternatives: int = 3) -> ToolResult:
+        ...
+
+    @server.tool("email_outlook_fix", "Fix Outlook rendering issues in email HTML")
+    async def handle_outlook_fix(html: str) -> ToolResult:
+        ...
+
+    @server.tool("email_accessibility", "Add alt text and WCAG improvements to email HTML")
+    async def handle_accessibility(html: str) -> ToolResult:
+        ...
+
+    @server.tool("email_code_review", "Review email HTML for quality and compatibility issues")
+    async def handle_code_review(html: str) -> ToolResult:
+        ...
+
+    @server.tool("email_personalise", "Add dynamic content blocks to email HTML")
+    async def handle_personalise(html: str, esp: str | None = None) -> ToolResult:
+        ...
+
+    @server.tool("email_innovate", "Suggest structural improvements for email HTML")
+    async def handle_innovate(html: str) -> ToolResult:
+        ...
+
+    @server.tool("email_knowledge", "Look up brand/product knowledge for email content")
+    async def handle_knowledge(query: str, brand: str | None = None) -> ToolResult:
+        ...
+    ```
+  - Each handler follows the pattern: validate input → build domain request → call service singleton → format structured result → return `text_result()` or `error_result()`
+  - Tool parameter schemas use Pydantic models converted to JSON Schema (reuse existing `schemas.py` per agent)
+- Create `app/mcp/helpers.py`:
+  - `text_result(data: dict) -> ToolResult` — wraps response as MCP content block
+  - `error_result(message: str) -> ToolResult` — wraps error with `isError=True`
+  - `html_result(html: str, metadata: dict) -> ToolResult` — returns HTML as a separate content block for easy extraction by the calling agent
+- Create `bin/email-hub-mcp` entry point:
+  - Loads config, initializes services (same startup as FastAPI but without HTTP server)
+  - Starts MCP server on stdio transport
+  - Graceful shutdown on SIGTERM/SIGINT
+- Add MCP resource: `email-hub://agents` — returns list of available agents with capabilities, model tiers, and supported operations (analogous to Context Hub's `chub://registry` resource)
+- Add to `pyproject.toml`:
+  - `[project.scripts]` entry: `email-hub-mcp = "app.mcp.server:main"`
+  - Add `mcp` dependency
+- Create `mcp-config.example.json` for Claude Code integration:
+  ```json
+  {
+    "mcpServers": {
+      "email-hub": {
+        "command": "email-hub-mcp",
+        "env": {
+          "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+          "EMAIL_HUB_DB_URL": "${EMAIL_HUB_DB_URL}"
+        }
+      }
+    }
+  }
+  ```
+- Rate limiting: reuse existing `RateLimiter` from the FastAPI layer — same per-agent limits apply via MCP as via REST
+- Authentication: MCP runs locally (stdio) so no API key auth needed — the user's own environment credentials are used for LLM calls
+**Security:** MCP stdio transport is local-only — no network exposure. Tool inputs are validated through the same Pydantic schemas as REST endpoints (XSS sanitization, length limits, input validation all apply). No new attack surface beyond what the REST API already exposes. LLM API keys come from the user's environment, not from the MCP protocol. Tool results contain HTML output — same sanitization profile as REST responses.
+**Verify:** `email-hub-mcp` starts without errors. Claude Code can discover all 9 tools via MCP handshake. Calling `email_scaffold` with a brief → returns valid HTML with confidence score. Calling `email_code_review` with HTML → returns structured review. Calling `email_content` with `operation="subject_line"` → returns alternatives list. Error cases: invalid operation → `error_result` with message. Missing required params → MCP validation error. `email-hub://agents` resource → returns agent list with capabilities. `make test` passes.
+
+### 32.10 Skill Versioning with Rollback `[Backend]`
+**What:** Add version metadata to all L3 skill file frontmatter, implement version tracking in the skill loader, and provide a rollback mechanism that can pin a project to a previous skill file version when a 32.6 eval-driven update causes a regression. Store version history in a `skill-versions.yaml` manifest per agent directory.
+**Why:** Phase 32.6 introduces automated skill file patching — the eval pipeline detects failure patterns, generates patches, and opens PRs. But once merged, there's no clean rollback path beyond `git revert`. If a skill patch improves pass rate on one criterion but regresses another (common with prompt changes), the team needs to: (a) know which version of the skill file was active during a given eval run, (b) quickly revert to the prior version without touching git history, and (c) A/B test the old vs new version using the existing `skill_override.py` infrastructure. Without versioning, the 32.6 pipeline creates churn — patches get merged, regress, get reverted, get re-applied. Versioning adds the control surface that makes 32.6's automation safe to trust.
+**Implementation:**
+- Add version metadata to L3 skill file frontmatter:
+  ```yaml
+  ---
+  token_cost: 1500
+  priority: 2
+  version: "1.2.0"
+  updated: "2026-03-20"
+  changelog:
+    - "1.2.0: Added Samsung double-inversion workaround (eval-driven, 32.6)"
+    - "1.1.0: Expanded Outlook.com data-ogsc selector examples"
+    - "1.0.0: Initial release"
+  ---
+  ```
+- Create `skill-versions.yaml` manifest per agent:
+  ```yaml
+  # app/ai/agents/dark_mode/skill-versions.yaml
+  skills:
+    client_behavior:
+      current: "1.2.0"
+      pinned: null  # null = use current, or "1.1.0" to pin
+      versions:
+        "1.2.0":
+          hash: "a3f8c2d"  # git short hash of the commit that introduced this version
+          date: "2026-03-20"
+          source: "eval-driven"  # or "manual"
+          eval_pass_rate: 0.87  # pass rate at time of introduction
+        "1.1.0":
+          hash: "b7e1f4a"
+          date: "2026-03-01"
+          source: "manual"
+          eval_pass_rate: 0.82
+        "1.0.0":
+          hash: "c9d2e5b"
+          date: "2026-01-15"
+          source: "manual"
+          eval_pass_rate: null
+    dark_mode_queries:
+      current: "1.0.0"
+      pinned: null
+      versions:
+        "1.0.0":
+          hash: "c9d2e5b"
+          date: "2026-01-15"
+          source: "manual"
+          eval_pass_rate: null
+  ```
+- Modify `app/ai/agents/skill_loader.py`:
+  - `load_skill_file(agent_name, skill_name)`:
+    - Read `skill-versions.yaml` for the agent
+    - If `pinned` is set for this skill → load the pinned version from git (`git show {hash}:{skill_file_path}`)
+    - If `pinned` is null → load current file from disk (existing behavior)
+    - Add `loaded_version` to the skill metadata returned to the agent (appears in `skills_loaded` response field)
+  - `pin_skill(agent_name, skill_name, version: str)` → sets `pinned` in `skill-versions.yaml`
+  - `unpin_skill(agent_name, skill_name)` → clears `pinned` (resume using current)
+  - `list_skill_versions(agent_name, skill_name) -> list[SkillVersion]` → returns version history with eval pass rates
+- Modify `app/ai/agents/evals/skill_updater.py` (32.6 integration):
+  - After `generate_patch()`: bump version in skill file frontmatter (semver minor bump)
+  - After `apply_patches()`: update `skill-versions.yaml` with new version entry including git hash and current eval pass rate
+  - Add `--rollback` flag to `scripts/eval-skill-update.py`:
+    - `--rollback {agent} {skill} {version}` → pins skill to specified version, logs reason
+    - Validates version exists in manifest before pinning
+- Modify `app/ai/agents/skill_override.py` — version-aware override:
+  - `set_override_from_version(agent_name, skill_name, version: str)`:
+    - Loads skill content from git at the specified version hash
+    - Sets it as the active override (same mechanism as A/B testing)
+    - Enables comparing two versions head-to-head in eval runs without changing the on-disk file
+- Add to `Makefile`:
+  - `skill-versions`: list all agents' skill versions and pin status
+  - `skill-pin`: pin a skill to a version (`make skill-pin AGENT=dark_mode SKILL=client_behavior VERSION=1.1.0`)
+  - `skill-unpin`: unpin a skill (`make skill-unpin AGENT=dark_mode SKILL=client_behavior`)
+- Backfill: create initial `skill-versions.yaml` for all 9 agents with current files as `1.0.0`, `hash` = current HEAD, `pinned = null`
+**Security:** Version pinning reads skill file content via `git show` — no shell injection risk (hash and path are validated against the manifest). `skill-versions.yaml` is checked into the repo — changes are reviewed via PR. Pinning does not modify skill files on disk — it loads an older version at runtime only. No new API endpoints.
+**Verify:** `load_skill_file("dark_mode", "client_behavior")` with no pin → loads current file, returns `loaded_version: "1.2.0"`. Pin to `1.1.0` → loads content from git hash `b7e1f4a`, returns `loaded_version: "1.1.0"`. Unpin → resumes loading current. `eval-skill-update-apply` → bumps version in frontmatter and updates manifest. `--rollback dark_mode client_behavior 1.1.0` → pins and logs. `set_override_from_version` → loads old version as override for A/B eval. `make skill-versions` → prints table of all agents' skill versions. `make test` passes.
+
+### 32.11 Per-Client Skill Overlays `[Backend]`
+**What:** Allow project-level skill file overlays that extend or override core agent L3 skills with client-specific behavioral guidance. A project linked to brand "Acme Corp" can have custom skill files at `data/clients/acme/agents/scaffolder/skills/brand_patterns.md` that are loaded alongside (or instead of) core skills when processing that project's emails. Integrate with the existing skill loader's budget-aware progressive disclosure system.
+**Why:** The centralized client matrix (32.1) solves data duplication for email client rendering facts, but different brands need different agent *behaviors* — not just different data. Acme Corp's brand guidelines require 2-column layouts with a hero image pattern that the Scaffolder should follow; BrandX prefers single-column with heavy typography. The Content agent's tone for a luxury brand differs from a SaaS product. Currently, per-brand customization only happens through L4 knowledge (brand guidelines fetched at runtime) — but L4 is unstructured RAG retrieval, not curated skill instructions. Brand-specific L3 overlays provide structured, version-controlled, budget-aware behavioral customization that slots into the existing skill loading pipeline. This also supports agency use cases where email-hub serves multiple clients from a single deployment.
+**Implementation:**
+- Define overlay directory structure:
+  ```
+  data/clients/
+  └── acme/
+      └── agents/
+          ├── scaffolder/
+          │   └── skills/
+          │       └── brand_patterns.md      # Acme-specific layout patterns
+          ├── content/
+          │   └── skills/
+          │       └── brand_voice.md         # Acme tone & style override
+          └── dark_mode/
+              └── skills/
+                  └── brand_colors.md        # Acme dark mode color mappings
+  ```
+- Skill file frontmatter for overlays:
+  ```yaml
+  ---
+  token_cost: 800
+  priority: 1
+  overlay_mode: "extend"  # "extend" (append to core) or "replace" (substitute core skill)
+  replaces: null           # skill name to replace when overlay_mode="replace", e.g., "brand_voice"
+  client_id: "acme"
+  ---
+  ```
+  - `extend` (default): overlay content is appended after the core skill file content. Both are loaded within the same budget allocation. Use for additive brand guidance.
+  - `replace`: overlay completely substitutes the named core skill file. The core skill's `token_cost` budget is freed and reallocated to the overlay. Use when brand guidelines fundamentally contradict core defaults (e.g., brand insists on patterns the core skill file advises against).
+- Modify `app/ai/agents/skill_loader.py`:
+  - `discover_overlays(agent_name: str, client_id: str | None) -> dict[str, OverlaySkill]`:
+    - If `client_id` is None → return empty (no overlays)
+    - Scan `data/clients/{client_id}/agents/{agent_name}/skills/` for `.md` files
+    - Parse frontmatter → return mapping of skill name → `OverlaySkill(content, mode, replaces, token_cost, priority)`
+    - Cache per `(agent_name, client_id)` pair — overlays don't change at runtime
+  - Modify `load_skills_for_agent(agent_name, request, client_id=None)`:
+    - After loading core L3 skills via `detect_relevant_skills()`:
+      - Call `discover_overlays(agent_name, client_id)`
+      - For each overlay with `mode="replace"`: remove the named core skill from the loaded set, add overlay in its place
+      - For each overlay with `mode="extend"`: append overlay content to the end of the loaded skill set
+      - Budget accounting: overlay `token_cost` counts against the agent's `skill_docs_max` budget (same as core skills)
+      - Priority ordering: overlays respect the same priority system (1=critical, 2=standard, 3=supplementary) — under budget pressure, low-priority overlays are dropped before high-priority core skills
+    - Add `overlays_loaded: list[str]` to skill loading metadata (returned in agent response's `skills_loaded` field as `"overlay:acme/brand_patterns"`)
+- Modify `app/ai/agents/base.py` — `BaseAgentService.run()`:
+  - Extract `client_id` from request metadata (project → client mapping from database)
+  - Pass `client_id` to skill loading pipeline
+  - No changes to agent prompt building — overlays are transparent to the agent (they appear as additional or replacement skill content)
+- Modify `app/ai/blueprints/engine.py`:
+  - Extract `client_id` from project context at blueprint start
+  - Pass through `NodeContext.metadata["client_id"]` to all agent nodes
+  - Agent nodes pass `client_id` to their service's `run()` method
+- Create `scripts/validate-overlays.py`:
+  - Validates all overlay files in `data/clients/`:
+    - Frontmatter is valid (required fields present, `overlay_mode` is valid enum)
+    - `replaces` skill name exists in the core agent's `SKILL_FILES` mapping (catch typos)
+    - `token_cost` is within budget (overlay + remaining core skills ≤ `skill_docs_max`)
+    - No conflicting overlays (two overlays both replacing the same core skill)
+  - Run as part of `make check` and as a pre-commit hook
+- Add to `Makefile`:
+  - `validate-overlays`: run `scripts/validate-overlays.py`
+  - `list-overlays`: list all client overlays grouped by client and agent
+- Create starter overlay for documentation/testing:
+  - `data/clients/_example/agents/content/skills/brand_voice.md`:
+    ```yaml
+    ---
+    token_cost: 500
+    priority: 2
+    overlay_mode: "extend"
+    client_id: "_example"
+    ---
+    ## Example Brand Voice Overlay
+
+    This is a template for creating client-specific content agent overlays.
+    Replace this content with the client's brand voice guidelines.
+
+    **Tone:** [Professional / Casual / Playful / Authoritative]
+    **Vocabulary:** [Industry-specific terms to use or avoid]
+    **CTA style:** [Direct / Soft / Question-based]
+    ```
+**Security:** Overlay files are checked into the repo under `data/clients/` — changes go through PR review. No user input reaches the overlay loader (client_id comes from the database project record, not from the request body). Overlay content is treated identically to core skill content — same sanitization, same budget limits, same token counting. `validate-overlays.py` catches malformed files before they reach production. The `replace` mode cannot inject content outside the skill loading pipeline — it only substitutes one skill file for another within the existing budget. No new API endpoints.
+**Verify:** Project linked to client "acme" → Scaffolder loads core skills + `brand_patterns.md` overlay (extend mode). Response `skills_loaded` includes `"overlay:acme/brand_patterns"`. Project with no client → no overlays loaded. Overlay with `mode="replace"` and `replaces="brand_voice"` → core `brand_voice.md` not loaded, overlay loaded instead. Budget pressure: overlay has `priority=3`, budget < 70% → overlay dropped. `validate-overlays.py` catches: missing frontmatter fields, `replaces` pointing to nonexistent skill, two overlays replacing the same skill. `_example` overlay loads without errors. `make test` passes. `make validate-overlays` passes.
+
+### 32.12 Tests for 32.9–32.11 `[Full-Stack]`
+**What:** Tests covering MCP server exposure, skill versioning, and per-client skill overlays.
+**Implementation:**
+- **MCP server tests** — `app/mcp/tests/test_mcp_server.py`:
+  - MCP server starts and completes handshake (tool listing)
+  - All 9 agent tools registered with correct parameter schemas
+  - `email_scaffold` tool call with valid brief → returns HTML + confidence + qa_passed
+  - `email_content` tool call with `operation="subject_line"` → returns alternatives list
+  - `email_code_review` tool call with HTML → returns structured review results
+  - Invalid operation → `error_result` with descriptive message
+  - Missing required parameter → MCP validation error (not a crash)
+  - `email-hub://agents` resource → returns JSON with 9 agents, each with name, capabilities, model_tier
+  - Rate limiting applies: rapid successive calls → rate limit error after threshold
+- **Skill versioning tests** — `app/ai/agents/tests/test_skill_versioning.py`:
+  - `load_skill_file()` with no pin → loads current version from disk, returns correct `loaded_version`
+  - `pin_skill("dark_mode", "client_behavior", "1.1.0")` → updates `skill-versions.yaml`
+  - `load_skill_file()` after pin → loads content from git hash, returns pinned version
+  - `unpin_skill()` → clears pin, resumes loading current
+  - `list_skill_versions()` → returns version history with eval pass rates
+  - Pin to nonexistent version → raises `VersionNotFoundError`
+  - `set_override_from_version()` → loads old version content as override
+  - `eval-skill-update-apply` → bumps version in frontmatter, updates manifest with new entry
+  - `--rollback` flag → pins skill and logs reason
+  - Backfill: all 9 agents have `skill-versions.yaml` with `1.0.0` entries
+- **Per-client overlay tests** — `app/ai/agents/tests/test_skill_overlays.py`:
+  - `discover_overlays("scaffolder", "acme")` → finds overlay files in `data/clients/acme/agents/scaffolder/skills/`
+  - `discover_overlays("scaffolder", None)` → returns empty dict
+  - `discover_overlays("scaffolder", "nonexistent")` → returns empty dict
+  - Extend mode: core skill + overlay both loaded, overlay appended after core content
+  - Replace mode: core skill removed, overlay loaded in its place
+  - Budget accounting: overlay `token_cost` deducted from `skill_docs_max`
+  - Priority drop: overlay with `priority=3` dropped when budget < 70%
+  - `skills_loaded` response includes `"overlay:acme/brand_patterns"` for extend, replaces core entry for replace
+  - `validate-overlays.py` rejects: missing `overlay_mode`, invalid `replaces` target, duplicate replacements
+  - `validate-overlays.py` passes for `_example` overlay
+  - Caching: `discover_overlays` called twice with same args → second call uses cache
+**Security:** Tests only. No production code changes. Test fixtures use `_example` client and mock skill files — no real client data. Git operations in versioning tests use test repo fixtures.
+**Verify:** `make test` passes (all new test files). `make check` all green. `make validate-overlays` passes.
+
 ---
 
 ## Phase 33 — Design Token Pipeline Overhaul (Figma → Email HTML)
@@ -702,7 +990,7 @@
 - [x] ~~33.4 Spacing token pipeline & auto-layout → table mapping~~ DONE
 - [x] ~~33.5 Multi-column layout & proportional width calculation~~ DONE
 - [x] ~~33.5b Client-aware conversion — ontology wire-up (prerequisite for 33.7)~~ DONE
-- [ ] 33.6 Semantic HTML generation (headings, paragraphs, buttons)
+- [x] ~~33.6 Semantic HTML generation (headings, paragraphs, buttons)~~ DONE
 - [ ] 33.7 Dark mode token extraction & gradient fallbacks
 - [ ] 33.8 Design context enrichment & Scaffolder integration
 - [ ] 33.9 Builder annotations for visual builder sync

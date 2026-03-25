@@ -56,7 +56,7 @@ Save the plan to `.agents/plans/{feature-name}.md` with this structure:
 For every new/modified endpoint in this plan, address each item from the backend security checklist below.
 
 ## Verification
-- [ ] `make check` passes (includes lint, types, tests, frontend, security-check)
+- [ ] `make check` passes (26-rule ruff lint, mypy+pyright strict, tests, frontend lint+format+types, security-check)
 - [ ] New endpoints have auth + rate limiting
 - [ ] Error responses don't leak internal types
 ```

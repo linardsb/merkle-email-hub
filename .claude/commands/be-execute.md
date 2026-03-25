@@ -16,7 +16,9 @@ After each step that adds/modifies routes, verify against the backend security c
 ## Rules
 
 - Follow the plan exactly — don't add features not in the plan
-- Run `uv run ruff format . && uv run ruff check --fix .` after creating/modifying Python files
+- Run `uv run ruff format {changed_files} && uv run ruff check --fix {changed_files}` after creating/modifying Python files (26 rule sets including security, simplify, performance, docstring formatting)
+- **NEVER** run `ruff check --fix .` on the entire repo — only lint files you're actively changing
+- **NEVER** use `--unsafe-fixes` — it can move imports that break SQLAlchemy/Pydantic at runtime
 
 @_shared/backend-conventions.md
 @_shared/backend-security-scoped.md

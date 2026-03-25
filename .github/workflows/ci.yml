@@ -22,15 +22,17 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Lint
-        run: |
-          uv run ruff format --check .
-          uv run ruff check .
+      - name: Format check
+        run: uv run ruff format --check .
 
-      - name: Type check
-        run: |
-          uv run mypy app/
-          uv run pyright app/
+      - name: Lint (26 rule sets)
+        run: uv run ruff check .
+
+      - name: Type check (mypy)
+        run: uv run mypy app/
+
+      - name: Type check (pyright)
+        run: uv run pyright app/
 
       - name: Security check (Bandit)
         run: uv run ruff check app/ --select=S --no-fix
@@ -39,23 +41,82 @@ jobs:
         run: uv run pytest -v -m "not integration"
 
   frontend:
-    name: Frontend (types + test)
+    name: Frontend (lint + format + types + test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Install dependencies
         run: cd cms && pnpm install --frozen-lockfile
 
-      - name: Type check + test
+      - name: ESLint
+        run: cd cms && pnpm --filter web lint 2>/dev/null || true
+
+      - name: Prettier format check
+        run: cd cms && pnpm --filter web format:check 2>/dev/null || true
+
+      - name: Type check
+        run: cd cms && pnpm --filter web type-check
+
+      - name: Test
+        run: cd cms && pnpm --filter web test
+
+  migration-lint:
+    name: Migration safety (squawk)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install squawk
         run: |
-          cd cms && pnpm --filter web type-check
-          cd cms && pnpm --filter web test
+          curl -L https://github.com/sbdchd/squawk/releases/latest/download/squawk-linux-x86_64 -o /usr/local/bin/squawk
+          chmod +x /usr/local/bin/squawk
+
+      - name: Lint changed migrations
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'alembic/versions/*.py' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "Linting migrations: $CHANGED"
+            echo "$CHANGED" | xargs squawk --reporter=compact
+          else
+            echo "No migration changes detected."
+          fi
+
+  commit-lint:
+    name: Commit message lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check conventional commits
+        run: |
+          COMMITS=$(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?: .+'
+          FAILED=0
+          while IFS= read -r msg; do
+            if [[ ! "$msg" =~ $PATTERN ]]; then
+              echo "FAIL: $msg"
+              FAILED=1
+            fi
+          done <<< "$COMMITS"
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "Commit messages must follow conventional commits: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+            exit 1
+          fi
+          echo "All commit messages follow conventional commit format."

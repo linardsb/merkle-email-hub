@@ -324,10 +324,10 @@ def _render_semantic_text(
         return f'{pad}<td><p style="{p_style}">{content}</p></td>'
 
     # Multi-line -> multiple <p> tags
+    p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
     p_parts: list[str] = []
     for line in lines:
         if line.strip():
-            p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
             p_parts.append(f'<p style="{p_style}">{line}</p>')
     inner = "".join(p_parts)
     return f"{pad}<td>{inner}</td>"
@@ -520,7 +520,7 @@ def node_to_email_html(
                 if mapped_name.strip("'\"").lower() == primary.lower() and chain:
                     mso_alt = f"mso-font-alt:{chain[0]};"
                     break
-        # Ensure mso-line-height-rule on elements with line-height
+        # Safety net: ensure mso-line-height-rule if line-height added without it
         if "line-height:" in extra_style and "mso-line-height-rule" not in extra_style:
             extra_style += "mso-line-height-rule:exactly;"
 
