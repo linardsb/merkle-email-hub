@@ -15,6 +15,7 @@ from app.design_sync.protocol import (
     DesignNode,
     DesignNodeType,
     ExtractedColor,
+    ExtractedGradient,
     ExtractedSpacing,
     ExtractedTypography,
 )
@@ -284,6 +285,14 @@ def _contrasting_text_color(bg_hex: str) -> str:
     return "#ffffff" if _relative_luminance(bg_hex) < 0.5 else "#000000"
 
 
+def _gradient_to_css(gradient: ExtractedGradient) -> str:
+    """Convert ExtractedGradient to CSS linear-gradient() value."""
+    stops_css = ", ".join(
+        f"{_sanitize_css_value(hex_val)} {round(pos * 100, 1)}%" for hex_val, pos in gradient.stops
+    )
+    return f"linear-gradient({gradient.angle}deg, {stops_css})"
+
+
 def _determine_heading_level(
     font_size: float,
     body_font_size: float,
@@ -447,6 +456,7 @@ def node_to_email_html(
     current_section: EmailSection | None = None,
     body_font_size: float = 16.0,
     compat: ConverterCompatibility | None = None,
+    gradients_map: dict[str, ExtractedGradient] | None = None,
     _depth: int = 0,
     container_width: int = 600,
 ) -> str:
@@ -466,7 +476,10 @@ def node_to_email_html(
         text_meta: Node ID → TextBlock metadata from layout analysis.
         current_section: The enclosing EmailSection (for context propagation).
         body_font_size: Base body font size in px (default 16).
+        compat: Compatibility checker for client-aware warnings.
+        gradients_map: Node name → ExtractedGradient for gradient CSS.
         _depth: Internal nesting depth counter for guard.
+        container_width: Available width in px for column calculations.
     """
     pad = "  " * indent
     props = props_map.get(node.id) if props_map else None
@@ -600,6 +613,15 @@ def node_to_email_html(
             bgcolor_attr = f' bgcolor="{html.escape(props.bg_color)}"'
             effective_bg = props.bg_color
 
+        # Gradient override: if node name matches a gradient, add CSS background
+        if gradients_map and node.name in gradients_map:
+            grad = gradients_map[node.name]
+            gradient_css = _gradient_to_css(grad)
+            # Keep bgcolor as fallback for Outlook
+            if not bgcolor_attr:
+                bgcolor_attr = f' bgcolor="{html.escape(grad.fallback_hex)}"'
+            style_parts.append(f"background:{gradient_css}")
+
         # Resolve effective font for children
         effective_font = parent_font
         if props and props.font_family:
@@ -642,6 +664,7 @@ def node_to_email_html(
                     current_section=section,
                     body_font_size=body_font_size,
                     compat=compat,
+                    gradients_map=gradients_map,
                     _depth=_depth + 1,
                     container_width=container_width,
                 )
@@ -731,6 +754,7 @@ def node_to_email_html(
                         current_section=section,
                         body_font_size=body_font_size,
                         compat=compat,
+                        gradients_map=gradients_map,
                         _depth=_depth,
                         container_width=effective_width,
                     )
@@ -752,6 +776,7 @@ def node_to_email_html(
                         current_section=section,
                         body_font_size=body_font_size,
                         compat=compat,
+                        gradients_map=gradients_map,
                         _depth=_depth + 1,
                         container_width=container_width,
                     )
@@ -1056,6 +1081,7 @@ def _render_multi_column_row(
     current_section: EmailSection | None,
     body_font_size: float,
     compat: ConverterCompatibility | None,
+    gradients_map: dict[str, ExtractedGradient] | None,
     _depth: int,
     container_width: int,
 ) -> list[str]:
@@ -1130,6 +1156,7 @@ def _render_multi_column_row(
             current_section=current_section,
             body_font_size=body_font_size,
             compat=compat,
+            gradients_map=gradients_map,
             _depth=_depth + 1,
             container_width=col_width,
         )

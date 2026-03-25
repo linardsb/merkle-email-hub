@@ -52,6 +52,17 @@ class ExtractedVariable:
 
 
 @dataclass(frozen=True)
+class ExtractedGradient:
+    """A gradient extracted from a design file."""
+
+    name: str
+    type: str  # "linear" | "radial"
+    angle: float  # degrees, 0-360 (linear only)
+    stops: tuple[tuple[str, float], ...]  # (hex_color, position 0.0-1.0)
+    fallback_hex: str  # midpoint solid for Outlook
+
+
+@dataclass(frozen=True)
 class ExtractedTokens:
     """All design tokens extracted from a design file."""
 
@@ -62,6 +73,8 @@ class ExtractedTokens:
     modes: dict[str, str] | None = None
     stroke_colors: list[ExtractedColor] = field(default_factory=list[ExtractedColor])
     variables: list[ExtractedVariable] = field(default_factory=list[ExtractedVariable])
+    dark_colors: list[ExtractedColor] = field(default_factory=list[ExtractedColor])
+    gradients: list[ExtractedGradient] = field(default_factory=list[ExtractedGradient])
 
 
 class DesignNodeType(StrEnum):

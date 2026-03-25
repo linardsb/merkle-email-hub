@@ -137,8 +137,8 @@ class TestHorizontalAutoLayout:
             children=children,
         )
         html = node_to_email_html(node)
-        # Second and third cells have padding-left:8px
-        assert html.count("padding-left:8px") == 2
+        # Multi-column: gap rendered as MSO spacer <td width="8">
+        assert html.count('width="8"') == 2
 
     def test_horizontal_first_cell_no_padding(self) -> None:
         children = [
@@ -153,8 +153,8 @@ class TestHorizontalAutoLayout:
             children=children,
         )
         html = node_to_email_html(node)
-        # Only 1 cell has padding-left (not the first)
-        assert html.count("padding-left:16px") == 1
+        # Multi-column: only 1 MSO spacer between 2 columns
+        assert html.count('width="16"') == 1
 
 
 class TestFallbackGrouping:
@@ -205,6 +205,8 @@ class TestSpacingInDesignContext:
             DesignSpacingResponse(name="sm", value=8),
             DesignSpacingResponse(name="md", value=16),
         ]
+        tokens.dark_colors = []
+        tokens.gradients = []
         layout = MagicMock(spec=LayoutAnalysisResponse)
         layout.sections = []
         layout.file_name = "test.fig"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
@@ -20,6 +21,7 @@ from app.design_sync.protocol import (
     DesignNodeType,
     ExportedImage,
     ExtractedColor,
+    ExtractedGradient,
     ExtractedSpacing,
     ExtractedTokens,
     ExtractedTypography,
@@ -141,6 +143,42 @@ def _float_or_none(val: Any) -> float | None:
     return float(val) if isinstance(val, (int, float)) else None
 
 
+def _compute_gradient_angle(handles: list[dict[str, Any]]) -> float:
+    """Compute CSS gradient angle from Figma handle positions."""
+    if len(handles) < 2:
+        return 180.0  # default top-to-bottom
+    h1 = handles[0]
+    h2 = handles[1]
+    dx = float(h2.get("x", 0)) - float(h1.get("x", 0))
+    dy = float(h2.get("y", 0)) - float(h1.get("y", 0))
+    # Figma: (0,0)=top-left. CSS: 0deg=to-top, 180deg=to-bottom
+    angle = math.degrees(math.atan2(dx, -dy)) % 360
+    return round(angle, 1)
+
+
+def _parse_gradient_stops(
+    stops_raw: list[Any], *, bg_hex: str = "#FFFFFF"
+) -> list[tuple[str, float]]:
+    """Parse Figma gradientStops into (hex, position) tuples."""
+    result: list[tuple[str, float]] = []
+    for stop in stops_raw:
+        if not isinstance(stop, dict):
+            continue
+        color_raw = stop.get("color")
+        pos = float(stop.get("position", 0))
+        if isinstance(color_raw, dict):
+            c = cast(dict[str, Any], color_raw)
+            hex_val = _rgba_to_hex_with_opacity(
+                float(c.get("r", 0)),
+                float(c.get("g", 0)),
+                float(c.get("b", 0)),
+                fill_alpha=float(c.get("a", 1.0)),
+                bg_hex=bg_hex,
+            )
+            result.append((hex_val, round(pos, 3)))
+    return result
+
+
 class FigmaDesignSyncService:
     """Real Figma API integration."""
 
@@ -260,14 +298,15 @@ class FigmaDesignSyncService:
         var_colors: list[ExtractedColor] = []
         var_variables: list[ExtractedVariable] = []
         var_modes: dict[str, str] = {}
+        var_dark_colors: list[ExtractedColor] = []
         variables_source = False
 
         if settings.design_sync.figma_variables_enabled:
             try:
                 raw_vars = await self._fetch_variables(file_ref, access_token)
                 if raw_vars is not None:
-                    var_colors, _var_typography, var_variables, var_modes = self._parse_variables(
-                        raw_vars, bg_hex=bg_hex
+                    var_colors, _var_typography, var_variables, var_modes, var_dark_colors = (
+                        self._parse_variables(raw_vars, bg_hex=bg_hex)
                     )
                     if var_colors:
                         variables_source = True
@@ -277,11 +316,20 @@ class FigmaDesignSyncService:
                 logger.warning("design_sync.figma.variables_parse_failed", exc_info=True)
 
         # Styles/node-walk fallback (or supplement)
+        gradients: list[ExtractedGradient] = []
         if variables_source:
             colors = var_colors
             stroke_colors: list[ExtractedColor] = []
+            # Always walk for gradients even in variables_source mode
+            grad_list: list[ExtractedGradient] = []
+            self._walk_for_colors(
+                file_data.get("document", {}), [], set(), gradients=grad_list, bg_hex=bg_hex
+            )
+            gradients = grad_list
         else:
-            colors, stroke_colors = self._parse_colors(file_data, styles_data, bg_hex=bg_hex)
+            colors, stroke_colors, gradients = self._parse_colors(
+                file_data, styles_data, bg_hex=bg_hex
+            )
 
         typography = self._parse_typography(file_data, styles_data)
         spacing = self._parse_spacing(file_data)
@@ -289,8 +337,10 @@ class FigmaDesignSyncService:
         logger.info(
             "design_sync.figma.tokens_extracted",
             colors=len(colors),
+            dark_colors=len(var_dark_colors),
             typography=len(typography),
             spacing=len(spacing),
+            gradients=len(gradients),
             variables_source=variables_source,
         )
 
@@ -299,9 +349,11 @@ class FigmaDesignSyncService:
             typography=typography,
             spacing=spacing,
             variables_source=variables_source,
-            modes=var_modes if var_modes else None,
+            modes=var_modes or None,
             stroke_colors=stroke_colors if not variables_source else [],
             variables=var_variables,
+            dark_colors=var_dark_colors if variables_source else [],
+            gradients=gradients,
         )
 
         # Parse file structure from the same response (no extra API call)
@@ -389,9 +441,13 @@ class FigmaDesignSyncService:
     def _parse_variables(
         self, raw: dict[str, Any], bg_hex: str = "#FFFFFF"
     ) -> tuple[
-        list[ExtractedColor], list[ExtractedTypography], list[ExtractedVariable], dict[str, str]
+        list[ExtractedColor],
+        list[ExtractedTypography],
+        list[ExtractedVariable],
+        dict[str, str],
+        list[ExtractedColor],
     ]:
-        """Parse Variables API response into colors, typography (future), variables, and modes."""
+        """Parse Variables API response into colors, typography, variables, modes, dark_colors."""
         colors: list[ExtractedColor] = []
         seen_hex: set[str] = set()
         variables: list[ExtractedVariable] = []
@@ -434,6 +490,14 @@ class FigmaDesignSyncService:
 
         # Default mode: first in global_modes
         default_mode_id = next(iter(global_modes.values()), "")
+
+        # Detect dark mode: any mode name containing "dark", "night", or "dim"
+        _DARK_MODE_PATTERNS = ("dark", "night", "dim")
+        dark_mode_id: str | None = None
+        for mode_name, mode_id in global_modes.items():
+            if any(p in mode_name.lower() for p in _DARK_MODE_PATTERNS):
+                dark_mode_id = mode_id
+                break
 
         for var_id, var_data_raw in all_variables.items():
             if not isinstance(var_data_raw, dict):
@@ -502,8 +566,41 @@ class FigmaDesignSyncService:
                         seen_hex.add(hex_val)
                         colors.append(ExtractedColor(name=display_name, hex=hex_val, opacity=a))
 
+        # Dark color extraction from dark mode
+        dark_colors: list[ExtractedColor] = []
+        if dark_mode_id:
+            seen_dark_hex: set[str] = set()
+            for var_id, var_data_raw in all_variables.items():
+                if not isinstance(var_data_raw, dict):
+                    continue
+                var_data = cast(dict[str, Any], var_data_raw)
+                resolved_type = str(var_data.get("resolvedType", ""))
+                if resolved_type != "COLOR":
+                    continue
+                var_name = str(var_data.get("name", var_id))
+                display_name = var_name
+                if display_name.lower().startswith("color/"):
+                    display_name = display_name[6:]
+
+                values_by_mode_raw = cast(dict[str, Any], var_data.get("valuesByMode", {}))
+                dark_val = self._resolve_variable_alias(
+                    values_by_mode_raw.get(dark_mode_id), all_variables, dark_mode_id
+                )
+                if isinstance(dark_val, dict):
+                    dv = cast(dict[str, Any], dark_val)
+                    r = float(dv.get("r", 0))
+                    g = float(dv.get("g", 0))
+                    b = float(dv.get("b", 0))
+                    a = float(dv.get("a", 1.0))
+                    hex_val = _rgba_to_hex_with_opacity(r, g, b, fill_alpha=a, bg_hex=bg_hex)
+                    if hex_val not in seen_dark_hex:
+                        seen_dark_hex.add(hex_val)
+                        dark_colors.append(
+                            ExtractedColor(name=display_name, hex=hex_val, opacity=a)
+                        )
+
         # Typography from Variables is future work (33.3)
-        return colors, [], variables, global_modes
+        return colors, [], variables, global_modes, dark_colors
 
     def _parse_colors(
         self,
@@ -511,15 +608,16 @@ class FigmaDesignSyncService:
         styles_data: dict[str, Any],  # noqa: ARG002
         *,
         bg_hex: str = "#FFFFFF",
-    ) -> tuple[list[ExtractedColor], list[ExtractedColor]]:
+    ) -> tuple[list[ExtractedColor], list[ExtractedColor], list[ExtractedGradient]]:
         """Extract colour tokens from published styles + node walk fallback.
 
-        Returns (fill_colors, stroke_colors).
+        Returns (fill_colors, stroke_colors, gradients).
         """
         colors: list[ExtractedColor] = []
         seen_hex: set[str] = set()
         stroke_colors: list[ExtractedColor] = []
         seen_stroke_hex: set[str] = set()
+        gradients: list[ExtractedGradient] = []
 
         # Phase 1: Published styles (better names, take priority)
         raw_styles = file_data.get("styles", {})
@@ -561,9 +659,10 @@ class FigmaDesignSyncService:
             stroke_colors=stroke_colors,
             seen_stroke_hex=seen_stroke_hex,
             bg_hex=bg_hex,
+            gradients=gradients,
         )
 
-        return colors, stroke_colors
+        return colors, stroke_colors, gradients
 
     def _parse_typography(
         self,
@@ -646,6 +745,7 @@ class FigmaDesignSyncService:
         stroke_colors: list[ExtractedColor] | None = None,
         seen_stroke_hex: set[str] | None = None,
         bg_hex: str = "#FFFFFF",
+        gradients: list[ExtractedGradient] | None = None,
     ) -> None:
         """Recursively extract fill/stroke colors from every node."""
         if depth >= _MAX_WALK_DEPTH or not isinstance(node, dict):
@@ -672,12 +772,29 @@ class FigmaDesignSyncService:
                     continue
                 if fill_d.get("type") == "GRADIENT_LINEAR":
                     stops = fill_d.get("gradientStops", [])
-                    if isinstance(stops, list):
+                    if isinstance(stops, list) and len(stops) >= 2:
+                        # Still extract midpoint for color palette (backward compat)
                         midpoint = _gradient_midpoint_hex(cast(list[dict[str, Any]], stops))
                         if midpoint and midpoint not in seen_hex:
                             seen_hex.add(midpoint)
                             gname = f"{node_name} (gradient midpoint)" if node_name else midpoint
                             colors.append(ExtractedColor(name=gname, hex=midpoint, opacity=1.0))
+
+                        # Full gradient extraction
+                        if gradients is not None:
+                            handles = fill_d.get("gradientHandlePositions", [])
+                            angle = _compute_gradient_angle(handles)
+                            parsed_stops = _parse_gradient_stops(stops, bg_hex=bg_hex)
+                            fallback = midpoint or "#808080"
+                            gradients.append(
+                                ExtractedGradient(
+                                    name=node_name or f"gradient-{len(gradients)}",
+                                    type="linear",
+                                    angle=angle,
+                                    stops=tuple(parsed_stops),
+                                    fallback_hex=fallback,
+                                )
+                            )
 
             # Pass 2: topmost visible solid (last in array = topmost in Figma)
             for fill_item in reversed(fills_list):
@@ -745,6 +862,7 @@ class FigmaDesignSyncService:
                 stroke_colors=stroke_colors,
                 seen_stroke_hex=seen_stroke_hex,
                 bg_hex=bg_hex,
+                gradients=gradients,
             )
 
     def _walk_for_typography(

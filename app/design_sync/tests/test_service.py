@@ -970,7 +970,7 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors, _ = figma_service._parse_colors(file_data, {})
+        colors, _, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 1
         assert colors[0].hex == "#3366CC"
         assert colors[0].name == "#3366CC"
@@ -988,7 +988,7 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors, stroke_colors = figma_service._parse_colors(file_data, {})
+        colors, stroke_colors, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 0
         assert len(stroke_colors) == 1
         assert stroke_colors[0].hex == "#FF0000"
@@ -1006,7 +1006,7 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors, _ = figma_service._parse_colors(file_data, {})
+        colors, _, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 0
 
     # 4. Gradient fills extract midpoint
@@ -1032,7 +1032,7 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors, _ = figma_service._parse_colors(file_data, {})
+        colors, _, _ = figma_service._parse_colors(file_data, {})
         # Should have gradient midpoint + the solid blue (topmost visible solid)
         midpoints = [c for c in colors if "(gradient midpoint)" in c.name]
         assert len(midpoints) == 1
@@ -1056,7 +1056,7 @@ class TestNodeWalkExtraction:
                 "style_1": {"styleType": "FILL", "name": "Brand Blue"},
             },
         )
-        colors, _ = figma_service._parse_colors(file_data, {})
+        colors, _, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 1
         assert colors[0].name == "Brand Blue"
         assert colors[0].hex == "#3366CC"
@@ -1171,7 +1171,7 @@ class TestNodeWalkExtraction:
                 "style_1": {"styleType": "FILL", "name": "Brand Blue"},
             },
         )
-        colors, _ = figma_service._parse_colors(file_data, {})
+        colors, _, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 2
         assert colors[0].name == "Brand Blue"
         assert colors[0].hex == "#3366CC"
@@ -1181,7 +1181,7 @@ class TestNodeWalkExtraction:
     # 10. Empty document → empty lists
     def test_empty_document(self, figma_service: FigmaDesignSyncService) -> None:
         file_data = self._make_file_data(document={})
-        colors, stroke_colors = figma_service._parse_colors(file_data, {})
+        colors, stroke_colors, _ = figma_service._parse_colors(file_data, {})
         typography = figma_service._parse_typography(file_data, {})
         assert colors == []
         assert stroke_colors == []
@@ -1215,7 +1215,7 @@ class TestNodeWalkExtraction:
                 ]
             }
         )
-        colors, _ = figma_service._parse_colors(file_data, {})
+        colors, _, _ = figma_service._parse_colors(file_data, {})
         assert len(colors) == 1
         assert colors[0].hex == "#00FF00"
 
@@ -1303,7 +1303,7 @@ class TestFigmaVariablesAPI:
                 }
             },
         )
-        colors, _, variables, modes = figma_service._parse_variables(raw)
+        colors, _, variables, modes, _ = figma_service._parse_variables(raw)
         assert len(colors) == 1
         assert colors[0].hex == "#3366CC"
         assert colors[0].name == "primary"  # "color/" prefix stripped
@@ -1338,7 +1338,7 @@ class TestFigmaVariablesAPI:
                 },
             },
         )
-        colors, _, variables, _ = figma_service._parse_variables(raw)
+        colors, _, variables, _, _ = figma_service._parse_variables(raw)
         alias_vars = [v for v in variables if v.is_alias]
         assert len(alias_vars) == 1
         assert alias_vars[0].alias_path == "blue-500"
@@ -1365,7 +1365,7 @@ class TestFigmaVariablesAPI:
                 }
             },
         )
-        colors, _, _, _ = figma_service._parse_variables(raw)
+        colors, _, _, _, _ = figma_service._parse_variables(raw)
         assert len(colors) == 1
         assert colors[0].hex == "#8080FF"  # Blue 50% on white
 
@@ -1412,7 +1412,7 @@ class TestFigmaVariablesAPI:
                 },
             },
         )
-        colors, _, variables, _ = figma_service._parse_variables(raw)
+        colors, _, variables, _, _ = figma_service._parse_variables(raw)
         # Should not crash — circular aliases resolve to None, no colors extracted
         assert len(colors) == 0
         assert len(variables) == 2
@@ -1434,14 +1434,14 @@ class TestFigmaVariablesAPI:
                 }
             },
         )
-        colors, _, variables, _ = figma_service._parse_variables(raw)
+        colors, _, variables, _, _ = figma_service._parse_variables(raw)
         assert len(colors) == 0
         assert len(variables) == 1
         assert variables[0].type == "FLOAT"
 
     def test_empty_variables_response(self, figma_service: FigmaDesignSyncService) -> None:
         raw = self._make_variables_response()
-        colors, _, variables, modes = figma_service._parse_variables(raw)
+        colors, _, variables, modes, _ = figma_service._parse_variables(raw)
         assert colors == []
         assert variables == []
         assert modes == {}

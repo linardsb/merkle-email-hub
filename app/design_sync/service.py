@@ -57,6 +57,8 @@ from app.design_sync.schemas import (
     DesignColorResponse,
     DesignComponentResponse,
     DesignFileResponse,
+    DesignGradientResponse,
+    DesignGradientStopResponse,
     DesignNodeResponse,
     DesignSpacingResponse,
     DesignTokensResponse,
@@ -514,6 +516,33 @@ class DesignSyncService:
             spacing=[
                 DesignSpacingResponse(name=str(s["name"]), value=float(s["value"]))
                 for s in spacing_list
+            ],
+            dark_colors=[
+                DesignColorResponse(
+                    name=str(c["name"]),
+                    hex=str(c["hex"]),
+                    opacity=float(c.get("opacity", 1.0)),
+                )
+                for c in tj.get("dark_colors", [])
+                if isinstance(c, dict)
+            ],
+            gradients=[
+                DesignGradientResponse(
+                    name=str(g["name"]),
+                    type=str(g.get("type", "linear")),
+                    angle=float(g.get("angle", 180)),
+                    stops=[
+                        DesignGradientStopResponse(
+                            hex=str(s.get("hex", "")),
+                            position=float(s.get("position", 0)),
+                        )
+                        for s in g.get("stops", [])
+                        if isinstance(s, dict)
+                    ],
+                    fallback_hex=str(g.get("fallback_hex", "#808080")),
+                )
+                for g in tj.get("gradients", [])
+                if isinstance(g, dict)
             ],
             extracted_at=snapshot.extracted_at,
             warnings=warning_strings or None,
@@ -1208,7 +1237,6 @@ def _layout_to_response(
     layout: DesignLayoutDescription,
 ) -> LayoutAnalysisResponse:
     """Convert DesignLayoutDescription to LayoutAnalysisResponse."""
-
     sections = [
         AnalyzedSectionResponse(
             section_type=s.section_type.value,

@@ -24,6 +24,8 @@ from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
     DesignNodeType,
+    ExtractedColor,
+    ExtractedGradient,
     ExtractedTokens,
 )
 
@@ -74,6 +76,65 @@ class ConversionResult:
 
 # Backward-compatible alias
 PenpotConversionResult = ConversionResult
+
+_DARK_MODE_CLASS_PREFIX = "dm-"
+
+
+def dark_mode_style_block(
+    light_colors: list[ExtractedColor],
+    dark_colors: list[ExtractedColor],
+) -> str:
+    """Generate 3-tier dark mode CSS block.
+
+    Tier 1: meta tags (injected in skeleton <head>)
+    Tier 2: @media (prefers-color-scheme: dark) with !important
+    Tier 3: [data-ogsc]/[data-ogsb] for Outlook.com
+    """
+    if not dark_colors:
+        return ""
+
+    # Build light→dark mapping by name, sanitize hex for CSS context
+    dark_by_name = {c.name.lower(): c for c in dark_colors}
+    pairs: list[tuple[str, str]] = []  # (light_name_lower, sanitized_dark_hex)
+    for light in light_colors:
+        dark = dark_by_name.get(light.name.lower())
+        if dark:
+            safe_hex = _sanitize_css_value(dark.hex) or dark.hex
+            pairs.append((light.name.lower(), safe_hex))
+
+    if not pairs:
+        return ""
+
+    lines = ["<style>"]
+
+    # Tier 2: @media prefers-color-scheme
+    lines.append("  @media (prefers-color-scheme: dark) {")
+    lines.append(f"    body {{ background-color:{pairs[0][1]} !important; }}")
+    for i, (name, dark_hex) in enumerate(pairs):
+        cls = f"{_DARK_MODE_CLASS_PREFIX}{i}"
+        # Background swap
+        lines.append(f"    .{cls} {{ background-color:{dark_hex} !important; }}")
+        # Text color swap (if it's a text-role color)
+        if any(kw in name for kw in ("text", "body", "foreground")):
+            lines.append(f"    .{cls}-text {{ color:{dark_hex} !important; }}")
+    lines.append("  }")
+
+    # Tier 3: Outlook.com [data-ogsc] (text) / [data-ogsb] (background)
+    for i, (name, dark_hex) in enumerate(pairs):
+        cls = f"{_DARK_MODE_CLASS_PREFIX}{i}"
+        lines.append(f"  [data-ogsb] .{cls} {{ background-color:{dark_hex} !important; }}")
+        if any(kw in name for kw in ("text", "body", "foreground")):
+            lines.append(f"  [data-ogsc] .{cls}-text {{ color:{dark_hex} !important; }}")
+    lines.append("</style>")
+    return "\n".join(lines)
+
+
+def dark_mode_meta_tags() -> str:
+    """Return required dark mode meta tags for <head>."""
+    return (
+        '<meta name="color-scheme" content="light dark">\n'
+        '<meta name="supported-color-schemes" content="light dark">'
+    )
 
 
 class DesignConverterService:
@@ -147,6 +208,11 @@ class DesignConverterService:
             except (ValueError, TypeError):
                 pass
 
+        # Build gradient name → ExtractedGradient lookup
+        gradients_map: dict[str, ExtractedGradient] = (
+            {g.name: g for g in tokens.gradients} if tokens.gradients else {}
+        )
+
         # Convert each frame to HTML section
         section_parts: list[str] = []
         for frame in frames:
@@ -160,6 +226,7 @@ class DesignConverterService:
                 text_meta=text_meta,
                 body_font_size=body_font_size,
                 compat=compat,
+                gradients_map=gradients_map or None,
             )
             section_parts.append(f"<tr><td>\n{section_html}\n</td></tr>")
 
@@ -189,6 +256,15 @@ class DesignConverterService:
             " outline: none; text-decoration: none; }\n"
             "</style>"
         )
+
+        # Dark mode CSS (only if dark tokens present)
+        if tokens.dark_colors:
+            dark_css = dark_mode_style_block(tokens.colors, tokens.dark_colors)
+            dark_meta = dark_mode_meta_tags()
+            if dark_meta:
+                style_block = dark_meta + "\n" + style_block
+            if dark_css:
+                style_block = style_block + "\n" + dark_css
 
         # Check max-width support (used on wrapper table)
         if compat.has_targets:

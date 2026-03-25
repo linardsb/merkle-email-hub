@@ -22,6 +22,7 @@ from app.design_sync.protocol import (
     DesignNode,
     DesignNodeType,
     ExtractedColor,
+    ExtractedGradient,
     ExtractedTypography,
 )
 
@@ -1630,3 +1631,53 @@ class TestButtonContrastValidation:
         _validate_button_contrast("#000000", "#ffffff", 16)
         captured = capsys.readouterr()
         assert "button_contrast_low" not in captured.out
+
+
+class TestGradientNodeRendering:
+    """Tests for gradient rendering in node_to_email_html."""
+
+    def test_gradient_node_has_bgcolor_fallback(self) -> None:
+        """Gradient node renders bgcolor="{fallback}"."""
+        node = DesignNode(
+            id="frame1",
+            name="hero-bg",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=300,
+        )
+        grad = ExtractedGradient(
+            name="hero-bg",
+            type="linear",
+            angle=180.0,
+            stops=(("#FF0000", 0.0), ("#0000FF", 1.0)),
+            fallback_hex="#800080",
+        )
+        html = node_to_email_html(
+            node,
+            gradients_map={"hero-bg": grad},
+        )
+        assert 'bgcolor="#800080"' in html
+
+    def test_gradient_node_has_css_background(self) -> None:
+        """Style contains linear-gradient(...)."""
+        node = DesignNode(
+            id="frame1",
+            name="hero-bg",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=300,
+        )
+        grad = ExtractedGradient(
+            name="hero-bg",
+            type="linear",
+            angle=90.0,
+            stops=(("#FF0000", 0.0), ("#00FF00", 0.5), ("#0000FF", 1.0)),
+            fallback_hex="#808080",
+        )
+        html = node_to_email_html(
+            node,
+            gradients_map={"hero-bg": grad},
+        )
+        assert "linear-gradient(90.0deg" in html
+        assert "#FF0000 0.0%" in html
+        assert "#0000FF 100.0%" in html

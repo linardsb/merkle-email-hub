@@ -407,6 +407,23 @@ class DesignImportService:
                 ],
                 "spacing": convert_spacing(spacing_tokens),
             }
+            # Dark colors for downstream agents
+            if tokens.dark_colors:
+                design_tokens["dark_colors"] = [
+                    {"name": c.name, "hex": c.hex, "opacity": c.opacity} for c in tokens.dark_colors
+                ]
+            # Gradients
+            if tokens.gradients:
+                design_tokens["gradients"] = [
+                    {
+                        "name": g.name,
+                        "type": g.type,
+                        "angle": g.angle,
+                        "stops": [{"hex": s.hex, "position": s.position} for s in g.stops],
+                        "fallback_hex": g.fallback_hex,
+                    }
+                    for g in tokens.gradients
+                ]
 
         return {
             "image_urls": image_urls,
@@ -765,7 +782,11 @@ class DesignImportService:
     @staticmethod
     def _tokens_to_protocol(tokens: DesignTokensResponse) -> ExtractedTokens:
         """Convert response schema back to protocol dataclass."""
-        from app.design_sync.protocol import ExtractedColor, ExtractedTypography
+        from app.design_sync.protocol import (
+            ExtractedColor,
+            ExtractedGradient,
+            ExtractedTypography,
+        )
 
         return ExtractedTokens(
             colors=[
@@ -780,5 +801,19 @@ class DesignImportService:
                     line_height=t.lineHeight,
                 )
                 for t in tokens.typography
+            ],
+            dark_colors=[
+                ExtractedColor(name=c.name, hex=c.hex, opacity=c.opacity)
+                for c in tokens.dark_colors
+            ],
+            gradients=[
+                ExtractedGradient(
+                    name=g.name,
+                    type=g.type,
+                    angle=g.angle,
+                    stops=tuple((s.hex, s.position) for s in g.stops),
+                    fallback_hex=g.fallback_hex,
+                )
+                for g in tokens.gradients
             ],
         )

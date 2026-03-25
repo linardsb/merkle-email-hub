@@ -991,7 +991,7 @@
 - [x] ~~33.5 Multi-column layout & proportional width calculation~~ DONE
 - [x] ~~33.5b Client-aware conversion — ontology wire-up (prerequisite for 33.7)~~ DONE
 - [x] ~~33.6 Semantic HTML generation (headings, paragraphs, buttons)~~ DONE
-- [ ] 33.7 Dark mode token extraction & gradient fallbacks
+- [x] ~~33.7 Dark mode token extraction & gradient fallbacks~~ DONE
 - [ ] 33.8 Design context enrichment & Scaffolder integration
 - [ ] 33.9 Builder annotations for visual builder sync
 - [ ] 33.10 Image asset import for design sync pipeline
@@ -1514,7 +1514,7 @@
 **Security:** HTML content is escaped via `html.escape()` (already in place). Button `href="#"` is a placeholder — no user-controlled URLs in conversion output. VML attributes use escaped values.
 **Verify:** TEXT node with font-size 32px (body 16px) → `<h1>` inside `<td>` with `mso-line-height-rule:exactly`. TEXT node with font-size 16px → `<p style="margin:0 0 10px 0;">` inside `<td>`. COMPONENT named "CTA Button" with "Shop Now" text → bulletproof `<a>` button with VML `<v:roundrect>` fallback, `role="presentation"` on button wrapper table, contrast ratio ≥ 4.5:1 validated. Button height ≥ 44px (touch target). Multi-line text → multiple `<p>` tags. Heading hierarchy is sequential (no skipped levels). Layout tables have `role="presentation"`. Existing conversion output still has valid email HTML structure. `make test` passes.
 
-### 33.7 Dark Mode Token Extraction & Gradient Fallbacks `[Backend]`
+### ~~33.7 Dark Mode Token Extraction & Gradient Fallbacks~~ DONE `[Backend]`
 **What:** Extract dark mode color variants from Figma Variables API modes. When a variable collection has a "Dark" mode, extract parallel token sets for light and dark. Generate `prefers-color-scheme: dark` CSS overrides and `[data-ogsc]` / `[data-ogsb]` attribute selectors for Outlook dark mode. Add gradient linear fallback support: emit CSS `background: linear-gradient(...)` with a solid `bgcolor` fallback for Outlook.
 **Why:** Currently the pipeline extracts zero dark mode tokens. The Dark Mode agent downstream must guess dark colors algorithmically — often producing poor contrast or off-brand colors. Figma Variables natively support light/dark modes, but the extraction pipeline ignores mode data entirely. Additionally, gradient backgrounds are silently dropped (33.1 extracts a midpoint color, but the actual gradient information is lost). Many modern email designs use subtle gradients in hero sections.
 **Implementation:**
@@ -1828,3 +1828,133 @@
 | Dark mode token extraction | Light/dark variable modes extracted in parallel — no more algorithmic guessing |
 | Gradient fallbacks | Linear gradients → CSS `linear-gradient()` + solid `bgcolor` fallback for Outlook |
 | Design context enrichment | Full token set (typography + spacing + dark + gradients + warnings) flows to Scaffolder |
+| CRAG accept/reject gate | Corrections verified via before/after issue count — regressions rejected, originals preserved |
+
+---
+
+## Phase 34 — CRAG Accept/Reject Gate
+
+> The CRAG validation loop (Phase 16.5) detects unsupported CSS in agent-generated HTML, retrieves ontology fallbacks, and asks the LLM to apply them. But its acceptance gate is blind: if the corrected output is longer than 50 characters, it ships. The LLM can break MSO conditionals, drop sections, introduce new unsupported CSS, or bloat past Gmail's 102KB clip threshold — and CRAG will accept it. QA catches these regressions *after* CRAG, but by then the original pre-CRAG HTML is gone. The response ships with the damaged version plus QA warnings.
+>
+> This phase adds a before/after compatibility check: re-run `unsupported_css_in_html()` on the corrected output and reject corrections that didn't reduce qualifying issues. Zero LLM cost — the function is a pure regex scan already imported in the same file. Also adds structured logging for observability and targeted tests for the new gate.
+>
+> **Dependency note:** Independent of Phases 32–33. Can be implemented at any time. The fix is contained to `validation_loop.py` + its test file.
+
+- [ ] 34.1 Accept/reject gate on CRAG corrections
+- [ ] 34.2 Structured CRAG observability logging
+- [ ] 34.3 Tests for accept/reject gate
+
+### 34.1 Accept/Reject Gate on CRAG Corrections `[Backend]`
+**What:** After CRAG calls the LLM and extracts corrected HTML, re-scan the corrected output with `unsupported_css_in_html()` using the same severity threshold. Compare qualifying issue counts before vs. after. Only accept the correction if the post-correction count is strictly lower. Otherwise reject and return the original HTML unchanged.
+**Why:** The current acceptance gate (`validation_loop.py:129-131`) only checks `len(corrected) < 50`. This means any non-trivial LLM output is accepted regardless of whether it actually fixed the compatibility issues or introduced new ones. The LLM is instructed to "preserve all other HTML exactly as-is" but frequently: (1) breaks MSO conditional balancing while swapping CSS properties, (2) drops sections or structural elements during the rewrite, (3) introduces new unsupported CSS alongside the fallback code, (4) inflates HTML size with verbose table fallbacks. All of these produce output >50 chars, so they pass the current gate. `unsupported_css_in_html()` is already imported and called 10 lines earlier in the same method — reusing it adds zero new dependencies and near-zero latency (pure regex scan over CSS contexts).
+**Implementation:**
+- In `app/ai/agents/validation_loop.py`, after the existing length gate (line 129–131) and before the success log (line 133), add post-correction scanning:
+  ```python
+  # Accept/reject gate: verify correction actually improved compatibility
+  post_issues = unsupported_css_in_html(corrected)
+  post_qualifying = [
+      issue for issue in post_issues
+      if severity_order.get(str(issue["severity"]), 2) <= threshold
+  ]
+
+  if len(post_qualifying) >= len(qualifying):
+      logger.warning(
+          "agents.crag.correction_rejected",
+          pre_issues=len(qualifying),
+          post_issues=len(post_qualifying),
+          reason="correction did not reduce qualifying issues",
+      )
+      return html, []
+  ```
+- The `severity_order` and `threshold` variables are already in scope from step 2 of the method — no new locals needed
+- The `qualifying` list (pre-correction issues) is already computed at line 48–50 — reuse it for the comparison
+- Keep the existing `len(corrected) < 50` gate above this new gate — it's a fast short-circuit for degenerate outputs that avoids the regex scan entirely
+- Move the `corrections` list construction and success log below the new gate so they only execute on accepted corrections
+**Security:** No new input paths. `unsupported_css_in_html()` operates on sanitized HTML (already passed through `extract_html()` + `sanitize_html_xss()` at line 126–127). No new LLM calls, no new config, no new dependencies.
+**Verify:** Unit test: CRAG correction that introduces new unsupported CSS → rejected, original returned. Unit test: CRAG correction that fixes 2 of 3 issues but adds 1 new → net reduction, accepted. Unit test: CRAG correction that fixes all issues → accepted. Existing tests still pass (the new gate is transparent when corrections improve things). `make check` passes.
+
+### 34.2 Structured CRAG Observability Logging `[Backend]`
+**What:** Enhance CRAG logging to emit structured fields that enable monitoring correction acceptance rates, rejection reasons, and per-property fix effectiveness.
+**Why:** Currently CRAG logs `agents.crag.correction_applied` on success and `agents.crag.output_too_short` on length failure — but there's no visibility into *what* was fixed vs. *what* regressed. When the accept/reject gate starts rejecting corrections, operators need to understand: which CSS properties are the LLM failing to fix? Which fallback techniques produce regressions? Is the rejection rate climbing (suggesting prompt degradation or ontology drift)? Structured logging fields enable dashboards and alerting without log parsing.
+**Implementation:**
+- Update the success log (`agents.crag.correction_applied`) to include before/after counts and per-property outcomes:
+  ```python
+  logger.info(
+      "agents.crag.correction_accepted",
+      pre_issues=len(qualifying),
+      post_issues=len(post_qualifying),
+      issues_fixed=len(qualifying) - len(post_qualifying),
+      corrections=corrections,
+      original_length=len(html),
+      corrected_length=len(corrected),
+  )
+  ```
+- The rejection log (`agents.crag.correction_rejected`) added in 34.1 already includes `pre_issues`, `post_issues`, and `reason` — no changes needed
+- Update `agents.crag.issues_detected` to include property IDs for correlation:
+  ```python
+  logger.info(
+      "agents.crag.issues_detected",
+      total_issues=len(issues),
+      qualifying_issues=len(qualifying),
+      qualifying_property_ids=[str(i["property_id"]) for i in qualifying],
+      min_severity=min_severity,
+  )
+  ```
+- Rename `agents.crag.correction_applied` → `agents.crag.correction_accepted` for symmetry with `agents.crag.correction_rejected`
+- Update the `base.py` caller log at line 313 to use the same event name:
+  ```python
+  logger.info(
+      f"agents.{self.agent_name}.crag_accepted",
+      corrections=crag_corrections,
+  )
+  ```
+**Security:** Logging only — no new endpoints, no PII in log fields (property IDs and counts only). Verify no CSS values (which could contain user content) appear in log output.
+**Verify:** Enable CRAG, trigger a correction → `agents.crag.correction_accepted` log includes `pre_issues`, `post_issues`, `issues_fixed`. Trigger a rejection → `agents.crag.correction_rejected` log includes `pre_issues`, `post_issues`, `reason`. Grep production log output for PII — none found in CRAG events. `make check` passes.
+
+### 34.3 Tests for Accept/Reject Gate `[Backend]`
+**What:** Add targeted tests in `app/ai/agents/tests/test_validation_loop.py` covering the new accept/reject gate behavior: regressions rejected, partial improvements accepted, full fixes accepted, and edge cases (same count, new property types).
+**Why:** The existing test suite (`TestCRAGMixin`) covers: no issues, severity filtering, successful correction, LLM failure, empty output, no-fallback instructions, and severity threshold. None of these tests verify that a "successful" LLM call with bad output gets rejected. The accept/reject gate is the critical safety mechanism — it must be tested explicitly.
+**Implementation:**
+- Add new test class `TestCRAGAcceptRejectGate` in `test_validation_loop.py`:
+  ```python
+  class TestCRAGAcceptRejectGate:
+      """Test the before/after compatibility gate."""
+
+      @pytest.mark.asyncio
+      async def test_correction_introducing_new_issues_rejected(self) -> None:
+          """LLM 'fixes' flex but introduces gap → same issue count → rejected."""
+          # Pre: 1 qualifying issue (display:flex)
+          # Post: 1 qualifying issue (gap) — different property, same count
+          # Expected: rejection, original returned
+
+      @pytest.mark.asyncio
+      async def test_correction_increasing_issues_rejected(self) -> None:
+          """LLM output has MORE issues than input → rejected."""
+          # Pre: 1 qualifying issue
+          # Post: 2 qualifying issues
+          # Expected: rejection, original returned
+
+      @pytest.mark.asyncio
+      async def test_partial_fix_accepted(self) -> None:
+          """LLM fixes 2 of 3 issues → net reduction → accepted."""
+          # Pre: 3 qualifying issues
+          # Post: 1 qualifying issue
+          # Expected: accepted, corrected HTML returned
+
+      @pytest.mark.asyncio
+      async def test_full_fix_accepted(self) -> None:
+          """LLM fixes all issues → 0 post issues → accepted."""
+          # Pre: 2 qualifying issues
+          # Post: 0 qualifying issues
+          # Expected: accepted, corrected HTML returned
+
+      @pytest.mark.asyncio
+      async def test_length_gate_runs_before_compatibility_gate(self) -> None:
+          """Empty output rejected by length gate — compatibility scan never runs."""
+          # LLM returns "" → length gate rejects → unsupported_css_in_html not called on ""
+  ```
+- Mock strategy: patch `unsupported_css_in_html` with `side_effect` that returns different results for the original HTML vs. the corrected HTML. Use the call order (first call = pre-scan on original, inside the method at line 43; the pre-scan result is already captured in `qualifying`) — but since `unsupported_css_in_html` is called TWICE now (once on original at line 43, once on corrected after the new gate), the mock's `side_effect` can return `[issue_list_1, issue_list_2]` to simulate before/after.
+- Verify that rejected corrections return `(original_html, [])` — empty corrections list signals no changes applied
+- Verify that accepted corrections return `(corrected_html, [property_ids])` — non-empty corrections list
+**Security:** Tests only — no production code paths, no PII, no real LLM calls.
+**Verify:** `python -m pytest app/ai/agents/tests/test_validation_loop.py -v` — all existing + new tests pass. `make check` passes. No test relies on real ontology data (all mocked).

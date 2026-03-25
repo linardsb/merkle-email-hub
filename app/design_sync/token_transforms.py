@@ -14,6 +14,7 @@ from typing import Literal
 from app.core.logging import get_logger
 from app.design_sync.protocol import (
     ExtractedColor,
+    ExtractedGradient,
     ExtractedSpacing,
     ExtractedTokens,
     ExtractedTypography,
@@ -520,6 +521,86 @@ def _validate_spacing(spacing: ExtractedSpacing, warnings: list[TokenWarning]) -
     return replace(spacing, value=value)
 
 
+# ── Gradient & dark mode validation ──
+
+
+_MAGIC_COLOR_MAP: dict[str, str] = {
+    "#000000": "#010101",  # Prevent Outlook auto-inversion of pure black
+    "#FFFFFF": "#FEFEFE",  # Prevent Outlook auto-inversion of pure white
+}
+
+
+def _apply_magic_colors(color: ExtractedColor) -> ExtractedColor:
+    """Replace pure black/white with magic values for Outlook dark mode safety."""
+    replacement = _MAGIC_COLOR_MAP.get(color.hex.upper())
+    if replacement:
+        return replace(color, hex=replacement)
+    return color
+
+
+def _validate_gradient(
+    gradient: ExtractedGradient, warnings: list[TokenWarning]
+) -> ExtractedGradient:
+    """Validate gradient: clamp angle 0-360, validate stop hex values."""
+    angle = gradient.angle % 360
+    if angle != gradient.angle:
+        warnings.append(
+            TokenWarning(
+                level="info",
+                field=f"gradients[{gradient.name}].angle",
+                message=f"Angle clamped from {gradient.angle} to {angle}",
+            )
+        )
+    validated_stops: list[tuple[str, float]] = []
+    for hex_val, pos in gradient.stops:
+        norm = _normalize_hex(hex_val)
+        if norm is None:
+            warnings.append(
+                TokenWarning(
+                    level="error",
+                    field=f"gradients[{gradient.name}].stops",
+                    message=f"Unparseable gradient stop color: {hex_val}",
+                    original_value=hex_val,
+                )
+            )
+        validated_stops.append((norm or hex_val, max(0.0, min(1.0, pos))))
+    norm_fallback = _normalize_hex(gradient.fallback_hex)
+    return replace(
+        gradient,
+        angle=angle,
+        stops=tuple(validated_stops),
+        fallback_hex=norm_fallback or gradient.fallback_hex,
+    )
+
+
+def _validate_dark_mode_contrast(
+    dark_colors: list[ExtractedColor],
+    warnings: list[TokenWarning],
+) -> None:
+    """Warn if dark mode text/background pairs fail WCAG AA (4.5:1)."""
+    dark_by_name = {c.name.lower(): c for c in dark_colors}
+    dark_bg = (
+        dark_by_name.get("background") or dark_by_name.get("bg") or dark_by_name.get("surface")
+    )
+    dark_text = (
+        dark_by_name.get("text") or dark_by_name.get("body") or dark_by_name.get("foreground")
+    )
+    if dark_bg and dark_text:
+        from app.design_sync.converter import _contrast_ratio, _relative_luminance
+
+        bg_lum = _relative_luminance(dark_bg.hex)
+        text_lum = _relative_luminance(dark_text.hex)
+        ratio = _contrast_ratio(bg_lum, text_lum)
+        if ratio < 4.5:
+            warnings.append(
+                TokenWarning(
+                    level="warning",
+                    field="dark_colors",
+                    message=f"Dark mode text/bg contrast ratio {ratio:.1f}:1 < 4.5:1 WCAG AA",
+                )
+            )
+
+
 # ── Deduplication ──
 
 
@@ -716,6 +797,17 @@ def validate_and_transform(
             )
         )
 
+    # Dark color validation: same as light colors + magic color replacement
+    dark_colors = [_validate_color(c, warnings) for c in tokens.dark_colors]
+    dark_colors = _dedup_colors(dark_colors, warnings)
+    dark_colors = [_apply_magic_colors(c) for c in dark_colors]
+
+    # Gradient validation
+    gradients = [_validate_gradient(g, warnings) for g in tokens.gradients]
+
+    # WCAG AA contrast check for dark color pairs
+    _validate_dark_mode_contrast(dark_colors, warnings)
+
     # Also validate stroke_colors (same rules as colors)
     stroke_colors = [_validate_color(c, warnings) for c in tokens.stroke_colors]
     stroke_colors = _dedup_colors(stroke_colors, warnings)
@@ -739,5 +831,7 @@ def validate_and_transform(
         modes=tokens.modes,
         stroke_colors=stroke_colors,
         variables=tokens.variables,
+        dark_colors=dark_colors,
+        gradients=gradients,
     )
     return validated, warnings

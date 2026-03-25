@@ -156,13 +156,32 @@ class CompatibilityHintResponse(BaseModel):
     affected_clients: list[str]
 
 
+class DesignGradientStopResponse(BaseModel):
+    """A single gradient stop."""
+
+    hex: str
+    position: float
+
+
+class DesignGradientResponse(BaseModel):
+    """A gradient extracted from a design file."""
+
+    name: str
+    type: str
+    angle: float
+    stops: list[DesignGradientStopResponse]
+    fallback_hex: str
+
+
 class DesignTokensResponse(BaseModel):
     """Design tokens extracted from a connection."""
 
     connection_id: int
     colors: list[DesignColorResponse]
+    dark_colors: list[DesignColorResponse] = Field(default_factory=list)
     typography: list[DesignTypographyResponse]
     spacing: list[DesignSpacingResponse]
+    gradients: list[DesignGradientResponse] = Field(default_factory=list)
     extracted_at: datetime.datetime
     warnings: list[str] | None = None
     compatibility_hints: list[CompatibilityHintResponse] | None = None
