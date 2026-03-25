@@ -402,6 +402,9 @@ class DesignImportService:
                         "family": t.family,
                         "weight": t.weight,
                         "size": t.size,
+                        "line_height": t.lineHeight,
+                        "letter_spacing": t.letterSpacing,
+                        "text_transform": t.textTransform,
                     }
                     for t in tokens.typography
                 ],
@@ -424,6 +427,8 @@ class DesignImportService:
                     }
                     for g in tokens.gradients
                 ]
+            if tokens.warnings:
+                design_tokens["token_warnings"] = tokens.warnings
 
         return {
             "image_urls": image_urls,
@@ -747,6 +752,8 @@ class DesignImportService:
         children: list[DesignNode] = []
         for i, section in enumerate(layout.sections):
             child_nodes: list[DesignNode] = []
+
+            # IMAGE children
             for img in section.images:
                 img_name = getattr(img, "name", None)
                 img_width = getattr(img, "width", None)
@@ -760,14 +767,50 @@ class DesignImportService:
                         height=float(img_height) if isinstance(img_height, (int, float)) else None,
                     )
                 )
+
+            # TEXT children from section.texts
+            for txt in section.texts:
+                font_size_val = txt.font_size
+                font_family_val = txt.font_family
+                font_weight_val = txt.font_weight
+                line_height_val = txt.line_height
+                letter_spacing_val = txt.letter_spacing
+                child_nodes.append(
+                    DesignNode(
+                        id=txt.node_id,
+                        name=f"text_{txt.node_id}",
+                        type=DesignNodeType.TEXT,
+                        text_content=txt.content,
+                        font_size=float(font_size_val)
+                        if isinstance(font_size_val, (int, float))
+                        else None,
+                        font_family=font_family_val if isinstance(font_family_val, str) else None,
+                        font_weight=int(font_weight_val)
+                        if isinstance(font_weight_val, (int, float))
+                        else None,
+                        line_height_px=float(line_height_val)
+                        if isinstance(line_height_val, (int, float))
+                        else None,
+                        letter_spacing_px=float(letter_spacing_val)
+                        if isinstance(letter_spacing_val, (int, float))
+                        else None,
+                    )
+                )
+
+            # Section with padding/spacing
+            spacing_after = section.spacing_after
             children.append(
                 DesignNode(
                     id=f"section_{i}",
                     name=section.section_type,
                     type=DesignNodeType.FRAME,
                     children=child_nodes,
-                    width=600,
-                    fill_color=getattr(section, "bg_color", None),
+                    width=section.width or 600,
+                    height=section.height,
+                    fill_color=section.bg_color,
+                    item_spacing=float(spacing_after)
+                    if isinstance(spacing_after, (int, float))
+                    else None,
                 )
             )
         return [
@@ -799,6 +842,9 @@ class DesignImportService:
                     weight=t.weight,
                     size=t.size,
                     line_height=t.lineHeight,
+                    letter_spacing=t.letterSpacing,
+                    text_transform=t.textTransform,
+                    text_decoration=t.textDecoration,
                 )
                 for t in tokens.typography
             ],

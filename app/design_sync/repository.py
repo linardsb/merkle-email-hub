@@ -150,6 +150,17 @@ class DesignSyncRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_previous_snapshot(self, connection_id: int) -> DesignTokenSnapshot | None:
+        """Get the second-most-recent snapshot for diff comparison."""
+        result = await self.db.execute(
+            select(DesignTokenSnapshot)
+            .where(DesignTokenSnapshot.connection_id == connection_id)
+            .order_by(DesignTokenSnapshot.extracted_at.desc())
+            .offset(1)
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
     # ── Design Imports ──
 
     async def create_import(
@@ -285,7 +296,8 @@ class DesignSyncRepository:
         assets: list[dict[str, object]],
     ) -> list[DesignImportAsset]:
         """Create multiple assets in a single flush. Each dict must have
-        node_id, node_name, file_path; optional: width, height, format, usage."""
+        node_id, node_name, file_path; optional: width, height, format, usage.
+        """
         models = [
             DesignImportAsset(
                 import_id=import_id,

@@ -1445,3 +1445,56 @@ class TestFigmaVariablesAPI:
         assert colors == []
         assert variables == []
         assert modes == {}
+
+
+class TestTokenDiff:
+    """Tests for token diff computation."""
+
+    def test_compute_token_diff_detects_added_color(self) -> None:
+        """Token diff detects added colors between snapshots."""
+        from app.design_sync.service import DesignSyncService
+
+        prev_json: dict[str, Any] = {
+            "colors": [{"name": "Primary", "hex": "#538FE4", "opacity": 1.0}]
+        }
+        cur_json: dict[str, Any] = {
+            "colors": [
+                {"name": "Primary", "hex": "#538FE4", "opacity": 1.0},
+                {"name": "Secondary", "hex": "#FF6B35", "opacity": 1.0},
+            ]
+        }
+        entries = DesignSyncService._compute_token_diff(cur_json, prev_json)
+        added = [e for e in entries if e.change == "added"]
+        assert len(added) == 1
+        assert added[0].name == "Secondary"
+        assert added[0].category == "color"
+
+    def test_compute_token_diff_detects_removed_color(self) -> None:
+        """Token diff detects removed colors."""
+        from app.design_sync.service import DesignSyncService
+
+        prev_json: dict[str, Any] = {
+            "colors": [
+                {"name": "Primary", "hex": "#538FE4", "opacity": 1.0},
+                {"name": "Old", "hex": "#AAAAAA", "opacity": 1.0},
+            ]
+        }
+        cur_json: dict[str, Any] = {
+            "colors": [{"name": "Primary", "hex": "#538FE4", "opacity": 1.0}]
+        }
+        entries = DesignSyncService._compute_token_diff(cur_json, prev_json)
+        removed = [e for e in entries if e.change == "removed"]
+        assert len(removed) == 1
+        assert removed[0].name == "Old"
+
+    def test_compute_token_diff_empty_previous(self) -> None:
+        """All tokens are 'added' when previous snapshot is empty."""
+        from app.design_sync.service import DesignSyncService
+
+        cur_json: dict[str, Any] = {
+            "colors": [{"name": "Primary", "hex": "#538FE4", "opacity": 1.0}],
+            "typography": [{"name": "H1", "family": "Inter", "size": 32}],
+        }
+        entries = DesignSyncService._compute_token_diff(cur_json, {})
+        assert len(entries) == 2
+        assert all(e.change == "added" for e in entries)

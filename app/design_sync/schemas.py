@@ -187,6 +187,26 @@ class DesignTokensResponse(BaseModel):
     compatibility_hints: list[CompatibilityHintResponse] | None = None
 
 
+class TokenDiffEntry(BaseModel):
+    """A single token change between snapshots."""
+
+    category: str
+    name: str
+    change: Literal["added", "removed", "changed"]
+    old_value: str | None = None
+    new_value: str | None = None
+
+
+class TokenDiffResponse(BaseModel):
+    """Token diff between current and previous sync."""
+
+    connection_id: int
+    current_extracted_at: datetime.datetime
+    previous_extracted_at: datetime.datetime | None = None
+    entries: list[TokenDiffEntry]
+    has_previous: bool = False
+
+
 # ── File Structure Responses ──
 
 
@@ -373,6 +393,10 @@ class TextBlockResponse(BaseModel):
     content: str
     font_size: float | None = None
     is_heading: bool = False
+    font_family: str | None = None
+    font_weight: int | None = None
+    line_height: float | None = None
+    letter_spacing: float | None = None
 
 
 class ImagePlaceholderResponse(BaseModel):

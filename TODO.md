@@ -992,7 +992,7 @@
 - [x] ~~33.5b Client-aware conversion — ontology wire-up (prerequisite for 33.7)~~ DONE
 - [x] ~~33.6 Semantic HTML generation (headings, paragraphs, buttons)~~ DONE
 - [x] ~~33.7 Dark mode token extraction & gradient fallbacks~~ DONE
-- [ ] 33.8 Design context enrichment & Scaffolder integration
+- [x] ~~33.8 Design context enrichment & Scaffolder integration~~ DONE
 - [ ] 33.9 Builder annotations for visual builder sync
 - [ ] 33.10 Image asset import for design sync pipeline
 - [ ] 33.11 Tests & integration verification
@@ -1563,7 +1563,7 @@
 **Security:** No new input paths. Gradient angle clamped to 0-360. Color hex values validated by 33.2 transform layer. Magic color values (#010101, #fefefe) are static constants.
 **Verify:** Figma file with "Light"/"Dark" variable modes → both `colors` and `dark_colors` populated. Dark mode CSS block contains all three tiers: meta tags, `@media (prefers-color-scheme: dark)` rules with `!important`, and `[data-ogsc]`/`[data-ogsb]` selectors. Magic colors used: generated dark CSS uses `#010101` instead of `#000000` and `#fefefe` instead of `#ffffff`. Dark color pairs validated for WCAG AA contrast. Gradient fill → `background: linear-gradient(...)` in CSS + `bgcolor="{fallback_hex}"` attribute + VML `<v:fill type="gradient">` for Outlook. Gradient with 3 stops → all stops present in CSS. CTA buttons have 1x1 pixel background trick to prevent Outlook inversion. No dark mode in Figma → `dark_colors` empty, no dark CSS generated, no meta tags added. `make test` passes.
 
-### 33.8 Design Context Enrichment & Scaffolder Integration `[Backend + Frontend]`
+### ~~33.8 Design Context Enrichment & Scaffolder Integration~~ DONE `[Backend + Frontend]`
 **What:** Ensure the full enriched token set (colors, typography with line-height/letter-spacing, spacing, dark mode colors, gradients, token warnings) flows through the design context to the Scaffolder and is visible in the frontend token viewer. Fix the `_layout_to_design_nodes()` reconstruction to preserve typography, padding, and text content. Add token diff display on the design sync page showing what changed between syncs.
 **Why:** Currently: (1) `_build_design_context()` drops line_height and spacing from the dict sent to the Scaffolder. (2) `_layout_to_design_nodes()` builds hollow `DesignNode` objects that lose all typography, padding, and text content. (3) The frontend `DesignTokensView` only shows colors, typography families, and spacing values — no line-height, letter-spacing, dark mode variants, or gradient previews. (4) Users can't see what changed between syncs — they must compare manually.
 **Implementation:**

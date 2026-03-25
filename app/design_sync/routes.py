@@ -35,6 +35,7 @@ from app.design_sync.schemas import (
     ImportResponse,
     LayoutAnalysisResponse,
     StartImportRequest,
+    TokenDiffResponse,
     UpdateImportBriefRequest,
 )
 from app.design_sync.service import DesignSyncService
@@ -99,6 +100,19 @@ async def get_tokens(
     """Get design tokens for a connection."""
     _ = request
     return await service.get_tokens(connection_id, current_user)
+
+
+@router.get("/connections/{connection_id}/tokens/diff", response_model=TokenDiffResponse)
+@limiter.limit("30/minute")
+async def get_token_diff(
+    connection_id: int,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> TokenDiffResponse:
+    """Compare current token snapshot with previous sync."""
+    _ = request
+    return await service.get_token_diff(connection_id, current_user)
 
 
 @router.post("/connections", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)

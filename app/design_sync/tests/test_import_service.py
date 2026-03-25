@@ -12,12 +12,17 @@ from app.ai.agents.scaffolder.prompt import build_design_context_section
 from app.ai.agents.scaffolder.schemas import ScaffolderRequest, ScaffolderResponse
 from app.design_sync.exceptions import ImportNotFoundError, ImportStateError
 from app.design_sync.import_service import DesignImportService
+from app.design_sync.protocol import DesignNodeType
 from app.design_sync.repository import DesignSyncRepository
 from app.design_sync.schemas import (
     AnalyzedSectionResponse,
     ConvertImportRequest,
     DesignContextSchema,
+    DesignTokensResponse,
+    DesignTypographyResponse,
+    LayoutAnalysisResponse,
     StartImportRequest,
+    TextBlockResponse,
 )
 from app.design_sync.service import DesignSyncService
 
@@ -706,3 +711,104 @@ class TestDesignImportServiceOrchestrator:
         assert "placehold.co" not in fixed.html
         assert "/assets/hero.png" in fixed.html
         assert "/assets/logo.png" in fixed.html
+
+    def test_build_design_context_includes_typography_fields(self) -> None:
+        """Typography entries include line_height, letter_spacing, text_transform."""
+        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        conn = _make_connection(conn_id=5)
+
+        layout = MagicMock()
+        layout.sections = [MagicMock(section_type="hero")]
+        layout.file_name = "Test.fig"
+
+        tokens = MagicMock()
+        tokens.colors = []
+        typo = MagicMock()
+        typo.name = "H1"
+        typo.family = "Inter"
+        typo.weight = "700"
+        typo.size = 32
+        typo.lineHeight = 40.0
+        typo.letterSpacing = 0.5
+        typo.textTransform = "uppercase"
+        tokens.typography = [typo]
+        tokens.spacing = []
+        tokens.dark_colors = []
+        tokens.gradients = []
+        tokens.warnings = ["Test warning"]
+
+        ctx = svc._build_design_context(layout, None, tokens, conn)
+        dt = ctx["design_tokens"]
+        assert isinstance(dt, dict)
+        typo_entry = dt["typography"][0]
+        assert typo_entry["line_height"] == 40.0
+        assert typo_entry["letter_spacing"] == 0.5
+        assert typo_entry["text_transform"] == "uppercase"
+        assert dt["token_warnings"] == ["Test warning"]
+
+    def test_layout_to_design_nodes_with_text(self) -> None:
+        """TEXT children are created from section.texts with typography data."""
+        svc = DesignImportService(design_service_factory=MagicMock(), user=_make_user())
+        layout = LayoutAnalysisResponse(
+            connection_id=1,
+            file_name="Test.fig",
+            overall_width=600,
+            sections=[
+                AnalyzedSectionResponse(
+                    section_type="hero",
+                    node_id="1:0",
+                    node_name="Hero",
+                    texts=[
+                        TextBlockResponse(
+                            node_id="1:1",
+                            content="Hello World",
+                            font_size=32,
+                            is_heading=True,
+                            font_family="Inter",
+                            font_weight=700,
+                            line_height=40,
+                            letter_spacing=0.5,
+                        )
+                    ],
+                    images=[],
+                    buttons=[],
+                ),
+            ],
+            total_text_blocks=1,
+            total_images=0,
+        )
+        nodes = svc._layout_to_design_nodes(layout)
+        text_node = nodes[0].children[0].children[0]  # page > section > text
+        assert text_node.type == DesignNodeType.TEXT
+        assert text_node.text_content == "Hello World"
+        assert text_node.font_family == "Inter"
+        assert text_node.font_size == 32.0
+        assert text_node.line_height_px == 40.0
+        assert text_node.letter_spacing_px == 0.5
+
+    def test_tokens_to_protocol_preserves_typography_fields(self) -> None:
+        """Round-trip: letterSpacing, textTransform, textDecoration survive conversion."""
+        tokens = DesignTokensResponse(
+            connection_id=1,
+            colors=[],
+            typography=[
+                DesignTypographyResponse(
+                    name="H1",
+                    family="Inter",
+                    weight="700",
+                    size=32,
+                    lineHeight=40,
+                    letterSpacing=0.5,
+                    textTransform="uppercase",
+                    textDecoration="underline",
+                ),
+            ],
+            spacing=[],
+            extracted_at="2026-01-01T00:00:00Z",
+        )
+        result = DesignImportService._tokens_to_protocol(tokens)
+        typo = result.typography[0]
+        assert typo.letter_spacing == 0.5
+        assert typo.text_transform == "uppercase"
+        assert typo.text_decoration == "underline"
+        assert typo.line_height == 40

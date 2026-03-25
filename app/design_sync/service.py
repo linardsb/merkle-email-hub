@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -75,6 +76,8 @@ from app.design_sync.schemas import (
     StartImportRequest,
     StoredAssetResponse,
     TextBlockResponse,
+    TokenDiffEntry,
+    TokenDiffResponse,
 )
 from app.design_sync.sketch.service import SketchDesignSyncService
 from app.projects.service import ProjectService
@@ -567,6 +570,86 @@ class DesignSyncService:
             for h in raw
             if isinstance(h, dict)
         ]
+
+    # ── Token Diff ──
+
+    async def get_token_diff(self, connection_id: int, user: User) -> TokenDiffResponse:
+        """Compare current token snapshot vs previous."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        current = await self._repo.get_latest_snapshot(connection_id)
+        if current is None:
+            return TokenDiffResponse(
+                connection_id=connection_id,
+                current_extracted_at=cast(datetime, conn.created_at),
+                entries=[],
+            )
+
+        previous = await self._repo.get_previous_snapshot(connection_id)
+        entries = self._compute_token_diff(
+            current.tokens_json,
+            previous.tokens_json if previous else {},
+        )
+
+        return TokenDiffResponse(
+            connection_id=connection_id,
+            current_extracted_at=current.extracted_at,
+            previous_extracted_at=previous.extracted_at if previous else None,
+            entries=entries,
+            has_previous=previous is not None,
+        )
+
+    @staticmethod
+    def _compute_token_diff(
+        current: dict[str, Any], previous: dict[str, Any]
+    ) -> list[TokenDiffEntry]:
+        """Diff two token snapshot JSON dicts."""
+        entries: list[TokenDiffEntry] = []
+
+        diff_specs: list[tuple[str, str, Callable[[dict[str, Any]], tuple[str, ...]]]] = [
+            ("color", "colors", lambda c: (c.get("name", ""), c.get("hex", ""))),
+            (
+                "typography",
+                "typography",
+                lambda t: (t.get("name", ""), t.get("family", ""), str(t.get("size", ""))),
+            ),
+            ("spacing", "spacing", lambda s: (s.get("name", ""), str(s.get("value", "")))),
+            ("dark_color", "dark_colors", lambda c: (c.get("name", ""), c.get("hex", ""))),
+        ]
+
+        for category, json_key, key_fn in diff_specs:
+            cur_items = [i for i in current.get(json_key, []) if isinstance(i, dict)]
+            prev_items = [i for i in previous.get(json_key, []) if isinstance(i, dict)]
+
+            cur_keys = {key_fn(i): i for i in cur_items}
+            prev_keys = {key_fn(i): i for i in prev_items}
+
+            for k in cur_keys:
+                if k not in prev_keys:
+                    entries.append(
+                        TokenDiffEntry(
+                            category=category,
+                            name=cur_keys[k].get("name", "?"),
+                            change="added",
+                            new_value=str(k),
+                        )
+                    )
+            for k in prev_keys:
+                if k not in cur_keys:
+                    entries.append(
+                        TokenDiffEntry(
+                            category=category,
+                            name=prev_keys[k].get("name", "?"),
+                            change="removed",
+                            old_value=str(k),
+                        )
+                    )
+
+        return entries
 
     # ── Phase 12.1: File Structure, Components, Image Export ──
 
@@ -1253,6 +1336,10 @@ def _layout_to_response(
                     content=t.content,
                     font_size=t.font_size,
                     is_heading=t.is_heading,
+                    font_family=t.font_family,
+                    font_weight=t.font_weight,
+                    line_height=t.line_height,
+                    letter_spacing=t.letter_spacing,
                 )
                 for t in s.texts
             ],

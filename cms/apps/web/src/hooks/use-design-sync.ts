@@ -23,6 +23,7 @@ import type {
   ExtractComponentsArg,
   BrowseFilesResponse,
   BrowseFilesArg,
+  TokenDiff,
 } from "@/types/design-sync";
 
 // ── Browse files (wizard) ──
@@ -41,15 +42,19 @@ export function useDesignConnections() {
 }
 
 export function useDesignConnection(id: number | null) {
-  return useSWR<DesignConnection>(
-    id ? `/api/v1/design-sync/connections/${id}` : null,
-    fetcher,
-  );
+  return useSWR<DesignConnection>(id ? `/api/v1/design-sync/connections/${id}` : null, fetcher);
 }
 
 export function useDesignTokens(connectionId: number | null) {
   return useSWR<DesignTokens>(
     connectionId ? `/api/v1/design-sync/connections/${connectionId}/tokens` : null,
+    fetcher,
+  );
+}
+
+export function useTokenDiff(connectionId: number | null) {
+  return useSWR<TokenDiff>(
+    connectionId ? `/api/v1/design-sync/connections/${connectionId}/tokens/diff` : null,
     fetcher,
   );
 }
@@ -75,7 +80,9 @@ export function useRefreshConnectionToken(connectionId: number | null) {
         try {
           const body = await res.json();
           if (body.error) message = body.error;
-        } catch { /* use default */ }
+        } catch {
+          /* use default */
+        }
         throw new ApiError(res.status, message);
       }
       return res.json();
@@ -131,7 +138,9 @@ export function useDesignImportByTemplate(templateId: number | null, projectId: 
 export function useDesignFileStructure(connectionId: number | null, depth?: number) {
   const depthParam = depth ? `?depth=${depth}` : "";
   return useSWR<DesignFileStructure>(
-    connectionId ? `/api/v1/design-sync/connections/${connectionId}/file-structure${depthParam}` : null,
+    connectionId
+      ? `/api/v1/design-sync/connections/${connectionId}/file-structure${depthParam}`
+      : null,
     fetcher,
   );
 }
@@ -186,7 +195,9 @@ export function useUpdateImportBrief(importId: number | null) {
         try {
           const body = await res.json();
           if (body.error) message = body.error;
-        } catch { /* use default */ }
+        } catch {
+          /* use default */
+        }
         throw new ApiError(res.status, message);
       }
       return res.json();

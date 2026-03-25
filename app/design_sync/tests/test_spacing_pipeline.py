@@ -207,6 +207,7 @@ class TestSpacingInDesignContext:
         ]
         tokens.dark_colors = []
         tokens.gradients = []
+        tokens.warnings = None
         layout = MagicMock(spec=LayoutAnalysisResponse)
         layout.sections = []
         layout.file_name = "test.fig"

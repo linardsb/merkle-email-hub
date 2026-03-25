@@ -30,6 +30,9 @@ export interface DesignTypography {
   weight: string;
   size: number;
   lineHeight: number;
+  letterSpacing?: number | null;
+  textTransform?: string | null;
+  textDecoration?: string | null;
 }
 
 export interface DesignSpacing {
@@ -37,12 +40,52 @@ export interface DesignSpacing {
   value: number;
 }
 
+export interface DesignGradientStop {
+  hex: string;
+  position: number;
+}
+
+export interface DesignGradient {
+  name: string;
+  type: string;
+  angle: number;
+  stops: DesignGradientStop[];
+  fallback_hex: string;
+}
+
+export interface CompatibilityHint {
+  level: string;
+  css_property: string;
+  message: string;
+  affected_clients: string[];
+}
+
 export interface DesignTokens {
   connection_id: number;
   colors: DesignColor[];
+  dark_colors?: DesignColor[];
   typography: DesignTypography[];
   spacing: DesignSpacing[];
+  gradients?: DesignGradient[];
   extracted_at: string;
+  warnings?: string[] | null;
+  compatibility_hints?: CompatibilityHint[];
+}
+
+export interface TokenDiffEntry {
+  category: string;
+  name: string;
+  change: "added" | "removed" | "changed";
+  old_value?: string | null;
+  new_value?: string | null;
+}
+
+export interface TokenDiff {
+  connection_id: number;
+  current_extracted_at: string;
+  previous_extracted_at: string | null;
+  entries: TokenDiffEntry[];
+  has_previous: boolean;
 }
 
 export interface DesignConnectionCreate {
@@ -141,7 +184,13 @@ export interface DesignImportAsset {
   created_at: string;
 }
 
-export type ImportStatus = "pending" | "extracting" | "converting" | "completed" | "failed" | "cancelled";
+export type ImportStatus =
+  | "pending"
+  | "extracting"
+  | "converting"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export interface DesignImport {
   id: number;
