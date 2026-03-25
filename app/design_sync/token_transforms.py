@@ -592,8 +592,37 @@ def _dedup_spacing(
 # ── Main entry point ──
 
 
+_SYSTEM_FONTS: set[str] = {
+    "arial",
+    "helvetica",
+    "times new roman",
+    "times",
+    "georgia",
+    "verdana",
+    "tahoma",
+    "trebuchet ms",
+    "courier new",
+    "courier",
+    "impact",
+    "comic sans ms",
+    "lucida console",
+    "lucida sans unicode",
+    "palatino linotype",
+    "book antiqua",
+    "palatino",
+}
+
+
+def _is_system_font(family: str) -> bool:
+    """Check if font is a widely-available system font."""
+    primary = family.split(",")[0].strip().strip("'\"").lower()
+    return primary in _SYSTEM_FONTS
+
+
 def validate_and_transform(
     tokens: ExtractedTokens,
+    *,
+    target_clients: list[str] | None = None,
 ) -> tuple[ExtractedTokens, list[TokenWarning]]:
     """Validate and transform extracted tokens to email-safe values.
 
@@ -610,6 +639,70 @@ def validate_and_transform(
     colors = _dedup_colors(colors, warnings)
     typography = _dedup_typography(typography, warnings)
     spacing = _dedup_spacing(spacing, warnings)
+
+    # Client-aware compatibility checks
+    compat = None
+    if target_clients:
+        from app.design_sync.compatibility import ConverterCompatibility
+        from app.knowledge.ontology import SupportLevel
+
+        compat = ConverterCompatibility(target_clients=target_clients)
+
+        # Client-aware color warnings
+        for c in colors:
+            if c.opacity is not None and c.opacity < 1.0:
+                level = compat.check_property("opacity")
+                if level != SupportLevel.FULL:
+                    unsupported = compat.unsupported_clients("opacity")
+                    if unsupported:
+                        warnings.append(
+                            TokenWarning(
+                                level="info",
+                                field="color.opacity",
+                                message=(
+                                    f"Color '{c.name}' uses opacity ({c.opacity}) — "
+                                    f"not supported in {', '.join(unsupported[:3])}"
+                                ),
+                                original_value=str(c.opacity),
+                                fixed_value=str(c.opacity),
+                            )
+                        )
+
+        # Client-aware typography warnings
+        for t in typography:
+            if t.family and not _is_system_font(t.family):
+                unsupported = compat.unsupported_clients("@font-face")
+                if unsupported:
+                    warnings.append(
+                        TokenWarning(
+                            level="info",
+                            field="typography.family",
+                            message=(
+                                f"Font '{t.family}' requires @font-face — "
+                                f"fallback used in {', '.join(unsupported[:3])}"
+                            ),
+                            original_value=t.family,
+                            fixed_value=t.family,
+                        )
+                    )
+
+            if t.letter_spacing is not None and t.letter_spacing < 0:
+                word_clients = [
+                    cid for cid in target_clients if compat.client_engine(cid) == "word"
+                ]
+                if word_clients:
+                    warnings.append(
+                        TokenWarning(
+                            level="info",
+                            field="typography.letter_spacing",
+                            message=(
+                                f"Negative letter-spacing ({t.letter_spacing}px) "
+                                f"ignored in {', '.join(word_clients[:2])} (Word engine)"
+                            ),
+                            original_value=str(t.letter_spacing),
+                            fixed_value=str(t.letter_spacing),
+                        )
+                    )
 
     # Cross-token warnings
     if not colors:

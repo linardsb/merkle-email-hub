@@ -15,11 +15,13 @@ from app.design_sync.protocol import (
     DesignNode,
     DesignNodeType,
     ExtractedColor,
+    ExtractedSpacing,
     ExtractedTypography,
 )
 from app.projects.design_system import BrandPalette, Typography
 
 if TYPE_CHECKING:
+    from app.design_sync.compatibility import ConverterCompatibility
     from app.design_sync.figma.layout_analyzer import EmailSection, TextBlock
 
 logger = get_logger(__name__)
@@ -64,6 +66,8 @@ class _NodeProps:
     border_color: str | None = None
     border_width: float = 0
     layout_direction: str | None = None  # "row" | "column" | None
+    item_spacing: float = 0
+    counter_axis_spacing: float = 0
     line_height_px: float | None = None
     letter_spacing_px: float | None = None
     text_transform: str | None = None
@@ -232,6 +236,49 @@ def convert_typography(styles: list[ExtractedTypography]) -> Typography:
     )
 
 
+# Standard spacing scale — values that align to 4px/8px multiples get named
+_SPACING_SCALE: dict[int, str] = {
+    4: "2xs",
+    8: "xs",
+    12: "sm",
+    16: "md",
+    20: "md-lg",
+    24: "lg",
+    32: "xl",
+    40: "xl-2",
+    48: "2xl",
+    64: "3xl",
+}
+
+
+def convert_spacing(spacing: list[ExtractedSpacing]) -> dict[str, float]:
+    """Convert extracted spacing tokens to a named spacing scale.
+
+    Maps numeric spacing values to semantic names. Values that align to
+    the standard 4px/8px scale get standard names (xs, sm, md, lg, xl).
+    Non-standard values keep their original name.
+
+    Returns:
+        Mapping of semantic name → pixel value.
+    """
+    result: dict[str, float] = {}
+    for token in spacing:
+        px = token.value
+        int_px = int(px)
+        # Use standard scale name if value matches
+        if int_px in _SPACING_SCALE:
+            name = _SPACING_SCALE[int_px]
+        else:
+            # Normalize name: strip "spacing-" prefix, lowercase
+            name = token.name.lower().removeprefix("spacing-").removeprefix("space-")
+            if not name:
+                name = f"{int_px}px"
+        # Avoid overwriting a scale entry with a different value
+        if name not in result:
+            result[name] = px
+    return result
+
+
 def _contrasting_text_color(bg_hex: str) -> str:
     """Return white or black text depending on background luminance."""
     return "#ffffff" if _relative_luminance(bg_hex) < 0.5 else "#000000"
@@ -249,6 +296,7 @@ def node_to_email_html(
     text_meta: dict[str, TextBlock] | None = None,
     current_section: EmailSection | None = None,
     body_font_size: float = 16.0,
+    compat: ConverterCompatibility | None = None,
     _depth: int = 0,
 ) -> str:
     """Convert a DesignNode tree to email-safe HTML (table layout).
@@ -295,6 +343,11 @@ def node_to_email_html(
                 lh = round(props.line_height_px)
                 extra_style += f"line-height:{lh}px;mso-line-height-rule:exactly;"
             if props.letter_spacing_px:
+                if compat:
+                    compat.check_and_warn(
+                        "letter-spacing",
+                        context=f"Text node '{node.name}'",
+                    )
                 ls = round(props.letter_spacing_px, 1)
                 extra_style += f"letter-spacing:{ls}px;"
             if props.text_transform:
@@ -370,18 +423,18 @@ def node_to_email_html(
             if safe_family:
                 effective_font = f"{safe_family},Arial,Helvetica,sans-serif"
 
-        if props:
-            pad_vals = [
-                props.padding_top,
-                props.padding_right,
-                props.padding_bottom,
-                props.padding_left,
-            ]
-            if any(v > 0 for v in pad_vals):
-                style_parts.append(
-                    f"padding:{int(props.padding_top)}px {int(props.padding_right)}px "
-                    f"{int(props.padding_bottom)}px {int(props.padding_left)}px"
-                )
+        # Build padding string for inner <td> wrapper (NOT <table>).
+        # Outlook ignores padding on <table>; only <td> is reliable.
+        pad_top = node.padding_top or (props.padding_top if props else 0) or 0
+        pad_right = node.padding_right or (props.padding_right if props else 0) or 0
+        pad_bottom = node.padding_bottom or (props.padding_bottom if props else 0) or 0
+        pad_left = node.padding_left or (props.padding_left if props else 0) or 0
+        has_padding = any(v > 0 for v in (pad_top, pad_right, pad_bottom, pad_left))
+        padding_css = (
+            f"padding:{int(pad_top)}px {int(pad_right)}px {int(pad_bottom)}px {int(pad_left)}px"
+            if has_padding
+            else ""
+        )
 
         # Nesting depth guard — flatten beyond depth 6
         if _depth > 6:
@@ -404,6 +457,7 @@ def node_to_email_html(
                     text_meta=text_meta,
                     current_section=section,
                     body_font_size=body_font_size,
+                    compat=compat,
                     _depth=_depth + 1,
                 )
                 if child.type != DesignNodeType.TEXT:
@@ -419,15 +473,60 @@ def node_to_email_html(
         ]
 
         if not node.children:
-            lines.append(f"{pad}  <tr><td>&nbsp;</td></tr>")
+            if has_padding:
+                lines.append(f'{pad}  <tr><td style="{padding_css}">&nbsp;</td></tr>')
+            else:
+                lines.append(f"{pad}  <tr><td>&nbsp;</td></tr>")
         else:
-            rows = _group_into_rows(node.children, parent_width=node.width)
-            for row in rows:
-                lines.append(f"{pad}  <tr>")
-                for child in row:
+            # Determine layout strategy
+            layout_dir = props.layout_direction if props else None
+            # DesignNode takes priority
+            if node.layout_mode == "HORIZONTAL":
+                layout_dir = "row"
+            elif node.layout_mode == "VERTICAL":
+                layout_dir = "column"
+
+            gap = (props.item_spacing if props else 0) or (node.item_spacing or 0)
+            cross_gap = (props.counter_axis_spacing if props else 0) or (
+                node.counter_axis_spacing or 0
+            )
+
+            if layout_dir == "row":
+                # HORIZONTAL: all children in a single <tr>
+                rows = [node.children] if node.children else []
+            elif layout_dir == "column":
+                # VERTICAL: each child in its own <tr>
+                rows = [[child] for child in node.children]
+            else:
+                # No auto-layout: fall back to y-position grouping
+                rows = _group_into_rows(node.children, parent_width=node.width)
+
+            # Wrap all rows in a padding <td> if the node has padding
+            if has_padding:
+                lines.append(f'{pad}  <tr><td style="{padding_css}">')
+                lines.append(
+                    f'{pad}    <table width="100%" cellpadding="0" cellspacing="0"'
+                    f' border="0" role="presentation"'
+                    f' style="border-collapse:collapse;'
+                    f'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
+                )
+
+            for row_idx, row in enumerate(rows):
+                # Insert vertical spacer between rows (not before first)
+                if row_idx > 0 and gap > 0 and layout_dir in ("column", None):
+                    gap_px = int(gap)
+                    lines.append(
+                        f'{pad}    <tr><td style="height:{gap_px}px;'
+                        f"font-size:1px;line-height:1px;"
+                        f'mso-line-height-rule:exactly;" '
+                        f'aria-hidden="true">&nbsp;</td></tr>'
+                    )
+
+                lines.append(f"{pad}    <tr>")
+                for cell_idx, child in enumerate(row):
                     child_html = node_to_email_html(
                         child,
-                        indent=indent + 2,
+                        indent=indent + (4 if has_padding else 2),
                         props_map=props_map,
                         parent_bg=effective_bg,
                         parent_font=effective_font,
@@ -436,18 +535,35 @@ def node_to_email_html(
                         text_meta=text_meta,
                         current_section=section,
                         body_font_size=body_font_size,
+                        compat=compat,
                         _depth=_depth + 1,
                     )
+
                     if child.type != DesignNodeType.TEXT:
-                        font_style = (
-                            f' style="font-family:{effective_font};"' if effective_font else ""
-                        )
-                        lines.append(f"{pad}    <td{font_style}>")
+                        # Build <td> style
+                        td_styles: list[str] = []
+                        if effective_font:
+                            td_styles.append(f"font-family:{effective_font}")
+                        # Horizontal gap: padding-left on all cells except first
+                        if layout_dir == "row" and cell_idx > 0 and gap > 0:
+                            td_styles.append(f"padding-left:{int(gap)}px")
+                        # Cross-axis padding
+                        if cross_gap > 0:
+                            if layout_dir == "row":
+                                td_styles.append(f"padding-top:{int(cross_gap)}px")
+                            elif layout_dir == "column":
+                                td_styles.append(f"padding-left:{int(cross_gap)}px")
+                        td_style = f' style="{";".join(td_styles)}"' if td_styles else ""
+                        lines.append(f"{pad}      <td{td_style}>")
                         lines.append(child_html)
-                        lines.append(f"{pad}    </td>")
+                        lines.append(f"{pad}      </td>")
                     else:
                         lines.append(child_html)
-                lines.append(f"{pad}  </tr>")
+                lines.append(f"{pad}    </tr>")
+
+            if has_padding:
+                lines.append(f"{pad}    </table>")
+                lines.append(f"{pad}  </td></tr>")
         lines.append(f"{pad}</table>")
         return "\n".join(lines)
 

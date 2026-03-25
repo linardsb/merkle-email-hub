@@ -698,9 +698,10 @@
 - [x] ~~33.0 Wire layout analyzer into converter (prerequisite for 33.4–33.9)~~ DONE
 - [x] ~~33.1 Figma Variables API + opacity compositing~~ DONE
 - [x] ~~33.2 Email-safe token transforms & validation layer~~ DONE
-- [ ] 33.3 Typography pipeline: line-height, letter-spacing, font mapping
-- [ ] 33.4 Spacing token pipeline & auto-layout → table mapping
+- [x] ~~33.3 Typography pipeline: line-height, letter-spacing, font mapping~~ DONE
+- [x] ~~33.4 Spacing token pipeline & auto-layout → table mapping~~ DONE
 - [ ] 33.5 Multi-column layout & proportional width calculation
+- [x] ~~33.5b Client-aware conversion — ontology wire-up (prerequisite for 33.7)~~ DONE
 - [ ] 33.6 Semantic HTML generation (headings, paragraphs, buttons)
 - [ ] 33.7 Dark mode token extraction & gradient fallbacks
 - [ ] 33.8 Design context enrichment & Scaffolder integration

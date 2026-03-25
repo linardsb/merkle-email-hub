@@ -309,13 +309,15 @@ class TestNodeToEmailHtml:
         assert "Deep" in result
 
     def test_props_map_padding(self) -> None:
-        """FRAME with padding props gets padding style."""
+        """FRAME with padding props gets padding style on <td> (not <table>)."""
         node = DesignNode(id="50", name="Padded", type=DesignNodeType.FRAME, width=600, children=[])
         props_map = {
             "50": _NodeProps(padding_top=20, padding_right=10, padding_bottom=20, padding_left=10),
         }
         result = node_to_email_html(node, props_map=props_map)
+        # Padding on <td>, not <table> — Outlook ignores padding on <table>
         assert "padding:20px 10px 20px 10px" in result
+        assert '<td style="padding:' in result
 
     def test_text_content_html_escaped(self) -> None:
         """Text content with HTML chars is escaped to prevent XSS."""
@@ -575,7 +577,7 @@ class TestFrameWidthAndFont:
         )
         props_map = {"f2": _NodeProps(font_family="Roboto")}
         result = node_to_email_html(frame, props_map=props_map)
-        assert 'style="font-family:Roboto,Arial,Helvetica,sans-serif;"' in result
+        assert "font-family:Roboto,Arial,Helvetica,sans-serif" in result
 
     def test_email_skeleton_has_width_600(self) -> None:
         """EMAIL_SKELETON formatted output contains width='600' on main table."""

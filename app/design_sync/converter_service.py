@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.core.logging import get_logger
+from app.design_sync.compatibility import CompatibilityHint, ConverterCompatibility
 from app.design_sync.converter import (
     _NodeProps,
     _sanitize_css_value,
@@ -68,6 +69,7 @@ class ConversionResult:
     sections_count: int
     warnings: list[str] = field(default_factory=list)
     layout: DesignLayoutDescription | None = None
+    compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
 
 
 # Backward-compatible alias
@@ -84,6 +86,7 @@ class DesignConverterService:
         *,
         raw_file_data: dict[str, Any] | None = None,
         selected_nodes: list[str] | None = None,
+        target_clients: list[str] | None = None,
     ) -> ConversionResult:
         """Convert a design file structure into an email HTML skeleton.
 
@@ -97,6 +100,7 @@ class DesignConverterService:
             ConversionResult with HTML skeleton and metadata.
         """
         warnings: list[str] = []
+        compat = ConverterCompatibility(target_clients=target_clients)
 
         # Collect top-level frames from all pages
         frames = self._collect_frames(structure, selected_nodes)
@@ -145,6 +149,7 @@ class DesignConverterService:
                 section_map=sections_by_node_id,
                 button_ids=button_node_ids,
                 text_meta=text_meta,
+                compat=compat,
             )
             section_parts.append(f"<tr><td>\n{section_html}\n</td></tr>")
 
@@ -176,6 +181,10 @@ class DesignConverterService:
             "</style>"
         )
 
+        # Check max-width support (used on wrapper table)
+        if compat.has_targets:
+            compat.check_and_warn("max-width", context="Email wrapper table")
+
         result_html = EMAIL_SKELETON.format(
             style_block=style_block,
             bg_color=bg_color,
@@ -196,6 +205,7 @@ class DesignConverterService:
             sections_count=len(frames),
             warnings=warnings,
             layout=layout,
+            compatibility_hints=compat.hints,
         )
 
     def _collect_frames(
@@ -238,6 +248,8 @@ class DesignConverterService:
                 or node.padding_bottom
                 or node.padding_left
                 or node.layout_mode
+                or node.item_spacing
+                or node.counter_axis_spacing
                 or node.line_height_px
                 or node.letter_spacing_px
                 or node.text_transform
@@ -260,6 +272,8 @@ class DesignConverterService:
                         if node.layout_mode == "VERTICAL"
                         else None
                     ),
+                    item_spacing=node.item_spacing or 0,
+                    counter_axis_spacing=node.counter_axis_spacing or 0,
                     line_height_px=node.line_height_px,
                     letter_spacing_px=node.letter_spacing_px,
                     text_transform=node.text_transform,
@@ -301,6 +315,12 @@ class DesignConverterService:
                     layout_direction=str(obj.get("layout-flex-dir"))
                     if obj.get("layout-flex-dir")
                     else None,
+                    item_spacing=float(obj.get("layout-gap", {}).get("row-gap", 0))
+                    if isinstance(obj.get("layout-gap"), dict)
+                    else 0,
+                    counter_axis_spacing=float(obj.get("layout-gap", {}).get("column-gap", 0))
+                    if isinstance(obj.get("layout-gap"), dict)
+                    else 0,
                 )
         return props
 

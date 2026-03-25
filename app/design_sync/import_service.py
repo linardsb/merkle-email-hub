@@ -87,6 +87,11 @@ class DesignImportService:
                     )
                     return
 
+                # 1b. Fetch project target clients for compatibility checks
+                from app.design_sync.service import fetch_target_clients
+
+                target_clients = await fetch_target_clients(db, conn.project_id)
+
                 # 2. Analyze layout
                 layout_response = await design_service.analyze_layout(
                     design_import.connection_id,
@@ -157,7 +162,9 @@ class DesignImportService:
                         # Validate tokens before converter consumption
                         from app.design_sync.token_transforms import validate_and_transform
 
-                        extracted_tokens, token_warnings = validate_and_transform(extracted_tokens)
+                        extracted_tokens, token_warnings = validate_and_transform(
+                            extracted_tokens, target_clients=target_clients
+                        )
                         if token_warnings:
                             logger.info(
                                 "design_sync.import_token_warnings",
@@ -174,8 +181,19 @@ class DesignImportService:
                             extracted_tokens,
                             raw_file_data=raw_data,
                             selected_nodes=design_import.selected_node_ids or None,
+                            target_clients=target_clients,
                         )
                         initial_html = conversion.html
+                        if conversion.compatibility_hints:
+                            logger.info(
+                                "design_sync.conversion_compatibility",
+                                hint_count=len(conversion.compatibility_hints),
+                                warnings=[
+                                    h.message
+                                    for h in conversion.compatibility_hints
+                                    if h.level == "warning"
+                                ],
+                            )
                         logger.info(
                             "design_sync.converter_completed",
                             import_id=import_id,
@@ -370,6 +388,10 @@ class DesignImportService:
 
         design_tokens: dict[str, object] | None = None
         if tokens is not None:
+            from app.design_sync.converter import convert_spacing
+            from app.design_sync.protocol import ExtractedSpacing
+
+            spacing_tokens = [ExtractedSpacing(name=s.name, value=s.value) for s in tokens.spacing]
             design_tokens = {
                 "colors": [
                     {"name": c.name, "hex": c.hex, "opacity": c.opacity} for c in tokens.colors
@@ -383,6 +405,7 @@ class DesignImportService:
                     }
                     for t in tokens.typography
                 ],
+                "spacing": convert_spacing(spacing_tokens),
             }
 
         return {

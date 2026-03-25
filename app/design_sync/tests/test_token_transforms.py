@@ -392,3 +392,58 @@ class TestFullPipeline:
         assert result.modes == {"light": "default"}
         assert len(result.variables) == 1
         assert result.variables[0].name == "primary"
+
+
+class TestClientAwareTypographyWarnings:
+    def test_web_font_warning_with_targets(self) -> None:
+        tokens = ExtractedTokens(
+            colors=[],
+            spacing=[],
+            typography=[ExtractedTypography("H", "Inter", "700", 32, 38)],
+        )
+        _, warnings = validate_and_transform(
+            tokens,
+            target_clients=["gmail_web", "outlook_365_win"],
+        )
+        font_warnings = [
+            w for w in warnings if "font-face" in w.message.lower() or "Inter" in w.message
+        ]
+        assert len(font_warnings) >= 1
+
+    def test_no_warning_for_system_font(self) -> None:
+        tokens = ExtractedTokens(
+            colors=[],
+            spacing=[],
+            typography=[ExtractedTypography("H", "Arial", "700", 32, 38)],
+        )
+        _, warnings = validate_and_transform(
+            tokens,
+            target_clients=["gmail_web"],
+        )
+        font_warnings = [w for w in warnings if "font-face" in w.message.lower()]
+        assert len(font_warnings) == 0
+
+    def test_negative_letter_spacing_word_engine_warning(self) -> None:
+        tokens = ExtractedTokens(
+            colors=[],
+            spacing=[],
+            typography=[ExtractedTypography("H", "Arial", "700", 32, 38, letter_spacing=-1.5)],
+        )
+        _, warnings = validate_and_transform(
+            tokens,
+            target_clients=["outlook_365_win"],
+        )
+        ls_warnings = [w for w in warnings if "letter_spacing" in w.field]
+        assert any("Word engine" in w.message for w in ls_warnings)
+
+    def test_no_targets_no_client_warnings(self) -> None:
+        tokens = ExtractedTokens(
+            colors=[],
+            spacing=[],
+            typography=[ExtractedTypography("H", "Inter", "700", 32, 38, letter_spacing=-1.5)],
+        )
+        _, warnings = validate_and_transform(tokens)
+        client_warnings = [
+            w for w in warnings if "Word engine" in w.message or "font-face" in w.message.lower()
+        ]
+        assert len(client_warnings) == 0

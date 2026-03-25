@@ -50,6 +50,7 @@ from app.design_sync.schemas import (
     AnalyzedSectionResponse,
     BrowseFilesResponse,
     ButtonElementResponse,
+    CompatibilityHintResponse,
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionResponse,
@@ -95,6 +96,26 @@ if get_settings().environment == "development":
     from app.design_sync.mock.service import MockDesignSyncService
 
     SUPPORTED_PROVIDERS["mock"] = MockDesignSyncService  # type: ignore[assignment]  # structural Protocol subtype
+
+
+async def fetch_target_clients(
+    db: AsyncSession,
+    project_id: int | None,
+) -> list[str] | None:
+    """Fetch project target clients for compatibility checks (best-effort).
+
+    Returns None if no project or if the lookup fails for any reason.
+    """
+    if not project_id:
+        return None
+    try:
+        from app.projects.repository import ProjectRepository
+
+        project = await ProjectRepository(db).get(project_id)
+        return project.target_clients if project else None
+    except Exception:
+        logger.debug("design_sync.target_clients_skip", exc_info=True)
+        return None
 
 
 class DesignSyncService:
@@ -285,6 +306,8 @@ class DesignSyncService:
 
         await self._repo.update_status(conn, "syncing")
 
+        target_clients = await fetch_target_clients(self.db, conn.project_id)
+
         try:
             # Fetch tokens and file structure from a single Figma API call
             tokens, structure = await provider.sync_tokens_and_structure(
@@ -294,7 +317,7 @@ class DesignSyncService:
             # Validate and transform tokens to email-safe values
             from app.design_sync.token_transforms import validate_and_transform
 
-            tokens, token_warnings = validate_and_transform(tokens)
+            tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
 
             structure_cache: dict[str, Any] = {
                 "file_name": structure.file_name,
@@ -332,6 +355,22 @@ class DesignSyncService:
                     }
                     for w in token_warnings
                 ]
+                # Store client-aware warnings as compatibility hints
+                if target_clients:
+                    client_hints = [
+                        {
+                            "level": w.level,
+                            "css_property": w.field,
+                            "message": w.message,
+                            "affected_clients": [],
+                        }
+                        for w in token_warnings
+                        if "font-face" in w.message.lower()
+                        or "Word engine" in w.message
+                        or "opacity" in w.field
+                    ]
+                    if client_hints:
+                        tokens_dict["_compatibility_hints"] = client_hints
             await self._repo.save_snapshot(conn.id, tokens_dict)
             await self._repo.update_status(conn, "connected")
 
@@ -478,7 +517,27 @@ class DesignSyncService:
             ],
             extracted_at=snapshot.extracted_at,
             warnings=warning_strings or None,
+            compatibility_hints=self._read_compatibility_hints(tj),
         )
+
+    @staticmethod
+    def _read_compatibility_hints(
+        tj: dict[str, Any],
+    ) -> list[CompatibilityHintResponse] | None:
+        """Read stored compatibility hints from snapshot JSON."""
+        raw = tj.get("_compatibility_hints", [])
+        if not raw:
+            return None
+        return [
+            CompatibilityHintResponse(
+                level=str(h.get("level", "info")),
+                css_property=str(h.get("css_property", "")),
+                message=str(h.get("message", "")),
+                affected_clients=list(h.get("affected_clients", [])),
+            )
+            for h in raw
+            if isinstance(h, dict)
+        ]
 
     # ── Phase 12.1: File Structure, Components, Image Export ──
 

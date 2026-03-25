@@ -147,6 +147,15 @@ class DesignSpacingResponse(BaseModel):
     value: float
 
 
+class CompatibilityHintResponse(BaseModel):
+    """A client compatibility observation surfaced during conversion."""
+
+    level: str  # "info" | "warning"
+    css_property: str
+    message: str
+    affected_clients: list[str]
+
+
 class DesignTokensResponse(BaseModel):
     """Design tokens extracted from a connection."""
 
@@ -156,6 +165,7 @@ class DesignTokensResponse(BaseModel):
     spacing: list[DesignSpacingResponse]
     extracted_at: datetime.datetime
     warnings: list[str] | None = None
+    compatibility_hints: list[CompatibilityHintResponse] | None = None
 
 
 # ── File Structure Responses ──
