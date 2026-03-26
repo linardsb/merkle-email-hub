@@ -2,53 +2,12 @@
 priority: 3
 ---
 
-> **Deprecation Notice (Phase 32 prep):** Client-specific facts in this file
-> will be superseded by the centralized ClientMatrix (Phase 32.1) and the
-> `lookup_client_support` tool (Phase 32.4). This file is retained as a
-> fallback reference. Priority demoted to 3 (supplementary) — only loaded
-> when token budget allows.
+> Client rendering constraints are injected via audience context from the
+> centralized client matrix (`data/email-client-matrix.yaml`). CSS property
+> support tables have been removed — see the matrix for current data.
+> For specific client capabilities, see Phase 32.4 `lookup_client_support` tool.
 
-<!-- L4 source: docs/SKILL_html-email-components.md sections 12-13, docs/SKILL_email-dark-mode-dom-reference.md section 18 -->
-<!-- Last synced: 2026-03-13 -->
-
-# Email Client Compatibility Reference
-
-## CSS Property Support Matrix
-
-### Universally Safe (use freely)
-| Property | Gmail | Outlook | Apple Mail | Yahoo |
-|----------|-------|---------|------------|-------|
-| color | Yes | Yes | Yes | Yes |
-| background-color | Yes | Yes | Yes | Yes |
-| font-family | Yes | Yes | Yes | Yes |
-| font-size | Yes | Yes | Yes | Yes |
-| font-weight | Yes | Yes | Yes | Yes |
-| line-height | Yes | Needs mso-line-height-rule | Yes | Yes |
-| text-align | Yes | Yes | Yes | Yes |
-| text-decoration | Yes | Yes | Yes | Yes |
-| padding | Yes | On `<td>` only | Yes | Yes |
-| margin | Yes | Partial | Yes | Yes |
-| width | Yes | Yes | Yes | Yes |
-| height | Yes | Yes | Yes | Yes |
-| border | Yes | Yes | Yes | Yes |
-| vertical-align | Yes | Yes | Yes | Yes |
-
-### Partially Supported (use with fallbacks)
-| Property | Gmail | Outlook | Apple Mail | Yahoo |
-|----------|-------|---------|------------|-------|
-| border-radius | Yes | No | Yes | Yes |
-| background-image | Yes | No, use VML | Yes | Yes |
-| max-width | Yes | No, use MSO table | Yes | Yes |
-| box-shadow | No | No | Yes | No |
-| opacity | No | No | Yes | No |
-
-### Never Use in Email
-- `display: flex` / `display: grid`
-- `position: absolute/relative/fixed`
-- CSS variables (`var(--x)`)
-- `calc()`, `clamp()`, `min()`, `max()`
-- `float` (except image wrapping with MSO fallback)
-- `@import` (stripped by Gmail)
+# Email Client Compatibility — Scaffolder Behavioral Guidance
 
 ## Gmail-Specific Constraints
 
@@ -105,26 +64,3 @@ priority: 3
 - Caution: applies BOTH your dark styles AND its own partial inversion — double-inversion risk
 - Use `!important` on all dark mode declarations
 
-## Dark Mode Support Matrix
-
-| Feature | Apple Mail | Outlook.com | Outlook Desktop | Gmail | Samsung |
-|---------|-----------|-------------|----------------|-------|---------|
-| `color-scheme` meta | Yes | No | No | Stripped | No |
-| `prefers-color-scheme` | Yes | No | No | No | Yes |
-| `[data-ogsc]`/`[data-ogsb]` | No | Yes | No | No | No |
-| `<picture>` dark swap | Yes | No | No | No | No |
-| Developer control | Full | Partial | None | None | Partial |
-
-## Client Targeting Selectors
-
-```css
-/* WebKit (Apple Mail, iOS) */
-@media screen and (-webkit-min-device-pixel-ratio: 0) { }
-
-/* Mozilla (Thunderbird) */
-@media all and (min--moz-device-pixel-ratio: 0) { }
-
-/* Outlook.com dark mode */
-[data-ogsc] .text { color: #fff !important; }
-[data-ogsb] .bg { background-color: #1a1a1a !important; }
-```

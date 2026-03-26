@@ -1,24 +1,8 @@
-<!-- L4 source: docs/SKILL_html-email-css-dom-reference.md -->
 # Email Client Rendering Engines
 
-## Rendering Engine Map
-
-| Client | Platform | Engine | CSS Support |
-|--------|----------|--------|-------------|
-| Apple Mail | macOS, iOS | WebKit | Excellent |
-| Gmail | Web | Blink (restricted) | Good (with caveats) |
-| Gmail | Android | WebView (restricted) | Moderate |
-| Gmail | iOS | WebKit (restricted) | Good |
-| Outlook 2007-2019 | Windows | Microsoft Word | Poor |
-| Outlook 365 | Windows | Microsoft Word | Poor |
-| Outlook.com | Web | Blink/WebKit | Good |
-| Outlook | macOS | WebKit | Good |
-| Outlook | iOS/Android | WebKit/WebView | Good |
-| Yahoo Mail | Web | Blink/WebKit | Moderate |
-| Yahoo Mail | Mobile | WebView | Moderate |
-| Samsung Mail | Android | WebView | Moderate |
-| Thunderbird | Desktop | Gecko | Good |
-| AOL Mail | Web | Blink/WebKit | Good |
+> Client rendering data (engines, CSS support, dark mode) is centralized in
+> `data/email-client-matrix.yaml`. The engine map table has been removed.
+> For specific client capabilities, see Phase 32.4 `lookup_client_support` tool.
 
 ## Engine Implications
 
@@ -58,15 +42,3 @@
 - 2013 (Word 2013) — same as 2010 in practice
 - 2016/2019/365 (Word 2016) — best Word engine, still limited
 - Target: `<!--[if gte mso 12]>` for all Word-engine versions
-
-### Gmail
-- Gmail web (logged in) — supports `<style>`
-- Gmail web (not logged in / delegation) — may strip `<style>`
-- Gmail app (Gmail account) — supports most `<style>`
-- Gmail app (non-Gmail IMAP) — strips `<style>`
-- Always inline critical styles as fallback
-
-### Apple Mail
-- macOS 13+ and iOS 16+ — excellent support
-- Older versions — still good, minor differences
-- Dark mode fully supported via `prefers-color-scheme`

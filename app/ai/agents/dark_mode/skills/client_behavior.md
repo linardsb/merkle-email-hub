@@ -2,88 +2,18 @@
 priority: 3
 ---
 
-> **Deprecation Notice (Phase 32 prep):** Client-specific facts in this file
-> will be superseded by the centralized ClientMatrix (Phase 32.1) and the
-> `lookup_client_support` tool (Phase 32.4). This file is retained as a
-> fallback reference. Priority demoted to 3 (supplementary) — only loaded
-> when token budget allows.
+> Client rendering constraints are injected via audience context from the
+> centralized client matrix (`data/email-client-matrix.yaml`). Per-client
+> CSS support details have been removed — see the matrix for current data.
+> For specific client capabilities, see Phase 32.4 `lookup_client_support` tool.
 
-<!-- L4 source: docs/SKILL_email-dark-mode-dom-reference.md sections 13-15, 18 -->
-<!-- Last synced: 2026-03-13 -->
-
-# Email Client Dark Mode Behavior Matrix
+# Email Client Dark Mode Behavior — Agent Decision Guide
 
 ## Three Types of Dark Mode Behavior
 
 1. **No color change** — dark chrome (inbox, toolbar) but email HTML untouched (rare)
 2. **Partial inversion** — only light backgrounds changed to dark; dark backgrounds and text left alone (Apple Mail, iOS Mail default)
 3. **Full forced inversion** — ALL colors forcibly inverted regardless of design intent (Outlook desktop Windows, Outlook.com, Gmail Android)
-
-## Client Support Matrix
-
-### Apple Mail / iOS Mail — Full Developer Control
-- `<meta name="color-scheme" content="light dark">` — Parsed
-- `<meta name="supported-color-schemes" content="light dark">` — Parsed
-- `color-scheme: light dark` CSS property — Parsed
-- `@media (prefers-color-scheme: dark)` — Full support
-- `<picture><source media="(prefers-color-scheme: dark)">` — Supported (Apple Mail only)
-- CSS show/hide image swap — Supported
-- `color-scheme: light only` (prevent dark mode) — Works
-
-**Auto-inversion rules:**
-- With `color-scheme: light dark` AND `@media` dark CSS present: uses YOUR styles (no auto-inversion)
-- With `color-scheme: light dark` but NO dark CSS: applies partial auto-inversion
-- Without `color-scheme` meta: applies full auto-inversion
-- With `color-scheme: light only`: attempts light mode regardless of system setting
-
-**Transparent image behavior:** May add subtle white background/glow behind transparent PNGs in dark mode. Workaround: bake slight dark edges or shadow into the image file.
-
-### Outlook.com (Webmail) — Partial Control via Selectors
-- `<meta name="color-scheme">` — Ignored
-- `@media (prefers-color-scheme: dark)` — Ignored
-- `[data-ogsc]` foreground targeting — Supported
-- `[data-ogsb]` background targeting — Supported
-- Forced color inversion — Active (overridable via selectors)
-
-### Outlook Desktop (Windows) — No Developer Control
-- `<meta name="color-scheme">` — Ignored
-- `@media (prefers-color-scheme: dark)` — Ignored
-- `[data-ogsc]` / `[data-ogsb]` — Not applicable (not webmail)
-- MSO conditional styles — Cannot detect dark mode state
-- 1x1 pixel background trick — May prevent background inversion (version-dependent)
-- Forced color inversion — Active, cannot be overridden
-
-### Gmail (All Versions) — No Developer Control
-- `<meta name="color-scheme">` — Stripped
-- `@media (prefers-color-scheme: dark)` — Stripped with `<style>` block
-- 1x1 pixel trick — Does not prevent inversion
-- Forced color inversion — Active, cannot be overridden
-
-**Gmail Web:** Strips `<style>` in some contexts (clipped/forwarded emails). Prefixes class names. Uses own forced inversion targeting `background-color`, `bgcolor`, `color` inline styles.
-
-**Gmail Android:** Most aggressive forced inversion. Strips `<style>` blocks entirely. No dark mode CSS support whatsoever.
-
-**Gmail iOS:** Similar to Android but occasionally less aggressive. Also strips `<style>`.
-
-**Gmail defensive strategy:** Since Gmail ignores all dark mode CSS, the only approach is defensive color choices:
-- Avoid pure `#ffffff` backgrounds — use `#f5f5f5` or off-white
-- Avoid pure `#000000` text — use `#333333`
-- Use mid-to-dark saturated brand colors that look acceptable whether inverted or not
-- Ensure text meets contrast ratios against BOTH light and inverted dark backgrounds
-
-### Samsung Mail (Android 9+) — Partial Support with Caveats
-- `@media (prefers-color-scheme: dark)` — Supported
-- Forced partial inversion — Also active alongside your CSS
-
-**Double-inversion issue:** Samsung applies BOTH your custom dark styles AND its own partial inversion. This can cause unexpected results (your dark override + Samsung's inversion = colors reverting toward light). Workaround: use `!important` on all dark mode declarations and test specifically in Samsung Mail.
-
-### Thunderbird — Full Support
-- `@media (prefers-color-scheme: dark)` — Full support
-- `color-scheme` CSS property — Supported
-
-### Yahoo Mail / AOL Mail — Limited
-- `@media (prefers-color-scheme: dark)` — Limited/inconsistent
-- May apply own forced inversion
 
 ## Dark Mode Categories
 

@@ -1,0 +1,478 @@
+# Email Client Rendering Matrix — Single source of truth for client capabilities
+# Used by: app/knowledge/client_matrix.py, audience_context.py
+# Updated manually + cross-referenced via scripts/sync-client-matrix.py
+version: "1.0"
+
+clients:
+  # ─── Outlook (Word Engine) ──────────────────────────────────────────
+
+  outlook_365_win:
+    display_name: "Outlook 365 (Windows)"
+    engine: word
+    css_support:
+      layout:
+        flexbox: { support: none, workaround: "Use nested tables with fixed widths" }
+        grid: { support: none, workaround: "Use nested tables" }
+        float: { support: none, workaround: "Use align attribute on table/img" }
+        position: { support: none }
+        display_inline_block: { support: none, workaround: "Use table cells" }
+      box_model:
+        max-width: { support: none, workaround: "Use width attribute + MSO table wrapper" }
+        border-radius: { support: none, workaround: "Use VML <v:roundrect>" }
+        box-shadow: { support: none }
+        margin: { support: partial, notes: "Supported on block elements, not table cells" }
+      typography:
+        font-family: { support: partial, notes: "System fonts only — no web fonts. Use mso-font-alt for fallback" }
+        line-height: { support: partial, workaround: "Use mso-line-height-rule:exactly" }
+      color:
+        background-image: { support: none, workaround: "Use VML <v:fill>" }
+        linear-gradient: { support: none, workaround: "Use VML fill patterns" }
+      selectors:
+        media_queries: { support: none }
+        attribute_selectors: { support: none }
+        pseudo_classes: { support: partial, notes: ":hover partial only" }
+    dark_mode:
+      type: forced_inversion
+      developer_control: none
+      selectors: []
+      notes: "Outlook desktop (Windows) applies forced color inversion. No CSS override available."
+    vml_required: true
+    mso_conditionals: true
+    known_bugs:
+      - id: ghost_table
+        symptom: "Multi-column layout collapses to single column"
+        fix: "Wrap columns in MSO conditional ghost table"
+      - id: dpi_scaling
+        symptom: "Images render at wrong size on high-DPI displays"
+        fix: "Set explicit width/height attributes on <img> + use CSS width for fluid"
+      - id: line_height
+        symptom: "Inconsistent line spacing"
+        fix: "Add mso-line-height-rule:exactly to elements"
+      - id: p_spacing
+        symptom: "Extra vertical spacing on <p> tags"
+        fix: "Add mso-margin-top-alt:0; mso-margin-bottom-alt:0 or use margin:0 inline"
+      - id: font_fallback
+        symptom: "Text renders in Times New Roman instead of specified font"
+        fix: "Add mso-font-alt: Arial (or appropriate system font) to font-family declaration"
+    size_limits: {}
+    supported_fonts: [Arial, Helvetica, Georgia, "Times New Roman", Verdana, Tahoma,
+                      "Trebuchet MS", "Courier New", "Comic Sans MS", Impact, "Lucida Console"]
+
+  outlook_2019_win:
+    display_name: "Outlook 2019 (Windows)"
+    engine: word
+    css_support:
+      layout:
+        flexbox: { support: none, workaround: "Use nested tables with fixed widths" }
+        grid: { support: none, workaround: "Use nested tables" }
+        float: { support: none, workaround: "Use align attribute on table/img" }
+        position: { support: none }
+      box_model:
+        max-width: { support: none, workaround: "Use width attribute + MSO table wrapper" }
+        border-radius: { support: none, workaround: "Use VML <v:roundrect>" }
+        box-shadow: { support: none }
+      typography:
+        font-family: { support: partial, notes: "System fonts only. Use mso-font-alt" }
+        line-height: { support: partial, workaround: "Use mso-line-height-rule:exactly" }
+      color:
+        background-image: { support: none, workaround: "Use VML <v:fill>" }
+        linear-gradient: { support: none, workaround: "Use VML fill patterns" }
+      selectors:
+        media_queries: { support: none }
+        attribute_selectors: { support: none }
+    dark_mode:
+      type: forced_inversion
+      developer_control: none
+      selectors: []
+      notes: "Same as Outlook 365 Windows — forced color inversion, no override."
+    vml_required: true
+    mso_conditionals: true
+    known_bugs:
+      - id: ghost_table
+        symptom: "Multi-column layout collapses to single column"
+        fix: "Wrap columns in MSO conditional ghost table"
+      - id: dpi_scaling
+        symptom: "Images render at wrong size on high-DPI displays"
+        fix: "Set explicit width/height attributes on <img>"
+    size_limits: {}
+    supported_fonts: [Arial, Helvetica, Georgia, "Times New Roman", Verdana, Tahoma,
+                      "Trebuchet MS", "Courier New", "Comic Sans MS", Impact, "Lucida Console"]
+
+  # ─── Outlook (WebKit) ──────────────────────────────────────────────
+
+  outlook_mac:
+    display_name: "Outlook for Mac"
+    engine: webkit
+    css_support:
+      layout:
+        flexbox: { support: partial, notes: "Basic flexbox works, complex nesting unreliable" }
+        grid: { support: partial }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full, notes: "Web fonts via <link> in <head>" }
+      selectors:
+        media_queries: { support: full }
+        attribute_selectors: { support: full }
+    dark_mode:
+      type: developer_controlled
+      developer_control: full
+      selectors: ["@media (prefers-color-scheme: dark)"]
+      notes: "Full developer control via prefers-color-scheme. MSO conditionals ignored."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  # ─── Outlook (Web/Blink) ──────────────────────────────────────────
+
+  outlook_web:
+    display_name: "Outlook.com / Outlook Web"
+    engine: blink_restricted
+    css_support:
+      layout:
+        flexbox: { support: none }
+        grid: { support: none }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: partial }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: none }
+    dark_mode:
+      type: partial_developer
+      developer_control: partial
+      selectors: ["[data-ogsc]", "[data-ogsb]"]
+      notes: "data-ogsc for text color, data-ogsb for background color. Only these selectors work."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  # ─── Gmail ─────────────────────────────────────────────────────────
+
+  gmail_web:
+    display_name: "Gmail (Web)"
+    engine: blink_restricted
+    css_support:
+      layout:
+        flexbox: { support: none, workaround: "Use display:inline-block with widths" }
+        grid: { support: none, workaround: "Use nested tables" }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full, notes: "Web fonts via <link> in <head>" }
+      selectors:
+        media_queries: { support: none }
+        attribute_selectors: { support: full }
+        pseudo_classes: { support: partial, notes: ":hover supported" }
+    dark_mode:
+      type: forced_inversion
+      developer_control: none
+      selectors: []
+      notes: "Gmail forces full color inversion. No developer override. Avoid pure #ffffff/#000000."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits:
+      clip_threshold_kb: 102
+      style_block: "Stripped in some contexts (non-AMP, forwarded)"
+    supported_fonts: "*"
+
+  gmail_ios:
+    display_name: "Gmail (iOS)"
+    engine: webkit
+    css_support:
+      layout:
+        flexbox: { support: partial }
+        grid: { support: partial }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+    dark_mode:
+      type: forced_inversion
+      developer_control: none
+      selectors: []
+      notes: "Forced color inversion like Gmail web. No developer override."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits:
+      clip_threshold_kb: 102
+    supported_fonts: "*"
+
+  gmail_android:
+    display_name: "Gmail (Android)"
+    engine: blink_restricted
+    css_support:
+      layout:
+        flexbox: { support: none }
+        grid: { support: none }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: none }
+    dark_mode:
+      type: forced_inversion
+      developer_control: none
+      selectors: []
+      notes: "Forced color inversion. No developer override."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits:
+      clip_threshold_kb: 102
+    supported_fonts: "*"
+
+  # ─── Apple Mail ────────────────────────────────────────────────────
+
+  apple_mail_macos:
+    display_name: "Apple Mail (macOS)"
+    engine: webkit
+    css_support:
+      layout:
+        flexbox: { support: full }
+        grid: { support: full }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+        attribute_selectors: { support: full }
+        pseudo_classes: { support: full, notes: ":hover, :active, :focus" }
+    dark_mode:
+      type: developer_controlled
+      developer_control: full
+      selectors: ["@media (prefers-color-scheme: dark)"]
+      notes: "Full developer control. Supports <picture> source swap for image dark mode."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  apple_mail_ios:
+    display_name: "Apple Mail (iOS)"
+    engine: webkit
+    css_support:
+      layout:
+        flexbox: { support: full }
+        grid: { support: full }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+        attribute_selectors: { support: full }
+    dark_mode:
+      type: developer_controlled
+      developer_control: full
+      selectors: ["@media (prefers-color-scheme: dark)"]
+      notes: "Full developer control via prefers-color-scheme."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  # ─── Yahoo ─────────────────────────────────────────────────────────
+
+  yahoo_web:
+    display_name: "Yahoo Mail (Web)"
+    engine: blink_restricted
+    css_support:
+      layout:
+        flexbox: { support: none }
+        grid: { support: none }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+    dark_mode:
+      type: partial_inversion
+      developer_control: limited
+      selectors: ["@media (prefers-color-scheme: dark)"]
+      notes: "Partial inversion with limited developer control. Some CSS overrides respected."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs:
+      - id: class_renaming
+        symptom: "CSS classes renamed with random prefix"
+        fix: "Use inline styles as primary, <style> block as progressive enhancement"
+    size_limits: {}
+    supported_fonts: "*"
+
+  yahoo_ios:
+    display_name: "Yahoo Mail (iOS)"
+    engine: webkit
+    css_support:
+      layout:
+        flexbox: { support: partial }
+      box_model:
+        border-radius: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+    dark_mode:
+      type: partial_inversion
+      developer_control: limited
+      selectors: ["@media (prefers-color-scheme: dark)"]
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  yahoo_android:
+    display_name: "Yahoo Mail (Android)"
+    engine: blink_restricted
+    css_support:
+      layout:
+        flexbox: { support: none }
+      box_model:
+        border-radius: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: none }
+    dark_mode:
+      type: partial_inversion
+      developer_control: limited
+      selectors: []
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  # ─── Samsung ───────────────────────────────────────────────────────
+
+  samsung_mail:
+    display_name: "Samsung Mail"
+    engine: custom
+    css_support:
+      layout:
+        flexbox: { support: none }
+        grid: { support: none }
+      box_model:
+        border-radius: { support: full }
+      typography:
+        font-family: { support: partial, notes: "System + Google Fonts" }
+      selectors:
+        media_queries: { support: full }
+    dark_mode:
+      type: double_inversion_risk
+      developer_control: partial
+      selectors: ["@media (prefers-color-scheme: dark)"]
+      notes: "Applies BOTH custom dark CSS AND its own partial inversion. Risk of double-inversion."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: system_plus_google
+
+  # ─── Thunderbird ───────────────────────────────────────────────────
+
+  thunderbird:
+    display_name: "Thunderbird"
+    engine: gecko
+    css_support:
+      layout:
+        flexbox: { support: full }
+        grid: { support: full }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+        attribute_selectors: { support: full }
+    dark_mode:
+      type: developer_controlled
+      developer_control: full
+      selectors: ["@media (prefers-color-scheme: dark)"]
+    vml_required: false
+    mso_conditionals: false
+    known_bugs: []
+    size_limits: {}
+    supported_fonts: "*"
+
+  # ─── AOL ───────────────────────────────────────────────────────────
+
+  aol_web:
+    display_name: "AOL Mail (Web)"
+    engine: blink_restricted
+    css_support:
+      layout:
+        flexbox: { support: none }
+        grid: { support: none }
+      box_model:
+        border-radius: { support: full }
+      typography:
+        font-family: { support: full }
+      selectors:
+        media_queries: { support: full }
+    dark_mode:
+      type: partial_inversion
+      developer_control: limited
+      selectors: []
+      notes: "Similar rendering to Yahoo Mail (same parent company)."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs:
+      - id: class_renaming
+        symptom: "CSS classes renamed with random prefix (same as Yahoo)"
+        fix: "Use inline styles as primary"
+    size_limits: {}
+    supported_fonts: "*"
+
+  # ─── ProtonMail ────────────────────────────────────────────────────
+
+  protonmail_web:
+    display_name: "ProtonMail (Web)"
+    engine: custom
+    css_support:
+      layout:
+        flexbox: { support: none }
+        grid: { support: none }
+      box_model:
+        border-radius: { support: full }
+        max-width: { support: full }
+      typography:
+        font-family: { support: partial, notes: "Web fonts blocked for privacy" }
+      selectors:
+        media_queries: { support: partial, notes: "Some media queries stripped" }
+    dark_mode:
+      type: forced_inversion
+      developer_control: none
+      selectors: []
+      notes: "Aggressive sanitization. External images blocked by default. No dark mode override."
+    vml_required: false
+    mso_conditionals: false
+    known_bugs:
+      - id: image_blocking
+        symptom: "External images blocked by default, user must opt in"
+        fix: "Always provide meaningful alt text and fallback background colors"
+    size_limits: {}
+    supported_fonts: system

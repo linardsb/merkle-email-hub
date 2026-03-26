@@ -133,8 +133,9 @@ ontology-sync: ## Sync ontology from Can I Email
 ontology-sync-dry: ## Sync ontology (dry run — show diff without writing)
 	uv run python -m app.knowledge.ontology.sync.cli --dry-run
 
-sync-ontology: ## Sync ontology data to sidecar (YAML → JSON)
+sync-ontology: ## Sync ontology data to sidecar (YAML → JSON) + check client matrix drift
 	cd services/maizzle-builder && npm run sync-ontology
+	uv run python scripts/sync-client-matrix.py --check
 
 # === Eval Pipeline ===
 

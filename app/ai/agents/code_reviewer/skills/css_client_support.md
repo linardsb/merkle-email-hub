@@ -1,39 +1,10 @@
-<!-- L4 source: docs/SKILL_html-email-components.md section 11, docs/SKILL_email-dark-mode-dom-reference.md section 18 -->
-<!-- Last synced: 2026-03-13 -->
+# CSS Client Support — Code Reviewer Reference
 
-# CSS Client Support — L3 Reference
-
-## Critical (Breaks Rendering)
-
-| CSS Property | Unsupported In | Rule ID |
-|---|---|---|
-| `display: flex` | Outlook (all), Gmail (partial) | `css-unsupported-flex` |
-| `display: grid` | Outlook (all), Gmail, Yahoo | `css-unsupported-grid` |
-| `position: fixed` | All email clients | `css-unsupported-position-fixed` |
-| `position: sticky` | All email clients | `css-unsupported-position-sticky` |
-| `position: absolute` | Outlook, many webmail | `css-unsupported-position-absolute` |
-| `float` | Outlook (all versions) | `css-unsupported-float` |
-| `calc()` | Outlook, Gmail (partial) | `css-unsupported-calc` |
-| `var()` / CSS custom properties | Outlook, Gmail | `css-unsupported-custom-props` |
-
-## Warning (Degraded Experience)
-
-| CSS Property | Unsupported In | Rule ID |
-|---|---|---|
-| `border-radius` | Outlook (Windows) | `css-partial-border-radius` |
-| `box-shadow` | Outlook (Windows) | `css-partial-box-shadow` |
-| `background-image` (CSS) | Outlook (use VML) | `css-partial-bg-image` |
-| `max-width` without MSO fallback | Outlook | `css-needs-mso-fallback` |
-| `gap` | Most email clients | `css-unsupported-gap` |
-| `object-fit` | Outlook | `css-partial-object-fit` |
-| `clip-path` | Most email clients | `css-unsupported-clip-path` |
-
-## Info (Minor Compatibility)
-
-| CSS Property | Note | Rule ID |
-|---|---|---|
-| `margin: auto` for centering | Outlook needs `align="center"` | `css-info-margin-auto` |
-| `line-height` as unitless | Some clients need px value | `css-info-unitless-line-height` |
+> Client rendering constraints and CSS property support data are provided by
+> the centralized client matrix (`data/email-client-matrix.yaml`) via audience
+> context injection. For specific client capabilities, see Phase 32.4
+> `lookup_client_support` tool. This file contains Code Reviewer-specific
+> review checklists and detection rules.
 
 ## Responsive Technique Support by Client
 

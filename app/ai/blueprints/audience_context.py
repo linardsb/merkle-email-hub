@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.core.logging import get_logger
 from app.knowledge.ontology.registry import load_ontology
 from app.knowledge.ontology.types import (
     EmailClient,
     SupportLevel,
 )
 from app.personas.schemas import PersonaResponse
+
+logger = get_logger(__name__)
 
 # Persona email_client slug → ontology client IDs
 # Maps persona slugs to all ontology clients in that family/platform
@@ -52,6 +55,11 @@ class AudienceProfile:
     constraints: tuple[AudienceConstraint, ...]
     dark_mode_required: bool
     mobile_viewports: tuple[int, ...]
+    # Rendering matrix fields (enriched from client_matrix.py)
+    rendering_engines: tuple[str, ...] = ()
+    dark_mode_types: tuple[str, ...] = ()
+    vml_required: bool = False
+    clip_threshold_kb: int | None = None
 
 
 def resolve_audience_clients(personas: list[PersonaResponse]) -> list[str]:
@@ -110,6 +118,23 @@ def build_audience_profile(personas: list[PersonaResponse]) -> AudienceProfile |
     dark_mode_required = any(p.dark_mode for p in personas)
     mobile_viewports = tuple(p.viewport_width for p in personas if p.viewport_width <= 480)
 
+    # Enrich with rendering matrix data (non-critical — fail gracefully)
+    rendering_engines: tuple[str, ...] = ()
+    dark_mode_types: tuple[str, ...] = ()
+    vml_required = False
+    clip_threshold_kb: int | None = None
+    try:
+        from app.knowledge.client_matrix import load_client_matrix
+
+        matrix = load_client_matrix()
+        mc = matrix.get_constraints_for_clients(client_ids)
+        rendering_engines = mc.rendering_engines
+        dark_mode_types = mc.dark_mode_types
+        vml_required = mc.vml_required
+        clip_threshold_kb = mc.clip_threshold_kb
+    except Exception:
+        logger.debug("knowledge.client_matrix_enrichment_failed", exc_info=True)
+
     return AudienceProfile(
         persona_names=tuple(p.name for p in personas),
         client_ids=tuple(client_ids),
@@ -117,6 +142,10 @@ def build_audience_profile(personas: list[PersonaResponse]) -> AudienceProfile |
         constraints=tuple(constraints),
         dark_mode_required=dark_mode_required,
         mobile_viewports=mobile_viewports,
+        rendering_engines=rendering_engines,
+        dark_mode_types=dark_mode_types,
+        vml_required=vml_required,
+        clip_threshold_kb=clip_threshold_kb,
     )
 
 
@@ -161,6 +190,22 @@ def format_audience_context(profile: AudienceProfile) -> str:
                 parts.append(line)
     else:
         parts.append("\nNo CSS restrictions — all properties supported by target clients.")
+
+    # Rendering matrix enrichment
+    if profile.rendering_engines:
+        parts.append(f"\nRENDERING ENGINES: {', '.join(profile.rendering_engines)}")
+    if profile.vml_required:
+        parts.append(
+            "REQUIREMENT: VML required — use <v:roundrect> for buttons, "
+            "<v:fill> for background images (Outlook Word engine)"
+        )
+    if profile.clip_threshold_kb:
+        parts.append(
+            f"WARNING: Message clipping at {profile.clip_threshold_kb}KB "
+            "(Gmail) — keep total HTML under this limit"
+        )
+    if profile.dark_mode_types:
+        parts.append(f"DARK MODE TYPES: {', '.join(sorted(profile.dark_mode_types))}")
 
     parts.append("--- END AUDIENCE CONSTRAINTS ---")
     return "\n".join(parts)
