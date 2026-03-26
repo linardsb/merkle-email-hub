@@ -15,6 +15,10 @@ SKILL_FILES: dict[str, str] = {
     "div_layouts": "skills/div_layouts.md",
     "esp_tokens": "skills/esp_tokens.md",
     "column_patterns": "skills/column_patterns.md",
+    "common_email_builders": "skills/l3/common_email_builders.md",
+    "css_normalization": "skills/l3/css_normalization.md",
+    "wrapper_detection": "skills/l3/wrapper_detection.md",
+    "esp_token_edge_cases": "skills/l3/esp_token_edge_cases.md",
 }
 
 
@@ -52,11 +56,36 @@ def detect_relevant_skills(html: str, esp_platform: str | None = None) -> list[s
     if esp_platform and "esp_tokens" not in skills:
         skills.append("esp_tokens")
 
+    # Email builder detection (Stripo, Bee Free, Mailchimp, MJML, Litmus)
+    builder_markers = ["esd-", "bee-", "mc:edit", "stripo", "<!-- begin module", "<!-- module:"]
+    if any(m in html_lower for m in builder_markers):
+        skills.append("common_email_builders")
+
+    # CSS normalization (high !important count or vendor prefixes)
+    if html_lower.count("!important") > 5 or "-webkit-" in html_lower or "-moz-" in html_lower:
+        skills.append("css_normalization")
+
+    # Wrapper detection — always load (core to import fidelity)
+    skills.append("wrapper_detection")
+
+    # ESP edge cases (advanced token patterns, Mailchimp merge tags)
+    esp_edge_markers = [
+        "*|",
+        "%%=concat",
+        "%%=redirect",
+        "{{{",
+        "{{>",
+        "{% connected_content",
+        "<%- include",
+    ]
+    if any(m in html_lower for m in esp_edge_markers):
+        skills.append("esp_token_edge_cases")
+
     # For very large HTML, load everything
     if len(html) > 50_000:
         skills = list(SKILL_FILES.keys())
 
-    return skills
+    return list(dict.fromkeys(skills))
 
 
 def build_system_prompt(

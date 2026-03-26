@@ -182,11 +182,12 @@ class TestDetectRelevantSkills:
         assert "esp_tokens" in skills
 
     def test_large_html_loads_all_skills(self) -> None:
-        from app.ai.agents.import_annotator.prompt import detect_relevant_skills
+        from app.ai.agents.import_annotator.prompt import SKILL_FILES, detect_relevant_skills
 
         html = "x" * 51_000
         skills = detect_relevant_skills(html)
-        assert len(skills) == 4  # All skills loaded
+        assert len(skills) == len(SKILL_FILES)  # All skills loaded
+        assert set(skills) == set(SKILL_FILES.keys())
 
 
 class TestImportAnnotationSchemas:

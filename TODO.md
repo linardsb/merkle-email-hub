@@ -74,7 +74,7 @@
 
 - [ ] 32.1 Centralized email client rendering matrix
 - [x] ~~32.2 Content agent email rendering awareness~~ DONE
-- [ ] 32.3 Import annotator skill depth
+- [x] ~~32.3 Import annotator skill depth~~ DONE
 - [ ] 32.4 Agent knowledge lookup tool
 - [ ] 32.5 Cross-agent insight propagation
 - [ ] 32.6 Eval-driven skill file updates
@@ -334,7 +334,7 @@
 **Security:** Read-only skill file addition. No new code paths, API endpoints, or user input handling. Skill detection uses existing metadata fields.
 **Verify:** Content agent generating a preheader with Outlook Desktop in audience → output ≤50 significant characters in first sentence. Content agent generating CTA → ≤5 words. Content agent generating subject line → value proposition in first 35 characters. Content agent without audience context → universal safe defaults applied. Existing Content agent tests still pass. `make test` passes.
 
-### 32.3 Import Annotator Skill Depth `[Backend]`
+### ~~32.3 Import Annotator Skill Depth~~ `[Backend]` DONE
 **What:** Add 4 new L3 skill files to the Import Annotator agent (`app/ai/agents/import_annotator/`) that teach it to recognize HTML patterns from popular email builders, normalize imported CSS, detect wrapper structures, and handle edge-case ESP token patterns. Update skill detection to load these files based on input HTML characteristics.
 **Why:** The Import Annotator is the newest agent (Phase 24.9) with the fewest L3 skill files (4: `table_layouts.md`, `div_layouts.md`, `esp_tokens.md`, `column_patterns.md`). Users importing HTML from external tools — Stripo, Bee Free, Mailchimp, MJML-compiled output, Litmus Builder — hit edge cases the annotator doesn't handle: tool-specific ghost table patterns, non-standard comment markers, proprietary CSS class naming (`mc:edit`, `bee-row`, `stripo-*`), MJML's compiled nested table structure, and vendor-specific meta tags. Improving the annotator's recognition directly supports Phase 31's import fidelity goals.
 **Implementation:**

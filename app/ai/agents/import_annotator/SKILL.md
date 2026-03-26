@@ -23,6 +23,10 @@ references:
   - skills/div_layouts.md
   - skills/esp_tokens.md
   - skills/column_patterns.md
+  - skills/l3/common_email_builders.md
+  - skills/l3/css_normalization.md
+  - skills/l3/wrapper_detection.md
+  - skills/l3/esp_token_edge_cases.md
 ---
 
 # Import Annotator Agent
