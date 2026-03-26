@@ -34,6 +34,7 @@ _FIGMA_FILE_KEY_RE = re.compile(r"figma\.com/(?:design|file|proto|board|embed)/(
 _FIGMA_API = "https://api.figma.com"
 _TIMEOUT = 60.0
 _MAX_WALK_DEPTH = 500
+_MAX_PARSE_DEPTH = 30  # Hard ceiling for _parse_node recursion (Figma rarely exceeds ~15)
 _MAX_ALIAS_DEPTH = 10
 
 _FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
@@ -1097,7 +1098,8 @@ class FigmaDesignSyncService:
 
         children: list[DesignNode] = []
         # Only recurse if we haven't hit the depth limit
-        if max_depth is None or current_depth < max_depth:
+        effective_max = max_depth if max_depth is not None else _MAX_PARSE_DEPTH
+        if current_depth < effective_max:
             for child_data in node_data.get("children", []):
                 if isinstance(child_data, dict):
                     children.append(
