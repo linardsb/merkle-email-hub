@@ -995,7 +995,7 @@
 - [x] ~~33.8 Design context enrichment & Scaffolder integration~~ DONE
 - [x] ~~33.9 Builder annotations for visual builder sync~~ DONE
 - [x] ~~33.10 Image asset import for design sync pipeline~~ DONE
-- [ ] 33.11 Tests & integration verification
+- [x] ~~33.11 Tests & integration verification~~ DONE
 
 ### 33.0 Wire Layout Analyzer into Converter `[Backend]`
 **What:** Connect the existing `analyze_layout()` function in `app/design_sync/figma/layout_analyzer.py` to `DesignConverterService.convert()` in `app/design_sync/converter_service.py`. Currently the converter calls `node_to_email_html()` directly on raw `DesignNode` trees, bypassing the layout analyzer entirely. The analyzer already detects column layouts, buttons, heading hierarchy, item spacing, element gaps, and section types — but none of this data reaches the HTML generation step. This subtask bridges the gap so that subsequent subtasks (33.4–33.9) can consume rich `EmailSection` data instead of reimplementing detection logic. Additionally, fix `_build_props_map_from_nodes()` to extract all `DesignNode` fields (currently only `bg_color`), add MSO reset styles to the email skeleton and inline table/image output, and extend `_NodeProps` and `ConversionResult` dataclasses for downstream use.
@@ -1958,3 +1958,725 @@
 - Verify that accepted corrections return `(corrected_html, [property_ids])` — non-empty corrections list
 **Security:** Tests only — no production code paths, no PII, no real LLM calls.
 **Verify:** `python -m pytest app/ai/agents/tests/test_validation_loop.py -v` — all existing + new tests pass. `make check` passes. No test relies on real ontology data (all mocked).
+
+---
+
+## Phase 35 — Next-Gen Design-to-Email Pipeline (MJML + AI Intelligence + Standards)
+
+> **The design-to-email pipeline (Phases 31–33) works end-to-end but has structural limitations.** The converter (`converter.py`) hand-rolls every email HTML pattern — ghost tables, MSO conditionals, responsive column stacking, VML buttons — duplicating battle-tested logic that MJML already handles. The layout analyzer classifies sections by naming convention heuristics that fail on arbitrarily-named Figma frames. There's no visual fidelity validation (no comparison between Figma design and converted output). Token input is Figma-only (no W3C Design Tokens standard). Sync is manual (no Figma webhooks). And AI agents fix converter mistakes repeatedly without feeding corrections back into the converter itself.
+>
+> This phase addresses all of these with 5 pillars: **(1)** MJML as an intermediate representation — offload responsive email compilation to a mature library, **(2)** Figma node tree normalization — clean input produces better output, **(3)** AI-powered layout intelligence — LLM fallback for unclassifiable sections + vision-based fidelity scoring + self-improving converter, **(4)** W3C Design Tokens + caniemail.com data — standards compliance and live client support data, **(5)** Figma webhooks + incremental conversion — real-time sync with section-level caching.
+>
+> **Dependency note:** Builds on Phase 33 (token pipeline) and Phase 27 (rendering infrastructure). Independent of Phase 32 (agent intelligence) and Phase 34 (CRAG gate). The MJML sidecar endpoint (35.1) is prerequisite for all MJML subtasks. AI subtasks (35.5–35.7) can run in parallel with MJML work.
+
+- [ ] 35.1 MJML compilation service in Maizzle sidecar
+- [ ] 35.2 Figma node tree normalizer
+- [ ] 35.3 MJML generation backend in converter
+- [ ] 35.4 MJML email section templates
+- [ ] 35.5 AI layout intelligence & semantic detection
+- [ ] 35.6 AI visual fidelity scoring pipeline
+- [ ] 35.7 AI conversion learning loop
+- [ ] 35.8 W3C Design Tokens & caniemail.com integration
+- [ ] 35.9 Figma webhooks & live preview sync
+- [ ] 35.10 Incremental conversion & section caching
+- [ ] 35.11 Tests & integration verification
+
+### 35.1 MJML Compilation Service in Maizzle Sidecar `[Sidecar]`
+**What:** Add MJML as an npm dependency to the Maizzle sidecar and expose a `POST /compile-mjml` endpoint that accepts MJML markup and returns compiled, production-ready email HTML with inline CSS, MSO conditionals, and responsive media queries.
+**Why:** MJML (`mjmlio/mjml`, MIT, ~17k GitHub stars) is the industry standard for email HTML compilation. It handles the hardest parts of email rendering — responsive column stacking, ghost tables for Outlook, MSO conditional comments, CSS inlining, image sizing, `@media` queries — with output battle-tested across 50+ email clients. Our converter currently hand-rolls all of these patterns in `converter.py:_render_multi_column_row()`, `node_to_email_html()`, and the `EMAIL_SKELETON` template. MJML compilation eliminates ~60% of the low-level HTML generation code and produces more reliable output. The Maizzle sidecar already runs Node.js and accepts HTML via HTTP — adding MJML is a natural extension.
+**Implementation:**
+- Add `mjml` npm dependency to `services/maizzle-builder/package.json` (MIT license, ~2MB)
+- Add `POST /compile-mjml` endpoint to `services/maizzle-builder/index.js`:
+  ```
+  Request:  { mjml: string, options?: { minify?: bool, beautify?: bool, validationLevel?: "strict"|"soft"|"skip" } }
+  Response: { html: string, errors: MjmlError[], build_time_ms: number }
+  ```
+- MJML compilation options: `keepComments: false`, `fonts: {}` (we inject font links ourselves), `minify: production`, `validationLevel: "soft"` (warn but don't fail on custom attributes like `data-slot-name`)
+- After MJML compilation, run existing `postcss-email-optimize.js` if `target_clients` provided — MJML output still benefits from ontology-driven CSS elimination
+- Add health check extension: `GET /health` response includes `mjml_version` field
+- Wire `MaizzleClient` in `app/design_sync/converter_service.py` to call the new endpoint via the existing HTTP client pattern used for `/build`
+- Add `compile_mjml()` method to `MaizzleClient`:
+  ```python
+  async def compile_mjml(self, mjml: str, *, minify: bool = True, target_clients: list[str] | None = None) -> MjmlCompileResult
+  ```
+- `MjmlCompileResult` dataclass: `html: str`, `errors: list[MjmlError]`, `build_time_ms: float`
+**Security:** MJML is a template compiler — no network calls, no eval, no file system access. Input is our own generated MJML (not user-provided). Output is HTML that still passes through `sanitize_html_xss()` before reaching users. No new attack surface.
+**Verify:** `POST /compile-mjml` with `<mjml><mj-body><mj-section><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>` returns valid HTML with `<table>` layout, MSO conditionals, and inline CSS. Invalid MJML returns errors array. `/health` includes `mjml_version`. Existing `/build` and `/preview` endpoints unchanged. `npm test` passes in sidecar.
+
+### 35.2 Figma Node Tree Normalizer `[Backend]`
+**What:** Add a `normalize_tree()` pre-processing pass in `app/design_sync/figma/tree_normalizer.py` that cleans and simplifies the Figma node tree before it reaches the layout analyzer or converter. Handles: instance resolution, group flattening, hidden node removal, auto-layout inference, and contiguous text merging.
+**Why:** The Figma REST API returns the raw document tree including invisible nodes, deeply nested GROUP wrappers, unresolved COMPONENT_INSTANCE overrides, and frames without auto-layout that use absolute positioning. The converter and layout analyzer each work around these issues independently (`_has_visible_content()` in `converter_service.py:263`, y-position grouping with 20px tolerance in `layout_analyzer.py`, 6-level depth guard in `converter.py`). A single normalization pass produces a cleaner tree that all downstream stages benefit from, similar to Locofy's "Design Optimizer" pre-processing step.
+**Implementation:**
+- Create `app/design_sync/figma/tree_normalizer.py`:
+  ```python
+  def normalize_tree(root: DesignNode, *, raw_file_data: dict[str, Any] | None = None) -> DesignNode:
+  ```
+- **Transform 1 — Remove invisible nodes:** Drop nodes where `visible=False` or `opacity=0.0`. Recurse depth-first, prune leaf-up. Preserves nodes inside `<!--[if mso]>` blocks (MSO-only content is intentionally hidden from visual tree).
+- **Transform 2 — Flatten redundant groups:** If a GROUP node has exactly one child and no meaningful properties (no fill, no stroke, no effects, no auto-layout), replace the GROUP with its child, inheriting position. Reduces nesting depth by 1–3 levels in typical Figma files.
+- **Transform 3 — Resolve component instances:** If `raw_file_data` provided, resolve INSTANCE nodes by overlaying override properties onto the source component's node tree. Uses Figma's `overrides` array format: `{"id": "node_id", "overriddenFields": ["characters", "fills"]}`. Result: INSTANCE nodes become FRAME nodes with resolved values.
+- **Transform 4 — Infer auto-layout from positioning:** For FRAME nodes without `layout_mode`, analyze children's x/y coordinates:
+  - If all children share the same x (within 5px tolerance) and are stacked vertically → infer `layout_mode=VERTICAL`, compute `item_spacing` from y-deltas
+  - If all children share the same y (within 5px tolerance) and are side-by-side → infer `layout_mode=HORIZONTAL`, compute `item_spacing` from x-deltas
+  - Otherwise → leave as-is (true absolute positioning)
+  - Set `inferred_layout=True` flag so downstream code can distinguish real vs. inferred auto-layout
+- **Transform 5 — Merge contiguous text nodes:** Adjacent TEXT children within the same parent that share identical styling (family, size, weight, color) and are vertically contiguous (y-delta equals line-height) → merge into single TEXT node with combined content. Reduces text fragmentation common in Figma exports.
+- Wire into `converter_service.py:convert()` — call `normalize_tree()` on each page's root before `analyze_layout()`:
+  ```python
+  normalized = normalize_tree(page_root, raw_file_data=raw_file_data)
+  layout = analyze_layout(normalized, ...)
+  ```
+- Add `NormalizationStats` dataclass returned alongside: `nodes_removed: int`, `groups_flattened: int`, `instances_resolved: int`, `layouts_inferred: int`, `texts_merged: int` — logged as structured event `design_sync.tree_normalized`
+**Security:** Pure tree transformation — no network calls, no file system access. Input is already-parsed Figma API response. `raw_file_data` is the same dict used in `converter_service.py` today. No new user input vectors.
+**Verify:** Tree with 3 hidden nodes → `normalize_tree()` returns tree without them, `nodes_removed=3`. GROUP with single FRAME child → flattened. FRAME with 3 vertically-stacked children at x=0 → `layout_mode=VERTICAL` inferred. Two adjacent TEXT nodes with same style → merged. Existing converter output unchanged for auto-layout frames (normalization is additive). `make test` passes.
+
+### 35.3 MJML Generation Backend in Converter `[Backend]`
+**What:** Add a third conversion path `_convert_mjml()` in `converter_service.py` that generates MJML markup from the layout analysis, then compiles via the sidecar's `/compile-mjml` endpoint. This replaces the hand-rolled table generation for the common case while keeping the recursive converter as fallback.
+**Why:** The existing `_convert_recursive()` path manually generates every email HTML pattern — multi-column ghost tables (`_render_multi_column_row()`), VML buttons (`_render_button()`), MSO resets, responsive stacking, spacer rows. This is ~800 lines of intricate HTML generation in `converter.py` that duplicates what MJML handles automatically. By generating `<mj-section>/<mj-column>/<mj-text>/<mj-button>/<mj-image>` markup and letting MJML compile it, we get: (a) responsive stacking on mobile for free, (b) Outlook ghost tables generated by MJML's battle-tested compiler, (c) CSS inlining handled by MJML, (d) fewer edge-case bugs in our code. The recursive converter remains for designs that use advanced features MJML can't express (deep nesting, arbitrary VML, custom MSO blocks).
+**Implementation:**
+- Add `_convert_mjml()` method to `DesignConverterService`:
+  ```python
+  async def _convert_mjml(
+      self, layout: DesignLayoutDescription, palette: BrandPalette,
+      typography: dict, tokens: ExtractedTokens, *, container_width: int = 600,
+      target_clients: list[str] | None = None,
+  ) -> ConversionResult:
+  ```
+- **Section-to-MJML mapping** (one function per section type):
+
+  | EmailSectionType | MJML output |
+  |------------------|-------------|
+  | HEADER | `<mj-section>` with `<mj-column>` + `<mj-image>` (logo) + `<mj-text>` (nav) |
+  | HERO | `<mj-hero>` or `<mj-section>` with `background-url` + `<mj-text>` (heading) + `<mj-button>` |
+  | CONTENT | `<mj-section>` + `<mj-column>` + `<mj-text>` (body) |
+  | CTA | `<mj-section>` + `<mj-button>` with brand colors |
+  | FOOTER | `<mj-section>` + `<mj-text>` (small, muted) |
+  | TWO_COLUMN | `<mj-section>` with 2x `<mj-column width="50%">` |
+  | THREE_COLUMN | `<mj-section>` with 3x `<mj-column width="33.33%">` |
+  | MULTI_COLUMN | `<mj-section>` with N x `<mj-column>` using proportional widths from `_calculate_column_widths()` |
+  | IMAGE | `<mj-section>` + `<mj-image>` with `src`, `alt`, `width` |
+  | SPACER | `<mj-section>` + `<mj-spacer height="Npx">` |
+
+- **Token injection into MJML attributes:**
+  - Colors: `background-color`, `color` attributes on `<mj-*>` elements from `palette`
+  - Typography: `font-family`, `font-size`, `font-weight`, `line-height`, `letter-spacing` from `typography` dict
+  - Spacing: `padding` on `<mj-section>` and `<mj-column>` from `section.padding_*` fields
+  - Dark mode: `<mj-attributes>` with `<mj-all>` defaults + custom `<mj-class>` for dark-mode-aware elements
+- **MJML wrapper template:**
+  ```xml
+  <mjml>
+    <mj-head>
+      <mj-attributes>
+        <mj-all font-family="{body_font_stack}" />
+        <mj-text font-size="{body_size}px" color="{text_color}" line-height="{line_height}" />
+        <mj-button background-color="{primary}" color="{btn_text}" font-size="16px" inner-padding="12px 24px" />
+      </mj-attributes>
+      <mj-style>{dark_mode_css}</mj-style>
+      <mj-style>{custom_styles}</mj-style>
+    </mj-head>
+    <mj-body width="{container_width}px" background-color="{bg_color}">
+      {sections_mjml}
+    </mj-body>
+  </mjml>
+  ```
+- Preserve `data-slot-name` and `data-component-name` attributes via MJML's `mj-html-attributes` or by post-processing compiled HTML
+- Call `self._maizzle_client.compile_mjml(mjml_str, target_clients=target_clients)` to compile
+- Add `output_format: Literal["html", "mjml"] = "html"` parameter to `convert()` method — when `"mjml"`, use `_convert_mjml()` path
+- Fallback logic: if MJML compilation returns errors with `validationLevel="strict"`, log warning and fall back to `_convert_recursive()`
+**Security:** Generated MJML contains only values from validated `ExtractedTokens` (already passed through `validate_and_transform()`). Text content is HTML-escaped via `html.escape()`. No user-provided MJML. Compiled HTML still passes through `sanitize_html_xss()`.
+**Verify:** Convert the 15 golden templates via MJML path → all produce valid email HTML. Compare MJML output vs. recursive output for the same Figma file → MJML output renders correctly in Litmus/EOA for 14 client profiles (Phase 27). Multi-column layouts stack on mobile (< 480px). VML buttons render in Outlook. `make test` passes.
+
+### 35.4 MJML Email Section Templates `[Backend + Sidecar]`
+**What:** Create a library of pre-built, token-injectable MJML section templates in `app/design_sync/mjml_templates/` for the 10 common email section types. These templates are used by `_convert_mjml()` and by `ComponentMatcher` as an alternative to the existing HTML component templates.
+**Why:** The MJML generation in 35.3 builds MJML programmatically from section data. For well-known patterns (hero with background image, 2-column product grid, CTA with VML button), pre-built MJML templates produce higher-quality output than programmatic generation because they encode email-specific best practices (image-over-text layering, mobile-first CTA sizing, footer legal text patterns). Emailify and Stripo both use template libraries for their section types — this is the industry standard approach.
+**Implementation:**
+- Create `app/design_sync/mjml_templates/` directory with Jinja2-templated MJML files:
+  - `hero.mjml.j2` — Full-width hero with background image/color, heading, subheading, CTA button. Supports: image `src`/`alt`/`width`, heading text + styling, body text, button text + URL + colors. `<mj-hero>` with `mode="fluid-height"` for responsive.
+  - `content_single.mjml.j2` — Single-column text content. Heading + body paragraphs + optional image. Uses `<mj-text>` with heading detection from `TextBlock.is_heading`.
+  - `content_two_col.mjml.j2` — Two equal columns. Each column: optional image + heading + text. Uses 2x `<mj-column width="50%">` with `<mj-image>` + `<mj-text>`.
+  - `content_three_col.mjml.j2` — Three equal columns. Feature cards or product grid. 3x `<mj-column width="33.33%">`.
+  - `content_multi_col.mjml.j2` — N columns with proportional widths from layout analysis. Uses `mj-column width="{{ col.width_pct }}%"`.
+  - `cta.mjml.j2` — Centered call-to-action section. `<mj-button>` with brand colors, border-radius, inner-padding. 44px min touch target enforced via `height` attribute.
+  - `header.mjml.j2` — Logo + optional navigation links. `<mj-image>` for logo with `href` link, `<mj-navbar>` for nav items.
+  - `footer.mjml.j2` — Legal text, social links, unsubscribe. `<mj-social>` with `<mj-social-element>` for social icons. Small muted text for legal.
+  - `image_full.mjml.j2` — Full-width image section. `<mj-image>` with `fluid-on-mobile="true"`, `alt`, `src`, `width`, `href`.
+  - `spacer.mjml.j2` — Vertical spacer. `<mj-section><mj-column><mj-spacer height="{{ height }}px" /></mj-column></mj-section>`.
+- All templates accept a `ctx` dict with: `palette` (BrandPalette), `typography` (heading/body font stacks + sizes), `spacing` (padding values), `dark_colors` (optional), `content` (section-specific: texts, images, buttons)
+- Create `MjmlTemplateEngine` class in `app/design_sync/mjml_template_engine.py`:
+  ```python
+  class MjmlTemplateEngine:
+      def render_section(self, section: EmailSection, ctx: MjmlTemplateContext) -> str:
+      def render_email(self, sections: list[EmailSection], ctx: MjmlTemplateContext) -> str:
+  ```
+- Wire into `_convert_mjml()`: for each `EmailSection`, look up matching template → render with section data → assemble into full MJML document → compile
+- Wire into `ComponentMatcher`: add `mjml_template` field to `ComponentMatch` alongside existing `component_slug` — when MJML mode active, use MJML template instead of HTML component
+**Security:** Templates are Jinja2 with `autoescape=True` — all injected values are HTML-escaped. No user-provided template paths (templates are hardcoded in the engine). Template directory is read-only at runtime.
+**Verify:** Each of the 10 templates renders valid MJML (pass MJML strict validation). Compiled HTML for each template renders correctly in Gmail Web + Outlook desktop + Apple Mail (3-client smoke test via local rendering). Templates with dark mode context produce `prefers-color-scheme` media queries. `make test` passes.
+
+### 35.5 AI Layout Intelligence & Semantic Detection `[Backend + AI]`
+**What:** Add AI-powered fallback for layout analysis when heuristic classification fails, plus semantic content detection (logo, social links, unsubscribe, legal text) from visual/structural cues rather than naming conventions alone. This is the biggest differentiator vs. tools like Emailify that require annotated layers.
+**Why:** The current `layout_analyzer.py` classifies sections by matching frame names against `_SECTION_PATTERNS` regex patterns. This works for well-named designs (MJML convention, descriptive names) but fails for generic names (`Frame 1`, `Group 42`, auto-generated Figma names). Market analysis shows Kombai uses deep learning for similar intent detection. Our approach uses targeted LLM calls (cheaper, more controllable) as a fallback when heuristics fail, plus a vision model for content role detection.
+**Implementation:**
+- **AI Layout Classifier** — `app/design_sync/ai_layout_classifier.py`:
+  ```python
+  async def classify_section(
+      section: EmailSection, *, node_data: DesignNode, siblings: list[EmailSection],
+  ) -> SectionClassification:
+  ```
+  - Called only when `layout_analyzer.py` assigns `EmailSectionType.UNKNOWN` or confidence < 0.5
+  - Builds a compact prompt with: node tree structure (types + dimensions + colors, not raw JSON), sibling section types (positional context — "this is between a HERO and a FOOTER"), text content snippets (first 100 chars per text block), image count + dimensions
+  - Uses lightweight model (Haiku) with structured output: `{ section_type: EmailSectionType, column_layout: ColumnLayout, confidence: float, reasoning: str }`
+  - Cost: ~200 tokens input + ~50 tokens output per unclassified section = ~$0.0001 per call
+  - Cache classification by node tree hash — same structure won't trigger LLM twice
+- **Semantic Content Detector** — `app/design_sync/ai_content_detector.py`:
+  ```python
+  async def detect_content_roles(sections: list[EmailSection]) -> list[ContentRoleAnnotation]:
+  ```
+  - Detects roles: `logo`, `social_links`, `unsubscribe_link`, `legal_text`, `navigation`, `preheader`, `view_in_browser`, `address`
+  - Two-pass approach:
+    1. **Heuristic pass** (free, fast): regex patterns on text content — "unsubscribe" → `unsubscribe_link`, "©" or "copyright" → `legal_text`, URL patterns for social platforms → `social_links`, image in first section with small height → `logo`
+    2. **LLM pass** (only for undetected roles in sections where heuristics found nothing): send text content + position info → structured output with role annotations
+  - Annotations stored in `EmailSection.content_roles: list[str]` — used by MJML template selection (footer template for sections with `legal_text` + `unsubscribe_link`, header template for sections with `logo`)
+- **Section Position Intelligence:**
+  - First section in email → boost `HEADER` probability
+  - Last section → boost `FOOTER` probability
+  - Section after `HERO` → boost `CONTENT` probability
+  - Section with single large image and text overlay → boost `HERO` probability
+  - These positional heuristics are added to `layout_analyzer.py` directly (no LLM needed)
+- Wire into `layout_analyzer.py:analyze_layout()`:
+  ```python
+  # After heuristic classification
+  unknown_sections = [s for s in sections if s.section_type == EmailSectionType.UNKNOWN]
+  if unknown_sections:
+      classifications = await classify_sections_batch(unknown_sections, node_data=...)
+      for section, classification in zip(unknown_sections, classifications):
+          section.section_type = classification.section_type
+          section.column_layout = classification.column_layout
+  ```
+- Add `DESIGN_SYNC__AI_LAYOUT_ENABLED` config flag (default `True`) — disable for deterministic-only mode
+**Security:** LLM receives only structural metadata (dimensions, types, text snippets) — no auth tokens, no user PII, no Figma API credentials. Structured output constrains LLM to enum values only. Content detection regex runs before LLM — most roles detected without AI.
+**Verify:** Figma file with generic frame names (`Frame 1` through `Frame 6`) → AI classifier correctly identifies header/hero/content/cta/content/footer with confidence > 0.7. Section containing "© 2026 Acme Corp | Unsubscribe" → `legal_text` + `unsubscribe_link` roles detected by heuristic (no LLM call). Classification cache: same node tree hash → second call returns cached result, no LLM invocation. `DESIGN_SYNC__AI_LAYOUT_ENABLED=false` → no LLM calls, UNKNOWN sections stay UNKNOWN. `make test` passes.
+
+### 35.6 AI Visual Fidelity Scoring Pipeline `[Backend + Rendering]`
+**What:** After converting a Figma design to HTML, automatically capture a screenshot of the rendered HTML and compare it against the Figma frame image. Produce a per-section visual fidelity score (0–100%) and flag regions where the converter output drifts from design intent. Uses the existing rendering infrastructure (Phase 27) and Figma's image export API.
+**Why:** No Figma-to-email tool currently offers automated visual fidelity scoring. Locofy claims 95%+ match scores for web conversion but doesn't publish their methodology. For email, visual fidelity is harder because table layout is inherently less precise than CSS flexbox — but measuring it is essential for knowing whether the converter is improving. This closes the feedback loop: design → convert → render → score → identify drift → fix converter. Without scoring, we only discover visual regressions when humans compare screenshots manually.
+**Implementation:**
+- **Figma frame capture** — extend `FigmaDesignSyncService` with:
+  ```python
+  async def export_frame_image(self, file_key: str, node_id: str, *, scale: float = 2.0, format: str = "png") -> bytes:
+  ```
+  Uses Figma REST API `GET /v1/images/{file_key}?ids={node_id}&scale=2&format=png` — returns CDN URL, download image bytes.
+- **HTML rendering** — use existing `LocalRenderingProvider` from `app/rendering/local/`:
+  ```python
+  async def render_html_to_image(self, html: str, *, width: int = 600, device_scale_factor: float = 2.0) -> bytes:
+  ```
+  Playwright headless Chromium renders the converted email HTML at the container width. Returns PNG bytes.
+- **Visual comparison engine** — `app/design_sync/visual_scorer.py`:
+  ```python
+  @dataclass(frozen=True)
+  class FidelityScore:
+      overall: float          # 0.0–1.0
+      ssim: float             # Structural Similarity Index
+      sections: list[SectionScore]  # Per-section breakdown
+      diff_image: bytes | None      # Visual diff overlay (red = differences)
+
+  async def score_fidelity(
+      figma_image: bytes, html_image: bytes, *, sections: list[EmailSection],
+  ) -> FidelityScore:
+  ```
+  - **SSIM comparison** (Structural Similarity Index): Uses `scikit-image` `structural_similarity()` — standard metric for image quality, returns 0–1. Handles different aspect ratios by padding shorter image.
+  - **Per-section scoring**: Slice both images into horizontal bands matching section y-coordinates from `DesignLayoutDescription`. Compute SSIM per band. Identify which sections have lowest fidelity.
+  - **Diff image generation**: Overlay red highlights on regions where pixel difference exceeds threshold (20% luminance delta). Store as PNG for frontend display.
+  - **Tolerance adjustments**: Text anti-aliasing differences are normal (Figma uses Skia, Chromium uses different sub-pixel rendering). Apply Gaussian blur (σ=1.0) before comparison to smooth anti-aliasing artifacts. Color tolerance of ΔE < 3.0 (imperceptible to human eye).
+- **Integration into conversion pipeline** — add optional `score_fidelity: bool = False` parameter to `DesignImportService.run_conversion()`:
+  - When enabled: after conversion, fetch Figma frame images for each section → render HTML → compute fidelity scores → store in `ConversionResult.fidelity_scores`
+  - Store scores in `DesignImport.metadata_json["fidelity"]` for historical tracking
+  - Frontend: display fidelity badge (green > 85%, yellow 70–85%, red < 70%) on import results
+- Add `GET /api/v1/design-sync/imports/{id}/fidelity` endpoint returning scores + diff image
+- Add `scikit-image` to `requirements.txt` (BSD license, already a transitive dep via other scientific packages)
+**Security:** Figma frame export requires existing auth token (already stored encrypted in `DesignConnection`). Screenshot rendering is local (Playwright in sandbox). Image comparison is pure computation — no network calls. Diff images contain design content only (no secrets). Fidelity endpoint requires same auth as import endpoint.
+**Verify:** Convert a Figma file with known simple layout (single-column, 3 sections) → fidelity score > 85%. Intentionally break converter output (wrong colors, missing section) → score drops below 70%. Per-section scores correctly identify the broken section. Diff image highlights the difference region. `make test` passes.
+
+### 35.7 AI Conversion Learning Loop `[Backend + AI]`
+**What:** When AI agents (Outlook Fixer, Dark Mode, Code Reviewer) repeatedly fix the same converter output patterns, automatically extract those patterns as converter rules. This creates a self-improving pipeline where agent corrections feed back into the converter, reducing future agent work and improving first-pass quality.
+**Why:** Currently, agents fix converter mistakes at runtime — every email goes through the same fix cycle. Example: if the converter consistently produces `<td style="padding:20px">` but the Outlook Fixer always rewrites it to `<td style="padding:20px 20px 20px 20px;">` (longhand for Word engine), that pattern should become a converter rule so the Outlook Fixer doesn't need to fix it every time. This is the "learning" part of the AI pipeline — moving validated corrections upstream. Locofy's "Design Optimizer" learns from user corrections in a similar feedback loop.
+**Implementation:**
+- **Correction pattern tracker** — `app/design_sync/correction_tracker.py`:
+  ```python
+  @dataclass(frozen=True)
+  class CorrectionPattern:
+      agent: str                    # "outlook_fixer", "dark_mode", etc.
+      pattern_hash: str             # Hash of (input_pattern, output_pattern)
+      input_pattern: str            # Regex matching converter output
+      output_pattern: str           # Agent's correction
+      occurrences: int              # How many times seen
+      first_seen: datetime
+      last_seen: datetime
+      confidence: float             # Consistency score (same correction every time?)
+
+  class CorrectionTracker:
+      async def record_correction(self, agent: str, original_html: str, corrected_html: str) -> None:
+      async def get_frequent_patterns(self, *, min_occurrences: int = 5, min_confidence: float = 0.9) -> list[CorrectionPattern]:
+      async def suggest_converter_rules(self) -> list[ConverterRuleSuggestion]:
+  ```
+- **Diff extraction**: When an agent returns modified HTML, compute a structural diff (not text diff) using `htmldiff` — identifies which elements/attributes changed. Group changes by pattern (e.g., "shorthand padding → longhand padding on `<td>`" is one pattern regardless of which `<td>` or what values).
+- **Pattern storage**: Store in `data/correction_patterns.jsonl` (append-only log). Periodic aggregation into `data/correction_rules.json` (deduplicated, ranked by frequency).
+- **Rule suggestion engine**: When a pattern reaches threshold (5+ occurrences, 90%+ consistency), generate a `ConverterRuleSuggestion`:
+  ```python
+  @dataclass
+  class ConverterRuleSuggestion:
+      description: str              # Human-readable: "Expand shorthand padding to longhand on <td>"
+      agent_source: str             # Which agent discovered this
+      pattern: CorrectionPattern
+      suggested_code: str           # Python snippet for converter.py
+      status: Literal["suggested", "approved", "rejected", "applied"]
+  ```
+- **Integration points**:
+  - Hook into `BaseAgentService.validate_output()` — after agent returns HTML, call `tracker.record_correction(agent_name, input_html, output_html)` if HTML changed
+  - Add `GET /api/v1/design-sync/correction-patterns` endpoint (admin only) — list frequent patterns with suggested converter rules
+  - Add `POST /api/v1/design-sync/correction-patterns/{id}/approve` — mark a suggestion as approved (developer reviews before applying)
+  - Approved rules are NOT auto-applied to `converter.py` — they're surfaced as developer tasks. The system suggests, humans decide.
+- **Dashboard integration**: Frontend card in design-sync settings showing: top 5 correction patterns, suggested rules, approval status. Links to specific converter code locations.
+**Security:** Correction patterns contain HTML snippets from agent input/output — these are already sanitized. Pattern storage is local JSONL (no external calls). Admin-only endpoints require `admin` role. No auto-modification of converter code — human approval required.
+**Verify:** Run 10 conversions where Outlook Fixer consistently expands shorthand padding → `get_frequent_patterns()` returns pattern with `occurrences=10`, `confidence=1.0`. `suggest_converter_rules()` generates a suggestion with Python snippet. Pattern with only 3 occurrences → not suggested (below threshold). Admin endpoint returns patterns with suggested code. `make test` passes.
+
+### 35.8 W3C Design Tokens & caniemail.com Integration `[Backend]`
+**What:** Add W3C Design Tokens v1.0 JSON as an alternative token input format (alongside Figma Variables API), and integrate caniemail.com's open-source CSS support data as a live data source for `compatibility.py` and `token_transforms.py`.
+**Why:** The W3C Design Tokens spec reached v1.0 stable in October 2025. Figma announced native W3C import/export for November 2026. Supporting W3C tokens now future-proofs the pipeline for: (a) Figma's native export when it ships, (b) Tokens Studio users who already export W3C format, (c) any design tool that supports the standard (Penpot, Sketch via plugins). For caniemail.com: the existing `compatibility.py` uses our ontology YAML (`css_properties.yaml`, `support_matrix.yaml`) which requires manual updates. caniemail.com tracks 303 HTML/CSS features across all major email clients with community-maintained data on GitHub — syncing this data keeps our compatibility checks current.
+**Implementation:**
+- **W3C Design Tokens parser** — `app/design_sync/w3c_tokens.py`:
+  ```python
+  def parse_w3c_tokens(tokens_json: dict[str, Any]) -> ExtractedTokens:
+  ```
+  - Parses W3C Design Tokens v1.0 JSON format: `{ "color": { "$type": "color", "$value": "#ff0000" }, "spacing": { "sm": { "$type": "dimension", "$value": "8px" } } }`
+  - Maps W3C types to `ExtractedTokens` fields: `color` → `ExtractedColor`, `dimension` → spacing, `fontFamily`/`fontWeight`/`fontSize` → `ExtractedTypography`, `duration`/`cubicBezier` → ignored (not email-relevant)
+  - Resolves aliases: `{ "$value": "{color.primary}" }` → follow reference chain with cycle detection (max depth 10)
+  - Handles composite tokens: `shadow`, `border`, `gradient` → map to relevant `ExtractedTokens` fields
+  - Supports multi-file tokens: `$extensions.mode` for light/dark → `dark_colors` population
+- **W3C token export** — `app/design_sync/w3c_export.py`:
+  ```python
+  def export_w3c_tokens(tokens: ExtractedTokens) -> dict[str, Any]:
+  ```
+  - Converts validated `ExtractedTokens` back to W3C v1.0 JSON for downstream tooling (Style Dictionary, Tokens Studio)
+- **API endpoints**:
+  - `POST /api/v1/design-sync/tokens/import-w3c` — accepts W3C JSON, validates, stores as `DesignTokenSnapshot`
+  - `GET /api/v1/design-sync/connections/{id}/tokens/export-w3c` — export current tokens in W3C format
+- **caniemail.com data sync** — `scripts/sync-caniemail.py`:
+  - Fetches `https://github.com/hteumeuleu/caniemail` data files (JSON/YAML)
+  - Parses feature support matrix: property → client → support level (yes/no/partial + notes)
+  - Outputs `data/caniemail-support.json` — 303 features × N clients
+  - `make sync-caniemail` command
+- **Integration with compatibility.py**:
+  - `ConverterCompatibility` gains `caniemail_data` parameter — when provided, supplements ontology data with caniemail.com data
+  - Merge strategy: if both sources have data for a property+client, use the more restrictive support level (safer)
+  - `check_property()` returns `source: "ontology" | "caniemail" | "both"` field for transparency
+- **Integration with token_transforms.py**:
+  - `validate_and_transform()` gains `caniemail_data` parameter — used for client-aware warnings alongside existing ontology checks
+**Security:** W3C token import accepts JSON — validate schema strictly before parsing (reject unknown `$type` values, limit nesting depth to 20, limit file size to 1MB). caniemail sync is a developer script, not a runtime endpoint — data is committed to repo. No user input reaches the sync script.
+**Verify:** Import W3C tokens JSON with 5 colors + 3 typography + 2 spacing → `parse_w3c_tokens()` returns `ExtractedTokens` with correct values. Alias resolution: `{color.primary}` → resolved hex. Export round-trip: `export_w3c_tokens(parse_w3c_tokens(input)) ≈ input` (normalized). `sync-caniemail` produces `data/caniemail-support.json` with 300+ features. `ConverterCompatibility` with caniemail data correctly identifies `gap` as unsupported in Outlook. `make test` passes.
+
+### 35.9 Figma Webhooks & Live Preview Sync `[Backend + Frontend]`
+**What:** Add Figma webhook handling for `FILE_UPDATE` events to trigger automatic token re-sync and conversion preview updates. Push changes to the frontend via WebSocket so designers see their Figma edits reflected in the email preview within seconds.
+**Why:** The current workflow is: designer edits Figma → manually clicks "Sync" in the UI → waits for API call → views updated tokens. This breaks the design-to-code feedback loop. Figma webhooks (`FILE_UPDATE` event) fire within seconds of a save. Combined with the existing token diff engine (Phase 33.8 `_compute_token_diff()`) and WebSocket infrastructure (Phase 24 collaboration), this enables near-real-time preview: design change → webhook → token diff → re-convert changed sections → push preview update.
+**Implementation:**
+- **Webhook endpoint** — `app/design_sync/routes.py`:
+  ```python
+  @router.post("/webhooks/figma", status_code=200)
+  async def handle_figma_webhook(request: Request) -> dict:
+  ```
+  - Verify webhook signature using `X-Figma-Signature` header with HMAC-SHA256 (Figma signs payloads with the webhook passcode)
+  - Parse event: `{ "event_type": "FILE_UPDATE", "file_key": "abc123", "file_name": "...", "timestamp": "..." }`
+  - Look up `DesignConnection` by `file_key` — if found, enqueue async sync job
+  - Return `200 OK` immediately (Figma requires < 5s response)
+- **Webhook registration** — `app/design_sync/service.py`:
+  ```python
+  async def register_figma_webhook(self, connection_id: int, *, team_id: str) -> str:
+  ```
+  - Calls Figma API `POST /v2/webhooks` with `event_type: "FILE_UPDATE"`, `team_id`, `endpoint`, `passcode`
+  - Stores webhook ID in `DesignConnection.webhook_id` column (new nullable column, Alembic migration)
+  - Returns webhook ID for management
+- **Debounced sync job** — designers save frequently, so debounce webhook events:
+  - On webhook received: set Redis key `figma_webhook:{file_key}` with 5s TTL
+  - Background worker checks key expiry → only trigger sync after 5s of no new webhooks
+  - Sync job: `sync_connection()` → `_compute_token_diff()` → if tokens changed, re-convert
+- **WebSocket push** — extend existing collaboration WebSocket (`app/collaboration/`):
+  - New message type: `{ "type": "design_sync_update", "connection_id": N, "diff": TokenDiffResponse, "preview_url": "..." }`
+  - Frontend `useDesignSync` hook receives update → refreshes token display + email preview
+- **Frontend live preview** — `cms/apps/web/src/hooks/use-design-sync-live.ts`:
+  - Subscribes to `design_sync_update` WebSocket messages
+  - Shows toast: "Design updated — 3 tokens changed" with diff summary
+  - Auto-refreshes email preview if the preview panel is open
+  - Debounces UI updates to avoid flickering
+- **Config:** `DESIGN_SYNC__FIGMA_WEBHOOK_ENABLED` (default `False`), `DESIGN_SYNC__FIGMA_WEBHOOK_PASSCODE` (secret for HMAC validation), `DESIGN_SYNC__WEBHOOK_DEBOUNCE_SECONDS` (default `5`)
+**Security:** Webhook endpoint validates HMAC-SHA256 signature before processing — rejects unsigned/tampered payloads. Passcode stored in settings (not in DB). Rate limit webhook endpoint to 60/min per IP. Webhook registration requires admin role. WebSocket messages only sent to authenticated users with access to the project.
+**Verify:** Register webhook for a test connection → Figma API returns webhook ID, stored in DB. Simulate `FILE_UPDATE` event with valid signature → sync job enqueued after 5s debounce. Invalid signature → 401 rejected. Two rapid webhook events → only one sync job (debounce works). WebSocket client receives `design_sync_update` message with token diff. Frontend toast appears. `make test` passes.
+
+### 35.10 Incremental Conversion & Section Caching `[Backend]`
+**What:** Cache conversion results at the section level and only re-convert sections whose node tree or tokens changed. On re-conversion, assemble the email from cached + fresh sections.
+**Why:** A full Figma-to-email conversion for a typical 6-section email takes 2–5 seconds (layout analysis + recursive HTML generation + MJML compilation + optional fidelity scoring). When a designer changes only one section's text, re-converting all 6 sections wastes 80% of the work. Section-level caching reduces re-conversion time to < 1 second for incremental changes — critical for the live preview sync (35.9) to feel responsive.
+**Implementation:**
+- **Section hash computation** — `app/design_sync/section_cache.py`:
+  ```python
+  def compute_section_hash(section: EmailSection, tokens: ExtractedTokens) -> str:
+  ```
+  - Hash inputs: section's node tree (types + dimensions + styles + text content), relevant tokens (colors used in section, typography, spacing), container_width, target_clients
+  - Uses `hashlib.sha256` on a canonical JSON representation
+  - Stable ordering: sort dict keys, round floats to 2 decimal places
+- **Section cache storage**:
+  - In-memory LRU cache: `functools.lru_cache` with 500 entries (covers ~80 emails × 6 sections)
+  - Redis cache with 1-hour TTL for persistence across restarts: key = `section_cache:{connection_id}:{section_hash}`, value = rendered HTML + MJML
+  - Cache entry: `{ html: str, mjml: str | None, fidelity_score: float | None, generated_at: datetime }`
+- **Incremental conversion** — extend `DesignConverterService.convert()`:
+  ```python
+  # After layout analysis
+  section_hashes = {s.id: compute_section_hash(s, tokens) for s in layout.sections}
+  cached = await self._cache.get_many(connection_id, section_hashes)
+
+  to_convert = [s for s in layout.sections if s.id not in cached]
+  fresh_results = await self._convert_sections(to_convert, ...)  # Only convert changed sections
+
+  all_sections_html = []
+  for section in layout.sections:
+      if section.id in cached:
+          all_sections_html.append(cached[section.id].html)
+      else:
+          all_sections_html.append(fresh_results[section.id])
+          await self._cache.set(connection_id, section_hashes[section.id], fresh_results[section.id])
+  ```
+- **Cache invalidation**: Clear all cache entries for a connection when: (a) token diff detects structural changes (not just value changes), (b) `target_clients` change, (c) `container_width` changes, (d) manual cache clear via admin endpoint
+- **Metrics**: Log `design_sync.conversion_cache_hit_rate` — ratio of cached vs. fresh sections per conversion. Include in `ConversionResult.metadata`.
+- Add `DELETE /api/v1/design-sync/connections/{id}/cache` admin endpoint for manual cache clear
+**Security:** Cache keys are SHA-256 hashes — no user content in keys. Cache values are rendered HTML (already sanitized). Redis cache uses same auth as existing Redis connection. Admin-only cache clear endpoint.
+**Verify:** Convert a 6-section email → all 6 sections cached. Change text in 1 section → re-convert → only 1 section re-converted, 5 from cache (`cache_hit_rate=0.83`). Change `target_clients` → full cache invalidation → all 6 re-converted. Cache TTL: wait 1 hour → entries expired → full re-conversion. `make test` passes.
+
+### 35.11 Tests & Integration Verification `[Full-Stack]`
+**What:** Comprehensive test suite covering all Phase 35 subtasks: MJML compilation, tree normalization, MJML generation, AI classification, visual fidelity, correction learning, W3C tokens, webhooks, and caching. Plus end-to-end integration test: Figma file → normalize → classify → convert (MJML) → compile → score fidelity → cache.
+**Implementation:**
+- **MJML sidecar tests** (`services/maizzle-builder/test/`):
+  - `test-mjml-compile.js`: Valid MJML → HTML with tables. Invalid MJML → error array. Empty input → 400. Large MJML (100 sections) → compiles within 5s.
+  - `test-mjml-postcss.js`: MJML output + `target_clients=["outlook_2019"]` → PostCSS strips unsupported CSS from compiled HTML.
+- **Tree normalizer tests** (`app/design_sync/tests/test_tree_normalizer.py`):
+  - Hidden node removal, GROUP flattening, auto-layout inference (vertical, horizontal, mixed), text merging, instance resolution. Edge: empty tree, single-node tree, max-depth tree.
+- **MJML generation tests** (`app/design_sync/tests/test_mjml_generation.py`):
+  - Each section type → valid MJML output. Token injection → correct attributes. Dark mode → `<mj-style>` block. Multi-column → correct `mj-column width`. Full email assembly → valid MJML document.
+- **MJML template tests** (`app/design_sync/tests/test_mjml_templates.py`):
+  - Each of 10 templates renders valid MJML. Autoescape prevents XSS in text content. Missing optional fields → graceful defaults.
+- **AI layout tests** (`app/design_sync/tests/test_ai_layout.py`):
+  - Mock LLM returns valid classification → section type updated. LLM error → graceful fallback to UNKNOWN. Cache hit → no LLM call. Config disabled → no LLM call. Heuristic content roles: unsubscribe, copyright, social links detected without LLM.
+- **Visual fidelity tests** (`app/design_sync/tests/test_visual_scorer.py`):
+  - Identical images → score 1.0. Completely different → score < 0.3. Known diff → per-section scores identify correct section. Anti-aliasing tolerance → minor rendering differences don't tank score.
+- **Correction tracker tests** (`app/design_sync/tests/test_correction_tracker.py`):
+  - Record 10 identical corrections → pattern with `occurrences=10`. Below threshold → not suggested. Approve pattern → status changes. Different corrections for same input → low confidence, not suggested.
+- **W3C token tests** (`app/design_sync/tests/test_w3c_tokens.py`):
+  - Parse valid W3C JSON → correct `ExtractedTokens`. Alias resolution → chain followed. Circular alias → error. Export round-trip → consistent. Unknown `$type` → skipped with warning.
+- **Webhook tests** (`app/design_sync/tests/test_webhooks.py`):
+  - Valid signature → accepted. Invalid signature → 401. Unknown file_key → 200 (acknowledged, no action). Debounce: 3 rapid events → 1 sync job.
+- **Cache tests** (`app/design_sync/tests/test_section_cache.py`):
+  - Cache miss → full convert. Cache hit → skip convert. Invalidation on token change. TTL expiry. Hash stability (same input → same hash).
+- **E2E integration test** (`app/design_sync/tests/test_e2e_mjml_pipeline.py`):
+  - Uses mock Figma API response (real structure from golden template)
+  - Full pipeline: normalize → analyze → classify → MJML generate → compile → verify HTML output has tables + MSO conditionals + responsive media queries + dark mode
+  - Verify section count matches layout analysis
+  - Verify `data-slot-name` attributes preserved through MJML compilation
+**Security:** Tests only — no production code paths, no real Figma API calls, no real LLM calls (all mocked).
+**Verify:** `make test` — all new test files pass. `make check` — full suite green. `make bench` — MJML compilation benchmark added (target: < 500ms for 6-section email). Test count: estimated 80–100 new tests across all subtasks.
+
+---
+
+## Phase 36 — Universal Email Design Document & Multi-Format Import Hub
+
+> **The pipeline has a coupling problem.** Design tool providers (Figma, Penpot) produce Python objects (`ExtractedTokens`, `DesignFileStructure`) consumed directly by the converter in-process. This means: (1) new input formats (MJML files, raw HTML, manual JSON) must produce these exact Python types, (2) the converter can't run independently or be tested without a provider, (3) there's no formal contract — any field can be missing or shaped differently per provider, and (4) tokens and structure flow through separate paths that must be kept in sync manually. Meanwhile, the import annotator agent (Phase 32.3) detects Stripo/Beefree/MJML/Mailchimp patterns but can't extract structural data, and ESP export covers 3 of the Big 5 (Braze + SFMC + Adobe Campaign — missing Klaviyo + HubSpot).
+>
+> This phase introduces the **`EmailDesignDocument`** — a single, formally specified JSON Schema that serves as the universal contract between ALL input sources and the converter. Every provider (Figma, Penpot, MJML import, HTML import, manual API) produces this JSON. The converter consumes ONLY this JSON. The schema is versioned, validated, cacheable, and testable with fixtures. Plus: MJML import adapter, AI-powered HTML reverse engineering adapter, and Klaviyo + HubSpot ESP export to complete the Big 5.
+>
+> **Why not import proprietary builder formats (Beefree JSON, Stripo modules, Chamaileon JSON, Unlayer JSON)?** Competitive analysis shows these are undocumented/proprietary schemas with tiny migration audiences and high maintenance burden. When enterprises leave those tools, they export HTML — which the HTML import adapter handles. MJML is the only structured email format worth parsing directly (open, formal schema, 17k GitHub stars, used by Email Love + Topol.io + Parcel).
+>
+> **Dependency note:** Builds on Phase 35 (MJML compilation service, node tree normalizer, AI layout intelligence). Requires 35.1 (MJML sidecar) for MJML round-trip and 35.5 (AI layout intelligence) for HTML reverse engineering. ESP export subtask (36.5) is independent — can start immediately using existing `ESPSyncProvider` protocol in `app/connectors/sync_protocol.py`.
+
+- [ ] 36.1 EmailDesignDocument JSON Schema v1
+- [ ] 36.2 Refactor converter to consume EmailDesignDocument
+- [ ] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument
+- [ ] 36.4 MJML import adapter
+- [ ] 36.5 AI-powered HTML reverse engineering adapter
+- [ ] 36.6 Klaviyo + HubSpot ESP export
+- [ ] 36.7 Tests & integration verification
+
+### 36.1 EmailDesignDocument JSON Schema v1 `[Backend]`
+**What:** Define a formal JSON Schema (Draft 2020-12) for the `EmailDesignDocument` — the single canonical intermediate representation between any input source and the converter. Create the schema file, Python dataclass mirror, serialization/deserialization, and validation.
+**Why:** The pipeline currently passes Python objects in-memory between providers and the converter. This creates tight coupling, makes testing harder (need a provider to test the converter), prevents external tools from feeding the pipeline, and has no validation (missing fields cause runtime errors deep in the converter). A formal JSON Schema makes the contract explicit, enables schema validation at the boundary, allows JSON fixtures for testing, supports caching/versioning/diffing of the full input, and opens the door for external tools to target the schema directly via API.
+**Implementation:**
+- Create `app/design_sync/schemas/email_design_document.json` — JSON Schema Draft 2020-12:
+  ```json
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "email-design-document/v1",
+    "type": "object",
+    "required": ["version", "tokens", "sections", "layout"],
+    "properties": {
+      "version": { "const": "1.0" },
+      "source": {
+        "type": "object",
+        "properties": {
+          "provider": { "enum": ["figma", "penpot", "mjml", "html", "manual", "sketch", "canva"] },
+          "file_ref": { "type": "string" },
+          "synced_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "tokens": { "$ref": "#/$defs/tokens" },
+      "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
+      "layout": { "$ref": "#/$defs/layout" },
+      "compatibility_hints": { ... },
+      "token_warnings": { ... }
+    }
+  }
+  ```
+- **Tokens sub-schema** (`$defs/tokens`): maps directly to existing `ExtractedTokens` fields — `colors[]` (name, hex, opacity, role), `typography[]` (name, family, size, weight, line_height, letter_spacing, text_transform, text_decoration), `spacing[]` (name, value), `dark_colors[]`, `gradients[]` (angle, stops[], fallback_hex), `variables[]` (name, type, value, mode). All fields optional with sensible defaults — minimal valid document needs only `version` + empty `tokens` + empty `sections` + `layout.container_width`.
+- **Section sub-schema** (`$defs/section`): maps to existing `EmailSection` dataclass — `id`, `type` (enum: header/preheader/hero/content/cta/footer/social/divider/spacer/nav/unknown), `column_layout` (enum: single/two-column/three-column/multi-column), `width`, `height`, `padding` (top/right/bottom/left), `item_spacing`, `background_color`, `texts[]` (content, is_heading, font_family, font_size, font_weight, color, line_height, letter_spacing), `images[]` (node_id, width, height, alt, src), `buttons[]` (text, url, background_color, text_color, border_radius, padding), `columns[]` (width_pct, texts, images, buttons — for multi-column), `content_roles[]`, `spacing_after`.
+- **Layout sub-schema** (`$defs/layout`): `container_width` (int, 400–800, default 600), `naming_convention` (enum), `overall_width`.
+- Create Python mirror in `app/design_sync/email_design_document.py`:
+  ```python
+  @dataclass(frozen=True)
+  class EmailDesignDocument:
+      version: str
+      tokens: DocumentTokens
+      sections: list[DocumentSection]
+      layout: DocumentLayout
+      source: DocumentSource | None = None
+      compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
+      token_warnings: list[TokenWarning] = field(default_factory=list)
+
+      @classmethod
+      def from_json(cls, data: dict[str, Any]) -> EmailDesignDocument: ...
+      def to_json(self) -> dict[str, Any]: ...
+      @staticmethod
+      def validate(data: dict[str, Any]) -> list[str]: ...  # Returns validation errors
+  ```
+- `DocumentTokens`, `DocumentSection`, `DocumentLayout`, `DocumentSource` — frozen dataclasses mirroring the JSON schema. These are thin wrappers, NOT duplicates of `ExtractedTokens`/`EmailSection` — they have `to_extracted_tokens()` and `to_email_sections()` bridge methods for backward compatibility during migration.
+- Schema validation via `jsonschema` library (already a dependency via other packages) — validate at the boundary (when JSON arrives from adapter or API), not inside the converter.
+- Add `POST /api/v1/design-sync/validate-document` endpoint — accepts JSON, returns validation errors. Useful for external tools testing their output.
+- Add `GET /api/v1/design-sync/schema/v1` endpoint — serves the JSON Schema for external consumers.
+- Store validated `EmailDesignDocument` JSON in `DesignTokenSnapshot.document_json` (new column, nullable — coexists with existing `tokens_json` during migration). Alembic migration adds column.
+**Security:** Schema validation prevents malformed input from reaching the converter. Max document size: 5MB (enforced at API boundary). JSON Schema `maxItems` on arrays (sections: 100, texts per section: 50, colors: 500) prevents DoS via oversized documents. No `additionalProperties: true` on inner objects — unknown fields are rejected.
+**Verify:** Valid EmailDesignDocument JSON → `validate()` returns empty list. Missing required field → validation error with path. Section with invalid type → rejected. Document with 101 sections → rejected (maxItems). `from_json(to_json(doc))` round-trips correctly. Schema endpoint returns valid JSON Schema. `make test` passes.
+
+### 36.2 Refactor Converter to Consume EmailDesignDocument `[Backend]`
+**What:** Modify `DesignConverterService.convert()` to accept `EmailDesignDocument` as its primary input, replacing the current `(DesignFileStructure, ExtractedTokens)` pair. The existing signature remains as a deprecated compatibility shim during migration.
+**Why:** The converter currently accepts `DesignFileStructure` + `ExtractedTokens` + 8 keyword arguments (`raw_file_data`, `selected_nodes`, `target_clients`, `use_components`, `connection_config`, `image_urls`). This signature is Figma-centric (e.g., `raw_file_data` is the raw Figma API response). Moving to `EmailDesignDocument` as the single input: (a) makes the converter input-source-agnostic, (b) reduces the parameter surface from 10 args to 1 object, (c) enables testing with JSON fixtures instead of mock providers, (d) enables caching by document hash.
+**Implementation:**
+- Add new method `DesignConverterService.convert_document()`:
+  ```python
+  async def convert_document(
+      self, document: EmailDesignDocument, *, target_clients: list[str] | None = None,
+      output_format: Literal["html", "mjml"] = "html",
+  ) -> ConversionResult:
+  ```
+- Internally: `document.tokens.to_extracted_tokens()` → feed to `validate_and_transform()`. `document.sections` → feed to `_convert_mjml()` (Phase 35.3) or `_convert_with_components()`. `document.layout.container_width` → thread through all rendering calls.
+- The existing `convert()` method becomes a shim:
+  ```python
+  async def convert(self, structure, tokens, **kwargs) -> ConversionResult:
+      # Build EmailDesignDocument from legacy inputs
+      document = self._build_document_from_legacy(structure, tokens, **kwargs)
+      return await self.convert_document(document, target_clients=kwargs.get("target_clients"))
+  ```
+- `_build_document_from_legacy()` bridges the old inputs → `EmailDesignDocument`:
+  - Runs `analyze_layout(structure)` to get `EmailSection[]`
+  - Maps `ExtractedTokens` → `DocumentTokens`
+  - Maps `EmailSection[]` → `DocumentSection[]`
+  - This is the ONLY place layout analysis happens for Figma/Penpot inputs (Option A from architecture discussion)
+- Update `import_service.py:run_conversion()` to call `convert_document()` with the `EmailDesignDocument` stored in `DesignTokenSnapshot.document_json` when available, falling back to legacy path when not.
+- Update `service.py:sync_connection()` to build and store `EmailDesignDocument` JSON in the snapshot after token extraction + layout analysis.
+- **No changes to `converter.py` internals** (`node_to_email_html()`, `_render_semantic_text()`, etc.) — these receive `EmailSection` data from the document's `.to_email_sections()` bridge. The refactor is at the orchestration layer only.
+**Security:** `convert_document()` requires a validated `EmailDesignDocument` — call `validate()` before passing. The shim validates legacy inputs by construction (they come from trusted provider code). No new user input paths.
+**Verify:** `convert_document()` with a JSON fixture produces identical HTML to `convert()` with the same data via legacy path. All existing design_sync tests pass without modification (shim handles backward compatibility). `convert_document()` with invalid document → raises `AppError`. `make test` passes. `make check` all green.
+
+### 36.3 Refactor Figma + Penpot Adapters to Produce EmailDesignDocument `[Backend]`
+**What:** Modify `FigmaDesignSyncService` and `PenpotDesignSyncService` to output `EmailDesignDocument` JSON as their primary result, in addition to the existing `ExtractedTokens` + `DesignFileStructure` return types. Each adapter encapsulates all provider-specific logic — API calls, node parsing, layout analysis — and outputs the universal document.
+**Why:** Currently, the Figma provider returns raw `ExtractedTokens` + `DesignFileStructure`, and the converter runs layout analysis. This means layout analysis is in the converter's responsibility, but it's really a provider-specific concern (Figma nodes need y-position grouping; MJML sections are explicit; HTML needs DOM traversal). Moving layout analysis into the adapter means each adapter can use the right analysis strategy for its format, and the converter receives pre-analyzed sections.
+**Implementation:**
+- Add `build_document()` method to `FigmaDesignSyncService`:
+  ```python
+  async def build_document(
+      self, file_ref: str, access_token: str, *, selected_nodes: list[str] | None = None,
+      connection_config: dict[str, Any] | None = None,
+  ) -> EmailDesignDocument:
+  ```
+  - Calls existing `sync_tokens_and_structure()` → `ExtractedTokens` + `DesignFileStructure`
+  - Calls `validate_and_transform(tokens)` → validated tokens + warnings
+  - If Phase 35.2 available: calls `normalize_tree(structure)` → cleaned tree
+  - Calls `analyze_layout(structure)` → `DesignLayoutDescription` with `EmailSection[]`
+  - If Phase 35.5 available: calls `classify_unknown_sections()` for AI fallback
+  - Assembles all results into `EmailDesignDocument`
+  - Returns the document (also stores as JSON in snapshot)
+- Add same `build_document()` to `PenpotDesignSyncService` — same flow, different API client.
+- Update `DesignSyncService.sync_connection()`:
+  ```python
+  # New path: build full document
+  provider = self._get_provider(connection.provider)
+  if hasattr(provider, "build_document"):
+      document = await provider.build_document(file_ref, token, ...)
+      snapshot.document_json = document.to_json()
+  else:
+      # Legacy path for stub providers (Sketch, Canva)
+      tokens, structure = await provider.sync_tokens_and_structure(file_ref, token)
+      snapshot.tokens_json = tokens.to_dict()
+  ```
+- The `DesignSyncProvider` protocol gains an optional `build_document()` method (not required — stubs don't implement it). Use `hasattr` check, not protocol enforcement, so existing providers aren't broken.
+- **Layout analysis moves from converter to adapter.** The converter no longer calls `analyze_layout()` — it receives pre-analyzed sections in the document. This is the key architectural shift.
+**Security:** No new input paths. `build_document()` uses the same authenticated API calls as existing methods. Document JSON is validated before storage. Existing auth, rate limiting, and encryption unchanged.
+**Verify:** `sync_connection()` for a Figma connection → stores `document_json` with valid EmailDesignDocument. `document_json` contains sections with types, texts, images, buttons. `convert_document(document)` produces same HTML as legacy `convert(structure, tokens)` path. Penpot connection → same flow. Stub providers (Sketch, Canva) → legacy path, no `document_json`. `make test` passes.
+
+### 36.4 MJML Import Adapter `[Backend]`
+**What:** Create `app/design_sync/mjml_import/adapter.py` — a parser that reads MJML markup (`<mjml>/<mj-body>/<mj-section>/<mj-column>/<mj-text>/<mj-button>/<mj-image>`) and produces an `EmailDesignDocument`. This enables importing existing MJML templates into the platform for editing, AI enhancement, and multi-client rendering. Combined with Phase 35.3 (MJML generation), this completes the MJML round-trip.
+**Why:** MJML is the de facto standard intermediate representation for email. Enterprise email teams have hundreds of MJML templates from Maizzle, Parcel, Email Love, Topol.io, or hand-coded workflows. Importing these templates unlocks: (a) AI agent enhancement (dark mode, accessibility, outlook fixes) on existing MJML templates, (b) visual editing in the builder, (c) multi-client rendering via the emulators, (d) QA engine checks on legacy templates. MJML's XML structure maps cleanly to `EmailDesignDocument` — `<mj-section>` → section, `<mj-column>` → column, `<mj-text>` → text block, `<mj-button>` → button, `<mj-image>` → image. This is a 1:1 mapping, not heuristic inference.
+**Implementation:**
+- Create `app/design_sync/mjml_import/adapter.py`:
+  ```python
+  class MjmlImportAdapter:
+      def parse(self, mjml_source: str) -> EmailDesignDocument: ...
+  ```
+- **MJML parsing** — use `lxml.etree` with MJML namespace handling:
+  - Parse MJML as XML tree
+  - Walk `<mj-head>` → extract tokens:
+    - `<mj-attributes>/<mj-all>` → default typography (font-family, font-size, color)
+    - `<mj-attributes>/<mj-text>` → text typography overrides
+    - `<mj-attributes>/<mj-button>` → button defaults (background-color, color, font-size, inner-padding, border-radius)
+    - `<mj-style>` → parse CSS for color variables, dark mode rules (`prefers-color-scheme`)
+    - `<mj-font>` → web font references
+  - Walk `<mj-body>` → extract sections:
+    - Each `<mj-section>` → one `DocumentSection`:
+      - `background-color` attr → `background_color`
+      - `padding` attr → parse to `padding_top/right/bottom/left`
+      - Count child `<mj-column>` → determine `column_layout` (1=SINGLE, 2=TWO_COLUMN, 3=THREE_COLUMN, 4+=MULTI_COLUMN)
+    - Each `<mj-column>` → column group with `width` → `width_pct`
+    - Each `<mj-text>` → `TextBlock`:
+      - Inner HTML content (strip tags for plain text, detect headings from `<h1>`-`<h6>` tags or font-size)
+      - `font-family`, `font-size`, `font-weight`, `color`, `line-height`, `letter-spacing` from attributes + inline style
+    - Each `<mj-image>` → `ImagePlaceholder` with `src`, `alt`, `width`, `height`
+    - Each `<mj-button>` → `ButtonElement` with `href`, inner text, `background-color`, `color`, `border-radius`, `inner-padding`
+    - Each `<mj-spacer>` → section with type=SPACER and `height`
+    - Each `<mj-divider>` → section with type=DIVIDER
+    - `<mj-hero>` → section with type=HERO + background image from `background-url`
+    - `<mj-social>/<mj-social-element>` → section with type=SOCIAL + content roles
+    - `<mj-navbar>/<mj-navbar-link>` → section with type=NAV
+  - **Section type inference**: MJML doesn't have explicit section types. Infer from position + content:
+    - First section with image and no text → HEADER
+    - Section with `<mj-hero>` or large background image + heading → HERO
+    - Last section with small text or `<mj-social>` → FOOTER
+    - Section with only `<mj-button>` → CTA
+    - Everything else → CONTENT
+  - `document.source.provider = "mjml"`
+  - `document.layout.container_width` from `<mj-body width="600px">` or default 600
+- **API endpoints**:
+  - `POST /api/v1/design-sync/import/mjml` — accepts MJML string in request body, returns `EmailDesignDocument` JSON + conversion preview
+  - Reuses auth + rate limiting from existing design_sync routes
+- **Integration with visual builder**: imported `EmailDesignDocument` can be opened in the builder for editing, then exported as MJML (Phase 35.3) or HTML (converter)
+- Max MJML size: 2MB (matches import annotator limit). Validate XML well-formedness before parsing.
+**Security:** MJML input is parsed as XML via `lxml` with `resolve_entities=False`, `no_network=True` to prevent XXE attacks. Text content from `<mj-text>` is passed through `html.escape()` when extracting plain text. `src` URLs from `<mj-image>` are validated (http/https only, no `javascript:` or `data:` URIs). Import endpoint requires authentication.
+**Verify:** Import the 10 MJML section templates from Phase 35.4 → each produces valid `EmailDesignDocument` with correct section types, column layouts, and content. Round-trip: MJML → import → `EmailDesignDocument` → MJML generation (35.3) → compile (35.1) → produces equivalent HTML. `<mj-hero>` → HERO section. 2-column section → TWO_COLUMN layout with 2 column groups. Dark mode `<mj-style>` → `dark_colors` tokens extracted. Malformed XML → descriptive error, no crash. XXE payload → rejected. `make test` passes.
+
+### 36.5 AI-Powered HTML Reverse Engineering Adapter `[Backend + AI]`
+**What:** Create `app/design_sync/html_import/adapter.py` — a parser that takes arbitrary email HTML and reverse-engineers an `EmailDesignDocument`. Uses the existing import annotator agent (Phase 32.3) for pattern detection, plus new DOM traversal logic to extract `EmailSection[]` with full content (texts, images, buttons, styling). This is the #1 enterprise migration feature — enterprises have thousands of legacy HTML templates that need to become editable.
+**Why:** The import annotator agent already detects section boundaries and adds `data-section-id` attributes, identifies builder patterns (Stripo, Beefree, Mailchimp, MJML), and recognizes ESP tokens (AMPscript, Liquid, Handlebars). But it does NOT extract structured data — no `EmailSection` objects, no text blocks, no image metadata, no button detection. The gap is the 60% between "annotated HTML" and "structured EmailDesignDocument." Beefree launched their HTML Importer API in 2025 (rule-based). Chamaileon has an HTML import plugin. Both produce mediocre results on messy real-world email HTML. AI-powered extraction using the import annotator's pattern detection + LLM fallback for ambiguous structures would be a genuine differentiator.
+**Implementation:**
+- Create `app/design_sync/html_import/adapter.py`:
+  ```python
+  class HtmlImportAdapter:
+      async def parse(self, html: str, *, use_ai: bool = True) -> EmailDesignDocument: ...
+  ```
+- **Phase 1 — DOM-based section extraction** (deterministic, no LLM):
+  - Parse HTML via `lxml.html` (same library as import annotator)
+  - Find the outermost content table (skip MSO wrapper tables via `<!--[if mso]>` detection)
+  - Walk top-level `<tr>` rows → each row is a candidate section
+  - For each candidate section:
+    - **Text extraction**: Find all text-bearing elements (`<td>`, `<p>`, `<h1>`-`<h6>`, `<span>`, `<a>`) → create `TextBlock` objects with content + inline style parsing (font-family, font-size, font-weight, color, line-height from `style` attribute)
+    - **Image extraction**: Find all `<img>` tags → create `ImagePlaceholder` with `src`, `alt`, `width`, `height` (from attributes or inline style)
+    - **Button extraction**: Detect buttons via multiple patterns — `<a>` with background-color in style, `<table>` with single `<a>` child (bulletproof button pattern), VML `<v:roundrect>` (Outlook button), `role="button"` attribute → create `ButtonElement` with text, href, styling
+    - **Column detection**: Count immediate child `<td>` elements in a row. 1 td = SINGLE, 2 = TWO_COLUMN, 3 = THREE_COLUMN, 4+ = MULTI_COLUMN. Also detect `display:inline-block` column pattern (fluid hybrid).
+    - **Background color**: Extract from `bgcolor` attribute or `background-color` in style on `<td>`/`<table>`
+    - **Padding**: Parse `padding` from inline style on section-level `<td>`
+- **Phase 2 — Section type classification** (heuristic + AI fallback):
+  - **Heuristic rules** (free, fast):
+    - Section with image and no/little text in first position → HEADER
+    - Section with large font heading (> 24px) + optional image + optional button → HERO
+    - Section with only `<a>` button → CTA
+    - Last section with small text (< 14px) or "unsubscribe"/"©" content → FOOTER
+    - Section with social media image links (facebook/twitter/linkedin/instagram URL patterns) → SOCIAL
+    - Section with `<hr>` or 1px-height element → DIVIDER
+    - Section with no content, height-only → SPACER
+  - **AI fallback** (only for sections classified as UNKNOWN after heuristics): reuse Phase 35.5 `classify_section()` with text snippets + position context → Haiku structured output
+- **Phase 3 — Token extraction from CSS**:
+  - Parse `<style>` blocks and inline styles → build color palette (deduplicate hex values, assign roles by frequency: most common bg = background, most common text = body_text, etc.)
+  - Extract typography: find distinct font-family + font-size combinations → heading vs. body by size
+  - Extract spacing: common padding values → spacing scale
+  - Detect dark mode: `@media (prefers-color-scheme: dark)` rules → `dark_colors`
+  - Detect web fonts: `@import` or `<link>` with font URLs
+- **Integration with import annotator**: if import annotator was already run on this HTML (has `data-section-id` attributes), use those annotations as section boundaries instead of inferring from `<tr>` rows. This leverages the agent's builder-specific pattern detection.
+- **API endpoint**: `POST /api/v1/design-sync/import/html` — accepts HTML string, returns `EmailDesignDocument` JSON
+- **Config**: `DESIGN_SYNC__HTML_IMPORT_AI_ENABLED` (default `True`) — disable AI fallback for deterministic-only mode
+**Security:** HTML input parsed via `lxml.html` (inherently sanitizes). `src` URLs validated (http/https only). Text content passed through `html.escape()` on extraction. AI fallback receives only structural metadata (dimensions, text snippets), not raw HTML. Import endpoint requires authentication. Max HTML size: 2MB.
+**Verify:** Import a golden template HTML → produces `EmailDesignDocument` with correct section count, types, and content. Import a Stripo-exported HTML → section boundaries detected (leveraging import annotator skills). Import a Beefree-exported HTML → same. Import hand-coded email with bulletproof buttons → buttons correctly extracted. Import email with dark mode CSS → `dark_colors` populated. AI disabled → UNKNOWN sections stay UNKNOWN. Malformed HTML → best-effort parsing, no crash. `make test` passes.
+
+### 36.6 Klaviyo + HubSpot ESP Export `[Backend]`
+**What:** Add Klaviyo and HubSpot ESP export providers to complete the Big 5 coverage (joining existing Braze, SFMC, Adobe Campaign in `app/connectors/`). Implements the existing `ESPSyncProvider` protocol from `app/connectors/sync_protocol.py`.
+**Why:** Braze, SFMC, and Adobe Campaign export already works. Klaviyo and HubSpot are the remaining two of the five most-used enterprise ESPs. Without them, enterprise prospects using these platforms can't push templates from the platform — a deal-breaker. The existing `ESPSyncProvider` protocol + `ConnectorService` dispatch pattern makes adding new providers straightforward (same pattern as `BrazeSyncProvider`, `SFMCSyncProvider`).
+**Implementation:**
+- **Klaviyo provider** — `app/connectors/klaviyo/`:
+  - `service.py` — `KlaviyoConnectorService`:
+    - Auth: API key (private key, `Authorization: Klaviyo-API-Key {key}`)
+    - Base URL: `https://a.klaviyo.com/api`
+    - API revision header: `revision: 2025-07-15` (Klaviyo requires version pinning)
+  - `sync_provider.py` — `KlaviyoSyncProvider` implementing `ESPSyncProvider`:
+    - `validate_credentials()` → `GET /api/accounts/` (returns account info if key valid)
+    - `list_templates()` → `GET /api/templates/` with pagination (`page[cursor]`). Map response to `ESPTemplate` (id, name, html, updated_at). Klaviyo uses JSON:API format — unwrap `data[].attributes`.
+    - `get_template(id)` → `GET /api/templates/{id}/`
+    - `create_template(name, html)` → `POST /api/templates/` with `{ "data": { "type": "template", "attributes": { "name": name, "html": html } } }`
+    - `update_template(id, html)` → `PATCH /api/templates/{id}/` with same JSON:API format
+    - `delete_template(id)` → `DELETE /api/templates/{id}/`
+  - Rate limit: Klaviyo allows 75 requests/sec for private API keys. Add `RateLimiter` with 60/sec safety margin.
+- **HubSpot provider** — `app/connectors/hubspot/`:
+  - `service.py` — `HubSpotConnectorService`:
+    - Auth: Private app access token (`Authorization: Bearer {token}`)
+    - Base URL: `https://api.hubapi.com`
+  - `sync_provider.py` — `HubSpotSyncProvider` implementing `ESPSyncProvider`:
+    - `validate_credentials()` → `GET /account-info/v3/details` (returns portal ID if valid)
+    - `list_templates()` → `GET /marketing/v3/emails/` with pagination (`after` cursor). Map to `ESPTemplate`. Note: HubSpot's Marketing Email API is the modern path — the older Template API is for CMS templates, not email templates.
+    - `get_template(id)` → `GET /marketing/v3/emails/{id}`
+    - `create_template(name, html)` → `POST /marketing/v3/emails/` with `{ "name": name, "content": { "html": html }, "type": "REGULAR" }`
+    - `update_template(id, html)` → `PATCH /marketing/v3/emails/{id}` with content update
+    - `delete_template(id)` → `DELETE /marketing/v3/emails/{id}` (moves to trash, not permanent)
+  - Rate limit: HubSpot allows 100 requests/10sec for private apps. Add `RateLimiter` with 8/sec safety margin.
+- Register both in `ConnectorService`:
+  ```python
+  # app/connectors/service.py
+  PROVIDERS["klaviyo"] = KlaviyoSyncProvider
+  PROVIDERS["hubspot"] = HubSpotSyncProvider
+  ```
+- Add config: `ESPSyncConfig` gains `klaviyo_api_key`, `hubspot_access_token` fields
+- Add pre-check support: both providers in `export_pre_check()` for dry-run validation
+**Security:** API keys stored encrypted via existing `encrypt_credentials()` in `app/connectors/`. Keys never logged (structured logging excludes credential fields). Rate limiters prevent API abuse. HubSpot delete is soft-delete (trash) — not destructive. Klaviyo API key scopes validated on `validate_credentials()` (need `templates:read`, `templates:write`).
+**Verify:** Klaviyo: `validate_credentials()` with valid key → `True`. `create_template("Test", "<html>...")` → returns `ESPTemplate` with Klaviyo ID. `list_templates()` → returns list including created template. `update_template(id, new_html)` → HTML updated. `delete_template(id)` → `True`. Invalid key → `validate_credentials()` returns `False`. HubSpot: same test matrix. Both providers work through existing `POST /api/v1/connectors/export` endpoint. `make test` passes (mocked API calls).
+
+### 36.7 Tests & Integration Verification `[Full-Stack]`
+**What:** Comprehensive test suite covering all Phase 36 subtasks plus end-to-end integration tests for the full multi-format pipeline.
+**Implementation:**
+- **Schema tests** (`app/design_sync/tests/test_email_design_document.py`):
+  - Valid document → passes validation. Missing `version` → error. Invalid section type → error. `from_json(to_json())` round-trip. Max size limits enforced. Bridge methods: `to_extracted_tokens()`, `to_email_sections()` produce correct types.
+- **Converter refactor tests** (`app/design_sync/tests/test_converter_document.py`):
+  - `convert_document()` with JSON fixture → same HTML as legacy `convert()` with equivalent data. Invalid document → `AppError`. Empty sections → valid empty email skeleton. All existing converter tests pass via shim.
+- **Figma adapter tests** (`app/design_sync/tests/test_figma_adapter.py`):
+  - `build_document()` with mock Figma response → valid `EmailDesignDocument`. Document contains sections with classified types. Tokens validated and warnings present. Penpot adapter: same test matrix.
+- **MJML import tests** (`app/design_sync/tests/test_mjml_import.py`):
+  - Each MJML element type → correct mapping. `<mj-section>` with 2 `<mj-column>` → TWO_COLUMN. `<mj-button>` → button with href + styling. `<mj-hero>` → HERO type. `<mj-social>` → SOCIAL type. Dark mode `<mj-style>` → dark_colors. Malformed XML → error. XXE → rejected. Round-trip: import → generate (35.3) → compile (35.1) → valid HTML.
+- **HTML import tests** (`app/design_sync/tests/test_html_import.py`):
+  - Import golden template HTML (use real fixtures from `app/components/data/seeds.py`) → correct section count and types. Bulletproof button pattern → detected as button. Inline styles → tokens extracted. Dark mode CSS → dark_colors. Builder-specific HTML (Stripo/Beefree patterns) → correct section boundaries. AI disabled → UNKNOWN sections preserved. Empty HTML → empty document, no crash.
+- **ESP export tests** (`app/connectors/tests/test_klaviyo.py`, `test_hubspot.py`):
+  - Mock API: CRUD operations for both providers. Rate limiter: burst of 100 requests → throttled. Invalid credentials → `False`. JSON:API format handling (Klaviyo). Pagination (both).
+- **E2E integration tests** (`app/design_sync/tests/test_e2e_document_pipeline.py`):
+  - **Figma E2E**: Mock Figma API → `build_document()` → `convert_document()` → valid email HTML with tables + MSO conditionals.
+  - **MJML E2E**: MJML template → `MjmlImportAdapter.parse()` → `EmailDesignDocument` → `convert_document(output_format="mjml")` → MJML compile (35.1) → valid email HTML. Verify round-trip fidelity.
+  - **HTML E2E**: Golden template HTML → `HtmlImportAdapter.parse()` → `EmailDesignDocument` → `convert_document()` → valid email HTML. Verify section count matches original.
+  - **Cross-format**: Import same email as MJML and as HTML → both produce `EmailDesignDocument` with same section count and types (content may differ in extraction precision).
+  - **ESP push E2E**: `convert_document()` → HTML → `ConnectorService.export("klaviyo", html)` → mock API called with correct payload. Same for HubSpot.
+**Security:** Tests only. No real API calls (all mocked). Golden template fixtures from existing seeds — no external data.
+**Verify:** `make test` — all new test files pass. `make check` — full suite green. Estimated 60–80 new tests. Existing design_sync tests (514+) unchanged (backward compatibility via shim).
+
+---
