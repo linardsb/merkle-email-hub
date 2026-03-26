@@ -20,6 +20,7 @@ from app.design_sync.figma.layout_analyzer import (
     TextBlock,
     analyze_layout,
 )
+from app.design_sync.html_formatter import format_email_html
 from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
@@ -283,6 +284,7 @@ class DesignConverterService:
             sections=sections_html,
             container_width=container_width,
         )
+        result_html = format_email_html(result_html)
 
         logger.info(
             "design_sync.converter_result",
