@@ -73,7 +73,7 @@
 > Upgrade all 11 AI agents from distributed, duplicated email knowledge to a unified rendering intelligence layer: centralized client matrix, runtime knowledge lookup, cross-agent learning, content-aware rendering constraints, deeper import skills, eval-driven skill evolution, MCP integration for IDE-native agent access, skill versioning for safe automated updates, and per-client skill overlays for multi-tenant customization.
 
 - [ ] 32.1 Centralized email client rendering matrix
-- [ ] 32.2 Content agent email rendering awareness
+- [x] ~~32.2 Content agent email rendering awareness~~ DONE
 - [ ] 32.3 Import annotator skill depth
 - [ ] 32.4 Agent knowledge lookup tool
 - [ ] 32.5 Cross-agent insight propagation
@@ -283,7 +283,7 @@
 **Security:** Read-only YAML file parsed at startup. No user input reaches the parser. Pydantic validation rejects malformed data. No new API endpoints.
 **Verify:** `ClientMatrix.get_css_support("outlook_365_windows", "flexbox")` returns `CSSSupport(support="none", workaround="Use nested tables...")`. `ClientMatrix.format_audience_context(["gmail_web", "outlook_365_windows"])` produces constraint string mentioning flexbox unsupported, 102KB clip limit. Agent L3 skill files no longer contain client CSS matrices. `audience_context.py` produces identical output format as before (diff test). `make test` passes. `make sync-ontology` runs without errors and logs any matrix drift warnings.
 
-### 32.2 Content Agent Email Rendering Awareness `[Backend]`
+### ~~32.2 Content Agent Email Rendering Awareness~~ `[Backend]` DONE
 **What:** Add a new L3 skill file `content_rendering_constraints.md` to the Content agent that teaches it how email client rendering constraints affect the text content it generates. Add skill detection triggers so the file loads when the agent is generating subject lines, preheaders, CTAs, or body copy destined for specific email clients.
 **Why:** The Content agent generates text in a vacuum — it doesn't know that preheader visible length varies by client (Gmail ~100 chars, Apple Mail ~140, Outlook ~50), that subject lines truncate at different points on mobile vs desktop (35 chars vs 60 chars), that CTA button text renders inside VML `<v:roundrect>` elements with fixed dimensions (long text breaks layout), that body copy inside narrow `<td>` cells wraps differently than web, or that certain characters (smart quotes, em dashes, non-ASCII) break rendering in Outlook's Word engine. The agent's existing `operation_best_practices.md` has generic length guidelines but no client-aware constraints. When building for Outlook-heavy audiences, the Content agent should generate shorter, simpler text. When building for Apple Mail users, it can be more expressive.
 **Implementation:**

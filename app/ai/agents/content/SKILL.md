@@ -24,6 +24,7 @@ references:
   - skills/subject_line_formulas.md
   - skills/brand_voice.md
   - skills/operation_best_practices.md
+  - skills/content_rendering_constraints.md
 l4_sources:
   - docs/SKILL_email-spam-score-dom-reference.md
   - docs/SKILL_email-link-validation-dom-reference.md
@@ -153,6 +154,20 @@ typed alternatives.
 - Transform to requested tone
 - Preserve factual content
 - Adjust vocabulary and register
+
+## Client-Aware Text Generation
+
+When audience context is available (target email client IDs provided), respect per-client
+character limits for preheaders, subject lines, and CTAs. Adapt character encoding choices
+and sentence length to the target clients' rendering constraints.
+
+When no audience context is specified, use universal safe defaults:
+- Preheader: critical message in first 50 characters
+- Subject line: value proposition front-loaded in first 35 characters
+- CTA: 2-3 words maximum
+- Character encoding: ASCII-safe alternatives preferred
+
+See `skills/content_rendering_constraints.md` for full per-client constraint tables.
 
 ## Anti-Spam Rules
 

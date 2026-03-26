@@ -37,6 +37,10 @@ class ContentRequest(BaseModel):
         description="Brand voice guidelines from project settings",
     )
     num_alternatives: int = Field(default=1, ge=1, le=10, description="Number of alternatives")
+    audience_client_ids: tuple[str, ...] | None = Field(
+        default=None,
+        description="Target email client IDs from audience profile for client-aware generation",
+    )
     build_plan: dict[str, object] | None = None
     output_mode: str = "html"
     stream: bool = False

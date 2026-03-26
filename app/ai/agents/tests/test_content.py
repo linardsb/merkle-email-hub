@@ -4,12 +4,14 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.ai.agents.content.prompt import detect_relevant_skills
 from app.ai.agents.content.schemas import ContentRequest
 from app.ai.agents.content.service import (
     ContentService,
     check_spam_triggers,
     extract_content,
 )
+from app.ai.agents.skill_loader import parse_skill_meta
 from app.ai.exceptions import AIExecutionError
 from app.ai.protocols import CompletionResponse
 
@@ -723,3 +725,101 @@ class TestContentServiceLengthGuardrails:
         # Should return original with warnings (retry failed gracefully)
         assert len(response.length_warnings) > 0
         assert any("exceeds max 60" in w for w in response.length_warnings)
+
+
+# ── Skill detection: content rendering constraints ──
+
+
+class TestDetectRelevantSkillsRendering:
+    """Tests for content_rendering_constraints skill detection."""
+
+    def test_subject_line_loads_rendering_constraints(self) -> None:
+        skills = detect_relevant_skills(operation="subject_line")
+        assert "content_rendering_constraints" in skills
+
+    def test_preheader_loads_rendering_constraints(self) -> None:
+        skills = detect_relevant_skills(operation="preheader")
+        assert "content_rendering_constraints" in skills
+
+    def test_cta_loads_rendering_constraints(self) -> None:
+        skills = detect_relevant_skills(operation="cta")
+        assert "content_rendering_constraints" in skills
+
+    def test_body_copy_without_audience_skips_rendering(self) -> None:
+        skills = detect_relevant_skills(operation="body_copy")
+        assert "content_rendering_constraints" not in skills
+
+    def test_body_copy_with_audience_loads_rendering(self) -> None:
+        skills = detect_relevant_skills(
+            operation="body_copy",
+            audience_client_ids=("outlook_365_win", "gmail_web"),
+        )
+        assert "content_rendering_constraints" in skills
+
+    def test_any_operation_with_audience_loads_rendering(self) -> None:
+        skills = detect_relevant_skills(
+            operation="rewrite",
+            audience_client_ids=("gmail_web",),
+        )
+        assert "content_rendering_constraints" in skills
+
+    def test_without_audience_non_text_ops_skip_rendering(self) -> None:
+        for op in ("rewrite", "shorten", "expand", "tone_adjust"):
+            skills = detect_relevant_skills(operation=op)
+            assert "content_rendering_constraints" not in skills
+
+    def test_rendering_constraints_not_duplicated(self) -> None:
+        skills = detect_relevant_skills(
+            operation="subject_line",
+            audience_client_ids=("outlook_365_win",),
+        )
+        assert skills.count("content_rendering_constraints") == 1
+
+
+# ── Skill file loading ──
+
+
+class TestRenderingConstraintsSkillFile:
+    """Tests for content_rendering_constraints.md loading and parsing."""
+
+    def test_skill_file_loads(self) -> None:
+        from app.ai.agents.content.prompt import _load_skill_file
+
+        content = _load_skill_file("content_rendering_constraints.md")
+        assert "Preheader Length" in content
+        assert "CTA Button" in content
+
+    def test_skill_meta_parsed(self) -> None:
+        from app.ai.agents.content.prompt import _load_skill_file
+
+        content = _load_skill_file("content_rendering_constraints.md")
+        meta, body = parse_skill_meta(content)
+        assert meta.token_cost == 450
+        assert meta.priority == 2
+        assert "Preheader Length" in body
+
+
+# ── Service-layer pass-through ──
+
+
+class TestServicePassesAudienceClientIds:
+    """Verify ContentService.detect_relevant_skills threads audience_client_ids."""
+
+    def test_service_passes_audience_to_prompt(self) -> None:
+        service = ContentService()
+        request = ContentRequest(
+            operation="body_copy",
+            text="Summer sale copy",
+            audience_client_ids=("outlook_365_win", "gmail_web"),
+        )
+        skills = service.detect_relevant_skills(request)
+        assert "content_rendering_constraints" in skills
+
+    def test_service_omits_rendering_without_audience(self) -> None:
+        service = ContentService()
+        request = ContentRequest(
+            operation="body_copy",
+            text="Summer sale copy",
+        )
+        skills = service.detect_relevant_skills(request)
+        assert "content_rendering_constraints" not in skills

@@ -36,6 +36,7 @@ SKILL_FILES: dict[str, str] = {
     "subject_line_formulas": "subject_line_formulas.md",
     "brand_voice": "brand_voice.md",
     "operation_best_practices": "operation_best_practices.md",
+    "content_rendering_constraints": "content_rendering_constraints.md",
 }
 
 
@@ -91,6 +92,7 @@ def detect_relevant_skills(
     operation: str,
     brand_voice: str | None = None,
     _text: str | None = None,
+    audience_client_ids: tuple[str, ...] | None = None,
 ) -> list[str]:
     """Detect which L3 skill files are relevant based on the operation and context.
 
@@ -100,6 +102,7 @@ def detect_relevant_skills(
         operation: Content operation type (subject_line, preheader, cta, etc.).
         brand_voice: Optional brand voice guidelines.
         _text: Optional source text to analyze (reserved for future content analysis).
+        audience_client_ids: Optional target email client IDs from audience profile.
 
     Returns:
         List of relevant skill keys.
@@ -120,6 +123,10 @@ def detect_relevant_skills(
     # Tone adjustment needs brand voice framework
     if operation == "tone_adjust":
         skills.append("brand_voice")
+
+    # Client rendering constraints: always for subject/preheader/cta, or when audience known
+    if operation in {"subject_line", "preheader", "cta"} or audience_client_ids:
+        skills.append("content_rendering_constraints")
 
     # Always load spam triggers for any content generation
     skills.append("spam_triggers")

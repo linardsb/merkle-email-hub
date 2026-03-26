@@ -121,7 +121,12 @@ class ContentService(BaseAgentService):
 
     def detect_relevant_skills(self, request: Any) -> list[str]:
         req: ContentRequest = request
-        return _detect_relevant_skills(req.operation, req.brand_voice, req.text)
+        return _detect_relevant_skills(
+            req.operation,
+            req.brand_voice,
+            req.text,
+            audience_client_ids=req.audience_client_ids,
+        )
 
     def _build_user_message(self, request: Any) -> str:
         req: ContentRequest = request
