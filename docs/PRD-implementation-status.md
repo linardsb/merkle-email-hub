@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-25
+> Last updated: 2026-03-26
 
 ### Completed
 
@@ -206,9 +206,17 @@
 
 **Phase 33.0:** Wire Layout Analyzer into Converter — `analyze_layout()` wired into `DesignConverterService.convert()`; `_build_props_map_from_nodes()` extracts all DesignNode fields; MSO reset styles; `ConversionResult.layout`; dynamic container width; inter-section spacers; nesting depth guard; 17 new tests (331 design_sync tests total).
 
+**Phase 32.1:** Centralized Client Matrix — `data/email-client-matrix.yaml` with 16 client profiles; `app/knowledge/client_matrix.py` loader with `ClientMatrix` registry + `@lru_cache` singleton; `AudienceProfile` enriched with rendering engines/dark mode types/VML/clip threshold; 5 agent L3 skill files deduplicated; `scripts/sync-client-matrix.py` ontology drift detection; 33 new tests.
+
+**Phase 32.2:** Content Agent Email Rendering Awareness — `content_rendering_constraints.md` L3 skill; `audience_client_ids` threaded through `ContentRequest`→service→prompt; skill triggers for subject_line/preheader/cta + audience context; SKILL.md L2 client-aware rules; 12 new tests.
+
+**Phase 32.3:** Import Annotator Skill Depth — 4 new L3 skill files (`common_email_builders`, `css_normalization`, `wrapper_detection`, `esp_token_edge_cases`); `SKILL_FILES` expanded 4→8; `detect_relevant_skills()` updated with builder/CSS/wrapper/ESP-edge heuristics; 26 new tests.
+
+**Phase 32.4:** Agent Knowledge Lookup Tool — `app/ai/agents/tools/client_lookup.py` with `ClientLookupTool` (single-client queries: css_support/dark_mode/known_bugs/size_limits/font_support) + `MultiClientLookupTool` (batch N×M queries); `ClientLookupParams`/`ClientLookupResult` Pydantic models; module-level singleton instances; structured logging; blueprint engine LAYER 11.5 injects tools into `context.metadata` for all agentic nodes; 6 agent SKILL.md files updated with Client Rendering Lookup L2 section; 26 new tests.
+
 ### Up Next
 
-**Phase 33.11** (Design Token Pipeline — remaining 1 subtask: tests & integration verification) and **Phase 32** (Agent Email Rendering Intelligence). See `TODO.md` for details.
+**Phase 33.11** (Design Token Pipeline — remaining 1 subtask: tests & integration verification) and **Phase 32.5–32.11** (Agent Email Rendering Intelligence — remaining 7 subtasks). See `TODO.md` for details.
 
 ### Infrastructure Built
 

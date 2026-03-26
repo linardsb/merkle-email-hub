@@ -853,6 +853,16 @@ class BlueprintEngine:
                 if competitive_ctx:
                     context.metadata["competitive_context"] = competitive_ctx
 
+        # LAYER 11.5: Client lookup tools (agentic — deterministic matrix queries)
+        if node.node_type == "agentic":
+            from app.ai.agents.tools.client_lookup import (
+                _CLIENT_LOOKUP_TOOL,
+                _MULTI_CLIENT_LOOKUP_TOOL,
+            )
+
+            context.metadata["client_lookup_tool"] = _CLIENT_LOOKUP_TOOL
+            context.metadata["client_lookup_batch_tool"] = _MULTI_CLIENT_LOOKUP_TOOL
+
         # LAYER 12: Adaptive model tier (agentic only — inject effective tier for model selection)
         if self._routing_history_repo is not None and node.node_type == "agentic":
             from app.ai.routing_history import resolve_adaptive_tier

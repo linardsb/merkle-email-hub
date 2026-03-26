@@ -72,10 +72,10 @@
 
 > Upgrade all 11 AI agents from distributed, duplicated email knowledge to a unified rendering intelligence layer: centralized client matrix, runtime knowledge lookup, cross-agent learning, content-aware rendering constraints, deeper import skills, eval-driven skill evolution, MCP integration for IDE-native agent access, skill versioning for safe automated updates, and per-client skill overlays for multi-tenant customization.
 
-- [ ] 32.1 Centralized email client rendering matrix
+- [x] ~~32.1 Centralized email client rendering matrix~~ DONE
 - [x] ~~32.2 Content agent email rendering awareness~~ DONE
 - [x] ~~32.3 Import annotator skill depth~~ DONE
-- [ ] 32.4 Agent knowledge lookup tool
+- [x] ~~32.4 Agent knowledge lookup tool~~ DONE
 - [ ] 32.5 Cross-agent insight propagation
 - [ ] 32.6 Eval-driven skill file updates
 - [ ] 32.7 Visual QA feedback loop tightening

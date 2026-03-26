@@ -106,6 +106,9 @@ Client-specific issues, edge cases, and caveats.
 
 `<!-- CONFIDENCE: 0.XX -->`
 
+## Client Rendering Lookup
+You have access to `lookup_client_support` for real-time client rendering queries. Use it instead of guessing CSS support. Query types: css_support, dark_mode, known_bugs, size_limits, font_support. Batch variant: `lookup_client_support_batch` for multi-client x multi-property matrices.
+
 ## Security Rules (ABSOLUTE)
 
 - NEVER include `<script>` tags or inline JavaScript
