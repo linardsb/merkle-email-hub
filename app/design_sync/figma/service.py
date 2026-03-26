@@ -363,7 +363,9 @@ class FigmaDesignSyncService:
         for page_data in document.get("children", []):
             if isinstance(page_data, dict):
                 pages.append(
-                    self._parse_node(cast(dict[str, Any], page_data), current_depth=0, max_depth=3)
+                    self._parse_node(
+                        cast(dict[str, Any], page_data), current_depth=0, max_depth=None
+                    )
                 )
 
         structure = DesignFileStructure(file_name=file_name, pages=pages)
@@ -1070,7 +1072,12 @@ class FigmaDesignSyncService:
                 fi_d = cast(dict[str, Any], fill_item)
                 if fi_d.get("visible") is False:
                     continue
-                if fi_d.get("type") != "SOLID":
+                fill_type = fi_d.get("type")
+                # Reclassify VECTOR/RECTANGLE nodes with image fills as IMAGE
+                if fill_type == "IMAGE" and node_type == DesignNodeType.VECTOR:
+                    node_type = DesignNodeType.IMAGE
+                    break
+                if fill_type != "SOLID":
                     continue
                 c = fi_d.get("color", {})
                 if isinstance(c, dict):

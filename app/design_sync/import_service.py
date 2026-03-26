@@ -13,7 +13,6 @@ from app.core.logging import get_logger
 from app.design_sync.exceptions import SyncFailedError
 from app.design_sync.models import DesignConnection
 from app.design_sync.protocol import (
-    DesignFileStructure,
     DesignNode,
     DesignNodeType,
     ExtractedTokens,
@@ -152,9 +151,13 @@ class DesignImportService:
                         )
 
                         converter = DesignConverterService()
-                        structure = DesignFileStructure(
-                            file_name=layout_response.file_name,
-                            pages=self._layout_to_design_nodes(layout_response),
+                        # Use the real Figma node tree (not a flat
+                        # reconstruction from the layout summary which
+                        # loses nesting, groups, and child nodes).
+                        structure = await design_service.get_design_structure(
+                            design_import.connection_id,
+                            self._user,
+                            selected_node_ids=design_import.selected_node_ids or None,
                         )
                         extracted_tokens = (
                             self._tokens_to_protocol(tokens) if tokens else ExtractedTokens()
@@ -177,11 +180,14 @@ class DesignImportService:
                         raw_data = (
                             design_import.structure_json if conn.provider == "penpot" else None
                         )
+                        # Don't pass selected_nodes — layout analysis already
+                        # filtered by selected_node_ids, and the reconstructed
+                        # tree uses synthetic IDs that won't match Figma IDs.
                         conversion = converter.convert(
                             structure,
                             extracted_tokens,
                             raw_file_data=raw_data,
-                            selected_nodes=design_import.selected_node_ids or None,
+                            selected_nodes=None,
                             target_clients=target_clients,
                         )
                         initial_html = conversion.html
@@ -234,14 +240,36 @@ class DesignImportService:
                     if image_meta and conversion is not None:
                         conversion = _dc_replace(conversion, images=image_meta)
 
-                # 6. Call Scaffolder
-                scaffolder_response = await self._call_scaffolder(
-                    brief=design_import.generated_brief or "",
-                    design_context=design_context,
-                    run_qa=run_qa,
-                    output_mode=output_mode,
-                    initial_html=initial_html,
-                )
+                # 6. Use converter HTML directly when available (bypasses
+                #    Scaffolder rewriting which discards converter structure —
+                #    centering, font-family, dark mode CSS, image placement).
+                #    Fall back to Scaffolder when converter is disabled or failed.
+                if initial_html and conversion and conversion.sections_count > 0:
+                    from app.ai.agents.scaffolder.schemas import (
+                        ScaffolderResponse as _SRDirect,
+                    )
+
+                    scaffolder_response = _SRDirect(
+                        html=initial_html,
+                        qa_results=None,
+                        qa_passed=None,
+                        model="design-converter",
+                        confidence=0.85,
+                        skills_loaded=[],
+                    )
+                    logger.info(
+                        "design_sync.converter_passthrough",
+                        import_id=import_id,
+                        sections=conversion.sections_count,
+                    )
+                else:
+                    scaffolder_response = await self._call_scaffolder(
+                        brief=design_import.generated_brief or "",
+                        design_context=design_context,
+                        run_qa=run_qa,
+                        output_mode=output_mode,
+                        initial_html=initial_html,
+                    )
 
                 # 6.5 Post-process: inject design asset URLs into Scaffolder output
                 # The Scaffolder (especially in structured mode) may generate

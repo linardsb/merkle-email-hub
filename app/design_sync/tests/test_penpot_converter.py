@@ -1142,7 +1142,14 @@ class TestInterSectionSpacer:
                             y=0,
                             width=600,
                             height=80,
-                            children=[],
+                            children=[
+                                DesignNode(
+                                    id="t1",
+                                    name="title",
+                                    type=DesignNodeType.TEXT,
+                                    text_content="Header",
+                                ),
+                            ],
                         ),
                         DesignNode(
                             id="f2",
@@ -1152,7 +1159,14 @@ class TestInterSectionSpacer:
                             y=120,  # 40px gap from header bottom (80)
                             width=600,
                             height=200,
-                            children=[],
+                            children=[
+                                DesignNode(
+                                    id="t2",
+                                    name="body",
+                                    type=DesignNodeType.TEXT,
+                                    text_content="Content",
+                                ),
+                            ],
                         ),
                     ],
                 ),

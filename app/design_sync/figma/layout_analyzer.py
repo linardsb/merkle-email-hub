@@ -426,8 +426,11 @@ def _walk_for_buttons(node: DesignNode, results: list[ButtonElement]) -> None:
             lower_name = node.name.lower()
             name_hints = ("button", "btn", "cta", "action", "link")
             is_button_name = any(h in lower_name for h in name_hints)
-            # Accept if name hints OR frame is compact with short text
-            if is_button_name or (node.width is not None and node.width <= 300):
+            # Accept if name hints OR frame has a visible fill (real buttons have backgrounds)
+            has_fill = bool(
+                node.fill_color and node.fill_color.upper() not in ("#FFFFFF", "#FFF", "")
+            )
+            if is_button_name or has_fill:
                 results.append(
                     ButtonElement(
                         node_id=node.id,

@@ -217,7 +217,11 @@ class DesignConverterService:
 
         # Convert each frame to HTML section
         section_parts: list[str] = []
-        for idx, frame in enumerate(frames):
+        section_idx = 0
+        for frame in frames:
+            # Skip childless frames at section level (empty spacer sections)
+            if not frame.children:
+                continue
             self._collect_vector_warnings(frame, warnings)
             slot_counter: dict[str, int] = {}
             section_html = node_to_email_html(
@@ -233,8 +237,9 @@ class DesignConverterService:
                 slot_counter=slot_counter,
             )
             section_parts.append(
-                f'<tr data-section-id="section_{idx}"><td>\n{section_html}\n</td></tr>'
+                f'<tr data-section-id="section_{section_idx}"><td>\n{section_html}\n</td></tr>'
             )
+            section_idx += 1
 
             # Inter-section spacer from layout analysis
             frame_section = sections_by_node_id.get(frame.id)

@@ -701,7 +701,8 @@ def node_to_email_html(
                     container_width=container_width,
                     slot_counter=slot_counter,
                 )
-                if child.type != DesignNodeType.TEXT:
+                is_button = bool(button_ids and child.id in button_ids)
+                if child.type != DesignNodeType.TEXT and not is_button:
                     flat_lines.append(f"{pad}<tr><td>{child_html}</td></tr>")
                 else:
                     flat_lines.append(f"{pad}<tr>{child_html}</tr>")
@@ -819,7 +820,8 @@ def node_to_email_html(
                         slot_counter=slot_counter,
                     )
 
-                    if child.type != DesignNodeType.TEXT:
+                    is_button = bool(button_ids and child.id in button_ids)
+                    if child.type != DesignNodeType.TEXT and not is_button:
                         # Build <td> style
                         td_styles: list[str] = []
                         if effective_font:

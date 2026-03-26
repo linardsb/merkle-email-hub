@@ -715,7 +715,7 @@ class DesignSyncService:
 
     def _serialize_node(self, node: DesignNode) -> dict[str, Any]:
         """Serialize a DesignNode to a JSON-safe dict for caching."""
-        return {
+        d: dict[str, Any] = {
             "id": node.id,
             "name": node.name,
             "type": str(node.type),
@@ -726,6 +726,40 @@ class DesignSyncService:
             "y": node.y,
             "text_content": node.text_content,
         }
+        # Preserve rich properties for the converter pipeline
+        if node.fill_color is not None:
+            d["fill_color"] = node.fill_color
+        if node.text_color is not None:
+            d["text_color"] = node.text_color
+        if node.padding_top is not None:
+            d["padding_top"] = node.padding_top
+        if node.padding_right is not None:
+            d["padding_right"] = node.padding_right
+        if node.padding_bottom is not None:
+            d["padding_bottom"] = node.padding_bottom
+        if node.padding_left is not None:
+            d["padding_left"] = node.padding_left
+        if node.item_spacing is not None:
+            d["item_spacing"] = node.item_spacing
+        if node.counter_axis_spacing is not None:
+            d["counter_axis_spacing"] = node.counter_axis_spacing
+        if node.layout_mode is not None:
+            d["layout_mode"] = node.layout_mode
+        if node.font_family is not None:
+            d["font_family"] = node.font_family
+        if node.font_size is not None:
+            d["font_size"] = node.font_size
+        if node.font_weight is not None:
+            d["font_weight"] = node.font_weight
+        if node.line_height_px is not None:
+            d["line_height_px"] = node.line_height_px
+        if node.letter_spacing_px is not None:
+            d["letter_spacing_px"] = node.letter_spacing_px
+        if node.text_transform is not None:
+            d["text_transform"] = node.text_transform
+        if node.text_decoration is not None:
+            d["text_decoration"] = node.text_decoration
+        return d
 
     _THUMBNAIL_NODE_TYPES: ClassVar[set[str]] = {
         "FRAME",
@@ -907,6 +941,28 @@ class DesignSyncService:
         """Get path to a stored asset (for serving)."""
         asset_service = DesignAssetService()
         return asset_service.get_stored_path(connection_id, filename)
+
+    async def get_design_structure(
+        self,
+        connection_id: int,
+        user: User,
+        *,
+        selected_node_ids: list[str] | None = None,
+    ) -> DesignFileStructure:
+        """Get the raw design file structure for the converter pipeline."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+        provider = self._get_provider(conn.provider)
+        access_token = decrypt_token(conn.encrypted_token)
+        structure = await self._get_cached_structure(
+            conn.id, conn.file_ref, access_token, provider, depth=None
+        )
+        if selected_node_ids:
+            structure = _filter_structure(structure, selected_node_ids)
+        return structure
 
     # ── Phase 12.4: Layout Analysis & Brief Generation ──
 
@@ -1247,6 +1303,8 @@ class DesignSyncService:
             node_type = DesignNodeType(raw_type)
         except ValueError:
             node_type = DesignNodeType.OTHER
+
+        raw_fw = data.get("font_weight")
         return DesignNode(
             id=str(data.get("id", "")),
             name=str(data.get("name", "")),
@@ -1261,6 +1319,22 @@ class DesignSyncService:
             x=data.get("x"),
             y=data.get("y"),
             text_content=data.get("text_content"),
+            fill_color=data.get("fill_color"),
+            text_color=data.get("text_color"),
+            padding_top=data.get("padding_top"),
+            padding_right=data.get("padding_right"),
+            padding_bottom=data.get("padding_bottom"),
+            padding_left=data.get("padding_left"),
+            item_spacing=data.get("item_spacing"),
+            counter_axis_spacing=data.get("counter_axis_spacing"),
+            layout_mode=data.get("layout_mode"),
+            font_family=data.get("font_family"),
+            font_size=data.get("font_size"),
+            font_weight=int(raw_fw) if isinstance(raw_fw, (int, float)) else None,
+            line_height_px=data.get("line_height_px"),
+            letter_spacing_px=data.get("letter_spacing_px"),
+            text_transform=data.get("text_transform"),
+            text_decoration=data.get("text_decoration"),
         )
 
     # ── Helpers ──
