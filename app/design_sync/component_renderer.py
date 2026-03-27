@@ -1,0 +1,403 @@
+"""Render EmailSections using pre-built component HTML templates with slot filling."""
+
+from __future__ import annotations
+
+import html
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+from app.core.logging import get_logger
+from app.design_sync.component_matcher import ComponentMatch, SlotFill, TokenOverride
+
+logger = get_logger(__name__)
+
+# Lazy-loaded to avoid circular imports
+_SEED_CACHE: dict[str, dict[str, Any]] | None = None
+
+
+def _load_seeds() -> dict[str, dict[str, Any]]:
+    """Load component seeds by slug. Cached on first call."""
+    global _SEED_CACHE
+    if _SEED_CACHE is not None:
+        return _SEED_CACHE
+
+    from app.components.data.seeds import COMPONENT_SEEDS
+
+    _SEED_CACHE = {seed["slug"]: seed for seed in COMPONENT_SEEDS}
+    return _SEED_CACHE
+
+
+@dataclass(frozen=True)
+class RenderedSection:
+    """A rendered component section ready for assembly."""
+
+    html: str
+    component_slug: str
+    section_idx: int
+    dark_mode_classes: tuple[str, ...] = ()
+    images: list[dict[str, str]] = field(default_factory=list)
+
+
+class ComponentRenderer:
+    """Render matched sections using component seed HTML templates."""
+
+    def __init__(self, container_width: int = 600) -> None:
+        self._container_width = container_width
+        self._templates: dict[str, str] = {}
+        self._loaded = False
+
+    def load(self) -> None:
+        """Load component templates from COMPONENT_SEEDS."""
+        if self._loaded:
+            return
+        seeds = _load_seeds()
+        for slug, seed in seeds.items():
+            html_source = seed.get("html_source", "")
+            if html_source:
+                self._templates[slug] = html_source
+        self._loaded = True
+
+    def render_section(self, match: ComponentMatch) -> RenderedSection:
+        """Render a single matched section using its component template."""
+        if not self._loaded:
+            self.load()
+
+        template_html = self._templates.get(match.component_slug)
+        if template_html is None:
+            logger.warning(
+                "design_sync.component_renderer_missing_template",
+                slug=match.component_slug,
+            )
+            return self._fallback_render(match)
+
+        result_html = template_html
+
+        # 1. Fill slots with Figma content
+        result_html = self._fill_slots(result_html, match.slot_fills, match.component_slug)
+
+        # 2. Apply token overrides (inline style replacement)
+        result_html = self._apply_token_overrides(result_html, match.token_overrides)
+
+        # 3. Update MSO table widths to match container width
+        result_html = self._update_mso_widths(result_html, self._container_width)
+
+        # 4. Add builder annotations
+        result_html = self._add_annotations(result_html, match)
+
+        # 5. Extract dark mode classes and image metadata
+        dark_classes = self._extract_dark_mode_classes(result_html)
+        images = self._extract_images(result_html)
+
+        return RenderedSection(
+            html=result_html,
+            component_slug=match.component_slug,
+            section_idx=match.section_idx,
+            dark_mode_classes=tuple(dark_classes),
+            images=images,
+        )
+
+    def render_all(self, matches: list[ComponentMatch]) -> list[RenderedSection]:
+        """Render all matched sections."""
+        if not self._loaded:
+            self.load()
+        return [self.render_section(m) for m in matches]
+
+    def _fill_slots(
+        self,
+        template_html: str,
+        fills: list[SlotFill],
+        slug: str,
+    ) -> str:
+        """Fill data-slot elements with content using regex-based replacement.
+
+        Uses regex instead of lxml to preserve MSO conditional comments
+        which lxml would strip.
+        """
+        result = template_html
+
+        for fill in fills:
+            slot_id = fill.slot_id
+
+            # Special: spacer_height modifies style attributes, not text content
+            if slug == "spacer" and slot_id == "spacer_height":
+                result = self._fill_spacer_height(result, fill.value)
+                continue
+
+            # Special: hero_image modifies background-image URL + VML src
+            if slug == "hero-block" and slot_id == "hero_image":
+                result = self._fill_hero_image(result, fill.value)
+                continue
+
+            # Special: image-block has no data-slot attrs — replace placeholder src directly
+            if slug == "image-block" and slot_id == "image_url":
+                safe_url = html.escape(fill.value)
+                result = re.sub(
+                    r'(<img\b[^>]*\bsrc=")[^"]*(")',
+                    rf"\g<1>{safe_url}\g<2>",
+                    result,
+                    count=1,
+                )
+                continue
+            if slug == "image-block" and slot_id == "image_alt":
+                safe_alt = html.escape(fill.value)
+                result = re.sub(
+                    r'(<img\b[^>]*\balt=")[^"]*(")',
+                    rf"\g<1>{safe_alt}\g<2>",
+                    result,
+                    count=1,
+                )
+                continue
+
+            if fill.slot_type == "image":
+                result = self._fill_image_slot(result, slot_id, fill)
+            elif fill.slot_type == "cta":
+                result = self._fill_cta_slot(result, slot_id, fill)
+            else:
+                result = self._fill_text_slot(result, slot_id, fill)
+
+        return result
+
+    def _fill_text_slot(self, html_str: str, slot_id: str, fill: SlotFill) -> str:
+        """Replace text content of a data-slot element.
+
+        Extracts the tag name from the opening element and matches the
+        corresponding closing tag so that nested child elements (e.g.
+        ``<a>`` inside a ``<td>``) don't cause a premature match.
+        """
+        # Step 1: find the opening tag with data-slot to learn the tag name
+        open_pattern = rf'<(\w+)\b[^>]*\bdata-slot="{re.escape(slot_id)}"[^>]*>'
+        open_match = re.search(open_pattern, html_str)
+        if not open_match:
+            # Fallback: try <span data-slot="..."> (for nested cta_text spans)
+            span_pattern = (
+                rf'(<span\b[^>]*\bdata-slot="{re.escape(slot_id)}"[^>]*>)'
+                r"(.*?)"
+                r"(</span>)"
+            )
+            return re.sub(
+                span_pattern,
+                rf"\g<1>{fill.value}\g<3>",
+                html_str,
+                count=1,
+                flags=re.DOTALL,
+            )
+
+        tag_name = open_match.group(1)
+        # Step 2: match opening tag → content → matching closing tag
+        pattern = (
+            rf'(<{tag_name}\b[^>]*\bdata-slot="{re.escape(slot_id)}"[^>]*>)'
+            rf"(.*?)"
+            rf"(</{tag_name}>)"
+        )
+        replacement = rf"\g<1>{fill.value}\g<3>"
+        return re.sub(pattern, replacement, html_str, count=1, flags=re.DOTALL)
+
+    def _fill_image_slot(self, html_str: str, slot_id: str, fill: SlotFill) -> str:
+        """Update src (and optionally width/height/alt) on a data-slot image element."""
+        # Find the img tag with this data-slot
+        pattern = rf'(<img\b[^>]*\bdata-slot="{re.escape(slot_id)}"[^>]*/?>)'
+        match = re.search(pattern, html_str)
+        if not match:
+            return html_str
+
+        img_tag = match.group(1)
+        new_tag = img_tag
+
+        # Replace src
+        new_tag = re.sub(r'\bsrc="[^"]*"', f'src="{html.escape(fill.value)}"', new_tag)
+
+        # Apply attr_overrides
+        for attr, val in fill.attr_overrides.items():
+            if re.search(rf'\b{attr}="[^"]*"', new_tag):
+                new_tag = re.sub(rf'\b{attr}="[^"]*"', f'{attr}="{html.escape(val)}"', new_tag)
+
+        return html_str.replace(img_tag, new_tag, 1)
+
+    def _fill_cta_slot(self, html_str: str, slot_id: str, fill: SlotFill) -> str:
+        """Update href on a data-slot link element."""
+        # Match: <a data-slot="slot_id" href="..." ...>
+        pattern = rf'(<a\b[^>]*\bdata-slot="{re.escape(slot_id)}"[^>]*>)'
+        match = re.search(pattern, html_str)
+        if not match:
+            return html_str
+
+        a_tag = match.group(1)
+        new_tag = re.sub(r'\bhref="[^"]*"', f'href="{html.escape(fill.value)}"', a_tag)
+        return html_str.replace(a_tag, new_tag, 1)
+
+    def _fill_spacer_height(self, html_str: str, height: str) -> str:
+        """Update spacer height in both MSO table and non-MSO div."""
+        h = int(height) if height.isdigit() else 32
+        # MSO: height="N" and style="...height:Npx..."
+        result = re.sub(r'height="32"', f'height="{h}"', html_str)
+        # Non-MSO div: style with height/line-height
+        result = re.sub(r"height:\s*32px", f"height:{h}px", result)
+        result = re.sub(r"line-height:\s*32px", f"line-height:{h}px", result)
+        return result
+
+    def _fill_hero_image(self, html_str: str, image_url: str) -> str:
+        """Update hero background image URL in both CSS and VML."""
+        safe_url = html.escape(image_url)
+        # CSS: background-image: url('...')
+        result = re.sub(
+            r"background-image:\s*url\('[^']*'\)",
+            f"background-image: url('{safe_url}')",
+            html_str,
+        )
+        # VML: <v:fill ... src="..." />
+        result = re.sub(
+            r'(<v:fill\b[^>]*\bsrc=")[^"]*(")',
+            rf"\g<1>{safe_url}\g<2>",
+            result,
+        )
+        return result
+
+    def _apply_token_overrides(
+        self,
+        html_str: str,
+        overrides: list[TokenOverride],
+    ) -> str:
+        """Apply design token overrides to inline styles."""
+        result = html_str
+
+        for override in overrides:
+            prop = override.css_property
+            val = override.value
+            target = override.target_class
+
+            if target == "_outer":
+                # Replace on the first/outermost table or element with the property
+                result = self._replace_first_css_prop(result, prop, val)
+            elif target == "_heading":
+                # Replace font-family on heading elements (h1, h2, h3)
+                result = self._replace_heading_font(result, val)
+            elif target == "_body":
+                # Replace font-family on body text elements (p, td with body class)
+                result = self._replace_body_font(result, val)
+            elif target == "_cell":
+                # Replace padding on the first td with padding
+                result = self._replace_first_css_prop(result, prop, val)
+
+        return result
+
+    def _replace_first_css_prop(self, html_str: str, prop: str, value: str) -> str:
+        """Replace the first occurrence of a CSS property in a style attribute."""
+        pattern = rf'(style="[^"]*?){re.escape(prop)}:\s*[^;"]+(;?)'
+        return re.sub(pattern, rf"\g<1>{prop}:{value}\g<2>", html_str, count=1)
+
+    def _replace_heading_font(self, html_str: str, font: str) -> str:
+        """Replace font-family on h1/h2/h3 elements."""
+        safe_font = html.escape(font, quote=True)
+        pattern = r"(<h[1-3]\b[^>]*style=\"[^\"]*?)font-family:\s*[^;\"]+([;\"'])"
+        return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
+
+    def _replace_body_font(self, html_str: str, font: str) -> str:
+        """Replace font-family on p elements."""
+        safe_font = html.escape(font, quote=True)
+        pattern = r"(<p\b[^>]*style=\"[^\"]*?)font-family:\s*[^;\"]+([;\"'])"
+        return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
+
+    def _update_mso_widths(self, html_str: str, width: int) -> str:
+        """Update MSO conditional table widths to match container width."""
+
+        # Replace width="600" in MSO conditional blocks
+        # Only replace within <!--[if mso]> ... <![endif]--> blocks
+        def _replace_mso_width(match: re.Match[str]) -> str:
+            block = match.group(0)
+            return re.sub(r'width="600"', f'width="{width}"', block)
+
+        return re.sub(
+            r"<!--\[if mso\]>.*?<!\[endif\]-->",
+            _replace_mso_width,
+            html_str,
+            flags=re.DOTALL,
+        )
+
+    def _add_annotations(self, html_str: str, match: ComponentMatch) -> str:
+        """Add builder annotations for visual builder sync."""
+        result = html_str
+
+        # Add data-section-id on the outermost element
+        section_id = f"section_{match.section_idx}"
+        # Wrap in a comment-based section marker (preserves MSO conditionals)
+        result = f"<!-- section:{section_id} -->\n{result}\n<!-- /section:{section_id} -->"
+
+        # Add data-component-name on the first <table element
+        component_name = html.escape(match.section.node_name, quote=True)
+        result = re.sub(
+            r"(<table\b)",
+            rf'\g<1> data-component-name="{component_name}"',
+            result,
+            count=1,
+        )
+
+        return result
+
+    def _extract_dark_mode_classes(self, html_str: str) -> list[str]:
+        """Extract dark mode CSS classes from the rendered HTML."""
+        classes: set[str] = set()
+        # Find all class="..." attributes
+        for match in re.finditer(r'class="([^"]*)"', html_str):
+            for cls in match.group(1).split():
+                if any(
+                    cls.endswith(suffix)
+                    for suffix in (
+                        "-bg",
+                        "-text",
+                        "-link",
+                        "-btn",
+                        "-ghost",
+                        "-line",
+                        "-caption",
+                        "-overlay",
+                    )
+                ):
+                    classes.add(cls)
+        return sorted(classes)
+
+    def _extract_images(self, html_str: str) -> list[dict[str, str]]:
+        """Extract image metadata from rendered HTML."""
+        images: list[dict[str, str]] = []
+        for match in re.finditer(r"<img\b([^>]*)>", html_str):
+            attrs = match.group(1)
+            src_match = re.search(r'src="([^"]*)"', attrs)
+            alt_match = re.search(r'alt="([^"]*)"', attrs)
+            if src_match:
+                images.append(
+                    {
+                        "src": src_match.group(1),
+                        "alt": alt_match.group(1) if alt_match else "",
+                    }
+                )
+        return images
+
+    def _fallback_render(self, match: ComponentMatch) -> RenderedSection:
+        """Fallback: render section as a plain text-block with raw content."""
+        texts = " ".join(t.content for t in match.section.texts)
+        escaped = html.escape(texts) if texts else "&nbsp;"
+
+        fallback_html = (
+            f"<!--[if mso]>\n"
+            f'<table role="presentation" width="{self._container_width}" align="center" '
+            f'cellpadding="0" cellspacing="0" border="0"><tr><td>\n'
+            f"<![endif]-->\n"
+            f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+            f'border="0" style="background-color:#ffffff;">\n'
+            f"  <tr>\n"
+            f'    <td style="padding:24px;font-family:Arial,sans-serif;font-size:16px;'
+            f'color:#333333;line-height:1.6;">\n'
+            f"      {escaped}\n"
+            f"    </td>\n"
+            f"  </tr>\n"
+            f"</table>\n"
+            f"<!--[if mso]>\n"
+            f"</td></tr></table>\n"
+            f"<![endif]-->"
+        )
+
+        return RenderedSection(
+            html=fallback_html,
+            component_slug="text-block",
+            section_idx=match.section_idx,
+        )
