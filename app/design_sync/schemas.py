@@ -251,12 +251,18 @@ class TokenDiffResponse(BaseModel):
 class ImportW3cTokensRequest(BaseModel):
     """Request to import W3C Design Tokens v1.0 JSON."""
 
-    tokens_json: dict[str, object] = Field(..., description="W3C Design Tokens v1.0 JSON")
+    tokens_json: dict[str, object] = Field(
+        ...,
+        description="W3C Design Tokens v1.0 JSON",
+        max_length=10_000,
+    )
     connection_id: int | None = Field(
         None, description="Optional connection to store snapshot against"
     )
     target_clients: list[str] | None = Field(
-        None, description="Target clients for compatibility checks"
+        None,
+        description="Target clients for compatibility checks",
+        max_length=50,
     )
 
 

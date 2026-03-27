@@ -37,3 +37,19 @@ class TokenDecryptionError(AppError):
 
 class MjmlCompileError(AppError):
     """Raised when MJML compilation via the Maizzle sidecar fails."""
+
+
+class FidelityScoringError(SyncFailedError):
+    """Raised when visual fidelity scoring fails."""
+
+
+class WebhookSignatureError(AppError):
+    """Raised when HMAC-SHA256 signature validation fails for a Figma webhook."""
+
+
+class WebhookRegistrationError(SyncFailedError):
+    """Raised when Figma API webhook registration fails."""
+
+
+class W3cTokenParseError(DomainValidationError):
+    """W3C Design Tokens JSON is malformed or contains unsupported types."""

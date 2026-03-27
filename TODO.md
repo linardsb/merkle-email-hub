@@ -1129,7 +1129,7 @@
 - [x] ~~35.6 AI visual fidelity scoring pipeline~~ DONE
 - [ ] 35.7 AI conversion learning loop
 - [ ] 35.8 W3C Design Tokens & caniemail.com integration
-- [ ] 35.9 Figma webhooks & live preview sync
+- [x] ~~35.9 Figma webhooks & live preview sync~~ DONE
 - [ ] 35.10 Incremental conversion & section caching
 - [ ] 35.11 Tests & integration verification
 

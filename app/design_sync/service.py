@@ -732,7 +732,7 @@ class DesignSyncService:
                 await self._verify_access(conn.project_id, user)
             await self._repo.save_snapshot(body.connection_id, asdict(tokens), datetime.now(UTC))
 
-        return W3cImportResponse(
+        response = W3cImportResponse(
             colors=[
                 DesignColorResponse(name=c.name, hex=c.hex, opacity=c.opacity)
                 for c in tokens.colors
@@ -761,7 +761,7 @@ class DesignSyncService:
                     type=g.type,
                     angle=g.angle,
                     stops=[
-                        DesignGradientStopResponse(color=hex_val, position=pos)
+                        DesignGradientStopResponse(hex=hex_val, position=pos)
                         for hex_val, pos in g.stops
                     ],
                     fallback_hex=g.fallback_hex,
@@ -770,6 +770,17 @@ class DesignSyncService:
             ],
             warnings=warnings,
         )
+
+        logger.info(
+            "design_sync.w3c_import_completed",
+            colors=len(tokens.colors),
+            typography=len(tokens.typography),
+            spacing=len(tokens.spacing),
+            warnings=len(warnings),
+            connection_id=body.connection_id,
+        )
+
+        return response
 
     async def export_w3c_tokens(self, connection_id: int, user: User) -> dict[str, object]:
         """Export tokens for a connection in W3C Design Tokens v1.0 format."""
@@ -811,14 +822,16 @@ class DesignSyncService:
                     name=g.name,
                     type=g.type,
                     angle=g.angle,
-                    stops=tuple((s.color, s.position) for s in g.stops),
+                    stops=tuple((s.hex, s.position) for s in g.stops),
                     fallback_hex=g.fallback_hex,
                 )
                 for g in tokens_response.gradients
             ],
         )
 
-        return export_w3c_tokens(tokens)
+        result = export_w3c_tokens(tokens)
+        logger.info("design_sync.w3c_export_completed", connection_id=connection_id)
+        return result
 
     # ── Phase 12.1: File Structure, Components, Image Export ──
 

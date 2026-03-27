@@ -139,7 +139,7 @@ async def import_w3c_tokens(
     return await service.import_w3c_tokens(body, current_user)
 
 
-@router.get("/connections/{connection_id}/tokens/export-w3c")
+@router.get("/connections/{connection_id}/tokens/export-w3c", response_model=dict[str, object])
 @limiter.limit("30/minute")
 async def export_w3c_tokens_endpoint(
     connection_id: int,

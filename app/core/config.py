@@ -334,6 +334,20 @@ class DesignSyncConfig(BaseModel):
     figma_variables_enabled: bool = True  # DESIGN_SYNC__FIGMA_VARIABLES_ENABLED
     opacity_composite_bg: str = "#FFFFFF"  # Background hex for alpha compositing
     ai_layout_enabled: bool = True  # DESIGN_SYNC__AI_LAYOUT_ENABLED
+    # Visual fidelity scoring (SSIM comparison of Figma frames vs rendered HTML)
+    fidelity_enabled: bool = False  # DESIGN_SYNC__FIDELITY_ENABLED
+    fidelity_ssim_window: int = 7  # SSIM Gaussian window (odd, ≤ min image dim)
+    fidelity_blur_sigma: float = 1.0  # Gaussian blur before SSIM (anti-aliasing tolerance)
+    fidelity_critical_threshold: float = 0.70  # SSIM < 0.70 = critical
+    fidelity_warning_threshold: float = 0.85  # SSIM < 0.85 = warning
+    fidelity_figma_scale: float = 2.0  # Figma export scale factor
+    # W3C Design Tokens & caniemail.com
+    w3c_tokens_enabled: bool = True  # DESIGN_SYNC__W3C_TOKENS_ENABLED
+    # Figma webhooks (live preview sync)
+    figma_webhook_enabled: bool = False  # DESIGN_SYNC__FIGMA_WEBHOOK_ENABLED
+    figma_webhook_passcode: str = ""  # DESIGN_SYNC__FIGMA_WEBHOOK_PASSCODE (HMAC secret)
+    figma_webhook_callback_url: str = ""  # DESIGN_SYNC__FIGMA_WEBHOOK_CALLBACK_URL
+    webhook_debounce_seconds: int = 5  # DESIGN_SYNC__WEBHOOK_DEBOUNCE_SECONDS
 
 
 class ESPSyncConfig(BaseModel):
@@ -409,6 +423,15 @@ class EmailEngineConfig(BaseModel):
         "transactional",
         "event",
     ]
+
+
+class CorrectionTrackerConfig(BaseModel):
+    """Correction pattern tracking settings (Phase 35.7)."""
+
+    enabled: bool = False
+    min_occurrences: int = 5
+    min_confidence: float = 0.9
+    max_log_entries: int = 10_000
 
 
 class BlueprintConfig(BaseModel):
@@ -638,6 +661,7 @@ class Settings(BaseSettings):
     reporting: ReportingConfig = ReportingConfig()
     briefs: BriefsConfig = BriefsConfig()
     export: ExportConfig = ExportConfig()
+    correction_tracker: CorrectionTrackerConfig = CorrectionTrackerConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

@@ -97,6 +97,11 @@ class DesignSyncRepository:
         )
         return result.scalar_one_or_none()
 
+    async def update_webhook_id(self, connection: DesignConnection, webhook_id: str | None) -> None:
+        """Store or clear Figma webhook ID."""
+        connection.webhook_id = webhook_id
+        await self.db.flush()
+
     async def update_connection_token(
         self,
         connection: DesignConnection,
@@ -256,6 +261,15 @@ class DesignSyncRepository:
             design_import.result_template_id = result_template_id
         await self.db.commit()
         await self.db.refresh(design_import)
+
+    async def update_import_fidelity(
+        self,
+        design_import: DesignImport,
+        fidelity_data: dict[str, Any],
+    ) -> None:
+        """Store pre-computed fidelity scoring JSON on a design import."""
+        design_import.fidelity_json = fidelity_data
+        await self.db.flush()
 
     async def cancel_import(self, design_import: DesignImport) -> None:
         """Cancel an import if it's still in a cancellable state."""

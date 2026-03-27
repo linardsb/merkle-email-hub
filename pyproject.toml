@@ -42,6 +42,7 @@ dependencies = [
     "python-liquid>=1.12",
     "beautifulsoup4>=4.12",
     "aiosmtplib>=2.0",
+    "scikit-image>=0.24.0",
 ]
 
 [project.optional-dependencies]

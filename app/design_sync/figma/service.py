@@ -1283,3 +1283,80 @@ class FigmaDesignSyncService:
         )
 
         return all_images
+
+    async def download_image_bytes(self, exported: ExportedImage) -> bytes:
+        """Download image bytes from a Figma CDN URL.
+
+        Args:
+            exported: An ExportedImage with a CDN URL from export_images().
+
+        Returns:
+            Raw PNG/JPG bytes from the CDN.
+        """
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+            resp = await client.get(exported.url)
+            resp.raise_for_status()
+            content: bytes = resp.content
+            logger.info(
+                "design_sync.figma.image_downloaded",
+                node_id=exported.node_id,
+                size_bytes=len(content),
+            )
+            return content
+
+    # ── Webhook management ──
+
+    async def register_webhook(
+        self,
+        access_token: str,
+        *,
+        team_id: str,
+        endpoint: str,
+        passcode: str,
+    ) -> str:
+        """Register a FILE_UPDATE webhook with Figma. Returns the webhook ID."""
+        from app.design_sync.exceptions import WebhookRegistrationError
+
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.post(
+                f"{_FIGMA_API}/v2/webhooks",
+                headers={"X-Figma-Token": access_token},
+                json={
+                    "event_type": "FILE_UPDATE",
+                    "team_id": team_id,
+                    "endpoint": endpoint,
+                    "passcode": passcode,
+                },
+            )
+            if resp.status_code not in (200, 201):
+                logger.warning(
+                    "design_sync.figma.webhook_register_failed",
+                    status=resp.status_code,
+                    body=resp.text[:200],
+                )
+                raise WebhookRegistrationError(
+                    f"Figma webhook registration failed (HTTP {resp.status_code})"
+                )
+            data: dict[str, Any] = resp.json()
+            raw_id = data.get("id")
+            if raw_id is None:
+                raise WebhookRegistrationError("Figma webhook response missing 'id' field")
+            webhook_id = str(raw_id)
+            logger.info("design_sync.figma.webhook_registered", webhook_id=webhook_id)
+            return webhook_id
+
+    async def delete_webhook(self, access_token: str, webhook_id: str) -> None:
+        """Delete a registered Figma webhook."""
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.delete(
+                f"{_FIGMA_API}/v2/webhooks/{webhook_id}",
+                headers={"X-Figma-Token": access_token},
+            )
+            if resp.status_code not in (200, 204):
+                logger.warning(
+                    "design_sync.figma.webhook_delete_failed",
+                    status=resp.status_code,
+                    webhook_id=webhook_id,
+                )
+            else:
+                logger.info("design_sync.figma.webhook_deleted", webhook_id=webhook_id)

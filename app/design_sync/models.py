@@ -31,6 +31,7 @@ class DesignConnection(Base, TimestampMixin):
         Integer, ForeignKey("projects.id"), nullable=True, index=True
     )
     created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    webhook_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     snapshots: Mapped[list["DesignTokenSnapshot"]] = relationship(
         back_populates="connection", cascade="all, delete-orphan"
@@ -86,6 +87,7 @@ class DesignImport(Base, TimestampMixin):
         nullable=True,
     )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fidelity_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     created_by_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=False, index=True
     )
