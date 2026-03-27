@@ -18,6 +18,7 @@ from app.design_sync.schemas import (
     AnalyzeLayoutRequest,
     BrowseFilesRequest,
     BrowseFilesResponse,
+    CacheClearResponse,
     ComponentListResponse,
     ConnectionCreateRequest,
     ConnectionDeleteRequest,
@@ -791,3 +792,27 @@ async def unregister_webhook(
     _ = request
     await service.unregister_figma_webhook(connection_id, user=current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ── Section Cache (Phase 35.10) ──
+
+
+@router.delete(
+    "/connections/{connection_id}/cache",
+    response_model=CacheClearResponse,
+    status_code=200,
+)
+@limiter.limit("10/minute")
+async def clear_section_cache(
+    connection_id: int,
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+) -> CacheClearResponse:
+    """Clear cached conversion results for a connection. Admin only."""
+    _ = request
+    _ = current_user
+    from app.design_sync.section_cache import get_section_cache
+
+    cache = get_section_cache()
+    cleared = await cache.invalidate_connection(str(connection_id))
+    return CacheClearResponse(cleared_entries=cleared)

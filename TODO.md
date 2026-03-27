@@ -1130,7 +1130,7 @@
 - [x] ~~35.7 AI conversion learning loop~~ DONE
 - [ ] 35.8 W3C Design Tokens & caniemail.com integration
 - [x] ~~35.9 Figma webhooks & live preview sync~~ DONE
-- [ ] 35.10 Incremental conversion & section caching
+- [x] ~~35.10 Incremental conversion & section caching~~ DONE
 - [ ] 35.11 Tests & integration verification
 
 ### 35.1 MJML Compilation Service in Maizzle Sidecar `[Sidecar]`

@@ -691,3 +691,9 @@ class DesignSyncUpdateMessage(BaseModel):
     total_changes: int
     preview_url: str | None = None
     timestamp: datetime.datetime
+
+
+class CacheClearResponse(BaseModel):
+    """Response for section cache clear endpoint."""
+
+    cleared_entries: int

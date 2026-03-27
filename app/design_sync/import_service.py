@@ -190,6 +190,7 @@ class DesignImportService:
                         _image_url_map: dict[str, str] | None = (
                             _img_urls if isinstance(_img_urls, dict) else None  # type: ignore[assignment]
                         )
+                        _conn_id = str(design_import.connection_id)
                         if output_format == "mjml":
                             conversion = await converter.convert_mjml(
                                 structure,
@@ -198,6 +199,7 @@ class DesignImportService:
                                 selected_nodes=None,
                                 target_clients=target_clients,
                                 connection_config=conn.config_json,
+                                connection_id=_conn_id,
                             )
                         else:
                             conversion = converter.convert(
@@ -208,6 +210,7 @@ class DesignImportService:
                                 target_clients=target_clients,
                                 connection_config=conn.config_json,
                                 image_urls=_image_url_map,
+                                connection_id=_conn_id,
                             )
                         initial_html = conversion.html
                         if conversion.compatibility_hints:

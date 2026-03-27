@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -133,6 +134,7 @@ class ConversionResult:
     layout: DesignLayoutDescription | None = None
     compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
     images: list[dict[str, str]] = field(default_factory=list)
+    cache_hit_rate: float | None = None
 
 
 @dataclass(frozen=True)
@@ -231,6 +233,7 @@ class DesignConverterService:
         use_components: bool = True,
         connection_config: dict[str, Any] | None = None,
         image_urls: dict[str, str] | None = None,
+        connection_id: str | None = None,
     ) -> ConversionResult:
         """Convert a design file structure into an email HTML skeleton.
 
@@ -243,6 +246,7 @@ class DesignConverterService:
             use_components: If True, use component-template rendering (table-on-table).
                 If False, use legacy recursive converter (tr-stacking).
             connection_config: Per-connection config hints (naming convention, etc.).
+            connection_id: If set and caching enabled, cache section results.
 
         Returns:
             ConversionResult with HTML skeleton and metadata.
@@ -279,6 +283,18 @@ class DesignConverterService:
         elif layout.overall_width is not None:
             container_width = max(400, min(800, int(layout.overall_width)))
 
+        # Compute section hashes for caching (sync/memory-only path)
+        section_hashes: dict[str, str] | None = None
+        if connection_id and get_settings().design_sync.section_cache_enabled and layout.sections:
+            from app.design_sync.section_cache import compute_section_hash
+
+            section_hashes = {
+                s.node_id: compute_section_hash(
+                    s, tokens, container_width=container_width, target_clients=target_clients
+                )
+                for s in layout.sections
+            }
+
         if use_components and layout.sections:
             return self._convert_with_components(
                 frames=frames,
@@ -288,6 +304,8 @@ class DesignConverterService:
                 compat=compat,
                 container_width=container_width,
                 image_urls=image_urls,
+                connection_id=connection_id,
+                section_hashes=section_hashes,
             )
 
         return self._convert_recursive(
@@ -354,6 +372,7 @@ class DesignConverterService:
         selected_nodes: list[str] | None = None,
         target_clients: list[str] | None = None,
         connection_config: dict[str, Any] | None = None,
+        connection_id: str | None = None,
     ) -> ConversionResult:
         """Convert a design file structure into email HTML via MJML generation.
 
@@ -380,6 +399,7 @@ class DesignConverterService:
                 warnings=warnings,
                 container_width=container_width,
                 target_clients=target_clients,
+                connection_id=connection_id,
             )
         except MjmlCompileError:
             logger.warning("design_sync.mjml_fallback", reason="compilation_failed")
@@ -403,13 +423,51 @@ class DesignConverterService:
         container_width: int,
         target_clients: list[str] | None = None,
         use_templates: bool = True,
+        connection_id: str | None = None,
     ) -> ConversionResult:
         """Generate MJML from layout, compile via sidecar, return ConversionResult.
 
         When *use_templates* is True (default), the template engine renders each
         section via Jinja2 MJML templates.  Falls back to programmatic generation
         via ``generate_mjml()`` if template rendering fails.
+
+        When *connection_id* is set and caching is enabled, the full compiled result
+        is cached keyed by a composite hash of all section hashes. MJML compilation
+        requires the full assembled document, so caching is at conversion level.
         """
+        # Check async cache (memory + Redis) for full conversion result
+        cache_key: str | None = None
+        if connection_id and get_settings().design_sync.section_cache_enabled and layout.sections:
+            import hashlib
+
+            from app.design_sync.section_cache import compute_section_hash, get_section_cache
+
+            section_hashes = [
+                compute_section_hash(
+                    s, tokens, container_width=container_width, target_clients=target_clients
+                )
+                for s in layout.sections
+            ]
+            cache_key = hashlib.sha256(":".join(section_hashes).encode()).hexdigest()
+            cache = get_section_cache()
+            cached = await cache.get(connection_id, cache_key)
+            if cached is not None:
+                section_count = sum(
+                    1 for s in layout.sections if s.section_type != EmailSectionType.PREHEADER
+                )
+                logger.info(
+                    "design_sync.mjml_conversion_cache_hit",
+                    connection_id=connection_id,
+                    sections=section_count,
+                )
+                return ConversionResult(
+                    html=cached.html,
+                    sections_count=section_count,
+                    warnings=warnings,
+                    layout=layout,
+                    cache_hit_rate=1.0,
+                )
+
         mjml_str: str | None = None
         if use_templates:
             try:
@@ -455,6 +513,17 @@ class DesignConverterService:
             1 for s in layout.sections if s.section_type != EmailSectionType.PREHEADER
         )
 
+        # Store in async cache (memory + Redis)
+        if connection_id and cache_key:
+            from app.design_sync.section_cache import SectionCacheEntry, get_section_cache
+
+            entry = SectionCacheEntry(
+                html=compiled_html,
+                images=(),
+                generated_at=datetime.now(UTC).isoformat(),
+            )
+            await get_section_cache().set(connection_id, cache_key, entry)
+
         logger.info(
             "design_sync.mjml_conversion_completed",
             sections=section_count,
@@ -467,6 +536,7 @@ class DesignConverterService:
             sections_count=section_count,
             warnings=warnings,
             layout=layout,
+            cache_hit_rate=0.0 if connection_id and cache_key else None,
         )
 
     def _convert_with_components(
@@ -479,6 +549,8 @@ class DesignConverterService:
         compat: ConverterCompatibility,
         container_width: int,
         image_urls: dict[str, str] | None = None,
+        connection_id: str | None = None,
+        section_hashes: dict[str, str] | None = None,
     ) -> ConversionResult:
         """Component-template-based conversion (table-on-table structure)."""
         from app.design_sync.component_matcher import match_all
@@ -491,6 +563,21 @@ class DesignConverterService:
             image_urls=image_urls,
         )
 
+        # Section cache (sync/memory-only)
+        cache = None
+        cached_entries: dict[str, Any] = {}
+        if connection_id and section_hashes:
+            from app.design_sync.section_cache import SectionCacheEntry, get_section_cache
+
+            cache = get_section_cache()
+            for node_id, section_hash in section_hashes.items():
+                entry = cache.get_sync(connection_id, section_hash)
+                if entry is not None:
+                    cached_entries[node_id] = entry
+
+        hit_count = 0
+        miss_count = 0
+
         # Render each section using component templates
         renderer = ComponentRenderer(container_width=container_width)
         renderer.load()
@@ -499,9 +586,27 @@ class DesignConverterService:
         all_images: list[dict[str, str]] = []
 
         for match in matches:
-            rendered = renderer.render_section(match)
-            section_parts.append(rendered.html)
-            all_images.extend(rendered.images)
+            node_id = match.section.node_id
+            cached_entry = cached_entries.get(node_id)
+
+            if cached_entry is not None:
+                section_parts.append(cached_entry.html)
+                all_images.extend(cached_entry.images)
+                hit_count += 1
+            else:
+                rendered = renderer.render_section(match)
+                section_parts.append(rendered.html)
+                all_images.extend(rendered.images)
+                miss_count += 1
+
+                # Store in cache
+                if cache is not None and section_hashes and node_id in section_hashes:
+                    entry = SectionCacheEntry(
+                        html=rendered.html,
+                        images=tuple(rendered.images),
+                        generated_at=datetime.now(UTC).isoformat(),
+                    )
+                    cache.set_sync(connection_id, section_hashes[node_id], entry)
 
             # Inter-section spacer
             if match.spacing_after and match.spacing_after > 0:
@@ -554,6 +659,19 @@ class DesignConverterService:
         )
         result_html = format_email_html(result_html)
 
+        # Cache stats
+        total = hit_count + miss_count
+        cache_hit_rate: float | None = None
+        if total > 0 and connection_id and section_hashes:
+            cache_hit_rate = hit_count / total
+            logger.info(
+                "design_sync.conversion_cache_stats",
+                connection_id=connection_id,
+                hit_count=hit_count,
+                miss_count=miss_count,
+                hit_rate=round(cache_hit_rate, 2),
+            )
+
         logger.info(
             "design_sync.component_converter_result",
             sections_count=len(matches),
@@ -567,6 +685,7 @@ class DesignConverterService:
             layout=layout,
             compatibility_hints=compat.hints,
             images=all_images,
+            cache_hit_rate=cache_hit_rate,
         )
 
     def _convert_recursive(
@@ -995,8 +1114,6 @@ async def enhance_layout_with_ai(
 
     Returns a new DesignLayoutDescription with enhanced sections.
     """
-    from dataclasses import replace
-
     settings = get_settings()
     if not settings.design_sync.ai_layout_enabled:
         return layout

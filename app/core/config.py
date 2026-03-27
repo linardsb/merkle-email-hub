@@ -348,6 +348,10 @@ class DesignSyncConfig(BaseModel):
     figma_webhook_passcode: str = ""  # DESIGN_SYNC__FIGMA_WEBHOOK_PASSCODE (HMAC secret)
     figma_webhook_callback_url: str = ""  # DESIGN_SYNC__FIGMA_WEBHOOK_CALLBACK_URL
     webhook_debounce_seconds: int = 5  # DESIGN_SYNC__WEBHOOK_DEBOUNCE_SECONDS
+    # Section cache (35.10 — incremental conversion)
+    section_cache_enabled: bool = True  # DESIGN_SYNC__SECTION_CACHE_ENABLED
+    section_cache_memory_max: int = 500  # DESIGN_SYNC__SECTION_CACHE_MEMORY_MAX
+    section_cache_redis_ttl: int = 3600  # DESIGN_SYNC__SECTION_CACHE_REDIS_TTL (seconds)
 
 
 class ESPSyncConfig(BaseModel):
