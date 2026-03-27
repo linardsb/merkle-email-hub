@@ -74,5 +74,9 @@ HANDOFF.md
 # Playwright E2E auth state (generated at runtime)
 .e2e-auth-state
 
+# Correction pattern tracking (runtime data, Phase 35.7)
+data/correction_patterns.jsonl
+data/correction_rules.json
+
 # Visual regression diff images (generated on failure)
 app/rendering/tests/visual_regression/baselines/_diffs/

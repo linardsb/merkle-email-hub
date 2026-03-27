@@ -4,6 +4,7 @@ import time
 import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
@@ -505,6 +506,34 @@ class BlueprintEngine:
                     except Exception:
                         logger.warning(
                             "blueprint.handoff_memory_failed",
+                            node=current_node_name,
+                            run_id=run.run_id,
+                            exc_info=True,
+                        )
+
+            # LAYER 18: Correction pattern tracking (fire-and-forget)
+            if (
+                node.node_type == "agentic"
+                and context.html
+                and result.html
+                and context.html != result.html
+                and result.handoff is not None
+            ):
+                from app.core.config import get_settings as _get_settings_ct
+
+                if _get_settings_ct().correction_tracker.enabled:
+                    try:
+                        from app.design_sync.correction_tracker import CorrectionTracker
+
+                        tracker = CorrectionTracker(data_dir=Path("data"))
+                        await tracker.record_correction(
+                            agent=result.handoff.agent_name,
+                            original_html=context.html,
+                            corrected_html=result.html,
+                        )
+                    except Exception:
+                        logger.debug(
+                            "blueprint.correction_tracker_failed",
                             node=current_node_name,
                             run_id=run.run_id,
                             exc_info=True,
