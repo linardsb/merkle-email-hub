@@ -28,6 +28,7 @@ from app.design_sync.figma.layout_analyzer import (
 )
 from app.design_sync.figma.tree_normalizer import normalize_tree
 from app.design_sync.html_formatter import format_email_html
+from app.design_sync.mjml_generator import generate_mjml, inject_section_markers
 from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
@@ -293,6 +294,141 @@ class DesignConverterService:
             compat=compat,
             container_width=container_width,
             raw_file_data=raw_file_data,
+        )
+
+    def _prepare_conversion(
+        self,
+        structure: DesignFileStructure,
+        *,
+        raw_file_data: dict[str, Any] | None = None,
+        selected_nodes: list[str] | None = None,
+        target_clients: list[str] | None = None,
+        connection_config: dict[str, Any] | None = None,
+    ) -> (
+        tuple[list[DesignNode], DesignLayoutDescription, list[str], ConverterCompatibility, int]
+        | ConversionResult
+    ):
+        """Shared preamble: normalise, collect frames, analyse layout, derive width.
+
+        Returns a ConversionResult early-exit if no frames are found,
+        otherwise returns the prepared tuple for downstream converters.
+        """
+        warnings: list[str] = []
+        compat = ConverterCompatibility(target_clients=target_clients)
+        structure, _norm_stats = normalize_tree(structure, raw_file_data=raw_file_data)
+        frames = self._collect_frames(structure, selected_nodes)
+
+        if not frames:
+            logger.warning("design_sync.converter_no_frames")
+            return ConversionResult(html="", sections_count=0, warnings=["No frames found"])
+
+        layout_kwargs: dict[str, Any] = {}
+        if connection_config:
+            if nc := connection_config.get("naming_convention"):
+                layout_kwargs["naming_convention"] = nc
+            if snm := connection_config.get("section_name_map"):
+                layout_kwargs["section_name_map"] = snm
+            if bnh := connection_config.get("button_name_hints"):
+                layout_kwargs["button_name_hints"] = bnh
+        layout = analyze_layout(structure, **layout_kwargs)
+
+        container_width = 600
+        config_cw = connection_config.get("container_width") if connection_config else None
+        if isinstance(config_cw, int) and 320 <= config_cw <= 1200:
+            container_width = config_cw
+        elif layout.overall_width is not None:
+            container_width = max(400, min(800, int(layout.overall_width)))
+
+        return frames, layout, warnings, compat, container_width
+
+    async def convert_mjml(
+        self,
+        structure: DesignFileStructure,
+        tokens: ExtractedTokens,
+        *,
+        raw_file_data: dict[str, Any] | None = None,
+        selected_nodes: list[str] | None = None,
+        target_clients: list[str] | None = None,
+        connection_config: dict[str, Any] | None = None,
+    ) -> ConversionResult:
+        """Convert a design file structure into email HTML via MJML generation.
+
+        Generates MJML markup from the layout analysis, compiles it via the
+        Maizzle sidecar's /compile-mjml endpoint. Falls back to the recursive
+        converter if MJML compilation fails.
+        """
+        prepared = self._prepare_conversion(
+            structure,
+            raw_file_data=raw_file_data,
+            selected_nodes=selected_nodes,
+            target_clients=target_clients,
+            connection_config=connection_config,
+        )
+        if isinstance(prepared, ConversionResult):
+            return prepared
+
+        frames, layout, warnings, compat, container_width = prepared
+
+        try:
+            return await self._convert_mjml_from_layout(
+                layout=layout,
+                tokens=tokens,
+                warnings=warnings,
+                container_width=container_width,
+                target_clients=target_clients,
+            )
+        except MjmlCompileError:
+            logger.warning("design_sync.mjml_fallback", reason="compilation_failed")
+            warnings.append("MJML compilation failed, falling back to recursive converter")
+            return self._convert_recursive(
+                frames=frames,
+                layout=layout,
+                tokens=tokens,
+                warnings=warnings,
+                compat=compat,
+                container_width=container_width,
+                raw_file_data=raw_file_data,
+            )
+
+    async def _convert_mjml_from_layout(
+        self,
+        *,
+        layout: DesignLayoutDescription,
+        tokens: ExtractedTokens,
+        warnings: list[str],
+        container_width: int,
+        target_clients: list[str] | None = None,
+    ) -> ConversionResult:
+        """Generate MJML from layout, compile via sidecar, return ConversionResult."""
+        mjml_str = generate_mjml(layout, tokens, container_width=container_width)
+        compile_result = await self.compile_mjml(mjml_str, target_clients=target_clients)
+
+        if compile_result.errors:
+            error_msgs = [e.message for e in compile_result.errors]
+            warnings.append(
+                f"MJML had {len(compile_result.errors)} validation issues: "
+                + "; ".join(error_msgs[:3])
+            )
+
+        compiled_html = inject_section_markers(compile_result.html, layout)
+
+        # Count non-preheader sections for sections_count
+        section_count = sum(
+            1 for s in layout.sections if s.section_type != EmailSectionType.PREHEADER
+        )
+
+        logger.info(
+            "design_sync.mjml_conversion_completed",
+            sections=section_count,
+            build_time_ms=compile_result.build_time_ms,
+            errors=len(compile_result.errors),
+        )
+
+        return ConversionResult(
+            html=compiled_html,
+            sections_count=section_count,
+            warnings=warnings,
+            layout=layout,
         )
 
     def _convert_with_components(

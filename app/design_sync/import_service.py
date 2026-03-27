@@ -54,6 +54,8 @@ class DesignImportService:
         *,
         run_qa: bool = True,
         output_mode: Literal["html", "structured"] = "structured",
+        output_format: Literal["html", "mjml"] = "html",
+        score_fidelity: bool = False,
     ) -> None:
         """Background pipeline: layout analysis → asset download → Scaffolder → Template creation.
 
@@ -188,15 +190,25 @@ class DesignImportService:
                         _image_url_map: dict[str, str] | None = (
                             _img_urls if isinstance(_img_urls, dict) else None  # type: ignore[assignment]
                         )
-                        conversion = converter.convert(
-                            structure,
-                            extracted_tokens,
-                            raw_file_data=raw_data,
-                            selected_nodes=None,
-                            target_clients=target_clients,
-                            connection_config=conn.config_json,
-                            image_urls=_image_url_map,
-                        )
+                        if output_format == "mjml":
+                            conversion = await converter.convert_mjml(
+                                structure,
+                                extracted_tokens,
+                                raw_file_data=raw_data,
+                                selected_nodes=None,
+                                target_clients=target_clients,
+                                connection_config=conn.config_json,
+                            )
+                        else:
+                            conversion = converter.convert(
+                                structure,
+                                extracted_tokens,
+                                raw_file_data=raw_data,
+                                selected_nodes=None,
+                                target_clients=target_clients,
+                                connection_config=conn.config_json,
+                                image_urls=_image_url_map,
+                            )
                         initial_html = conversion.html
                         if conversion.compatibility_hints:
                             logger.info(
@@ -333,6 +345,42 @@ class DesignImportService:
                     import_id=import_id,
                     template_id=template_id,
                 )
+
+                # 9. Optional visual fidelity scoring (non-fatal)
+                if (
+                    score_fidelity
+                    and get_settings().design_sync.fidelity_enabled
+                    and conversion
+                    and conversion.layout
+                    and conversion.layout.sections
+                ):
+                    try:
+                        from app.design_sync.fidelity_service import (
+                            VisualFidelityService,
+                        )
+
+                        fidelity_svc = VisualFidelityService()
+                        fidelity_result = await fidelity_svc.score_import(
+                            design_import,
+                            conn,
+                            scaffolder_response.html,
+                            conversion.layout,
+                            self._user,
+                        )
+                        fidelity_data = fidelity_svc.serialize_score(fidelity_result)
+                        await repo.update_import_fidelity(design_import, fidelity_data)
+                        logger.info(
+                            "design_sync.fidelity_scored",
+                            import_id=import_id,
+                            overall_ssim=fidelity_result.overall,
+                            section_count=len(fidelity_result.sections),
+                        )
+                    except Exception:
+                        logger.warning(
+                            "design_sync.fidelity_failed",
+                            import_id=import_id,
+                            exc_info=True,
+                        )
 
             except Exception:
                 logger.exception("design_sync.conversion_failed", import_id=import_id)

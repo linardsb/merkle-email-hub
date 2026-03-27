@@ -114,6 +114,7 @@ class ConnectionResponse(BaseModel):
     project_id: int | None = None
     project_name: str | None = None
     config: ConnectionConfigRequest | None = None
+    webhook_id: str | None = None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
@@ -150,6 +151,7 @@ class ConnectionResponse(BaseModel):
             project_id=conn.project_id,
             project_name=project_name,
             config=config,
+            webhook_id=conn.webhook_id if type(conn.webhook_id) is str else None,
             created_at=cast(datetime.datetime, conn.created_at),
             updated_at=cast(datetime.datetime, conn.updated_at),
         )
@@ -241,6 +243,33 @@ class TokenDiffResponse(BaseModel):
     previous_extracted_at: datetime.datetime | None = None
     entries: list[TokenDiffEntry]
     has_previous: bool = False
+
+
+# ── W3C Design Tokens ──
+
+
+class ImportW3cTokensRequest(BaseModel):
+    """Request to import W3C Design Tokens v1.0 JSON."""
+
+    tokens_json: dict[str, object] = Field(..., description="W3C Design Tokens v1.0 JSON")
+    connection_id: int | None = Field(
+        None, description="Optional connection to store snapshot against"
+    )
+    target_clients: list[str] | None = Field(
+        None, description="Target clients for compatibility checks"
+    )
+
+
+class W3cImportResponse(BaseModel):
+    """Response from W3C token import."""
+
+    colors: list[DesignColorResponse]
+    dark_colors: list[DesignColorResponse] = []  # pyright: ignore[reportUnknownVariableType]
+    typography: list[DesignTypographyResponse]
+    spacing: list[DesignSpacingResponse]
+    gradients: list[DesignGradientResponse] = []  # pyright: ignore[reportUnknownVariableType]
+    warnings: list[str]
+    compatibility_hints: list[CompatibilityHintResponse] = []  # pyright: ignore[reportUnknownVariableType]
 
 
 # ── File Structure Responses ──
@@ -595,3 +624,64 @@ class ConvertImportRequest(BaseModel):
 
     run_qa: bool = Field(default=True, description="Run QA gate on generated HTML")
     output_mode: Literal["html", "structured"] = Field(default="structured")
+    output_format: Literal["html", "mjml"] = Field(
+        default="html",
+        description="Conversion backend: 'html' (recursive) or 'mjml' (MJML generation + compilation)",
+    )
+    score_fidelity: bool = Field(
+        default=False,
+        description="Run visual fidelity scoring after conversion (requires FIDELITY_ENABLED)",
+    )
+
+
+# ── Phase 35.6: Visual Fidelity Scoring ──
+
+
+class SectionFidelityScore(BaseModel):
+    """Per-section SSIM fidelity score."""
+
+    section_id: str
+    section_name: str
+    section_type: str
+    ssim: float = Field(ge=0.0, le=1.0, description="Structural Similarity Index (0-1)")
+    severity: Literal["ok", "warning", "critical"]
+
+
+class FidelityResult(BaseModel):
+    """Aggregate fidelity scoring result for a design import."""
+
+    overall_ssim: float = Field(ge=0.0, le=1.0)
+    sections: list[SectionFidelityScore]
+    diff_image_available: bool = False
+    scored_at: datetime.datetime
+
+
+class FidelityResponse(BaseModel):
+    """API response wrapping fidelity scores for a design import."""
+
+    import_id: int
+    fidelity: FidelityResult | None = None
+
+
+# ── Webhook Schemas ──
+
+
+class FigmaWebhookPayload(BaseModel):
+    """Figma FILE_UPDATE webhook event payload."""
+
+    event_type: str
+    file_key: str
+    file_name: str
+    timestamp: str
+    team_id: str | None = None
+
+
+class DesignSyncUpdateMessage(BaseModel):
+    """WebSocket message for live design sync updates."""
+
+    type: Literal["design_sync_update"] = "design_sync_update"
+    connection_id: int
+    diff_summary: str
+    total_changes: int
+    preview_url: str | None = None
+    timestamp: datetime.datetime

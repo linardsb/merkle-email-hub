@@ -1,9 +1,12 @@
 # pyright: reportUnknownMemberType=false, reportUntypedFunctionDecorator=false
 """REST API routes for design sync."""
 
+import asyncio
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.requests import Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
@@ -29,15 +32,19 @@ from app.design_sync.schemas import (
     ExportImageRequest,
     ExtractComponentsRequest,
     ExtractComponentsResponse,
+    FidelityResponse,
+    FidelityResult,
     FileStructureResponse,
     GenerateBriefRequest,
     GenerateBriefResponse,
     ImageExportResponse,
     ImportResponse,
+    ImportW3cTokensRequest,
     LayoutAnalysisResponse,
     StartImportRequest,
     TokenDiffResponse,
     UpdateImportBriefRequest,
+    W3cImportResponse,
 )
 from app.design_sync.service import DesignSyncService
 
@@ -114,6 +121,35 @@ async def get_token_diff(
     """Compare current token snapshot with previous sync."""
     _ = request
     return await service.get_token_diff(connection_id, current_user)
+
+
+# ── Phase 35.8: W3C Design Tokens ──
+
+
+@router.post("/tokens/import-w3c", response_model=W3cImportResponse)
+@limiter.limit("10/minute")
+async def import_w3c_tokens(
+    request: Request,
+    body: ImportW3cTokensRequest,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> W3cImportResponse:
+    """Import tokens from W3C Design Tokens v1.0 JSON format."""
+    _ = request
+    return await service.import_w3c_tokens(body, current_user)
+
+
+@router.get("/connections/{connection_id}/tokens/export-w3c")
+@limiter.limit("30/minute")
+async def export_w3c_tokens_endpoint(
+    connection_id: int,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("viewer")),
+) -> dict[str, object]:
+    """Export tokens in W3C Design Tokens v1.0 JSON format."""
+    _ = request
+    return await service.export_w3c_tokens(connection_id, current_user)
 
 
 @router.post("/connections", response_model=ConnectionResponse, status_code=status.HTTP_201_CREATED)
@@ -456,6 +492,108 @@ async def convert_import(
         current_user,
         run_qa=body.run_qa,
         output_mode=body.output_mode,
+        output_format=body.output_format,
+        score_fidelity=body.score_fidelity,
+    )
+
+
+# ── Visual Fidelity Scoring (Phase 35.6) ──
+
+
+@router.get("/imports/{import_id}/fidelity", response_model=FidelityResponse)
+@limiter.limit("30/minute")
+async def get_fidelity(
+    import_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("developer")),
+) -> FidelityResponse:
+    """Get visual fidelity scoring results for a design import."""
+    _ = request
+    from app.design_sync.exceptions import ImportNotFoundError
+    from app.design_sync.repository import DesignSyncRepository
+
+    repo = DesignSyncRepository(db)
+    design_import = await repo.get_import(import_id)
+    if design_import is None:
+        raise ImportNotFoundError(f"Import {import_id} not found")
+    service = DesignSyncService(db)
+    await service._verify_access(design_import.project_id, current_user)
+    fidelity = None
+    if design_import.fidelity_json:
+        fidelity = FidelityResult(**design_import.fidelity_json)
+    return FidelityResponse(import_id=import_id, fidelity=fidelity)
+
+
+@router.post(
+    "/imports/{import_id}/score-fidelity",
+    response_model=FidelityResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@limiter.limit("5/minute")
+async def trigger_fidelity_scoring(
+    import_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("developer")),
+) -> FidelityResponse:
+    """Validate that an import is eligible for fidelity scoring and return current scores.
+
+    To actually score, re-run conversion via POST /imports/{id}/convert with score_fidelity=true.
+    """
+    _ = request
+    from app.design_sync.exceptions import ImportNotFoundError, ImportStateError
+    from app.design_sync.repository import DesignSyncRepository
+
+    repo = DesignSyncRepository(db)
+    design_import = await repo.get_import(import_id)
+    if design_import is None:
+        raise ImportNotFoundError(f"Import {import_id} not found")
+    service = DesignSyncService(db)
+    await service._verify_access(design_import.project_id, current_user)
+    if design_import.status != "completed":
+        raise ImportStateError("Fidelity scoring requires a completed import")
+    fidelity = None
+    if design_import.fidelity_json:
+        fidelity = FidelityResult(**design_import.fidelity_json)
+    return FidelityResponse(import_id=import_id, fidelity=fidelity)
+
+
+@router.get("/imports/{import_id}/fidelity/diff-image")
+@limiter.limit("30/minute")
+async def get_diff_image(
+    import_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("developer")),
+) -> Response:
+    """Get the visual diff overlay image for a fidelity-scored import."""
+    _ = request
+    from app.core.config import get_settings
+    from app.core.exceptions import NotFoundError
+    from app.design_sync.exceptions import ImportNotFoundError
+    from app.design_sync.repository import DesignSyncRepository
+
+    repo = DesignSyncRepository(db)
+    design_import = await repo.get_import(import_id)
+    if design_import is None:
+        raise ImportNotFoundError(f"Import {import_id} not found")
+    service = DesignSyncService(db)
+    await service._verify_access(design_import.project_id, current_user)
+    if not design_import.fidelity_json:
+        raise NotFoundError("No fidelity scores available for this import")
+
+    settings = get_settings()
+    diff_path = (
+        Path(settings.design_sync.asset_storage_path) / "fidelity" / str(import_id) / "diff.png"
+    )
+    if not diff_path.exists():
+        raise NotFoundError("Diff image not found")
+
+    return Response(
+        content=diff_path.read_bytes(),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600"},
     )
 
 
@@ -487,3 +625,169 @@ async def diagnose_connection(
     runner = DiagnosticRunner()
     report = runner.run_from_structure(structure, tokens)
     return DRR.from_report(report)
+
+
+# ── Correction Pattern Tracking (Phase 35.7) ──
+
+
+@router.get("/correction-patterns")
+@limiter.limit("30/minute")
+async def list_correction_patterns(
+    request: Request,
+    min_occurrences: int = Query(default=5, ge=1),
+    min_confidence: float = Query(default=0.9, ge=0.0, le=1.0),
+    agent: str | None = Query(default=None),
+    current_user: User = Depends(require_role("admin")),
+) -> list[dict[str, object]]:
+    """List frequent correction patterns above threshold. Admin only."""
+    _ = (request, current_user)
+    from app.design_sync.correction_tracker import CorrectionPatternResponse, CorrectionTracker
+
+    tracker = CorrectionTracker(data_dir=Path("data"))
+    patterns = tracker.get_frequent_patterns(
+        min_occurrences=min_occurrences,
+        min_confidence=min_confidence,
+    )
+    if agent:
+        patterns = [p for p in patterns if p.agent == agent]
+    return [CorrectionPatternResponse.from_pattern(p).model_dump(mode="json") for p in patterns]
+
+
+@router.get("/correction-patterns/suggestions")
+@limiter.limit("30/minute")
+async def get_rule_suggestions(
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+) -> list[dict[str, object]]:
+    """Get converter rule suggestions from frequent patterns. Admin only."""
+    _ = (request, current_user)
+    from app.design_sync.correction_tracker import (
+        ConverterRuleSuggestionResponse,
+        CorrectionTracker,
+    )
+
+    tracker = CorrectionTracker(data_dir=Path("data"))
+    suggestions = tracker.suggest_converter_rules()
+    return [
+        ConverterRuleSuggestionResponse.from_suggestion(s).model_dump(mode="json")
+        for s in suggestions
+    ]
+
+
+@router.post("/correction-patterns/{pattern_hash}/approve")
+@limiter.limit("10/minute")
+async def approve_correction_rule(
+    pattern_hash: str,
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+) -> dict[str, str]:
+    """Approve a correction pattern for converter rule application. Admin only."""
+    _ = (request, current_user)
+    import re
+
+    if not re.fullmatch(r"[0-9a-f]{16}", pattern_hash):
+        from app.core.exceptions import DomainValidationError
+
+        raise DomainValidationError("Invalid pattern hash format")
+
+    from app.design_sync.correction_tracker import CorrectionTracker
+
+    tracker = CorrectionTracker(data_dir=Path("data"))
+    tracker.approve_rule(pattern_hash)
+    return {"status": "approved", "pattern_hash": pattern_hash}
+
+
+# ── Figma Webhooks ──
+
+_webhook_tasks: set[asyncio.Task[None]] = set()
+
+
+@router.post("/webhooks/figma", status_code=200, include_in_schema=False)
+@limiter.limit("60/minute")
+async def handle_figma_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """Receive Figma FILE_UPDATE webhook. Must respond < 5s."""
+    from app.core.config import get_settings
+    from app.core.logging import get_logger
+    from app.design_sync.webhook import (
+        debounced_sync_worker,
+        enqueue_debounced_sync,
+        verify_signature,
+    )
+
+    log = get_logger(__name__)
+    settings = get_settings()
+
+    if not settings.design_sync.figma_webhook_enabled:
+        return {"status": "disabled"}
+
+    from app.design_sync.exceptions import WebhookSignatureError
+
+    body = await request.body()
+    signature = request.headers.get("X-Figma-Signature", "")
+    try:
+        verify_signature(body, signature, settings.design_sync.figma_webhook_passcode)
+    except WebhookSignatureError:
+        log.warning("design_sync.webhook_signature_invalid")
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=401, detail="Invalid webhook signature") from None
+
+    from app.design_sync.schemas import FigmaWebhookPayload
+
+    payload = FigmaWebhookPayload.model_validate_json(body)
+    if payload.event_type != "FILE_UPDATE":
+        return {"status": "ignored"}
+
+    repo = DesignSyncService(db)._repo
+    conn = await repo.get_connection_by_file_ref("figma", payload.file_key)
+    if conn is None:
+        log.info("design_sync.webhook_no_connection", file_key=payload.file_key)
+        return {"status": "ok"}
+
+    await enqueue_debounced_sync(payload.file_key, conn.id)
+    task = asyncio.create_task(debounced_sync_worker(conn.id, payload.file_key, conn.project_id))
+    _webhook_tasks.add(task)
+    task.add_done_callback(_webhook_tasks.discard)
+
+    return {"status": "ok"}
+
+
+@router.post(
+    "/connections/{connection_id}/webhook",
+    status_code=201,
+    response_model=dict[str, str],
+)
+@limiter.limit("10/minute")
+async def register_webhook(
+    connection_id: int,
+    request: Request,
+    team_id: str = Query(..., description="Figma team ID for webhook scope"),
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("admin")),
+) -> dict[str, str]:
+    """Register a Figma webhook for live sync. Admin only."""
+    _ = request
+    webhook_id = await service.register_figma_webhook(
+        connection_id, team_id=team_id, user=current_user
+    )
+    return {"webhook_id": webhook_id}
+
+
+@router.delete(
+    "/connections/{connection_id}/webhook",
+    status_code=204,
+)
+@limiter.limit("10/minute")
+async def unregister_webhook(
+    connection_id: int,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("admin")),
+) -> Response:
+    """Remove a Figma webhook. Admin only."""
+    _ = request
+    await service.unregister_figma_webhook(connection_id, user=current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

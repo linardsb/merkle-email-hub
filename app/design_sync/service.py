@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import asdict
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -78,9 +78,13 @@ from app.design_sync.schemas import (
     TextBlockResponse,
     TokenDiffEntry,
     TokenDiffResponse,
+    W3cImportResponse,
 )
 from app.design_sync.sketch.service import SketchDesignSyncService
 from app.projects.service import ProjectService
+
+if TYPE_CHECKING:
+    from app.design_sync.schemas import DesignSyncUpdateMessage, ImportW3cTokensRequest
 
 logger = get_logger(__name__)
 
@@ -288,12 +292,12 @@ class DesignSyncService:
         logger.info("design_sync.connection_deleted", connection_id=connection_id)
         return await self._repo.delete_connection(connection_id)
 
-    async def sync_connection(self, connection_id: int, user: User) -> ConnectionResponse:
+    async def sync_connection(self, connection_id: int, user: User | None) -> ConnectionResponse:
         """Trigger a token sync for a connection."""
         conn = await self._repo.get_connection(connection_id)
         if conn is None:
             raise ConnectionNotFoundError(f"Connection {connection_id} not found")
-        if conn.project_id is not None:
+        if conn.project_id is not None and user is not None:
             await self._verify_access(conn.project_id, user)
 
         provider = self._get_provider(conn.provider)
@@ -613,12 +617,14 @@ class DesignSyncService:
 
     # ── Token Diff ──
 
-    async def get_token_diff(self, connection_id: int, user: User) -> TokenDiffResponse:
+    async def get_token_diff(
+        self, connection_id: int, user: User | None = None
+    ) -> TokenDiffResponse:
         """Compare current token snapshot vs previous."""
         conn = await self._repo.get_connection(connection_id)
         if conn is None:
             raise ConnectionNotFoundError(f"Connection {connection_id} not found")
-        if conn.project_id is not None:
+        if conn.project_id is not None and user is not None:
             await self._verify_access(conn.project_id, user)
 
         current = await self._repo.get_latest_snapshot(connection_id)
@@ -690,6 +696,129 @@ class DesignSyncService:
                     )
 
         return entries
+
+    # ── Phase 35.8: W3C Design Tokens ──
+
+    async def import_w3c_tokens(
+        self, body: ImportW3cTokensRequest, user: User
+    ) -> W3cImportResponse:
+        """Parse W3C Design Tokens v1.0 JSON and return validated tokens."""
+        from app.design_sync.token_transforms import validate_and_transform
+        from app.design_sync.w3c_tokens import parse_w3c_tokens
+
+        result = parse_w3c_tokens(dict(body.tokens_json))
+
+        # Load caniemail data for compatibility enrichment
+        caniemail_data = None
+        if body.target_clients:
+            from app.design_sync.caniemail import load_caniemail_data
+
+            caniemail_data = load_caniemail_data()
+
+        tokens, validation_warnings = validate_and_transform(
+            result.tokens,
+            target_clients=body.target_clients or None,
+            caniemail_data=caniemail_data,
+        )
+
+        warnings = [w.message for w in result.warnings] + [w.message for w in validation_warnings]
+
+        # Optionally store as snapshot against a connection
+        if body.connection_id is not None:
+            conn = await self._repo.get_connection(body.connection_id)
+            if conn is None:
+                raise ConnectionNotFoundError(f"Connection {body.connection_id} not found")
+            if conn.project_id is not None:
+                await self._verify_access(conn.project_id, user)
+            await self._repo.save_snapshot(body.connection_id, asdict(tokens), datetime.now(UTC))
+
+        return W3cImportResponse(
+            colors=[
+                DesignColorResponse(name=c.name, hex=c.hex, opacity=c.opacity)
+                for c in tokens.colors
+            ],
+            dark_colors=[
+                DesignColorResponse(name=c.name, hex=c.hex, opacity=c.opacity)
+                for c in tokens.dark_colors
+            ],
+            typography=[
+                DesignTypographyResponse(
+                    name=t.name,
+                    family=t.family,
+                    weight=t.weight,
+                    size=t.size,
+                    lineHeight=t.line_height,
+                    letterSpacing=t.letter_spacing,
+                    textTransform=t.text_transform,
+                    textDecoration=t.text_decoration,
+                )
+                for t in tokens.typography
+            ],
+            spacing=[DesignSpacingResponse(name=s.name, value=s.value) for s in tokens.spacing],
+            gradients=[
+                DesignGradientResponse(
+                    name=g.name,
+                    type=g.type,
+                    angle=g.angle,
+                    stops=[
+                        DesignGradientStopResponse(color=hex_val, position=pos)
+                        for hex_val, pos in g.stops
+                    ],
+                    fallback_hex=g.fallback_hex,
+                )
+                for g in tokens.gradients
+            ],
+            warnings=warnings,
+        )
+
+    async def export_w3c_tokens(self, connection_id: int, user: User) -> dict[str, object]:
+        """Export tokens for a connection in W3C Design Tokens v1.0 format."""
+        from app.design_sync.w3c_export import export_w3c_tokens
+
+        # Reuse get_tokens to fetch validated tokens
+        tokens_response = await self.get_tokens(connection_id, user)
+
+        # Reconstruct ExtractedTokens from response
+        from app.design_sync.protocol import (
+            ExtractedGradient,
+        )
+
+        tokens = ExtractedTokens(
+            colors=[
+                ExtractedColor(name=c.name, hex=c.hex, opacity=c.opacity)
+                for c in tokens_response.colors
+            ],
+            dark_colors=[
+                ExtractedColor(name=c.name, hex=c.hex, opacity=c.opacity)
+                for c in tokens_response.dark_colors
+            ],
+            typography=[
+                ExtractedTypography(
+                    name=t.name,
+                    family=t.family,
+                    weight=t.weight,
+                    size=t.size,
+                    line_height=t.lineHeight,
+                    letter_spacing=t.letterSpacing,
+                    text_transform=t.textTransform,
+                    text_decoration=t.textDecoration,
+                )
+                for t in tokens_response.typography
+            ],
+            spacing=[ExtractedSpacing(name=s.name, value=s.value) for s in tokens_response.spacing],
+            gradients=[
+                ExtractedGradient(
+                    name=g.name,
+                    type=g.type,
+                    angle=g.angle,
+                    stops=tuple((s.color, s.position) for s in g.stops),
+                    fallback_hex=g.fallback_hex,
+                )
+                for g in tokens_response.gradients
+            ],
+        )
+
+        return export_w3c_tokens(tokens)
 
     # ── Phase 12.1: File Structure, Components, Image Export ──
 
@@ -1248,6 +1377,8 @@ class DesignSyncService:
         *,
         run_qa: bool = True,
         output_mode: Literal["html", "structured"] = "structured",
+        output_format: Literal["html", "mjml"] = "html",
+        score_fidelity: bool = False,
     ) -> ImportResponse:
         """Kick off the background conversion pipeline."""
         from app.core.exceptions import DomainValidationError
@@ -1290,6 +1421,8 @@ class DesignSyncService:
                 import_id=import_id,
                 run_qa=run_qa,
                 output_mode=output_mode,
+                output_format=output_format,
+                score_fidelity=score_fidelity,
             )
         )
         task.add_done_callback(_on_task_done)
@@ -1378,6 +1511,98 @@ class DesignSyncService:
         )
 
     # ── Helpers ──
+
+    # ── Figma Webhooks ──
+
+    async def register_figma_webhook(self, connection_id: int, *, team_id: str, user: User) -> str:
+        """Register a Figma FILE_UPDATE webhook for a connection. Returns webhook_id."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+        if conn.provider != "figma":
+            raise UnsupportedProviderError("Webhooks are only supported for Figma connections")
+
+        access_token = decrypt_token(conn.encrypted_token)
+        figma = FigmaDesignSyncService()
+        settings = get_settings()
+
+        callback_url = settings.design_sync.figma_webhook_callback_url
+        if not callback_url:
+            raise SyncFailedError("DESIGN_SYNC__FIGMA_WEBHOOK_CALLBACK_URL is not configured")
+
+        webhook_id = await figma.register_webhook(
+            access_token,
+            team_id=team_id,
+            endpoint=f"{callback_url}/api/v1/design-sync/webhooks/figma",
+            passcode=settings.design_sync.figma_webhook_passcode,
+        )
+        await self._repo.update_webhook_id(conn, webhook_id)
+        await self.db.commit()
+        logger.info(
+            "design_sync.webhook_registered",
+            connection_id=connection_id,
+            webhook_id=webhook_id,
+        )
+        return webhook_id
+
+    async def unregister_figma_webhook(self, connection_id: int, *, user: User) -> None:
+        """Remove a Figma webhook for a connection."""
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+        if not conn.webhook_id:
+            return
+
+        access_token = decrypt_token(conn.encrypted_token)
+        figma = FigmaDesignSyncService()
+        await figma.delete_webhook(access_token, conn.webhook_id)
+        await self._repo.update_webhook_id(conn, None)
+        await self.db.commit()
+        logger.info("design_sync.webhook_unregistered", connection_id=connection_id)
+
+    async def handle_webhook_sync(self, connection_id: int) -> DesignSyncUpdateMessage | None:
+        """Run sync triggered by webhook, compute diff, return WS message if changes."""
+        from app.design_sync.schemas import DesignSyncUpdateMessage
+
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            return None
+
+        try:
+            await self.sync_connection(connection_id, user=None)
+        except Exception:
+            logger.warning(
+                "design_sync.webhook_sync_failed",
+                connection_id=connection_id,
+                exc_info=True,
+            )
+            return None
+
+        diff = await self.get_token_diff(connection_id)
+        if not diff.entries:
+            return None
+
+        return DesignSyncUpdateMessage(
+            connection_id=connection_id,
+            diff_summary=self._format_diff_summary(diff.entries),
+            total_changes=len(diff.entries),
+            timestamp=datetime.now(UTC),
+        )
+
+    @staticmethod
+    def _format_diff_summary(entries: list[TokenDiffEntry]) -> str:
+        """Build a human-readable summary like '3 colors added, 1 removed'."""
+        from collections import Counter
+
+        counts: Counter[str] = Counter()
+        for e in entries:
+            counts[e.change] += 1
+        parts = [f"{count} {change}" for change, count in sorted(counts.items())]
+        return ", ".join(parts) if parts else "no changes"
 
     async def _verify_access(self, project_id: int, user: User) -> None:
         project_service = ProjectService(self.db)
