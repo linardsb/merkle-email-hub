@@ -139,3 +139,27 @@ class BlueprintEvalTrace:
     elapsed_seconds: float
     node_trace: list[dict[str, object]]
     error: str | None = None
+
+
+@dataclass(frozen=True)
+class SkillUpdateCandidate:
+    """A detected opportunity to update a skill file based on eval failures."""
+
+    agent: str
+    criterion: str
+    pass_rate: float
+    failure_count: int
+    failure_cluster: str  # Pattern description
+    sample_reasons: list[str] = field(default_factory=lambda: list[str]())
+    target_skill_file: str = ""  # Resolved L3 skill file path
+    source: str = "eval"  # "eval" or "tool_usage"
+
+
+@dataclass(frozen=True)
+class SkillFilePatch:
+    """A proposed addition to a skill file."""
+
+    skill_file_path: str  # Relative path: app/ai/agents/{agent}/skills/{file}.md
+    patch_content: str  # Markdown to append
+    candidate: SkillUpdateCandidate
+    confidence: str = "MEDIUM"  # HIGH / MEDIUM / LOW (from LLM)

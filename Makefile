@@ -218,6 +218,12 @@ eval-golden: ## CI golden test — deterministic assembly regression (no LLM)
 eval-refresh: ## Refresh analysis.json from production + synthetic verdicts
 	uv run python -c "from app.ai.agents.evals.production_sampler import refresh_analysis; refresh_analysis()"
 
+eval-skill-update: ## Detect skill file update candidates (dry-run)
+	uv run python scripts/eval-skill-update.py --dry-run
+
+eval-skill-update-apply: ## Generate skill file patches and create git branch
+	uv run python scripts/eval-skill-update.py
+
 # === CLI (mcp2cli) ===
 
 .cli-ensure: ## (internal) auto-bake mcp2cli config if missing

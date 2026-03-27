@@ -3760,3 +3760,44 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - 0 pyright errors, 0 mypy errors, 0 ruff errors in `app/ai/agents/evals/`
 
 ---
+
+## Phase 32.7 — Visual QA Feedback Loop Tightening (DONE)
+
+> **Date completed:** 2026-03-27
+> **Scope:** Integrate Visual QA agent into blueprint recovery loop with pre-QA visual defect detection, post-build screenshot comparison, and multimodal screenshot injection to fixer agents.
+
+### What was built
+
+| Deliverable | Details |
+|---|---|
+| `app/ai/blueprints/nodes/visual_precheck_node.py` | `VisualPrecheckNode` deterministic node: renders top N audience clients, runs `detect_defects_lightweight()` via VLM, converts high/critical defects to `StructuredFailure` with `visual_defect:{client_id}` check names, stores screenshots in metadata for downstream injection |
+| `app/ai/blueprints/nodes/visual_comparison_node.py` | `VisualComparisonNode` deterministic node: post-build ODiff pixel comparison + VLM semantic description, regression detection vs previous iteration, advisory only (never blocks output), stores `VisualComparisonResult` in metadata |
+| `app/ai/agents/visual_qa/service.py` additions | `detect_defects_lightweight()` fast-path VLM (1024 max_tokens, minimal prompt), `compare_screenshots()` ODiff→VLM pipeline, `_describe_drift()` VLM semantic diff, `_map_severity()` + `_infer_agent()` helpers |
+| `app/qa_engine/schemas.py` | `QAVisualDefect` model (type, severity Literal, client_id, description, suggested_agent, screenshot_ref, bounding_box), `visual_defects` field on `QAResultResponse` |
+| `app/ai/agents/visual_qa/schemas.py` | `VisualComparisonResult` model (drift_score, diff_regions, diff_image_ref, semantic_description, regressed) |
+| `app/email_engine/schemas.py` | `visual_drift: VisualComparisonResult | None` on `BuildResponse` |
+| `app/ai/blueprints/nodes/qa_gate_node.py` | Merges `visual_precheck_failures` from metadata into QA gate failure list |
+| `app/ai/blueprints/nodes/recovery_router_node.py` | Dynamic `visual_defect:*` routing via `suggested_agent`, `_inject_visual_context()` multimodal screenshot injection (ImageBlock + TextBlock) |
+| `app/ai/blueprints/engine.py` | Layer 14.5: `multimodal_context_override` injection for agentic nodes (one-shot clear after use) |
+| `app/ai/blueprints/definitions/campaign.py` | 2 new nodes + 3 new edges: `repair→visual_precheck→qa_gate`, `maizzle_build→visual_comparison→export` |
+| `app/core/config.py` | 4 `BlueprintConfig` feature gates: `visual_qa_precheck`, `visual_comparison`, `visual_comparison_threshold`, `visual_precheck_top_clients` (all default off) |
+
+### Test coverage
+
+| Test file | Tests | Coverage |
+|---|---|---|
+| `app/ai/agents/visual_qa/tests/test_visual_precheck.py` | 9 | Node: skipped/disabled, no defects, high-severity, multiple clients, render failure, VLM failure, metadata storage |
+| `app/ai/agents/visual_qa/tests/test_visual_comparison.py` | 8 | Node: skipped/disabled, no originals, low/high drift, regression detection, ODiff failure, metadata storage |
+| `app/ai/blueprints/tests/test_nodes.py` additions | 4 | QA gate visual merge, recovery router visual routing + multimodal injection + cycle detection |
+| `app/ai/agents/visual_qa/tests/test_visual_qa.py` additions | 14 | Service: lightweight detect success/empty/error, compare low/high diff, partial clients, _infer_agent, _map_severity |
+| **Total new tests** | **35** | All 113 existing + new tests pass |
+
+### Key patterns
+
+- Both feature gates default to `False` — zero latency impact unless explicitly enabled
+- Visual precheck node is a separate pipeline step (not inlined in QA gate) per plan's preflight warning
+- Multimodal screenshot injection uses one-shot `multimodal_context_override` metadata key (cleared after Layer 14.5 injection)
+- `_infer_agent()` heuristic maps VLM defect descriptions to fixer agents (Outlook/dark mode/accessibility keywords)
+- `VisualComparisonNode` is advisory only — never returns "failed" status
+
+---
