@@ -79,7 +79,7 @@
 - [x] ~~32.5 Cross-agent insight propagation~~ DONE
 - [x] ~~32.6 Eval-driven skill file updates~~ DONE
 - [x] ~~32.7 Visual QA feedback loop tightening~~ DONE
-- [ ] 32.8 Tests & integration verification
+- [x] ~~32.8 Tests & integration verification~~ DONE
 - [x] ~~32.9 MCP server exposure for agent tools~~ DONE
 - [ ] 32.10 Skill versioning with rollback
 - [x] ~~32.11 Per-client skill overlays~~ DONE

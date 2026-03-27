@@ -153,3 +153,65 @@ class TestBuildSystemPrompt:
     def test_unknown_skill_key_ignored(self) -> None:
         prompt = build_system_prompt(["nonexistent_skill"])
         assert "--- REFERENCE:" not in prompt
+
+
+class TestLayoutAndColumnDetection:
+    """Tests for table/div layout and column pattern skill detection (Phase 32.8)."""
+
+    def test_table_layout_detection(self) -> None:
+        html = "<table><tr><td>Content</td></tr></table>"
+        skills = detect_relevant_skills(html)
+        assert "table_layouts" in skills
+
+    def test_div_layout_mj_column(self) -> None:
+        html = '<div class="mj-column">Content</div>'
+        skills = detect_relevant_skills(html)
+        assert "div_layouts" in skills
+
+    def test_div_layout_email_body(self) -> None:
+        html = '<div class="email-body">Content</div>'
+        skills = detect_relevant_skills(html)
+        assert "div_layouts" in skills
+
+    def test_column_inline_block(self) -> None:
+        html = '<td style="display:inline-block;width:50%">Col</td>'
+        skills = detect_relevant_skills(html)
+        assert "column_patterns" in skills
+
+    def test_column_float(self) -> None:
+        html = '<td style="float:left;width:300px">Col</td>'
+        skills = detect_relevant_skills(html)
+        assert "column_patterns" in skills
+
+
+class TestBoundaryConditions:
+    """Boundary tests for CSS normalization and HTML size thresholds (Phase 32.8)."""
+
+    def test_css_important_at_5_not_loaded(self) -> None:
+        decls = "color:red !important; " * 5
+        html = f'<td style="{decls}">text</td>'
+        skills = detect_relevant_skills(html)
+        assert "css_normalization" not in skills
+
+    def test_css_important_at_6_loaded(self) -> None:
+        decls = "color:red !important; " * 6
+        html = f'<td style="{decls}">text</td>'
+        skills = detect_relevant_skills(html)
+        assert "css_normalization" in skills
+
+    def test_esp_platform_plus_builder_combo(self) -> None:
+        html = '<div class="esd-structure"><table><tr><td>Stripo</td></tr></table></div>'
+        skills = detect_relevant_skills(html, esp_platform="braze")
+        assert "esp_tokens" in skills
+        assert "common_email_builders" in skills
+
+    def test_html_50k_boundary(self) -> None:
+        # At exactly 50,000 bytes — should NOT load all skills
+        html_at_boundary = "a" * 50_000
+        skills_at = detect_relevant_skills(html_at_boundary)
+        assert len(skills_at) < len(SKILL_FILES)
+
+        # At 50,001 bytes — should load ALL skills
+        html_over = "a" * 50_001
+        skills_over = detect_relevant_skills(html_over)
+        assert set(skills_over) == set(SKILL_FILES.keys())
