@@ -102,6 +102,7 @@ def build_system_prompt(
     relevant_skills: list[str],
     *,
     remaining_budget: int | None = None,
+    client_id: str | None = None,
 ) -> str:
     """Build system prompt from SKILL.md + relevant L3 files."""
     override = get_override("innovation")
@@ -135,5 +136,18 @@ def build_system_prompt(
                 "agents.innovation.skill_loaded",
                 skill=skill_name,
             )
+
+    # Per-client skill overlays (Phase 32.11)
+    if client_id:
+        from app.ai.agents.skill_loader import apply_overlays, discover_overlays
+
+        overlays = discover_overlays("innovation", client_id)
+        if overlays:
+            budget = remaining_budget or 2000
+            parts = [base_prompt]
+            parts, cumulative_cost, _overlay_names = apply_overlays(
+                parts, set(relevant_skills), overlays, cumulative_cost, budget, budget
+            )
+            base_prompt = "\n".join(parts)
 
     return base_prompt

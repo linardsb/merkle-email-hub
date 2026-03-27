@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers skill-versions skill-pin skill-unpin skill-rollback help
 
 # === Local Development ===
 
@@ -80,9 +80,15 @@ lint-fe: ## Format + lint frontend (ESLint + Prettier)
 	cd cms && pnpm --filter web lint:fix 2>/dev/null || true
 	cd cms && pnpm --filter web format 2>/dev/null || true
 
-check: lint types test check-fe security-check ## Run all checks (backend + frontend + security)
+check: lint types test check-fe security-check validate-overlays ## Run all checks (backend + frontend + security)
 
-check-full: lint types test check-fe security-check migration-lint ## Run all checks including migration lint
+check-full: lint types test check-fe security-check migration-lint validate-overlays ## Run all checks including migration lint
+
+validate-overlays: ## Validate per-client skill overlay files
+	uv run python scripts/validate-overlays.py
+
+list-overlays: ## List all client skill overlays
+	@find data/clients -name "*.md" -path "*/agents/*/skills/*" 2>/dev/null | sort
 
 e2e: ## Run all e2e tests
 	cd cms && pnpm --filter web e2e
@@ -223,6 +229,20 @@ eval-skill-update: ## Detect skill file update candidates (dry-run)
 
 eval-skill-update-apply: ## Generate skill file patches and create git branch
 	uv run python scripts/eval-skill-update.py
+
+# === Skill Versioning ===
+
+skill-versions: ## List all agents' skill versions and pin status
+	@uv run python -c "from app.ai.agents.skill_version import print_all_versions; print_all_versions()"
+
+skill-pin: ## Pin a skill to a version (AGENT=dark_mode SKILL=client_behavior VERSION=1.0.0)
+	@uv run python -c "from app.ai.agents.skill_version import pin_skill; pin_skill('$(AGENT)', '$(SKILL)', '$(VERSION)')"
+
+skill-unpin: ## Unpin a skill (AGENT=dark_mode SKILL=client_behavior)
+	@uv run python -c "from app.ai.agents.skill_version import unpin_skill; unpin_skill('$(AGENT)', '$(SKILL)')"
+
+skill-rollback: ## Rollback a skill to a prior version (AGENT=dark_mode SKILL=client_behavior VERSION=1.0.0)
+	uv run python scripts/eval-skill-update.py rollback $(AGENT) $(SKILL) $(VERSION)
 
 # === CLI (mcp2cli) ===
 

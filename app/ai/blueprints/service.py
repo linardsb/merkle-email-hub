@@ -99,8 +99,9 @@ class BlueprintService:
         except Exception:
             logger.debug("blueprint.graph_provider_init_skipped", exc_info=True)
 
-        # Load design system from project (single DB read)
+        # Load design system and client_id from project (single DB read)
         design_system: DesignSystem | None = None
+        client_id: str | None = None
         if project_id is not None and db is not None:
             try:
                 from app.projects.repository import ProjectRepository
@@ -109,6 +110,10 @@ class BlueprintService:
                 project = await repo.get(project_id)
                 if project is not None:
                     design_system = load_design_system(project.design_system)
+                    # Resolve client_id for per-client skill overlays (Phase 32.11)
+                    org = getattr(project, "client_org", None)
+                    if org is not None:
+                        client_id = org.slug
             except Exception:
                 logger.warning(
                     "blueprint.design_system_load_failed",
@@ -168,6 +173,7 @@ class BlueprintService:
             routing_history_repo=routing_history_repo,
             recovery_outcome_repo=recovery_outcome_repo,
             confidence_calibrations=confidence_calibrations,
+            client_id=client_id,
         )
 
         return engine, definition, project_id, audience_profile
@@ -290,6 +296,7 @@ class BlueprintService:
         try:
             from app.ai.blueprints.outcome_logger import (
                 extract_and_store_failure_patterns,
+                extract_and_store_insights,
                 persist_outcome_to_memory,
                 queue_outcome_for_graph,
             )
@@ -299,6 +306,7 @@ class BlueprintService:
             await extract_and_store_failure_patterns(
                 bp_run, definition.name, project_id, audience_profile
             )
+            await extract_and_store_insights(bp_run, definition.name, audience_profile, project_id)
         except Exception:
             logger.warning(
                 "blueprint.outcome_logging_failed",

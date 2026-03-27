@@ -29,6 +29,8 @@ SKILL_FILES: dict[str, str] = {}
 def build_system_prompt(
     relevant_skills: list[str],
     output_mode: str = "structured",  # noqa: ARG001
+    *,
+    client_id: str | None = None,
 ) -> str:
     """Build system prompt for visual QA analysis."""
     base = (
@@ -62,12 +64,27 @@ def build_system_prompt(
         base += f"\n\n{body}"
 
     # Append relevant L3 skill files
+    cumulative_cost = 0
     for skill_key in relevant_skills:
         filename = SKILL_FILES.get(skill_key)
         if filename:
             content = _load_skill_file(filename)
             if content:
+                meta, _body = parse_skill_meta(content)
+                cumulative_cost += meta.token_cost
                 base += f"\n\n## Skill: {skill_key}\n{content}"
+
+    # Per-client skill overlays (Phase 32.11)
+    if client_id:
+        from app.ai.agents.skill_loader import apply_overlays, discover_overlays
+
+        overlays = discover_overlays("visual_qa", client_id)
+        if overlays:
+            parts = [base]
+            parts, cumulative_cost, _overlay_names = apply_overlays(
+                parts, set(relevant_skills), overlays, cumulative_cost, 2000, 2000
+            )
+            base = "\n".join(parts)
 
     return base
 
@@ -84,8 +101,13 @@ def detect_relevant_skills(html: str) -> list[str]:
     relevant: list[str] = []
     html_lower = html.lower()
     for skill_key in SKILL_FILES:
-        if ("mso" in skill_key and ("mso-" in html_lower or "<!--[if" in html_lower)) or ("dark" in skill_key and (
-            "prefers-color-scheme" in html_lower or "data-ogsc" in html_lower
-        )) or "layout" in skill_key:
+        if (
+            ("mso" in skill_key and ("mso-" in html_lower or "<!--[if" in html_lower))
+            or (
+                "dark" in skill_key
+                and ("prefers-color-scheme" in html_lower or "data-ogsc" in html_lower)
+            )
+            or "layout" in skill_key
+        ):
             relevant.append(skill_key)
     return relevant

@@ -68,7 +68,8 @@ class KnowledgeAgentService:
 
         # 3. Detect skills and build prompt
         relevant_skills = detect_relevant_skills(request.question)
-        system_prompt = build_system_prompt(relevant_skills)
+        client_id: str | None = getattr(request, "client_id", None)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         # 4. Build user message with retrieved context
         user_message = _build_user_message(request.question, search_response)

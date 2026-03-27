@@ -116,8 +116,14 @@ class ContentService(BaseAgentService):
     stream_prefix = "content"
     _output_mode_supported: bool = True
 
-    def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
-        return _build_system_prompt(relevant_skills, output_mode=output_mode)
+    def build_system_prompt(
+        self,
+        relevant_skills: list[str],
+        output_mode: str = "html",
+        *,
+        client_id: str | None = None,
+    ) -> str:
+        return _build_system_prompt(relevant_skills, output_mode=output_mode, client_id=client_id)
 
     def detect_relevant_skills(self, request: Any) -> list[str]:
         req: ContentRequest = request

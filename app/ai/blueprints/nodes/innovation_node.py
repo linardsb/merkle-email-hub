@@ -56,8 +56,9 @@ class InnovationNode:
             )
 
         # Build prompt
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills(str(technique))
-        system_prompt = build_system_prompt(relevant_skills)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         graph_ctx = context.metadata.get("graph_context", "")
         graph_section = f"\n\n{graph_ctx}" if graph_ctx else ""

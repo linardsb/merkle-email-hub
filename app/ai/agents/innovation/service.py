@@ -42,7 +42,8 @@ class InnovationService:
 
         # 1. Detect skills and build prompt
         relevant_skills = detect_relevant_skills(request.technique)
-        system_prompt = build_system_prompt(relevant_skills)
+        client_id: str | None = getattr(request, "client_id", None)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         # 2. Build user message
         user_message = _build_user_message(request, competitive_context)

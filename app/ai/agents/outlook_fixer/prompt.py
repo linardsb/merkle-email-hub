@@ -51,6 +51,7 @@ def build_system_prompt(
     output_mode: str = "html",
     *,
     remaining_budget: int | None = None,
+    client_id: str | None = None,
 ) -> str:
     """Build system prompt with progressive disclosure of L3 reference files.
 
@@ -59,6 +60,7 @@ def build_system_prompt(
         output_mode: "html" or "structured" — controls which output format section is included.
         remaining_budget: Optional token budget for skill docs. When set, low-priority
             skills are skipped based on their front matter metadata.
+        client_id: Optional client org slug for per-client overlay loading.
 
     Returns:
         Complete system prompt with relevant L3 files appended.
@@ -83,6 +85,17 @@ def build_system_prompt(
                     continue
                 cumulative_cost += meta.token_cost
                 parts.append(f"\n\n--- REFERENCE: {skill_key} ---\n\n{body}")
+
+    # Per-client skill overlays (Phase 32.11)
+    if client_id:
+        from app.ai.agents.skill_loader import apply_overlays, discover_overlays
+
+        overlays = discover_overlays("outlook_fixer", client_id)
+        if overlays:
+            budget = remaining_budget or 2000
+            parts, cumulative_cost, _overlay_names = apply_overlays(
+                parts, set(relevant_skills), overlays, cumulative_cost, budget, budget
+            )
 
     return "\n".join(parts)
 

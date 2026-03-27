@@ -61,8 +61,9 @@ class ScaffolderNode:
         if output_mode == "structured":
             return await self._execute_structured(context, provider, model)
 
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills(context.brief)
-        system_prompt = build_system_prompt(relevant_skills)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)

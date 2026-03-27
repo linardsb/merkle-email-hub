@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
-from app.ai.agents.skill_loader import extract_skill_for_mode
+from app.ai.agents.skill_loader import extract_skill_for_mode, parse_skill_meta
 from app.ai.agents.skill_override import get_override
 
 _SKILL_DIR = Path(__file__).parent
@@ -91,6 +91,8 @@ def detect_relevant_skills(html: str, esp_platform: str | None = None) -> list[s
 def build_system_prompt(
     relevant_skills: list[str],
     output_mode: str = "html",
+    *,
+    client_id: str | None = None,
 ) -> str:
     """Build the full system prompt with relevant L3 skills appended."""
     prompt = _base_system_prompt(output_mode)
@@ -101,11 +103,26 @@ def build_system_prompt(
         prompt += f"\n\n## KNOWN FAILURE PATTERNS\n{warnings}"
 
     # Append relevant L3 skill files
+    cumulative_cost = 0
     for key in relevant_skills:
         if key in SKILL_FILES:
             path = _SKILL_DIR / SKILL_FILES[key]
             if path.exists():
                 content = path.read_text(encoding="utf-8")
+                meta, _body = parse_skill_meta(content)
+                cumulative_cost += meta.token_cost
                 prompt += f"\n\n--- REFERENCE: {key} ---\n{content}"
+
+    # Per-client skill overlays (Phase 32.11)
+    if client_id:
+        from app.ai.agents.skill_loader import apply_overlays, discover_overlays
+
+        overlays = discover_overlays("import_annotator", client_id)
+        if overlays:
+            parts = [prompt]
+            parts, cumulative_cost, _overlay_names = apply_overlays(
+                parts, set(relevant_skills), overlays, cumulative_cost, 2000, 2000
+            )
+            prompt = "\n".join(parts)
 
     return prompt

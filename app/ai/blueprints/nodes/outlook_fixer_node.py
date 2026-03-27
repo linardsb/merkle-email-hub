@@ -66,8 +66,9 @@ class OutlookFixerNode:
             return await self._execute_structured(context, provider, model)
 
         # Progressive disclosure: detect which skills are relevant
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills(context.html)
-        system_prompt = build_system_prompt(relevant_skills)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
@@ -158,8 +159,11 @@ class OutlookFixerNode:
         model: str,
     ) -> NodeResult:
         """Execute in diagnostic mode: report MSO issues without modifying HTML."""
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills(context.html or "")
-        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+        system_prompt = build_system_prompt(
+            relevant_skills, output_mode="structured", client_id=client_id
+        )
 
         user_message = (
             "Analyze this assembled email HTML for MSO/Outlook compatibility issues. "

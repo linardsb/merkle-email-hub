@@ -70,7 +70,13 @@ class BaseAgentService:
 
     # ── Subclass hooks ──
 
-    def build_system_prompt(self, relevant_skills: list[str], output_mode: str = "html") -> str:
+    def build_system_prompt(
+        self,
+        relevant_skills: list[str],
+        output_mode: str = "html",
+        *,
+        client_id: str | None = None,
+    ) -> str:
         """Build the system prompt from skill files.
 
         Every agent has its own ``prompt.py`` with ``build_system_prompt()``.
@@ -246,7 +252,10 @@ class BaseAgentService:
 
         # Progressive disclosure — load only relevant skill files
         relevant_skills = self._detect_skills_from_request(request)
-        system_prompt = self.build_system_prompt(relevant_skills, output_mode=output_mode)
+        client_id: str | None = getattr(request, "client_id", None)
+        system_prompt = self.build_system_prompt(
+            relevant_skills, output_mode=output_mode, client_id=client_id
+        )
         system_prompt += CONFIDENCE_INSTRUCTION
 
         # Build messages (multimodal-aware)
@@ -311,7 +320,7 @@ class BaseAgentService:
             )
             if crag_corrections:
                 logger.info(
-                    f"agents.{self.agent_name}.crag_applied",
+                    f"agents.{self.agent_name}.crag_accepted",
                     corrections=crag_corrections,
                 )
 
@@ -359,7 +368,10 @@ class BaseAgentService:
 
         relevant_skills = self._detect_skills_from_request(request)
         output_mode = self._get_output_mode(request)
-        system_prompt = self.build_system_prompt(relevant_skills, output_mode=output_mode)
+        stream_client_id: str | None = getattr(request, "client_id", None)
+        system_prompt = self.build_system_prompt(
+            relevant_skills, output_mode=output_mode, client_id=stream_client_id
+        )
         system_prompt += CONFIDENCE_INSTRUCTION
 
         user_message = self._build_user_message(request)

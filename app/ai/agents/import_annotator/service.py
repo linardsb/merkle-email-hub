@@ -44,8 +44,10 @@ class ImportAnnotatorService(BaseAgentService):
         self,
         relevant_skills: list[str],
         output_mode: str = "html",
+        *,
+        client_id: str | None = None,
     ) -> str:
-        return build_system_prompt(relevant_skills, output_mode)
+        return build_system_prompt(relevant_skills, output_mode, client_id=client_id)
 
     def detect_relevant_skills(self, request: Any) -> list[str]:
         html = request.get("html", "")

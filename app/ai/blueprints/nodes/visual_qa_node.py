@@ -88,8 +88,9 @@ class VisualQANode:
         model = visual_qa_model or resolve_model("standard")
         provider_name = settings.ai.provider
 
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills(context.html)
-        system_prompt = build_system_prompt(relevant_skills)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         # Build multimodal message
         text_content = self._build_user_message(context, screenshots)

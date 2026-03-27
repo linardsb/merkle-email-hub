@@ -1,13 +1,20 @@
 """Shared utility for output-mode-aware SKILL.md section extraction.
 
 Phase 5 addition: Budget-aware skill loading with front matter metadata.
+Phase 32.11 addition: Per-client skill overlays (extend/replace).
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Literal
+
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 OutputMode = Literal["html", "structured"]
 
@@ -23,10 +30,12 @@ class SkillMeta:
     Attributes:
         token_cost: Estimated token cost of loading this skill file.
         priority: Loading priority (1=critical, 2=standard, 3=supplementary).
+        version: Semver version string from front matter (default ``1.0.0``).
     """
 
     token_cost: int = 500
     priority: int = 2
+    version: str = "1.0.0"
 
 
 def parse_skill_meta(content: str) -> tuple[SkillMeta, str]:
@@ -44,6 +53,7 @@ def parse_skill_meta(content: str) -> tuple[SkillMeta, str]:
 
     token_cost = 500
     priority = 2
+    version = "1.0.0"
 
     for line in front_matter.strip().splitlines():
         line = line.strip()
@@ -57,8 +67,12 @@ def parse_skill_meta(content: str) -> tuple[SkillMeta, str]:
                 priority = int(line.split(":", 1)[1].strip())
             except ValueError:
                 pass
+        elif line.startswith("version:"):
+            val = line.split(":", 1)[1].strip().strip('"').strip("'")
+            if val:
+                version = val
 
-    return SkillMeta(token_cost=token_cost, priority=priority), body
+    return SkillMeta(token_cost=token_cost, priority=priority, version=version), body
 
 
 def should_load_skill(
@@ -98,6 +112,190 @@ def should_load_skill(
         return False
 
     return True
+
+
+# ---------------------------------------------------------------------------
+# Phase 32.11: Per-client skill overlays
+# ---------------------------------------------------------------------------
+
+_OVERLAYS_BASE = Path(__file__).resolve().parents[2] / "data" / "clients"
+
+_VALID_OVERLAY_MODES = frozenset({"extend", "replace"})
+
+
+@dataclass(frozen=True)
+class OverlayMeta:
+    """Metadata for a client skill overlay file."""
+
+    token_cost: int = 500
+    priority: int = 2
+    overlay_mode: str = "extend"
+    replaces: str | None = None
+    client_id: str = ""
+    content: str = ""
+    source_path: str = ""
+
+
+def parse_overlay_meta(content: str) -> tuple[OverlayMeta, str]:
+    """Parse overlay-specific frontmatter (superset of SkillMeta fields).
+
+    Returns (OverlayMeta, remaining_content). If no front matter found,
+    returns defaults and original content.
+    """
+    match = _FRONT_MATTER_RE.match(content)
+    if not match:
+        return OverlayMeta(), content
+
+    front_matter = match.group(1)
+    body = content[match.end() :]
+
+    token_cost = 500
+    priority = 2
+    overlay_mode = "extend"
+    replaces: str | None = None
+    client_id = ""
+
+    for line in front_matter.strip().splitlines():
+        line = line.strip()
+        if line.startswith("token_cost:"):
+            try:
+                token_cost = int(line.split(":", 1)[1].strip())
+            except ValueError:
+                pass
+        elif line.startswith("priority:"):
+            try:
+                priority = int(line.split(":", 1)[1].strip())
+            except ValueError:
+                pass
+        elif line.startswith("overlay_mode:"):
+            val = line.split(":", 1)[1].strip().strip('"').strip("'")
+            if val in _VALID_OVERLAY_MODES:
+                overlay_mode = val
+        elif line.startswith("replaces:"):
+            val = line.split(":", 1)[1].strip().strip('"').strip("'")
+            if val and val != "null":
+                replaces = val
+        elif line.startswith("client_id:"):
+            val = line.split(":", 1)[1].strip().strip('"').strip("'")
+            if val:
+                client_id = val
+
+    return (
+        OverlayMeta(
+            token_cost=token_cost,
+            priority=priority,
+            overlay_mode=overlay_mode,
+            replaces=replaces,
+            client_id=client_id,
+        ),
+        body,
+    )
+
+
+@lru_cache(maxsize=128)
+def discover_overlays(agent_name: str, client_id: str) -> tuple[OverlayMeta, ...]:
+    """Discover overlay skill files for a client+agent pair.
+
+    Scans ``data/clients/{client_id}/agents/{agent_name}/skills/*.md``.
+    Returns a tuple (hashable for cache). Empty tuple if path is invalid
+    or no overlay files exist.
+    """
+    # Path traversal guard
+    if "/" in client_id or "\\" in client_id or ".." in client_id:
+        logger.warning("skill_loader.invalid_client_id", client_id=client_id)
+        return ()
+
+    overlay_dir = _OVERLAYS_BASE / client_id / "agents" / agent_name / "skills"
+    if not overlay_dir.is_dir():
+        return ()
+
+    overlays: list[OverlayMeta] = []
+    for md_file in sorted(overlay_dir.glob("*.md")):
+        raw = md_file.read_text(encoding="utf-8")
+        meta, body = parse_overlay_meta(raw)
+        overlays.append(
+            OverlayMeta(
+                token_cost=meta.token_cost,
+                priority=meta.priority,
+                overlay_mode=meta.overlay_mode,
+                replaces=meta.replaces,
+                client_id=client_id,
+                content=body,
+                source_path=str(md_file.relative_to(_OVERLAYS_BASE)),
+            )
+        )
+
+    return tuple(overlays)
+
+
+def apply_overlays(
+    skill_parts: list[str],
+    loaded_skills: set[str],
+    overlays: tuple[OverlayMeta, ...],
+    cumulative_cost: int,
+    remaining_budget: int,
+    budget_max: int,
+) -> tuple[list[str], int, list[str]]:
+    """Apply client overlays to the skill loading pipeline.
+
+    Handles ``extend`` (append after core skills) and ``replace`` (remove
+    named core skill, load overlay in its place) modes. Budget-aware —
+    overlays use the same priority/threshold logic as core skills.
+
+    Returns:
+        (updated_parts, updated_cumulative_cost, overlay_names_loaded)
+    """
+    overlay_names: list[str] = []
+
+    for overlay in overlays:
+        # Handle "replace" mode: remove the named core skill
+        if overlay.overlay_mode == "replace" and overlay.replaces:
+            tag = f"--- REFERENCE: {overlay.replaces} ---"
+            skill_parts = [p for p in skill_parts if tag not in p]
+            loaded_skills.discard(overlay.replaces)
+
+        # Budget check using same logic as core skills
+        meta = SkillMeta(token_cost=overlay.token_cost, priority=overlay.priority)
+        if not should_load_skill(meta, cumulative_cost, remaining_budget, budget_max):
+            continue
+
+        cumulative_cost += overlay.token_cost
+        overlay_name = Path(overlay.source_path).stem
+        label = f"overlay:{overlay.client_id}/{overlay_name}"
+        skill_parts.append(f"\n\n--- REFERENCE: {label} ---\n\n{overlay.content}")
+        overlay_names.append(label)
+
+    if overlay_names:
+        logger.info(
+            "skill_loader.overlays_applied",
+            overlays=overlay_names,
+            count=len(overlay_names),
+        )
+
+    return skill_parts, cumulative_cost, overlay_names
+
+
+def load_skill_with_version(
+    agent: str,
+    skill_name: str,
+    skill_path: Path,
+) -> tuple[str, str]:
+    """Load skill content, respecting version pins.
+
+    Returns ``(content, loaded_version)``. If the skill is pinned, content
+    is retrieved from git at the pinned revision. Otherwise the on-disk
+    file is used.
+    """
+    from app.ai.agents.skill_version import load_pinned_content
+
+    pinned = load_pinned_content(agent, skill_name)
+    if pinned is not None:
+        meta, _body = parse_skill_meta(pinned)
+        return pinned, meta.version
+
+    content = skill_path.read_text(encoding="utf-8")
+    meta, _body = parse_skill_meta(content)
+    return content, meta.version
 
 
 def extract_skill_for_mode(skill_content: str, output_mode: str = "html") -> str:

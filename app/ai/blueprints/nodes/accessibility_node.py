@@ -70,8 +70,9 @@ class AccessibilityNode:
             return await self._execute_structured(context, provider, model)
 
         # Progressive disclosure: detect which skills are relevant
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills(context.html)
-        system_prompt = build_system_prompt(relevant_skills)
+        system_prompt = build_system_prompt(relevant_skills, client_id=client_id)
 
         user_content = self._build_user_message(context)
         sanitized = sanitize_prompt(user_content)
@@ -224,8 +225,11 @@ class AccessibilityNode:
         plan = context.build_plan
         assert plan is not None  # noqa: S101
 
+        client_id: str | None = context.metadata.get("client_id")  # type: ignore[assignment]
         relevant_skills = detect_relevant_skills("")
-        system_prompt = build_system_prompt(relevant_skills, output_mode="structured")
+        system_prompt = build_system_prompt(
+            relevant_skills, output_mode="structured", client_id=client_id
+        )
 
         slot_ids = [sf.slot_id for sf in plan.slot_fills]
         plan_summary = {

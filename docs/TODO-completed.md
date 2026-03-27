@@ -3801,3 +3801,50 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - `VisualComparisonNode` is advisory only — never returns "failed" status
 
 ---
+
+## Phase 32.11 — Per-Client Skill Overlays (DONE)
+
+> **Date completed:** 2026-03-27
+
+### What was built
+
+Per-client skill file overlays that extend or replace core agent L3 skills with client-specific behavioral guidance. Projects linked to a `ClientOrg` automatically load overlays from `data/clients/{slug}/agents/{agent}/skills/*.md`.
+
+### Key deliverables
+
+| Component | Details |
+|-----------|---------|
+| **Overlay engine** (`skill_loader.py`) | `OverlayMeta` frozen dataclass, `parse_overlay_meta()` frontmatter parser (token_cost, priority, overlay_mode, replaces, client_id), `discover_overlays()` with `@lru_cache(128)` + path traversal guard, `apply_overlays()` with extend/replace modes + budget-aware priority logic |
+| **11 agent `prompt.py` files** | `client_id: str \| None = None` kwarg on `build_system_prompt()`, overlay loading block after core skills |
+| **9 service wrappers** | Forward `client_id` through `build_system_prompt()` wrapper methods |
+| **2 direct-call services** | `knowledge/service.py`, `innovation/service.py` thread `client_id` to prompt builder |
+| **`BaseAgentService`** (`base.py`) | Extract `client_id` from request in `process()` and `stream_process()` |
+| **Blueprint engine** (`engine.py`) | `client_id` constructor param, inject into `NodeContext.metadata["client_id"]` |
+| **Blueprint service** (`service.py`) | Resolve `client_id` from `project.client_org.slug` |
+| **9 agentic nodes** | Extract `client_id` from context metadata, pass to `build_system_prompt()` (15 callsites across HTML + structured paths) |
+| **Example overlay** | `data/clients/_example/agents/content/skills/brand_voice.md` |
+| **Validation script** | `scripts/validate-overlays.py` — frontmatter validation, `replaces` reference check, conflict detection |
+| **Makefile targets** | `validate-overlays` (added to `check`), `list-overlays` |
+
+### Overlay modes
+
+- **`extend`** (default): overlay content appended after core skills within same budget
+- **`replace`**: overlay substitutes named core skill; core skill's budget freed for overlay
+
+### Tests
+
+| File | Count | Coverage |
+|------|-------|----------|
+| `app/ai/agents/tests/test_skill_loader.py` additions | 19 | `parse_overlay_meta` (6), `discover_overlays` (4), `apply_overlays` (6), path traversal (3) |
+| `app/ai/blueprints/tests/test_nodes.py` additions | 3 | `TestClientIdThreading`: metadata reaches node, no client_id returns None, scaffolder passes client_id to prompt |
+| **Total new tests** | **22** | All 70 skill_loader + nodes + prompt_output_mode tests pass |
+
+### Key patterns
+
+- `client_id` sourced from DB (`project.client_org.slug`), never from request body
+- Path traversal guard rejects `/`, `\`, `..` in `client_id`
+- Overlays use same `should_load_skill()` budget logic as core skills
+- `validate-overlays.py` runs as part of `make check` to catch malformed files
+- Overlay names logged as `"overlay:{client_id}/{skill_name}"` via `skill_loader.overlays_applied`
+
+---

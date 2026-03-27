@@ -348,3 +348,52 @@ class TestRecoveryRouterVisualDefects:
         result = await node.execute(context)
 
         assert "route_to:scaffolder" in result.details
+
+
+class TestClientIdThreading:
+    """Tests for Phase 32.11 — client_id metadata threading."""
+
+    def test_client_id_in_metadata_reaches_node(self) -> None:
+        context = NodeContext(
+            html="<table><tr><td>test</td></tr></table>",
+            metadata={"client_id": "acme-corp"},
+        )
+        assert context.metadata["client_id"] == "acme-corp"
+
+    def test_no_client_id_returns_none(self) -> None:
+        context = NodeContext(html="<table><tr><td>test</td></tr></table>")
+        assert context.metadata.get("client_id") is None
+
+    @pytest.mark.asyncio()
+    async def test_scaffolder_node_passes_client_id_to_prompt(self) -> None:
+        context = NodeContext(
+            html="",
+            brief="A simple email",
+            metadata={"client_id": "acme-corp", "agent_name": "scaffolder"},
+        )
+        with (
+            patch(
+                "app.ai.blueprints.nodes.scaffolder_node.build_system_prompt",
+                return_value="prompt",
+            ) as mock_prompt,
+            patch(
+                "app.ai.blueprints.nodes.scaffolder_node.detect_relevant_skills",
+                return_value=[],
+            ),
+            patch("app.ai.blueprints.nodes.scaffolder_node.get_settings") as mock_settings,
+            patch("app.ai.blueprints.nodes.scaffolder_node.get_registry") as mock_registry,
+        ):
+            mock_settings.return_value.ai.provider = "test"
+            mock_provider = AsyncMock()
+            mock_provider.complete.return_value = AsyncMock(
+                content="<table><tr><td>Email</td></tr></table><!-- CONFIDENCE: 0.90 -->",
+                usage={"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
+            )
+            mock_registry.return_value.get_llm.return_value = mock_provider
+
+            node = ScaffolderNode()
+            await node.execute(context)
+
+            mock_prompt.assert_called_once()
+            call_kwargs = mock_prompt.call_args
+            assert call_kwargs.kwargs.get("client_id") == "acme-corp"

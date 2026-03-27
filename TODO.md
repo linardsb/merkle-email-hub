@@ -82,7 +82,7 @@
 - [ ] 32.8 Tests & integration verification
 - [x] ~~32.9 MCP server exposure for agent tools~~ DONE
 - [ ] 32.10 Skill versioning with rollback
-- [ ] 32.11 Per-client skill overlays
+- [x] ~~32.11 Per-client skill overlays~~ DONE
 
 ### 32.1 Centralized Email Client Rendering Matrix `[Backend + Data]`
 **What:** Create a single authoritative `data/email-client-matrix.yaml` file that defines every email client's rendering engine, CSS property support, dark mode behavior, known bugs, size limits, and quirks. Replace the 5+ duplicated client-compatibility references scattered across agent L3 skill files (`client_compatibility.md`, `client_behavior.md`, `email_client_engines.md`, `css_client_support.md`, `dom_rendering_reference.md`) with a loader that reads from this matrix. Integrate with the existing ontology sync pipeline so the matrix stays current with CanIEmail data.
