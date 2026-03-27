@@ -75,6 +75,29 @@ class _NodeProps:
     text_decoration: str | None = None
 
 
+def _has_visible_content(node: DesignNode) -> bool:
+    """Return True if node or any descendant has visible content (text/image)."""
+    if node.type in (DesignNodeType.TEXT, DesignNodeType.IMAGE):
+        return True
+    return any(_has_visible_content(c) for c in (node.children or []))
+
+
+def _is_inline_row(children: list[DesignNode]) -> bool:
+    """Detect rows where inline rendering is better than multi-column ghost tables.
+
+    Returns True for small inline content like nav items (TEXT + small icon).
+    """
+    if len(children) < 2 or len(children) > 4:
+        return False
+    has_text = any(c.type == DesignNodeType.TEXT for c in children)
+    all_small_or_text = all(
+        c.type == DesignNodeType.TEXT
+        or (c.type == DesignNodeType.IMAGE and (c.width or 0) <= 30 and (c.height or 0) <= 30)
+        for c in children
+    )
+    return has_text and all_small_or_text
+
+
 def _sanitize_css_value(value: str) -> str:
     """Strip characters that could break out of a CSS property value.
 
@@ -328,14 +351,26 @@ def _render_semantic_text(
     heading_level: int | None,
     slot_counter: dict[str, int] | None = None,
 ) -> str:
-    """Render a TEXT node as semantic HTML (<h1>-<h3> or <p>) inside <td>."""
+    """Render a TEXT node as semantic HTML (<h1>-<h3> or <p>) inside <td>.
+
+    Key styles are duplicated to the wrapping <td> because many email clients
+    (Gmail, Outlook, Yahoo) ignore or strip styles on <h> and <p> tags.
+    The <td> style acts as the reliable fallback.
+    """
+    # Build td-level style: font-family + key visual props from extra_style.
+    # This ensures email clients that ignore h/p styles still render correctly.
+    td_style = f"font-family:{font_family};{mso_alt}{extra_style}"
+
     if is_heading and heading_level is not None:
         tag = f"h{heading_level}"
         slot_attr = ""
         if slot_counter is not None:
             slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "heading")}"'
         inner_style = f"margin:0;font-family:{font_family};{mso_alt}{extra_style}"
-        return f'{pad}<td><{tag}{slot_attr} style="{inner_style}">{content}</{tag}></td>'
+        return (
+            f'{pad}<td style="{td_style}">'
+            f'<{tag}{slot_attr} style="{inner_style}">{content}</{tag}></td>'
+        )
 
     # Body text -> <p> (split multi-line on \n)
     lines = content.split("\n") if "\n" in content else [content]
@@ -344,7 +379,7 @@ def _render_semantic_text(
         if slot_counter is not None:
             slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "body")}"'
         p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
-        return f'{pad}<td><p{slot_attr} style="{p_style}">{content}</p></td>'
+        return f'{pad}<td style="{td_style}"><p{slot_attr} style="{p_style}">{content}</p></td>'
 
     # Multi-line -> multiple <p> tags
     p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
@@ -356,7 +391,7 @@ def _render_semantic_text(
                 slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "body")}"'
             p_parts.append(f'<p{slot_attr} style="{p_style}">{line}</p>')
     inner = "".join(p_parts)
-    return f"{pad}<td>{inner}</td>"
+    return f'{pad}<td style="{td_style}">{inner}</td>'
 
 
 def _validate_button_contrast(
@@ -770,6 +805,62 @@ def node_to_email_html(
                     )
 
                 # Multi-column row: use hybrid inline-block + MSO ghost table
+                if len(row) > 1 and _is_inline_row(row):
+                    # B2: Inline content heuristic — render TEXT + small images
+                    # inline in a single <td> instead of ghost table columns.
+                    # TEXT → <span> with typography; IMAGE → inline <img>.
+                    inner_pad = "  " * (indent + (3 if has_padding else 2))
+                    td_font = effective_font or "Arial,Helvetica,sans-serif"
+                    lines.append(
+                        f'{pad}    <tr><td style="vertical-align:middle;font-family:{td_font};">'
+                    )
+                    for child in row:
+                        if child.type == DesignNodeType.TEXT:
+                            text = html.escape(child.text_content or "")
+                            if not text:
+                                continue
+                            child_props = props_map.get(child.id) if props_map else None
+                            font = td_font
+                            style_parts: list[str] = []
+                            if child_props:
+                                if child_props.font_family:
+                                    sf = _sanitize_css_value(child_props.font_family)
+                                    if sf:
+                                        font = _font_stack(sf)
+                                if child_props.font_size:
+                                    style_parts.append(f"font-size:{int(child_props.font_size)}px")
+                                if child_props.font_weight:
+                                    try:
+                                        wn = int(child_props.font_weight)
+                                        mw = "bold" if wn >= 500 else "normal"
+                                    except (ValueError, TypeError):
+                                        s = str(child_props.font_weight).lower()
+                                        mw = "bold" if s == "bold" else "normal"
+                                    style_parts.append(f"font-weight:{mw}")
+                            style_parts.insert(0, f"font-family:{font}")
+                            if child.text_color:
+                                sc = _sanitize_css_value(child.text_color)
+                                if sc:
+                                    style_parts.append(f"color:{sc}")
+                            elif effective_bg:
+                                style_parts.append(f"color:{_contrasting_text_color(effective_bg)}")
+                            css = ";".join(style_parts)
+                            lines.append(f'{inner_pad}<span style="{css}">{text}</span>')
+                        elif child.type == DesignNodeType.IMAGE:
+                            w = int(child.width) if child.width else ""
+                            h = int(child.height) if child.height else ""
+                            alt = html.escape(child.name or "")
+                            w_attr = f' width="{w}"' if w else ""
+                            h_attr = f' height="{h}"' if h else ""
+                            lines.append(
+                                f'{inner_pad}<img src="" alt="{alt}"'
+                                f' data-node-id="{child.id}"'
+                                f"{w_attr}{h_attr}"
+                                f' style="vertical-align:middle;border:0;" />'
+                            )
+                    lines.append(f"{pad}    </td></tr>")
+                    continue
+
                 if len(row) > 1:
                     col_widths = _calculate_column_widths(
                         row,
@@ -1078,6 +1169,12 @@ def _calculate_column_widths(
         # All children have widths — proportional distribution
         total_child_w = sum(w for _, w in known)
         if total_child_w > 0:
+            # B4: Sparse layout detection — when children are small relative to
+            # container, keep natural widths instead of stretching to fill
+            if total_child_w < container_width * 0.6:
+                for i, w in known:
+                    widths[i] = int(w)
+                return widths
             for i, w in known:
                 widths[i] = round(avail * (w / total_child_w))
         else:
@@ -1169,25 +1266,22 @@ def _render_multi_column_row(
         # MSO column open
         lines.append(f'{inner_pad}<!--[if mso]><td width="{col_width}" valign="top"><![endif]-->')
 
-        # Modern wrapper div
+        # B1: Use <table class="column"> instead of <div class="column"> + inner
+        # <table> to avoid sanitizer double-wrapping (div→table conversion).
+        # Single table serves as both modern inline-block wrapper and content host.
         lines.append(
-            f'{inner_pad}<div class="column" style="display:inline-block;'
-            f"max-width:{col_width}px;width:100%;vertical-align:top;"
-            f'">'
-        )
-
-        # Inner table
-        lines.append(
-            f'{col_pad}<table role="presentation" width="100%"'
+            f'{inner_pad}<table class="column" role="presentation" width="100%"'
             f' cellpadding="0" cellspacing="0" border="0"'
-            f' style="border-collapse:collapse;mso-table-lspace:0pt;'
+            f' style="display:inline-block;max-width:{col_width}px;'
+            f"width:100%;vertical-align:top;"
+            f"border-collapse:collapse;mso-table-lspace:0pt;"
             f'mso-table-rspace:0pt;">'
         )
 
         # Recurse into child
         child_html = node_to_email_html(
             child,
-            indent=indent + 3,
+            indent=indent + 2,
             props_map=props_map,
             parent_bg=parent_bg,
             parent_font=parent_font,
@@ -1203,14 +1297,19 @@ def _render_multi_column_row(
             slot_counter=slot_counter,
         )
 
-        if child.type == DesignNodeType.TEXT:
-            lines.append(f"{col_pad}  <tr>{child_html}</tr>")
-        else:
-            lines.append(f"{col_pad}  <tr><td>{child_html}</td></tr>")
+        # B3: Skip empty column content
+        if not child_html or not child_html.strip():
+            lines.append(f"{inner_pad}</table>")
+            lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
+            continue
 
-        # Close inner table + div
-        lines.append(f"{col_pad}</table>")
-        lines.append(f"{inner_pad}</div>")
+        if child.type == DesignNodeType.TEXT:
+            lines.append(f"{col_pad}<tr>{child_html}</tr>")
+        else:
+            lines.append(f"{col_pad}<tr><td>{child_html}</td></tr>")
+
+        # Close column table (B1: single table replaces div+table pair)
+        lines.append(f"{inner_pad}</table>")
 
         # MSO column close
         lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")

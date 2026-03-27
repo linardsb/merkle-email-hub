@@ -122,6 +122,9 @@ class DesignNode:
     letter_spacing_px: float | None = None
     text_transform: str | None = None  # uppercase|lowercase|capitalize|None (TEXT nodes only)
     text_decoration: str | None = None  # underline|line-through|None (TEXT nodes only)
+    image_ref: str | None = None  # Figma imageRef hash (IMAGE fill on FRAME nodes)
+    visible: bool = True  # Figma "visible" property (default True per API spec)
+    opacity: float = 1.0  # Figma node opacity 0.0-1.0 (default 1.0)
 
 
 @dataclass(frozen=True)

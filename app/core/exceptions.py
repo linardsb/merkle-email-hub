@@ -17,30 +17,24 @@ class AppError(Exception):
     """Base exception for all application errors."""
 
 
-
 class NotFoundError(AppError):
     """Resource not found (404)."""
-
 
 
 class DomainValidationError(AppError):
     """Business rule validation failure (422)."""
 
 
-
 class ForbiddenError(AppError):
     """Access denied (403)."""
-
 
 
 class ConflictError(AppError):
     """Resource conflict, e.g. duplicate entry (409)."""
 
 
-
 class ServiceUnavailableError(AppError):
     """External dependency unavailable (503)."""
-
 
 
 # ── Exception Handlers ──

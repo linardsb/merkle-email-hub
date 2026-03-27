@@ -246,6 +246,8 @@ class DesignSyncService:
             file_ref=file_ref,
         )
 
+        config_json = data.config.model_dump(exclude_none=True) if data.config else None
+
         conn = await self._repo.create_connection(
             name=data.name,
             provider=provider_name,
@@ -255,6 +257,7 @@ class DesignSyncService:
             token_last4=token_last4,
             project_id=data.project_id,
             created_by_id=user.id,
+            config_json=config_json,
         )
 
         # Auto-sync tokens and file structure on creation
@@ -456,6 +459,43 @@ class DesignSyncService:
 
         project_name = await self._get_project_name(project_id)
         return ConnectionResponse.from_model(conn, project_name=project_name)
+
+    async def get_diagnostic_data(
+        self, connection_id: int, user: User
+    ) -> tuple[DesignFileStructure, ExtractedTokens]:
+        """Return protocol-level structure + tokens for diagnostic pipeline.
+
+        Reads from the cached snapshot to get full-fidelity data (all node fields).
+        Raises ConnectionNotFoundError if connection doesn't exist.
+        Raises ConflictError if no snapshot is available yet.
+        """
+        from app.design_sync.diagnose.report import _dict_to_tokens, _node_from_dict
+
+        conn = await self._repo.get_connection(connection_id)
+        if conn is None:
+            raise ConnectionNotFoundError(f"Connection {connection_id} not found")
+        if conn.project_id is not None:
+            await self._verify_access(conn.project_id, user)
+
+        snapshot = await self._repo.get_latest_snapshot(connection_id)
+        if snapshot is None:
+            raise ConflictError("No sync snapshot available — sync the connection first")
+
+        tokens_json = snapshot.tokens_json
+        cached_structure = tokens_json.get("_file_structure")
+        if isinstance(cached_structure, dict):
+            pages = [
+                _node_from_dict(p) for p in cached_structure.get("pages", []) if isinstance(p, dict)
+            ]
+            structure = DesignFileStructure(
+                file_name=str(cached_structure.get("file_name", "")),
+                pages=pages,
+            )
+        else:
+            structure = DesignFileStructure(file_name="", pages=[])
+
+        tokens = _dict_to_tokens(tokens_json)
+        return structure, tokens
 
     async def get_tokens(self, connection_id: int, user: User) -> DesignTokensResponse:
         """Get the latest design tokens for a connection."""
@@ -1437,6 +1477,8 @@ def _layout_to_response(
             ],
             spacing_after=s.spacing_after,
             bg_color=s.bg_color,
+            classification_confidence=s.classification_confidence,
+            content_roles=list(s.content_roles),
         )
         for s in layout.sections
     ]

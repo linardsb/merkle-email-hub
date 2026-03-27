@@ -107,6 +107,7 @@ class AgentHandoff:
     confidence: float | None = None
     uncertainties: tuple[str, ...] = ()
     typed_payload: object | None = None  # HandoffPayload at runtime, object for protocol decoupling
+    learnings: tuple[str, ...] = ()  # What the agent learned during this execution
 
     def compact(self) -> AgentHandoff:
         """Return a copy with large fields stripped (artifact cleared)."""
@@ -120,13 +121,15 @@ class AgentHandoff:
             confidence=self.confidence,
             uncertainties=self.uncertainties,
             typed_payload=self.typed_payload,
+            learnings=self.learnings,
         )
 
     def summary(self) -> str:
         """Return a single-line summary string for decayed handoff history."""
         conf = f" conf={self.confidence:.2f}" if self.confidence is not None else ""
         unc = f" unc={len(self.uncertainties)}" if self.uncertainties else ""
-        return f"{self.agent_name}: {self.status.value}{conf}{unc}"
+        lrn = f" lrn={len(self.learnings)}" if self.learnings else ""
+        return f"{self.agent_name}: {self.status.value}{conf}{unc}{lrn}"
 
 
 @dataclass(frozen=True)

@@ -333,6 +333,7 @@ class DesignSyncConfig(BaseModel):
     converter_enabled: bool = True  # DESIGN_SYNC__CONVERTER_ENABLED (provider-agnostic)
     figma_variables_enabled: bool = True  # DESIGN_SYNC__FIGMA_VARIABLES_ENABLED
     opacity_composite_bg: str = "#FFFFFF"  # Background hex for alpha compositing
+    ai_layout_enabled: bool = True  # DESIGN_SYNC__AI_LAYOUT_ENABLED
 
 
 class ESPSyncConfig(BaseModel):

@@ -235,7 +235,7 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
 <![endif]-->
 <table role="presentation" class="footer-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5;">
   <tr>
-    <td style="padding: 32px 24px; text-align: center;">
+    <td data-slot="footer_content" style="padding: 32px 24px; text-align: center;">
       <p class="footer-text" style="margin: 0 0 12px; font-family: Arial, sans-serif; font-size: 12px; color: #666666; line-height: 1.5;">
         &copy; 2026 Company Name. All rights reserved.
       </p>
@@ -257,7 +257,14 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
 <![endif]-->""",
         "css_source": None,
         "compatibility": _COMPAT_FULL,
-        "slot_definitions": None,
+        "slot_definitions": [
+            {
+                "slot_id": "footer_content",
+                "slot_type": "body",
+                "selector": "[data-slot='footer_content']",
+                "required": False,
+            },
+        ],
         "default_tokens": None,
     },
     # ── 3. CTA Button (upgraded: ghost variant, slot_definitions) ──
@@ -542,10 +549,10 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
 <table role="presentation" class="textblock-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
   <tr>
     <td style="padding: 24px;">
-      <h2 class="textblock-heading" style="margin: 0 0 12px; font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; color: #333333; line-height: 1.3;">
+      <h2 data-slot="heading" class="textblock-heading" style="margin: 0 0 12px; font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; color: #333333; line-height: 1.3;">
         Section Heading
       </h2>
-      <p class="textblock-body" style="margin: 0; font-family: Arial, sans-serif; font-size: 16px; color: #555555; line-height: 1.6;">
+      <p data-slot="body" class="textblock-body" style="margin: 0; font-family: Arial, sans-serif; font-size: 16px; color: #555555; line-height: 1.6;">
         Body text goes here. This component supports multiple paragraphs and can be customised with different font sizes and colours to match your brand guidelines.
       </p>
     </td>
@@ -556,7 +563,20 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
 <![endif]-->""",
         "css_source": None,
         "compatibility": _COMPAT_FULL,
-        "slot_definitions": None,
+        "slot_definitions": [
+            {
+                "slot_id": "heading",
+                "slot_type": "text",
+                "selector": "[data-slot='heading']",
+                "required": False,
+            },
+            {
+                "slot_id": "body",
+                "slot_type": "body",
+                "selector": "[data-slot='body']",
+                "required": False,
+            },
+        ],
         "default_tokens": None,
     },
     # ── 10. Divider ──

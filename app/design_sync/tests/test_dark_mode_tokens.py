@@ -272,6 +272,15 @@ class TestDarkModeStyleBlock:
                             type=DesignNodeType.FRAME,
                             width=600,
                             height=400,
+                            children=[
+                                DesignNode(
+                                    id="t1",
+                                    name="Text",
+                                    type=DesignNodeType.TEXT,
+                                    text_content="Hello",
+                                    y=0,
+                                ),
+                            ],
                         ),
                     ],
                 ),
@@ -303,6 +312,15 @@ class TestDarkModeStyleBlock:
                             type=DesignNodeType.FRAME,
                             width=600,
                             height=400,
+                            children=[
+                                DesignNode(
+                                    id="t2",
+                                    name="Text",
+                                    type=DesignNodeType.TEXT,
+                                    text_content="Hello",
+                                    y=0,
+                                ),
+                            ],
                         ),
                     ],
                 ),

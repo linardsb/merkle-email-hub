@@ -38,7 +38,6 @@ class Base(DeclarativeBase):
     """Base class for all database models."""
 
 
-
 @asynccontextmanager
 async def get_db_context() -> AsyncIterator[AsyncSession]:
     """Create a standalone async session for use outside FastAPI request lifecycle.

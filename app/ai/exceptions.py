@@ -21,20 +21,16 @@ class AIError(Exception):
     """Base exception for all AI layer errors."""
 
 
-
 class AIConfigurationError(AIError):
     """Invalid AI configuration (wrong provider, missing API key, bad base_url)."""
-
 
 
 class AIExecutionError(AIError):
     """AI execution failed (LLM timeout, rate limit, API error)."""
 
 
-
 class BudgetExceededError(AIError):
     """Monthly AI budget exceeded (429)."""
-
 
 
 async def ai_exception_handler(request: Request, exc: AIError) -> JSONResponse:

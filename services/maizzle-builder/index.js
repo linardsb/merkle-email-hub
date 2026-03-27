@@ -14,6 +14,7 @@ import postcss from "postcss";
 import emailOptimize, { loadOntology } from "./postcss-email-optimize.js";
 import { transform } from "lightningcss";
 import { isPreCompiledEmail } from "./precompiled-detect.js";
+import { compileMjml, mjmlVersion } from "./mjml-compile.js";
 import { parseDocument } from "htmlparser2";
 import { findAll } from "domutils";
 import render_dom from "dom-serializer";
@@ -126,7 +127,7 @@ async function optimizeInlineStyles(html, targetClients) {
 }
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "healthy", service: "maizzle-builder", ontology_version: ontologyVersion });
+  res.json({ status: "healthy", service: "maizzle-builder", ontology_version: ontologyVersion, mjml_version: mjmlVersion });
 });
 
 app.post("/build", async (req, res) => {
@@ -252,6 +253,42 @@ app.post("/preview", async (req, res) => {
   } catch (err) {
     console.error("Preview failed:", err.message);
     res.status(500).json({ error: "Preview failed", detail: err.message, build_time_ms: Date.now() - start });
+  }
+});
+
+app.post("/compile-mjml", async (req, res) => {
+  const start = Date.now();
+  const { mjml, options = {}, target_clients } = req.body;
+
+  if (!mjml || typeof mjml !== "string") {
+    return res.status(400).json({ error: "mjml field is required and must be a string" });
+  }
+
+  try {
+    const result = compileMjml(mjml, options);
+
+    let html = result.html;
+    let optimization = null;
+
+    if (ontologyVersion && target_clients?.length) {
+      const r = await optimizeCss(html, target_clients);
+      html = r.optimizedHtml;
+      optimization = r.optimization;
+    }
+
+    res.json({
+      html,
+      errors: result.errors || [],
+      build_time_ms: Date.now() - start,
+      ...(optimization && { optimization }),
+    });
+  } catch (err) {
+    console.error("MJML compilation failed:", err.message);
+    res.status(500).json({
+      error: "MJML compilation failed",
+      detail: err.message,
+      build_time_ms: Date.now() - start,
+    });
   }
 });
 

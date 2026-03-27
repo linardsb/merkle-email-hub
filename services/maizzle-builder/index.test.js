@@ -102,3 +102,58 @@ describe('postcss-email-optimize shorthand expansion', () => {
     expect(result.emailOptimization.shorthand_expansions).toBeGreaterThanOrEqual(8);
   });
 });
+
+describe('compileMjml', () => {
+  let compileMjml;
+  let mjmlVersion;
+
+  beforeAll(async () => {
+    const mod = await import('./mjml-compile.js');
+    compileMjml = mod.compileMjml;
+    mjmlVersion = mod.mjmlVersion;
+  });
+
+  it('compiles valid MJML to HTML with table layout', () => {
+    const result = compileMjml(
+      '<mjml><mj-body><mj-section><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>',
+    );
+    expect(result.html).toContain('<table');
+    expect(result.html).toContain('Hello');
+    expect(result.errors).toEqual([]);
+  });
+
+  it('returns errors for unknown MJML tags', () => {
+    const result = compileMjml(
+      '<mjml><mj-body><mj-section><mj-column><mj-unknown>Bad</mj-unknown></mj-column></mj-section></mj-body></mjml>',
+    );
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]).toHaveProperty('message');
+    // Still produces HTML output despite errors (soft validation)
+    expect(result.html).toBeDefined();
+  });
+
+  it('generates MSO conditionals for Outlook', () => {
+    const result = compileMjml(
+      '<mjml><mj-body><mj-section><mj-column><mj-text>Outlook test</mj-text></mj-column></mj-section></mj-body></mjml>',
+    );
+    expect(result.html).toContain('<!--[if mso');
+  });
+
+  it('compiles multi-column layout to responsive table', () => {
+    const result = compileMjml(`
+      <mjml><mj-body><mj-section>
+        <mj-column><mj-text>Left</mj-text></mj-column>
+        <mj-column><mj-text>Right</mj-text></mj-column>
+      </mj-section></mj-body></mjml>
+    `);
+    expect(result.html).toContain('Left');
+    expect(result.html).toContain('Right');
+    // Two columns produce table-based layout
+    expect(result.html).toContain('<table');
+    expect(result.errors).toEqual([]);
+  });
+
+  it('exports a valid semver version string', () => {
+    expect(mjmlVersion).toMatch(/^\d+\.\d+\.\d+/);
+  });
+});

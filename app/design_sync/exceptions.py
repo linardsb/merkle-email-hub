@@ -33,3 +33,7 @@ class ImportStateError(DomainValidationError):
 
 class TokenDecryptionError(AppError):
     """Raised when a stored access token cannot be decrypted (key rotation)."""
+
+
+class MjmlCompileError(AppError):
+    """Raised when MJML compilation via the Maizzle sidecar fails."""

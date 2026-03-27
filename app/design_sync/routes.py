@@ -10,6 +10,7 @@ from app.auth.dependencies import require_role
 from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.design_sync.diagnose.schemas import DiagnosticReportResponse
 from app.design_sync.schemas import (
     AnalyzeLayoutRequest,
     BrowseFilesRequest,
@@ -456,3 +457,33 @@ async def convert_import(
         run_qa=body.run_qa,
         output_mode=body.output_mode,
     )
+
+
+# ── Conversion Diagnostics ──
+
+
+@router.get(
+    "/connections/{connection_id}/diagnose",
+    response_model=DiagnosticReportResponse,
+)
+@limiter.limit("2/minute")
+async def diagnose_connection(
+    connection_id: int,
+    request: Request,
+    service: DesignSyncService = Depends(get_service),
+    current_user: User = Depends(require_role("developer")),
+) -> DiagnosticReportResponse:
+    """Run conversion diagnostics on a design connection.
+
+    Returns a detailed report with per-section traces, data loss events,
+    and pipeline stage metrics. Rate limited to 2/min (expensive operation).
+    """
+    _ = request
+    from app.design_sync.diagnose.runner import DiagnosticRunner
+    from app.design_sync.diagnose.schemas import DiagnosticReportResponse as DRR
+
+    structure, tokens = await service.get_diagnostic_data(connection_id, current_user)
+
+    runner = DiagnosticRunner()
+    report = runner.run_from_structure(structure, tokens)
+    return DRR.from_report(report)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +33,7 @@ class DesignSyncRepository:
         token_last4: str,
         project_id: int | None,
         created_by_id: int,
+        config_json: dict[str, Any] | None = None,
     ) -> DesignConnection:
         conn = DesignConnection(
             name=name,
@@ -43,6 +45,7 @@ class DesignSyncRepository:
             status="connected",
             project_id=project_id,
             created_by_id=created_by_id,
+            config_json=config_json,
         )
         self.db.add(conn)
         await self.db.commit()

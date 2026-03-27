@@ -68,7 +68,7 @@
 
 ---
 
-## Phase 32 — Agent Email Rendering Intelligence
+## ~~Phase 32 — Agent Email Rendering Intelligence~~ DONE
 
 > Upgrade all 11 AI agents from distributed, duplicated email knowledge to a unified rendering intelligence layer: centralized client matrix, runtime knowledge lookup, cross-agent learning, content-aware rendering constraints, deeper import skills, eval-driven skill evolution, MCP integration for IDE-native agent access, skill versioning for safe automated updates, and per-client skill overlays for multi-tenant customization.
 
@@ -83,6 +83,7 @@
 - [x] ~~32.9 MCP server exposure for agent tools~~ DONE
 - [x] ~~32.10 Skill versioning with rollback~~ DONE
 - [x] ~~32.11 Per-client skill overlays~~ DONE
+- [x] ~~32.12 Tests for 32.9–32.11~~ DONE
 
 ### 32.1 Centralized Email Client Rendering Matrix `[Backend + Data]`
 **What:** Create a single authoritative `data/email-client-matrix.yaml` file that defines every email client's rendering engine, CSS property support, dark mode behavior, known bugs, size limits, and quirks. Replace the 5+ duplicated client-compatibility references scattered across agent L3 skill files (`client_compatibility.md`, `client_behavior.md`, `email_client_engines.md`, `css_client_support.md`, `dom_rendering_reference.md`) with a loader that reads from this matrix. Integrate with the existing ontology sync pipeline so the matrix stays current with CanIEmail data.
@@ -1120,8 +1121,8 @@
 >
 > **Dependency note:** Builds on Phase 33 (token pipeline) and Phase 27 (rendering infrastructure). Independent of Phase 32 (agent intelligence) and Phase 34 (CRAG gate). The MJML sidecar endpoint (35.1) is prerequisite for all MJML subtasks. AI subtasks (35.5–35.7) can run in parallel with MJML work.
 
-- [ ] 35.1 MJML compilation service in Maizzle sidecar
-- [ ] 35.2 Figma node tree normalizer
+- [x] ~~35.1 MJML compilation service in Maizzle sidecar~~ DONE
+- [x] ~~35.2 Figma node tree normalizer~~ DONE
 - [ ] 35.3 MJML generation backend in converter
 - [ ] 35.4 MJML email section templates
 - [ ] 35.5 AI layout intelligence & semantic detection

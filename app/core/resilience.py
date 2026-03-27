@@ -36,7 +36,6 @@ class CircuitOpenError(Exception):
     """Raised when circuit is open and request is rejected."""
 
 
-
 class CircuitBreaker:
     """Circuit breaker for external service calls."""
 

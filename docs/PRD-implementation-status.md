@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-26
+> Last updated: 2026-03-27
 
 ### Completed
 
@@ -180,7 +180,13 @@
 | 33.9 | Builder Annotations for Visual Builder Sync | `_next_slot_name()` dedup helper for unique slot IDs per section; `slot_counter: dict[str, int]` threaded through `node_to_email_html()`/`_render_semantic_text()`/`_render_button()`/`_render_multi_column_row()`; `data-slot-name` on headings/body `<p>`/images/CTA `<a>` tags; `data-component-name` with `html.escape()` on section root `<table>`; `data-section-id="section_{idx}"` on `<tr>` wrapper; backward compatible when `slot_counter=None`; 15 new tests (498 design_sync total) |
 | 33.10 | Image Asset Import for Design Sync Pipeline | `max-width:{w}px` responsive style on IMAGE nodes in `converter.py`; `ConversionResult.images: list[dict[str, str]]` field (frozen dataclass); `converter_image_urls` extraction + `_fill_image_urls()` wiring in `import_service.py` step 5.6–5.7; image metadata persisted in `structure_json["images"]` via `dataclasses.replace()`; `ImportedImageResponse` Pydantic schema; existing `DesignAssetService.download_and_store()` + `_fill_image_urls()` + asset serving endpoint reused (no new endpoints); 16 new tests (514 design_sync total) |
 
+| 35.1 | MJML Compilation Service in Maizzle Sidecar | `mjml ^4.15.0` npm dependency; `services/maizzle-builder/mjml-compile.js` pure `compileMjml()` module + `mjmlVersion` export; `POST /compile-mjml` endpoint with optional PostCSS optimization via `target_clients`; `GET /health` extended with `mjml_version`; Python `MjmlCompileResult`/`MjmlError` frozen dataclasses + `DesignConverterService.compile_mjml()` async method via `httpx.AsyncClient`; `MjmlCompileError(AppError)` exception; 5 Vitest sidecar tests + 8 pytest Python tests |
+
 ### Recently Completed
+
+**Phase 35.2:** Figma Node Tree Normalizer — `app/design_sync/figma/tree_normalizer.py` with `normalize_tree()` 5-transform pre-processing pipeline applied before layout analysis and conversion: (1) invisible node removal via new `visible: bool`/`opacity: float` fields on `DesignNode` (populated from Figma API in `_parse_node()`), (2) redundant GROUP flattening (single-child, no fill/layout → promote child with position inheritance), (3) INSTANCE→FRAME type resolution for downstream processing, (4) auto-layout inference from child x/y positioning (5px tolerance, computes `item_spacing` from deltas), (5) contiguous TEXT node merging by style key (font_family, font_size, font_weight, text_color); `NormalizationStats` frozen dataclass with per-transform counters; structured logging `design_sync.tree_normalized`; wired into `converter_service.py:convert()` before `_collect_frames()` + `analyze_layout()`; 22 tests covering all transforms + edge cases (deep invisible grandchild, position inheritance, ambiguous layout, empty structure).
+
+**Phase 35.1:** MJML Compilation Service in Maizzle Sidecar — `mjml ^4.15.0` in `services/maizzle-builder/package.json`; `mjml-compile.js` pure `compileMjml()` function (extracted for testability, matches existing sidecar module pattern); `POST /compile-mjml` Express endpoint with MJML compilation + optional PostCSS CSS optimization when `target_clients` provided; `GET /health` includes `mjml_version`; Python `MjmlError`/`MjmlCompileResult` frozen dataclasses + `compile_mjml()` async method on `DesignConverterService` using `httpx.AsyncClient(timeout=30.0)` + `get_settings().maizzle_builder_url`; `MjmlCompileError(AppError)` in `design_sync/exceptions.py` (catches `ConnectError`, `HTTPStatusError`, `ValueError`); 5 Vitest tests (valid MJML, error handling, MSO conditionals, multi-column, version string) + 8 pytest tests (success, error parsing, target_clients, optimization, connect/HTTP/JSON errors).
 
 **Phase 33.10:** Image Asset Import for Design Sync Pipeline — `max-width:{w}px` responsive IMAGE styles; `ConversionResult.images` metadata field; `converter_image_urls` + `_fill_image_urls()` wiring verified; image metadata persisted in `structure_json["images"]`; `ImportedImageResponse` schema; reuses existing `DesignAssetService` + asset serving endpoint; 16 new tests (514 design_sync total).
 
@@ -216,7 +222,7 @@
 
 ### Up Next
 
-**Phase 33.11** (Design Token Pipeline — remaining 1 subtask: tests & integration verification) and **Phase 32.5–32.11** (Agent Email Rendering Intelligence — remaining 7 subtasks). See `TODO.md` for details.
+**Phase 35.3–35.11** (Next-Gen Design-to-Email Pipeline — remaining 9 subtasks: MJML generation backend, MJML section templates, AI layout intelligence, AI visual fidelity scoring, AI conversion learning loop, W3C Design Tokens + caniemail.com, Figma webhooks, incremental conversion, tests). **Phase 32.12** (tests for 32.9–32.11). See `TODO.md` for details.
 
 ### Infrastructure Built
 

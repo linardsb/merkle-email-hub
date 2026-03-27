@@ -56,7 +56,6 @@ class ProviderNotFoundError(KeyError):
     """Raised when a requested provider is not registered."""
 
 
-
 class ProviderRegistry:
     """Registry for AI provider implementations.
 

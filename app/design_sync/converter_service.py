@@ -5,21 +5,28 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+import httpx
+
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.design_sync.compatibility import CompatibilityHint, ConverterCompatibility
 from app.design_sync.converter import (
+    _has_visible_content,
     _NodeProps,
     _sanitize_css_value,
     convert_colors_to_palette,
     convert_typography,
     node_to_email_html,
 )
+from app.design_sync.exceptions import MjmlCompileError
 from app.design_sync.figma.layout_analyzer import (
     DesignLayoutDescription,
     EmailSection,
+    EmailSectionType,
     TextBlock,
     analyze_layout,
 )
+from app.design_sync.figma.tree_normalizer import normalize_tree
 from app.design_sync.html_formatter import format_email_html
 from app.design_sync.protocol import (
     DesignFileStructure,
@@ -64,6 +71,53 @@ EMAIL_SKELETON = """<!DOCTYPE html>
 </html>"""
 
 
+# Component-based shell: sections are independent table blocks inside a div,
+# NOT <tr> rows in one <table>. Matches the email-shell component pattern.
+COMPONENT_SHELL = """\
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+{meta_tags}
+<!--[if mso]>
+<noscript><xml>
+<o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml></noscript>
+<style>
+td,th,div,p,a,h1,h2,h3,h4,h5,h6 {{font-family: {mso_font}; mso-line-height-rule: exactly;}}
+</style>
+<![endif]-->
+{style_block}
+</head>
+<body style="margin:0;padding:0;width:100%;-webkit-text-size-adjust:100%;background-color:{bg_color};font-family:{body_font};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+<tr>
+<td align="center" style="font-size:{base_size};font-family:{body_font};">
+<!--[if mso]>
+<table role="presentation" cellpadding="0" cellspacing="0" width="{container_width}" align="center" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td>
+<![endif]-->
+<table class="dark-bg" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:{container_width}px;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;background-color:{bg_color};">
+<tr>
+<td>
+{sections}
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</body>
+</html>"""
+
+
 @dataclass(frozen=True)
 class ConversionResult:
     """Result of converting a design tree to email HTML."""
@@ -74,6 +128,25 @@ class ConversionResult:
     layout: DesignLayoutDescription | None = None
     compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
     images: list[dict[str, str]] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class MjmlError:
+    """Single MJML validation error returned by the sidecar."""
+
+    line: int
+    message: str
+    tag_name: str
+
+
+@dataclass(frozen=True)
+class MjmlCompileResult:
+    """Result of MJML compilation via the Maizzle sidecar."""
+
+    html: str
+    errors: list[MjmlError]
+    build_time_ms: float
+    optimization: dict[str, Any] | None = None
 
 
 # Backward-compatible alias
@@ -150,6 +223,9 @@ class DesignConverterService:
         raw_file_data: dict[str, Any] | None = None,
         selected_nodes: list[str] | None = None,
         target_clients: list[str] | None = None,
+        use_components: bool = True,
+        connection_config: dict[str, Any] | None = None,
+        image_urls: dict[str, str] | None = None,
     ) -> ConversionResult:
         """Convert a design file structure into an email HTML skeleton.
 
@@ -158,12 +234,19 @@ class DesignConverterService:
             tokens: Extracted design tokens (colors, typography, spacing).
             raw_file_data: Raw file data for supplementary properties (Penpot only).
             selected_nodes: If provided, only convert frames with these IDs.
+            target_clients: Target email clients for compatibility checks.
+            use_components: If True, use component-template rendering (table-on-table).
+                If False, use legacy recursive converter (tr-stacking).
+            connection_config: Per-connection config hints (naming convention, etc.).
 
         Returns:
             ConversionResult with HTML skeleton and metadata.
         """
         warnings: list[str] = []
         compat = ConverterCompatibility(target_clients=target_clients)
+
+        # Normalize tree before processing (hidden removal, group flattening, etc.)
+        structure, _norm_stats = normalize_tree(structure, raw_file_data=raw_file_data)
 
         # Collect top-level frames from all pages
         frames = self._collect_frames(structure, selected_nodes)
@@ -172,9 +255,158 @@ class DesignConverterService:
             logger.warning("design_sync.converter_no_frames")
             return ConversionResult(html="", sections_count=0, warnings=["No frames found"])
 
-        # Run layout analysis on full structure
-        layout = analyze_layout(structure)
+        # Run layout analysis on full structure with config hints
+        layout_kwargs: dict[str, Any] = {}
+        if connection_config:
+            if nc := connection_config.get("naming_convention"):
+                layout_kwargs["naming_convention"] = nc
+            if snm := connection_config.get("section_name_map"):
+                layout_kwargs["section_name_map"] = snm
+            if bnh := connection_config.get("button_name_hints"):
+                layout_kwargs["button_name_hints"] = bnh
+        layout = analyze_layout(structure, **layout_kwargs)
 
+        # Derive container width (clamped 400-800), config override takes priority
+        container_width = 600
+        config_cw = connection_config.get("container_width") if connection_config else None
+        if isinstance(config_cw, int) and 320 <= config_cw <= 1200:
+            container_width = config_cw
+        elif layout.overall_width is not None:
+            container_width = max(400, min(800, int(layout.overall_width)))
+
+        if use_components and layout.sections:
+            return self._convert_with_components(
+                frames=frames,
+                layout=layout,
+                tokens=tokens,
+                warnings=warnings,
+                compat=compat,
+                container_width=container_width,
+                image_urls=image_urls,
+            )
+
+        return self._convert_recursive(
+            frames=frames,
+            layout=layout,
+            tokens=tokens,
+            warnings=warnings,
+            compat=compat,
+            container_width=container_width,
+            raw_file_data=raw_file_data,
+        )
+
+    def _convert_with_components(
+        self,
+        *,
+        frames: list[DesignNode],
+        layout: DesignLayoutDescription,
+        tokens: ExtractedTokens,
+        warnings: list[str],
+        compat: ConverterCompatibility,
+        container_width: int,
+        image_urls: dict[str, str] | None = None,
+    ) -> ConversionResult:
+        """Component-template-based conversion (table-on-table structure)."""
+        from app.design_sync.component_matcher import match_all
+        from app.design_sync.component_renderer import ComponentRenderer
+
+        # Match sections to components
+        matches = match_all(
+            layout.sections,
+            container_width=container_width,
+            image_urls=image_urls,
+        )
+
+        # Render each section using component templates
+        renderer = ComponentRenderer(container_width=container_width)
+        renderer.load()
+
+        section_parts: list[str] = []
+        all_images: list[dict[str, str]] = []
+
+        for match in matches:
+            rendered = renderer.render_section(match)
+            section_parts.append(rendered.html)
+            all_images.extend(rendered.images)
+
+            # Inter-section spacer
+            if match.spacing_after and match.spacing_after > 0:
+                spacer_h = int(match.spacing_after)
+                section_parts.append(
+                    f"<!--[if mso]>\n"
+                    f'<table role="presentation" width="{container_width}" align="center" '
+                    f'cellpadding="0" cellspacing="0" border="0"><tr>'
+                    f'<td height="{spacer_h}" style="font-size:0;line-height:0;'
+                    f'mso-line-height-rule:exactly;">&nbsp;</td></tr></table>\n'
+                    f"<![endif]-->\n"
+                    f"<!--[if !mso]><!-->\n"
+                    f'<div style="height:{spacer_h}px;line-height:{spacer_h}px;'
+                    f'font-size:1px;mso-line-height-rule:exactly;">&nbsp;</div>\n'
+                    f"<!--<![endif]-->"
+                )
+
+        sections_html = "\n".join(section_parts)
+
+        # Build style block
+        palette = convert_colors_to_palette(tokens.colors)
+        typography = convert_typography(tokens.typography)
+        bg_color = _sanitize_css_value(palette.background) or "#ffffff"
+        safe_body_font = _sanitize_css_value(typography.body_font)
+        safe_mso_font = _sanitize_css_value(typography.heading_font) or '"Segoe UI", sans-serif'
+
+        style_block = self._build_component_style_block(
+            safe_body_font or "Arial, Helvetica, sans-serif",
+            tokens,
+        )
+
+        # Dark mode meta tags
+        meta_tags = ""
+        if tokens.dark_colors:
+            meta_tags = dark_mode_meta_tags()
+
+        # Check max-width support
+        if compat.has_targets:
+            compat.check_and_warn("max-width", context="Email wrapper div")
+
+        result_html = COMPONENT_SHELL.format(
+            meta_tags=meta_tags,
+            style_block=style_block,
+            mso_font=safe_mso_font,
+            bg_color=bg_color,
+            body_font=safe_body_font or "Arial, Helvetica, sans-serif",
+            base_size=typography.base_size or "16px",
+            container_width=container_width,
+            sections=sections_html,
+        )
+        result_html = format_email_html(result_html)
+
+        logger.info(
+            "design_sync.component_converter_result",
+            sections_count=len(matches),
+            warnings_count=len(warnings),
+        )
+
+        return ConversionResult(
+            html=result_html,
+            sections_count=len(matches),
+            warnings=warnings,
+            layout=layout,
+            compatibility_hints=compat.hints,
+            images=all_images,
+        )
+
+    def _convert_recursive(
+        self,
+        *,
+        frames: list[DesignNode],
+        layout: DesignLayoutDescription,
+        tokens: ExtractedTokens,
+        warnings: list[str],
+        compat: ConverterCompatibility,
+        container_width: int,
+        raw_file_data: dict[str, Any] | None = None,
+    ) -> ConversionResult:
+        """Legacy recursive converter (original tr-stacking approach)."""
         # Build O(1) lookup maps from layout analysis
         sections_by_node_id: dict[str, EmailSection] = {
             section.node_id: section for section in layout.sections
@@ -189,11 +421,6 @@ class DesignConverterService:
         for section in layout.sections:
             for tb in section.texts:
                 text_meta[tb.node_id] = tb
-
-        # Derive container width (clamped 400-800)
-        container_width = 600
-        if layout.overall_width is not None:
-            container_width = max(400, min(800, int(layout.overall_width)))
 
         # Build props_map: from raw file data (Penpot) or from DesignNode tree (Figma)
         if raw_file_data:
@@ -305,6 +532,96 @@ class DesignConverterService:
             compatibility_hints=compat.hints,
         )
 
+    @staticmethod
+    def _build_component_style_block(body_font: str, tokens: ExtractedTokens) -> str:
+        """Build <style> block for component-based shell with responsive utilities."""
+        lines = [
+            "<style>",
+            "  :root {",
+            "    color-scheme: light dark;",
+            "    supported-color-schemes: light dark;",
+            "  }",
+            f"  body {{ font-family: {body_font}; margin: 0; padding: 0;"
+            " width: 100%; -webkit-text-size-adjust: 100%; }",
+            "  img { border: 0; outline: none; text-decoration: none;"
+            " -ms-interpolation-mode: bicubic; }",
+            "  table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }",
+            "  @media only screen and (max-width: 599px) {",
+            "    .column { display: block !important; max-width: 100% !important;"
+            " width: 100% !important; }",
+            "    .bannerimg { width: 100% !important; height: auto !important; }",
+            "    .wf { width: 100% !important; }",
+            "    .hide { display: none !important; max-height: 0 !important;"
+            " overflow: hidden !important; mso-hide: all !important; }",
+            "    .db { display: block !important; }",
+            "  }",
+        ]
+
+        # Component dark mode classes (from email-shell seed)
+        lines.extend(
+            [
+                "  @media (prefers-color-scheme: dark) {",
+                "    .dark-bg { background-color: #1a1a2e !important; }",
+                "    .dark-text { color: #e0e0e0 !important; }",
+                "    .header-bg, .footer-bg, .navbar-bg, .logoheader-bg,",
+                "    .preheader-bg, .col2-bg, .col3-bg, .col4-bg,",
+                "    .revcol-bg, .social-bg, .textblock-bg,",
+                "    .artcard-bg { background-color: #1a1a2e !important; }",
+                "    .product-card { background-color: #2d2d44 !important; }",
+                "    .header-link, .navbar-link, .preheader-link,",
+                "    .footer-link { color: #8ecae6 !important; }",
+                "    .footer-text, .social-label, .imgblock-caption { color: #b0b0b0 !important; }",
+                "    .product-desc { color: #b0b0b0 !important; }",
+                "    .textblock-heading, .artcard-heading, .product-title,",
+                "    .hero-title { color: #e0e0e0 !important; }",
+                "    .textblock-body, .artcard-body,",
+                "    .hero-subtitle { color: #cccccc !important; }",
+                "    .product-price { color: #8ecae6 !important; }",
+                "    .cta-btn { background-color: #4895ef !important; }",
+                "    .cta-btn a { color: #ffffff !important; }",
+                "    .cta-ghost { border-color: #8ecae6 !important; }",
+                "    .cta-ghost a { color: #8ecae6 !important; }",
+                "    .hero-overlay { background-color: rgba(0,0,0,0.7) !important; }",
+                "    .divider-line { border-top-color: #444466 !important; }",
+                "  }",
+                "  [data-ogsc] .dark-bg { background-color: #1a1a2e !important; }",
+                "  [data-ogsb] .dark-text { color: #e0e0e0 !important; }",
+                "  [data-ogsc] .header-bg, [data-ogsc] .footer-bg, [data-ogsc] .navbar-bg,",
+                "  [data-ogsc] .logoheader-bg, [data-ogsc] .preheader-bg,",
+                "  [data-ogsc] .col2-bg, [data-ogsc] .col3-bg, [data-ogsc] .col4-bg,",
+                "  [data-ogsc] .revcol-bg, [data-ogsc] .social-bg,",
+                "  [data-ogsc] .textblock-bg,"
+                " [data-ogsc] .artcard-bg { background-color: #1a1a2e !important; }",
+                "  [data-ogsc] .product-card { background-color: #2d2d44 !important; }",
+                "  [data-ogsc] .header-link, [data-ogsc] .navbar-link,",
+                "  [data-ogsc] .preheader-link,"
+                " [data-ogsc] .footer-link { color: #8ecae6 !important; }",
+                "  [data-ogsc] .footer-text, [data-ogsc] .social-label,",
+                "  [data-ogsc] .imgblock-caption { color: #b0b0b0 !important; }",
+                "  [data-ogsc] .textblock-heading, [data-ogsc] .artcard-heading,",
+                "  [data-ogsc] .product-title,"
+                " [data-ogsc] .hero-title { color: #e0e0e0 !important; }",
+                "  [data-ogsb] .textblock-body, [data-ogsb] .artcard-body,",
+                "  [data-ogsc] .hero-subtitle { color: #cccccc !important; }",
+                "  [data-ogsc] .product-price { color: #8ecae6 !important; }",
+                "  [data-ogsc] .cta-btn { background-color: #4895ef !important; }",
+                "  [data-ogsc] .cta-ghost { border-color: #8ecae6 !important; }",
+                "  [data-ogsc] .divider-line { border-top-color: #444466 !important; }",
+            ]
+        )
+
+        # Token-derived dark mode (additional per-project dark colors)
+        if tokens.dark_colors:
+            dark_css = dark_mode_style_block(tokens.colors, tokens.dark_colors)
+            if dark_css:
+                # Strip outer <style></style> tags — we'll close ours
+                inner = dark_css.replace("<style>", "").replace("</style>", "").strip()
+                if inner:
+                    lines.append(f"  {inner}")
+
+        lines.append("</style>")
+        return "\n".join(lines)
+
     def _collect_frames(
         self,
         structure: DesignFileStructure,
@@ -318,6 +635,9 @@ class DesignConverterService:
             for child in page.children:
                 if child.type in frame_types:
                     if selected_nodes is None or child.id in selected_nodes:
+                        # B3: Skip top-level frames with no visible content
+                        if not _has_visible_content(child):
+                            continue
                         frames.append(child)
         return frames
 
@@ -421,6 +741,51 @@ class DesignConverterService:
                 )
         return props
 
+    async def compile_mjml(
+        self,
+        mjml: str,
+        *,
+        target_clients: list[str] | None = None,
+    ) -> MjmlCompileResult:
+        """Compile MJML markup to email HTML via the Maizzle sidecar."""
+        url = get_settings().maizzle_builder_url
+        payload: dict[str, object] = {"mjml": mjml}
+        if target_clients:
+            payload["target_clients"] = target_clients
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(f"{url}/compile-mjml", json=payload)
+                response.raise_for_status()
+                data = response.json()
+
+                errors = [
+                    MjmlError(
+                        line=e.get("line", 0),
+                        message=e.get("message", ""),
+                        tag_name=e.get("tagName", ""),
+                    )
+                    for e in data.get("errors", [])
+                ]
+                return MjmlCompileResult(
+                    html=str(data["html"]),
+                    errors=errors,
+                    build_time_ms=float(data.get("build_time_ms", 0)),
+                    optimization=data.get("optimization"),
+                )
+        except httpx.ConnectError as exc:
+            logger.error("design_sync.mjml_compile_unavailable", error=str(exc))
+            raise MjmlCompileError("Cannot connect to maizzle-builder service") from exc
+        except httpx.HTTPStatusError as exc:
+            logger.error(
+                "design_sync.mjml_compile_error",
+                status_code=exc.response.status_code,
+            )
+            raise MjmlCompileError("MJML compilation failed") from exc
+        except ValueError as exc:
+            logger.error("design_sync.mjml_compile_invalid_response", error=str(exc))
+            raise MjmlCompileError("Invalid response from maizzle-builder service") from exc
+
     @staticmethod
     def _extract_bg(obj: dict[str, Any]) -> str | None:
         """Extract first solid fill color from Penpot fills array."""
@@ -435,3 +800,89 @@ class DesignConverterService:
 
 # Backward-compatible alias
 PenpotConverterService = DesignConverterService
+
+
+def build_component_style_block(body_font: str, tokens: ExtractedTokens) -> str:
+    """Build <style> block for component-based shell.
+
+    Public module-level wrapper around the static method for external callers
+    (e.g. diagnostic runner).
+    """
+    return DesignConverterService._build_component_style_block(body_font, tokens)
+
+
+async def enhance_layout_with_ai(
+    layout: DesignLayoutDescription,
+) -> DesignLayoutDescription:
+    """Post-process layout analysis with AI classification and content role detection.
+
+    Called after sync analyze_layout() by async service layers.
+    Skipped entirely when DESIGN_SYNC__AI_LAYOUT_ENABLED is False.
+
+    Returns a new DesignLayoutDescription with enhanced sections.
+    """
+    from dataclasses import replace
+
+    settings = get_settings()
+    if not settings.design_sync.ai_layout_enabled:
+        return layout
+
+    if not layout.sections:
+        return layout
+
+    sections = list(layout.sections)
+
+    # 1. AI classification for UNKNOWN sections
+    unknown_sections = [s for s in sections if s.section_type == EmailSectionType.UNKNOWN]
+    if unknown_sections:
+        from app.design_sync.ai_layout_classifier import classify_sections_batch
+
+        all_types = [s.section_type.value for s in sections]
+        all_ids = [s.node_id for s in sections]
+        classifications = await classify_sections_batch(
+            unknown_sections,
+            all_section_types=all_types,
+            all_node_ids=all_ids,
+        )
+
+        # Build lookup: node_id -> classification
+        classification_map = {
+            s.node_id: c for s, c in zip(unknown_sections, classifications, strict=True)
+        }
+
+        # Replace sections with AI-classified versions
+        new_sections: list[EmailSection] = []
+        for s in sections:
+            if s.node_id in classification_map:
+                c = classification_map[s.node_id]
+                try:
+                    new_type = EmailSectionType(c.section_type)
+                except ValueError:
+                    new_type = EmailSectionType.UNKNOWN
+                new_sections.append(
+                    replace(
+                        s,
+                        section_type=new_type,
+                        classification_confidence=c.confidence,
+                    )
+                )
+            else:
+                new_sections.append(s)
+        sections = new_sections
+
+    # 2. Content role detection
+    from app.design_sync.ai_content_detector import detect_content_roles
+
+    annotations = await detect_content_roles(sections)
+
+    # Merge annotations into sections
+    role_map = {a.section_node_id: a.roles for a in annotations}
+    enhanced: list[EmailSection] = []
+    for s in sections:
+        roles = role_map.get(s.node_id, ())
+        if roles:
+            enhanced.append(replace(s, content_roles=roles))
+        else:
+            enhanced.append(s)
+
+    return replace(layout, sections=enhanced)

@@ -1064,6 +1064,7 @@ class FigmaDesignSyncService:
         # Extract fill colors for the converter pipeline
         fill_color: str | None = None
         text_color_hex: str | None = None
+        image_ref: str | None = None
         node_opacity = float(node_data.get("opacity", 1.0))
         raw_fills = node_data.get("fills", [])
         if isinstance(raw_fills, list):
@@ -1078,6 +1079,12 @@ class FigmaDesignSyncService:
                 if fill_type == "IMAGE" and node_type == DesignNodeType.VECTOR:
                     node_type = DesignNodeType.IMAGE
                     break
+                # Extract IMAGE fill reference on FRAME nodes (hero/section backgrounds)
+                if fill_type == "IMAGE" and node_type == DesignNodeType.FRAME:
+                    raw_ref = fi_d.get("imageRef")
+                    if isinstance(raw_ref, str) and raw_ref:
+                        image_ref = raw_ref
+                    continue
                 if fill_type != "SOLID":
                     continue
                 c = fi_d.get("color", {})
@@ -1134,6 +1141,9 @@ class FigmaDesignSyncService:
             letter_spacing_px=dn_letter_spacing_px,
             text_transform=dn_text_transform,
             text_decoration=dn_text_decoration,
+            image_ref=image_ref,
+            visible=node_data.get("visible", True) is not False,
+            opacity=_float_or_none(node_data.get("opacity")) or 1.0,
         )
 
     async def list_components(self, file_ref: str, access_token: str) -> list[DesignComponent]:

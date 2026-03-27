@@ -8,6 +8,30 @@ from pydantic import BaseModel, ConfigDict, Field
 # ── Requests ──
 
 
+class ConnectionConfigRequest(BaseModel):
+    """Per-connection converter configuration hints."""
+
+    naming_convention: str = Field(
+        default="auto",
+        pattern=r"^(auto|mjml|descriptive|generic|custom)$",
+        description="Naming convention: auto-detect or specify",
+    )
+    section_name_map: dict[str, str] | None = Field(
+        default=None,
+        description="Custom section name → type mapping (e.g. {'my-hero': 'hero'})",
+    )
+    button_name_hints: list[str] | None = Field(
+        default=None,
+        description="Extra button name prefixes (e.g. ['btn-', 'cta-'])",
+    )
+    container_width: int | None = Field(
+        default=None,
+        ge=320,
+        le=1200,
+        description="Override auto-detected container width",
+    )
+
+
 class ConnectionCreateRequest(BaseModel):
     """Request to create a design tool connection."""
 
@@ -16,6 +40,10 @@ class ConnectionCreateRequest(BaseModel):
     file_url: str = Field(..., min_length=1, max_length=500, description="Design file URL")
     access_token: str = Field(..., min_length=1, description="Provider access token / PAT")
     project_id: int | None = Field(default=None, description="Link to a project")
+    config: ConnectionConfigRequest | None = Field(
+        default=None,
+        description="Optional converter configuration hints",
+    )
 
 
 class BrowseFilesRequest(BaseModel):
@@ -85,6 +113,7 @@ class ConnectionResponse(BaseModel):
     last_synced_at: datetime.datetime | None = None
     project_id: int | None = None
     project_name: str | None = None
+    config: ConnectionConfigRequest | None = None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
@@ -102,6 +131,12 @@ class ConnectionResponse(BaseModel):
         if not isinstance(conn, DesignConnection):
             msg = "Expected DesignConnection instance"
             raise TypeError(msg)
+        config = None
+        if conn.config_json:
+            import contextlib
+
+            with contextlib.suppress(Exception):
+                config = ConnectionConfigRequest.model_validate(conn.config_json)
         return cls(
             id=conn.id,
             name=conn.name,
@@ -114,6 +149,7 @@ class ConnectionResponse(BaseModel):
             last_synced_at=conn.last_synced_at,
             project_id=conn.project_id,
             project_name=project_name,
+            config=config,
             created_at=cast(datetime.datetime, conn.created_at),
             updated_at=cast(datetime.datetime, conn.updated_at),
         )
@@ -441,6 +477,8 @@ class AnalyzedSectionResponse(BaseModel):
     buttons: list[ButtonElementResponse] = Field(default_factory=list[ButtonElementResponse])
     spacing_after: float | None = None
     bg_color: str | None = None
+    classification_confidence: float | None = None
+    content_roles: list[str] = Field(default_factory=list)
 
 
 class LayoutAnalysisResponse(BaseModel):

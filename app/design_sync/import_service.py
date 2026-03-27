@@ -183,12 +183,19 @@ class DesignImportService:
                         # Don't pass selected_nodes — layout analysis already
                         # filtered by selected_node_ids, and the reconstructed
                         # tree uses synthetic IDs that won't match Figma IDs.
+                        # Extract image_urls from design_context for component matcher
+                        _img_urls = design_context.get("image_urls")
+                        _image_url_map: dict[str, str] | None = (
+                            _img_urls if isinstance(_img_urls, dict) else None  # type: ignore[assignment]
+                        )
                         conversion = converter.convert(
                             structure,
                             extracted_tokens,
                             raw_file_data=raw_data,
                             selected_nodes=None,
                             target_clients=target_clients,
+                            connection_config=conn.config_json,
+                            image_urls=_image_url_map,
                         )
                         initial_html = conversion.html
                         if conversion.compatibility_hints:
