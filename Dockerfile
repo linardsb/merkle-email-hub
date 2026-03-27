@@ -40,6 +40,9 @@ USER appuser
 
 EXPOSE 8891
 
+HEALTHCHECK --interval=15s --timeout=10s --retries=5 --start-period=120s \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8891/health')" || exit 1
+
 CMD ["gunicorn", "app.main:app", \
      "-k", "uvicorn.workers.UvicornWorker", \
      "-w", "4", \
