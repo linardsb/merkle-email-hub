@@ -1127,7 +1127,7 @@
 - [ ] 35.4 MJML email section templates
 - [x] ~~35.5 AI layout intelligence & semantic detection~~ DONE
 - [x] ~~35.6 AI visual fidelity scoring pipeline~~ DONE
-- [ ] 35.7 AI conversion learning loop
+- [x] ~~35.7 AI conversion learning loop~~ DONE
 - [ ] 35.8 W3C Design Tokens & caniemail.com integration
 - [x] ~~35.9 Figma webhooks & live preview sync~~ DONE
 - [ ] 35.10 Incremental conversion & section caching
@@ -1348,7 +1348,7 @@
 **Security:** Figma frame export requires existing auth token (already stored encrypted in `DesignConnection`). Screenshot rendering is local (Playwright in sandbox). Image comparison is pure computation — no network calls. Diff images contain design content only (no secrets). Fidelity endpoint requires same auth as import endpoint.
 **Verify:** Convert a Figma file with known simple layout (single-column, 3 sections) → fidelity score > 85%. Intentionally break converter output (wrong colors, missing section) → score drops below 70%. Per-section scores correctly identify the broken section. Diff image highlights the difference region. `make test` passes.
 
-### 35.7 AI Conversion Learning Loop `[Backend + AI]`
+### ~~35.7 AI Conversion Learning Loop~~ `[Backend + AI]` DONE
 **What:** When AI agents (Outlook Fixer, Dark Mode, Code Reviewer) repeatedly fix the same converter output patterns, automatically extract those patterns as converter rules. This creates a self-improving pipeline where agent corrections feed back into the converter, reducing future agent work and improving first-pass quality.
 **Why:** Currently, agents fix converter mistakes at runtime — every email goes through the same fix cycle. Example: if the converter consistently produces `<td style="padding:20px">` but the Outlook Fixer always rewrites it to `<td style="padding:20px 20px 20px 20px;">` (longhand for Word engine), that pattern should become a converter rule so the Outlook Fixer doesn't need to fix it every time. This is the "learning" part of the AI pipeline — moving validated corrections upstream. Locofy's "Design Optimizer" learns from user corrections in a similar feedback loop.
 **Implementation:**
