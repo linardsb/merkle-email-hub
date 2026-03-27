@@ -1,8 +1,8 @@
 ---
 token_cost: 350
 priority: 1
+version: "1.0.0"
 ---
-
 # ESP Template Token Syntax Reference
 
 All tokens below must be treated as **opaque text** — never parse, modify, or move them.

@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_email-accessibility-wcag-aa.md section 12 -->
 <!-- Last synced: 2026-03-13 -->
 

@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md sections 1, 3, 10, bug-fixes -->
 <!-- Last synced: 2026-03-13 -->
 

@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/esp_personalisation/esp_06_hubspot.md sections 1-14 -->
 # HubSpot HubL Reference
 

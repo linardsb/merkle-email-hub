@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/esp_personalisation/esp_04_klaviyo.md sections 1-13 -->
 # Klaviyo Django Template Language Reference
 

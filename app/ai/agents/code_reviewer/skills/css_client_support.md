@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 # CSS Client Support — Code Reviewer Reference
 
 > Client rendering constraints and CSS property support data are provided by

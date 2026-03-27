@@ -3848,3 +3848,50 @@ Per-client skill file overlays that extend or replace core agent L3 skills with 
 - Overlay names logged as `"overlay:{client_id}/{skill_name}"` via `skill_loader.overlays_applied`
 
 ---
+
+## Phase 32.10 — Skill Versioning with Rollback (DONE)
+
+> **Date completed:** 2026-03-27
+
+### What was built
+
+Version tracking, pinning, and rollback for L3 skill files. Per-agent `skill-versions.yaml` manifests track version history with git hashes and eval pass rates. Runtime pinning loads a prior version via `git show` without modifying files on disk. Integrates with the 32.6 eval-driven updater to auto-bump versions when patches are applied.
+
+### Key deliverables
+
+| Component | Details |
+|-----------|---------|
+| **`app/ai/agents/skill_version.py`** | Core module: `SkillVersionManifest`/`SkillVersionConfig` frozen dataclasses, `load_manifest()`/`save_manifest()` YAML I/O, `pin_skill()`/`unpin_skill()` with version validation, `load_pinned_content()` via `git show`, `bump_version()` semver minor bump, `record_version()`, `resolve_skill_path()` (handles `skills/l3/` subdirectory), `print_all_versions()` CLI |
+| **`evals/schemas.py`** | `SkillVersionEntry` frozen dataclass (version, hash, date, source, eval_pass_rate) |
+| **`skill_loader.py`** | `SkillMeta.version` field (default `"1.0.0"`), `parse_skill_meta()` version extraction, `load_skill_with_version()` pin-aware loader |
+| **`skill_override.py`** | `set_override_from_version()` — loads versioned content for A/B testing |
+| **`skill_updater.py`** | `_update_frontmatter_version()` regex-based version replacement, `_update_version_manifests()` pre-commit manifest update (included in same git commit as patches) |
+| **`scripts/eval-skill-update.py`** | `rollback` subcommand: `uv run python scripts/eval-skill-update.py rollback {agent} {skill} {version}` |
+| **10 `skill-versions.yaml` manifests** | One per agent directory (scaffolder, dark_mode, content, outlook_fixer, accessibility, personalisation, code_reviewer, knowledge, innovation, import_annotator), 62 L3 skills backfilled to v1.0.0 |
+| **61 L3 skill files** | `version: "1.0.0"` frontmatter added (new block for files without frontmatter, appended for files with existing frontmatter) |
+| **Makefile targets** | `skill-versions` (list all), `skill-pin` (pin), `skill-unpin` (unpin), `skill-rollback` (rollback via CLI) |
+
+### Security
+
+- Git hash validated via `re.compile(r"^[0-9a-f]{7,40}$")` before `git show`
+- Path traversal guard on `manifest_path()` rejects `/`, `\`, `..` in agent names
+- `skill-versions.yaml` checked into repo — changes go through PR review
+- No new API endpoints — all operations are CLI/internal only
+- Pinning does not modify skill files on disk — runtime only via `git show`
+
+### Tests
+
+| File | Count | Coverage |
+|------|-------|----------|
+| `app/ai/agents/evals/tests/test_skill_versioning.py` | 37 | `TestSkillVersionManifest` (5), `TestPinUnpin` (5), `TestLoadPinnedContent` (4), `TestBumpVersion` (5), `TestRecordVersion` (2), `TestSkillMetaVersion` (6), `TestListSkillVersions` (3), `TestSetOverrideFromVersion` (3), `TestUpdaterIntegration` (4) |
+| **Total new tests** | **37** | All 858 agent tests pass, 124 skill-related tests pass |
+
+### Key patterns
+
+- Frozen dataclasses throughout (`SkillVersionConfig`, `SkillVersionManifest`, `SkillVersionEntry`)
+- `load_pinned_content()` returns `None` when not pinned — caller falls through to disk file
+- Version manifests updated *before* git commit so they're included in the same commit as patches
+- `set_override_from_version()` enables head-to-head version comparison in eval runs via existing `skill_override.py` infrastructure
+- `datetime.now(tz=UTC).date().isoformat()` for timezone-aware date recording
+
+---

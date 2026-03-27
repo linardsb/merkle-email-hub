@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_email-dark-mode-dom-reference.md sections 6-9 -->
 <!-- Last synced: 2026-03-13 -->
 

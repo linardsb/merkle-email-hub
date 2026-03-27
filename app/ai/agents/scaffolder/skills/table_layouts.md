@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_html-email-components.md sections 2, 11 -->
 <!-- Last synced: 2026-03-13 -->
 

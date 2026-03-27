@@ -1,5 +1,6 @@
 ---
 priority: 3
+version: "1.0.0"
 ---
 
 > **Deprecation Notice (Phase 32 prep):** Client-specific facts in this file

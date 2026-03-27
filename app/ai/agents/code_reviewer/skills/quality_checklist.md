@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: none (original content — pre-QA gate checklist) -->
 # 40-Point Email Quality Checklist
 

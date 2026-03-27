@@ -1,0 +1,37 @@
+skills:
+  can_i_email_reference:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  citation_rules:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  email_client_engines:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  rag_strategies:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null

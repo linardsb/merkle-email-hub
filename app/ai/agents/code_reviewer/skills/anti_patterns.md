@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: none (original content — email anti-pattern catalog) -->
 # Email Anti-Patterns — Detection Rules
 

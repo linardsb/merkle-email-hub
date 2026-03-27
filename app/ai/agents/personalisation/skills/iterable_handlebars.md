@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/esp_personalisation/esp_07_iterable.md sections 1-18 -->
 # Iterable Handlebars Reference
 

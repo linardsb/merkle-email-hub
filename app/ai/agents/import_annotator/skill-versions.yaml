@@ -1,0 +1,73 @@
+skills:
+  column_patterns:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  common_email_builders:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  css_normalization:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  div_layouts:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  esp_token_edge_cases:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  esp_tokens:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  table_layouts:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  wrapper_detection:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null

@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_outlook-mso-fallback-reference.md -->
 # Diagnostic Table — Symptom to Cause to Fix
 

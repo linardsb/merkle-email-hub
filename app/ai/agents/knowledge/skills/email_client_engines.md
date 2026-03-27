@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 # Email Client Rendering Engines
 
 > Client rendering data (engines, CSS support, dark mode) is centralized in

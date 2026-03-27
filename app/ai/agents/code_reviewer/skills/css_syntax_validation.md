@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_html-email-css-dom-reference.md sections 6-14 -->
 <!-- Last synced: 2026-03-13 -->
 

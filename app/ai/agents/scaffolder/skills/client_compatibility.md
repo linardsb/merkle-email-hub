@@ -1,5 +1,6 @@
 ---
 priority: 3
+version: "1.0.0"
 ---
 
 > Client rendering constraints are injected via audience context from the

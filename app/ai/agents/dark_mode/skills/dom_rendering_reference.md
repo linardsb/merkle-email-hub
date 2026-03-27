@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_email-dark-mode-dom-reference.md -->
 # Email Dark Mode DOM Rendering — Validation Reference
 

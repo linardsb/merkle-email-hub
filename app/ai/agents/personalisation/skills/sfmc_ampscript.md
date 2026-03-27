@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/esp_personalisation/esp_02_sfmc.md -->
 # SFMC AMPscript Syntax Reference
 

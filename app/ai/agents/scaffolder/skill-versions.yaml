@@ -1,0 +1,64 @@
+skills:
+  client_compatibility:
+    current: 1.0.0
+    pinned: null
+    versions:
+      1.0.0:
+        hash: 519eaab
+        date: '2026-03-27'
+        source: manual
+        eval_pass_rate: null
+  css_email_reference:
+    current: 1.0.0
+    pinned: null
+    versions:
+      1.0.0:
+        hash: 519eaab
+        date: '2026-03-27'
+        source: manual
+        eval_pass_rate: null
+  email_structure:
+    current: 1.0.0
+    pinned: null
+    versions:
+      1.0.0:
+        hash: 519eaab
+        date: '2026-03-27'
+        source: manual
+        eval_pass_rate: null
+  maizzle_syntax:
+    current: 1.0.0
+    pinned: null
+    versions:
+      1.0.0:
+        hash: 519eaab
+        date: '2026-03-27'
+        source: manual
+        eval_pass_rate: null
+  mso_vml_quick_ref:
+    current: 1.0.0
+    pinned: null
+    versions:
+      1.0.0:
+        hash: 519eaab
+        date: '2026-03-27'
+        source: manual
+        eval_pass_rate: null
+  skill:
+    current: 1.1.0
+    pinned: null
+    versions:
+      1.1.0:
+        hash: pending
+        date: '2026-03-27'
+        source: eval-driven
+        eval_pass_rate: 0.5
+  table_layouts:
+    current: 1.0.0
+    pinned: null
+    versions:
+      1.0.0:
+        hash: 519eaab
+        date: '2026-03-27'
+        source: manual
+        eval_pass_rate: null

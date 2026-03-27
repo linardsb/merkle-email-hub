@@ -396,6 +396,82 @@ Respond with EXACTLY this structure:
         return len(overlap) / len(patch_lines) > 0.7
 
 
+def _update_frontmatter_version(path: Path, content: str, new_version: str) -> None:
+    """Update the ``version:`` field in a skill file's front matter.
+
+    If no front matter exists, prepends a new block. If front matter exists
+    but has no ``version:`` line, appends one before the closing ``---``.
+    """
+    import re
+
+    fm_match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
+    if not fm_match:
+        # No front matter — prepend one
+        path.write_text(f'---\nversion: "{new_version}"\n---\n{content}')
+        return
+
+    fm_text = fm_match.group(1)
+    if re.search(r"^version:", fm_text, re.MULTILINE):
+        new_fm = re.sub(
+            r"^version:.*$",
+            f'version: "{new_version}"',
+            fm_text,
+            flags=re.MULTILINE,
+        )
+    else:
+        new_fm = fm_text.rstrip() + f'\nversion: "{new_version}"'
+
+    rest = content[fm_match.end() :]
+    path.write_text(f"---\n{new_fm}\n---\n{rest}")
+
+
+def _update_version_manifests(
+    patches: list[SkillFilePatch],
+) -> list[str]:
+    """Bump version in frontmatter and update skill-versions.yaml for patched files.
+
+    Called *before* the git commit so manifest changes are included in the
+    same commit. Returns list of additional changed file paths (manifests).
+    """
+    from app.ai.agents.skill_loader import parse_skill_meta
+    from app.ai.agents.skill_version import (
+        bump_version,
+        load_manifest,
+        manifest_path,
+        record_version,
+    )
+
+    manifest_paths: set[str] = set()
+    for patch in patches:
+        path = Path(patch.skill_file_path)
+        if not path.exists():
+            continue
+
+        content = path.read_text()
+        meta, _body = parse_skill_meta(content)
+        new_version = bump_version(meta.version)
+
+        _update_frontmatter_version(path, content, new_version)
+
+        agent = patch.candidate.agent
+        skill_name = path.stem
+        manifest = load_manifest(agent)
+        if manifest is None:
+            continue
+
+        record_version(
+            agent=agent,
+            skill_name=skill_name,
+            version=new_version,
+            git_hash="pending",  # Will be the commit hash; updated post-merge
+            source="eval-driven",
+            eval_pass_rate=patch.candidate.pass_rate,
+        )
+        manifest_paths.add(str(manifest_path(agent)))
+
+    return list(manifest_paths)
+
+
 def apply_patches(
     patches: list[SkillFilePatch],
     dry_run: bool = False,
@@ -471,6 +547,10 @@ def _apply_patches_git(
             capture_output=True,
         )
         return None
+
+    # Bump version in frontmatter and update skill-versions.yaml manifests
+    manifest_files = _update_version_manifests(patches)
+    changed_files.extend(manifest_files)
 
     subprocess.run(  # noqa: S603
         ["git", "add", *changed_files],  # noqa: S607

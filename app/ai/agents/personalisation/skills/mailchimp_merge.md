@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/esp_personalisation/esp_05_mailchimp.md sections 1-15 -->
 # Mailchimp Merge Language Reference
 

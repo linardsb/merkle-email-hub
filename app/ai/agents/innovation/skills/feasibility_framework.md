@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: none (original content — risk assessment template) -->
 # Feasibility Assessment Framework
 

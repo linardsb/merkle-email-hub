@@ -1,0 +1,46 @@
+skills:
+  amp_email:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  competitive_landscape:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  css_animations:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  css_checkbox_hacks:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  feasibility_framework:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null

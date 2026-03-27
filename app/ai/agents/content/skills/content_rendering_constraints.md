@@ -1,8 +1,8 @@
 ---
 token_cost: 450
 priority: 2
+version: "1.0.0"
 ---
-
 # Email Client Rendering Constraints for Content
 
 ## Preheader Length by Client

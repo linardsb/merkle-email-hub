@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_email-spam-score-dom-reference.md sections 16, 20 -->
 <!-- Last synced: 2026-03-13 -->
 

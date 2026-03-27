@@ -1,0 +1,46 @@
+skills:
+  brand_voice:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  content_rendering_constraints:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  operation_best_practices:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  spam_triggers:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  subject_line_formulas:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null

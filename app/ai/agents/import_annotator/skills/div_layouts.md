@@ -1,8 +1,8 @@
 ---
 token_cost: 300
 priority: 2
+version: "1.0.0"
 ---
-
 # CSS-Based Email Layout Patterns
 
 ## Generic Div-Based

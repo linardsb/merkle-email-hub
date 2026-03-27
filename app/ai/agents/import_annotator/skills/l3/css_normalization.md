@@ -1,8 +1,8 @@
 ---
 token_cost: 350
 priority: 2
+version: "1.0.0"
 ---
-
 # CSS Normalization Patterns in Imported Email HTML
 
 ## Shorthand Expansion

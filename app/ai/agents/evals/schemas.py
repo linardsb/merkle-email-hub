@@ -142,6 +142,17 @@ class BlueprintEvalTrace:
 
 
 @dataclass(frozen=True)
+class SkillVersionEntry:
+    """A single version record in the skill-versions.yaml manifest."""
+
+    version: str
+    hash: str
+    date: str
+    source: str = "manual"
+    eval_pass_rate: float | None = None
+
+
+@dataclass(frozen=True)
 class SkillUpdateCandidate:
     """A detected opportunity to update a skill file based on eval failures."""
 

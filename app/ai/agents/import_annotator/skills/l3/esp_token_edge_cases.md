@@ -1,8 +1,8 @@
 ---
 token_cost: 400
 priority: 1
+version: "1.0.0"
 ---
-
 # ESP Token Edge Cases
 
 ## AMPscript Advanced

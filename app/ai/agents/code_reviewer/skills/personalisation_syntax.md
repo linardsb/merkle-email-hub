@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/esp_personalisation/ (all 7 ESP files) -->
 <!-- L3 source: app/ai/agents/personalisation/skills/*.md -->
 # Personalisation Syntax — Code Review Reference

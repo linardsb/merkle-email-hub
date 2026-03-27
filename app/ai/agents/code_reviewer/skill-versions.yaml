@@ -1,0 +1,100 @@
+skills:
+  anti_patterns:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  css_client_support:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  css_support_matrix:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  css_syntax_validation:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  file_size_optimization:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  link_validation:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  nesting_validation:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  personalisation_syntax:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  quality_checklist:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  redundant_code:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null
+  spam_patterns:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "519eaab"
+        date: "2026-03-27"
+        source: manual
+        eval_pass_rate: null

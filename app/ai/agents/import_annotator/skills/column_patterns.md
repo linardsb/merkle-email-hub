@@ -1,8 +1,8 @@
 ---
 token_cost: 300
 priority: 2
+version: "1.0.0"
 ---
-
 # Column Layout Detection Patterns
 
 ## Table-Based Columns

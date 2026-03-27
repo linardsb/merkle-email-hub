@@ -1,3 +1,7 @@
+---
+version: "1.0.0"
+---
+
 <!-- L4 source: docs/SKILL_email-link-validation-dom-reference.md -->
 # Link Validation Patterns for Email HTML
 

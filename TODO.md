@@ -81,7 +81,7 @@
 - [x] ~~32.7 Visual QA feedback loop tightening~~ DONE
 - [x] ~~32.8 Tests & integration verification~~ DONE
 - [x] ~~32.9 MCP server exposure for agent tools~~ DONE
-- [ ] 32.10 Skill versioning with rollback
+- [x] ~~32.10 Skill versioning with rollback~~ DONE
 - [x] ~~32.11 Per-client skill overlays~~ DONE
 
 ### 32.1 Centralized Email Client Rendering Matrix `[Backend + Data]`
@@ -772,7 +772,7 @@
 **Security:** MCP stdio transport is local-only — no network exposure. Tool inputs are validated through the same Pydantic schemas as REST endpoints (XSS sanitization, length limits, input validation all apply). No new attack surface beyond what the REST API already exposes. LLM API keys come from the user's environment, not from the MCP protocol. Tool results contain HTML output — same sanitization profile as REST responses.
 **Verify:** `email-hub-mcp` starts without errors. Claude Code can discover all 9 tools via MCP handshake. Calling `email_scaffold` with a brief → returns valid HTML with confidence score. Calling `email_code_review` with HTML → returns structured review. Calling `email_content` with `operation="subject_line"` → returns alternatives list. Error cases: invalid operation → `error_result` with message. Missing required params → MCP validation error. `email-hub://agents` resource → returns agent list with capabilities. `make test` passes.
 
-### 32.10 Skill Versioning with Rollback `[Backend]`
+### ~~32.10 Skill Versioning with Rollback~~ `[Backend]` DONE
 **What:** Add version metadata to all L3 skill file frontmatter, implement version tracking in the skill loader, and provide a rollback mechanism that can pin a project to a previous skill file version when a 32.6 eval-driven update causes a regression. Store version history in a `skill-versions.yaml` manifest per agent directory.
 **Why:** Phase 32.6 introduces automated skill file patching — the eval pipeline detects failure patterns, generates patches, and opens PRs. But once merged, there's no clean rollback path beyond `git revert`. If a skill patch improves pass rate on one criterion but regresses another (common with prompt changes), the team needs to: (a) know which version of the skill file was active during a given eval run, (b) quickly revert to the prior version without touching git history, and (c) A/B test the old vs new version using the existing `skill_override.py` infrastructure. Without versioning, the 32.6 pipeline creates churn — patches get merged, regress, get reverted, get re-applied. Versioning adds the control surface that makes 32.6's automation safe to trust.
 **Implementation:**
