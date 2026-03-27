@@ -243,8 +243,11 @@ services:
       - SETGID
       - SETUID
     labels:
-      - "coolify.fqdn=http://204.168.129.30"
-      - "coolify.port=80"
+      - traefik.enable=true
+      - "traefik.http.routers.merkle-nginx.rule=HostRegexp(`.+`)"
+      - traefik.http.routers.merkle-nginx.entrypoints=http
+      - traefik.http.routers.merkle-nginx.priority=1
+      - traefik.http.services.merkle-nginx.loadbalancer.server.port=80
     deploy:
       resources:
         limits:
