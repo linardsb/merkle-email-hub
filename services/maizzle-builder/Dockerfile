@@ -7,6 +7,8 @@ RUN npm install --production
 
 COPY scripts/ ./scripts/
 COPY postcss-email-optimize.js ./
+COPY precompiled-detect.js ./
+COPY mjml-compile.js ./
 COPY index.js ./
 COPY data/ ./data/
 
