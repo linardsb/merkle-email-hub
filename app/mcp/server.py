@@ -10,6 +10,7 @@ from app.core.logging import get_logger
 from app.mcp.auth import verify_mcp_token
 from app.mcp.config import is_tool_allowed
 from app.mcp.resources import register_resources
+from app.mcp.tools.agents import register_agent_tools
 from app.mcp.tools.ai import register_ai_tools
 from app.mcp.tools.email import register_email_tools
 from app.mcp.tools.knowledge import register_knowledge_tools
@@ -69,6 +70,7 @@ def create_mcp_server() -> FastMCP:
     register_rendering_tools(mcp)
     register_template_tools(mcp)
     register_ai_tools(mcp)
+    register_agent_tools(mcp)
 
     # Apply tool allowlist filter — remove tools not in the operator allowlist
     _apply_tool_allowlist(mcp)

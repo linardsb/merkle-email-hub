@@ -2848,3 +2848,915 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 - [x] ~~31.8 Tests & integration verification~~ DONE
 
 ---
+## Phase 33 — Design Token Pipeline Overhaul (Figma → Email HTML)
+
+> **Continues Phase 31.5–31.6 design sync work.** Phase 31.6 enriched `layout_analyzer.py` with typography data (`TextBlock.font_family/weight/line_height/letter_spacing`, `EmailSection.buttons/column_layout/item_spacing`) and added `spacing_bridge.py` for token extraction — but the converter (`converter.py`, `converter_service.py`) never consumes this data. Phase 33 refactors the existing converter to use the rich layout analysis already available, improves HTML output quality (semantic elements, MSO fallbacks, dark mode, proportional widths), and adds a validation layer. No new pipeline — same files, same entry points, same data flow. The converter just gets smarter.
+>
+> The current system silently drops opacity, gradients, spacing, line-height, and dark mode tokens; misidentifies colors via fragile heuristics; ignores auto-layout direction; produces broken multi-column layouts; and doesn't support Figma's modern Variables API. Knowledge from agent skill files (`table_layouts.md`, `mso_bug_fixes.md`, `dark-mode-css.md`, `color_remapping.md`, `cta-buttons.md`, `vml_reference.md`), ontology data (`css_properties.yaml`, `support_matrix.yaml`), and data files (`email_client_fonts.yaml`) is encoded directly into the converter code — not connected at runtime.
+
+> **Dependency note:** Direct continuation of Phase 31.5–31.6. Independent of Phase 32 (Agent Rendering Intelligence). Can be implemented in parallel with Phase 32. However, Phase 33 fixes are *upstream* of Phase 32 — agents receiving better tokens and HTML from this phase will produce better results. Recommended to start Phase 33 first or concurrently.
+
+- [x] ~~33.0 Wire layout analyzer into converter (prerequisite for 33.4–33.9)~~ DONE
+- [x] ~~33.1 Figma Variables API + opacity compositing~~ DONE
+- [x] ~~33.2 Email-safe token transforms & validation layer~~ DONE
+- [x] ~~33.3 Typography pipeline: line-height, letter-spacing, font mapping~~ DONE
+- [x] ~~33.4 Spacing token pipeline & auto-layout → table mapping~~ DONE
+- [x] ~~33.5 Multi-column layout & proportional width calculation~~ DONE
+- [x] ~~33.5b Client-aware conversion — ontology wire-up (prerequisite for 33.7)~~ DONE
+- [x] ~~33.6 Semantic HTML generation (headings, paragraphs, buttons)~~ DONE
+- [x] ~~33.7 Dark mode token extraction & gradient fallbacks~~ DONE
+- [x] ~~33.8 Design context enrichment & Scaffolder integration~~ DONE
+- [x] ~~33.9 Builder annotations for visual builder sync~~ DONE
+- [x] ~~33.10 Image asset import for design sync pipeline~~ DONE
+- [x] ~~33.11 Tests & integration verification~~ DONE
+
+### 33.0 Wire Layout Analyzer into Converter `[Backend]`
+**What:** Connect the existing `analyze_layout()` function in `app/design_sync/figma/layout_analyzer.py` to `DesignConverterService.convert()` in `app/design_sync/converter_service.py`. Currently the converter calls `node_to_email_html()` directly on raw `DesignNode` trees, bypassing the layout analyzer entirely. The analyzer already detects column layouts, buttons, heading hierarchy, item spacing, element gaps, and section types — but none of this data reaches the HTML generation step. This subtask bridges the gap so that subsequent subtasks (33.4–33.9) can consume rich `EmailSection` data instead of reimplementing detection logic. Additionally, fix `_build_props_map_from_nodes()` to extract all `DesignNode` fields (currently only `bg_color`), add MSO reset styles to the email skeleton and inline table/image output, and extend `_NodeProps` and `ConversionResult` dataclasses for downstream use.
+**Why:** `converter_service.py` line 110 calls `node_to_email_html(frame, ...)` on raw frames. The layout analyzer's `EmailSection` dataclass already carries: `column_layout` (single/two/three/multi), `column_count`, `texts` (with `is_heading`), `images`, `buttons` (with dimensions + text), `spacing_after`, `bg_color`, `padding_*`, `item_spacing`, and `element_gaps`. Without this connection, every Phase 33 subtask must reimplement detection that already exists — e.g., 33.6 describes button detection rules that are identical to `layout_analyzer._walk_for_buttons()`. Additionally, `_build_props_map_from_nodes()` only extracts `bg_color` from `DesignNode` fields, silently discarding `font_family`, `font_size`, `font_weight`, `padding_*`, and `layout_mode` — data that the Penpot path (`_build_props_map`) already handles. The `EMAIL_SKELETON` style block lacks mandatory MSO table resets (`mso-table-lspace:0pt;mso-table-rspace:0pt`), image resets (`-ms-interpolation-mode:bicubic`), and the inline table/image styles don't include them either — Gmail clips emails at 102KB and strips `<style>` blocks, so inline styles must be self-sufficient.
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `app/ai/agents/scaffolder/skills/email_structure.md` — document skeleton requirements: VML/Office XML namespace (`xmlns:v`, `xmlns:o`), DPI fix (`o:PixelsPerInch=96`), required meta tags (`format-detection`, `x-apple-disable-message-reformatting`, `color-scheme`, `supported-color-schemes`, `-webkit-text-size-adjust:100%`, `word-spacing:normal`). Verify `EMAIL_SKELETON` in `converter_service.py` includes all elements — currently missing `<meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">` and `<meta name="x-apple-disable-message-reformatting">`
+- `app/ai/agents/outlook_fixer/skills/mso_bug_fixes.md` — 15 Outlook bug patterns. MSO reset styles that must be present: (1) every `<table>`: `border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;` — prevents 1px white lines between cells, (2) every `<img>`: `-ms-interpolation-mode:bicubic;display:block;border:0;outline:none;text-decoration:none;` — prevents image spacing and DPI scaling artifacts, (3) `<body>`: `margin:0;padding:0;` reset. These must be both in the `<style>` block AND inline on each element (belt-and-suspenders for Gmail which strips `<style>` in clipped emails >102KB)
+- `app/knowledge/data/seeds/best_practices/table-based-layout.md` — structural wrapper pattern: 100% outer table for body background + fixed-width (600px) content table with `align="center"` + `role="presentation"` on ALL layout tables. `cellpadding="0" cellspacing="0" border="0"` on every table (already present in `node_to_email_html()`). Avoid nesting tables deeper than 6 levels (Outlook rendering degrades). Current skeleton has a single-level wrapper — verify the converter doesn't produce nesting >6 on deeply nested Figma trees
+- `app/knowledge/data/seeds/css_support/box-model.md` — padding works ONLY on `<td>` cells (Outlook ignores on `<p>`/`<div>`/`<a>`). Never use `margin: 0 auto` for centering — use `align="center"` HTML attribute. Width must be set as both HTML attribute (`width="600"`) AND CSS (`style="width:600px"`) for Outlook compatibility. `box-sizing` is ignored by Outlook — always use content-box math. Percentage widths are reliable on `<td>` elements
+**Implementation:**
+- Update `DesignConverterService.convert()` in `app/design_sync/converter_service.py`:
+  - Add import: `from app.design_sync.figma.layout_analyzer import analyze_layout, DesignLayoutDescription, EmailSection`
+  - After `frames = self._collect_frames(structure, selected_nodes)`, call layout analysis:
+    ```python
+    layout = analyze_layout(structure)
+    sections_by_node_id: dict[str, EmailSection] = {
+        section.node_id: section for section in layout.sections
+    }
+    ```
+  - Build button ID lookup for O(1) hit testing during recursion:
+    ```python
+    button_node_ids: set[str] = set()
+    for section in layout.sections:
+        for btn in section.buttons:
+            button_node_ids.add(btn.node_id)
+    ```
+  - Build text ID lookup for heading detection during recursion:
+    ```python
+    text_meta: dict[str, TextBlock] = {}
+    for section in layout.sections:
+        for tb in section.texts:
+            text_meta[tb.node_id] = tb
+    ```
+  - Pass all lookups to `node_to_email_html()`:
+    ```python
+    section_html = node_to_email_html(
+        frame,
+        indent=1,
+        props_map=props_map or None,
+        section_map=sections_by_node_id,
+        button_ids=button_node_ids,
+        text_meta=text_meta,
+    )
+    ```
+  - Use `layout.overall_width` as container width when available:
+    ```python
+    container_width = int(layout.overall_width) if layout.overall_width else 600
+    ```
+    Replace hardcoded `width="600"` and `max-width:600px` in `EMAIL_SKELETON.format()` with `container_width`. Update MSO wrapper table width to match.
+  - Add inter-section spacer rows using `section.spacing_after`:
+    ```python
+    for idx, frame in enumerate(frames):
+        section = sections_by_node_id.get(frame.id)
+        section_html = node_to_email_html(frame, ...)
+        section_parts.append(f'<tr><td>\n{section_html}\n</td></tr>')
+        if section and section.spacing_after and section.spacing_after > 0:
+            spacer_h = int(section.spacing_after)
+            section_parts.append(
+                f'<tr><td style="height:{spacer_h}px;font-size:1px;'
+                f'line-height:1px;mso-line-height-rule:exactly;" '
+                f'aria-hidden="true">&nbsp;</td></tr>'
+            )
+    ```
+  - Store layout on result:
+    ```python
+    return ConversionResult(
+        html=result_html,
+        sections_count=len(frames),
+        warnings=warnings,
+        layout=layout,
+    )
+    ```
+- Update `node_to_email_html()` signature in `app/design_sync/converter.py`:
+  - Add new optional parameters:
+    ```python
+    def node_to_email_html(
+        node: DesignNode,
+        *,
+        indent: int = 0,
+        props_map: dict[str, _NodeProps] | None = None,
+        parent_bg: str | None = None,
+        parent_font: str | None = None,
+        section_map: dict[str, EmailSection] | None = None,
+        button_ids: set[str] | None = None,
+        text_meta: dict[str, TextBlock] | None = None,
+        current_section: EmailSection | None = None,
+        body_font_size: float = 16.0,
+    ) -> str:
+    ```
+  - At the top of FRAME/GROUP/COMPONENT/INSTANCE handling, look up section data:
+    ```python
+    section = current_section
+    if section_map and node.id in section_map:
+        section = section_map[node.id]
+    ```
+  - Thread `current_section=section`, `button_ids`, `text_meta`, `section_map`, and `body_font_size` through all recursive calls to `node_to_email_html()` for child nodes
+  - When `section` is available:
+    - Use `section.column_layout` and `section.column_count` to decide row grouping strategy (consumed by 33.5 — for now, store on context, 33.5 will use it)
+    - Use `section.item_spacing` to insert spacer `<tr>` rows or cell padding between children (consumed by 33.4)
+    - Check `button_ids` for button detection (consumed by 33.6 — for now, pass through)
+    - Check `text_meta` for heading classification (consumed by 33.6 — for now, pass through)
+- Fix `_build_props_map_from_nodes()` in `app/design_sync/converter_service.py` (lines 169-181):
+  - Replace the current `_walk()` that only extracts `bg_color`:
+    ```python
+    def _build_props_map_from_nodes(self, frames: list[DesignNode]) -> dict[str, _NodeProps]:
+        """Build props_map from DesignNode fields (provider-agnostic)."""
+        props: dict[str, _NodeProps] = {}
+
+        def _walk(node: DesignNode) -> None:
+            has_data = (
+                node.fill_color or node.font_family or node.font_size
+                or node.font_weight or node.padding_top or node.padding_right
+                or node.padding_bottom or node.padding_left or node.layout_mode
+                or node.line_height_px or node.letter_spacing_px
+            )
+            if has_data:
+                props[node.id] = _NodeProps(
+                    bg_color=node.fill_color,
+                    font_family=node.font_family,
+                    font_size=node.font_size,
+                    font_weight=str(node.font_weight) if node.font_weight else None,
+                    padding_top=node.padding_top or 0,
+                    padding_right=node.padding_right or 0,
+                    padding_bottom=node.padding_bottom or 0,
+                    padding_left=node.padding_left or 0,
+                    layout_direction=(
+                        "row" if node.layout_mode == "HORIZONTAL"
+                        else "column" if node.layout_mode == "VERTICAL"
+                        else None
+                    ),
+                    line_height_px=node.line_height_px,
+                    letter_spacing_px=node.letter_spacing_px,
+                )
+            for child in node.children:
+                _walk(child)
+
+        for frame in frames:
+            _walk(frame)
+        return props
+    ```
+  - This aligns the Figma path with the Penpot path (`_build_props_map`, lines 183-213) which already extracts font, padding, and layout data from raw file objects
+- Extend `_NodeProps` dataclass in `app/design_sync/converter.py` (lines 30-44):
+  - Add typography fields consumed by 33.3 and 33.6:
+    ```python
+    @dataclass(frozen=True)
+    class _NodeProps:
+        """Supplementary visual properties not carried by DesignNode."""
+        bg_color: str | None = None
+        font_family: str | None = None
+        font_size: float | None = None
+        font_weight: str | None = None
+        padding_top: float = 0
+        padding_right: float = 0
+        padding_bottom: float = 0
+        padding_left: float = 0
+        border_color: str | None = None
+        border_width: float = 0
+        layout_direction: str | None = None  # "row" | "column" | None
+        line_height_px: float | None = None  # NEW: explicit line-height in px
+        letter_spacing_px: float | None = None  # NEW: letter-spacing in px
+    ```
+- Extend `ConversionResult` dataclass in `app/design_sync/converter_service.py` (lines 56-61):
+  - Add layout field for downstream consumers (33.8 Scaffolder integration, 33.9 builder annotations):
+    ```python
+    @dataclass(frozen=True)
+    class ConversionResult:
+        """Result of converting a design tree to email HTML."""
+        html: str
+        sections_count: int
+        warnings: list[str] = field(default_factory=list)
+        layout: DesignLayoutDescription | None = None  # NEW: rich layout data
+    ```
+- Update `EMAIL_SKELETON` in `app/design_sync/converter_service.py` (lines 26-52):
+  - Add missing meta tags to `<head>` (before `{style_block}`):
+    ```html
+    <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+    <meta name="x-apple-disable-message-reformatting">
+    ```
+  - Expand `{style_block}` generation to include MSO reset styles:
+    ```python
+    style_block = (
+        "<style>\n"
+        f"  body {{ font-family: {safe_body_font}; margin: 0; padding: 0; }}\n"
+        "  table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }\n"
+        "  img { -ms-interpolation-mode: bicubic; border: 0; display: block; outline: none; text-decoration: none; }\n"
+        "</style>"
+    )
+    ```
+  - Make container width dynamic (replace hardcoded `600`):
+    ```python
+    result_html = EMAIL_SKELETON.format(
+        style_block=style_block,
+        bg_color=bg_color,
+        text_color=text_color,
+        body_font=safe_body_font or "Arial, Helvetica, sans-serif",
+        sections=sections_html,
+        container_width=container_width,
+    )
+    ```
+    Update `EMAIL_SKELETON` template to use `{container_width}` in place of `600` (3 occurrences: MSO table `width`, CSS `max-width`, and outer table `width` attribute)
+- Update `node_to_email_html()` table output in `app/design_sync/converter.py` (lines 301-303):
+  - Add MSO reset styles inline on every `<table>` element (belt-and-suspenders for Gmail clipping):
+    ```python
+    table_style_parts = [
+        "border-collapse:collapse",
+        "mso-table-lspace:0pt",
+        "mso-table-rspace:0pt",
+    ]
+    if any(v > 0 for v in pad_vals):
+        table_style_parts.append(
+            f"padding:{int(props.padding_top)}px {int(props.padding_right)}px "
+            f"{int(props.padding_bottom)}px {int(props.padding_left)}px"
+        )
+    style_attr = f' style="{";".join(table_style_parts)}"'
+    ```
+  - This replaces the current `style_parts` list that only includes padding
+- Update `node_to_email_html()` image output in `app/design_sync/converter.py` (lines 246-254):
+  - Expand inline image styles (partially present, add missing properties):
+    ```python
+    return (
+        f'{pad}<img src="" alt="{alt}"{node_id_attr}{w}{h}'
+        f' style="display:block;border:0;outline:none;text-decoration:none;'
+        f'-ms-interpolation-mode:bicubic;width:100%;height:auto;" />'
+    )
+    ```
+  - Currently missing: `outline:none`, `text-decoration:none`, `-ms-interpolation-mode:bicubic`
+- Guard against excessive table nesting depth:
+  - Add `max_depth: int = 6` parameter to `node_to_email_html()`
+  - Track `current_depth` through recursion, increment when entering FRAME/GROUP/COMPONENT/INSTANCE
+  - If `current_depth > max_depth`: flatten remaining children as `<tr><td>` without nesting a new `<table>`, log warning `"design_sync.nesting_depth_exceeded"` with node ID
+  - This prevents Outlook rendering degradation on deeply nested Figma trees (per `best_practices/table-based-layout.md`)
+**Security:** No new input paths. Layout analysis is pure computation on existing `DesignNode` data — no I/O, no external calls. MSO reset styles are static CSS strings. Container width comes from `layout.overall_width` (a `float | None` derived from node dimensions) — clamped to `400 <= width <= 800` before use in `EMAIL_SKELETON.format()` to prevent injection via absurd values. Table nesting depth guard is a safety limit, not a security boundary. No user input reaches the new code paths.
+**Verify:** `analyze_layout(structure)` is called during `convert()` and returns valid `DesignLayoutDescription` with correct section count matching frame count. `sections_by_node_id` lookup maps at least one node ID to an `EmailSection` object. `button_node_ids` set contains IDs of all detected buttons. `text_meta` dict maps TEXT node IDs to `TextBlock` objects with `is_heading` set. `node_to_email_html()` accepts new parameters without error — existing callers using keyword args still work (all new params have defaults). `_build_props_map_from_nodes()` populates all `_NodeProps` fields from `DesignNode` — frame with `padding_top=24, font_family="Inter", layout_mode="HORIZONTAL"` → `_NodeProps(padding_top=24, font_family="Inter", layout_direction="row")`. `_NodeProps` has `line_height_px` and `letter_spacing_px` fields. `ConversionResult.layout` is populated with `DesignLayoutDescription`. `EMAIL_SKELETON` contains `<meta name="format-detection">` and `<meta name="x-apple-disable-message-reformatting">`. Style block contains `border-collapse: collapse`, `mso-table-lspace: 0pt`, `-ms-interpolation-mode: bicubic`. All `<table>` elements have `border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt` inline. All `<img>` elements have `display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic` inline. Container width from `layout.overall_width=700` → `width="700"` and `max-width:700px` in output. Container width `None` → falls back to 600. Container width `1200` → clamped to `800`. Inter-section spacer rows present when `spacing_after > 0`, with `mso-line-height-rule:exactly` and `aria-hidden="true"`. Nesting depth >6 → children flattened, warning logged. Existing conversion tests still pass (all changes are additive — new params default to `None`). `make test` passes. `make types` passes.
+
+### 33.1 Figma Variables API + Opacity Compositing `[Backend]`
+**What:** Add support for Figma's Variables API (`/v1/files/:key/variables/local` and `/v1/files/:key/variables/published`) as the primary token extraction source, falling back to the legacy Styles API for older files. Implement opacity compositing that flattens fill opacity × layer opacity into final hex values. Fix gradient and multi-fill handling to extract the topmost visible solid fill with a fallback midpoint color for linear gradients. Stop mixing stroke colors into the fill palette.
+**Why:** The current pipeline uses only the legacy Styles endpoint (`/v1/files/{key}/styles`). Figma's Variables API — GA since late 2023 — is now the default way designers define tokens. Files using Variables (which is the majority of modern Figma files) extract **zero tokens** from the styles endpoint. Additionally, `_rgba_to_hex()` discards the alpha channel entirely, node-level `opacity` is never read, gradients silently vanish, and stroke colors pollute the palette. A semi-transparent blue overlay on white currently extracts as solid blue; a gradient hero section extracts nothing.
+**Implementation:**
+- Extend `FigmaDesignSyncService` in `app/design_sync/figma/service.py`:
+  - Add `_fetch_variables()` method:
+    - Call `GET /v1/files/{file_key}/variables/local` (returns variable collections, modes, values)
+    - Call `GET /v1/files/{file_key}/variables/published` (returns published library variables)
+    - Handle 403 (Variables API requires paid plan) — graceful fallback to Styles API
+    - Parse variable collections into groups: "Primitives", "Semantic", "Component" (by collection name)
+    - Extract modes: light/dark/brand variants from collection modes
+    - Resolve aliases: `{color.brand.primary}` → walk reference chain to literal value (detect circular refs, max depth 10)
+  - Update `sync_tokens_and_structure()` to try Variables API first, fall back to Styles:
+    ```
+    try: variables = await _fetch_variables(file_ref, access_token)
+    except (SyncFailedError, httpx.HTTPStatusError): variables = None
+    if variables: colors, typography = _parse_variables(variables)
+    else: colors = _parse_colors(file_data, styles_data)  # existing path
+    ```
+  - Add `_rgba_to_hex_with_opacity()`:
+    - Accept `r, g, b, a` (fill) + `node_opacity` (layer) as parameters
+    - Compute effective alpha: `fill_alpha * node_opacity`
+    - If effective alpha < 1.0, composite against assumed background (white `#FFFFFF` default, configurable):
+      `final_r = round(r * eff_alpha + bg_r * (1 - eff_alpha))`
+    - Return hex string of composited color
+    - Keep existing `_rgba_to_hex()` as fast path for fully opaque colors
+  - Fix `_walk_for_colors()`:
+    - Read `node.get("opacity", 1.0)` and pass to `_rgba_to_hex_with_opacity()`
+    - For nodes with multiple fills: iterate fills top-to-bottom (last in array = topmost), take the first visible (`visible != false`) solid fill
+    - For `GRADIENT_LINEAR` fills: extract the two endpoint colors, compute midpoint hex, add with name suffix " (gradient midpoint)"
+    - Separate strokes from fills: add strokes to a separate `stroke_colors` list (not mixed into `colors`). Expose `stroke_colors` on `ExtractedTokens` as optional field but don't feed them into `convert_colors_to_palette()`
+  - Fix `_parse_node()` fill extraction (lines 560-576):
+    - Read node-level `opacity` and composite with fill opacity
+    - Iterate fills top-to-bottom instead of breaking on first match
+    - Skip fills with `visible: false`
+- Update `ExtractedTokens` in `app/design_sync/protocol.py`:
+  - Add optional `variables_source: bool = False` field to indicate extraction source (Variables vs Styles)
+  - Add optional `modes: dict[str, str] | None = None` to carry mode names (e.g., `{"light": "mode_id_1", "dark": "mode_id_2"}`)
+  - Add optional `stroke_colors: list[ExtractedColor] = field(default_factory=list)` to keep strokes separate
+- Add `ExtractedVariable` dataclass:
+  ```python
+  @dataclass(frozen=True)
+  class ExtractedVariable:
+      name: str
+      collection: str
+      type: str  # "COLOR", "FLOAT", "STRING", "BOOLEAN"
+      values_by_mode: dict[str, Any]  # mode_name → resolved value
+      is_alias: bool = False
+      alias_path: str | None = None  # e.g., "color/brand/primary"
+  ```
+**Security:** Figma API calls use existing encrypted PAT from `DesignConnection.access_token`. No new secrets. Variables API response contains design token values only — no PII. Alias resolution has max-depth guard (10) to prevent infinite loops.
+**Verify:** Figma file using Variables API → tokens extracted with correct hex values. Semi-transparent fill (opacity 0.5 blue on white) → extracts as `#8080FF` (composited), not `#0000FF`. Gradient fill → midpoint color extracted with "(gradient midpoint)" suffix. Stroke colors → not present in `convert_colors_to_palette()` output. Node with layer opacity 0.5 + fill opacity 0.5 → effective opacity 0.25 applied. File without Variables (legacy) → falls back to Styles path, existing tests pass. `make test` passes. `make types` passes.
+
+### 33.2 Email-Safe Token Transforms & Validation Layer `[Backend]`
+**What:** Add a token validation and transformation layer between extraction (33.1) and consumption (converter, Scaffolder, design system). Validate that all extracted tokens meet email-safe requirements: colors are 6-digit hex (no rgba, no CSS custom properties), sizes are in px (no rem/em/%), font families include fallback stacks, and no unresolved aliases remain. Transform non-conforming values to email-safe equivalents. Reject invalid tokens with descriptive errors.
+**Why:** Currently there is zero validation between extraction and conversion. An empty font family becomes `", Arial, Helvetica, sans-serif"` in the output. A color extracted as `rgba(0,0,0,0.5)` (if the pipeline were extended) would pass through verbatim, breaking email clients. There's no way to detect that tokens are incomplete before the Scaffolder generates HTML with missing values. A validation layer catches these issues early and ensures every downstream consumer receives clean, email-safe values.
+**Implementation:**
+- Create `app/design_sync/token_transforms.py`:
+  - `validate_and_transform(tokens: ExtractedTokens) -> tuple[ExtractedTokens, list[TokenWarning]]`:
+    - Color validation:
+      - Verify hex format matches `#[0-9A-Fa-f]{6}` — reject 3-digit shorthand (expand to 6), reject named colors (map `"red"` → `"#FF0000"` via lookup table of CSS named colors)
+      - Reject `rgba()`, `hsl()`, `oklch()` format strings — convert to hex via utility
+      - Clamp opacity to 0.0-1.0 range
+      - Warn on fully transparent colors (opacity < 0.01)
+    - Typography validation:
+      - Verify `family` is non-empty string — warn and default to `"Arial"` if empty
+      - Verify `size` > 0 and < 200 (sanity bounds) — warn on unreasonable sizes
+      - Verify `weight` is valid CSS weight string (100-900 or "normal"/"bold") — map numeric strings to nearest valid weight
+      - Verify `line_height` > 0 — if unitless ratio (< 5.0), multiply by font size to get px value
+      - Convert any `em` values to px using font size as base
+    - Spacing validation:
+      - Verify `value` > 0 and < 500 (sanity bounds)
+      - Verify no negative spacing values
+    - Cross-token validation:
+      - At least 1 color extracted — warn (not error) if zero
+      - At least 1 typography style extracted — warn if zero
+      - No duplicate token names within same type
+  - `TokenWarning` dataclass: `(level: "info" | "warning" | "error", field: str, message: str, original_value: str | None, fixed_value: str | None)`
+  - CSS named color map: 147 CSS named colors → hex (from CSS Color Level 4 spec)
+- Integrate into `DesignSyncService.sync_connection()` and `DesignImportService.run_conversion()`:
+  - Call `validate_and_transform()` immediately after token extraction
+  - Store warnings in `DesignSyncSnapshot.structure_json["token_warnings"]`
+  - Log warnings at appropriate levels
+  - Surface warnings in API response via `DesignTokensResponse.warnings` field
+- Add `warnings: list[str] | None` to `DesignTokensResponse` in `app/design_sync/schemas.py`
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `ontology/data/css_properties.yaml` (365 properties) — use as the authoritative source for which CSS properties exist and their valid value types. Load at module level. When validating a generated CSS property, check it against the ontology instead of hardcoding safe/unsafe lists
+- `ontology/data/support_matrix.yaml` — per-client support flags (25+ email clients). Use to determine which CSS properties are safe to emit for target clients. E.g., `border-radius` is ⚠️ (partial) — emit but add VML fallback; `position` is ❌ — never emit
+- `code_reviewer/skills/css_syntax_validation.md` — error patterns and severity levels to implement: empty value (error), missing semicolon (error), unclosed braces (error), invalid property (warning), unitless numeric (warning for non-zero, info for zero). Use these severity classifications in the `TokenWarning` dataclass
+- `code_reviewer/skills/css_client_support.md` — vendor prefix rules (all invalid except `-webkit-text-size-adjust`); external resources (`@font-face`/`@import` stripped by Gmail); `!important` guidelines (expected in dark mode, flag if >10 non-dark uses)
+- `css_support/colors-backgrounds.md` — Outlook rejects `rgba()`/`hsl()` — always convert to 6-digit hex. Gmail strips `background-image` from inline styles. Use these rules in color validation
+**Security:** Pure data validation. No I/O, no user input in transform logic. Named color map is a static dict.
+**Verify:** Empty font family → warning + replaced with "Arial". 3-digit hex `#F00` → expanded to `#FF0000`. Named color "red" → `#FF0000`. Unitless line-height `1.5` with font size `16px` → `24px`. Size of `-5` → error warning. Zero colors extracted → warning in response. Existing extraction tests still pass. `make test` passes.
+
+### 33.3 Typography Pipeline: Line-Height, Letter-Spacing, Font Mapping `[Backend]`
+**What:** Fix the typography pipeline to preserve line-height and letter-spacing through the entire extraction → design system → HTML path. Add a configurable web-font → email-safe-font mapping table. Map Figma font weights to email-safe values (400/700). Extract text-transform and text-decoration from Figma nodes. Update the `Typography` model to carry these properties.
+**Why:** Currently: (1) `ExtractedTypography.line_height` is extracted from Figma but discarded by `convert_typography()` — the `Typography` model has no `line_height` field. (2) Letter-spacing is extracted at the node level but not in `ExtractedTypography`. (3) The `_font_stack()` function keeps web fonts as the primary font (e.g., `"Inter, Arial, Helvetica, sans-serif"`) — Inter won't render in any email client except Apple Mail with `@font-face`. (4) Font weights like `300` and `500` pass through verbatim — system fonts only support `normal` (400) and `bold` (700). (5) Figma's `textCase` (UPPER/LOWER/TITLE) and `textDecoration` are never read. Uppercase headings in the design render as mixed-case.
+**Implementation:**
+- Update `ExtractedTypography` in `app/design_sync/protocol.py`:
+  - Add `letter_spacing: float | None = None` (px value)
+  - Add `text_transform: str | None = None` (uppercase/lowercase/capitalize/none)
+  - Add `text_decoration: str | None = None` (underline/line-through/none)
+- Update `_parse_typography()` and `_walk_for_typography()` in `app/design_sync/figma/service.py`:
+  - Extract `letterSpacing` from Figma style dict → store in `ExtractedTypography.letter_spacing`
+  - Extract `textCase` → map: `UPPER` → `"uppercase"`, `LOWER` → `"lowercase"`, `TITLE` → `"capitalize"`, else `None`
+  - Extract `textDecoration` → map: `UNDERLINE` → `"underline"`, `STRIKETHROUGH` → `"line-through"`, else `None`
+- Update `Typography` in `app/projects/design_system.py`:
+  - Add `heading_line_height: str | None = None` (e.g., `"36px"`)
+  - Add `body_line_height: str | None = None` (e.g., `"24px"`)
+  - Add `heading_letter_spacing: str | None = None` (e.g., `"-0.5px"`)
+  - Add `body_letter_spacing: str | None = None` (e.g., `"0px"`)
+  - Add `heading_text_transform: str | None = None`
+- Update `convert_typography()` in `app/design_sync/converter.py`:
+  - Map line-height from heading/body styles to `Typography` fields (convert to px string)
+  - Map letter-spacing similarly
+  - Map text-transform from heading style
+  - **Load font fallback map from `data/email_client_fonts.yaml`** at module level instead of hardcoding. The YAML file already contains:
+    - `fallback_map`: web-font → email-safe fallback chain (e.g., `Inter: [Arial, Helvetica, sans-serif]`, `Playfair Display: [Georgia, "Times New Roman", serif]`)
+    - `clients`: per-client font support data including `requires_mso_font_alt: true` for Outlook desktop
+    ```python
+    import yaml
+    from pathlib import Path
+
+    _FONT_DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "email_client_fonts.yaml"
+    _FONT_DATA = yaml.safe_load(_FONT_DATA_PATH.read_text())
+    _FALLBACK_MAP: dict[str, list[str]] = _FONT_DATA.get("fallback_map", {})
+    _MSO_FONT_ALT_CLIENTS = {
+        k for k, v in _FONT_DATA.get("clients", {}).items()
+        if isinstance(v, dict) and v.get("requires_mso_font_alt")
+    }
+    ```
+  - Update `_font_stack()` to use the YAML mapping: look up `family_clean` in `_FALLBACK_MAP`, build stack from YAML fallback chain, use original font as progressive enhancement: `f"{family_clean}, {', '.join(fallback_chain)}"`
+  - When `requires_mso_font_alt` is true for target clients: add `mso-font-alt` CSS property to the inline style (e.g., `mso-font-alt:Arial;`) so Outlook uses the mapped system font
+  - Map font weight: `int(weight)` → `"bold"` if ≥ 500, `"normal"` if < 500
+- Update `node_to_email_html()` in `app/design_sync/converter.py`:
+  - When rendering TEXT nodes: include `line-height:{value}px;` if available from node or props
+  - Include `letter-spacing:{value}px;` if non-zero
+  - Include `text-transform:{value};` if set
+  - Include `text-decoration:{value};` if set
+  - Use mapped font weight (`normal`/`bold`) instead of raw numeric weight
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `data/email_client_fonts.yaml` — **primary data source** for font fallback mapping and per-client font support. Load at module level (replaces hardcoded `_WEB_FONT_MAP`). Contains `fallback_map` (10 web fonts → email-safe chains) and `clients` (11 email clients with `type`, `fonts`, `requires_mso_font_alt` fields)
+- `css_support/typography.md` — px units only for `font-size`/`line-height` (unitless line-height breaks Outlook); `-webkit-text-size-adjust: 100%` required for iOS; intermediate font weights (300, 500) may fail in Outlook — only `normal` (400) and `bold` (700) are safe; reset heading margins explicitly (`margin:0`)
+- `outlook_fixer/skills/mso_bug_fixes.md` — `mso-font-alt` property for Outlook font fallback; `mso-line-height-rule: exactly` required when setting explicit line-height in Outlook (without this, Outlook may override line-height)
+- `scaffolder/skills/client_compatibility.md` — font-family, font-size, font-weight, line-height, text-align, text-decoration are universally safe CSS properties; letter-spacing is partially supported (safe to include but may be ignored by some clients)
+**Security:** Static mapping table loaded from YAML. No user input processing changes.
+**Verify:** Figma TEXT node with `Inter` font → HTML has `font-family:Inter, Arial, Helvetica, sans-serif` (from YAML `fallback_map`). `mso-font-alt:Arial` included in inline style. Font weight `300` → `font-weight:normal`. Font weight `600` → `font-weight:bold`. Line-height `28.8` → `line-height:29px` in HTML with `mso-line-height-rule:exactly`. Letter-spacing `0.5` → `letter-spacing:1px` in HTML (rounded). Text with `textCase: UPPER` → `text-transform:uppercase` in HTML. `Typography` model populated with `heading_line_height`, `body_line_height`. Unknown font not in `fallback_map` → falls back to `Arial, Helvetica, sans-serif` (generic sans-serif). Existing typography tests still pass. `make test` passes. `make types` passes.
+
+### 33.4 Spacing Token Pipeline & Auto-Layout → Table Mapping `[Backend]`
+**What:** Wire spacing tokens through the full pipeline: extraction → design system → HTML conversion. Map Figma auto-layout `itemSpacing` to spacer `<tr>` rows (vertical) or cell padding (horizontal). Apply `padding_top/right/bottom/left` from `DesignNode` directly in `node_to_email_html()` instead of relying on the `_NodeProps` indirection that currently drops padding. Pass spacing tokens to the Scaffolder via the design context.
+**Why:** Currently: (1) `ExtractedSpacing` tokens are extracted from Figma but never consumed — there's no `convert_spacing()` function and they're absent from the design context sent to the Scaffolder. (2) `node_to_email_html()` reads padding from `props_map` but `_build_props_map_from_nodes()` only populates `bg_color`, silently discarding padding. (3) `item_spacing` from auto-layout is stored on `DesignNode` but never generates spacer rows or cell padding. The result: every Figma design's carefully crafted spacing is completely lost in the converted HTML.
+**Implementation:**
+- Create `convert_spacing()` in `app/design_sync/converter.py`:
+  - Accept `list[ExtractedSpacing]`, return a spacing scale dict: `dict[str, float]` mapping names to px values
+  - Detect common patterns: 4/8/12/16/24/32/48 → standard spacing scale
+  - Name normalization: `spacing-8` → `xs`, `spacing-16` → `sm`, `spacing-24` → `md`, `spacing-32` → `lg`, `spacing-48` → `xl` (if values align to multiples of 4 or 8)
+- Update `node_to_email_html()` in `app/design_sync/converter.py`:
+  - Read padding directly from `DesignNode` fields (not just `props_map`):
+    ```python
+    pad_top = node.padding_top or (props.padding_top if props else 0)
+    pad_right = node.padding_right or (props.padding_right if props else 0)
+    pad_bottom = node.padding_bottom or (props.padding_bottom if props else 0)
+    pad_left = node.padding_left or (props.padding_left if props else 0)
+    ```
+  - Apply padding as inline style on the wrapping `<table>` or on inner `<td>` elements
+  - Read `node.layout_mode` to determine row grouping strategy:
+    - `HORIZONTAL` → children become cells in a single `<tr>` (side by side)
+    - `VERTICAL` → children each get their own `<tr>` (stacked)
+    - `None` (no auto-layout) → fall back to existing `_group_into_rows()` by y-position
+  - Apply `item_spacing`:
+    - Vertical layout: insert spacer `<tr><td style="height:{item_spacing}px;font-size:1px;line-height:1px;">&nbsp;</td></tr>` between child rows
+    - Horizontal layout: add `padding-left:{item_spacing}px` on all cells except the first
+  - Apply `counter_axis_spacing` as padding on the cross-axis direction
+- Update `_build_props_map_from_nodes()` in `app/design_sync/converter_service.py`:
+  - Populate padding, font_family, font_size, font_weight, and layout_direction from `DesignNode` fields (currently only `bg_color` is set)
+- Update `_build_design_context()` in `app/design_sync/import_service.py`:
+  - Add `"spacing"` key to `design_tokens`:
+    ```python
+    "spacing": [
+        {"name": s.name, "value": s.value} for s in tokens.spacing
+    ]
+    ```
+  - Include `spacing_map` from layout analysis in the design context
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `css_support/box-model.md` — **critical rules**: padding works ONLY on `<td>` cells (Outlook ignores padding on `<p>`/`<div>`/`<a>`). Never use `margin: 0 auto` for centering — use `align="center"` HTML attribute. Width must be set as both HTML attribute (`width="600"`) and CSS (`style="width:600px"`) for Outlook compatibility. `box-sizing` is ignored by Outlook. Percentage widths are reliable on `<td>` elements
+- `outlook_fixer/skills/mso_bug_fixes.md` — spacer row pattern must include `font-size:1px;line-height:1px;mso-line-height-rule:exactly` to prevent Outlook from expanding spacer rows to default line height (~18px). Without `mso-line-height-rule:exactly`, a `height:12px` spacer row renders as 18px in Outlook
+- `css_support/layout-properties.md` — `display:inline-block` fails in Outlook (use ghost tables instead); `float` is ignored by Gmail and Outlook; flexbox/grid are Apple Mail only. Table layout is the only reliable approach for multi-client emails
+- `best_practices/table-based-layout.md` — always include `cellpadding="0" cellspacing="0" border="0"` on layout tables; `role="presentation"` on all non-data tables; avoid nesting tables deeper than 6 levels (Outlook rendering degrades)
+**Security:** No new input paths. Spacing values are numeric, already validated in 33.2.
+**Verify:** Figma frame with `paddingTop: 24, paddingLeft: 16` → HTML `<td>` has `style="padding:24px 0px 0px 16px"` (padding on `<td>`, NOT on `<table>`). Vertical auto-layout with `itemSpacing: 12` → spacer `<tr>` rows with `height:12px;font-size:1px;line-height:1px;mso-line-height-rule:exactly` between children. Horizontal auto-layout with `itemSpacing: 8` → cells have `padding-left:8px` (except first). Centering uses `align="center"` attribute, not `margin:0 auto`. Spacing tokens appear in Scaffolder design context. `make test` passes.
+
+### 33.5 Multi-Column Layout & Proportional Width Calculation `[Backend]`
+**What:** Fix multi-column rendering so that child nodes receive proportional widths based on their Figma dimensions relative to the parent. Replace the current `width="100%"` on all nested tables with calculated widths. Use `layout_mode` from auto-layout to determine horizontal vs. vertical arrangement instead of relying solely on y-position proximity.
+**Why:** Currently every nested `<table>` gets `width="100%"`. In a two-column layout (e.g., 200px + 400px in a 600px parent), both columns render at 100% width and stack vertically instead of sitting side by side. The `_group_into_rows()` function uses a 10px y-tolerance to guess which nodes are on the same row, but: (a) auto-layout nodes often lack absolute positions, (b) 11px offset splits columns into separate rows, and (c) it ignores the explicit `layoutMode: "HORIZONTAL"` that Figma provides.
+**Implementation:**
+- Update `node_to_email_html()` in `app/design_sync/converter.py`:
+  - When rendering child nodes in a `<tr>` (horizontal row):
+    - Calculate width percentage: `child_width_pct = round((child.width / parent_width) * 100)` if both widths are known
+    - Apply as `width="{pct}%"` on the child `<td>` wrapper and `width="100%"` on the inner `<table>` (so the table fills its cell)
+    - For unknown widths: distribute equally (`100 / len(row_children)`)%
+  - When `node.layout_mode == "HORIZONTAL"`:
+    - Override `_group_into_rows()` — treat ALL children as a single row regardless of y-position
+    - Skip y-position sorting for this node's children
+  - When `node.layout_mode == "VERTICAL"`:
+    - Override `_group_into_rows()` — treat EACH child as its own row
+  - Only call `_group_into_rows()` when `layout_mode` is `None` (absolute positioning)
+  - Add Outlook ghost table wrapping for multi-column rows:
+    ```html
+    <!--[if mso]><table role="presentation" width="100%"><tr><![endif]-->
+    <td width="50%" style="display:inline-block;vertical-align:top;">...</td>
+    <!--[if mso]></tr></table><![endif]-->
+    ```
+- Update `_group_into_rows()`:
+  - Increase y-tolerance from 10px to 20px (common offset in manually positioned designs)
+  - Handle `y=None` nodes: if ALL children have `y=None`, return them as a single row (assume horizontal auto-layout)
+  - If SOME children have y and SOME don't, group y-bearing children normally and append y-less children to the last row
+- Update `DesignConverterService.convert()` in `converter_service.py`:
+  - Pass `selected_nodes` to `node_to_email_html()` context so width calculation has access to parent frame dimensions
+  - Make container width configurable (default 600px) based on design's `overall_width` from layout analysis
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `scaffolder/skills/table_layouts.md` — **complete HTML patterns** for 2-column (50/50 with MSO ghost table), 3-column (33/33/33), hero + content grid, 70/30 sidebar, fluid-hybrid spongy layout. Use these as parameterized templates in `node_to_email_html()` rather than generating from scratch. Each pattern includes MSO conditional ghost table wrapper, `display:inline-block;vertical-align:top;` for modern clients, and `width` on both `<td>` cells and MSO table cells
+- `outlook_fixer/skills/mso_conditionals.md` — ghost table nesting rules: NEVER nest MSO conditionals (causes Word engine stack corruption). Always close `<![endif]-->` before opening another `<!--[if mso]>`. Version targeting operators: `gte mso 12` (Outlook 2007+), `lte mso 16` (Outlook 2021 and earlier). Count conditional pairs to verify balanced open/close
+- `outlook_fixer/skills/mso_bug_fixes.md` — MSO table reset styles: `mso-table-lspace:0pt;mso-table-rspace:0pt` on every `<table>` (prevents 1px white lines between cells). Ghost table pattern must include `cellpadding="0" cellspacing="0"`. DPI scaling fix (`PixelsPerInch=96`) already in `EMAIL_SKELETON` — verify it's not duplicated
+- `css_support/layout-properties.md` — `display:inline-block` requires `vertical-align:top` and `width` set via both attribute and CSS. Gmail clips emails at 102KB — monitor generated HTML size for multi-column layouts
+- `import_annotator/skills/column_patterns.md` — column detection patterns for reverse mapping: table-based columns (each `<td>` = column), inline-block columns (parent = section), and the key rule that individual columns are NOT sections (parent gets the section annotation)
+**Security:** No new input paths. Width calculations use numeric node dimensions only.
+**Verify:** Two children (200px + 400px) in a 600px parent with `layoutMode: "HORIZONTAL"` → `<td width="33%">` and `<td width="67%">` with ghost table wrapper. Three equal columns → `<td width="33%">` each with MSO ghost table. Ghost table includes `cellpadding="0" cellspacing="0"` and `mso-table-lspace:0pt;mso-table-rspace:0pt`. No nested MSO conditionals (balanced open/close count). Vertical auto-layout → each child in its own `<tr>`. Mixed y-position nodes with >10px offset but <20px → grouped in same row. All children with `y=None` → single row. Existing single-column layouts unaffected. `make test` passes.
+
+### 33.6 Semantic HTML Generation (Headings, Paragraphs, Buttons) `[Backend]`
+**What:** Update `node_to_email_html()` to emit semantic HTML elements inside `<td>` cells: `<h1>`-`<h3>` for headings, `<p>` for body text, and styled `<a>` tags for button components. Use font size relative to the design's body size to determine heading level. Recognize COMPONENT/INSTANCE nodes named as buttons and convert to bulletproof `<a>` buttons with VML fallback.
+**Why:** Currently all text becomes a bare `<td>` tag regardless of semantic role. This violates the codebase's own email HTML rules ("Use `<h1>`-`<h6>` with inline styles inside `<td>` cells" and "Use `<p style='margin:0 0 10px 0;'>` inside `<td>` cells"). Screen readers can't distinguish headings from body text. Button components (FRAME/COMPONENT with a single short TEXT child) render as `<table>` wrappers instead of clickable `<a>` elements.
+**Implementation:**
+- Update TEXT node rendering in `node_to_email_html()`:
+  - Determine semantic role from font size + design context:
+    - `font_size >= body_size * 2.0` → `<h1>` (or within 80% of largest font in parent)
+    - `font_size >= body_size * 1.5` → `<h2>`
+    - `font_size >= body_size * 1.2` → `<h3>`
+    - Otherwise → `<p>` (not bare text in `<td>`)
+  - Body size: determined from `convert_typography()` result or default 16px
+  - Wrap semantic element inside the `<td>`:
+    ```html
+    <td>
+      <h1 style="margin:0;font-family:...;font-size:...;font-weight:...;color:...;line-height:...;">
+        Heading Text
+      </h1>
+    </td>
+    ```
+  - `<p>` tags get `style="margin:0 0 10px 0;"` per codebase convention
+  - Multi-line TEXT nodes (containing `\n`): split into multiple `<p>` tags
+- Add button detection and rendering:
+  - **Reuse `layout_analyzer` output**: 33.0 wires `analyze_layout()` into the converter, producing `EmailSection.buttons` (list of `ButtonElement` with `node_id`, `text`, `width`, `height`). Check if the current node's `id` matches a button in the section's buttons list rather than re-detecting. Fallback detection for nodes outside analyzed sections: COMPONENT/INSTANCE with name containing "button"/"btn"/"cta" AND a single TEXT child ≤30 chars AND height ≤80px (same rules as `layout_analyzer._walk_for_buttons`)
+  - Render as bulletproof button:
+    ```html
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="border-radius:4px;background-color:{fill_color};">
+            <a href="#" style="display:inline-block;padding:12px 24px;font-family:...;font-size:...;color:{text_color};text-decoration:none;">
+              {button_text}
+            </a>
+          </td>
+        </tr>
+      </table>
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" style="width:{width}px;height:{height}px;" arcsize="8%" fillcolor="{fill_color}" stroke="f">
+        <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">
+          <center style="font-family:Arial,sans-serif;font-size:{font_size}px;color:{text_color};">{button_text}</center>
+        </v:textbox>
+      </v:roundrect>
+      <![endif]-->
+    </td>
+    ```
+  - Extract button dimensions from node.width/height, bg color from node.fill_color, text color from child TEXT node
+- Pass body font size as parameter to `node_to_email_html()` for heading level calculation
+- **Reuse `layout_analyzer` heading detection**: 33.0 wires `analyze_layout()` into the converter, producing `EmailSection.texts` with `is_heading=True/False` already set by `_detect_content_hierarchy()`. Use `TextBlock.is_heading` from the section's text list to determine whether a TEXT node is a heading, rather than re-computing font size ratios. The heading level (h1/h2/h3) still uses the font size thresholds described above — `is_heading` determines *whether* it's a heading, the size ratio determines *which level*
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `best_practices/cta-buttons.md` — **complete bulletproof button patterns**: padding-based table button (widest support), VML roundrect for Outlook (with `arcsize` percentage), and border-based approach (fallback). Design rules: 44px minimum touch target height, 4.5:1 contrast ratio between button text and background, action verb copy (2-4 words), multiple CTAs should have visual hierarchy (primary = filled, secondary = outlined). The VML `<v:roundrect>` pattern includes `stroke="f"` (no border), `<v:textbox inset="0,0,0,0">`, and `<center>` for text alignment
+- `outlook_fixer/skills/vml_reference.md` — VML shape syntax: `<v:roundrect>` for buttons (with `arcsize` as percentage of shortest side), `<v:fill type="solid" color="{hex}">`, `<v:textbox>` with `mso-fit-shape-to-text:true` to auto-size. VML namespace must be declared on `<html>` (already in `EMAIL_SKELETON`). Always include `xmlns:v="urn:schemas-microsoft-com:vml"` and `xmlns:o="urn:schemas-microsoft-com:office:office"`
+- `accessibility/skills/screen_reader_behavior.md` — `role="presentation"` on ALL layout tables (already present but verify button wrapper tables get it too). Headings create navigation landmarks — ensure heading hierarchy doesn't skip levels (h1 → h3 without h2). `aria-hidden="true"` on decorative spacer rows. Reading order follows DOM order, not visual order — verify the converter outputs elements in the same order as the design's top-to-bottom reading flow
+- `accessibility/skills/color_contrast.md` — WCAG AA contrast: 4.5:1 for normal text (<18px or <14px bold), 3:1 for large text (≥18px or ≥14px bold). Apply to button text vs button background color. The converter already has `_relative_luminance()` and `_contrast_ratio()` — extend to validate button contrast and warn if below threshold
+- `outlook_fixer/skills/mso_bug_fixes.md` — `mso-line-height-rule:exactly` required on ALL elements with explicit `line-height` (headings, paragraphs). Without it, Outlook overrides line-height with its own default. Paragraph margins: use `mso-margin-top-alt` and `mso-margin-bottom-alt` for Outlook-specific margin control
+**Security:** HTML content is escaped via `html.escape()` (already in place). Button `href="#"` is a placeholder — no user-controlled URLs in conversion output. VML attributes use escaped values.
+**Verify:** TEXT node with font-size 32px (body 16px) → `<h1>` inside `<td>` with `mso-line-height-rule:exactly`. TEXT node with font-size 16px → `<p style="margin:0 0 10px 0;">` inside `<td>`. COMPONENT named "CTA Button" with "Shop Now" text → bulletproof `<a>` button with VML `<v:roundrect>` fallback, `role="presentation"` on button wrapper table, contrast ratio ≥ 4.5:1 validated. Button height ≥ 44px (touch target). Multi-line text → multiple `<p>` tags. Heading hierarchy is sequential (no skipped levels). Layout tables have `role="presentation"`. Existing conversion output still has valid email HTML structure. `make test` passes.
+
+### ~~33.7 Dark Mode Token Extraction & Gradient Fallbacks~~ DONE `[Backend]`
+**What:** Extract dark mode color variants from Figma Variables API modes. When a variable collection has a "Dark" mode, extract parallel token sets for light and dark. Generate `prefers-color-scheme: dark` CSS overrides and `[data-ogsc]` / `[data-ogsb]` attribute selectors for Outlook dark mode. Add gradient linear fallback support: emit CSS `background: linear-gradient(...)` with a solid `bgcolor` fallback for Outlook.
+**Why:** Currently the pipeline extracts zero dark mode tokens. The Dark Mode agent downstream must guess dark colors algorithmically — often producing poor contrast or off-brand colors. Figma Variables natively support light/dark modes, but the extraction pipeline ignores mode data entirely. Additionally, gradient backgrounds are silently dropped (33.1 extracts a midpoint color, but the actual gradient information is lost). Many modern email designs use subtle gradients in hero sections.
+**Implementation:**
+- Extend `ExtractedTokens` in `app/design_sync/protocol.py`:
+  - Add `dark_colors: list[ExtractedColor] = field(default_factory=list)` — dark mode counterparts
+  - Add `gradients: list[ExtractedGradient] = field(default_factory=list)`
+- Add `ExtractedGradient` dataclass:
+  ```python
+  @dataclass(frozen=True)
+  class ExtractedGradient:
+      name: str
+      type: str  # "linear" | "radial"
+      angle: float  # degrees (linear only)
+      stops: list[tuple[str, float]]  # (hex_color, position 0.0-1.0)
+      fallback_hex: str  # midpoint solid fallback for Outlook
+  ```
+- Update `_fetch_variables()` in `app/design_sync/figma/service.py`:
+  - When parsing variable collections: detect modes with names containing "dark", "night", "dim" (case-insensitive)
+  - For each color variable: extract both default mode value and dark mode value
+  - Create parallel `ExtractedColor` lists: light mode → `colors`, dark mode → `dark_colors`
+  - Match by variable name: `dark_colors[i].name` == `colors[i].name` for easy pairing
+- Update `_walk_for_colors()`:
+  - For `GRADIENT_LINEAR` fills:
+    - Extract `gradientHandlePositions` (angle calculation) and `gradientStops` (colors + positions)
+    - Compute angle from handle positions: `atan2(handle2.y - handle1.y, handle2.x - handle1.x) * 180 / pi`
+    - Build `ExtractedGradient` with stops and fallback midpoint hex
+- Update `converter.py`:
+  - Add `_gradient_to_css()`: convert `ExtractedGradient` → `background: linear-gradient({angle}deg, {stop1} {pos1}%, {stop2} {pos2}%, ...)`
+  - When a node's fill is a gradient: emit both `bgcolor="{fallback_hex}"` for Outlook and `style="background:{gradient_css};"` for modern clients
+- Update `converter_service.py`:
+  - Add `dark_mode_style_block()`: generate `@media (prefers-color-scheme: dark)` CSS rules mapping light → dark colors
+  - Add `[data-ogsc]` and `[data-ogsb]` selectors for Outlook.com dark mode
+  - Include dark mode CSS in the `<style>` block of `EMAIL_SKELETON`
+- Update `_build_design_context()` in `import_service.py`:
+  - Include `dark_colors` in design context when available
+  - Include `gradients` list
+**Knowledge sources (encode as code, do not connect at runtime):**
+- `css_support/dark-mode-css.md` — **complete dark mode email template** with all techniques combined. Three-tier approach: (1) `<meta name="color-scheme" content="light dark">` + `<meta name="supported-color-schemes" content="light dark">` in `<head>`, (2) `@media (prefers-color-scheme: dark)` with `!important` on all overrides (for Apple Mail, iOS, Samsung), (3) `[data-ogsc]` (text) and `[data-ogsb]` (background) attribute selectors for Outlook.com. CSS `color-scheme: light dark;` property on `<body>`. All three must be present for full coverage
+- `dark_mode/skills/color_remapping.md` — **magic color values**: use `#010101` instead of `#000000` and `#fefefe` instead of `#ffffff` to prevent Outlook auto-inversion (Outlook categorizes pure black and pure white for automatic dark mode swapping). Luminance-based color categorization zones: light (lum > 0.5) → may be darkened, dark (lum < 0.2) → may be lightened, mid-range (0.2-0.5) → usually preserved. Pre-verified dark mode color pairs with WCAG AA contrast ratios
+- `dark_mode/skills/outlook_dark_mode.md` — Outlook.com-specific patterns: `[data-ogsc]` targets text color, `[data-ogsb]` targets background color. The 1x1 pixel background trick prevents Outlook from inverting CTA button backgrounds: set a 1x1 transparent PNG as `background-image` on the button `<td>` (`background-image:url(data:image/png;base64,...)`) — Outlook won't invert elements with background images. Class-based selectors required (not element selectors) because Outlook.com rewrites class names
+- `dark_mode/skills/client_behavior.md` — client behavior matrix: Apple Mail = full control (color-scheme + @media), Outlook.com = partial (`[data-ogsc]`/`[data-ogsb]` only), Outlook Desktop = no dark mode control, Gmail = no dark mode control, **Samsung = double-inversion risk** (Samsung inverts colors, then re-inverts `prefers-color-scheme` overrides — test carefully). Implementation priority: Apple/iOS first (largest dark mode market share), then Outlook.com, then Samsung
+- `dark_mode/skills/meta_tag_injection.md` — required meta tags (must be in `<head>`, before any `<style>` block): `<meta name="color-scheme" content="light dark">` and `<meta name="supported-color-schemes" content="light dark">`. Without these, Apple Mail ignores `@media (prefers-color-scheme: dark)` entirely
+- `dark_mode/skills/image_handling.md` — image swap techniques for dark mode: `<picture><source media="(prefers-color-scheme: dark)" srcset="dark-logo.png">` for Apple Mail; CSS show/hide with `display:none` / `display:block !important` for broader support; transparent PNG logos work natively in dark mode. Product images: add 1-2px white border to prevent blend-in on dark backgrounds
+- `css_support/colors-backgrounds.md` — gradient CSS support: only Apple Mail/iOS/Samsung support `background: linear-gradient(...)`. All other clients need solid `bgcolor` fallback. For Outlook: use VML `<v:fill type="gradient" color="{start_hex}" color2="{end_hex}" angle="{angle}">` (from `outlook_fixer/skills/vml_reference.md`). Always emit both CSS gradient AND `bgcolor` attribute on the same element
+- `accessibility/skills/color_contrast.md` — dark mode colors must ALSO meet WCAG AA contrast: validate all dark color pairs (dark text on dark background) at 4.5:1 for normal text, 3:1 for large text. Use `_relative_luminance()` and `_contrast_ratio()` already in `converter.py`
+**Security:** No new input paths. Gradient angle clamped to 0-360. Color hex values validated by 33.2 transform layer. Magic color values (#010101, #fefefe) are static constants.
+**Verify:** Figma file with "Light"/"Dark" variable modes → both `colors` and `dark_colors` populated. Dark mode CSS block contains all three tiers: meta tags, `@media (prefers-color-scheme: dark)` rules with `!important`, and `[data-ogsc]`/`[data-ogsb]` selectors. Magic colors used: generated dark CSS uses `#010101` instead of `#000000` and `#fefefe` instead of `#ffffff`. Dark color pairs validated for WCAG AA contrast. Gradient fill → `background: linear-gradient(...)` in CSS + `bgcolor="{fallback_hex}"` attribute + VML `<v:fill type="gradient">` for Outlook. Gradient with 3 stops → all stops present in CSS. CTA buttons have 1x1 pixel background trick to prevent Outlook inversion. No dark mode in Figma → `dark_colors` empty, no dark CSS generated, no meta tags added. `make test` passes.
+
+### ~~33.8 Design Context Enrichment & Scaffolder Integration~~ DONE `[Backend + Frontend]`
+**What:** Ensure the full enriched token set (colors, typography with line-height/letter-spacing, spacing, dark mode colors, gradients, token warnings) flows through the design context to the Scaffolder and is visible in the frontend token viewer. Fix the `_layout_to_design_nodes()` reconstruction to preserve typography, padding, and text content. Add token diff display on the design sync page showing what changed between syncs.
+**Why:** Currently: (1) `_build_design_context()` drops line_height and spacing from the dict sent to the Scaffolder. (2) `_layout_to_design_nodes()` builds hollow `DesignNode` objects that lose all typography, padding, and text content. (3) The frontend `DesignTokensView` only shows colors, typography families, and spacing values — no line-height, letter-spacing, dark mode variants, or gradient previews. (4) Users can't see what changed between syncs — they must compare manually.
+**Implementation:**
+- Update `_build_design_context()` in `app/design_sync/import_service.py`:
+  - Add `line_height` and `letter_spacing` to typography entries
+  - Add `spacing` array from `ExtractedSpacing` tokens
+  - Add `dark_colors` array when available
+  - Add `gradients` array when available
+  - Add `token_warnings` list from validation layer (33.2)
+- Fix `_layout_to_design_nodes()` in `app/design_sync/import_service.py`:
+  - Preserve `text_content`, `font_family`, `font_size`, `font_weight`, `line_height_px`, `letter_spacing_px` from `TextBlock` data in layout analysis
+  - Preserve `padding_top/right/bottom/left` and `item_spacing` from section data
+  - Preserve `fill_color` and `text_color` where available
+  - Create TEXT-type child nodes from `section.texts` with full typography data
+- Update `DesignTokensResponse` schema in `app/design_sync/schemas.py`:
+  - Add `dark_colors: list[ColorResponse] | None`
+  - Add `gradients: list[GradientResponse] | None`
+  - Add `warnings: list[str] | None`
+  - Add `typography[].line_height`, `typography[].letter_spacing`, `typography[].text_transform`
+- Update frontend `design-tokens-view.tsx`:
+  - Show dark mode colors alongside light mode colors (side-by-side swatches)
+  - Show gradient previews (CSS gradient rendered in a swatch div)
+  - Show line-height and letter-spacing in typography cards
+  - Show token warnings as dismissible alerts
+- Add token diff logic:
+  - Backend: `DesignSyncService.get_token_diff(connection_id)` → compares current snapshot tokens vs previous snapshot
+  - Return: `{added: [...], removed: [...], changed: [{name, old_value, new_value}]}`
+  - Frontend: show diff summary after sync with color-coded added/removed/changed badges
+**Security:** Token warnings are system-generated strings, not user input. No XSS risk in frontend display (React auto-escapes).
+**Verify:** Scaffolder receives typography with line_height and letter_spacing in design context. `_layout_to_design_nodes()` produces nodes with font_family, font_size, text_content populated. Frontend shows dark mode swatches when available. Token diff after re-sync shows changed colors. Token warnings visible in UI. `make check-fe` passes. `make test` passes.
+
+### ~~33.9 Builder Annotations for Visual Builder Sync~~ DONE `[Backend]`
+**What:** Add `data-section-id`, `data-component-name`, and `data-slot-name` attributes to the HTML output of `node_to_email_html()` and `DesignConverterService.convert()`. These annotations are what the frontend builder sync (`ast-mapper.ts` → `visual-builder-panel.tsx`) uses to populate slot definitions, render actual content instead of placeholders, and enable drag-and-drop editing of imported designs.
+**Why:** Phase 31 fixed slot definition inference for the HTML upload/paste path (via `inferSlotDefinitions()` fallback in `visual-builder-panel.tsx`). But the Figma design sync pipeline produces HTML without any builder annotations. The frontend sync engine's Strategy 1 (annotated HTML with `data-section-id`) never matches — it falls through to Strategy 2 (structural content-root analysis), which produces `SectionNode` objects with `componentId=0` and empty `slotValues`. The `sectionNodeToBuilderSection()` function then calls `inferSlotDefinitions()` on the HTML fragment, but since the converter emits bare `<td>` elements (no `data-slot-name` attributes), inference returns `[]` → slot fills are never applied → the visual builder shows "Body content goes here" placeholders instead of the actual Figma content. The fix is to annotate the converter output at generation time, so the builder sync path works end-to-end without relying on fallback inference.
+**Implementation:**
+- Update `node_to_email_html()` in `app/design_sync/converter.py`:
+  - Add `data-section-id="section_{idx}"` on each top-level frame's wrapping `<tr>` element (the `<tr><td>` wrapper in `converter_service.py` line 111)
+  - Add `data-component-name="{node.name}"` on the section's outer `<table>` element (using the Figma frame/component name, sanitized via `html.escape()`)
+  - Add `data-slot-name="{slot_id}"` on content-bearing elements inside sections:
+    - TEXT nodes rendered as `<h1>`/`<h2>`/`<h3>` (from 33.6) → `data-slot-name="heading"` (or `heading_2`, `heading_3` for subsequent headings in the same section)
+    - TEXT nodes rendered as `<p>` → `data-slot-name="body"` (or `body_2`, `body_3` for subsequent paragraphs)
+    - IMAGE nodes → `data-slot-name="image"` (or `image_2` for subsequent images)
+    - Button `<a>` elements (from 33.6) → `data-slot-name="cta"` (or `cta_2` for subsequent buttons)
+  - Slot ID generation: maintain a per-section counter dict `{slot_type: count}` to generate unique IDs like `heading`, `body`, `body_2`, `image`, `cta`
+  - Pass section index as parameter to `node_to_email_html()` for `data-section-id` generation
+- Update `DesignConverterService.convert()` in `converter_service.py`:
+  - Pass frame index to `node_to_email_html()` so section IDs are sequential
+  - Add `data-section-id` to the `<tr><td>` wrapper:
+    ```python
+    section_parts.append(
+        f'<tr data-section-id="section_{idx}"><td>\n{section_html}\n</td></tr>'
+    )
+    ```
+- Frontend compatibility verification:
+  - `ast-mapper.ts` Strategy 1 should now match on `data-section-id` attributes → produces annotated `SectionNode[]`
+  - `sectionNodeToBuilderSection()` receives `slotValues` populated from `data-slot-name` elements → slot fills applied → actual content visible in preview
+  - `inferSlotDefinitions()` fallback still works for HTML without annotations (backward compatible)
+  - `stripAnnotations()` in `section-markers.ts` already handles `data-section-id`, `data-slot-name`, `data-component-name` removal on export (no changes needed)
+**Security:** Annotation attributes use `html.escape()` for all values derived from Figma node names. `data-*` attributes are inert HTML — no script execution risk. `stripAnnotations()` removes all builder metadata before export, so annotations never reach the final email output.
+**Verify:** Import Figma design via design sync → converter output contains `data-section-id="section_0"`, `data-section-id="section_1"`, etc. on `<tr>` elements. Content elements have `data-slot-name` attributes matching their semantic role. Visual builder preview shows actual Figma content (headings, body text, images) instead of placeholders. `ast-mapper.ts` Strategy 1 matches annotated sections. `stripAnnotations()` removes all `data-*` builder attributes on export. Existing upload/paste path still works (annotations are additive). `make test` passes. `make check-fe` passes.
+
+### 33.10 Image Asset Import for Design Sync Pipeline `[Backend]`
+**What:** Wire the existing `ImageImporter` (built in Phase 31.7 for the upload pipeline) into the design sync conversion pipeline. After `DesignConverterService.convert()` produces the HTML skeleton with `<img src="" ...>` placeholders, download the actual images from Figma's image export API, store them locally, and rewrite the `src` attributes to hub-hosted URLs. Preserve image dimensions from both Figma node data and downloaded image metadata.
+**Why:** Currently `node_to_email_html()` renders IMAGE nodes as `<img src="" alt="..." width="..." height="..." />` — the `src` is always empty. The Figma API provides image export endpoints (`/v1/images/{file_key}?ids={node_ids}&format=png`) that return temporary CDN URLs for rendered images. Phase 31.7 built a complete `ImageImporter` class with SSRF prevention, magic byte validation, dimension extraction via Pillow, content-hash deduplication, and semaphore-limited concurrent downloads — but it's only wired into the upload pipeline (`TemplateUploadService`). The design sync pipeline needs the same capability to produce complete, renderable HTML from Figma imports.
+**Implementation:**
+- Update `DesignConverterService` in `converter_service.py`:
+  - Add `async convert_with_images()` method that wraps `convert()` + image import:
+    - Call `convert()` to produce the HTML skeleton (existing flow)
+    - Collect all IMAGE node IDs from the design tree (the `data-node-id` attributes already emitted by `node_to_email_html()` on `<img>` tags)
+    - Call `provider.export_images(file_ref, access_token, node_ids, format="png", scale=2.0)` to get temporary Figma CDN URLs
+    - Build a mapping: `{node_id: figma_cdn_url}`
+    - Rewrite `<img src="" data-node-id="{node_id}"` → `<img src="{figma_cdn_url}" data-node-id="{node_id}"` in the HTML
+    - Pass the HTML through `ImageImporter.import_images(html, upload_id=import_id)` to download, validate, store, and rewrite URLs to hub-hosted paths
+    - Return `ConversionResult` with the image-complete HTML + `ImportedImage` list
+  - Keep `convert()` synchronous and image-free (for tests and cases where image import isn't needed)
+- Update `DesignImportService.run_conversion()` in `import_service.py`:
+  - Call `convert_with_images()` instead of `convert()` when `generate_html=True`
+  - Pass `import_id` for image storage path (same pattern as upload pipeline)
+  - Store `ImportedImage` metadata in the import record's `structure_json["images"]`
+- Reuse `ImageImporter` from `app/templates/upload/image_importer.py`:
+  - No modifications needed — the class is already generic (accepts HTML string, returns modified HTML + image list)
+  - Configuration via `settings.templates.import_images`, `max_image_download_size`, etc. (already in place from Phase 31.7)
+- Serve imported images via the existing asset endpoint:
+  - `GET /api/v1/templates/upload/assets/{upload_id}/{filename}` already serves images with path traversal protection and CSP headers
+  - For design sync imports, use `import_id` as the storage directory key (same pattern, different ID namespace)
+  - Add a parallel endpoint or alias: `GET /api/v1/design-sync/imports/{import_id}/assets/{filename}` that delegates to the same `DesignAssetService`
+- Update `<img>` rendering in `node_to_email_html()`:
+  - Preserve `data-node-id` attribute (already present) — used by the image rewriting step to match Figma export URLs to elements
+  - Use Figma node dimensions (`width`, `height`) for HTML attributes, but update with actual downloaded dimensions if they differ (Pillow measurement from `ImageImporter`)
+  - Set `style="display:block;border:0;width:100%;max-width:{width}px;height:auto;"` for responsive images
+**Security:** Figma CDN URLs are temporary (expire after ~30 minutes) — images are downloaded and stored locally immediately. `ImageImporter` already validates: HTTP/HTTPS only (no `file://`), magic byte verification (PNG/JPEG/GIF/WebP/SVG), 5MB size limit per image, 50 images per import. Asset serving endpoint has path traversal prevention via `.resolve()` + `is_relative_to()`. No user-controlled URLs — all URLs come from Figma's API response.
+**Verify:** Import Figma design with 3 images → converter fetches Figma export URLs → `ImageImporter` downloads and stores locally → HTML `src` attributes point to hub-hosted URLs. Images render correctly in builder preview. Image dimensions from Figma preserved in HTML attributes. Figma export failure (CDN timeout) → graceful fallback, `src` stays as Figma CDN URL (temporary but functional). Import without images → no errors (empty image list). `ImageImporter` deduplication: same image in two sections → downloaded once. Asset serving endpoint returns correct content-type and CSP headers. `make test` passes.
+
+### 33.11 Tests & Integration Verification `[Full-Stack]`
+**What:** Comprehensive tests verifying the full design token pipeline from Figma API response through to email HTML output: Variables API parsing, opacity compositing, token validation, typography transforms, spacing application, multi-column layout, semantic HTML, dark mode extraction, and Scaffolder integration.
+**Implementation:**
+- **Variables API extraction tests** — `app/design_sync/figma/tests/test_variables_api.py`:
+  - Mock Variables API response with color, float, and string variables → `ExtractedTokens` with `variables_source=True`
+  - Variable with alias `{color.brand.primary}` → resolved to literal hex value
+  - Circular alias `A → B → A` → raises `SyncFailedError("Circular variable alias")`
+  - Collection with "Light" and "Dark" modes → separate `colors` and `dark_colors` lists
+  - 403 response (no paid plan) → graceful fallback to Styles API path
+  - Existing Styles API tests still pass (regression)
+- **Opacity compositing tests** — `app/design_sync/figma/tests/test_opacity.py`:
+  - `_rgba_to_hex_with_opacity(0, 0, 1.0, a=0.5, node_opacity=1.0)` → `#8080FF` (blue composited on white)
+  - `_rgba_to_hex_with_opacity(0, 0, 1.0, a=1.0, node_opacity=0.5)` → `#8080FF` (same via layer opacity)
+  - `_rgba_to_hex_with_opacity(0, 0, 1.0, a=0.5, node_opacity=0.5)` → `#C0C0FF` (25% effective opacity)
+  - Fully opaque → `_rgba_to_hex()` fast path, identical to current behavior
+  - Multiple fills: top solid fill is extracted, lower fills ignored
+  - Gradient fill → midpoint color extracted + `ExtractedGradient` created
+  - Stroke colors → not in `tokens.colors` list
+- **Token validation tests** — `app/design_sync/tests/test_token_transforms.py`:
+  - Empty font family → warning + replaced with `"Arial"`
+  - 3-digit hex `#F00` → expanded to `#FF0000`
+  - Named color `"red"` → `#FF0000`
+  - `rgba(255, 0, 0, 0.5)` string → converted to composited hex
+  - Unitless line-height `1.5` with font size `16` → `24.0` (px)
+  - Negative spacing `-5` → error-level warning
+  - Zero colors → info-level warning
+  - Valid tokens → zero warnings, pass-through unchanged
+- **Typography pipeline tests** — `app/design_sync/tests/test_typography_pipeline.py`:
+  - `convert_typography()` with `Inter 400 16px` → `Typography(body_font="Inter, Arial, Arial, Helvetica, sans-serif")`
+  - `_font_stack("Inter")` → `"Inter, Arial, Arial, Helvetica, sans-serif"`
+  - `_font_stack("Playfair Display")` → `"Playfair Display, Georgia, Georgia, Times New Roman, serif"`
+  - `_font_stack("Unknown Custom Font")` → `"Unknown Custom Font, Arial, Helvetica, sans-serif"` (no mapping, default fallback)
+  - Font weight `300` → `"normal"`, weight `600` → `"bold"`
+  - Line-height `28.8` from Figma → `"29px"` in `Typography.heading_line_height`
+  - Letter-spacing preserved through pipeline
+  - Text transform `UPPER` → `"uppercase"` in output
+- **Spacing and layout tests** — `app/design_sync/tests/test_spacing_layout.py`:
+  - Vertical auto-layout with `itemSpacing: 12` → spacer `<tr>` rows in HTML
+  - Horizontal auto-layout with `itemSpacing: 8` → `padding-left:8px` on cells (skip first)
+  - Node padding `(24, 16, 24, 16)` → `style="padding:24px 16px 24px 16px"` on table
+  - Spacing tokens in design context dict for Scaffolder
+  - `convert_spacing()` with `[8, 16, 24, 32]` values → named scale
+- **Multi-column layout tests** — `app/design_sync/tests/test_multi_column.py`:
+  - Two children (200px + 400px) in 600px parent, `layoutMode: "HORIZONTAL"` → `<td width="33%">` and `<td width="67%">`
+  - Three equal children → `<td width="33%">` each
+  - MSO ghost table wrappers present in multi-column output
+  - `layoutMode: "VERTICAL"` → each child in own `<tr>` regardless of position
+  - `layoutMode: None` → fallback to `_group_into_rows()` by y-position
+  - All children `y=None` → single row (assumes horizontal)
+  - `_group_into_rows()` with 15px offset (> old 10px, < new 20px tolerance) → same row
+- **Semantic HTML tests** — `app/design_sync/tests/test_semantic_html.py`:
+  - TEXT node font-size 32px (body 16px) → `<h1>` inside `<td>`
+  - TEXT node font-size 24px → `<h2>` inside `<td>`
+  - TEXT node font-size 16px → `<p style="margin:0 0 10px 0;">` inside `<td>`
+  - Button component → `<a>` with VML `<v:roundrect>` fallback
+  - Multi-line text with `\n` → multiple `<p>` tags
+  - All semantic elements have inline styles (font-family, size, weight, color)
+- **Dark mode & gradient tests** — `app/design_sync/tests/test_dark_mode_gradients.py`:
+  - Variables with "Dark" mode → `dark_colors` populated with matching names
+  - Dark mode CSS block has `@media (prefers-color-scheme: dark)` rules
+  - Dark mode CSS block has `[data-ogsc]` selectors
+  - Linear gradient → `background: linear-gradient(...)` + `bgcolor` fallback
+  - Gradient with 3 stops → correct CSS output
+  - No dark mode → no dark CSS block (clean output)
+- **Builder annotation tests** — `app/design_sync/tests/test_builder_annotations.py`:
+  - Single-frame conversion → `<tr data-section-id="section_0">` on outer wrapper
+  - Multi-frame conversion → sequential `data-section-id` values (`section_0`, `section_1`, `section_2`)
+  - TEXT node rendered as `<h1>` → has `data-slot-name="heading"` attribute
+  - Second TEXT node rendered as `<p>` in same section → has `data-slot-name="body"` (not `heading`)
+  - Third TEXT node → `data-slot-name="body_2"` (counter increments)
+  - IMAGE node → `data-slot-name="image"` attribute
+  - Button `<a>` → `data-slot-name="cta"` attribute
+  - Multiple buttons in same section → `cta`, `cta_2` (unique IDs)
+  - Frame/component name → `data-component-name` attribute on section `<table>` (HTML-escaped)
+  - Frame with special characters in name (`"Hero Section / v2"`) → properly escaped in attribute
+  - `stripAnnotations()` removes all `data-section-id`, `data-slot-name`, `data-component-name` attributes (existing function, verify coverage)
+  - Frontend `ast-mapper.ts` Strategy 1 matches annotated HTML → produces `SectionNode[]` with populated `slotValues`
+  - `sectionNodeToBuilderSection()` with annotated sections → `slotDefinitions` populated from `data-slot-name` elements → preview shows actual content (not placeholders)
+- **Image import for design sync tests** — `app/design_sync/tests/test_design_sync_images.py`:
+  - `convert_with_images()` calls `provider.export_images()` for IMAGE node IDs → receives Figma CDN URLs
+  - Figma CDN URLs rewritten into HTML `<img src="">` placeholders before `ImageImporter` processes them
+  - `ImageImporter.import_images()` downloads from CDN URLs → stores locally → rewrites `src` to hub-hosted paths
+  - 3 images in Figma design → 3 `ImportedImage` entries in result with correct dimensions
+  - Duplicate image (same content hash) → downloaded once, reused (deduplication)
+  - Figma export failure (mock 500 response) → graceful fallback, `src` retains Figma CDN URL
+  - Image exceeding 5MB limit → skipped with warning, original URL preserved
+  - SVG image node → validated via magic bytes, stored as `.svg`
+  - Asset serving endpoint returns imported image with correct content-type header
+  - `import_images=false` in config → images skipped, `src=""` preserved
+  - Image dimensions from Figma node match HTML `width`/`height` attributes
+  - Image dimensions updated if Pillow measurement differs from Figma node data (actual file dimensions take precedence)
+- **End-to-end pipeline test** — `app/design_sync/tests/test_e2e_pipeline.py`:
+  - Mock Figma file response with Variables, auto-layout, gradients, dark mode:
+    - Variables API returns 6 colors (3 light, 3 dark), 2 typography styles, 4 spacing values
+    - Document tree: vertical frame with header (horizontal: logo + nav), hero (gradient bg + heading + CTA button), content (two-column), footer
+    - 3 IMAGE nodes (logo, hero image, content image) with mock export URLs
+  - Pipeline produces:
+    - Valid HTML email with `<!DOCTYPE>`, MSO conditionals, 600px container
+    - Header section with proportional columns
+    - Hero with gradient CSS + solid fallback + `<h1>` heading + bulletproof button
+    - Two-column content with proportional `<td>` widths + MSO ghost tables
+    - Dark mode `<style>` block with `prefers-color-scheme` + OGS selectors
+    - All spacing from auto-layout applied (padding + spacer rows)
+    - Typography with mapped email-safe fonts, line-height, letter-spacing
+    - No token validation warnings (all clean)
+    - Builder annotations: `data-section-id` on all section `<tr>` elements, `data-slot-name` on content elements, `data-component-name` on section tables
+    - Images: all `<img src>` attributes point to hub-hosted URLs (not empty, not Figma CDN)
+  - HTML validates (no unclosed tags, proper nesting)
+  - Visual builder integration: annotated HTML loaded into builder → sections detected via Strategy 1 → slot fills applied → preview renders actual Figma content
+**Security:** Tests only. Mock Figma API responses with synthetic data. No real PATs, no real API calls, no PII. Mock image downloads use `httpx` transport mocking — no real HTTP requests.
+**Verify:** `make test` passes (all new test files). `make check` all green. `make types` passes. No regression in existing design sync tests. `make bench` shows no performance regression in conversion pipeline.
+
+---
+
+## Security Checklist (Run Before Each Sprint Demo)
+
+- [ ] All new endpoints have auth dependency injection
+- [ ] All new endpoints have rate limiting configured
+- [ ] All request schemas validate input (no raw strings to DB)
+- [ ] All response schemas exclude sensitive fields
+- [ ] No credentials in logs (grep for password, secret, key, token in log output)
+- [ ] New database tables have appropriate RLS policies
+- [ ] Frontend forms sanitise input before API calls
+- [ ] Preview iframes use sandbox attribute
+- [ ] Error responses don't leak internal details
+- [ ] Audit entries created for all state-changing operations
+- [ ] CORS configuration checked (no wildcards)
+- [ ] Docker containers run as non-root
+- [ ] New environment variables documented in `.env.example`
+
+---
+
+## Success Criteria (Phases 32–33 — Next)
+
+| Metric | Status |
+|--------|--------|
+| Campaign build time | Under 1 hour (deterministic CSS pipeline) |
+| Cross-client rendering defects | Near-zero + enforced QA + rendering + approval gates |
+| QA checks | 17+ (enforced at export) |
+| CSS pipeline latency | <500ms (single-pass sidecar) |
+| Template CSS precompilation | Amortized at registration (0ms at build time) |
+| CSS compatibility visibility | Full gate panel: QA + rendering + approval status |
+| Email client emulators | 8 clients, 14 profiles (Gmail, Outlook, Apple Mail, Yahoo, Samsung, Thunderbird, Android Gmail, Outlook.com) |
+| Rendering confidence scoring | Per-client 0–100 with breakdown + recommendations + dashboard |
+| Pre-send rendering gate | Rendering + QA + approval gates in export pipeline (enforce/warn/skip) |
+| Approval workflow | Full UI: request, review, decide, feedback, audit trail |
+| E2E test coverage | 32+ Playwright scenarios + visual regression + 3 browsers (Chromium + Firefox + WebKit) |
+| Design import paths | Figma + Penpot + brief-only + enhanced Penpot converter |
+| HTML import fidelity | Pre-compiled email HTML imports with preserved centering, fonts, colors, images, and dark mode readability |
+| Maizzle passthrough | Pre-compiled HTML bypasses render() — no double-inlining or structural scrambling |
+| Typography token pipeline | font-weight, line-height, letter-spacing extracted + font-size/spacing applied during assembly + project design system mapping |
+| Font compilation | Client-specific font stacks (Outlook mso-font-alt, Gmail web font `<link>`), project design system font mapping with diff preview |
+| Image asset import | External images downloaded, re-hosted, dimensions preserved (display + intrinsic) |
+| Client rendering matrix | Single authoritative YAML — all 8 client families, CSS support, dark mode, known bugs, synced with ontology |
+| Agent knowledge lookup | Runtime `lookup_client_support` tool — <1ms deterministic queries, replaces static L3 duplication |
+| Content agent email awareness | Client-aware preheader/subject/CTA lengths, character encoding safety, column-width-adapted copy |
+| Import annotator recognition | Stripo, Bee, Mailchimp, MJML patterns recognized + ESP edge cases (AMPscript, nested Liquid, Handlebars partials) |
+| Cross-agent learning | Insight bus propagates rendering discoveries between agents — within-run handoff learnings + across-run semantic memory |
+| Eval-driven skill updates | Semi-automated pipeline: pass rate drop → failure cluster → skill file patch → PR for review |
+| Visual QA feedback loop | Pre-Maizzle visual precheck + screenshot-attached recovery routing + post-render drift comparison |
+| Figma Variables API | Modern token extraction via Variables API with Styles API fallback — zero-token files eliminated |
+| Opacity compositing | Fill opacity × layer opacity flattened to final hex — semi-transparent colors render correctly |
+| Token validation layer | All tokens validated before consumption: hex format, px units, non-empty fonts, no unresolved aliases |
+| Web font → email mapping | 25+ web fonts mapped to email-safe system fonts — no raw web fonts in final HTML |
+| Auto-layout → table mapping | Figma `layoutMode` drives HTML structure: HORIZONTAL → columns, VERTICAL → rows, with proportional widths |
+| Spacing token pipeline | `itemSpacing` → spacer rows/cell padding, `padding_*` → table padding, spacing tokens in Scaffolder context |
+| Multi-column proportional widths | Child widths calculated relative to parent — no more `width="100%"` on all nested tables |
+| Semantic email HTML | Headings → `<h1>`-`<h3>`, body → `<p>`, buttons → bulletproof `<a>` with VML fallback |
+| Dark mode token extraction | Light/dark variable modes extracted in parallel — no more algorithmic guessing |
+| Gradient fallbacks | Linear gradients → CSS `linear-gradient()` + solid `bgcolor` fallback for Outlook |
+| Design context enrichment | Full token set (typography + spacing + dark + gradients + warnings) flows to Scaffolder |
+| CRAG accept/reject gate | Corrections verified via before/after issue count — regressions rejected, originals preserved |
+
+---
+
+## Phase 32.9 — MCP Server Exposure for Agent Tools (DONE)
+
+> **Date completed:** 2026-03-27
+> **Scope:** Expose all 9 production agents as MCP tools for IDE-based coding agents (Claude Code, Cursor, Windsurf).
+
+### What was built
+
+| Deliverable | Details |
+|---|---|
+| `app/mcp/tools/agents.py` | `register_agent_tools(mcp)` — 9 tools: `agent_scaffold`, `agent_dark_mode`, `agent_content`, `agent_outlook_fix`, `agent_accessibility`, `agent_code_review`, `agent_personalise`, `agent_innovate`, `agent_knowledge` |
+| Input validation | HTML size limit (500K), brief length (4K), text length (10K), min-length checks, enum validation for `operation`, `platform`, `focus`, `output_mode` |
+| `_format_agent_result()` | Custom formatter: confidence-first ordering, HTML truncation via `truncate_html()`, empty collection filtering |
+| `_split_csv()` | Comma-separated string → `list[str]` conversion for MCP scalar params (issues, focus_areas, target_clients) |
+| Knowledge agent DB wiring | `get_db_context()` + `KnowledgeService` injected as `rag_service` — matches `knowledge_search` tool pattern |
+| `hub://agents` resource | `_AGENT_REGISTRY` in `resources.py` — 9 entries with name, tool, type (generator/transformer/analyzer/advisor), description, accepts, returns |
+| `app/mcp/server.py` | Added `register_agent_tools(mcp)` as 7th tool group |
+| `app/mcp/tests/test_agent_tools.py` | 29 tests: happy path per agent, input validation (too short/long/invalid enum), error handling (generic message, no stack trace, logs tool name), resource listing, registration + description substantiveness |
+| Test allowlist fix | `test_allowlist.py` hardcoded `== 17` → `>= 17` to tolerate new tools |
+
+### Key patterns
+
+- Follows existing MCP tool pattern from `app/mcp/tools/ai.py`: lazy imports, `format_simple_result(to_dict(response))`, `except Exception` → generic error + structured logging
+- `pyright: ignore[reportArgumentType]` for str→Literal boundary (MCP params arrive as str, schemas use Literal) — all have explicit validation guards
+- 84 total MCP tests pass (29 new + 55 existing)
+- 0 pyright errors, 0 mypy errors in `app/mcp/`
+
+---
+
+## Phase 32.6 — Eval-Driven Skill File Updates (DONE)
+
+> **Date completed:** 2026-03-27
+> **Scope:** Semi-automated pipeline that monitors eval pass rates, detects persistent failure patterns, generates L3 skill file patches via LLM, and creates git branches for human review.
+
+### What was built
+
+| Deliverable | Details |
+|---|---|
+| `app/ai/agents/evals/skill_updater.py` | `SkillUpdateDetector` class: `detect_update_candidates()` (reads analysis.json, filters pass_rate < 0.80 + count >= 5), `generate_patch()` (LLM call, temperature=0.0, structured PATCH_START/PATCH_END format), `apply_patches()` (git branch + commit automation) |
+| `CRITERION_SKILL_MAP` | 45-entry dict mapping 9 agents × 5 criteria each to L3 skill files (e.g., `scaffolder:mso_conditionals` → `mso_vml_quick_ref.md`). Falls back to SKILL.md for unmapped criteria |
+| `SkillUpdateCandidate` + `SkillFilePatch` | Frozen dataclasses in `schemas.py` — `source` field distinguishes `"eval"` vs `"tool_usage"` candidates |
+| Tool usage analytics | `_detect_tool_usage_promotions()` reads `traces/tool_usage.jsonl`, promotes facts queried >10 times to L2 SKILL.md candidates |
+| Duplicate detection | `_is_duplicate()` — 70% line overlap threshold prevents redundant patches |
+| Git error handling | `CalledProcessError` catch + `contextlib.suppress` best-effort `git checkout -` cleanup |
+| `scripts/eval-skill-update.py` | CLI: `--dry-run` (default in Makefile), `--threshold`, `--min-failures`, `--agent`, `--analysis` |
+| Makefile targets | `eval-skill-update` (dry-run), `eval-skill-update-apply` (creates branch) |
+| 35 tests | 8 test classes: detection (7), CRITERION_SKILL_MAP coverage (4), patch generation (4), apply_patches (5), tool usage promotion (3), formatting (4), parse response (3), duplicate detection (4). 223 evals tests total |
+
+### Key patterns
+
+- Reuses LLM call pattern from `amendment_suggester.py` (provider + registry + resolve_model)
+- `CRITERION_SKILL_MAP` validated by test against actual files on disk (`test_all_mapped_files_exist`)
+- Git operations isolated in `_apply_patches_git()` for clean error boundary
+- 0 pyright errors, 0 mypy errors, 0 ruff errors in `app/ai/agents/evals/`
+
+---

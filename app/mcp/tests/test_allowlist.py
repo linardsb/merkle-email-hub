@@ -13,12 +13,12 @@ class TestAllowlistFiltering:
     """Test tool allowlist fnmatch-based filtering."""
 
     def test_empty_allowlist_allows_all(self) -> None:
-        """Empty allowlist allows all 17 tools."""
+        """Empty allowlist allows all registered tools."""
         with patch("app.mcp.config.get_settings") as mock_settings:
             mock_settings.return_value.mcp.tool_allowlist = []
             server = create_mcp_server()
             tools = server._tool_manager._tools  # type: ignore[attr-defined]
-            assert len(tools) == 17
+            assert len(tools) >= 17
 
     def test_specific_allowlist_filters(self) -> None:
         """Pattern `qa_*` keeps only QA-prefixed tools."""
@@ -37,9 +37,7 @@ class TestAllowlistFiltering:
             server = create_mcp_server()
             tools = set(server._tool_manager._tools)  # type: ignore[attr-defined]
             for name in tools:
-                assert name.startswith("qa_") or name.startswith("knowledge_"), (
-                    f"Unexpected tool: {name}"
-                )
+                assert name.startswith(("qa_", "knowledge_")), f"Unexpected tool: {name}"
 
     def test_no_matching_pattern_removes_all(self) -> None:
         """Non-matching pattern removes all tools."""

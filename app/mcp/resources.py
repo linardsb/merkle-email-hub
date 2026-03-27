@@ -6,6 +6,81 @@ import json
 
 from mcp.server.fastmcp import FastMCP
 
+_AGENT_REGISTRY = [
+    {
+        "name": "scaffolder",
+        "tool": "agent_scaffold",
+        "type": "generator",
+        "description": "Generate email HTML from a campaign brief",
+        "accepts": "brief",
+        "returns": "html",
+    },
+    {
+        "name": "dark_mode",
+        "tool": "agent_dark_mode",
+        "type": "transformer",
+        "description": "Add dark mode styles to email HTML",
+        "accepts": "html",
+        "returns": "html",
+    },
+    {
+        "name": "content",
+        "tool": "agent_content",
+        "type": "generator",
+        "description": "Generate email copy (subject lines, CTAs, body text)",
+        "accepts": "operation + text",
+        "returns": "alternatives",
+    },
+    {
+        "name": "outlook_fixer",
+        "tool": "agent_outlook_fix",
+        "type": "transformer",
+        "description": "Fix Outlook rendering issues in email HTML",
+        "accepts": "html",
+        "returns": "html",
+    },
+    {
+        "name": "accessibility",
+        "tool": "agent_accessibility",
+        "type": "transformer",
+        "description": "Add WCAG accessibility improvements to email HTML",
+        "accepts": "html",
+        "returns": "html",
+    },
+    {
+        "name": "code_reviewer",
+        "tool": "agent_code_review",
+        "type": "analyzer",
+        "description": "Review email HTML for quality and compatibility issues",
+        "accepts": "html",
+        "returns": "issues",
+    },
+    {
+        "name": "personalisation",
+        "tool": "agent_personalise",
+        "type": "transformer",
+        "description": "Inject ESP dynamic content syntax into email HTML",
+        "accepts": "html + platform + requirements",
+        "returns": "html",
+    },
+    {
+        "name": "innovation",
+        "tool": "agent_innovate",
+        "type": "generator",
+        "description": "Prototype experimental email techniques",
+        "accepts": "technique",
+        "returns": "prototype + fallback",
+    },
+    {
+        "name": "knowledge",
+        "tool": "agent_knowledge",
+        "type": "advisor",
+        "description": "Answer email development questions with citations",
+        "accepts": "question",
+        "returns": "answer + sources",
+    },
+]
+
 
 def register_resources(mcp: FastMCP) -> None:
     """Register MCP resources."""
@@ -47,3 +122,8 @@ def register_resources(mcp: FastMCP) -> None:
             "cost_governor": s.ai.cost_governor_enabled,
         }
         return json.dumps(caps, indent=2)
+
+    @mcp.resource("hub://agents")
+    def agent_list() -> str:
+        """List all available AI agents with their MCP tool names and capabilities."""
+        return json.dumps({"agents": _AGENT_REGISTRY, "count": len(_AGENT_REGISTRY)}, indent=2)
