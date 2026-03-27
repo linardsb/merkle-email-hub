@@ -24,6 +24,8 @@ from app.ai.blueprints.nodes.qa_gate_node import QAGateNode
 from app.ai.blueprints.nodes.recovery_router_node import RecoveryRouterNode
 from app.ai.blueprints.nodes.repair_node import RepairNode
 from app.ai.blueprints.nodes.scaffolder_node import ScaffolderNode
+from app.ai.blueprints.nodes.visual_comparison_node import VisualComparisonNode
+from app.ai.blueprints.nodes.visual_precheck_node import VisualPrecheckNode
 from app.ai.blueprints.protocols import BlueprintNode
 
 
@@ -42,6 +44,8 @@ def build_campaign_blueprint() -> BlueprintDefinition:
     code_reviewer = CodeReviewerNode()
     knowledge = KnowledgeNode()
     innovation = InnovationNode()
+    visual_precheck = VisualPrecheckNode()
+    visual_comparison = VisualComparisonNode()
 
     nodes: dict[str, BlueprintNode] = {
         scaffolder.name: scaffolder,
@@ -57,12 +61,15 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         code_reviewer.name: code_reviewer,
         knowledge.name: knowledge,
         innovation.name: innovation,
+        visual_precheck.name: visual_precheck,
+        visual_comparison.name: visual_comparison,
     }
 
     edges = [
-        # scaffolder → repair → qa_gate
+        # scaffolder → repair → visual_precheck → qa_gate
         Edge(from_node="scaffolder", to_node="repair", condition="always"),
-        Edge(from_node="repair", to_node="qa_gate", condition="always"),
+        Edge(from_node="repair", to_node="visual_precheck", condition="always"),
+        Edge(from_node="visual_precheck", to_node="qa_gate", condition="always"),
         # QA pass → build
         Edge(from_node="qa_gate", to_node="maizzle_build", condition="success"),
         # QA fail → recovery router
@@ -110,8 +117,9 @@ def build_campaign_blueprint() -> BlueprintDefinition:
         Edge(from_node="accessibility", to_node="repair", condition="always"),
         Edge(from_node="personalisation", to_node="repair", condition="always"),
         Edge(from_node="code_reviewer", to_node="repair", condition="always"),
-        # Build → export
-        Edge(from_node="maizzle_build", to_node="export", condition="always"),
+        # Build → visual_comparison → export
+        Edge(from_node="maizzle_build", to_node="visual_comparison", condition="always"),
+        Edge(from_node="visual_comparison", to_node="export", condition="always"),
     ]
 
     return BlueprintDefinition(

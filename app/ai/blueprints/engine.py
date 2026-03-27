@@ -107,6 +107,7 @@ class BlueprintRun:
     )
     resumed_from: str | None = None
     token_budget: int = 500_000
+    insights_extracted: int = 0
 
     @property
     def remaining_budget(self) -> float:
@@ -139,11 +140,13 @@ class BlueprintEngine:
         routing_history_repo: "RoutingHistoryRepository | None" = None,
         recovery_outcome_repo: "RecoveryOutcomeRepository | None" = None,
         confidence_calibrations: dict[str, "CalibrationResult"] | None = None,
+        client_id: str | None = None,
     ) -> None:
         self._definition = definition
         self._component_resolver = component_resolver
         self._on_handoff = on_handoff
         self._project_id = project_id
+        self._client_id = client_id
         self._graph_provider = graph_provider
         self._audience_profile = audience_profile
         self._judge_on_retry = judge_on_retry
@@ -662,6 +665,8 @@ class BlueprintEngine:
         agent_budget = get_budget(agent_name)
         context.metadata["agent_name"] = agent_name
         context.metadata["agent_budget"] = agent_budget
+        if self._client_id:
+            context.metadata["client_id"] = self._client_id
 
         # Inject upstream handoff for agentic nodes (compact in economy mode)
         if run._last_handoff is not None:
@@ -676,6 +681,10 @@ class BlueprintEngine:
                 upstream_constraints = format_upstream_constraints(run._last_handoff)
                 if upstream_constraints:
                     context.metadata["upstream_constraints"] = upstream_constraints
+
+                # Inject learnings from upstream agent (within-run propagation)
+                if run._last_handoff.learnings:
+                    context.metadata["upstream_learnings"] = run._last_handoff.learnings
 
         if run._handoff_history:
             # Enable decay tiers when history is long enough (Phase 3)
@@ -747,6 +756,37 @@ class BlueprintEngine:
                 except Exception:
                     logger.debug(
                         "blueprint.judge_aggregation_inject_failed",
+                        node=node.name,
+                        exc_info=True,
+                    )
+
+        # LAYER 17: Cross-agent insight propagation (agentic + enabled + audience)
+        if node.node_type == "agentic" and self._audience_profile is not None:
+            from app.core.config import get_settings as _get_settings_ip
+
+            if _get_settings_ip().blueprint.insight_propagation_enabled:
+                from app.ai.blueprints.insight_bus import (
+                    format_insight_context,
+                    recall_insights,
+                )
+
+                try:
+                    audience_client_ids = tuple(self._audience_profile.client_ids)
+                    insights = await recall_insights(
+                        agent_name=agent_name,
+                        client_ids=audience_client_ids,
+                        project_id=self._project_id,
+                    )
+                    if insights:
+                        context.metadata["cross_agent_insights"] = format_insight_context(insights)
+                        logger.info(
+                            "blueprint.insights_injected",
+                            agent=agent_name,
+                            count=len(insights),
+                        )
+                except Exception:
+                    logger.debug(
+                        "blueprint.insight_recall_failed",
                         node=node.name,
                         exc_info=True,
                     )
@@ -974,6 +1014,20 @@ class BlueprintEngine:
                         block_count=len(multimodal_blocks),
                         exc_info=True,
                     )
+
+        # LAYER 14.5: Visual defect multimodal override (recovery router injects screenshots for fixers)
+        override_raw = context.metadata.get("multimodal_context_override")
+        if isinstance(override_raw, list) and override_raw and node.node_type == "agentic":
+            from app.ai.multimodal import ContentBlock
+
+            typed_blocks: list[ContentBlock] = [
+                b for b in override_raw if isinstance(b, ContentBlock)
+            ]
+            if typed_blocks:
+                existing = context.multimodal_context or []
+                context.multimodal_context = [*existing, *typed_blocks]
+            # Clear override after injection (one-shot)
+            context.metadata.pop("multimodal_context_override", None)
 
         # LAYER 11: Design system (ALL nodes — agentic for prompt context, deterministic for brand repair)
         if self._design_system is not None:

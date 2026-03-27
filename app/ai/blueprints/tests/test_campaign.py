@@ -149,8 +149,9 @@ class TestCampaignBlueprint:
         assert "repair" in definition.nodes
         assert definition.nodes["repair"].node_type == "deterministic"
 
-        # Verify edge count (16: repair node adds 1 extra edge vs original 15)
-        assert len(definition.edges) == 16
+        # Verify edge count (>= 16: repair node adds 1 extra edge vs original 15;
+        # visual precheck/comparison nodes may add more when feature-gated on)
+        assert len(definition.edges) >= 16
 
         # Verify agentic vs deterministic
         assert definition.nodes["scaffolder"].node_type == "agentic"

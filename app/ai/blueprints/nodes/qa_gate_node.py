@@ -37,6 +37,24 @@ class QAGateNode:
         structured_failures: list[StructuredFailure] = []
         passed_count = 0
 
+        # Merge visual precheck failures (set by VisualPrecheckNode upstream)
+        visual_precheck_data = (context.metadata or {}).get("visual_precheck_failures", [])
+        for vpf in visual_precheck_data:
+            if isinstance(vpf, dict):
+                detail = str(vpf.get("details", "visual defect"))
+                check_name = str(vpf.get("check_name", "visual_defect"))
+                failures.append(f"{check_name}: {detail}")
+                structured_failures.append(
+                    StructuredFailure(
+                        check_name=check_name,
+                        score=float(vpf.get("score", 0.0)),
+                        details=detail,
+                        suggested_agent=str(vpf.get("suggested_agent", "scaffolder")),
+                        priority=int(vpf.get("priority", 0)),
+                        severity=str(vpf.get("severity", "high")),
+                    )
+                )
+
         profile = load_defaults()
         for check in ALL_CHECKS:
             check_config = profile.get_check_config(check.name)

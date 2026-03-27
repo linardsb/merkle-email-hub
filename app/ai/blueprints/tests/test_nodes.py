@@ -8,7 +8,7 @@ from app.ai.blueprints.nodes.export_node import ExportNode
 from app.ai.blueprints.nodes.qa_gate_node import QAGateNode
 from app.ai.blueprints.nodes.recovery_router_node import RecoveryRouterNode
 from app.ai.blueprints.nodes.scaffolder_node import ScaffolderNode
-from app.ai.blueprints.protocols import NodeContext
+from app.ai.blueprints.protocols import NodeContext, StructuredFailure
 
 
 class TestQAGateNode:
@@ -232,3 +232,119 @@ class TestScaffolderNode:
         node = ScaffolderNode()
         assert node.name == "scaffolder"
         assert node.node_type == "agentic"
+
+
+class TestQAGateVisualPrecheck:
+    """Tests for QA gate merging visual precheck failures."""
+
+    @pytest.mark.asyncio()
+    async def test_qa_gate_merges_visual_precheck_failures(self, sample_html_valid: str) -> None:
+        node = QAGateNode()
+        visual_failures = [
+            {
+                "check_name": "visual_defect:outlook_2019",
+                "score": 0.0,
+                "details": "Hero collapses",
+                "suggested_agent": "outlook_fixer",
+                "priority": 0,
+                "severity": "critical",
+            }
+        ]
+        context = NodeContext(
+            html=sample_html_valid,
+            metadata={"visual_precheck_failures": visual_failures},
+        )
+        result = await node.execute(context)
+
+        # Even if standard checks pass, visual failures cause QA gate to fail
+        assert result.status == "failed"
+        assert any(
+            sf.check_name == "visual_defect:outlook_2019" for sf in result.structured_failures
+        )
+
+
+class TestRecoveryRouterVisualDefects:
+    """Tests for recovery router handling visual defect failures."""
+
+    @pytest.mark.asyncio()
+    async def test_routes_visual_defect_to_suggested_agent(self) -> None:
+        node = RecoveryRouterNode()
+        structured = [
+            StructuredFailure(
+                check_name="visual_defect:outlook_2019",
+                score=0.0,
+                details="Hero collapses",
+                suggested_agent="outlook_fixer",
+                priority=0,
+                severity="critical",
+            )
+        ]
+        context = NodeContext(
+            html="<p>test</p>",
+            metadata={"qa_failure_details": structured},
+        )
+        result = await node.execute(context)
+
+        assert "route_to:outlook_fixer" in result.details
+
+    @pytest.mark.asyncio()
+    async def test_visual_context_injected_for_visual_defect(self) -> None:
+        """Screenshot is injected into metadata when routing visual defects."""
+        node = RecoveryRouterNode()
+        tiny_png_b64 = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4"
+            "2mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        )
+        structured = [
+            StructuredFailure(
+                check_name="visual_defect:outlook_2019",
+                score=0.0,
+                details="Hero collapses",
+                suggested_agent="outlook_fixer",
+                priority=0,
+                severity="critical",
+            )
+        ]
+        metadata: dict[str, object] = {
+            "qa_failure_details": structured,
+            "precheck_screenshots": {"outlook_2019": tiny_png_b64},
+        }
+        context = NodeContext(html="<p>test</p>", metadata=metadata)
+
+        result = await node.execute(context)
+
+        assert result.status == "success"
+        assert "route_to:outlook_fixer" in result.details
+        # multimodal_context_override should be set
+        assert "multimodal_context_override" in metadata
+
+    @pytest.mark.asyncio()
+    async def test_visual_defect_cycle_detection(self) -> None:
+        """Same visual defect after fixer ran → escalate to scaffolder."""
+        from app.ai.blueprints.protocols import AgentHandoff
+
+        node = RecoveryRouterNode()
+        structured = [
+            StructuredFailure(
+                check_name="visual_defect:outlook_2019",
+                score=0.0,
+                details="Hero collapses",
+                suggested_agent="outlook_fixer",
+                priority=0,
+                severity="critical",
+            )
+        ]
+        context = NodeContext(
+            html="<p>test</p>",
+            metadata={
+                "qa_failure_details": structured,
+                "previous_qa_failure_details": structured,  # Same failures as before
+                "handoff_history": [
+                    AgentHandoff(agent_name="outlook_fixer", artifact=""),
+                ],
+            },
+            iteration=1,
+        )
+        result = await node.execute(context)
+
+        assert "route_to:scaffolder" in result.details

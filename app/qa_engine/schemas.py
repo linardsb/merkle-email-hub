@@ -1,6 +1,7 @@
 """Pydantic schemas for QA engine."""
 
 import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -52,6 +53,24 @@ class QAOverrideResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class QAVisualDefect(BaseModel):
+    """A rendering defect detected by visual QA precheck (per-client)."""
+
+    type: str = Field(description="Defect type, e.g. 'layout_collapse', 'style_stripping'")
+    severity: Literal["low", "medium", "high", "critical"] = "medium"
+    client_id: str = Field(description="Email client ID, e.g. 'outlook_2019'")
+    description: str = Field(description="Human-readable defect description")
+    suggested_agent: str | None = Field(
+        default=None, description="Fixer agent to route to, e.g. 'outlook_fixer'"
+    )
+    screenshot_ref: str | None = Field(
+        default=None, description="Content block ID for downstream multimodal injection"
+    )
+    bounding_box: dict[str, int] | None = Field(
+        default=None, description="Defect region: {x, y, w, h}"
+    )
+
+
 class QAResultResponse(BaseModel):
     """Full QA result with individual checks."""
 
@@ -65,6 +84,7 @@ class QAResultResponse(BaseModel):
     checks: list[QACheckResult] = []
     override: QAOverrideResponse | None = None
     resilience_score: float | None = None
+    visual_defects: list[QAVisualDefect] = []
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)

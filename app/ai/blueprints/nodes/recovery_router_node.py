@@ -212,6 +212,9 @@ class RecoveryRouterNode:
             if not fallback_found:
                 target = "scaffolder"
 
+        # Inject multimodal context for visual defect routing
+        self._inject_visual_context(context, structured, target)
+
         logger.info(
             "blueprint.recovery_router.routing",
             target=target,
@@ -225,6 +228,58 @@ class RecoveryRouterNode:
             html=context.html,
             details=f"route_to:{target}",
         )
+
+    @staticmethod
+    def _inject_visual_context(
+        context: NodeContext,
+        structured: list[StructuredFailure],
+        target: str,
+    ) -> None:
+        """Inject screenshot into multimodal context when routing visual defects.
+
+        When a visual_defect:* failure routes to a fixer agent, attach the
+        screenshot so the fixer can *see* the defect it's fixing.
+        """
+        import base64
+
+        visual_failures = [sf for sf in structured if sf.check_name.startswith("visual_defect:")]
+        if not visual_failures:
+            return
+
+        metadata = context.metadata or {}
+        raw_screenshots = metadata.get("precheck_screenshots", {})
+        if not isinstance(raw_screenshots, dict) or not raw_screenshots:
+            return
+        screenshots: dict[str, str] = {str(k): str(v) for k, v in raw_screenshots.items()}
+        # Find the first screenshot matching a visual defect for this target
+        for vf in visual_failures:
+            if vf.suggested_agent != target:
+                continue
+            client_id = vf.check_name.split(":", 1)[1] if ":" in vf.check_name else ""
+            b64_data = screenshots.get(client_id)
+            if not b64_data:
+                continue
+
+            try:
+                from app.ai.multimodal import ImageBlock, TextBlock
+
+                image_bytes = base64.b64decode(b64_data)
+                override: list[object] = [
+                    TextBlock(text=f"Visual defect in {client_id}: {vf.details}"),
+                    ImageBlock(data=image_bytes, media_type="image/png", source="base64"),
+                ]
+                metadata["multimodal_context_override"] = override
+                logger.info(
+                    "blueprint.recovery_router.visual_context_injected",
+                    client=client_id,
+                    target=target,
+                )
+            except Exception:
+                logger.warning(
+                    "blueprint.recovery_router.visual_context_failed",
+                    exc_info=True,
+                )
+            return  # Inject only one screenshot per routing decision
 
     def _legacy_route(self, context: NodeContext) -> NodeResult:
         """String-based routing for backward compatibility."""

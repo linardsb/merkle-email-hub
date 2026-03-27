@@ -19,9 +19,14 @@ from app.ai.agents.visual_qa.prompt import (
 from app.ai.agents.visual_qa.prompt import (
     detect_relevant_skills as _detect_relevant_skills,
 )
-from app.ai.agents.visual_qa.schemas import VisualDefect, VisualQARequest, VisualQAResponse
+from app.ai.agents.visual_qa.schemas import (
+    VisualComparisonResult,
+    VisualDefect,
+    VisualQARequest,
+    VisualQAResponse,
+)
 from app.core.logging import get_logger
-from app.qa_engine.schemas import QACheckResult
+from app.qa_engine.schemas import QACheckResult, QAVisualDefect
 
 logger = get_logger(__name__)
 
@@ -44,9 +49,13 @@ class VisualQAService(BaseAgentService):
     _output_mode_supported: bool = False  # Always structured output
 
     def build_system_prompt(
-        self, relevant_skills: list[str], output_mode: str = "structured"
+        self,
+        relevant_skills: list[str],
+        output_mode: str = "structured",
+        *,
+        client_id: str | None = None,
     ) -> str:
-        return _build_system_prompt(relevant_skills, output_mode=output_mode)
+        return _build_system_prompt(relevant_skills, output_mode=output_mode, client_id=client_id)
 
     def detect_relevant_skills(self, request: Any) -> list[str]:
         req: VisualQARequest = request
@@ -298,6 +307,198 @@ class VisualQAService(BaseAgentService):
             auto_fixable=decisions.auto_fixable,
         )
 
+    async def detect_defects_lightweight(
+        self,
+        screenshots: dict[str, str],
+        html: str,
+    ) -> list[QAVisualDefect]:
+        """Fast-path VLM defect detection for QA gate precheck.
+
+        Uses a minimal prompt and lower max_tokens for speed.
+        Returns QA-engine VisualDefect objects (not agent-level).
+        """
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.core.config import get_settings
+
+        settings = get_settings()
+
+        # Validate screenshots
+        image_blocks = self._screenshots_to_blocks(screenshots)
+        if isinstance(image_blocks, VisualQAResponse):
+            return []  # Validation error — skip silently
+
+        visual_qa_model = settings.ai.visual_qa_model
+        model = visual_qa_model or resolve_model(self.model_tier)
+        provider_name = settings.ai.provider
+
+        html_preview = html[:2000] if len(html) > 2000 else html
+        user_text = (
+            f"Detect rendering defects in these email screenshots.\n"
+            f"Clients: {', '.join(screenshots.keys())}\n\n"
+            f"HTML preview:\n```html\n{html_preview}\n```\n\n"
+            "Return JSON with a 'defects' array only. Each defect: "
+            '{"region", "description", "severity" (critical/warning/info), '
+            '"affected_clients" (list), "suggested_fix"}.'
+        )
+
+        system_prompt = (
+            "You are a visual QA specialist for HTML email. "
+            "Detect rendering defects from screenshots. Be concise."
+        )
+        messages = self._build_multimodal_messages(
+            system_prompt=system_prompt,
+            user_text=user_text,
+            context_blocks=image_blocks,
+        )
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+
+        try:
+            result = await provider.complete(messages, model_override=model, max_tokens=1024)
+        except Exception as exc:
+            logger.warning("agents.visual_qa.lightweight_detect_failed", error=str(exc))
+            return []
+
+        decisions = self.parse_decisions(result.content)
+
+        qa_defects: list[QAVisualDefect] = []
+        for d in decisions.defects:
+            for client_id in d.affected_clients or list(screenshots.keys()):
+                qa_defects.append(
+                    QAVisualDefect(
+                        type=d.region or "rendering_defect",
+                        severity=_map_severity(d.severity),
+                        client_id=client_id,
+                        description=d.description,
+                        suggested_agent=_infer_agent(d.suggested_fix, d.description),
+                    )
+                )
+
+        logger.info(
+            "agents.visual_qa.lightweight_detect_completed",
+            defects_count=len(qa_defects),
+        )
+        return qa_defects
+
+    async def compare_screenshots(
+        self,
+        original: dict[str, str],
+        rendered: dict[str, str],
+        threshold: float = 5.0,
+    ) -> VisualComparisonResult:
+        """Compare original design screenshots against rendered email.
+
+        Uses ODiff for pixel diff, VLM for semantic interpretation when diff > threshold.
+        """
+        from app.rendering.visual_diff import compare_images
+
+        max_drift: float = 0.0
+        all_regions: list[dict[str, object]] = []
+        clients_compared = 0
+
+        for client_id in original:
+            if client_id not in rendered:
+                continue
+            clients_compared += 1
+
+            try:
+                orig_bytes = base64.b64decode(original[client_id])
+                rend_bytes = base64.b64decode(rendered[client_id])
+            except Exception:
+                logger.warning("agents.visual_qa.compare_decode_failed", client=client_id)
+                continue
+
+            try:
+                diff_result = await compare_images(orig_bytes, rend_bytes)
+            except Exception:
+                logger.warning("agents.visual_qa.odiff_failed", client=client_id, exc_info=True)
+                continue
+
+            pct = diff_result.diff_percentage
+            if pct > max_drift:
+                max_drift = pct
+            if pct > 0:
+                all_regions.append(
+                    {
+                        "client": client_id,
+                        "diff_percentage": pct,
+                        "pixels": diff_result.pixel_count,
+                    }
+                )
+
+        # VLM semantic description if drift exceeds threshold
+        semantic = ""
+        if max_drift > threshold and clients_compared > 0:
+            semantic = await self._describe_drift(original, rendered, all_regions)
+
+        logger.info(
+            "agents.visual_qa.comparison_completed",
+            drift_score=round(max_drift, 2),
+            clients_compared=clients_compared,
+        )
+        return VisualComparisonResult(
+            drift_score=round(max_drift, 2),
+            diff_regions=all_regions,
+            semantic_description=semantic,
+        )
+
+    async def _describe_drift(
+        self,
+        original: dict[str, str],
+        rendered: dict[str, str],
+        regions: list[dict[str, object]],
+    ) -> str:
+        """Ask VLM for a semantic description of visual differences."""
+        from app.ai.multimodal import TextBlock
+        from app.ai.registry import get_registry
+        from app.ai.routing import resolve_model
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        visual_qa_model = settings.ai.visual_qa_model
+        model = visual_qa_model or resolve_model(self.model_tier)
+
+        # Pick first client that has both original and rendered
+        client_id = next((c for c in original if c in rendered), None)
+        if client_id is None:
+            return ""
+
+        blocks: list[ContentBlock] = []
+        try:
+            orig_bytes = base64.b64decode(original[client_id])
+            rend_bytes = base64.b64decode(rendered[client_id])
+        except Exception:
+            return ""
+
+        blocks.append(self._image_block(orig_bytes, "image/png"))
+        blocks.append(TextBlock(text="[Original design screenshot]"))
+        blocks.append(self._image_block(rend_bytes, "image/png"))
+        blocks.append(TextBlock(text="[Rendered email screenshot]"))
+
+        region_summary = "; ".join(
+            f"{r.get('client', '?')}: {r.get('diff_percentage', '?')}% changed" for r in regions[:5]
+        )
+
+        messages = self._build_multimodal_messages(
+            system_prompt="Briefly describe the visual differences between the original design and rendered email.",
+            user_text=(
+                f"ODiff results: {region_summary}\n"
+                "Describe the key visual differences in 1-2 sentences."
+            ),
+            context_blocks=blocks,
+        )
+
+        registry = get_registry()
+        provider = registry.get_llm(settings.ai.provider)
+        try:
+            result = await provider.complete(messages, model_override=model, max_tokens=256)
+            return result.content.strip()
+        except Exception:
+            logger.warning("agents.visual_qa.drift_describe_failed", exc_info=True)
+            return ""
+
     def _build_response(
         self,
         *,
@@ -312,6 +513,30 @@ class VisualQAService(BaseAgentService):
     ) -> VisualQAResponse:
         """Not used — process() builds response directly."""
         return VisualQAResponse(model=model_id, skills_loaded=skills_loaded)
+
+
+_SEVERITY_LITERAL = {"critical", "high", "medium", "low"}
+_SEVERITY_MAP = {"warning": "medium", "info": "low"}
+
+
+def _map_severity(severity_str: str) -> str:
+    """Map VLM severity string to QA VisualDefect severity value."""
+    s = severity_str.lower().strip()
+    if s in _SEVERITY_LITERAL:
+        return s
+    return _SEVERITY_MAP.get(s, "medium")
+
+
+def _infer_agent(suggested_fix: str, description: str) -> str | None:
+    """Infer which fixer agent should handle a visual defect."""
+    text = f"{suggested_fix} {description}".lower()
+    if any(kw in text for kw in ("outlook", "vml", "ghost table", "mso")):
+        return "outlook_fixer"
+    if any(kw in text for kw in ("dark mode", "color-scheme", "prefers-color-scheme")):
+        return "dark_mode"
+    if any(kw in text for kw in ("contrast", "alt text", "accessibility", "aria", "wcag")):
+        return "accessibility"
+    return "scaffolder"
 
 
 # ── Module-level singleton ──

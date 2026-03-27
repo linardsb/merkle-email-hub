@@ -41,6 +41,22 @@ class VisualDefect(BaseModel):
     )
 
 
+class VisualComparisonResult(BaseModel):
+    """Result of comparing rendered email screenshots against original design."""
+
+    drift_score: float = Field(
+        default=0.0, ge=0.0, le=100.0, description="Pixel diff percentage (0-100)"
+    )
+    diff_regions: list[dict[str, object]] = Field(default_factory=list)
+    diff_image_ref: str | None = Field(
+        default=None, description="Path or content block ID for diff image"
+    )
+    semantic_description: str = Field(
+        default="", description="VLM interpretation of visual differences"
+    )
+    regressed: bool = Field(default=False, description="True if worse than previous iteration")
+
+
 class VisualQAResponse(BaseModel):
     """Response from the visual QA analysis endpoint."""
 

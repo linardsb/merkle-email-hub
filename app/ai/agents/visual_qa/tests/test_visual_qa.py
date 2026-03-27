@@ -11,6 +11,12 @@ from app.ai.agents.visual_qa.service import _MAX_SCREENSHOT_B64_LEN, VisualQASer
 from app.ai.blueprints.nodes.visual_qa_node import VisualQANode
 from app.ai.blueprints.protocols import NodeContext
 
+# 1x1 transparent PNG (smallest valid PNG) — module-level for use in test classes
+TINY_PNG_B64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4"
+    "2mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
+
 # ── Fixtures ──
 
 
@@ -542,3 +548,213 @@ class TestVisualQAPrompt:
         html = "<html><style>@media (prefers-color-scheme: dark) {}</style></html>" + "x" * 50
         skills = detect_relevant_skills(html)
         assert isinstance(skills, list)
+
+
+# ── Lightweight Detection Tests ──
+
+
+class TestDetectDefectsLightweight:
+    """Tests for VisualQAService.detect_defects_lightweight()."""
+
+    @pytest.mark.asyncio()
+    async def test_success_returns_qa_defects(self) -> None:
+        service = VisualQAService()
+        mock_response = MagicMock()
+        mock_response.content = '{"defects": [{"region": "hero", "description": "broken layout", "severity": "critical", "affected_clients": ["outlook_2019"], "suggested_fix": "Add ghost table for Outlook"}]}'
+
+        mock_provider = AsyncMock()
+        mock_provider.complete.return_value = mock_response
+
+        with (
+            patch("app.core.config.get_settings") as mock_settings,
+            patch("app.ai.registry.get_registry") as mock_registry,
+            patch("app.ai.routing.resolve_model", return_value="test-model"),
+        ):
+            mock_settings.return_value.ai.visual_qa_model = ""
+            mock_settings.return_value.ai.provider = "mock"
+            mock_registry.return_value.get_llm.return_value = mock_provider
+
+            result = await service.detect_defects_lightweight(
+                {"outlook_2019": TINY_PNG_B64},
+                "<html>" + "x" * 100 + "</html>",
+            )
+
+        assert len(result) >= 1
+        assert result[0].client_id == "outlook_2019"
+        assert result[0].severity in ("critical", "high", "medium", "low")
+
+    @pytest.mark.asyncio()
+    async def test_empty_defects_returns_empty_list(self) -> None:
+        service = VisualQAService()
+        mock_response = MagicMock()
+        mock_response.content = '{"defects": []}'
+
+        mock_provider = AsyncMock()
+        mock_provider.complete.return_value = mock_response
+
+        with (
+            patch("app.core.config.get_settings") as mock_settings,
+            patch("app.ai.registry.get_registry") as mock_registry,
+            patch("app.ai.routing.resolve_model", return_value="test-model"),
+        ):
+            mock_settings.return_value.ai.visual_qa_model = ""
+            mock_settings.return_value.ai.provider = "mock"
+            mock_registry.return_value.get_llm.return_value = mock_provider
+
+            result = await service.detect_defects_lightweight(
+                {"gmail_web": TINY_PNG_B64},
+                "<html>" + "x" * 100 + "</html>",
+            )
+
+        assert result == []
+
+    @pytest.mark.asyncio()
+    async def test_vlm_error_returns_empty_list(self) -> None:
+        service = VisualQAService()
+        mock_provider = AsyncMock()
+        mock_provider.complete.side_effect = RuntimeError("VLM down")
+
+        with (
+            patch("app.core.config.get_settings") as mock_settings,
+            patch("app.ai.registry.get_registry") as mock_registry,
+            patch("app.ai.routing.resolve_model", return_value="test-model"),
+        ):
+            mock_settings.return_value.ai.visual_qa_model = ""
+            mock_settings.return_value.ai.provider = "mock"
+            mock_registry.return_value.get_llm.return_value = mock_provider
+
+            result = await service.detect_defects_lightweight(
+                {"gmail_web": TINY_PNG_B64},
+                "<html>" + "x" * 100 + "</html>",
+            )
+
+        assert result == []
+
+
+# ── Screenshot Comparison Tests ──
+
+
+class TestCompareScreenshots:
+    """Tests for VisualQAService.compare_screenshots()."""
+
+    @pytest.mark.asyncio()
+    async def test_low_diff_no_vlm_call(self) -> None:
+        service = VisualQAService()
+        mock_diff = MagicMock()
+        mock_diff.diff_percentage = 2.0
+        mock_diff.pixel_count = 50
+
+        with patch(
+            "app.rendering.visual_diff.compare_images",
+            return_value=mock_diff,
+        ):
+            result = await service.compare_screenshots(
+                {"gmail_web": TINY_PNG_B64},
+                {"gmail_web": TINY_PNG_B64},
+                threshold=5.0,
+            )
+
+        assert result.drift_score == 2.0
+        assert not result.semantic_description
+
+    @pytest.mark.asyncio()
+    async def test_high_diff_vlm_called(self) -> None:
+        service = VisualQAService()
+        mock_diff = MagicMock()
+        mock_diff.diff_percentage = 12.5
+        mock_diff.pixel_count = 5000
+
+        with (
+            patch(
+                "app.rendering.visual_diff.compare_images",
+                return_value=mock_diff,
+            ),
+            patch.object(service, "_describe_drift", return_value="Hero padding increased"),
+        ):
+            result = await service.compare_screenshots(
+                {"gmail_web": TINY_PNG_B64},
+                {"gmail_web": TINY_PNG_B64},
+                threshold=5.0,
+            )
+
+        assert result.drift_score == 12.5
+        assert result.semantic_description == "Hero padding increased"
+
+    @pytest.mark.asyncio()
+    async def test_partial_clients_compared(self) -> None:
+        """Only clients present in both dicts are compared."""
+        service = VisualQAService()
+        mock_diff = MagicMock()
+        mock_diff.diff_percentage = 1.0
+        mock_diff.pixel_count = 10
+
+        with patch(
+            "app.rendering.visual_diff.compare_images",
+            return_value=mock_diff,
+        ):
+            result = await service.compare_screenshots(
+                {"gmail_web": TINY_PNG_B64, "outlook_2019": TINY_PNG_B64},
+                {"gmail_web": TINY_PNG_B64},  # Only gmail_web in rendered
+                threshold=5.0,
+            )
+
+        assert result.drift_score == 1.0
+        assert len(result.diff_regions) == 1
+
+
+# ── Helper Functions Tests ──
+
+
+class TestInferAgent:
+    """Tests for _infer_agent helper."""
+
+    def test_outlook_keywords(self) -> None:
+        from app.ai.agents.visual_qa.service import _infer_agent
+
+        assert _infer_agent("Add ghost table", "broken in Outlook") == "outlook_fixer"
+        assert _infer_agent("VML background", "") == "outlook_fixer"
+        assert _infer_agent("MSO conditional", "") == "outlook_fixer"
+
+    def test_dark_mode_keywords(self) -> None:
+        from app.ai.agents.visual_qa.service import _infer_agent
+
+        assert _infer_agent("", "Dark mode inverts logo") == "dark_mode"
+        assert _infer_agent("prefers-color-scheme fix", "") == "dark_mode"
+
+    def test_accessibility_keywords(self) -> None:
+        from app.ai.agents.visual_qa.service import _infer_agent
+
+        assert _infer_agent("", "Low contrast text") == "accessibility"
+        assert _infer_agent("Add alt text", "") == "accessibility"
+
+    def test_default_to_scaffolder(self) -> None:
+        from app.ai.agents.visual_qa.service import _infer_agent
+
+        assert _infer_agent("", "General layout issue") == "scaffolder"
+
+
+class TestMapSeverity:
+    """Tests for _map_severity helper."""
+
+    def test_direct_matches(self) -> None:
+        from app.ai.agents.visual_qa.service import _map_severity
+
+        assert _map_severity("critical") == "critical"
+        assert _map_severity("high") == "high"
+        assert _map_severity("medium") == "medium"
+        assert _map_severity("low") == "low"
+
+    def test_warning_maps_to_medium(self) -> None:
+        from app.ai.agents.visual_qa.service import _map_severity
+
+        assert _map_severity("warning") == "medium"
+
+    def test_info_maps_to_low(self) -> None:
+        from app.ai.agents.visual_qa.service import _map_severity
+
+        assert _map_severity("info") == "low"
+
+    def test_unknown_defaults_to_medium(self) -> None:
+        from app.ai.agents.visual_qa.service import _map_severity
+
+        assert _map_severity("unknown") == "medium"

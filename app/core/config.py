@@ -421,6 +421,11 @@ class BlueprintConfig(BaseModel):
     correction_examples_enabled: bool = False  # Few-shot correction examples on retries
     judge_aggregation_enabled: bool = False  # Judge verdict aggregation → prompt patching
     confidence_calibration_enabled: bool = False  # Per-agent confidence calibration
+    insight_propagation_enabled: bool = False  # Cross-agent insight propagation
+    visual_qa_precheck: bool = False  # Pre-QA visual defect detection via VLM screenshots
+    visual_comparison: bool = False  # Post-build screenshot comparison vs original design
+    visual_comparison_threshold: float = 5.0  # Pixel diff % threshold for drift warning
+    visual_precheck_top_clients: int = 3  # Number of clients to render for precheck
 
 
 class EvalConfig(BaseModel):

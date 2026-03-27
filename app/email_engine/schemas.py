@@ -1,8 +1,12 @@
 """Pydantic schemas for email build pipeline."""
 
+from __future__ import annotations
+
 import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.ai.agents.visual_qa.schemas import VisualComparisonResult
 
 
 class BuildRequest(BaseModel):
@@ -33,6 +37,7 @@ class BuildResponse(BaseModel):
     error_message: str | None = None
     is_production: bool
     passthrough: bool = False
+    visual_drift: VisualComparisonResult | None = None
     created_at: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
