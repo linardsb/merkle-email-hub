@@ -1,6 +1,6 @@
 """Add fidelity_json to design_imports for visual fidelity scoring.
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: f6e5d4c3b2a1
 Revises: z0a1b2c3d4e5
 Create Date: 2026-03-27
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import JSON
 
 from alembic import op
 
-revision: str = "a1b2c3d4e5f6"
+revision: str = "f6e5d4c3b2a1"
 down_revision: str | None = "z0a1b2c3d4e5"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

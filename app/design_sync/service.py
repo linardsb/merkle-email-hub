@@ -730,7 +730,7 @@ class DesignSyncService:
                 raise ConnectionNotFoundError(f"Connection {body.connection_id} not found")
             if conn.project_id is not None:
                 await self._verify_access(conn.project_id, user)
-            await self._repo.save_snapshot(body.connection_id, asdict(tokens), datetime.now(UTC))
+            await self._repo.save_snapshot(body.connection_id, asdict(tokens))
 
         response = W3cImportResponse(
             colors=[

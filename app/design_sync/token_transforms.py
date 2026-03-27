@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, replace
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from app.design_sync.caniemail import CanieMailData
 
 from app.core.logging import get_logger
 from app.design_sync.protocol import (
@@ -704,6 +707,7 @@ def validate_and_transform(
     tokens: ExtractedTokens,
     *,
     target_clients: list[str] | None = None,
+    caniemail_data: CanieMailData | None = None,
 ) -> tuple[ExtractedTokens, list[TokenWarning]]:
     """Validate and transform extracted tokens to email-safe values.
 
@@ -727,7 +731,9 @@ def validate_and_transform(
         from app.design_sync.compatibility import ConverterCompatibility
         from app.knowledge.ontology import SupportLevel
 
-        compat = ConverterCompatibility(target_clients=target_clients)
+        compat = ConverterCompatibility(
+            target_clients=target_clients, caniemail_data=caniemail_data
+        )
 
         # Client-aware color warnings
         for c in colors:

@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from app.knowledge.ontology import OntologyRegistry, SupportLevel, get_ontology
+
+if TYPE_CHECKING:
+    from app.design_sync.caniemail import CanieMailData
 
 
 @dataclass(frozen=True)
@@ -23,11 +27,19 @@ class ConverterCompatibility:
     Not a compiler — does not mutate CSS. Answers "is this safe?" and
     "who won't support this?" so the converter can make informed choices
     and surface early warnings.
+
+    Optionally merges caniemail.com data for broader feature coverage.
     """
 
-    def __init__(self, target_clients: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        target_clients: list[str] | None = None,
+        *,
+        caniemail_data: CanieMailData | None = None,
+    ) -> None:
         self._registry: OntologyRegistry = get_ontology()
         self._targets: list[str] = target_clients or []
+        self._caniemail: CanieMailData | None = caniemail_data
         self._hints: list[CompatibilityHint] = []
 
     @property
@@ -46,10 +58,52 @@ class ConverterCompatibility:
         """Check worst-case support for a CSS property across target clients.
 
         Returns SupportLevel.FULL if no targets configured (optimistic default).
+        Merges ontology and caniemail data, using the more restrictive level.
         """
         if not self._targets:
             return SupportLevel.FULL
 
+        ontology_level = self._check_ontology(css_property, value)
+        caniemail_level = self._check_caniemail(css_property)
+
+        # Use the more restrictive (lower) support level
+        return min(ontology_level, caniemail_level, key=_support_level_rank)
+
+    def check_property_with_source(
+        self,
+        css_property: str,
+        value: str | None = None,
+    ) -> tuple[SupportLevel, str]:
+        """Check support and return which source determined the level.
+
+        Returns:
+            (support_level, source) where source is "ontology", "caniemail", or "both".
+        """
+        if not self._targets:
+            return SupportLevel.FULL, "ontology"
+
+        ontology_level = self._check_ontology(css_property, value)
+        caniemail_level = self._check_caniemail(css_property)
+
+        ontology_rank = _support_level_rank(ontology_level)
+        caniemail_rank = _support_level_rank(caniemail_level)
+
+        if ontology_rank == caniemail_rank:
+            source = "both" if self._caniemail else "ontology"
+        elif ontology_rank < caniemail_rank:
+            source = "ontology"
+        else:
+            source = "caniemail"
+
+        level = min(ontology_level, caniemail_level, key=_support_level_rank)
+        return level, source
+
+    def _check_ontology(
+        self,
+        css_property: str,
+        value: str | None = None,
+    ) -> SupportLevel:
+        """Check support using the ontology registry."""
         prop = self._registry.find_property_by_name(css_property, value)
         if prop is None:
             return SupportLevel.FULL  # Unknown property — assume safe
@@ -63,6 +117,27 @@ class ConverterCompatibility:
                 worst = SupportLevel.PARTIAL
         return worst
 
+    def _check_caniemail(self, css_property: str) -> SupportLevel:
+        """Check support using caniemail.com data."""
+        if not self._caniemail or not self._targets:
+            return SupportLevel.FULL
+
+        worst = SupportLevel.FULL
+        feature_map = self._caniemail.features.get(css_property)
+        if feature_map is None:
+            return SupportLevel.FULL
+
+        for client_id in self._targets:
+            entry = feature_map.get(client_id)
+            if entry is None:
+                continue
+            if entry.support == "no":
+                return SupportLevel.NONE
+            if entry.support == "partial":
+                worst = SupportLevel.PARTIAL
+
+        return worst
+
     def unsupported_clients(
         self,
         css_property: str,
@@ -72,15 +147,28 @@ class ConverterCompatibility:
         if not self._targets:
             return []
 
-        prop = self._registry.find_property_by_name(css_property, value)
-        if prop is None:
-            return []
-
         result: list[str] = []
-        for client_id in self._targets:
-            level = self._registry.get_support(prop.id, client_id)
-            if level == SupportLevel.NONE:
-                result.append(client_id)
+
+        # Check ontology
+        prop = self._registry.find_property_by_name(css_property, value)
+        if prop is not None:
+            for client_id in self._targets:
+                level = self._registry.get_support(prop.id, client_id)
+                if level == SupportLevel.NONE:
+                    result.append(client_id)
+
+        # Check caniemail (add clients not already found via ontology)
+        if self._caniemail:
+            feature_map = self._caniemail.features.get(css_property)
+            if feature_map:
+                seen = set(result)
+                for client_id in self._targets:
+                    if client_id in seen:
+                        continue
+                    entry = feature_map.get(client_id)
+                    if entry and entry.support == "no":
+                        result.append(client_id)
+
         return result
 
     def client_engine(self, client_id: str) -> str | None:
@@ -157,3 +245,15 @@ class ConverterCompatibility:
                         msg = f"{context} — {msg}"
                     self.info(css_property, msg, affected)
         return level
+
+
+_SUPPORT_RANK: dict[SupportLevel, int] = {
+    SupportLevel.NONE: 0,
+    SupportLevel.PARTIAL: 1,
+    SupportLevel.FULL: 2,
+}
+
+
+def _support_level_rank(level: SupportLevel) -> int:
+    """Numeric rank for SupportLevel comparison (lower = more restrictive)."""
+    return _SUPPORT_RANK.get(level, 2)

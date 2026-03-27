@@ -29,7 +29,7 @@ export function useDesignSyncLive(
   connectionId: number | null,
   onUpdate?: (update: DesignSyncUpdate) => void,
 ) {
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const onUpdateRef = useRef(onUpdate);
   onUpdateRef.current = onUpdate;
 
