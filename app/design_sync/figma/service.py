@@ -6,7 +6,7 @@ import asyncio
 import math
 import re
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import httpx
 
@@ -27,6 +27,10 @@ from app.design_sync.protocol import (
     ExtractedTypography,
     ExtractedVariable,
 )
+
+if TYPE_CHECKING:
+    from app.design_sync.email_design_document import EmailDesignDocument
+    from app.design_sync.token_transforms import TokenWarning
 
 logger = get_logger(__name__)
 
@@ -372,6 +376,46 @@ class FigmaDesignSyncService:
         structure = DesignFileStructure(file_name=file_name, pages=pages)
 
         return tokens, structure
+
+    async def build_document(
+        self,
+        file_ref: str,
+        access_token: str,
+        *,
+        selected_nodes: list[str] | None = None,
+        connection_config: dict[str, Any] | None = None,
+        target_clients: list[str] | None = None,
+    ) -> tuple[EmailDesignDocument, ExtractedTokens, list[TokenWarning], DesignFileStructure]:
+        """Build a complete EmailDesignDocument from a Figma file.
+
+        Encapsulates: API fetch -> token extraction -> validation ->
+        tree normalization -> layout analysis -> document assembly.
+        """
+        from app.design_sync.email_design_document import EmailDesignDocument
+        from app.design_sync.figma.tree_normalizer import normalize_tree
+        from app.design_sync.token_transforms import (
+            validate_and_transform,
+        )
+
+        tokens, structure = await self.sync_tokens_and_structure(file_ref, access_token)
+        tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
+        structure, _stats = normalize_tree(structure)
+        document = EmailDesignDocument.from_legacy(
+            structure,
+            tokens,
+            selected_nodes=selected_nodes,
+            connection_config=connection_config,
+            source_provider="figma",
+            _pre_normalized=True,
+        )
+
+        logger.info(
+            "design_sync.figma.build_document_completed",
+            file_ref=file_ref,
+            sections=len(document.sections),
+            token_warnings=len(token_warnings),
+        )
+        return document, tokens, token_warnings, structure
 
     async def _fetch_variables(self, file_ref: str, access_token: str) -> dict[str, Any] | None:
         """Fetch local and published variables from the Figma Variables API."""

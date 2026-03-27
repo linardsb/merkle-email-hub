@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -22,6 +22,10 @@ from app.design_sync.protocol import (
     ExtractedTokens,
     ExtractedTypography,
 )
+
+if TYPE_CHECKING:
+    from app.design_sync.email_design_document import EmailDesignDocument
+    from app.design_sync.token_transforms import TokenWarning
 
 logger = get_logger(__name__)
 
@@ -133,6 +137,46 @@ class PenpotDesignSyncService:
         pages = self._parse_pages(file_data, depth=3)
         structure = DesignFileStructure(file_name=file_name, pages=pages)
         return tokens, structure
+
+    async def build_document(
+        self,
+        file_ref: str,
+        access_token: str,
+        *,
+        selected_nodes: list[str] | None = None,
+        connection_config: dict[str, Any] | None = None,
+        target_clients: list[str] | None = None,
+    ) -> tuple[EmailDesignDocument, ExtractedTokens, list[TokenWarning], DesignFileStructure]:
+        """Build a complete EmailDesignDocument from a Penpot file.
+
+        Encapsulates: API fetch -> token extraction -> validation ->
+        tree normalization -> layout analysis -> document assembly.
+        """
+        from app.design_sync.email_design_document import EmailDesignDocument
+        from app.design_sync.figma.tree_normalizer import normalize_tree
+        from app.design_sync.token_transforms import (
+            validate_and_transform,
+        )
+
+        tokens, structure = await self.sync_tokens_and_structure(file_ref, access_token)
+        tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
+        structure, _stats = normalize_tree(structure)
+        document = EmailDesignDocument.from_legacy(
+            structure,
+            tokens,
+            selected_nodes=selected_nodes,
+            connection_config=connection_config,
+            source_provider="penpot",
+            _pre_normalized=True,
+        )
+
+        logger.info(
+            "design_sync.penpot.build_document_completed",
+            file_ref=file_ref,
+            sections=len(document.sections),
+            token_warnings=len(token_warnings),
+        )
+        return document, tokens, token_warnings, structure
 
     async def get_file_structure(
         self,

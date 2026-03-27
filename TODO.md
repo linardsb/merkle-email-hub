@@ -1546,7 +1546,7 @@
 
 - [x] 36.1 EmailDesignDocument JSON Schema v1 ~~DONE~~
 - [x] 36.2 Refactor converter to consume EmailDesignDocument ~~DONE~~
-- [ ] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument
+- [x] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument ~~DONE~~
 - [ ] 36.4 MJML import adapter
 - [ ] 36.5 AI-powered HTML reverse engineering adapter
 - [ ] 36.6 Klaviyo + HubSpot ESP export
@@ -1640,7 +1640,7 @@
 **Security:** `convert_document()` requires a validated `EmailDesignDocument` — call `validate()` before passing. The shim validates legacy inputs by construction (they come from trusted provider code). No new user input paths.
 **Verify:** `convert_document()` with a JSON fixture produces identical HTML to `convert()` with the same data via legacy path. All existing design_sync tests pass without modification (shim handles backward compatibility). `convert_document()` with invalid document → raises `AppError`. `make test` passes. `make check` all green.
 
-### 36.3 Refactor Figma + Penpot Adapters to Produce EmailDesignDocument `[Backend]`
+### ~~36.3 Refactor Figma + Penpot Adapters to Produce EmailDesignDocument~~ `[Backend]` DONE
 **What:** Modify `FigmaDesignSyncService` and `PenpotDesignSyncService` to output `EmailDesignDocument` JSON as their primary result, in addition to the existing `ExtractedTokens` + `DesignFileStructure` return types. Each adapter encapsulates all provider-specific logic — API calls, node parsing, layout analysis — and outputs the universal document.
 **Why:** Currently, the Figma provider returns raw `ExtractedTokens` + `DesignFileStructure`, and the converter runs layout analysis. This means layout analysis is in the converter's responsibility, but it's really a provider-specific concern (Figma nodes need y-position grouping; MJML sections are explicit; HTML needs DOM traversal). Moving layout analysis into the adapter means each adapter can use the right analysis strategy for its format, and the converter receives pre-analyzed sections.
 **Implementation:**

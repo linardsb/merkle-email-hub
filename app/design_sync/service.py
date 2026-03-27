@@ -321,22 +321,58 @@ class DesignSyncService:
         target_clients = await fetch_target_clients(self.db, conn.project_id)
 
         try:
-            # Fetch tokens and file structure from a single Figma API call
-            tokens, structure = await provider.sync_tokens_and_structure(
-                conn.file_ref, access_token
-            )
+            # New path: adapter builds full document (Figma, Penpot)
+            if hasattr(provider, "build_document"):
+                from app.design_sync.email_design_document import EmailDesignDocument
+                from app.design_sync.token_transforms import TokenWarning
 
-            # Validate and transform tokens to email-safe values
-            from app.design_sync.token_transforms import validate_and_transform
+                _raw = await provider.build_document(  # type: ignore[attr-defined]
+                    conn.file_ref,
+                    access_token,
+                    connection_config=conn.config_json,
+                    target_clients=target_clients,
+                )
+                document = cast(EmailDesignDocument, _raw[0])
+                tokens = cast(ExtractedTokens, _raw[1])
+                token_warnings = cast(list[TokenWarning], _raw[2])
+                structure = cast(DesignFileStructure, _raw[3])
+                doc_json: dict[str, object] | None = document.to_json()
+            else:
+                # Legacy path for stub providers (Sketch, Canva)
+                tokens, structure = await provider.sync_tokens_and_structure(
+                    conn.file_ref, access_token
+                )
+                from app.design_sync.token_transforms import validate_and_transform
 
-            tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
+                tokens, token_warnings = validate_and_transform(
+                    tokens, target_clients=target_clients
+                )
+                doc_json = None
+                try:
+                    from app.design_sync.email_design_document import (
+                        EmailDesignDocument,
+                    )
 
+                    document = EmailDesignDocument.from_legacy(
+                        structure,
+                        tokens,
+                        connection_config=conn.config_json,
+                        source_provider=conn.provider,
+                    )
+                    doc_json = document.to_json()
+                except (ValueError, KeyError, TypeError):
+                    logger.warning(
+                        "design_sync.document_json_build_failed",
+                        connection_id=connection_id,
+                        exc_info=True,
+                    )
+
+            # Structure cache + thumbnails (shared by both paths)
             structure_cache: dict[str, Any] = {
                 "file_name": structure.file_name,
                 "pages": [self._serialize_node(p) for p in structure.pages],
             }
 
-            # Cache thumbnail URLs for top-level frames (avoids Figma API on every page load)
             thumbnail_cache: dict[str, str] | None = None
             try:
                 top_frame_ids = self._collect_top_frame_ids(structure_cache["pages"])
@@ -383,24 +419,6 @@ class DesignSyncService:
                     ]
                     if client_hints:
                         tokens_dict["_compatibility_hints"] = client_hints
-            # Build EmailDesignDocument for the document_json column
-            doc_json: dict[str, object] | None = None
-            try:
-                from app.design_sync.email_design_document import EmailDesignDocument
-
-                document = EmailDesignDocument.from_legacy(
-                    structure,
-                    tokens,
-                    connection_config=conn.config_json,
-                    source_provider=conn.provider,
-                )
-                doc_json = document.to_json()
-            except (ValueError, KeyError, TypeError):
-                logger.warning(
-                    "design_sync.document_json_build_failed",
-                    connection_id=connection_id,
-                    exc_info=True,
-                )
 
             await self._repo.save_snapshot(conn.id, tokens_dict, document_json=doc_json)
             await self._repo.update_status(conn, "connected")
