@@ -443,3 +443,53 @@ class TestEndToEndPipeline:
     def test_semantic_heading(self, pipeline_html: str) -> None:
         """Text content appears in output (heading detection depends on layout analysis)."""
         assert "Summer Collection 2026" in pipeline_html
+
+
+class TestMjmlOutputFormat:
+    """Tests for MJML output path in the E2E pipeline."""
+
+    @pytest.mark.asyncio
+    async def test_convert_mjml_output_contains_mjml_markers(self) -> None:
+        """convert_mjml() produces HTML with section markers from MJML generation."""
+        from unittest.mock import AsyncMock, patch
+
+        from app.design_sync.converter_service import MjmlCompileResult
+
+        tokens = _make_e2e_tokens()
+        structure = _make_e2e_structure()
+        service = DesignConverterService()
+
+        compiled_html = (
+            "<html><body>"
+            "<!-- section:header:header -->\n<table><tr><td>Header</td></tr></table>"
+            "</body></html>"
+        )
+        with patch.object(service, "compile_mjml", new_callable=AsyncMock) as mock_compile:
+            mock_compile.return_value = MjmlCompileResult(
+                html=compiled_html, errors=[], build_time_ms=30.0
+            )
+            result = await service.convert_mjml(structure, tokens)
+
+        assert result.html
+        assert result.sections_count >= 1
+        assert result.layout is not None
+
+    @pytest.mark.asyncio
+    async def test_convert_mjml_fallback_produces_valid_html(self) -> None:
+        """MjmlCompileError falls back to recursive converter producing table-based HTML."""
+        from unittest.mock import AsyncMock, patch
+
+        from app.design_sync.exceptions import MjmlCompileError
+
+        tokens = _make_e2e_tokens()
+        structure = _make_e2e_structure()
+        service = DesignConverterService()
+
+        with patch.object(service, "compile_mjml", new_callable=AsyncMock) as mock_compile:
+            mock_compile.side_effect = MjmlCompileError("Sidecar down")
+            result = await service.convert_mjml(structure, tokens)
+
+        assert result.html
+        assert "<!DOCTYPE" in result.html
+        assert "<table" in result.html
+        assert any("MJML compilation failed" in w for w in result.warnings)

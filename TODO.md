@@ -1113,7 +1113,7 @@
 
 ---
 
-## Phase 35 — Next-Gen Design-to-Email Pipeline (MJML + AI Intelligence + Standards)
+## ~~Phase 35 — Next-Gen Design-to-Email Pipeline (MJML + AI Intelligence + Standards)~~ ALL DONE
 
 > **The design-to-email pipeline (Phases 31–33) works end-to-end but has structural limitations.** The converter (`converter.py`) hand-rolls every email HTML pattern — ghost tables, MSO conditionals, responsive column stacking, VML buttons — duplicating battle-tested logic that MJML already handles. The layout analyzer classifies sections by naming convention heuristics that fail on arbitrarily-named Figma frames. There's no visual fidelity validation (no comparison between Figma design and converted output). Token input is Figma-only (no W3C Design Tokens standard). Sync is manual (no Figma webhooks). And AI agents fix converter mistakes repeatedly without feeding corrections back into the converter itself.
 >
@@ -1128,10 +1128,10 @@
 - [x] ~~35.5 AI layout intelligence & semantic detection~~ DONE
 - [x] ~~35.6 AI visual fidelity scoring pipeline~~ DONE
 - [x] ~~35.7 AI conversion learning loop~~ DONE
-- [ ] 35.8 W3C Design Tokens & caniemail.com integration
+- [x] ~~35.8 W3C Design Tokens & caniemail.com integration~~ DONE
 - [x] ~~35.9 Figma webhooks & live preview sync~~ DONE
 - [x] ~~35.10 Incremental conversion & section caching~~ DONE
-- [ ] 35.11 Tests & integration verification
+- [x] ~~35.11 Tests & integration verification~~ DONE
 
 ### 35.1 MJML Compilation Service in Maizzle Sidecar `[Sidecar]`
 **What:** Add MJML as an npm dependency to the Maizzle sidecar and expose a `POST /compile-mjml` endpoint that accepts MJML markup and returns compiled, production-ready email HTML with inline CSS, MSO conditionals, and responsive media queries.
@@ -1391,7 +1391,7 @@
 **Security:** Correction patterns contain HTML snippets from agent input/output — these are already sanitized. Pattern storage is local JSONL (no external calls). Admin-only endpoints require `admin` role. No auto-modification of converter code — human approval required.
 **Verify:** Run 10 conversions where Outlook Fixer consistently expands shorthand padding → `get_frequent_patterns()` returns pattern with `occurrences=10`, `confidence=1.0`. `suggest_converter_rules()` generates a suggestion with Python snippet. Pattern with only 3 occurrences → not suggested (below threshold). Admin endpoint returns patterns with suggested code. `make test` passes.
 
-### 35.8 W3C Design Tokens & caniemail.com Integration `[Backend]`
+### ~~35.8 W3C Design Tokens & caniemail.com Integration~~ `[Backend]` DONE
 **What:** Add W3C Design Tokens v1.0 JSON as an alternative token input format (alongside Figma Variables API), and integrate caniemail.com's open-source CSS support data as a live data source for `compatibility.py` and `token_transforms.py`.
 **Why:** The W3C Design Tokens spec reached v1.0 stable in October 2025. Figma announced native W3C import/export for November 2026. Supporting W3C tokens now future-proofs the pipeline for: (a) Figma's native export when it ships, (b) Tokens Studio users who already export W3C format, (c) any design tool that supports the standard (Penpot, Sketch via plugins). For caniemail.com: the existing `compatibility.py` uses our ontology YAML (`css_properties.yaml`, `support_matrix.yaml`) which requires manual updates. caniemail.com tracks 303 HTML/CSS features across all major email clients with community-maintained data on GitHub — syncing this data keeps our compatibility checks current.
 **Implementation:**
@@ -1500,7 +1500,7 @@
 **Security:** Cache keys are SHA-256 hashes — no user content in keys. Cache values are rendered HTML (already sanitized). Redis cache uses same auth as existing Redis connection. Admin-only cache clear endpoint.
 **Verify:** Convert a 6-section email → all 6 sections cached. Change text in 1 section → re-convert → only 1 section re-converted, 5 from cache (`cache_hit_rate=0.83`). Change `target_clients` → full cache invalidation → all 6 re-converted. Cache TTL: wait 1 hour → entries expired → full re-conversion. `make test` passes.
 
-### 35.11 Tests & Integration Verification `[Full-Stack]`
+### ~~35.11 Tests & Integration Verification~~ `[Full-Stack]` DONE
 **What:** Comprehensive test suite covering all Phase 35 subtasks: MJML compilation, tree normalization, MJML generation, AI classification, visual fidelity, correction learning, W3C tokens, webhooks, and caching. Plus end-to-end integration test: Figma file → normalize → classify → convert (MJML) → compile → score fidelity → cache.
 **Implementation:**
 - **MJML sidecar tests** (`services/maizzle-builder/test/`):

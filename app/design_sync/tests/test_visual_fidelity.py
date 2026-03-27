@@ -495,6 +495,41 @@ class TestSerializeScore:
         assert "scored_at" in data
 
 
+# ── Edge Case Tests (Phase 35.11) ──
+
+
+class TestScoreFidelityEdgeCases:
+    def test_single_pixel_diff_high_score(self) -> None:
+        """1-pixel difference produces score very close to 1.0."""
+        base = np.full((100, 100), 128, dtype=np.uint8)
+        modified = base.copy()
+        modified[50, 50] = 200  # Change one pixel
+
+        base_png = _array_to_png(base)
+        modified_png = _array_to_png(modified)
+        sections = [_make_section(y_position=0, height=100)]
+
+        result = score_fidelity(base_png, modified_png, sections, blur_sigma=0)
+        assert result.overall > 0.99
+
+    def test_width_mismatch_handled(self) -> None:
+        """Different width images are padded and produce valid score."""
+        narrow = _make_png(80, 100, color=128)
+        wide = _make_png(120, 100, color=128)
+        sections = [_make_section(y_position=0, height=100)]
+
+        result = score_fidelity(narrow, wide, sections, blur_sigma=0)
+        assert 0.0 <= result.overall <= 1.0
+
+    def test_empty_sections_overall_only(self) -> None:
+        """Empty sections list → overall score only, no per-section breakdown."""
+        png = _make_png(100, 100, color=128)
+        result = score_fidelity(png, png, [], blur_sigma=0)
+
+        assert result.overall == 1.0
+        assert len(result.sections) == 0
+
+
 # ── Utility ──
 
 
