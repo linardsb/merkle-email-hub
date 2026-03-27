@@ -11,7 +11,7 @@ import json
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from jsonschema import Draft202012Validator
 
@@ -33,6 +33,9 @@ from app.design_sync.protocol import (
     ExtractedTypography,
     ExtractedVariable,
 )
+
+if TYPE_CHECKING:
+    from app.design_sync.protocol import DesignFileStructure
 
 _SCHEMA_PATH = (
     Path(__file__).resolve().parents[2] / "data" / "schemas" / "email-design-document-v1.json"
@@ -336,6 +339,59 @@ class DocumentTokens:
                 )
                 for g in self.gradients
             ],
+        )
+
+    @classmethod
+    def from_extracted_tokens(cls, tokens: ExtractedTokens) -> DocumentTokens:
+        """Reverse bridge: build DocumentTokens from ExtractedTokens."""
+        return cls(
+            colors=[
+                DocumentColor(name=c.name, hex=c.hex, opacity=c.opacity) for c in tokens.colors
+            ],
+            typography=[
+                DocumentTypography(
+                    name=t.name,
+                    family=t.family,
+                    weight=t.weight,
+                    size=t.size,
+                    line_height=t.line_height,
+                    letter_spacing=t.letter_spacing,
+                    text_transform=t.text_transform,
+                    text_decoration=t.text_decoration,
+                )
+                for t in tokens.typography
+            ],
+            spacing=[DocumentSpacing(name=s.name, value=s.value) for s in tokens.spacing],
+            dark_colors=[
+                DocumentColor(name=c.name, hex=c.hex, opacity=c.opacity) for c in tokens.dark_colors
+            ],
+            gradients=[
+                DocumentGradient(
+                    name=g.name,
+                    type=g.type,
+                    angle=g.angle,
+                    stops=tuple(DocumentGradientStop(hex=s[0], position=s[1]) for s in g.stops),
+                    fallback_hex=g.fallback_hex,
+                )
+                for g in tokens.gradients
+            ],
+            variables=[
+                DocumentVariable(
+                    name=v.name,
+                    collection=v.collection,
+                    type=v.type,
+                    values_by_mode=v.values_by_mode,
+                    is_alias=v.is_alias,
+                    alias_path=v.alias_path,
+                )
+                for v in tokens.variables
+            ],
+            stroke_colors=[
+                DocumentColor(name=c.name, hex=c.hex, opacity=c.opacity)
+                for c in tokens.stroke_colors
+            ],
+            variables_source=tokens.variables_source,
+            modes=tokens.modes,
         )
 
 
@@ -682,6 +738,108 @@ class DocumentSection:
             content_roles=tuple(self.content_roles),
         )
 
+    @classmethod
+    def from_email_section(cls, section: EmailSection) -> DocumentSection:
+        """Reverse bridge: build DocumentSection from EmailSection."""
+        padding: DocumentPadding | None = None
+        if any(
+            v is not None
+            for v in (
+                section.padding_top,
+                section.padding_right,
+                section.padding_bottom,
+                section.padding_left,
+            )
+        ):
+            padding = DocumentPadding(
+                top=section.padding_top if section.padding_top is not None else 0.0,
+                right=section.padding_right if section.padding_right is not None else 0.0,
+                bottom=section.padding_bottom if section.padding_bottom is not None else 0.0,
+                left=section.padding_left if section.padding_left is not None else 0.0,
+            )
+        return cls(
+            id=section.node_id,
+            type=section.section_type.value,
+            node_name=section.node_name or None,
+            y_position=section.y_position,
+            width=section.width,
+            height=section.height,
+            column_layout=section.column_layout.value,
+            column_count=section.column_count,
+            padding=padding,
+            item_spacing=section.item_spacing,
+            background_color=section.bg_color,
+            texts=[
+                DocumentText(
+                    node_id=t.node_id,
+                    content=t.content,
+                    font_size=t.font_size,
+                    is_heading=t.is_heading,
+                    font_family=t.font_family,
+                    font_weight=t.font_weight,
+                    line_height=t.line_height,
+                    letter_spacing=t.letter_spacing,
+                )
+                for t in section.texts
+            ],
+            images=[
+                DocumentImage(
+                    node_id=i.node_id,
+                    node_name=i.node_name,
+                    width=i.width,
+                    height=i.height,
+                    is_background=i.is_background,
+                )
+                for i in section.images
+            ],
+            buttons=[
+                DocumentButton(node_id=b.node_id, text=b.text, width=b.width, height=b.height)
+                for b in section.buttons
+            ],
+            columns=[
+                DocumentColumn(
+                    column_idx=c.column_idx,
+                    node_id=c.node_id,
+                    node_name=c.node_name,
+                    width=c.width,
+                    texts=[
+                        DocumentText(
+                            node_id=t.node_id,
+                            content=t.content,
+                            font_size=t.font_size,
+                            is_heading=t.is_heading,
+                            font_family=t.font_family,
+                            font_weight=t.font_weight,
+                            line_height=t.line_height,
+                            letter_spacing=t.letter_spacing,
+                        )
+                        for t in c.texts
+                    ],
+                    images=[
+                        DocumentImage(
+                            node_id=i.node_id,
+                            node_name=i.node_name,
+                            width=i.width,
+                            height=i.height,
+                            is_background=i.is_background,
+                        )
+                        for i in c.images
+                    ],
+                    buttons=[
+                        DocumentButton(
+                            node_id=b.node_id, text=b.text, width=b.width, height=b.height
+                        )
+                        for b in c.buttons
+                    ],
+                )
+                for c in section.column_groups
+            ],
+            content_roles=list(section.content_roles),
+            spacing_after=section.spacing_after,
+            classification_confidence=section.classification_confidence,
+            element_gaps=list(section.element_gaps),
+        )
+
 
 @dataclass(frozen=True)
 class DocumentLayout:
@@ -848,11 +1006,98 @@ class EmailDesignDocument:
     def to_layout_description(self, file_name: str = "") -> DesignLayoutDescription:
         """Convert to the existing ``DesignLayoutDescription`` dataclass."""
         sections = self.to_email_sections()
+        resolved_name = file_name or (self.source.file_ref if self.source else "") or ""
         return DesignLayoutDescription(
-            file_name=file_name,
+            file_name=resolved_name,
             overall_width=self.layout.overall_width,
             sections=sections,
             total_text_blocks=sum(len(s.texts) for s in sections),
             total_images=sum(len(s.images) for s in sections),
             spacing_map={},
+        )
+
+    @classmethod
+    def from_legacy(
+        cls,
+        structure: DesignFileStructure,
+        tokens: ExtractedTokens,
+        *,
+        raw_file_data: dict[str, Any] | None = None,
+        selected_nodes: list[str] | None = None,
+        connection_config: dict[str, Any] | None = None,
+        source_provider: str = "figma",
+        _pre_normalized: bool = False,
+    ) -> EmailDesignDocument:
+        """Build an EmailDesignDocument from legacy converter inputs.
+
+        Runs the full pre-processing pipeline (tree normalization, frame
+        collection, layout analysis, width derivation) so the resulting
+        document is ready for ``convert_document()``.
+        """
+        from app.design_sync.converter import _has_visible_content
+        from app.design_sync.figma.layout_analyzer import analyze_layout
+        from app.design_sync.figma.tree_normalizer import normalize_tree
+        from app.design_sync.protocol import DesignNodeType
+
+        # 1. Normalize tree (skip if caller already normalized)
+        if not _pre_normalized:
+            structure, _stats = normalize_tree(structure, raw_file_data=raw_file_data)
+
+        # 2. Collect top-level frames (same logic as converter_service._collect_frames)
+        frame_types = {DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.INSTANCE}
+        frames_found = False
+        for page in structure.pages:
+            for child in page.children:
+                if (
+                    child.type in frame_types
+                    and (selected_nodes is None or child.id in selected_nodes)
+                    and _has_visible_content(child)
+                ):
+                    frames_found = True
+                    break
+            if frames_found:
+                break
+
+        if not frames_found:
+            return cls(
+                version="1.0",
+                tokens=DocumentTokens.from_extracted_tokens(tokens),
+                sections=[],
+                layout=DocumentLayout(),
+                source=DocumentSource(provider=source_provider, file_ref=structure.file_name),
+            )
+
+        # 3. Layout analysis with config hints
+        layout_kwargs: dict[str, Any] = {}
+        if connection_config:
+            if nc := connection_config.get("naming_convention"):
+                layout_kwargs["naming_convention"] = nc
+            if snm := connection_config.get("section_name_map"):
+                layout_kwargs["section_name_map"] = snm
+            if bnh := connection_config.get("button_name_hints"):
+                layout_kwargs["button_name_hints"] = bnh
+        layout = analyze_layout(structure, **layout_kwargs)
+
+        # 4. Derive container width (clamped 400-800, config override priority)
+        container_width = 600
+        config_cw = connection_config.get("container_width") if connection_config else None
+        if isinstance(config_cw, int) and 320 <= config_cw <= 1200:
+            container_width = config_cw
+        elif layout.overall_width is not None:
+            container_width = max(400, min(800, int(layout.overall_width)))
+
+        # 5. Build document
+        naming_convention = (
+            connection_config.get("naming_convention") if connection_config else None
+        )
+        return cls(
+            version="1.0",
+            tokens=DocumentTokens.from_extracted_tokens(tokens),
+            sections=[DocumentSection.from_email_section(s) for s in layout.sections],
+            layout=DocumentLayout(
+                container_width=container_width,
+                overall_width=layout.overall_width,
+                naming_convention=naming_convention,
+            ),
+            source=DocumentSource(provider=source_provider, file_ref=structure.file_name),
         )

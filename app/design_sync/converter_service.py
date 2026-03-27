@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -25,7 +25,6 @@ from app.design_sync.figma.layout_analyzer import (
     EmailSection,
     EmailSectionType,
     TextBlock,
-    analyze_layout,
 )
 from app.design_sync.figma.tree_normalizer import normalize_tree
 from app.design_sync.html_formatter import format_email_html
@@ -42,6 +41,9 @@ from app.design_sync.protocol import (
     ExtractedGradient,
     ExtractedTokens,
 )
+
+if TYPE_CHECKING:
+    from app.design_sync.email_design_document import EmailDesignDocument
 
 logger = get_logger(__name__)
 
@@ -222,6 +224,117 @@ def dark_mode_meta_tags() -> str:
 class DesignConverterService:
     """Orchestrates design tree → email HTML conversion (provider-agnostic)."""
 
+    # ── Document-based entry points (Phase 36.2) ──────────────────────
+
+    def convert_document(
+        self,
+        document: EmailDesignDocument,
+        *,
+        target_clients: list[str] | None = None,
+        use_components: bool = True,
+        image_urls: dict[str, str] | None = None,
+        connection_id: str | None = None,
+    ) -> ConversionResult:
+        """Convert an EmailDesignDocument into email HTML.
+
+        Primary entry point for Phase 36+.  The document already contains
+        pre-analysed layout and validated tokens, so no tree normalisation
+        or layout analysis is performed here.
+
+        Args:
+            document: Pre-validated EmailDesignDocument.
+            target_clients: Target email clients for compatibility checks.
+            use_components: Use component-template rendering if sections exist.
+            image_urls: Mapping of node-id → image URL for component matcher.
+            connection_id: If set and caching enabled, cache section results.
+        """
+        from app.design_sync.token_transforms import validate_and_transform
+
+        tokens = document.to_extracted_tokens()
+        tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
+
+        warnings: list[str] = [w.message for w in token_warnings]
+        layout = document.to_layout_description()
+        container_width = document.layout.container_width
+        compat = ConverterCompatibility(target_clients=target_clients)
+
+        if not layout.sections:
+            logger.warning("design_sync.convert_document_no_sections")
+            return ConversionResult(html="", sections_count=0, warnings=["No sections found"])
+
+        # Compute section hashes for caching (sync/memory-only path)
+        section_hashes: dict[str, str] | None = None
+        if connection_id and get_settings().design_sync.section_cache_enabled:
+            from app.design_sync.section_cache import compute_section_hash
+
+            section_hashes = {
+                s.node_id: compute_section_hash(
+                    s, tokens, container_width=container_width, target_clients=target_clients
+                )
+                for s in layout.sections
+            }
+
+        if use_components:
+            return self._convert_with_components(
+                frames=[],
+                layout=layout,
+                tokens=tokens,
+                warnings=warnings,
+                compat=compat,
+                container_width=container_width,
+                image_urls=image_urls,
+                connection_id=connection_id,
+                section_hashes=section_hashes,
+            )
+
+        # Recursive converter requires full DesignNode frames which the
+        # document path doesn't carry.  Fall back to an empty result.
+        logger.warning("design_sync.convert_document_no_recursive_fallback")
+        return ConversionResult(
+            html="",
+            sections_count=0,
+            warnings=[*warnings, "Recursive converter not available in document path"],
+        )
+
+    async def convert_document_mjml(
+        self,
+        document: EmailDesignDocument,
+        *,
+        target_clients: list[str] | None = None,
+        connection_id: str | None = None,
+    ) -> ConversionResult:
+        """Convert an EmailDesignDocument into email HTML via MJML.
+
+        Generates MJML markup from the document's layout, compiles via
+        the Maizzle sidecar.  Unlike ``convert_mjml()``, this does NOT
+        fall back to the recursive converter on compilation failure —
+        callers should use ``convert_mjml()`` (the shim) if they need
+        that fallback.
+        """
+        from app.design_sync.token_transforms import validate_and_transform
+
+        tokens = document.to_extracted_tokens()
+        tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
+
+        warnings: list[str] = [w.message for w in token_warnings]
+        layout = document.to_layout_description()
+        container_width = document.layout.container_width
+
+        if not layout.sections:
+            logger.warning("design_sync.convert_document_mjml_no_sections")
+            return ConversionResult(html="", sections_count=0, warnings=["No sections found"])
+
+        return await self._convert_mjml_from_layout(
+            layout=layout,
+            tokens=tokens,
+            warnings=warnings,
+            container_width=container_width,
+            target_clients=target_clients,
+            connection_id=connection_id,
+        )
+
+    # ── Legacy entry points (shim to document path) ──────────────────
+
     def convert(
         self,
         structure: DesignFileStructure,
@@ -237,131 +350,52 @@ class DesignConverterService:
     ) -> ConversionResult:
         """Convert a design file structure into an email HTML skeleton.
 
-        Args:
-            structure: Parsed design file structure with pages and nodes.
-            tokens: Extracted design tokens (colors, typography, spacing).
-            raw_file_data: Raw file data for supplementary properties (Penpot only).
-            selected_nodes: If provided, only convert frames with these IDs.
-            target_clients: Target email clients for compatibility checks.
-            use_components: If True, use component-template rendering (table-on-table).
-                If False, use legacy recursive converter (tr-stacking).
-            connection_config: Per-connection config hints (naming convention, etc.).
-            connection_id: If set and caching enabled, cache section results.
-
-        Returns:
-            ConversionResult with HTML skeleton and metadata.
+        Shim: builds an ``EmailDesignDocument`` via ``from_legacy()`` and
+        delegates to ``convert_document()``.  Falls back to the legacy
+        recursive converter when ``use_components`` is False (requires
+        the full DesignNode tree which the document path doesn't carry).
         """
-        warnings: list[str] = []
-        compat = ConverterCompatibility(target_clients=target_clients)
+        from app.design_sync.email_design_document import EmailDesignDocument
 
-        # Normalize tree before processing (hidden removal, group flattening, etc.)
+        # Normalize once — reused by both from_legacy and recursive fallback
         structure, _norm_stats = normalize_tree(structure, raw_file_data=raw_file_data)
 
-        # Collect top-level frames from all pages
-        frames = self._collect_frames(structure, selected_nodes)
+        document = EmailDesignDocument.from_legacy(
+            structure,
+            tokens,
+            selected_nodes=selected_nodes,
+            connection_config=connection_config,
+            _pre_normalized=True,
+        )
 
+        if use_components:
+            return self.convert_document(
+                document,
+                target_clients=target_clients,
+                use_components=True,
+                image_urls=image_urls,
+                connection_id=connection_id,
+            )
+
+        # Recursive converter requires full DesignNode frames
+        frames = self._collect_frames(structure, selected_nodes)
         if not frames:
             logger.warning("design_sync.converter_no_frames")
             return ConversionResult(html="", sections_count=0, warnings=["No frames found"])
 
-        # Run layout analysis on full structure with config hints
-        layout_kwargs: dict[str, Any] = {}
-        if connection_config:
-            if nc := connection_config.get("naming_convention"):
-                layout_kwargs["naming_convention"] = nc
-            if snm := connection_config.get("section_name_map"):
-                layout_kwargs["section_name_map"] = snm
-            if bnh := connection_config.get("button_name_hints"):
-                layout_kwargs["button_name_hints"] = bnh
-        layout = analyze_layout(structure, **layout_kwargs)
-
-        # Derive container width (clamped 400-800), config override takes priority
-        container_width = 600
-        config_cw = connection_config.get("container_width") if connection_config else None
-        if isinstance(config_cw, int) and 320 <= config_cw <= 1200:
-            container_width = config_cw
-        elif layout.overall_width is not None:
-            container_width = max(400, min(800, int(layout.overall_width)))
-
-        # Compute section hashes for caching (sync/memory-only path)
-        section_hashes: dict[str, str] | None = None
-        if connection_id and get_settings().design_sync.section_cache_enabled and layout.sections:
-            from app.design_sync.section_cache import compute_section_hash
-
-            section_hashes = {
-                s.node_id: compute_section_hash(
-                    s, tokens, container_width=container_width, target_clients=target_clients
-                )
-                for s in layout.sections
-            }
-
-        if use_components and layout.sections:
-            return self._convert_with_components(
-                frames=frames,
-                layout=layout,
-                tokens=tokens,
-                warnings=warnings,
-                compat=compat,
-                container_width=container_width,
-                image_urls=image_urls,
-                connection_id=connection_id,
-                section_hashes=section_hashes,
-            )
+        layout = document.to_layout_description()
+        container_width = document.layout.container_width
+        compat = ConverterCompatibility(target_clients=target_clients)
 
         return self._convert_recursive(
             frames=frames,
             layout=layout,
-            tokens=tokens,
-            warnings=warnings,
+            tokens=document.to_extracted_tokens(),
+            warnings=[],
             compat=compat,
             container_width=container_width,
             raw_file_data=raw_file_data,
         )
-
-    def _prepare_conversion(
-        self,
-        structure: DesignFileStructure,
-        *,
-        raw_file_data: dict[str, Any] | None = None,
-        selected_nodes: list[str] | None = None,
-        target_clients: list[str] | None = None,
-        connection_config: dict[str, Any] | None = None,
-    ) -> (
-        tuple[list[DesignNode], DesignLayoutDescription, list[str], ConverterCompatibility, int]
-        | ConversionResult
-    ):
-        """Shared preamble: normalise, collect frames, analyse layout, derive width.
-
-        Returns a ConversionResult early-exit if no frames are found,
-        otherwise returns the prepared tuple for downstream converters.
-        """
-        warnings: list[str] = []
-        compat = ConverterCompatibility(target_clients=target_clients)
-        structure, _norm_stats = normalize_tree(structure, raw_file_data=raw_file_data)
-        frames = self._collect_frames(structure, selected_nodes)
-
-        if not frames:
-            logger.warning("design_sync.converter_no_frames")
-            return ConversionResult(html="", sections_count=0, warnings=["No frames found"])
-
-        layout_kwargs: dict[str, Any] = {}
-        if connection_config:
-            if nc := connection_config.get("naming_convention"):
-                layout_kwargs["naming_convention"] = nc
-            if snm := connection_config.get("section_name_map"):
-                layout_kwargs["section_name_map"] = snm
-            if bnh := connection_config.get("button_name_hints"):
-                layout_kwargs["button_name_hints"] = bnh
-        layout = analyze_layout(structure, **layout_kwargs)
-
-        container_width = 600
-        config_cw = connection_config.get("container_width") if connection_config else None
-        if isinstance(config_cw, int) and 320 <= config_cw <= 1200:
-            container_width = config_cw
-        elif layout.overall_width is not None:
-            container_width = max(400, min(800, int(layout.overall_width)))
-
-        return frames, layout, warnings, compat, container_width
 
     async def convert_mjml(
         self,
@@ -374,43 +408,50 @@ class DesignConverterService:
         connection_config: dict[str, Any] | None = None,
         connection_id: str | None = None,
     ) -> ConversionResult:
-        """Convert a design file structure into email HTML via MJML generation.
+        """Convert a design file structure into email HTML via MJML.
 
-        Generates MJML markup from the layout analysis, compiles it via the
-        Maizzle sidecar's /compile-mjml endpoint. Falls back to the recursive
-        converter if MJML compilation fails.
+        Shim: builds an ``EmailDesignDocument`` via ``from_legacy()`` and
+        delegates to ``convert_document_mjml()``.  Falls back to the
+        recursive converter if MJML compilation fails (requires full
+        DesignNode tree preserved from the original structure).
         """
-        prepared = self._prepare_conversion(
-            structure,
-            raw_file_data=raw_file_data,
-            selected_nodes=selected_nodes,
-            target_clients=target_clients,
-            connection_config=connection_config,
-        )
-        if isinstance(prepared, ConversionResult):
-            return prepared
+        from app.design_sync.email_design_document import EmailDesignDocument
 
-        frames, layout, warnings, compat, container_width = prepared
+        # Normalize once — reused by both from_legacy and recursive fallback
+        structure, _norm_stats = normalize_tree(structure, raw_file_data=raw_file_data)
+
+        document = EmailDesignDocument.from_legacy(
+            structure,
+            tokens,
+            selected_nodes=selected_nodes,
+            connection_config=connection_config,
+            _pre_normalized=True,
+        )
+
+        if not document.sections:
+            return ConversionResult(html="", sections_count=0, warnings=["No frames found"])
 
         try:
-            return await self._convert_mjml_from_layout(
-                layout=layout,
-                tokens=tokens,
-                warnings=warnings,
-                container_width=container_width,
+            return await self.convert_document_mjml(
+                document,
                 target_clients=target_clients,
                 connection_id=connection_id,
             )
         except MjmlCompileError:
             logger.warning("design_sync.mjml_fallback", reason="compilation_failed")
-            warnings.append("MJML compilation failed, falling back to recursive converter")
+            # Reuse already-normalized structure for recursive fallback
+            frames = self._collect_frames(structure, selected_nodes)
+            if not frames:
+                return ConversionResult(html="", sections_count=0, warnings=["No frames found"])
+            layout = document.to_layout_description()
+            compat = ConverterCompatibility(target_clients=target_clients)
             return self._convert_recursive(
                 frames=frames,
                 layout=layout,
-                tokens=tokens,
-                warnings=warnings,
+                tokens=document.to_extracted_tokens(),
+                warnings=["MJML compilation failed, falling back to recursive converter"],
                 compat=compat,
-                container_width=container_width,
+                container_width=document.layout.container_width,
                 raw_file_data=raw_file_data,
             )
 

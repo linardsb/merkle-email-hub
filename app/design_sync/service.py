@@ -383,7 +383,26 @@ class DesignSyncService:
                     ]
                     if client_hints:
                         tokens_dict["_compatibility_hints"] = client_hints
-            await self._repo.save_snapshot(conn.id, tokens_dict)
+            # Build EmailDesignDocument for the document_json column
+            doc_json: dict[str, object] | None = None
+            try:
+                from app.design_sync.email_design_document import EmailDesignDocument
+
+                document = EmailDesignDocument.from_legacy(
+                    structure,
+                    tokens,
+                    connection_config=conn.config_json,
+                    source_provider=conn.provider,
+                )
+                doc_json = document.to_json()
+            except (ValueError, KeyError, TypeError):
+                logger.warning(
+                    "design_sync.document_json_build_failed",
+                    connection_id=connection_id,
+                    exc_info=True,
+                )
+
+            await self._repo.save_snapshot(conn.id, tokens_dict, document_json=doc_json)
             await self._repo.update_status(conn, "connected")
 
             logger.info(

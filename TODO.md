@@ -1545,7 +1545,7 @@
 > **Dependency note:** Builds on Phase 35 (MJML compilation service, node tree normalizer, AI layout intelligence). Requires 35.1 (MJML sidecar) for MJML round-trip and 35.5 (AI layout intelligence) for HTML reverse engineering. ESP export subtask (36.5) is independent — can start immediately using existing `ESPSyncProvider` protocol in `app/connectors/sync_protocol.py`.
 
 - [x] 36.1 EmailDesignDocument JSON Schema v1 ~~DONE~~
-- [ ] 36.2 Refactor converter to consume EmailDesignDocument
+- [x] 36.2 Refactor converter to consume EmailDesignDocument ~~DONE~~
 - [ ] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument
 - [ ] 36.4 MJML import adapter
 - [ ] 36.5 AI-powered HTML reverse engineering adapter
@@ -1610,7 +1610,7 @@
 **Security:** Schema validation prevents malformed input from reaching the converter. Max document size: 5MB (enforced at API boundary). JSON Schema `maxItems` on arrays (sections: 100, texts per section: 50, colors: 500) prevents DoS via oversized documents. No `additionalProperties: true` on inner objects — unknown fields are rejected.
 **Verify:** Valid EmailDesignDocument JSON → `validate()` returns empty list. Missing required field → validation error with path. Section with invalid type → rejected. Document with 101 sections → rejected (maxItems). `from_json(to_json(doc))` round-trips correctly. Schema endpoint returns valid JSON Schema. `make test` passes.
 
-### 36.2 Refactor Converter to Consume EmailDesignDocument `[Backend]`
+### ~~36.2 Refactor Converter to Consume EmailDesignDocument~~ `[Backend]` DONE
 **What:** Modify `DesignConverterService.convert()` to accept `EmailDesignDocument` as its primary input, replacing the current `(DesignFileStructure, ExtractedTokens)` pair. The existing signature remains as a deprecated compatibility shim during migration.
 **Why:** The converter currently accepts `DesignFileStructure` + `ExtractedTokens` + 8 keyword arguments (`raw_file_data`, `selected_nodes`, `target_clients`, `use_components`, `connection_config`, `image_urls`). This signature is Figma-centric (e.g., `raw_file_data` is the raw Figma API response). Moving to `EmailDesignDocument` as the single input: (a) makes the converter input-source-agnostic, (b) reduces the parameter surface from 10 args to 1 object, (c) enables testing with JSON fixtures instead of mock providers, (d) enables caching by document hash.
 **Implementation:**

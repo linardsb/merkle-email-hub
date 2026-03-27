@@ -153,65 +153,96 @@ class DesignImportService:
                         )
 
                         converter = DesignConverterService()
-                        # Use the real Figma node tree (not a flat
-                        # reconstruction from the layout summary which
-                        # loses nesting, groups, and child nodes).
-                        structure = await design_service.get_design_structure(
-                            design_import.connection_id,
-                            self._user,
-                            selected_node_ids=design_import.selected_node_ids or None,
-                        )
-                        extracted_tokens = (
-                            self._tokens_to_protocol(tokens) if tokens else ExtractedTokens()
-                        )
-
-                        # Validate tokens before converter consumption
-                        from app.design_sync.token_transforms import validate_and_transform
-
-                        extracted_tokens, token_warnings = validate_and_transform(
-                            extracted_tokens, target_clients=target_clients
-                        )
-                        if token_warnings:
-                            logger.info(
-                                "design_sync.import_token_warnings",
-                                import_id=import_id,
-                                count=len(token_warnings),
-                            )
-
-                        # Pass raw_file_data only for Penpot (has richer props)
-                        raw_data = (
-                            design_import.structure_json if conn.provider == "penpot" else None
-                        )
-                        # Don't pass selected_nodes — layout analysis already
-                        # filtered by selected_node_ids, and the reconstructed
-                        # tree uses synthetic IDs that won't match Figma IDs.
-                        # Extract image_urls from design_context for component matcher
                         _img_urls = design_context.get("image_urls")
                         _image_url_map: dict[str, str] | None = (
                             _img_urls if isinstance(_img_urls, dict) else None  # type: ignore[assignment]
                         )
                         _conn_id = str(design_import.connection_id)
-                        if output_format == "mjml":
-                            conversion = await converter.convert_mjml(
-                                structure,
-                                extracted_tokens,
-                                raw_file_data=raw_data,
-                                selected_nodes=None,
-                                target_clients=target_clients,
-                                connection_config=conn.config_json,
-                                connection_id=_conn_id,
+
+                        # Prefer document path when snapshot has document_json
+                        snapshot = await repo.get_latest_snapshot(design_import.connection_id)
+                        if snapshot and snapshot.document_json:
+                            from app.design_sync.email_design_document import (
+                                EmailDesignDocument,
                             )
-                        else:
-                            conversion = converter.convert(
-                                structure,
-                                extracted_tokens,
-                                raw_file_data=raw_data,
-                                selected_nodes=None,
-                                target_clients=target_clients,
-                                connection_config=conn.config_json,
-                                image_urls=_image_url_map,
-                                connection_id=_conn_id,
+
+                            try:
+                                document = EmailDesignDocument.from_json(snapshot.document_json)
+                            except (ValueError, KeyError):
+                                logger.warning(
+                                    "design_sync.document_json_invalid",
+                                    import_id=import_id,
+                                )
+                            else:
+                                if output_format == "mjml":
+                                    conversion = await converter.convert_document_mjml(
+                                        document,
+                                        target_clients=target_clients,
+                                        connection_id=_conn_id,
+                                    )
+                                else:
+                                    conversion = converter.convert_document(
+                                        document,
+                                        target_clients=target_clients,
+                                        image_urls=_image_url_map,
+                                        connection_id=_conn_id,
+                                    )
+                                logger.info(
+                                    "design_sync.converter_document_path",
+                                    import_id=import_id,
+                                    sections=conversion.sections_count,
+                                )
+
+                        # Legacy path: fetch full tree + extract tokens
+                        if conversion is None:
+                            structure = await design_service.get_design_structure(
+                                design_import.connection_id,
+                                self._user,
+                                selected_node_ids=design_import.selected_node_ids or None,
                             )
+                            extracted_tokens = (
+                                self._tokens_to_protocol(tokens) if tokens else ExtractedTokens()
+                            )
+
+                            from app.design_sync.token_transforms import (
+                                validate_and_transform,
+                            )
+
+                            extracted_tokens, token_warnings = validate_and_transform(
+                                extracted_tokens, target_clients=target_clients
+                            )
+                            if token_warnings:
+                                logger.info(
+                                    "design_sync.import_token_warnings",
+                                    import_id=import_id,
+                                    count=len(token_warnings),
+                                )
+
+                            raw_data = (
+                                design_import.structure_json if conn.provider == "penpot" else None
+                            )
+                            if output_format == "mjml":
+                                conversion = await converter.convert_mjml(
+                                    structure,
+                                    extracted_tokens,
+                                    raw_file_data=raw_data,
+                                    selected_nodes=None,
+                                    target_clients=target_clients,
+                                    connection_config=conn.config_json,
+                                    connection_id=_conn_id,
+                                )
+                            else:
+                                conversion = converter.convert(
+                                    structure,
+                                    extracted_tokens,
+                                    raw_file_data=raw_data,
+                                    selected_nodes=None,
+                                    target_clients=target_clients,
+                                    connection_config=conn.config_json,
+                                    image_urls=_image_url_map,
+                                    connection_id=_conn_id,
+                                )
+
                         initial_html = conversion.html
                         if conversion.compatibility_hints:
                             logger.info(

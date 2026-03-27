@@ -138,10 +138,12 @@ class DesignSyncRepository:
         self,
         connection_id: int,
         tokens_json: dict[str, object],
+        document_json: dict[str, object] | None = None,
     ) -> DesignTokenSnapshot:
         snapshot = DesignTokenSnapshot(
             connection_id=connection_id,
             tokens_json=tokens_json,
+            document_json=document_json,
             extracted_at=datetime.now(UTC).replace(tzinfo=None),
         )
         self.db.add(snapshot)
