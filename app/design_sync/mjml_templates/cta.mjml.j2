@@ -1,0 +1,15 @@
+<!-- section:{{ section.node_id }}:{{ section.section_type }} -->
+<mj-section background-color="{{ section.bg_color or palette.background }}" padding="{{ section_padding }}">
+  <mj-column>
+{% for text in section.texts %}
+    <mj-text font-size="{{ typo.base_size }}" line-height="{{ typo.body_line_height or '1.5' }}" color="{{ palette.text }}" font-family="{{ typo.body_font }}" align="center" padding="10px 25px">
+      {{ text.content }}
+    </mj-text>
+{% endfor %}
+{% for btn in section.buttons %}
+    <mj-button background-color="{{ palette.primary }}" color="#ffffff" font-family="{{ typo.body_font }}" font-size="{{ typo.base_size }}" font-weight="700" href="#" border-radius="4px" inner-padding="14px 30px" height="44px" align="center">
+      {{ btn.text }}
+    </mj-button>
+{% endfor %}
+  </mj-column>
+</mj-section>

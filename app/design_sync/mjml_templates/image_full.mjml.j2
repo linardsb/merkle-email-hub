@@ -1,0 +1,8 @@
+<!-- section:{{ section.node_id }}:{{ section.section_type }} -->
+<mj-section background-color="{{ section.bg_color or palette.background }}" padding="0">
+  <mj-column>
+{% for img in section.images %}
+    <mj-image src="https://placehold.co/{{ (img.width or container_width)|int }}x{{ (img.height or 300)|int }}" alt="{{ img.node_name }}" width="{{ (img.width or container_width)|int }}px" fluid-on-mobile="true" padding="0" />
+{% endfor %}
+  </mj-column>
+</mj-section>

@@ -1,0 +1,38 @@
+<!-- section:{{ section.node_id }}:{{ section.section_type }} -->
+<mj-section background-color="{{ section.bg_color or palette.background }}" padding="{{ section_padding }}">
+{% if section.column_groups %}
+{% for group in section.column_groups %}
+  <mj-column width="33.33%">
+{% for img in group.images %}
+    <mj-image src="https://placehold.co/{{ (img.width or 170)|int }}x{{ (img.height or 170)|int }}" alt="{{ img.node_name }}" width="{{ (img.width or 170)|int }}px" padding="10px 10px" />
+{% endfor %}
+{% for text in group.texts %}
+{% if text.is_heading %}
+    <mj-text font-size="{{ typo.base_size }}" font-weight="700" color="{{ palette.text }}" font-family="{{ typo.heading_font }}" padding="5px 10px">
+      <h3 style="margin:0;">{{ text.content }}</h3>
+    </mj-text>
+{% else %}
+    <mj-text font-size="{{ typo.base_size }}" color="{{ palette.text }}" font-family="{{ typo.body_font }}" padding="5px 10px">
+      {{ text.content }}
+    </mj-text>
+{% endif %}
+{% endfor %}
+{% for btn in group.buttons %}
+    <mj-button background-color="{{ palette.primary }}" color="#ffffff" font-size="14px" href="#" border-radius="4px" inner-padding="10px 16px" height="44px">
+      {{ btn.text }}
+    </mj-button>
+{% endfor %}
+  </mj-column>
+{% endfor %}
+{% else %}
+  <mj-column width="33.33%">
+    <mj-text padding="10px">Column 1</mj-text>
+  </mj-column>
+  <mj-column width="33.33%">
+    <mj-text padding="10px">Column 2</mj-text>
+  </mj-column>
+  <mj-column width="33.33%">
+    <mj-text padding="10px">Column 3</mj-text>
+  </mj-column>
+{% endif %}
+</mj-section>

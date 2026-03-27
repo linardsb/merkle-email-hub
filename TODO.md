@@ -1124,7 +1124,7 @@
 - [x] ~~35.1 MJML compilation service in Maizzle sidecar~~ DONE
 - [x] ~~35.2 Figma node tree normalizer~~ DONE
 - [x] ~~35.3 MJML generation backend in converter~~ DONE
-- [ ] 35.4 MJML email section templates
+- [x] ~~35.4 MJML email section templates~~ DONE
 - [x] ~~35.5 AI layout intelligence & semantic detection~~ DONE
 - [x] ~~35.6 AI visual fidelity scoring pipeline~~ DONE
 - [x] ~~35.7 AI conversion learning loop~~ DONE

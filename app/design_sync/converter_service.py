@@ -29,6 +29,10 @@ from app.design_sync.figma.layout_analyzer import (
 from app.design_sync.figma.tree_normalizer import normalize_tree
 from app.design_sync.html_formatter import format_email_html
 from app.design_sync.mjml_generator import generate_mjml, inject_section_markers
+from app.design_sync.mjml_template_engine import (
+    build_template_context,
+    get_engine,
+)
 from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
@@ -398,9 +402,43 @@ class DesignConverterService:
         warnings: list[str],
         container_width: int,
         target_clients: list[str] | None = None,
+        use_templates: bool = True,
     ) -> ConversionResult:
-        """Generate MJML from layout, compile via sidecar, return ConversionResult."""
-        mjml_str = generate_mjml(layout, tokens, container_width=container_width)
+        """Generate MJML from layout, compile via sidecar, return ConversionResult.
+
+        When *use_templates* is True (default), the template engine renders each
+        section via Jinja2 MJML templates.  Falls back to programmatic generation
+        via ``generate_mjml()`` if template rendering fails.
+        """
+        mjml_str: str | None = None
+        if use_templates:
+            try:
+                engine = get_engine()
+                ctx = build_template_context(tokens, container_width=container_width)
+                preheader = ""
+                for s in layout.sections:
+                    if s.section_type == EmailSectionType.PREHEADER and s.texts:
+                        preheader = s.texts[0].content
+                        break
+                body_sections = [
+                    s for s in layout.sections if s.section_type != EmailSectionType.PREHEADER
+                ]
+                mjml_str = engine.render_email(
+                    body_sections,
+                    ctx,
+                    preheader=preheader,
+                )
+                logger.info("design_sync.mjml_template_rendered", sections=len(body_sections))
+            except Exception:
+                logger.warning(
+                    "design_sync.mjml_template_fallback",
+                    reason="template_error",
+                    exc_info=True,
+                )
+                mjml_str = None
+
+        if mjml_str is None:
+            mjml_str = generate_mjml(layout, tokens, container_width=container_width)
         compile_result = await self.compile_mjml(mjml_str, target_clients=target_clients)
 
         if compile_result.errors:

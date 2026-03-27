@@ -1,0 +1,30 @@
+<!-- section:{{ section.node_id }}:{{ section.section_type }} -->
+<mj-section background-color="{{ section.bg_color or palette.background }}" padding="{{ section_padding }}">
+{% if section.column_groups %}
+{% for group in section.column_groups %}
+{% set pct = ((group.width or (container_width / section.column_count)) / container_width * 100)|round(1) %}
+  <mj-column width="{{ pct }}%">
+{% for img in group.images %}
+    <mj-image src="https://placehold.co/{{ (img.width or 200)|int }}x{{ (img.height or 150)|int }}" alt="{{ img.node_name }}" padding="10px" />
+{% endfor %}
+{% for text in group.texts %}
+    <mj-text font-size="{{ typo.base_size }}" color="{{ palette.text }}" font-family="{{ typo.body_font }}" padding="5px 10px">
+      {{ text.content }}
+    </mj-text>
+{% endfor %}
+{% for btn in group.buttons %}
+    <mj-button background-color="{{ palette.primary }}" color="#ffffff" href="#" border-radius="4px" inner-padding="10px 16px" height="44px">
+      {{ btn.text }}
+    </mj-button>
+{% endfor %}
+  </mj-column>
+{% endfor %}
+{% else %}
+{% for i in range(section.column_count) %}
+{% set col_pct = (100 / section.column_count)|round(1) %}
+  <mj-column width="{{ col_pct }}%">
+    <mj-text padding="10px">Column {{ i + 1 }}</mj-text>
+  </mj-column>
+{% endfor %}
+{% endif %}
+</mj-section>

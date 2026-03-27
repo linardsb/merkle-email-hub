@@ -1,0 +1,10 @@
+<!-- section:{{ section.node_id }}:{{ section.section_type }} -->
+<mj-section padding="0">
+  <mj-column>
+{% if section.section_type.value == "divider" %}
+    <mj-divider border-color="{{ palette.text }}" border-width="1px" padding="10px 25px" />
+{% else %}
+    <mj-spacer height="{{ (section.height or 20)|int }}px" />
+{% endif %}
+  </mj-column>
+</mj-section>

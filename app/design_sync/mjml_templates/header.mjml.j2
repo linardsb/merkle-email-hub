@@ -1,0 +1,13 @@
+<!-- section:{{ section.node_id }}:{{ section.section_type }} -->
+<mj-section background-color="{{ section.bg_color or palette.background }}" padding="10px 0">
+  <mj-column>
+{% for img in section.images %}
+    <mj-image src="https://placehold.co/{{ (img.width or 150)|int }}x{{ (img.height or 50)|int }}" alt="{{ img.node_name }}" width="{{ (img.width or 150)|int }}px" align="center" padding="10px 25px" />
+{% endfor %}
+{% for text in section.texts %}
+    <mj-text font-size="{{ typo.base_size }}" color="{{ palette.text }}" font-family="{{ typo.body_font }}" align="center" padding="5px 25px">
+      {{ text.content }}
+    </mj-text>
+{% endfor %}
+  </mj-column>
+</mj-section>
