@@ -7,9 +7,11 @@ cms/
 nginx/
 services/
 email-templates/
-*.md
 *.png
 *.txt
+# Exclude top-level and docs markdown, but keep app/ skill files (.md) needed at runtime
+/*.md
+docs/*.md
 .venv
 __pycache__
 *.pyc
