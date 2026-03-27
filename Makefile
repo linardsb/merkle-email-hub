@@ -143,6 +143,9 @@ sync-ontology: ## Sync ontology data to sidecar (YAML → JSON) + check client m
 	cd services/maizzle-builder && npm run sync-ontology
 	uv run python scripts/sync-client-matrix.py --check
 
+sync-caniemail: ## Sync caniemail.com CSS support data to data/caniemail-support.json
+	uv run python scripts/sync-caniemail.py --verbose
+
 # === Eval Pipeline ===
 
 eval-verify: ## Verify LLM provider is configured and responding
