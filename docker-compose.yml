@@ -242,6 +242,9 @@ services:
       - NET_BIND_SERVICE
       - SETGID
       - SETUID
+    labels:
+      - "coolify.fqdn=http://204.168.129.30"
+      - "coolify.port=80"
     deploy:
       resources:
         limits:
