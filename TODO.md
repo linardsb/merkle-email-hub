@@ -983,7 +983,7 @@
 
 ---
 
-## Phase 34 — CRAG Accept/Reject Gate
+## ~~Phase 34 — CRAG Accept/Reject Gate~~ DONE
 
 > The CRAG validation loop (Phase 16.5) detects unsupported CSS in agent-generated HTML, retrieves ontology fallbacks, and asks the LLM to apply them. But its acceptance gate is blind: if the corrected output is longer than 50 characters, it ships. The LLM can break MSO conditionals, drop sections, introduce new unsupported CSS, or bloat past Gmail's 102KB clip threshold — and CRAG will accept it. QA catches these regressions *after* CRAG, but by then the original pre-CRAG HTML is gone. The response ships with the damaged version plus QA warnings.
 >
@@ -991,9 +991,9 @@
 >
 > **Dependency note:** Independent of Phases 32–33. Can be implemented at any time. The fix is contained to `validation_loop.py` + its test file.
 
-- [ ] 34.1 Accept/reject gate on CRAG corrections
-- [ ] 34.2 Structured CRAG observability logging
-- [ ] 34.3 Tests for accept/reject gate
+- [x] ~~34.1 Accept/reject gate on CRAG corrections~~ DONE
+- [x] ~~34.2 Structured CRAG observability logging~~ DONE
+- [x] ~~34.3 Tests for accept/reject gate~~ DONE
 
 ### 34.1 Accept/Reject Gate on CRAG Corrections `[Backend]`
 **What:** After CRAG calls the LLM and extracts corrected HTML, re-scan the corrected output with `unsupported_css_in_html()` using the same severity threshold. Compare qualifying issue counts before vs. after. Only accept the correction if the post-correction count is strictly lower. Otherwise reject and return the original HTML unchanged.

@@ -52,10 +52,12 @@ class CRAGMixin:
         if not qualifying:
             return html, []
 
+        qualifying_property_ids = [str(i["property_id"]) for i in qualifying]
         logger.info(
             "agents.crag.issues_detected",
             total_issues=len(issues),
             qualifying_issues=len(qualifying),
+            qualifying_property_ids=qualifying_property_ids,
             min_severity=min_severity,
         )
 
@@ -118,7 +120,14 @@ class CRAGMixin:
         try:
             result = await provider.complete(messages, model_override=model, max_tokens=16_384)
         except Exception:
-            logger.warning("agents.crag.llm_call_failed", exc_info=True)
+            # No post_issues — post-correction scan hasn't run yet
+            logger.warning(
+                "agents.crag.correction_rejected",
+                reason="llm_call_failed",
+                pre_issues=len(qualifying),
+                qualifying_property_ids=qualifying_property_ids,
+                exc_info=True,
+            )
             return html, []  # Failure-safe: return original
 
         # Step 6: Validate and sanitize output
@@ -127,12 +136,40 @@ class CRAGMixin:
         corrected = sanitize_html_xss(corrected)
 
         if not corrected or len(corrected) < 50:
-            logger.warning("agents.crag.output_too_short", length=len(corrected))
+            # No post_issues — post-correction scan hasn't run yet
+            logger.warning(
+                "agents.crag.correction_rejected",
+                reason="output_too_short",
+                pre_issues=len(qualifying),
+                qualifying_property_ids=qualifying_property_ids,
+                corrected_length=len(corrected),
+            )
             return html, []  # Failure-safe: return original
+
+        # Step 7: Accept/reject gate — verify correction actually reduced qualifying issues
+        post_issues = unsupported_css_in_html(corrected)
+        post_qualifying = [
+            issue
+            for issue in post_issues
+            if severity_order.get(str(issue["severity"]), 2) <= threshold
+        ]
+
+        if len(post_qualifying) >= len(qualifying):
+            logger.warning(
+                "agents.crag.correction_rejected",
+                reason="no_improvement",
+                pre_issues=len(qualifying),
+                post_issues=len(post_qualifying),
+                qualifying_property_ids=qualifying_property_ids,
+            )
+            return html, []
 
         corrections = [str(issue["property_id"]) for issue in qualifying]
         logger.info(
-            "agents.crag.correction_applied",
+            "agents.crag.correction_accepted",
+            pre_issues=len(qualifying),
+            post_issues=len(post_qualifying),
+            issues_fixed=len(qualifying) - len(post_qualifying),
             corrections=corrections,
             original_length=len(html),
             corrected_length=len(corrected),
