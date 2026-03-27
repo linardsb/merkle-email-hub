@@ -1125,7 +1125,7 @@
 - [x] ~~35.2 Figma node tree normalizer~~ DONE
 - [ ] 35.3 MJML generation backend in converter
 - [ ] 35.4 MJML email section templates
-- [ ] 35.5 AI layout intelligence & semantic detection
+- [x] ~~35.5 AI layout intelligence & semantic detection~~ DONE
 - [ ] 35.6 AI visual fidelity scoring pipeline
 - [ ] 35.7 AI conversion learning loop
 - [ ] 35.8 W3C Design Tokens & caniemail.com integration
