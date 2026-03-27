@@ -697,3 +697,10 @@ class CacheClearResponse(BaseModel):
     """Response for section cache clear endpoint."""
 
     cleared_entries: int
+
+
+class DocumentValidationResponse(BaseModel):
+    """Response for the EmailDesignDocument validation endpoint."""
+
+    valid: bool
+    errors: list[str]

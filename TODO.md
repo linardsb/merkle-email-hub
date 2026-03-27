@@ -1544,7 +1544,7 @@
 >
 > **Dependency note:** Builds on Phase 35 (MJML compilation service, node tree normalizer, AI layout intelligence). Requires 35.1 (MJML sidecar) for MJML round-trip and 35.5 (AI layout intelligence) for HTML reverse engineering. ESP export subtask (36.5) is independent — can start immediately using existing `ESPSyncProvider` protocol in `app/connectors/sync_protocol.py`.
 
-- [ ] 36.1 EmailDesignDocument JSON Schema v1
+- [x] 36.1 EmailDesignDocument JSON Schema v1 ~~DONE~~
 - [ ] 36.2 Refactor converter to consume EmailDesignDocument
 - [ ] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument
 - [ ] 36.4 MJML import adapter

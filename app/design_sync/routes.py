@@ -2,9 +2,11 @@
 """REST API routes for design sync."""
 
 import asyncio
+import json
 from pathlib import Path
+from typing import Any, cast
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.requests import Request
 from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +30,7 @@ from app.design_sync.schemas import (
     ConnectionUpdateTokenRequest,
     ConvertImportRequest,
     DesignTokensResponse,
+    DocumentValidationResponse,
     DownloadAssetsRequest,
     DownloadAssetsResponse,
     ExportImageRequest,
@@ -816,3 +819,57 @@ async def clear_section_cache(
     cache = get_section_cache()
     cleared = await cache.invalidate_connection(str(connection_id))
     return CacheClearResponse(cleared_entries=cleared)
+
+
+# ── EmailDesignDocument Schema (Phase 36.1) ──
+
+_MAX_DOCUMENT_BODY_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+@router.get("/schema/v1")
+@limiter.limit("60/minute")
+async def get_document_schema(request: Request) -> Response:
+    """Serve the EmailDesignDocument v1 JSON Schema (public, no auth required)."""
+    _ = request
+    from app.design_sync.email_design_document import EmailDesignDocument
+
+    body = json.dumps(EmailDesignDocument.schema(), separators=(",", ":"))
+    return Response(
+        content=body,
+        media_type="application/schema+json",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@router.post("/validate-document", response_model=DocumentValidationResponse)
+@limiter.limit("30/minute")
+async def validate_document(
+    request: Request,
+    current_user: User = Depends(require_role("viewer")),
+) -> DocumentValidationResponse:
+    """Validate a JSON body against the EmailDesignDocument v1 schema."""
+    _ = current_user
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            if int(content_length) > _MAX_DOCUMENT_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Request body exceeds 5 MB limit")
+        except ValueError:
+            pass  # Malformed Content-Length — let body-length check below handle it
+
+    body = await request.body()
+    if len(body) > _MAX_DOCUMENT_BODY_BYTES:
+        raise HTTPException(status_code=413, detail="Request body exceeds 5 MB limit")
+
+    try:
+        data = json.loads(body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return DocumentValidationResponse(valid=False, errors=["Request body is not valid JSON"])
+
+    if not isinstance(data, dict):
+        return DocumentValidationResponse(valid=False, errors=["Document must be a JSON object"])
+
+    from app.design_sync.email_design_document import EmailDesignDocument
+
+    errors = EmailDesignDocument.validate(cast(dict[str, Any], data))
+    return DocumentValidationResponse(valid=not errors, errors=errors)

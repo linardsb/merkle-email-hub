@@ -1,0 +1,387 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "email-design-document/v1",
+  "title": "Email Design Document v1",
+  "description": "Canonical intermediate representation between design sources and the email converter.",
+  "type": "object",
+  "required": ["version", "tokens", "sections", "layout"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": "1.0",
+      "description": "Schema version identifier."
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "tokens": {
+      "$ref": "#/$defs/tokens"
+    },
+    "sections": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/section" },
+      "maxItems": 100
+    },
+    "layout": {
+      "$ref": "#/$defs/layout"
+    },
+    "compatibility_hints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/compatibility_hint" },
+      "maxItems": 200,
+      "default": []
+    },
+    "token_warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/token_warning" },
+      "maxItems": 200,
+      "default": []
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["figma", "penpot", "mjml", "html", "manual", "sketch", "canva"]
+        },
+        "file_ref": { "type": "string", "maxLength": 500 },
+        "synced_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "colors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/color" },
+          "maxItems": 500,
+          "default": []
+        },
+        "typography": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/typography" },
+          "maxItems": 200,
+          "default": []
+        },
+        "spacing": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/spacing" },
+          "maxItems": 200,
+          "default": []
+        },
+        "dark_colors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/color" },
+          "maxItems": 500,
+          "default": []
+        },
+        "gradients": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gradient" },
+          "maxItems": 100,
+          "default": []
+        },
+        "variables": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/variable" },
+          "maxItems": 500,
+          "default": []
+        },
+        "stroke_colors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/color" },
+          "maxItems": 200,
+          "default": []
+        },
+        "variables_source": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether tokens originated from the Figma Variables API."
+        },
+        "modes": {
+          "type": ["object", "null"],
+          "additionalProperties": { "type": "string" },
+          "default": null,
+          "description": "Figma variable mode names keyed by mode ID."
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "required": ["name", "hex"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "default": 1.0 }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "required": ["name", "family", "weight", "size", "line_height"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "family": { "type": "string", "maxLength": 200 },
+        "weight": { "type": "string", "maxLength": 20 },
+        "size": { "type": "number", "minimum": 0 },
+        "line_height": { "type": "number", "minimum": 0 },
+        "letter_spacing": { "type": ["number", "null"], "default": null },
+        "text_transform": { "type": ["string", "null"], "default": null },
+        "text_decoration": { "type": ["string", "null"], "default": null }
+      }
+    },
+    "spacing": {
+      "type": "object",
+      "required": ["name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "value": { "type": "number", "minimum": 0 }
+      }
+    },
+    "gradient": {
+      "type": "object",
+      "required": ["name", "type", "angle", "stops", "fallback_hex"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "enum": ["linear", "radial"] },
+        "angle": { "type": "number", "minimum": 0, "maximum": 360 },
+        "stops": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gradient_stop" },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "fallback_hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+      }
+    },
+    "gradient_stop": {
+      "type": "object",
+      "required": ["hex", "position"],
+      "additionalProperties": false,
+      "properties": {
+        "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "position": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "variable": {
+      "type": "object",
+      "required": ["name", "collection", "type", "values_by_mode"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "collection": { "type": "string", "maxLength": 200 },
+        "type": {
+          "type": "string",
+          "enum": ["COLOR", "FLOAT", "STRING", "BOOLEAN"]
+        },
+        "values_by_mode": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "is_alias": { "type": "boolean", "default": false },
+        "alias_path": { "type": ["string", "null"], "default": null, "maxLength": 500 }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "maxLength": 200 },
+        "type": {
+          "type": "string",
+          "enum": [
+            "header", "preheader", "hero", "content", "cta",
+            "footer", "social", "divider", "spacer", "nav", "unknown"
+          ]
+        },
+        "node_name": { "type": ["string", "null"], "default": null, "maxLength": 200 },
+        "y_position": { "type": ["number", "null"], "default": null },
+        "width": { "type": ["number", "null"], "default": null },
+        "height": { "type": ["number", "null"], "default": null },
+        "column_layout": {
+          "type": "string",
+          "enum": ["single", "two-column", "three-column", "multi-column"],
+          "default": "single"
+        },
+        "column_count": { "type": "integer", "minimum": 1, "default": 1 },
+        "padding": { "$ref": "#/$defs/padding" },
+        "item_spacing": { "type": ["number", "null"], "default": null },
+        "background_color": { "type": ["string", "null"], "default": null, "maxLength": 20 },
+        "texts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/text" },
+          "maxItems": 50,
+          "default": []
+        },
+        "images": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/image" },
+          "maxItems": 50,
+          "default": []
+        },
+        "buttons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/button" },
+          "maxItems": 30,
+          "default": []
+        },
+        "columns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/column" },
+          "maxItems": 12,
+          "default": []
+        },
+        "content_roles": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20,
+          "default": []
+        },
+        "spacing_after": { "type": ["number", "null"], "default": null },
+        "classification_confidence": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "default": null
+        },
+        "element_gaps": {
+          "type": "array",
+          "items": { "type": "number" },
+          "maxItems": 100,
+          "default": []
+        }
+      }
+    },
+    "padding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "top": { "type": "number", "minimum": 0, "default": 0 },
+        "right": { "type": "number", "minimum": 0, "default": 0 },
+        "bottom": { "type": "number", "minimum": 0, "default": 0 },
+        "left": { "type": "number", "minimum": 0, "default": 0 }
+      }
+    },
+    "text": {
+      "type": "object",
+      "required": ["node_id", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "node_id": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 10000 },
+        "font_size": { "type": ["number", "null"], "minimum": 0, "default": null },
+        "is_heading": { "type": "boolean", "default": false },
+        "font_family": { "type": ["string", "null"], "default": null, "maxLength": 200 },
+        "font_weight": { "type": ["integer", "null"], "default": null },
+        "line_height": { "type": ["number", "null"], "minimum": 0, "default": null },
+        "letter_spacing": { "type": ["number", "null"], "default": null }
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["node_id", "node_name"],
+      "additionalProperties": false,
+      "properties": {
+        "node_id": { "type": "string", "maxLength": 200 },
+        "node_name": { "type": "string", "maxLength": 200 },
+        "width": { "type": ["number", "null"], "default": null },
+        "height": { "type": ["number", "null"], "default": null },
+        "is_background": { "type": "boolean", "default": false }
+      }
+    },
+    "button": {
+      "type": "object",
+      "required": ["node_id", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "node_id": { "type": "string", "maxLength": 200 },
+        "text": { "type": "string", "maxLength": 500 },
+        "width": { "type": ["number", "null"], "default": null },
+        "height": { "type": ["number", "null"], "default": null }
+      }
+    },
+    "column": {
+      "type": "object",
+      "required": ["column_idx", "node_id", "node_name"],
+      "additionalProperties": false,
+      "properties": {
+        "column_idx": { "type": "integer", "minimum": 0 },
+        "node_id": { "type": "string", "maxLength": 200 },
+        "node_name": { "type": "string", "maxLength": 200 },
+        "width": { "type": ["number", "null"], "default": null },
+        "texts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/text" },
+          "maxItems": 50,
+          "default": []
+        },
+        "images": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/image" },
+          "maxItems": 50,
+          "default": []
+        },
+        "buttons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/button" },
+          "maxItems": 30,
+          "default": []
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "required": ["container_width"],
+      "additionalProperties": false,
+      "properties": {
+        "container_width": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 800,
+          "default": 600
+        },
+        "naming_convention": {
+          "type": ["string", "null"],
+          "enum": ["mjml", "descriptive", "generic", "custom", null],
+          "default": null
+        },
+        "overall_width": { "type": ["number", "null"], "default": null }
+      }
+    },
+    "compatibility_hint": {
+      "type": "object",
+      "required": ["level", "css_property", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "level": { "type": "string", "enum": ["info", "warning", "error"] },
+        "css_property": { "type": "string", "maxLength": 200 },
+        "message": { "type": "string", "maxLength": 1000 },
+        "affected_clients": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 100 },
+          "maxItems": 50,
+          "default": []
+        }
+      }
+    },
+    "token_warning": {
+      "type": "object",
+      "required": ["level", "field", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "level": { "type": "string", "enum": ["error", "warning", "info"] },
+        "field": { "type": "string", "maxLength": 200 },
+        "message": { "type": "string", "maxLength": 1000 },
+        "fixed_value": { "type": ["string", "null"], "default": null, "maxLength": 500 }
+      }
+    }
+  }
+}

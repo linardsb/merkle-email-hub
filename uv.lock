@@ -995,6 +995,7 @@ dependencies = [
     { name = "gunicorn" },
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "jsonschema" },
     { name = "lightningcss" },
     { name = "lxml" },
     { name = "mcp" },
@@ -1037,6 +1038,7 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "types-jsonschema" },
     { name = "types-lxml" },
 ]
 
@@ -1058,6 +1060,7 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jinja2", specifier = ">=3.1.0" },
+    { name = "jsonschema", specifier = ">=4.0.0" },
     { name = "lightningcss", specifier = ">=0.3.0" },
     { name = "lxml", specifier = ">=5.0" },
     { name = "mcp", specifier = ">=1.12.0" },
@@ -1096,6 +1099,7 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "ruff", specifier = ">=0.14.2" },
+    { name = "types-jsonschema", specifier = ">=4.0.0" },
     { name = "types-lxml", specifier = ">=2026.2" },
 ]
 
@@ -4545,6 +4549,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c8/f3/d9a1bbba7b42b5558a3f9fe017d967f5338cf8108d35991d9b15fdea3e0d/types_html5lib-1.1.11.20251117.tar.gz", hash = "sha256:1a6a3ac5394aa12bf547fae5d5eff91dceec46b6d07c4367d9b39a37f42f201a", size = 18100, upload-time = "2025-11-17T03:08:00.78Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f0/ab/f5606db367c1f57f7400d3cb3bead6665ee2509621439af1b29c35ef6f9e/types_html5lib-1.1.11.20251117-py3-none-any.whl", hash = "sha256:2a3fc935de788a4d2659f4535002a421e05bea5e172b649d33232e99d4272d08", size = 24302, upload-time = "2025-11-17T03:07:59.996Z" },
+]
+
+[[package]]
+name = "types-jsonschema"
+version = "4.26.0.20260325"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "referencing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cb/bf/97b3438f0a3834d7d8e515fbccd4e1ca957465e094f0b260162a5cf9b951/types_jsonschema-4.26.0.20260325.tar.gz", hash = "sha256:84c319ba1af5463394d99accd96db543b7cb0eeab0938c652c18129536672002", size = 16441, upload-time = "2026-03-25T04:08:12.647Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/ec/65a4a55a024c9eb7fe08c207c0a94a537db0db50fea61ad565fa6b39220f/types_jsonschema-4.26.0.20260325-py3-none-any.whl", hash = "sha256:032a952fd32d9e06b71bdce5a5b4005dd58a074f6cb2899e96b633cbe1c28f40", size = 16080, upload-time = "2026-03-25T04:08:11.108Z" },
 ]
 
 [[package]]

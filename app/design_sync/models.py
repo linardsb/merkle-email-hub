@@ -54,6 +54,7 @@ class DesignTokenSnapshot(Base, TimestampMixin):
         index=True,
     )
     tokens_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    document_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=None)
     extracted_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     connection: Mapped["DesignConnection"] = relationship(back_populates="snapshots")
