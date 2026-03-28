@@ -67,3 +67,27 @@ class ESPPushRequest(BaseModel):
     """Request to push a local Hub template to an ESP."""
 
     template_id: int = Field(..., description="Local Hub template ID")
+
+
+class TokenRewriteRequest(BaseModel):
+    """Request to rewrite ESP personalisation tokens from one ESP format to another."""
+
+    html: str = Field(..., max_length=5_000_000)
+    target_esp: str = Field(
+        ...,
+        pattern=r"^(braze|sfmc|adobe_campaign|klaviyo|hubspot|mailchimp|sendgrid|activecampaign|iterable|brevo)$",
+    )
+    source_esp: str | None = Field(
+        default=None,
+        pattern=r"^(braze|sfmc|adobe_campaign|klaviyo|hubspot|mailchimp|sendgrid|activecampaign|iterable|brevo)$",
+    )
+
+
+class TokenRewriteResponse(BaseModel):
+    """Response from token rewrite operation."""
+
+    html: str
+    source_esp: str
+    target_esp: str
+    tokens_rewritten: int
+    warnings: list[str]

@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from app.connectors.token_rewriter import TokenRewriteResult
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
+from app.connectors.activecampaign.sync_provider import ActiveCampaignSyncProvider
 from app.connectors.adobe.sync_provider import AdobeSyncProvider
 from app.connectors.braze.sync_provider import BrazeSyncProvider
+from app.connectors.brevo.sync_provider import BrevoSyncProvider
 from app.connectors.exceptions import (
     ESPConnectionNotFoundError,
     ESPSyncFailedError,
@@ -30,9 +36,8 @@ from app.connectors.sync_schemas import (
     ESPTemplate,
     ESPTemplateList,
 )
-from app.connectors.activecampaign.sync_provider import ActiveCampaignSyncProvider
-from app.connectors.brevo.sync_provider import BrevoSyncProvider
 from app.connectors.taxi.sync_provider import TaxiSyncProvider
+from app.core.exceptions import DomainValidationError
 from app.core.logging import get_logger
 from app.design_sync.crypto import decrypt_token, encrypt_token
 from app.projects.service import ProjectService
@@ -64,6 +69,51 @@ class ConnectorSyncService:
         self._repo = ESPSyncRepository(db)
         self._project_service = ProjectService(db)
         self._template_service = TemplateService(db)
+
+    # ── Token Rewriting ──
+
+    async def rewrite_tokens(
+        self, html: str, target_esp: str, source_esp: str | None = None
+    ) -> TokenRewriteResult:
+        """Rewrite ESP personalisation tokens from one format to another."""
+        from app.connectors.token_ir import ESPPlatform
+        from app.connectors.token_rewriter import TokenRewriterService
+
+        rewriter = TokenRewriterService()
+        return await rewriter.rewrite(
+            html,
+            cast(ESPPlatform, target_esp),
+            cast(ESPPlatform, source_esp) if source_esp else None,
+        )
+
+    async def _auto_rewrite_tokens(self, html: str, target_esp_type: str) -> str:
+        """Auto-detect source ESP tokens and rewrite to target if different."""
+        from app.connectors.token_ir import (
+            ALL_PLATFORMS,
+            ESPPlatform,
+            detect_and_parse,
+            emit_tokens,
+        )
+
+        if target_esp_type not in ALL_PLATFORMS:
+            return html
+        try:
+            ir, source_esp = detect_and_parse(html)
+        except (ValueError, DomainValidationError):
+            # No tokens detected — return as-is
+            return html
+
+        if source_esp == target_esp_type:
+            return html
+
+        new_html, _warnings = emit_tokens(ir, html, cast(ESPPlatform, target_esp_type))
+        logger.info(
+            "connectors.token_rewrite.auto",
+            source_esp=source_esp,
+            target_esp=target_esp_type,
+            tokens_rewritten=len(ir.variables) + len(ir.conditionals) + len(ir.loops),
+        )
+        return new_html
 
     # ── Helpers ──
 
@@ -270,6 +320,10 @@ class ConnectorSyncService:
                 local_template_id, local.latest_version, user
             )
             html = version.html_source
+
+        # Auto-rewrite tokens if source ESP differs from target
+        if html:
+            html = await self._auto_rewrite_tokens(html, conn.esp_type)
 
         try:
             remote = await provider.create_template(local.name, html, credentials)

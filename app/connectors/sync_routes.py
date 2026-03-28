@@ -14,6 +14,8 @@ from app.connectors.sync_schemas import (
     ESPPushRequest,
     ESPTemplate,
     ESPTemplateList,
+    TokenRewriteRequest,
+    TokenRewriteResponse,
 )
 from app.connectors.sync_service import ConnectorSyncService
 from app.core.database import get_db
@@ -151,3 +153,27 @@ async def push_template(
     """Push a local Hub template to the remote ESP."""
     _ = request
     return await service.push_template(connection_id, data.template_id, current_user)
+
+
+# ── Token Rewriting ──
+
+
+@router.post("/rewrite-tokens", response_model=TokenRewriteResponse)
+@limiter.limit("30/minute")
+async def rewrite_tokens(
+    data: TokenRewriteRequest,
+    request: Request,
+    service: ConnectorSyncService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> TokenRewriteResponse:
+    """Rewrite ESP personalisation tokens from one format to another."""
+    _ = request
+    _ = current_user
+    result = await service.rewrite_tokens(data.html, data.target_esp, data.source_esp)
+    return TokenRewriteResponse(
+        html=result.html,
+        source_esp=result.source_esp,
+        target_esp=result.target_esp,
+        tokens_rewritten=result.tokens_rewritten,
+        warnings=list(result.warnings),
+    )
