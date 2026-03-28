@@ -16,7 +16,10 @@ from app.connectors.exceptions import (
     InvalidESPCredentialsError,
 )
 from app.connectors.hubspot.sync_provider import HubSpotSyncProvider
+from app.connectors.iterable.sync_provider import IterableSyncProvider
 from app.connectors.klaviyo.sync_provider import KlaviyoSyncProvider
+from app.connectors.mailchimp.sync_provider import MailchimpSyncProvider
+from app.connectors.sendgrid.sync_provider import SendGridSyncProvider
 from app.connectors.sfmc.sync_provider import SFMCSyncProvider
 from app.connectors.sync_models import ESPConnection
 from app.connectors.sync_protocol import ESPSyncProvider
@@ -27,6 +30,8 @@ from app.connectors.sync_schemas import (
     ESPTemplate,
     ESPTemplateList,
 )
+from app.connectors.activecampaign.sync_provider import ActiveCampaignSyncProvider
+from app.connectors.brevo.sync_provider import BrevoSyncProvider
 from app.connectors.taxi.sync_provider import TaxiSyncProvider
 from app.core.logging import get_logger
 from app.design_sync.crypto import decrypt_token, encrypt_token
@@ -43,6 +48,11 @@ PROVIDER_REGISTRY: dict[str, type[ESPSyncProvider]] = {
     "taxi": TaxiSyncProvider,
     "klaviyo": KlaviyoSyncProvider,
     "hubspot": HubSpotSyncProvider,
+    "mailchimp": MailchimpSyncProvider,
+    "sendgrid": SendGridSyncProvider,
+    "activecampaign": ActiveCampaignSyncProvider,
+    "iterable": IterableSyncProvider,
+    "brevo": BrevoSyncProvider,
 }
 
 

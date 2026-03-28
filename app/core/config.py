@@ -368,6 +368,11 @@ class ESPSyncConfig(BaseModel):
     taxi_base_url: str = "http://mock-esp:3002/taxi"
     klaviyo_base_url: str = "http://mock-esp:3002/klaviyo"
     hubspot_base_url: str = "http://mock-esp:3002/hubspot"
+    mailchimp_base_url: str = "http://mock-esp:3002/mailchimp"
+    sendgrid_base_url: str = "http://mock-esp:3002/sendgrid"
+    activecampaign_base_url: str = "http://mock-esp:3002/activecampaign"
+    iterable_base_url: str = "http://mock-esp:3002/iterable"
+    brevo_base_url: str = "http://mock-esp:3002/brevo"
 
 
 class QAGmailPredictorConfig(BaseModel):
