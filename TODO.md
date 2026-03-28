@@ -1550,7 +1550,7 @@
 - [x] 36.4 MJML import adapter ~~DONE~~
 - [x] 36.5 AI-powered HTML reverse engineering adapter ~~DONE~~
 - [x] 36.6 Klaviyo + HubSpot ESP export ~~DONE~~
-- [ ] 36.7 Tests & integration verification
+- [x] 36.7 Tests & integration verification ~~DONE~~
 
 ### 36.1 EmailDesignDocument JSON Schema v1 `[Backend]`
 **What:** Define a formal JSON Schema (Draft 2020-12) for the `EmailDesignDocument` — the single canonical intermediate representation between any input source and the converter. Create the schema file, Python dataclass mirror, serialization/deserialization, and validation.
@@ -1807,7 +1807,7 @@
 **Security:** API keys stored encrypted via existing `encrypt_credentials()` in `app/connectors/`. Keys never logged (structured logging excludes credential fields). Rate limiters prevent API abuse. HubSpot delete is soft-delete (trash) — not destructive. Klaviyo API key scopes validated on `validate_credentials()` (need `templates:read`, `templates:write`).
 **Verify:** Klaviyo: `validate_credentials()` with valid key → `True`. `create_template("Test", "<html>...")` → returns `ESPTemplate` with Klaviyo ID. `list_templates()` → returns list including created template. `update_template(id, new_html)` → HTML updated. `delete_template(id)` → `True`. Invalid key → `validate_credentials()` returns `False`. HubSpot: same test matrix. Both providers work through existing `POST /api/v1/connectors/export` endpoint. `make test` passes (mocked API calls).
 
-### 36.7 Tests & Integration Verification `[Full-Stack]`
+### ~~36.7 Tests & Integration Verification `[Full-Stack]`~~ DONE
 **What:** Comprehensive test suite covering all Phase 36 subtasks plus end-to-end integration tests for the full multi-format pipeline.
 **Implementation:**
 - **Schema tests** (`app/design_sync/tests/test_email_design_document.py`):
