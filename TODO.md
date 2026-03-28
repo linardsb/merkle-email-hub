@@ -1549,7 +1549,7 @@
 - [x] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument ~~DONE~~
 - [ ] 36.4 MJML import adapter
 - [ ] 36.5 AI-powered HTML reverse engineering adapter
-- [ ] 36.6 Klaviyo + HubSpot ESP export
+- [x] 36.6 Klaviyo + HubSpot ESP export ~~DONE~~
 - [ ] 36.7 Tests & integration verification
 
 ### 36.1 EmailDesignDocument JSON Schema v1 `[Backend]`
@@ -1767,7 +1767,7 @@
 **Security:** HTML input parsed via `lxml.html` (inherently sanitizes). `src` URLs validated (http/https only). Text content passed through `html.escape()` on extraction. AI fallback receives only structural metadata (dimensions, text snippets), not raw HTML. Import endpoint requires authentication. Max HTML size: 2MB.
 **Verify:** Import a golden template HTML → produces `EmailDesignDocument` with correct section count, types, and content. Import a Stripo-exported HTML → section boundaries detected (leveraging import annotator skills). Import a Beefree-exported HTML → same. Import hand-coded email with bulletproof buttons → buttons correctly extracted. Import email with dark mode CSS → `dark_colors` populated. AI disabled → UNKNOWN sections stay UNKNOWN. Malformed HTML → best-effort parsing, no crash. `make test` passes.
 
-### 36.6 Klaviyo + HubSpot ESP Export `[Backend]`
+### ~~36.6 Klaviyo + HubSpot ESP Export `[Backend]`~~ DONE
 **What:** Add Klaviyo and HubSpot ESP export providers to complete the Big 5 coverage (joining existing Braze, SFMC, Adobe Campaign in `app/connectors/`). Implements the existing `ESPSyncProvider` protocol from `app/connectors/sync_protocol.py`.
 **Why:** Braze, SFMC, and Adobe Campaign export already works. Klaviyo and HubSpot are the remaining two of the five most-used enterprise ESPs. Without them, enterprise prospects using these platforms can't push templates from the platform — a deal-breaker. The existing `ESPSyncProvider` protocol + `ConnectorService` dispatch pattern makes adding new providers straightforward (same pattern as `BrazeSyncProvider`, `SFMCSyncProvider`).
 **Implementation:**

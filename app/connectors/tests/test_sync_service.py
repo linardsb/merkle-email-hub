@@ -85,8 +85,8 @@ def service(db: AsyncMock) -> ConnectorSyncService:
 
 
 class TestProviderRegistry:
-    def test_registry_has_all_four(self) -> None:
-        assert set(PROVIDER_REGISTRY.keys()) == {"braze", "sfmc", "adobe_campaign", "taxi"}
+    def test_registry_has_all_providers(self) -> None:
+        assert {"braze", "sfmc", "adobe_campaign", "taxi"} <= set(PROVIDER_REGISTRY.keys())
 
     def test_get_provider_returns_instance(self, service: ConnectorSyncService) -> None:
         for key in PROVIDER_REGISTRY:

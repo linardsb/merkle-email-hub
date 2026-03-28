@@ -28,7 +28,9 @@ class ESPTemplateList(BaseModel):
 class ESPConnectionCreate(BaseModel):
     """Request to create an ESP connection."""
 
-    esp_type: str = Field(..., pattern=r"^(braze|sfmc|adobe_campaign|taxi)$", max_length=50)
+    esp_type: str = Field(
+        ..., pattern=r"^(braze|sfmc|adobe_campaign|taxi|klaviyo|hubspot)$", max_length=50
+    )
     name: str = Field(..., min_length=1, max_length=200)
     project_id: int
     credentials: dict[str, str] = Field(

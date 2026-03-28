@@ -15,6 +15,8 @@ from app.connectors.exceptions import (
     ESPSyncFailedError,
     InvalidESPCredentialsError,
 )
+from app.connectors.hubspot.sync_provider import HubSpotSyncProvider
+from app.connectors.klaviyo.sync_provider import KlaviyoSyncProvider
 from app.connectors.sfmc.sync_provider import SFMCSyncProvider
 from app.connectors.sync_models import ESPConnection
 from app.connectors.sync_protocol import ESPSyncProvider
@@ -39,6 +41,8 @@ PROVIDER_REGISTRY: dict[str, type[ESPSyncProvider]] = {
     "sfmc": SFMCSyncProvider,
     "adobe_campaign": AdobeSyncProvider,
     "taxi": TaxiSyncProvider,
+    "klaviyo": KlaviyoSyncProvider,
+    "hubspot": HubSpotSyncProvider,
 }
 
 

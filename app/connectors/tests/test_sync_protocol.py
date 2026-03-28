@@ -11,6 +11,8 @@ import pytest
 
 from app.connectors.adobe.sync_provider import AdobeSyncProvider
 from app.connectors.braze.sync_provider import BrazeSyncProvider
+from app.connectors.hubspot.sync_provider import HubSpotSyncProvider
+from app.connectors.klaviyo.sync_provider import KlaviyoSyncProvider
 from app.connectors.sfmc.sync_provider import SFMCSyncProvider
 from app.connectors.sync_protocol import ESPSyncProvider
 from app.connectors.sync_schemas import ESPTemplate
@@ -29,7 +31,7 @@ PROTOCOL_METHODS = [
 
 
 class TestSyncProtocolConformance:
-    """All 4 sync providers satisfy ESPSyncProvider protocol."""
+    """All 6 sync providers satisfy ESPSyncProvider protocol."""
 
     def test_braze_is_esp_sync_provider(self) -> None:
         assert isinstance(BrazeSyncProvider(), ESPSyncProvider)
@@ -42,6 +44,12 @@ class TestSyncProtocolConformance:
 
     def test_taxi_is_esp_sync_provider(self) -> None:
         assert isinstance(TaxiSyncProvider(), ESPSyncProvider)
+
+    def test_klaviyo_is_esp_sync_provider(self) -> None:
+        assert isinstance(KlaviyoSyncProvider(), ESPSyncProvider)
+
+    def test_hubspot_is_esp_sync_provider(self) -> None:
+        assert isinstance(HubSpotSyncProvider(), ESPSyncProvider)
 
     @pytest.mark.parametrize("method", PROTOCOL_METHODS)
     def test_braze_has_protocol_method(self, method: str) -> None:
@@ -62,6 +70,16 @@ class TestSyncProtocolConformance:
     def test_taxi_has_protocol_method(self, method: str) -> None:
         assert hasattr(TaxiSyncProvider, method)
         assert inspect.iscoroutinefunction(getattr(TaxiSyncProvider, method))
+
+    @pytest.mark.parametrize("method", PROTOCOL_METHODS)
+    def test_klaviyo_has_protocol_method(self, method: str) -> None:
+        assert hasattr(KlaviyoSyncProvider, method)
+        assert inspect.iscoroutinefunction(getattr(KlaviyoSyncProvider, method))
+
+    @pytest.mark.parametrize("method", PROTOCOL_METHODS)
+    def test_hubspot_has_protocol_method(self, method: str) -> None:
+        assert hasattr(HubSpotSyncProvider, method)
+        assert inspect.iscoroutinefunction(getattr(HubSpotSyncProvider, method))
 
 
 # ── Provider Initialization ──
@@ -85,6 +103,14 @@ class TestProviderInit:
     def test_taxi_base_url_from_settings(self) -> None:
         provider = TaxiSyncProvider()
         assert provider._base_url.endswith("/taxi") or "taxi" in provider._base_url
+
+    def test_klaviyo_base_url_from_settings(self) -> None:
+        provider = KlaviyoSyncProvider()
+        assert provider._base_url.endswith("/klaviyo") or "klaviyo" in provider._base_url
+
+    def test_hubspot_base_url_from_settings(self) -> None:
+        provider = HubSpotSyncProvider()
+        assert provider._base_url.endswith("/hubspot") or "hubspot" in provider._base_url
 
 
 # ── Provider Auth Patterns ──
