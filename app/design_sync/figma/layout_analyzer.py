@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import re
+import statistics
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from app.design_sync.protocol import DesignFileStructure, DesignNode, DesignNodeType
+from app.design_sync.protocol import DesignFileStructure, DesignNode, DesignNodeType, StyleRun
 
 
 class EmailSectionType(StrEnum):
@@ -55,6 +57,12 @@ class TextBlock:
     font_weight: int | None = None
     line_height: float | None = None
     letter_spacing: float | None = None
+    text_color: str | None = None
+    text_align: str | None = None  # left|center|right|justify
+    hyperlink: str | None = None
+    style_runs: tuple[StyleRun, ...] = ()
+    text_transform: str | None = None  # uppercase|lowercase|capitalize
+    text_decoration: str | None = None  # underline|line-through
 
 
 @dataclass(frozen=True)
@@ -76,6 +84,10 @@ class ButtonElement:
     text: str
     width: float | None = None
     height: float | None = None
+    fill_color: str | None = None
+    url: str | None = None
+    border_radius: float | None = None
+    text_color: str | None = None
 
 
 @dataclass(frozen=True)
@@ -230,9 +242,10 @@ def analyze_layout(
         )
 
         col_layout, col_count, col_groups = _detect_column_layout_with_groups(node, convention)
-        texts = _detect_content_hierarchy(_extract_texts(node))
-        images = _extract_images(node)
         buttons = _extract_buttons(node, extra_hints=button_name_hints)
+        button_node_ids = _collect_button_node_ids(buttons)
+        texts = _detect_content_hierarchy(_extract_texts(node, exclude_node_ids=button_node_ids))
+        images = _extract_images(node)
 
         sections.append(
             EmailSection(
@@ -323,7 +336,7 @@ def _detect_naming_convention(candidates: list[DesignNode]) -> NamingConvention:
         for child in c.children:
             names.append(child.name.lower())
 
-    total = len(names) or 1
+    total = max(len(names), 1)
     mj_count = sum(1 for n in names if n.startswith("mj-"))
     pattern_count = sum(
         1
@@ -512,7 +525,7 @@ def _classify_by_content(
 
     # Large image + text overlay near top (tall section) → hero
     if _has_large_image_child(node) and has_texts and index <= 1:
-        height = node.height or 0
+        height = node.height if node.height is not None else 0
         if height >= 300:
             return EmailSectionType.HERO
 
@@ -522,8 +535,12 @@ def _classify_by_content(
         if heading_sizes:
             return EmailSectionType.HERO
 
-    # Section with ©/copyright/unsubscribe text → footer (regardless of position)
-    if has_texts and (_LEGAL_TEXT_RE.search(all_text) or _UNSUBSCRIBE_RE.search(all_text)):
+    # Section with ©/copyright/unsubscribe text near bottom → footer
+    if (
+        has_texts
+        and (_LEGAL_TEXT_RE.search(all_text) or _UNSUBSCRIBE_RE.search(all_text))
+        and index >= total - 2
+    ):
         return EmailSectionType.FOOTER
 
     # Social platform URLs → social
@@ -540,7 +557,7 @@ def _classify_by_content(
 
     # Small text at bottom → footer
     if index >= total - 2 and has_texts and not has_images:
-        avg_size = sum(t.font_size or 14 for t in texts) / len(texts)
+        avg_size = sum(t.font_size if t.font_size is not None else 14 for t in texts) / len(texts)
         if avg_size <= 13:
             return EmailSectionType.FOOTER
 
@@ -548,11 +565,11 @@ def _classify_by_content(
 
 
 def _classify_by_name(name: str) -> EmailSectionType:
-    """Match frame name against known email section patterns (case-insensitive)."""
+    """Match frame name against known email section patterns (word-boundary)."""
     lower = name.lower().strip()
     for section_type, patterns in _SECTION_PATTERNS.items():
         for pattern in patterns:
-            if pattern in lower:
+            if re.search(rf"\b{re.escape(pattern)}\b", lower):
                 return section_type
     return EmailSectionType.UNKNOWN
 
@@ -567,7 +584,7 @@ def _classify_by_position(
 
     Uses height, position, and child content to infer section type.
     """
-    height = node.height or 0
+    height = node.height if node.height is not None else 0
 
     # Very short sections are spacers/dividers
     if height <= 30:
@@ -593,9 +610,21 @@ def _classify_by_position(
     if has_large_image and height >= 300:
         return EmailSectionType.HERO
 
-    # Short section with button-sized height → CTA
+    # Short section with button-sized height → CTA only if button-like content
     if 60 < height <= 150:
-        return EmailSectionType.CTA
+        # Check children for button-like frames (small frame with short text child)
+        has_button_child = any(
+            c.type in _FRAME_TYPES
+            and c.height is not None
+            and c.height <= 80
+            and any(
+                gc.type == DesignNodeType.TEXT and gc.text_content and len(gc.text_content) <= 30
+                for gc in c.children
+            )
+            for c in node.children
+        )
+        if has_button_child:
+            return EmailSectionType.CTA
 
     return EmailSectionType.CONTENT
 
@@ -661,9 +690,10 @@ def _detect_mj_columns(node: DesignNode) -> list[ColumnGroup]:
     col_idx = 0
     for child in section_node.children:
         if child.name.lower().startswith("mj-column"):
-            texts = _extract_texts(child)
-            images = _extract_images(child)
             buttons = _extract_buttons(child)
+            btn_ids = _collect_button_node_ids(buttons)
+            texts = _extract_texts(child, exclude_node_ids=btn_ids)
+            images = _extract_images(child)
 
             # Skip spacer-only columns (e.g., mj-column containing only mj-spacer)
             has_content = bool(texts or images or buttons)
@@ -695,14 +725,16 @@ def _build_column_groups(frame_children: list[DesignNode]) -> list[ColumnGroup]:
     """Build ColumnGroup from a list of frame children (auto-layout columns)."""
     groups: list[ColumnGroup] = []
     for idx, child in enumerate(frame_children, 1):
+        buttons = _extract_buttons(child)
+        btn_ids = _collect_button_node_ids(buttons)
         groups.append(
             ColumnGroup(
                 column_idx=idx,
                 node_id=child.id,
                 node_name=child.name,
-                texts=_extract_texts(child),
+                texts=_extract_texts(child, exclude_node_ids=btn_ids),
                 images=_extract_images(child),
-                buttons=_extract_buttons(child),
+                buttons=buttons,
                 width=child.width,
             )
         )
@@ -710,7 +742,7 @@ def _build_column_groups(frame_children: list[DesignNode]) -> list[ColumnGroup]:
 
 
 def _detect_position_columns(node: DesignNode) -> list[ColumnGroup]:
-    """Position-based column detection (Y-grouping)."""
+    """Position-based column detection (Y-grouping, deterministic)."""
     frame_children = [
         c for c in node.children if c.type in _FRAME_TYPES and c.x is not None and c.y is not None
     ]
@@ -718,38 +750,58 @@ def _detect_position_columns(node: DesignNode) -> list[ColumnGroup]:
     if len(frame_children) < 2:
         return []
 
-    # Group by y-position (within tolerance)
-    y_groups: dict[float, list[DesignNode]] = {}
+    # Sort by Y first (then X) for deterministic grouping
+    frame_children.sort(
+        key=lambda c: (c.y if c.y is not None else 0.0, c.x if c.x is not None else 0.0)
+    )
+
+    # Group by y-position (greedy non-overlapping bands)
+    y_groups: list[list[DesignNode]] = []
     for child in frame_children:
         if child.y is None:
             continue
         placed = False
-        for ref_y in y_groups:
-            if abs(child.y - ref_y) <= _Y_TOLERANCE:
-                y_groups[ref_y].append(child)
+        for group in y_groups:
+            ref_y = group[0].y
+            if ref_y is not None and abs(child.y - ref_y) <= _Y_TOLERANCE:
+                group.append(child)
                 placed = True
                 break
         if not placed:
-            y_groups[child.y] = [child]
+            y_groups.append([child])
 
-    max_group = max(y_groups.values(), key=len)
+    if not y_groups:
+        return []
+
+    max_group = max(y_groups, key=len)
     if len(max_group) < 2:
         return []
 
-    # Sort by x-position and build groups
+    # Sort each row by x-position
     max_group.sort(key=lambda c: c.x if c.x is not None else 0.0)
     return _build_column_groups(max_group)
 
 
-def _extract_texts(node: DesignNode) -> list[TextBlock]:
+def _extract_texts(
+    node: DesignNode,
+    *,
+    exclude_node_ids: set[str] | None = None,
+) -> list[TextBlock]:
     """Recursively extract text blocks from TEXT nodes."""
     results: list[TextBlock] = []
-    _walk_for_texts(node, results)
+    _walk_for_texts(node, results, exclude_node_ids=exclude_node_ids)
     return results
 
 
-def _walk_for_texts(node: DesignNode, results: list[TextBlock]) -> None:
-    """Walk tree collecting TEXT nodes."""
+def _walk_for_texts(
+    node: DesignNode,
+    results: list[TextBlock],
+    *,
+    exclude_node_ids: set[str] | None = None,
+) -> None:
+    """Walk tree collecting TEXT nodes, skipping excluded subtrees."""
+    if exclude_node_ids and node.id in exclude_node_ids:
+        return
     if node.type == DesignNodeType.TEXT and node.text_content:
         # Use actual font_size from design tool; fall back to bounding box height
         results.append(
@@ -762,10 +814,16 @@ def _walk_for_texts(node: DesignNode, results: list[TextBlock]) -> None:
                 font_weight=node.font_weight,
                 line_height=node.line_height_px,
                 letter_spacing=node.letter_spacing_px,
+                text_color=node.text_color,
+                text_align=node.text_align,
+                hyperlink=node.hyperlink,
+                style_runs=node.style_runs,
+                text_transform=node.text_transform,
+                text_decoration=node.text_decoration,
             )
         )
     for child in node.children:
-        _walk_for_texts(child, results)
+        _walk_for_texts(child, results, exclude_node_ids=exclude_node_ids)
 
 
 def _extract_images(node: DesignNode) -> list[ImagePlaceholder]:
@@ -834,6 +892,11 @@ def _extract_buttons(
 _DEFAULT_BUTTON_HINTS = ("button", "btn", "cta", "action", "link", "mj-button")
 
 
+def _collect_button_node_ids(buttons: list[ButtonElement]) -> set[str]:
+    """Collect node IDs of detected buttons for text extraction exclusion."""
+    return {b.node_id for b in buttons}
+
+
 def _walk_for_buttons(
     node: DesignNode,
     results: list[ButtonElement],
@@ -859,17 +922,25 @@ def _walk_for_buttons(
             if extra_hints:
                 hints = (*_DEFAULT_BUTTON_HINTS, *extra_hints)
             is_button_name = any(h in lower_name for h in hints)
-            # Accept if name hints OR frame has a visible fill (real buttons have backgrounds)
+            # Accept if name hints (covers ghost/outline buttons) OR visible fill
             has_fill = bool(
                 node.fill_color and node.fill_color.upper() not in ("#FFFFFF", "#FFF", "")
             )
+            # Ghost buttons: accept by name even without fill (outline-style CTAs)
             if is_button_name or has_fill:
+                # Resolve hyperlink: prefer frame hyperlink, fall back to text child
+                btn_url = node.hyperlink or text_children[0].hyperlink
+                btn_text_color = text_children[0].text_color
                 results.append(
                     ButtonElement(
                         node_id=node.id,
                         text=text_children[0].text_content,
                         width=node.width,
                         height=node.height,
+                        fill_color=node.fill_color,
+                        url=btn_url,
+                        border_radius=node.corner_radius,
+                        text_color=btn_text_color,
                     )
                 )
                 return  # Don't recurse into button internals
@@ -878,46 +949,44 @@ def _walk_for_buttons(
         _walk_for_buttons(child, results, extra_hints=extra_hints)
 
 
-def _has_large_image_child(node: DesignNode) -> bool:
-    """Check if node has a single IMAGE child taking >60% of parent width."""
+def _has_large_image_child(node: DesignNode, *, _depth: int = 0) -> bool:
+    """Check if node has a large IMAGE child (recurse up to 2 levels)."""
     if node.width is None or node.width == 0:
         return False
 
-    image_children = [c for c in node.children if c.type == DesignNodeType.IMAGE]
-    if len(image_children) != 1:
-        return False
+    for child in node.children:
+        if (
+            child.type == DesignNodeType.IMAGE
+            and child.width is not None
+            and child.width / node.width > 0.6
+        ):
+            return True
+        if (
+            _depth < 1
+            and child.type in _FRAME_TYPES
+            and _has_large_image_child(child, _depth=_depth + 1)
+        ):
+            return True
 
-    img = image_children[0]
-    if img.width is None:
-        return False
-
-    return img.width / node.width > 0.6
+    return False
 
 
 def _detect_content_hierarchy(texts: list[TextBlock]) -> list[TextBlock]:
-    """Mark headings based on relative font size (largest = heading)."""
+    """Mark headings based on relative font size (1.3x median = heading)."""
     if not texts:
         return texts
 
     sizes = [t.font_size for t in texts if t.font_size is not None]
-    if not sizes:
-        return texts
+    if not sizes or len(set(sizes)) == 1:
+        return texts  # Uniform sizes → no headings
 
-    max_size = max(sizes)
-    # Anything within 80% of max size is considered a heading
-    threshold = max_size * 0.8
+    median_size = statistics.median(sizes)
+    threshold = median_size * 1.3
 
     return [
-        TextBlock(
-            node_id=t.node_id,
-            content=t.content,
-            font_size=t.font_size,
-            is_heading=t.font_size is not None and t.font_size >= threshold,
-            font_family=t.font_family,
-            font_weight=t.font_weight,
-            line_height=t.line_height,
-            letter_spacing=t.letter_spacing,
-        )
+        dataclasses.replace(t, is_heading=True)
+        if t.font_size is not None and t.font_size >= threshold
+        else t
         for t in texts
     ]
 
@@ -937,27 +1006,10 @@ def _calculate_spacing(sections: list[EmailSection]) -> list[EmailSection]:
                 spacing = max(0.0, next_top - current_bottom)
 
         result.append(
-            EmailSection(
-                section_type=section.section_type,
-                node_id=section.node_id,
-                node_name=section.node_name,
-                y_position=section.y_position,
-                width=section.width,
-                height=section.height,
-                column_layout=section.column_layout,
-                column_count=section.column_count,
-                texts=section.texts,
-                images=section.images,
-                buttons=section.buttons,
+            dataclasses.replace(
+                section,
                 spacing_after=spacing,
-                bg_color=section.bg_color,
-                padding_top=section.padding_top,
-                padding_right=section.padding_right,
-                padding_bottom=section.padding_bottom,
-                padding_left=section.padding_left,
-                item_spacing=section.item_spacing,
                 element_gaps=_compute_element_gaps(section),
-                column_groups=section.column_groups,
             )
         )
     return result

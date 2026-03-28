@@ -943,7 +943,7 @@ class DesignImportService:
                     name=section.section_type,
                     type=DesignNodeType.FRAME,
                     children=child_nodes,
-                    width=section.width or 600,
+                    width=section.width if section.width is not None else 600,
                     height=section.height,
                     fill_color=section.bg_color,
                     item_spacing=float(spacing_after)

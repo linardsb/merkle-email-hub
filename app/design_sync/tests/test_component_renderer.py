@@ -170,6 +170,48 @@ class TestTokenOverrides:
         result = renderer.render_section(match)
         assert "Georgia, serif" in result.html
 
+    def test_heading_color_override(self, renderer: ComponentRenderer) -> None:
+        match = _make_match(
+            "text-block",
+            overrides=[TokenOverride("color", "_heading", "#FFFFFF")],
+        )
+        result = renderer.render_section(match)
+        assert "color:#FFFFFF" in result.html
+
+    def test_body_color_override(self, renderer: ComponentRenderer) -> None:
+        match = _make_match(
+            "text-block",
+            overrides=[TokenOverride("color", "_body", "#AABBCC")],
+        )
+        result = renderer.render_section(match)
+        assert "color:#AABBCC" in result.html
+
+    def test_color_override_does_not_corrupt_background_color(
+        self, renderer: ComponentRenderer
+    ) -> None:
+        """Regression: color override must not match background-color: property."""
+        match = _make_match(
+            "text-block",
+            overrides=[
+                TokenOverride("background-color", "_outer", "#FE5117"),
+                TokenOverride("color", "_heading", "#FFFFFF"),
+            ],
+        )
+        result = renderer.render_section(match)
+        assert "background-color:#FE5117" in result.html
+        assert "color:#FFFFFF" in result.html
+
+    def test_placeholder_url_stripped(self, renderer: ComponentRenderer) -> None:
+        match = _make_match(
+            "article-card",
+            fills=[
+                SlotFill("image_url", "https://via.placeholder.com/280x200", slot_type="image"),
+                SlotFill("heading", "Test Title"),
+            ],
+        )
+        result = renderer.render_section(match)
+        assert "via.placeholder.com" not in result.html
+
 
 class TestAnnotations:
     def test_section_comment_marker(self, renderer: ComponentRenderer) -> None:

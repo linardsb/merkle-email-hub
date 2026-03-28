@@ -271,7 +271,7 @@ class DesignSyncRepository:
     ) -> None:
         """Store pre-computed fidelity scoring JSON on a design import."""
         design_import.fidelity_json = fidelity_data
-        await self.db.flush()
+        await self.db.commit()
 
     async def cancel_import(self, design_import: DesignImport) -> None:
         """Cancel an import if it's still in a cancellable state."""

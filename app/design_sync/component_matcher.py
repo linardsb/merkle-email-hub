@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import re
 from dataclasses import dataclass, field
 
 from app.design_sync.figma.layout_analyzer import (
@@ -192,6 +193,12 @@ def _match_content(
         # Tiny icons paired with text = link list / nav, not a real image card
         if _all_images_are_icons(section):
             return "navigation-bar", 0.9
+        # Column groups → multi-column layout (handled by match_section)
+        if section.column_groups:
+            return "text-block", 0.8
+        # >2 images = image grid, not article card
+        if len(section.images) > 2:
+            return "image-grid", 0.9
         # Image + text + optional CTA = article card
         return "article-card", 1.0
     if has_images and len(section.images) >= 2:
@@ -261,6 +268,84 @@ def _body_texts(texts: list[TextBlock]) -> list[TextBlock]:
 def _safe_text(text: str) -> str:
     """HTML-escape text content."""
     return html.escape(text, quote=False)
+
+
+_PLACEHOLDER_PATTERNS = re.compile(
+    r"(?i)(image caption|describe\s+the\s+image|placeholder|lorem ipsum"
+    r"|add\s+your\s+text|your\s+text\s+here|insert\s+text)"
+)
+
+
+def _is_placeholder(text: str) -> bool:
+    """Check if text looks like placeholder/template text."""
+    return bool(_PLACEHOLDER_PATTERNS.search(text))
+
+
+_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+
+
+def _safe_color(color: str | None, fallback: str = "#333333") -> str:
+    """Validate hex color, returning fallback if malformed."""
+    if not color:
+        return fallback
+    if _HEX_COLOR_RE.match(color):
+        return color
+    return fallback
+
+
+def _safe_url(url: str | None) -> str:
+    """Validate and return URL, defaulting to '#' for invalid/missing."""
+    if not url:
+        return "#"
+    stripped = url.strip()
+    if stripped.startswith(("http://", "https://", "mailto:", "tel:", "/")):
+        return stripped
+    return "#"
+
+
+def _build_column_fill_html(
+    group: ColumnGroup,
+    *,
+    image_urls: dict[str, str] | None = None,
+) -> str:
+    """Build structured semantic HTML for a column group (G-REF-5)."""
+    parts: list[str] = []
+    for img in group.images:
+        url = _resolve_image_url(img.node_id, image_urls)
+        parts.append(
+            f'<img src="{html.escape(url)}" '
+            f'alt="{html.escape(img.node_name)}" '
+            f'style="display:block;width:100%;height:auto;border:0;" />'
+        )
+    for text in group.texts:
+        if _is_placeholder(text.content):
+            continue
+        color = _safe_color(text.text_color)
+        escaped = _safe_text(text.content)
+        if text.is_heading:
+            size = int(text.font_size) if text.font_size else 18
+            parts.append(
+                f'<h3 style="margin:0 0 8px;font-size:{size}px;'
+                f'font-weight:bold;color:{color};">{escaped}</h3>'
+            )
+        else:
+            size = int(text.font_size) if text.font_size else 14
+            parts.append(
+                f'<p style="margin:0 0 8px;font-size:{size}px;'
+                f'color:{color};line-height:1.5;">{escaped}</p>'
+            )
+    for btn in group.buttons:
+        if _is_placeholder(btn.text):
+            continue
+        btn_url = html.escape(_safe_url(btn.url))
+        bg = _safe_color(btn.fill_color, "#0066cc")
+        parts.append(
+            f'<a href="{btn_url}" style="display:inline-block;'
+            f"padding:10px 24px;background-color:{bg};color:#ffffff;"
+            f"text-decoration:none;font-size:14px;font-weight:bold;"
+            f'border-radius:4px;">{_safe_text(btn.text)}</a>'
+        )
+    return "\n".join(parts)
 
 
 def _resolve_image_url(
@@ -354,7 +439,7 @@ def _fills_hero(
     if section.buttons:
         btn = section.buttons[0]
         fills.append(SlotFill("cta_text", _safe_text(btn.text)))
-        fills.append(SlotFill("cta_url", "#", slot_type="cta"))
+        fills.append(SlotFill("cta_url", _safe_url(btn.url), slot_type="cta"))
     return fills
 
 
@@ -394,14 +479,46 @@ def _fills_text_block(
         fills.append(SlotFill("heading", _safe_text(heading.content)))
     bodies = _body_texts(section.texts)
     if bodies:
-        joined = " ".join(b.content for b in bodies)
-        fills.append(SlotFill("body", _safe_text(joined)))
+        para_parts = [
+            f'<p style="margin:0 0 10px 0;">{_safe_text(b.content)}</p>'
+            for b in bodies
+            if not _is_placeholder(b.content)
+        ]
+        if para_parts:
+            fills.append(SlotFill("body", "\n".join(para_parts)))
     elif not heading and section.texts:
         # All texts are headings — use first as heading, rest as body
         fills.append(SlotFill("heading", _safe_text(section.texts[0].content)))
         if len(section.texts) > 1:
-            joined = " ".join(t.content for t in section.texts[1:])
-            fills.append(SlotFill("body", _safe_text(joined)))
+            para_parts = [
+                f'<p style="margin:0 0 10px 0;">{_safe_text(t.content)}</p>'
+                for t in section.texts[1:]
+                if not _is_placeholder(t.content)
+            ]
+            if para_parts:
+                fills.append(SlotFill("body", "\n".join(para_parts)))
+
+    # Append CTA button HTML to body slot (text-block has no dedicated CTA slot)
+    if section.buttons:
+        btn = section.buttons[0]
+        if not _is_placeholder(btn.text):
+            btn_url = html.escape(_safe_url(btn.url))
+            bg = _safe_color(btn.fill_color, "#0066cc")
+            cta_html = (
+                f'<p style="margin:16px 0 0 0;">'
+                f'<a href="{btn_url}" style="display:inline-block;'
+                f"padding:10px 24px;background-color:{bg};color:#ffffff;"
+                f"text-decoration:none;font-size:14px;font-weight:bold;"
+                f'border-radius:4px;">{_safe_text(btn.text)}</a></p>'
+            )
+            # Append to existing body fill or create new one
+            body_fill = next((f for f in fills if f.slot_id == "body"), None)
+            if body_fill:
+                idx = fills.index(body_fill)
+                fills[idx] = SlotFill("body", body_fill.value + "\n" + cta_html)
+            else:
+                fills.append(SlotFill("body", cta_html))
+
     return fills
 
 
@@ -426,13 +543,19 @@ def _fills_article_card(
     heading = _first_heading(section.texts)
     if heading:
         fills.append(SlotFill("heading", _safe_text(heading.content)))
-    body = _first_body(section.texts)
-    if body:
-        fills.append(SlotFill("body_text", _safe_text(body.content)))
+    bodies = _body_texts(section.texts)
+    if bodies:
+        para_parts = [
+            f'<p style="margin:0 0 8px 0;">{_safe_text(b.content)}</p>'
+            for b in bodies
+            if not _is_placeholder(b.content)
+        ]
+        if para_parts:
+            fills.append(SlotFill("body_text", "\n".join(para_parts)))
     if section.buttons:
         btn = section.buttons[0]
         fills.append(SlotFill("cta_text", _safe_text(btn.text)))
-        fills.append(SlotFill("cta_url", "#", slot_type="cta"))
+        fills.append(SlotFill("cta_url", _safe_url(btn.url), slot_type="cta"))
     return fills
 
 
@@ -492,7 +615,7 @@ def _fills_cta(
     if section.buttons:
         btn = section.buttons[0]
         fills.append(SlotFill("cta_text", _safe_text(btn.text)))
-        fills.append(SlotFill("cta_url", "#", slot_type="cta"))
+        fills.append(SlotFill("cta_url", _safe_url(btn.url), slot_type="cta"))
     return fills
 
 
@@ -525,7 +648,7 @@ def _fills_spacer(
     _cw: int,
     **_kw: object,
 ) -> list[SlotFill]:
-    height = int(section.height or 32)
+    height = int(section.height if section.height is not None else 32)
     return [SlotFill("spacer_height", str(height))]
 
 
@@ -608,7 +731,18 @@ def _build_column_fills(
         col_texts: list[str] = []
         for i, text in enumerate(section.texts):
             if (i % col_count) + 1 == col_idx:
-                col_texts.append(_safe_text(text.content))
+                if _is_placeholder(text.content):
+                    continue
+                color = _safe_color(text.text_color)
+                escaped = _safe_text(text.content)
+                if text.is_heading:
+                    col_texts.append(
+                        f'<h3 style="margin:0 0 8px;font-weight:bold;color:{color};">{escaped}</h3>'
+                    )
+                else:
+                    col_texts.append(
+                        f'<p style="margin:0 0 8px;color:{color};line-height:1.5;">{escaped}</p>'
+                    )
 
         col_images: list[str] = []
         for i, img in enumerate(section.images):
@@ -634,24 +768,9 @@ def _build_column_fills_from_groups(
     """Build column fills from actual column groups (preserves design structure)."""
     fills: list[SlotFill] = []
     for group in groups:
-        col_parts: list[str] = []
-        # Images first (design order)
-        for img in group.images:
-            url = _resolve_image_url(img.node_id, image_urls)
-            col_parts.append(
-                f'<img src="{html.escape(url)}" '
-                f'alt="{html.escape(img.node_name)}" '
-                f'style="display:block;width:100%;height:auto;border:0;" />'
-            )
-        # Texts in order
-        for text in group.texts:
-            col_parts.append(_safe_text(text.content))
-        # Buttons
-        for btn in group.buttons:
-            col_parts.append(_safe_text(btn.text))
-
-        if col_parts:
-            fills.append(SlotFill(f"col_{group.column_idx}", "\n".join(col_parts)))
+        content = _build_column_fill_html(group, image_urls=image_urls)
+        if content:
+            fills.append(SlotFill(f"col_{group.column_idx}", content))
     return fills
 
 
@@ -671,6 +790,17 @@ def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
     for text in section.texts:
         if not text.is_heading and text.font_family:
             overrides.append(TokenOverride("font-family", "_body", text.font_family))
+            break
+
+    # Text color overrides (validate hex to prevent CSS injection)
+    for text in section.texts:
+        if text.is_heading and text.text_color and _HEX_COLOR_RE.match(text.text_color):
+            overrides.append(TokenOverride("color", "_heading", text.text_color))
+            break
+
+    for text in section.texts:
+        if not text.is_heading and text.text_color and _HEX_COLOR_RE.match(text.text_color):
+            overrides.append(TokenOverride("color", "_body", text.text_color))
             break
 
     # Padding overrides

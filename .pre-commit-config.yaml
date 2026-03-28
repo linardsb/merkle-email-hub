@@ -1,0 +1,112 @@
+# Pre-commit hooks — run `pre-commit install` or `make install-hooks`
+# Docs: https://pre-commit.com
+repos:
+  # === General file hygiene ===
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main]
+        stages: [pre-commit]
+
+  # === Python formatting + linting (Ruff) ===
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.2
+    hooks:
+      - id: ruff-format
+        name: ruff format
+      - id: ruff
+        name: ruff lint
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # === Python security (Bandit via Ruff) ===
+  - repo: local
+    hooks:
+      - id: bandit-security
+        name: bandit security check
+        entry: uv run ruff check --select=S --ignore=S311 --no-fix
+        language: system
+        types: [python]
+        pass_filenames: true
+
+  # === Falsy-numeric anti-pattern (design_sync) ===
+  - repo: local
+    hooks:
+      - id: falsy-numeric-trap
+        name: falsy numeric or-default check
+        entry: bash -c 'matches=$(grep -rn "\bor -\?[0-9]" app/design_sync/ --include="*.py" | grep -v "# noqa: falsy-or" | grep -v "/tests/" | grep -v "^\s*#"); if [ -n "$matches" ]; then echo "$matches"; echo "ERROR: Use \"x if x is not None else default\" instead of \"x or <number>\""; exit 1; fi'
+        language: system
+        pass_filenames: false
+        files: ^app/design_sync/.*\.py$
+
+  # === Secret detection ===
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: >
+          (?x)^(
+            .*\.lock|
+            .*\.svg|
+            .*\.png|
+            .*\.jpg|
+            .*\.ico|
+            .*\.woff2?
+          )$
+
+  # === Commit message (conventional commits) ===
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - feat
+          - fix
+          - docs
+          - style
+          - refactor
+          - perf
+          - test
+          - build
+          - ci
+          - chore
+          - revert
+
+  # === PostgreSQL migration safety (squawk) ===
+  - repo: local
+    hooks:
+      - id: squawk-migrations
+        name: squawk migration lint
+        entry: bash -c 'command -v squawk >/dev/null 2>&1 && git diff --cached --name-only --diff-filter=ACM | grep "alembic/versions/.*\.py$" | xargs -I{} squawk --reporter=compact {} || true'
+        language: system
+        pass_filenames: false
+        files: alembic/versions/.*\.py$
+
+  # === Frontend (ESLint + Prettier) ===
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend eslint
+        entry: bash -c 'cd cms && pnpm --filter web lint --max-warnings=0 2>/dev/null || true'
+        language: system
+        pass_filenames: false
+        files: ^cms/.*\.(ts|tsx|js|jsx)$
+      - id: frontend-format
+        name: frontend prettier
+        entry: bash -c 'cd cms && pnpm exec prettier --check --ignore-unknown 2>/dev/null || true'
+        language: system
+        pass_filenames: false
+        files: ^cms/.*\.(ts|tsx|js|jsx|json|css)$

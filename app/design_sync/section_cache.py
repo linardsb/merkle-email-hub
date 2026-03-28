@@ -74,7 +74,17 @@ def _section_to_canonical(section: EmailSection) -> dict[str, Any]:
         "padding_bottom": _round_float(section.padding_bottom),
         "padding_left": _round_float(section.padding_left),
         "item_spacing": _round_float(section.item_spacing),
-        "texts": [{"node_id": t.node_id, "content": t.content} for t in section.texts],
+        "texts": [
+            {
+                "node_id": t.node_id,
+                "content": t.content,
+                "font_size": _round_float(t.font_size),
+                "font_weight": t.font_weight,
+                "font_family": t.font_family,
+                "is_heading": t.is_heading,
+            }
+            for t in section.texts
+        ],
         "images": [
             {
                 "node_id": img.node_id,

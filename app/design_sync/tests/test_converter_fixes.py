@@ -301,9 +301,9 @@ class TestSparseColumnWidths:
 
 
 class TestTableColumnWrapper:
-    """B1: Multi-column uses <table class="column"> instead of <div class="column">."""
+    """38.7: Multi-column uses <div class="column"> matching golden components."""
 
-    def test_column_uses_table_not_div(self) -> None:
+    def test_column_uses_div_not_table(self) -> None:
         parent = DesignNode(
             id="frame1",
             name="Row",
@@ -321,9 +321,9 @@ class TestTableColumnWrapper:
             ],
         )
         html = node_to_email_html(parent)
-        # B1: should use <table class="column"> not <div class="column">
-        assert '<table class="column"' in html
-        assert '<div class="column"' not in html
+        # 38.7: golden pattern uses <div class="column"> for mobile stacking
+        assert '<div class="column"' in html
+        assert '<table class="column"' not in html
 
     def test_column_has_inline_block(self) -> None:
         parent = DesignNode(
@@ -367,7 +367,7 @@ class TestTableColumnWrapper:
         assert "<![endif]-->" in html
 
     def test_no_double_table_nesting(self) -> None:
-        """B1: Single table per column (no div→table sanitizer double-wrap)."""
+        """38.7: div wrapper + single inner table per column."""
         parent = DesignNode(
             id="frame1",
             name="Row",
@@ -411,7 +411,282 @@ class TestTableColumnWrapper:
             ],
         )
         html = node_to_email_html(parent)
-        # Count tables: parent(1) + padding wrapper(1) + 2 column tables + 2 child frames = 6
-        # Before B1 fix: parent(1) + padding(1) + 2 div→table + 2 inner + 2 child = 8
+        # Count tables: parent(1) + padding wrapper(1) + 2 inner column tables + 2 child frames = 6
+        # (div wrapper replaces table wrapper — same table count)
         table_count = html.count("<table")
         assert table_count <= 6
+
+
+# ── Phase 38.4 Tests ──
+
+
+class TestDuplicateButtonMsoConditional:
+    """Bug 22: Button must not render both VML and HTML in non-MSO clients."""
+
+    def test_button_has_mso_conditional(self) -> None:
+        parent = DesignNode(
+            id="btn1",
+            name="CTA",
+            type=DesignNodeType.FRAME,
+            width=200,
+            height=50,
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Click me",
+                    font_size=16.0,
+                ),
+            ],
+        )
+        html = node_to_email_html(parent, button_ids={"btn1"})
+        # VML for Outlook
+        assert "<!--[if mso]>" in html
+        assert "v:roundrect" in html
+        # HTML for non-MSO, wrapped in conditional
+        assert "<!--[if !mso]><!-->" in html
+        assert "<!--<![endif]-->" in html
+        # Only one <a> tag — the HTML button
+        assert html.count("<a ") == 1
+
+    def test_vml_stroke_is_false(self) -> None:
+        """Bug 27: VML stroke attribute must be proper XML value."""
+        parent = DesignNode(
+            id="btn1",
+            name="CTA",
+            type=DesignNodeType.FRAME,
+            width=200,
+            height=50,
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Click me",
+                    font_size=16.0,
+                ),
+            ],
+        )
+        html = node_to_email_html(parent, button_ids={"btn1"})
+        assert 'stroke="false"' in html
+        assert 'stroke="f"' not in html
+
+
+# ── Phase 39.1 Tests: Enriched field rendering ──
+
+
+class TestButtonEnrichedFields:
+    """39.1: Button rendering uses corner_radius and hyperlink from DesignNode."""
+
+    def test_button_uses_corner_radius(self) -> None:
+        parent = DesignNode(
+            id="btn1",
+            name="CTA",
+            type=DesignNodeType.FRAME,
+            width=200,
+            height=48,
+            corner_radius=8.0,
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Click me",
+                    font_size=16.0,
+                ),
+            ],
+        )
+        html = node_to_email_html(parent, button_ids={"btn1"})
+        assert "border-radius:8px" in html
+        # VML arcsize should use 8px not 4px
+        # arcsize = round(8/48*100) = 17%
+        assert 'arcsize="17%"' in html
+
+    def test_button_uses_hyperlink(self) -> None:
+        parent = DesignNode(
+            id="btn1",
+            name="CTA",
+            type=DesignNodeType.FRAME,
+            width=200,
+            height=48,
+            hyperlink="https://example.com/shop",
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Shop Now",
+                    font_size=16.0,
+                ),
+            ],
+        )
+        html = node_to_email_html(parent, button_ids={"btn1"})
+        assert 'href="https://example.com/shop"' in html
+        assert 'href="#"' not in html
+
+    def test_button_default_href_when_no_hyperlink(self) -> None:
+        """Backward compat: no hyperlink → still gets href='#'."""
+        parent = DesignNode(
+            id="btn1",
+            name="CTA",
+            type=DesignNodeType.FRAME,
+            width=200,
+            height=48,
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Label",
+                    type=DesignNodeType.TEXT,
+                    text_content="Click",
+                    font_size=16.0,
+                ),
+            ],
+        )
+        html = node_to_email_html(parent, button_ids={"btn1"})
+        assert 'href="#"' in html
+
+
+class TestBorderFromStroke:
+    """39.1: Frame stroke_weight + stroke_color → CSS border."""
+
+    def test_border_from_stroke(self) -> None:
+        parent = DesignNode(
+            id="card1",
+            name="Card",
+            type=DesignNodeType.FRAME,
+            width=300,
+            height=200,
+            stroke_weight=1.0,
+            stroke_color="#E0E0E0",
+            children=[
+                DesignNode(
+                    id="t1",
+                    name="Title",
+                    type=DesignNodeType.TEXT,
+                    text_content="Product",
+                    font_size=16.0,
+                ),
+            ],
+        )
+        html = node_to_email_html(parent)
+        assert "border:1px solid #E0E0E0" in html
+
+
+class TestTextAlignCSS:
+    """39.1: Text alignment from design → CSS text-align."""
+
+    def test_text_align_center_css(self) -> None:
+        node = DesignNode(
+            id="t1",
+            name="Centered",
+            type=DesignNodeType.TEXT,
+            text_content="Center me",
+            text_align="center",
+        )
+        html = node_to_email_html(node)
+        assert "text-align:center" in html
+
+
+class TestStyleRunsRendering:
+    """39.1: Style runs → inline HTML tags."""
+
+    def test_style_runs_render_bold(self) -> None:
+        from app.design_sync.converter import _render_style_runs
+        from app.design_sync.protocol import StyleRun
+
+        result = _render_style_runs("Hello Bold", (StyleRun(start=6, end=10, bold=True),))
+        assert "<strong>Bold</strong>" in result
+        assert "Hello " in result
+
+    def test_style_runs_render_link(self) -> None:
+        from app.design_sync.converter import _render_style_runs
+        from app.design_sync.protocol import StyleRun
+
+        result = _render_style_runs(
+            "Click here now",
+            (StyleRun(start=6, end=10, link_url="https://example.com"),),
+        )
+        assert 'href="https://example.com"' in result
+        assert ">here</a>" in result
+
+    def test_style_runs_escapes_content(self) -> None:
+        from app.design_sync.converter import _render_style_runs
+        from app.design_sync.protocol import StyleRun
+
+        result = _render_style_runs(
+            "<script>alert(1)</script>",
+            (StyleRun(start=0, end=25, bold=True),),
+        )
+        assert "<script>" not in result
+        assert "&lt;script&gt;" in result
+
+
+class TestBackgroundImageRendering:
+    """38.8: FRAME with image_ref renders CSS background-image + VML."""
+
+    def test_frame_with_image_ref_renders_background(self) -> None:
+        """FRAME with image_ref + children → CSS background-image on table."""
+        child = DesignNode(id="t1", name="Overlay", type=DesignNodeType.TEXT, text_content="Hello")
+        parent = DesignNode(
+            id="f1",
+            name="Hero",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=400,
+            image_ref="https://example.com/hero.jpg",
+            children=[child],
+        )
+        html = node_to_email_html(parent)
+        assert "background-image:url('https://example.com/hero.jpg')" in html
+        assert "background-size:cover" in html
+
+    def test_frame_background_has_vml_fallback(self) -> None:
+        """FRAME with image_ref + children → VML v:rect + v:fill for Outlook."""
+        child = DesignNode(id="t1", name="Overlay", type=DesignNodeType.TEXT, text_content="Hello")
+        parent = DesignNode(
+            id="f1",
+            name="Hero",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=400,
+            image_ref="https://example.com/hero.jpg",
+            children=[child],
+        )
+        html = node_to_email_html(parent)
+        assert "v:rect" in html
+        assert "v:fill" in html
+        assert 'src="https://example.com/hero.jpg"' in html
+        assert "<!--[if gte mso 9]>" in html
+
+    def test_frame_image_ref_no_children_renders_img(self) -> None:
+        """FRAME with image_ref but no children → standalone <img> tag."""
+        node = DesignNode(
+            id="f1",
+            name="Banner Image",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=300,
+            image_ref="https://example.com/banner.jpg",
+            children=[],
+        )
+        html = node_to_email_html(node)
+        assert "<img" in html
+        assert 'src="https://example.com/banner.jpg"' in html
+        assert 'alt="Banner Image"' in html
+
+    def test_background_url_validation(self) -> None:
+        """javascript: URL in image_ref → rejected, no background rendered."""
+        child = DesignNode(id="t1", name="Text", type=DesignNodeType.TEXT, text_content="Hello")
+        parent = DesignNode(
+            id="f1",
+            name="Hero",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=400,
+            image_ref="javascript:alert(1)",
+            children=[child],
+        )
+        html = node_to_email_html(parent)
+        assert "background-image" not in html
+        assert "v:fill" not in html

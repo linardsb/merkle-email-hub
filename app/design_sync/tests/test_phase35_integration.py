@@ -22,7 +22,7 @@ from app.design_sync.figma.layout_analyzer import (
     EmailSectionType,
     TextBlock,
 )
-from app.design_sync.mjml_generator import generate_mjml
+from app.design_sync.mjml_template_engine import MjmlTemplateEngine, build_template_context
 from app.design_sync.protocol import (
     ExtractedColor,
     ExtractedTokens,
@@ -134,7 +134,7 @@ class TestSectionHashStability:
 
 class TestW3cRoundTrip:
     def test_w3c_round_trip_in_pipeline(self) -> None:
-        """parse_w3c_tokens → ExtractedTokens → generate_mjml → valid output."""
+        """parse_w3c_tokens → ExtractedTokens → template engine → valid output."""
         w3c_json = {
             "color": {
                 "$type": "color",
@@ -153,7 +153,9 @@ class TestW3cRoundTrip:
             _make_section(texts=[TextBlock(node_id="t1", content="Test content")]),
         ]
         layout = _make_layout(sections)
-        mjml = generate_mjml(layout, tokens)
+        engine = MjmlTemplateEngine()
+        ctx = build_template_context(tokens)
+        mjml = engine.render_email(layout.sections, ctx)
 
         assert "<mjml>" in mjml
         assert "<mj-section" in mjml

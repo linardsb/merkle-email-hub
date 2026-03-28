@@ -410,6 +410,8 @@ class DocumentText:
     font_weight: int | None = None
     line_height: float | None = None
     letter_spacing: float | None = None
+    color: str | None = None
+    text_align: str | None = None  # left|center|right|justify
 
     def to_json(self) -> dict[str, Any]:
         d: dict[str, Any] = {"node_id": self.node_id, "content": self.content}
@@ -425,6 +427,10 @@ class DocumentText:
             d["line_height"] = self.line_height
         if self.letter_spacing is not None:
             d["letter_spacing"] = self.letter_spacing
+        if self.color is not None:
+            d["color"] = self.color
+        if self.text_align is not None:
+            d["text_align"] = self.text_align
         return d
 
     @classmethod
@@ -438,6 +444,8 @@ class DocumentText:
             font_weight=data.get("font_weight"),
             line_height=data.get("line_height"),
             letter_spacing=data.get("letter_spacing"),
+            color=data.get("color"),
+            text_align=data.get("text_align"),
         )
 
 
@@ -480,6 +488,9 @@ class DocumentButton:
     text: str
     width: float | None = None
     height: float | None = None
+    url: str | None = None
+    border_radius: float | None = None
+    fill_color: str | None = None
 
     def to_json(self) -> dict[str, Any]:
         d: dict[str, Any] = {"node_id": self.node_id, "text": self.text}
@@ -487,6 +498,12 @@ class DocumentButton:
             d["width"] = self.width
         if self.height is not None:
             d["height"] = self.height
+        if self.url is not None:
+            d["url"] = self.url
+        if self.border_radius is not None:
+            d["border_radius"] = self.border_radius
+        if self.fill_color is not None:
+            d["fill_color"] = self.fill_color
         return d
 
     @classmethod
@@ -496,6 +513,9 @@ class DocumentButton:
             text=data["text"],
             width=data.get("width"),
             height=data.get("height"),
+            url=data.get("url"),
+            border_radius=data.get("border_radius"),
+            fill_color=data.get("fill_color"),
         )
 
 
@@ -671,6 +691,7 @@ class DocumentSection:
                     font_weight=t.font_weight,
                     line_height=t.line_height,
                     letter_spacing=t.letter_spacing,
+                    text_color=getattr(t, "text_color", None),
                 )
                 for t in self.texts
             ],
@@ -685,7 +706,13 @@ class DocumentSection:
                 for i in self.images
             ],
             buttons=[
-                ButtonElement(node_id=b.node_id, text=b.text, width=b.width, height=b.height)
+                ButtonElement(
+                    node_id=b.node_id,
+                    text=b.text,
+                    width=b.width,
+                    height=b.height,
+                    fill_color=getattr(b, "fill_color", None),
+                )
                 for b in self.buttons
             ],
             spacing_after=self.spacing_after,
@@ -712,6 +739,7 @@ class DocumentSection:
                             font_weight=t.font_weight,
                             line_height=t.line_height,
                             letter_spacing=t.letter_spacing,
+                            text_color=getattr(t, "text_color", None),
                         )
                         for t in c.texts
                     ],
@@ -727,7 +755,11 @@ class DocumentSection:
                     ],
                     buttons=[
                         ButtonElement(
-                            node_id=b.node_id, text=b.text, width=b.width, height=b.height
+                            node_id=b.node_id,
+                            text=b.text,
+                            width=b.width,
+                            height=b.height,
+                            fill_color=getattr(b, "fill_color", None),
                         )
                         for b in c.buttons
                     ],
@@ -779,6 +811,8 @@ class DocumentSection:
                     font_weight=t.font_weight,
                     line_height=t.line_height,
                     letter_spacing=t.letter_spacing,
+                    color=t.text_color,
+                    text_align=t.text_align,
                 )
                 for t in section.texts
             ],
@@ -793,7 +827,15 @@ class DocumentSection:
                 for i in section.images
             ],
             buttons=[
-                DocumentButton(node_id=b.node_id, text=b.text, width=b.width, height=b.height)
+                DocumentButton(
+                    node_id=b.node_id,
+                    text=b.text,
+                    width=b.width,
+                    height=b.height,
+                    url=b.url,
+                    border_radius=b.border_radius,
+                    fill_color=b.fill_color,
+                )
                 for b in section.buttons
             ],
             columns=[
@@ -812,6 +854,8 @@ class DocumentSection:
                             font_weight=t.font_weight,
                             line_height=t.line_height,
                             letter_spacing=t.letter_spacing,
+                            color=t.text_color,
+                            text_align=t.text_align,
                         )
                         for t in c.texts
                     ],
@@ -827,7 +871,13 @@ class DocumentSection:
                     ],
                     buttons=[
                         DocumentButton(
-                            node_id=b.node_id, text=b.text, width=b.width, height=b.height
+                            node_id=b.node_id,
+                            text=b.text,
+                            width=b.width,
+                            height=b.height,
+                            url=b.url,
+                            border_radius=b.border_radius,
+                            fill_color=b.fill_color,
                         )
                         for b in c.buttons
                     ],

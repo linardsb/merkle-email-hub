@@ -77,6 +77,21 @@ class ExtractedTokens:
     gradients: list[ExtractedGradient] = field(default_factory=list[ExtractedGradient])
 
 
+@dataclass(frozen=True)
+class StyleRun:
+    """A styled text segment within a TEXT node (bold, italic, color, link)."""
+
+    start: int
+    end: int
+    bold: bool = False
+    italic: bool = False
+    underline: bool = False
+    strikethrough: bool = False
+    color_hex: str | None = None
+    font_size: float | None = None
+    link_url: str | None = None
+
+
 class DesignNodeType(StrEnum):
     """Normalised node types across design tools."""
 
@@ -123,6 +138,20 @@ class DesignNode:
     text_transform: str | None = None  # uppercase|lowercase|capitalize|None (TEXT nodes only)
     text_decoration: str | None = None  # underline|line-through|None (TEXT nodes only)
     image_ref: str | None = None  # Figma imageRef hash (IMAGE fill on FRAME nodes)
+    # Hyperlink (TEXT/FRAME nodes — validated http/https/mailto only)
+    hyperlink: str | None = None
+    # Corner radius (FRAME/RECTANGLE nodes)
+    corner_radius: float | None = None
+    corner_radii: tuple[float, ...] | None = None  # [TL, TR, BR, BL] per-corner
+    # Text alignment
+    text_align: str | None = None  # left|center|right|justify (TEXT nodes)
+    primary_axis_align: str | None = None  # start|center|end|space-between (FRAME)
+    counter_axis_align: str | None = None  # start|center|end (FRAME)
+    # Borders/strokes
+    stroke_weight: float | None = None
+    stroke_color: str | None = None  # First SOLID stroke hex
+    # Rich text style runs (TEXT nodes — characterStyleOverrides)
+    style_runs: tuple[StyleRun, ...] = ()
     visible: bool = True  # Figma "visible" property (default True per API spec)
     opacity: float = 1.0  # Figma node opacity 0.0-1.0 (default 1.0)
 

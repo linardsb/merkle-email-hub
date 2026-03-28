@@ -437,3 +437,71 @@ class TestSectionMarkers:
         assert 'data-node-id="s1"' in result
         assert 'data-section-type="footer"' in result
         assert 'data-node-id="s2"' in result
+
+
+# -- Phase 39.1: Enriched field tests --
+
+
+class TestButtonEnrichedMjml:
+    """39.1: ButtonElement with url/border_radius -> correct mj-button attrs."""
+
+    def test_button_uses_enriched_fields(self) -> None:
+        btn = ButtonElement(
+            node_id="b1",
+            text="Shop Now",
+            width=200.0,
+            url="https://shop.example.com",
+            border_radius=8.0,
+            fill_color="#FF6600",
+        )
+        section = _make_section(buttons=[btn])
+        layout = _make_layout([section])
+        result = generate_mjml(layout, _make_tokens())
+
+        assert 'href="https://shop.example.com"' in result
+        assert 'border-radius="8px"' in result
+        assert 'background-color="#FF6600"' in result
+        assert 'href="#"' not in result
+
+    def test_button_default_href_when_no_url(self) -> None:
+        """Backward compat: no url -> still gets href='#'."""
+        btn = ButtonElement(node_id="b1", text="Click", width=200.0)
+        section = _make_section(buttons=[btn])
+        layout = _make_layout([section])
+        result = generate_mjml(layout, _make_tokens())
+        assert 'href="#"' in result
+
+
+class TestMjmlMeaningfulAlt:
+    """38.8: MJML image alt text uses _meaningful_alt()."""
+
+    def test_mjml_image_meaningful_alt(self) -> None:
+        """ImagePlaceholder with generic name → meaningful alt, not raw name."""
+        section = _make_section(
+            images=[ImagePlaceholder(node_id="i1", node_name="mj-image", width=600.0, height=300.0)]
+        )
+        layout = _make_layout([section])
+        result = generate_mjml(layout, _make_tokens())
+        assert "<mj-image" in result
+        assert 'alt="mj-image"' not in result
+        assert 'alt="Email image"' in result
+
+    def test_mjml_hero_section_background_url(self) -> None:
+        """Hero section with is_background image → background-url on mj-section."""
+        section = _make_section(
+            section_type=EmailSectionType.HERO,
+            images=[
+                ImagePlaceholder(
+                    node_id="bg1",
+                    node_name="Hero BG",
+                    width=600.0,
+                    height=400.0,
+                    is_background=True,
+                )
+            ],
+            texts=[TextBlock(node_id="t1", content="Welcome", is_heading=True, font_size=32.0)],
+        )
+        layout = _make_layout([section])
+        result = generate_mjml(layout, _make_tokens())
+        assert "background-url" in result
+        assert "bg1" in result

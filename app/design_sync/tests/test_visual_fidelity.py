@@ -454,7 +454,7 @@ class TestRepositoryFidelity:
         await repo.update_import_fidelity(design_import, fidelity_data)
 
         assert design_import.fidelity_json is fidelity_data
-        mock_db.flush.assert_called_once()
+        mock_db.commit.assert_called_once()
 
 
 class TestSerializeScore:

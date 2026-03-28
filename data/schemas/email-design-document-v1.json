@@ -282,7 +282,8 @@
         "font_family": { "type": ["string", "null"], "default": null, "maxLength": 200 },
         "font_weight": { "type": ["integer", "null"], "default": null },
         "line_height": { "type": ["number", "null"], "minimum": 0, "default": null },
-        "letter_spacing": { "type": ["number", "null"], "default": null }
+        "letter_spacing": { "type": ["number", "null"], "default": null },
+        "color": { "type": ["string", "null"], "default": null, "maxLength": 20 }
       }
     },
     "image": {

@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from app.design_sync.component_matcher import (
+    _build_column_fill_html,
+    _is_placeholder,
+    _safe_color,
+    _safe_url,
     match_all,
     match_section,
 )
 from app.design_sync.figma.layout_analyzer import (
     ButtonElement,
+    ColumnGroup,
     ColumnLayout,
     EmailSection,
     EmailSectionType,
@@ -33,6 +38,7 @@ def _make_section(
     padding_right: float | None = None,
     padding_bottom: float | None = None,
     padding_left: float | None = None,
+    column_groups: list[ColumnGroup] | None = None,
 ) -> EmailSection:
     return EmailSection(
         section_type=section_type,
@@ -50,6 +56,7 @@ def _make_section(
         padding_right=padding_right,
         padding_bottom=padding_bottom,
         padding_left=padding_left,
+        column_groups=column_groups or [],
     )
 
 
@@ -238,7 +245,7 @@ class TestSlotFills:
         m = match_section(s, 0)
         fills_by_id = {f.slot_id: f for f in m.slot_fills}
         assert fills_by_id["heading"].value == "Title"
-        assert fills_by_id["body"].value == "Body content"
+        assert "Body content" in fills_by_id["body"].value
 
     def test_cta_button_fills(self) -> None:
         s = _make_section(EmailSectionType.CTA, buttons=[_button("Buy Now")])
@@ -532,3 +539,233 @@ class TestTinyIconHeuristic:
         )
         m = match_section(s, 0)
         assert m.component_slug == "article-card"
+
+
+# ── Phase 38.6 Bug Fix Tests ──
+
+
+class TestSemanticColumnHTML:
+    """Bug 51: Column fills should produce structured HTML, not raw text."""
+
+    def test_column_fill_html_has_paragraph_tags(self) -> None:
+        group = ColumnGroup(
+            column_idx=1,
+            node_id="c1",
+            node_name="Col 1",
+            texts=[
+                TextBlock(node_id="t1", content="Product title", is_heading=True, font_size=18.0)
+            ],
+        )
+        result = _build_column_fill_html(group)
+        assert "<h3" in result
+        assert "Product title" in result
+        assert "font-size:18px" in result
+
+    def test_column_fill_html_body_text_in_p_tag(self) -> None:
+        group = ColumnGroup(
+            column_idx=1,
+            node_id="c1",
+            node_name="Col 1",
+            texts=[TextBlock(node_id="t1", content="Description text")],
+        )
+        result = _build_column_fill_html(group)
+        assert "<p " in result
+        assert "Description text" in result
+
+    def test_column_fill_html_button_as_anchor(self) -> None:
+        """Bug 49: Buttons must render as <a> elements, not plain text."""
+        group = ColumnGroup(
+            column_idx=1,
+            node_id="c1",
+            node_name="Col 1",
+            buttons=[ButtonElement(node_id="b1", text="SHOP NOW", fill_color="#FF5500")],
+        )
+        result = _build_column_fill_html(group)
+        assert "<a " in result
+        assert "SHOP NOW" in result
+        assert "background-color:#FF5500" in result
+
+    def test_column_fill_html_preserves_text_color(self) -> None:
+        """Bug 50: Text color from design should be applied."""
+        group = ColumnGroup(
+            column_idx=1,
+            node_id="c1",
+            node_name="Col 1",
+            texts=[TextBlock(node_id="t1", content="White text", text_color="#FFFFFF")],
+        )
+        result = _build_column_fill_html(group)
+        assert "color:#FFFFFF" in result
+
+    def test_column_fill_strips_placeholder_text(self) -> None:
+        """Bug 54: Placeholder text must not appear in output."""
+        group = ColumnGroup(
+            column_idx=1,
+            node_id="c1",
+            node_name="Col 1",
+            texts=[
+                TextBlock(node_id="t1", content="Image caption — describe the image"),
+                TextBlock(node_id="t2", content="Real content"),
+            ],
+        )
+        result = _build_column_fill_html(group)
+        assert "describe the image" not in result
+        assert "Real content" in result
+
+
+class TestTextColorOverrides:
+    """Bug 50: Text color should propagate through token overrides."""
+
+    def test_heading_color_override(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[
+                TextBlock(node_id="t1", content="Title", is_heading=True, text_color="#FFFFFF"),
+            ],
+        )
+        m = match_section(s, 0)
+        color_overrides = [o for o in m.token_overrides if o.css_property == "color"]
+        assert len(color_overrides) >= 1
+        assert color_overrides[0].value == "#FFFFFF"
+
+    def test_body_color_override(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[
+                TextBlock(node_id="t1", content="Body", text_color="#AABBCC"),
+            ],
+        )
+        m = match_section(s, 0)
+        color_overrides = [o for o in m.token_overrides if o.css_property == "color"]
+        assert any(o.value == "#AABBCC" for o in color_overrides)
+
+
+class TestArticleCardGuard:
+    """Bug 52: Sections with >2 images or column groups should NOT match article-card."""
+
+    def test_many_images_becomes_image_grid(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Title")],
+            images=[_image("i1", "p1"), _image("i2", "p2"), _image("i3", "p3")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "article-card"
+        assert m.component_slug == "image-grid"
+
+    def test_column_groups_not_article_card(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Title")],
+            images=[_image()],
+            column_groups=[
+                ColumnGroup(column_idx=1, node_id="c1", node_name="Col 1"),
+                ColumnGroup(column_idx=2, node_id="c2", node_name="Col 2"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "article-card"
+
+
+class TestMultiParagraphBody:
+    """Bug 53: Multiple body texts must each get their own <p> element."""
+
+    def test_multiple_body_paragraphs(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[
+                _text("Heading", is_heading=True),
+                _text("First paragraph"),
+                _text("Second paragraph"),
+            ],
+        )
+        m = match_section(s, 0)
+        body = next(f for f in m.slot_fills if f.slot_id == "body")
+        assert body.value.count("<p ") == 2
+        assert "First paragraph" in body.value
+        assert "Second paragraph" in body.value
+
+    def test_article_card_multi_paragraph(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[
+                _text("Title", is_heading=True),
+                _text("Para 1"),
+                _text("Para 2"),
+            ],
+            images=[_image()],
+        )
+        m = match_section(s, 0)
+        body = next(f for f in m.slot_fills if f.slot_id == "body_text")
+        assert body.value.count("<p ") == 2
+
+
+class TestPlaceholderSuppression:
+    """Bug 54: Placeholder text must be filtered out."""
+
+    def test_placeholder_filtered_from_body(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[
+                _text("Heading", is_heading=True),
+                _text("Your text here"),
+                _text("Real content"),
+            ],
+        )
+        m = match_section(s, 0)
+        body = next(f for f in m.slot_fills if f.slot_id == "body")
+        assert "Your text here" not in body.value
+        assert "Real content" in body.value
+
+    def test_is_placeholder_detection(self) -> None:
+        assert _is_placeholder("Image caption — describe the image")
+        assert _is_placeholder("Lorem ipsum dolor sit amet")
+        assert _is_placeholder("Add your text here")
+        assert not _is_placeholder("SHOP THE COLLECTION")
+        assert not _is_placeholder("Eiger Nordwand Jacket")
+
+
+class TestButtonInTextBlock:
+    """Bug 49: Buttons in text-block sections should render as CTA HTML."""
+
+    def test_text_block_with_button(self) -> None:
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Heading", is_heading=True), _text("Body text")],
+            buttons=[ButtonElement(node_id="b1", text="Shop Now", fill_color="#0066cc")],
+        )
+        m = match_section(s, 0)
+        body = next(f for f in m.slot_fills if f.slot_id == "body")
+        assert "<a " in body.value
+        assert "Shop Now" in body.value
+        assert "background-color:#0066cc" in body.value
+
+
+class TestURLValidation:
+    """Bug 59: Button URLs must be validated."""
+
+    def test_safe_url_allows_http(self) -> None:
+        assert _safe_url("https://example.com") == "https://example.com"
+
+    def test_safe_url_blocks_javascript(self) -> None:
+        assert _safe_url("javascript:alert(1)") == "#"
+
+    def test_safe_url_allows_relative(self) -> None:
+        assert _safe_url("/path/to/page") == "/path/to/page"
+
+    def test_safe_url_none_returns_hash(self) -> None:
+        assert _safe_url(None) == "#"
+
+
+class TestColorValidation:
+    """Security: Color values must be validated hex."""
+
+    def test_safe_color_valid_hex(self) -> None:
+        assert _safe_color("#FF5500") == "#FF5500"
+        assert _safe_color("#abc") == "#abc"
+
+    def test_safe_color_rejects_injection(self) -> None:
+        assert _safe_color("#333;position:fixed") == "#333333"
+
+    def test_safe_color_none_returns_fallback(self) -> None:
+        assert _safe_color(None) == "#333333"
+        assert _safe_color(None, "#0066cc") == "#0066cc"

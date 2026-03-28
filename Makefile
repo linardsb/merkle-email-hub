@@ -80,9 +80,9 @@ lint-fe: ## Format + lint frontend (ESLint + Prettier)
 	cd cms && pnpm --filter web lint:fix 2>/dev/null || true
 	cd cms && pnpm --filter web format 2>/dev/null || true
 
-check: lint types test check-fe security-check validate-overlays ## Run all checks (backend + frontend + security)
+check: lint types test check-fe security-check validate-overlays lint-numeric ## Run all checks (backend + frontend + security)
 
-check-full: lint types test check-fe security-check migration-lint validate-overlays ## Run all checks including migration lint
+check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric ## Run all checks including migration lint
 
 validate-overlays: ## Validate per-client skill overlay files
 	uv run python scripts/validate-overlays.py
@@ -274,6 +274,10 @@ install-hooks: ## Install pre-commit hooks (format, lint, security, secrets, com
 
 security-check: ## Run security lint (Ruff Bandit rules)
 	uv run ruff check app/ --select=S --ignore=S311 --no-fix
+
+lint-numeric: ## Check for falsy-numeric or-default anti-pattern in design_sync
+	@echo "Checking for falsy-numeric traps in design_sync..."
+	@! grep -rn '\bor -\?[0-9]' app/design_sync/ --include='*.py' | grep -v '# noqa: falsy-or' | grep -v '/tests/' | grep -v '^\s*#'
 
 migration-lint: ## Lint Alembic migrations for unsafe DDL (requires squawk)
 	@command -v squawk >/dev/null 2>&1 || { echo "Install squawk: brew install sbdchd/squawk/squawk"; exit 1; }

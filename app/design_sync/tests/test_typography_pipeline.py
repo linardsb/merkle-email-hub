@@ -1,10 +1,10 @@
 # pyright: reportPrivateUsage=false
-"""Tests for typography pipeline: font stacks, convert_typography, weight mapping (Phase 33.11 — Step 4)."""
+"""Tests for typography pipeline: font stacks, convert_typography, weight mapping (Phase 33.11 — Step 4, 38.8)."""
 
 from __future__ import annotations
 
-from app.design_sync.converter import _font_stack, convert_typography
-from app.design_sync.protocol import ExtractedTypography
+from app.design_sync.converter import _font_stack, convert_typography, node_to_email_html
+from app.design_sync.protocol import DesignNode, DesignNodeType, ExtractedTypography
 
 
 class TestFontStack:
@@ -156,3 +156,27 @@ class TestConvertTypography:
         typo = convert_typography(styles)
         # "Heading" keyword takes priority over largest font size
         assert typo.heading_line_height == "40px"
+
+
+class TestFontPreservation:
+    """38.8: Font family from Figma preserved through converter pipeline."""
+
+    def test_helvetica_font_stack(self) -> None:
+        """Helvetica → includes Helvetica in stack with proper fallbacks."""
+        result = _font_stack("Helvetica")
+        assert "Helvetica" in result
+        assert "sans-serif" in result
+
+    def test_font_family_preserved_through_converter(self) -> None:
+        """DesignNode with font_family → font-family in output HTML."""
+        node = DesignNode(
+            id="t1",
+            name="Heading",
+            type=DesignNodeType.TEXT,
+            text_content="Hello World",
+            font_family="Helvetica",
+            font_size=24.0,
+        )
+        html = node_to_email_html(node, body_font_size=16.0)
+        assert "Helvetica" in html
+        assert "font-family:" in html

@@ -667,3 +667,54 @@ def test_clear_cache_unauthenticated(client: TestClient) -> None:
     app.dependency_overrides.clear()
     resp = client.delete(f"{BASE}/connections/1/cache")
     assert resp.status_code == 401
+
+
+# ── Phase 38.4 Tests ──
+
+
+class TestHashIncludesTextStyling:
+    """Bug 25: Cache hash must include text styling fields."""
+
+    def test_different_font_size_different_hash(self) -> None:
+        tokens = _make_tokens()
+        s1 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", font_size=16.0)])
+        s2 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", font_size=24.0)])
+        h1 = compute_section_hash(s1, tokens, container_width=600)
+        h2 = compute_section_hash(s2, tokens, container_width=600)
+        assert h1 != h2
+
+    def test_different_font_weight_different_hash(self) -> None:
+        tokens = _make_tokens()
+        s1 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", font_weight=400)])
+        s2 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", font_weight=700)])
+        h1 = compute_section_hash(s1, tokens, container_width=600)
+        h2 = compute_section_hash(s2, tokens, container_width=600)
+        assert h1 != h2
+
+    def test_different_font_family_different_hash(self) -> None:
+        tokens = _make_tokens()
+        s1 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", font_family="Arial")])
+        s2 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", font_family="Georgia")])
+        h1 = compute_section_hash(s1, tokens, container_width=600)
+        h2 = compute_section_hash(s2, tokens, container_width=600)
+        assert h1 != h2
+
+    def test_different_is_heading_different_hash(self) -> None:
+        tokens = _make_tokens()
+        s1 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", is_heading=False)])
+        s2 = _make_section(texts=[TextBlock(node_id="t1", content="Hi", is_heading=True)])
+        h1 = compute_section_hash(s1, tokens, container_width=600)
+        h2 = compute_section_hash(s2, tokens, container_width=600)
+        assert h1 != h2
+
+    def test_same_styling_same_hash(self) -> None:
+        tokens = _make_tokens()
+        s1 = _make_section(
+            texts=[TextBlock(node_id="t1", content="Hi", font_size=16.0, font_weight=400)]
+        )
+        s2 = _make_section(
+            texts=[TextBlock(node_id="t1", content="Hi", font_size=16.0, font_weight=400)]
+        )
+        h1 = compute_section_hash(s1, tokens, container_width=600)
+        h2 = compute_section_hash(s2, tokens, container_width=600)
+        assert h1 == h2

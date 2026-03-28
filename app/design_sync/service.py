@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
@@ -996,7 +996,7 @@ class DesignSyncService:
         def walk(node: dict[str, Any], depth: int) -> None:
             ntype = str(node.get("type", ""))
             if ntype in self._THUMBNAIL_NODE_TYPES:
-                area = float(node.get("width", 0) or 0) * float(node.get("height", 0) or 0)
+                area = float(node.get("width", 0)) * float(node.get("height", 0))
                 score = 0.0
                 if depth == 0:
                     score += 1000
@@ -1682,17 +1682,7 @@ def _filter_structure(
             return node
         filtered_children = [c for c in (_filter_node(ch) for ch in node.children) if c is not None]
         if filtered_children:
-            return DesignNode(
-                id=node.id,
-                name=node.name,
-                type=node.type,
-                children=filtered_children,
-                width=node.width,
-                height=node.height,
-                x=node.x,
-                y=node.y,
-                text_content=node.text_content,
-            )
+            return replace(node, children=filtered_children)
         return None
 
     filtered_pages: list[DesignNode] = []

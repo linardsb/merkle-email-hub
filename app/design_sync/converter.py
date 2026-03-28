@@ -18,6 +18,7 @@ from app.design_sync.protocol import (
     ExtractedGradient,
     ExtractedSpacing,
     ExtractedTypography,
+    StyleRun,
 )
 from app.projects.design_system import BrandPalette, Typography
 
@@ -92,20 +93,37 @@ def _is_inline_row(children: list[DesignNode]) -> bool:
     has_text = any(c.type == DesignNodeType.TEXT for c in children)
     all_small_or_text = all(
         c.type == DesignNodeType.TEXT
-        or (c.type == DesignNodeType.IMAGE and (c.width or 0) <= 30 and (c.height or 0) <= 30)
+        or (
+            c.type == DesignNodeType.IMAGE
+            and (c.width if c.width is not None else 0) <= 30
+            and (c.height if c.height is not None else 0) <= 30
+        )
         for c in children
     )
     return has_text and all_small_or_text
+
+
+_DANGEROUS_CSS_RE = re.compile(
+    r"expression\s*\(|url\s*\(\s*javascript\s*:|url\s*\(\s*data\s*:\s*text/html"
+    r"|-moz-binding\s*:",
+    re.IGNORECASE,
+)
 
 
 def _sanitize_css_value(value: str) -> str:
     """Strip characters that could break out of a CSS property value.
 
     Removes semicolons, braces, angle brackets, and other injection vectors.
+    Preserves balanced parentheses for safe CSS functions (rgb, hsl, calc).
     Returns empty string if the value is entirely unsafe.
     """
-    # Remove anything that could terminate a style attribute or inject HTML
-    sanitized = re.sub(r'[;<>{}\'"\\()]+', "", value)
+    # Strip control characters FIRST so they can't break up dangerous keywords
+    sanitized = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", value)
+    # Block dangerous CSS functions
+    sanitized = _DANGEROUS_CSS_RE.sub("", sanitized)
+    # Strip characters that could terminate style attribute or inject HTML
+    # Parentheses are preserved for safe CSS functions like rgb(), hsl(), calc()
+    sanitized = re.sub(r'[;<>{}\'"\\]+', "", sanitized)
     return sanitized.strip()
 
 
@@ -210,6 +228,55 @@ def _font_stack(family: str) -> str:
         return family_clean
     # Unknown font — default sans-serif chain
     return f"{family_clean}, Arial, Helvetica, sans-serif"
+
+
+_GENERIC_LAYER_NAMES: frozenset[str] = frozenset(
+    {
+        "image",
+        "frame",
+        "group",
+        "rectangle",
+        "vector",
+        "ellipse",
+        "component",
+        "instance",
+        "mask",
+        "slice",
+    }
+)
+
+_LAYER_PREFIX_RE = re.compile(
+    r"^(mj-|figma-|frame-|group-|image-|img-|pic-|photo-)",
+    re.IGNORECASE,
+)
+
+
+def _meaningful_alt(
+    node_name: str | None,
+    *,
+    section: EmailSection | None = None,
+) -> str:
+    """Derive accessible alt text from node name with smart fallbacks."""
+    name = (node_name or "").strip()
+    cleaned = _LAYER_PREFIX_RE.sub("", name).strip()
+    # Node name is meaningful
+    if cleaned and cleaned.lower() not in _GENERIC_LAYER_NAMES:
+        return html.escape(cleaned)
+    # Derive from section heading
+    if section and section.texts:
+        heading = next((t for t in section.texts if t.is_heading), None)
+        if heading and heading.content:
+            return html.escape(heading.content[:80])
+    # Derive from section type
+    if section:
+        label = section.section_type.value.replace("_", " ").title()
+        return f"{label} image"
+    return "Email image"
+
+
+def _is_safe_url(url: str) -> bool:
+    """Only allow http/https and internal API URLs for background images."""
+    return url.startswith(("http://", "https://", "/api/"))
 
 
 def convert_typography(styles: list[ExtractedTypography]) -> Typography:
@@ -366,7 +433,7 @@ def _render_semantic_text(
         slot_attr = ""
         if slot_counter is not None:
             slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "heading")}"'
-        inner_style = f"margin:0;font-family:{font_family};{mso_alt}{extra_style}"
+        inner_style = f"margin:0;font-family:{font_family};mso-line-height-rule:exactly;{mso_alt}{extra_style}"
         return (
             f'{pad}<td style="{td_style}">'
             f'<{tag}{slot_attr} style="{inner_style}">{content}</{tag}></td>'
@@ -417,6 +484,47 @@ def _validate_button_contrast(
         )
 
 
+def _render_style_runs(text: str, runs: tuple[StyleRun, ...]) -> str:
+    """Render rich text with inline style runs (bold, italic, color, links).
+
+    Each segment of the text is HTML-escaped individually. Style runs wrap
+    segments with appropriate HTML tags.
+    """
+    if not runs:
+        return html.escape(text)
+
+    # Build segments: before first run, between runs, and after last run
+    parts: list[str] = []
+    last_end = 0
+    for run in sorted(runs, key=lambda r: r.start):
+        # Text before this run
+        if run.start > last_end:
+            parts.append(html.escape(text[last_end : run.start]))
+        # The styled segment
+        segment = html.escape(text[run.start : run.end])
+        if run.bold:
+            segment = f"<strong>{segment}</strong>"
+        if run.italic:
+            segment = f"<em>{segment}</em>"
+        if run.underline:
+            segment = f'<span style="text-decoration:underline;">{segment}</span>'
+        if run.strikethrough:
+            segment = f"<s>{segment}</s>"
+        if run.color_hex:
+            segment = f'<span style="color:{html.escape(run.color_hex)};">{segment}</span>'
+        if run.link_url:
+            escaped_url = html.escape(run.link_url, quote=True)
+            segment = f'<a href="{escaped_url}" style="color:inherit;">{segment}</a>'
+        parts.append(segment)
+        last_end = run.end
+
+    # Remaining text after last run
+    if last_end < len(text):
+        parts.append(html.escape(text[last_end:]))
+
+    return "".join(parts)
+
+
 def _render_button(
     node: DesignNode,
     *,
@@ -433,24 +541,37 @@ def _render_button(
     width = int(node.width) if node.width else 200
     height = max(int(node.height) if node.height else 44, 44)
 
-    bg_color = node.fill_color or (props.bg_color if props else None) or "#0066cc"
-    bg_color = _sanitize_css_value(bg_color) or "#0066cc"
+    raw_bg = node.fill_color if node.fill_color is not None else (props.bg_color if props else None)
+    bg_color = _sanitize_css_value(raw_bg) if raw_bg is not None else ""
+    if not bg_color:
+        bg_color = "#0066cc"
 
-    text_color = text_children[0].text_color or _contrasting_text_color(bg_color)
-    text_color = _sanitize_css_value(text_color) or "#ffffff"
+    raw_text_color = (
+        text_children[0].text_color
+        if text_children[0].text_color is not None
+        else _contrasting_text_color(bg_color)
+    )
+    text_color = _sanitize_css_value(raw_text_color) if raw_text_color else ""
+    if not text_color:
+        text_color = "#ffffff"
 
     font_family = "Arial,Helvetica,sans-serif"
     child_props_font = text_children[0].font_family
     if child_props_font:
         font_family = _font_stack(_sanitize_css_value(child_props_font) or "Arial")
 
-    font_size = int(text_children[0].font_size or 16)
+    font_size = int(text_children[0].font_size if text_children[0].font_size is not None else 16)
 
     _validate_button_contrast(bg_color, text_color, font_size)
 
-    border_radius = "4px"
+    # Corner radius: use design value, fall back to 4px
+    radius_px = int(node.corner_radius) if node.corner_radius else 4
+    border_radius = f"{radius_px}px"
     shortest_side = min(width, height)
-    arcsize_pct = round((4 / shortest_side) * 100) if shortest_side > 0 else 8
+    arcsize_pct = round((radius_px / shortest_side) * 100) if shortest_side > 0 else 8
+
+    # Hyperlink: use design value, fall back to "#"
+    btn_href = html.escape(node.hyperlink or "#", quote=True)
 
     v_pad = max(8, (height - font_size) // 2)
     h_pad = 24
@@ -461,30 +582,12 @@ def _render_button(
 
     parts = [
         f'{pad}<td align="center">',
-        (
-            f"{pad}  "
-            f'<table role="presentation" cellpadding="0" cellspacing="0" border="0"'
-            ' style="border-collapse:collapse;'
-            'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
-        ),
-        f"{pad}    <tr>",
-        (f'{pad}      <td style="border-radius:{border_radius};background-color:{bg_color};">'),
-        (
-            f'{pad}        <a href="#"{slot_attr} style="display:inline-block;'
-            f"padding:{v_pad}px {h_pad}px;"
-            f"font-family:{font_family};font-size:{font_size}px;"
-            f"color:{text_color};text-decoration:none;"
-            f'mso-line-height-rule:exactly;">{button_text}</a>'
-        ),
-        f"{pad}      </td>",
-        f"{pad}    </tr>",
-        f"{pad}  </table>",
         f"{pad}  <!--[if mso]>",
         (
             f'{pad}  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml"'
             f' style="width:{width}px;height:{height}px;"'
             f' arcsize="{arcsize_pct}%"'
-            f' fillcolor="{bg_color}" stroke="f">'
+            f' fillcolor="{bg_color}" stroke="false">'
         ),
         (f'{pad}    <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">'),
         (
@@ -495,6 +598,26 @@ def _render_button(
         f"{pad}    </v:textbox>",
         f"{pad}  </v:roundrect>",
         f"{pad}  <![endif]-->",
+        f"{pad}  <!--[if !mso]><!-->",
+        (
+            f"{pad}  "
+            f'<table role="presentation" cellpadding="0" cellspacing="0" border="0"'
+            ' style="border-collapse:collapse;'
+            'mso-table-lspace:0pt;mso-table-rspace:0pt;">'
+        ),
+        f"{pad}    <tr>",
+        (f'{pad}      <td style="border-radius:{border_radius};background-color:{bg_color};">'),
+        (
+            f'{pad}        <a href="{btn_href}"{slot_attr} style="display:inline-block;'
+            f"padding:{v_pad}px {h_pad}px;"
+            f"font-family:{font_family};font-size:{font_size}px;"
+            f"color:{text_color};text-decoration:none;"
+            f'mso-line-height-rule:exactly;">{button_text}</a>'
+        ),
+        f"{pad}      </td>",
+        f"{pad}    </tr>",
+        f"{pad}  </table>",
+        f"{pad}  <!--<![endif]-->",
         f"{pad}</td>",
     ]
     return "\n".join(parts)
@@ -544,7 +667,12 @@ def node_to_email_html(
     props = props_map.get(node.id) if props_map else None
 
     if node.type == DesignNodeType.TEXT:
-        content = html.escape(node.text_content or "")
+        raw_text = node.text_content or ""
+        content = (
+            _render_style_runs(raw_text, node.style_runs)
+            if node.style_runs
+            else html.escape(raw_text)
+        )
         font_family = parent_font or "Arial,Helvetica,sans-serif"
         extra_style = ""
         if props:
@@ -577,6 +705,9 @@ def node_to_email_html(
                 extra_style += f"text-transform:{_sanitize_css_value(props.text_transform)};"
             if props.text_decoration:
                 extra_style += f"text-decoration:{_sanitize_css_value(props.text_decoration)};"
+        # Text alignment from design tool
+        if node.text_align and node.text_align != "left":
+            extra_style += f"text-align:{node.text_align};"
         # Color priority: node.text_color (from design) > contrast auto > none
         if node.text_color:
             safe_text_color = _sanitize_css_value(node.text_color)
@@ -603,7 +734,9 @@ def node_to_email_html(
             tb = text_meta[node.id]
             is_heading = tb.is_heading
         if is_heading:
-            font_size_val = (props.font_size if props else None) or node.font_size or 16.0
+            font_size_val = props.font_size if props else None
+            if font_size_val is None:
+                font_size_val = node.font_size if node.font_size is not None else 16.0
             heading_level = _determine_heading_level(font_size_val, body_font_size)
             if heading_level is None:
                 # is_heading from analyzer but ratio too small — default h3
@@ -625,7 +758,7 @@ def node_to_email_html(
         h_val = int(node.height) if node.height else None
         w = f' width="{w_val}"' if w_val else ""
         h = f' height="{h_val}"' if h_val else ""
-        alt = html.escape(node.name or "")
+        alt = _meaningful_alt(node.name, section=current_section)
         node_id_attr = f' data-node-id="{html.escape(node.id)}"'
         slot_attr = ""
         if slot_counter is not None:
@@ -644,6 +777,26 @@ def node_to_email_html(
             pad=pad,
             props=props,
             slot_counter=slot_counter,
+        )
+
+    # FRAME with image_ref but no children → render as standalone <img>
+    if (
+        node.type in (DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.INSTANCE)
+        and node.image_ref
+        and not node.children
+        and _is_safe_url(node.image_ref)
+    ):
+        w_val = int(node.width) if node.width else None
+        h_val = int(node.height) if node.height else None
+        w = f' width="{w_val}"' if w_val else ""
+        h = f' height="{h_val}"' if h_val else ""
+        alt = _meaningful_alt(node.name, section=current_section)
+        max_w = f"max-width:{w_val}px;" if w_val else ""
+        return (
+            f'{pad}<img src="{html.escape(node.image_ref)}" alt="{alt}"'
+            f' data-node-id="{html.escape(node.id)}"{w}{h}'
+            f' style="display:block;border:0;outline:none;text-decoration:none;'
+            f'-ms-interpolation-mode:bicubic;width:100%;{max_w}height:auto;" />'
         )
 
     # Frame/Group/Component/Instance → table with rows
@@ -689,6 +842,43 @@ def node_to_email_html(
                 bgcolor_attr = f' bgcolor="{html.escape(grad.fallback_hex)}"'
             style_parts.append(f"background:{gradient_css}")
 
+        # Border from stroke data (e.g. product cards)
+        if node.stroke_weight and node.stroke_color:
+            stroke_w = int(node.stroke_weight)
+            safe_stroke = _sanitize_css_value(node.stroke_color)
+            if safe_stroke:
+                style_parts.append(f"border:{stroke_w}px solid {safe_stroke}")
+
+        # Corner radius on frames (cards, panels)
+        if node.corner_radius:
+            style_parts.append(f"border-radius:{int(node.corner_radius)}px")
+
+        # Background image for frames with image_ref + text children (hero sections)
+        bg_vml_open = ""
+        bg_vml_close = ""
+        if node.image_ref and node.children:
+            bg_url = node.image_ref
+            if _is_safe_url(bg_url):
+                safe_url = html.escape(bg_url)
+                style_parts.append(f"background-image:url('{safe_url}')")
+                style_parts.append("background-size:cover")
+                style_parts.append("background-position:center")
+                style_parts.append("background-repeat:no-repeat")
+                bg_w = int(node.width) if node.width else 600
+                bg_h = int(node.height) if node.height else 300
+                bg_vml_open = (
+                    f"{pad}<!--[if gte mso 9]>\n"
+                    f'{pad}<v:rect xmlns:v="urn:schemas-microsoft-com:vml"'
+                    f' fill="true" stroke="false"'
+                    f' style="width:{bg_w}px;height:{bg_h}px;">\n'
+                    f'{pad}<v:fill type="frame" src="{safe_url}" />\n'
+                    f'{pad}<v:textbox inset="0,0,0,0">\n'
+                    f"{pad}<![endif]-->"
+                )
+                bg_vml_close = (
+                    f"{pad}<!--[if gte mso 9]>\n{pad}</v:textbox></v:rect>\n{pad}<![endif]-->"
+                )
+
         # Resolve effective font for children
         effective_font = parent_font
         if props and props.font_family:
@@ -698,10 +888,26 @@ def node_to_email_html(
 
         # Build padding string for inner <td> wrapper (NOT <table>).
         # Outlook ignores padding on <table>; only <td> is reliable.
-        pad_top = node.padding_top or (props.padding_top if props else 0) or 0
-        pad_right = node.padding_right or (props.padding_right if props else 0) or 0
-        pad_bottom = node.padding_bottom or (props.padding_bottom if props else 0) or 0
-        pad_left = node.padding_left or (props.padding_left if props else 0) or 0
+        pad_top = (
+            node.padding_top
+            if node.padding_top is not None
+            else (props.padding_top if props else 0)
+        )
+        pad_right = (
+            node.padding_right
+            if node.padding_right is not None
+            else (props.padding_right if props else 0)
+        )
+        pad_bottom = (
+            node.padding_bottom
+            if node.padding_bottom is not None
+            else (props.padding_bottom if props else 0)
+        )
+        pad_left = (
+            node.padding_left
+            if node.padding_left is not None
+            else (props.padding_left if props else 0)
+        )
         has_padding = any(v > 0 for v in (pad_top, pad_right, pad_bottom, pad_left))
         padding_css = (
             f"padding:{int(pad_top)}px {int(pad_right)}px {int(pad_bottom)}px {int(pad_left)}px"
@@ -747,10 +953,13 @@ def node_to_email_html(
         component_attr = ""
         if _depth == 0 and slot_counter is not None:
             component_attr = f' data-component-name="{html.escape(node.name or "")}"'
-        lines = [
+        lines: list[str] = []
+        if bg_vml_open:
+            lines.append(bg_vml_open)
+        lines.append(
             f"{pad}<table{width_attr}{bgcolor_attr}{component_attr}{style_attr}"
             f' cellpadding="0" cellspacing="0" border="0" role="presentation">'
-        ]
+        )
 
         if not node.children:
             if has_padding:
@@ -766,9 +975,15 @@ def node_to_email_html(
             elif node.layout_mode == "VERTICAL":
                 layout_dir = "column"
 
-            gap = (props.item_spacing if props else 0) or (node.item_spacing or 0)
-            cross_gap = (props.counter_axis_spacing if props else 0) or (
-                node.counter_axis_spacing or 0
+            gap = (
+                props.item_spacing
+                if props
+                else (node.item_spacing if node.item_spacing is not None else 0)
+            )
+            cross_gap = (
+                props.counter_axis_spacing
+                if props
+                else (node.counter_axis_spacing if node.counter_axis_spacing is not None else 0)
             )
 
             if layout_dir == "row":
@@ -849,7 +1064,7 @@ def node_to_email_html(
                         elif child.type == DesignNodeType.IMAGE:
                             w = int(child.width) if child.width else ""
                             h = int(child.height) if child.height else ""
-                            alt = html.escape(child.name or "")
+                            alt = _meaningful_alt(child.name, section=section)
                             w_attr = f' width="{w}"' if w else ""
                             h_attr = f' height="{h}"' if h else ""
                             lines.append(
@@ -938,6 +1153,8 @@ def node_to_email_html(
                 lines.append(f"{pad}    </table>")
                 lines.append(f"{pad}  </td></tr>")
         lines.append(f"{pad}</table>")
+        if bg_vml_close:
+            lines.append(bg_vml_close)
         return "\n".join(lines)
 
     # Vector/other → skip (vectors/SVGs are not email-safe)
@@ -1020,7 +1237,11 @@ def sanitize_web_tags_for_email(html_str: str) -> str:
                 style_match = re.search(r'style=["\']([^"\']*)["\']', attrs)
                 style_val = style_match.group(1) if style_match else ""
 
-                if _LAYOUT_CSS_RE.search(style_val):
+                # Preserve <div class="column"> — structural email
+                # element for mobile stacking (CSS .column { display: block !important; })
+                if 'class="column"' in attrs:
+                    action = "preserve"
+                elif _LAYOUT_CSS_RE.search(style_val):
                     action = "convert"
                 elif _is_inside_td(html_str, open_tok.start()):
                     action = "preserve"
@@ -1041,6 +1262,8 @@ def sanitize_web_tags_for_email(html_str: str) -> str:
             safe_style = (
                 style_val.replace('"', "").replace("'", "").replace("<", "").replace(">", "")
             )
+            # Block dangerous CSS functions in div→table conversion
+            safe_style = _DANGEROUS_CSS_RE.sub("", safe_style)
             table_open = (
                 '<table role="presentation" cellpadding="0" cellspacing="0" border="0">'
                 f'<tr><td style="{safe_style}">'
@@ -1091,12 +1314,15 @@ def _group_into_rows(
     if not y_known:
         return [nodes]
 
-    sorted_nodes = sorted(y_known, key=lambda n: (n.y or 0, n.x or 0))
+    sorted_nodes = sorted(
+        y_known,
+        key=lambda n: (n.y if n.y is not None else 0, n.x if n.x is not None else 0),
+    )
     rows: list[list[DesignNode]] = [[sorted_nodes[0]]]
 
     for node in sorted_nodes[1:]:
-        last_row_y = rows[-1][0].y or 0
-        node_y = node.y or 0
+        last_row_y = rows[-1][0].y if rows[-1][0].y is not None else 0
+        node_y = node.y if node.y is not None else 0
         if abs(node_y - last_row_y) <= tolerance:
             rows[-1].append(node)
         else:
@@ -1108,7 +1334,7 @@ def _group_into_rows(
 
     # Sort each row by x-position (left to right)
     for row in rows:
-        row.sort(key=lambda n: n.x or 0)
+        row.sort(key=lambda n: n.x if n.x is not None else 0)
 
     # Hero image detection: split wide images into their own rows
     if parent_width and parent_width > 0:
@@ -1203,6 +1429,18 @@ def _calculate_column_widths(
     return widths
 
 
+def _col_padding(col_index: int, col_count: int, gutter: float = 8.0) -> str:
+    """Asymmetric gutter padding for multi-column layouts (G11 pattern)."""
+    if col_count <= 1:
+        return "0"
+    if col_index == 0:
+        return f"0 {gutter}px 0 0"
+    if col_index == col_count - 1:
+        return f"0 0 0 {gutter}px"
+    half = gutter / 2
+    return f"0 {half}px 0 {half}px"
+
+
 def _render_multi_column_row(
     children: list[DesignNode],
     *,
@@ -1266,15 +1504,17 @@ def _render_multi_column_row(
         # MSO column open
         lines.append(f'{inner_pad}<!--[if mso]><td width="{col_width}" valign="top"><![endif]-->')
 
-        # B1: Use <table class="column"> instead of <div class="column"> + inner
-        # <table> to avoid sanitizer double-wrapping (div→table conversion).
-        # Single table serves as both modern inline-block wrapper and content host.
+        # G-REF-1: <div class="column"> matches golden components and enables
+        # mobile stacking via CSS .column { display: block !important; }
         lines.append(
-            f'{inner_pad}<table class="column" role="presentation" width="100%"'
-            f' cellpadding="0" cellspacing="0" border="0"'
+            f'{inner_pad}<div class="column"'
             f' style="display:inline-block;max-width:{col_width}px;'
-            f"width:100%;vertical-align:top;"
-            f"border-collapse:collapse;mso-table-lspace:0pt;"
+            f'width:100%;vertical-align:top;">'
+        )
+        lines.append(
+            f'{col_pad}<table role="presentation" width="100%"'
+            f' cellpadding="0" cellspacing="0" border="0"'
+            f' style="border-collapse:collapse;mso-table-lspace:0pt;'
             f'mso-table-rspace:0pt;">'
         )
 
@@ -1299,17 +1539,16 @@ def _render_multi_column_row(
 
         # B3: Skip empty column content
         if not child_html or not child_html.strip():
-            lines.append(f"{inner_pad}</table>")
+            lines.append(f"{col_pad}</table>")
+            lines.append(f"{inner_pad}</div>")
             lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")
             continue
 
-        if child.type == DesignNodeType.TEXT:
-            lines.append(f"{col_pad}<tr>{child_html}</tr>")
-        else:
-            lines.append(f"{col_pad}<tr><td>{child_html}</td></tr>")
+        padding = _col_padding(col_idx, len(children))
+        lines.append(f'{col_pad}<tr><td style="padding:{padding};">{child_html}</td></tr>')
 
-        # Close column table (B1: single table replaces div+table pair)
-        lines.append(f"{inner_pad}</table>")
+        lines.append(f"{col_pad}</table>")
+        lines.append(f"{inner_pad}</div>")
 
         # MSO column close
         lines.append(f"{inner_pad}<!--[if mso]></td><![endif]-->")

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from app.design_sync.converter import (
     _font_stack,
+    _meaningful_alt,
     _sanitize_css_value,
     convert_colors_to_palette,
     convert_typography,
@@ -319,6 +320,10 @@ def _mjml_text(text: TextBlock, typo: Typography, palette: BrandPalette) -> str:
             attrs.append(f'letter-spacing="{round(text.letter_spacing, 1)}px"')
         inner = f"<p>{escaped}</p>"
 
+    # Text alignment from design
+    if text.text_align and text.text_align != "left":
+        attrs.append(f'align="{text.text_align}"')
+
     attr_str = " " + " ".join(attrs) if attrs else ""
     return f"<mj-text{attr_str}>{inner}</mj-text>"
 
@@ -326,7 +331,7 @@ def _mjml_text(text: TextBlock, typo: Typography, palette: BrandPalette) -> str:
 def _mjml_image(img: ImagePlaceholder) -> str:
     """Render an ImagePlaceholder as <mj-image>."""
     src = f"{{{{img:{img.node_id}}}}}"
-    alt = html_mod.escape(img.node_name)
+    alt = _meaningful_alt(img.node_name)
     attrs = [f'src="{src}"', f'alt="{alt}"']
     if img.width:
         attrs.append(f'width="{int(img.width)}px"')
@@ -339,11 +344,16 @@ def _mjml_image(img: ImagePlaceholder) -> str:
 def _mjml_button(btn: ButtonElement, palette: BrandPalette) -> str:
     """Render a ButtonElement as <mj-button>."""
     text = html_mod.escape(btn.text)
+    href = html_mod.escape(btn.url or "#", quote=True)
+    bg = btn.fill_color or palette.primary
+    text_color = btn.text_color or palette.background
     attrs = [
-        'href="#"',
-        f'background-color="{palette.primary}"',
-        f'color="{palette.background}"',
+        f'href="{href}"',
+        f'background-color="{bg}"',
+        f'color="{text_color}"',
     ]
+    if btn.border_radius:
+        attrs.append(f'border-radius="{int(btn.border_radius)}px"')
     if btn.width:
         attrs.append(f'width="{int(btn.width)}px"')
     attr_str = " ".join(attrs)

@@ -22,6 +22,7 @@ from app.design_sync.converter import (
 )
 from app.design_sync.figma.layout_analyzer import (
     ColumnLayout,
+    DesignLayoutDescription,
     EmailSection,
     EmailSectionType,
 )
@@ -102,6 +103,17 @@ class MjmlTemplateEngine:
         """Render one EmailSection to MJML markup (no ``<mjml>``/``<mj-body>`` wrapper)."""
         template_name = self.resolve_template_name(section)
         template = self._env.get_template(template_name)
+        # Build per-text style overrides so templates can use individual
+        # font_size / font_weight / font_family instead of global typography
+        text_styles = [
+            {
+                "font_size": t.font_size,
+                "font_weight": t.font_weight,
+                "font_family": t.font_family,
+                "is_heading": t.is_heading,
+            }
+            for t in section.texts
+        ]
         rendered: str = template.render(
             section=section,
             palette=ctx.palette,
@@ -109,6 +121,7 @@ class MjmlTemplateEngine:
             dark_colors=ctx.dark_colors,
             container_width=ctx.container_width,
             section_padding=ctx.section_padding,
+            text_styles=text_styles,
         )
         return rendered
 
@@ -180,12 +193,23 @@ def _build_dark_mode_css(dark_colors: tuple[ExtractedColor, ...]) -> str:
         return ""
     rules: list[str] = []
     for dc in dark_colors:
-        name = _sanitize_css_value(dc.name.lower().replace(" ", "-"))
-        hex_val = _sanitize_css_value(dc.hex)
-        if not name or not hex_val:
+        name = _sanitize_css_value(dc.name.lower().replace(" ", "-")) if dc.name else ""
+        hex_val = _sanitize_css_value(dc.hex) if dc.hex else ""
+        if name == "" or hex_val == "":
             continue
         rules.append(f"    .dark-{name} {{ color: {hex_val} !important; }}")
-    return "@media (prefers-color-scheme: dark) {\n" + "\n".join(rules) + "\n  }"
+    css = "@media (prefers-color-scheme: dark) {\n" + "\n".join(rules) + "\n  }"
+    # Outlook dark mode: [data-ogsc] for text, [data-ogsb] for backgrounds
+    ogsc_rules: list[str] = []
+    for dc in dark_colors:
+        name = _sanitize_css_value(dc.name.lower().replace(" ", "-")) if dc.name else ""
+        hex_val = _sanitize_css_value(dc.hex) if dc.hex else ""
+        if name == "" or hex_val == "":
+            continue
+        ogsc_rules.append(f"[data-ogsc] .dark-{name} {{ color: {hex_val} !important; }}")
+    if ogsc_rules:
+        css += "\n" + "\n".join(ogsc_rules)
+    return css
 
 
 _MJML_DOC = """\
@@ -196,6 +220,7 @@ _MJML_DOC = """\
       <mj-text font-size="{base_size}" line-height="{body_lh}" color="{text_color}" />
       <mj-body width="{container_width}px" />
     </mj-attributes>
+    <mj-raw position="head"><meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" /></mj-raw>
     <mj-preview>{preheader}</mj-preview>
     <mj-style>
       {dark_css}
@@ -205,3 +230,36 @@ _MJML_DOC = """\
 {body}
   </mj-body>
 </mjml>"""
+
+
+# ---------------------------------------------------------------------------
+# Post-processing: inject data attributes into compiled HTML
+# ---------------------------------------------------------------------------
+
+
+def inject_section_markers(compiled_html: str, layout: DesignLayoutDescription) -> str:
+    """Replace MJML comment markers with data attributes on the nearest table.
+
+    MJML strips data-* attributes during compilation, so we inject comment markers
+    in the MJML source and then replace them in the compiled HTML with proper
+    data attributes on the enclosing <table> element.
+    """
+    result = compiled_html
+    for section in layout.sections:
+        if section.section_type == EmailSectionType.PREHEADER:
+            continue
+        marker = f"<!-- section:{section.node_id}:{section.section_type.value} -->"
+        replacement = (
+            f"<!-- section:{section.node_id}:{section.section_type.value} -->"
+            f'\n<div data-section-type="{section.section_type.value}"'
+            f' data-node-id="{html_mod.escape(section.node_id)}">'
+        )
+        marker_idx = result.find(marker)
+        if marker_idx >= 0:
+            result = result[:marker_idx] + replacement + result[marker_idx + len(marker) :]
+            # Close the wrapper div after the section's table
+            table_end = result.find("</table>", marker_idx + len(replacement))
+            if table_end >= 0:
+                insert_pos = table_end + len("</table>")
+                result = result[:insert_pos] + "\n</div>" + result[insert_pos:]
+    return result

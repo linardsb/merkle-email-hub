@@ -173,15 +173,15 @@ def _extract_typography(sections: list[DocumentSection]) -> list[DocumentTypogra
     for section in sections:
         for text in section.texts:
             family = text.font_family or "Arial"
-            size = text.font_size or 16.0
-            weight = text.font_weight or 400
+            size = text.font_size if text.font_size is not None else 16.0
+            weight = text.font_weight if text.font_weight is not None else 400
             key = (family, size, weight)
             combos[key] = combos.get(key, 0) + 1
         for col in section.columns:
             for text in col.texts:
                 family = text.font_family or "Arial"
-                size = text.font_size or 16.0
-                weight = text.font_weight or 400
+                size = text.font_size if text.font_size is not None else 16.0
+                weight = text.font_weight if text.font_weight is not None else 400
                 key = (family, size, weight)
                 combos[key] = combos.get(key, 0) + 1
 

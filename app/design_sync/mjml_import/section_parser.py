@@ -276,7 +276,7 @@ def _parse_text_element(el: etree._Element) -> list[DocumentText]:
                         font_size=base_font_size,
                         is_heading=True,
                         font_family=base_font_family,
-                        font_weight=base_font_weight or 700,
+                        font_weight=base_font_weight if base_font_weight is not None else 700,
                         line_height=base_line_height,
                         letter_spacing=base_letter_spacing,
                     )
@@ -403,4 +403,4 @@ def _inner_html(el: etree._Element) -> str:
 
 
 def _section_height(section: DocumentSection) -> float:
-    return section.height or 100.0
+    return section.height if section.height is not None else 100.0

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import html as html_mod
 import re
-import uuid
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
@@ -46,7 +46,28 @@ class ParsedEmail:
 # ── Heading detection ──────────────────────────────────────────────
 
 _HEADING_TAGS = frozenset({"h1", "h2", "h3", "h4", "h5", "h6"})
-_TEXT_TAGS = frozenset({"td", "p", "h1", "h2", "h3", "h4", "h5", "h6", "span", "a"})
+_TEXT_TAGS = frozenset(
+    {
+        "td",
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "span",
+        "a",
+        "b",
+        "strong",
+        "em",
+        "i",
+        "u",
+        "li",
+        "blockquote",
+    }
+)
+_INLINE_TAGS = frozenset({"b", "strong", "em", "i", "u", "s", "sub", "sup", "span", "a"})
 _HIDDEN_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.IGNORECASE)
 _MSO_COMMENT_RE = re.compile(r"<!--\[if\s+mso", re.IGNORECASE)
 _SOCIAL_URL_PARTS = frozenset({"facebook", "twitter", "linkedin", "instagram", "youtube", "x.com"})
@@ -85,7 +106,7 @@ def parse_email_dom(raw_html: str) -> ParsedEmail:
     for idx, elem in enumerate(section_elements):
         section = _build_section(elem, idx, y_offset, container_width)
         sections.append(section)
-        y_offset += section.height or 0.0
+        y_offset += section.height if section.height is not None else 0.0
 
     return ParsedEmail(
         sections=sections,
@@ -331,6 +352,7 @@ def _walk_for_texts(element: HtmlElement, out: list[DocumentText]) -> None:
             font_weight = _parse_font_weight(font_weight_str)
             line_height = extract_font_size_px(style.properties.get("line-height", ""))
             font_family = style.properties.get("font-family", "").strip("'\"") or None
+            color = normalize_hex_color(style.properties.get("color", ""))
 
             is_heading = tag in _HEADING_TAGS or (font_size is not None and font_size > 20.0)
 
@@ -343,6 +365,7 @@ def _walk_for_texts(element: HtmlElement, out: list[DocumentText]) -> None:
                     font_family=font_family,
                     font_weight=font_weight,
                     line_height=line_height,
+                    color=color,
                 )
             )
 
@@ -352,14 +375,18 @@ def _walk_for_texts(element: HtmlElement, out: list[DocumentText]) -> None:
 
 
 def _get_direct_text(element: HtmlElement) -> str:
-    """Get the combined text content of an element (text + tail of children)."""
+    """Get the combined text content of an element, recursing into inline tags."""
     parts: list[str] = []
     if element.text:
         parts.append(element.text)
     for child in element:
+        tag = child.tag if isinstance(child.tag, str) else ""
+        if tag in _INLINE_TAGS:
+            # Recurse into inline formatting tags (b, strong, em, etc.)
+            parts.append(_get_direct_text(child))
         if child.tail:
             parts.append(child.tail)
-    return " ".join(parts)
+    return " ".join(p for p in parts if p.strip())
 
 
 def _parse_font_weight(value: str) -> int | None:
@@ -604,10 +631,10 @@ def _extract_padding(element: HtmlElement) -> DocumentPadding | None:
         left = extract_font_size_px(style.properties.get("padding-left", ""))
         if any(v is not None for v in (top, right, bottom, left)):
             return DocumentPadding(
-                top=top or 0.0,
-                right=right or 0.0,
-                bottom=bottom or 0.0,
-                left=left or 0.0,
+                top=top if top is not None else 0.0,
+                right=right if right is not None else 0.0,
+                bottom=bottom if bottom is not None else 0.0,
+                left=left if left is not None else 0.0,
             )
 
     return None
@@ -670,8 +697,17 @@ def _estimate_height(element: HtmlElement) -> float | None:
 
 
 def _make_node_id(element: HtmlElement) -> str:
-    """Generate a stable-ish node ID for an element."""
+    """Generate a deterministic node ID from element content and position."""
     existing_id = element.get("id") or element.get("data-section-id")
     if existing_id:
         return existing_id
-    return f"html-{uuid.uuid4().hex[:8]}"
+    tag = element.tag if isinstance(element.tag, str) else "unknown"
+    text = (element.text or "")[:50]
+    # Use sourceline + sibling index to disambiguate same-line elements
+    line = str(element.sourceline if element.sourceline is not None else 0)
+    parent = element.getparent()
+    sibling_idx = list(parent).index(element) if parent is not None else 0
+    digest = hashlib.md5(
+        f"{tag}:{text}:{line}:{sibling_idx}".encode(), usedforsecurity=False
+    ).hexdigest()[:8]
+    return f"html-{digest}"

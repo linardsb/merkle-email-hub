@@ -65,7 +65,7 @@ class TestRemoveInvisible:
         assert stats.nodes_removed == 1
 
     def test_drops_deep_hidden_grandchild(self) -> None:
-        """Hidden grandchild removed even when direct child is visible."""
+        """Hidden grandchild removed; resulting empty container also pruned."""
         structure = _struct(
             _node(
                 "outer",
@@ -77,9 +77,10 @@ class TestRemoveInvisible:
         )
         result, stats = normalize_tree(structure)
         outer = result.pages[0].children[0]
-        inner = outer.children[1]
-        assert len(inner.children) == 0
-        assert stats.nodes_removed == 1
+        # "inner" frame is pruned because it became empty (no fill/image)
+        assert len(outer.children) == 1
+        assert outer.children[0].name == "keep"
+        assert stats.nodes_removed == 2  # "gone" text + empty "inner" frame
 
     def test_preserves_visible_nodes(self) -> None:
         structure = _struct(
@@ -163,13 +164,13 @@ class TestResolveInstances:
         assert resolved.children[0].text_content == "Hello"
         assert stats.instances_resolved == 1
 
-    def test_instance_resolved_only_with_raw_data(self) -> None:
-        """Without raw_file_data, INSTANCE stays as INSTANCE."""
+    def test_instance_resolved_without_raw_data(self) -> None:
+        """INSTANCE is resolved to FRAME even without raw_file_data."""
         instance = _node("inst", type_=DesignNodeType.INSTANCE)
         structure = _struct(instance)
         result, stats = normalize_tree(structure)
-        assert result.pages[0].children[0].type == DesignNodeType.INSTANCE
-        assert stats.instances_resolved == 0
+        assert result.pages[0].children[0].type == DesignNodeType.FRAME
+        assert stats.instances_resolved == 1
 
     def test_instance_resolved_with_raw_data(self) -> None:
         instance = _node("inst", type_=DesignNodeType.INSTANCE)
@@ -199,7 +200,7 @@ class TestInferAutoLayout:
         result, stats = normalize_tree(structure)
         container = result.pages[0].children[0]
         assert container.layout_mode == "VERTICAL"
-        assert container.item_spacing == 100.0
+        assert container.item_spacing == 20.0  # gap: 100 - (0+80) = 20
         assert stats.layouts_inferred == 1
 
     def test_infer_horizontal_layout(self) -> None:
@@ -215,7 +216,7 @@ class TestInferAutoLayout:
         result, stats = normalize_tree(structure)
         row = result.pages[0].children[0]
         assert row.layout_mode == "HORIZONTAL"
-        assert row.item_spacing == 200.0
+        assert row.item_spacing == 20.0  # gap: 200 - (0+180) = 20
         assert stats.layouts_inferred == 1
 
     def test_no_infer_when_layout_exists(self) -> None:
@@ -366,3 +367,204 @@ class TestNormalizeIntegration:
         assert stats.instances_resolved == 0
         assert stats.layouts_inferred == 0
         assert stats.texts_merged == 0
+
+
+# ---------------------------------------------------------------------------
+# Bug-specific regression tests
+# ---------------------------------------------------------------------------
+
+
+class TestBug6SpacingGaps:
+    """item_spacing must be the gap between bounding box edges, not position diffs."""
+
+    def test_vertical_spacing_is_gap_not_position(self) -> None:
+        frame = _node(
+            "vstack",
+            children=[
+                _node("c1", x=0.0, y=0.0, width=200.0, height=100.0),
+                _node("c2", x=0.0, y=120.0, width=200.0, height=100.0),
+                _node("c3", x=0.0, y=240.0, width=200.0, height=100.0),
+            ],
+        )
+        structure = _struct(frame)
+        result, stats = normalize_tree(structure)
+        container = result.pages[0].children[0]
+        assert container.layout_mode == "VERTICAL"
+        assert container.item_spacing == 20.0  # 120-(0+100)=20, 240-(120+100)=20
+        assert stats.layouts_inferred == 1
+
+    def test_horizontal_spacing_is_gap_not_position(self) -> None:
+        frame = _node(
+            "hstack",
+            children=[
+                _node("c1", x=0.0, y=0.0, width=180.0, height=50.0),
+                _node("c2", x=200.0, y=0.0, width=180.0, height=50.0),
+                _node("c3", x=400.0, y=0.0, width=180.0, height=50.0),
+            ],
+        )
+        structure = _struct(frame)
+        result, stats = normalize_tree(structure)
+        row = result.pages[0].children[0]
+        assert row.layout_mode == "HORIZONTAL"
+        assert row.item_spacing == 20.0  # 200-(0+180)=20
+        assert stats.layouts_inferred == 1
+
+    def test_overlapping_children_clamp_to_zero(self) -> None:
+        frame = _node(
+            "overlap",
+            children=[
+                _node("c1", x=0.0, y=0.0, width=100.0, height=60.0),
+                _node("c2", x=0.0, y=50.0, width=100.0, height=60.0),  # overlaps by 10px
+            ],
+        )
+        structure = _struct(frame)
+        result, _ = normalize_tree(structure)
+        container = result.pages[0].children[0]
+        assert container.layout_mode == "VERTICAL"
+        assert container.item_spacing == 0.0  # clamped from -10
+
+
+class TestBug8GroupDimensions:
+    """Group flattening must inherit width/height from parent GROUP."""
+
+    def test_group_flattening_inherits_width_height(self) -> None:
+        inner = _node("inner", x=None, y=None, width=None, height=None)
+        group = _node(
+            "wrapper",
+            type_=DesignNodeType.GROUP,
+            children=[inner],
+            x=10.0,
+            y=20.0,
+            width=200.0,
+            height=100.0,
+        )
+        structure = _struct(group)
+        result, stats = normalize_tree(structure)
+        promoted = result.pages[0].children[0]
+        assert promoted.x == 10.0
+        assert promoted.y == 20.0
+        assert promoted.width == 200.0
+        assert promoted.height == 100.0
+        assert stats.groups_flattened == 1
+
+    def test_group_flattening_preserves_child_dimensions(self) -> None:
+        inner = _node("inner", width=150.0, height=75.0)
+        group = _node(
+            "wrapper",
+            type_=DesignNodeType.GROUP,
+            children=[inner],
+            width=200.0,
+            height=100.0,
+        )
+        structure = _struct(group)
+        result, _ = normalize_tree(structure)
+        promoted = result.pages[0].children[0]
+        assert promoted.width == 150.0  # child's own dimensions preserved
+        assert promoted.height == 75.0
+
+
+class TestBug9TextMergeHeight:
+    """Text merge spacing should use node height, not CSS line_height."""
+
+    def test_text_merge_uses_node_height(self) -> None:
+        frame = _node(
+            "container",
+            children=[
+                _text("t1", "Line 1", font_family="Inter", font_size=16.0, y=0.0, height=20.0),
+                _text("t2", "Line 2", font_family="Inter", font_size=16.0, y=22.0, height=20.0),
+            ],
+        )
+        structure = _struct(frame)
+        result, stats = normalize_tree(structure)
+        container = result.pages[0].children[0]
+        assert len(container.children) == 1
+        assert container.children[0].text_content == "Line 1\nLine 2"
+        assert stats.texts_merged == 1
+
+    def test_text_merge_fallback_to_line_height(self) -> None:
+        frame = _node(
+            "container",
+            children=[
+                _text(
+                    "t1",
+                    "Line 1",
+                    font_family="Inter",
+                    font_size=16.0,
+                    y=0.0,
+                    line_height_px=18.0,
+                ),
+                _text(
+                    "t2",
+                    "Line 2",
+                    font_family="Inter",
+                    font_size=16.0,
+                    y=20.0,
+                    line_height_px=18.0,
+                ),
+            ],
+        )
+        structure = _struct(frame)
+        result, stats = normalize_tree(structure)
+        container = result.pages[0].children[0]
+        assert len(container.children) == 1
+        assert stats.texts_merged == 1
+
+    def test_text_no_merge_when_gap_too_large(self) -> None:
+        frame = _node(
+            "container",
+            children=[
+                _text("t1", "Line 1", font_family="Inter", font_size=16.0, y=0.0, height=20.0),
+                _text("t2", "Line 2", font_family="Inter", font_size=16.0, y=50.0, height=20.0),
+            ],
+        )
+        structure = _struct(frame)
+        result, stats = normalize_tree(structure)
+        container = result.pages[0].children[0]
+        assert len(container.children) == 2  # 30px gap > 5px tolerance
+        assert stats.texts_merged == 0
+
+
+class TestBug10EmptyContainerPruning:
+    """Empty GROUP/FRAME without visual content should be pruned."""
+
+    def test_empty_container_pruned_after_invisible_removal(self) -> None:
+        structure = _struct(
+            _node(
+                "container",
+                children=[
+                    _text("gone1", "Hidden", visible=False),
+                    _text("gone2", "Hidden", visible=False),
+                ],
+            ),
+        )
+        result, stats = normalize_tree(structure)
+        page = result.pages[0]
+        assert len(page.children) == 0  # container pruned
+        assert stats.nodes_removed == 3  # 2 texts + 1 empty frame
+
+    def test_container_with_fill_preserved(self) -> None:
+        structure = _struct(
+            _node(
+                "bg_block",
+                fill_color="#FF0000",
+                children=[_text("gone", "Hidden", visible=False)],
+            ),
+        )
+        result, stats = normalize_tree(structure)
+        page = result.pages[0]
+        assert len(page.children) == 1  # kept because of fill_color
+        assert page.children[0].fill_color == "#FF0000"
+        assert stats.nodes_removed == 1  # only the invisible text
+
+    def test_container_with_image_preserved(self) -> None:
+        structure = _struct(
+            _node(
+                "img_block",
+                image_ref="abc123",
+                children=[_text("gone", "Hidden", visible=False)],
+            ),
+        )
+        result, stats = normalize_tree(structure)
+        page = result.pages[0]
+        assert len(page.children) == 1  # kept because of image_ref
+        assert stats.nodes_removed == 1

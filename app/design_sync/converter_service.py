@@ -28,10 +28,10 @@ from app.design_sync.figma.layout_analyzer import (
 )
 from app.design_sync.figma.tree_normalizer import normalize_tree
 from app.design_sync.html_formatter import format_email_html
-from app.design_sync.mjml_generator import generate_mjml, inject_section_markers
 from app.design_sync.mjml_template_engine import (
     build_template_context,
     get_engine,
+    inject_section_markers,
 )
 from app.design_sync.protocol import (
     DesignFileStructure,
@@ -463,14 +463,9 @@ class DesignConverterService:
         warnings: list[str],
         container_width: int,
         target_clients: list[str] | None = None,
-        use_templates: bool = True,
         connection_id: str | None = None,
     ) -> ConversionResult:
-        """Generate MJML from layout, compile via sidecar, return ConversionResult.
-
-        When *use_templates* is True (default), the template engine renders each
-        section via Jinja2 MJML templates.  Falls back to programmatic generation
-        via ``generate_mjml()`` if template rendering fails.
+        """Generate MJML from layout via template engine, compile via sidecar.
 
         When *connection_id* is set and caching is enabled, the full compiled result
         is cached keyed by a composite hash of all section hashes. MJML compilation
@@ -509,35 +504,20 @@ class DesignConverterService:
                     cache_hit_rate=1.0,
                 )
 
-        mjml_str: str | None = None
-        if use_templates:
-            try:
-                engine = get_engine()
-                ctx = build_template_context(tokens, container_width=container_width)
-                preheader = ""
-                for s in layout.sections:
-                    if s.section_type == EmailSectionType.PREHEADER and s.texts:
-                        preheader = s.texts[0].content
-                        break
-                body_sections = [
-                    s for s in layout.sections if s.section_type != EmailSectionType.PREHEADER
-                ]
-                mjml_str = engine.render_email(
-                    body_sections,
-                    ctx,
-                    preheader=preheader,
-                )
-                logger.info("design_sync.mjml_template_rendered", sections=len(body_sections))
-            except Exception:
-                logger.warning(
-                    "design_sync.mjml_template_fallback",
-                    reason="template_error",
-                    exc_info=True,
-                )
-                mjml_str = None
-
-        if mjml_str is None:
-            mjml_str = generate_mjml(layout, tokens, container_width=container_width)
+        engine = get_engine()
+        ctx = build_template_context(tokens, container_width=container_width)
+        preheader = ""
+        for s in layout.sections:
+            if s.section_type == EmailSectionType.PREHEADER and s.texts:
+                preheader = s.texts[0].content
+                break
+        body_sections = [s for s in layout.sections if s.section_type != EmailSectionType.PREHEADER]
+        mjml_str = engine.render_email(
+            body_sections,
+            ctx,
+            preheader=preheader,
+        )
+        logger.info("design_sync.mjml_template_rendered", sections=len(body_sections))
         compile_result = await self.compile_mjml(mjml_str, target_clients=target_clients)
 
         if compile_result.errors:
@@ -1012,10 +992,10 @@ class DesignConverterService:
                     font_family=node.font_family,
                     font_size=node.font_size,
                     font_weight=str(node.font_weight) if node.font_weight else None,
-                    padding_top=node.padding_top or 0,
-                    padding_right=node.padding_right or 0,
-                    padding_bottom=node.padding_bottom or 0,
-                    padding_left=node.padding_left or 0,
+                    padding_top=node.padding_top if node.padding_top is not None else 0,
+                    padding_right=node.padding_right if node.padding_right is not None else 0,
+                    padding_bottom=node.padding_bottom if node.padding_bottom is not None else 0,
+                    padding_left=node.padding_left if node.padding_left is not None else 0,
                     layout_direction=(
                         "row"
                         if node.layout_mode == "HORIZONTAL"
@@ -1023,8 +1003,10 @@ class DesignConverterService:
                         if node.layout_mode == "VERTICAL"
                         else None
                     ),
-                    item_spacing=node.item_spacing or 0,
-                    counter_axis_spacing=node.counter_axis_spacing or 0,
+                    item_spacing=node.item_spacing if node.item_spacing is not None else 0,
+                    counter_axis_spacing=node.counter_axis_spacing
+                    if node.counter_axis_spacing is not None
+                    else 0,
                     line_height_px=node.line_height_px,
                     letter_spacing_px=node.letter_spacing_px,
                     text_transform=node.text_transform,

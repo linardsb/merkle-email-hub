@@ -56,14 +56,14 @@ def classify_sections(
 
     # Build position map if not provided
     if container_position_map is None:
-        total_height = sum(s.height or 50.0 for s in sections)
+        total_height = sum(s.height if s.height is not None else 50.0 for s in sections)
         if total_height <= 0:
             total_height = len(sections) * 50.0
         cumulative = 0.0
         container_position_map = {}
         for s in sections:
             container_position_map[s.id] = cumulative / total_height
-            cumulative += s.height or 50.0
+            cumulative += s.height if s.height is not None else 50.0
 
     result: list[DocumentSection] = []
     for idx, section in enumerate(sections):
@@ -95,14 +95,24 @@ def _classify_single(
     all_buttons = _all_buttons(section)
     combined_text = " ".join(t.content for t in all_texts)
 
+    # Rule 1b: Preheader — hidden/zero-size text near top
+    if idx <= 1 and all_texts and not all_images and not all_buttons:
+        if section.height is not None and section.height < 5.0:
+            return "preheader"
+        avg_size = _avg_font_size(all_texts)
+        if avg_size is not None and avg_size < 1.0 and position < 0.1:
+            return "preheader"
+
     # Rule 2: First section with small image → HEADER
     if idx == 0 and all_images and not any(t.is_heading for t in all_texts):
-        max_img_height = max((img.height or 0.0) for img in all_images)
+        max_img_height = max((img.height if img.height is not None else 0.0) for img in all_images)
         if max_img_height < 200.0 or max_img_height == 0.0:
             return "header"
 
     # Rule 3: Large heading → HERO
-    has_large_heading = any(t.is_heading and (t.font_size or 0) > 24.0 for t in all_texts)
+    has_large_heading = any(
+        t.is_heading and (t.font_size if t.font_size is not None else 0) > 24.0 for t in all_texts
+    )
     if has_large_heading:
         return "hero"
 
@@ -111,9 +121,15 @@ def _classify_single(
     if all_buttons and not body_texts:
         return "cta"
 
-    # Rule 5: Social media URLs
-    if _SOCIAL_URL_RE.search(combined_text):
-        return "social"
+    # Rule 5: Social media URLs (in text or image names)
+    social_haystack = combined_text
+    for img in all_images:
+        social_haystack += " " + img.node_name
+    if _SOCIAL_URL_RE.search(social_haystack):
+        social_matches = len(_SOCIAL_URL_RE.findall(social_haystack))
+        # Require ≥2 social matches or grouped small images (social icon strip)
+        if social_matches >= 2 or (all_images and len(all_images) >= 3 and not all_texts):
+            return "social"
 
     # Rule 6: No content → SPACER
     if not all_texts and not all_images and not all_buttons:

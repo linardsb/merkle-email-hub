@@ -12,7 +12,6 @@ from app.design_sync.converter_service import (
     MjmlCompileResult,
     MjmlError,
 )
-from app.design_sync.exceptions import MjmlCompileError
 from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
@@ -88,7 +87,7 @@ def _make_structure() -> DesignFileStructure:
 class TestConvertMjmlSuccess:
     @pytest.mark.asyncio
     async def test_convert_mjml_success(self) -> None:
-        """Full layout → generate_mjml → compile_mjml mock → ConversionResult."""
+        """Full layout → template engine → compile_mjml mock → ConversionResult."""
         service = DesignConverterService()
         compiled_html = (
             "<html><body>"
@@ -152,21 +151,6 @@ class TestConvertMjmlSuccess:
 
         assert result.layout is not None
         assert result.layout.file_name == "Test"
-
-
-class TestConvertMjmlFallback:
-    @pytest.mark.asyncio
-    async def test_convert_mjml_fallback_on_error(self) -> None:
-        """MjmlCompileError falls back to recursive converter with warning."""
-        service = DesignConverterService()
-
-        with patch.object(service, "compile_mjml", new_callable=AsyncMock) as mock_compile:
-            mock_compile.side_effect = MjmlCompileError("Sidecar down")
-            result = await service.convert_mjml(_make_structure(), _make_tokens())
-
-        assert isinstance(result, ConversionResult)
-        assert result.html  # Recursive converter produced HTML
-        assert any("MJML compilation failed" in w for w in result.warnings)
 
 
 class TestConvertMjmlValidation:

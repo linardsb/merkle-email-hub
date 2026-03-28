@@ -10,6 +10,7 @@ Transforms applied in order:
 
 from __future__ import annotations
 
+import statistics
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -55,14 +56,14 @@ class _NormCtx:
 def normalize_tree(
     root: DesignFileStructure,
     *,
-    raw_file_data: dict[str, Any] | None = None,
+    raw_file_data: dict[str, Any] | None = None,  # noqa: ARG001 — reserved for future component property merging
 ) -> tuple[DesignFileStructure, NormalizationStats]:
     """Pre-process Figma node tree before layout analysis / conversion.
 
     Returns the normalized structure and statistics about what changed.
     """
     ctx = _NormCtx()
-    pages = [_normalize_page(p, ctx, raw_file_data) for p in root.pages]
+    pages = [_normalize_page(p, ctx) for p in root.pages]
     stats = NormalizationStats(
         nodes_removed=ctx.nodes_removed,
         groups_flattened=ctx.groups_flattened,
@@ -84,13 +85,11 @@ def normalize_tree(
 def _normalize_page(
     page: DesignNode,
     ctx: _NormCtx,
-    raw_file_data: dict[str, Any] | None,
 ) -> DesignNode:
     """Apply all transforms to a single page node."""
     page = _remove_invisible(page, ctx)
     page = _flatten_groups(page, ctx)
-    if raw_file_data:
-        page = _resolve_instances(page, ctx)
+    page = _resolve_instances(page, ctx)
     page = _infer_auto_layout(page, ctx)
     page = _merge_contiguous_text(page, ctx)
     return page
@@ -113,6 +112,17 @@ def _remove_invisible(node: DesignNode, ctx: _NormCtx) -> DesignNode:
         recursed = _remove_invisible(child, ctx)
         if recursed is not child:
             changed = True
+        # Prune containers that became empty after invisible child removal
+        if (
+            child.children
+            and not recursed.children
+            and recursed.type in {DesignNodeType.FRAME, DesignNodeType.GROUP}
+            and not recursed.fill_color
+            and not recursed.image_ref
+        ):
+            ctx.nodes_removed += 1
+            changed = True
+            continue
         new_children.append(recursed)
     if changed:
         return replace(node, children=new_children)
@@ -140,6 +150,10 @@ def _flatten_groups(node: DesignNode, ctx: _NormCtx) -> DesignNode:
             grandchild = child.children[0]
             if grandchild.x is None and child.x is not None:
                 grandchild = replace(grandchild, x=child.x, y=child.y)
+            if grandchild.width is None and child.width is not None:
+                grandchild = replace(grandchild, width=child.width)
+            if grandchild.height is None and child.height is not None:
+                grandchild = replace(grandchild, height=child.height)
             new_children.append(grandchild)
             ctx.groups_flattened += 1
         else:
@@ -194,18 +208,36 @@ def _infer_auto_layout(node: DesignNode, ctx: _NormCtx) -> DesignNode:
     y_spread = max(ys) - min(ys)
 
     if x_spread <= _POS_TOLERANCE and y_spread > _POS_TOLERANCE:
-        sorted_ys = sorted(ys)
-        spacings = [sorted_ys[i + 1] - sorted_ys[i] for i in range(len(sorted_ys) - 1)]
-        avg_spacing = sum(spacings) / len(spacings) if spacings else 0
+        sorted_v = sorted(
+            (
+                (c.y if c.y is not None else 0.0, c.height if c.height is not None else 0.0)
+                for c in node.children
+            ),
+            key=lambda t: t[0],
+        )
+        gaps = [
+            max(0.0, sorted_v[i + 1][0] - (sorted_v[i][0] + sorted_v[i][1]))
+            for i in range(len(sorted_v) - 1)
+        ]
+        med_spacing = statistics.median(gaps) if gaps else 0.0
         ctx.layouts_inferred += 1
-        return replace(node, layout_mode="VERTICAL", item_spacing=round(avg_spacing, 1))
+        return replace(node, layout_mode="VERTICAL", item_spacing=round(med_spacing, 1))
 
     if y_spread <= _POS_TOLERANCE and x_spread > _POS_TOLERANCE:
-        sorted_xs = sorted(xs)
-        spacings = [sorted_xs[i + 1] - sorted_xs[i] for i in range(len(sorted_xs) - 1)]
-        avg_spacing = sum(spacings) / len(spacings) if spacings else 0
+        sorted_h = sorted(
+            (
+                (c.x if c.x is not None else 0.0, c.width if c.width is not None else 0.0)
+                for c in node.children
+            ),
+            key=lambda t: t[0],
+        )
+        gaps = [
+            max(0.0, sorted_h[i + 1][0] - (sorted_h[i][0] + sorted_h[i][1]))
+            for i in range(len(sorted_h) - 1)
+        ]
+        med_spacing = statistics.median(gaps) if gaps else 0.0
         ctx.layouts_inferred += 1
-        return replace(node, layout_mode="HORIZONTAL", item_spacing=round(avg_spacing, 1))
+        return replace(node, layout_mode="HORIZONTAL", item_spacing=round(med_spacing, 1))
 
     return node
 
@@ -246,16 +278,19 @@ def _merge_contiguous_text(node: DesignNode, ctx: _NormCtx) -> DesignNode:
                 break
             if _text_style_key(nxt) != _text_style_key(current):
                 break
-            if current.line_height_px and nxt.y is not None and current.y is not None:
-                expected_y = current.y + current.line_height_px * len(group)
-                if abs(nxt.y - expected_y) > _POS_TOLERANCE:
-                    break
+            last = group[-1]
+            if nxt.y is not None and last.y is not None:
+                spacing_estimate = last.height if last.height is not None else last.line_height_px
+                if spacing_estimate is not None:
+                    last_bottom = last.y + spacing_estimate
+                    if abs(nxt.y - last_bottom) > _POS_TOLERANCE:
+                        break
             group.append(nxt)
             j += 1
 
         if len(group) > 1:
             combined_text = "\n".join(g.text_content for g in group if g.text_content)
-            total_height = sum(g.height or 0 for g in group)
+            total_height = sum(g.height if g.height is not None else 0 for g in group)
             merged_node = replace(
                 group[0],
                 text_content=combined_text,

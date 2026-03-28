@@ -1,11 +1,17 @@
-"""Tests for image asset pipeline in design sync converter (Phase 33.10)."""
+"""Tests for image asset pipeline in design sync converter (Phase 33.10, 38.8)."""
 
+# pyright: reportPrivateUsage=false
 from __future__ import annotations
 
 from dataclasses import replace
 
-from app.design_sync.converter import node_to_email_html
+from app.design_sync.converter import _meaningful_alt, node_to_email_html
 from app.design_sync.converter_service import ConversionResult
+from app.design_sync.figma.layout_analyzer import (
+    EmailSection,
+    EmailSectionType,
+    TextBlock,
+)
 from app.design_sync.import_service import DesignImportService
 from app.design_sync.protocol import DesignNode, DesignNodeType
 
@@ -69,6 +75,54 @@ class TestImageNodeResponsiveStyles:
         node = DesignNode(id="img1", name="Photo", type=DesignNodeType.IMAGE, width=600, height=300)
         html = node_to_email_html(node)
         assert "-ms-interpolation-mode:bicubic" in html
+
+
+class TestMeaningfulAlt:
+    """38.8: _meaningful_alt() produces accessible alt text with smart fallbacks."""
+
+    def test_strips_mj_prefix(self) -> None:
+        """'mj-image' → generic layer name after stripping → 'Email image'."""
+        assert _meaningful_alt("mj-image") == "Email image"
+
+    def test_strips_figma_prefix(self) -> None:
+        """'figma-hero' → 'hero' is not generic → preserved."""
+        assert _meaningful_alt("figma-hero") == "hero"
+
+    def test_uses_clean_name(self) -> None:
+        """Meaningful name preserved as-is."""
+        assert _meaningful_alt("Hero Banner") == "Hero Banner"
+
+    def test_falls_back_to_heading(self) -> None:
+        """Generic name + section with heading → heading content as alt."""
+        section = EmailSection(
+            section_type=EmailSectionType.CONTENT,
+            node_id="s1",
+            node_name="Section",
+            texts=[TextBlock(node_id="t1", content="Summer Sale Preview", is_heading=True)],
+            images=[],
+            buttons=[],
+        )
+        assert _meaningful_alt("image", section=section) == "Summer Sale Preview"
+
+    def test_falls_back_to_section_type(self) -> None:
+        """Generic name + section with no heading → section type label."""
+        section = EmailSection(
+            section_type=EmailSectionType.HERO,
+            node_id="s1",
+            node_name="Section",
+            texts=[],
+            images=[],
+            buttons=[],
+        )
+        assert _meaningful_alt("image", section=section) == "Hero image"
+
+    def test_escapes_html_in_name(self) -> None:
+        """HTML characters in name → escaped in alt."""
+        assert _meaningful_alt("Sale <50% off>") == "Sale &lt;50% off&gt;"
+
+    def test_none_name_returns_fallback(self) -> None:
+        """None name → 'Email image' default."""
+        assert _meaningful_alt(None) == "Email image"
 
 
 class TestFillImageUrls:

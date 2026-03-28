@@ -159,9 +159,11 @@ def _extract_simple_rules(css_text: str, *, is_dark_mode: bool, out: list[CssRul
 
 
 def extract_font_size_px(value: str) -> float | None:
-    """Normalise a CSS font-size value to pixels.
+    """Normalise a CSS size value to pixels.
 
-    Handles ``px``, ``pt`` (x1.333), ``em``/``rem`` (x16).
+    Handles ``px``, ``pt`` (x1.333), ``em``/``rem`` (x16), and bare
+    unitless numbers (returned as-is — useful for line-height multipliers
+    which the caller converts relative to font-size).
     Returns ``None`` if the value cannot be parsed.
     """
     if not value:
@@ -169,19 +171,23 @@ def extract_font_size_px(value: str) -> float | None:
 
     value = value.strip().lower()
     m = _FONT_SIZE_RE.match(value)
-    if not m:
+    if m:
+        num = float(m.group(1))
+        unit = m.group(2).lower()
+
+        if unit == "px":
+            return num
+        if unit == "pt":
+            return round(num * 1.333, 1)
+        if unit in ("em", "rem"):
+            return round(num * 16.0, 1)
         return None
 
-    num = float(m.group(1))
-    unit = m.group(2).lower()
-
-    if unit == "px":
-        return num
-    if unit == "pt":
-        return round(num * 1.333, 1)
-    if unit in ("em", "rem"):
-        return round(num * 16.0, 1)
-    return None
+    # Bare unitless number (e.g. line-height: 1.5)
+    try:
+        return float(value)
+    except ValueError:
+        return None
 
 
 def normalize_hex_color(value: str) -> str | None:
@@ -194,6 +200,10 @@ def normalize_hex_color(value: str) -> str | None:
         return None
 
     value = value.strip().lower()
+
+    # Transparent / fully-transparent rgba → no colour
+    if value in ("transparent", "rgba(0, 0, 0, 0)", "rgba(0,0,0,0)"):
+        return None
 
     # Named colour
     if value in _NAMED_COLORS:

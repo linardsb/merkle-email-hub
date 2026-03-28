@@ -82,10 +82,13 @@ class ComponentRenderer:
         # 3. Update MSO table widths to match container width
         result_html = self._update_mso_widths(result_html, self._container_width)
 
-        # 4. Add builder annotations
+        # 4. Strip remaining placeholder URLs
+        result_html = self._strip_placeholder_urls(result_html)
+
+        # 5. Add builder annotations
         result_html = self._add_annotations(result_html, match)
 
-        # 5. Extract dark mode classes and image metadata
+        # 6. Extract dark mode classes and image metadata
         dark_classes = self._extract_dark_mode_classes(result_html)
         images = self._extract_images(result_html)
 
@@ -269,12 +272,14 @@ class ComponentRenderer:
             if target == "_outer":
                 # Replace on the first/outermost table or element with the property
                 result = self._replace_first_css_prop(result, prop, val)
-            elif target == "_heading":
-                # Replace font-family on heading elements (h1, h2, h3)
+            elif target == "_heading" and prop == "font-family":
                 result = self._replace_heading_font(result, val)
-            elif target == "_body":
-                # Replace font-family on body text elements (p, td with body class)
+            elif target == "_heading" and prop == "color":
+                result = self._replace_heading_color(result, val)
+            elif target == "_body" and prop == "font-family":
                 result = self._replace_body_font(result, val)
+            elif target == "_body" and prop == "color":
+                result = self._replace_body_color(result, val)
             elif target == "_cell":
                 # Replace padding on the first td with padding
                 result = self._replace_first_css_prop(result, prop, val)
@@ -297,6 +302,32 @@ class ComponentRenderer:
         safe_font = html.escape(font, quote=True)
         pattern = r"(<p\b[^>]*style=\"[^\"]*?)font-family:\s*[^;\"]+([;\"'])"
         return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
+
+    def _replace_heading_color(self, html_str: str, color: str) -> str:
+        """Replace color on h1/h2/h3 elements.
+
+        Uses negative lookbehind to avoid matching background-color:.
+        """
+        safe = html.escape(color, quote=True)
+        pattern = r'(<h[1-3]\b[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
+        return re.sub(pattern, rf"\g<1>color:{safe}\g<2>", html_str)
+
+    def _replace_body_color(self, html_str: str, color: str) -> str:
+        """Replace color on p elements.
+
+        Uses negative lookbehind to avoid matching background-color:.
+        """
+        safe = html.escape(color, quote=True)
+        pattern = r'(<p\b[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
+        return re.sub(pattern, rf"\g<1>color:{safe}\g<2>", html_str)
+
+    _PLACEHOLDER_URL_RE = re.compile(
+        r'(src|href)="https?://(?:via\.placeholder\.com|placehold\.co|placeholder\.com)[^"]*"'
+    )
+
+    def _strip_placeholder_urls(self, html_str: str) -> str:
+        """Replace remaining placeholder URLs with empty defaults."""
+        return self._PLACEHOLDER_URL_RE.sub(r'\1=""', html_str)
 
     def _update_mso_widths(self, html_str: str, width: int) -> str:
         """Update MSO conditional table widths to match container width."""

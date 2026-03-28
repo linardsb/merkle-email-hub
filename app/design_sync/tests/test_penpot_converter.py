@@ -1741,3 +1741,76 @@ class TestGradientNodeRendering:
         assert "linear-gradient(90.0deg" in html
         assert "#FF0000 0.0%" in html
         assert "#0000FF 100.0%" in html
+
+
+# ── Phase 38.4 Tests ──
+
+
+class TestSanitizeCssValuePhase384:
+    """Bug 20: CSS sanitizer must preserve balanced parens for rgb/hsl/calc."""
+
+    def test_rgb_preserved(self) -> None:
+        assert _sanitize_css_value("rgb(255, 0, 0)") == "rgb(255, 0, 0)"
+
+    def test_rgba_preserved(self) -> None:
+        assert _sanitize_css_value("rgba(0, 0, 0, 0.5)") == "rgba(0, 0, 0, 0.5)"
+
+    def test_hsl_preserved(self) -> None:
+        assert _sanitize_css_value("hsl(120, 50%, 50%)") == "hsl(120, 50%, 50%)"
+
+    def test_calc_preserved(self) -> None:
+        assert _sanitize_css_value("calc(100% - 20px)") == "calc(100% - 20px)"
+
+    def test_expression_blocked(self) -> None:
+        result = _sanitize_css_value("expression(alert(1))")
+        assert "expression" not in result.lower()
+
+    def test_url_javascript_blocked(self) -> None:
+        result = _sanitize_css_value("url(javascript:alert(1))")
+        assert "javascript" not in result.lower()
+
+    def test_url_data_html_blocked(self) -> None:
+        result = _sanitize_css_value("url(data:text/html,<script>)")
+        assert "data:text/html" not in result.lower()
+
+    def test_moz_binding_blocked(self) -> None:
+        result = _sanitize_css_value("-moz-binding: url(evil)")
+        assert "-moz-binding" not in result.lower()
+
+
+class TestHeadingMsoLineHeight:
+    """Bug 26: Headings must include mso-line-height-rule:exactly."""
+
+    def test_heading_has_mso_line_height(self) -> None:
+        node = DesignNode(
+            id="t1",
+            name="Title",
+            type=DesignNodeType.TEXT,
+            text_content="Hello",
+            font_size=32.0,
+        )
+        tb = TextBlock(node_id="t1", content="Hello", font_size=32.0, is_heading=True)
+        result = node_to_email_html(node, text_meta={"t1": tb})
+        assert "mso-line-height-rule:exactly" in result
+
+
+class TestFalsyPaddingConverter:
+    """Bug 21: padding=0.0 must not be treated as falsy."""
+
+    def test_zero_padding_not_dropped(self) -> None:
+        node = DesignNode(
+            id="f1",
+            name="Frame",
+            type=DesignNodeType.FRAME,
+            width=600,
+            padding_top=0.0,
+            padding_right=10.0,
+            padding_bottom=0.0,
+            padding_left=10.0,
+            children=[
+                DesignNode(id="t1", name="T", type=DesignNodeType.TEXT, text_content="Hi"),
+            ],
+        )
+        result = node_to_email_html(node)
+        # padding_top=0 should be present as 0px, not dropped to some default
+        assert "padding:0px 10px 0px 10px" in result

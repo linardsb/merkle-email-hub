@@ -78,6 +78,7 @@ exclude = [
     ".mypy_cache",
     ".claude/worktrees",
     "email-templates",
+    ".semgrep",
 ]
 
 [tool.ruff.lint]

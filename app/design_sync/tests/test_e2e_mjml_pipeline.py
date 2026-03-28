@@ -1,15 +1,13 @@
 # pyright: reportPrivateUsage=false
-"""End-to-end MJML pipeline test: normalize → analyze → classify → generate MJML → compile.
+"""End-to-end MJML pipeline test: normalize → analyze → classify → template render → compile.
 
 Verifies the full MJML conversion path from DesignFileStructure through to
 compiled email HTML, including:
 - Tree normalization (hidden node removal, group flattening)
 - Layout analysis into EmailSections
-- MJML generation with section markers and token injection
-- MjmlTemplateEngine rendering
+- MjmlTemplateEngine rendering with section markers and token injection
 - Dark mode CSS in MJML output
 - Multi-column layouts via mj-column
-- Fallback to recursive converter on MJML compilation failure
 """
 
 from __future__ import annotations
@@ -23,7 +21,6 @@ from app.design_sync.converter_service import (
     DesignConverterService,
     MjmlCompileResult,
 )
-from app.design_sync.exceptions import MjmlCompileError
 from app.design_sync.figma.layout_analyzer import (
     ButtonElement,
     ColumnLayout,
@@ -35,8 +32,10 @@ from app.design_sync.figma.layout_analyzer import (
     analyze_layout,
 )
 from app.design_sync.figma.tree_normalizer import normalize_tree
-from app.design_sync.mjml_generator import generate_mjml
-from app.design_sync.mjml_template_engine import MjmlTemplateEngine
+from app.design_sync.mjml_template_engine import (
+    MjmlTemplateEngine,
+    build_template_context,
+)
 from app.design_sync.protocol import (
     DesignFileStructure,
     DesignNode,
@@ -273,12 +272,26 @@ def _make_layout(sections: list[EmailSection]) -> DesignLayoutDescription:
 
 
 # ---------------------------------------------------------------------------
-# Tests: Full pipeline normalize → analyze → generate_mjml
+# Tests: Full pipeline normalize → analyze → template engine
 # ---------------------------------------------------------------------------
 
 
+def _render_mjml(layout: DesignLayoutDescription, tokens: ExtractedTokens) -> str:
+    """Render MJML via template engine (replaces generate_mjml)."""
+    engine = MjmlTemplateEngine()
+    ctx = build_template_context(tokens)
+    preheader = ""
+    body_sections: list[EmailSection] = []
+    for s in layout.sections:
+        if s.section_type == EmailSectionType.PREHEADER and s.texts:
+            preheader = s.texts[0].content
+        elif s.section_type != EmailSectionType.PREHEADER:
+            body_sections.append(s)
+    return engine.render_email(body_sections, ctx, preheader=preheader)
+
+
 class TestNormalizeToMjmlPipeline:
-    """Full pipeline: normalize_tree → analyze_layout → generate_mjml."""
+    """Full pipeline: normalize_tree → analyze_layout → template engine."""
 
     def test_full_pipeline_normalize_to_mjml(self) -> None:
         """Full pipeline produces valid <mjml> document."""
@@ -287,7 +300,7 @@ class TestNormalizeToMjmlPipeline:
 
         normalized, _stats = normalize_tree(structure)
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<mjml>" in mjml
         assert "</mjml>" in mjml
@@ -301,7 +314,7 @@ class TestNormalizeToMjmlPipeline:
 
         normalized, _stats = normalize_tree(structure)
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         section_count = len(layout.sections)
         mj_section_count = mjml.count("<mj-section")
@@ -320,7 +333,7 @@ class TestNormalizeToMjmlPipeline:
 
         normalized, _stats = normalize_tree(structure)
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "@media (prefers-color-scheme: dark)" in mjml
         assert "<mj-style" in mjml
@@ -332,7 +345,7 @@ class TestNormalizeToMjmlPipeline:
 
         normalized, _stats = normalize_tree(structure)
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "Inter" in mjml
 
@@ -348,7 +361,7 @@ class TestNormalizeToMjmlPipeline:
         ]
         layout = _make_layout(sections)
         tokens = _make_tokens()
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<mj-column" in mjml
         assert mjml.count("<mj-column") >= 2
@@ -360,7 +373,7 @@ class TestNormalizeToMjmlPipeline:
 
         normalized, _stats = normalize_tree(structure)
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<!-- section:" in mjml
 
@@ -376,7 +389,7 @@ class TestNormalizeToMjmlPipeline:
         ]
         layout = _make_layout(sections)
         tokens = _make_tokens()
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<mj-preview>" in mjml
         assert "Preview text here" in mjml
@@ -388,7 +401,7 @@ class TestNormalizeToMjmlPipeline:
 
         normalized, _stats = normalize_tree(structure)
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<mj-body" in mjml
         assert 'width="600px"' in mjml
@@ -398,7 +411,7 @@ class TestNormalizeToMjmlPipeline:
         structure = DesignFileStructure(file_name="Empty.fig", pages=[])
         tokens = _make_tokens()
         layout = analyze_layout(structure)
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<mjml>" in mjml
         assert "<mj-head>" in mjml
@@ -415,7 +428,7 @@ class TestNormalizeToMjmlPipeline:
         ]
         layout = _make_layout(sections)
         tokens = _make_tokens()
-        mjml = generate_mjml(layout, tokens)
+        mjml = _render_mjml(layout, tokens)
 
         assert "<mj-section" in mjml
         assert "Buy Now" in mjml
@@ -460,7 +473,7 @@ class TestNormalizeToMjmlPipeline:
         assert stats.nodes_removed > 0
 
         layout = analyze_layout(normalized)
-        mjml = generate_mjml(layout, _make_tokens())
+        mjml = _render_mjml(layout, _make_tokens())
 
         assert "Visible text" in mjml
         assert "Should not appear" not in mjml
@@ -524,21 +537,6 @@ class TestConvertMjmlServicePipeline:
         assert result.html
         assert result.sections_count >= 1
         mock_compile.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_pipeline_fallback_on_compile_error(self) -> None:
-        """MjmlCompileError triggers fallback to recursive converter."""
-        service = DesignConverterService()
-        structure = _make_structure()
-        tokens = _make_tokens()
-
-        with patch.object(service, "compile_mjml", new_callable=AsyncMock) as mock_compile:
-            mock_compile.side_effect = MjmlCompileError("Sidecar unavailable")
-            result = await service.convert_mjml(structure, tokens)
-
-        assert isinstance(result, ConversionResult)
-        assert result.html
-        assert any("MJML compilation failed" in w for w in result.warnings)
 
     @pytest.mark.asyncio
     async def test_pipeline_classify_unknown_sections(self) -> None:

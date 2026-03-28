@@ -134,7 +134,7 @@ class VisualFidelityService:
         # Stitch vertically in section order (by y_position)
         sorted_sections = sorted(
             [s for s in sections if s.node_id in image_bytes_map],
-            key=lambda s: s.y_position or 0.0,
+            key=lambda s: s.y_position if s.y_position is not None else 0.0,
         )
 
         if not sorted_sections:

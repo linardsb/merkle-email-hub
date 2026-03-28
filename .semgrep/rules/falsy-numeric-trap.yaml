@@ -1,0 +1,20 @@
+rules:
+  - id: falsy-numeric-or-default
+    patterns:
+      - pattern: $X or $DEFAULT
+      - metavariable-regex:
+          metavariable: $DEFAULT
+          regex: '^-?[0-9]+(\.[0-9]+)?$'
+    paths:
+      include:
+        - /app/design_sync/
+    message: >-
+      Falsy-numeric trap: `$X or $DEFAULT` returns $DEFAULT when $X is 0 or 0.0.
+      Use `$X if $X is not None else $DEFAULT` instead.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: correctness
+      technology: [python]
+      references:
+        - https://docs.python.org/3/library/stdtypes.html#truth-value-testing

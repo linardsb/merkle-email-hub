@@ -7,6 +7,10 @@ from app.design_sync.figma.layout_analyzer import (
     ColumnLayout,
     DesignLayoutDescription,
     EmailSectionType,
+    TextBlock,
+    _classify_by_name,
+    _detect_content_hierarchy,
+    _has_large_image_child,
     analyze_layout,
 )
 from app.design_sync.protocol import (
@@ -1079,3 +1083,634 @@ class TestSortByYPosition:
         layout = analyze_layout(structure)
         y_positions = [s.y_position for s in layout.sections if s.y_position is not None]
         assert y_positions == sorted(y_positions)
+
+
+# ── 38.3 Bug Fix Tests ──
+
+
+def _make_text_node(
+    node_id: str,
+    text: str,
+    font_size: float = 16.0,
+    **kw: object,
+) -> DesignNode:
+    return DesignNode(
+        id=node_id,
+        name=f"text-{node_id}",
+        type=DesignNodeType.TEXT,
+        text_content=text,
+        font_size=font_size,
+        **kw,  # type: ignore[arg-type]
+    )
+
+
+def _make_button_frame(
+    node_id: str,
+    text: str,
+    *,
+    fill_color: str | None = "#FF0000",
+    width: float = 200,
+    height: float = 50,
+) -> DesignNode:
+    text_child = _make_text_node(f"{node_id}-text", text)
+    return DesignNode(
+        id=node_id,
+        name="button",
+        type=DesignNodeType.FRAME,
+        children=[text_child],
+        fill_color=fill_color,
+        width=width,
+        height=height,
+    )
+
+
+def _make_section_structure(
+    sections: list[DesignNode],
+) -> DesignFileStructure:
+    return DesignFileStructure(
+        file_name="test",
+        pages=[
+            DesignNode(
+                id="page1",
+                name="Email",
+                type=DesignNodeType.PAGE,
+                children=sections,
+            )
+        ],
+    )
+
+
+class TestHeadingDetectionFixes:
+    """Bug 11-12: heading threshold uses 1.3x median, uniform sizes → no headings."""
+
+    def test_uniform_sizes_no_headings(self) -> None:
+        texts = [
+            TextBlock(node_id="a", content="One", font_size=16.0),
+            TextBlock(node_id="b", content="Two", font_size=16.0),
+            TextBlock(node_id="c", content="Three", font_size=16.0),
+        ]
+        result = _detect_content_hierarchy(texts)
+        assert all(not t.is_heading for t in result)
+
+    def test_small_ratio_not_heading(self) -> None:
+        """18px vs 16px body = 1.125x median — NOT heading (< 1.3x)."""
+        texts = [
+            TextBlock(node_id="a", content="Body text", font_size=16.0),
+            TextBlock(node_id="b", content="Slightly larger", font_size=18.0),
+        ]
+        result = _detect_content_hierarchy(texts)
+        assert not any(t.is_heading for t in result)
+
+    def test_large_ratio_is_heading(self) -> None:
+        """32px vs 16px body → median=16, threshold=20.8 → IS heading."""
+        texts = [
+            TextBlock(node_id="a", content="Body text", font_size=16.0),
+            TextBlock(node_id="b", content="More body", font_size=16.0),
+            TextBlock(node_id="c", content="Title", font_size=32.0),
+        ]
+        result = _detect_content_hierarchy(texts)
+        headings = [t for t in result if t.is_heading]
+        assert len(headings) == 1
+        assert headings[0].content == "Title"
+
+    def test_median_based_threshold(self) -> None:
+        """[12, 14, 16, 16, 32] → median=16, threshold=20.8 → only 32 is heading."""
+        texts = [
+            TextBlock(node_id="a", content="Small", font_size=12.0),
+            TextBlock(node_id="b", content="Medium", font_size=14.0),
+            TextBlock(node_id="c", content="Body", font_size=16.0),
+            TextBlock(node_id="d", content="Body2", font_size=16.0),
+            TextBlock(node_id="e", content="Heading", font_size=32.0),
+        ]
+        result = _detect_content_hierarchy(texts)
+        headings = [t for t in result if t.is_heading]
+        assert len(headings) == 1
+        assert headings[0].content == "Heading"
+
+
+class TestFooterClassificationFixes:
+    """Bug 13: footer requires position near bottom AND legal text."""
+
+    def test_legal_text_mid_email_not_footer(self) -> None:
+        """© text at index 1 of 5 → should NOT be FOOTER."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s0",
+                    name="Frame 0",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=80,
+                ),
+                DesignNode(
+                    id="s1",
+                    name="Frame 1",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=100,
+                    width=600,
+                    height=200,
+                    children=[_make_text_node("t1", "© 2024 Company. All rights reserved.")],
+                ),
+                DesignNode(
+                    id="s2",
+                    name="Frame 2",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=300,
+                    width=600,
+                    height=200,
+                ),
+                DesignNode(
+                    id="s3",
+                    name="Frame 3",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=500,
+                    width=600,
+                    height=200,
+                ),
+                DesignNode(
+                    id="s4",
+                    name="Frame 4",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=700,
+                    width=600,
+                    height=100,
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section_1 = next(s for s in layout.sections if s.node_id == "s1")
+        assert section_1.section_type != EmailSectionType.FOOTER
+
+    def test_legal_text_bottom_is_footer(self) -> None:
+        """© text at last position → FOOTER."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s0",
+                    name="Frame 0",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=80,
+                ),
+                DesignNode(
+                    id="s1",
+                    name="Frame 1",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=100,
+                    width=600,
+                    height=200,
+                ),
+                DesignNode(
+                    id="s2",
+                    name="Frame 2",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=300,
+                    width=600,
+                    height=100,
+                    children=[_make_text_node("t1", "© 2024 Company. Unsubscribe")],
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section_2 = next(s for s in layout.sections if s.node_id == "s2")
+        assert section_2.section_type == EmailSectionType.FOOTER
+
+    def test_unsubscribe_mid_not_footer(self) -> None:
+        """'unsubscribe' at index 2 of 6 → not FOOTER."""
+        sections = [
+            DesignNode(
+                id=f"s{i}",
+                name=f"Frame {i}",
+                type=DesignNodeType.FRAME,
+                x=0,
+                y=i * 100,
+                width=600,
+                height=80,
+            )
+            for i in range(6)
+        ]
+        # Add unsubscribe text to section at index 2
+        sections[2] = DesignNode(
+            id="s2",
+            name="Frame 2",
+            type=DesignNodeType.FRAME,
+            x=0,
+            y=200,
+            width=600,
+            height=80,
+            children=[_make_text_node("t1", "Click here to unsubscribe from updates")],
+        )
+        structure = _make_section_structure(sections)
+        layout = analyze_layout(structure)
+        section_2 = next(s for s in layout.sections if s.node_id == "s2")
+        assert section_2.section_type != EmailSectionType.FOOTER
+
+
+class TestPatternMatchingFixes:
+    """Bug 14: word-boundary matching prevents false substring matches."""
+
+    def test_text_not_matches_context(self) -> None:
+        """'context-block' should NOT match pattern 'text'."""
+        result = _classify_by_name("context-block")
+        assert result != EmailSectionType.CONTENT
+
+    def test_exact_word_matches(self) -> None:
+        """'content-block' should match pattern 'content'."""
+        result = _classify_by_name("content-block")
+        assert result == EmailSectionType.CONTENT
+
+
+class TestImageChildDetectionFixes:
+    """Bug 15: _has_large_image_child recurses 2 levels deep."""
+
+    def test_nested_image_detected(self) -> None:
+        """IMAGE 2 levels deep should be detected."""
+        inner_frame = DesignNode(
+            id="inner",
+            name="inner-frame",
+            type=DesignNodeType.FRAME,
+            width=500,
+            height=300,
+            children=[
+                DesignNode(
+                    id="img",
+                    name="hero-img",
+                    type=DesignNodeType.IMAGE,
+                    width=500,
+                    height=300,
+                ),
+            ],
+        )
+        outer = DesignNode(
+            id="outer",
+            name="outer-frame",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=400,
+            children=[inner_frame],
+        )
+        assert _has_large_image_child(outer)
+
+    def test_shallow_image_still_works(self) -> None:
+        """Direct child IMAGE should still be detected."""
+        node = DesignNode(
+            id="frame",
+            name="hero",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=300,
+            children=[
+                DesignNode(
+                    id="img",
+                    name="hero-img",
+                    type=DesignNodeType.IMAGE,
+                    width=500,
+                    height=300,
+                ),
+            ],
+        )
+        assert _has_large_image_child(node)
+
+    def test_multiple_images_still_detected(self) -> None:
+        """Multiple IMAGE children — largest still triggers detection."""
+        node = DesignNode(
+            id="frame",
+            name="gallery",
+            type=DesignNodeType.FRAME,
+            width=600,
+            height=300,
+            children=[
+                DesignNode(
+                    id="img1",
+                    name="large-img",
+                    type=DesignNodeType.IMAGE,
+                    width=400,
+                    height=200,
+                ),
+                DesignNode(
+                    id="img2",
+                    name="small-img",
+                    type=DesignNodeType.IMAGE,
+                    width=100,
+                    height=100,
+                ),
+            ],
+        )
+        assert _has_large_image_child(node)
+
+
+class TestColumnGroupingFixes:
+    """Bug 16: deterministic column grouping regardless of input order."""
+
+    def test_deterministic_2x2_grid(self) -> None:
+        """2x2 grid → same result regardless of input order."""
+        children = [
+            DesignNode(
+                id="a",
+                name="A",
+                type=DesignNodeType.FRAME,
+                x=0,
+                y=0,
+                width=280,
+                height=200,
+                children=[_make_text_node("ta", "Col A")],
+            ),
+            DesignNode(
+                id="b",
+                name="B",
+                type=DesignNodeType.FRAME,
+                x=300,
+                y=0,
+                width=280,
+                height=200,
+                children=[_make_text_node("tb", "Col B")],
+            ),
+            DesignNode(
+                id="c",
+                name="C",
+                type=DesignNodeType.FRAME,
+                x=0,
+                y=220,
+                width=280,
+                height=200,
+                children=[_make_text_node("tc", "Col C")],
+            ),
+            DesignNode(
+                id="d",
+                name="D",
+                type=DesignNodeType.FRAME,
+                x=300,
+                y=220,
+                width=280,
+                height=200,
+                children=[_make_text_node("td", "Col D")],
+            ),
+        ]
+        # Forward order
+        s1 = _make_section_structure(
+            [
+                DesignNode(
+                    id="row",
+                    name="grid",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=440,
+                    children=children,
+                ),
+            ]
+        )
+        l1 = analyze_layout(s1)
+
+        # Reversed order
+        s2 = _make_section_structure(
+            [
+                DesignNode(
+                    id="row",
+                    name="grid",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=440,
+                    children=list(reversed(children)),
+                ),
+            ]
+        )
+        l2 = analyze_layout(s2)
+
+        # Column groups should be identical
+        g1 = l1.sections[0].column_groups
+        g2 = l2.sections[0].column_groups
+        assert len(g1) == len(g2)
+        for a, b in zip(g1, g2, strict=True):
+            assert a.node_id == b.node_id
+
+    def test_sorted_by_x_within_row(self) -> None:
+        """Columns should be sorted left-to-right by x position."""
+        children = [
+            DesignNode(
+                id="right",
+                name="Right",
+                type=DesignNodeType.FRAME,
+                x=300,
+                y=0,
+                width=280,
+                height=200,
+            ),
+            DesignNode(
+                id="left", name="Left", type=DesignNodeType.FRAME, x=0, y=0, width=280, height=200
+            ),
+        ]
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="row",
+                    name="row",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=200,
+                    children=children,
+                ),
+                DesignNode(
+                    id="footer",
+                    name="Footer",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=200,
+                    width=600,
+                    height=80,
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        row_section = next(s for s in layout.sections if s.node_id == "row")
+        groups = row_section.column_groups
+        assert len(groups) >= 2
+        assert groups[0].node_id == "left"
+        assert groups[1].node_id == "right"
+
+
+class TestButtonTextExclusionFixes:
+    """CRITICAL: button text should NOT appear in section.texts."""
+
+    def test_button_text_not_in_section_texts(self) -> None:
+        """'SHOP NOW' in buttons, NOT in texts."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s1",
+                    name="CTA Section",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=150,
+                    children=[
+                        _make_text_node("t1", "Check out our deals", font_size=16.0),
+                        _make_button_frame("btn1", "SHOP NOW"),
+                    ],
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section = layout.sections[0]
+        text_contents = [t.content for t in section.texts]
+        button_texts = [b.text for b in section.buttons]
+        assert "SHOP NOW" in button_texts
+        assert "SHOP NOW" not in text_contents
+        assert "Check out our deals" in text_contents
+
+    def test_body_text_preserved(self) -> None:
+        """Non-button text should still be extracted."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s1",
+                    name="Content",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=300,
+                    children=[
+                        _make_text_node("t1", "Hello world"),
+                        _make_text_node("t2", "Another paragraph"),
+                        _make_button_frame("btn1", "Click me"),
+                    ],
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section = layout.sections[0]
+        text_contents = [t.content for t in section.texts]
+        assert "Hello world" in text_contents
+        assert "Another paragraph" in text_contents
+        assert "Click me" not in text_contents
+
+    def test_multiple_buttons_excluded(self) -> None:
+        """Multiple buttons excluded, body text kept."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s1",
+                    name="Section",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=300,
+                    children=[
+                        _make_text_node("t1", "Body text here"),
+                        _make_button_frame("btn1", "BUY NOW"),
+                        _make_button_frame("btn2", "LEARN MORE"),
+                    ],
+                ),
+                DesignNode(
+                    id="s2",
+                    name="Footer",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=300,
+                    width=600,
+                    height=80,
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section = next(s for s in layout.sections if s.node_id == "s1")
+        text_contents = [t.content for t in section.texts]
+        assert "Body text here" in text_contents
+        assert "BUY NOW" not in text_contents
+        assert "LEARN MORE" not in text_contents
+        assert len(section.buttons) == 2
+
+
+class TestGhostButtonFixes:
+    """Bug 19: ghost/outline buttons detected by name even without fill."""
+
+    def test_outline_button_by_name(self) -> None:
+        """Frame 'cta-button' with no fill → detected as button."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s1",
+                    name="Section",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=200,
+                    children=[
+                        DesignNode(
+                            id="ghost-btn",
+                            name="cta-button",
+                            type=DesignNodeType.FRAME,
+                            width=200,
+                            height=48,
+                            fill_color=None,
+                            children=[_make_text_node("gt", "Learn More")],
+                        ),
+                    ],
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section = layout.sections[0]
+        assert len(section.buttons) == 1
+        assert section.buttons[0].text == "Learn More"
+
+
+class TestCTAClassificationFixes:
+    """Bug 18: CTA classification requires button-like content."""
+
+    def test_tall_frame_without_buttons_not_cta(self) -> None:
+        """Frame 60-150px height with only text → NOT CTA via position fallback."""
+        structure = _make_section_structure(
+            [
+                DesignNode(
+                    id="s0",
+                    name="Frame 0",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=0,
+                    width=600,
+                    height=80,
+                ),
+                DesignNode(
+                    id="s1",
+                    name="Frame 1",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=100,
+                    width=600,
+                    height=120,
+                    children=[_make_text_node("t1", "Just a text paragraph with no button")],
+                ),
+                DesignNode(
+                    id="s2",
+                    name="Frame 2",
+                    type=DesignNodeType.FRAME,
+                    x=0,
+                    y=300,
+                    width=600,
+                    height=100,
+                ),
+            ]
+        )
+        layout = analyze_layout(structure)
+        section_1 = next(s for s in layout.sections if s.node_id == "s1")
+        assert section_1.section_type != EmailSectionType.CTA

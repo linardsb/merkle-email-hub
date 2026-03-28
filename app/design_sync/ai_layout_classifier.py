@@ -98,10 +98,23 @@ def _build_prompt(
     if section.bg_color:
         lines.append(f"  Background: {section.bg_color}")
 
-    # Sibling context
-    if section_index > 0:
+    # Column layout context
+    if section.column_count > 1:
+        lines.append(f"  Columns: {section.column_count} ({section.column_layout.value})")
+
+    # Padding context
+    pad_parts: list[str] = []
+    if section.padding_top:
+        pad_parts.append(f"top={section.padding_top}")
+    if section.padding_bottom:
+        pad_parts.append(f"bottom={section.padding_bottom}")
+    if pad_parts:
+        lines.append(f"  Padding: {', '.join(pad_parts)}")
+
+    # Sibling context (guard against mismatched list length)
+    if section_index > 0 and section_index - 1 < len(sibling_types):
         lines.append(f"  Previous section: {sibling_types[section_index - 1]}")
-    if section_index < total_sections - 1:
+    if section_index < total_sections - 1 and section_index + 1 < len(sibling_types):
         lines.append(f"  Next section: {sibling_types[section_index + 1]}")
 
     # Text content snippets

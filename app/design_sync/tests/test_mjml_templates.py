@@ -8,6 +8,7 @@ from app.design_sync.figma.layout_analyzer import (
     ButtonElement,
     ColumnGroup,
     ColumnLayout,
+    DesignLayoutDescription,
     EmailSection,
     EmailSectionType,
     ImagePlaceholder,
@@ -17,6 +18,7 @@ from app.design_sync.mjml_template_engine import (
     MjmlTemplateContext,
     MjmlTemplateEngine,
     build_template_context,
+    inject_section_markers,
 )
 from app.design_sync.protocol import ExtractedColor, ExtractedTokens, ExtractedTypography
 from app.projects.design_system import BrandPalette, Typography
@@ -531,3 +533,106 @@ class TestButtonMinHeight:
         result = engine.render_section(s, ctx)
         if "<mj-button" in result:
             assert 'height="44px"' in result
+
+
+# ── Phase 38.4 Tests ──
+
+
+class TestPerTextStyleThreading:
+    """Bugs 23-24: Per-text font properties must reach templates via text_styles."""
+
+    def test_text_styles_passed_to_template(self) -> None:
+        engine = MjmlTemplateEngine()
+        ctx = _ctx()
+        s = _section(
+            texts=[
+                TextBlock(
+                    node_id="t1",
+                    content="Big heading",
+                    font_size=32.0,
+                    font_weight=700,
+                    font_family="Georgia",
+                    is_heading=True,
+                ),
+                TextBlock(
+                    node_id="t2",
+                    content="Body text",
+                    font_size=14.0,
+                    font_weight=400,
+                    font_family="Arial",
+                    is_heading=False,
+                ),
+            ],
+        )
+        # Should not raise — text_styles is in the context
+        result = engine.render_section(s, ctx)
+        assert "Big heading" in result
+        assert "Body text" in result
+
+    def test_text_styles_empty_when_no_texts(self) -> None:
+        engine = MjmlTemplateEngine()
+        ctx = _ctx()
+        s = _section(texts=[])
+        result = engine.render_section(s, ctx)
+        assert isinstance(result, str)
+
+
+class TestMjmlDocFormatDetection:
+    """G-REF-6: format-detection meta in template engine document."""
+
+    def test_format_detection_in_rendered_email(self) -> None:
+        engine = MjmlTemplateEngine()
+        ctx = _ctx()
+        result = engine.render_email([_section(texts=[_text("Hello")])], ctx)
+        assert "format-detection" in result
+
+
+class TestDarkModeCssFalsyFix:
+    """Bug 31: Dark mode CSS should not drop entries with empty-string sanitization."""
+
+    def test_dark_colors_with_valid_names(self) -> None:
+        engine = MjmlTemplateEngine()
+        dark = (ExtractedColor(name="bg", hex="#1a1a2e"),)
+        ctx = _ctx(dark_colors=dark)
+        result = engine.render_email([_section(texts=[_text("Hello")])], ctx)
+        assert "#1a1a2e" in result
+
+
+class TestOutlookDarkModeSelectorsTemplate:
+    """G-REF-6: [data-ogsc] selectors in template engine dark mode."""
+
+    def test_data_ogsc_in_dark_mode(self) -> None:
+        engine = MjmlTemplateEngine()
+        dark = (ExtractedColor(name="bg", hex="#1a1a2e"),)
+        ctx = _ctx(dark_colors=dark)
+        result = engine.render_email([_section(texts=[_text("Hello")])], ctx)
+        assert "[data-ogsc]" in result
+
+
+# ---------------------------------------------------------------------------
+# Post-processing: inject_section_markers (migrated from test_mjml_generator)
+# ---------------------------------------------------------------------------
+
+
+class TestInjectSectionMarkers:
+    def test_inject_section_markers(self) -> None:
+        """Comment markers are replaced with data-* wrapper divs."""
+        compiled_html = (
+            "<!-- section:s1:content -->\n"
+            "<table><tr><td>Hello</td></tr></table>\n"
+            "<!-- section:s2:footer -->\n"
+            "<table><tr><td>Footer</td></tr></table>"
+        )
+        layout = DesignLayoutDescription(
+            file_name="Test",
+            sections=[
+                _section(EmailSectionType.CONTENT, node_id="s1"),
+                _section(EmailSectionType.FOOTER, node_id="s2"),
+            ],
+        )
+        result = inject_section_markers(compiled_html, layout)
+
+        assert 'data-section-type="content"' in result
+        assert 'data-node-id="s1"' in result
+        assert 'data-section-type="footer"' in result
+        assert 'data-node-id="s2"' in result
