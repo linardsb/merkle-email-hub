@@ -1548,7 +1548,7 @@
 - [x] 36.2 Refactor converter to consume EmailDesignDocument ~~DONE~~
 - [x] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument ~~DONE~~
 - [x] 36.4 MJML import adapter ~~DONE~~
-- [ ] 36.5 AI-powered HTML reverse engineering adapter
+- [x] 36.5 AI-powered HTML reverse engineering adapter ~~DONE~~
 - [x] 36.6 Klaviyo + HubSpot ESP export ~~DONE~~
 - [ ] 36.7 Tests & integration verification
 
@@ -1725,7 +1725,7 @@
 **Security:** MJML input is parsed as XML via `lxml` with `resolve_entities=False`, `no_network=True` to prevent XXE attacks. Text content from `<mj-text>` is passed through `html.escape()` when extracting plain text. `src` URLs from `<mj-image>` are validated (http/https only, no `javascript:` or `data:` URIs). Import endpoint requires authentication.
 **Verify:** Import the 10 MJML section templates from Phase 35.4 → each produces valid `EmailDesignDocument` with correct section types, column layouts, and content. Round-trip: MJML → import → `EmailDesignDocument` → MJML generation (35.3) → compile (35.1) → produces equivalent HTML. `<mj-hero>` → HERO section. 2-column section → TWO_COLUMN layout with 2 column groups. Dark mode `<mj-style>` → `dark_colors` tokens extracted. Malformed XML → descriptive error, no crash. XXE payload → rejected. `make test` passes.
 
-### 36.5 AI-Powered HTML Reverse Engineering Adapter `[Backend + AI]`
+### ~~36.5 AI-Powered HTML Reverse Engineering Adapter `[Backend + AI]`~~ DONE
 **What:** Create `app/design_sync/html_import/adapter.py` — a parser that takes arbitrary email HTML and reverse-engineers an `EmailDesignDocument`. Uses the existing import annotator agent (Phase 32.3) for pattern detection, plus new DOM traversal logic to extract `EmailSection[]` with full content (texts, images, buttons, styling). This is the #1 enterprise migration feature — enterprises have thousands of legacy HTML templates that need to become editable.
 **Why:** The import annotator agent already detects section boundaries and adds `data-section-id` attributes, identifies builder patterns (Stripo, Beefree, Mailchimp, MJML), and recognizes ESP tokens (AMPscript, Liquid, Handlebars). But it does NOT extract structured data — no `EmailSection` objects, no text blocks, no image metadata, no button detection. The gap is the 60% between "annotated HTML" and "structured EmailDesignDocument." Beefree launched their HTML Importer API in 2025 (rule-based). Chamaileon has an HTML import plugin. Both produce mediocre results on messy real-world email HTML. AI-powered extraction using the import annotator's pattern detection + LLM fallback for ambiguous structures would be a genuine differentiator.
 **Implementation:**
