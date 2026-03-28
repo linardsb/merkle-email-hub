@@ -41,7 +41,11 @@ from app.design_sync.schemas import (
     FileStructureResponse,
     GenerateBriefRequest,
     GenerateBriefResponse,
+    HtmlImportRequest,
+    HtmlImportResponse,
     ImageExportResponse,
+    ImportMjmlRequest,
+    ImportMjmlResponse,
     ImportResponse,
     ImportW3cTokensRequest,
     LayoutAnalysisResponse,
@@ -873,3 +877,89 @@ async def validate_document(
 
     errors = EmailDesignDocument.validate(cast(dict[str, Any], data))
     return DocumentValidationResponse(valid=not errors, errors=errors)
+
+
+# ── MJML import (36.4) ──────────────────────────────────────────────
+
+
+@router.post("/import/mjml", response_model=ImportMjmlResponse)
+@limiter.limit("10/minute")
+async def import_mjml(
+    request: Request,
+    body: ImportMjmlRequest,
+    current_user: User = Depends(require_role("developer")),
+) -> ImportMjmlResponse:
+    """Import MJML markup and produce an EmailDesignDocument."""
+    from app.core.config import get_settings
+    from app.core.logging import get_logger
+    from app.design_sync.email_design_document import EmailDesignDocument
+    from app.design_sync.exceptions import MjmlImportError
+    from app.design_sync.mjml_import.adapter import MjmlImportAdapter
+
+    logger = get_logger(__name__)
+
+    settings = get_settings()
+    if not settings.design_sync.mjml_import_enabled:
+        raise HTTPException(status_code=503, detail="MJML import is disabled")
+
+    adapter = MjmlImportAdapter()
+    try:
+        document = adapter.parse(body.mjml_source)
+    except MjmlImportError as exc:
+        logger.warning("design_sync.mjml_import_failed", reason=str(exc))
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    doc_json = document.to_json()
+    errors = EmailDesignDocument.validate(doc_json)
+    warnings = [str(e) for e in errors] if errors else []
+
+    logger.info(
+        "design_sync.mjml_import_completed",
+        sections_count=len(document.sections),
+        warning_count=len(warnings),
+    )
+
+    return ImportMjmlResponse(
+        document=doc_json,
+        sections_count=len(document.sections),
+        warnings=warnings,
+    )
+
+
+# ── HTML reverse-engineering import (36.5) ─────────────────────────
+
+
+@router.post(
+    "/import/html",
+    response_model=HtmlImportResponse,
+    summary="Import email HTML as EmailDesignDocument",
+)
+@limiter.limit("10/minute")
+async def import_html(
+    request: Request,
+    body: HtmlImportRequest,
+    current_user: User = Depends(require_role("developer")),
+) -> HtmlImportResponse:
+    """Reverse-engineer arbitrary email HTML into a structured EmailDesignDocument."""
+    from app.design_sync.exceptions import HtmlImportError
+    from app.design_sync.html_import.adapter import HtmlImportAdapter
+
+    adapter = HtmlImportAdapter()
+    try:
+        document = await adapter.parse(
+            body.html,
+            use_ai=body.use_ai,
+            source_name=body.source_name,
+        )
+    except HtmlImportError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    doc_json = document.to_json()
+    ai_count = sum(1 for s in document.sections if s.classification_confidence is not None)
+
+    return HtmlImportResponse(
+        document=doc_json,
+        section_count=len(document.sections),
+        ai_sections_classified=ai_count,
+        warnings=[],
+    )

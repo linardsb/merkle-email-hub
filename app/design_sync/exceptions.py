@@ -53,3 +53,11 @@ class WebhookRegistrationError(SyncFailedError):
 
 class W3cTokenParseError(DomainValidationError):
     """W3C Design Tokens JSON is malformed or contains unsupported types."""
+
+
+class MjmlImportError(DomainValidationError):
+    """Raised when MJML import parsing fails."""
+
+
+class HtmlImportError(AppError):
+    """Raised when HTML import parsing or validation fails."""

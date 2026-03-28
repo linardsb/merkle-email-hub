@@ -1547,7 +1547,7 @@
 - [x] 36.1 EmailDesignDocument JSON Schema v1 ~~DONE~~
 - [x] 36.2 Refactor converter to consume EmailDesignDocument ~~DONE~~
 - [x] 36.3 Refactor Figma + Penpot adapters to produce EmailDesignDocument ~~DONE~~
-- [ ] 36.4 MJML import adapter
+- [x] 36.4 MJML import adapter ~~DONE~~
 - [ ] 36.5 AI-powered HTML reverse engineering adapter
 - [x] 36.6 Klaviyo + HubSpot ESP export ~~DONE~~
 - [ ] 36.7 Tests & integration verification
@@ -1676,7 +1676,7 @@
 **Security:** No new input paths. `build_document()` uses the same authenticated API calls as existing methods. Document JSON is validated before storage. Existing auth, rate limiting, and encryption unchanged.
 **Verify:** `sync_connection()` for a Figma connection → stores `document_json` with valid EmailDesignDocument. `document_json` contains sections with types, texts, images, buttons. `convert_document(document)` produces same HTML as legacy `convert(structure, tokens)` path. Penpot connection → same flow. Stub providers (Sketch, Canva) → legacy path, no `document_json`. `make test` passes.
 
-### 36.4 MJML Import Adapter `[Backend]`
+### ~~36.4 MJML Import Adapter `[Backend]`~~ DONE
 **What:** Create `app/design_sync/mjml_import/adapter.py` — a parser that reads MJML markup (`<mjml>/<mj-body>/<mj-section>/<mj-column>/<mj-text>/<mj-button>/<mj-image>`) and produces an `EmailDesignDocument`. This enables importing existing MJML templates into the platform for editing, AI enhancement, and multi-client rendering. Combined with Phase 35.3 (MJML generation), this completes the MJML round-trip.
 **Why:** MJML is the de facto standard intermediate representation for email. Enterprise email teams have hundreds of MJML templates from Maizzle, Parcel, Email Love, Topol.io, or hand-coded workflows. Importing these templates unlocks: (a) AI agent enhancement (dark mode, accessibility, outlook fixes) on existing MJML templates, (b) visual editing in the builder, (c) multi-client rendering via the emulators, (d) QA engine checks on legacy templates. MJML's XML structure maps cleanly to `EmailDesignDocument` — `<mj-section>` → section, `<mj-column>` → column, `<mj-text>` → text block, `<mj-button>` → button, `<mj-image>` → image. This is a 1:1 mapping, not heuristic inference.
 **Implementation:**

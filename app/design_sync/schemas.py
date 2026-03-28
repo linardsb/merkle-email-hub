@@ -704,3 +704,44 @@ class DocumentValidationResponse(BaseModel):
 
     valid: bool
     errors: list[str]
+
+
+# ── HTML Import (36.5) ──
+
+
+class HtmlImportRequest(BaseModel):
+    """Request to reverse-engineer email HTML into an EmailDesignDocument."""
+
+    model_config = ConfigDict(strict=True)
+
+    html: str = Field(..., max_length=2_097_152, description="Raw email HTML (max 2 MB)")
+    use_ai: bool | None = Field(None, description="Override AI fallback (None = use config)")
+    source_name: str | None = Field(None, max_length=255, description="Source identifier")
+
+
+class HtmlImportResponse(BaseModel):
+    """Response from HTML reverse-engineering import."""
+
+    document: dict[str, object] = Field(..., description="EmailDesignDocument JSON")
+    section_count: int
+    ai_sections_classified: int
+    warnings: list[str] = Field(default_factory=list)
+
+
+# ── MJML Import (36.4) ──
+
+
+class ImportMjmlRequest(BaseModel):
+    """Request to import MJML markup into an EmailDesignDocument."""
+
+    model_config = ConfigDict(strict=True)
+
+    mjml_source: str = Field(..., max_length=2_100_000, description="Raw MJML markup (max ~2 MB)")
+
+
+class ImportMjmlResponse(BaseModel):
+    """Response from MJML import."""
+
+    document: dict[str, object] = Field(..., description="EmailDesignDocument JSON")
+    sections_count: int
+    warnings: list[str] = Field(default_factory=list)

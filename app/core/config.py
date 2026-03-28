@@ -352,6 +352,11 @@ class DesignSyncConfig(BaseModel):
     section_cache_enabled: bool = True  # DESIGN_SYNC__SECTION_CACHE_ENABLED
     section_cache_memory_max: int = 500  # DESIGN_SYNC__SECTION_CACHE_MEMORY_MAX
     section_cache_redis_ttl: int = 3600  # DESIGN_SYNC__SECTION_CACHE_REDIS_TTL (seconds)
+    # MJML import (36.4)
+    mjml_import_enabled: bool = True  # DESIGN_SYNC__MJML_IMPORT_ENABLED
+    # HTML reverse-engineering import (36.5)
+    html_import_ai_enabled: bool = True  # DESIGN_SYNC__HTML_IMPORT_AI_ENABLED
+    html_import_max_size_bytes: int = 2_097_152  # DESIGN_SYNC__HTML_IMPORT_MAX_SIZE_BYTES (2 MB)
 
 
 class ESPSyncConfig(BaseModel):
@@ -361,6 +366,8 @@ class ESPSyncConfig(BaseModel):
     sfmc_base_url: str = "http://mock-esp:3002/sfmc"
     adobe_base_url: str = "http://mock-esp:3002/adobe"
     taxi_base_url: str = "http://mock-esp:3002/taxi"
+    klaviyo_base_url: str = "http://mock-esp:3002/klaviyo"
+    hubspot_base_url: str = "http://mock-esp:3002/hubspot"
 
 
 class QAGmailPredictorConfig(BaseModel):
