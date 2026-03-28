@@ -8,12 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import require_role
 from app.auth.models import User
 from app.connectors.sync_schemas import (
+    BulkExportRequest,
+    BulkExportResponse,
     ESPConnectionCreate,
     ESPConnectionResponse,
     ESPImportRequest,
     ESPPushRequest,
     ESPTemplate,
     ESPTemplateList,
+    ExportRequest,
+    ExportResponse,
     TokenRewriteRequest,
     TokenRewriteResponse,
 )
@@ -153,6 +157,50 @@ async def push_template(
     """Push a local Hub template to the remote ESP."""
     _ = request
     return await service.push_template(connection_id, data.template_id, current_user)
+
+
+# ── Export Orchestration ──
+
+
+@router.post("/export", response_model=ExportResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
+async def export_template(
+    data: ExportRequest,
+    request: Request,
+    service: ConnectorSyncService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> ExportResponse:
+    """Export HTML to an ESP with optional token rewriting."""
+    _ = request
+    return await service.export_template(
+        html=data.html,
+        template_id=data.template_id,
+        target_esp=data.target_esp,
+        connection_id=data.connection_id,
+        template_name=data.template_name,
+        source_esp=data.source_esp,
+        rewrite_tokens=data.rewrite_tokens,
+        user=current_user,
+    )
+
+
+@router.post("/export-bulk", response_model=BulkExportResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
+async def export_templates_bulk(
+    data: BulkExportRequest,
+    request: Request,
+    service: ConnectorSyncService = Depends(get_service),  # noqa: B008
+    current_user: User = Depends(require_role("developer")),  # noqa: B008
+) -> BulkExportResponse:
+    """Export multiple templates to an ESP with per-item error isolation."""
+    _ = request
+    return await service.export_templates_bulk(
+        template_ids=data.template_ids,
+        target_esp=data.target_esp,
+        connection_id=data.connection_id,
+        rewrite_tokens=data.rewrite_tokens,
+        user=current_user,
+    )
 
 
 # ── Token Rewriting ──

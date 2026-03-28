@@ -31,10 +31,13 @@ from app.connectors.sync_models import ESPConnection
 from app.connectors.sync_protocol import ESPSyncProvider
 from app.connectors.sync_repository import ESPSyncRepository
 from app.connectors.sync_schemas import (
+    BulkExportItemResult,
+    BulkExportResponse,
     ESPConnectionCreate,
     ESPConnectionResponse,
     ESPTemplate,
     ESPTemplateList,
+    ExportResponse,
 )
 from app.connectors.taxi.sync_provider import TaxiSyncProvider
 from app.core.exceptions import DomainValidationError
@@ -339,3 +342,180 @@ class ConnectorSyncService:
             remote_template_id=remote.id,
         )
         return remote
+
+    # ── Export Orchestration ──
+
+    async def _rewrite_for_export(
+        self,
+        html: str,
+        target_esp: str,
+        source_esp: str | None,
+        rewrite_tokens: bool,
+    ) -> tuple[str, int, list[str]]:
+        """Rewrite tokens for export, returning (html, count, warnings)."""
+        if not rewrite_tokens:
+            return html, 0, []
+
+        from app.connectors.token_ir import (
+            ALL_PLATFORMS,
+            ESPPlatform,
+            detect_and_parse,
+            emit_tokens,
+        )
+
+        if target_esp not in ALL_PLATFORMS:
+            return html, 0, []
+
+        try:
+            if source_esp:
+                from app.connectors.token_ir import parse_tokens
+
+                ir = parse_tokens(html, cast(ESPPlatform, source_esp))
+                detected = source_esp
+            else:
+                ir, detected = detect_and_parse(html)
+        except (ValueError, DomainValidationError):
+            return html, 0, []
+
+        if detected == target_esp:
+            return html, 0, []
+
+        new_html, warnings = emit_tokens(ir, html, cast(ESPPlatform, target_esp))
+        count = len(ir.variables) + len(ir.conditionals) + len(ir.loops)
+        return new_html, count, list(warnings)
+
+    async def _fetch_template_html(self, template_id: int, user: User) -> tuple[str, str]:
+        """Fetch HTML and name for a local template by ID."""
+        local = await self._template_service.get_template(template_id, user)
+        html = ""
+        if local.latest_version is not None:
+            version = await self._template_service.get_version(
+                template_id, local.latest_version, user
+            )
+            html = version.html_source
+        return html, local.name
+
+    async def export_template(
+        self,
+        html: str | None,
+        template_id: int | None,
+        target_esp: str,
+        connection_id: int,
+        template_name: str,
+        source_esp: str | None,
+        rewrite_tokens: bool,
+        user: User,
+    ) -> ExportResponse:
+        """Export HTML to an ESP: optionally rewrite tokens, then push."""
+        logger.info(
+            "esp_sync.export_started",
+            connection_id=connection_id,
+            target_esp=target_esp,
+            has_html=html is not None,
+            template_id=template_id,
+        )
+
+        conn, credentials = await self._get_connection_with_bola(connection_id, user)
+        provider = self._get_provider(conn.esp_type)
+
+        # Resolve HTML
+        if html is None and template_id is not None:
+            html, resolved_name = await self._fetch_template_html(template_id, user)
+            if template_name == "Exported Email":
+                template_name = resolved_name
+        if not html:
+            html = ""
+
+        # Rewrite tokens
+        html, tokens_rewritten, warnings = await self._rewrite_for_export(
+            html, target_esp, source_esp, rewrite_tokens
+        )
+
+        # Push to ESP
+        try:
+            remote = await provider.create_template(template_name, html, credentials)
+        except Exception as exc:
+            await self._repo.update_status(conn, "error", str(exc))
+            raise ESPSyncFailedError(f"Failed to export template: {exc}") from exc
+
+        await self._repo.update_status(conn, "connected")
+        logger.info(
+            "esp_sync.export_completed",
+            connection_id=connection_id,
+            esp_template_id=remote.id,
+            tokens_rewritten=tokens_rewritten,
+        )
+        return ExportResponse(
+            esp_template_id=remote.id,
+            template_name=template_name,
+            target_esp=target_esp,
+            tokens_rewritten=tokens_rewritten,
+            warnings=warnings,
+        )
+
+    async def export_templates_bulk(
+        self,
+        template_ids: list[int],
+        target_esp: str,
+        connection_id: int,
+        rewrite_tokens: bool,
+        user: User,
+    ) -> BulkExportResponse:
+        """Export multiple templates to an ESP with per-item error isolation."""
+        logger.info(
+            "esp_sync.export_bulk_started",
+            connection_id=connection_id,
+            target_esp=target_esp,
+            template_count=len(template_ids),
+        )
+
+        conn, credentials = await self._get_connection_with_bola(connection_id, user)
+        provider = self._get_provider(conn.esp_type)
+
+        results: list[BulkExportItemResult] = []
+        succeeded = 0
+
+        for tid in template_ids:
+            try:
+                html, name = await self._fetch_template_html(tid, user)
+                html, tokens_rewritten, _warnings = await self._rewrite_for_export(
+                    html, target_esp, None, rewrite_tokens
+                )
+                remote = await provider.create_template(name, html, credentials)
+                results.append(
+                    BulkExportItemResult(
+                        template_id=tid,
+                        success=True,
+                        esp_template_id=remote.id,
+                        tokens_rewritten=tokens_rewritten,
+                    )
+                )
+                succeeded += 1
+            except Exception as exc:
+                logger.warning(
+                    "esp_sync.export_bulk_item_failed",
+                    template_id=tid,
+                    connection_id=connection_id,
+                    error=str(exc),
+                )
+                results.append(
+                    BulkExportItemResult(
+                        template_id=tid,
+                        success=False,
+                        error=str(exc),
+                    )
+                )
+
+        logger.info(
+            "esp_sync.export_bulk_completed",
+            connection_id=connection_id,
+            total=len(template_ids),
+            succeeded=succeeded,
+            failed=len(template_ids) - succeeded,
+        )
+        return BulkExportResponse(
+            results=results,
+            total=len(template_ids),
+            succeeded=succeeded,
+            failed=len(template_ids) - succeeded,
+        )

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import datetime
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ESPTemplate(BaseModel):
@@ -91,3 +92,65 @@ class TokenRewriteResponse(BaseModel):
     target_esp: str
     tokens_rewritten: int
     warnings: list[str]
+
+
+# ── Export Orchestration ──
+
+_ESP_TYPE_PATTERN = r"^(braze|sfmc|adobe_campaign|taxi|klaviyo|hubspot|mailchimp|sendgrid|activecampaign|iterable|brevo)$"
+
+
+class ExportRequest(BaseModel):
+    """Request to export HTML to an ESP via a connection."""
+
+    html: str | None = Field(None, max_length=5_000_000)
+    template_id: int | None = None
+    target_esp: str = Field(..., pattern=_ESP_TYPE_PATTERN)
+    connection_id: int
+    template_name: str = Field("Exported Email", max_length=500)
+    source_esp: str | None = Field(default=None, pattern=_ESP_TYPE_PATTERN)
+    rewrite_tokens: bool = True
+
+    @model_validator(mode="after")
+    def require_html_or_template_id(self) -> Self:
+        if self.html is None and self.template_id is None:
+            msg = "Either html or template_id is required"
+            raise ValueError(msg)
+        return self
+
+
+class ExportResponse(BaseModel):
+    """Response from a single export operation."""
+
+    esp_template_id: str
+    template_name: str
+    target_esp: str
+    tokens_rewritten: int
+    warnings: list[str]
+
+
+class BulkExportRequest(BaseModel):
+    """Request to export multiple templates to an ESP."""
+
+    template_ids: list[int] = Field(..., min_length=1, max_length=50)
+    target_esp: str = Field(..., pattern=_ESP_TYPE_PATTERN)
+    connection_id: int
+    rewrite_tokens: bool = True
+
+
+class BulkExportItemResult(BaseModel):
+    """Result for a single item in a bulk export."""
+
+    template_id: int
+    success: bool
+    esp_template_id: str | None = None
+    error: str | None = None
+    tokens_rewritten: int = 0
+
+
+class BulkExportResponse(BaseModel):
+    """Response from a bulk export operation."""
+
+    results: list[BulkExportItemResult]
+    total: int
+    succeeded: int
+    failed: int

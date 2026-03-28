@@ -34,9 +34,14 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=rate_limiter_middleware)
 # ESP-specific validation error formatting
 app.add_exception_handler(RequestValidationError, esp_validation_error_handler)  # type: ignore[arg-type]
 
+from activecampaign.routes import router as activecampaign_router  # noqa: E402
 from adobe.routes import router as adobe_router  # noqa: E402
 from braze.routes import router as braze_router  # noqa: E402
+from brevo.routes import router as brevo_router  # noqa: E402
 from briefs.routes import router as briefs_router  # noqa: E402
+from iterable.routes import router as iterable_router  # noqa: E402
+from mailchimp.routes import router as mailchimp_router  # noqa: E402
+from sendgrid.routes import router as sendgrid_router  # noqa: E402
 from sfmc.routes import router as sfmc_router  # noqa: E402
 from taxi.routes import router as taxi_router  # noqa: E402
 
@@ -45,6 +50,11 @@ app.include_router(sfmc_router)
 app.include_router(adobe_router)
 app.include_router(taxi_router)
 app.include_router(briefs_router)
+app.include_router(mailchimp_router)
+app.include_router(sendgrid_router)
+app.include_router(activecampaign_router)
+app.include_router(iterable_router)
+app.include_router(brevo_router)
 
 
 @app.get("/health")
