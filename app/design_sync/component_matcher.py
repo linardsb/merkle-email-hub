@@ -142,7 +142,7 @@ def _match_by_type(section: EmailSection) -> tuple[str, float]:
         return "hero-block", 0.8
 
     if st == EmailSectionType.CONTENT:
-        return _match_content(section, has_images, has_texts, has_buttons, has_headings)
+        return _score_candidates(section, has_images, has_texts, has_buttons, has_headings)
 
     if st == EmailSectionType.CTA:
         return "cta-button", 1.0
@@ -181,37 +181,72 @@ def _all_images_are_icons(section: EmailSection, threshold: float = 30.0) -> boo
     )
 
 
-def _match_content(
+def _score_candidates(
     section: EmailSection,
     has_images: bool,
     has_texts: bool,
-    has_buttons: bool,
-    has_headings: bool,
+    _has_buttons: bool,
+    _has_headings: bool,
 ) -> tuple[str, float]:
-    """Determine the best component for a CONTENT section."""
-    if has_images and has_texts:
-        # Tiny icons paired with text = link list / nav, not a real image card
-        if _all_images_are_icons(section):
-            return "navigation-bar", 0.9
-        # Column groups → multi-column layout (handled by match_section)
-        if section.column_groups:
-            return "text-block", 0.8
-        # >2 images = image grid, not article card
-        if len(section.images) > 2:
-            return "image-grid", 0.9
-        # Image + text + optional CTA = article card
-        return "article-card", 1.0
-    if has_images and len(section.images) >= 2:
-        return "image-grid", 0.9
-    if has_images:
-        return "image-block", 1.0
-    if has_headings and has_buttons:
-        # Heading + body + CTA = text-block (CTA appended)
-        return "text-block", 1.0
-    if has_texts:
-        return "text-block", 1.0
-    # Empty content section — treat as spacer
-    return "spacer", 0.5
+    """Score all candidate components and return the best match.
+
+    Replaces the first-match ``_match_content`` with multi-candidate scoring
+    so that product grids, image galleries, and category navs are correctly
+    distinguished from generic article-cards.
+    """
+    candidates: list[tuple[str, float]] = []
+
+    img_count = len(section.images)
+    text_count = len(section.texts)
+    col_groups = section.column_groups or []
+    groups_with_mixed = sum(1 for g in col_groups if g.images and g.texts)
+
+    # product-grid: 2+ column groups each with image + text
+    if len(col_groups) >= 2 and groups_with_mixed >= 2:
+        candidates.append(("product-grid", 0.95))
+
+    # navigation-bar: tiny icons paired with text
+    if has_images and has_texts and _all_images_are_icons(section):
+        candidates.append(("navigation-bar", 0.9))
+
+    # image-gallery: 3+ images, minimal text
+    if img_count >= 3 and text_count <= 1:
+        candidates.append(("image-gallery", 0.88))
+
+    # image-grid: exactly 2 images, minimal text
+    if img_count == 2 and text_count <= 1:
+        candidates.append(("image-grid", 0.85))
+
+    # article-card: 1 image + text, single column (no multi-column groups)
+    if img_count == 1 and text_count >= 1 and len(col_groups) <= 1:
+        candidates.append(("article-card", 0.9))
+
+    # category-nav: 3+ short texts, few images, no headings (more specific than text-block)
+    has_any_heading = any(t.is_heading for t in section.texts)
+    short_texts = [t for t in section.texts if len(t.content) < 20]
+    is_category_nav = len(short_texts) >= 3 and img_count <= 1 and not has_any_heading
+    if is_category_nav:
+        candidates.append(("category-nav", 0.7))
+
+    # image-block: single image, no text
+    if img_count == 1 and not has_texts:
+        candidates.append(("image-block", 1.0))
+
+    # text-block: generic text-only fallback (skip when category-nav is more specific)
+    if has_texts and not has_images and not is_category_nav:
+        candidates.append(("text-block", 1.0))
+
+    if not candidates:
+        return ("text-block", 0.5) if has_texts else ("spacer", 0.5)
+
+    # Highest score wins
+    candidates.sort(key=lambda c: c[1], reverse=True)
+    best_slug, best_score = candidates[0]
+
+    if best_score < 0.5:
+        return ("text-block", 0.5)
+
+    return (best_slug, best_score)
 
 
 def _build_slot_fills(
@@ -232,6 +267,9 @@ def _build_slot_fills(
         "article-card": _fills_article_card,
         "image-block": _fills_image_block,
         "image-grid": _fills_image_grid,
+        "product-grid": _fills_product_grid,
+        "category-nav": _fills_category_nav,
+        "image-gallery": _fills_image_gallery,
         "cta-button": _fills_cta,
         "email-footer": _fills_footer,
         "spacer": _fills_spacer,
@@ -596,6 +634,69 @@ def _fills_image_grid(
 ) -> list[SlotFill]:
     fills: list[SlotFill] = []
     for i, img in enumerate(section.images[:2], start=1):
+        fills.append(
+            SlotFill(
+                f"image_{i}",
+                _resolve_image_url(img.node_id, image_urls),
+                slot_type="image",
+            )
+        )
+    return fills
+
+
+def _fills_product_grid(
+    section: EmailSection,
+    _cw: int,
+    *,
+    image_urls: dict[str, str] | None = None,
+    **_kw: object,
+) -> list[SlotFill]:
+    """Fill product-grid: iterate column groups, extract image/title/desc/cta per product."""
+    fills: list[SlotFill] = []
+    groups = section.column_groups or []
+    for i, group in enumerate(groups[:4], 1):
+        if group.images:
+            img = group.images[0]
+            fills.append(
+                SlotFill(
+                    f"product_{i}_image",
+                    _resolve_image_url(img.node_id, image_urls),
+                    slot_type="image",
+                )
+            )
+        heading = _first_heading(group.texts)
+        if heading:
+            fills.append(SlotFill(f"product_{i}_title", _safe_text(heading.content)))
+        body = _body_texts(group.texts)
+        if body:
+            fills.append(SlotFill(f"product_{i}_desc", _safe_text(body[0].content)))
+        if group.buttons:
+            fills.append(SlotFill(f"product_{i}_cta", _safe_text(group.buttons[0].text)))
+    return fills
+
+
+def _fills_category_nav(
+    section: EmailSection,
+    _cw: int,
+    **_kw: object,
+) -> list[SlotFill]:
+    """Fill category-nav: map short texts to nav_item slots."""
+    fills: list[SlotFill] = []
+    for i, text in enumerate(section.texts[:6], 1):
+        fills.append(SlotFill(f"nav_item_{i}", _safe_text(text.content)))
+    return fills
+
+
+def _fills_image_gallery(
+    section: EmailSection,
+    _cw: int,
+    *,
+    image_urls: dict[str, str] | None = None,
+    **_kw: object,
+) -> list[SlotFill]:
+    """Fill image-gallery: map 3+ images to numbered slots."""
+    fills: list[SlotFill] = []
+    for i, img in enumerate(section.images[:6], start=1):
         fills.append(
             SlotFill(
                 f"image_{i}",

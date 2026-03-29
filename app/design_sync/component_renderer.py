@@ -39,6 +39,29 @@ class RenderedSection:
     images: list[dict[str, str]] = field(default_factory=list)
 
 
+_SLOT_ATTR_RE = re.compile(r'data-slot="([^"]+)"')
+
+
+def _validate_slot_fill_rate(
+    template_html: str,
+    slot_fills: list[SlotFill],
+) -> tuple[float, list[str]]:
+    """Check what fraction of template slots were filled.
+
+    Returns (fill_rate, warnings). Warns if < 50% of slots are filled.
+    """
+    slot_ids = set(_SLOT_ATTR_RE.findall(template_html))
+    total = len(slot_ids)
+    if total == 0:
+        return 1.0, []
+    filled = sum(1 for f in slot_fills if f.slot_id in slot_ids)
+    rate = filled / total
+    warnings: list[str] = []
+    if rate < 0.5:
+        warnings.append(f"Low slot fill rate ({filled}/{total} = {rate:.0%})")
+    return rate, warnings
+
+
 class ComponentRenderer:
     """Render matched sections using component seed HTML templates."""
 
@@ -75,6 +98,16 @@ class ComponentRenderer:
 
         # 1. Fill slots with Figma content
         result_html = self._fill_slots(result_html, match.slot_fills, match.component_slug)
+
+        # 1b. Validate slot fill rate
+        _fill_rate, fill_warnings = _validate_slot_fill_rate(template_html, match.slot_fills)
+        for warn in fill_warnings:
+            logger.warning(
+                "design_sync.low_slot_fill_rate",
+                slug=match.component_slug,
+                section_idx=match.section_idx,
+                message=warn,
+            )
 
         # 2. Apply token overrides (inline style replacement)
         result_html = self._apply_token_overrides(result_html, match.token_overrides)

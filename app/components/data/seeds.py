@@ -1316,4 +1316,274 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
             },
         },
     },
+    # ── 22. Product Grid ──
+    {
+        "name": "Product Grid",
+        "slug": "product-grid",
+        "description": "2-column product card grid. Each cell has image, title, description, and CTA.",
+        "category": "commerce",
+        "html_source": """\
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+  <tr>
+    <td style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="300" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 8px;">
+              <img data-slot="product_1_image" src="https://via.placeholder.com/284x200" alt="Product 1" width="284" style="display: block; width: 100%; height: auto; border: 0;" />
+              <h3 data-slot="product_1_title" style="margin: 12px 0 4px; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333;">Product Title</h3>
+              <p data-slot="product_1_desc" style="margin: 0 0 12px; font-family: Arial, sans-serif; font-size: 14px; color: #666666; line-height: 1.5;">Short description of this product.</p>
+              <a data-slot="product_1_cta" href="https://example.com/product-1" style="display: inline-block; padding: 8px 20px; background-color: #0066cc; color: #ffffff; text-decoration: none; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; border-radius: 4px;">Shop Now</a>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="300" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 8px;">
+              <img data-slot="product_2_image" src="https://via.placeholder.com/284x200" alt="Product 2" width="284" style="display: block; width: 100%; height: auto; border: 0;" />
+              <h3 data-slot="product_2_title" style="margin: 12px 0 4px; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333;">Product Title</h3>
+              <p data-slot="product_2_desc" style="margin: 0 0 12px; font-family: Arial, sans-serif; font-size: 14px; color: #666666; line-height: 1.5;">Short description of this product.</p>
+              <a data-slot="product_2_cta" href="https://example.com/product-2" style="display: inline-block; padding: 8px 20px; background-color: #0066cc; color: #ffffff; text-decoration: none; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; border-radius: 4px;">Shop Now</a>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
+        "css_source": None,
+        "compatibility": _COMPAT_FULL,
+        "slot_definitions": [
+            {
+                "slot_id": "product_1_image",
+                "slot_type": "image",
+                "selector": "[data-slot='product_1_image']",
+                "required": True,
+            },
+            {
+                "slot_id": "product_1_title",
+                "slot_type": "text",
+                "selector": "[data-slot='product_1_title']",
+                "required": True,
+            },
+            {
+                "slot_id": "product_1_desc",
+                "slot_type": "text",
+                "selector": "[data-slot='product_1_desc']",
+                "required": False,
+            },
+            {
+                "slot_id": "product_1_cta",
+                "slot_type": "cta",
+                "selector": "[data-slot='product_1_cta']",
+                "required": False,
+            },
+            {
+                "slot_id": "product_2_image",
+                "slot_type": "image",
+                "selector": "[data-slot='product_2_image']",
+                "required": True,
+            },
+            {
+                "slot_id": "product_2_title",
+                "slot_type": "text",
+                "selector": "[data-slot='product_2_title']",
+                "required": True,
+            },
+            {
+                "slot_id": "product_2_desc",
+                "slot_type": "text",
+                "selector": "[data-slot='product_2_desc']",
+                "required": False,
+            },
+            {
+                "slot_id": "product_2_cta",
+                "slot_type": "cta",
+                "selector": "[data-slot='product_2_cta']",
+                "required": False,
+            },
+        ],
+        "default_tokens": {
+            "colors": {
+                "title": "#333333",
+                "dark_title": "#f0f0f0",
+                "description": "#666666",
+                "dark_description": "#cccccc",
+                "cta_bg": "#0066cc",
+                "dark_cta_bg": "#3399ff",
+                "cta_text": "#ffffff",
+            },
+        },
+    },
+    # ── 23. Category Nav ──
+    {
+        "name": "Category Nav",
+        "slug": "category-nav",
+        "description": "Vertical list of category labels or icon+label rows for content navigation.",
+        "category": "structure",
+        "html_source": """\
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f8f8; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+  <tr>
+    <td style="padding: 16px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td data-slot="nav_item_1" style="padding: 6px 0; font-family: Arial, sans-serif; font-size: 14px; color: #333333; line-height: 1.4;">
+            <a href="#" style="color: #0066cc; text-decoration: none;">Category 1</a>
+          </td>
+        </tr>
+        <tr>
+          <td data-slot="nav_item_2" style="padding: 6px 0; font-family: Arial, sans-serif; font-size: 14px; color: #333333; line-height: 1.4;">
+            <a href="#" style="color: #0066cc; text-decoration: none;">Category 2</a>
+          </td>
+        </tr>
+        <tr>
+          <td data-slot="nav_item_3" style="padding: 6px 0; font-family: Arial, sans-serif; font-size: 14px; color: #333333; line-height: 1.4;">
+            <a href="#" style="color: #0066cc; text-decoration: none;">Category 3</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
+        "css_source": None,
+        "compatibility": _COMPAT_FULL,
+        "slot_definitions": [
+            {
+                "slot_id": "nav_item_1",
+                "slot_type": "text",
+                "selector": "[data-slot='nav_item_1']",
+                "required": True,
+            },
+            {
+                "slot_id": "nav_item_2",
+                "slot_type": "text",
+                "selector": "[data-slot='nav_item_2']",
+                "required": True,
+            },
+            {
+                "slot_id": "nav_item_3",
+                "slot_type": "text",
+                "selector": "[data-slot='nav_item_3']",
+                "required": False,
+            },
+        ],
+        "default_tokens": {
+            "colors": {
+                "link": "#0066cc",
+                "dark_link": "#8ecae6",
+                "background": "#f8f8f8",
+                "dark_background": "#1a1a2e",
+            },
+        },
+    },
+    # ── 24. Image Gallery ──
+    {
+        "name": "Image Gallery",
+        "slug": "image-gallery",
+        "description": "3-column responsive image gallery. Each cell is a linked image with alt text.",
+        "category": "content",
+        "html_source": """\
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+  <tr>
+    <td style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="200" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 4px;">
+              <img data-slot="image_1" src="https://via.placeholder.com/192x192" alt="Gallery image 1" width="192" style="display: block; width: 100%; height: auto; border: 0;" />
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="200" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 4px;">
+              <img data-slot="image_2" src="https://via.placeholder.com/192x192" alt="Gallery image 2" width="192" style="display: block; width: 100%; height: auto; border: 0;" />
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="200" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 200px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 4px;">
+              <img data-slot="image_3" src="https://via.placeholder.com/192x192" alt="Gallery image 3" width="192" style="display: block; width: 100%; height: auto; border: 0;" />
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->""",
+        "css_source": None,
+        "compatibility": _COMPAT_FULL,
+        "slot_definitions": [
+            {
+                "slot_id": "image_1",
+                "slot_type": "image",
+                "selector": "[data-slot='image_1']",
+                "required": True,
+            },
+            {
+                "slot_id": "image_2",
+                "slot_type": "image",
+                "selector": "[data-slot='image_2']",
+                "required": True,
+            },
+            {
+                "slot_id": "image_3",
+                "slot_type": "image",
+                "selector": "[data-slot='image_3']",
+                "required": True,
+            },
+        ],
+        "default_tokens": {
+            "colors": {
+                "background": "#ffffff",
+                "dark_background": "#1a1a2e",
+            },
+        },
+    },
 ]

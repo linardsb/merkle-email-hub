@@ -507,8 +507,8 @@ class TestTinyIconHeuristic:
         m = match_section(s, 0)
         assert m.component_slug == "article-card"
 
-    def test_mixed_icon_sizes_remains_article_card(self) -> None:
-        """If any image is large, treat as article-card."""
+    def test_mixed_icon_sizes_two_images_becomes_image_grid(self) -> None:
+        """Two images (mixed sizes) with text → image-grid (multi-candidate scoring)."""
         s = _make_section(
             EmailSectionType.CONTENT,
             texts=[_text("Title", is_heading=True)],
@@ -518,7 +518,7 @@ class TestTinyIconHeuristic:
             ],
         )
         m = match_section(s, 0)
-        assert m.component_slug == "article-card"
+        assert m.component_slug == "image-grid"
 
     def test_icon_threshold_boundary(self) -> None:
         """Images exactly at 30px threshold are still icons."""
@@ -642,7 +642,8 @@ class TestTextColorOverrides:
 class TestArticleCardGuard:
     """Bug 52: Sections with >2 images or column groups should NOT match article-card."""
 
-    def test_many_images_becomes_image_grid(self) -> None:
+    def test_many_images_becomes_image_gallery(self) -> None:
+        """3+ images → image-gallery (not article-card or image-grid)."""
         s = _make_section(
             EmailSectionType.CONTENT,
             texts=[_text("Title")],
@@ -650,7 +651,7 @@ class TestArticleCardGuard:
         )
         m = match_section(s, 0)
         assert m.component_slug != "article-card"
-        assert m.component_slug == "image-grid"
+        assert m.component_slug == "image-gallery"
 
     def test_column_groups_not_article_card(self) -> None:
         s = _make_section(
@@ -769,3 +770,321 @@ class TestColorValidation:
     def test_safe_color_none_returns_fallback(self) -> None:
         assert _safe_color(None) == "#333333"
         assert _safe_color(None, "#0066cc") == "#0066cc"
+
+
+# ── Phase 39.6: Multi-Candidate Scoring Tests ──
+
+
+class TestMultiCandidateScoring:
+    """Verify multi-candidate scoring selects the correct component."""
+
+    def test_product_grid_detection(self) -> None:
+        """2+ column groups with image + text → product-grid."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Title A"), _text("Title B")],
+            images=[_image("i1", "p1"), _image("i2", "p2")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="c1",
+                    node_name="Col 1",
+                    texts=[TextBlock(node_id="t1", content="Title A", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i1", node_name="p1")],
+                ),
+                ColumnGroup(
+                    column_idx=2,
+                    node_id="c2",
+                    node_name="Col 2",
+                    texts=[TextBlock(node_id="t2", content="Title B", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i2", node_name="p2")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "product-grid"
+        assert m.confidence == 0.95
+
+    def test_product_grid_over_article_card(self) -> None:
+        """Product grid (0.95) beats article-card (0.9) for mixed column content."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Prod A", is_heading=True), _text("Prod B", is_heading=True)],
+            images=[_image("i1", "p1"), _image("i2", "p2")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="c1",
+                    node_name="Col 1",
+                    texts=[TextBlock(node_id="t1", content="Prod A", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i1", node_name="p1")],
+                ),
+                ColumnGroup(
+                    column_idx=2,
+                    node_id="c2",
+                    node_name="Col 2",
+                    texts=[TextBlock(node_id="t2", content="Prod B", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i2", node_name="p2")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "product-grid"
+        assert m.component_slug != "article-card"
+
+    def test_image_grid_two_images(self) -> None:
+        """Exactly 2 images with ≤1 text → image-grid."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            images=[_image("i1", "p1"), _image("i2", "p2")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "image-grid"
+        assert m.confidence == 0.85
+
+    def test_image_gallery_three_plus(self) -> None:
+        """3+ images with no text → image-gallery."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            images=[_image("i1", "a"), _image("i2", "b"), _image("i3", "c")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "image-gallery"
+        assert m.confidence == 0.88
+
+    def test_article_card_single_image_text(self) -> None:
+        """1 image + text, single column → article-card at 0.9."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Heading", is_heading=True), _text("Body text")],
+            images=[_image()],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "article-card"
+        assert m.confidence == 0.9
+
+    def test_category_nav_short_texts(self) -> None:
+        """3+ short texts (<20 chars) → category-nav."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Shoes"), _text("Bags"), _text("Watches"), _text("Hats")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "category-nav"
+        assert m.confidence == 0.7
+
+    def test_fallback_to_text_block(self) -> None:
+        """Empty content section falls back to spacer at 0.5."""
+        s = _make_section(EmailSectionType.CONTENT)
+        m = match_section(s, 0)
+        assert m.component_slug == "spacer"
+        assert m.confidence == 0.5
+
+    def test_icon_nav_still_works(self) -> None:
+        """Tiny icons + text → navigation-bar at 0.9."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Home"), _text("About")],
+            images=[
+                _image("i1", "icon1", 20, 20),
+                _image("i2", "icon2", 20, 20),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "navigation-bar"
+        assert m.confidence == 0.9
+
+
+class TestSpatialColumnAssignment:
+    """Column groups are used for column assignment when present."""
+
+    def test_column_groups_fill_by_index(self) -> None:
+        """Column groups fill col_1, col_2 by column_idx."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            column_layout=ColumnLayout.TWO_COLUMN,
+            column_count=2,
+            column_groups=[
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="c1",
+                    node_name="Left",
+                    texts=[TextBlock(node_id="t1", content="Left content")],
+                ),
+                ColumnGroup(
+                    column_idx=2,
+                    node_id="c2",
+                    node_name="Right",
+                    texts=[TextBlock(node_id="t2", content="Right content")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        fills_by_id = {f.slot_id: f for f in m.slot_fills}
+        assert "col_1" in fills_by_id
+        assert "col_2" in fills_by_id
+        assert "Left content" in fills_by_id["col_1"].value
+        assert "Right content" in fills_by_id["col_2"].value
+
+    def test_column_groups_preferred_over_roundrobin(self) -> None:
+        """When column_groups exist, they are used instead of round-robin."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("A"), _text("B"), _text("C")],
+            column_layout=ColumnLayout.TWO_COLUMN,
+            column_count=2,
+            column_groups=[
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="c1",
+                    node_name="Left",
+                    texts=[
+                        TextBlock(node_id="t1", content="A"),
+                        TextBlock(node_id="t2", content="B"),
+                    ],
+                ),
+                ColumnGroup(
+                    column_idx=2,
+                    node_id="c2",
+                    node_name="Right",
+                    texts=[TextBlock(node_id="t3", content="C")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        fills_by_id = {f.slot_id: f for f in m.slot_fills}
+        # Both A and B in col_1 (not round-robin A→1, B→2, C→1)
+        assert "A" in fills_by_id["col_1"].value
+        assert "B" in fills_by_id["col_1"].value
+        assert "C" in fills_by_id["col_2"].value
+
+    def test_roundrobin_fallback_without_groups(self) -> None:
+        """Without column_groups, round-robin distributes texts."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("A"), _text("B")],
+            column_layout=ColumnLayout.TWO_COLUMN,
+            column_count=2,
+        )
+        m = match_section(s, 0)
+        fills_by_id = {f.slot_id: f for f in m.slot_fills}
+        assert "col_1" in fills_by_id
+        assert "col_2" in fills_by_id
+
+    def test_single_group_no_column_fills(self) -> None:
+        """Single column_group with mixed content still gets article-card."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Title", is_heading=True)],
+            images=[_image()],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="c1",
+                    node_name="Col 1",
+                    texts=[TextBlock(node_id="t1", content="Title", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i1", node_name="img")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "article-card"
+
+
+class TestSlotValidation:
+    """Slot fill rate validation."""
+
+    def test_full_fill_rate(self) -> None:
+        from app.design_sync.component_matcher import SlotFill
+        from app.design_sync.component_renderer import _validate_slot_fill_rate
+
+        html = '<td data-slot="a">X</td><td data-slot="b">Y</td>'
+        fills = [SlotFill("a", "val1"), SlotFill("b", "val2")]
+        rate, warnings = _validate_slot_fill_rate(html, fills)
+        assert rate == 1.0
+        assert not warnings
+
+    def test_low_fill_rate_warning(self) -> None:
+        from app.design_sync.component_matcher import SlotFill
+        from app.design_sync.component_renderer import _validate_slot_fill_rate
+
+        html = '<td data-slot="a">X</td><td data-slot="b">Y</td><td data-slot="c">Z</td>'
+        fills = [SlotFill("a", "val1")]
+        rate, warnings = _validate_slot_fill_rate(html, fills)
+        assert rate < 0.5
+        assert len(warnings) == 1
+        assert "Low slot fill rate" in warnings[0]
+
+    def test_no_slots_template(self) -> None:
+        from app.design_sync.component_renderer import _validate_slot_fill_rate
+
+        html = "<table><tr><td>No slots here</td></tr></table>"
+        rate, warnings = _validate_slot_fill_rate(html, [])
+        assert rate == 1.0
+        assert not warnings
+
+
+class TestConfidenceInResult:
+    """Confidence scores propagated through the pipeline."""
+
+    def test_confidence_in_component_match(self) -> None:
+        """Match carries the correct confidence from scoring."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Heading", is_heading=True)],
+            images=[_image()],
+        )
+        m = match_section(s, 0)
+        assert isinstance(m.confidence, float)
+        assert 0.0 < m.confidence <= 1.0
+
+    def test_confidence_varies_by_type(self) -> None:
+        """Different component types get different confidence scores."""
+        s_article = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Title", is_heading=True)],
+            images=[_image()],
+        )
+        s_grid = _make_section(
+            EmailSectionType.CONTENT,
+            images=[_image("i1", "a"), _image("i2", "b")],
+        )
+        m_article = match_section(s_article, 0)
+        m_grid = match_section(s_grid, 1)
+        # Article-card and image-grid have different confidence values
+        assert m_article.confidence != m_grid.confidence
+
+
+class TestNewComponentSlotFills:
+    """Slot fills for new component types."""
+
+    def test_product_grid_slot_fills(self) -> None:
+        """Product grid fills per-group slots: product_1_title, product_2_title, etc."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("A"), _text("B")],
+            images=[_image("i1", "p1"), _image("i2", "p2")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="c1",
+                    node_name="Col 1",
+                    texts=[TextBlock(node_id="t1", content="Product A", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i1", node_name="p1")],
+                ),
+                ColumnGroup(
+                    column_idx=2,
+                    node_id="c2",
+                    node_name="Col 2",
+                    texts=[TextBlock(node_id="t2", content="Product B", is_heading=True)],
+                    images=[ImagePlaceholder(node_id="i2", node_name="p2")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "product-grid"
+        fills_by_id = {f.slot_id: f for f in m.slot_fills}
+        assert "product_1_title" in fills_by_id
+        assert "product_2_title" in fills_by_id
+        assert fills_by_id["product_1_title"].value == "Product A"
+        assert fills_by_id["product_2_title"].value == "Product B"

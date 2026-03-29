@@ -331,7 +331,7 @@ Current converter dumps column content as raw text — each content type needs i
 - [x] 38.5 Import service, HTML import adapter & regression tests ~~DONE~~
 - [x] 38.6 Component matcher & renderer fidelity fixes ~~DONE~~
 - [x] 38.7 Column HTML structure — `<div class="column">` pattern ~~DONE~~
-- [ ] 38.8 Image alt text, font family preservation & background images
+- [x] 38.8 Image alt text, font family preservation & background images ~~DONE~~
 
 ---
 
@@ -709,9 +709,9 @@ Current converter dumps column content as raw text — each content type needs i
 - [x] 39.1 Figma API enrichment & data model gaps ~~DONE~~
 - [x] 39.2 Testing infrastructure (fixtures, property-based, contracts, visual regression) ~~DONE~~
 - [x] 39.3 Eliminate dual MJML generation path ~~DONE~~
-- [ ] 39.4 Automated quality contracts (contrast, completeness, placeholders)
+- [x] 39.4 Automated quality contracts (contrast, completeness, placeholders) ~~DONE~~
 - [x] 39.5 Custom lint rules for pipeline anti-patterns ~~DONE~~
-- [ ] 39.6 Component matcher architectural improvements
+- [x] 39.6 Component matcher architectural improvements ~~DONE~~
 - [x] 39.7 Golden template conformance gate ~~DONE~~
 
 ---
@@ -768,23 +768,17 @@ Current converter dumps column content as raw text — each content type needs i
 
 ---
 
-### 39.4 Automated Quality Contracts `[Backend]`
+### ~~39.4 Automated Quality Contracts `[Backend]`~~ DONE
 
 **What:** Add 3 post-conversion quality checks: WCAG contrast validation, section completeness, placeholder detection. Warnings in `ConversionResult` for UI display.
-**Why:** Mammut conversion: `#333333` on `#FE5117` = contrast 1.8:1 (below 4.5:1 AA). 12 Figma sections but 11 in output. "Image caption — describe..." placeholder leaked. Phase 38 fixes root causes — these contracts catch regressions.
-**Implementation:**
-- **Contrast:** extract text/bg color pairs from HTML → WCAG 2.1 ratio → warn if <4.5:1
-- **Completeness:** count output sections vs input → warn if missing. Count buttons → warn if lost.
-- **Placeholders:** scan for known placeholder strings → warn
-- Wire into `converter_service.py` post-conversion:
-  ```python
-  result.contrast_warnings = check_contrast(result.html)
-  result.completeness_warnings = check_completeness(sections, result.html)
-  result.placeholder_warnings = check_placeholders(result.html)
-  ```
-
-**Security:** Read-only analysis. No new input paths.
-**Verify:** `#FFFFFF` on `#FE5117` → warning (ratio 3.2:1). `#333333` on `#FFFFFF` → no warning (12.6:1). Missing sections → warning. Lost buttons → warning. Placeholder text → warning. 18 new tests.
+**Delivered:**
+- `app/design_sync/quality_contracts.py` — `QualityWarning` dataclass + 3 pure sync check functions + `run_quality_contracts()` orchestrator
+- **Contrast:** `check_contrast()` parses inline `color:`/`background-color:` from HTML via lxml, walks ancestors for bg, computes WCAG 2.1 ratio via `_relative_luminance()`/`_contrast_ratio()` (reused from `converter.py`), warns if <4.5:1 normal text or <3.0:1 large text (18px+ or bold 14px+)
+- **Completeness:** `check_completeness()` counts `<!-- section:... -->` markers vs input count, counts `<a style="display:inline-block;padding:...">` + `v:roundrect` patterns vs input button count
+- **Placeholders:** `check_placeholders()` reuses `_PLACEHOLDER_PATTERNS` from `component_matcher.py`, deduplicates matches
+- `ConversionResult.quality_warnings` field added (frozen dataclass, `list[QualityWarning]`, default empty)
+- Wired into all 3 conversion paths: `_convert_mjml_from_layout`, `_convert_with_components`, `_convert_recursive`
+- 19 tests: 6 contrast, 6 completeness, 4 placeholder, 3 integration
 
 ---
 
@@ -803,24 +797,10 @@ Current converter dumps column content as raw text — each content type needs i
 
 ---
 
-### 39.6 Component Matcher Architectural Improvements `[Backend]`
+### ~~39.6 Component Matcher Architectural Improvements `[Backend]`~~ DONE
 
 **What:** Replace first-match template selection with multi-candidate scoring, add spatial column assignment, post-render slot validation, 3 new component types (`product-grid`, `category-nav`, `image-gallery`), and match confidence scores.
-**Why:** Current matcher: `has_images and has_texts → article-card` at confidence 1.0. Mammut product grids get article-card treatment. Round-robin column distribution ignores spatial position. Unfilled slots show placeholder text. Golden components define distinct patterns per type (`article-card.html` vs `image-grid.html` vs `product-card.html`) — matcher must pick correctly.
-**Implementation:**
-- **Multi-candidate scoring** — `_score_candidates()` replaces `_match_content()`:
-  - article-card: 1 image + ≥2 texts, single column → 0.9
-  - image-grid: 2+ images, ≤1 text → 0.85
-  - product-grid: 2+ column groups each with image + text → 0.95
-  - category-nav: 3+ short texts → 0.7
-  - Score < 0.5 → fallback to `text-block`
-- **New components:** `product-grid` (2×N cards per G-REF-5), `category-nav` (icon + label rows), `image-gallery` (3+ images)
-- **Spatial column assignment:** sort by X-position, divide by column width → assign to nearest column
-- **Slot validation:** count filled vs total slots, warn if fill rate < 50%
-- **Confidence in `ConversionResult`:** `match_confidences: dict[str, float]`
-
-**Security:** Deterministic scoring. No new input paths.
-**Verify:** Mammut product section → `product-grid` (not `article-card`). 4 images → `image-grid`. X=0 content → column 1, X=300 → column 2. Low fill rate → warning. Confidence in result. 18 new tests.
+**Delivered:** `_score_candidates()` replaces `_match_content()` with multi-candidate scoring — product-grid (0.95), article-card (0.9), image-gallery (0.88), image-grid (0.85), category-nav (0.7). 3 new component seeds (`product-grid`, `category-nav`, `image-gallery`) with table-based HTML, MSO conditionals, data-slot markers. 3 new `_fills_*` functions registered in dispatch. `_validate_slot_fill_rate()` in `component_renderer.py` warns when <50% of template slots filled. `match_confidences: dict[int, float]` on `ConversionResult`, propagated from `match_all()`. Column assignment uses `column_groups.column_idx` (spatial structure from Phase 35). 22 tests (18 new + 2 updated + 2 fixes), 1522 design_sync tests pass.
 
 ---
 

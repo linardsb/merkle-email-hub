@@ -41,6 +41,7 @@ from app.design_sync.protocol import (
     ExtractedGradient,
     ExtractedTokens,
 )
+from app.design_sync.quality_contracts import QualityWarning, run_quality_contracts
 
 if TYPE_CHECKING:
     from app.design_sync.email_design_document import EmailDesignDocument
@@ -137,6 +138,8 @@ class ConversionResult:
     compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
     images: list[dict[str, str]] = field(default_factory=list)
     cache_hit_rate: float | None = None
+    quality_warnings: list[QualityWarning] = field(default_factory=list)
+    match_confidences: dict[int, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -552,12 +555,20 @@ class DesignConverterService:
             errors=len(compile_result.errors),
         )
 
+        input_button_count = sum(len(s.buttons) for s in layout.sections)
+        quality_warnings = run_quality_contracts(
+            compiled_html,
+            input_section_count=section_count,
+            input_button_count=input_button_count,
+        )
+
         return ConversionResult(
             html=compiled_html,
             sections_count=section_count,
             warnings=warnings,
             layout=layout,
             cache_hit_rate=0.0 if connection_id and cache_key else None,
+            quality_warnings=quality_warnings,
         )
 
     def _convert_with_components(
@@ -699,6 +710,16 @@ class DesignConverterService:
             warnings_count=len(warnings),
         )
 
+        # Match confidence scores
+        match_confidences = {m.section_idx: m.confidence for m in matches}
+
+        input_button_count = sum(len(s.buttons) for s in layout.sections)
+        quality_warnings = run_quality_contracts(
+            result_html,
+            input_section_count=len(matches),
+            input_button_count=input_button_count,
+        )
+
         return ConversionResult(
             html=result_html,
             sections_count=len(matches),
@@ -707,6 +728,8 @@ class DesignConverterService:
             compatibility_hints=compat.hints,
             images=all_images,
             cache_hit_rate=cache_hit_rate,
+            quality_warnings=quality_warnings,
+            match_confidences=match_confidences,
         )
 
     def _convert_recursive(
@@ -838,12 +861,20 @@ class DesignConverterService:
             warnings_count=len(warnings),
         )
 
+        input_button_count = sum(len(s.buttons) for s in layout.sections)
+        quality_warnings = run_quality_contracts(
+            result_html,
+            input_section_count=len(frames),
+            input_button_count=input_button_count,
+        )
+
         return ConversionResult(
             html=result_html,
             sections_count=len(frames),
             warnings=warnings,
             layout=layout,
             compatibility_hints=compat.hints,
+            quality_warnings=quality_warnings,
         )
 
     @staticmethod
