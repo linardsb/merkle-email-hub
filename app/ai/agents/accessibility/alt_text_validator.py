@@ -117,9 +117,7 @@ def _is_tracking_pixel(element: lxml_html.HtmlElement) -> bool:
     style = element.get("style", "").lower()
     if w == "1" and h == "1":
         return True
-    if "display:none" in style or "display: none" in style:
-        return True
-    return False
+    return bool("display:none" in style or "display: none" in style)
 
 
 def validate_alt_text(html_content: str) -> AltTextAnalysis:

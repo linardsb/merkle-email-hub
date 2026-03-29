@@ -15,6 +15,9 @@ from pathlib import Path
 from typing import Any
 
 from app.ai.agents.evals.schemas import FailureCluster
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_verdicts(path: Path) -> list[dict[str, Any]]:
@@ -170,7 +173,7 @@ def main() -> None:
         all_verdicts = load_verdicts(verdicts_path)
 
     if not all_verdicts:
-        print("No verdicts found.", file=sys.stderr)
+        logger.error("No verdicts found.")
         sys.exit(1)
 
     report = build_analysis_report(all_verdicts)
@@ -180,19 +183,19 @@ def main() -> None:
         json.dump(report, out_f, indent=2)
 
     s = report["summary"]
-    print("\n=== Error Analysis ===")
-    print(
+    logger.info("=== Error Analysis ===")
+    logger.info(
         f"Traces: {s['total_traces']} "
         f"(passed={s['passed']}, failed={s['failed']}, errors={s['errors']})"
     )
-    print(f"Overall pass rate: {s['overall_pass_rate']:.1%}")
+    logger.info(f"Overall pass rate: {s['overall_pass_rate']:.1%}")
 
     if report["top_failures"]:
-        print("\nTop failure clusters:")
+        logger.info("Top failure clusters:")
         for tf in report["top_failures"]:
-            print(f"  [{tf['count']}x] {tf['cluster_id']}: {tf['pattern'][:80]}")
+            logger.info(f"  [{tf['count']}x] {tf['cluster_id']}: {tf['pattern'][:80]}")
 
-    print(f"\nFull report: {output_path}")
+    logger.info(f"Full report: {output_path}")
 
 
 if __name__ == "__main__":

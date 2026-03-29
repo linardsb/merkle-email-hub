@@ -20,6 +20,9 @@ from pathlib import Path
 from typing import Any
 
 from app.ai.agents.evals.schemas import RegressionReport
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Per-agent regression tolerance: if any single agent's pass rate drops by
 # more than this many percentage points, it's flagged as a regression.
@@ -153,9 +156,9 @@ def main() -> None:
     current_rates: dict[str, dict[str, float]] = current_data.get("pass_rates", {})
 
     if not baseline_path.exists():
-        print(f"No baseline found at {baseline_path}. Creating from current run.")
+        logger.info(f"No baseline found at {baseline_path}. Creating from current run.")
         shutil.copy2(current_path, baseline_path)
-        print(f"Baseline created: {baseline_path}")
+        logger.info(f"Baseline created: {baseline_path}")
         return
 
     with baseline_path.open() as f:
@@ -165,28 +168,28 @@ def main() -> None:
     reports = compare_pass_rates(current_rates, baseline_rates, args.tolerance)
     report = build_regression_report(reports)
 
-    print(f"\n=== Regression Check (tolerance={args.tolerance:.0%}) ===")
+    logger.info(f"=== Regression Check (tolerance={args.tolerance:.0%}) ===")
     for detail in report["details"]:
         status = "REGRESSED" if detail["is_regression"] else "OK"
-        print(
+        logger.info(
             f"  {detail['agent']}: {detail['baseline_pass_rate']:.1%} -> "
             f"{detail['current_pass_rate']:.1%} "
             f"({detail['delta']:+.1%}) [{status}]"
         )
         if detail["regressed_criteria"]:
-            print(f"    Regressed: {', '.join(detail['regressed_criteria'])}")
+            logger.info(f"    Regressed: {', '.join(detail['regressed_criteria'])}")
 
     if args.update_baseline and not report["has_regression"]:
         shutil.copy2(current_path, baseline_path)
-        print(f"\nBaseline updated: {baseline_path}")
+        logger.info(f"Baseline updated: {baseline_path}")
     elif args.update_baseline and report["has_regression"]:
-        print("\nBaseline NOT updated (regression detected).")
+        logger.info("Baseline NOT updated (regression detected).")
 
     if report["has_regression"]:
-        print(f"\nREGRESSION DETECTED — {report['agents_regressed']} agent(s) regressed.")
+        logger.info(f"REGRESSION DETECTED — {report['agents_regressed']} agent(s) regressed.")
         sys.exit(1)
     else:
-        print("\nNo regressions detected.")
+        logger.info("No regressions detected.")
 
 
 if __name__ == "__main__":

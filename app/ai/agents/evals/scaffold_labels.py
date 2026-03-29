@@ -20,6 +20,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 QA_CHECK_NAMES: list[str] = [
     "html_validation",
     "css_support",
@@ -107,7 +111,7 @@ def main() -> None:
                 traces.append(json.loads(stripped))
 
     if not verdicts:
-        print("No verdicts found.", file=sys.stderr)
+        logger.error("No verdicts found.")
         sys.exit(1)
 
     labels = scaffold_labels(verdicts, traces, include_qa_criteria=not args.no_qa)
@@ -120,11 +124,11 @@ def main() -> None:
 
     judge_count = sum(1 for lbl in labels if lbl["judge_pass"] is not None)
     qa_count = len(labels) - judge_count
-    print(
+    logger.info(
         f"Scaffolded {len(labels)} label rows "
         f"({judge_count} judge + {qa_count} QA) -> {output_path}"
     )
-    print("Edit the file and set human_pass to true/false for each row.")
+    logger.info("Edit the file and set human_pass to true/false for each row.")
 
 
 if __name__ == "__main__":

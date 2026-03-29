@@ -31,6 +31,9 @@ from app.ai.agents.evals.synthetic_data_outlook_fixer import OUTLOOK_FIXER_TEST_
 from app.ai.agents.evals.synthetic_data_personalisation import PERSONALISATION_TEST_CASES
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 from app.ai.agents.evals.template_eval_generator import TemplateEvalGenerator
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
@@ -601,10 +604,10 @@ async def run_agent(
                 if line:
                     existing_ids.add(json.loads(line)["id"])
         if existing_ids:
-            print(f"Resuming: {len(existing_ids)} existing traces found in {output_file}")
+            logger.info(f"Resuming: {len(existing_ids)} existing traces found in {output_file}")
 
     file_mode = "a" if existing_ids else "w"
-    print(f"Running {len(cases)} test cases for {agent}{mode_label}...")
+    logger.info(f"Running {len(cases)} test cases for {agent}{mode_label}...")
 
     trace_count = 0
     error_count = 0
@@ -615,9 +618,9 @@ async def run_agent(
 
             for i, case in enumerate(cases, 1):
                 if case["id"] in existing_ids:
-                    print(f"  [{i}/{len(cases)}] {case['id']}... SKIPPED (exists)")
+                    logger.debug(f"  [{i}/{len(cases)}] {case['id']}... SKIPPED (exists)")
                     continue
-                print(f"  [{i}/{len(cases)}] {case['id']}... (dry-run)")
+                logger.debug(f"  [{i}/{len(cases)}] {case['id']}... (dry-run)")
                 trace = generate_mock_trace(case, agent)
                 f.write(json.dumps(trace) + "\n")
                 f.flush()
@@ -625,9 +628,9 @@ async def run_agent(
         else:
             for i, case in enumerate(cases, 1):
                 if case["id"] in existing_ids:
-                    print(f"  [{i}/{len(cases)}] {case['id']}... SKIPPED (exists)")
+                    logger.debug(f"  [{i}/{len(cases)}] {case['id']}... SKIPPED (exists)")
                     continue
-                print(f"  [{i}/{len(cases)}] {case['id']}...", end=" ", flush=True)
+                logger.debug(f"  [{i}/{len(cases)}] {case['id']}...")
                 trace = await runner(case)
                 f.write(json.dumps(trace) + "\n")
                 f.flush()
@@ -635,14 +638,14 @@ async def run_agent(
                 if trace["error"] is not None:
                     error_count += 1
                 status = "OK" if trace["error"] is None else f"ERROR: {trace['error']}"
-                print(f"{status} ({trace['elapsed_seconds']}s)")
+                logger.debug(f"    {status} ({trace['elapsed_seconds']}s)")
                 if (i % batch_size == 0) and i < len(cases):
-                    print(f"  Rate limit pause ({delay}s)...", flush=True)
+                    logger.debug(f"  Rate limit pause ({delay}s)...")
                     await asyncio.sleep(delay)
 
     total = trace_count + len(existing_ids)
     passed = total - error_count
-    print(f"\nDone: {passed}/{total} succeeded. Traces: {output_file}")
+    logger.info(f"Done: {passed}/{total} succeeded. Traces: {output_file}")
 
 
 async def main() -> None:

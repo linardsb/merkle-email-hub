@@ -115,7 +115,7 @@ def main() -> None:
         task_id=args.task_id,
     )
     delta_sign = "+" if entry.delta >= 0 else ""
-    print(
+    logger.info(
         f"Recorded: {entry.agent}/{entry.criterion} "
         f"{entry.before_rate:.1%} -> {entry.after_rate:.1%} "
         f"({delta_sign}{entry.delta:.1%})"

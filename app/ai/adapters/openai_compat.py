@@ -12,6 +12,7 @@ Uses httpx.AsyncClient for non-blocking HTTP calls with connection pooling.
 Reads configuration from app.core.config.Settings.ai namespace.
 """
 
+import contextlib
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -459,7 +460,5 @@ class OpenAICompatProvider:
 
         Should be called during application shutdown to release connections.
         """
-        try:
+        with contextlib.suppress(RuntimeError):
             await self._client.aclose()
-        except RuntimeError:
-            pass  # Event loop already closed during shutdown

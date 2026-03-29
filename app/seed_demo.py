@@ -12,7 +12,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -247,7 +247,7 @@ async def _seed_design_connections(db: AsyncSession, project: Project, user: Use
 
     demo_token = "demo-figma-token-not-real"
     encrypted = encrypt_token(demo_token)
-    now = datetime.utcnow()
+    now = datetime.now(tz=UTC)
 
     connections_data = [
         {

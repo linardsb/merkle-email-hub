@@ -240,9 +240,12 @@ class EmailIntentClassifier:
 
         # ── Cross-intent suppression ──
         # Transactional with prices should stay transactional (receipts have prices)
-        if scores[IntentType.TRANSACTIONAL] > 0 and scores[IntentType.PROMOTIONAL] > 0:
-            if order_matches or receipt_matches:
-                scores[IntentType.PROMOTIONAL] *= 0.3
+        if (
+            scores[IntentType.TRANSACTIONAL] > 0
+            and scores[IntentType.PROMOTIONAL] > 0
+            and (order_matches or receipt_matches)
+        ):
+            scores[IntentType.PROMOTIONAL] *= 0.3
 
         # Newsletter unsubscribe link is present in most marketing emails too
         if scores[IntentType.NEWSLETTER] > 0 and scores[IntentType.PROMOTIONAL] > 1.0:

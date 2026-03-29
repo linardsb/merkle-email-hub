@@ -136,7 +136,7 @@ class ChatService:
         return response
 
     async def stream_chat(self, request: ChatCompletionRequest) -> AsyncIterator[str]:
-        """Stream chat completion tokens as SSE-formatted strings.
+        r"""Stream chat completion tokens as SSE-formatted strings.
 
         Yields SSE-formatted chunks compatible with OpenAI streaming format.
 

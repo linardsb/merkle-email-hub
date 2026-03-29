@@ -188,9 +188,7 @@ class ImageImporter:
         # Tracking pixels: both width AND height present and <= 2
         w = self._parse_int_attr(img, "width")
         h = self._parse_int_attr(img, "height")
-        if w is not None and h is not None and w <= 2 and h <= 2:
-            return True
-        return False
+        return bool(w is not None and h is not None and w <= 2 and h <= 2)
 
     @staticmethod
     async def _download(client: httpx.AsyncClient, url: str, max_size: int) -> bytes | None:

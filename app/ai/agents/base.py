@@ -445,10 +445,7 @@ class BaseAgentService:
         Blueprint nodes can call this instead of manually constructing
         AgentHandoff, ensuring consistent field population across all agents.
         """
-        if qa_passed is False:
-            status = HandoffStatus.WARNING
-        else:
-            status = HandoffStatus.OK
+        status = HandoffStatus.WARNING if qa_passed is False else HandoffStatus.OK
 
         return AgentHandoff(
             status=status,

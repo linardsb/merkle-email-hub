@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
@@ -276,8 +277,8 @@ class PenpotDesignSyncService:
         spacing: list[ExtractedSpacing] = []
         seen: set[str] = set()
         objects = file_data.get("data", {}).get("pages-index", {})
-        for _page_id, page_data in objects.items():
-            for _oid, obj in page_data.get("objects", {}).items():
+        for page_data in objects.values():
+            for obj in page_data.get("objects", {}).values():
                 layout = obj.get("layout")
                 if layout in ("flex", "grid"):
                     gap = obj.get("layout-gap", {})
@@ -423,14 +424,12 @@ class PenpotDesignSyncService:
                         dn_font_size = float(raw_fs) if isinstance(raw_fs, (int, float)) else None
                     raw_fw = span.get("font-weight")
                     if raw_fw is not None and dn_font_weight is None:
-                        try:
+                        with contextlib.suppress(ValueError, TypeError):
                             dn_font_weight = (
                                 int(float(raw_fw))
                                 if isinstance(raw_fw, (int, float, str))
                                 else None
                             )
-                        except (ValueError, TypeError):
-                            pass
                     raw_lh = span.get("line-height")
                     if raw_lh is not None and dn_line_height_px is None:
                         dn_line_height_px = (

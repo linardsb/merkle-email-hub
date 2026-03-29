@@ -25,6 +25,9 @@ from typing import Any
 
 from app.ai.agents.evals.calibration import load_human_labels
 from app.ai.agents.evals.schemas import HumanLabel, QACalibrationResult
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 QA_CHECK_NAMES: list[str] = [
     "html_validation",
@@ -164,7 +167,7 @@ def main() -> None:
     labels = load_human_labels(Path(args.labels))
 
     if not traces or not labels:
-        print("Need both traces and labels.", file=sys.stderr)
+        logger.error("Need both traces and labels.")
         sys.exit(1)
 
     qa_results = asyncio.run(run_qa_on_traces(traces))
@@ -177,18 +180,18 @@ def main() -> None:
     with output_path.open("w") as f:
         json.dump(report, f, indent=2)
 
-    print("\n=== QA Gate Calibration ===")
-    print(f"Checks evaluated: {report['checks_evaluated']}")
-    print(f"Average agreement: {report['average_agreement']:.1%}")
+    logger.info("=== QA Gate Calibration ===")
+    logger.info(f"Checks evaluated: {report['checks_evaluated']}")
+    logger.info(f"Average agreement: {report['average_agreement']:.1%}")
     if report["needs_tuning"]:
-        print(f"\nNeeds tuning ({len(report['needs_tuning'])} checks < 75% agreement):")
+        logger.info(f"Needs tuning ({len(report['needs_tuning'])} checks < 75% agreement):")
         for item in report["needs_tuning"]:
-            print(
+            logger.info(
                 f"  {item['check_name']}: {item['agreement_rate']:.1%} "
                 f"(false_pass={item['false_pass_rate']:.1%}, "
                 f"false_fail={item['false_fail_rate']:.1%})"
             )
-    print(f"\nReport: {args.output}")
+    logger.info(f"Report: {args.output}")
 
 
 if __name__ == "__main__":

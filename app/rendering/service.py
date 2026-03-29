@@ -356,9 +356,13 @@ class RenderingService:
                     subject="Calibration test",
                     profile_names=data.client_ids,
                 )
-                for profile_name, _html, screenshot, _diff in captures:
-                    if screenshot:
-                        external_map[profile_name] = screenshot
+                external_map.update(
+                    {
+                        profile_name: screenshot
+                        for profile_name, _html, screenshot, _diff in captures
+                        if screenshot
+                    }
+                )
             except CalibrationError:
                 raise
             except Exception as exc:

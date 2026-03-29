@@ -506,10 +506,9 @@ def _check_children_match(
 
     for el in elements:
         children = [c for c in el if isinstance(c.tag, str)]
-        if not children or str(children[0].tag).lower() != rule.value:
-            if len(issues) == 0:
-                issues.append(rule.message)
-                total += deduction
+        if (not children or str(children[0].tag).lower() != rule.value) and len(issues) == 0:
+            issues.append(rule.message)
+            total += deduction
 
     return RuleResult(rule_id=rule.id, passed=len(issues) == 0, issues=issues, deduction=total)
 

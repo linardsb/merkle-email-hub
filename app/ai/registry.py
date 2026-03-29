@@ -37,7 +37,7 @@ class _ResilientLLMProvider:
         self._breaker = breaker
 
     async def complete(self, messages: list[Message], **kwargs: object) -> CompletionResponse:
-        """Call complete() with circuit breaker protection."""
+        """Complete with circuit breaker protection."""
         async with self._breaker:
             return await self._provider.complete(messages, **kwargs)
 

@@ -22,25 +22,25 @@ async def main(dry_run: bool = False) -> None:
     service = CanIEmailSyncService()
     report = await service.sync(dry_run=dry_run)
 
-    print(f"\n{'DRY RUN — ' if dry_run else ''}Sync Report:")
-    print(f"  Commit SHA: {report.commit_sha or 'unknown'}")
-    print(f"  New properties: {report.new_properties}")
-    print(f"  Updated levels: {report.updated_levels}")
-    print(f"  New clients: {report.new_clients}")
-    print(f"  Changelog entries: {len(report.changelog)}")
+    logger.info(f"{'DRY RUN -- ' if dry_run else ''}Sync Report:")
+    logger.info(f"  Commit SHA: {report.commit_sha or 'unknown'}")
+    logger.info(f"  New properties: {report.new_properties}")
+    logger.info(f"  Updated levels: {report.updated_levels}")
+    logger.info(f"  New clients: {report.new_clients}")
+    logger.info(f"  Changelog entries: {len(report.changelog)}")
 
     if report.errors:
-        print(f"\n  Errors ({len(report.errors)}):")
+        logger.info(f"  Errors ({len(report.errors)}):")
         for err in report.errors:
-            print(f"    - {err}")
+            logger.info(f"    - {err}")
 
     if report.changelog:
-        print(f"\n  Changes ({len(report.changelog)}):")
+        logger.info(f"  Changes ({len(report.changelog)}):")
         for entry in report.changelog[:20]:
             old = entry.old_level or "new"
-            print(f"    {entry.property_id} @ {entry.client_id}: {old} -> {entry.new_level}")
+            logger.info(f"    {entry.property_id} @ {entry.client_id}: {old} -> {entry.new_level}")
         if len(report.changelog) > 20:
-            print(f"    ... and {len(report.changelog) - 20} more")
+            logger.info(f"    ... and {len(report.changelog) - 20} more")
 
     if report.errors:
         sys.exit(1)

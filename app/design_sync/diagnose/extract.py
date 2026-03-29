@@ -28,9 +28,12 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
+
+if TYPE_CHECKING:
+    from app.design_sync.protocol import DesignFileStructure
 
 from app.core.logging import get_logger
 
@@ -78,10 +81,10 @@ async def _fetch_figma_json(
 
         resp = await client.get(url, headers=headers, params=params)
         if resp.status_code == 403:
-            print("ERROR: Figma token is invalid or expired.", file=sys.stderr)
+            logger.error("Figma token is invalid or expired.")
             sys.exit(1)
         if resp.status_code == 404:
-            print(f"ERROR: File not found: {file_key}", file=sys.stderr)
+            logger.error(f"File not found: {file_key}")
             sys.exit(1)
         resp.raise_for_status()
         return resp.json()  # type: ignore[no-any-return]
@@ -96,7 +99,7 @@ async def _get_connection_creds(connection_id: int) -> tuple[str, str]:
     async with get_db_context() as db:
         conn = await db.get(DesignConnection, connection_id)
         if conn is None:
-            print(f"ERROR: Connection {connection_id} not found in DB.", file=sys.stderr)
+            logger.error(f"Connection {connection_id} not found in DB.")
             sys.exit(1)
         token = decrypt_token(conn.encrypted_token)
         return conn.file_ref, token
@@ -107,19 +110,19 @@ async def list_frames(
     token: str,
 ) -> None:
     """List top-level frames in a Figma file to find email node-ids."""
-    print(f"Fetching frame list for {file_key}...")
+    logger.info(f"Fetching frame list for {file_key}...")
     raw = await _fetch_figma_json(file_key, token, depth=2)
 
     doc = raw.get("document", {})
     file_name = raw.get("name", "Untitled")
-    print(f"\nFile: {file_name}")
-    print("=" * 60)
+    logger.info(f"File: {file_name}")
+    logger.info("=" * 60)
 
     for page in doc.get("children", []):
         page_name = page.get("name", "?")
         page_id = page.get("id", "?")
-        print(f"\n  Page: {page_name}  (id: {page_id})")
-        print(f"  {'─' * 56}")
+        logger.info(f"  Page: {page_name}  (id: {page_id})")
+        logger.info(f"  {'─' * 56}")
 
         for frame in page.get("children", []):
             frame_id = frame.get("id", "?")
@@ -131,19 +134,19 @@ async def list_frames(
 
             # Highlight likely email layouts (tall, ~600px wide)
             is_email = 400 <= w <= 800 and h > 500
-            marker = " ← LIKELY EMAIL" if is_email else ""
+            marker = " <- LIKELY EMAIL" if is_email else ""
 
-            # URL-safe node id (colon → dash)
+            # URL-safe node id (colon -> dash)
             url_id = frame_id.replace(":", "-")
-            print(
+            logger.info(
                 f"    {frame_name:40s}  id: {frame_id:12s}  "
                 f"{w}x{h}  ({child_count} children){marker}"
             )
             if is_email:
-                print(f"      --node-id {url_id}")
+                logger.info(f"      --node-id {url_id}")
 
-    print(f"\n{'=' * 60}")
-    print("Use --node-id <id> to extract a specific email frame.")
+    logger.info("=" * 60)
+    logger.info("Use --node-id <id> to extract a specific email frame.")
 
 
 async def extract(
@@ -171,13 +174,13 @@ async def extract(
     out.mkdir(parents=True, exist_ok=True)
 
     # 1. Fetch raw JSON from Figma API
-    print(f"Fetching from Figma API (file={file_key}, node={node_id or 'full'})...")
+    logger.info(f"Fetching from Figma API (file={file_key}, node={node_id or 'full'})...")
     raw = await _fetch_figma_json(file_key, token, node_id=node_id)
 
     raw_path = out / "raw_figma.json"
     raw_path.write_text(json.dumps(raw, indent=2))
     raw_size = raw_path.stat().st_size
-    print(f"  Saved raw JSON: {raw_path} ({raw_size:,} bytes)")
+    logger.info(f"  Saved raw JSON: {raw_path} ({raw_size:,} bytes)")
 
     # 2. Parse into DesignFileStructure + ExtractedTokens
     service = FigmaDesignSyncService()
@@ -185,7 +188,7 @@ async def extract(
     if node_id and "nodes" in raw:
         # Per-campaign mode: parse the node-specific response directly
         # This gives us ONLY the email frame, not the entire design system
-        print("Parsing node subtree (per-campaign mode)...")
+        logger.info("Parsing node subtree (per-campaign mode)...")
         figma_node_id = node_id.replace("-", ":")
         node_data = raw["nodes"].get(figma_node_id, {})
         doc = node_data.get("document", {})
@@ -211,32 +214,32 @@ async def extract(
         # Try to load cached tokens from a previous onboarding run
         cached_tokens_path = out / "tokens.json"
         if cached_tokens_path.exists():
-            print("  Loading cached tokens from previous onboarding run...")
+            logger.info("  Loading cached tokens from previous onboarding run...")
             tokens = load_tokens_from_json(cached_tokens_path)
         else:
             # Fallback: do a lightweight full-file fetch just for tokens
-            print("  No cached tokens — fetching full file for token extraction...")
+            logger.info("  No cached tokens -- fetching full file for token extraction...")
             tokens, _full_structure = await service.sync_tokens_and_structure(file_key, token)
     else:
         # Onboarding mode: full file fetch for complete token extraction
-        print("Parsing full file (onboarding mode)...")
+        logger.info("Parsing full file (onboarding mode)...")
         tokens, structure = await service.sync_tokens_and_structure(file_key, token)
 
     # 3. Save parsed data
     structure_path = out / "structure.json"
     dump_structure_to_json(structure, structure_path)
-    print(f"  Saved structure: {structure_path}")
+    logger.info(f"  Saved structure: {structure_path}")
 
     tokens_path = out / "tokens.json"
     dump_tokens_to_json(tokens, tokens_path)
-    print(f"  Saved tokens: {tokens_path}")
+    logger.info(f"  Saved tokens: {tokens_path}")
 
     # 4. Print tree summary
     _print_tree_summary(structure)
 
     # 5. Run diagnostics
     if run_diagnostics:
-        print("\nRunning diagnostic pipeline...")
+        logger.info("Running diagnostic pipeline...")
         runner = DiagnosticRunner()
         report = runner.run_from_structure(
             structure,
@@ -246,37 +249,37 @@ async def extract(
 
         report_path = out / "report.json"
         report_path.write_text(report_to_json(report))
-        print(f"  Saved report: {report_path}")
+        logger.info(f"  Saved report: {report_path}")
 
-        # Print summary
-        print(f"\n{'=' * 60}")
-        print(f"  Stages completed:  {report.stages_completed}")
-        print(f"  Total warnings:    {report.total_warnings}")
-        print(f"  Data loss events:  {report.total_data_loss_events}")
-        print(f"  Sections found:    {len(report.section_traces)}")
-        print(f"  Final HTML length: {report.final_html_length:,} chars")
-        print(f"  Elapsed:           {report.total_elapsed_ms:.0f}ms")
+        # Log summary
+        logger.info("=" * 60)
+        logger.info(f"  Stages completed:  {report.stages_completed}")
+        logger.info(f"  Total warnings:    {report.total_warnings}")
+        logger.info(f"  Data loss events:  {report.total_data_loss_events}")
+        logger.info(f"  Sections found:    {len(report.section_traces)}")
+        logger.info(f"  Final HTML length: {report.final_html_length:,} chars")
+        logger.info(f"  Elapsed:           {report.total_elapsed_ms:.0f}ms")
 
         if report.section_traces:
-            print("\n  Section Traces:")
+            logger.info("  Section Traces:")
             for t in report.section_traces:
-                print(
-                    f"    [{t.section_idx}] {t.classified_type:12s} → "
+                logger.info(
+                    f"    [{t.section_idx}] {t.classified_type:12s} -> "
                     f"{t.matched_component:20s} "
                     f"(conf={t.match_confidence:.1f}) "
                     f"texts={t.texts_found} imgs={t.images_found} "
                     f"btns={t.buttons_found}"
                 )
                 if t.unfilled_slots:
-                    print(f"         UNFILLED: {', '.join(t.unfilled_slots)}")
+                    logger.info(f"         UNFILLED: {', '.join(t.unfilled_slots)}")
 
         if report.total_data_loss_events > 0:
-            print("\n  Data Loss Events:")
+            logger.info("  Data Loss Events:")
             for stage in report.stages:
                 for ev in stage.data_loss:
-                    print(f"    [{ev.stage}] {ev.type}: {ev.detail}")
+                    logger.info(f"    [{ev.stage}] {ev.type}: {ev.detail}")
 
-    print(f"\n  Output directory: {out}")
+    logger.info(f"  Output directory: {out}")
     return out
 
 
@@ -299,8 +302,8 @@ def _print_tree_summary(structure: DesignFileStructure) -> None:
     for page in structure.pages:
         _walk(page)
 
-    print(f"\n  Node tree: {total} nodes, max depth {max_depth}")
-    print(f"  Types: {dict(sorted(type_counts.items(), key=lambda x: -x[1]))}")
+    logger.info(f"  Node tree: {total} nodes, max depth {max_depth}")
+    logger.info(f"  Types: {dict(sorted(type_counts.items(), key=lambda x: -x[1]))}")
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -358,7 +361,7 @@ async def _async_main(argv: list[str] | None = None) -> None:
         file_key = _extract_file_key(args.figma_url)
         token = os.environ.get("FIGMA_TOKEN", "")
         if not token:
-            print("ERROR: Set FIGMA_TOKEN env var or use --connection-id.", file=sys.stderr)
+            logger.error("Set FIGMA_TOKEN env var or use --connection-id.")
             sys.exit(1)
         label = file_key[:12]
 

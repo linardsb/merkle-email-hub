@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -574,7 +575,7 @@ class DesignConverterService:
     def _convert_with_components(
         self,
         *,
-        frames: list[DesignNode],
+        _frames: list[DesignNode],
         layout: DesignLayoutDescription,
         tokens: ExtractedTokens,
         warnings: list[str],
@@ -769,10 +770,8 @@ class DesignConverterService:
         typography = convert_typography(tokens.typography)
         body_font_size = 16.0
         if typography.base_size:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 body_font_size = float(typography.base_size.replace("px", ""))
-            except (ValueError, TypeError):
-                pass
 
         # Build gradient name → ExtractedGradient lookup
         gradients_map: dict[str, ExtractedGradient] = (
@@ -978,12 +977,13 @@ class DesignConverterService:
 
         for page in structure.pages:
             for child in page.children:
-                if child.type in frame_types:
-                    if selected_nodes is None or child.id in selected_nodes:
-                        # B3: Skip top-level frames with no visible content
-                        if not _has_visible_content(child):
-                            continue
-                        frames.append(child)
+                if child.type in frame_types and (
+                    selected_nodes is None or child.id in selected_nodes
+                ):
+                    # B3: Skip top-level frames with no visible content
+                    if not _has_visible_content(child):
+                        continue
+                    frames.append(child)
         return frames
 
     def _collect_vector_warnings(self, node: DesignNode, warnings: list[str]) -> None:
@@ -1054,7 +1054,7 @@ class DesignConverterService:
         """Extract visual properties from raw Penpot objects."""
         props: dict[str, _NodeProps] = {}
         pages_index = file_data.get("data", {}).get("pages-index", {})
-        for _page_id, page_data in pages_index.items():
+        for page_data in pages_index.values():
             if not isinstance(page_data, dict):
                 continue
             for obj_id, obj in page_data.get("objects", {}).items():

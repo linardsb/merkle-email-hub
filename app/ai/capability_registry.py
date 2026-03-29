@@ -82,9 +82,9 @@ class ModelSpec:
             return False
         if min_context > 0 and self.constraints.context_window < min_context:
             return False
-        if min_output_tokens > 0 and self.constraints.max_output_tokens < min_output_tokens:
-            return False
-        return True
+        return not (
+            min_output_tokens > 0 and self.constraints.max_output_tokens < min_output_tokens
+        )
 
 
 class CapabilityRegistry:

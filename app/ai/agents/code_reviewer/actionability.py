@@ -118,11 +118,7 @@ def is_actionable(issue: CodeReviewIssue) -> bool:
         return False
 
     # Check for vague patterns
-    for pattern in _VAGUE_PATTERNS:
-        if pattern.search(suggestion):
-            return False
-
-    return True
+    return all(not pattern.search(suggestion) for pattern in _VAGUE_PATTERNS)
 
 
 def format_non_actionable_for_retry(issues: list[CodeReviewIssue]) -> str:

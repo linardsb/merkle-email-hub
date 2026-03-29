@@ -22,6 +22,7 @@ vi.mock("@/hooks/use-mcp", () => ({
 
 vi.mock("@/hooks/use-design-sync", () => ({
   useDesignTokens: vi.fn(),
+  useTokenDiff: vi.fn().mockReturnValue({ data: undefined, error: undefined, isLoading: false, mutate: vi.fn() }),
 }));
 
 vi.mock("@/components/ui/empty-state", () => ({

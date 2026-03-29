@@ -137,10 +137,7 @@ class VisualQAService(BaseAgentService):
 
         # Resolve VLM model (uses visual_qa-specific model if configured)
         visual_qa_model = settings.ai.visual_qa_model
-        if visual_qa_model:
-            model = visual_qa_model
-        else:
-            model = resolve_model(self.model_tier)
+        model = visual_qa_model or resolve_model(self.model_tier)
         provider_name = settings.ai.provider
         model_id = f"{provider_name}:{model}"
 

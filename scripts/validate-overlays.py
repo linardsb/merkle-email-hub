@@ -19,7 +19,7 @@ from pathlib import Path
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from app.ai.agents.skill_loader import _VALID_OVERLAY_MODES, parse_overlay_meta
+from app.ai.agents.skill_loader import _VALID_OVERLAY_MODES, parse_overlay_meta  # noqa: E402
 
 _CLIENTS_DIR = _PROJECT_ROOT / "data" / "clients"
 

@@ -100,7 +100,7 @@ async def _seed_graph(entries: list[SeedEntry]) -> None:
     settings = get_settings()
 
     if not settings.cognee.enabled:
-        print("\n  Graph seeding skipped (COGNEE__ENABLED=false)")
+        logger.info("  Graph seeding skipped (COGNEE__ENABLED=false)")
         return
 
     try:
@@ -108,10 +108,10 @@ async def _seed_graph(entries: list[SeedEntry]) -> None:
 
         provider_cls = _cp.CogneeGraphProvider
     except ImportError:
-        print("\n  Graph seeding skipped (cognee not installed — pip install -e '.[graph]')")
+        logger.info("  Graph seeding skipped (cognee not installed)")
         return
 
-    print("\n  Seeding knowledge graph...")
+    logger.info("  Seeding knowledge graph...")
     start = time.monotonic()
 
     provider = provider_cls(settings)
@@ -129,10 +129,10 @@ async def _seed_graph(entries: list[SeedEntry]) -> None:
     for domain, texts in by_domain.items():
         try:
             await provider.add_documents(texts, dataset_name=domain)
-            print(f"  GRAPH ADD  {domain}: {len(texts)} documents")
+            logger.info(f"  GRAPH ADD  {domain}: {len(texts)} documents")
             total_docs += len(texts)
         except Exception as e:
-            print(f"  GRAPH FAIL {domain}: {e}")
+            logger.error(f"  GRAPH FAIL {domain}: {e}")
             logger.error(
                 "knowledge.graph_seed.add_failed",
                 domain=domain,
@@ -144,9 +144,9 @@ async def _seed_graph(entries: list[SeedEntry]) -> None:
     for domain in by_domain:
         try:
             await provider.build_graph(dataset_name=domain, background=False)
-            print(f"  GRAPH BUILD {domain}: cognify complete")
+            logger.info(f"  GRAPH BUILD {domain}: cognify complete")
         except Exception as e:
-            print(f"  GRAPH BUILD FAIL {domain}: {e}")
+            logger.error(f"  GRAPH BUILD FAIL {domain}: {e}")
             logger.error(
                 "knowledge.graph_seed.build_failed",
                 domain=domain,
@@ -154,7 +154,7 @@ async def _seed_graph(entries: list[SeedEntry]) -> None:
             )
 
     duration = time.monotonic() - start
-    print(
+    logger.info(
         f"  Graph seeding done in {duration:.1f}s ({total_docs} documents across {len(by_domain)} datasets)"
     )
 
@@ -164,7 +164,7 @@ async def _seed_ontology_graph() -> None:
     settings = get_settings()
 
     if not settings.cognee.enabled:
-        print("\n  Ontology graph seeding skipped (COGNEE__ENABLED=false)")
+        logger.info("  Ontology graph seeding skipped (COGNEE__ENABLED=false)")
         return
 
     try:
@@ -172,12 +172,12 @@ async def _seed_ontology_graph() -> None:
 
         provider_cls = _cp.CogneeGraphProvider
     except ImportError:
-        print("\n  Ontology graph seeding skipped (cognee not installed)")
+        logger.info("  Ontology graph seeding skipped (cognee not installed)")
         return
 
     from app.knowledge.ontology.graph_export import export_ontology_documents
 
-    print("\n  Seeding ontology into knowledge graph...")
+    logger.info("  Seeding ontology into knowledge graph...")
     start = time.monotonic()
 
     provider = provider_cls(settings)
@@ -192,10 +192,10 @@ async def _seed_ontology_graph() -> None:
     for dataset, texts in by_dataset.items():
         try:
             await provider.add_documents(texts, dataset_name=dataset)
-            print(f"  ONTOLOGY ADD  {dataset}: {len(texts)} documents")
+            logger.info(f"  ONTOLOGY ADD  {dataset}: {len(texts)} documents")
             total_docs += len(texts)
         except Exception as e:
-            print(f"  ONTOLOGY FAIL {dataset}: {e}")
+            logger.error(f"  ONTOLOGY FAIL {dataset}: {e}")
             logger.error(
                 "knowledge.ontology_seed.add_failed",
                 dataset=dataset,
@@ -206,9 +206,9 @@ async def _seed_ontology_graph() -> None:
     for dataset in by_dataset:
         try:
             await provider.build_graph(dataset_name=dataset, background=False)
-            print(f"  ONTOLOGY BUILD {dataset}: cognify complete")
+            logger.info(f"  ONTOLOGY BUILD {dataset}: cognify complete")
         except Exception as e:
-            print(f"  ONTOLOGY BUILD FAIL {dataset}: {e}")
+            logger.error(f"  ONTOLOGY BUILD FAIL {dataset}: {e}")
             logger.error(
                 "knowledge.ontology_seed.build_failed",
                 dataset=dataset,
@@ -216,7 +216,7 @@ async def _seed_ontology_graph() -> None:
             )
 
     duration = time.monotonic() - start
-    print(
+    logger.info(
         f"  Ontology graph done in {duration:.1f}s"
         f" ({total_docs} documents across {len(by_dataset)} datasets)"
     )
@@ -230,9 +230,9 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
         skip_graph: If True, skip Cognee graph seeding (RAG only).
     """
     start = time.monotonic()
-    print(f"\n  Seeding knowledge base ({len(SEED_MANIFEST)} documents)...")
-    print(f"  Source: {SEED_DIR}")
-    print(f"  Force: {force}\n")
+    logger.info(f"  Seeding knowledge base ({len(SEED_MANIFEST)} documents)...")
+    logger.info(f"  Source: {SEED_DIR}")
+    logger.info(f"  Force: {force}")
 
     async with get_db_context() as db:
         service = KnowledgeService(db)
@@ -242,7 +242,7 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
 
         # Pre-create tags
         tag_map = await _ensure_tags(service)
-        print(f"  Tags ready: {len(tag_map)}\n")
+        logger.info(f"  Tags ready: {len(tag_map)}")
 
         seeded = 0
         skipped = 0
@@ -254,13 +254,13 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
 
             # Validate file exists
             if not file_path.is_file():
-                print(f"  MISS {entry.filename} (file not found)")
+                logger.info(f"  MISS {entry.filename} (file not found)")
                 failed += 1
                 continue
 
             # Idempotency: skip if filename already exists
             if file_path.name in existing:
-                print(f"  SKIP {entry.filename} (already seeded)")
+                logger.debug(f"  SKIP {entry.filename} (already seeded)")
                 skipped += 1
                 continue
 
@@ -268,10 +268,10 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
                 chunks = await _ingest_entry(service, entry, tag_map)
                 total_chunks += chunks
                 seeded += 1
-                print(f"  OK   {entry.filename} -> {chunks} chunks")
+                logger.info(f"  OK   {entry.filename} -> {chunks} chunks")
             except Exception as e:
                 failed += 1
-                print(f"  FAIL {entry.filename}: {e}")
+                logger.error(f"  FAIL {entry.filename}: {e}")
                 logger.error(
                     "knowledge.seed.entry_failed",
                     filename=entry.filename,
@@ -280,8 +280,8 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
                 )
 
     duration = time.monotonic() - start
-    print(f"\n  Done in {duration:.1f}s: {seeded} seeded, {skipped} skipped, {failed} failed")
-    print(f"  Total chunks: {total_chunks}\n")
+    logger.info(f"  Done in {duration:.1f}s: {seeded} seeded, {skipped} skipped, {failed} failed")
+    logger.info(f"  Total chunks: {total_chunks}")
 
     # --- Phase 2: Graph seeding (Cognee ECL pipeline) ---
     # Use all manifest entries (not just newly seeded — graph needs full corpus)
@@ -289,7 +289,7 @@ async def seed_knowledge_base(*, force: bool = False, skip_graph: bool = False) 
         await _seed_graph(SEED_MANIFEST)
         await _seed_ontology_graph()
     else:
-        print("\n  Graph seeding skipped (--skip-graph flag)")
+        logger.info("  Graph seeding skipped (--skip-graph flag)")
 
     if failed > 0:
         sys.exit(1)

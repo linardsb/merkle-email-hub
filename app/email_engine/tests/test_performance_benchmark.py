@@ -13,8 +13,11 @@ from unittest.mock import patch
 
 import pytest
 
+from app.core.logging import get_logger
 from app.email_engine.css_compiler.compiler import EmailCSSCompiler
 from app.email_engine.tests.conftest import make_mock_registry
+
+logger = get_logger(__name__)
 
 
 def _generate_scaled_email(section_count: int) -> str:
@@ -77,8 +80,8 @@ class TestCompilationBenchmarks:
         compile_ms = _time_fn(compiler.compile, html)
         optimize_ms = _time_fn(compiler.optimize_css, html)
 
-        print(
-            f"\n  [{sections} sections] compile={compile_ms:.1f}ms  optimize={optimize_ms:.1f}ms  "
+        logger.info(
+            f"[{sections} sections] compile={compile_ms:.1f}ms  optimize={optimize_ms:.1f}ms  "
             f"speedup={compile_ms / max(optimize_ms, 0.01):.1f}x"
         )
 
@@ -91,7 +94,7 @@ class TestCompilationBenchmarks:
         compiler = EmailCSSCompiler(target_clients=["gmail_web", "outlook_2019"])
         for name, html in representative_templates.items():
             ms = _time_fn(compiler.optimize_css, html)
-            print(f"\n  [{name}] optimize={ms:.1f}ms  size={len(html)}b")
+            logger.info(f"[{name}] optimize={ms:.1f}ms  size={len(html)}b")
             assert ms < 200, f"Template '{name}' optimize took {ms:.1f}ms, expected <200ms"
 
     def test_compile_real_templates(self, representative_templates: dict[str, str]) -> None:
@@ -99,7 +102,7 @@ class TestCompilationBenchmarks:
         compiler = EmailCSSCompiler(target_clients=["gmail_web", "outlook_2019"])
         for name, html in representative_templates.items():
             ms = _time_fn(compiler.compile, html)
-            print(f"\n  [{name}] compile={ms:.1f}ms  size={len(html)}b")
+            logger.info(f"[{name}] compile={ms:.1f}ms  size={len(html)}b")
             assert ms < 500, f"Template '{name}' compile took {ms:.1f}ms, expected <500ms"
 
     def test_optimize_30_sections_under_100ms(self) -> None:
@@ -107,7 +110,7 @@ class TestCompilationBenchmarks:
         html = _generate_scaled_email(30)
         compiler = EmailCSSCompiler(target_clients=["gmail_web", "outlook_2019"])
         ms = _time_fn(compiler.optimize_css, html)
-        print(f"\n  [30 sections] optimize={ms:.1f}ms")
+        logger.info(f"[30 sections] optimize={ms:.1f}ms")
         assert ms < 100, f"optimize_css took {ms:.1f}ms, expected <100ms"
 
     def test_compile_50_sections_completes(self) -> None:
@@ -116,7 +119,7 @@ class TestCompilationBenchmarks:
         compiler = EmailCSSCompiler(target_clients=["gmail_web"])
         result = compiler.compile(html)
         assert result.compiled_size > 0
-        print(f"\n  [50 sections] compile={result.compile_time_ms:.1f}ms")
+        logger.info(f"[50 sections] compile={result.compile_time_ms:.1f}ms")
 
     def test_optimize_email_shell_component(self, component_html: dict[str, str]) -> None:
         """Benchmark optimize_css() on the email-shell component (heaviest CSS)."""
@@ -125,7 +128,7 @@ class TestCompilationBenchmarks:
             pytest.skip("email-shell component not in seeds")
         compiler = EmailCSSCompiler(target_clients=["gmail_web", "outlook_2019"])
         ms = _time_fn(compiler.optimize_css, shell)
-        print(f"\n  [email-shell] optimize={ms:.1f}ms  size={len(shell)}b")
+        logger.info(f"[email-shell] optimize={ms:.1f}ms  size={len(shell)}b")
         assert ms < 200, f"email-shell optimize took {ms:.1f}ms, expected <200ms"
 
     def test_optimize_all_components(self, component_html: dict[str, str]) -> None:
@@ -133,4 +136,4 @@ class TestCompilationBenchmarks:
         compiler = EmailCSSCompiler(target_clients=["gmail_web", "outlook_2019"])
         for slug, html in component_html.items():
             ms = _time_fn(compiler.optimize_css, html)
-            print(f"\n  [{slug}] optimize={ms:.1f}ms  size={len(html)}b")
+            logger.info(f"[{slug}] optimize={ms:.1f}ms  size={len(html)}b")

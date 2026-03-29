@@ -1,6 +1,7 @@
 # pyright: reportUnknownMemberType=false, reportMissingTypeStubs=false
 """Redis client singleton for shared state across the application."""
 
+import contextlib
 from urllib.parse import urlparse
 
 from redis.asyncio import Redis
@@ -57,9 +58,7 @@ async def close_redis() -> None:
     """Close the Redis client. Called on app shutdown."""
     global _redis_client
     if _redis_client is not None:
-        try:
+        with contextlib.suppress(RuntimeError):
             await _redis_client.aclose()
-        except RuntimeError:
-            pass  # Event loop already closed
         _redis_client = None
         logger.info("redis.connection_closed")

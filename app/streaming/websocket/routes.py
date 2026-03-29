@@ -192,22 +192,26 @@ async def ws_collab(
                 if not can_edit:
                     # Viewers can receive sync but not send updates
                     sync = get_sync_handler()
-                    if sync is not None and settings.collab_ws.crdt_enabled:
-                        # Allow SyncStep1 (read-only sync request)
-                        if len(data) >= 2 and data[0] == 0 and data[1] == 0:
-                            from app.core.database import AsyncSessionLocal
+                    if (
+                        sync is not None
+                        and settings.collab_ws.crdt_enabled
+                        and len(data) >= 2
+                        and data[0] == 0
+                        and data[1] == 0
+                    ):
+                        from app.core.database import AsyncSessionLocal
 
-                            async with AsyncSessionLocal() as db:
-                                replies, _ = await sync.handle_sync_message(
-                                    db,
-                                    room_id,
-                                    str(user.id),
-                                    data,
-                                )
-                                # Don't commit -- viewer sync is read-only
-                            for reply in replies:
-                                await websocket.send_bytes(reply)
-                            continue
+                        async with AsyncSessionLocal() as db:
+                            replies, _ = await sync.handle_sync_message(
+                                db,
+                                room_id,
+                                str(user.id),
+                                data,
+                            )
+                            # Don't commit -- viewer sync is read-only
+                        for reply in replies:
+                            await websocket.send_bytes(reply)
+                        continue
                     err = CollabError(code="read_only", message="Viewer role cannot edit")
                     await websocket.send_json(err.model_dump())
                     continue

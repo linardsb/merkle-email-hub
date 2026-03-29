@@ -20,6 +20,9 @@ from pathlib import Path
 from typing import Any
 
 from app.ai.agents.evals.schemas import CalibrationResult, HumanLabel
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_human_labels(path: Path) -> list[HumanLabel]:
@@ -160,7 +163,7 @@ def main() -> None:
     labels = load_human_labels(Path(args.labels))
 
     if not labels:
-        print("No human labels found.", file=sys.stderr)
+        logger.error("No human labels found.")
         sys.exit(1)
 
     results = calibrate(labels, judge_lookup)
@@ -171,24 +174,24 @@ def main() -> None:
     with output_path.open("w") as f:
         json.dump(report, f, indent=2)
 
-    print("\n=== Judge Calibration ===")
-    print(f"Criteria evaluated: {report['total_criteria']}")
-    print(
+    logger.info("=== Judge Calibration ===")
+    logger.info(f"Criteria evaluated: {report['total_criteria']}")
+    logger.info(
         f"Meeting targets (TPR>{report['target_tpr']}, TNR>{report['target_tnr']}): "
         f"{report['passing_criteria']}/{report['total_criteria']}"
     )
 
     if report["needs_attention"]:
-        print("\nNeeds attention:")
+        logger.info("Needs attention:")
         for item in report["needs_attention"]:
-            print(
+            logger.info(
                 f"  {item['agent']}:{item['criterion']} "
                 f"— TPR={item['tpr']:.2f}, TNR={item['tnr']:.2f}"
             )
 
     status = "PASS" if report["all_meet_targets"] else "FAIL"
-    print(f"\nCalibration: {status}")
-    print(f"Report: {args.output}")
+    logger.info(f"Calibration: {status}")
+    logger.info(f"Report: {args.output}")
 
 
 if __name__ == "__main__":

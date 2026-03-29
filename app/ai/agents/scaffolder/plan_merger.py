@@ -43,10 +43,11 @@ def merge_dark_mode(
 
     # Apply overrides to design tokens colors dict
     tokens = plan.design_tokens
-    color_updates: dict[str, str] = {}
-    for token_name, dark_value in override_map.items():
-        if token_name in tokens.colors:
-            color_updates[token_name] = dark_value
+    color_updates: dict[str, str] = {
+        token_name: dark_value
+        for token_name, dark_value in override_map.items()
+        if token_name in tokens.colors
+    }
 
     if color_updates:
         merged_colors = {**tokens.colors, **color_updates}

@@ -138,13 +138,10 @@ class WhisperLocalTranscriber:
         ext = _MIME_TO_EXT.get(media_type, "wav")
 
         # Whisper requires file path — write to temp file, process, delete
-        tmp = tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False)
-        tmp_path = Path(tmp.name)
-        try:
+        with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
             tmp.write(audio)
-            tmp.flush()
-            tmp.close()
-
+        try:
             # Run CPU-bound whisper in thread pool
             model = self._model
 

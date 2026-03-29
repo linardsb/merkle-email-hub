@@ -550,7 +550,7 @@ class DeliverabilityCheck:
                 issue_lines.append(f"[{issue.severity}] {issue.description} → {issue.fix}")
 
         # Add ISP-specific flags
-        for _isp_name, profile in isp_analysis.isp_risks.items():
+        for profile in isp_analysis.isp_risks.values():
             for flag in profile.flags:
                 issue_lines.append(
                     f"[{flag.severity}] [{flag.isp.upper()}] {flag.description} → {flag.fix}"
@@ -567,7 +567,7 @@ class DeliverabilityCheck:
         details += " | ".join(dimension_lines)
 
         # Per-ISP summary
-        for _isp_name, profile in isp_analysis.isp_risks.items():
+        for profile in isp_analysis.isp_risks.values():
             details += (
                 f"\n{profile.display_name}: risk={profile.risk_level}, score={profile.score}/100"
             )

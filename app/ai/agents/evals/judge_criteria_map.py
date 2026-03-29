@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Any
 
 from app.ai.agents.evals.judges.schemas import CriterionResult
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -325,10 +328,7 @@ async def evaluate_criterion_via_qa(
         result = await check.run(html)
         results.append((check_name, result.passed, result.details or ""))
 
-    if mapping.strategy == "all":
-        passed = all(r[1] for r in results)
-    else:  # "any"
-        passed = any(r[1] for r in results)
+    passed = all(r[1] for r in results) if mapping.strategy == "all" else any(r[1] for r in results)
 
     failed_checks = [f"{name}: {detail}" for name, ok, detail in results if not ok]
     if passed:
@@ -502,33 +502,35 @@ def build_coverage_report(
 
 
 def print_coverage_report(report: dict[str, Any]) -> None:
-    """Pretty-print the coverage report to stdout."""
-    print("\n=== QA Coverage Report ===")
-    print(
+    """Log the coverage report."""
+    logger.info("=== QA Coverage Report ===")
+    logger.info(
         f"Criteria mapped:    {report['total_mapped']}/{report['total_criteria']} "
         f"({report['overall_coverage_pct']}%)"
     )
-    print(
+    logger.info(
         f"Criteria LLM-only:  {report['total_llm_only']}/{report['total_criteria']} "
         f"({100.0 - report['overall_coverage_pct']:.1f}%)"
     )
 
-    print("\nPer-agent breakdown:")
+    logger.info("Per-agent breakdown:")
     for agent_data in report["agents"]:
         llm_only_str = ", ".join(agent_data["llm_only_criteria"]) or "(none)"
-        print(
+        logger.info(
             f"  {agent_data['agent']:20s} {agent_data['mapped']}/{agent_data['total']} "
             f"mapped ({agent_data['coverage_pct']}%) — LLM-only: {llm_only_str}"
         )
 
-        # Print agreement details if available
+        # Log agreement details if available
         if "criteria_detail" in agent_data:
             for detail in agent_data["criteria_detail"]:
                 rate = detail.get("agreement_rate")
                 if rate is not None:
                     status = "PROMOTED" if detail["promoted"] else "NEEDS TUNING"
                     checks_str = " + ".join(detail["qa_checks"])
-                    print(f"    {detail['criterion']:38s} → {checks_str:30s} {rate:.0%} {status}")
+                    logger.info(
+                        f"    {detail['criterion']:38s} -> {checks_str:30s} {rate:.0%} {status}"
+                    )
 
 
 def main() -> None:
@@ -552,7 +554,7 @@ def main() -> None:
 
     agreement: dict[str, dict[str, float]] | None = None
     if args.traces and args.traces.exists():
-        print("Running agreement analysis against existing traces...")
+        logger.info("Running agreement analysis against existing traces...")
         agreement = asyncio.run(compute_agreement(args.traces))
 
     report = build_coverage_report(summaries, agreement)
@@ -562,7 +564,7 @@ def main() -> None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("w") as f:
             json.dump(report, f, indent=2)
-        print(f"\nReport written to: {args.output}")
+        logger.info(f"Report written to: {args.output}")
 
 
 if __name__ == "__main__":

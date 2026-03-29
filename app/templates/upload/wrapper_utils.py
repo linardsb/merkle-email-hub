@@ -48,10 +48,7 @@ def detect_centering(html: str) -> bool:
             return True
 
     # Check for MSO conditional wrapper in raw HTML
-    if _MSO_WRAPPER_RE.search(html):
-        return True
-
-    return False
+    return bool(_MSO_WRAPPER_RE.search(html))
 
 
 def inject_centering_wrapper(

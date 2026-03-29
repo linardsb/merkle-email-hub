@@ -306,10 +306,7 @@ def _fill_url_slot(html: str, slot_id: str, value: str) -> str:
 
     Uses lambda replacement to avoid re.escape issues in replacement strings.
     """
-    if slot_id.endswith("_image") or slot_id.endswith("_img"):
-        attr = "src"
-    else:
-        attr = "href"
+    attr = "src" if slot_id.endswith(("_image", "_img")) else "href"
     pattern = re.compile(
         r"""(<[^>]+data-slot=["']"""
         + re.escape(slot_id)

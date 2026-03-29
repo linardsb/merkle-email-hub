@@ -94,7 +94,7 @@ class SchemaValidator:
         warnings: list[str],
     ) -> None:
         """Validate nested schema.org objects."""
-        for _key, value in obj.items():
+        for value in obj.values():
             if isinstance(value, dict) and "@type" in value:
                 nested = cast(dict[str, Any], value)
                 nested_type = str(nested["@type"])

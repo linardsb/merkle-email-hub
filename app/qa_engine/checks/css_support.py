@@ -86,8 +86,7 @@ class CssSupportCheck:
                     f"Engine: {engine.value.title()} ({share:.1f}% share) — no support for {issue['property_name']}"
                 )
 
-        for warning in sorted(engine_warnings)[:5]:
-            detail_parts.append(warning)
+        detail_parts.extend(sorted(engine_warnings)[:5])
 
         ontology_score_loss = len(errors) * error_deduction + len(warnings) * warning_deduction
 

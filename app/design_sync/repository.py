@@ -314,8 +314,9 @@ class DesignSyncRepository:
         import_id: int,
         assets: list[dict[str, object]],
     ) -> list[DesignImportAsset]:
-        """Create multiple assets in a single flush. Each dict must have
-        node_id, node_name, file_path; optional: width, height, format, usage.
+        """Create multiple assets in a single flush.
+
+        Each dict must have node_id, node_name, file_path; optional: width, height, format, usage.
         """
         models = [
             DesignImportAsset(

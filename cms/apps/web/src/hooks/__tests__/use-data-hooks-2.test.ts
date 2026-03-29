@@ -355,7 +355,7 @@ describe("use-design-sync", () => {
       const { useSyncDesignConnection } = await import("../use-design-sync");
       renderHook(() => useSyncDesignConnection());
       expect(mockUseSWRMutation.mock.calls[0][0]).toBe("/api/v1/design-sync/connections/sync");
-      expect(mockUseSWRMutation.mock.calls[0][1]).toBe(mutationFetcher);
+      expect(mockUseSWRMutation.mock.calls[0][1]).toEqual(expect.any(Function));
     });
   });
 

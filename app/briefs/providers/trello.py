@@ -67,7 +67,7 @@ class TrelloBriefProvider:
             raw_labels: list[dict[str, Any]] = card.get("labels", []) or []
             labels: list[str] = [lbl.get("name", "") for lbl in raw_labels]
             due_str = card.get("due")
-            due_date = datetime.fromisoformat(due_str.replace("Z", "+00:00")) if due_str else None
+            due_date = datetime.fromisoformat(due_str) if due_str else None
             is_closed = card.get("closed", False)
 
             items.append(
@@ -105,7 +105,7 @@ class TrelloBriefProvider:
         raw_labels: list[dict[str, Any]] = card.get("labels", []) or []
         labels: list[str] = [lbl.get("name", "") for lbl in raw_labels]
         due_str = card.get("due")
-        due_date = datetime.fromisoformat(due_str.replace("Z", "+00:00")) if due_str else None
+        due_date = datetime.fromisoformat(due_str) if due_str else None
 
         raw_atts: list[dict[str, Any]] = card.get("attachments", []) or []
         attachments = [

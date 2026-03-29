@@ -196,9 +196,8 @@ def _check_schema_refs(
 
     errors: list[str] = []
     for key, value in schema.items():
-        if key in _BLOCKED_SCHEMA_KEYS:
-            if isinstance(value, str) and not value.startswith("#"):
-                errors.append(f"External {key} not allowed at {path or 'root'}: {value}")
+        if key in _BLOCKED_SCHEMA_KEYS and isinstance(value, str) and not value.startswith("#"):
+            errors.append(f"External {key} not allowed at {path or 'root'}: {value}")
         if isinstance(value, dict):
             errors.extend(_check_schema_refs(value, f"{path}/{key}", _depth=_depth + 1))
         elif isinstance(value, list):

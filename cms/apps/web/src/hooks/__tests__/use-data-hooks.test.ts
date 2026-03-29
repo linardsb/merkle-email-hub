@@ -600,6 +600,7 @@ describe("use-email", () => {
       expect(mockUseSWRMutation).toHaveBeenCalledWith(
         "/api/v1/email/build",
         mockLongMutationFetcher,
+        { throwOnError: false },
       );
     });
   });
@@ -610,6 +611,7 @@ describe("use-email", () => {
       expect(mockUseSWRMutation).toHaveBeenCalledWith(
         "/api/v1/email/preview",
         mockLongMutationFetcher,
+        { throwOnError: false },
       );
     });
   });

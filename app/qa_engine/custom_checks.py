@@ -865,9 +865,7 @@ def _is_tracking_pixel(img: HtmlElement) -> bool:
         return True
     if "display:none" in style.replace(" ", ""):
         return True
-    if "visibility:hidden" in style.replace(" ", ""):
-        return True
-    return False
+    return "visibility:hidden" in style.replace(" ", "")
 
 
 def _has_data_table_signals(table: HtmlElement) -> bool:
@@ -1306,11 +1304,10 @@ def spacer_aria(
     # Spacer images
     for img in doc.iter("img"):
         src = (img.get("src") or "").lower()
-        if "spacer" in src or "blank" in src:
-            if img.get("aria-hidden") != "true":
-                if len(issues) < cap:
-                    issues.append("Spacer image without aria-hidden='true'")
-                total += deduction
+        if ("spacer" in src or "blank" in src) and img.get("aria-hidden") != "true":
+            if len(issues) < cap:
+                issues.append("Spacer image without aria-hidden='true'")
+            total += deduction
 
     return issues, total
 
@@ -1335,11 +1332,10 @@ def separator_aria(
         if el.tag.lower() in ("style", "script", "head"):
             continue
         text = (el.text_content() or "").strip()
-        if len(text) <= 2 and text and text in _SEPARATOR_CHARS:
-            if el.get("aria-hidden") != "true":
-                if len(issues) < cap:
-                    issues.append(f"Separator character '{text}' without aria-hidden='true'")
-                total += deduction
+        if len(text) <= 2 and text and text in _SEPARATOR_CHARS and el.get("aria-hidden") != "true":
+            if len(issues) < cap:
+                issues.append(f"Separator character '{text}' without aria-hidden='true'")
+            total += deduction
 
     return issues, total
 
@@ -1586,11 +1582,10 @@ def required_aria(
 
     for tag_name in ("input", "select", "textarea"):
         for el in doc.iter(tag_name):
-            if el.get("required") is not None:
-                if el.get("aria-required") != "true":
-                    if len(issues) < cap:
-                        issues.append(f"Required <{tag_name}> missing aria-required='true'")
-                    total += deduction
+            if el.get("required") is not None and el.get("aria-required") != "true":
+                if len(issues) < cap:
+                    issues.append(f"Required <{tag_name}> missing aria-required='true'")
+                total += deduction
 
     return issues, total
 
@@ -1933,15 +1928,13 @@ def dm_contrast_ratio(
     total = 0.0
 
     for pair in result.color_pairs:
-        if pair.contrast_ratio > 0 and pair.contrast_ratio < 4.5:
-            # Skip if already caught as invisible (< 1.5)
-            if pair.contrast_ratio >= 1.5:
-                if len(issues) < cap:
-                    issues.append(
-                        f"Low contrast in dark mode: {pair.selector} "
-                        f"{pair.css_property} ratio {pair.contrast_ratio}:1 (need 4.5:1)"
-                    )
-                total += deduction
+        if pair.contrast_ratio > 0 and pair.contrast_ratio < 4.5 and pair.contrast_ratio >= 1.5:
+            if len(issues) < cap:
+                issues.append(
+                    f"Low contrast in dark mode: {pair.selector} "
+                    f"{pair.css_property} ratio {pair.contrast_ratio}:1 (need 4.5:1)"
+                )
+            total += deduction
 
     return issues, total
 
@@ -1989,16 +1982,16 @@ def dm_image_swap_alt(
     for img in doc.iter("img"):
         classes = (img.get("class") or "").lower()
         style = (img.get("style") or "").lower()
-        if any(c in classes for c in ("dark-img", "dark-image", "dark-logo", "dark_img")):
-            if "display: none" in style or "display:none" in style:
-                alt = img.get("alt")
-                if alt is not None and alt != "":
-                    if len(issues) < cap:
-                        issues.append(
-                            "Dark mode swap image should have alt='' to avoid "
-                            "duplicate screen reader announcements"
-                        )
-                    total += deduction
+        if any(c in classes for c in ("dark-img", "dark-image", "dark-logo", "dark_img")) and (
+            "display: none" in style or "display:none" in style
+        ):
+            alt = img.get("alt")
+            if alt is not None and alt != "" and len(issues) < cap:
+                issues.append(
+                    "Dark mode swap image should have alt='' to avoid "
+                    "duplicate screen reader announcements"
+                )
+                total += deduction
 
     return issues, total
 
@@ -2017,15 +2010,16 @@ def dm_hidden_img_mso(
     for img in doc.iter("img"):
         classes = (img.get("class") or "").lower()
         style = img.get("style") or ""
-        if any(c in classes for c in ("dark-img", "dark-image", "dark-logo", "dark_img")):
-            if "display: none" in style.lower() or "display:none" in style.lower():
-                if not re.search(r"mso-hide\s*:\s*all", style, re.IGNORECASE):
-                    if len(issues) < cap:
-                        issues.append(
-                            "Dark mode swap image hidden by default should include "
-                            "'mso-hide: all' for Outlook"
-                        )
-                    total += deduction
+        if (
+            any(c in classes for c in ("dark-img", "dark-image", "dark-logo", "dark_img"))
+            and ("display: none" in style.lower() or "display:none" in style.lower())
+            and not re.search(r"mso-hide\s*:\s*all", style, re.IGNORECASE)
+            and len(issues) < cap
+        ):
+            issues.append(
+                "Dark mode swap image hidden by default should include 'mso-hide: all' for Outlook"
+            )
+            total += deduction
 
     return issues, total
 

@@ -5,6 +5,7 @@ Uses the official anthropic Python SDK with async support.
 Supports both single-shot completion and SSE streaming.
 """
 
+import contextlib
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -455,7 +456,5 @@ class AnthropicProvider:
 
         Should be called during application shutdown to release connections.
         """
-        try:
+        with contextlib.suppress(RuntimeError):
             await self._client.close()
-        except RuntimeError:
-            pass  # Event loop already closed during shutdown

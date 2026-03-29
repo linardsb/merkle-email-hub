@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from typing import TYPE_CHECKING
 
 from app.core.logging import get_logger
@@ -136,10 +137,8 @@ class PluginLifecycleManager:
         """Stop the periodic health check background task."""
         if self._health_task is not None:
             self._health_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_task
-            except asyncio.CancelledError:
-                pass
             self._health_task = None
             logger.info("plugins.health_monitor_stopped")
 

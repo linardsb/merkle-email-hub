@@ -411,7 +411,7 @@ def _fills_preheader(
 
 
 def _fills_email_header(
-    section: EmailSection,
+    _section: EmailSection,
     _cw: int,
     **_kw: object,
 ) -> list[SlotFill]:
@@ -754,7 +754,7 @@ def _fills_spacer(
 
 
 def _fills_social(
-    section: EmailSection,
+    _section: EmailSection,
     _cw: int,
     **_kw: object,
 ) -> list[SlotFill]:
@@ -763,7 +763,7 @@ def _fills_social(
 
 
 def _fills_divider(
-    section: EmailSection,
+    _section: EmailSection,
     _cw: int,
     **_kw: object,
 ) -> list[SlotFill]:

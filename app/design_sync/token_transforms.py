@@ -442,18 +442,17 @@ def _validate_typography(
 
     # Letter spacing validation
     letter_spacing = typo.letter_spacing
-    if letter_spacing is not None:
-        if abs(letter_spacing) > 50:
-            warnings.append(
-                TokenWarning(
-                    level="warning",
-                    field=f"typography[{typo.name}].letter_spacing",
-                    message=f"Letter spacing {letter_spacing}px seems extreme",
-                    original_value=str(letter_spacing),
-                    fixed_value=str(max(-50.0, min(50.0, letter_spacing))),
-                )
+    if letter_spacing is not None and abs(letter_spacing) > 50:
+        warnings.append(
+            TokenWarning(
+                level="warning",
+                field=f"typography[{typo.name}].letter_spacing",
+                message=f"Letter spacing {letter_spacing}px seems extreme",
+                original_value=str(letter_spacing),
+                fixed_value=str(max(-50.0, min(50.0, letter_spacing))),
             )
-            letter_spacing = max(-50.0, min(50.0, letter_spacing))
+        )
+        letter_spacing = max(-50.0, min(50.0, letter_spacing))
 
     # Text transform validation
     text_transform = typo.text_transform

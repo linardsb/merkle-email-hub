@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 def escape_like(value: str) -> str:
-    """Escape SQL LIKE/ILIKE wildcard characters.
+    r"""Escape SQL LIKE/ILIKE wildcard characters.
 
     Args:
         value: Raw search string that may contain %, _, or \\ characters.

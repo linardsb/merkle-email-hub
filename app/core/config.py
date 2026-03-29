@@ -194,7 +194,7 @@ class QAOutlookAnalyzerConfig(BaseModel):
 
 
 class QADeliverabilityConfig(BaseModel):
-    """Deliverability prediction scoring. Env prefix: QA_DELIVERABILITY__"""
+    """Deliverability prediction scoring. Env prefix: QA_DELIVERABILITY__."""
 
     enabled: bool = False
     threshold: int = 70  # 0-100 score, pass if >= threshold

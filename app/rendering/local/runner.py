@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import re
 import tempfile
 from pathlib import Path
@@ -110,7 +111,5 @@ async def capture_screenshot(
         return image_bytes
 
     finally:
-        try:
+        with contextlib.suppress(OSError):
             Path(html_path).unlink()
-        except OSError:
-            pass

@@ -37,6 +37,9 @@ from app.ai.agents.import_annotator.evals.judges.import_judge import ImportAnnot
 from app.ai.protocols import CompletionResponse, LLMProvider, Message
 from app.ai.registry import get_registry
 from app.core.config import get_settings
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_traces(traces_path: Path) -> list[dict[str, Any]]:
@@ -207,11 +210,11 @@ def print_summary(agent: str, verdicts: list[JudgeVerdict], output_path: Path) -
     errored = sum(1 for v in verdicts if v.error is not None)
     failed = total - passed - errored
 
-    print(f"\n=== Judge Results: {agent} ===")
-    print(f"Traces evaluated: {total}")
-    print(f"  Passed: {passed} ({passed / total * 100:.1f}%)" if total else "  Passed: 0")
-    print(f"  Failed: {failed} ({failed / total * 100:.1f}%)" if total else "  Failed: 0")
-    print(f"  Errors: {errored} ({errored / total * 100:.1f}%)" if total else "  Errors: 0")
+    logger.info(f"=== Judge Results: {agent} ===")
+    logger.info(f"Traces evaluated: {total}")
+    logger.info(f"  Passed: {passed} ({passed / total * 100:.1f}%)" if total else "  Passed: 0")
+    logger.info(f"  Failed: {failed} ({failed / total * 100:.1f}%)" if total else "  Failed: 0")
+    logger.info(f"  Errors: {errored} ({errored / total * 100:.1f}%)" if total else "  Errors: 0")
 
     # Per-criterion pass rates
     criterion_counts: dict[str, dict[str, int]] = defaultdict(lambda: {"passed": 0, "total": 0})
@@ -222,10 +225,10 @@ def print_summary(agent: str, verdicts: list[JudgeVerdict], output_path: Path) -
                 criterion_counts[cr.criterion]["passed"] += 1
 
     if criterion_counts:
-        print("\nPer-criterion pass rates:")
+        logger.info("Per-criterion pass rates:")
         for name, counts in criterion_counts.items():
             rate = counts["passed"] / counts["total"] * 100 if counts["total"] else 0
-            print(f"  {name:40s} {counts['passed']}/{counts['total']} ({rate:.1f}%)")
+            logger.info(f"  {name:40s} {counts['passed']}/{counts['total']} ({rate:.1f}%)")
 
     # Show deterministic vs LLM breakdown
     det_count = sum(
@@ -241,9 +244,9 @@ def print_summary(agent: str, verdicts: list[JudgeVerdict], output_path: Path) -
         if not cr.reasoning.startswith("[DETERMINISTIC]")
     )
     if det_count:
-        print(f"\nCriteria evaluations: {det_count} deterministic, {llm_count} LLM")
+        logger.info(f"Criteria evaluations: {det_count} deterministic, {llm_count} LLM")
 
-    print(f"\nVerdicts written to: {output_path}")
+    logger.info(f"Verdicts written to: {output_path}")
 
 
 async def run_judge(
@@ -267,7 +270,7 @@ async def run_judge(
     traces = load_traces(traces_path)
 
     if not traces:
-        print(f"No valid traces found in {traces_path}")
+        logger.info(f"No valid traces found in {traces_path}")
         return
 
     # Load existing verdicts for resume capability
@@ -282,7 +285,7 @@ async def run_judge(
                     existing_ids.add(data["trace_id"])
                     verdicts.append(JudgeVerdict(**data))
         if existing_ids:
-            print(f"Resuming: {len(existing_ids)} existing verdicts found in {output_path}")
+            logger.info(f"Resuming: {len(existing_ids)} existing verdicts found in {output_path}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     file_mode = "a" if existing_ids else "w"
@@ -292,13 +295,13 @@ async def run_judge(
             from app.ai.agents.evals.mock_traces import AGENT_CRITERIA, generate_mock_verdict
 
             criteria = AGENT_CRITERIA.get(agent, [])
-            print(f"Judging {len(traces)} traces for {agent} (dry-run)...")
+            logger.info(f"Judging {len(traces)} traces for {agent} (dry-run)...")
             for i, trace in enumerate(traces, 1):
                 trace_id = trace["id"]
                 if trace_id in existing_ids:
-                    print(f"  [{i}/{len(traces)}] {trace_id}... SKIPPED (exists)")
+                    logger.debug(f"  [{i}/{len(traces)}] {trace_id}... SKIPPED (exists)")
                     continue
-                print(f"  [{i}/{len(traces)}] {trace_id}... (dry-run)")
+                logger.debug(f"  [{i}/{len(traces)}] {trace_id}... (dry-run)")
                 verdict_dict = generate_mock_verdict(trace, criteria)
                 verdict = JudgeVerdict(
                     trace_id=verdict_dict["trace_id"],
@@ -323,7 +326,7 @@ async def run_judge(
             model = model_override or settings.ai.model
 
             pending_traces = [t for t in traces if t["id"] not in existing_ids]
-            print(
+            logger.info(
                 f"Judging {len(pending_traces)} traces for {agent} "
                 f"(provider={resolved_provider}, model={model}, mode={mode})..."
             )
@@ -334,11 +337,7 @@ async def run_judge(
 
                 for trace in batch:
                     trace_id = trace["id"]
-                    print(
-                        f"  [{len(verdicts) + 1}/{len(traces)}] {trace_id}...",
-                        end=" ",
-                        flush=True,
-                    )
+                    logger.debug(f"  [{len(verdicts) + 1}/{len(traces)}] {trace_id}...")
 
                     start = time.monotonic()
                     verdict = await judge_trace_hybrid(judge, trace, provider, model, mode)
@@ -350,11 +349,11 @@ async def run_judge(
                     status = (
                         "PASS" if verdict.overall_pass else ("ERROR" if verdict.error else "FAIL")
                     )
-                    print(f"{status} ({elapsed:.1f}s)")
+                    logger.debug(f"    {status} ({elapsed:.1f}s)")
 
                 # Delay between batches (not after last batch)
                 if batch_start + batch_size < len(pending_traces):
-                    print(f"  [batch {batch_num} complete, waiting {delay}s...]")
+                    logger.debug(f"  [batch {batch_num} complete, waiting {delay}s...]")
                     await asyncio.sleep(delay)
 
     print_summary(agent, verdicts, output_path)
@@ -432,7 +431,7 @@ async def main() -> None:
             output_path = args.output
 
         if not traces_path.exists():
-            print(f"Traces file not found: {traces_path}, skipping {agent}")
+            logger.info(f"Traces file not found: {traces_path}, skipping {agent}")
             continue
 
         await run_judge(

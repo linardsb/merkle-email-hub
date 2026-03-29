@@ -27,6 +27,9 @@ from app.ai.agents.evals.schemas import (
     SkillABResult,
 )
 from app.ai.agents.skill_override import clear_override, set_override
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Map agent names to their SKILL.md paths
 _SKILL_PATHS: dict[str, Path] = {
@@ -231,12 +234,12 @@ async def run_ab_test(
 
     try:
         # Variant A: run with current SKILL.md
-        print(f"\n=== Variant A: current SKILL.md ({agent}) ===")
+        logger.info(f"=== Variant A: current SKILL.md ({agent}) ===")
         set_override(agent, current_content)
         rates_a = await _run_eval_variant(agent, "A", output_dir, dry_run=dry_run)
 
         # Variant B: run with proposed SKILL.md
-        print(f"\n=== Variant B: proposed SKILL.md ({agent}) ===")
+        logger.info(f"=== Variant B: proposed SKILL.md ({agent}) ===")
         set_override(agent, proposed_content)
         rates_b = await _run_eval_variant(agent, "B", output_dir, dry_run=dry_run)
     finally:
@@ -291,7 +294,7 @@ async def main() -> None:
     args = parser.parse_args()
 
     if not args.proposed.exists():
-        print(f"Proposed SKILL.md not found: {args.proposed}", file=sys.stderr)
+        logger.error(f"Proposed SKILL.md not found: {args.proposed}")
         sys.exit(1)
 
     args.output.mkdir(parents=True, exist_ok=True)
@@ -311,26 +314,25 @@ async def main() -> None:
     with report_path.open("w") as f:
         json.dump(report, f, indent=2)
 
-    # Print summary
-    print(f"\n=== A/B Test Result: {args.agent} ===")
-    print(f"Current:  {result.variant_a_overall_pass_rate:.1%} overall pass rate")
-    print(f"Proposed: {result.variant_b_overall_pass_rate:.1%} overall pass rate")
-    print(f"Delta:    {result.overall_delta:+.1%}")
-    print()
+    # Log summary
+    logger.info(f"=== A/B Test Result: {args.agent} ===")
+    logger.info(f"Current:  {result.variant_a_overall_pass_rate:.1%} overall pass rate")
+    logger.info(f"Proposed: {result.variant_b_overall_pass_rate:.1%} overall pass rate")
+    logger.info(f"Delta:    {result.overall_delta:+.1%}")
 
     for cd in result.criteria_deltas:
         marker = (
             "DEGRADED" if cd.is_degraded else ("IMPROVED" if cd.delta > args.threshold else "~")
         )
-        print(
+        logger.info(
             f"  {cd.criterion}: {cd.variant_a_rate:.1%} -> {cd.variant_b_rate:.1%} "
             f"({cd.delta:+.1%}) [{marker}]"
         )
 
-    print(f"\nRecommendation: {result.recommendation.upper()}")
+    logger.info(f"Recommendation: {result.recommendation.upper()}")
     if result.rejection_reason:
-        print(f"Reason: {result.rejection_reason}")
-    print(f"\nFull report: {report_path}")
+        logger.info(f"Reason: {result.rejection_reason}")
+    logger.info(f"Full report: {report_path}")
 
     # Exit code: 1 if rejected, 0 otherwise
     if result.recommendation == "reject":

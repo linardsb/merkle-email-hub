@@ -154,6 +154,4 @@ class TemplatePrecompiler:
         """
         if template.optimized_at is None:
             return True
-        if set(template.optimized_for_clients) != set(target_clients):
-            return True
-        return False
+        return set(template.optimized_for_clients) != set(target_clients)

@@ -60,10 +60,12 @@ class CircuitBreaker:
     @property
     def state(self) -> CircuitState:
         """Current circuit state, accounting for timeout transitions."""
-        if self._state == CircuitState.OPEN:
-            if time.monotonic() - self._last_failure_time >= self.reset_timeout:
-                self._state = CircuitState.HALF_OPEN
-                return CircuitState.HALF_OPEN
+        if (
+            self._state == CircuitState.OPEN
+            and time.monotonic() - self._last_failure_time >= self.reset_timeout
+        ):
+            self._state = CircuitState.HALF_OPEN
+            return CircuitState.HALF_OPEN
         return self._state
 
     async def __aenter__(self) -> "CircuitBreaker":

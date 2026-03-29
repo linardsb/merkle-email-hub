@@ -30,6 +30,7 @@ class InnovationService:
 
         Args:
             request: The technique description and optional filters.
+            competitive_context: Optional competitive analysis context.
 
         Returns:
             Prototype with feasibility assessment and fallback.
@@ -144,9 +145,9 @@ def _parse_innovation_output(
     sections = output.split("### ")
     for section in sections:
         lower = section.lower()
-        if lower.startswith("1.") or lower.startswith("prototype"):
+        if lower.startswith(("1.", "prototype")):
             prototype = section.split("\n", 1)[-1].strip() if "\n" in section else ""
-        elif lower.startswith("2.") or lower.startswith("feasibility"):
+        elif lower.startswith(("2.", "feasibility")):
             feasibility = section.split("\n", 1)[-1].strip() if "\n" in section else ""
             # Extract coverage percentage
             coverage = _extract_percentage(feasibility)
@@ -154,7 +155,7 @@ def _parse_innovation_output(
             risk = _extract_risk(feasibility)
             # Extract recommendation
             recommendation = _extract_recommendation(feasibility)
-        elif lower.startswith("3.") or lower.startswith("fallback"):
+        elif lower.startswith(("3.", "fallback")):
             fallback = section.split("\n", 1)[-1].strip() if "\n" in section else ""
 
     return prototype, feasibility, coverage, risk, recommendation, fallback

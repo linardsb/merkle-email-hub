@@ -119,21 +119,20 @@ async def upload_document(
     # Save to temp file with streaming size limit
     max_upload_size = 50 * 1024 * 1024  # 50MB
     suffix = Path(safe_filename).suffix
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    try:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp_path = Path(tmp.name)
         size = 0
         while chunk := await file.read(8192):
             size += len(chunk)
             if size > max_upload_size:
                 tmp.close()
-                Path(tmp.name).unlink(missing_ok=True)
+                tmp_path.unlink(missing_ok=True)
                 raise HTTPException(status_code=413, detail="File exceeds 50MB limit")
             tmp.write(chunk)
         tmp.flush()
-        tmp.close()
-
+    try:
         return await service.ingest_document(
-            file_path=tmp.name,
+            file_path=str(tmp_path),
             upload=upload,
             filename=safe_filename,
             source_type=source_type,

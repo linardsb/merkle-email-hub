@@ -155,10 +155,7 @@ def _is_retryable(error: Exception) -> bool:
 
     # Check for status_code attribute (generic HTTP errors)
     status = getattr(error, "status_code", None)
-    if status is not None and status in _RETRYABLE_STATUS_CODES:
-        return True
-
-    return False
+    return bool(status is not None and status in _RETRYABLE_STATUS_CODES)
 
 
 # ── Core fallback caller ──

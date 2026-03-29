@@ -17,6 +17,9 @@ import time
 from pathlib import Path
 
 from app.ai.agents.evals.schemas import BlueprintEvalTrace
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 BLUEPRINT_TEST_BRIEFS: list[dict[str, str]] = [
     {
@@ -141,7 +144,7 @@ async def run_all_blueprints(
 
     with output_path.open("w") as f:
         for brief_def in briefs:
-            print(f"  Running {brief_def['id']}: {brief_def['name']}...", flush=True)
+            logger.info(f"  Running {brief_def['id']}: {brief_def['name']}...")
 
             if dry_run:
                 from app.ai.agents.evals.mock_traces import generate_mock_blueprint_trace
@@ -173,7 +176,7 @@ async def run_all_blueprints(
             f.flush()
 
             status = "PASS" if trace.qa_passed else ("ERROR" if trace.error else "FAIL")
-            print(
+            logger.info(
                 f"    -> {status} ({trace.total_steps} steps, "
                 f"{trace.total_retries} retries, "
                 f"{trace.elapsed_seconds:.1f}s, {trace.total_tokens} tokens)"
@@ -186,7 +189,7 @@ def print_summary(traces: list[BlueprintEvalTrace]) -> None:
     """Print summary statistics for all blueprint eval runs."""
     total = len(traces)
     if total == 0:
-        print("\nNo traces to summarize.")
+        logger.info("No traces to summarize.")
         return
 
     errors = sum(1 for t in traces if t.error)
@@ -198,14 +201,14 @@ def print_summary(traces: list[BlueprintEvalTrace]) -> None:
     avg_tokens = sum(t.total_tokens for t in traces) / total
     avg_time = sum(t.elapsed_seconds for t in traces) / total
 
-    print("\n=== Blueprint Pipeline Eval ===")
-    print(
+    logger.info("=== Blueprint Pipeline Eval ===")
+    logger.info(
         f"Runs: {total} (qa_passed={qa_passed}, qa_failed={non_error - qa_passed}, errors={errors})"
     )
     if non_error > 0:
-        print(f"QA pass rate: {qa_passed / non_error:.1%}")
-    print(f"Avg steps: {avg_steps:.1f}, Avg retries: {avg_retries:.1f}")
-    print(f"Avg tokens: {avg_tokens:.0f}, Avg time: {avg_time:.1f}s")
+        logger.info(f"QA pass rate: {qa_passed / non_error:.1%}")
+    logger.info(f"Avg steps: {avg_steps:.1f}, Avg retries: {avg_retries:.1f}")
+    logger.info(f"Avg tokens: {avg_tokens:.0f}, Avg time: {avg_time:.1f}s")
 
 
 def main() -> None:
@@ -237,10 +240,10 @@ def main() -> None:
         briefs = BLUEPRINT_TEST_BRIEFS
 
     mode_label = " (dry-run)" if args.dry_run else ""
-    print(f"Running {len(briefs)} blueprint eval(s){mode_label}...")
+    logger.info(f"Running {len(briefs)} blueprint eval(s){mode_label}...")
     traces = asyncio.run(run_all_blueprints(briefs, output_path, dry_run=args.dry_run))
     print_summary(traces)
-    print(f"\nTraces: {output_path}")
+    logger.info(f"Traces: {output_path}")
 
 
 if __name__ == "__main__":

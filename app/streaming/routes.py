@@ -158,10 +158,7 @@ async def ws_stream(
                     msg = WsSubscribeMessage.model_validate(data)
                     # Convert filters to the format expected by the manager
                     # (None values mean "all" for that dimension)
-                    new_filters: dict[str, str | None] = {}
-                    if msg.filters:
-                        for key, value in msg.filters.items():
-                            new_filters[key] = value
+                    new_filters: dict[str, str | None] = dict(msg.filters) if msg.filters else {}
 
                     # BOLA: validate project_id filter against user membership
                     filter_project_id = new_filters.get("project_id")

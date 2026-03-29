@@ -46,7 +46,7 @@ async def test_store_correction_example() -> None:
         patch(
             "app.memory.service.MemoryService",
             return_value=mock_memory_svc,
-        ) as mock_ms_cls,
+        ),
     ):
         mock_db_ctx.return_value.__aenter__ = AsyncMock(return_value=mock_db)
         mock_db_ctx.return_value.__aexit__ = AsyncMock(return_value=False)

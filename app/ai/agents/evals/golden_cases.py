@@ -258,9 +258,9 @@ def run_golden_cases(verbose: bool = False) -> list[GoldenResult]:
 
         if verbose:
             status = "PASS" if passed else "FAIL"
-            print(f"  [{status}] {case.name} ({checks_passed}/{checks_run} checks)")
+            logger.info(f"  [{status}] {case.name} ({checks_passed}/{checks_run} checks)")
             for f in failures:
-                print(f"         - {f}")
+                logger.info(f"         - {f}")
 
     return results
 
@@ -271,7 +271,7 @@ def main() -> None:
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = parser.parse_args()
 
-    print("=== Golden Template CI Tests ===\n")
+    logger.info("=== Golden Template CI Tests ===")
     results = run_golden_cases(verbose=args.verbose)
 
     total = len(results)
@@ -281,21 +281,21 @@ def main() -> None:
     if not args.verbose:
         for r in results:
             status = "PASS" if r.passed else "FAIL"
-            print(f"  [{status}] {r.case_name} ({r.checks_passed}/{r.checks_run})")
+            logger.info(f"  [{status}] {r.case_name} ({r.checks_passed}/{r.checks_run})")
             for f in r.failures:
-                print(f"         - {f}")
+                logger.info(f"         - {f}")
 
-    print(f"\n{passed}/{total} golden cases passed.")
+    logger.info(f"{passed}/{total} golden cases passed.")
 
     if failed > 0:
-        print(f"\nFAILED: {failed} golden case(s) did not pass.")
+        logger.info(f"FAILED: {failed} golden case(s) did not pass.")
         logger.error(
             "eval.golden_cases_failed",
             extra={"passed": passed, "failed": failed, "total": total},
         )
         sys.exit(1)
     else:
-        print("\nAll golden cases passed.")
+        logger.info("All golden cases passed.")
         logger.info("eval.golden_cases_passed", extra={"total": total})
 
 

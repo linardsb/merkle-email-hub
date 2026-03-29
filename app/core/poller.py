@@ -23,6 +23,7 @@ Usage:
 """
 
 import asyncio
+import contextlib
 from abc import ABC, abstractmethod
 
 from app.core.logging import get_logger
@@ -156,8 +157,6 @@ class DataPoller(ABC):
         self._running = False
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None

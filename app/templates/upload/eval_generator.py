@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 from typing import Any
@@ -100,10 +101,8 @@ class EvalGenerator:
             start = content.find("UPLOADED_CASES = ")
             if start >= 0:
                 json_str = content[start + len("UPLOADED_CASES = ") :]
-                try:
+                with contextlib.suppress(json.JSONDecodeError, ValueError):
                     existing = json.loads(json_str)
-                except (json.JSONDecodeError, ValueError):
-                    pass
 
         # Deduplicate by ID
         existing_ids = {c["id"] for c in existing}

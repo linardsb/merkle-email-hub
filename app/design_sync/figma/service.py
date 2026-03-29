@@ -364,10 +364,8 @@ class FigmaDesignSyncService:
             last_modified_raw = item_d.get("last_modified")
             last_modified: datetime | None = None
             if isinstance(last_modified_raw, str):
-                try:
-                    last_modified = datetime.fromisoformat(last_modified_raw.replace("Z", "+00:00"))
-                except ValueError:
-                    pass
+                with contextlib.suppress(ValueError):
+                    last_modified = datetime.fromisoformat(last_modified_raw)
             files.append(
                 DesignFile(
                     file_id=file_key,
@@ -1126,7 +1124,7 @@ class FigmaDesignSyncService:
         node_styles = node_d.get("styles", {})
         if isinstance(node_styles, dict):
             node_styles_d = cast(dict[str, Any], node_styles)
-            for _key, sid in node_styles_d.items():
+            for sid in node_styles_d.values():
                 if str(sid) == style_id and prop in node_d:
                     return [node_d[prop]]
         results: list[Any] = []

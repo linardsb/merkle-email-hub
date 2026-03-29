@@ -1,4 +1,6 @@
-"""MSO fallback rendering check — validates Outlook conditional comments, VML nesting,
+"""MSO fallback rendering check.
+
+Validates Outlook conditional comments, VML nesting,
 namespace declarations, and ghost table structure.
 
 Uses the shared rule engine with rules loaded from rules/mso_fallback.yaml.

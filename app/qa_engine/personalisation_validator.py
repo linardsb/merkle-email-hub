@@ -495,18 +495,16 @@ def validate_jssp_syntax(raw_html: str) -> list[str]:
     # Check for unclosed code blocks
     for m in re.finditer(r"<%([^%=][^%]*?)%>", raw_html):
         content = m.group(1).strip()
-        if content:
-            # Check semicolons in multi-statement blocks
-            if "\n" in content or ";" in content:
-                # Multi-statement block — last statement should end with ;
-                stmts = [s.strip() for s in content.split(";") if s.strip()]
-                for stmt in stmts:
-                    open_parens = stmt.count("(")
-                    close_parens = stmt.count(")")
-                    if open_parens != close_parens:
-                        line = _get_line_number(raw_html, m.start())
-                        errors.append(f"Unbalanced parentheses in JSSP block at line {line}")
-                        break
+        if content and ("\n" in content or ";" in content):
+            # Multi-statement block — last statement should end with ;
+            stmts = [s.strip() for s in content.split(";") if s.strip()]
+            for stmt in stmts:
+                open_parens = stmt.count("(")
+                close_parens = stmt.count(")")
+                if open_parens != close_parens:
+                    line = _get_line_number(raw_html, m.start())
+                    errors.append(f"Unbalanced parentheses in JSSP block at line {line}")
+                    break
     return errors
 
 

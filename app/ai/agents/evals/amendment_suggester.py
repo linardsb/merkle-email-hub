@@ -244,11 +244,11 @@ async def main() -> None:
     )
 
     if written:
-        print(f"\n✓ Generated {len(written)} suggestion(s):")
+        logger.info(f"Generated {len(written)} suggestion(s):")
         for p in written:
-            print(f"  → {p}")
+            logger.info(f"  -> {p}")
     else:
-        print("\nNo actionable failure clusters found (need 3+ failures per cluster).")
+        logger.info("No actionable failure clusters found (need 3+ failures per cluster).")
 
 
 if __name__ == "__main__":

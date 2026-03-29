@@ -6,6 +6,7 @@ Phase 32.11 addition: Per-client skill overlays (extend/replace).
 
 from __future__ import annotations
 
+import contextlib
 import re
 from dataclasses import dataclass
 from functools import lru_cache
@@ -58,15 +59,11 @@ def parse_skill_meta(content: str) -> tuple[SkillMeta, str]:
     for line in front_matter.strip().splitlines():
         line = line.strip()
         if line.startswith("token_cost:"):
-            try:
+            with contextlib.suppress(ValueError):
                 token_cost = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                pass
         elif line.startswith("priority:"):
-            try:
+            with contextlib.suppress(ValueError):
                 priority = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                pass
         elif line.startswith("version:"):
             val = line.split(":", 1)[1].strip().strip('"').strip("'")
             if val:
@@ -108,10 +105,7 @@ def should_load_skill(
     if meta.priority == 3 and capacity_ratio < 0.70:
         return False
 
-    if meta.priority == 2 and capacity_ratio < 0.30:
-        return False
-
-    return True
+    return not (meta.priority == 2 and capacity_ratio < 0.3)
 
 
 # ---------------------------------------------------------------------------
@@ -158,15 +152,11 @@ def parse_overlay_meta(content: str) -> tuple[OverlayMeta, str]:
     for line in front_matter.strip().splitlines():
         line = line.strip()
         if line.startswith("token_cost:"):
-            try:
+            with contextlib.suppress(ValueError):
                 token_cost = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                pass
         elif line.startswith("priority:"):
-            try:
+            with contextlib.suppress(ValueError):
                 priority = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                pass
         elif line.startswith("overlay_mode:"):
             val = line.split(":", 1)[1].strip().strip('"').strip("'")
             if val in _VALID_OVERLAY_MODES:
