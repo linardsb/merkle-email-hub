@@ -1,0 +1,137 @@
+<!-- golden-ref: criteria=[technique_correctness, innovation_value, fallback_quality], agents=[innovation], verified=2026-03-29 -->
+<!-- Innovation AMP Email — amp-carousel, amp-form, amp-bind, AMP boilerplate, MIME fallback note -->
+<!-- NOTE: AMP emails require multipart MIME: text/x-amp-html (this) + text/html (fallback) + text/plain -->
+<!doctype html>
+<html amp4email lang="en">
+<head>
+<meta charset="utf-8">
+<script async src="https://cdn.ampproject.org/v0.js"></script>
+<script async custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js"></script>
+<script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
+<script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
+<script async custom-element="amp-list" src="https://cdn.ampproject.org/v0/amp-list-0.1.js"></script>
+<script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
+<style amp4email-boilerplate>body{visibility:hidden}</style>
+<style amp-custom>
+  /* AMP requires all CSS in a single <style amp-custom> tag, max 75KB */
+  body { margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif; }
+  .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+  .header { padding: 20px 30px; background-color: #0044aa; text-align: center; }
+  .header img { height: 40px; }
+  .section { padding: 20px 30px; }
+  h1 { margin: 0 0 10px 0; font-size: 26px; color: #222222; line-height: 1.2; }
+  h2 { margin: 0 0 10px 0; font-size: 20px; color: #333333; }
+  p { margin: 0 0 10px 0; font-size: 14px; line-height: 1.5; color: #555555; }
+  .btn { display: inline-block; padding: 12px 28px; background-color: #0066cc; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px; border: none; cursor: pointer; }
+  .btn:hover { background-color: #0052a3; }
+  .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+  .card h3 { margin: 0 0 5px 0; font-size: 16px; color: #333333; }
+  .card p { font-size: 13px; margin: 0; }
+  .footer { padding: 20px 30px; background-color: #f0f0f0; font-size: 12px; color: #999999; text-align: center; }
+  .footer a { color: #0066cc; }
+
+  /* Form styling */
+  .form-input { width: 100%; padding: 10px; border: 1px solid #cccccc; border-radius: 4px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
+  .form-group { margin-bottom: 15px; }
+  .form-label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; color: #333333; }
+  .success-msg { background-color: #e8f5e9; border: 1px solid #a5d6a7; padding: 15px; border-radius: 4px; color: #2e7d32; }
+  .error-msg { background-color: #fce4ec; border: 1px solid #ef9a9a; padding: 15px; border-radius: 4px; color: #c62828; }
+
+  /* Carousel styling */
+  amp-carousel .slide { text-align: center; }
+  amp-carousel .slide img { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="https://via.placeholder.com/180x40/0044aa/ffffff?text=LOGO" alt="Company Logo" height="40">
+  </div>
+
+  <!-- Hero with dynamic greeting via amp-bind -->
+  <div class="section">
+    <h1>Welcome<span [text]="' ' + userName" hidden> </span>!</h1>
+    <p>Explore our interactive email experience — browse products, submit feedback, and see dynamic content, all without leaving your inbox.</p>
+  </div>
+
+  <!-- AMP Carousel: interactive product slider -->
+  <div class="section">
+    <h2>Featured Products</h2>
+    <amp-carousel width="540" height="300" layout="responsive" type="slides" autoplay delay="4000" loop>
+      <div class="slide">
+        <img src="https://via.placeholder.com/540x300/e3f2fd/1565c0?text=Product+1" alt="Wireless headphones — premium noise cancellation" width="540" height="300" layout="responsive">
+      </div>
+      <div class="slide">
+        <img src="https://via.placeholder.com/540x300/fce4ec/c62828?text=Product+2" alt="Fitness tracker — heart rate and sleep monitoring" width="540" height="300" layout="responsive">
+      </div>
+      <div class="slide">
+        <img src="https://via.placeholder.com/540x300/e8f5e9/2e7d32?text=Product+3" alt="Bluetooth speaker — waterproof portable audio" width="540" height="300" layout="responsive">
+      </div>
+    </amp-carousel>
+  </div>
+
+  <!-- AMP List: dynamic content from API -->
+  <div class="section">
+    <h2>Recommended for You</h2>
+    <amp-list width="auto" height="200" layout="fixed-height" src="https://api.example.com/amp/recommendations" single-item items=".">
+      <template type="amp-mustache">
+        {{#products}}
+        <div class="card">
+          <h3>{{name}}</h3>
+          <p>{{description}} — <strong>{{price}}</strong></p>
+        </div>
+        {{/products}}
+      </template>
+      <div fallback>
+        <div class="card">
+          <h3>Check out our store</h3>
+          <p>Browse the full catalog for personalized recommendations.</p>
+        </div>
+      </div>
+    </amp-list>
+  </div>
+
+  <!-- AMP Form: in-email feedback submission -->
+  <div class="section">
+    <h2>Quick Feedback</h2>
+    <form method="post" action-xhr="https://api.example.com/amp/feedback" target="_top">
+      <div class="form-group">
+        <label class="form-label" for="rating">How was your experience?</label>
+        <select id="rating" name="rating" class="form-input" required>
+          <option value="">Select a rating</option>
+          <option value="5">Excellent</option>
+          <option value="4">Good</option>
+          <option value="3">Average</option>
+          <option value="2">Poor</option>
+          <option value="1">Very Poor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="comments">Comments (optional)</label>
+        <input type="text" id="comments" name="comments" class="form-input" placeholder="Tell us more...">
+      </div>
+      <button type="submit" class="btn">Submit Feedback</button>
+      <div submit-success>
+        <template type="amp-mustache">
+          <div class="success-msg">Thank you for your feedback!</div>
+        </template>
+      </div>
+      <div submit-error>
+        <template type="amp-mustache">
+          <div class="error-msg">Something went wrong. Please try again later.</div>
+        </template>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>&copy; 2026 Company, Inc. All rights reserved.</p>
+    <p><a href="https://example.com/preferences">Manage preferences</a> | <a href="https://example.com/unsubscribe">Unsubscribe</a></p>
+  </div>
+
+</div>
+</body>
+</html>

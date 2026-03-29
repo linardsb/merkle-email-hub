@@ -1,0 +1,228 @@
+<!-- golden-ref: criteria=[technique_correctness, fallback_quality], agents=[innovation], verified=2026-03-29 -->
+<!-- Innovation Accordion Dropdown — CSS checkbox-hack, :checked toggle, max-height animation, Outlook static fallback -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>Accordion Dropdown</title>
+<style>
+  /* === Accordion CSS === */
+  /* Default: hide content panels */
+  .acc-content {
+    max-height: 0;
+    overflow: hidden;
+    -webkit-transition: max-height 0.3s ease-out;
+    transition: max-height 0.3s ease-out;
+  }
+  /* When checked: reveal content */
+  .acc-toggle:checked + .acc-header + .acc-content {
+    max-height: 600px !important;
+    overflow: visible !important;
+  }
+  /* Toggle icon rotation */
+  .acc-toggle:checked + .acc-header .acc-icon {
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+  }
+  /* Hide checkbox inputs */
+  .acc-toggle { display: none !important; }
+  /* Header cursor */
+  .acc-header label { cursor: pointer; }
+
+  /* Yahoo Mail fallback: always show content */
+  @media screen yahoo {
+    .acc-content {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+  }
+
+  /* AOL fallback */
+  .aolReplacedBody .acc-content {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1e1e1e !important; }
+    .dark-text { color: #e0e0e0 !important; }
+    .dark-card { background-color: #2d2d44 !important; }
+    .dark-border { border-color: #444444 !important; }
+  }
+  [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+  [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+  [data-ogsb] .dark-card { background-color: #2d2d44 !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <tr>
+        <td style="padding: 20px 30px 10px 30px;">
+          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 24px; color: #333333;">Frequently Asked Questions</h1>
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Tap a question to reveal the answer.</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+
+          <!-- === Accordion Item 1 === -->
+          <!-- MSO-only static header (Outlook can't toggle, so show everything expanded) -->
+          <!--[if mso]>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; border-bottom: 1px solid #e0e0e0;">
+            <tr><td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333;">How do I track my order?</td></tr>
+          </table>
+          <![endif]-->
+
+          <!--[if !mso]><!-->
+          <input type="checkbox" id="acc-1" class="acc-toggle" style="display: none !important;">
+          <!--<![endif]-->
+
+          <!--[if !mso]><!-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="acc-header" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-bottom: 1px solid #e0e0e0;">
+            <tr>
+              <td style="padding: 15px 0;">
+                <label for="acc-1">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse;">
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333; cursor: pointer;">How do I track my order?</td>
+                      <td width="30" align="right" style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; color: #0066cc; cursor: pointer;"><span class="acc-icon" style="display: inline-block; -webkit-transition: transform 0.3s; transition: transform 0.3s;">+</span></td>
+                    </tr>
+                  </table>
+                </label>
+              </td>
+            </tr>
+          </table>
+          <!--<![endif]-->
+
+          <!--[if !mso]><!-->
+          <div class="acc-content">
+          <!--<![endif]-->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td style="padding: 10px 0 20px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
+                  <p style="margin: 0 0 10px 0;">Once your order ships, you will receive a confirmation email with a tracking number. You can also check your order status by visiting your account dashboard.</p>
+                </td>
+              </tr>
+            </table>
+          <!--[if !mso]><!-->
+          </div>
+          <!--<![endif]-->
+
+          <!-- === Accordion Item 2 === -->
+          <!--[if mso]>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; border-bottom: 1px solid #e0e0e0;">
+            <tr><td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333;">What is your return policy?</td></tr>
+          </table>
+          <![endif]-->
+
+          <!--[if !mso]><!-->
+          <input type="checkbox" id="acc-2" class="acc-toggle" style="display: none !important;">
+          <!--<![endif]-->
+
+          <!--[if !mso]><!-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="acc-header" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-bottom: 1px solid #e0e0e0;">
+            <tr>
+              <td style="padding: 15px 0;">
+                <label for="acc-2">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse;">
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333; cursor: pointer;">What is your return policy?</td>
+                      <td width="30" align="right" style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; color: #0066cc; cursor: pointer;"><span class="acc-icon" style="display: inline-block; -webkit-transition: transform 0.3s; transition: transform 0.3s;">+</span></td>
+                    </tr>
+                  </table>
+                </label>
+              </td>
+            </tr>
+          </table>
+          <!--<![endif]-->
+
+          <!--[if !mso]><!-->
+          <div class="acc-content">
+          <!--<![endif]-->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td style="padding: 10px 0 20px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
+                  <p style="margin: 0 0 10px 0;">We offer a 30-day return policy on all items in their original condition. Simply initiate a return from your account and print the prepaid shipping label.</p>
+                </td>
+              </tr>
+            </table>
+          <!--[if !mso]><!-->
+          </div>
+          <!--<![endif]-->
+
+          <!-- === Accordion Item 3 === -->
+          <!--[if mso]>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; border-bottom: 1px solid #e0e0e0;">
+            <tr><td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333;">Do you offer international shipping?</td></tr>
+          </table>
+          <![endif]-->
+
+          <!--[if !mso]><!-->
+          <input type="checkbox" id="acc-3" class="acc-toggle" style="display: none !important;">
+          <!--<![endif]-->
+
+          <!--[if !mso]><!-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="acc-header" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-bottom: 1px solid #e0e0e0;">
+            <tr>
+              <td style="padding: 15px 0;">
+                <label for="acc-3">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse;">
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333; cursor: pointer;">Do you offer international shipping?</td>
+                      <td width="30" align="right" style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; color: #0066cc; cursor: pointer;"><span class="acc-icon" style="display: inline-block; -webkit-transition: transform 0.3s; transition: transform 0.3s;">+</span></td>
+                    </tr>
+                  </table>
+                </label>
+              </td>
+            </tr>
+          </table>
+          <!--<![endif]-->
+
+          <!--[if !mso]><!-->
+          <div class="acc-content">
+          <!--<![endif]-->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td style="padding: 10px 0 20px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
+                  <p style="margin: 0 0 10px 0;">Yes! We ship to over 50 countries worldwide. International orders typically arrive within 7-14 business days. Shipping costs are calculated at checkout based on your location.</p>
+                </td>
+              </tr>
+            </table>
+          <!--[if !mso]><!-->
+          </div>
+          <!--<![endif]-->
+
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!-- golden-ref: criteria=[technique_correctness, fallback_quality, client_coverage_accuracy], agents=[innovation], verified=2026-03-29 -->
+<!-- Innovation CSS Carousel — Hidden radio inputs, sibling selectors, @keyframes animation, static fallback -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>CSS Carousel</title>
+<style>
+  /* === Carousel CSS — WebKit/Blink only === */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    /* Bugfix for Android 4.4 sibling selector support */
+    body { -webkit-animation: bugfix infinite 1s; }
+    @-webkit-keyframes bugfix { from { padding: 0; } to { padding: 0; } }
+
+    /* Show carousel, hide fallback in supporting clients */
+    .carousel-wrap { display: block !important; max-height: none !important; overflow: visible !important; }
+    .carousel-fallback { display: none !important; }
+
+    /* Samsung/Comcast/Zimbra: force fallback (inconsistent CSS) */
+    #MessageViewBody .carousel-fallback,
+    body.MsgBody .carousel-fallback { display: block !important; }
+    #MessageViewBody .carousel-wrap,
+    body.MsgBody .carousel-wrap { display: none !important; }
+
+    /* Hide radio inputs */
+    .car-radio { display: none !important; }
+
+    /* Slide container */
+    .car-slides { position: relative; overflow: hidden; }
+    .car-slides .car-slide {
+      display: block;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      -webkit-transition: opacity 0.6s ease-in-out;
+      transition: opacity 0.6s ease-in-out;
+    }
+    .car-slides .car-slide:first-child { position: relative; opacity: 1; }
+
+    /* Radio-driven slide visibility */
+    #car-s1:checked ~ .car-slides .car-slide:nth-child(1) { opacity: 1; position: relative; }
+    #car-s1:checked ~ .car-slides .car-slide:nth-child(2),
+    #car-s1:checked ~ .car-slides .car-slide:nth-child(3) { opacity: 0; position: absolute; }
+
+    #car-s2:checked ~ .car-slides .car-slide:nth-child(2) { opacity: 1; position: relative; }
+    #car-s2:checked ~ .car-slides .car-slide:nth-child(1),
+    #car-s2:checked ~ .car-slides .car-slide:nth-child(3) { opacity: 0; position: absolute; }
+
+    #car-s3:checked ~ .car-slides .car-slide:nth-child(3) { opacity: 1; position: relative; }
+    #car-s3:checked ~ .car-slides .car-slide:nth-child(1),
+    #car-s3:checked ~ .car-slides .car-slide:nth-child(2) { opacity: 0; position: absolute; }
+
+    /* Navigation dots */
+    .car-dots { text-align: center; padding: 10px 0; }
+    .car-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #cccccc;
+      margin: 0 4px;
+      cursor: pointer;
+    }
+    #car-s1:checked ~ .car-dots .car-dot:nth-child(1),
+    #car-s2:checked ~ .car-dots .car-dot:nth-child(2),
+    #car-s3:checked ~ .car-dots .car-dot:nth-child(3) {
+      background-color: #0066cc;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1e1e1e !important; }
+    .dark-text { color: #e0e0e0 !important; }
+  }
+  [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+  [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <tr>
+        <td style="padding: 20px 30px 10px 30px;">
+          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 24px; color: #333333;">Featured Products</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          <!-- Interactive carousel: hidden by default, shown by @media in supporting clients -->
+          <!--[if !mso]><!-->
+          <div class="carousel-wrap" style="display: none; max-height: 0; overflow: hidden;">
+            <!-- Radio inputs for slide state -->
+            <input type="radio" name="carousel" id="car-s1" class="car-radio" checked style="display: none !important;">
+            <input type="radio" name="carousel" id="car-s2" class="car-radio" style="display: none !important;">
+            <input type="radio" name="carousel" id="car-s3" class="car-radio" style="display: none !important;">
+
+            <!-- Slides -->
+            <div class="car-slides">
+              <a href="https://example.com/product-1" class="car-slide">
+                <img src="https://via.placeholder.com/540x300/e3f2fd/1565c0?text=Product+1" alt="Product 1 — Wireless headphones with noise cancellation" width="540" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+              <a href="https://example.com/product-2" class="car-slide">
+                <img src="https://via.placeholder.com/540x300/fce4ec/c62828?text=Product+2" alt="Product 2 — Smart fitness tracker with heart rate monitor" width="540" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+              <a href="https://example.com/product-3" class="car-slide">
+                <img src="https://via.placeholder.com/540x300/e8f5e9/2e7d32?text=Product+3" alt="Product 3 — Portable Bluetooth speaker" width="540" style="display: block; width: 100%; height: auto; border: 0;" />
+              </a>
+            </div>
+
+            <!-- Navigation dots -->
+            <div class="car-dots">
+              <label for="car-s1" class="car-dot"></label>
+              <label for="car-s2" class="car-dot"></label>
+              <label for="car-s3" class="car-dot"></label>
+            </div>
+          </div>
+          <!--<![endif]-->
+
+          <!-- Static fallback: visible in Outlook, Gmail, non-WebKit clients -->
+          <div class="carousel-fallback">
+            <a href="https://example.com/product-1">
+              <img src="https://via.placeholder.com/540x300/e3f2fd/1565c0?text=Product+1" alt="Product 1 — Wireless headphones with noise cancellation" width="540" style="display: block; width: 100%; height: auto; border: 0;" />
+            </a>
+          </div>
+        </td>
+      </tr>
+
+      <!-- CTA -->
+      <tr>
+        <td align="center" style="padding: 0 30px 30px 30px;">
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://example.com/shop" style="height:44px; v-text-anchor:middle; width:180px;" arcsize="10%" fillcolor="#0066cc" strokecolor="#0066cc">
+            <w:anchorlock/>
+            <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:16px; font-weight:bold;">Shop All</center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td align="center" bgcolor="#0066cc" style="border-radius: 5px; mso-padding-alt: 12px 28px;">
+                <a href="https://example.com/shop" target="_blank" style="display: inline-block; padding: 12px 28px; font-family: Arial, sans-serif; font-size: 16px; line-height: 120%; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px;">Shop All</a>
+              </td>
+            </tr>
+          </table>
+          <!--<![endif]-->
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>

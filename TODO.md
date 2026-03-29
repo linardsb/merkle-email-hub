@@ -22,7 +22,7 @@
 >
 > **Dependency note:** Independent of Phases 36/38/39. Uses existing judge infrastructure (`app/ai/agents/evals/judges/`). Golden components from `email-templates/components/` are the starting point. New reference templates can be added incrementally — the system is designed to grow.
 
-- [ ] 37.1 Expand golden component library with advanced patterns
+- [x] 37.1 Expand golden component library with advanced patterns
 - [ ] 37.2 Build golden reference loader & criterion mapping
 - [ ] 37.3 Wire golden references into judge prompts
 - [ ] 37.4 Re-run judge pipeline & measure calibration improvement

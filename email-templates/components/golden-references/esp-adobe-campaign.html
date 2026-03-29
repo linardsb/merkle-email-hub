@@ -1,0 +1,146 @@
+<!-- golden-ref: criteria=[syntax_correctness, fallback_completeness, platform_accuracy], agents=[personalisation], verified=2026-03-29 -->
+<!-- ESP Adobe Campaign — <%= %>, <% %>, recipient.field, ternary fallbacks, SQL queries -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>Adobe Campaign Template</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1e1e1e !important; }
+    .dark-text { color: #e0e0e0 !important; }
+  }
+  [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+  [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+
+<!-- Adobe Campaign JavaScript Server Pages (JSSP) scripting block -->
+<%
+  var firstName = recipient.firstName ? recipient.firstName : 'Friend';
+  var segment = recipient.segment ? recipient.segment : 'standard';
+  var loyaltyPoints = recipient.loyaltyPoints ? recipient.loyaltyPoints : 0;
+%>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <!-- Personalized greeting with ternary fallback -->
+      <tr>
+        <td style="padding: 30px 30px 10px 30px;">
+          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
+            Hi <%= firstName %>,
+          </h1>
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
+            Welcome back! Your account has been active since <%= formatDate(recipient.creationDate, '%B %Y') %>.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Conditional content: segment-based -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          <% if (segment == 'vip') { %>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f3e5f5; border-left: 4px solid #7b1fa2;">
+            <tr>
+              <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
+                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #7b1fa2;">VIP Exclusive Offer</h2>
+                <p style="margin: 0 0 10px 0;">Enjoy exclusive early access to our seasonal collection plus complimentary gift wrapping.</p>
+              </td>
+            </tr>
+          </table>
+          <% } else if (loyaltyPoints > 100) { %>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e8f5e9; border-left: 4px solid #388e3c;">
+            <tr>
+              <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
+                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2e7d32;">Points Ready to Redeem</h2>
+                <p style="margin: 0 0 10px 0;">You have <%= loyaltyPoints %> points. Redeem them for up to <%= Math.floor(loyaltyPoints / 10) %>% off your next order.</p>
+              </td>
+            </tr>
+          </table>
+          <% } else { %>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
+                <p style="margin: 0 0 10px 0;">Discover what is new this season. Start earning loyalty points with every purchase.</p>
+              </td>
+            </tr>
+          </table>
+          <% } %>
+        </td>
+      </tr>
+
+      <!-- Dynamic product listing via queryDef -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Recommendations</h2>
+          <%
+            var query = xtk.queryDef.create(
+              {queryDef: {schema: "nms:productRecs", operation: "select",
+                select: {node: [{expr: "@name"}, {expr: "@price"}, {expr: "@imageUrl"}, {expr: "@productUrl"}]},
+                where: {condition: [{expr: "[@recipientId] = " + recipient.id}]},
+                orderBy: {node: [{expr: "@score", sortDesc: "true"}]}}});
+            var recs = query.ExecuteQuery();
+          %>
+          <% if (recs.productRecs.length > 0) { %>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <% for each (var rec in recs.productRecs) { %>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee; font-family: Arial, sans-serif; font-size: 14px; color: #333333;">
+                <strong><%= rec.@name %></strong> — <%= rec.@price %>
+              </td>
+            </tr>
+            <% } %>
+          </table>
+          <% } else { %>
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Check out our most popular items this season.</p>
+          <% } %>
+        </td>
+      </tr>
+
+      <!-- Include shared content block -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          <%= include('shared_footer', 'delivery') %>
+        </td>
+      </tr>
+
+      <!-- Footer with system links -->
+      <tr>
+        <td style="padding: 20px 30px; background-color: #f0f0f0;">
+          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+            <a href="<%= mirrorPageUrl %>" style="color: #0066cc; text-decoration: underline;">View in browser</a> &nbsp;|&nbsp;
+            <a href="<%= optOutUrl %>" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>

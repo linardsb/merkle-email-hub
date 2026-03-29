@@ -1,0 +1,153 @@
+<!-- golden-ref: criteria=[syntax_correctness, fallback_completeness, platform_accuracy], agents=[personalisation], verified=2026-03-29 -->
+<!-- ESP SFMC AMPscript — %%[...]%%, %%=...=%%, Lookup(), IIF(), IF/ELSE, data extensions -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>SFMC AMPscript Template</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1e1e1e !important; }
+    .dark-text { color: #e0e0e0 !important; }
+  }
+  [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+  [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+
+<!-- AMPscript block: variable declarations and data lookups -->
+%%[
+SET @firstName = AttributeValue("FirstName")
+SET @lastName = AttributeValue("LastName")
+SET @email = AttributeValue("EmailAddress")
+SET @subscriberKey = AttributeValue("_subscriberkey")
+SET @segment = AttributeValue("Segment")
+
+/* Data Extension lookup for product recommendations */
+SET @productName = Lookup("ProductRecommendations", "ProductName", "SubscriberKey", @subscriberKey)
+SET @productPrice = Lookup("ProductRecommendations", "Price", "SubscriberKey", @subscriberKey)
+SET @productUrl = Lookup("ProductRecommendations", "ProductURL", "SubscriberKey", @subscriberKey)
+SET @productImg = Lookup("ProductRecommendations", "ImageURL", "SubscriberKey", @subscriberKey)
+
+/* Fallback defaults */
+SET @greeting = IIF(Empty(@firstName), "Friend", @firstName)
+SET @productFallback = IIF(Empty(@productName), "our latest collection", @productName)
+]%%
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <!-- Personalized greeting with IIF fallback -->
+      <tr>
+        <td style="padding: 30px 30px 10px 30px;">
+          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
+            Hi %%=v(@greeting)=%%,
+          </h1>
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
+            We have curated %%=v(@productFallback)=%% just for you.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Conditional content: segment-based targeting -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          %%[IF @segment == "VIP"]%%
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #fff8e1; border-left: 4px solid #ffa000;">
+            <tr>
+              <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
+                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #e65100;">VIP Exclusive Access</h2>
+                <p style="margin: 0 0 10px 0;">As a VIP member, enjoy 20% off plus free shipping on your next order. Use code: <strong>VIP20</strong></p>
+              </td>
+            </tr>
+          </table>
+          %%[ELSEIF @segment == "Loyalty"]%%
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e8f5e9; border-left: 4px solid #388e3c;">
+            <tr>
+              <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
+                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2e7d32;">Loyalty Rewards</h2>
+                <p style="margin: 0 0 10px 0;">You have earned 500 loyalty points! Redeem them on your next purchase for great savings.</p>
+              </td>
+            </tr>
+          </table>
+          %%[ELSE]%%
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
+                <p style="margin: 0 0 10px 0;">Discover our newest arrivals and trending items selected for you.</p>
+              </td>
+            </tr>
+          </table>
+          %%[ENDIF]%%
+        </td>
+      </tr>
+
+      <!-- Product recommendation from Data Extension lookup -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Picked for You</h2>
+          %%[IF NOT Empty(@productName)]%%
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td width="120" valign="top" style="padding-right: 15px;">
+                <img src="%%=v(@productImg)=%%" alt="%%=v(@productName)=%%" width="120" style="display: block; border: 0;" />
+              </td>
+              <td valign="top" style="font-family: Arial, sans-serif;">
+                <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #333333;">%%=v(@productName)=%%</h3>
+                <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: #0066cc;">%%=v(@productPrice)=%%</p>
+                <a href="%%=RedirectTo(@productUrl)=%%" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">View product details</a>
+              </td>
+            </tr>
+          </table>
+          %%[ELSE]%%
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Browse our full catalog for the latest deals and new arrivals.</p>
+          %%[ENDIF]%%
+        </td>
+      </tr>
+
+      <!-- Content Block reference -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          %%=ContentBlockByKey("shared_email_footer")=%%
+        </td>
+      </tr>
+
+      <!-- Footer with SFMC system strings -->
+      <tr>
+        <td style="padding: 20px 30px; background-color: #f0f0f0;">
+          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+            <a href="%%profile_center_url%%" style="color: #0066cc; text-decoration: underline;">Update preferences</a> &nbsp;|&nbsp;
+            <a href="%%unsub_center_url%%" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>

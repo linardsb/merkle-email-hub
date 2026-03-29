@@ -1,0 +1,140 @@
+<!-- golden-ref: criteria=[syntax_correctness, fallback_completeness, platform_accuracy], agents=[personalisation], verified=2026-03-29 -->
+<!-- ESP Braze Liquid — Liquid variables, conditionals, connected_content, content blocks, loops -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>Braze Liquid Template</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1e1e1e !important; }
+    .dark-text { color: #e0e0e0 !important; }
+  }
+  [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+  [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <!-- Personalized greeting with default fallback -->
+      <tr>
+        <td style="padding: 30px 30px 10px 30px;">
+          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
+            Hi {{ ${first_name} | default: 'Friend' }},
+          </h1>
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
+            Thanks for being a valued member since {{ custom_attribute.${signup_date} | date: '%B %Y' | default: 'the beginning' }}.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Conditional block: VIP vs standard content -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          {% if ${most_recent_app_version} == 'V3' %}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f0f7ff; border-left: 4px solid #0066cc;">
+            <tr>
+              <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
+                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0066cc;">Exclusive V3 Features</h2>
+                <p style="margin: 0 0 10px 0;">As a V3 user, you have early access to our new dashboard and analytics tools.</p>
+              </td>
+            </tr>
+          </table>
+          {% else %}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
+                <p style="margin: 0 0 10px 0;">Upgrade to our latest version to unlock premium features and improved performance.</p>
+              </td>
+            </tr>
+          </table>
+          {% endif %}
+        </td>
+      </tr>
+
+      <!-- Connected Content: dynamic product recommendations -->
+      <tr>
+        <td style="padding: 0 30px 10px 30px;">
+          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Recommended for You</h2>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          {% connected_content https://api.example.com/recommendations?user_id={{${user_id}}}&limit=3 :save recs %}
+          {% if recs.products.size > 0 %}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            {% for item in recs.products %}
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+                  <tr>
+                    <td width="80" valign="top" style="padding-right: 15px;">
+                      <img src="{{ item.image_url | default: 'https://via.placeholder.com/80x80' }}" alt="{{ item.name | default: 'Product image' }}" width="80" style="display: block; border: 0;" />
+                    </td>
+                    <td valign="top" style="font-family: Arial, sans-serif;">
+                      <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #333333;">{{ item.name }}</h3>
+                      <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">{{ item.description | truncate: 80 }}</p>
+                      <p style="margin: 0; font-size: 16px; font-weight: bold; color: #0066cc;">{{ item.price | default: '' }}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+          {% else %}
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Check out our latest arrivals in the store.</p>
+          {% endif %}
+        </td>
+      </tr>
+
+      <!-- Content Block reference -->
+      <tr>
+        <td style="padding: 0 30px 20px 30px;">
+          {{content_blocks.${email_footer_block}}}
+        </td>
+      </tr>
+
+      <!-- Abort logic for suppression -->
+      <!-- {% if ${email_opt_out} == true %}{% abort_message("User opted out") %}{% endif %} -->
+
+      <!-- Footer -->
+      <tr>
+        <td style="padding: 20px 30px; background-color: #f0f0f0;">
+          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+            <a href="{{${set_user_to_opted_in_url}}}" style="color: #0066cc; text-decoration: underline;">Update preferences</a> &nbsp;|&nbsp;
+            <a href="{{${set_user_to_unsubscribed_url}}}" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>

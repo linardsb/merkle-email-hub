@@ -76,7 +76,7 @@ For full architecture details see `.claude/docs/architecture-deep-dive.md`. For 
 
 ## Roadmap
 
-Phases 0–36 complete. Phase 37 (golden reference library) in progress. Phase 38 (pipeline fidelity fix) complete — all 8 subtasks done. Phase 39 (pipeline hardening) complete — all 7 subtasks done. 39.1 Figma API enrichment, 39.2 testing infrastructure, 39.3 dual MJML path eliminated, 39.4 automated quality contracts, 39.5 custom lint rules, 39.6 component matcher improvements (`_score_candidates()` multi-candidate scoring, 3 new component types product-grid/category-nav/image-gallery, slot fill validation, `match_confidences` on `ConversionResult`), 39.7 golden template conformance gate. See `TODO.md` for summary. See `docs/TODO-completed.md` for detailed completion records.
+Phases 0–36 complete. Phase 37 (golden reference library) in progress — 37.1 done (14 golden reference templates in `email-templates/components/golden-references/`: VML/MSO, dark mode, accessibility, ESP tokens for Braze/SFMC/Adobe Campaign/Klaviyo, innovation CSS carousel/accordion/AMP/kinetic hover). Phase 38 (pipeline fidelity fix) complete — all 8 subtasks done. Phase 39 (pipeline hardening) complete — all 7 subtasks done. 39.1 Figma API enrichment, 39.2 testing infrastructure, 39.3 dual MJML path eliminated, 39.4 automated quality contracts, 39.5 custom lint rules, 39.6 component matcher improvements (`_score_candidates()` multi-candidate scoring, 3 new component types product-grid/category-nav/image-gallery, slot fill validation, `match_confidences` on `ConversionResult`), 39.7 golden template conformance gate. See `TODO.md` for summary. See `docs/TODO-completed.md` for detailed completion records.
 
 ## Compact instructions
 

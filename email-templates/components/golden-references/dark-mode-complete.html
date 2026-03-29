@@ -1,0 +1,183 @@
+<!-- golden-ref: criteria=[color_coherence, outlook_selector_completeness, meta_and_media_query, contrast_preservation, html_preservation], agents=[dark_mode], verified=2026-03-29 -->
+<!-- Dark Mode Complete — Full dark mode: meta tags, @media, [data-ogsc]/[data-ogsb], utility classes, contrast-safe palette, image swap -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<!-- Dark mode meta declarations (required for Apple Mail, Hey, FastMail) -->
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>Dark Mode Complete</title>
+<style>
+  /* Base color-scheme declaration */
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+
+  /* Responsive */
+  @media screen and (max-width: 620px) {
+    .column { display: block !important; max-width: 100% !important; width: 100% !important; }
+    .stack-pad { padding: 10px 20px !important; }
+  }
+
+  /* Dark mode: standards-compliant media query */
+  @media (prefers-color-scheme: dark) {
+    /* Backgrounds */
+    .body-bg { background-color: #121212 !important; }
+    .container-bg { background-color: #1e1e1e !important; }
+    .header-bg { background-color: #1a1a2e !important; }
+    .card-bg { background-color: #2d2d44 !important; }
+    .footer-bg { background-color: #161616 !important; }
+
+    /* Text — all meet WCAG AA 4.5:1 on dark backgrounds */
+    .dark-text-primary { color: #f0f0f0 !important; }
+    .dark-text-secondary { color: #b3b3b3 !important; }
+    .dark-text-muted { color: #999999 !important; }
+    .dark-text-link { color: #6ea8fe !important; }
+
+    /* Borders */
+    .dark-border { border-color: #444444 !important; }
+
+    /* Button overrides */
+    .dark-btn-bg { background-color: #4d8cff !important; }
+    .dark-btn-text { color: #ffffff !important; }
+
+    /* Image swap: hide light, show dark */
+    .light-logo { display: none !important; max-height: 0 !important; overflow: hidden !important; }
+    .dark-logo { display: block !important; max-height: none !important; overflow: visible !important; }
+  }
+
+  /* Outlook.com dark mode — [data-ogsc] for text color, [data-ogsb] for backgrounds */
+  [data-ogsc] .dark-text-primary { color: #f0f0f0 !important; }
+  [data-ogsc] .dark-text-secondary { color: #b3b3b3 !important; }
+  [data-ogsc] .dark-text-muted { color: #999999 !important; }
+  [data-ogsc] .dark-text-link { color: #6ea8fe !important; }
+  [data-ogsc] .dark-btn-text { color: #ffffff !important; }
+
+  [data-ogsb] .body-bg { background-color: #121212 !important; }
+  [data-ogsb] .container-bg { background-color: #1e1e1e !important; }
+  [data-ogsb] .header-bg { background-color: #1a1a2e !important; }
+  [data-ogsb] .card-bg { background-color: #2d2d44 !important; }
+  [data-ogsb] .footer-bg { background-color: #161616 !important; }
+  [data-ogsb] .dark-btn-bg { background-color: #4d8cff !important; }
+</style>
+</head>
+<body class="body-bg" style="margin: 0; padding: 0; background-color: #f4f4f4;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="body-bg" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f4f4f4;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="container-bg" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <!-- Header with logo swap -->
+      <tr>
+        <td class="header-bg" align="center" style="padding: 24px 30px; background-color: #0044aa;">
+          <!-- Light mode logo (hidden in dark mode) -->
+          <img class="light-logo" src="https://via.placeholder.com/180x40/0044aa/ffffff?text=LOGO" alt="Company Logo" width="180" style="display: block; height: auto; border: 0;" />
+          <!-- Dark mode logo (hidden by default, shown in dark mode) -->
+          <!--[if !mso]><!-->
+          <div class="dark-logo" style="display: none; max-height: 0; overflow: hidden;">
+            <img src="https://via.placeholder.com/180x40/1a1a2e/6ea8fe?text=LOGO" alt="Company Logo" width="180" style="display: block; height: auto; border: 0;" />
+          </div>
+          <!--<![endif]-->
+        </td>
+      </tr>
+
+      <!-- Hero section -->
+      <tr>
+        <td class="container-bg" style="padding: 40px 30px; background-color: #ffffff;">
+          <h1 data-slot="heading" class="dark-text-primary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 28px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">Welcome to Dark Mode</h1>
+          <p data-slot="body_text" class="dark-text-secondary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">This email adapts seamlessly to your inbox theme. All colors maintain WCAG AA contrast ratios in both light and dark modes. Text remains readable, images swap appropriately, and buttons stay accessible.</p>
+        </td>
+      </tr>
+
+      <!-- 2-column cards -->
+      <tr>
+        <td class="container-bg" style="font-size: 0; text-align: center; padding: 0 20px 20px 20px; background-color: #ffffff;">
+          <!--[if mso]>
+          <table role="presentation" width="560" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="270" valign="top" style="padding: 0 5px;">
+          <![endif]-->
+          <div class="column" style="display: inline-block; max-width: 270px; width: 100%; vertical-align: top;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td class="card-bg dark-border" style="padding: 20px; background-color: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 8px;">
+                  <h2 data-slot="card_1_heading" class="dark-text-primary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333;">Card Title</h2>
+                  <p class="dark-text-secondary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Card content that adapts colors in dark mode while maintaining readable contrast.</p>
+                  <a class="dark-text-link" href="https://example.com" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">Read more</a>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <!--[if mso]>
+          </td><td width="270" valign="top" style="padding: 0 5px;">
+          <![endif]-->
+          <div class="column" style="display: inline-block; max-width: 270px; width: 100%; vertical-align: top;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td class="card-bg dark-border" style="padding: 20px; background-color: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 8px;">
+                  <h2 data-slot="card_2_heading" class="dark-text-primary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333;">Card Title</h2>
+                  <p class="dark-text-secondary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Second card with matching dark mode treatment and proper text/background contrast ratios.</p>
+                  <a class="dark-text-link" href="https://example.com" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">Read more</a>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <!--[if mso]>
+          </td></tr></table>
+          <![endif]-->
+        </td>
+      </tr>
+
+      <!-- CTA section -->
+      <tr>
+        <td class="container-bg" align="center" style="padding: 10px 30px 30px 30px; background-color: #ffffff;">
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://example.com/cta" style="height:48px; v-text-anchor:middle; width:200px;" arcsize="10%" fillcolor="#0066cc" strokecolor="#0066cc">
+            <w:anchorlock/>
+            <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:16px; font-weight:bold;">Take Action</center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td class="dark-btn-bg" align="center" bgcolor="#0066cc" style="border-radius: 5px; mso-padding-alt: 14px 32px;">
+                <a data-slot="cta_url" class="dark-btn-text" href="https://example.com/cta" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, sans-serif; font-size: 16px; line-height: 120%; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px;">Take Action</a>
+              </td>
+            </tr>
+          </table>
+          <!--<![endif]-->
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td class="footer-bg" style="padding: 20px 30px; background-color: #333333;">
+          <p class="dark-text-muted" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #aaaaaa; text-align: center;">You received this email because you subscribed to our newsletter.</p>
+          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #aaaaaa; text-align: center;">
+            <a class="dark-text-link" href="https://example.com/preferences" style="color: #99ccff; text-decoration: underline;">Manage preferences</a> &nbsp;|&nbsp;
+            <a class="dark-text-link" href="https://example.com/unsubscribe" style="color: #99ccff; text-decoration: underline;">Unsubscribe</a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>

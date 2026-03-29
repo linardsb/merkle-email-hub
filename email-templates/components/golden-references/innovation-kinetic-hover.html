@@ -1,0 +1,219 @@
+<!-- golden-ref: criteria=[technique_correctness, innovation_value], agents=[innovation], verified=2026-03-29 -->
+<!-- Innovation Kinetic Hover — :hover CTA reveal, animated underlines, color transitions, touch fallback -->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<!--[if mso]>
+<noscript>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+  </o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>Kinetic Hover Effects</title>
+<style>
+  /* === Kinetic CSS: hover effects for supporting clients === */
+
+  /* Product card hover: reveal secondary CTA */
+  .product-card .hover-reveal {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    -webkit-transition: max-height 0.3s ease, opacity 0.3s ease;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+  }
+  .product-card:hover .hover-reveal {
+    max-height: 60px;
+    opacity: 1;
+  }
+
+  /* Button hover: background color transition */
+  .btn-kinetic {
+    -webkit-transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease;
+  }
+  .btn-kinetic:hover {
+    background-color: #004499 !important;
+  }
+
+  /* Animated underline on links */
+  .link-animated {
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    -webkit-transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease;
+  }
+  .link-animated:hover {
+    border-bottom-color: #0066cc;
+  }
+
+  /* Subtle pulse animation on primary CTA */
+  @-webkit-keyframes pulse {
+    0% { -webkit-transform: scale(1); }
+    50% { -webkit-transform: scale(1.03); }
+    100% { -webkit-transform: scale(1); }
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+  .pulse-hover:hover {
+    -webkit-animation: pulse 1s ease-in-out infinite;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  /* Image zoom on hover */
+  .img-zoom {
+    -webkit-transition: -webkit-transform 0.4s ease;
+    transition: transform 0.4s ease;
+    overflow: hidden;
+  }
+  .img-zoom:hover img {
+    -webkit-transform: scale(1.05);
+    transform: scale(1.05);
+  }
+
+  /* Mobile touch fallback: always show hover-reveal content */
+  @media screen and (max-width: 620px) {
+    .column { display: block !important; max-width: 100% !important; width: 100% !important; }
+    .product-card .hover-reveal {
+      max-height: 60px !important;
+      opacity: 1 !important;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dark-bg { background-color: #1e1e1e !important; }
+    .dark-text { color: #e0e0e0 !important; }
+    .dark-card { background-color: #2d2d44 !important; }
+  }
+  [data-ogsc] .dark-text { color: #e0e0e0 !important; }
+  [data-ogsb] .dark-bg { background-color: #1e1e1e !important; }
+  [data-ogsb] .dark-card { background-color: #2d2d44 !important; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+<tr>
+  <td align="center" style="padding: 20px 0;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; max-width: 600px; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #ffffff;">
+
+      <!-- Header -->
+      <tr>
+        <td style="padding: 20px 30px 10px 30px;">
+          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 24px; color: #333333;">New Arrivals</h1>
+          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Hover over products to see quick-buy options. On mobile, all options are visible.</p>
+        </td>
+      </tr>
+
+      <!-- Product cards with hover reveal -->
+      <tr>
+        <td style="font-size: 0; text-align: center; padding: 0 20px 20px 20px;">
+          <!--[if mso]>
+          <table role="presentation" width="560" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="270" valign="top">
+          <![endif]-->
+          <div class="column" style="display: inline-block; max-width: 270px; width: 100%; vertical-align: top;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="product-card" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td style="padding: 10px;">
+                  <!-- Image with zoom effect -->
+                  <div class="img-zoom" style="overflow: hidden; border-radius: 8px;">
+                    <a href="https://example.com/product-a">
+                      <img src="https://via.placeholder.com/250x250/e3f2fd/1565c0?text=Product+A" alt="Premium leather jacket in charcoal black" width="250" style="display: block; width: 100%; height: auto; border: 0; -webkit-transition: transform 0.4s ease; transition: transform 0.4s ease;" />
+                    </a>
+                  </div>
+                  <h2 style="margin: 10px 0 5px 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+                    <a class="link-animated" href="https://example.com/product-a" style="color: #333333; text-decoration: none; border-bottom: 2px solid transparent;">Leather Jacket</a>
+                  </h2>
+                  <p style="margin: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; color: #0066cc;">$299.00</p>
+                  <!-- Hover-reveal secondary CTA -->
+                  <div class="hover-reveal" style="max-height: 0; overflow: hidden; opacity: 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+                      <tr>
+                        <td align="center" style="padding: 8px 0;">
+                          <a href="https://example.com/quick-buy/product-a" class="btn-kinetic" style="display: inline-block; padding: 8px 20px; font-family: Arial, sans-serif; font-size: 13px; color: #ffffff; background-color: #0066cc; text-decoration: none; border-radius: 4px;">Quick Buy</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <!--[if mso]>
+          </td><td width="270" valign="top">
+          <![endif]-->
+          <div class="column" style="display: inline-block; max-width: 270px; width: 100%; vertical-align: top;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="product-card" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+              <tr>
+                <td style="padding: 10px;">
+                  <div class="img-zoom" style="overflow: hidden; border-radius: 8px;">
+                    <a href="https://example.com/product-b">
+                      <img src="https://via.placeholder.com/250x250/fce4ec/c62828?text=Product+B" alt="Cashmere scarf in heather grey" width="250" style="display: block; width: 100%; height: auto; border: 0; -webkit-transition: transform 0.4s ease; transition: transform 0.4s ease;" />
+                    </a>
+                  </div>
+                  <h2 style="margin: 10px 0 5px 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333;">
+                    <a class="link-animated" href="https://example.com/product-b" style="color: #333333; text-decoration: none; border-bottom: 2px solid transparent;">Cashmere Scarf</a>
+                  </h2>
+                  <p style="margin: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; color: #0066cc;">$89.00</p>
+                  <div class="hover-reveal" style="max-height: 0; overflow: hidden; opacity: 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+                      <tr>
+                        <td align="center" style="padding: 8px 0;">
+                          <a href="https://example.com/quick-buy/product-b" class="btn-kinetic" style="display: inline-block; padding: 8px 20px; font-family: Arial, sans-serif; font-size: 13px; color: #ffffff; background-color: #0066cc; text-decoration: none; border-radius: 4px;">Quick Buy</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <!--[if mso]>
+          </td></tr></table>
+          <![endif]-->
+        </td>
+      </tr>
+
+      <!-- Primary CTA with pulse animation -->
+      <tr>
+        <td align="center" style="padding: 10px 30px 30px 30px;">
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://example.com/shop-all" style="height:48px; v-text-anchor:middle; width:200px;" arcsize="10%" fillcolor="#0066cc" strokecolor="#0066cc">
+            <w:anchorlock/>
+            <center style="color:#ffffff; font-family:Arial, sans-serif; font-size:16px; font-weight:bold;">Browse All</center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+            <tr>
+              <td align="center" bgcolor="#0066cc" class="pulse-hover" style="border-radius: 5px; mso-padding-alt: 14px 32px;">
+                <a href="https://example.com/shop-all" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, sans-serif; font-size: 16px; line-height: 120%; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px;">Browse All</a>
+              </td>
+            </tr>
+          </table>
+          <!--<![endif]-->
+        </td>
+      </tr>
+
+    </table>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+</body>
+</html>
