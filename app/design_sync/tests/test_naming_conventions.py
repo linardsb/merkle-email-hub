@@ -183,9 +183,14 @@ class TestClassifyMjSection:
 
 class TestClassifyByContent:
     def test_large_image_at_top_is_hero(self) -> None:
+        from app.design_sync.figma.layout_analyzer import ImagePlaceholder
+
         big_img = _node("img", ntype=DesignNodeType.IMAGE, width=500, height=400)
+        big_img_placeholder = ImagePlaceholder(
+            node_id=big_img.id, node_name=big_img.name, width=500, height=400
+        )
         node = _node("Frame 1", children=[big_img], width=600)
-        result = _classify_by_content(node, [], [big_img], [], 0, 5)
+        result = _classify_by_content(node, [], [big_img_placeholder], [], 0, 5)
         # _has_large_image_child checks direct children
         assert result == EmailSectionType.HERO
 

@@ -1036,14 +1036,16 @@ def node_to_email_html(
                                 continue
                             child_props = props_map.get(child.id) if props_map else None
                             font = td_font
-                            style_parts: list[str] = []
+                            child_style_parts: list[str] = []
                             if child_props:
                                 if child_props.font_family:
                                     sf = _sanitize_css_value(child_props.font_family)
                                     if sf:
                                         font = _font_stack(sf)
                                 if child_props.font_size:
-                                    style_parts.append(f"font-size:{int(child_props.font_size)}px")
+                                    child_style_parts.append(
+                                        f"font-size:{int(child_props.font_size)}px"
+                                    )
                                 if child_props.font_weight:
                                     try:
                                         wn = int(child_props.font_weight)
@@ -1051,19 +1053,21 @@ def node_to_email_html(
                                     except (ValueError, TypeError):
                                         s = str(child_props.font_weight).lower()
                                         mw = "bold" if s == "bold" else "normal"
-                                    style_parts.append(f"font-weight:{mw}")
-                            style_parts.insert(0, f"font-family:{font}")
+                                    child_style_parts.append(f"font-weight:{mw}")
+                            child_style_parts.insert(0, f"font-family:{font}")
                             if child.text_color:
                                 sc = _sanitize_css_value(child.text_color)
                                 if sc:
-                                    style_parts.append(f"color:{sc}")
+                                    child_style_parts.append(f"color:{sc}")
                             elif effective_bg:
-                                style_parts.append(f"color:{_contrasting_text_color(effective_bg)}")
-                            css = ";".join(style_parts)
+                                child_style_parts.append(
+                                    f"color:{_contrasting_text_color(effective_bg)}"
+                                )
+                            css = ";".join(child_style_parts)
                             lines.append(f'{inner_pad}<span style="{css}">{text}</span>')
                         elif child.type == DesignNodeType.IMAGE:
-                            w = int(child.width) if child.width else ""
-                            h = int(child.height) if child.height else ""
+                            w = str(int(child.width)) if child.width else ""
+                            h = str(int(child.height)) if child.height else ""
                             alt = _meaningful_alt(child.name, section=section)
                             w_attr = f' width="{w}"' if w else ""
                             h_attr = f' height="{h}"' if h else ""

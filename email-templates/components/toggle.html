@@ -1,11 +1,10 @@
 <!-- Component: toggle -->
-<!-- Usage: Type 'toggle' + Tab in Sublime Text -->
 
-<a href="$4">
-  <img src="images/img_$1.jpg" alt="" style="display: block; border: 0" border="0" class="hide" width="" height="">
+<a href="{{ link_url }}">
+  <img src="{{ desktop_image || 'https://fakeimg.pl/600x400/' }}" alt="{{ alt }}" style="display: block; border: 0" border="0" class="hide" width="" height="">
   <!--[if !mso]><!-->
     <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
-      <img src="images/img_$2.jpg" alt="" style="display: block; border: 0" border="0" class="respimg" width="" height="">
+      <img src="{{ mobile_image || 'https://fakeimg.pl/600x400/' }}" alt="{{ alt }}" style="display: block; border: 0" border="0" class="respimg" width="" height="">
     </div>
   <!--<![endif]-->
 </a>

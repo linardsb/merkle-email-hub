@@ -1,5 +1,4 @@
-<!-- Component: article-reverse -->
-<!-- Usage: Type 'article-reverse' + Tab in Sublime Text -->
+<!-- Component: article-reverse — Reverse-stacked article (text left, image right on desktop) -->
 
 <table cellpadding="0" cellspacing="0" border="0" width="600" id="vwrevart" class="resptab" role="presentation" style="width:600px;" bgcolor="#ffffff">
       <tr align="center">
@@ -9,21 +8,21 @@
               <td align="center" class="padlr20 padtop40 padbot40" style="padding-top:20px;">
                 <table cellpadding="0" cellspacing="0" border="0" width="240" class="resptab" role="presentation" style="width:240px;">
                   <tr align="center">
-                    <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 20px; line-height: 24px; color:#33302E; mso-line-height-rule: exactly; text-align: left; font-weight:normal; padding-bottom:20px;">
-                      Lorem ipsum dolor sit amet, consectetur
+                    <td data-slot="heading" align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 20px; line-height: 24px; color:#1a1a1a; mso-line-height-rule: exactly; text-align: left; font-weight:normal; padding-bottom:20px;">
+                      Article heading
                     </td>
                   </tr>
                   <tr align="center">
-                    <td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#33302E; mso-line-height-rule: exactly; text-align: left;">
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eu turpis molestie, dictum est a, mattis tellus.
+                    <td data-slot="body_text" align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 21px; color:#1a1a1a; mso-line-height-rule: exactly; text-align: left;">
+                      Article body text goes here. Replace with your content.
                     </td>
                   </tr>
                   <tr align="center">
                     <td align="left" style="padding-top: 30px;">
-                      <table cellpadding="0" cellspacing="0" border="0" class="cta" role="presentation" style="border-radius:25px;" bgcolor="#001E50">
+                      <table cellpadding="0" cellspacing="0" border="0" class="cta" role="presentation" style="border-radius:25px;" bgcolor="{{ button_color || '#e84e0f' }}">
                         <tr align="center">
-                          <td align="center" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-left: 30px; padding-right: 30px; height: 50px;">
-                            <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=${1:*LinkName*}&kx=1&kt=1&kd=${2:&Thunderhead&}${3:~Link~}?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="" xt="SPNOTRACK" target="_blank" style="font-family:'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">Primary button</a>
+                          <td align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-left: 30px; padding-right: 30px; height: 50px;">
+                            <a href="{{ button_url }}" target="_blank" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">{{ button_text || 'Primary button' }}</a>
                           </td>
                         </tr>
                       </table>
@@ -32,16 +31,16 @@
                 </table>
               </td>
             </tr>
-          </table>                
+          </table>
         </th>
         <th align="center" class="rup" valign="top">
           <table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
             <tr align="center">
-              <td align="center">
-                <a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=${1:*LinkName*}&kx=1&kt=1&kd=${2:&Thunderhead&}${3:~Link~}?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="" xt="SPNOTRACK" class="textCenter" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/600x600/" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="300" height="300"></a>
+              <td data-slot="image" align="center">
+                <a href="{{ image_link_url }}" style="color: #1a1a1a; text-decoration: none;" target="_blank"><img src="{{ image_src || 'https://fakeimg.pl/600x600/' }}" alt="{{ image_alt }}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #1a1a1a; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="300" height="300"></a>
               </td>
             </tr>
-          </table>              
+          </table>
         </th>
       </tr>
     </table>

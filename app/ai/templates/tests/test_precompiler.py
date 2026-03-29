@@ -58,7 +58,9 @@ class TestTemplatePrecompiler:
         assert CSS_PREOPTIMIZED_MARKER in result.optimized_html
         assert result.optimized_at is not None
         assert result.optimized_for_clients == ("gmail",)
-        assert result.optimization_metadata["original_size"] > 0
+        original_size = result.optimization_metadata["original_size"]
+        assert isinstance(original_size, int)
+        assert original_size > 0
 
     def test_precompile_preserves_original_fields(self, _mock_ontology: None) -> None:
         template = _make_template(name="promo")

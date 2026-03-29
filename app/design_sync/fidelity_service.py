@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PIL import Image
+from PIL import Image as PILImage
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -127,9 +127,9 @@ class VisualFidelityService:
 
         # Download all image bytes
         image_bytes_map: dict[str, bytes] = {}
-        for img in exported:
-            raw = await figma_service.download_image_bytes(img)
-            image_bytes_map[img.node_id] = raw
+        for exported_img in exported:
+            raw = await figma_service.download_image_bytes(exported_img)
+            image_bytes_map[exported_img.node_id] = raw
 
         # Stitch vertically in section order (by y_position)
         sorted_sections = sorted(
@@ -140,15 +140,15 @@ class VisualFidelityService:
         if not sorted_sections:
             raise FidelityScoringError("No section images available for compositing")
 
-        images: list[Image.Image] = []
+        images: list[PILImage.Image] = []
         for section in sorted_sections:
             raw = image_bytes_map[section.node_id]
-            images.append(Image.open(io.BytesIO(raw)).convert("RGB"))
+            images.append(PILImage.open(io.BytesIO(raw)).convert("RGB"))
 
         # Vertical concatenation
         total_width = max(img.width for img in images)
         total_height = sum(img.height for img in images)
-        composite = Image.new("RGB", (total_width, total_height), (255, 255, 255))
+        composite = PILImage.new("RGB", (total_width, total_height), (255, 255, 255))
 
         y_offset = 0
         for img in images:

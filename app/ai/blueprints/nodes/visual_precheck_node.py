@@ -147,15 +147,19 @@ class VisualPrecheckNode:
 
     async def _render_screenshots(self, html: str, client_ids: list[str]) -> dict[str, str]:
         """Render HTML for target clients and return base64 PNG dict."""
-        from app.rendering.service import RenderingService
+        import base64
 
-        service = RenderingService()
-        result = await service.render_screenshots(html, client_ids)
+        from app.rendering.local.service import LocalRenderingProvider
+
+        renderer = LocalRenderingProvider()
+        render_results = await renderer.render_screenshots(html, client_ids)
 
         screenshots: dict[str, str] = {}
-        for item in result:
-            client = item.get("client_name", "")
-            b64 = item.get("image_b64", "")
-            if client and b64:
-                screenshots[str(client)] = str(b64)
+        for item in render_results:
+            client = str(item.get("client_name", ""))
+            image_bytes = item.get("image_bytes", b"")
+            if client and image_bytes:
+                screenshots[client] = base64.b64encode(
+                    image_bytes if isinstance(image_bytes, bytes) else b""
+                ).decode()
         return screenshots

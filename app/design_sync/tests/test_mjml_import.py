@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.design_sync.exceptions import MjmlImportError
@@ -80,7 +82,7 @@ def _full_mjml() -> str:
 </mjml>"""
 
 
-def _parse_head(mjml: str):
+def _parse_head(mjml: str) -> Any:
     from lxml import etree
 
     parser = etree.XMLParser(resolve_entities=False, no_network=True)
@@ -88,7 +90,7 @@ def _parse_head(mjml: str):
     return root.find("mj-head")
 
 
-def _parse_body(mjml: str):
+def _parse_body(mjml: str) -> Any:
     from lxml import etree
 
     parser = etree.XMLParser(resolve_entities=False, no_network=True)
@@ -106,6 +108,7 @@ class TestMjmlXmlParsing:
         adapter = MjmlImportAdapter()
         doc = adapter.parse(_minimal_mjml())
         assert doc.version == "1.0"
+        assert doc.source is not None
         assert doc.source.provider == "mjml"
 
     def test_malformed_xml(self) -> None:
@@ -492,6 +495,7 @@ class TestAdapterIntegration:
         adapter = MjmlImportAdapter()
         doc = adapter.parse(_minimal_mjml())
         assert doc.version == "1.0"
+        assert doc.source is not None
         assert doc.source.provider == "mjml"
         assert len(doc.sections) == 1
 
@@ -517,6 +521,7 @@ class TestAdapterIntegration:
     def test_provider_is_mjml(self) -> None:
         adapter = MjmlImportAdapter()
         doc = adapter.parse(_minimal_mjml())
+        assert doc.source is not None
         assert doc.source.provider == "mjml"
 
     def test_naming_convention_is_mjml(self) -> None:

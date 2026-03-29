@@ -73,7 +73,7 @@ def _apply_blur(img: np.ndarray, sigma: float) -> np.ndarray:
     """Apply Gaussian blur to smooth anti-aliasing differences."""
     if sigma <= 0:
         return img
-    from scipy.ndimage import gaussian_filter
+    from scipy.ndimage import gaussian_filter  # type: ignore[import-untyped]
 
     result: np.ndarray = gaussian_filter(img, sigma=sigma)
     return result
@@ -89,7 +89,7 @@ def _compute_ssim(img_a: np.ndarray, img_b: np.ndarray, *, win_size: int = 7) ->
     if effective_win < 3:
         return 1.0  # Image too small for meaningful SSIM
 
-    score: float = structural_similarity(img_a, img_b, win_size=effective_win, data_range=255.0)
+    score: float = structural_similarity(img_a, img_b, win_size=effective_win, data_range=255.0)  # type: ignore[no-untyped-call]
     return float(np.clip(score, 0.0, 1.0))
 
 

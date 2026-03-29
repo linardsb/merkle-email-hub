@@ -10,7 +10,7 @@ from pathlib import Path
 
 from lxml import html as lxml_html
 
-# Import custom checks to ensure they are registered
+# Custom checks are registered via app.qa_engine.custom_checks (imported in __init__.py)
 from app.qa_engine.check_config import QACheckConfig
 from app.qa_engine.rule_engine import RuleEngine, load_rules
 from app.qa_engine.schemas import QACheckResult

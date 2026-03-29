@@ -326,7 +326,7 @@ class DesignSyncService:
                 from app.design_sync.email_design_document import EmailDesignDocument
                 from app.design_sync.token_transforms import TokenWarning
 
-                _raw = await provider.build_document(  # type: ignore[attr-defined]
+                _raw = await provider.build_document(
                     conn.file_ref,
                     access_token,
                     connection_config=conn.config_json,

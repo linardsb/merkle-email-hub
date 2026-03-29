@@ -387,14 +387,13 @@ def _classify_section(
     if section_type != EmailSectionType.UNKNOWN:
         return section_type
 
-    # For generic names, try content-based heuristics first
-    if convention == NamingConvention.GENERIC:
-        texts = _extract_texts(node)
-        images = _extract_images(node)
-        buttons = _extract_buttons(node)
-        return _classify_by_content(node, texts, images, buttons, index, total)
-
-    return _classify_by_position(node, index, total, _has_large_image_child(node))
+    # When name matching fails, always try content-based heuristics
+    # before falling back to position-only.  This handles frames with
+    # ambiguous names (e.g. "Section") that have clear content signals.
+    texts = _extract_texts(node)
+    images = _extract_images(node)
+    buttons = _extract_buttons(node)
+    return _classify_by_content(node, texts, images, buttons, index, total)
 
 
 def _classify_mj_section(
@@ -586,19 +585,25 @@ def _classify_by_position(
     """
     height = node.height if node.height is not None else 0
 
-    # Very short sections are spacers/dividers
-    if height <= 30:
+    # Very short sections are spacers/dividers — but only when the height
+    # is explicitly set.  Nodes with missing dimensions (height=None) that
+    # contain children should fall through to content-based classification
+    # rather than being mislabelled as spacers.
+    if node.height is not None and height <= 30:
         return EmailSectionType.SPACER
-    if 30 < height <= 60:
+    if node.height is not None and 30 < height <= 60:
         return EmailSectionType.DIVIDER
 
-    # First section is header/nav
-    if index == 0:
-        return EmailSectionType.HEADER
+    # Position-based heuristics only apply when there are multiple sections.
+    # A single section should default to CONTENT, not HEADER or FOOTER.
+    if total > 1:
+        # First section is header/nav
+        if index == 0:
+            return EmailSectionType.HEADER
 
-    # Last section is footer
-    if index == total - 1:
-        return EmailSectionType.FOOTER
+        # Last section is footer
+        if index == total - 1:
+            return EmailSectionType.FOOTER
 
     # Second-to-last short section is often social links
     if index == total - 2 and height <= 150:
@@ -918,7 +923,7 @@ def _walk_for_buttons(
         ):
             # Check if name also hints at button/CTA
             lower_name = node.name.lower()
-            hints = _DEFAULT_BUTTON_HINTS
+            hints: tuple[str, ...] = _DEFAULT_BUTTON_HINTS
             if extra_hints:
                 hints = (*_DEFAULT_BUTTON_HINTS, *extra_hints)
             is_button_name = any(h in lower_name for h in hints)

@@ -132,7 +132,16 @@ class CRAGMixin:
 
         # Step 6: Validate and sanitize output
         raw = validate_output(result.content)
-        corrected = extract_html(raw)
+        try:
+            corrected = extract_html(raw)
+        except ValueError:
+            logger.warning(
+                "agents.crag.correction_rejected",
+                reason="no_html_in_response",
+                pre_issues=len(qualifying),
+                qualifying_property_ids=qualifying_property_ids,
+            )
+            return html, []  # Failure-safe: return original
         corrected = sanitize_html_xss(corrected)
 
         if not corrected or len(corrected) < 50:

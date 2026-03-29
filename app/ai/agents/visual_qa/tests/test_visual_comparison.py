@@ -190,7 +190,9 @@ class TestVisualComparisonNode:
             await node.execute(ctx)
 
         assert "visual_comparison" in metadata
-        assert metadata["visual_comparison"]["drift_score"] == 1.5
+        vc = metadata["visual_comparison"]
+        assert isinstance(vc, dict)
+        assert vc["drift_score"] == 1.5
 
     @pytest.mark.asyncio()
     async def test_node_metadata(self) -> None:

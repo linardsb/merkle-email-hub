@@ -6,7 +6,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from app.design_sync.diagnose.models import DiagnosticReport
 from app.design_sync.protocol import (
@@ -24,7 +24,8 @@ from app.design_sync.protocol import (
 
 def report_to_dict(report: DiagnosticReport) -> dict[str, Any]:
     """Serialize DiagnosticReport to JSON-safe dict."""
-    return _dataclass_to_dict(report)
+    result: dict[str, Any] = _dataclass_to_dict(report)
+    return result
 
 
 def report_to_json(report: DiagnosticReport, *, indent: int = 2) -> str:
@@ -81,7 +82,7 @@ def _dataclass_to_dict(obj: Any) -> Any:  # noqa: ANN401
 def _structure_to_dict(structure: DesignFileStructure) -> dict[str, Any]:
     """Convert DesignFileStructure to dict with node type serialization."""
     result = _dataclass_to_dict(structure)
-    return result  # type: ignore[return-value]  # guaranteed dict for dataclass input
+    return cast(dict[str, Any], result)  # guaranteed dict for dataclass input
 
 
 def _node_from_dict(data: dict[str, Any]) -> DesignNode:

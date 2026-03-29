@@ -84,7 +84,11 @@ class DarkModeNode:
             )
 
         validated = validate_output(response.content)
-        html = extract_html(validated)
+        try:
+            html = extract_html(validated)
+        except ValueError as exc:
+            logger.error("blueprint.dark_mode_node.no_html_in_response", error=str(exc))
+            return NodeResult(status="failed", error=f"Dark mode did not produce HTML: {exc}")
         confidence = extract_confidence(html)
         html = strip_confidence_comment(html)
         html = sanitize_html_xss(html)

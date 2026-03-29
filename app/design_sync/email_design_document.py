@@ -1084,7 +1084,6 @@ class EmailDesignDocument:
         collection, layout analysis, width derivation) so the resulting
         document is ready for ``convert_document()``.
         """
-        from app.design_sync.converter import _has_visible_content
         from app.design_sync.figma.layout_analyzer import analyze_layout
         from app.design_sync.figma.tree_normalizer import normalize_tree
         from app.design_sync.protocol import DesignNodeType
@@ -1093,20 +1092,18 @@ class EmailDesignDocument:
         if not _pre_normalized:
             structure, _stats = normalize_tree(structure, raw_file_data=raw_file_data)
 
-        # 2. Collect top-level frames (same logic as converter_service._collect_frames)
+        # 2. Check for any top-level frame-type candidates.
+        # Note: we do NOT filter by _has_visible_content here — that check
+        # belongs in the recursive converter path (_collect_frames).  The
+        # document path delegates to analyze_layout(), which correctly
+        # creates sections from all frame-type candidates regardless of
+        # whether they contain text/image children.
         frame_types = {DesignNodeType.FRAME, DesignNodeType.COMPONENT, DesignNodeType.INSTANCE}
-        frames_found = False
-        for page in structure.pages:
-            for child in page.children:
-                if (
-                    child.type in frame_types
-                    and (selected_nodes is None or child.id in selected_nodes)
-                    and _has_visible_content(child)
-                ):
-                    frames_found = True
-                    break
-            if frames_found:
-                break
+        frames_found = any(
+            child.type in frame_types and (selected_nodes is None or child.id in selected_nodes)
+            for page in structure.pages
+            for child in page.children
+        )
 
         if not frames_found:
             return cls(
@@ -1116,6 +1113,19 @@ class EmailDesignDocument:
                 layout=DocumentLayout(),
                 source=DocumentSource(provider=source_provider, file_ref=structure.file_name),
             )
+
+        # 2b. Filter structure to selected nodes before layout analysis
+        if selected_nodes is not None:
+            from dataclasses import replace as dc_replace
+
+            selected_set = set(selected_nodes)
+            filtered_pages = []
+            for page in structure.pages:
+                filtered_children = [
+                    c for c in page.children if c.id in selected_set or c.type not in frame_types
+                ]
+                filtered_pages.append(dc_replace(page, children=filtered_children))
+            structure = dc_replace(structure, pages=filtered_pages)
 
         # 3. Layout analysis with config hints
         layout_kwargs: dict[str, Any] = {}

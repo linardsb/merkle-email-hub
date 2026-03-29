@@ -25,6 +25,7 @@ def _make_build(build_id: int = 1, project_id: int = 10) -> MagicMock:
     build.error_message = None
     build.is_production = False
     build.created_at = "2026-01-01T00:00:00"
+    build.visual_drift = None
     return build
 
 

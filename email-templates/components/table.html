@@ -1,5 +1,4 @@
-<!-- Component: table -->
-<!-- Usage: Type 'table' + Tab in Sublime Text -->
+<!-- Component: table — Interactive tab/carousel with thumbnail navigation -->
 
 /** TAB **/
 input{
@@ -108,7 +107,7 @@ max-height:none!important;
 							<td>
 								<div>
 									<!--[if !mso]><!-- -->
-									<div class="thumb-carousel wf" style="width:$1;height:0px;max-height:0px;max-width:0px;overflow:hidden!important;text-align:center">
+									<div class="thumb-carousel wf" style="width:{{ width || '700' }};height:0px;max-height:0px;max-width:0px;overflow:hidden!important;text-align:center">
 										<label>
 											<input type="radio" name="car-rd1" class="cbox7" style="display:none !important;">
 											<span>
@@ -137,31 +136,31 @@ max-height:none!important;
 										<div class="content-5 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
 										<div class="content-6 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
 										<div class="content-7 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
-										<span class="thumb thumb-1"><img src="images/img_56.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-1"><img src="images/img_56.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label>
-										<span class="thumb thumb-2"><img src="images/img_.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-2"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label>
-										<span class="thumb thumb-3"><img src="images/img_.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-3"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label>
-										<span class="thumb thumb-4"><img src="images/img_.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-4"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label>
-										<span class="thumb thumb-5"><img src="images/img_.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-5"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label>
-										<span class="thumb thumb-6"><img src="images/img_.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-6"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label> 
-										<span class="thumb thumb-7"><img src="images/img_.jpg" width="$2" style="display:block;max-height:0" border="0"></span>
+										<span class="thumb thumb-7"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
 										</span>
 										</label>       
 									</div>
 									<!--<![endif]-->
 									<div class="fallback ">
-										<div class="car-content"><a href=""><img src="images/img_.jpg" width="$1" alt="" style="display:block;" border="0"></a></div>
+										<div class="car-content"><a href=""><img src="images/img_.jpg" width="{{ width || '700' }}" alt="" style="display:block;" border="0"></a></div>
 									</div>
 								</div>
 							</td>

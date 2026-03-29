@@ -43,7 +43,10 @@ class VisualComparisonNode:
             return NodeResult(status="skipped", html=context.html, details="no HTML")
 
         metadata = context.metadata or {}
-        original_screenshots: dict[str, str] = metadata.get("original_screenshots", {})
+        _raw_orig = metadata.get("original_screenshots", {})
+        original_screenshots: dict[str, str] = (
+            dict(_raw_orig) if isinstance(_raw_orig, dict) else {}
+        )
         if not original_screenshots:
             return NodeResult(
                 status="skipped",
@@ -52,8 +55,9 @@ class VisualComparisonNode:
             )
 
         # Get current rendered screenshots (from precheck or render fresh)
-        current_screenshots: dict[str, str] = metadata.get(
-            "precheck_screenshots", metadata.get("screenshots", {})
+        _raw_current = metadata.get("precheck_screenshots", metadata.get("screenshots", {}))
+        current_screenshots: dict[str, str] = (
+            dict(_raw_current) if isinstance(_raw_current, dict) else {}
         )
         if not current_screenshots:
             try:
@@ -94,7 +98,10 @@ class VisualComparisonNode:
 
         # Check for regression vs previous iteration
         if context.iteration > 0:
-            prev_screenshots: dict[str, str] = metadata.get("prev_screenshots", {})
+            _raw_prev = metadata.get("prev_screenshots", {})
+            prev_screenshots: dict[str, str] = (
+                dict(_raw_prev) if isinstance(_raw_prev, dict) else {}
+            )
             if prev_screenshots:
                 try:
                     prev_result = await service.compare_screenshots(
@@ -134,16 +141,20 @@ class VisualComparisonNode:
 
     async def _render_current(self, html: str, original: dict[str, str]) -> dict[str, str]:
         """Render HTML for the same clients as the original screenshots."""
-        from app.rendering.service import RenderingService
+        import base64
 
-        service = RenderingService()
+        from app.rendering.local.service import LocalRenderingProvider
+
+        renderer = LocalRenderingProvider()
         client_ids = list(original.keys())
-        result = await service.render_screenshots(html, client_ids)
+        render_results = await renderer.render_screenshots(html, client_ids)
 
         screenshots: dict[str, str] = {}
-        for item in result:
-            client = item.get("client_name", "")
-            b64 = item.get("image_b64", "")
-            if client and b64:
-                screenshots[str(client)] = str(b64)
+        for item in render_results:
+            client = str(item.get("client_name", ""))
+            image_bytes = item.get("image_bytes", b"")
+            if client and image_bytes:
+                screenshots[client] = base64.b64encode(
+                    image_bytes if isinstance(image_bytes, bytes) else b""
+                ).decode()
         return screenshots

@@ -106,7 +106,7 @@ class BaseAgentService:
         Default: extract_html + sanitize_html_xss.
         Override for non-HTML agents (e.g., content → extract_content).
         """
-        html = extract_html(raw_content)
+        html = extract_html(raw_content)  # raises ValueError if non-HTML
         return sanitize_html_xss(html, profile=self.sanitization_profile)
 
     async def _run_qa(self, html: str) -> tuple[list[QACheckResult], bool]:

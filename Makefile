@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers skill-versions skill-pin skill-unpin skill-rollback help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers skill-versions skill-pin skill-unpin skill-rollback help
 
 # === Local Development ===
 
@@ -166,10 +166,19 @@ eval-rejudge: ## Re-run judges WITHOUT skip-existing (overwrites verdicts)
 eval-compare: ## Compare pre/post golden-reference verdicts
 	uv run python scripts/eval-compare-verdicts.py --pre-dir traces/pre_golden --post-dir traces --output traces/verdict_comparison.json
 
-eval-labels: ## Scaffold human label templates from traces+verdicts
+eval-labels: ## Scaffold human label templates from traces+verdicts (all 9 agents)
 	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/scaffolder_verdicts.jsonl --traces traces/scaffolder_traces.jsonl --output traces/scaffolder_human_labels.jsonl
 	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/dark_mode_verdicts.jsonl --traces traces/dark_mode_traces.jsonl --output traces/dark_mode_human_labels.jsonl
 	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/content_verdicts.jsonl --traces traces/content_traces.jsonl --output traces/content_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/outlook_fixer_verdicts.jsonl --traces traces/outlook_fixer_traces.jsonl --output traces/outlook_fixer_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/accessibility_verdicts.jsonl --traces traces/accessibility_traces.jsonl --output traces/accessibility_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/personalisation_verdicts.jsonl --traces traces/personalisation_traces.jsonl --output traces/personalisation_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/code_reviewer_verdicts.jsonl --traces traces/code_reviewer_traces.jsonl --output traces/code_reviewer_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/knowledge_verdicts.jsonl --traces traces/knowledge_traces.jsonl --output traces/knowledge_human_labels.jsonl
+	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/innovation_verdicts.jsonl --traces traces/innovation_traces.jsonl --output traces/innovation_human_labels.jsonl
+
+eval-labeling-tool: eval-labels ## Regenerate labeling tool data from traces+labels
+	uv run python scripts/generate-labeling-data.py --traces-dir traces/ --output docs/eval-labeling-data.json
 
 eval-analysis: ## Analyze judge verdicts (failure taxonomy)
 	uv run python -m app.ai.agents.evals.error_analysis --verdicts traces --output traces/analysis.json
@@ -182,15 +191,27 @@ eval-regression: ## Check for eval regressions vs baseline
 
 eval-check: eval-analysis eval-regression ## Full eval CI gate (analysis + regression check)
 
-eval-calibrate: ## Calibrate judges against human labels (all 3 agents)
+eval-calibrate: ## Calibrate judges against human labels (all 9 agents)
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/scaffolder_verdicts.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/scaffolder_calibration.json
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/dark_mode_verdicts.jsonl --labels traces/dark_mode_human_labels.jsonl --output traces/dark_mode_calibration.json
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/content_verdicts.jsonl --labels traces/content_human_labels.jsonl --output traces/content_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/outlook_fixer_verdicts.jsonl --labels traces/outlook_fixer_human_labels.jsonl --output traces/outlook_fixer_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/accessibility_verdicts.jsonl --labels traces/accessibility_human_labels.jsonl --output traces/accessibility_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/personalisation_verdicts.jsonl --labels traces/personalisation_human_labels.jsonl --output traces/personalisation_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/code_reviewer_verdicts.jsonl --labels traces/code_reviewer_human_labels.jsonl --output traces/code_reviewer_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/knowledge_verdicts.jsonl --labels traces/knowledge_human_labels.jsonl --output traces/knowledge_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/innovation_verdicts.jsonl --labels traces/innovation_human_labels.jsonl --output traces/innovation_calibration.json
 
-eval-qa-calibrate: ## Calibrate QA gate against human labels (all 3 agents)
+eval-qa-calibrate: ## Calibrate QA gate against human labels (all 9 agents)
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/scaffolder_traces.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/qa_calibration_scaffolder.json
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/dark_mode_traces.jsonl --labels traces/dark_mode_human_labels.jsonl --output traces/qa_calibration_dark_mode.json
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/content_traces.jsonl --labels traces/content_human_labels.jsonl --output traces/qa_calibration_content.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/outlook_fixer_traces.jsonl --labels traces/outlook_fixer_human_labels.jsonl --output traces/qa_calibration_outlook_fixer.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/accessibility_traces.jsonl --labels traces/accessibility_human_labels.jsonl --output traces/qa_calibration_accessibility.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/personalisation_traces.jsonl --labels traces/personalisation_human_labels.jsonl --output traces/qa_calibration_personalisation.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/code_reviewer_traces.jsonl --labels traces/code_reviewer_human_labels.jsonl --output traces/qa_calibration_code_reviewer.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/knowledge_traces.jsonl --labels traces/knowledge_human_labels.jsonl --output traces/qa_calibration_knowledge.json
+	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/innovation_traces.jsonl --labels traces/innovation_human_labels.jsonl --output traces/qa_calibration_innovation.json
 
 eval-qa-coverage: ## Report judge criteria → QA check coverage and agreement rates
 	uv run python -m app.ai.agents.evals.judge_criteria_map --traces traces/ --output traces/qa_coverage.json

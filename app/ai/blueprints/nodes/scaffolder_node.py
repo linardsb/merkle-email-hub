@@ -115,7 +115,18 @@ class ScaffolderNode:
             )
 
         validated = validate_output(response.content)
-        html = extract_html(validated)
+        try:
+            html = extract_html(validated)
+        except ValueError as exc:
+            logger.error(
+                "blueprint.scaffolder_node.no_html_in_response",
+                error=str(exc),
+                response_preview=validated[:200],
+            )
+            return NodeResult(
+                status="failed",
+                error=f"Scaffolder did not produce HTML: {exc}",
+            )
         confidence = extract_confidence(html)
         html = strip_confidence_comment(html)
         html = sanitize_html_xss(html)
@@ -246,6 +257,16 @@ class ScaffolderNode:
         """Build user prompt with brief and optional retry context."""
         if context.iteration == 0:
             parts = [context.brief]
+            # Include initial HTML when provided ("Include current HTML" mode)
+            if context.html:
+                parts.append(
+                    "\n\n## Initial HTML\n\n"
+                    "Below is the existing email HTML. Use this as a structural "
+                    "starting point — preserve its layout and content, enhance it "
+                    "with proper styling, email client compatibility, and any "
+                    "changes requested in the brief:\n\n"
+                    f"```html\n{context.html[:8000]}\n```"
+                )
             component_ctx = context.metadata.get("component_context", "")
             if component_ctx:
                 parts.append(f"\n\n{component_ctx}")

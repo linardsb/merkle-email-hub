@@ -153,6 +153,7 @@ class TestFigmaBuildDocument:
             )
 
         assert isinstance(document, EmailDesignDocument)
+        assert document.source is not None
         assert document.source.provider == "figma"
         assert len(document.sections) >= 1
         errors = EmailDesignDocument.validate(document.to_json())
@@ -280,6 +281,7 @@ class TestPenpotBuildDocument:
             )
 
         assert isinstance(document, EmailDesignDocument)
+        assert document.source is not None
         assert document.source.provider == "penpot"
         assert len(document.sections) >= 1
 
@@ -297,6 +299,7 @@ class TestPenpotBuildDocument:
         ):
             doc, _tokens, _warnings, _struct = await service.build_document("file123", "token123")
 
+        assert doc.source is not None
         assert doc.source.provider == "penpot"
 
 

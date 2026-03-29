@@ -7,23 +7,12 @@ only HTML markup with slot markers and inline styles.
 
 from typing import Any
 
-_COMPAT_FULL: dict[str, str] = {
-    "gmail": "full",
-    "outlook_365": "full",
-    "outlook_2019": "full",
-    "apple_mail": "full",
-    "ios_mail": "full",
-    "yahoo": "full",
-    "samsung_mail": "full",
-    "outlook_com": "full",
-}
+from app.components.data.compatibility_presets import COMPAT_PRESETS
 
-_COMPAT_PARTIAL_SAMSUNG: dict[str, str] = {
-    **_COMPAT_FULL,
-    "samsung_mail": "partial",
-}
+_COMPAT_FULL: dict[str, str] = COMPAT_PRESETS["full"]
+_COMPAT_PARTIAL_SAMSUNG: dict[str, str] = COMPAT_PRESETS["partial_samsung"]
 
-COMPONENT_SEEDS: list[dict[str, Any]] = [
+_INLINE_SEEDS: list[dict[str, Any]] = [
     # ── 0. Email Shell (outer document wrapper) ──
     {
         "name": "Email Shell",
@@ -1587,3 +1576,22 @@ COMPONENT_SEEDS: list[dict[str, Any]] = [
         },
     },
 ]
+
+
+def _build_all_seeds() -> list[dict[str, Any]]:
+    """Combine inline seeds with file-based seeds from manifest.
+
+    Inline seeds take precedence on slug collision.
+    """
+    from app.components.data.file_loader import load_file_components
+
+    inline_slugs = {s["slug"] for s in _INLINE_SEEDS}
+    file_seeds = load_file_components()
+    merged = list(_INLINE_SEEDS)
+    for fs in file_seeds:
+        if fs["slug"] not in inline_slugs:
+            merged.append(fs)
+    return merged
+
+
+COMPONENT_SEEDS: list[dict[str, Any]] = _build_all_seeds()

@@ -155,7 +155,7 @@ class DesignImportService:
                         converter = DesignConverterService()
                         _img_urls = design_context.get("image_urls")
                         _image_url_map: dict[str, str] | None = (
-                            _img_urls if isinstance(_img_urls, dict) else None  # type: ignore[assignment]
+                            _img_urls if isinstance(_img_urls, dict) else None
                         )
                         _conn_id = str(design_import.connection_id)
 
@@ -272,7 +272,7 @@ class DesignImportService:
                 # 5.6 Fill image URLs into converter HTML skeleton
                 _ctx_urls = design_context.get("image_urls")
                 converter_image_urls: dict[str, str] = (
-                    _ctx_urls if isinstance(_ctx_urls, dict) else {}  # type: ignore[assignment]
+                    _ctx_urls if isinstance(_ctx_urls, dict) else {}
                 )
                 if initial_html and converter_image_urls:
                     initial_html = self._fill_image_urls(initial_html, converter_image_urls)

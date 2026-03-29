@@ -1,8 +1,9 @@
 <!-- Component: cell -->
-<!-- Usage: Type 'cell' + Tab in Sublime Text -->
 
-<tr>
-  <td align="${1:center}" valign="${2:top}" style="font-family: ${3:Helvetica, Arial, sans-serif}; font-size: ${4:16}px; line-height: ${5:22}px; color: ${6:#000000};">
-    $7
-  </td>
-</tr>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+  <tr>
+    <td data-slot="content" align="{{ align || 'center' }}" valign="{{ valign || 'top' }}" style="font-family: {{ font_family || 'Helvetica, Arial, sans-serif' }}; font-size: {{ font_size || '16' }}px; line-height: {{ line_height || '22' }}px; color: {{ color || '#000000' }};">
+      Cell content
+    </td>
+  </tr>
+</table>

@@ -287,18 +287,30 @@ def extract_html(content: str) -> str:
     """Extract HTML from markdown code blocks.
 
     Looks for ```html ... ``` blocks. Falls back to raw content
-    if no code block is found.
+    if no code block is found, but validates that the fallback
+    actually contains HTML structure (not conversational text).
 
     Args:
         content: Raw LLM response text.
 
     Returns:
         Extracted HTML string.
+
+    Raises:
+        ValueError: If the response contains no recognizable HTML.
     """
     match = _CODE_BLOCK_RE.search(content)
     if match:
         return match.group(1).strip()
-    return content.strip()
+    # Validate fallback: must contain at least one HTML tag
+    stripped = content.strip()
+    if not re.search(r"<(?:html|body|table|tr|td|div|head|!DOCTYPE)\b", stripped, re.IGNORECASE):
+        raise ValueError(
+            "LLM response does not contain recognizable HTML. "
+            "The model may have responded conversationally instead of "
+            "generating email HTML."
+        )
+    return stripped
 
 
 # ── VML extraction helpers for Outlook Fixer ──

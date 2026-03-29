@@ -215,7 +215,7 @@ async def _seed_components(db: AsyncSession, user: User) -> int:
                 latest_version.default_tokens = seed.get("default_tokens")
                 updated += 1
             else:
-                # Component exists but has no versions — create one
+                # Component exists but has no version — create initial version
                 version = ComponentVersion(
                     component_id=component.id,
                     version_number=1,
@@ -248,6 +248,7 @@ async def _seed_design_connections(db: AsyncSession, project: Project, user: Use
     demo_token = "demo-figma-token-not-real"
     encrypted = encrypt_token(demo_token)
     now = datetime.now(tz=UTC)
+    now_naive = now.replace(tzinfo=None)  # last_synced_at is TIMESTAMP WITHOUT TIME ZONE
 
     connections_data = [
         {
@@ -256,7 +257,7 @@ async def _seed_design_connections(db: AsyncSession, project: Project, user: Use
             "file_ref": "abc123XYZdef456",
             "file_url": "https://www.figma.com/file/abc123XYZdef456/Summer-Campaign-Brand-Kit",
             "status": "connected",
-            "last_synced_at": now,
+            "last_synced_at": now_naive,
         },
         {
             "name": "Email Component Library",
@@ -264,7 +265,7 @@ async def _seed_design_connections(db: AsyncSession, project: Project, user: Use
             "file_ref": "ghi789JKLmno012",
             "file_url": "https://www.figma.com/file/ghi789JKLmno012/Email-Component-Library",
             "status": "connected",
-            "last_synced_at": now,
+            "last_synced_at": now_naive,
         },
         {
             "name": "Newsletter Layout — Penpot",
@@ -272,7 +273,7 @@ async def _seed_design_connections(db: AsyncSession, project: Project, user: Use
             "file_ref": "penpot-proj-001/file-001",
             "file_url": "https://design.penpot.app/#/view/penpot-proj-001/file-001",
             "status": "connected",
-            "last_synced_at": now,
+            "last_synced_at": now_naive,
         },
     ]
 
@@ -311,7 +312,7 @@ async def _seed_design_connections(db: AsyncSession, project: Project, user: Use
                 },
                 "spacing": {"section": "32px", "element": "16px"},
             },
-            extracted_at=now,
+            extracted_at=now_naive,
         )
         db.add(snapshot)
         created += 1

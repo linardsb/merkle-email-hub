@@ -568,7 +568,8 @@ class CorrectionTracker:
             return {}
         try:
             data = json.loads(self._rules_path.read_text())
-            return data.get("statuses", {})
+            result: dict[str, str] = data.get("statuses", {})
+            return result
         except (json.JSONDecodeError, OSError):
             return {}
 

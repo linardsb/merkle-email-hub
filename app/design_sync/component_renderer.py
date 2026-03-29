@@ -243,10 +243,13 @@ class ComponentRenderer:
         # Replace src
         new_tag = re.sub(r'\bsrc="[^"]*"', f'src="{html.escape(fill.value)}"', new_tag)
 
-        # Apply attr_overrides
+        # Apply attr_overrides — update existing attributes or insert new ones
         for attr, val in fill.attr_overrides.items():
             if re.search(rf'\b{attr}="[^"]*"', new_tag):
                 new_tag = re.sub(rf'\b{attr}="[^"]*"', f'{attr}="{html.escape(val)}"', new_tag)
+            else:
+                # Insert the attribute before the closing /> or >
+                new_tag = re.sub(r"(\s*/?>)$", f' {attr}="{html.escape(val)}"\\1', new_tag)
 
         return html_str.replace(img_tag, new_tag, 1)
 

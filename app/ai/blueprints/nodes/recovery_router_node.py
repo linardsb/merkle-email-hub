@@ -153,13 +153,21 @@ class RecoveryRouterNode:
         # Adaptive fixer selection via outcome ledger (if available)
         recovery_outcome_repo = context.metadata.get("recovery_outcome_repo")
         if recovery_outcome_repo is not None:
-            from app.ai.recovery_outcomes import select_best_fixer
+            from typing import cast
 
+            from app.ai.recovery_outcomes import (
+                RecoveryOutcomeRepository,
+                select_best_fixer,
+            )
+
+            _typed_repo = cast(RecoveryOutcomeRepository, recovery_outcome_repo)
+            _raw_pid = context.metadata.get("project_id")
+            _project_id = int(_raw_pid) if isinstance(_raw_pid, (int, str)) else None
             target = await select_best_fixer(
                 check_name=structured[0].check_name,
                 default_agent=structured[0].suggested_agent,
-                project_id=context.metadata.get("project_id"),
-                repo=recovery_outcome_repo,
+                project_id=_project_id,
+                repo=_typed_repo,
             )
         else:
             # Already sorted by priority from QA gate

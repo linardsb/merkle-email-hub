@@ -693,7 +693,7 @@ class TestCRAGLogging:
         assert corrections == []
         entry = _find_log(logs, "agents.crag.correction_rejected")
         assert entry is not None
-        assert entry["reason"] == "output_too_short"
+        assert entry["reason"] in ("output_too_short", "no_html_in_response")
         assert entry["pre_issues"] == 1
 
     @pytest.mark.asyncio

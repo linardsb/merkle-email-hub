@@ -295,8 +295,8 @@ def _parse_dark_mode(raw: dict[str, Any]) -> DarkModeProfile:
     """Parse dark mode profile from YAML."""
     selectors = raw.get("selectors", [])
     # Validate against Literal types, default to "unknown" if unrecognized
-    dm_type: DarkModeType = raw.get("type", "unknown")  # type: ignore[assignment]
-    dev_ctrl: DeveloperControl = raw.get("developer_control", "unknown")  # type: ignore[assignment]
+    dm_type: DarkModeType = raw.get("type", "unknown")
+    dev_ctrl: DeveloperControl = raw.get("developer_control", "unknown")
     return DarkModeProfile(
         type=dm_type,
         developer_control=dev_ctrl,

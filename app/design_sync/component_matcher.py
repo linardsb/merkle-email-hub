@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from app.design_sync.figma.layout_analyzer import (
@@ -284,8 +285,7 @@ def _build_slot_fills(
 
 
 # Type alias for slot builder functions
-type _SlotBuilder = _SlotBuilderCallable
-type _SlotBuilderCallable = object  # Callable[[EmailSection, int], list[SlotFill]]
+_SlotBuilder = Callable[..., list[SlotFill]]
 
 
 def _first_heading(texts: list[TextBlock]) -> TextBlock | None:
@@ -494,6 +494,8 @@ def _fills_full_width_image(
         overrides: dict[str, str] = {}
         if img.width:
             overrides["width"] = str(int(img.width))
+        if img.height:
+            overrides["height"] = str(int(img.height))
         fills.append(
             SlotFill(
                 "image_url",

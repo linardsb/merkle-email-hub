@@ -248,7 +248,7 @@ class VisualQANode:
             new_screenshots: dict[str, str] = {}
             for result in render_results:
                 client_name = str(result["client_name"])
-                image_bytes: bytes = result["image_bytes"]  # type: ignore[assignment]
+                image_bytes: bytes = result["image_bytes"]
                 new_screenshots[client_name] = base64.b64encode(image_bytes).decode()
 
             if not new_screenshots:

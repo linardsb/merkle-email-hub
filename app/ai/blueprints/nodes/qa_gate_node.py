@@ -38,7 +38,10 @@ class QAGateNode:
         passed_count = 0
 
         # Merge visual precheck failures (set by VisualPrecheckNode upstream)
-        visual_precheck_data = (context.metadata or {}).get("visual_precheck_failures", [])
+        _raw_precheck = (context.metadata or {}).get("visual_precheck_failures", [])
+        visual_precheck_data: list[object] = (
+            list(_raw_precheck) if isinstance(_raw_precheck, list) else []
+        )
         for vpf in visual_precheck_data:
             if isinstance(vpf, dict):
                 detail = str(vpf.get("details", "visual defect"))

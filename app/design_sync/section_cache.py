@@ -282,7 +282,7 @@ class SectionCache:
             pattern = f"{_REDIS_KEY_PREFIX}:{connection_id}:*"
             cursor = 0
             while True:
-                cursor, keys = await redis.scan(cursor=cursor, match=pattern, count=100)  # type: ignore[assignment]
+                cursor, keys = await redis.scan(cursor=cursor, match=pattern, count=100)
                 if keys:
                     await redis.delete(*keys)
                     cleared += len(keys)

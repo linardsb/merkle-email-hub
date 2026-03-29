@@ -98,7 +98,7 @@ def _validate_hyperlink(raw: Any) -> str | None:
         return None
     if parsed.scheme.lower() not in _HYPERLINK_SCHEMES:
         return None
-    return url
+    return str(url)
 
 
 def _extract_stroke(
@@ -108,7 +108,7 @@ def _extract_stroke(
     raw_strokes = node_data.get("strokes", [])
     if not isinstance(raw_strokes, list):
         return None, None
-    for stroke in cast(list[Any], raw_strokes):
+    for stroke in raw_strokes:
         if not isinstance(stroke, dict):
             continue
         s_d = cast(dict[str, Any], stroke)
@@ -172,7 +172,7 @@ def _parse_style_runs(node_data: dict[str, Any]) -> tuple[StyleRun, ...]:
         color_hex: str | None = None
         fills_raw = sd.get("fills", [])
         if isinstance(fills_raw, list):
-            for fill in cast(list[Any], fills_raw):
+            for fill in fills_raw:
                 if not isinstance(fill, dict):
                     continue
                 f_d = cast(dict[str, Any], fill)
@@ -1294,7 +1294,7 @@ class FigmaDesignSyncService:
             raw_rcr = node_data.get("rectangleCornerRadii")
             if isinstance(raw_rcr, list) and len(raw_rcr) >= 4:
                 with contextlib.suppress(TypeError, ValueError):
-                    dn_corner_radii = tuple(float(v) for v in cast(list[Any], raw_rcr)[:4])
+                    dn_corner_radii = tuple(float(v) for v in raw_rcr[:4])
 
         # Style runs (TEXT nodes — rich text overrides)
         dn_style_runs: tuple[StyleRun, ...] = ()

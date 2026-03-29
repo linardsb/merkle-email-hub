@@ -41,7 +41,7 @@ def _make_export_response(**overrides: object) -> ExportResponse:
         "warnings": [],
     }
     defaults.update(overrides)
-    return ExportResponse(**defaults)  # type: ignore[arg-type]
+    return ExportResponse(**defaults)
 
 
 def _make_bulk_response(succeeded: int = 2, failed: int = 0) -> BulkExportResponse:

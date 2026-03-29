@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from app.design_sync.exceptions import W3cTokenParseError
@@ -265,10 +267,12 @@ class TestEdgeCases:
 
     def test_nesting_depth_validation(self) -> None:
         """Deeply nested JSON should raise W3cTokenParseError."""
-        deeply_nested: dict = {"$type": "color"}
+        deeply_nested: dict[str, Any] = {"$type": "color"}
         current = deeply_nested
         for i in range(25):
-            child: dict = {"$type": "color"} if i < 24 else {"$type": "color", "$value": "#fff"}
+            child: dict[str, Any] = (
+                {"$type": "color"} if i < 24 else {"$type": "color", "$value": "#fff"}
+            )
             current[f"level{i}"] = child
             current = child
 
@@ -279,7 +283,7 @@ class TestEdgeCases:
         """parse → export → parse should preserve token data."""
         from app.design_sync.w3c_export import export_w3c_tokens
 
-        input_json: dict = {
+        input_json: dict[str, Any] = {
             "color": {
                 "$type": "color",
                 "red": {"$value": "#FF0000"},

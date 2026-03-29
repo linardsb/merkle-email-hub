@@ -111,7 +111,11 @@ async def correct_visual_defects(
 
     # Validate and sanitize output
     raw = validate_output(result.content)
-    corrected = extract_html(raw)
+    try:
+        corrected = extract_html(raw)
+    except ValueError:
+        logger.warning("visual_qa.correction.no_html_in_response")
+        return html, []  # Failure-safe: return original
     corrected = sanitize_html_xss(corrected)
 
     if not corrected or len(corrected) < 50:

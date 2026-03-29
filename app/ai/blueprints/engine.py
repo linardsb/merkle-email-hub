@@ -904,16 +904,16 @@ class BlueprintEngine:
 
             if should_fetch_competitive_context(brief):
                 # Use audience-aware feasibility when audience profile available
-                audience_client_ids: tuple[str, ...] = tuple(  # pyright: ignore[reportUnknownVariableType]
+                _audience_client_ids: tuple[str, ...] = tuple(  # pyright: ignore[reportUnknownVariableType]
                     context.metadata.get("audience_client_ids", ())  # type: ignore[arg-type]  # pyright: ignore[reportUnknownArgumentType]
                 )
-                if audience_client_ids:
+                if _audience_client_ids:
                     from app.knowledge.ontology.competitive_feasibility import (
                         format_feasibility_context,
                     )
 
                     competitive_ctx = format_feasibility_context(
-                        client_ids=audience_client_ids,
+                        client_ids=_audience_client_ids,
                         technique=brief,
                     )
                 else:

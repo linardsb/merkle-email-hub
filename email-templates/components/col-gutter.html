@@ -1,16 +1,16 @@
 <!-- Component: col-gutter -->
-<!-- Usage: Type 'col-gutter' + Tab in Sublime Text -->
 
-<table cellpadding="20" cellspacing="0" border="0" width="$1" class="wf" role="presentation" style="width:$1px;">
+<table cellpadding="20" cellspacing="0" border="0" width="{{ width || '660' }}" class="wf" role="presentation" style="width:{{ width || '660' }}px;">
   <tr>
     <td align="center">
       <table width="660" border="0" cellspacing="0" cellpadding="0" class="wf" role="presentation">
         <tr align="center">
-          <td align="center" class="wf wr fl" width="320">
-          $1
+          <td data-slot="col_1" align="center" class="wf wr fl" width="320">
+            Column 1 content
           </td>
           <td width="20" class="hide"></td>
-          <td align="center" class="wf wr fl" width="320">
+          <td data-slot="col_2" align="center" class="wf wr fl" width="320">
+            Column 2 content
           </td>
         </tr>
       </table>

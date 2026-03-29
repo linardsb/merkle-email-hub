@@ -104,7 +104,7 @@ td,th,div,p,a,h1,h2,h3,h4,h5,h6 {{font-family: {mso_font}; mso-line-height-rule:
 <![endif]-->
 {style_block}
 </head>
-<body style="margin:0;padding:0;width:100%;-webkit-text-size-adjust:100%;background-color:{bg_color};font-family:{body_font};">
+<body role="article" aria-roledescription="email" lang="en" style="margin:0;padding:0;width:100%;-webkit-text-size-adjust:100%;background-color:{bg_color};font-family:{body_font};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
 <tr>
 <td align="center" style="font-size:{base_size};font-family:{body_font};">
@@ -280,7 +280,7 @@ class DesignConverterService:
 
         if use_components:
             return self._convert_with_components(
-                frames=[],
+                _frames=[],
                 layout=layout,
                 tokens=tokens,
                 warnings=warnings,
@@ -633,7 +633,12 @@ class DesignConverterService:
                 miss_count += 1
 
                 # Store in cache
-                if cache is not None and section_hashes and node_id in section_hashes:
+                if (
+                    cache is not None
+                    and connection_id is not None
+                    and section_hashes
+                    and node_id in section_hashes
+                ):
                     entry = SectionCacheEntry(
                         html=rendered.html,
                         images=tuple(rendered.images),

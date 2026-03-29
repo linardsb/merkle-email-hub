@@ -63,15 +63,16 @@ class MjmlImportAdapter:
             recover=False,
         )
         try:
-            return etree.fromstring(raw, parser=parser)  # type: ignore[return-value]
+            return etree.fromstring(raw, parser=parser)
         except etree.XMLSyntaxError as exc:
             msg = "Invalid MJML XML: document is not well-formed"
             raise MjmlImportError(msg) from exc
 
     @staticmethod
     def _validate_root(root: etree._Element) -> None:
-        tag = root.tag
-        if isinstance(tag, str) and "}" in tag:
+        raw_tag = root.tag
+        tag = raw_tag if isinstance(raw_tag, str) else str(raw_tag)
+        if "}" in tag:
             tag = tag.split("}", 1)[1]
         if tag != "mjml":
             msg = f"Root element must be <mjml>, got <{tag}>"
@@ -81,6 +82,6 @@ class MjmlImportAdapter:
     def _parse_container_width(body: etree._Element) -> int:
         width_attr = body.get("width", "600px")
         try:
-            return int(width_attr.replace("px", "").strip())  # type: ignore[union-attr]
+            return int(width_attr.replace("px", "").strip())
         except (ValueError, AttributeError):
             return 600

@@ -148,19 +148,19 @@ def extract_insights(
         if not handoff.learnings:
             continue
         for learning in handoff.learnings:
-            category: InsightCategory = "layout"
+            handoff_category: InsightCategory = "layout"
             # Infer category from learning text
             lower = learning.lower()
             if any(w in lower for w in ("color", "palette", "hex", "#")):
-                category = "color"
+                handoff_category = "color"
             elif any(w in lower for w in ("dark mode", "dark-mode", "prefers-color")):
-                category = "dark_mode"
+                handoff_category = "dark_mode"
             elif any(w in lower for w in ("font", "typograph", "line-height")):
-                category = "typography"
+                handoff_category = "typography"
             elif any(w in lower for w in ("mso", "outlook", "vml")):
-                category = "mso"
+                handoff_category = "mso"
             elif any(w in lower for w in ("aria", "alt=", "accessibility", "screen reader")):
-                category = "accessibility"
+                handoff_category = "accessibility"
 
             # Target all agents except the source
             targets = tuple(
@@ -174,7 +174,7 @@ def extract_insights(
                 )
                 if a != handoff.agent_name
             )
-            dedup = _compute_dedup_hash(handoff.agent_name, category, client_ids, learning)
+            dedup = _compute_dedup_hash(handoff.agent_name, handoff_category, client_ids, learning)
             if dedup in seen_hashes:
                 continue
 
@@ -183,7 +183,7 @@ def extract_insights(
                 target_agents=targets,
                 client_ids=client_ids,
                 insight=learning,
-                category=category,
+                category=handoff_category,
                 confidence=handoff.confidence or 0.5,
                 evidence_count=1,
                 first_seen=now,
@@ -353,7 +353,7 @@ async def recall_insights(
                 continue
 
             dedup_hash = str(meta.get("dedup_hash", ""))
-            evidence_count = int(meta.get("evidence_count", 1))  # type: ignore[arg-type]
+            evidence_count = int(meta.get("evidence_count", 1))  # type: ignore[call-overload]
             raw_clients = meta.get("client_ids", [])
             pattern_clients: list[str] = (
                 [str(c) for c in raw_clients]  # pyright: ignore[reportUnknownArgumentType,reportUnknownVariableType]
