@@ -1,0 +1,272 @@
+{
+  "id": "3001:300",
+  "name": "Newsletter Content",
+  "type": "FRAME",
+  "visible": true,
+  "opacity": 1.0,
+  "absoluteBoundingBox": {"x": 0, "y": 0, "width": 600, "height": 520},
+  "layoutMode": "VERTICAL",
+  "primaryAxisAlignItems": "MIN",
+  "counterAxisAlignItems": "CENTER",
+  "paddingTop": 32,
+  "paddingRight": 24,
+  "paddingBottom": 32,
+  "paddingLeft": 24,
+  "itemSpacing": 24,
+  "fills": [
+    {
+      "type": "SOLID",
+      "visible": true,
+      "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+    }
+  ],
+  "strokes": [
+    {
+      "type": "SOLID",
+      "visible": true,
+      "color": {"r": 0.9, "g": 0.9, "b": 0.9, "a": 1.0}
+    }
+  ],
+  "strokeWeight": 1,
+  "effects": [],
+  "children": [
+    {
+      "id": "3001:301",
+      "name": "Newsletter Header",
+      "type": "TEXT",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 24, "y": 32, "width": 552, "height": 36},
+      "characters": "Weekly Design Digest",
+      "style": {
+        "fontFamily": "Georgia",
+        "fontSize": 28,
+        "fontWeight": 700,
+        "lineHeightPx": 36,
+        "letterSpacing": -0.5,
+        "textAlignHorizontal": "LEFT"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "color": {"r": 0.1, "g": 0.1, "b": 0.1, "a": 1.0}
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "children": []
+    },
+    {
+      "id": "3001:310",
+      "name": "Two Column Layout",
+      "type": "FRAME",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 24, "y": 92, "width": 552, "height": 380},
+      "layoutMode": "HORIZONTAL",
+      "primaryAxisAlignItems": "MIN",
+      "counterAxisAlignItems": "MIN",
+      "paddingTop": 0,
+      "paddingRight": 0,
+      "paddingBottom": 0,
+      "paddingLeft": 0,
+      "itemSpacing": 24,
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "children": [
+        {
+          "id": "3001:311",
+          "name": "Column Left",
+          "type": "FRAME",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 24, "y": 92, "width": 264, "height": 380},
+          "layoutMode": "VERTICAL",
+          "primaryAxisAlignItems": "MIN",
+          "counterAxisAlignItems": "MIN",
+          "paddingTop": 0,
+          "paddingRight": 0,
+          "paddingBottom": 0,
+          "paddingLeft": 0,
+          "itemSpacing": 16,
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "3001:312",
+              "name": "Article Image Left",
+              "type": "RECTANGLE",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 24, "y": 92, "width": 264, "height": 180},
+              "cornerRadius": 4,
+              "fills": [
+                {
+                  "type": "IMAGE",
+                  "visible": true,
+                  "imageRef": "article1_placeholder_hash"
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "3001:313",
+              "name": "Article Title Left",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 24, "y": 288, "width": 264, "height": 48},
+              "characters": "Design Systems at Scale",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 18,
+                "fontWeight": 600,
+                "lineHeightPx": 24,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": [],
+              "hyperlink": {"type": "URL", "url": "https://example.com/article-1"}
+            },
+            {
+              "id": "3001:314",
+              "name": "Article Body Left",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 24, "y": 344, "width": 264, "height": 80},
+              "characters": "How leading teams maintain consistency across hundreds of components and multiple platforms.",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 14,
+                "fontWeight": 400,
+                "lineHeightPx": 20,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT",
+                "textDecoration": "NONE"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "3001:321",
+          "name": "Column Right",
+          "type": "FRAME",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 312, "y": 92, "width": 264, "height": 380},
+          "layoutMode": "VERTICAL",
+          "primaryAxisAlignItems": "MIN",
+          "counterAxisAlignItems": "MIN",
+          "paddingTop": 0,
+          "paddingRight": 0,
+          "paddingBottom": 0,
+          "paddingLeft": 0,
+          "itemSpacing": 16,
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "3001:322",
+              "name": "Article Image Right",
+              "type": "RECTANGLE",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 312, "y": 92, "width": 264, "height": 180},
+              "cornerRadius": 4,
+              "fills": [
+                {
+                  "type": "IMAGE",
+                  "visible": true,
+                  "imageRef": "article2_placeholder_hash"
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "3001:323",
+              "name": "Article Title Right",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 312, "y": 288, "width": 264, "height": 48},
+              "characters": "Responsive Email Patterns",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 18,
+                "fontWeight": 600,
+                "lineHeightPx": 24,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "3001:324",
+              "name": "Article Body Right",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 312, "y": 344, "width": 264, "height": 80},
+              "characters": "Building emails that look great everywhere from desktop clients to mobile devices.",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 14,
+                "fontWeight": 400,
+                "lineHeightPx": 20,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+<!-- Component: image-swap -->
+<!-- Usage: Type 'image-swap' + Tab in Sublime Text -->
+
+<!-- image swap for mobile -->
+
+/** CSS to include - first @media = image for tablet & desktop, second @media for mobile **/
+	@media only screen and (min-device-width: 500px) and (max-device-width: 1024px)  {
+		span[id=switcher] {display:block;
+		background-image: url($1) !important;
+		background-repeat: no-repeat !important;
+		background-position: center !important;
+		width: 300px !important;
+		height: 250px !important; }
+		img[id=houdini] {display: none !important; }
+	}
+	@media only screen and (max-device-width: 489px) {
+		span[id=switcher] {display:block;
+		background-image: url($1) !important;
+		background-repeat: no-repeat !important;
+		background-position: center !important;
+		width: 300px !important;
+		height: 250px !important; }
+		img[id=houdini] {display: none !important; }
+	}
+/** CSS to include **/
+<a href="$1"><span id="switcher"><img id="houdini" src="$1" alt=""></span></a>
+
+<!-- image swap for mobile ends -->

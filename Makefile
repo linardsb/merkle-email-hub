@@ -80,9 +80,12 @@ lint-fe: ## Format + lint frontend (ESLint + Prettier)
 	cd cms && pnpm --filter web lint:fix 2>/dev/null || true
 	cd cms && pnpm --filter web format 2>/dev/null || true
 
-check: lint types test check-fe security-check validate-overlays lint-numeric ## Run all checks (backend + frontend + security)
+golden-conformance: ## Golden template conformance gate (design_sync)
+	uv run pytest app/design_sync/tests/test_golden_conformance.py -x -q --tb=short
 
-check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric ## Run all checks including migration lint
+check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance ## Run all checks (backend + frontend + security)
+
+check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance ## Run all checks including migration lint
 
 validate-overlays: ## Validate per-client skill overlay files
 	uv run python scripts/validate-overlays.py

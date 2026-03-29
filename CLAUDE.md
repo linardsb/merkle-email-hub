@@ -8,8 +8,9 @@ Centralised email platform with AI agents. FastAPI backend, Next.js 16 frontend,
 
 ```bash
 make dev             # Backend (:8891) + frontend (:3000)
-make check           # All checks (lint + types + tests + security)
+make check           # All checks (lint + types + tests + security + golden conformance)
 make check-full      # All checks + migration lint
+make golden-conformance  # Golden template conformance gate (design_sync)
 make test            # Backend unit tests
 make bench           # Performance benchmarks (CSS pipeline)
 make lint            # Format + lint (ruff — 26 rule sets)
@@ -75,7 +76,7 @@ For full architecture details see `.claude/docs/architecture-deep-dive.md`. For 
 
 ## Roadmap
 
-Phases 0–36 complete. Phase 37 (golden reference library) in progress. Phase 38 (pipeline fidelity fix) in progress — 38.1–38.7 done, 38.8 remaining. Phase 39 (pipeline hardening) in progress — 39.1 Figma API enrichment done (StyleRun, hyperlinks, corner_radius, text_align, strokes on DesignNode/TextBlock/ButtonElement; `_render_style_runs` in converter; URL scheme validation), 39.3 dual MJML path eliminated, 39.5 custom lint rules done; 39.2/39.4/39.6/39.7 remaining. See `TODO.md` for summary. See `docs/TODO-completed.md` for detailed completion records.
+Phases 0–36 complete. Phase 37 (golden reference library) in progress. Phase 38 (pipeline fidelity fix) in progress — 38.1–38.7 done, 38.8 remaining. Phase 39 (pipeline hardening) in progress — 39.1 Figma API enrichment done (StyleRun, hyperlinks, corner_radius, text_align, strokes on DesignNode/TextBlock/ButtonElement; `_render_style_runs` in converter; URL scheme validation), 39.2 testing infrastructure done (5 real Figma fixtures, Hypothesis property tests, pipeline contract tests, `assert_valid_email_html()` validator, 91 new tests), 39.3 dual MJML path eliminated, 39.5 custom lint rules done, 39.7 golden template conformance gate done (12 checks, `make golden-conformance` wired into `make check`); 39.4/39.6 remaining. See `TODO.md` for summary. See `docs/TODO-completed.md` for detailed completion records.
 
 ## Compact instructions
 

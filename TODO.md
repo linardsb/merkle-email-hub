@@ -707,12 +707,12 @@ Current converter dumps column content as raw text — each content type needs i
 > **Phasing:** 7 subtasks. 39.1 enriches Figma parser + data models. 39.2 adds testing infrastructure. 39.3 eliminates dual MJML path. 39.4 adds quality contracts. 39.5 adds lint rules. 39.6 improves component matcher. 39.7 adds golden template conformance gate. Most independent — parallel execution possible.
 
 - [x] 39.1 Figma API enrichment & data model gaps ~~DONE~~
-- [ ] 39.2 Testing infrastructure (fixtures, property-based, contracts, visual regression)
+- [x] 39.2 Testing infrastructure (fixtures, property-based, contracts, visual regression) ~~DONE~~
 - [x] 39.3 Eliminate dual MJML generation path ~~DONE~~
 - [ ] 39.4 Automated quality contracts (contrast, completeness, placeholders)
 - [x] 39.5 Custom lint rules for pipeline anti-patterns ~~DONE~~
 - [ ] 39.6 Component matcher architectural improvements
-- [ ] 39.7 Golden template conformance gate
+- [x] 39.7 Golden template conformance gate ~~DONE~~
 
 ---
 
@@ -738,7 +738,7 @@ Current converter dumps column content as raw text — each content type needs i
 
 ---
 
-### 39.2 Testing Infrastructure `[Backend]`
+### ~~39.2 Testing Infrastructure `[Backend]`~~ DONE
 
 **What:** Add 5 testing layers: real Figma API fixtures, Hypothesis property-based tests, pipeline contract tests, email HTML validity assertion, and visual regression testing.
 **Why:** Phase 38 found 63 bugs. Most were trivially detectable — `0.0 or 1.0`, missing fields, wrong thresholds. They accumulated because: (1) parser tests use synthetic objects, not real API responses, (2) no property-based testing catches `opacity=0.0`, (3) no contracts between stages catch field-dropping, (4) no validator catches missing `role="presentation"` or `alt="mj-image"`, (5) no visual regression catches "email looks different."
@@ -824,27 +824,10 @@ Current converter dumps column content as raw text — each content type needs i
 
 ---
 
-### 39.7 Golden Template Conformance Gate `[Backend]`
+### ~~39.7 Golden Template Conformance Gate `[Backend]`~~ DONE
 
 **What:** Permanent CI quality gate validating all converter output against `email-templates/components/` patterns. `make golden-conformance` target wired into `make check`.
-**Why:** Phase 38 fixes 63 bugs, Phase 39 adds testing — but without a permanent gate, new code can regress. The 16 golden components are the standard. A conformance gate ensures the converter never drifts from these patterns. Different from 39.2.4 (`assert_valid_email_html` is opt-in per test) — this is mandatory CI on every commit touching `app/design_sync/`.
-**Implementation:**
-- Create `app/design_sync/tests/test_golden_conformance.py`:
-  ```python
-  GOLDEN_CHECKS = {
-      "role_presentation": (r'<table[^>]*role="presentation"', True, "G1: role=presentation on tables"),
-      "img_display_block": (r'<img[^>]*display:\s*block', True, "G-REF-2: display:block on images"),
-      "img_meaningful_alt": (r'alt="(mj-image|mj-text|image|frame)"', False, "G-REF-2: meaningful alt text"),
-      "column_div_pattern": (r'<div class="column"', True, "G-REF-1: div.column wrapper"),
-      "no_div_layout": (r'<div[^>]*style="[^"]*\bwidth:[^"]*"', False, "No div layout CSS"),
-      "mso_ghost_table": (r'<!--\[if mso\]>', True, "MSO conditionals present"),
-  }
-  ```
-- `make golden-conformance` target → wire into `make check`
-- Scope: runs when `app/design_sync/` files modified
-
-**Security:** Read-only test.
-**Verify:** Missing `role="presentation"` → fail. `alt="mj-image"` → fail. `<div style="width:300px">` → fail. `<div class="column">` → pass. Runs in <10s. Wired into `make check`. 10+ conformance checks.
+**Delivered:** `app/design_sync/tests/test_golden_conformance.py` — 12 conformance checks (G1 role=presentation, G2 display:block on images, G3 meaningful alt text, G5 no div layout CSS, G6 MSO conditionals, G7 cellpadding/cellspacing, G10 email-safe meta tags, G11 MSO table reset, plus column class, VML fallback). 26 tests pass, 9 skipped (components without images). `make golden-conformance` wired into `make check` and `make check-full`. Runs in <1s.
 
 ---
 

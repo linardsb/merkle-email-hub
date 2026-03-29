@@ -1,0 +1,165 @@
+{
+  "id": "1001:100",
+  "name": "Hero Section",
+  "type": "FRAME",
+  "visible": true,
+  "opacity": 1.0,
+  "absoluteBoundingBox": {"x": 0, "y": 0, "width": 600, "height": 480},
+  "layoutMode": "VERTICAL",
+  "primaryAxisAlignItems": "CENTER",
+  "counterAxisAlignItems": "CENTER",
+  "paddingTop": 40,
+  "paddingRight": 20,
+  "paddingBottom": 40,
+  "paddingLeft": 20,
+  "itemSpacing": 24,
+  "cornerRadius": 0,
+  "fills": [
+    {
+      "type": "IMAGE",
+      "visible": true,
+      "imageRef": "abc123def456placeholder"
+    }
+  ],
+  "strokes": [],
+  "effects": [],
+  "children": [
+    {
+      "id": "1001:101",
+      "name": "Hero Image",
+      "type": "RECTANGLE",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 0, "y": 0, "width": 600, "height": 300},
+      "fills": [
+        {
+          "type": "IMAGE",
+          "visible": true,
+          "imageRef": "hero_img_placeholder_hash"
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "children": []
+    },
+    {
+      "id": "1001:102",
+      "name": "Headline",
+      "type": "TEXT",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 20, "y": 320, "width": 560, "height": 48},
+      "characters": "Summer Collection 2026",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 36,
+        "fontWeight": 700,
+        "lineHeightPx": 44,
+        "letterSpacing": 0,
+        "textAlignHorizontal": "CENTER",
+        "textCase": "UPPER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "children": []
+    },
+    {
+      "id": "1001:103",
+      "name": "Subheadline",
+      "type": "TEXT",
+      "visible": true,
+      "opacity": 0.8,
+      "absoluteBoundingBox": {"x": 40, "y": 376, "width": 520, "height": 24},
+      "characters": "Discover our latest arrivals and exclusive deals",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "lineHeightPx": 24,
+        "letterSpacing": 0.2,
+        "textAlignHorizontal": "CENTER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "children": []
+    },
+    {
+      "id": "1001:104",
+      "name": "CTA Button",
+      "type": "INSTANCE",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 200, "y": 416, "width": 200, "height": 48},
+      "layoutMode": "HORIZONTAL",
+      "primaryAxisAlignItems": "CENTER",
+      "counterAxisAlignItems": "CENTER",
+      "paddingTop": 12,
+      "paddingRight": 32,
+      "paddingBottom": 12,
+      "paddingLeft": 32,
+      "itemSpacing": 0,
+      "cornerRadius": 4,
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "color": {"r": 0.0, "g": 0.467, "b": 0.882, "a": 1.0}
+        }
+      ],
+      "strokes": [],
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "color": {"r": 0, "g": 0, "b": 0, "a": 0.15},
+          "offset": {"x": 0, "y": 2},
+          "radius": 4
+        }
+      ],
+      "children": [
+        {
+          "id": "1001:105",
+          "name": "Button Label",
+          "type": "TEXT",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 232, "y": 428, "width": 136, "height": 20},
+          "characters": "Shop Now",
+          "style": {
+            "fontFamily": "Inter",
+            "fontSize": 16,
+            "fontWeight": 600,
+            "lineHeightPx": 20,
+            "letterSpacing": 0.5,
+            "textAlignHorizontal": "CENTER"
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [],
+          "hyperlink": {"type": "URL", "url": "https://example.com/shop"}
+        }
+      ]
+    }
+  ]
+}

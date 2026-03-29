@@ -1,0 +1,60 @@
+<!-- Component: carousel-animated -->
+<!-- Usage: Type 'carousel-animated' + Tab in Sublime Text -->
+
+/** Slide CSS effect **/
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+        /* Hide Fallback content first */
+        .fallback{display:none;}
+        .carousel{display:block !important;max-height:none !important;position:relative;}
+        /* Selective blocking for clients.
+        - Samsung (#MessageViewBody) - no absolute positioning
+        - Comcast/Zimbra (body.MsgBody) - inconsistent CSS support */
+        #MessageViewBody .fallback, body.MsgBody .fallback{ display:block; }
+        #MessageViewBody .carousel, body.MsgBody .carousel{display:none !important;}
+        .carousel a{width:100%;display:block;}
+        .carousel img{display:block!important;width:100% !important;height:auto !important; }
+        .carousel.responsive{width:100% !important;}
+        .carousel.responsive .car-cont{width:100% !important;height:auto !important;}
+        /* Fade  */
+        .carousel.fade a{position:absolute;top:0px;left:0px; -webkit-animation: car-anim 9s linear infinite;  }
+        .carousel.fade a:nth-child(1){position:relative; -webkit-animation-delay: -10s; }
+        .carousel.fade a:nth-child(2){-webkit-animation-delay: -7s;}
+        .carousel.fade a:nth-child(3){-webkit-animation-delay: -4s;}
+        @-webkit-keyframes car-anim{
+        /* start fade in */
+        0%{z-index:2;opacity:0;}
+        /* end fade in */
+        5%{ opacity:1;}
+        33%{z-index:2;}
+        /* lower z-index - allow next image to fade in */
+        33.1%{z-index:1;}
+        /* already obscured */
+        38%{opacity:1;}
+        /* hide */
+        38.1%{opacity:0;}
+        100%{z-index:1; opacity:0;}
+        }
+        }
+        /** Slide CSS effect ends **/
+        <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+          <tr align="center">
+            <td align="center">
+              <!-- animated carousel -->
+              <!--[if !mso]><!-- -->
+              <div class="carousel fade responsive" style="overflow:hidden;display:none;max-height:0px;">
+                <div class="car-cont" style="position:relative;width:640px;height:400px;">
+                  <a href="##" target="_blank"><img src="http://freshinbox.com/examples/animated-carousel/images/car-castle.jpg" border="0"></a>
+                  <a href="##" target="_blank"><img src="http://freshinbox.com/examples/animated-carousel/images/car-meadow.jpg" border="0"></a>
+                  <a href="##" target="_blank"><img src="http://freshinbox.com/examples/animated-carousel/images/car-coast.jpg" border="0"></a>
+                </div>
+              </div>
+              <!--<![endif]-->
+              <!-- static fallback content -->
+              <div class="fallback">
+                <a href="https://www.google.com/search?q=fallback" target="_blank">
+                  <img src="http://freshinbox.com/examples/animated-carousel/images/carousel-fallback.jpg" height="400" width="640" style="display:block;" border="0">
+                  </a>
+                </div>
+              </td>
+            </tr>#
+          </table>

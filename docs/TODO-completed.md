@@ -5657,6 +5657,33 @@ Fixed 11 bugs in `component_matcher.py`, `component_renderer.py`, `figma/layout_
 
 ---
 
+### 39.2 Testing Infrastructure `[Backend]` — Completed 2026-03-28
+
+**Problem:** Phase 38 found 63 bugs, most trivially detectable (`0.0 or 1.0`, missing fields, wrong thresholds). Root causes: (1) parser tests used synthetic objects, not real API responses, (2) no property-based testing for edge values like `opacity=0.0`, (3) no contracts between pipeline stages caught field-dropping, (4) no validator caught `alt="mj-image"` or missing `role="presentation"`.
+
+**Solution:** 5 testing layers, 91 new tests:
+
+1. **Real Figma fixtures** (39.2.1) — 5 sanitized API response JSONs in `figma/tests/fixtures/`: mammut_hero (hero+CTA+headline), ecommerce_grid (2x2 product grid with `opacity=0.0` edge case), newsletter_2col (2-column with hyperlinks+strokes), transactional (receipt line items with `visible=false` node), navigation_header (horizontal nav with mailto links). 26 tests exercise `_parse_node()` against real payloads.
+2. **Hypothesis property tests** (39.2.2) — `design_nodes()` composite strategy generates arbitrary DesignNode trees. 9 tests verify: opacity roundtrip, opacity survives normalize, normalize never crashes (200 examples), output tree validity, sanitize never crashes, MSO preservation, `<p>` in `<td>` preservation, dimension roundtrip, typography values.
+3. **Pipeline contract tests** (39.2.3) — 30 parametrized tests across 6 contracts: parse→normalize, normalize→analyze, text/button ID disjointness, no-None-IDs, page preservation, section node IDs exist in tree.
+4. **Email HTML validity** (39.2.4) — `assert_valid_email_html()` reusable assertion checking G1 (table role), G-REF-2a (img display:block), G-REF-2b (meaningful alt), NO-DIV-LAYOUT (float/flex/grid on div). 11 unit tests + all 15 golden templates validated.
+5. **Visual regression** (39.2.5) — `playwright>=1.40` added to dev deps. Existing `rendering-regression` infra (ODiff-based) already wired via `make rendering-baselines` / `make rendering-regression`.
+
+**Files created:**
+- `app/design_sync/tests/conftest.py` — `make_design_node()`, `make_file_structure()` shared factories
+- `app/design_sync/figma/tests/fixtures/*.json` — 5 sanitized Figma API response fixtures
+- `app/design_sync/figma/tests/test_parse_real_fixtures.py` — 26 fixture parsing tests
+- `app/design_sync/tests/test_hypothesis_properties.py` — 9 property-based tests
+- `app/design_sync/tests/test_pipeline_contracts.py` — 30 contract tests
+- `app/design_sync/tests/test_email_html_validity.py` — 26 email validity tests
+
+**Files modified:**
+- `pyproject.toml` — Added `playwright>=1.40` to dev dependencies
+
+**Key deliverables:** 91 new tests, 0 pyright errors on new files, all 15 golden templates pass validation, 1681 existing design_sync tests unaffected. Fixtures include edge cases: `opacity=0.0`, `visible=false`, per-corner `corner_radii`, `mailto:` hyperlinks.
+
+---
+
 ### 39.3 Eliminate Dual MJML Generation Path `[Backend]` — Completed 2026-03-28
 
 **Problem:** Two MJML generation paths — `mjml_generator.py` (454 LOC, programmatic) and `mjml_template_engine.py` (231 LOC, Jinja2) — produced different output for the same input. Fixing one left the other broken. The `converter_service.py` had a silent `try/except` fallback that masked template errors.

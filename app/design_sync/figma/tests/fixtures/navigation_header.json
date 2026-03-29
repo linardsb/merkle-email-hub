@@ -1,0 +1,195 @@
+{
+  "id": "5001:500",
+  "name": "Navigation Bar",
+  "type": "FRAME",
+  "visible": true,
+  "opacity": 1.0,
+  "absoluteBoundingBox": {"x": 0, "y": 0, "width": 600, "height": 64},
+  "layoutMode": "HORIZONTAL",
+  "primaryAxisAlignItems": "SPACE_BETWEEN",
+  "counterAxisAlignItems": "CENTER",
+  "paddingTop": 12,
+  "paddingRight": 24,
+  "paddingBottom": 12,
+  "paddingLeft": 24,
+  "itemSpacing": 0,
+  "fills": [
+    {
+      "type": "SOLID",
+      "visible": true,
+      "color": {"r": 0.157, "g": 0.157, "b": 0.227, "a": 1.0}
+    }
+  ],
+  "strokes": [],
+  "effects": [],
+  "children": [
+    {
+      "id": "5001:501",
+      "name": "Logo",
+      "type": "FRAME",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 24, "y": 16, "width": 120, "height": 32},
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "children": [
+        {
+          "id": "5001:502",
+          "name": "Logo Image",
+          "type": "RECTANGLE",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 24, "y": 16, "width": 120, "height": 32},
+          "fills": [
+            {
+              "type": "IMAGE",
+              "visible": true,
+              "imageRef": "logo_placeholder_hash"
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "5001:510",
+      "name": "Nav Links",
+      "type": "FRAME",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 200, "y": 16, "width": 376, "height": 32},
+      "layoutMode": "HORIZONTAL",
+      "primaryAxisAlignItems": "CENTER",
+      "counterAxisAlignItems": "CENTER",
+      "paddingTop": 0,
+      "paddingRight": 0,
+      "paddingBottom": 0,
+      "paddingLeft": 0,
+      "itemSpacing": 24,
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "children": [
+        {
+          "id": "5001:511",
+          "name": "Link Home",
+          "type": "TEXT",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 200, "y": 22, "width": 48, "height": 20},
+          "characters": "Home",
+          "style": {
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "fontWeight": 500,
+            "lineHeightPx": 20,
+            "letterSpacing": 0.5,
+            "textAlignHorizontal": "CENTER",
+            "textCase": "UPPER"
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [],
+          "hyperlink": {"type": "URL", "url": "https://example.com"}
+        },
+        {
+          "id": "5001:512",
+          "name": "Link Products",
+          "type": "TEXT",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 272, "y": 22, "width": 72, "height": 20},
+          "characters": "Products",
+          "style": {
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "fontWeight": 500,
+            "lineHeightPx": 20,
+            "letterSpacing": 0.5,
+            "textAlignHorizontal": "CENTER",
+            "textCase": "UPPER"
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [],
+          "hyperlink": {"type": "URL", "url": "https://example.com/products"}
+        },
+        {
+          "id": "5001:513",
+          "name": "Link About",
+          "type": "TEXT",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 368, "y": 22, "width": 52, "height": 20},
+          "characters": "About",
+          "style": {
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "fontWeight": 500,
+            "lineHeightPx": 20,
+            "letterSpacing": 0.5,
+            "textAlignHorizontal": "CENTER",
+            "textCase": "UPPER"
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 0.85}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [],
+          "hyperlink": {"type": "URL", "url": "https://example.com/about"}
+        },
+        {
+          "id": "5001:514",
+          "name": "Link Contact",
+          "type": "TEXT",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 444, "y": 22, "width": 64, "height": 20},
+          "characters": "Contact",
+          "style": {
+            "fontFamily": "Inter",
+            "fontSize": 13,
+            "fontWeight": 500,
+            "lineHeightPx": 20,
+            "letterSpacing": 0.5,
+            "textAlignHorizontal": "CENTER",
+            "textCase": "UPPER"
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [],
+          "hyperlink": {"type": "URL", "url": "mailto:hello@example.com"}
+        }
+      ]
+    }
+  ]
+}

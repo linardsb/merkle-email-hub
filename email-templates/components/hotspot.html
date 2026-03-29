@@ -1,0 +1,548 @@
+<!-- Component: hotspot -->
+<!-- Usage: Type 'hotspot' + Tab in Sublime Text -->
+
+/** HOTSPOT CSS - to copy in your style /**
+        /* Test to see if device has the ability to have checked */
+        @media only screen and (-webkit-min-device-pixel-ratio:0), (min--moz-device-pixel-ratio:0) {
+        #webkitnocheck:checked ~ .fallback {display: none;}
+        #webkitnocheck:checked ~ div .interactive {display: block !important;max-height: none !important;}
+        .gradient {background: -webkit-linear-gradient(#e0c29e, #a98c70, #e4c8a3, #fcdeb4);-webkit-background-clip: text;-webkit-text-fill-color: transparent;}
+        }
+        /* Specific Yahoo! Detection */
+        @media screen yahoo {
+        .fallback {display: block !important;max-height: none;}
+        .interactive {display: none !important;}
+        }
+        /* Specific Samsung Mail detection */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+        #MessageViewBody .fallback, body.MsgBody .fallback {display: block !important;}
+        #MessageViewBody .interactive, body.MsgBody .interactive {display: none !important;}
+        #MessageViewBody .samsung {display: none !important;}
+        }
+        /* Specific Gmail detection */
+        @media screen and (max-width:9999px) {
+        u + .gmailbody .fallback {display: block !important;max-height: none;}
+        u + .gmailbody .interactive {display: none!important;}
+        }
+        /*Start of interactive CSS */
+        /* Background image Desktop */
+        @media only screen and (-webkit-min-device-pixel-ratio:0),(min--moz-device-pixel-ratio:0) {
+        .dynasties {position: relative; display: block !important; overflow: hidden; width: 640px;height: 640px;background-image: url(https://image.info.esteelauder.co.uk/lib/fe37117075640474741075/m/4/427722df-92c9-4051-993b-d4a740a6646b.jpg);background-size: cover;}
+        /* Buttons */
+        .hotspot1,.hotspot2,.hotspot3,.hotspot4,.hotspot5 {visibility: visible!important; display: block !important; max-height: 33px !important;position: absolute!important;z-index: 1;left: -1000px;top: -1000px;width: 27px;height: 27px;background-size: cover;background-position: center;-webkit-animation: pulse 2s ease 0s infinite;border-radius: 23px;-webkit-box-shadow: 0px 0px 5px 5px rgba(50, 50, 50, 0.5);cursor: pointer;}
+        .hotspot1,.hotspot2,.hotspot3,.hotspot4,.hotspot5 {background-image: url(https://fakeimg.pl/54x54/);}
+        /* Content Labels Position Desktop */
+        #hotspot1-content {position: absolute;left: 45px;top: 70px;z-index: 1;}
+        #hotspot2-content {position: absolute;left: 45px;top: 70px;z-index: 1;}
+        #hotspot3-content {position: absolute;left: 45px;top: 70px;z-index: 1;}
+        #hotspot4-content {position: absolute;left: 45px;top: 70px;z-index: 1;}
+        #hotspot5-content {position: absolute;left: 45px;top: 70px;z-index: 1;}
+        /* keyframe animation - button pulse */
+        @-webkit-keyframes pulse {
+        0% {opacity: 0.7;-webkit-transform: scale(1);}
+        50% {opacity: 1;-webkit-transform: scale(1.2);}
+        100% {opacity: 0.7;-webkit-transform: scale(1);}
+        }
+        /* Desktop button positions */
+        .hotspot1 {left: 430px !important;top: 420px !important;}
+        .hotspot2 {left: 170px !important;top: 240px !important;}
+        .hotspot3 {left: 100px !important; top: 320px !important;}
+        .hotspot4 {left: 120px !important;top: 430px !important;}
+        .hotspot5 {left: 460px !important;top: 890px !important;}
+        /* If button checked desktop */
+        #hotspot1:checked ~ div #hotspot1-content {display: block !important;z-index: 10;}
+        #hotspot1:checked ~ div .hotspot1 {display: block !important;position: absolute;left: 535px !important;top: 80px !important;z-index: 11;height: 50px;width: 50px;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot1:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot1:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot1:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot1:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot2:checked ~ div #hotspot2-content {display: block !important;z-index: 10;}
+        #hotspot2:checked ~ div .hotspot1 {display: block !important;}
+        #hotspot2:checked ~ div .hotspot2 {display: block !important;position: absolute;left: 535px !important;top: 80px !important;z-index: 11;height: 50px;width: 50px;background-image: url(https://fakeimg.pl/50x33/?text=Close);-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot2:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot2:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot2:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot3:checked ~ div #hotspot3-content {display: block !important;z-index: 10;}
+        #hotspot3:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot3:checked ~ div .hotspot3 {display: block !important;position: absolute;left: 535px !important;top: 80px !important;z-index: 11;height: 50px;width: 50px;background-image: url(https://fakeimg.pl/50x33/?text=Close);-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot3:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot3:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot4:checked ~ div #hotspot4-content {display: block !important;z-index: 10;}
+        #hotspot4:checked ~ div .hotspot1 {display: block !important;}
+        #hotspot4:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot4:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot4:checked ~ div .hotspot4 {display: block !important;position: absolute;left: 535px !important;top: 80px !important;z-index: 11;height: 50px;width: 50px;background-image: url(https://fakeimg.pl/50x33/?text=Close);-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot4:checked ~ div .hotspot5 {display: block !important;}
+        #hotspot5:checked ~ div #hotspot5-content {display: block !important;z-index: 10;}
+        #hotspot5:checked ~ div .hotspot1 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot2 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot3 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot4 {display: block !important;}
+        #hotspot5:checked ~ div .hotspot5 {display: block !important;position: absolute;left: 535px !important;top: 80px !important;z-index: 11;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none; }
+        /* Background image Mobile */
+        @media only screen and (max-width: 420px) {
+        .dynasties {position: relative;display: block !important;overflow: hidden;width: 100vw;height: 100vw;background-image: url(https://image.info.esteelauder.co.uk/lib/fe37117075640474741075/m/4/427722df-92c9-4051-993b-d4a740a6646b.jpg);background-size: 100vw 100vw;}
+        /* Buttons */
+        .hotspot1m, .hotspot2m, .hotspot3m, .hotspot4m, .hotspot5m {visibility: visible!important;display: block !important;max-height: 33px !important;position: absolute!important;z-index: 1;left: -1000px;top: -1000px;width: 27px;height: 27px;background-size: cover;background-position: center;-webkit-animation: pulse 2s ease 0s infinite;border-radius: 23px;-webkit-box-shadow: 0px 0px 5px 5px rgba(50, 50, 50, 0.5);cursor: pointer;}
+        .hotspot1m, .hotspot2m, .hotspot3m, .hotspot4m, .hotspot5m {background-image: url(https://fakeimg.pl/54x54/);}
+        /* Content Labels Position Mobile */
+        #hotspot1m-content {position: absolute;left: 5vw;top: 2vw; z-index: 1;}
+        #hotspot2m-content {position: absolute;left: 5vw;top: 2vw; z-index: 1;}
+        #hotspot3m-content {position: absolute;left: 5vw;top: 2vw; z-index: 1;}
+        #hotspot4m-content {position: absolute;left: 5vw;top: 2vw;z-index: 1;}
+        #hotspot5m-content {position: absolute;left: 5vw;top: 2vw;z-index: 1;}
+        /* keyframe animation - button pulse */
+        @-webkit-keyframes pulse {
+        0% {opacity: 0.7;-webkit-transform: scale(1);}
+        50% {opacity: 1;-webkit-transform: scale(1.2);}
+        100% {opacity: 0.7;-webkit-transform: scale(1); }
+        }
+        /* Mobile button positions */
+        .hotspot1m {left: 86vw !important;top: 70vw !important;}
+        .hotspot2m {left: 27vw !important;top: 40vw !important;}
+        .hotspot3m {left: 15vw !important;top: 55vw !important;}
+        .hotspot4m {left: 20vw !important;top: 70vw !important; }
+        .hotspot5m {left: 63vw !important;top: 123vw !important;}
+        }
+        /* If button checked mobile */
+        #hotspot1m:checked ~ div #hotspot1m-content {display: block !important;z-index: 10;}
+        #hotspot1m:checked ~ div .hotspot1m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important; z-index: 11;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0; -webkit-box-shadow: none;}
+        #hotspot1m:checked ~ div .hotspot2m {display: block !important;}
+        #hotspot1m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot1m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot1m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot2m:checked ~ div #hotspot2m-content {display: block !important;z-index: 10;}
+        #hotspot2m:checked ~ div .hotspot1m {display: block !important; }
+        #hotspot2m:checked ~ div .hotspot2m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important; z-index: 11;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot2m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot2m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot2m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot3m:checked ~ div #hotspot3m-content {display: block !important; z-index: 10;}
+        #hotspot3m:checked ~ div .hotspot1m {display: block !important;}
+        #hotspot3m:checked ~ div .hotspot2m { display: block !important;}
+        #hotspot3m:checked ~ div .hotspot3m {display: block !important; position: absolute;left: 86vw !important;top: 3vw !important; z-index: 11;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot3m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot3m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot4m:checked ~ div #hotspot4m-content {display: block !important;z-index: 10;}
+        #hotspot4m:checked ~ div .hotspot1m {display: block !important;}
+        #hotspot4m:checked ~ div .hotspot2m {display: block !important;}
+        #hotspot4m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot4m:checked ~ div .hotspot4m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important;z-index: 11;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        #hotspot4m:checked ~ div .hotspot5m {display: block !important;}
+        #hotspot5m:checked ~ div #hotspot5m-content {display: block !important;z-index: 10;}
+        #hotspot5m:checked ~ div .hotspot1m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot2m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot3m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot4m {display: block !important;}
+        #hotspot5m:checked ~ div .hotspot5m {display: block !important;position: absolute;left: 86vw !important;top: 3vw !important;z-index: 11;background-image: url('https://fakeimg.pl/50x33/?text=Close');-webkit-animation: none;border-radius: 0;-webkit-box-shadow: none;}
+        /** HOTSPOT CSS - to copy in your style /**
+
+    <!-- HOTSPOT SECTION -->
+    <table cellpadding="0" cellspacing="0" border="0" width="640" class="resptab" role="presentation" style="width:640px;">
+      <tr align="center">
+        <td align="center">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" class="hide">
+            <tbody>
+              <tr>
+                <td>
+                  <table role="presentation" width="640" cellpadding="0" cellspacing="0" align="center" border="0" style="width: 640px;" class="resptab">
+                    <tbody>
+                      <tr>
+                        <td valign="top" align="center">
+                          <table role="presentation" width="640" align="center" border="0" cellspacing="0" cellpadding="0" style="width: 640px;">
+                            <tbody>
+                              <tr>
+                                <td>
+                                  <table width="640" border="0" cellspacing="0" cellpadding="0" align="center">
+                                    <tbody>
+                                      <tr>
+                                        <td width="640" valign="top" style="width: 640px;" align="center">
+                                          <!--[if !mso]><!-- -->
+                                          <input type="checkbox" id="webkitnocheck" name="webkit" checked="checked" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                          <!--<![endif]-->
+                                          <div class="fallback">
+                                            <img src="https://image.info.esteelauder.co.uk/lib/fe37117075640474741075/m/4/427722df-92c9-4051-993b-d4a740a6646b.jpg" width="640" height="640" style="display: block;" border="0" alt="Dynasties">
+                                          </div>
+                                          <div class="samsung">
+                                            <!--[if !mso]><!-- -->
+                                            <div class="interactive" style="display: none; max-height: 0px; overflow: hidden;">
+                                              <input type="checkbox" class="hotspot" id="hotspot1" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                              <input type="checkbox" class="hotspot" id="hotspot2" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                              <input type="checkbox" class="hotspot" id="hotspot3" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                              <input type="checkbox" class="hotspot" id="hotspot4" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                            <div class="dynasties">
+                                              <label class="hotspot1" for="hotspot1" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                              <label class="hotspot2" for="hotspot2" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                              <label class="hotspot3" for="hotspot3" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                              <label class="hotspot4" for="hotspot4" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                              <div id="hotspot1-content" style="display: none;">
+                                                <table width="550" style="border: 2px solid #444444;" bgcolor="#f1f1f1" cellspacing="0" cellpadding="0">
+                                                  <tbody>
+                                                    <tr>
+                                                      <td align="center">
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" height="auto" align="center" valign="middle">
+                                                                <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="60%" height="auto" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="400" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; text-align: center; mso-line-height-rule: exactly; font-size: 24px; line-height: 30px; color: #000000; font-style: normal; text-transform: uppercase; padding: 10px 0px;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td align="center" style="font-family:HelveticaNeue-Light, Helvetica, Arial, sans-serif;text-align:center;mso-line-height-rule:exactly;font-size: 14px;line-height:20px;color:#000000;font-weight:normal;padding: 0px 20px 20px;">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book..
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                              <div id="hotspot2-content" style="display: none;">
+                                                <table width="550" style="border: 2px solid #444444;" bgcolor="#f1f1f1" cellspacing="0" cellpadding="0">
+                                                  <tbody>
+                                                    <tr>
+                                                      <td align="center">
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" height="auto" align="center" valign="middle">
+                                                                <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="60%" height="auto" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="400" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; text-align: center; mso-line-height-rule: exactly; font-size: 24px; line-height: 30px; color: #000000; font-style: normal; text-transform: uppercase; padding: 10px 0px;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td align="center" style="font-family:HelveticaNeue-Light, Helvetica, Arial, sans-serif;text-align:center;mso-line-height-rule:exactly;font-size: 14px;line-height:20px;color:#000000;font-weight:normal;padding: 0px 20px 20px;">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book..
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                              <div id="hotspot3-content" style="display: none;">
+                                                <table width="550" style="border: 2px solid #444444;" bgcolor="#f1f1f1" cellspacing="0" cellpadding="0">
+                                                  <tbody>
+                                                    <tr>
+                                                      <td align="center">
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" height="auto" align="center" valign="middle">
+                                                                <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="60%" height="auto" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="400" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; text-align: center; mso-line-height-rule: exactly; font-size: 24px; line-height: 30px; color: #000000; font-style: normal; text-transform: uppercase; padding: 10px 0px;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td align="center" style="font-family:HelveticaNeue-Light, Helvetica, Arial, sans-serif;text-align:center;mso-line-height-rule:exactly;font-size: 14px;line-height:20px;color:#000000;font-weight:normal;padding: 0px 20px 20px;">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book..
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                              <div id="hotspot4-content" style="display: none;">
+                                                <table width="550" style="border: 2px solid #444444;" bgcolor="#f1f1f1" cellspacing="0" cellpadding="0">
+                                                  <tbody>
+                                                    <tr>
+                                                      <td align="center">
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" height="auto" align="center" valign="middle">
+                                                                <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="60%" height="auto" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="400" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; text-align: center; mso-line-height-rule: exactly; font-size: 24px; line-height: 30px; color: #000000; font-style: normal; text-transform: uppercase; padding: 10px 0px;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td align="center" style="font-family:HelveticaNeue-Light, Helvetica, Arial, sans-serif;text-align:center;mso-line-height-rule:exactly;font-size: 14px;line-height:20px;color:#000000;font-weight:normal;padding: 0px 20px 20px;">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book..
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <!--<![endif]-->
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <!--[if !mso]><!-->
+        <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+          <div class="show" style="display: none; max-height: 0px; overflow: hidden;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              <tbody>
+                <tr>
+                  <td>
+                    <table role="presentation" width="420" align="center" border="0" cellspacing="0" cellpadding="0" style="width: 420px;" class="resptab">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <table width="420" border="0" cellspacing="0" cellpadding="0" align="center" class="resptab">
+                              <tbody>
+                                <tr>
+                                  <td width="420" valign="top" style="width: 420px;" align="center">
+                                    <!--[if !mso]><!-- -->
+                                    <input type="checkbox" id="webkitnocheck" name="webkit" checked="checked" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                    <!--<![endif]-->
+                                    <div class="fallback">
+                                      <img src="https://image.info.esteelauder.co.uk/lib/fe37117075640474741075/m/4/427722df-92c9-4051-993b-d4a740a6646b.jpg" width="420" height="420" style="display: block;" border="0" alt="Dynasties" class="respimg">
+                                    </div>
+                                    <div class="samsung">
+                                      <!--[if !mso]><!-- -->
+                                      <div class="interactive" style="display: none; max-height: 0px; overflow: hidden;">
+                                        <input type="checkbox" class="hotspot" id="hotspot1m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                        <input type="checkbox" class="hotspot" id="hotspot2m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                        <input type="checkbox" class="hotspot" id="hotspot3m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                        <input type="checkbox" class="hotspot" id="hotspot4m" name="hotspot" style="display: none; max-height: 0px; visibility: hidden;" value="on">
+                                          <div class="dynasties">
+                                            <label class="hotspot1m" for="hotspot1m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                            <label class="hotspot2m" for="hotspot2m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                            <label class="hotspot3m" for="hotspot3m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                            <label class="hotspot4m" for="hotspot4m" style="display: none; max-height: 0px; visibility: hidden;"></label>
+                                            <div id="hotspot1m-content" style="display: none;">
+                                              <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                                                <tbody>
+                                                  <tr>
+                                                    <td align="center">
+                                                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tbody>
+                                                          <tr>
+                                                            <td align="center" valign="middle">
+                                                              <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="50%" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 5vw; color: #000000; line-height: 5vw; text-align: center; padding: 10px 0px;text-transform: uppercase;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 4vw; color: #000000; line-height: 5vw; text-align: left; padding: 0px 20px 20px;text-align: center; ">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            <div id="hotspot2m-content" style="display: none;">
+                                              <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                                                <tbody>
+                                                  <tr>
+                                                    <td align="center">
+                                                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tbody>
+                                                          <tr>
+                                                            <td align="center" valign="middle">
+                                                              <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="50%" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 5vw; color: #000000; line-height: 5vw; text-align: center; padding: 10px 0px;text-transform: uppercase;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 4vw; color: #000000; line-height: 5vw; text-align: left; padding: 0px 20px 20px;text-align: center; ">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            <div id="hotspot3m-content" style="display: none;">
+                                              <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                                                <tbody>
+                                                  <tr>
+                                                    <td align="center">
+                                                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tbody>
+                                                          <tr>
+                                                            <td align="center" valign="middle">
+                                                              <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="50%" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 5vw; color: #000000; line-height: 5vw; text-align: center; padding: 10px 0px;text-transform: uppercase;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 4vw; color: #000000; line-height: 5vw; text-align: left; padding: 0px 20px 20px;text-align: center; ">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                              <div id="hotspot4m-content" style="display: none;">
+                                                <table style="width: 90vw; border: 2px solid #444444;" cellspacing="0" cellpadding="0" bgcolor="f1f1f1">
+                                                  <tbody>
+                                                    <tr>
+                                                      <td align="center">
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td align="center" valign="middle">
+                                                                <img style="display: block;" src="https://fakeimg.pl/450x450/?text=Prod Preview" width="50%" alt="">
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 5vw; color: #000000; line-height: 5vw; text-align: center; padding: 10px 0px;text-transform: uppercase;">
+                                                                Lorem Ipsum is simply dummy text
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                          <tbody>
+                                                            <tr>
+                                                              <td width="100%" align="center" style="font-family: HelveticaNeue-Light, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 21px; color:#000000; mso-line-height-rule: exactly;font-weight:normal; font-size: 4vw; color: #000000; line-height: 5vw; text-align: left; padding: 0px 20px 20px;text-align: center; ">
+                                                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+                                                              </td>
+                                                            </tr>
+                                                          </tbody>
+                                                        </table>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <!--<![endif]-->
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <!--<![endif]-->
+          </td>
+        </tr>
+      </table>

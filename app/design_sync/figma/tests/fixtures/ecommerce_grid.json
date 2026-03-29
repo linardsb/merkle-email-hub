@@ -1,0 +1,412 @@
+{
+  "id": "2001:200",
+  "name": "Product Grid",
+  "type": "FRAME",
+  "visible": true,
+  "opacity": 1.0,
+  "absoluteBoundingBox": {"x": 0, "y": 500, "width": 600, "height": 640},
+  "layoutMode": "VERTICAL",
+  "primaryAxisAlignItems": "MIN",
+  "counterAxisAlignItems": "CENTER",
+  "paddingTop": 32,
+  "paddingRight": 16,
+  "paddingBottom": 32,
+  "paddingLeft": 16,
+  "itemSpacing": 16,
+  "fills": [
+    {
+      "type": "SOLID",
+      "visible": true,
+      "color": {"r": 0.976, "g": 0.976, "b": 0.976, "a": 1.0}
+    }
+  ],
+  "strokes": [],
+  "effects": [],
+  "children": [
+    {
+      "id": "2001:201",
+      "name": "Section Title",
+      "type": "TEXT",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 16, "y": 532, "width": 568, "height": 32},
+      "characters": "Featured Products",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 24,
+        "fontWeight": 700,
+        "lineHeightPx": 32,
+        "letterSpacing": 0,
+        "textAlignHorizontal": "CENTER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "children": []
+    },
+    {
+      "id": "2001:210",
+      "name": "Row 1",
+      "type": "FRAME",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 16, "y": 580, "width": 568, "height": 280},
+      "layoutMode": "HORIZONTAL",
+      "primaryAxisAlignItems": "MIN",
+      "counterAxisAlignItems": "MIN",
+      "paddingTop": 0,
+      "paddingRight": 0,
+      "paddingBottom": 0,
+      "paddingLeft": 0,
+      "itemSpacing": 16,
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "children": [
+        {
+          "id": "2001:211",
+          "name": "Product Card 1",
+          "type": "FRAME",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 16, "y": 580, "width": 276, "height": 280},
+          "layoutMode": "VERTICAL",
+          "primaryAxisAlignItems": "MIN",
+          "counterAxisAlignItems": "CENTER",
+          "paddingTop": 0,
+          "paddingRight": 0,
+          "paddingBottom": 12,
+          "paddingLeft": 0,
+          "itemSpacing": 8,
+          "cornerRadius": 8,
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "2001:212",
+              "name": "Product Image 1",
+              "type": "RECTANGLE",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 16, "y": 580, "width": 276, "height": 200},
+              "cornerRadius": 8,
+              "rectangleCornerRadii": [8.0, 8.0, 0.0, 0.0],
+              "fills": [
+                {
+                  "type": "IMAGE",
+                  "visible": true,
+                  "imageRef": "product1_placeholder_hash"
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:213",
+              "name": "Product Name 1",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 28, "y": 788, "width": 252, "height": 20},
+              "characters": "Classic Running Shoe",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "lineHeightPx": 20,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:214",
+              "name": "Price 1",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 28, "y": 812, "width": 252, "height": 18},
+              "characters": "$129.00",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 14,
+                "fontWeight": 400,
+                "lineHeightPx": 18,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "2001:221",
+          "name": "Product Card 2",
+          "type": "FRAME",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 308, "y": 580, "width": 276, "height": 280},
+          "layoutMode": "VERTICAL",
+          "primaryAxisAlignItems": "MIN",
+          "counterAxisAlignItems": "CENTER",
+          "paddingTop": 0,
+          "paddingRight": 0,
+          "paddingBottom": 12,
+          "paddingLeft": 0,
+          "itemSpacing": 8,
+          "cornerRadius": 8,
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "2001:222",
+              "name": "Product Image 2",
+              "type": "RECTANGLE",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 308, "y": 580, "width": 276, "height": 200},
+              "fills": [
+                {
+                  "type": "IMAGE",
+                  "visible": true,
+                  "imageRef": "product2_placeholder_hash"
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:223",
+              "name": "Product Name 2",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 320, "y": 788, "width": 252, "height": 20},
+              "characters": "Trail Hiking Boot",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 14,
+                "fontWeight": 600,
+                "lineHeightPx": 20,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:224",
+              "name": "Price 2",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 320, "y": 812, "width": 252, "height": 18},
+              "characters": "$159.00",
+              "style": {
+                "fontFamily": "Inter",
+                "fontSize": 14,
+                "fontWeight": 400,
+                "lineHeightPx": 18,
+                "letterSpacing": 0,
+                "textAlignHorizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2001:230",
+      "name": "Row 2",
+      "type": "FRAME",
+      "visible": true,
+      "opacity": 1.0,
+      "absoluteBoundingBox": {"x": 16, "y": 876, "width": 568, "height": 280},
+      "layoutMode": "HORIZONTAL",
+      "primaryAxisAlignItems": "MIN",
+      "counterAxisAlignItems": "MIN",
+      "paddingTop": 0,
+      "paddingRight": 0,
+      "paddingBottom": 0,
+      "paddingLeft": 0,
+      "itemSpacing": 16,
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "children": [
+        {
+          "id": "2001:231",
+          "name": "Product Card 3",
+          "type": "FRAME",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 16, "y": 876, "width": 276, "height": 280},
+          "layoutMode": "VERTICAL",
+          "paddingBottom": 12,
+          "itemSpacing": 8,
+          "cornerRadius": 8,
+          "fills": [{"type": "SOLID", "visible": true, "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}}],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "2001:232",
+              "name": "Product Image 3",
+              "type": "RECTANGLE",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 16, "y": 876, "width": 276, "height": 200},
+              "fills": [{"type": "IMAGE", "visible": true, "imageRef": "product3_placeholder_hash"}],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:233",
+              "name": "Product Name 3",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 28, "y": 1084, "width": 252, "height": 20},
+              "characters": "Casual Sneaker",
+              "style": {"fontFamily": "Inter", "fontSize": 14, "fontWeight": 600, "lineHeightPx": 20, "letterSpacing": 0, "textAlignHorizontal": "LEFT"},
+              "fills": [{"type": "SOLID", "visible": true, "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}}],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:234",
+              "name": "Price 3",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 28, "y": 1108, "width": 252, "height": 18},
+              "characters": "$89.00",
+              "style": {"fontFamily": "Inter", "fontSize": 14, "fontWeight": 400, "lineHeightPx": 18, "letterSpacing": 0, "textAlignHorizontal": "LEFT"},
+              "fills": [{"type": "SOLID", "visible": true, "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}}],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "2001:241",
+          "name": "Product Card 4",
+          "type": "FRAME",
+          "visible": true,
+          "opacity": 1.0,
+          "absoluteBoundingBox": {"x": 308, "y": 876, "width": 276, "height": 280},
+          "layoutMode": "VERTICAL",
+          "paddingBottom": 12,
+          "itemSpacing": 8,
+          "cornerRadius": 8,
+          "fills": [{"type": "SOLID", "visible": true, "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}}],
+          "strokes": [],
+          "effects": [],
+          "children": [
+            {
+              "id": "2001:242",
+              "name": "Product Image 4",
+              "type": "RECTANGLE",
+              "visible": true,
+              "opacity": 0.0,
+              "absoluteBoundingBox": {"x": 308, "y": 876, "width": 276, "height": 200},
+              "fills": [{"type": "IMAGE", "visible": true, "imageRef": "product4_placeholder_hash"}],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:243",
+              "name": "Product Name 4",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 320, "y": 1084, "width": 252, "height": 20},
+              "characters": "Limited Edition Sandal",
+              "style": {"fontFamily": "Inter", "fontSize": 14, "fontWeight": 600, "lineHeightPx": 20, "letterSpacing": 0, "textAlignHorizontal": "LEFT"},
+              "fills": [{"type": "SOLID", "visible": true, "color": {"r": 0.133, "g": 0.133, "b": 0.133, "a": 1.0}}],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            },
+            {
+              "id": "2001:244",
+              "name": "Price 4",
+              "type": "TEXT",
+              "visible": true,
+              "opacity": 1.0,
+              "absoluteBoundingBox": {"x": 320, "y": 1108, "width": 252, "height": 18},
+              "characters": "$199.00",
+              "style": {"fontFamily": "Inter", "fontSize": 14, "fontWeight": 400, "lineHeightPx": 18, "letterSpacing": 0, "textAlignHorizontal": "LEFT"},
+              "fills": [{"type": "SOLID", "visible": true, "color": {"r": 0.4, "g": 0.4, "b": 0.4, "a": 1.0}}],
+              "strokes": [],
+              "effects": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
