@@ -160,6 +160,12 @@ eval-run: eval-verify ## Run agent evals (generate traces)
 eval-judge: ## Run judges on traces (generate verdicts)
 	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces --skip-existing
 
+eval-rejudge: ## Re-run judges WITHOUT skip-existing (overwrites verdicts)
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces --mode hybrid
+
+eval-compare: ## Compare pre/post golden-reference verdicts
+	uv run python scripts/eval-compare-verdicts.py --pre-dir traces/pre_golden --post-dir traces --output traces/verdict_comparison.json
+
 eval-labels: ## Scaffold human label templates from traces+verdicts
 	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/scaffolder_verdicts.jsonl --traces traces/scaffolder_traces.jsonl --output traces/scaffolder_human_labels.jsonl
 	uv run python -m app.ai.agents.evals.scaffold_labels --verdicts traces/dark_mode_verdicts.jsonl --traces traces/dark_mode_traces.jsonl --output traces/dark_mode_human_labels.jsonl

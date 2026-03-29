@@ -156,40 +156,10 @@
 
 ---
 
-### 37.4 Re-run Judge Pipeline & Measure Calibration Improvement `[Evals]`
+### ~~37.4 Re-run Judge Pipeline & Measure Calibration Improvement~~ DONE `[Evals]`
 
-**What:** Re-run the eval pipeline with golden-reference-enhanced judges against the existing 36 traces. Create a comparison script that diffs verdicts before/after to measure improvement and identify criteria with high flip rates for priority human review.
-**Why:** The golden references are a calibration intervention — we need to measure whether they actually improve judge accuracy. If a criterion's verdicts flip >20% after adding examples, that criterion was poorly calibrated before and needs priority human review in 37.5. If verdicts are stable, the judges were already aligned and the golden references confirmed rather than changed their behavior. This data drives the labeling strategy: focus human time on high-flip criteria, spot-check low-flip ones.
-**Implementation:**
-- Backup existing verdicts:
-  ```bash
-  cp traces/*_verdicts.jsonl traces/*_verdicts_pre_golden.jsonl
-  ```
-- Re-run judges: `make eval-judge` (same traces, new judge prompts with golden references)
-- Create `scripts/eval-compare-verdicts.py`:
-  ```python
-  def compare_verdicts(pre_path: str, post_path: str) -> dict:
-      """Compare pre/post verdicts, report per-criterion flip rates."""
-      pre = load_jsonl(pre_path)
-      post = load_jsonl(post_path)
-      results = {}
-      for criterion in all_criteria:
-          pre_verdicts = {r["id"]: r["pass"] for r in pre if r["criterion"] == criterion}
-          post_verdicts = {r["id"]: r["pass"] for r in post if r["criterion"] == criterion}
-          flips = sum(1 for id in pre_verdicts if pre_verdicts[id] != post_verdicts.get(id))
-          total = len(pre_verdicts)
-          results[criterion] = {
-              "total": total, "flips": flips, "flip_rate": flips / total if total else 0,
-              "pass_to_fail": ..., "fail_to_pass": ...,
-          }
-      return results
-  ```
-  - Flags criteria with >20% flip rate for priority human review
-  - Outputs summary table to stdout + `traces/verdict_comparison.json`
-- Add `make eval-compare` Makefile target
-
-**Security:** Read-only comparison of JSONL files. No external API calls. No data modification.
-**Verify:** Pre-golden verdicts backed up in `traces/*_pre_golden.jsonl`. New verdicts generated with golden references. `scripts/eval-compare-verdicts.py` outputs per-criterion flip rates. `make eval-compare` runs successfully. High-flip criteria identified for 37.5 priority labeling.
+**What:** Re-run the eval pipeline with golden-reference-enhanced judges against the existing traces. Create a comparison script that diffs verdicts before/after to measure improvement and identify criteria with high flip rates for priority human review.
+**Delivered:** `scripts/eval-compare-verdicts.py` (comparison CLI with per-criterion flip rate analysis, priority review flagging at >20% threshold, JSON report output, 14 tests). `make eval-rejudge` (re-run without `--skip-existing`) and `make eval-compare` Makefile targets. Pre-golden verdicts backed up in `traces/pre_golden/`. All 9 agents re-judged with golden-reference-enhanced prompts (hybrid mode, Claude Sonnet). **Results:** 15 of 35 criteria flagged for priority human review — golden references made judges significantly more discriminating (e.g. `code_reviewer:output_format` flipped 100% P→F, `scaffolder:brief_fidelity` 83% P→F against mock output). Report at `traces/verdict_comparison.json`.
 
 ---
 
@@ -224,7 +194,7 @@
 | 37.1 Expand golden library | `email-templates/components/golden-references/` | None — start immediately | 14 new templates |
 | ~~37.2 Golden reference loader~~ DONE | `app/ai/agents/evals/golden_references.py`, `index.yaml` | 37.1 (templates exist) | ~200 LOC + 18 tests |
 | ~~37.3 Wire into judge prompts~~ DONE | 7 judge files + `base.py` | 37.2 (loader ready) | ~150 LOC + 22 tests |
-| 37.4 Re-run & measure | `scripts/eval-compare-verdicts.py`, Makefile | 37.3 (judges updated) | Script + pipeline run |
+| ~~37.4 Re-run & measure~~ DONE | `scripts/eval-compare-verdicts.py`, Makefile | 37.3 (judges updated) | Script + pipeline run, 15/35 criteria flagged |
 | 37.5 Human labeling | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (improved judges) | ~2-4 hours manual |
 
 > **Execution:** 37.1 is independent — start immediately (template authoring). 37.2–37.3 are sequential (loader → wiring). 37.4 depends on 37.3. 37.5 depends on 37.4. **The golden templates (37.1) are the long pole** — everything else is mechanical wiring.
