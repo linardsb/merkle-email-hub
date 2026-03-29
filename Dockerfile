@@ -43,9 +43,12 @@ EXPOSE 8891
 HEALTHCHECK --interval=15s --timeout=10s --retries=5 --start-period=120s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8891/health')" || exit 1
 
-CMD ["gunicorn", "app.main:app", \
-     "-k", "uvicorn.workers.UvicornWorker", \
-     "-w", "4", \
-     "--bind", "0.0.0.0:8891", \
-     "--timeout", "120", \
-     "--graceful-timeout", "30"]
+CMD ["sh", "-c", "gunicorn app.main:app \
+     -k uvicorn.workers.UvicornWorker \
+     -w ${WEB_CONCURRENCY:-2} \
+     --preload \
+     --max-requests 1000 \
+     --max-requests-jitter 100 \
+     --bind 0.0.0.0:8891 \
+     --timeout 120 \
+     --graceful-timeout 30"]
