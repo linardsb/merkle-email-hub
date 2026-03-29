@@ -1,0 +1,118 @@
+# Golden Reference Registry — maps templates to judge criteria and agents.
+# Used by app/ai/agents/evals/golden_references.py to serve snippets to judges.
+#
+# selector.lines: [start, end] inclusive 1-based line range for snippet extraction.
+# Omit selector to use full file (capped at 80 lines).
+
+references:
+  - name: VML Background Image
+    file: vml-background-image.html
+    selector:
+      lines: [42, 72]
+    criteria: [mso_conditional_correctness, vml_wellformedness]
+    agents: [scaffolder, outlook_fixer]
+    verified: "2026-03-29"
+
+  - name: Nested MSO Conditionals
+    file: nested-mso-conditionals.html
+    selector:
+      lines: [41, 114]
+    criteria: [mso_conditional_correctness, vml_wellformedness]
+    agents: [scaffolder, outlook_fixer]
+    verified: "2026-03-29"
+
+  - name: VML Rounded Button Variants
+    file: vml-rounded-button-variants.html
+    selector:
+      lines: [40, 105]
+    criteria: [vml_wellformedness, email_layout_patterns]
+    agents: [scaffolder, outlook_fixer]
+    verified: "2026-03-29"
+
+  - name: Complex Hybrid Layout
+    file: complex-hybrid-layout.html
+    selector:
+      lines: [46, 125]
+    criteria: [email_layout_patterns, issue_genuineness, mso_conditional_correctness]
+    agents: [scaffolder, code_reviewer]
+    verified: "2026-03-29"
+
+  - name: Dark Mode Complete
+    file: dark-mode-complete.html
+    selector:
+      lines: [23, 73]
+    criteria: [color_coherence, outlook_selector_completeness, meta_and_media_query, contrast_preservation, html_preservation]
+    agents: [dark_mode]
+    verified: "2026-03-29"
+
+  - name: Accessibility Compliant
+    file: accessibility-compliant.html
+    selector:
+      lines: [38, 102]
+    criteria: [wcag_aa_compliance, alt_text_quality, semantic_structure, screen_reader_compatibility, contrast_ratio_accuracy]
+    agents: [accessibility]
+    verified: "2026-03-29"
+
+  - name: ESP Braze Liquid
+    file: esp-braze-liquid.html
+    selector:
+      lines: [40, 110]
+    criteria: [syntax_correctness, fallback_completeness, platform_accuracy]
+    agents: [personalisation]
+    verified: "2026-03-29"
+
+  - name: ESP SFMC AMPscript
+    file: esp-sfmc-ampscript.html
+    selector:
+      lines: [33, 101]
+    criteria: [syntax_correctness, fallback_completeness, platform_accuracy]
+    agents: [personalisation]
+    verified: "2026-03-29"
+
+  - name: ESP Adobe Campaign
+    file: esp-adobe-campaign.html
+    selector:
+      lines: [40, 119]
+    criteria: [syntax_correctness, platform_accuracy]
+    agents: [personalisation]
+    verified: "2026-03-29"
+
+  - name: ESP Klaviyo Django
+    file: esp-klaviyo-django.html
+    selector:
+      lines: [40, 110]
+    criteria: [syntax_correctness, platform_accuracy]
+    agents: [personalisation]
+    verified: "2026-03-29"
+
+  - name: Innovation CSS Carousel
+    file: innovation-css-carousel.html
+    selector:
+      lines: [22, 85]
+    criteria: [technique_correctness, fallback_quality]
+    agents: [innovation]
+    verified: "2026-03-29"
+
+  - name: Innovation Accordion Dropdown
+    file: innovation-accordion-dropdown.html
+    selector:
+      lines: [22, 69]
+    criteria: [technique_correctness, fallback_quality]
+    agents: [innovation]
+    verified: "2026-03-29"
+
+  - name: Innovation AMP Email
+    file: innovation-amp-email.html
+    selector:
+      lines: [7, 43]
+    criteria: [technique_correctness, fallback_quality]
+    agents: [innovation]
+    verified: "2026-03-29"
+
+  - name: Innovation Kinetic Hover
+    file: innovation-kinetic-hover.html
+    selector:
+      lines: [23, 102]
+    criteria: [technique_correctness, fallback_quality]
+    agents: [innovation]
+    verified: "2026-03-29"

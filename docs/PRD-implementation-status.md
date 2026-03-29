@@ -185,6 +185,10 @@
 
 ### Recently Completed
 
+**Phase 37.2:** Golden Reference Loader & Criterion Mapping — `app/ai/agents/evals/golden_references.py` with `GoldenReference` frozen dataclass, `SnippetSelector` line-range extraction, `load_golden_references()` `@lru_cache` singleton loading from `index.yaml` YAML registry (14 entries mapping golden templates to judge criteria and agents), `get_references_for_criterion()` (max 3 snippets per criterion, 80-line cap), `get_references_for_agent()`, path traversal prevention, CLI (`--list`/`--criterion`/`--agent`); `email-templates/components/golden-references/index.yaml` registry; re-exports in `evals/__init__.py`; 18 tests.
+
+**Phase 37.1:** Expand Golden Component Library — 14 golden reference templates in `email-templates/components/golden-references/`: VML background image, nested MSO conditionals, VML rounded buttons, complex hybrid layout, dark mode complete, accessibility compliant, 4 ESP templates (Braze Liquid, SFMC AMPscript, Adobe Campaign, Klaviyo Django), 4 innovation templates (CSS carousel, accordion, AMP email, kinetic hover). Each with frontmatter annotation `<!-- golden-ref: criteria=[...], agents=[...], verified=... -->`.
+
 **Phase 35.6:** AI Visual Fidelity Scoring Pipeline — `app/design_sync/visual_scorer.py` with `score_fidelity()` SSIM engine (`scikit-image` `structural_similarity()`, Gaussian blur anti-aliasing tolerance, per-section y-position slicing, red-highlighted diff overlay); `app/design_sync/fidelity_service.py` `VisualFidelityService` orchestrating Figma frame export → composite stitching → Playwright HTML screenshot → SSIM scoring → diff storage; `download_image_bytes()` on `FigmaDesignSyncService`; `score_fidelity: bool` threaded through `ConvertImportRequest` → routes → service → `run_conversion()` (non-fatal); `fidelity_json` column on `DesignImport`; `SectionFidelityScore`/`FidelityResult`/`FidelityResponse` schemas; 3 endpoints (`GET /fidelity`, `POST /score-fidelity`, `GET /fidelity/diff-image`); 6 config settings (`fidelity_enabled=False`); 26 new tests.
 
 **Phase 35.5:** AI Layout Intelligence & Semantic Detection — `ai_layout_classifier.py` LLM fallback for UNKNOWN sections; `ai_content_detector.py` two-pass (heuristic + LLM) content role detection for 8 types; enhanced `_classify_by_content()` heuristics; `classification_confidence`/`content_roles` on `EmailSection`; `enhance_layout_with_ai()` post-processor; `AI_LAYOUT_ENABLED` config; 48 new tests.
@@ -228,6 +232,8 @@
 **Phase 32.4:** Agent Knowledge Lookup Tool — `app/ai/agents/tools/client_lookup.py` with `ClientLookupTool` (single-client queries: css_support/dark_mode/known_bugs/size_limits/font_support) + `MultiClientLookupTool` (batch N×M queries); `ClientLookupParams`/`ClientLookupResult` Pydantic models; module-level singleton instances; structured logging; blueprint engine LAYER 11.5 injects tools into `context.metadata` for all agentic nodes; 6 agent SKILL.md files updated with Client Rendering Lookup L2 section; 26 new tests.
 
 ### Up Next
+
+**Phase 37.3–37.5** (Golden Reference Library — wire golden references into 7 judge `build_prompt()` methods, re-run judge pipeline to measure calibration improvement, complete human labeling with improved judges). See `TODO.md` Phase 37 for details.
 
 **Phase 35.4–35.11** (Next-Gen Design-to-Email Pipeline — remaining 6 subtasks: MJML section templates, AI conversion learning loop, W3C Design Tokens + caniemail.com, Figma webhooks, incremental conversion, tests). See `TODO.md` for details.
 

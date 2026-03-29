@@ -23,7 +23,7 @@
 > **Dependency note:** Independent of Phases 36/38/39. Uses existing judge infrastructure (`app/ai/agents/evals/judges/`). Golden components from `email-templates/components/` are the starting point. New reference templates can be added incrementally — the system is designed to grow.
 
 - [x] 37.1 Expand golden component library with advanced patterns
-- [ ] 37.2 Build golden reference loader & criterion mapping
+- [x] 37.2 Build golden reference loader & criterion mapping
 - [ ] 37.3 Wire golden references into judge prompts
 - [ ] 37.4 Re-run judge pipeline & measure calibration improvement
 - [ ] 37.5 Complete human labeling with improved judges
@@ -63,7 +63,7 @@
 
 ---
 
-### 37.2 Build Golden Reference Loader & Criterion Mapping `[Backend]`
+### ~~37.2 Build Golden Reference Loader & Criterion Mapping~~ `[Backend]` DONE
 
 **What:** Create `app/ai/agents/evals/golden_references.py` — a loader that reads golden reference templates from `email-templates/components/golden-references/`, parses their frontmatter annotations, and maps them to judge criteria. Create `index.yaml` as the registry that controls which snippet from which file serves which criterion.
 **Why:** Judges need to query "show me examples for `mso_conditional_correctness`" and get the relevant HTML snippets. Without a structured loader, each judge would need hardcoded paths and manual snippet extraction — unmaintainable as the library grows. The loader provides a single API: `get_references_for_criterion(name) → list[(name, html_snippet)]`. YAML-based registry means new templates are auto-discovered without code changes. Snippet extraction (not full files) keeps prompts within token budget.
@@ -222,7 +222,7 @@
 | Subtask | Scope | Dependencies | Effort |
 |---------|-------|--------------|--------|
 | 37.1 Expand golden library | `email-templates/components/golden-references/` | None — start immediately | 14 new templates |
-| 37.2 Golden reference loader | `app/ai/agents/evals/golden_references.py`, `index.yaml` | 37.1 (templates exist) | ~200 LOC + 15 tests |
+| ~~37.2 Golden reference loader~~ DONE | `app/ai/agents/evals/golden_references.py`, `index.yaml` | 37.1 (templates exist) | ~200 LOC + 18 tests |
 | 37.3 Wire into judge prompts | 7 judge files + `base.py` | 37.2 (loader ready) | ~150 LOC + 14 tests |
 | 37.4 Re-run & measure | `scripts/eval-compare-verdicts.py`, Makefile | 37.3 (judges updated) | Script + pipeline run |
 | 37.5 Human labeling | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (improved judges) | ~2-4 hours manual |
