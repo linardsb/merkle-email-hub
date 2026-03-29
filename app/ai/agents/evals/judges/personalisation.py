@@ -3,6 +3,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -93,10 +94,17 @@ class PersonalisationJudge:
         if judge_input.output_data:
             html_output = str(judge_input.output_data.get("html", ""))
 
+        golden = format_golden_section(
+            ["syntax_correctness", "fallback_completeness", "platform_accuracy"],
+            name_filter=platform or None,
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
             f"## TARGET PLATFORM\n{platform}\n\n"
             f"## PERSONALISATION REQUIREMENTS\n{requirements}\n\n"
-            f"## AGENT INPUT (Original HTML)\n```html\n{html_input}\n```\n\n"
+            f"## AGENT INPUT (Original HTML)\n```html\n{html_input}\n```"
+            f"{golden_block}\n\n"
             f"## AGENT OUTPUT (Personalised HTML)\n```html\n{html_output}\n```"
         )
         return f"{system}\n\n---\n\n{user_content}"

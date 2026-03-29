@@ -24,7 +24,7 @@
 
 - [x] 37.1 Expand golden component library with advanced patterns
 - [x] 37.2 Build golden reference loader & criterion mapping
-- [ ] 37.3 Wire golden references into judge prompts
+- [x] 37.3 Wire golden references into judge prompts
 - [ ] 37.4 Re-run judge pipeline & measure calibration improvement
 - [ ] 37.5 Complete human labeling with improved judges
 
@@ -128,7 +128,7 @@
 
 ---
 
-### 37.3 Wire Golden References into Judge Prompts `[Backend, Evals]`
+### ~~37.3 Wire Golden References into Judge Prompts~~ `[Backend, Evals]` DONE
 
 **What:** Modify all 7 HTML-evaluating judge `build_prompt()` methods to inject golden reference snippets from the loader (37.2). Each judge sees verified-correct examples alongside the agent's output. Content, Knowledge, and Visual QA judges are excluded (text-only/screenshot-based criteria — golden HTML not applicable).
 **Why:** Zero-shot judging (criteria description only) forces judges to infer what "correct" looks like from text descriptions alone. Few-shot judging (criteria + concrete examples) is empirically more accurate — the judge can pattern-match against known-good HTML instead of guessing. This is the core calibration improvement: judges that can *see* proper VML, valid MSO conditionals, or correct Liquid syntax will produce more consistent verdicts, reducing the human labeling burden in 37.5.
@@ -223,7 +223,7 @@
 |---------|-------|--------------|--------|
 | 37.1 Expand golden library | `email-templates/components/golden-references/` | None — start immediately | 14 new templates |
 | ~~37.2 Golden reference loader~~ DONE | `app/ai/agents/evals/golden_references.py`, `index.yaml` | 37.1 (templates exist) | ~200 LOC + 18 tests |
-| 37.3 Wire into judge prompts | 7 judge files + `base.py` | 37.2 (loader ready) | ~150 LOC + 14 tests |
+| ~~37.3 Wire into judge prompts~~ DONE | 7 judge files + `base.py` | 37.2 (loader ready) | ~150 LOC + 22 tests |
 | 37.4 Re-run & measure | `scripts/eval-compare-verdicts.py`, Makefile | 37.3 (judges updated) | Script + pipeline run |
 | 37.5 Human labeling | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (improved judges) | ~2-4 hours manual |
 

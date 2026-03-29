@@ -4,6 +4,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -106,9 +107,16 @@ class CodeReviewerJudge:
         if judge_input.expected_challenges:
             expected = "\n".join(f"- {c}" for c in judge_input.expected_challenges)
 
+        golden = format_golden_section(
+            ["issue_genuineness", "severity_accuracy"],
+            framing="inverted",
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
             f"## REVIEW FOCUS\n{focus}\n\n"
-            f"## EXPECTED CHALLENGES\n{expected}\n\n"
+            f"## EXPECTED CHALLENGES\n{expected}"
+            f"{golden_block}\n\n"
             f"## AGENT INPUT (Email HTML)\n```html\n{html_input}\n```\n\n"
             f"## AGENT OUTPUT (Code Review)\n{review_output}"
         )

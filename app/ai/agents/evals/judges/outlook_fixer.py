@@ -3,6 +3,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -89,8 +90,19 @@ class OutlookFixerJudge:
         if judge_input.output_data:
             html_output = str(judge_input.output_data.get("html", ""))
 
+        golden = format_golden_section(
+            [
+                "mso_conditional_correctness",
+                "vml_wellformedness",
+                "fix_completeness",
+                "outlook_version_targeting",
+            ]
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
-            f"## AGENT INPUT (Email HTML with Outlook issues)\n```html\n{html_input}\n```\n\n"
+            f"## AGENT INPUT (Email HTML with Outlook issues)\n```html\n{html_input}\n```"
+            f"{golden_block}\n\n"
             f"## AGENT OUTPUT (Fixed HTML)\n```html\n{html_output}\n```"
         )
         return f"{system}\n\n---\n\n{user_content}"

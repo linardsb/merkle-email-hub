@@ -3,6 +3,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -96,9 +97,19 @@ class DarkModeJudge:
                 "For html_preservation, mark as PASS (cannot evaluate without input)."
             )
 
+        golden = format_golden_section(
+            [
+                "color_coherence",
+                "outlook_selector_completeness",
+                "meta_and_media_query",
+            ]
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
             f"{input_section}\n"
-            f"{constraints}\n\n"
+            f"{constraints}"
+            f"{golden_block}\n\n"
             f"## DARK MODE HTML (Output)\n```html\n{html_output}\n```"
         )
         return f"{system}\n\n---\n\n{user_content}"

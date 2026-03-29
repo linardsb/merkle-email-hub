@@ -4,6 +4,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -93,10 +94,17 @@ class InnovationJudge:
         if judge_input.expected_challenges:
             expected = "\n".join(f"- {c}" for c in judge_input.expected_challenges)
 
+        golden = format_golden_section(
+            ["technique_correctness", "fallback_quality"],
+            name_filter=category if category != "any" else None,
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
             f"## TECHNIQUE REQUEST\n{technique}\n\n"
             f"## CATEGORY\n{category}\n\n"
-            f"## EXPECTED CHALLENGES\n{expected}\n\n"
+            f"## EXPECTED CHALLENGES\n{expected}"
+            f"{golden_block}\n\n"
             f"## AGENT OUTPUT (Prototype)\n{prototype_output}\n\n"
             f"## AGENT OUTPUT (Feasibility)\n{feasibility_output}\n\n"
             f"## AGENT OUTPUT (Fallback)\n{fallback_output}"

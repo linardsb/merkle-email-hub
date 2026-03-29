@@ -1,5 +1,7 @@
 """Base judge protocol and shared prompt template."""
 
+from __future__ import annotations
+
 import json
 from typing import Protocol
 
@@ -9,6 +11,8 @@ from app.ai.agents.evals.judges.schemas import (
     JudgeInput,
     JudgeVerdict,
 )
+
+_GOLDEN_TOKEN_BUDGET = 2000  # ~8000 chars at ~4 chars/token
 
 
 class Judge(Protocol):
@@ -65,6 +69,79 @@ def build_criteria_block(criteria: list[JudgeCriteria]) -> str:
     for i, c in enumerate(criteria, 1):
         lines.append(f"{i}. **{c.name}**: {c.description}")
     return "\n".join(lines)
+
+
+def format_golden_section(
+    criteria_names: list[str],
+    *,
+    framing: str = "standard",
+    name_filter: str | None = None,
+) -> str:
+    """Build golden reference prompt section for given criteria.
+
+    Args:
+        criteria_names: Criterion names to fetch references for.
+        framing: "standard" | "inverted". Inverted adds "do NOT flag" clause.
+        name_filter: If set, only include refs whose name contains this substring
+                     (case-insensitive). Used for platform/category filtering.
+
+    Returns:
+        Formatted section string, or empty string if no references found.
+    """
+    from app.ai.agents.evals.golden_references import get_references_for_criterion
+
+    snippets: list[tuple[str, str]] = []
+    for name in criteria_names:
+        snippets.extend(get_references_for_criterion(name))
+
+    if not snippets:
+        return ""
+
+    # Deduplicate by name (same ref may appear for multiple criteria)
+    seen: set[str] = set()
+    unique: list[tuple[str, str]] = []
+    for ref_name, html in snippets:
+        if ref_name not in seen:
+            seen.add(ref_name)
+            unique.append((ref_name, html))
+
+    # Apply name filter (platform/category conditional)
+    if name_filter:
+        filter_lower = name_filter.lower()
+        unique = [(n, h) for n, h in unique if filter_lower in n.lower()]
+
+    if not unique:
+        return ""
+
+    # Enforce token budget (~4 chars per token)
+    char_budget = _GOLDEN_TOKEN_BUDGET * 4
+    parts: list[str] = []
+    used = 0
+    for i, (ref_name, html) in enumerate(unique, 1):
+        entry = f"### Example {i}: {ref_name}\n```html\n{html}\n```"
+        if used + len(entry) > char_budget:
+            break
+        parts.append(entry)
+        used += len(entry)
+
+    if not parts:
+        return ""
+
+    if framing == "inverted":
+        header = (
+            "## GOLDEN REFERENCE EXAMPLES\n"
+            "The following are verified-correct email HTML patterns. "
+            "These patterns are CORRECT — do NOT flag them as issues.\n"
+        )
+    else:
+        header = (
+            "## GOLDEN REFERENCE EXAMPLES\n"
+            "The following are verified-correct email HTML patterns. "
+            'Use them as your standard for what "correct" looks like '
+            "when evaluating the criteria above.\n"
+        )
+
+    return header + "\n" + "\n\n".join(parts)
 
 
 def parse_judge_response(raw: str, judge_input: JudgeInput, agent_name: str) -> JudgeVerdict:

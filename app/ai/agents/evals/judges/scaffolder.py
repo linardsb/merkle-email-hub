@@ -3,6 +3,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -76,8 +77,19 @@ class ScaffolderJudge:
         if judge_input.output_data:
             html_output = str(judge_input.output_data.get("html", ""))
 
+        golden = format_golden_section(
+            [
+                "email_layout_patterns",
+                "mso_conditional_correctness",
+                "dark_mode_readiness",
+                "accessibility_baseline",
+            ]
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
-            f"## AGENT INPUT (Brief)\n{brief}\n\n"
+            f"## AGENT INPUT (Brief)\n{brief}"
+            f"{golden_block}\n\n"
             f"## AGENT OUTPUT (HTML)\n```html\n{html_output}\n```"
         )
         return f"{system}\n\n---\n\n{user_content}"

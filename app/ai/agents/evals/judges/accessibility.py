@@ -3,6 +3,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_golden_section,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -86,8 +87,19 @@ class AccessibilityJudge:
         if judge_input.output_data:
             html_output = str(judge_input.output_data.get("html", ""))
 
+        golden = format_golden_section(
+            [
+                "wcag_aa_compliance",
+                "alt_text_quality",
+                "semantic_structure",
+                "screen_reader_compatibility",
+            ]
+        )
+        golden_block = f"\n\n{golden}" if golden else ""
+
         user_content = (
-            f"## AGENT INPUT (Email HTML with accessibility issues)\n```html\n{html_input}\n```\n\n"
+            f"## AGENT INPUT (Email HTML with accessibility issues)\n```html\n{html_input}\n```"
+            f"{golden_block}\n\n"
             f"## AGENT OUTPUT (Fixed HTML with accessibility improvements)\n```html\n{html_output}\n```"
         )
         return f"{system}\n\n---\n\n{user_content}"

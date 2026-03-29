@@ -185,6 +185,8 @@
 
 ### Recently Completed
 
+**Phase 37.3:** Wire Golden References into Judge Prompts — `format_golden_section()` helper in `app/ai/agents/evals/judges/base.py` with `_GOLDEN_TOKEN_BUDGET` (2000 tokens), dedup across criteria, `framing` param (standard/inverted), `name_filter` param (platform/category conditional). Wired into all 7 HTML-evaluating judges: Scaffolder (4 criteria), Dark Mode (3 criteria), Outlook Fixer (4 criteria), Accessibility (4 criteria), Personalisation (3 criteria, platform-conditional — only matching ESP template injected), Code Reviewer (2 criteria, inverted framing — "do NOT flag as issues"), Innovation (2 criteria, category-conditional — matching technique template only). Lazy import avoids circular deps. 22 tests in `test_golden_prompt_injection.py`.
+
 **Phase 37.2:** Golden Reference Loader & Criterion Mapping — `app/ai/agents/evals/golden_references.py` with `GoldenReference` frozen dataclass, `SnippetSelector` line-range extraction, `load_golden_references()` `@lru_cache` singleton loading from `index.yaml` YAML registry (14 entries mapping golden templates to judge criteria and agents), `get_references_for_criterion()` (max 3 snippets per criterion, 80-line cap), `get_references_for_agent()`, path traversal prevention, CLI (`--list`/`--criterion`/`--agent`); `email-templates/components/golden-references/index.yaml` registry; re-exports in `evals/__init__.py`; 18 tests.
 
 **Phase 37.1:** Expand Golden Component Library — 14 golden reference templates in `email-templates/components/golden-references/`: VML background image, nested MSO conditionals, VML rounded buttons, complex hybrid layout, dark mode complete, accessibility compliant, 4 ESP templates (Braze Liquid, SFMC AMPscript, Adobe Campaign, Klaviyo Django), 4 innovation templates (CSS carousel, accordion, AMP email, kinetic hover). Each with frontmatter annotation `<!-- golden-ref: criteria=[...], agents=[...], verified=... -->`.
@@ -233,7 +235,7 @@
 
 ### Up Next
 
-**Phase 37.3–37.5** (Golden Reference Library — wire golden references into 7 judge `build_prompt()` methods, re-run judge pipeline to measure calibration improvement, complete human labeling with improved judges). See `TODO.md` Phase 37 for details.
+**Phase 37.4–37.5** (Golden Reference Library — re-run judge pipeline to measure calibration improvement, complete human labeling with improved judges). See `TODO.md` Phase 37 for details.
 
 **Phase 35.4–35.11** (Next-Gen Design-to-Email Pipeline — remaining 6 subtasks: MJML section templates, AI conversion learning loop, W3C Design Tokens + caniemail.com, Figma webhooks, incremental conversion, tests). See `TODO.md` for details.
 
