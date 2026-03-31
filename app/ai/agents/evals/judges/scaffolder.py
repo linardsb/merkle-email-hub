@@ -3,6 +3,7 @@
 from app.ai.agents.evals.judges.base import (
     SYSTEM_PROMPT_TEMPLATE,
     build_criteria_block,
+    format_design_context_section,
     format_golden_section,
     parse_judge_response,
 )
@@ -58,6 +59,16 @@ SCAFFOLDER_CRITERIA: list[JudgeCriteria] = [
             "Images must have explicit width/height and style='display:block;border:0'."
         ),
     ),
+    JudgeCriteria(
+        name="design_fidelity",
+        description=(
+            "When a DESIGN REFERENCE section is provided: Does the HTML faithfully "
+            "reproduce the Figma design's color palette, typography, spacing, and "
+            "section structure? Compare expected design tokens against actual inline "
+            "styles in the output. Check that section-to-component mapping matches. "
+            "When NO design reference is provided: auto-pass this criterion."
+        ),
+    ),
 ]
 
 
@@ -87,9 +98,17 @@ class ScaffolderJudge:
         )
         golden_block = f"\n\n{golden}" if golden else ""
 
+        # Include design context for design_fidelity criterion when available
+        design_block = ""
+        if judge_input.design_context:
+            design_section = format_design_context_section(judge_input.design_context)
+            if design_section:
+                design_block = f"\n\n{design_section}"
+
         user_content = (
             f"## AGENT INPUT (Brief)\n{brief}"
-            f"{golden_block}\n\n"
+            f"{golden_block}"
+            f"{design_block}\n\n"
             f"## AGENT OUTPUT (HTML)\n```html\n{html_output}\n```"
         )
         return f"{system}\n\n---\n\n{user_content}"

@@ -137,6 +137,10 @@ def _match_by_type(section: EmailSection) -> tuple[str, float]:
 
     if st == EmailSectionType.HERO:
         if has_images and (has_texts or has_buttons):
+            # Subtitle+title pair: 2+ headings → hero-text (richer slots)
+            heading_count = sum(1 for t in section.texts if t.is_heading)
+            if heading_count >= 2:
+                return "hero-text", 1.0
             return "hero-block", 1.0
         if has_images:
             return "full-width-image", 1.0
@@ -161,6 +165,9 @@ def _match_by_type(section: EmailSection) -> tuple[str, float]:
         return "spacer", 1.0
 
     if st == EmailSectionType.NAV:
+        # Vertical nav: stacked items (no column groups) → nav-hamburger
+        if not section.column_groups and len(section.texts) >= 3:
+            return "nav-hamburger", 0.95
         return "navigation-bar", 1.0
 
     # UNKNOWN fallback
@@ -217,6 +224,10 @@ def _score_candidates(
     # image-grid: exactly 2 images, minimal text
     if img_count == 2 and text_count <= 1:
         candidates.append(("image-grid", 0.85))
+
+    # editorial-2: single column group with mixed image+text (editorial layout)
+    if len(col_groups) == 1 and col_groups[0].images and col_groups[0].texts:
+        candidates.append(("editorial-2", 0.92))
 
     # article-card: 1 image + text, single column (no multi-column groups)
     if img_count == 1 and text_count >= 1 and len(col_groups) <= 1:
@@ -277,6 +288,9 @@ def _build_slot_fills(
         "social-icons": _fills_social,
         "divider": _fills_divider,
         "navigation-bar": _fills_nav,
+        "hero-text": _fills_hero,
+        "editorial-2": _fills_article_card,
+        "nav-hamburger": _fills_nav,
     }
     builder = builders.get(slug)
     if builder:

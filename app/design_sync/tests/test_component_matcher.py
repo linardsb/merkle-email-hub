@@ -971,8 +971,8 @@ class TestSpatialColumnAssignment:
         assert "col_1" in fills_by_id
         assert "col_2" in fills_by_id
 
-    def test_single_group_no_column_fills(self) -> None:
-        """Single column_group with mixed content still gets article-card."""
+    def test_single_group_mixed_content_gets_editorial(self) -> None:
+        """Single column_group with mixed image+text matches editorial-2."""
         s = _make_section(
             EmailSectionType.CONTENT,
             texts=[_text("Title", is_heading=True)],
@@ -988,7 +988,7 @@ class TestSpatialColumnAssignment:
             ],
         )
         m = match_section(s, 0)
-        assert m.component_slug == "article-card"
+        assert m.component_slug == "editorial-2"
 
 
 class TestSlotValidation:
@@ -1088,3 +1088,78 @@ class TestNewComponentSlotFills:
         assert "product_2_title" in fills_by_id
         assert fills_by_id["product_1_title"].value == "Product A"
         assert fills_by_id["product_2_title"].value == "Product B"
+
+
+class TestExpandedMatcherRules:
+    """Tests for file-based component richness expansions (40.7.5)."""
+
+    def test_hero_with_subtitle_title_emits_hero_text(self) -> None:
+        """Hero with 2+ headings emits hero-text instead of hero-block."""
+        s = _make_section(
+            EmailSectionType.HERO,
+            texts=[
+                _text("Summer Collection", is_heading=True),
+                _text("Shop the Latest Styles", is_heading=True),
+            ],
+            images=[_image()],
+            buttons=[_button("Shop Now")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "hero-text"
+        assert m.confidence == 1.0
+
+    def test_hero_single_heading_emits_hero_block(self) -> None:
+        """Hero with 1 heading stays as hero-block."""
+        s = _make_section(
+            EmailSectionType.HERO,
+            texts=[_text("Big Title", is_heading=True)],
+            images=[_image()],
+            buttons=[_button("Shop")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "hero-block"
+
+    def test_vertical_nav_emits_nav_hamburger(self) -> None:
+        """NAV with stacked text items and no column groups → nav-hamburger."""
+        s = _make_section(
+            EmailSectionType.NAV,
+            texts=[
+                _text("Home"),
+                _text("Products"),
+                _text("About"),
+                _text("Contact"),
+            ],
+            column_groups=[],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "nav-hamburger"
+        assert m.confidence == 0.95
+
+    def test_horizontal_nav_stays_navigation_bar(self) -> None:
+        """NAV with fewer than 3 texts stays as navigation-bar."""
+        s = _make_section(
+            EmailSectionType.NAV,
+            texts=[_text("Home"), _text("Products")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "navigation-bar"
+
+    def test_editorial_two_column_with_image_and_text(self) -> None:
+        """Content with 1 column group containing image+text → editorial-2."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Editorial body")],
+            images=[_image()],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Column Group",
+                    images=[_image()],
+                    texts=[_text("Body text")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "editorial-2"
+        assert m.confidence >= 0.9

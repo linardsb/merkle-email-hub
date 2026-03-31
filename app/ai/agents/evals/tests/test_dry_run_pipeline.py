@@ -63,7 +63,7 @@ class TestMockVerdicts:
         assert verdict["agent"] == "scaffolder"
         assert isinstance(verdict["overall_pass"], bool)
         assert verdict["error"] is None
-        assert len(verdict["criteria_results"]) == 5
+        assert len(verdict["criteria_results"]) == len(criteria)
         for cr in verdict["criteria_results"]:
             assert "criterion" in cr
             assert "passed" in cr

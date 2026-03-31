@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures";
 
 test.describe("Dashboard & Projects", () => {
-  test("dashboard loads with navigation", async ({
+  test("dashboard loads with navigation @smoke", async ({
     authenticatedPage: page,
   }) => {
     await page.goto("/");
@@ -11,7 +11,7 @@ test.describe("Dashboard & Projects", () => {
     ).toBeVisible();
   });
 
-  test("create a new project", async ({ authenticatedPage: page }) => {
+  test("create a new project @smoke", async ({ authenticatedPage: page }) => {
     await page.goto("/projects");
     await page.getByRole("button", { name: /new project/i }).click();
     await expect(page.getByRole("dialog")).toBeVisible();

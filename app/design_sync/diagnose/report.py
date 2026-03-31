@@ -88,6 +88,14 @@ def _structure_to_dict(structure: DesignFileStructure) -> dict[str, Any]:
 def _node_from_dict(data: dict[str, Any]) -> DesignNode:
     """Reconstruct a DesignNode from a dict."""
     children = [_node_from_dict(c) for c in data.get("children", [])]
+    raw_style_runs = data.get("style_runs", ())
+    style_runs: tuple[Any, ...] = ()
+    if raw_style_runs:
+        from app.design_sync.protocol import StyleRun
+
+        style_runs = tuple(StyleRun(**sr) if isinstance(sr, dict) else sr for sr in raw_style_runs)
+    raw_radii = data.get("corner_radii")
+    corner_radii: tuple[float, ...] | None = tuple(raw_radii) if raw_radii else None
     return DesignNode(
         id=data["id"],
         name=data["name"],
@@ -114,6 +122,18 @@ def _node_from_dict(data: dict[str, Any]) -> DesignNode:
         letter_spacing_px=data.get("letter_spacing_px"),
         text_transform=data.get("text_transform"),
         text_decoration=data.get("text_decoration"),
+        image_ref=data.get("image_ref"),
+        hyperlink=data.get("hyperlink"),
+        corner_radius=data.get("corner_radius"),
+        corner_radii=corner_radii,
+        text_align=data.get("text_align"),
+        primary_axis_align=data.get("primary_axis_align"),
+        counter_axis_align=data.get("counter_axis_align"),
+        stroke_weight=data.get("stroke_weight"),
+        stroke_color=data.get("stroke_color"),
+        style_runs=style_runs,
+        visible=data.get("visible", True),
+        opacity=data.get("opacity", 1.0),
     )
 
 

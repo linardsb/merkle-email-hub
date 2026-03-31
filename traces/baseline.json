@@ -1,41 +1,83 @@
 {
   "summary": {
-    "total_traces": 36,
-    "passed": 6,
-    "failed": 30,
+    "total_traces": 123,
+    "passed": 10,
+    "failed": 113,
     "errors": 0,
-    "overall_pass_rate": 0.16666666666666666
+    "overall_pass_rate": 0.08130081300813008
   },
   "pass_rates": {
+    "accessibility": {
+      "alt_text_quality": 1.0,
+      "contrast_ratio_accuracy": 1.0,
+      "screen_reader_compatibility": 0.0,
+      "semantic_structure": 1.0,
+      "wcag_aa_compliance": 1.0
+    },
+    "code_reviewer": {
+      "coverage_completeness": 0.0,
+      "issue_genuineness": 0.85,
+      "output_format": 0.1,
+      "severity_accuracy": 0.95,
+      "suggestion_actionability": 1.0
+    },
     "content": {
-      "copy_quality": 0.9285714285714286,
-      "operation_compliance": 0.5714285714285714,
-      "security_and_pii": 0.9285714285714286,
-      "spam_avoidance": 0.8571428571428571,
-      "tone_accuracy": 1.0
+      "copy_quality": 0.2222222222222222,
+      "operation_compliance": 0.16666666666666666,
+      "security_and_pii": 1.0,
+      "spam_avoidance": 1.0,
+      "tone_accuracy": 0.16666666666666666
     },
     "dark_mode": {
-      "color_coherence": 1.0,
-      "contrast_preservation": 1.0,
-      "html_preservation": 0.1,
-      "meta_and_media_query": 1.0,
-      "outlook_selector_completeness": 1.0
+      "color_coherence": 0.7142857142857143,
+      "contrast_preservation": 0.7142857142857143,
+      "html_preservation": 1.0,
+      "meta_and_media_query": 0.0,
+      "outlook_selector_completeness": 0.0
+    },
+    "innovation": {
+      "client_coverage_accuracy": 0.0,
+      "fallback_quality": 0.0,
+      "feasibility_assessment": 0.0,
+      "innovation_value": 0.0,
+      "technique_correctness": 0.0
+    },
+    "knowledge": {
+      "answer_accuracy": 0.0,
+      "citation_grounding": 0.0,
+      "code_example_quality": 1.0,
+      "completeness": 0.0,
+      "source_relevance": 0.0
+    },
+    "outlook_fixer": {
+      "fix_completeness": 0.9,
+      "html_preservation": 0.9,
+      "mso_conditional_correctness": 0.9,
+      "outlook_version_targeting": 0.9,
+      "vml_wellformedness": 0.9
+    },
+    "personalisation": {
+      "fallback_completeness": 0.4166666666666667,
+      "html_preservation": 0.0,
+      "logic_match": 0.75,
+      "platform_accuracy": 0.4166666666666667,
+      "syntax_correctness": 0.4166666666666667
     },
     "scaffolder": {
-      "accessibility_baseline": 0.08333333333333333,
-      "brief_fidelity": 1.0,
-      "dark_mode_readiness": 0.25,
-      "email_layout_patterns": 1.0,
-      "mso_conditional_correctness": 0.0
+      "accessibility_baseline": 0.045454545454545456,
+      "brief_fidelity": 0.5454545454545454,
+      "dark_mode_readiness": 0.0,
+      "email_layout_patterns": 0.22727272727272727,
+      "mso_conditional_correctness": 0.5909090909090909
     }
   },
   "failure_clusters": [
     {
-      "cluster_id": "scaffolder:mso_conditional_correctness",
+      "cluster_id": "scaffolder:dark_mode_readiness",
       "agent": "scaffolder",
-      "criterion": "mso_conditional_correctness",
-      "pattern": "While MSO conditionals are present and properly closed, the VML elements are missing required xmlns:v and xmlns:o namesp",
-      "count": 12,
+      "criterion": "dark_mode_readiness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing <meta name='color-scheme' content='light dark'>; Missing <meta na",
+      "count": 22,
       "trace_ids": [
         "scaff-001",
         "scaff-002",
@@ -48,24 +90,35 @@
         "scaff-009",
         "scaff-010",
         "scaff-011",
-        "scaff-012"
+        "scaff-012",
+        "scaff-013",
+        "scaff-014",
+        "scaff-015",
+        "scaff-016",
+        "scaff-017",
+        "scaff-018",
+        "scaff-019",
+        "scaff-020",
+        "scaff-021",
+        "scaff-022"
       ],
       "sample_reasonings": [
-        "While MSO conditionals are present and properly closed, the VML elements are missing required xmlns:v and xmlns:o namespace declarations in the opening MSO conditional comments, and the namespace references in v:roundrect are incomplete.",
-        "While MSO conditionals are present for the ghost table layout and VML button, the required xmlns:v and xmlns:o namespace declarations are missing from the document. The VML button references 'urn:schemas-microsoft-com:vml' but the namespaces aren't declared in the HTML element.",
-        "While MSO conditional comments are present and properly structured, they are missing the required xmlns:v and xmlns:o namespace declarations that are essential for Outlook compatibility."
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing <meta name='color-scheme' content='light dark'>; Missing <meta name='supported-color-schemes'> companion tag for older Apple Mail; Missing 'color-scheme: light dark' CSS property on :root; Low contrast in dark mode: .text-muted color ratio 3.58:1 (need 4.5:1); Low contrast in dark mode: .text-muted color ratio 2.79:1 (need 4.5:1); Low contrast in dark mode: .text-muted color ratio 1.77:1 (need 4.5:1); Low contrast in dark mode: .text-muted color ratio 2.79:1 (need 4.5:1); Low contrast in dark mode: .text-muted color ratio 1.77:1 (need 4.5:1)",
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing <meta name='color-scheme' content='light dark'>; Missing <meta name='supported-color-schemes'> companion tag for older Apple Mail; Missing 'color-scheme: light dark' CSS property on :root; Near-invisible text in dark mode: .dark-bg-header background-color contrast ratio 1.14:1; Near-invisible text in dark mode: .dark-bg-header background-color contrast ratio 1.14:1; Low contrast in dark mode: .dark-text-muted color ratio 1.51:1 (need 4.5:1); Low contrast in dark mode: .dark-text-secondary color ratio 3.48:1 (need 4.5:1); Low contrast in dark mode: .dark-link color ratio 2.33:1 (need 4.5:1); Low contrast in dark mode: .dark-text-secondary color ratio 3.48:1 (need 4.5:1); Low contrast in dark mode: .dark-link color ratio 2.33:1 (need 4.5:1)",
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Near-invisible text in dark mode: .email-wrapper background-color contrast ratio 1.26:1; Near-invisible text in dark mode: .dark-bg-hero background-color contrast ratio 1.0:1; Near-invisible text in dark mode: .dark-text color contrast ratio 1.14:1"
       ]
     },
     {
       "cluster_id": "scaffolder:accessibility_baseline",
       "agent": "scaffolder",
       "criterion": "accessibility_baseline",
-      "pattern": "The HTML is missing the lang attribute on the <html> tag, role='article' on the wrapper, and lacks a proper semantic hea",
-      "count": 11,
+      "pattern": "[DETERMINISTIC] QA check(s) failed: accessibility: Missing lang attribute on <html> \u2014 screen readers cannot determine pr",
+      "count": 21,
       "trace_ids": [
         "scaff-001",
         "scaff-002",
         "scaff-003",
+        "scaff-004",
         "scaff-005",
         "scaff-006",
         "scaff-007",
@@ -73,137 +126,786 @@
         "scaff-009",
         "scaff-010",
         "scaff-011",
-        "scaff-012"
+        "scaff-012",
+        "scaff-014",
+        "scaff-015",
+        "scaff-016",
+        "scaff-017",
+        "scaff-018",
+        "scaff-019",
+        "scaff-020",
+        "scaff-021",
+        "scaff-022"
       ],
       "sample_reasonings": [
-        "The HTML is missing the lang attribute on the <html> tag, role='article' on the wrapper, and lacks a proper semantic heading hierarchy. While images have meaningful alt text and proper styling, the fundamental accessibility structure is incomplete.",
-        "Missing critical accessibility features: no lang attribute on <html> element, no role='article' on wrapper, and no semantic heading hierarchy (uses h2, h3 without h1). Images do have proper alt text, width/height, and display:block styling.",
-        "Missing lang attribute on <html> tag, role='article' on wrapper, and semantic heading hierarchy (uses h1 then h3, skipping h2). Images do have proper alt text, width/height, and display:block styling."
+        "[DETERMINISTIC] QA check(s) failed: accessibility: Missing lang attribute on <html> \u2014 screen readers cannot determine pronunciation language: <html> missing lang; Invalid lang value \u2014 use BCP-47 format (e.g. 'en', 'en-US', 'zh-Hans'): <html> lang=\"\"; Preview text padding (repeated \\u200c/\\u00a0) without aria-hidden='true'; outline:none/outline:0 found in inline style \u2014 removes visible focus indicator",
+        "[DETERMINISTIC] QA check(s) failed: accessibility: Missing lang attribute on <html> \u2014 screen readers cannot determine pronunciation language: <html> missing lang; Invalid lang value \u2014 use BCP-47 format (e.g. 'en', 'en-US', 'zh-Hans'): <html> lang=\"\"; Redundant adjacent links to same URL \u2014 wrap image and text in a single <a>; Redundant adjacent links to same URL \u2014 wrap image and text in a single <a>; Redundant adjacent links to same URL \u2014 wrap image and text in a single <a>; Preview text padding (repeated \\u200c/\\u00a0) without aria-hidden='true'; Separator character '\u2022' without aria-hidden='true'; Separator character '\u2022' without aria-hidden='true'; Separator character '\u2022' without aria-hidden='true'",
+        "[DETERMINISTIC] QA check(s) failed: accessibility: Preview text padding (repeated \\u200c/\\u00a0) without aria-hidden='true'"
       ]
     },
     {
-      "cluster_id": "dark_mode:html_preservation",
-      "agent": "dark_mode",
-      "criterion": "html_preservation",
-      "pattern": "The original HTML input is empty, but the output contains a complete HTML email structure. This violates the requirement",
-      "count": 9,
+      "cluster_id": "code_reviewer:coverage_completeness",
+      "agent": "code_reviewer",
+      "criterion": "coverage_completeness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+      "count": 20,
       "trace_ids": [
-        "dark-001",
-        "dark-002",
-        "dark-003",
-        "dark-004",
-        "dark-005",
-        "dark-006",
-        "dark-007",
-        "dark-008",
-        "dark-010"
+        "cr-001",
+        "cr-002",
+        "cr-003",
+        "cr-004",
+        "cr-005",
+        "cr-006",
+        "cr-007",
+        "cr-008",
+        "cr-009",
+        "cr-010",
+        "cr-011",
+        "cr-012",
+        "cr-013",
+        "cr-014",
+        "cr-015",
+        "cr-016",
+        "cr-017",
+        "cr-018",
+        "cr-019",
+        "cr-020"
       ],
       "sample_reasonings": [
-        "The original HTML input is empty, but the output contains a complete HTML email structure. This violates the requirement to preserve the original HTML structure exactly.",
-        "Cannot verify HTML structure preservation because the original input HTML is empty, making it impossible to compare and confirm that all elements, attributes, and structure were maintained.",
-        "Cannot verify HTML structure preservation because the original HTML input is empty. Without the original HTML to compare against, it's impossible to determine if the structure, elements, attributes, and MSO conditionals were preserved exactly."
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>"
       ]
     },
     {
-      "cluster_id": "scaffolder:dark_mode_readiness",
+      "cluster_id": "code_reviewer:output_format",
+      "agent": "code_reviewer",
+      "criterion": "output_format",
+      "pattern": "The output is not valid JSON and does not contain the required structure with 'issues' array and 'summary' string fields",
+      "count": 18,
+      "trace_ids": [
+        "cr-001",
+        "cr-002",
+        "cr-003",
+        "cr-004",
+        "cr-005",
+        "cr-006",
+        "cr-007",
+        "cr-008",
+        "cr-009",
+        "cr-010",
+        "cr-011",
+        "cr-012",
+        "cr-013",
+        "cr-014",
+        "cr-015",
+        "cr-016",
+        "cr-018",
+        "cr-019"
+      ],
+      "sample_reasonings": [
+        "The output is not valid JSON and does not contain the required structure with 'issues' array and 'summary' string fields.",
+        "The output is not valid JSON and lacks the required structure with 'issues' array and 'summary' string fields.",
+        "The output is not valid JSON and does not contain the required structure with 'issues' array and 'summary' string."
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:email_layout_patterns",
       "agent": "scaffolder",
-      "criterion": "dark_mode_readiness",
-      "pattern": "The output is missing required dark mode meta tags (color-scheme, supported-color-schemes) and lacks comprehensive dark ",
-      "count": 9,
+      "criterion": "email_layout_patterns",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing DOCTYPE declaration; Missing <html> tag; Unclosed tag: <tab",
+      "count": 17,
       "trace_ids": [
         "scaff-001",
         "scaff-002",
-        "scaff-003",
-        "scaff-006",
+        "scaff-004",
+        "scaff-005",
         "scaff-007",
         "scaff-008",
-        "scaff-009",
+        "scaff-010",
         "scaff-011",
-        "scaff-012"
+        "scaff-012",
+        "scaff-013",
+        "scaff-014",
+        "scaff-015",
+        "scaff-016",
+        "scaff-018",
+        "scaff-019",
+        "scaff-021",
+        "scaff-022"
       ],
       "sample_reasonings": [
-        "The output is missing required dark mode meta tags (color-scheme, supported-color-schemes) and lacks comprehensive dark mode CSS rules with proper [data-ogsc]/[data-ogsb] selectors for all elements that need dark mode styling.",
-        "The output completely lacks dark mode support - no color-scheme meta tags, no @media (prefers-color-scheme: dark) rules, and no [data-ogsc]/[data-ogsb] Outlook dark mode selectors are present.",
-        "Missing required dark mode meta tags (color-scheme, supported-color-schemes) and [data-ogsb] Outlook dark mode selectors. Only includes basic @media query and [data-ogsc] selector."
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing DOCTYPE declaration; Missing <html> tag; Unclosed tag: <table> (20 opened, 18 closed); Unclosed tag: <tr> (31 opened, 29 closed); Unclosed tag: <td> (33 opened, 31 closed); <style> in <body> (1 found) \u2014 move to <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing DOCTYPE declaration; Missing <html> tag; Unclosed tag: <table> (20 opened, 19 closed); Unclosed tag: <tr> (27 opened, 26 closed); Unclosed tag: <td> (30 opened, 29 closed); <style> in <body> (1 found) \u2014 move to <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing DOCTYPE declaration; Missing <html> tag; Unclosed tag: <table> (40 opened, 38 closed); Unclosed tag: <tr> (40 opened, 38 closed); Unclosed tag: <td> (45 opened, 43 closed)"
       ]
     },
     {
       "cluster_id": "content:operation_compliance",
       "agent": "content",
       "criterion": "operation_compliance",
-      "pattern": "The operation requested a single subject line, but the output provides 5 different options separated by dashes. This doe",
-      "count": 6,
+      "pattern": "The requested operation was to create a subject line, but no subject line was provided. This completely fails to fulfill",
+      "count": 15,
       "trace_ids": [
         "content-001",
         "content-002",
         "content-003",
         "content-004",
         "content-005",
-        "content-013"
+        "content-006",
+        "content-007",
+        "content-008",
+        "content-009",
+        "content-010",
+        "content-011",
+        "content-012",
+        "content-013",
+        "content-014",
+        "content-015"
       ],
       "sample_reasonings": [
-        "The operation requested a single subject line, but the output provides 5 different options separated by dashes. This does not comply with the subject_line operation specification.",
-        "The operation requested a single subject line, but the output provided three different options separated by dashes, which doesn't comply with the specific operation request.",
-        "The operation requested a single subject line, but the agent provided three options with separators, which doesn't comply with delivering one final subject line output."
+        "The requested operation was to create a subject line, but no subject line was provided. This completely fails to fulfill the operation requirements.",
+        "The operation requested a subject line but no subject line was provided, completely failing to fulfill the requested operation.",
+        "The operation requested a subject line within character limits, but no subject line was provided. This completely fails to fulfill the requested operation."
       ]
     },
     {
-      "cluster_id": "content:spam_avoidance",
+      "cluster_id": "content:tone_accuracy",
       "agent": "content",
-      "criterion": "spam_avoidance",
-      "pattern": "The output contains '100% online' which uses the spam trigger '100%' that should be avoided according to the criteria.",
-      "count": 2,
+      "criterion": "tone_accuracy",
+      "pattern": "No content was provided to evaluate tone accuracy. The luxury_aspirational tone and brand voice requirements were comple",
+      "count": 15,
       "trace_ids": [
+        "content-001",
+        "content-002",
+        "content-003",
+        "content-004",
+        "content-005",
+        "content-006",
         "content-007",
-        "content-011"
+        "content-008",
+        "content-009",
+        "content-010",
+        "content-011",
+        "content-012",
+        "content-013",
+        "content-014",
+        "content-016"
       ],
       "sample_reasonings": [
-        "The output contains '100% online' which uses the spam trigger '100%' that should be avoided according to the criteria.",
-        "The output contains 'WILD' and 'HERE' in all caps, which are spam triggers that should be avoided even when used for emphasis."
+        "No content was provided to evaluate tone accuracy. The luxury_aspirational tone and brand voice requirements were completely ignored.",
+        "No tone can be evaluated as there is no output content to assess against the requested professional tone.",
+        "No output was provided, so the requested empathetic tone with warm, caring, professional brand voice cannot be assessed."
+      ]
+    },
+    {
+      "cluster_id": "accessibility:screen_reader_compatibility",
+      "agent": "accessibility",
+      "criterion": "screen_reader_compatibility",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: fallback: Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays",
+      "count": 14,
+      "trace_ids": [
+        "a11y-001",
+        "a11y-002",
+        "a11y-003",
+        "a11y-004",
+        "a11y-005",
+        "a11y-006",
+        "a11y-007",
+        "a11y-008",
+        "a11y-009",
+        "a11y-010",
+        "a11y-011",
+        "a11y-012",
+        "a11y-013",
+        "a11y-014"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: fallback: Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays",
+        "[DETERMINISTIC] QA check(s) failed: fallback: Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays",
+        "[DETERMINISTIC] QA check(s) failed: fallback: Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays"
       ]
     },
     {
       "cluster_id": "content:copy_quality",
       "agent": "content",
       "criterion": "copy_quality",
-      "pattern": "The agent provided three subject line options instead of one final subject line, and none are within the optimal 40-60 c",
-      "count": 1,
+      "pattern": "The output is completely empty, providing no subject line content whatsoever. This fails to meet any quality standards f",
+      "count": 14,
       "trace_ids": [
-        "content-003"
-      ],
-      "sample_reasonings": [
-        "The agent provided three subject line options instead of one final subject line, and none are within the optimal 40-60 character range (first is 33, second is 32, third is 28 characters)."
-      ]
-    },
-    {
-      "cluster_id": "content:security_and_pii",
-      "agent": "content",
-      "criterion": "security_and_pii",
-      "pattern": "The output contains code block formatting (```text) which violates the plain text only requirement, even though PII was ",
-      "count": 1,
-      "trace_ids": [
+        "content-001",
+        "content-002",
+        "content-003",
+        "content-004",
+        "content-005",
+        "content-006",
+        "content-007",
+        "content-008",
+        "content-009",
+        "content-010",
+        "content-011",
+        "content-012",
+        "content-013",
         "content-014"
       ],
       "sample_reasonings": [
-        "The output contains code block formatting (```text) which violates the plain text only requirement, even though PII was properly replaced with placeholders."
+        "The output is completely empty, providing no subject line content whatsoever. This fails to meet any quality standards for compelling, clear, or well-crafted copy.",
+        "The output is completely empty with no subject line generated, failing to provide any copy whatsoever.",
+        "The output is completely empty with no subject line generated. There is no copy to evaluate for quality, compelling nature, or character count compliance."
+      ]
+    },
+    {
+      "cluster_id": "personalisation:html_preservation",
+      "agent": "personalisation",
+      "criterion": "html_preservation",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+      "count": 12,
+      "trace_ids": [
+        "pers-001",
+        "pers-002",
+        "pers-003",
+        "pers-004",
+        "pers-005",
+        "pers-006",
+        "pers-007",
+        "pers-008",
+        "pers-009",
+        "pers-010",
+        "pers-011",
+        "pers-012"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>; personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'product1.image_url' at line 44; No fallback for 'product1.name' at line 44; No fallback for 'product1.name' at line 45; No fallback for 'product1.price' at line 45; No fallback for 'product2.image_url' at line 47; No fallback for 'product2.name' at line 47; No fallback for 'product2.name' at line 48; No fallback for 'product2.price' at line 48; Summary: 42 tag(s), platform: braze, 9 without fallback"
+      ]
+    },
+    {
+      "cluster_id": "innovation:client_coverage_accuracy",
+      "agent": "innovation",
+      "criterion": "client_coverage_accuracy",
+      "pattern": "No client coverage percentage or assessment was provided in the agent output. Cannot verify if coverage estimates are re",
+      "count": 10,
+      "trace_ids": [
+        "inn-001",
+        "inn-002",
+        "inn-003",
+        "inn-004",
+        "inn-005",
+        "inn-006",
+        "inn-007",
+        "inn-008",
+        "inn-009",
+        "inn-010"
+      ],
+      "sample_reasonings": [
+        "No client coverage percentage or assessment was provided in the agent output. Cannot verify if coverage estimates are realistic.",
+        "No client coverage percentage or assessment was provided. Cannot evaluate if the coverage estimate correctly accounts for Apple Mail support and Gmail limitations.",
+        "No client coverage percentage was stated. Cannot assess if the coverage estimate is realistic for @keyframes animation support."
+      ]
+    },
+    {
+      "cluster_id": "innovation:fallback_quality",
+      "agent": "innovation",
+      "criterion": "fallback_quality",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+      "count": 10,
+      "trace_ids": [
+        "inn-001",
+        "inn-002",
+        "inn-003",
+        "inn-004",
+        "inn-005",
+        "inn-006",
+        "inn-007",
+        "inn-008",
+        "inn-009",
+        "inn-010"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>"
+      ]
+    },
+    {
+      "cluster_id": "innovation:feasibility_assessment",
+      "agent": "innovation",
+      "criterion": "feasibility_assessment",
+      "pattern": "No feasibility assessment was provided including risk level, file size impact, or recommendation. Cannot evaluate if the",
+      "count": 10,
+      "trace_ids": [
+        "inn-001",
+        "inn-002",
+        "inn-003",
+        "inn-004",
+        "inn-005",
+        "inn-006",
+        "inn-007",
+        "inn-008",
+        "inn-009",
+        "inn-010"
+      ],
+      "sample_reasonings": [
+        "No feasibility assessment was provided including risk level, file size impact, or recommendation. Cannot evaluate if the assessment is appropriate for the technique.",
+        "No feasibility assessment was provided. Missing required elements: risk level, file size impact, and clear recommendation (ship/test_further/avoid).",
+        "No feasibility assessment was provided. Missing required elements: risk level, file size impact, and clear recommendation."
+      ]
+    },
+    {
+      "cluster_id": "innovation:innovation_value",
+      "agent": "innovation",
+      "criterion": "innovation_value",
+      "pattern": "No agent output was provided to demonstrate knowledge of email-specific trade-offs, client quirks, or actionable guidanc",
+      "count": 10,
+      "trace_ids": [
+        "inn-001",
+        "inn-002",
+        "inn-003",
+        "inn-004",
+        "inn-005",
+        "inn-006",
+        "inn-007",
+        "inn-008",
+        "inn-009",
+        "inn-010"
+      ],
+      "sample_reasonings": [
+        "No agent output was provided to demonstrate knowledge of email-specific trade-offs, client quirks, or actionable guidance. Cannot assess innovation value.",
+        "No output was provided to demonstrate knowledge of technique trade-offs or email-specific context. Cannot assess if actionable guidance was provided.",
+        "No response content was provided to evaluate. Cannot assess email-specific knowledge, trade-offs discussion, or actionable guidance."
+      ]
+    },
+    {
+      "cluster_id": "innovation:technique_correctness",
+      "agent": "innovation",
+      "criterion": "technique_correctness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+      "count": 10,
+      "trace_ids": [
+        "inn-001",
+        "inn-002",
+        "inn-003",
+        "inn-004",
+        "inn-005",
+        "inn-006",
+        "inn-007",
+        "inn-008",
+        "inn-009",
+        "inn-010"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>"
+      ]
+    },
+    {
+      "cluster_id": "knowledge:answer_accuracy",
+      "agent": "knowledge",
+      "criterion": "answer_accuracy",
+      "pattern": "Cannot evaluate accuracy as no agent output was provided in the input.",
+      "count": 10,
+      "trace_ids": [
+        "kn-001",
+        "kn-002",
+        "kn-003",
+        "kn-004",
+        "kn-005",
+        "kn-006",
+        "kn-007",
+        "kn-008",
+        "kn-009",
+        "kn-010"
+      ],
+      "sample_reasonings": [
+        "Cannot evaluate accuracy as no agent output was provided in the input.",
+        "Cannot evaluate accuracy as no agent output was provided in the input.",
+        "Cannot evaluate accuracy as no agent output was provided in the input."
+      ]
+    },
+    {
+      "cluster_id": "knowledge:citation_grounding",
+      "agent": "knowledge",
+      "criterion": "citation_grounding",
+      "pattern": "Cannot evaluate citations as no agent output was provided in the input.",
+      "count": 10,
+      "trace_ids": [
+        "kn-001",
+        "kn-002",
+        "kn-003",
+        "kn-004",
+        "kn-005",
+        "kn-006",
+        "kn-007",
+        "kn-008",
+        "kn-009",
+        "kn-010"
+      ],
+      "sample_reasonings": [
+        "Cannot evaluate citations as no agent output was provided in the input.",
+        "Cannot evaluate citations as no agent output was provided in the input.",
+        "Cannot evaluate citations as no agent output was provided in the input."
+      ]
+    },
+    {
+      "cluster_id": "knowledge:completeness",
+      "agent": "knowledge",
+      "criterion": "completeness",
+      "pattern": "Cannot evaluate completeness as no agent output was provided in the input.",
+      "count": 10,
+      "trace_ids": [
+        "kn-001",
+        "kn-002",
+        "kn-003",
+        "kn-004",
+        "kn-005",
+        "kn-006",
+        "kn-007",
+        "kn-008",
+        "kn-009",
+        "kn-010"
+      ],
+      "sample_reasonings": [
+        "Cannot evaluate completeness as no agent output was provided in the input.",
+        "Cannot evaluate completeness as no agent output was provided in the input.",
+        "Cannot evaluate completeness as no agent output was provided in the input."
+      ]
+    },
+    {
+      "cluster_id": "knowledge:source_relevance",
+      "agent": "knowledge",
+      "criterion": "source_relevance",
+      "pattern": "Cannot evaluate source relevance as no retrieved sources were provided in the input.",
+      "count": 10,
+      "trace_ids": [
+        "kn-001",
+        "kn-002",
+        "kn-003",
+        "kn-004",
+        "kn-005",
+        "kn-006",
+        "kn-007",
+        "kn-008",
+        "kn-009",
+        "kn-010"
+      ],
+      "sample_reasonings": [
+        "Cannot evaluate source relevance as no retrieved sources were provided in the input.",
+        "Cannot evaluate source relevance as no retrieved sources were provided in the input.",
+        "Cannot evaluate source relevance as no retrieved sources were provided in the input."
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:brief_fidelity",
+      "agent": "scaffolder",
+      "criterion": "brief_fidelity",
+      "pattern": "The output is incomplete and cuts off abruptly in the middle of the HTML structure. The footer section with social icons",
+      "count": 10,
+      "trace_ids": [
+        "scaff-001",
+        "scaff-002",
+        "scaff-004",
+        "scaff-007",
+        "scaff-010",
+        "scaff-012",
+        "scaff-015",
+        "scaff-016",
+        "scaff-017",
+        "scaff-018"
+      ],
+      "sample_reasonings": [
+        "The output is incomplete and cuts off abruptly in the middle of the HTML structure. The footer section with social icons, unsubscribe link, and company address is completely missing.",
+        "The HTML is incomplete and cuts off abruptly in the footer section. The footer is missing the preferences link and unsubscribe link that were specifically requested in the brief.",
+        "The HTML is incomplete and cuts off abruptly in the middle of the event details section. The 2x2 speaker grid is present but the output is truncated, missing the complete structure and closing tags."
+      ]
+    },
+    {
+      "cluster_id": "scaffolder:mso_conditional_correctness",
+      "agent": "scaffolder",
+      "criterion": "mso_conditional_correctness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: fallback: VML elements present but missing xmlns:v on <html> tag; VML/Office element",
+      "count": 9,
+      "trace_ids": [
+        "scaff-001",
+        "scaff-002",
+        "scaff-004",
+        "scaff-005",
+        "scaff-008",
+        "scaff-011",
+        "scaff-014",
+        "scaff-019",
+        "scaff-022"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: fallback: VML elements present but missing xmlns:v on <html> tag; VML/Office elements present but missing xmlns:o on <html> tag; No VML/Office namespace declarations",
+        "[DETERMINISTIC] QA check(s) failed: fallback: VML elements present but missing xmlns:v on <html> tag; VML/Office elements present but missing xmlns:o on <html> tag; No VML/Office namespace declarations",
+        "[DETERMINISTIC] QA check(s) failed: fallback: VML elements present but missing xmlns:v on <html> tag; VML/Office elements present but missing xmlns:o on <html> tag; No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:meta_and_media_query",
+      "agent": "dark_mode",
+      "criterion": "meta_and_media_query",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing 'color-scheme: light dark' CSS property on :root; Low contrast in",
+      "count": 7,
+      "trace_ids": [
+        "dark-001",
+        "dark-002",
+        "dark-003",
+        "dark-007",
+        "dark-008",
+        "dark-009",
+        "dark-010"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing 'color-scheme: light dark' CSS property on :root; Low contrast in dark mode: .cta-button background-color ratio 2.12:1 (need 4.5:1); Low contrast in dark mode: .dark-cta background-color ratio 2.12:1 (need 4.5:1); Low contrast in dark mode: .dark-text-muted color ratio 2.2:1 (need 4.5:1); Low contrast in dark mode: .dark-link color ratio 2.19:1 (need 4.5:1)",
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing 'color-scheme: light dark' CSS property on :root; Near-invisible text in dark mode: .dark-header-bar background-color contrast ratio 1.47:1; Near-invisible text in dark mode: .dark-text-muted color contrast ratio 1.09:1; Near-invisible text in dark mode: .dark-link color contrast ratio 1.09:1; Low contrast in dark mode: .dark-brand-text color ratio 3.38:1 (need 4.5:1); Low contrast in dark mode: .dark-brand-text color ratio 3.38:1 (need 4.5:1)",
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Near-invisible text in dark mode: .dark-text-heading color contrast ratio 1.09:1; Near-invisible text in dark mode: .dark-text-light color contrast ratio 1.0:1; Near-invisible text in dark mode: .dark-button-bg background-color contrast ratio 1.25:1"
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:outlook_selector_completeness",
+      "agent": "dark_mode",
+      "criterion": "outlook_selector_completeness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing 'color-scheme: light dark' CSS property on :root; Low contrast in",
+      "count": 7,
+      "trace_ids": [
+        "dark-001",
+        "dark-002",
+        "dark-003",
+        "dark-007",
+        "dark-008",
+        "dark-009",
+        "dark-010"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing 'color-scheme: light dark' CSS property on :root; Low contrast in dark mode: .cta-button background-color ratio 2.12:1 (need 4.5:1); Low contrast in dark mode: .dark-cta background-color ratio 2.12:1 (need 4.5:1); Low contrast in dark mode: .dark-text-muted color ratio 2.2:1 (need 4.5:1); Low contrast in dark mode: .dark-link color ratio 2.19:1 (need 4.5:1)",
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing 'color-scheme: light dark' CSS property on :root; Near-invisible text in dark mode: .dark-header-bar background-color contrast ratio 1.47:1; Near-invisible text in dark mode: .dark-text-muted color contrast ratio 1.09:1; Near-invisible text in dark mode: .dark-link color contrast ratio 1.09:1; Low contrast in dark mode: .dark-brand-text color ratio 3.38:1 (need 4.5:1); Low contrast in dark mode: .dark-brand-text color ratio 3.38:1 (need 4.5:1)",
+        "[DETERMINISTIC] QA check(s) failed: dark_mode: Near-invisible text in dark mode: .dark-text-heading color contrast ratio 1.09:1; Near-invisible text in dark mode: .dark-text-light color contrast ratio 1.0:1; Near-invisible text in dark mode: .dark-button-bg background-color contrast ratio 1.25:1"
+      ]
+    },
+    {
+      "cluster_id": "personalisation:fallback_completeness",
+      "agent": "personalisation",
+      "criterion": "fallback_completeness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'produ",
+      "count": 7,
+      "trace_ids": [
+        "pers-003",
+        "pers-004",
+        "pers-006",
+        "pers-007",
+        "pers-008",
+        "pers-010",
+        "pers-012"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'product1.image_url' at line 44; No fallback for 'product1.name' at line 44; No fallback for 'product1.name' at line 45; No fallback for 'product1.price' at line 45; No fallback for 'product2.image_url' at line 47; No fallback for 'product2.name' at line 47; No fallback for 'product2.name' at line 48; No fallback for 'product2.price' at line 48; Summary: 42 tag(s), platform: braze, 9 without fallback",
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: Personalisation tags detected but ESP platform could not be identified; Summary: 0 tag(s), platform: unknown",
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'ProperCase' at line 35; No fallback for 'ProperCase' at line 45; No fallback for 'UrlEncode' at line 46; No fallback for 'ProperCase' at line 46; Summary: 10 tag(s), platform: sfmc, 4 without fallback"
+      ]
+    },
+    {
+      "cluster_id": "personalisation:platform_accuracy",
+      "agent": "personalisation",
+      "criterion": "platform_accuracy",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'produ",
+      "count": 7,
+      "trace_ids": [
+        "pers-003",
+        "pers-004",
+        "pers-006",
+        "pers-007",
+        "pers-008",
+        "pers-010",
+        "pers-012"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'product1.image_url' at line 44; No fallback for 'product1.name' at line 44; No fallback for 'product1.name' at line 45; No fallback for 'product1.price' at line 45; No fallback for 'product2.image_url' at line 47; No fallback for 'product2.name' at line 47; No fallback for 'product2.name' at line 48; No fallback for 'product2.price' at line 48; Summary: 42 tag(s), platform: braze, 9 without fallback",
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: Personalisation tags detected but ESP platform could not be identified; Summary: 0 tag(s), platform: unknown",
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'ProperCase' at line 35; No fallback for 'ProperCase' at line 45; No fallback for 'UrlEncode' at line 46; No fallback for 'ProperCase' at line 46; Summary: 10 tag(s), platform: sfmc, 4 without fallback"
+      ]
+    },
+    {
+      "cluster_id": "personalisation:syntax_correctness",
+      "agent": "personalisation",
+      "criterion": "syntax_correctness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'produ",
+      "count": 7,
+      "trace_ids": [
+        "pers-003",
+        "pers-004",
+        "pers-006",
+        "pers-007",
+        "pers-008",
+        "pers-010",
+        "pers-012"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'user_id' at line 16; No fallback for 'product1.image_url' at line 44; No fallback for 'product1.name' at line 44; No fallback for 'product1.name' at line 45; No fallback for 'product1.price' at line 45; No fallback for 'product2.image_url' at line 47; No fallback for 'product2.name' at line 47; No fallback for 'product2.name' at line 48; No fallback for 'product2.price' at line 48; Summary: 42 tag(s), platform: braze, 9 without fallback",
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: Personalisation tags detected but ESP platform could not be identified; Summary: 0 tag(s), platform: unknown",
+        "[DETERMINISTIC] QA check(s) failed: personalisation_syntax: No fallback for 'ProperCase' at line 35; No fallback for 'ProperCase' at line 45; No fallback for 'UrlEncode' at line 46; No fallback for 'ProperCase' at line 46; Summary: 10 tag(s), platform: sfmc, 4 without fallback"
+      ]
+    },
+    {
+      "cluster_id": "code_reviewer:issue_genuineness",
+      "agent": "code_reviewer",
+      "criterion": "issue_genuineness",
+      "pattern": "The agent flagged missing cellpadding/cellspacing and border-collapse as issues, but these are standard email patterns t",
+      "count": 3,
+      "trace_ids": [
+        "cr-013",
+        "cr-018",
+        "cr-019"
+      ],
+      "sample_reasonings": [
+        "The agent flagged missing cellpadding/cellspacing and border-collapse as issues, but these are standard email patterns that are acceptable to omit. Not all email tables require these attributes.",
+        "Several flagged issues are not genuine problems. Missing xmlns:o is not required when xmlns:v is present, and missing MSO properties like mso-table-lspace are optimizations, not issues for a clean email.",
+        "The agent flagged 'gold' as an invalid CSS color value, but 'gold' is a valid named CSS color. This is a false positive that incorrectly flags standard CSS."
+      ]
+    },
+    {
+      "cluster_id": "personalisation:logic_match",
+      "agent": "personalisation",
+      "criterion": "logic_match",
+      "pattern": "The conditional logic is present but incomplete - there are empty {% if %} and {% else %} blocks that don't actually wra",
+      "count": 3,
+      "trace_ids": [
+        "pers-002",
+        "pers-006",
+        "pers-008"
+      ],
+      "sample_reasonings": [
+        "The conditional logic is present but incomplete - there are empty {% if %} and {% else %} blocks that don't actually wrap the VIP and Standard sections as required by the logic specifications.",
+        "The logic fails to properly implement the requirement to 'show the personalized section only if a preference exists' - the personalized section still displays even when @preferredCategory is empty, just with blank category names.",
+        "While the code attempts to implement tier highlighting logic, the IF conditions are syntactically broken and would not function to highlight the correct tier cell as required."
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:color_coherence",
+      "agent": "dark_mode",
+      "criterion": "color_coherence",
+      "pattern": "The dark mode colors are not visually coherent. The content section uses white background (#ffffff) with dark-bg class t",
+      "count": 2,
+      "trace_ids": [
+        "dark-003",
+        "dark-007"
+      ],
+      "sample_reasonings": [
+        "The dark mode colors are not visually coherent. The content section uses white background (#ffffff) with dark-bg class that changes to #1a1a2e in dark mode, but the text color #333333 becomes #e0e0e0, creating poor contrast ratios and inconsistent color relationships.",
+        "The header-bar preserves #004E89 on dark backgrounds which violates the color override request that specified #004E89 should become #1a3a5c. The price text also uses #1a3a5c which may have poor contrast on the #2a2a2a background."
+      ]
+    },
+    {
+      "cluster_id": "dark_mode:contrast_preservation",
+      "agent": "dark_mode",
+      "criterion": "contrast_preservation",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: accessibility: Redundant adjacent links to same URL \u2014 wrap image and text in a singl",
+      "count": 2,
+      "trace_ids": [
+        "dark-002",
+        "dark-007"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: accessibility: Redundant adjacent links to same URL \u2014 wrap image and text in a single <a>",
+        "[DETERMINISTIC] QA check(s) failed: accessibility: Redundant adjacent links to same URL \u2014 wrap image and text in a single <a>"
+      ]
+    },
+    {
+      "cluster_id": "code_reviewer:severity_accuracy",
+      "agent": "code_reviewer",
+      "criterion": "severity_accuracy",
+      "pattern": "Several issues are over-classified as warnings when they should be info level. Missing font-family and table attributes ",
+      "count": 1,
+      "trace_ids": [
+        "cr-018"
+      ],
+      "sample_reasonings": [
+        "Several issues are over-classified as warnings when they should be info level. Missing font-family and table attributes are optimizations, not warnings that degrade experience."
+      ]
+    },
+    {
+      "cluster_id": "outlook_fixer:fix_completeness",
+      "agent": "outlook_fixer",
+      "criterion": "fix_completeness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook ma",
+      "count": 1,
+      "trace_ids": [
+        "outfix-004"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays"
+      ]
+    },
+    {
+      "cluster_id": "outlook_fixer:html_preservation",
+      "agent": "outlook_fixer",
+      "criterion": "html_preservation",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>",
+      "count": 1,
+      "trace_ids": [
+        "outfix-006"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>"
+      ]
+    },
+    {
+      "cluster_id": "outlook_fixer:mso_conditional_correctness",
+      "agent": "outlook_fixer",
+      "criterion": "mso_conditional_correctness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook ma",
+      "count": 1,
+      "trace_ids": [
+        "outfix-004"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays"
+      ]
+    },
+    {
+      "cluster_id": "outlook_fixer:outlook_version_targeting",
+      "agent": "outlook_fixer",
+      "criterion": "outlook_version_targeting",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook ma",
+      "count": 1,
+      "trace_ids": [
+        "outfix-004"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays"
+      ]
+    },
+    {
+      "cluster_id": "outlook_fixer:vml_wellformedness",
+      "agent": "outlook_fixer",
+      "criterion": "vml_wellformedness",
+      "pattern": "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook ma",
+      "count": 1,
+      "trace_ids": [
+        "outfix-004"
+      ],
+      "sample_reasonings": [
+        "[DETERMINISTIC] QA check(s) failed: fallback: No VML/Office namespace declarations; Missing o:PixelsPerInch \u2014 Outlook may scale images on high-DPI displays"
       ]
     }
   ],
   "top_failures": [
     {
-      "cluster_id": "scaffolder:mso_conditional_correctness",
-      "count": 12,
-      "pattern": "While MSO conditionals are present and properly closed, the VML elements are missing required xmlns:v and xmlns:o namesp"
+      "cluster_id": "scaffolder:dark_mode_readiness",
+      "count": 22,
+      "pattern": "[DETERMINISTIC] QA check(s) failed: dark_mode: Missing <meta name='color-scheme' content='light dark'>; Missing <meta na"
     },
     {
       "cluster_id": "scaffolder:accessibility_baseline",
-      "count": 11,
-      "pattern": "The HTML is missing the lang attribute on the <html> tag, role='article' on the wrapper, and lacks a proper semantic hea"
+      "count": 21,
+      "pattern": "[DETERMINISTIC] QA check(s) failed: accessibility: Missing lang attribute on <html> \u2014 screen readers cannot determine pr"
     },
     {
-      "cluster_id": "dark_mode:html_preservation",
-      "count": 9,
-      "pattern": "The original HTML input is empty, but the output contains a complete HTML email structure. This violates the requirement"
+      "cluster_id": "code_reviewer:coverage_completeness",
+      "count": 20,
+      "pattern": "[DETERMINISTIC] QA check(s) failed: html_validation: Missing <meta name=\"viewport\"> in <head>"
     }
   ]
 }

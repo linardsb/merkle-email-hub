@@ -22,15 +22,15 @@
 >
 > **Dependency note:** Independent of Phases 36/38/39. Uses existing judge infrastructure (`app/ai/agents/evals/judges/`). Golden components from `email-templates/components/` are the starting point. New reference templates can be added incrementally — the system is designed to grow.
 
-- [x] 37.1 Expand golden component library with advanced patterns
+- [ ] 37.1 Expand golden component library with advanced patterns *(needs update after 37.4/37.5 — golden refs must reflect real component output)*
 - [x] 37.2 Build golden reference loader & criterion mapping
 - [x] 37.3 Wire golden references into judge prompts
-- [ ] 37.4 Re-run judge pipeline & measure calibration improvement
-- [ ] 37.5 Complete human labeling with improved judges
+- [ ] 37.4 Re-run eval pipeline against file-based component output *(unblocked — 40.7 done)*
+- [ ] 37.5 Complete human labeling with improved judges *(blocked by 37.4)*
 
 ---
 
-### 37.1 Expand Golden Component Library `[Templates]`
+### 37.1 Expand Golden Component Library `[Templates]` *(partial — 14 templates exist, need update after 37.4/37.5)*
 
 **What:** Add 14 new golden reference templates to `email-templates/components/golden-references/` covering VML backgrounds, complex MSO conditionals, multi-ESP token syntax (Braze/SFMC/Adobe Campaign/Klaviyo), and CSS innovation techniques (carousels, accordions, AMP, kinetic hover). Each template is hand-verified, Outlook-tested, and annotated with which judge criteria it exemplifies.
 **Why:** The 17 existing golden components cover basic patterns (columns, buttons, heroes, footers) but judges evaluating VML correctness, ESP token syntax, or innovation techniques have zero concrete examples. Without references, a judge can't distinguish valid `v:roundrect` from broken VML, correct Braze Liquid from invalid syntax, or a working CSS carousel from a broken one. Adding verified-correct templates for each gap area gives judges concrete ground truth to compare against — the same principle that makes few-shot prompting more accurate than zero-shot.
@@ -156,10 +156,43 @@
 
 ---
 
-### ~~37.4 Re-run Judge Pipeline & Measure Calibration Improvement~~ DONE `[Evals]`
+### ~~37.4 Re-run Eval Pipeline Against File-Based Component Output~~ `[Evals]` DONE
 
-**What:** Re-run the eval pipeline with golden-reference-enhanced judges against the existing traces. Create a comparison script that diffs verdicts before/after to measure improvement and identify criteria with high flip rates for priority human review.
-**Delivered:** `scripts/eval-compare-verdicts.py` (comparison CLI with per-criterion flip rate analysis, priority review flagging at >20% threshold, JSON report output, 14 tests). `make eval-rejudge` (re-run without `--skip-existing`) and `make eval-compare` Makefile targets. Pre-golden verdicts backed up in `traces/pre_golden/`. All 9 agents re-judged with golden-reference-enhanced prompts (hybrid mode, Claude Sonnet). **Results:** 15 of 35 criteria flagged for priority human review — golden references made judges significantly more discriminating (e.g. `code_reviewer:output_format` flipped 100% P→F, `scaffolder:brief_fidelity` 83% P→F against mock output). Report at `traces/verdict_comparison.json`.
+**What:** Re-generate agent traces and re-run judges now that the converter produces HTML from file-based components (40.7) instead of inline seeds. The previous 37.4 run (verdict comparison script, flip rate analysis — delivered and tooling retained) was against inline-seed output. Those verdicts are stale because the converter now emits structurally different HTML: `data-slot` attributes, MSO conditional wrappers, semantic dark-mode classes, and VML button patterns that differ from the old hardcoded strings. Judges calibrated against inline-seed output may pass/fail differently on file-based output. Re-running establishes the true baseline for 37.5 human labeling.
+**Why:** The 9 AI agents (scaffolder, dark mode, content, outlook fixer, accessibility, personalisation, code reviewer, knowledge, innovation) all receive converter output as input context. With 40.7, that output changed: (1) hero-block now has VML `v:rect` background pattern instead of simple `background-image`, (2) cta-button has `v:roundrect` Outlook fallback, (3) text-block has explicit `data-slot="heading"` and `data-slot="body"` markers, (4) new components like `editorial-2` and `nav-hamburger` appear in matcher output. Judges comparing agent output against golden references must see the file-based HTML to produce accurate verdicts. The existing `traces/pre_golden/` backup (from the first 37.4 run) serves as the pre-file-based baseline for comparison.
+**Implementation:**
+- **37.4.1 Back up current verdicts as pre-file-based baseline:**
+  - Copy current `traces/*_verdicts.jsonl` → `traces/pre_file_based/` (9 agent verdict files)
+  - These are the inline-seed-era verdicts for comparison after re-run
+  - Keep `traces/pre_golden/` intact (original pre-golden-reference baseline)
+- **37.4.2 Re-generate agent traces with file-based components:**
+  - Run `make eval-run` — this invokes `runner.py --agent all --output traces/ --skip-existing`
+  - The `--skip-existing` flag means only new/changed test cases generate new traces
+  - To force full regeneration (recommended): `uv run python -m app.ai.agents.evals.runner --agent all --output traces/` (no `--skip-existing`)
+  - Traces now contain file-based component HTML as agent input context
+  - Verify: spot-check `traces/scaffolder_traces.jsonl` — input HTML should contain `data-slot` attributes and `<!-- Component: -->` markers, NOT the old inline seed patterns
+- **37.4.3 Re-run judges against new traces:**
+  - Run `make eval-rejudge` — overwrites all 9 verdict files with fresh judgments using golden-reference-enhanced prompts (hybrid mode, Claude Sonnet)
+  - This uses the same golden references from 37.1–37.3 (unchanged) but evaluates agents against file-based component output
+  - ~9 agents × ~60 traces × 5 criteria = ~2,700 LLM judge calls
+- **37.4.4 Compare verdicts: inline-seed vs file-based:**
+  - Run `make eval-compare` with updated pre-dir:
+    ```bash
+    uv run python scripts/eval-compare-verdicts.py \
+      --pre-dir traces/pre_file_based \
+      --post-dir traces \
+      --output traces/verdict_comparison_file_based.json
+    ```
+  - Analyse flip rates per criterion — criteria where verdicts changed indicate judge sensitivity to HTML structure
+  - Expected: scaffolder verdicts may improve (better template HTML to evaluate), code reviewer verdicts may shift (file-based HTML has different patterns to flag)
+  - Flag criteria with >20% flip rate for priority review in 37.5
+- **37.4.5 Run analysis and regression check:**
+  - Run `make eval-analysis` — regenerate `traces/analysis.json` from new verdicts
+  - Run `make eval-regression` — check per-agent pass rates against `AGENT_REGRESSION_TOLERANCE` (3pp)
+  - If regression detected: investigate whether the flip is a true quality change (agent output genuinely worse on file-based HTML) or a judge calibration artifact (judge is more/less discriminating)
+  - Document findings in `traces/verdict_comparison_file_based.json`
+**Security:** No new external inputs. LLM judge calls use existing configured provider. Verdict files are local JSONL — no PII.
+**Verify:** All 9 agents re-judged — `traces/*_verdicts.jsonl` timestamps updated. `traces/verdict_comparison_file_based.json` generated with per-criterion flip rates. `make eval-check` passes (analysis + regression). Spot-check: open `traces/scaffolder_verdicts.jsonl` — verdicts reference file-based component HTML (contains `data-slot` attributes). Comparison report identifies which criteria are sensitive to HTML source (inline vs file-based).
 
 ---
 
@@ -194,10 +227,10 @@
 | 37.1 Expand golden library | `email-templates/components/golden-references/` | None — start immediately | 14 new templates |
 | ~~37.2 Golden reference loader~~ DONE | `app/ai/agents/evals/golden_references.py`, `index.yaml` | 37.1 (templates exist) | ~200 LOC + 18 tests |
 | ~~37.3 Wire into judge prompts~~ DONE | 7 judge files + `base.py` | 37.2 (loader ready) | ~150 LOC + 22 tests |
-| ~~37.4 Re-run & measure~~ DONE | `scripts/eval-compare-verdicts.py`, Makefile | 37.3 (judges updated) | Script + pipeline run, 15/35 criteria flagged |
-| 37.5 Human labeling | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (improved judges) | ~2-4 hours manual |
+| 37.4 Re-run against file-based output | `traces/`, `eval-compare-verdicts.py`, Makefile | 37.3 + 40.7 (file-based components) | ~2,700 LLM judge calls, comparison report |
+| 37.5 Human labeling | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (re-calibrated verdicts) | ~2-4 hours manual |
 
-> **Execution:** 37.1 is independent — start immediately (template authoring). 37.2–37.3 are sequential (loader → wiring). 37.4 depends on 37.3. 37.5 depends on 37.4. **The golden templates (37.1) are the long pole** — everything else is mechanical wiring.
+> **Execution:** 37.1–37.3 done. Previous 37.4 tooling (comparison script, Makefile targets) delivered — retained and reused. Current 37.4 re-runs the pipeline against 40.7 file-based component output. 37.5 depends on 37.4. **37.4 is now unblocked** — 40.7 complete.
 
 ---
 
@@ -794,3 +827,1482 @@ Current converter dumps column content as raw text — each content type needs i
 | 39.7 Golden conformance gate | `tests/test_golden_conformance.py`, `Makefile` | Phase 38 complete |
 
 > **Execution:** 39.5 independent — start immediately. 39.1 after 38.1. 39.2 after Phase 38 complete. 39.3, 39.4, 39.6 depend on respective 38 subtasks. 39.7 last — codifies the final quality bar.
+
+---
+
+## Phase 40 — Converter Snapshot & Visual Regression Testing
+
+> **Problem:** Converter fixes keep regressing because tests use hand-crafted `DesignNode` objects, not real designs. A fix that passes synthetic tests breaks on real Figma data. This has happened 5+ times. The 1,449 existing converter tests check structure (`assert "<table" in html`) but never verify actual visual fidelity against the source design — spacing, colors, proportions, content hierarchy, and component matching are all invisible to the current test suite.
+>
+> **Solution:** Two-layer regression testing: (1) HTML text snapshots using real Figma inputs verify structural correctness, (2) visual pixel-diff against original Figma design screenshots catches layout/styling gaps. Every converter fix must pass both layers.
+
+- [x] 40.1 Snapshot test infrastructure (done)
+- [ ] 40.2 Collect and verify real design cases
+- [ ] 40.3 Visual regression: Figma design screenshot capture
+- [ ] 40.4 Visual regression: Playwright HTML rendering + pixel diff
+- [ ] 40.5 Wire into CI gate
+- [ ] 40.6 Flatten transparent PNG backgrounds to white on export
+- [x] 40.7 Unified component resolution — map converter to existing file-based components, create only missing ones (~5 files), delete inline seeds
+
+---
+
+### ~~40.1 Snapshot Test Infrastructure `[Backend]`~~ DONE
+
+**What:** Build a test harness that loads real Figma design inputs (`structure.json` + `tokens.json`) from `data/debug/{case}/`, runs the full `DesignConverterService.convert()` pipeline, and diffs the output against a hand-verified `expected.html`. Add a capture script to generate initial output for visual review, a YAML manifest to track case status, and Makefile targets.
+**Why:** The existing 1,449 converter tests construct toy `DesignNode` trees with 3–5 nodes. Real Figma designs have 100+ nodes, 250+ color tokens, 234 typography styles, nested auto-layout frames, spacer columns, and section naming conventions that synthetic tests never exercise. A fix that works on a 3-node tree regularly breaks on real data because it hits different code paths in layout analysis, component matching, section classification, or slot filling.
+**Implementation:**
+- Create `app/design_sync/tests/test_snapshot_regression.py`:
+  - `TestSnapshotRegression.test_snapshot_matches[case_id]` — parametrized over active cases in manifest. Loads `structure.json` via `load_structure_from_json()`, `tokens.json` via `load_tokens_from_json()`, runs `DesignConverterService().convert(structure, tokens)`, normalizes whitespace in both expected and actual HTML, diffs with `difflib.unified_diff()`. On mismatch: saves `actual.html` alongside for browser comparison, fails with first 100 lines of diff.
+  - `TestSnapshotSanity.test_case_loads[case_id]` — parametrized over ALL cases (including pending). Verifies `structure.json` and `tokens.json` exist and deserialize without error. Catches broken fixtures.
+  - `TestSnapshotSectionCount.test_section_count[case_id]` — parametrized over active cases. Verifies `result.sections_count` matches the `sections` field in manifest. Catches layout analysis regressions independently of HTML content.
+  - `_normalize_html(html)` — collapses whitespace, normalizes self-closing tags, splits on `>` for readable diffs. Allows whitespace-only reformatting while catching real content/structure changes.
+- Create `scripts/snapshot-capture.py`:
+  - CLI: `python scripts/snapshot-capture.py <case_id> [--overwrite] [--output path]`
+  - Loads inputs, runs converter, prints summary (node count, color count, section count, warnings), saves output to `expected.html`
+  - Prints next-step instructions (open in browser, verify, activate in manifest)
+- Create `data/debug/manifest.yaml`:
+  - YAML registry of cases with `id`, `name`, `source`, `sections` (expected count), `status` (pending/active)
+  - Only `active` cases run in `TestSnapshotRegression` and `TestSnapshotSectionCount`
+  - `pending` cases still run in `TestSnapshotSanity` (validates fixtures are loadable)
+- Fix `_node_from_dict()` in `app/design_sync/diagnose/report.py`:
+  - Was missing 11 fields: `image_ref`, `hyperlink`, `corner_radius`, `corner_radii`, `text_align`, `primary_axis_align`, `counter_axis_align`, `stroke_weight`, `stroke_color`, `style_runs`, `visible`, `opacity`
+  - Without these, replaying from saved `structure.json` silently drops data that affects conversion output (e.g., missing `image_ref` → no images, missing `visible` → invisible nodes rendered)
+  - `style_runs` deserialized from list of dicts to `tuple[StyleRun, ...]`, `corner_radii` from list to tuple
+- Add Makefile targets: `make snapshot-test` (runs pytest on test file), `make snapshot-capture CASE=N` (runs capture script with `--overwrite`)
+- Add `data/debug/*/actual.html` to `.gitignore` (generated on test failure, not committed)
+- Update `CLAUDE.md` Essential Commands section with new targets
+**Verify:** `make snapshot-test` runs — sanity test passes for case 5 (MAAP x KASK, 123 nodes, 9 sections), snapshot and section count tests skip (case pending). `scripts/snapshot-capture.py 5 --overwrite` produces 20KB HTML with 9 sections. `_node_from_dict()` round-trips all 30+ fields from real `structure.json`.
+
+**Delivered:**
+- `app/design_sync/tests/test_snapshot_regression.py` — 3 test classes, parametrized over manifest
+- `scripts/snapshot-capture.py` — CLI capture tool
+- `data/debug/manifest.yaml` — case registry
+- `data/debug/5/expected.html` — hand-corrected expected output for MAAP x KASK (9 sections, 123 nodes)
+- `app/design_sync/diagnose/report.py` — `_node_from_dict()` fix (11 missing fields)
+- `Makefile` — `snapshot-test`, `snapshot-capture` targets
+- `.gitignore` — `data/debug/*/actual.html`
+
+---
+
+### 40.2 Collect and Verify Real Design Cases `[Backend]`
+
+**What:** Collect 3–5 diverse real Figma email designs as snapshot test cases. Each case needs: diagnostic extract (`structure.json` + `tokens.json`), exported images (`data/design-assets/{id}/`), and a hand-corrected `expected.html` verified against the Figma design. Activate all cases in manifest.
+**Why:** A single test case (MAAP x KASK) only covers one design pattern (hero + text + 2-col + nav + buttons + footer). Real-world emails vary widely: Starbucks-style (hero image + promotional sections + deep footer), transactional (receipt table + order summary), newsletter (multi-article grid), minimal (single CTA). Each exercises different converter code paths — section classification (`_SECTION_PATTERNS`), component matching (`match_all()`), column layout detection, button extraction, and slot filling. A fix that works for MAAP x KASK (fashion/cycling) may break on a data-heavy transactional template.
+**Implementation:**
+- Extract 3–5 designs via `python -m app.design_sync.diagnose.extract --connection-id <N> --node-id <node>`:
+  - Case 5: MAAP x KASK (done — 9 sections: hero, text, 2-col, divider, nav, buttons, 3-col, footer)
+  - Case 6: Starbucks promotional (from connection 8, node 2833-1623 — 5 sections: hero, text+CTA, 2-col, 4-col nav, social+footer)
+  - Case 7: Newsletter/multi-article (3+ article cards in grid layout)
+  - Case 8: Transactional/receipt (table-heavy, minimal styling)
+  - Case 9: Minimal single-CTA (header + hero + CTA + footer)
+- For each case:
+  1. Run extract → `data/debug/{id}/structure.json`, `tokens.json`, `report.json`
+  2. Run `make snapshot-capture CASE={id}` → generates initial `expected.html`
+  3. Open in browser with light mode, compare against Figma design
+  4. Hand-correct `expected.html`: fix text hierarchy, button styles (pill/outlined/filled + VML), column gaps, section backgrounds, alt text, footer structure
+  5. Update image paths to relative `../../design-assets/{id}/` for local browser preview
+  6. Add to `data/debug/manifest.yaml` with `status: active`
+- Verify each case passes `make snapshot-test` after activation
+**Security:** No production data. Test cases use publicly available Figma community files or sanitized internal designs. No API keys or PII in committed fixtures.
+**Verify:** `make snapshot-test` runs 5 active cases — all pass (HTML text match + section count match). Each `expected.html` visually matches the Figma design when opened in a browser (hero images load from `data/design-assets/`, correct backgrounds, text hierarchy, button styles, column proportions).
+
+---
+
+### 40.3 Visual Regression: Figma Design Screenshot Capture `[Backend]`
+
+**What:** Extend the diagnostic extract script to automatically capture a full-frame PNG screenshot of the Figma design node via the Figma Images API. Save as `data/debug/{id}/design.png` alongside `structure.json` and `tokens.json`. This is the "source of truth" image that HTML output will be compared against.
+**Why:** The manual workflow of screenshotting Figma, pasting into chat, and eyeballing differences doesn't scale and misses subtle issues (2px spacing gaps, slightly wrong colors, font-size mismatches). An automated pixel-level comparison needs both images in a standardized format at the same dimensions. The Figma Images API renders the exact frame at configurable scale, producing a pixel-perfect reference without browser rendering artifacts.
+**Implementation:**
+- Extend `app/design_sync/diagnose/extract.py`:
+  - Add `--capture-image` flag (default True when extracting)
+  - After `_fetch_figma_data()`, call Figma Images API:
+    ```
+    GET /v1/images/{file_key}?ids={node_id}&format=png&scale=2
+    ```
+    (scale=2 for retina-quality reference; 600px design → 1200px PNG)
+  - Parse response: `response.json()["images"][node_id]` → temporary S3 URL
+  - Download PNG via `httpx.get(image_url)` → save to `{output_dir}/design.png`
+  - Handle errors gracefully: 403 (insufficient permissions), 404 (node not found), timeout → warn and continue without image
+  - Log image dimensions and file size for diagnostic report
+- Update `app/design_sync/diagnose/models.py`:
+  - Add `design_image_path: str | None = None` to `DiagnosticReport`
+  - Add `design_image_width: int | None` and `design_image_height: int | None`
+- Update `data/debug/manifest.yaml` schema:
+  - Add optional `design_image: bool` field per case (true if `design.png` exists)
+- Add `--no-image` flag to extract script for offline/CI runs without Figma API access
+**Security:** Figma Images API uses the same encrypted PAT from `DesignConnection.access_token`. The returned S3 URL is temporary (expires ~30 minutes). Downloaded PNGs contain rendered design content only — no metadata, no PII. Images committed to repo are from public Figma Community files.
+**Verify:** `python -m app.design_sync.diagnose.extract --connection-id 5 --node-id 2833-1623` produces `data/debug/5/design.png` alongside existing `structure.json`. Image dimensions match expected (1200×5036 at scale=2 for 600×2518 design). `--no-image` flag skips image capture without error. Expired/invalid token → graceful fallback with warning log.
+
+---
+
+### 40.4 Visual Regression: Playwright HTML Rendering + Pixel Diff `[Backend]`
+
+**What:** Add a Playwright-based visual regression test that renders `expected.html` to a screenshot, then pixel-diffs it against `design.png` from the Figma export. Produces a diff image highlighting mismatches. Reuses the existing `app/rendering/tests/visual_regression/` infrastructure for image comparison.
+**Why:** HTML text snapshots (40.1) catch structural regressions — missing sections, wrong text content, broken MSO conditionals. But they cannot catch the visual bugs that dominate real-world conversion issues: wrong column gap widths (8px vs 24px), incorrect section background colors, mismatched font sizes, buttons with wrong border-radius, text alignment off-by-one. These are exactly the issues found during manual review of case 5 (MAAP x KASK). A pixel-level comparison against the original design catches all of these automatically.
+**Implementation:**
+- Create `app/design_sync/tests/test_snapshot_visual.py`:
+  - `@pytest.mark.visual_regression` marker (skip in normal `make test`, run via `make snapshot-visual`)
+  - `TestSnapshotVisualRegression.test_visual_match[case_id]` — parametrized over active cases that have `design.png`:
+    1. Load `expected.html` from case directory
+    2. Rewrite image paths from relative (`../../design-assets/`) to absolute filesystem paths (Playwright needs absolute URLs or a local file server)
+    3. Launch Playwright Chromium, set viewport to design width (600px × auto-height)
+    4. Navigate to `file://{expected.html}` (or serve via `http://localhost` with a mini static server for image loading)
+    5. Take full-page screenshot → `rendered.png`
+    6. Load `design.png`, resize `rendered.png` to match dimensions if needed (Figma exports at scale=2)
+    7. Run pixel diff using `pixelmatch` (via Pillow + numpy, or the existing `compare_images()` from `app/rendering/tests/visual_regression/conftest.py`):
+       - Compute per-pixel color distance
+       - Threshold: allow ≤5% pixel mismatch (anti-aliasing, font rendering differences)
+       - Generate `diff.png` with mismatched pixels highlighted in red
+    8. On failure: save `rendered.png` and `diff.png` to case directory, fail with mismatch percentage and diff image path
+  - Helper: `_serve_case_directory(case_dir)` — starts a local HTTP server on a random port to serve HTML + images (Playwright can't load `file://` relative paths for images in some configurations)
+  - Helper: `_rewrite_image_paths(html, case_dir)` — replaces relative image paths with `http://localhost:{port}/` paths
+- Reuse existing visual regression infra:
+  - `app/rendering/tests/visual_regression/conftest.py` has `compare_images()` and diff generation
+  - Extend or adapt for design-vs-HTML comparison (may need different threshold since comparing design tool render vs browser render)
+- Add to `data/debug/manifest.yaml`: `visual_threshold: 0.05` per case (configurable mismatch tolerance)
+- Diff output on mismatch:
+  ```
+  data/debug/{id}/rendered.png   # Playwright screenshot of expected.html
+  data/debug/{id}/diff.png       # Pixel diff (red = mismatch)
+  ```
+- Add `.gitignore` entries: `data/debug/*/rendered.png`, `data/debug/*/diff.png`
+**Security:** Playwright runs in headless mode against local files only — no network access needed. Mini HTTP server binds to localhost only, random port, stopped after test.
+**Verify:** Case 5 with correct `design.png` and `expected.html` → visual test passes (≤5% mismatch). Intentionally break `expected.html` (change a background color) → test fails with diff.png showing the changed region in red. `make snapshot-visual` runs all visual cases. Cases without `design.png` → skipped gracefully.
+
+---
+
+### 40.5 Wire into CI Gate `[DevOps]`
+
+**What:** Add `make snapshot-test` to the `make check` target so HTML snapshot tests run as part of the standard CI gate. Add `make snapshot-visual` as an optional target (not in `make check` — requires Playwright + Figma images which may not be available in all CI environments).
+**Why:** The snapshot tests are only useful if they actually block broken merges. Adding to `make check` means every PR that touches converter code must pass all snapshot cases. Visual regression stays optional because it requires Playwright browsers installed and `design.png` files committed (which may be large).
+**Implementation:**
+- Update `Makefile`:
+  - Add `snapshot-test` to the `check` and `check-full` dependency lists
+  - Add `snapshot-visual` as standalone target (not in `check`): `uv run pytest app/design_sync/tests/test_snapshot_visual.py -v -m visual_regression --tb=long`
+- Update `CLAUDE.md`:
+  - Add `make snapshot-visual` to Essential Commands
+  - Document the visual regression workflow in the Roadmap section
+- Verify `make check` now includes snapshot tests and they pass
+
+**Verify:** `make check` runs snapshot tests alongside existing lint/types/test/conformance gates. Broken `expected.html` → `make check` fails. `make snapshot-visual` runs independently.
+
+---
+
+### 40.6 Export Images Exactly As-Is — No Background Color Added `[Backend]`
+
+**What:** When the converter pipeline exports images from Figma designs, the exported image must be an exact pixel-for-pixel copy of what Figma renders for that node — same dimensions, same crop, same background. The pipeline must NEVER add, remove, or modify any colors in the image, and must NEVER add background colors to image container elements (`<td>`, `<div>`, `<a>`) in the generated HTML.
+**Why:** Figma designers set the exact image appearance — including background fills on image frames (e.g., `#F0F0F0` gray behind product photos). The converter must export the `mj-image-Frame` node (which includes the designer's background) rather than just the raw `mj-image` fill. If the pipeline strips the frame background or exports only the image fill, the result is a transparent PNG that creates visual gaps in email. Conversely, if the pipeline adds its own background color via CSS (`background-color` on image `<td>`), that's wrong too — the image itself should contain all visual information. Observed on Mammut Eiger Nordwand product grid: raw image fills had transparent backgrounds, causing text to visually overlap the invisible transparent area.
+**Rules:**
+1. **Export the image frame node**, not just the image fill — this captures the designer's intended background
+2. **Never add `background-color`** to image `<td>` or image container elements in generated HTML — the image is self-contained
+3. **Never composite, alpha-flatten, or color-modify** exported images in the pipeline — export exactly what Figma renders
+4. **Never add transparent padding** — export bounds must match the Figma node's exact bounds
+5. Target `mj-image-Frame` (or equivalent container with fills) in Figma API requests, not the child `mj-image` node
+**Implementation:**
+- Audit the Figma image export path — ensure `GET /v1/images/{file_key}?ids={node_id}` targets the image frame node (which includes background fills), not the raw image fill node
+- In generated HTML, image `<td>` cells must have NO `background-color` — only `padding`, `font-family`, etc.
+- Add a lint rule: flag any `background-color` on elements containing `<img>` in converter output
+- Add a validation step: compare exported image dimensions against the Figma node's `absoluteBoundingBox` — flag mismatches
+**Verify:** Re-export Mammut product images from `mj-image-Frame` nodes → images have gray background baked in, 260×260 (@1x) / 520×520 (@2x). No `background-color` on any image `<td>` in converter output. Product grid renders identically to Figma design.
+
+---
+
+### ~~40.7 Unified Component Resolution — File-Based HTML as Source of Truth `[Backend]`~~ DONE
+
+**Training data:** `email-templates/training_HTML/for_converter_engine/CONVERTER-REFERENCE.md` — 3 real campaign HTMLs (Starbucks, Mammut, MAAP) mapping every section back to its source component file, listing every slot fill, structural change, style override, and design reasoning. Documents 16 components in use, 5 bespoke patterns needing new components, and 10 key observations (VML buttons, asymmetric columns, vertical navs, product grid gutters, semantic dark mode classes). This is the ground truth for which component maps to which visual pattern and what modifications the converter must apply.
+**What:** The conversion engine currently uses 24 inline HTML templates hardcoded as Python dicts in `seeds.py`, completely ignoring the 86 file-based HTML components in `email-templates/components/`. The two systems have different slugs (matcher emits `hero-block` → inline seed; files have `hero-text`), and where slugs overlap, inline seeds win. This means editing an HTML component file has zero effect on converter output. Fix this by extracting inline seeds to file-based components and flipping merge precedence so file-based HTML is the single source of truth.
+**Why:** The file-based HTML components are **brand-agnostic, reusable building blocks** — they use `data-slot` attributes for dynamic content injection (images, text, CTAs, colors) and design token overrides for brand-specific styling. They are not tied to any brand's palette, fonts, or copy. The conversion engine fills slots with Figma-extracted content and applies token overrides from the project's design system at render time. Having a parallel set of 24 hardcoded Python HTML strings means: (1) component changes require editing Python code instead of HTML files, (2) the 86 file-based components are invisible to the conversion engine, (3) there's no single source of truth — the systems drift apart silently. Unifying on file-based components means any developer or designer can edit an HTML file and the conversion engine immediately uses the updated version for all brands.
+**Implementation:**
+- **40.7.1 Map converter matcher to existing file-based components:**
+  - **Component library:** `email-templates/components/` (86 HTML files). **Manifest:** `app/components/data/component_manifest.yaml`. These are the source of truth — the converter must pull from here, not from inline Python seeds.
+  - The matcher currently emits 20 slugs that only exist as inline seeds — map each to an existing file-based component instead. No new HTML files except for the few patterns that genuinely have no file equivalent.
+  - **Already exist (remap matcher slug → file slug):** `preheader` → `preheader.html`, `logo-header` → `logo-header.html`, `hero-block` → `hero-text.html`, `email-header` → `header.html`, `email-footer` → `footer.html`, `cta-button` → `cta.html` / `button-filled.html` / `button-ghost.html`, `article-card` → `article-2.html` / `article-reverse.html`, `navigation-bar` → `nav-hamburger.html`, `image-block` → `image.html` / `image-responsive.html`, `text-block` → `heading.html` + `paragraph.html`, `divider` → `divider.html`, `social-icons` → `footer-social.html`, `product-card` → `product-showcase.html`
+  - **Create only missing files (~5):** `column-layout-2.html`, `column-layout-3.html`, `column-layout-4.html`, `spacer.html`, `full-width-image.html` — these have no file equivalent
+  - Ensure all mapped components have `data-slot` attributes and `<!-- Component: slug -->` tags
+  - `email-shell` stays inline — it's a document wrapper, not a component
+- **40.7.2 Add manifest entries with slot definitions:**
+  - Add/update `component_manifest.yaml` entries for all converter-used slugs
+  - Each entry needs `slot_definitions` matching the `data-slot` attributes in the HTML
+- **40.7.3 Auto-detect slots from HTML in file_loader:**
+  - Add `_extract_slots_from_html(html_source)` to `file_loader.py`
+  - Parses `data-slot="name"` attributes from HTML via regex
+  - Returns slot definitions as fallback when manifest has no `slot_definitions`
+  - Prevents manifest from going stale when someone edits HTML
+- **40.7.4 Delete inline seeds, file-based only:**
+  - Remove all 23 inline seed HTML templates from `_INLINE_SEEDS` in `seeds.py` (keep only `email-shell`)
+  - `_build_all_seeds()` becomes: load file-based components + append `email-shell` inline seed
+  - No more merge precedence logic — file-based components are the only source
+- **40.7.5 Expand matcher for file-based component richness:**
+  - Add alternate matcher rules so the converter can emit file-based slugs beyond the original 20
+  - Example: detect 2-column editorial layout → emit `editorial-2` instead of always `column-layout-2`
+  - Start with 3–5 high-value expansions where file-based components are better than generic fallbacks
+  - Use training data in `CONVERTER-REFERENCE.md` to identify which patterns need new matcher rules (vertical navs, product grid with gutters, VML button variants, subtitle+title pairs)
+- **40.7.6 Document interactive CSS extraction architecture (defer implementation):**
+  - Interactive components (accordion, carousel, `anim-*`) embed CSS directly in the HTML body — no mechanism to hoist it to `<head>` `<style>` block
+  - Document the approach: parse CSS from component files, collect during render, inject into shell's `<slot data-slot="head_styles">`
+  - Implementation deferred — requires `COMPONENT_SHELL` → email-shell migration (separate phase)
+**Security:** No new external inputs. Component HTML files are committed to the repo. `_extract_slots_from_html()` uses regex on trusted HTML files, not user input.
+**Verify:** `make test` — all existing converter tests pass (no regression). `make snapshot-test` — snapshot cases produce identical output (same HTML, now sourced from files). Delete an inline seed → converter still works (pulls from file). Edit a file-based component → converter output changes (proves file-based is live). `make types` + `make lint` clean.
+
+**Delivered:**
+- `app/components/data/seeds.py` — reduced from 1597→196 lines; 23 inline seeds removed, only `email-shell` remains inline; `_build_all_seeds()` simplified to shell + file-based
+- `app/components/data/file_loader.py` — added `_extract_slots_from_html()` regex-based auto-detection of `data-slot` attributes as fallback for manifest entries
+- `app/components/data/component_manifest.yaml` — expanded from 66→89 entries; 23 converter-emitted slugs added with slot definitions and default tokens
+- `email-templates/components/` — 8 new HTML files (`email-header`, `email-footer`, `social-icons`, `image-block`, `text-block`, `image-gallery`, `category-nav`, `product-grid`); 5 existing files replaced with `data-slot` versions (`hero-block`, `cta-button`, `product-card`, `divider`, `spacer`)
+- `app/design_sync/component_matcher.py` — 3 new matcher rules (subtitle+title hero→`hero-text`, vertical nav→`nav-hamburger`, editorial layout→`editorial-2`); 3 new slot fill builder aliases
+- `app/components/tests/test_file_loader.py` — 4 new tests (inline seed check, converter slug resolution, slot extraction, auto-slot fallback)
+- `app/design_sync/tests/test_component_matcher.py` — 5 new tests for expanded matcher rules
+- `.agents/plans/40.7-unified-component-resolution.md` — implementation plan
+
+---
+
+### Phase 40 — Summary
+
+| Subtask | Scope | Dependencies | Status |
+|---------|-------|--------------|--------|
+| 40.1 Snapshot test infrastructure | `test_snapshot_regression.py`, `snapshot-capture.py`, `manifest.yaml`, `report.py` fix | Phase 39 complete | Done |
+| 40.2 Collect and verify design cases | `data/debug/{id}/`, `expected.html` per case | 40.1 | In progress (case 5 draft) |
+| 40.3 Figma design screenshot capture | `diagnose/extract.py`, Figma Images API | 40.1 | Pending |
+| 40.4 Playwright visual regression | `test_snapshot_visual.py`, pixelmatch, mini server | 40.2 + 40.3 | Pending |
+| 40.5 CI gate wiring | `Makefile`, `CLAUDE.md` | 40.2 | Pending |
+| 40.6 Preserve exact image dimensions — no transparent padding | Image export pipeline, Figma API node targeting | 40.1 | Pending |
+| 40.7 Unified component resolution | `seeds.py`, `file_loader.py`, `component_manifest.yaml`, `component_matcher.py`, `email-templates/components/*.html` | 40.1 | Done |
+
+> **Execution:** 40.2 in progress — case 5 (MAAP x KASK) expected.html being refined. 40.3 independent of 40.2 — can start immediately. 40.4 requires both 40.2 (verified expected.html) and 40.3 (design.png). 40.5 last — activates the gate after all cases are verified. 40.6 independent — can start anytime. 40.7 independent of 40.2–40.6 — can start immediately. 40.7.1 + 40.7.2 parallel → 40.7.3 → 40.7.4 → 40.7.5. 40.7.6 is documentation only.
+
+---
+
+## Phase 41 — Converter Background Color Continuity
+
+> **Problem:** When a full-width image has a solid/dominant background color (e.g., Mammut Eiger Extreme blue `#0252B5`, brand orange `#E85D26`) and the adjacent HTML content block (heading, paragraph, CTA) continues the same visual section, the converter outputs `bgcolor="#ffffff"` — creating a jarring white gap that breaks the design's visual flow.
+>
+> **Solution:** After the converter emits a `full-width-image` component followed by a text section (or vice versa), sample the dominant edge color from the image and apply it as `bgcolor` on adjacent HTML content tables when the colors match. Also propagate text/link colors to white when the background is dark.
+
+- [ ] 41.1 Image edge color sampler utility
+- [ ] 41.2 Adjacent-section background propagation in converter
+- [ ] 41.3 Text/link color inversion for dark backgrounds
+- [ ] 41.4 Snapshot regression cases for background continuity
+
+---
+
+### 41.1 Image Edge Color Sampler Utility `[Backend]`
+
+**What:** Add `sample_edge_color(image_path: Path, edge: Literal["top", "bottom"]) -> str | None` to `app/design_sync/` that reads the top or bottom pixel strip of a design asset image, computes the dominant color, and returns a hex string if ≥80% of edge pixels share that color (solid background). Returns `None` for photographic/gradient edges.
+**Why:** The converter needs to know whether an image has a solid-color edge to propagate to adjacent HTML blocks. Sampling a 4px strip and checking color uniformity distinguishes solid backgrounds (brand blue, brand orange) from photographic content (mountain scene, product shots).
+**Implementation:**
+- Use Pillow to read a 4px strip from top or bottom edge
+- Cluster pixels by RGB (tolerance ±10 per channel)
+- If largest cluster ≥80%: return hex of cluster centroid
+- Else: return `None` (non-uniform edge, no propagation)
+**Verify:** `sample_edge_color("2833_1154.png", "bottom")` → `"#0252B5"`. `sample_edge_color("2833_1136.png", "bottom")` → `None` (photographic).
+
+---
+
+### 41.2 Adjacent-Section Background Propagation in Converter `[Backend]`
+
+**What:** In the converter's HTML assembly pass, when a `full-width-image` section is adjacent to a text/heading/CTA section, sample the facing edge of the image. If a solid color is detected, set `bgcolor` on all adjacent content tables (heading, paragraph, button-ghost, text-link) to that color instead of `#ffffff`.
+**Why:** Designs frequently use colored backgrounds that flow from an image into a text area (e.g., Mammut blue layering section, orange "Grab a Duvet Day" section). The converter currently ignores this and defaults every content block to white.
+**Implementation:**
+- After section ordering in `_assemble_html()`, iterate adjacent pairs
+- For each `(image_section, text_section)` pair: call `sample_edge_color()` on the image's facing edge
+- If solid color returned: inject `bgcolor="{color}"` on content tables
+- Store the propagated color on the section metadata for downstream use (text color inversion)
+**Verify:** Converting the Mammut design produces `bgcolor="#0252B5"` on the "A LAYERING SYSTEM" heading/paragraph/text-link tables, and `bgcolor="#E85D26"` on the "GRAB A DUVET DAY" heading/paragraph/button tables.
+
+---
+
+### 41.3 Text/Link Color Inversion for Dark Backgrounds `[Backend]`
+
+**What:** When a content block receives a propagated dark background (luminance < 0.4), automatically set text color to `#ffffff` and link colors to `#ffffff` instead of the default dark colors.
+**Why:** Without inversion, dark text on a dark background is unreadable. The converter must pair background propagation with appropriate text contrast.
+**Implementation:**
+- Calculate relative luminance of propagated bgcolor: `L = 0.2126*R + 0.7152*G + 0.0722*B` (sRGB)
+- If `L < 0.4`: override heading color to `#ffffff`, body text to `#ffffff`, link color to `#ffffff`
+- Apply to VML button fallbacks too (fillcolor, strokecolor, center text color)
+**Verify:** Mammut blue section (`#0252B5`, luminance ≈ 0.10) → white text. White section (`#ffffff`, luminance = 1.0) → unchanged dark text.
+
+---
+
+### 41.4 Snapshot Regression Cases for Background Continuity `[Backend]`
+
+**What:** Add snapshot test assertions that verify `bgcolor` values on content blocks adjacent to colored images. Extend existing snapshot cases to check background continuity.
+**Why:** Prevents regressions — ensures the sampler + propagation + inversion pipeline stays correct as the converter evolves.
+**Implementation:**
+- Add `test_background_continuity[case_id]` to `test_snapshot_regression.py`
+- For each active case: parse output HTML, find full-width-image tables, check that adjacent content tables have matching `bgcolor` when the image has a solid edge
+- Add Mammut design as a new snapshot case (case 10) with background continuity as a key verification point
+**Verify:** `make snapshot-test` includes background continuity checks. Breaking the sampler → test failure.
+
+---
+
+### Phase 41 — Summary
+
+| Subtask | Scope | Dependencies | Status |
+|---------|-------|--------------|--------|
+| 41.1 Image edge color sampler | `design_sync/` utility, Pillow | Phase 40 complete | Pending |
+| 41.2 Background propagation | Converter assembly pass | 41.1 | Pending |
+| 41.3 Text color inversion | Converter assembly pass | 41.2 | Pending |
+| 41.4 Snapshot regression | `test_snapshot_regression.py` | 41.2 + 41.3 | Pending |
+
+> **Execution:** 41.1 first (standalone utility). 41.2 wires it into the converter. 41.3 handles the text contrast consequence. 41.4 locks it down with tests. All subtasks are sequential.
+
+---
+
+## Phase 42 — HTTP Caching, Smart Polling & Data Fetching Hardening
+
+> **The platform polls aggressively but wastes bandwidth doing it.** 32 SWR hooks use `refreshInterval` to poll backend endpoints, but there is zero HTTP-level caching — every poll returns a full JSON response even when data hasn't changed. There is no visibility-aware polling — tabs left open in the background poll at the same rate as active tabs, wasting server capacity. And there is no centralized polling/stale-time configuration — each of the 56 custom hooks configures its own intervals, deduplication, and revalidation independently with no shared constants.
+>
+> **Measured impact (Archon case study):** The Archon project implemented ETag caching on polled endpoints and achieved ~70% bandwidth reduction for unchanged responses. They also implemented visibility-aware polling that pauses when tabs are hidden and slows to 1.5x interval when unfocused. Both patterns are directly applicable here — our polling-heavy endpoints (QA results, rendering tests, design sync, MCP status) return identical data on 90%+ of polls.
+>
+> **This is not a rewrite.** The SWR data layer is sound — conditional keys, centralized fetcher, per-hook deduplication. This phase adds three layers on top: (1) backend ETag generation for bandwidth reduction, (2) frontend visibility-aware polling for server load reduction, (3) centralized polling/stale constants to eliminate per-hook configuration drift. Each subtask is independently shippable and backward-compatible — no SWR-to-TanStack migration, no API contract changes.
+>
+> **Dependency note:** Independent of Phases 37–41. Uses existing SWR infrastructure and FastAPI middleware. No database changes. No new dependencies (uses stdlib `hashlib` for ETags, browser `document.visibilityState` for polling).
+
+- [ ] 42.1 Backend ETag middleware for polling endpoints
+- [ ] 42.2 Frontend ETag support in auth-fetch
+- [ ] 42.3 Visibility-aware smart polling hook
+- [ ] 42.4 Centralized polling and stale-time constants
+- [ ] 42.5 Migrate high-traffic hooks to smart polling + constants
+- [ ] 42.6 Unified progress tracking endpoint for long-running operations
+- [ ] 42.7 Wire ETag + smart polling into CI validation
+
+---
+
+### 42.1 Backend ETag Middleware for Polling Endpoints `[Backend]`
+
+**What:** Create a FastAPI middleware that generates ETag headers for JSON responses on GET endpoints, and returns `304 Not Modified` when the client's `If-None-Match` header matches. Apply to all `/api/v1/` GET routes. Uses MD5 hash of the serialized response body as the ETag value.
+**Why:** Every poll to `/api/v1/rendering/tests/{id}`, `/api/v1/design-sync/imports/{id}`, `/api/v1/mcp/status`, `/api/v1/qa/reports/{id}` returns the full JSON body even when nothing changed. For a rendering test that polls every 3 seconds, that's 20 identical ~5KB responses per minute per open tab. With 5 developers and 3 open tabs each, that's 300 wasted responses/minute from rendering alone. ETag caching turns these into 304s with zero body — the browser serves the cached response. Archon measured ~70% bandwidth reduction with this exact pattern.
+**Implementation:**
+- Create `app/core/etag.py`:
+  ```python
+  import hashlib
+  from starlette.middleware.base import BaseHTTPMiddleware
+  from starlette.requests import Request
+  from starlette.responses import Response
+
+  class ETagMiddleware(BaseHTTPMiddleware):
+      """Generate ETags for GET responses; return 304 when unchanged."""
+
+      async def dispatch(self, request: Request, call_next):
+          response = await call_next(request)
+
+          # Only ETag GET requests with JSON responses
+          if request.method != "GET" or not response.headers.get("content-type", "").startswith("application/json"):
+              return response
+
+          # Read response body, compute ETag
+          body = b""
+          async for chunk in response.body_iterator:
+              body += chunk
+
+          etag = f'"{hashlib.md5(body).hexdigest()}"'
+
+          # Check If-None-Match
+          if_none_match = request.headers.get("if-none-match")
+          if if_none_match == etag:
+              return Response(status_code=304, headers={
+                  "ETag": etag,
+                  "Cache-Control": "no-cache, must-revalidate",
+              })
+
+          # Return original response with ETag headers
+          return Response(
+              content=body,
+              status_code=response.status_code,
+              headers={
+                  **dict(response.headers),
+                  "ETag": etag,
+                  "Cache-Control": "no-cache, must-revalidate",
+              },
+              media_type=response.media_type,
+          )
+  ```
+- Register in `app/core/middleware.py` → `setup_middleware(app)`:
+  ```python
+  from app.core.etag import ETagMiddleware
+  app.add_middleware(ETagMiddleware)
+  ```
+  Position: after CORS, before `RequestLoggingMiddleware` (so logging sees the 304 status)
+- **Design decisions:**
+  - MD5 is sufficient — this is cache validation, not security. Fast and collision-resistant for JSON payloads
+  - `Cache-Control: no-cache, must-revalidate` — forces browser to always revalidate (never serve stale without checking), which is correct for polled data
+  - Applied globally to all GET JSON responses — no per-endpoint opt-in needed. POST/PUT/DELETE/WebSocket unaffected
+  - Response body is buffered in memory for hashing — acceptable for JSON responses (typically <100KB). The existing `BodySizeLimitMiddleware` already caps at 100KB for non-upload paths
+**Security:** MD5 is used for cache fingerprinting only, not cryptographic signing. ETag values are opaque identifiers per RFC 7232 — no sensitive data exposed. `Cache-Control: no-cache` prevents proxies from serving stale data.
+**Verify:** `curl -v GET /api/v1/projects` → response includes `ETag: "abc123..."` header. Second request with `If-None-Match: "abc123..."` → `304 Not Modified` with empty body. Modify a project → next request returns `200` with new ETag. POST/DELETE requests → no ETag headers. `make test` passes — no regressions. 8 tests: ETag generation, 304 response, ETag change on data change, non-GET bypass, non-JSON bypass, streaming response bypass, concurrent request safety, header format (RFC 7232 quoted string).
+
+---
+
+### 42.2 Frontend ETag Support in auth-fetch `[Frontend]`
+
+**What:** Ensure the `authFetch` client correctly propagates `If-None-Match` headers and handles `304 Not Modified` responses. In standard browsers, `fetch()` handles this automatically via the HTTP cache. Add a fallback for non-browser runtimes (SSR, test environments) where 304 may surface as an empty response.
+**Why:** The browser's HTTP cache automatically sends `If-None-Match` and interprets 304 responses — in production, this works out of the box once the backend sends ETag headers (42.1). However, Next.js SSR (`typeof window === "undefined"` path in `auth-fetch.ts`) uses Node.js `fetch()` which may not have a backing HTTP cache. In that case, a 304 response surfaces to JavaScript as an empty body, which would cause `res.json()` to throw. The fetcher must handle this edge case gracefully.
+**Implementation:**
+- Update `cms/apps/web/src/lib/swr-fetcher.ts`:
+  ```typescript
+  export async function fetcher<T>(url: string): Promise<T> {
+    const res = await authFetch(url);
+
+    // 304 Not Modified — browser cache served the response.
+    // In non-browser runtimes, 304 may surface with empty body.
+    // SWR treats undefined return as "no update" and keeps cached data.
+    if (res.status === 304) {
+      return undefined as unknown as T;
+    }
+
+    if (!res.ok) {
+      // ... existing error handling unchanged
+    }
+
+    return res.json();
+  }
+  ```
+- **SWR behavior on `undefined` return:** SWR's `fetcher` returning `undefined` does NOT clear cached data — it leaves the previous value in place. This is the correct behavior: a 304 means "data unchanged", so SWR should keep showing the cached version. Verify this in a test.
+- **No changes needed to `authFetch`** itself — `fetch()` automatically sends `If-None-Match` when the browser cache has an ETag for that URL. The `Cache-Control: no-cache, must-revalidate` from the backend (42.1) ensures the browser always revalidates.
+- Add `"304 handling"` section to SWR fetcher JSDoc explaining the caching flow
+**Security:** No new attack surface. 304 responses contain no body — no data leakage. The existing JWT auth flow is unaffected (auth headers are orthogonal to cache validation headers).
+**Verify:** Open Chrome DevTools → Network tab. Poll a rendering test endpoint → first response shows `ETag` header. Subsequent polls show `If-None-Match` request header → server returns `304` with empty body → UI still shows data (SWR cache). Modify data → next poll returns `200` with new body and new ETag → UI updates. SSR path: mock a 304 response in Vitest → fetcher returns `undefined` → SWR keeps previous data. 5 tests: 304 handling, undefined return preservation, ETag header forwarding, SSR fallback, error responses unaffected.
+
+---
+
+### 42.3 Visibility-Aware Smart Polling Hook `[Frontend]`
+
+**What:** Create a `useSmartPolling(baseInterval: number)` hook that returns a dynamic `refreshInterval` value for SWR. The interval adjusts based on browser tab visibility: full speed when visible, 1.5x when window is unfocused, paused (0) when tab is hidden. Replaces hardcoded `refreshInterval` values across all polling hooks.
+**Why:** The platform has 32 SWR hooks with `refreshInterval`. Tabs left open in the background poll at full speed — a developer with 3 tabs open has 3x the server load even though they're only looking at one. The `document.visibilityState` API (supported in all modern browsers) provides visibility information. Archon's `useSmartPolling` hook reduced background server load by ~60% in their testing. The hook is a drop-in replacement: instead of `refreshInterval: 3000`, use `refreshInterval: useSmartPolling(3000)`.
+**Implementation:**
+- Create `cms/apps/web/src/hooks/use-smart-polling.ts`:
+  ```typescript
+  import { useCallback, useEffect, useState } from "react";
+
+  type VisibilityState = "visible" | "hidden" | "blurred";
+
+  /**
+   * Visibility-aware polling interval for SWR.
+   * - visible: baseInterval (full speed)
+   * - blurred: baseInterval * 1.5 (window unfocused but tab visible)
+   * - hidden: 0 (paused — tab not visible)
+   *
+   * Usage: useSWR(key, fetcher, { refreshInterval: useSmartPolling(3000) })
+   */
+  export function useSmartPolling(baseInterval: number): number {
+    const [visibility, setVisibility] = useState<VisibilityState>("visible");
+
+    useEffect(() => {
+      const onVisibilityChange = () => {
+        setVisibility(document.hidden ? "hidden" : "visible");
+      };
+      const onFocus = () => setVisibility("visible");
+      const onBlur = () => {
+        if (!document.hidden) setVisibility("blurred");
+      };
+
+      document.addEventListener("visibilitychange", onVisibilityChange);
+      window.addEventListener("focus", onFocus);
+      window.addEventListener("blur", onBlur);
+
+      return () => {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+        window.removeEventListener("focus", onFocus);
+        window.removeEventListener("blur", onBlur);
+      };
+    }, []);
+
+    if (baseInterval === 0) return 0;
+
+    switch (visibility) {
+      case "visible": return baseInterval;
+      case "blurred": return Math.round(baseInterval * 1.5);
+      case "hidden": return 0;
+    }
+  }
+  ```
+- **Design decisions:**
+  - Returns a number, not a function — SWR accepts both `refreshInterval: number` and `refreshInterval: (data) => number`. The hook returns a number so it composes with SWR's function form: `refreshInterval: (data) => data?.status === "done" ? 0 : smartInterval`
+  - `baseInterval === 0` → always returns 0. This preserves the existing pattern where `refreshInterval: 0` means "no polling"
+  - Three states, not two — "blurred" (window lost focus but tab still visible, e.g., using another window on the same monitor) gets a slowdown, not a full pause. This handles the common case of a developer with the email preview in one window and their IDE in another
+  - Cleanup on unmount — no leaked event listeners
+  - SSR-safe — `document` access is inside `useEffect`, not at module level
+**Security:** Read-only access to `document.visibilityState` and window focus events. No new permissions or APIs.
+**Verify:** Open a polling page (rendering test with 3s interval). Switch to another tab → DevTools Network shows polling stops. Switch back → polling resumes at 3s. Unfocus window (click desktop) → polling slows to 4.5s. Refocus → back to 3s. `baseInterval: 0` → always 0 regardless of visibility. 6 tests: visible interval, hidden pause, blurred slowdown, zero passthrough, cleanup on unmount, SSR no-crash (no `document` access during render).
+
+---
+
+### 42.4 Centralized Polling and Stale-Time Constants `[Frontend]`
+
+**What:** Create a shared constants module that defines all polling intervals and SWR configuration presets. Replaces the 32 scattered hardcoded `refreshInterval` values and per-hook `dedupingInterval` / `revalidateOnFocus` settings with named constants.
+**Why:** Current state: `use-design-sync.ts` polls at 2000ms, `use-renderings.ts` at 3000ms, `use-mcp.ts` at 30000ms and 15000ms, `use-ontology.ts` at 60000ms — all hardcoded. When you need to tune polling (e.g., reduce server load during peak hours), you'd have to find and update 32 files. Archon solved this with a `STALE_TIMES` constant object and `POLLING_INTERVALS` — one file to change, all hooks follow. Additionally, `dedupingInterval` varies between 300ms and 600ms across hooks with no rationale for the difference.
+**Implementation:**
+- Create `cms/apps/web/src/lib/swr-constants.ts`:
+  ```typescript
+  /**
+   * Centralized SWR configuration constants.
+   * Single source of truth for polling intervals, deduplication, and stale times.
+   */
+
+  /** Polling intervals (milliseconds). Used with refreshInterval or useSmartPolling. */
+  export const POLL = {
+    /** Real-time operations: rendering tests, active builds, design sync imports */
+    realtime: 3_000,
+    /** Frequently changing: QA reports, blueprint runs, approval status */
+    frequent: 5_000,
+    /** Moderate: MCP connections, agent status */
+    moderate: 15_000,
+    /** Status checks: MCP server status, ontology sync */
+    status: 30_000,
+    /** Background: plugin health, ontology, penpot sync */
+    background: 60_000,
+    /** Disabled: no polling */
+    off: 0,
+  } as const;
+
+  /** Deduplication intervals (milliseconds). Prevents duplicate requests within window. */
+  export const DEDUP = {
+    /** Standard deduplication for most hooks */
+    standard: 500,
+    /** Extended deduplication for expensive queries (search, AI) */
+    expensive: 2_000,
+  } as const;
+
+  /** SWR option presets for common patterns. Spread into useSWR options. */
+  export const SWR_PRESETS = {
+    /** Polling endpoint: dedup + no revalidate on focus (polling handles freshness) */
+    polling: {
+      dedupingInterval: DEDUP.standard,
+      revalidateOnFocus: false,
+    },
+    /** Static data: long dedup, no polling, no focus revalidation */
+    static: {
+      dedupingInterval: DEDUP.expensive,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    },
+    /** User-triggered: no dedup delay, revalidate on focus */
+    interactive: {
+      dedupingInterval: 0,
+      revalidateOnFocus: true,
+    },
+  } as const;
+  ```
+- **Migration mapping** (documents which constant replaces which hardcoded value):
+  | Hook | Current interval | New constant |
+  |------|-----------------|-------------|
+  | `use-renderings.ts` (polling) | `3000` | `POLL.realtime` |
+  | `use-design-sync.ts` (polling) | `2000` | `POLL.realtime` |
+  | `use-mcp.ts` (connections) | `15000` | `POLL.moderate` |
+  | `use-mcp.ts` (status) | `30000` | `POLL.status` |
+  | `use-ontology.ts` | `60000` | `POLL.background` |
+  | `use-penpot.ts` | `60000` | `POLL.background` |
+  | `use-plugins.ts` | `60000` | `POLL.background` |
+  | `use-email-clients.ts` (dedup) | `300` | `DEDUP.standard` |
+  | `use-agent-skills.ts` (dedup) | `600` | `DEDUP.standard` |
+**Security:** Pure constants file. No runtime behavior, no external dependencies.
+**Verify:** All constants are `as const` (TypeScript enforces literal types). Importing `POLL.realtime` in a hook → TypeScript resolves to `3_000`. No default exports — tree-shaking works. `make check-fe` passes (type check + lint). 3 tests: constant values match expected, presets contain required keys, POLL.off === 0.
+
+---
+
+### 42.5 Migrate High-Traffic Hooks to Smart Polling + Constants `[Frontend]`
+
+**What:** Update the 10 highest-traffic polling hooks to use `useSmartPolling` (42.3) and centralized constants (42.4). These are the hooks that generate the most server load due to short polling intervals or high usage frequency. Remaining hooks migrate in a follow-up (not blocking).
+**Why:** Migrating all 32 hooks at once is risky and hard to review. The top 10 by traffic cover ~80% of polling load. Each migration is a 2-line change (import constant, wrap interval), so the PR stays reviewable. The remaining 22 hooks can migrate incrementally — they're longer-interval or lower-traffic.
+**Implementation:**
+- **Priority 1 — Real-time polling (3s, always active when page open):**
+  1. `cms/apps/web/src/hooks/use-renderings.ts` → `useRenderingTestPolling()`:
+     ```typescript
+     // Before:
+     refreshInterval: (data) => data && (data.status === "pending" || data.status === "processing") ? 3000 : 0,
+     // After:
+     const smartInterval = useSmartPolling(POLL.realtime);
+     refreshInterval: (data) => data && (data.status === "pending" || data.status === "processing") ? smartInterval : POLL.off,
+     ```
+  2. `cms/apps/web/src/hooks/use-design-sync.ts` → `useDesignImport()`:
+     ```typescript
+     // Before: refreshInterval: polling ? 2000 : 0,
+     // After:
+     const smartInterval = useSmartPolling(POLL.realtime);
+     refreshInterval: polling ? smartInterval : POLL.off,
+     ```
+  3. `cms/apps/web/src/hooks/use-blueprint-runs.ts` — if polling active builds
+  4. `cms/apps/web/src/hooks/use-qa-reports.ts` — if polling active QA checks
+
+- **Priority 2 — Moderate polling (15-30s, always on):**
+  5. `cms/apps/web/src/hooks/use-mcp.ts` → connections (15s) and status (30s):
+     ```typescript
+     const connInterval = useSmartPolling(POLL.moderate);
+     const statusInterval = useSmartPolling(POLL.status);
+     ```
+  6. `cms/apps/web/src/hooks/use-approval.ts` — if polling approval status
+
+- **Priority 3 — Background polling (60s):**
+  7. `cms/apps/web/src/hooks/use-ontology.ts` → `POLL.background`
+  8. `cms/apps/web/src/hooks/use-penpot.ts` → `POLL.background`
+  9. `cms/apps/web/src/hooks/use-plugins.ts` → `POLL.background`
+  10. `cms/apps/web/src/hooks/use-email-clients.ts` → dedup to `DEDUP.standard`
+
+- **Each hook migration:**
+  1. Import `useSmartPolling` and relevant `POLL`/`DEDUP`/`SWR_PRESETS` constants
+  2. Replace hardcoded `refreshInterval` with `useSmartPolling(POLL.xxx)`
+  3. Replace hardcoded `dedupingInterval` with `DEDUP.standard` or `DEDUP.expensive`
+  4. Add `...SWR_PRESETS.polling` spread where appropriate
+  5. Remove per-hook `revalidateOnFocus: false` (now in preset)
+- **Do NOT change:** Hook signatures, return types, conditional key patterns, error handling. This is a config-only migration — no behavior change when tab is visible and focused.
+**Security:** No new attack surface. Polling behavior change is client-side only. Server sees fewer requests from background tabs — reduced load, not increased.
+**Verify:** Open rendering test page, start a test → polls at 3s (visible in Network tab). Switch tab → polling pauses. Come back → resumes. Unfocus window → slows to ~4.5s. All 10 migrated hooks use constants from `swr-constants.ts` (grep confirms no hardcoded intervals remain in those files). `make check-fe` passes. Existing Vitest tests for each hook still pass. 10 tests (one per hook): verify correct `refreshInterval` value at each visibility state.
+
+---
+
+### 42.6 Unified Progress Tracking for Long-Running Operations `[Backend + Frontend]`
+
+**What:** Create a lightweight in-memory progress tracker for long-running operations (rendering tests, QA scans, design sync imports, connector exports, blueprint runs). Exposes a single `GET /api/v1/progress/{operation_id}` endpoint that returns operation status, progress percentage, and log messages. Frontend polls this single endpoint instead of per-feature status endpoints.
+**Why:** Currently, each long-running operation has its own polling pattern: rendering tests poll `/api/v1/rendering/tests/{id}` for status, design sync polls `/api/v1/design-sync/imports/{id}`, QA polls its own endpoint. Each returns the full entity just to check a `status` field. A dedicated progress endpoint returns only status + progress + log (tiny payload, ~200 bytes), is ETag-friendly (42.1), and provides a consistent UX across all operation types. Archon's `ProgressTracker` pattern proved this — simple in-memory dict with progress callbacks, polled via a single endpoint.
+**Implementation:**
+- Create `app/core/progress.py`:
+  ```python
+  from dataclasses import dataclass, field
+  from datetime import datetime, UTC
+  from enum import StrEnum
+
+  class OperationStatus(StrEnum):
+      PENDING = "pending"
+      PROCESSING = "processing"
+      COMPLETED = "completed"
+      FAILED = "failed"
+
+  @dataclass
+  class ProgressEntry:
+      operation_id: str
+      operation_type: str  # "rendering", "qa_scan", "design_sync", "export", "blueprint"
+      status: OperationStatus = OperationStatus.PENDING
+      progress: int = 0  # 0-100
+      message: str = ""
+      started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+      updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+      error: str | None = None
+
+  class ProgressTracker:
+      """In-memory progress store for long-running operations."""
+      _store: dict[str, ProgressEntry] = {}
+
+      @classmethod
+      def start(cls, operation_id: str, operation_type: str) -> ProgressEntry:
+          entry = ProgressEntry(operation_id=operation_id, operation_type=operation_type)
+          cls._store[operation_id] = entry
+          return entry
+
+      @classmethod
+      def update(cls, operation_id: str, *, progress: int | None = None,
+                 status: OperationStatus | None = None, message: str | None = None,
+                 error: str | None = None) -> ProgressEntry | None:
+          entry = cls._store.get(operation_id)
+          if not entry:
+              return None
+          if progress is not None: entry.progress = progress
+          if status is not None: entry.status = status
+          if message is not None: entry.message = message
+          if error is not None: entry.error = error
+          entry.updated_at = datetime.now(UTC)
+          return entry
+
+      @classmethod
+      def get(cls, operation_id: str) -> ProgressEntry | None:
+          return cls._store.get(operation_id)
+
+      @classmethod
+      def cleanup_completed(cls, max_age_seconds: int = 300) -> int:
+          """Remove completed/failed entries older than max_age. Call periodically."""
+          now = datetime.now(UTC)
+          to_remove = [
+              k for k, v in cls._store.items()
+              if v.status in (OperationStatus.COMPLETED, OperationStatus.FAILED)
+              and (now - v.updated_at).total_seconds() > max_age_seconds
+          ]
+          for k in to_remove:
+              del cls._store[k]
+          return len(to_remove)
+  ```
+- Create `app/core/progress_routes.py`:
+  ```python
+  @router.get("/api/v1/progress/{operation_id}")
+  async def get_progress(operation_id: str) -> dict:
+      entry = ProgressTracker.get(operation_id)
+      if not entry:
+          raise HTTPException(404, f"Operation {operation_id} not found")
+      return {
+          "operation_id": entry.operation_id,
+          "operation_type": entry.operation_type,
+          "status": entry.status,
+          "progress": entry.progress,
+          "message": entry.message,
+          "error": entry.error,
+      }
+
+  @router.get("/api/v1/progress/active")
+  async def get_active_operations() -> list[dict]:
+      """List all in-flight operations."""
+      return [...]
+  ```
+- Register router in `app/core/__init__.py` or `main.py`
+- **Integration points** (wire into existing services — one at a time, not all at once):
+  - `app/rendering/service.py` → call `ProgressTracker.start()` when test begins, `.update()` on each client render, `.update(status=COMPLETED)` when done
+  - `app/design_sync/service.py` → start on import, update per-stage (fetching → converting → saving)
+  - `app/qa_engine/service.py` → start on scan, update per-check (1/10 → 2/10 → ...)
+  - `app/connectors/` → start on export, update per-ESP
+- Frontend: Create `cms/apps/web/src/hooks/use-progress.ts`:
+  ```typescript
+  export function useProgress(operationId: string | null) {
+    const smartInterval = useSmartPolling(POLL.realtime);
+    return useSWR<ProgressEntry>(
+      operationId ? `/api/v1/progress/${operationId}` : null,
+      fetcher,
+      {
+        refreshInterval: (data) =>
+          data && (data.status === "pending" || data.status === "processing")
+            ? smartInterval : POLL.off,
+        ...SWR_PRESETS.polling,
+      },
+    );
+  }
+  ```
+- **This does NOT replace per-feature detail endpoints** — those still return full entity data. The progress endpoint is an optimization for the "is it done yet?" polling pattern.
+**Security:** Progress entries are in-memory — lost on restart (acceptable, operations restart too). No PII in progress messages. Operation IDs should be UUIDs (not sequential integers) to prevent enumeration. Auth middleware applies to `/api/v1/progress/` like all other routes.
+**Verify:** Start a rendering test → `GET /api/v1/progress/{id}` returns `{"status": "processing", "progress": 30, "message": "Rendering Gmail..."}`. Poll with ETag → 304 when progress unchanged. Operation completes → status becomes `"completed"`, progress 100. After 5 minutes → entry cleaned up, 404 returned. `GET /api/v1/progress/active` → lists all in-flight operations. 12 tests: start, update, get, 404, cleanup, active list, concurrent operations, status transitions, error capture, auth required, UUID validation, ETag compatibility.
+
+---
+
+### 42.7 Wire ETag + Smart Polling into CI Validation `[DevOps]`
+
+**What:** Add validation to the CI pipeline that ensures: (1) no new SWR hooks use hardcoded `refreshInterval` numbers (must use `POLL.*` constants), (2) the ETag middleware is registered and responding, (3) the `useSmartPolling` hook is used for all polling intervals > 0.
+**Why:** Without CI enforcement, new hooks will inevitably introduce hardcoded intervals, bypassing the centralized configuration. A lint rule catches this at PR time — much cheaper than discovering drift months later. The ETag middleware integration test catches accidental removal during refactoring.
+**Implementation:**
+- **Frontend lint rule** — add to `cms/apps/web/eslint.config.mjs` (or create a custom rule):
+  - Pattern: flag `refreshInterval: <number_literal>` where number > 0 in any `.ts`/`.tsx` file under `src/hooks/`
+  - Allowed: `refreshInterval: POLL.xxx`, `refreshInterval: smartInterval`, `refreshInterval: (data) => ...`, `refreshInterval: 0`
+  - Implementation option A: ESLint `no-restricted-syntax` rule with AST selector
+  - Implementation option B: Simple grep-based check in Makefile:
+    ```makefile
+    lint-polling:
+    	@echo "Checking for hardcoded polling intervals..."
+    	@! grep -rn 'refreshInterval.*[0-9]\{3,\}' cms/apps/web/src/hooks/ \
+    		--include='*.ts' --include='*.tsx' \
+    		| grep -v 'POLL\.' | grep -v '// legacy-ok' \
+    		&& echo "FAIL: Hardcoded refreshInterval found" && exit 1 \
+    		|| echo "OK: All polling intervals use POLL constants"
+    ```
+- **Backend integration test** — add to `tests/test_etag.py`:
+  ```python
+  async def test_etag_middleware_active(client):
+      """ETag middleware responds with ETag header on GET."""
+      resp = await client.get("/api/v1/health")
+      assert "etag" in resp.headers
+
+  async def test_etag_304_on_match(client):
+      """304 returned when If-None-Match matches."""
+      resp1 = await client.get("/api/v1/health")
+      etag = resp1.headers["etag"]
+      resp2 = await client.get("/api/v1/health", headers={"If-None-Match": etag})
+      assert resp2.status_code == 304
+  ```
+- **Wire into Makefile:**
+  - Add `lint-polling` to the `check-fe` target
+  - Add `test_etag.py` to the standard `test` target (it's a unit test, not integration)
+- Update `CLAUDE.md` Essential Commands section:
+  - Add `make lint-polling` — "Check for hardcoded polling intervals"
+  - Document ETag + smart polling architecture in a new "HTTP Caching" section
+**Security:** CI rules are read-only checks. No new permissions or external access.
+**Verify:** Add a new hook with `refreshInterval: 5000` → `make lint-polling` fails. Change to `refreshInterval: POLL.frequent` → passes. `make check` includes `lint-polling` and ETag tests. Remove ETag middleware → `test_etag_304_on_match` fails. All green when properly configured.
+
+---
+
+### Phase 42 — Summary
+
+| Subtask | Scope | Dependencies | Effort |
+|---------|-------|--------------|--------|
+| 42.1 ETag middleware | `app/core/etag.py`, `middleware.py` | None — start immediately | ~120 LOC + 8 tests |
+| 42.2 Frontend ETag support | `swr-fetcher.ts`, `auth-fetch.ts` | 42.1 (backend sends ETags) | ~20 LOC + 5 tests |
+| 42.3 Smart polling hook | `use-smart-polling.ts` | None — independent | ~60 LOC + 6 tests |
+| 42.4 Polling constants | `swr-constants.ts` | None — independent | ~50 LOC + 3 tests |
+| 42.5 Hook migration (top 10) | 10 hook files | 42.3 + 42.4 | ~5 LOC per hook + 10 tests |
+| 42.6 Progress tracker | `app/core/progress.py`, `use-progress.ts` | 42.1 + 42.3 + 42.4 | ~200 LOC + 12 tests |
+| 42.7 CI validation | `Makefile`, `eslint.config`, `test_etag.py` | 42.1 + 42.4 | ~80 LOC + lint rule |
+
+> **Execution:** 42.1, 42.3, and 42.4 are fully independent — start all three in parallel. 42.2 depends on 42.1 (needs backend ETags). 42.5 depends on 42.3 + 42.4 (needs smart polling hook + constants). 42.6 depends on 42.1 + 42.3 + 42.4 (uses all three). 42.7 depends on 42.1 + 42.4 (validates both). **Critical path:** 42.1 → 42.2, then 42.3 + 42.4 → 42.5 → 42.6 → 42.7.
+>
+> **This is NOT a major refactoring.** No SWR-to-TanStack migration. No API contract changes. No database schema changes. Each subtask is backward-compatible — existing hooks work unchanged until individually migrated. The heaviest subtask (42.6 progress tracker) is optional and can be deferred. The core value (42.1–42.5) is ~250 LOC of new code + config changes to 10 hook files.
+
+---
+
+## Phase 43 — Judge Feedback Loop & Self-Improving Calibration
+
+> **Judges are stateless — they make the same mistakes every run.** After Phase 37.5 human labeling, we know exactly which traces each judge got wrong and why. But this knowledge lives in `traces/*_calibration.json` files and is never fed back into judge prompts. Agents already benefit from a feedback loop (`failure_warnings.py` injects eval failures into agent prompts), but judges have no equivalent mechanism. Every re-run repeats the same false positives and false negatives.
+>
+> **Solution:** Mirror the agent feedback pattern for judges. After each calibration cycle, auto-generate per-criterion correction examples from disagreements (human said X, judge said Y) and inject them into judge prompts as few-shot corrections. Judges also get progressive skill files — like agents' `SKILL.md` + `skills/` — accumulating domain knowledge about email evaluation patterns. The Knowledge agent's RAG base stores calibration learnings as searchable docs, enabling cross-agent knowledge sharing.
+>
+> **Dependency:** Phase 37.5 complete (human labels exist). No database changes. No API changes. ~400 LOC of new code + YAML config.
+
+- [ ] 43.1 Judge correction generator from calibration data
+- [ ] 43.2 Inject corrections into judge prompt template
+- [ ] 43.3 Judge skill files for domain knowledge accumulation
+- [ ] 43.4 Knowledge agent integration for cross-judge learnings
+- [ ] 43.5 Calibration delta tracking and regression gate
+- [ ] 43.6 End-to-end validation: re-judge with corrections, measure TPR/TNR improvement
+
+---
+
+### 43.1 Judge Correction Generator from Calibration Data `[Backend, Evals]`
+
+**What:** Add `app/ai/agents/evals/judge_corrections.py` that reads calibration results (`traces/*_calibration.json`) and human label files (`traces/*_human_labels.jsonl`), extracts disagreement cases (judge verdict != human label), and generates structured correction YAML files per agent at `traces/corrections/{agent}_judge_corrections.yaml`.
+**Why:** After 37.5, each calibration file contains TP/TN/FP/FN counts per criterion. The FP (judge said PASS, human said FAIL) and FN (judge said FAIL, human said PASS) cases are the judge's mistakes. Formatting these as concrete "you got this wrong" examples with the trace context and reasoning is the most direct way to improve the next run — same principle as `failure_warnings.py` but for judges instead of agents.
+**Implementation:**
+- Read `traces/{agent}_calibration.json` for per-criterion confusion matrices
+- Read `traces/{agent}_human_labels.jsonl` + `traces/{agent}_verdicts.jsonl` to find specific disagreement traces
+- For each FP/FN case, extract: `trace_id`, `criterion`, `judge_verdict`, `human_verdict`, `judge_reasoning`, `trace_brief` (first 200 chars)
+- Generate `traces/corrections/{agent}_judge_corrections.yaml`:
+  ```yaml
+  agent: scaffolder
+  generated: "2026-03-30T12:00:00Z"
+  corrections:
+    - criterion: brief_fidelity
+      trace_id: scaff-003
+      judge_said: PASS
+      correct_answer: FAIL
+      judge_reasoning: "The output includes a hero section and product grid..."
+      correction: "The brief requested 3 product cards at 180x220px but output has 2 at default size. Count and dimension mismatches are FAIL."
+      pattern: "Always verify exact counts and dimensions against brief, not just section presence."
+  ```
+- Cap at 3 corrections per criterion (most impactful FP/FN cases, sorted by reasoning length — shorter reasoning = less confident judge = more useful correction)
+- CLI: `python -m app.ai.agents.evals.judge_corrections --traces-dir traces/ --output traces/corrections/`
+- Add `make eval-corrections` Makefile target
+
+**Security:** No external inputs. Reads existing local trace/label files only. YAML output is local.
+**Verify:** After 37.5 labels exist, `make eval-corrections` generates 7 YAML files (one per LLM-judged agent — accessibility and outlook_fixer are fully deterministic, skip them). Each file contains 1–15 corrections (3 max per criterion × 5 criteria). Spot-check: correction `pattern` field is actionable guidance, not just restating the disagreement. 10 tests.
+
+---
+
+### 43.2 Inject Corrections into Judge Prompt Template `[Backend, Evals]`
+
+**What:** Add `format_corrections_section(agent_name: str) -> str` to `app/ai/agents/evals/judges/base.py` that reads the agent's correction YAML and formats it as a prompt section injected between the criteria block and the golden references in `SYSTEM_PROMPT_TEMPLATE`. Each judge's `build_prompt()` calls this automatically.
+**Why:** The correction examples act as few-shot "anti-examples" — they show the judge its own past mistakes with the correct answer. This is empirically more effective than adjusting criterion descriptions because it addresses specific failure modes (e.g., "counting items" or "checking exact dimensions") rather than general criteria wording.
+**Implementation:**
+- `format_corrections_section(agent_name)` in `base.py`:
+  - Load `traces/corrections/{agent}_judge_corrections.yaml` (cache with `@lru_cache` keyed on file mtime)
+  - Format as prompt block:
+    ```
+    ## CORRECTION EXAMPLES (from prior calibration)
+    You previously made these mistakes. Learn from them:
+
+    1. **brief_fidelity** on trace scaff-003:
+       You said: PASS. Correct answer: FAIL.
+       Your reasoning was: "The output includes a hero section..."
+       The mistake: Always verify exact counts and dimensions against brief.
+    ```
+  - Token budget: 1500 tokens max (~6000 chars). Prioritize FP corrections over FN (false positives are more damaging — they let bad output through).
+  - Return empty string if no corrections file exists (graceful degradation — judges work fine without corrections, just less accurately)
+- Update `SYSTEM_PROMPT_TEMPLATE` to include `{corrections_block}` placeholder
+- Each judge's `build_prompt()` calls `format_corrections_section(self.agent_name)` — zero changes needed in individual judge files if base class handles it
+- Add `--no-corrections` flag to `judge_runner.py` for A/B comparison runs
+
+**Security:** Correction files are local YAML. No user input reaches prompt injection surface — corrections are generated from our own calibration data.
+**Verify:** Judge prompt for scaffolder includes correction section when YAML exists. Judge prompt without YAML file has no correction section (empty string). Token budget respected — correction section ≤1500 tokens even with 15 corrections. `--no-corrections` flag suppresses injection. 8 tests.
+
+---
+
+### 43.3 Judge Skill Files for Domain Knowledge Accumulation `[Backend, Evals]`
+
+**What:** Add `app/ai/agents/evals/judges/skills/` directory with per-domain skill files that accumulate email evaluation expertise, mirroring the agent `SKILL.md` + `skills/` pattern. Each judge loads relevant skills via a `JUDGE_SKILL.md` manifest.
+**Why:** Corrections address specific past mistakes. Skills address systemic knowledge gaps — patterns the judge consistently struggles with across multiple traces and calibration cycles. For example, if the scaffolder judge repeatedly misjudges MSO conditional nesting depth, a skill file `mso_conditional_evaluation.md` teaches it the structural rules once. This separates ephemeral corrections (from one calibration run) from durable knowledge (accumulated across runs).
+**Implementation:**
+- Create `app/ai/agents/evals/judges/skills/` with initial skill files derived from 37.4 flip-rate analysis:
+  - `mso_conditional_patterns.md` — valid MSO nesting rules, common false positives (e.g., `<!--[if !mso]><!-->` is correct despite looking unbalanced)
+  - `email_layout_detection.md` — how to distinguish layout divs (FAIL) from wrapper divs inside `<td>` (PASS)
+  - `dark_mode_completeness.md` — minimum viable dark mode (meta + media query + Outlook selectors) vs partial implementation
+  - `esp_syntax_validation.md` — platform-specific delimiter rules, common false positives (nested Liquid tags, AMPscript CONCAT)
+  - `copy_quality_boundaries.md` — where "good enough" meets "compelling" — calibrated pass/fail boundary examples
+- Add `JUDGE_SKILL.md` per judge agent mapping criteria → relevant skill files:
+  ```yaml
+  name: scaffolder_judge
+  skills:
+    mso_conditional_correctness: [mso_conditional_patterns.md]
+    email_layout_patterns: [email_layout_detection.md]
+    dark_mode_readiness: [dark_mode_completeness.md]
+  ```
+- `load_judge_skills(agent_name: str, criterion: str) -> str` utility loads and concatenates relevant skills
+- Injected into prompt after golden references, before corrections (knowledge → examples → mistakes)
+- Token budget: 1000 tokens per skill file, 2000 total skill budget per judge call
+
+**Security:** Skill files are local markdown. Static content, no dynamic generation from user input.
+**Verify:** Scaffolder judge prompt includes MSO pattern skill when evaluating `mso_conditional_correctness`. No skill injection for criteria with no mapped skills. Token budget enforced. Initial 5 skill files authored. 6 tests.
+
+---
+
+### 43.4 Knowledge Agent Integration for Cross-Judge Learnings `[Backend, Evals]`
+
+**What:** After each calibration cycle, auto-generate a knowledge base document from calibration results and disagreement patterns, and store it in the Knowledge agent's RAG corpus (`data/knowledge/`). This makes judge calibration learnings queryable by the Knowledge agent — developers can ask "what do our judges struggle with?" and get grounded answers.
+**Why:** Judge corrections (43.1) and skills (43.3) improve judges directly. But the calibration data also has value for humans — it reveals which email patterns are ambiguous, which criteria need clearer definitions, and where agent output quality is genuinely poor vs where judges are miscalibrating. Storing this in the Knowledge agent's RAG base makes it searchable and citable.
+**Implementation:**
+- Add `scripts/generate-calibration-knowledge.py`:
+  - Read all `traces/*_calibration.json` files
+  - Generate `data/knowledge/judge_calibration_insights.md` with sections:
+    - Per-agent calibration summary (TPR/TNR per criterion)
+    - Common disagreement patterns (grouped by criterion type)
+    - Criteria approaching failure threshold (TPR < 0.90 or TNR < 0.85 — early warning)
+    - Cross-agent patterns (e.g., "html_preservation is hard for all agents that modify HTML")
+  - Include concrete examples from disagreement traces (anonymized trace IDs, not full HTML)
+- Add `make eval-knowledge` Makefile target (runs after `make eval-calibrate`)
+- Knowledge agent indexes the doc automatically on next `KnowledgeService.search()` call (existing indexing pipeline)
+
+**Security:** No PII in calibration data. Knowledge doc contains trace IDs and criterion names only — no full HTML or user content.
+**Verify:** `make eval-knowledge` generates `judge_calibration_insights.md`. Knowledge agent query "which judges have low accuracy" returns grounded answer with citations. Document regenerated cleanly after re-calibration. 4 tests.
+
+---
+
+### 43.5 Calibration Delta Tracking and Regression Gate `[Backend, Evals]`
+
+**What:** Add `app/ai/agents/evals/calibration_tracker.py` that compares current calibration results against the previous run and flags regressions. Wire into `make eval-check` as a calibration regression gate: if any criterion's TPR drops >5pp or TNR drops >5pp from the baseline, the gate fails.
+**Why:** Without tracking, judges can silently degrade — a prompt tweak that fixes one criterion may break another. The improvement tracker (`improvement_tracker.py`) tracks agent pass rates but not judge accuracy. This closes the gap: every calibration run is compared to baseline, and regressions are caught before they propagate.
+**Implementation:**
+- `calibration_tracker.py`:
+  - `load_baseline(path: Path) -> dict[str, CalibrationResult]` — reads `traces/calibration_baseline.json`
+  - `compare_calibration(current: list[CalibrationResult], baseline: dict) -> list[CalibrationDelta]` — computes per-criterion TPR/TNR deltas
+  - `CalibrationDelta(agent, criterion, tpr_before, tpr_after, tpr_delta, tnr_before, tnr_after, tnr_delta, regressed: bool)`
+  - `save_baseline(results: list[CalibrationResult], path: Path)` — snapshots current as new baseline
+- CLI: `python -m app.ai.agents.evals.calibration_tracker --current traces/ --baseline traces/calibration_baseline.json`
+- `make eval-calibration-gate` target: fails if any criterion regressed >5pp
+- Wire into `make eval-check` (existing CI gate)
+- First run after 37.5: save initial baseline, no comparison
+
+**Security:** Local file comparison. No external services.
+**Verify:** Baseline saved on first run. Simulated regression (manually edit calibration) triggers gate failure. Improvements pass gate. Delta report shows per-criterion changes. 8 tests.
+
+---
+
+### 43.6 End-to-End Validation: Re-Judge with Corrections `[Evals, Manual]`
+
+**What:** Re-run the full judge pipeline with corrections enabled (from 43.1–43.2) and compare TPR/TNR against the 37.5 baseline. This validates that the feedback loop actually improves accuracy. Run a second pass without corrections (`--no-corrections`) for A/B comparison.
+**Why:** The entire phase is pointless if corrections don't improve judge accuracy. This subtask measures the delta and identifies any criteria where corrections made things worse (over-correction). It also establishes the first calibration baseline for the regression gate (43.5).
+**Implementation:**
+- Run `make eval-corrections` to generate correction YAMLs from 37.5 labels
+- Run `make eval-judge` (with corrections) → new verdicts
+- Run `make eval-calibrate` → new calibration against same 37.5 human labels
+- Compare: `make eval-calibration-gate --baseline traces/calibration_baseline_37_5.json`
+- Run `make eval-judge -- --no-corrections` → verdicts without corrections
+- Run `make eval-calibrate` again → calibration without corrections
+- Document delta per criterion in `traces/correction_impact_report.json`:
+  ```json
+  {
+    "scaffolder:brief_fidelity": {
+      "tpr_without": 0.82, "tpr_with": 0.91,
+      "tnr_without": 0.78, "tnr_with": 0.85,
+      "verdict": "improved"
+    }
+  }
+  ```
+- If any criterion worsened with corrections: review and adjust the correction YAML, re-run
+- Save final calibration as new baseline for 43.5 gate
+
+**Security:** Same as 37.4 — LLM judge calls use existing configured provider. ~$2.50 per full run on Sonnet, ~$5 total for A/B comparison.
+**Verify:** Correction impact report generated for all 7 LLM-judged agents. Majority of criteria show TPR/TNR improvement or no change. No criterion regressed >3pp (if so, adjust corrections and re-run). Final calibration meets TPR ≥ 0.85 and TNR ≥ 0.80 for all criteria. Baseline saved for future regression gate.
+
+---
+
+### Phase 43 — Summary
+
+| Subtask | Scope | Dependencies | Effort |
+|---------|-------|--------------|--------|
+| 43.1 Correction generator | `judge_corrections.py`, YAML output | 37.5 complete (human labels) | ~120 LOC + 10 tests |
+| 43.2 Prompt injection | `base.py` update, `judge_runner.py` flag | 43.1 (corrections exist) | ~80 LOC + 8 tests |
+| 43.3 Judge skill files | `judges/skills/`, `JUDGE_SKILL.md`, loader | None — independent | ~5 skill files + 60 LOC + 6 tests |
+| 43.4 Knowledge integration | `generate-calibration-knowledge.py` | 37.5 complete (calibration data) | ~100 LOC + 4 tests |
+| 43.5 Calibration regression gate | `calibration_tracker.py`, Makefile | 37.5 complete (first baseline) | ~80 LOC + 8 tests |
+| 43.6 End-to-end validation | Re-judge + A/B comparison | 43.1 + 43.2 + 43.5 | ~$5 API cost, manual review |
+
+> **Execution:** 43.1 first (generates the data). 43.2 wires it into prompts (depends on 43.1). 43.3 is independent — can run in parallel with 43.1/43.2. 43.4 is independent — can run in parallel. 43.5 is independent — can run in parallel. 43.6 is the integration test — depends on 43.1 + 43.2 + 43.5. **Critical path:** 43.1 → 43.2 → 43.6. **Parallel track:** 43.3 + 43.4 + 43.5 (all independent).
+>
+> **This completes the judge feedback loop.** After Phase 43, every calibration cycle automatically generates corrections that improve the next judge run. The pattern mirrors the existing agent feedback loop (`failure_warnings.py`) but for judges. Combined with golden references (Phase 37) and judge skills (43.3), judges have three layers of improving context: durable knowledge (skills), verified examples (golden refs), and mistake corrections (calibration feedback). Total new code: ~440 LOC + 5 skill files. API cost per validation run: ~$5.
+
+---
+
+## Phase 44 — Workflow Hardening, CI Gaps & Operational Maturity
+
+> **The codebase is well-engineered but the workflow around it has gaps.** Strict types, 26 ruff rules, pre-commit hooks, SAST scanning, and a rich eval pipeline protect code quality — but UI regressions ship uncaught (Playwright tests don't run in CI), dependencies accumulate silent CVEs (no automated update tooling), 50+ feature flags have no expiry tracking, 47 Alembic migrations have no squash strategy, and there are zero operational runbooks for production incidents. These are the gaps between "well-built" and "well-operated."
+>
+> **This phase closes them systematically.** 10 subtasks across CI hardening, dependency hygiene, operational documentation, adversarial agent evaluation, CRDT testing, SDK drift detection, and contributor onboarding. Most subtasks are independent — high parallelism possible. No architectural changes. Total effort: ~1200 LOC + config + documentation.
+>
+> **Dependency note:** Independent of Phases 37–43. Uses existing CI infrastructure (`.github/workflows/ci.yml`), Makefile targets, Docker Compose services, and eval pipeline. No new external services required except Renovate (GitHub App, free for open source / self-hosted).
+
+- [x] ~~44.1 E2E smoke tests in CI~~ DONE
+- [x] ~~44.2 Dependency update automation (Renovate)~~ DONE
+- [x] ~~44.3 Feature flag lifecycle management~~ DONE
+- [ ] 44.4 Adversarial agent evaluation pass
+- [ ] 44.5 Operational runbooks
+- [ ] 44.6 Migration squash strategy & tooling
+- [ ] 44.7 CRDT collaboration test coverage
+- [ ] 44.8 SDK drift detection in CI
+- [ ] 44.9 Observability stack for local development
+- [ ] 44.10 Contributing guide & new-feature scaffolding
+
+---
+
+### 44.1 E2E Smoke Tests in CI `[CI/CD, Testing]`
+
+**What:** Add a `test-e2e-smoke` job to `.github/workflows/ci.yml` that runs a tagged subset of Playwright tests (`@smoke`) on every PR. Full multi-browser runs remain local-only via `make e2e-all-browsers`. Upload Playwright trace artifacts on failure for debugging.
+**Why:** Playwright tests exist (`cms/apps/web/playwright.config.ts`, `make e2e`) but skip CI entirely. UI regressions — broken navigation, form submission failures, rendering glitches — only surface during manual testing or after merge. A smoke subset (5-10 critical paths: login, project creation, template editor load, component preview, approval flow) catches the most damaging regressions in <3 minutes without bloating CI.
+**Implementation:**
+- Tag critical E2E tests with `@smoke` annotation in test descriptions:
+  ```typescript
+  test('login flow @smoke', async ({ page }) => { ... });
+  test('create project @smoke', async ({ page }) => { ... });
+  test('template editor loads @smoke', async ({ page }) => { ... });
+  ```
+- Add CI job to `.github/workflows/ci.yml`:
+  ```yaml
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:15
+        env: { POSTGRES_USER: test, POSTGRES_PASSWORD: test, POSTGRES_DB: test }
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'cms/pnpm-lock.yaml' }
+      - run: uv sync && cd cms && pnpm install --frozen-lockfile
+      - run: uv run alembic upgrade head
+      - run: cd cms && pnpm exec playwright install --with-deps chromium
+      - run: make dev &
+      - run: cd cms && pnpm exec playwright test --grep @smoke --reporter=github
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: cms/apps/web/test-results/ }
+  ```
+- Add `make e2e-smoke` Makefile target for local smoke runs
+- Identify and tag 5-10 smoke tests from existing E2E suite — prioritize tests covering: auth flow, project CRUD, template editor initialization, component library browsing, approval submit
+
+**Security:** CI services use test-only credentials. No production secrets in E2E job. Playwright traces may contain rendered HTML — artifact retention set to 7 days.
+**Verify:** `e2e-smoke` job runs on PR. 5+ tests tagged `@smoke`. Job completes in <5 minutes. Failed test uploads trace artifact. `make e2e-smoke` runs same subset locally. Existing CI jobs unaffected.
+
+---
+
+### 44.2 Dependency Update Automation (Renovate) `[CI/CD, Security]`
+
+**What:** Configure Renovate Bot to manage dependency updates across Python (`uv.lock`), Node.js (`cms/pnpm-lock.yaml`), Docker base images (`Dockerfile`, `cms/apps/web/Dockerfile`, `db/Dockerfile`), and GitHub Actions (`workflows/*.yml`). Group updates by risk tier: security patches auto-merge, minor versions in weekly PRs, major versions as individual PRs with manual review.
+**Why:** 100+ production dependencies with no automated update tooling. `uv.lock` and `pnpm-lock.yaml` pin exact versions — great for reproducibility, bad for security when CVEs are published against pinned versions. The existing `make check` gate (lint + types + tests + security) catches breakage, so automated PRs are safe to merge when CI passes. Renovate handles monorepo layouts (pnpm workspaces, multiple Dockerfiles, lock files) better than Dependabot.
+**Implementation:**
+- Add `renovate.json5` to repo root:
+  ```json5
+  {
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended", "security:openssl-rollback"],
+    "timezone": "Europe/Riga",
+    "schedule": ["before 8am on Monday"],
+    "labels": ["dependencies"],
+    "enabledManagers": ["pip_requirements", "pep621", "pnpm", "dockerfile", "github-actions"],
+    "packageRules": [
+      // Security patches: auto-merge if CI passes
+      {
+        "matchUpdateTypes": ["patch"],
+        "matchCategories": ["security"],
+        "automerge": true,
+        "automergeType": "pr",
+        "platformAutomerge": true
+      },
+      // Group all minor Python deps
+      {
+        "matchManagers": ["pep621"],
+        "matchUpdateTypes": ["minor", "patch"],
+        "groupName": "python-minor",
+        "schedule": ["before 8am on Monday"]
+      },
+      // Group all minor Node.js deps
+      {
+        "matchManagers": ["pnpm"],
+        "matchUpdateTypes": ["minor", "patch"],
+        "groupName": "node-minor",
+        "schedule": ["before 8am on Monday"]
+      },
+      // Docker base images: separate PRs, manual review
+      {
+        "matchManagers": ["dockerfile"],
+        "groupName": "docker-images",
+        "automerge": false
+      },
+      // Major versions: individual PRs, never auto-merge
+      {
+        "matchUpdateTypes": ["major"],
+        "automerge": false,
+        "labels": ["dependencies", "breaking"]
+      }
+    ],
+    // Pin GitHub Actions to full SHA for supply-chain security
+    "pinDigests": true
+  }
+  ```
+- Enable Renovate GitHub App on the repository (or use self-hosted via GitHub Action)
+- Add `.github/renovate-config.js` for any repo-specific overrides (e.g., ignore `anthropic` SDK if pinned to specific version for compatibility)
+
+**Security:** Renovate PRs go through full CI pipeline (`make check`). Security patches auto-merge only after CI passes. GitHub Actions pinned to SHA digests to prevent supply-chain attacks via tag mutation. No secrets exposed to Renovate.
+**Verify:** Renovate opens first dependency dashboard issue. Security patch PR auto-merges after CI green. Minor deps grouped into weekly PR. Major deps get individual PRs with `breaking` label. Docker image updates in separate PR. `renovate-config-validator` passes on `renovate.json5`.
+
+---
+
+### 44.3 Feature Flag Lifecycle Management `[Backend, CI]`
+
+**What:** Add a `feature-flags.yaml` manifest tracking all feature flags with owner, creation date, intended removal date, and status. Add a CI check (`make flag-audit`) that warns on flags older than 90 days without a removal plan and fails on flags older than 180 days.
+**Why:** 50+ feature flags in `.env.example` (all disabled by default) with no lifecycle tracking. Flags added during development ("I'll clean this up later") accumulate indefinitely. Dead flags create confusion (is `COLLAB__ENABLED` safe to turn on?), bloat configuration, and mask untested code paths. A manifest with expiry dates creates social pressure to clean up — the CI warning is the nudge.
+**Implementation:**
+- Create `feature-flags.yaml` in repo root:
+  ```yaml
+  # Feature Flag Manifest — all flags must be registered here
+  # CI warns on flags >90 days without removal_date, fails on >180 days
+  flags:
+    - name: COLLAB__ENABLED
+      description: Real-time CRDT collaborative editing (Yjs + WebSocket)
+      owner: platform-team
+      created: "2026-01-15"
+      removal_date: null  # permanent — requires explicit opt-in per deployment
+      status: beta  # alpha | beta | ga | deprecated
+
+    - name: AI__STRUCTURED_OUTPUT
+      description: Agent structured output mode (JSON schema responses)
+      owner: ai-team
+      created: "2026-02-01"
+      removal_date: "2026-04-15"  # promote to always-on after eval validation
+      status: ga
+
+    # ... all 50+ flags registered
+  ```
+- Create `scripts/flag-audit.py`:
+  ```python
+  def audit_flags(manifest_path: Path, env_example_path: Path) -> list[Warning]:
+      """Compare manifest against .env.example, check expiry dates."""
+      manifest_flags = load_yaml(manifest_path)
+      env_flags = parse_env_example(env_example_path)
+      warnings = []
+      # Flags in .env.example but not in manifest
+      for flag in env_flags - manifest_flags:
+          warnings.append(Warning(flag, "UNREGISTERED", severity="error"))
+      # Flags past removal date
+      for flag in manifest_flags:
+          if flag.removal_date and flag.removal_date < today():
+              warnings.append(Warning(flag, "PAST_REMOVAL_DATE", severity="error"))
+          elif flag.removal_date is None and age(flag) > 180:
+              warnings.append(Warning(flag, "NO_REMOVAL_PLAN_180D", severity="error"))
+          elif flag.removal_date is None and age(flag) > 90:
+              warnings.append(Warning(flag, "NO_REMOVAL_PLAN_90D", severity="warn"))
+      return warnings
+  ```
+- Add `make flag-audit` Makefile target
+- Add to `make check` gate (warn-only initially, promote to fail after backlog cleared)
+
+**Security:** No runtime changes. Manifest is documentation + CI enforcement only.
+**Verify:** All 50+ flags registered in `feature-flags.yaml`. `make flag-audit` runs clean (no unregistered flags). Simulated stale flag (>90 days, no removal) triggers warning. Simulated expired flag triggers error. `make check` includes flag audit.
+
+---
+
+### 44.4 Adversarial Agent Evaluation Pass `[Backend, Evals]`
+
+**What:** Add an adversarial evaluation stage to the eval pipeline that generates hostile inputs designed to break agent output — long strings, RTL text, nested Liquid/AMPscript, missing images, extreme viewport widths, emoji-heavy content. Each agent's eval traces include adversarial test cases alongside normal ones. Failures feed back as regression test cases.
+**Why:** The current eval pipeline tests agents against representative inputs — well-formed Figma designs, standard email briefs, typical component HTML. But production inputs are adversarial by nature: clients paste Word-formatted text, Figma designs have 200+ layers, ESP templates nest 5 levels of conditionals. The adversarial-dev harness (GAN-inspired planner/generator/evaluator architecture) demonstrates that separate adversarial evaluation dramatically improves output quality. Adapting this principle: an adversarial input generator creates inputs designed to trigger known failure modes, and agents must survive them.
+**Implementation:**
+- Create `app/ai/agents/evals/adversarial.py`:
+  ```python
+  @dataclass(frozen=True)
+  class AdversarialCase:
+      name: str
+      agent: str
+      input_html: str
+      attack_type: str  # "long_string" | "rtl_injection" | "nested_conditionals" | "missing_assets" | "extreme_width" | "emoji_heavy" | "malformed_html"
+      description: str
+
+  def generate_adversarial_cases(agent: str) -> list[AdversarialCase]:
+      """Generate adversarial test cases for an agent."""
+      cases = []
+      cases.extend(_long_string_cases(agent))      # 500+ char subject, 10KB paragraph
+      cases.extend(_rtl_injection_cases(agent))     # Arabic/Hebrew mixed with LTR
+      cases.extend(_nested_conditional_cases(agent)) # 5-level Liquid nesting
+      cases.extend(_missing_asset_cases(agent))     # broken image URLs, missing fonts
+      cases.extend(_extreme_dimension_cases(agent)) # 200px and 1200px viewports
+      cases.extend(_emoji_cases(agent))             # emoji in headings, alt text, CTA
+      cases.extend(_malformed_html_cases(agent))    # unclosed tags, invalid nesting
+      return cases
+  ```
+- Add adversarial cases to `app/ai/agents/evals/test_cases/adversarial/` as YAML fixtures:
+  ```yaml
+  - name: scaffolder_long_heading
+    agent: scaffolder
+    attack_type: long_string
+    input_html: "<h1>{{ 'A' * 500 }}</h1><p>Normal body text</p>"
+    expect: "heading truncated or wrapped, no layout break"
+  ```
+- Extend `runner.py` to include adversarial cases: `--include-adversarial` flag
+- Extend `make eval-run` to generate adversarial traces alongside normal traces
+- Add `make eval-adversarial` target for adversarial-only runs
+- Failed adversarial cases auto-generate regression YAML entries in `test_cases/regression/` for permanent inclusion
+- Judge verdicts on adversarial cases tracked separately in `traces/*_adversarial_verdicts.jsonl`
+
+**Security:** Adversarial inputs are controlled test fixtures, not user-supplied. `malformed_html` cases sanitized through `nh3` before agent processing (same as production path). No XSS vectors in adversarial HTML — all use the same sanitization pipeline.
+**Verify:** `generate_adversarial_cases("scaffolder")` returns 10+ cases across 7 attack types. `make eval-adversarial` generates traces for all 9 agents. Adversarial verdicts stored separately from normal verdicts. At least 1 failed adversarial case auto-generates a regression entry. `make eval-check` includes adversarial pass rate (warn if <60%, fail if <40%). 15 tests.
+
+---
+
+### 44.5 Operational Runbooks `[Documentation]`
+
+**What:** Create `docs/operations/` with 4 runbooks: deployment checklist, disaster recovery, incident response, and performance tuning. Each runbook is a step-by-step procedure with commands, expected outputs, and decision points.
+**Why:** The codebase has excellent developer documentation (11 ADRs, CLAUDE.md, architecture deep-dive) but zero operational documentation. When production breaks at 2 AM, the responder needs "run this command, check this metric, if X then Y" — not architectural diagrams. Deployment currently relies on tribal knowledge. DB backup/restore, Redis persistence strategy, and secret rotation procedures are undocumented.
+**Implementation:**
+- Create `docs/operations/deployment-checklist.md`:
+  - Pre-deploy: `make check-full` passes, migration lint clean, no stale feature flags
+  - Database: `uv run alembic upgrade head` — verify migration count matches expected
+  - Services: rolling restart order (db → redis → app → maizzle-builder → cms → nginx)
+  - Post-deploy: health check endpoints (`/health`, `/health/db`, `/health/redis`), smoke test critical paths
+  - Rollback: `uv run alembic downgrade -1`, redeploy previous image tag
+- Create `docs/operations/disaster-recovery.md`:
+  - PostgreSQL: `pg_dump`/`pg_restore` procedures, WAL archiving setup, point-in-time recovery
+  - Redis: RDB snapshot schedule, AOF persistence config, cache warm-up after restore
+  - Application state: what's in Redis (sessions, rate limits, feature flags, pub/sub) vs what's in PostgreSQL (everything else)
+  - Recovery time objectives: DB <1 hour, Redis <5 minutes (cache rebuild), application <10 minutes
+- Create `docs/operations/incident-response.md`:
+  - Severity levels: S1 (platform down), S2 (feature broken), S3 (degraded performance), S4 (cosmetic)
+  - Triage steps: check health endpoints → check Docker service status → check recent deploys → check error logs
+  - Common incidents: migration failure (rollback procedure), Redis OOM (eviction policy check), AI provider outage (fallback chain verification), eval pipeline disagreement (manual override)
+  - Post-incident: write brief in `docs/incidents/`, update relevant runbook
+- Create `docs/operations/performance-tuning.md`:
+  - PostgreSQL: `DATABASE__POOL_SIZE` sizing (2× CPU cores), `work_mem`, `shared_buffers`, connection monitoring
+  - Redis: `maxmemory-policy`, key eviction monitoring, pub/sub channel limits
+  - Gunicorn: worker count (`2× CPU + 1`), timeout, keepalive
+  - Uvicorn: `--workers`, `--limit-concurrency`, `--backlog`
+  - Application: rate limit tuning (`RATE_LIMIT__*`), AI token budget (`AI__TOKEN_BUDGET_*`)
+
+**Security:** Runbooks reference health endpoints and configuration variables — no secrets, passwords, or API keys in documentation. Incident response references log locations, not log contents.
+**Verify:** 4 runbooks in `docs/operations/`. Each has step-by-step commands with expected outputs. Deployment checklist covers pre-deploy, deploy, post-deploy, rollback. DR covers PostgreSQL and Redis. Incident response covers 4 severity levels. Performance tuning covers all 4 infrastructure layers.
+
+---
+
+### 44.6 Migration Squash Strategy & Tooling `[Backend, Database]`
+
+**What:** Document a migration squash cadence and add `make db-squash` target that creates a clean baseline migration from the current schema, archiving old migrations. Run after major phase completions (every ~5 phases).
+**Why:** 47 Alembic migrations and growing. Long-running feature branches frequently conflict on the migration chain (`down_revision` pointer). Squashing to a baseline reduces conflict surface — instead of 47 files with a linear chain, new features branch from a single baseline. Alembic supports this via `alembic merge` + manual consolidation.
+**Implementation:**
+- Add `scripts/squash-migrations.sh`:
+  ```bash
+  #!/bin/bash
+  # 1. Verify clean DB state
+  uv run alembic check
+  # 2. Dump current schema as baseline
+  pg_dump --schema-only --no-owner --no-privileges $DATABASE_URL > alembic/baseline_schema.sql
+  # 3. Archive old migrations
+  mkdir -p alembic/archive/$(date +%Y%m%d)
+  mv alembic/versions/*.py alembic/archive/$(date +%Y%m%d)/
+  # 4. Create baseline migration
+  uv run alembic revision --autogenerate -m "baseline_squash_$(date +%Y%m%d)"
+  # 5. Stamp DB with new head (skip running migration — schema already matches)
+  uv run alembic stamp head
+  echo "Squash complete. Verify with: uv run alembic check"
+  ```
+- Add `make db-squash` Makefile target (requires confirmation prompt — destructive operation)
+- Document cadence in `alembic/CLAUDE.md`:
+  - Squash after every 5th phase completion (current: Phase 43 → squash candidate)
+  - Never squash during active feature branches — coordinate with team
+  - Archive preserves git-blame history for old migrations
+  - Post-squash: all active branches must rebase onto new baseline
+
+**Security:** Schema dump excludes ownership and privileges. Archived migrations retained in `alembic/archive/` for audit trail. Squash script requires explicit confirmation.
+**Verify:** `make db-squash` creates single baseline migration. `uv run alembic check` passes after squash. `uv run alembic upgrade head` on fresh DB creates identical schema to pre-squash. Archived migrations in `alembic/archive/`. `alembic/CLAUDE.md` documents cadence.
+
+---
+
+### 44.7 CRDT Collaboration Test Coverage `[Backend, Testing]`
+
+**What:** Add unit and property-based tests for the CRDT collaborative editing layer (`app/streaming/`). Cover concurrent edit convergence, WebSocket reconnection, conflict resolution, and document state synchronization. Wire into `make test` behind `COLLAB__ENABLED` feature flag check.
+**Why:** The CRDT layer (Yjs + pycrdt + pycrdt-websocket) is feature-flagged off and untested in CI. Before shipping collaborative editing, convergence properties must be validated — two clients editing the same document must converge to identical state regardless of message ordering. Without tests, subtle sync bugs (lost characters, duplicate paragraphs, cursor jumps) will surface in production where debugging is expensive.
+**Implementation:**
+- Create `app/streaming/tests/test_crdt_convergence.py`:
+  ```python
+  @pytest.mark.collab
+  class TestCRDTConvergence:
+      async def test_two_clients_converge(self):
+          """Two clients applying concurrent edits reach identical state."""
+          doc1, doc2 = YDoc(), YDoc()
+          # Client 1 inserts "hello" at position 0
+          # Client 2 inserts "world" at position 0
+          # After sync: both docs contain both words in deterministic order
+
+      async def test_offline_reconnection(self):
+          """Client applies edits offline, reconnects, state converges."""
+
+      async def test_concurrent_delete_and_insert(self):
+          """One client deletes, another inserts at same position — no data loss."""
+  ```
+- Create `app/streaming/tests/test_crdt_properties.py` (Hypothesis):
+  ```python
+  @given(
+      ops1=st.lists(st.tuples(st.sampled_from(["insert", "delete"]), st.integers(0, 100), st.text(max_size=10))),
+      ops2=st.lists(st.tuples(st.sampled_from(["insert", "delete"]), st.integers(0, 100), st.text(max_size=10))),
+  )
+  def test_convergence_property(ops1, ops2):
+      """Any sequence of concurrent operations converges to identical state."""
+      doc1, doc2 = apply_ops(ops1), apply_ops(ops2)
+      sync(doc1, doc2)
+      assert doc1.get_state() == doc2.get_state()
+  ```
+- Add `make test-collab` Makefile target: `uv run pytest -m collab`
+- Add `collab` marker to `pyproject.toml` pytest markers
+- WebSocket integration test: spin up `y-websocket` server, connect 2 clients, verify round-trip
+
+**Security:** Tests use local in-memory Yjs documents. No network calls. No user data.
+**Verify:** 10+ convergence unit tests. Hypothesis runs 200+ random operation sequences. All converge. WebSocket integration test connects 2 clients through server. `make test-collab` runs in <30 seconds. `make test` skips collab tests unless `COLLAB__ENABLED=true`. 15+ tests.
+
+---
+
+### 44.8 SDK Drift Detection in CI `[CI/CD, Frontend]`
+
+**What:** Add a `sdk-check` job to CI that regenerates the TypeScript SDK from the OpenAPI spec snapshot and diffs against the committed SDK. Fails if the committed SDK is stale (API changed without regenerating the client).
+**Why:** `make sdk` generates `cms/packages/sdk/` from the backend's OpenAPI spec — but it requires a running backend (`make dev-be`). Developers who change API routes may forget to regenerate the SDK. The frontend then uses stale types, and type errors surface late (or not at all if the shapes happen to overlap). A CI check catches this drift at PR time.
+**Implementation:**
+- Add OpenAPI spec snapshot: `make sdk-snapshot` exports the spec to `cms/packages/sdk/openapi-snapshot.json` (no running backend needed — FastAPI generates spec at import time)
+  ```python
+  # scripts/export-openapi.py
+  from app.main import app
+  import json
+  spec = app.openapi()
+  with open("cms/packages/sdk/openapi-snapshot.json", "w") as f:
+      json.dump(spec, f, indent=2)
+  ```
+- Modify `make sdk-local` to use snapshot: `openapi-typescript cms/packages/sdk/openapi-snapshot.json -o cms/packages/sdk/src/types.ts`
+- CI job in `.github/workflows/ci.yml`:
+  ```yaml
+  sdk-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: pnpm/action-setup@v4
+      - run: uv sync && uv run python scripts/export-openapi.py
+      - run: cd cms && pnpm install --frozen-lockfile && pnpm run sdk:generate
+      - run: git diff --exit-code cms/packages/sdk/
+  ```
+- Add `make sdk-check` Makefile target for local validation
+
+**Security:** OpenAPI spec export runs at import time — no database or external service required. No secrets needed in CI job.
+**Verify:** `make sdk-check` passes when SDK is up to date. Changing a route schema without regenerating SDK → `sdk-check` fails with diff. `scripts/export-openapi.py` generates valid OpenAPI 3.1 JSON. CI job runs in <2 minutes. Existing `make check` unaffected.
+
+---
+
+### 44.9 Observability Stack for Local Development `[DevOps]`
+
+**What:** Add a `docker-compose.observability.yml` override profile with Grafana + Loki for log aggregation and Prometheus for basic metrics. Structured logs from all services (app, cms, maizzle-builder, mock-esp) flow into Loki, queryable via Grafana dashboards.
+**Why:** Debugging multi-service issues (app ↔ maizzle-builder ↔ mock-esp ↔ cms) currently requires tailing 4+ log streams simultaneously (`make docker-logs` dumps everything interleaved). `structlog` already emits JSON — Loki ingests it natively. A pre-configured Grafana dashboard with panels for error rates, request latency, and agent eval durations makes local debugging 10× faster. This also serves as a template for production observability.
+**Implementation:**
+- Create `docker-compose.observability.yml`:
+  ```yaml
+  services:
+    loki:
+      image: grafana/loki:3.4
+      ports: ['3100:3100']
+      volumes: ['./observability/loki-config.yaml:/etc/loki/local-config.yaml']
+      command: -config.file=/etc/loki/local-config.yaml
+
+    promtail:
+      image: grafana/promtail:3.4
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - ./observability/promtail-config.yaml:/etc/promtail/config.yml
+      command: -config.file=/etc/promtail/config.yml
+
+    grafana:
+      image: grafana/grafana:11.6
+      ports: ['3333:3000']
+      volumes:
+        - ./observability/dashboards/:/var/lib/grafana/dashboards/
+        - ./observability/provisioning/:/etc/grafana/provisioning/
+      environment:
+        GF_AUTH_ANONYMOUS_ENABLED: 'true'
+        GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+  ```
+- Create `observability/` directory with:
+  - `loki-config.yaml` — local storage, 7-day retention
+  - `promtail-config.yaml` — scrape Docker container logs, parse JSON (structlog format)
+  - `dashboards/email-hub.json` — pre-built Grafana dashboard: error rate, request latency (p50/p95/p99), agent eval duration, active WebSocket connections
+  - `provisioning/` — auto-provision Loki datasource + dashboard
+- Add `make dev-observe` target: `docker compose -f docker-compose.yml -f docker-compose.observability.yml up`
+- Add `make grafana` target: opens `http://localhost:3333` in browser
+
+**Security:** Grafana runs with anonymous admin access (local dev only). No authentication — NOT for production. Loki stores logs locally with 7-day retention. No external data transmission.
+**Verify:** `make dev-observe` starts all services + observability stack. Grafana accessible at `localhost:3333`. Loki datasource auto-provisioned. Dashboard shows log panels for app, cms, maizzle-builder. `structlog` JSON parsed into Loki labels (`level`, `logger`, `event`). Error rate panel shows non-zero data after intentional 500. `make dev` (without observability) still works — no dependency on Loki.
+
+---
+
+### 44.10 Contributing Guide & New-Feature Scaffolding `[Documentation]`
+
+**What:** Create `CONTRIBUTING.md` with 3 guided workflows: adding a new feature slice, adding a new AI agent, and adding a new ESP connector. Include a `make scaffold-feature` target that generates boilerplate for a new vertical slice.
+**Why:** 30+ backend modules, 50+ make targets, 9 AI agents, 11 ESP connectors — but no contributor guide. New developers face a steep onboarding cliff: where do I put my code? How do I register routes? What tests are expected? How do I add a judge? The vertical slice pattern is consistent but implicit. Making it explicit with a guide and scaffolding tool reduces onboarding from days to hours.
+**Implementation:**
+- Create `CONTRIBUTING.md`:
+  - **Adding a feature slice:**
+    1. Create `app/{feature}/` with `__init__.py`, `models.py`, `schemas.py`, `service.py`, `routes.py`, `tests/`
+    2. Register routes in `app/routes/__init__.py`
+    3. Add Alembic migration: `make db-revision m="add {feature} tables"`
+    4. Add tests: unit tests in `app/{feature}/tests/`, integration marker for DB tests
+    5. Update `app/CLAUDE.md` with module description
+  - **Adding an AI agent:**
+    1. Create `app/ai/agents/{agent_name}/` with `service.py`, `SKILL.md`
+    2. Create `app/ai/agents/evals/judges/{agent_name}.py` with 5 evaluation criteria
+    3. Add test cases in `app/ai/agents/evals/test_cases/{agent_name}/`
+    4. Register in agent registry (`app/ai/agents/__init__.py`)
+    5. Add golden reference templates if agent evaluates HTML
+    6. Run `make eval-golden` to validate judge configuration
+  - **Adding an ESP connector:**
+    1. Create `app/connectors/{esp_name}/` implementing `ESPAdapter` protocol
+    2. Add mock endpoint in `services/mock-esp/`
+    3. Add ESP-specific token templates to golden references
+    4. Register in connector registry (`app/connectors/__init__.py`)
+    5. Add integration tests with mock ESP
+- Create `scripts/scaffold-feature.sh`:
+  ```bash
+  #!/bin/bash
+  FEATURE=$1
+  mkdir -p "app/$FEATURE/tests"
+  cat > "app/$FEATURE/__init__.py" << 'EOF'
+  EOF
+  cat > "app/$FEATURE/models.py" << 'EOF'
+  """$FEATURE database models."""
+  from app.shared.models import TimestampMixin
+  EOF
+  # ... schemas.py, service.py, routes.py, tests/__init__.py, tests/test_service.py
+  echo "Feature slice created: app/$FEATURE/"
+  echo "Next: register routes in app/routes/__init__.py"
+  ```
+- Add `make scaffold-feature name=<feature>` Makefile target
+
+**Security:** Scaffold script creates empty boilerplate only. No secrets, no database operations.
+**Verify:** `CONTRIBUTING.md` covers 3 workflows with step-by-step instructions. `make scaffold-feature name=billing` creates `app/billing/` with 6 files. Generated files have correct imports (`get_logger`, `TimestampMixin`, `get_db`). Guide references actual make targets and file paths. Existing `make check` passes after scaffold.
+
+---
+
+### Phase 44 — Summary
+
+| Subtask | Scope | Dependencies | Effort |
+|---------|-------|--------------|--------|
+| 44.1 E2E smoke in CI | `.github/workflows/ci.yml`, Playwright | None | ~50 LOC config + tag 5-10 tests |
+| 44.2 Renovate | `renovate.json5` | None | ~40 LOC config |
+| 44.3 Feature flag lifecycle | `feature-flags.yaml`, `scripts/flag-audit.py` | None | ~120 LOC + manifest |
+| 44.4 Adversarial eval pass | `app/ai/agents/evals/adversarial.py`, YAML fixtures | Eval pipeline (Phases 37-43) | ~250 LOC + 15 tests |
+| 44.5 Operational runbooks | `docs/operations/` (4 documents) | None | ~800 lines documentation |
+| 44.6 Migration squash | `scripts/squash-migrations.sh`, `alembic/CLAUDE.md` | None | ~60 LOC + docs |
+| 44.7 CRDT collaboration tests | `app/streaming/tests/` | None | ~200 LOC + 15 tests |
+| 44.8 SDK drift detection | `scripts/export-openapi.py`, CI job | None | ~40 LOC + CI config |
+| 44.9 Observability stack | `docker-compose.observability.yml`, `observability/` | None | ~150 LOC config + dashboard |
+| 44.10 Contributing guide | `CONTRIBUTING.md`, `scripts/scaffold-feature.sh` | None | ~300 lines docs + 50 LOC script |
+
+> **Execution:** All subtasks except 44.4 are independent — maximum parallelism. 44.4 (adversarial eval) benefits from Phases 37-43 being complete (golden references + judge feedback loop) but can start with basic adversarial cases immediately. **Quick wins first:** 44.2 (Renovate, 2 hours) → 44.1 (E2E smoke, 1-2 days) → 44.3 (flag audit, half day). **Parallel track:** 44.5 + 44.6 + 44.8 + 44.10 (documentation + tooling, all independent). **Testing track:** 44.7 (CRDT) + 44.9 (observability) can run in parallel. **Critical path for adversarial eval:** 44.4 benefits from 43.6 completion but is not blocked by it.
+>
+> **This phase shifts focus from code quality to operational quality.** After Phase 44, the platform has: CI-gated E2E tests, automated dependency updates, feature flag hygiene, adversarial agent stress testing, production runbooks, migration maintainability, collaboration test coverage, API/SDK consistency enforcement, local observability, and contributor onboarding. Total new code: ~1200 LOC + ~1100 lines documentation. No architectural changes — all additive.

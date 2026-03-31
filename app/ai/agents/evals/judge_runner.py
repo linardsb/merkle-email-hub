@@ -58,12 +58,18 @@ def load_traces(traces_path: Path) -> list[dict[str, Any]]:
 
 def trace_to_judge_input(trace: dict[str, Any]) -> JudgeInput:
     """Convert a raw trace dict to a JudgeInput."""
+    from app.ai.agents.evals.judges.schemas import DesignContext
+
+    design_raw = trace.get("design_context")
+    design_context = DesignContext(**design_raw) if design_raw else None
+
     return JudgeInput(
         trace_id=trace["id"],
         agent=trace["agent"],
         input_data=trace["input"],
         output_data=trace["output"],
         expected_challenges=trace.get("expected_challenges", []),
+        design_context=design_context,
     )
 
 

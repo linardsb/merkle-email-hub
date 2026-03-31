@@ -65,6 +65,11 @@ JUDGE_CRITERIA_MAP: dict[str, list[CriteriaMapping]] = {
             qa_checks=["accessibility"],
             notes="lang, roles, alt text, headings — covered by accessibility WCAG checks",
         ),
+        CriteriaMapping(
+            criterion="design_fidelity",
+            qa_checks=[],
+            notes="LLM-only: compares output HTML against Figma design tokens when design_context present",
+        ),
     ],
     "dark_mode": [
         CriteriaMapping(

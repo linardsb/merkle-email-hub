@@ -115,6 +115,10 @@ SCAFFOLDER_CRITERIA: list[dict[str, str]] = [
     {"criterion": "mso_conditionals", "description": "MSO conditionals correctly structured"},
     {"criterion": "table_structure", "description": "Table-based layout is correct"},
     {"criterion": "code_quality", "description": "Clean, well-structured HTML"},
+    {
+        "criterion": "design_fidelity",
+        "description": "HTML matches Figma design tokens when provided",
+    },
 ]
 
 DARK_MODE_CRITERIA: list[dict[str, str]] = [

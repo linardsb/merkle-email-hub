@@ -1,0 +1,478 @@
+# Feature Flag Manifest — all flags must be registered here
+# CI warns on flags >90 days without removal_date, fails on >180 days
+#
+# Fields:
+#   name:             Environment variable name (e.g., AI__ADAPTIVE_ROUTING_ENABLED)
+#   description:      What the flag controls
+#   owner:            Team or person responsible
+#   created:          Date the flag was added (ISO 8601)
+#   removal_date:     Target date to remove the flag (null = permanent)
+#   status:           alpha | beta | ga | deprecated
+#   permanent_reason: Required when removal_date is null — justifies keeping the flag
+
+flags:
+  # ── AI ──────────────────────────────────────────────────────────────────────
+  - name: AI__ADAPTIVE_ROUTING_ENABLED
+    description: Adaptive model tier routing with per-agent success tracking
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: AI__VISUAL_QA_ENABLED
+    description: Visual QA agent for screenshot-based defect detection
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: AI__VISUAL_QA_AUTOFIX_ENABLED
+    description: Visual QA auto-fix — applies corrections from VLM findings
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: AI__TOKEN_BUDGET_ENABLED
+    description: Token budget management for prompt/response allocation
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: AI__PROMPT_STORE_ENABLED
+    description: Prompt template store for versioned prompt management
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: AI__COST_GOVERNOR_ENABLED
+    description: Cost governance — budget limits and overspend prevention
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: AI__MULTIMODAL_CONTEXT_ENABLED
+    description: Multimodal agent context protocol (images, audio in prompts)
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  # ── Knowledge ───────────────────────────────────────────────────────────────
+  - name: KNOWLEDGE__AUTO_TAG_ENABLED
+    description: Automatic tagging of knowledge base documents
+    owner: ai-team
+    created: "2026-02-28"
+    removal_date: "2026-06-01"
+    status: beta
+
+  - name: KNOWLEDGE__HTML_CHUNKING_ENABLED
+    description: HTML-aware chunking for knowledge documents
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: KNOWLEDGE__CRAG_ENABLED
+    description: CRAG validation loop for RAG answer grounding
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: KNOWLEDGE__ROUTER_ENABLED
+    description: Query router for knowledge search strategy selection
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: KNOWLEDGE__MULTI_REP_ENABLED
+    description: Multi-representation indexing for knowledge documents
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  # ── QA ──────────────────────────────────────────────────────────────────────
+  - name: QA_CHAOS__ENABLED
+    description: Chaos testing — simulated rendering failures for resilience
+    owner: qa-team
+    created: "2026-03-17"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional testing tool; must be explicitly enabled per deployment"
+
+  - name: QA_CHAOS__RESILIENCE_CHECK_ENABLED
+    description: Chaos resilience scoring — quantifies template robustness
+    owner: qa-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: QA_PROPERTY_TESTING__ENABLED
+    description: Property-based email invariant testing (Hypothesis)
+    owner: qa-team
+    created: "2026-03-16"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional testing tool; must be explicitly enabled per deployment"
+
+  - name: QA_OUTLOOK_ANALYZER__ENABLED
+    description: Outlook Word-engine dependency analyzer
+    owner: qa-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: QA_DELIVERABILITY__ENABLED
+    description: Deliverability prediction scoring (ISP-aware analysis)
+    owner: qa-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: QA_GMAIL_PREDICTOR__ENABLED
+    description: Gmail AI summary prediction for inbox preview
+    owner: qa-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: QA_BIMI__ENABLED
+    description: BIMI readiness check (SVG logo, DMARC, VMC)
+    owner: qa-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  # ── Rendering ───────────────────────────────────────────────────────────────
+  - name: RENDERING__SCREENSHOTS_ENABLED
+    description: Cross-client screenshot capture via headless browser
+    owner: platform-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: RENDERING__VISUAL_DIFF_ENABLED
+    description: Visual diff regression detection (pixel comparison)
+    owner: platform-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: RENDERING__CONFIDENCE_ENABLED
+    description: Rendering confidence scoring per email client
+    owner: platform-team
+    created: "2026-03-22"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  # ── Cognee ──────────────────────────────────────────────────────────────────
+  - name: COGNEE__ENABLED
+    description: Cognee knowledge graph integration
+    owner: ai-team
+    created: "2026-03-10"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: COGNEE__PREFETCH_ENABLED
+    description: Knowledge graph pre-query for agent context enrichment
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  # ── Change Detection ────────────────────────────────────────────────────────
+  - name: CHANGE_DETECTION__ENABLED
+    description: Email client rendering change detection (weekly monitoring)
+    owner: platform-team
+    created: "2026-03-17"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional monitoring; must be explicitly enabled per deployment"
+
+  # ── Design Sync ─────────────────────────────────────────────────────────────
+  - name: DESIGN_SYNC__PENPOT_ENABLED
+    description: Penpot design tool integration
+    owner: design-team
+    created: "2026-03-18"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: DESIGN_SYNC__PENPOT_CONVERTER_ENABLED
+    description: Penpot-to-email HTML converter
+    owner: design-team
+    created: "2026-03-24"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: DESIGN_SYNC__CONVERTER_ENABLED
+    description: Provider-agnostic design-to-email converter
+    owner: design-team
+    created: "2026-03-24"
+    removal_date: null
+    status: ga
+    permanent_reason: "Core pipeline capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__FIGMA_VARIABLES_ENABLED
+    description: Figma variables extraction for design token mapping
+    owner: design-team
+    created: "2026-03-24"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__AI_LAYOUT_ENABLED
+    description: AI-assisted layout detection for design-to-email conversion
+    owner: design-team
+    created: "2026-03-27"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__FIDELITY_ENABLED
+    description: SSIM visual fidelity scoring (Figma vs rendered HTML)
+    owner: design-team
+    created: "2026-03-27"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: DESIGN_SYNC__W3C_TOKENS_ENABLED
+    description: W3C Design Tokens + caniemail.com CSS support integration
+    owner: design-team
+    created: "2026-03-27"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__FIGMA_WEBHOOK_ENABLED
+    description: Figma webhook listener for live preview sync
+    owner: design-team
+    created: "2026-03-27"
+    removal_date: null
+    status: beta
+    permanent_reason: "Requires external Figma webhook registration; must be explicitly enabled"
+
+  - name: DESIGN_SYNC__SECTION_CACHE_ENABLED
+    description: Incremental conversion section cache (memory + Redis)
+    owner: design-team
+    created: "2026-03-27"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on performance optimization; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__MJML_IMPORT_ENABLED
+    description: MJML-to-email HTML import pipeline
+    owner: design-team
+    created: "2026-03-28"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  - name: DESIGN_SYNC__HTML_IMPORT_AI_ENABLED
+    description: AI-assisted HTML reverse-engineering import
+    owner: design-team
+    created: "2026-03-28"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on capability; flag kept for emergency rollback"
+
+  # ── Voice ───────────────────────────────────────────────────────────────────
+  - name: VOICE__ENABLED
+    description: Voice brief input pipeline (speech-to-brief)
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  # ── MCP ─────────────────────────────────────────────────────────────────────
+  - name: MCP__ENABLED
+    description: Model Context Protocol server for external AI tool access
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional integration; must be explicitly enabled per deployment"
+
+  - name: MCP__AUDIT_LOG_ENABLED
+    description: Audit logging for MCP tool invocations
+    owner: ai-team
+    created: "2026-03-17"
+    removal_date: null
+    status: ga
+    permanent_reason: "Default-on security control; flag kept for compliance flexibility"
+
+  # ── Email Engine ────────────────────────────────────────────────────────────
+  - name: EMAIL_ENGINE__CSS_COMPILER_ENABLED
+    description: CSS compiler for target-client-specific optimization
+    owner: platform-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: EMAIL_ENGINE__SCHEMA_INJECTION_ENABLED
+    description: Schema.org structured data injection in emails
+    owner: platform-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: beta
+
+  # ── Blueprint ───────────────────────────────────────────────────────────────
+  - name: BLUEPRINT__CHECKPOINTS_ENABLED
+    description: Opt-in checkpoint persistence for blueprint runs
+    owner: ai-team
+    created: "2026-03-16"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: BLUEPRINT__RECOVERY_LEDGER_ENABLED
+    description: Adaptive recovery routing from outcome history
+    owner: ai-team
+    created: "2026-03-24"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: BLUEPRINT__CORRECTION_EXAMPLES_ENABLED
+    description: Few-shot correction examples injected on agent retries
+    owner: ai-team
+    created: "2026-03-24"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: BLUEPRINT__JUDGE_AGGREGATION_ENABLED
+    description: Judge verdict aggregation for prompt patching
+    owner: ai-team
+    created: "2026-03-24"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: BLUEPRINT__CONFIDENCE_CALIBRATION_ENABLED
+    description: Per-agent confidence calibration from judge verdicts
+    owner: ai-team
+    created: "2026-03-24"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  - name: BLUEPRINT__INSIGHT_PROPAGATION_ENABLED
+    description: Cross-agent insight propagation between pipeline nodes
+    owner: ai-team
+    created: "2026-03-27"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  # ── Collaboration ───────────────────────────────────────────────────────────
+  - name: COLLAB_WS__ENABLED
+    description: Real-time WebSocket collaboration
+    owner: platform-team
+    created: "2026-03-17"
+    removal_date: null
+    status: beta
+    permanent_reason: "Requires per-deployment opt-in and infrastructure (Redis, WebSocket proxy)"
+
+  - name: COLLAB_WS__CRDT_ENABLED
+    description: CRDT protocol for conflict-free real-time sync
+    owner: platform-team
+    created: "2026-03-17"
+    removal_date: "2026-06-15"
+    status: alpha
+
+  # ── Platform Ecosystem ──────────────────────────────────────────────────────
+  - name: TOLGEE__ENABLED
+    description: Tolgee TMS integration for localization
+    owner: platform-team
+    created: "2026-03-18"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional external integration; requires Tolgee instance"
+
+  - name: KESTRA__ENABLED
+    description: Kestra workflow orchestration engine
+    owner: platform-team
+    created: "2026-03-18"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional external integration; requires Kestra instance"
+
+  - name: REPORTING__ENABLED
+    description: Typst PDF report generation
+    owner: platform-team
+    created: "2026-03-18"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional capability; requires Typst binary"
+
+  - name: PLUGINS__ENABLED
+    description: Plugin architecture for third-party extensions
+    owner: platform-team
+    created: "2026-03-18"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional capability; requires explicit opt-in and plugin directory"
+
+  - name: SKILL_EXTRACTION__ENABLED
+    description: Automatic skill extraction from uploaded templates
+    owner: ai-team
+    created: "2026-03-18"
+    removal_date: "2026-06-15"
+    status: beta
+
+  - name: TEMPLATES__UPLOAD_ENABLED
+    description: Self-serve HTML template upload pipeline
+    owner: platform-team
+    created: "2026-03-18"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional capability; must be explicitly enabled per deployment"
+
+  - name: VARIANTS__ENABLED
+    description: Multi-variant A/B campaign assembly
+    owner: ai-team
+    created: "2026-03-19"
+    removal_date: "2026-06-15"
+    status: beta
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  - name: MEMORY__ENABLED
+    description: Agent memory system (embedding-based recall)
+    owner: ai-team
+    created: "2026-02-28"
+    removal_date: null
+    status: ga
+    permanent_reason: "Core subsystem default-on; flag kept for emergency rollback"
+
+  - name: WS__ENABLED
+    description: WebSocket streaming for real-time agent output
+    owner: platform-team
+    created: "2026-03-17"
+    removal_date: null
+    status: ga
+    permanent_reason: "Core subsystem default-on; flag kept for emergency rollback"
+
+  - name: BRIEFS__ENABLED
+    description: Brief connection pipeline (external project management sync)
+    owner: platform-team
+    created: "2026-03-20"
+    removal_date: null
+    status: ga
+    permanent_reason: "Core subsystem default-on; flag kept for emergency rollback"
+
+  - name: ONTOLOGY_SYNC__ENABLED
+    description: Can I Email ontology background sync
+    owner: platform-team
+    created: "2026-03-10"
+    removal_date: null
+    status: beta
+    permanent_reason: "Optional background job; requires explicit opt-in and GitHub token"
+
+  - name: CORRECTION_TRACKER__ENABLED
+    description: Correction pattern tracking for agent self-improvement
+    owner: ai-team
+    created: "2026-03-27"
+    removal_date: "2026-06-15"
+    status: alpha

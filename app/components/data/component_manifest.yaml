@@ -1,0 +1,812 @@
+# Component manifest — metadata for file-based email components.
+# HTML is loaded from email-templates/components/{slug}.html at runtime.
+# Slots and tokens can be added incrementally per component.
+
+html_dir: email-templates/components
+
+components:
+  # ── Action ──────────────────────────────────────────────
+  - slug: button
+    name: Button
+    description: "Single CTA button with rounded corners and filled background."
+    category: action
+    compatibility: full
+
+  - slug: button-filled
+    name: Button Filled
+    description: "Filled button with solid background, rounded corners, and uppercase text."
+    category: action
+    compatibility: full
+
+  - slug: button-ghost
+    name: Button Ghost
+    description: "Outline-only ghost button with transparent background and border."
+    category: action
+    compatibility: full
+
+  - slug: button-responsive
+    name: Button Responsive
+    description: "Filled button with rounded corners and responsive width scaling."
+    category: action
+    compatibility: full
+
+  - slug: cta
+    name: CTA
+    description: "Call-to-action section with left-aligned button in a padded container."
+    category: action
+    compatibility: full
+
+  - slug: cta-pair
+    name: CTA Pair
+    description: "Two side-by-side CTA buttons in a padded container."
+    category: action
+    compatibility: full
+
+  # ── Content ─────────────────────────────────────────────
+  - slug: article-2
+    name: Article 2-Column
+    description: "Two-column article with image and text side by side (300px columns)."
+    category: content
+    compatibility: full
+
+  - slug: article-3
+    name: Article 3-Column
+    description: "Two-column article with side-by-side floated columns (244px each)."
+    category: content
+    compatibility: full
+
+  - slug: article-4
+    name: Article 4-Column
+    description: "Two-column article variant with responsive stacking (245px columns)."
+    category: content
+    compatibility: full
+
+  - slug: article-reverse
+    name: Article Reverse
+    description: "Reverse-stacked article layout with text left, image right on desktop."
+    category: content
+    compatibility: full
+
+  - slug: banner
+    name: Banner
+    description: "Full-width colored banner bar with bold text slot."
+    category: content
+    compatibility: full
+
+  - slug: editorial-1
+    name: Editorial 1
+    description: "Two-column editorial block with colored background, image and text."
+    category: content
+    compatibility: full
+
+  - slug: editorial-2
+    name: Editorial 2
+    description: "Two-column editorial block with colored background and image + text."
+    category: content
+    compatibility: full
+
+  - slug: editorial-3
+    name: Editorial 3
+    description: "Two-column editorial with accent background, image right, text left."
+    category: content
+    compatibility: full
+
+  - slug: editorial-4
+    name: Editorial 4
+    description: "Two-column editorial with nested colored backgrounds and reversed layout."
+    category: content
+    compatibility: full
+
+  - slug: editorial-5
+    name: Editorial 5
+    description: "Full-width editorial with desktop/mobile image swap and text overlay."
+    category: content
+    compatibility: full
+
+  - slug: heading
+    name: Heading
+    description: "Large heading text block (24px) with left-aligned bold title."
+    category: content
+    compatibility: full
+
+  - slug: hero-2cta
+    name: Hero 2-CTA
+    description: "Hero image banner with desktop/mobile image swap and two CTA buttons."
+    category: content
+    compatibility: partial_samsung
+
+  - slug: hero-text
+    name: Hero Text
+    description: "Hero image banner with desktop/mobile image swap and text overlay below."
+    category: content
+    compatibility: partial_samsung
+
+  - slug: icon
+    name: Icon
+    description: "Icon + text row with small image (35px) beside descriptive content."
+    category: content
+    compatibility: full
+
+  - slug: image
+    name: Image
+    description: "Simple inline image tag with configurable src, alt, width, and height."
+    category: content
+    compatibility: full
+
+  - slug: image-responsive
+    name: Image Responsive
+    description: "Responsive image that scales to container width via responsive class."
+    category: content
+    compatibility: full
+
+  - slug: list
+    name: List
+    description: "Bulleted list using table rows with colored bullet characters."
+    category: content
+    compatibility: full
+
+  - slug: paragraph
+    name: Paragraph
+    description: "Body text paragraph block (14px) with left alignment in a padded container."
+    category: content
+    compatibility: full
+
+  - slug: product-showcase
+    name: Product Showcase
+    description: "Product card with side-by-side image and details layout."
+    category: content
+    compatibility: full
+
+  - slug: text
+    name: Text
+    description: "Inline text style snippet with configurable font, size, color, and line-height."
+    category: content
+    compatibility: full
+
+  - slug: text-left
+    name: Text Left
+    description: "Left-aligned light-weight text style snippet."
+    category: content
+    compatibility: full
+
+  - slug: text-link
+    name: Text Link
+    description: "Styled inline text hyperlink with bold weight and configurable color."
+    category: content
+    compatibility: full
+
+  # ── Structure ───────────────────────────────────────────
+  - slug: app-store
+    name: App Store
+    description: "Apple and Google app store download badge links with centered layout."
+    category: structure
+    compatibility: full
+
+  - slug: cell
+    name: Cell
+    description: "Generic single-cell table wrapper with configurable alignment, font, and color."
+    category: structure
+    compatibility: full
+
+  - slug: col-gutter
+    name: Column Gutter
+    description: "Two-column layout with 20px gutter padding and content slots."
+    category: structure
+    compatibility: full
+
+  - slug: col-icon
+    name: Column Icon
+    description: "Two-column layout with icon-sized imagery (244px columns)."
+    category: structure
+    compatibility: full
+
+  - slug: footer
+    name: Footer
+    description: "Full footer with copyright, address, unsubscribe and preferences links."
+    category: structure
+    compatibility: full
+
+  - slug: footer-menu
+    name: Footer Menu
+    description: "Footer navigation menu with horizontally-spaced text links."
+    category: structure
+    compatibility: full
+
+  - slug: footer-social
+    name: Footer Social
+    description: "Social media icon row with follow links in a centered footer section."
+    category: structure
+    compatibility: full
+
+  - slug: footer-unsub
+    name: Footer Unsubscribe
+    description: "Unsubscribe disclaimer text with opt-out link."
+    category: structure
+    compatibility: full
+
+  - slug: header
+    name: Header
+    description: "Email header with logo image on a dark background."
+    category: structure
+    compatibility: full
+
+  - slug: row
+    name: Row
+    description: "MSO conditional row break snippet for Outlook ghost table columns."
+    category: structure
+    compatibility: full
+
+  - slug: rtl
+    name: RTL Layout
+    description: "Right-to-left two-column layout using dir=rtl for reversed column order."
+    category: structure
+    compatibility: full
+
+  - slug: section
+    name: Section
+    description: "Generic full-width section wrapper with a single centered banner image."
+    category: structure
+    compatibility: full
+
+  - slug: td
+    name: Table Cell
+    description: "Bare empty td cell snippet for structural use."
+    category: structure
+    compatibility: full
+
+  # ── Interactive ─────────────────────────────────────────
+  - slug: accordion
+    name: Accordion
+    description: "CSS-only expandable accordion using checkbox hack. Limited client support."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: carousel
+    name: Carousel
+    description: "CSS-animated image carousel with non-WebKit fallback."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: carousel-animated
+    name: Carousel Animated
+    description: "Slide-effect animated carousel with Samsung/Comcast client detection."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: editable
+    name: Editable
+    description: "Snippet attribute to mark ESP-editable regions (Eloqua elq-edit)."
+    category: interactive
+    compatibility: full
+
+  - slug: hotspot
+    name: Hotspot
+    description: "Interactive CSS hotspot overlay with checkbox-driven show/hide and fallback."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: image-swap
+    name: Image Swap
+    description: "CSS media-query image swap showing different images on mobile vs desktop."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: nav-hamburger
+    name: Nav Hamburger
+    description: "Collapsible hamburger navigation menu using CSS checkbox toggle."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: table
+    name: Tabbed Content
+    description: "Interactive tabbed carousel with thumbnail navigation using CSS checkbox hack."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: toggle
+    name: Toggle
+    description: "Desktop/mobile image toggle showing different images per device via CSS show/hide."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: video
+    name: Video
+    description: "HTML5 video embed with CSS progressive enhancement and image fallback."
+    category: interactive
+    compatibility: partial_interactive
+
+  # ── Animation ───────────────────────────────────────────
+  - slug: anim-band
+    name: Animation Rubber Band
+    description: "CSS rubber band animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-bounce
+    name: Animation Bounce
+    description: "CSS bounce-in animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-fade
+    name: Animation Fade
+    description: "CSS fade-in animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-flip
+    name: Animation Flip
+    description: "CSS 3D flip animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-gif
+    name: Animation GIF
+    description: "Animated GIF with CSS-controlled playback. Fallback to static image."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-hinge
+    name: Animation Hinge
+    description: "CSS hinge drop animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-pulse
+    name: Animation Pulse
+    description: "CSS pulse/scale animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-rotate
+    name: Animation Rotate
+    description: "CSS rotation animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-showoff
+    name: Animation Showoff
+    description: "CSS entrance animation with translate and opacity. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  - slug: anim-swing
+    name: Animation Swing
+    description: "CSS swing/pendulum animation effect. WebKit/modern clients only."
+    category: animation
+    compatibility: partial_animation
+
+  # ── Converter (slugs emitted by the design-sync matcher) ─
+  - slug: email-header
+    name: Email Header
+    description: "Logo + navigation links header with MSO conditional wrapper."
+    category: structure
+    compatibility: full
+
+  - slug: email-footer
+    name: Email Footer
+    description: "Copyright, address, unsubscribe/preferences links with MSO wrapper."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: footer_content
+        slot_type: body
+        selector: "[data-slot='footer_content']"
+        required: false
+
+  - slug: cta-button
+    name: CTA Button
+    description: "Centered CTA button with VML roundrect fallback for Outlook."
+    category: action
+    compatibility: full
+    slot_definitions:
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: true
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: true
+    default_tokens:
+      colors:
+        cta: "#0066cc"
+        cta_text: "#ffffff"
+        dark_cta: "#4895ef"
+      spacing:
+        padding_v: "12px"
+        padding_h: "32px"
+
+  - slug: hero-block
+    name: Hero Block
+    description: "VML background image hero with headline, subtext, and CTA overlay."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: hero_image
+        slot_type: image
+        selector: "table[style*='background-image']"
+        required: true
+      - slot_id: headline
+        slot_type: headline
+        selector: "[data-slot='headline']"
+        required: true
+      - slot_id: subtext
+        slot_type: body
+        selector: "[data-slot='subtext']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
+    default_tokens:
+      colors:
+        headline: "#ffffff"
+        subtext: "#e0e0e0"
+        cta: "#ffffff"
+        cta_text: "#333333"
+        overlay: "rgba(0,0,0,0.4)"
+      fonts:
+        headline: "Arial, sans-serif"
+        body: "Arial, sans-serif"
+      font_sizes:
+        headline: "32px"
+        subtext: "16px"
+
+  - slug: product-card
+    name: Product Card
+    description: "Product image with title, price, description, and CTA in a bordered card."
+    category: content
+    compatibility: full
+
+  - slug: spacer
+    name: Spacer
+    description: "Adjustable-height transparent spacer with MSO conditional fallback."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: spacer_height
+        slot_type: body
+        selector: "[data-slot='spacer_height']"
+        required: true
+    default_tokens:
+      spacing:
+        height: "32px"
+
+  - slug: social-icons
+    name: Social Icons
+    description: "Row of social media icon links with 'Follow us' label."
+    category: structure
+    compatibility: full
+
+  - slug: image-block
+    name: Image Block
+    description: "Responsive image with optional caption and MSO conditional wrapper."
+    category: content
+    compatibility: full
+
+  - slug: text-block
+    name: Text Block
+    description: "Heading + body paragraph text section with data-slot attributes."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: false
+      - slot_id: body
+        slot_type: body
+        selector: "[data-slot='body']"
+        required: false
+
+  - slug: divider
+    name: Divider
+    description: "Horizontal line separator with MSO conditional wrapper."
+    category: structure
+    compatibility: full
+
+  - slug: column-layout-2
+    name: Column Layout 2
+    description: "Two-column hybrid MSO/inline-block layout with configurable content slots."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: col_1
+        slot_type: body
+        selector: "[data-slot='col_1']"
+        required: true
+      - slot_id: col_2
+        slot_type: body
+        selector: "[data-slot='col_2']"
+        required: true
+
+  - slug: column-layout-3
+    name: Column Layout 3
+    description: "Three-column hybrid MSO/inline-block layout."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: col_1
+        slot_type: body
+        selector: "[data-slot='col_1']"
+        required: true
+      - slot_id: col_2
+        slot_type: body
+        selector: "[data-slot='col_2']"
+        required: true
+      - slot_id: col_3
+        slot_type: body
+        selector: "[data-slot='col_3']"
+        required: true
+
+  - slug: column-layout-4
+    name: Column Layout 4
+    description: "Four-column hybrid MSO/inline-block layout."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: col_1
+        slot_type: body
+        selector: "[data-slot='col_1']"
+        required: true
+      - slot_id: col_2
+        slot_type: body
+        selector: "[data-slot='col_2']"
+        required: true
+      - slot_id: col_3
+        slot_type: body
+        selector: "[data-slot='col_3']"
+        required: true
+      - slot_id: col_4
+        slot_type: body
+        selector: "[data-slot='col_4']"
+        required: true
+
+  - slug: reverse-column
+    name: Reverse Column
+    description: "RTL-trick reverse stacking two-column layout."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: primary_content
+        slot_type: body
+        selector: "[data-slot='primary_content']"
+        required: true
+      - slot_id: secondary_content
+        slot_type: body
+        selector: "[data-slot='secondary_content']"
+        required: true
+
+  - slug: full-width-image
+    name: Full Width Image
+    description: "Responsive full-width linked image with MSO conditional wrapper."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: link_url
+        slot_type: cta
+        selector: "[data-slot='link_url']"
+        required: false
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+
+  - slug: preheader
+    name: Preheader
+    description: "Hidden preheader text with 'View in browser' link."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: preheader_text
+        slot_type: text
+        selector: "[data-slot='preheader_text']"
+        required: true
+      - slot_id: view_online_url
+        slot_type: cta
+        selector: "[data-slot='view_online_url']"
+        required: false
+
+  - slug: image-gallery
+    name: Image Gallery
+    description: "Three-column image gallery with MSO hybrid layout."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: image_1
+        slot_type: image
+        selector: "[data-slot='image_1']"
+        required: true
+      - slot_id: image_2
+        slot_type: image
+        selector: "[data-slot='image_2']"
+        required: true
+      - slot_id: image_3
+        slot_type: image
+        selector: "[data-slot='image_3']"
+        required: true
+    default_tokens:
+      colors:
+        background: "#ffffff"
+        dark_background: "#1a1a2e"
+
+  - slug: article-card
+    name: Article Card
+    description: "Image + heading + text + CTA article card with MSO wrapper."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
+
+  - slug: logo-header
+    name: Logo Header
+    description: "Centered logo-only email header."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: logo_url
+        slot_type: image
+        selector: "[data-slot='logo_url']"
+        required: true
+
+  - slug: navigation-bar
+    name: Navigation Bar
+    description: "Horizontal navigation link row in a centered container."
+    category: structure
+    compatibility: full
+    slot_definitions:
+      - slot_id: nav_links
+        slot_type: body
+        selector: "[data-slot='nav_links']"
+        required: true
+
+  - slug: category-nav
+    name: Category Nav
+    description: "Vertical category link list with configurable items."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: nav_item_1
+        slot_type: text
+        selector: "[data-slot='nav_item_1']"
+        required: true
+      - slot_id: nav_item_2
+        slot_type: text
+        selector: "[data-slot='nav_item_2']"
+        required: true
+      - slot_id: nav_item_3
+        slot_type: text
+        selector: "[data-slot='nav_item_3']"
+        required: false
+    default_tokens:
+      colors:
+        link: "#0066cc"
+        dark_link: "#8ecae6"
+        background: "#f8f8f8"
+        dark_background: "#1a1a2e"
+
+  - slug: product-grid
+    name: Product Grid
+    description: "Two-column product grid with image, title, description, and CTA per item."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: product_1_image
+        slot_type: image
+        selector: "[data-slot='product_1_image']"
+        required: true
+      - slot_id: product_1_title
+        slot_type: text
+        selector: "[data-slot='product_1_title']"
+        required: true
+      - slot_id: product_1_desc
+        slot_type: text
+        selector: "[data-slot='product_1_desc']"
+        required: false
+      - slot_id: product_1_cta
+        slot_type: cta
+        selector: "[data-slot='product_1_cta']"
+        required: false
+      - slot_id: product_2_image
+        slot_type: image
+        selector: "[data-slot='product_2_image']"
+        required: true
+      - slot_id: product_2_title
+        slot_type: text
+        selector: "[data-slot='product_2_title']"
+        required: true
+      - slot_id: product_2_desc
+        slot_type: text
+        selector: "[data-slot='product_2_desc']"
+        required: false
+      - slot_id: product_2_cta
+        slot_type: cta
+        selector: "[data-slot='product_2_cta']"
+        required: false
+    default_tokens:
+      colors:
+        title: "#333333"
+        dark_title: "#f0f0f0"
+        description: "#666666"
+        dark_description: "#cccccc"
+        cta_bg: "#0066cc"
+        dark_cta_bg: "#3399ff"
+        cta_text: "#ffffff"
+
+  - slug: image-grid
+    name: Image Grid
+    description: "Two-image side-by-side grid with links and MSO hybrid layout."
+    category: content
+    compatibility: full
+    slot_definitions:
+      - slot_id: link_1
+        slot_type: cta
+        selector: "[data-slot='link_1']"
+        required: false
+      - slot_id: image_1
+        slot_type: image
+        selector: "[data-slot='image_1']"
+        required: true
+      - slot_id: link_2
+        slot_type: cta
+        selector: "[data-slot='link_2']"
+        required: false
+      - slot_id: image_2
+        slot_type: image
+        selector: "[data-slot='image_2']"
+        required: true
+
+  # ── Utility ─────────────────────────────────────────────
+  - slug: font-inline
+    name: Font Inline
+    description: "Inline span snippet with configurable font size, line-height, and color."
+    category: utility
+    compatibility: utility
+
+  - slug: font-stack
+    name: Font Stack
+    description: "Safe system font-family stack declaration snippet."
+    category: utility
+    compatibility: utility
+
+  - slug: font-web
+    name: Font Web
+    description: "@font-face declaration for embedding a web font (Open Sans example)."
+    category: utility
+    compatibility: partial_outlook
+
+  - slug: mso-lineheight
+    name: MSO Line Height
+    description: "Outlook-safe mso-line-height-rule:exactly inline style snippet."
+    category: utility
+    compatibility: utility
+
+  - slug: vml-bg
+    name: VML Background
+    description: "VML background image with Outlook v:rect/v:fill fallback for full-bleed backgrounds."
+    category: utility
+    compatibility: full

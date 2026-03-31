@@ -7,12 +7,14 @@ from typing import Protocol
 
 from app.ai.agents.evals.judges.schemas import (
     CriterionResult,
+    DesignContext,
     JudgeCriteria,
     JudgeInput,
     JudgeVerdict,
 )
 
 _GOLDEN_TOKEN_BUDGET = 2000  # ~8000 chars at ~4 chars/token
+_DESIGN_CONTEXT_CHAR_BUDGET = 1500  # ~375 tokens for design context
 
 
 class Judge(Protocol):
@@ -142,6 +144,50 @@ def format_golden_section(
         )
 
     return header + "\n" + "\n\n".join(parts)
+
+
+def format_design_context_section(ctx: DesignContext) -> str:
+    """Build design fidelity prompt section from Figma metadata.
+
+    Returns formatted section string, or empty string if no useful data.
+    Capped at ~375 tokens to stay within prompt budget.
+    """
+    lines: list[str] = ["## DESIGN REFERENCE (from Figma)\n"]
+
+    if ctx.figma_url:
+        lines.append(f"Source: {ctx.figma_url}")
+    if ctx.node_id:
+        lines.append(f"Node: {ctx.node_id}")
+
+    if ctx.design_tokens:
+        tokens = ctx.design_tokens
+        lines.append("\n### Expected Design Tokens")
+        if tokens.colors:
+            lines.append("Colors: " + ", ".join(f"{k}={v}" for k, v in tokens.colors.items()))
+        if tokens.fonts:
+            lines.append("Fonts: " + ", ".join(f"{k}={v}" for k, v in tokens.fonts.items()))
+        if tokens.font_sizes:
+            lines.append("Sizes: " + ", ".join(f"{k}={v}" for k, v in tokens.font_sizes.items()))
+        if tokens.spacing:
+            lines.append("Spacing: " + ", ".join(f"{k}={v}" for k, v in tokens.spacing.items()))
+
+    if ctx.section_mapping:
+        lines.append("\n### Section-to-Component Mapping")
+        for m in ctx.section_mapping:
+            frame = f" (frame: {m.figma_frame_name})" if m.figma_frame_name else ""
+            lines.append(f"  Section {m.section_index}: {m.component_slug}{frame}")
+            if m.style_overrides:
+                overrides = ", ".join(f"{k}={v}" for k, v in m.style_overrides.items())
+                lines.append(f"    Overrides: {overrides}")
+
+    result = "\n".join(lines)
+
+    # Enforce char budget
+    if len(result) > _DESIGN_CONTEXT_CHAR_BUDGET:
+        result = result[:_DESIGN_CONTEXT_CHAR_BUDGET] + "\n[truncated]"
+
+    # Only return if we have more than just the header
+    return result if len(lines) > 1 else ""
 
 
 def parse_judge_response(raw: str, judge_input: JudgeInput, agent_name: str) -> JudgeVerdict:

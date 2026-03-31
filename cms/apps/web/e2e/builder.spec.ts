@@ -11,7 +11,7 @@ test.describe("Visual Builder", () => {
     }
   });
 
-  test("component palette loads", async ({ authenticatedPage: page }) => {
+  test("component palette loads @smoke", async ({ authenticatedPage: page }) => {
     await expect(
       page.getByPlaceholder(/search components/i)
     ).toBeVisible({ timeout: 10_000 });

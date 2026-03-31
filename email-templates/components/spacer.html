@@ -1,7 +1,7 @@
 <!-- Component: spacer -->
-
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
-  <tr>
-    <td height="{{ height || '20' }}" style="font-size: {{ height || '20' }}px; line-height: {{ height || '20' }}px; mso-line-height-rule: exactly;">&nbsp;</td>
-  </tr>
-</table>
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td height="32" style="font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table>
+<![endif]-->
+<!--[if !mso]><!-->
+<div data-slot="spacer_height" style="height: 32px; line-height: 32px; font-size: 1px; mso-line-height-rule: exactly;">&nbsp;</div>
+<!--<![endif]-->

@@ -69,6 +69,48 @@ jobs:
       - name: Test
         run: cd cms && pnpm --filter web test
 
+  sdk-check:
+    name: SDK drift detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install Python deps
+        run: uv sync --frozen
+
+      - name: Export OpenAPI spec
+        run: uv run python scripts/export-openapi.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Node deps
+        run: cd cms && pnpm install --frozen-lockfile
+
+      - name: Generate SDK from snapshot
+        run: cd cms && pnpm --filter @email-hub/sdk generate-sdk
+
+      - name: Check for drift
+        run: |
+          if ! git diff --quiet cms/packages/sdk/; then
+            echo "::error::SDK is out of date. Run 'make sdk-snapshot && make sdk-local' and commit."
+            git diff --stat cms/packages/sdk/
+            git diff cms/packages/sdk/
+            exit 1
+          fi
+          echo "SDK is up to date."
+
   migration-lint:
     name: Migration safety (squawk)
     runs-on: ubuntu-latest
@@ -120,3 +162,83 @@ jobs:
             exit 1
           fi
           echo "All commit messages follow conventional commit format."
+
+  e2e-smoke:
+    name: E2E Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE__URL: postgresql+asyncpg://test:test@localhost:5432/test
+      REDIS__URL: redis://localhost:6379/0
+      AUTH__JWT_SECRET_KEY: test-secret-for-ci
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: cms/pnpm-lock.yaml
+
+      - name: Install Node dependencies
+        run: cd cms && pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: cd cms && pnpm exec playwright install --with-deps chromium
+
+      - name: Run database migrations
+        run: uv run alembic upgrade head
+
+      - name: Start backend
+        run: |
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8891 &
+          echo "Waiting for backend..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8891/api/v1/health; then
+              echo "Backend ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Backend failed to start within 60s"
+          exit 1
+
+      - name: Run smoke E2E tests
+        run: cd cms && pnpm --filter web e2e:smoke
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: |
+            cms/apps/web/test-results/
+            cms/apps/web/playwright-report/
+          retention-days: 7

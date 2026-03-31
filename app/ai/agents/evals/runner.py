@@ -48,7 +48,7 @@ async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
     try:
         response = await service.generate(request)
         elapsed = time.monotonic() - start
-        return {
+        trace: dict[str, Any] = {
             "id": case["id"],
             "agent": "scaffolder",
             "dimensions": case["dimensions"],
@@ -64,9 +64,12 @@ async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
             "error": None,
             "timestamp": datetime.now(UTC).isoformat(),
         }
+        if case.get("design_context"):
+            trace["design_context"] = case["design_context"]
+        return trace
     except Exception as e:
         elapsed = time.monotonic() - start
-        return {
+        trace = {
             "id": case["id"],
             "agent": "scaffolder",
             "dimensions": case["dimensions"],
@@ -77,6 +80,9 @@ async def run_scaffolder_case(case: dict[str, Any]) -> dict[str, Any]:
             "error": f"{type(e).__name__}: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
         }
+        if case.get("design_context"):
+            trace["design_context"] = case["design_context"]
+        return trace
 
 
 async def run_dark_mode_case(case: dict[str, Any]) -> dict[str, Any]:

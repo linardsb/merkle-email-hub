@@ -3,7 +3,7 @@ import { test } from "./fixtures";
 import { TEST_USER_EMAIL, TEST_USER_PASSWORD } from "./fixtures/constants";
 
 base.describe("Authentication", () => {
-  base("login with valid credentials", async ({ page }) => {
+  base("login with valid credentials @smoke", async ({ page }) => {
     await page.goto("/login");
     await page.locator("#username").fill(TEST_USER_EMAIL);
     await page.locator("#password").fill(TEST_USER_PASSWORD);

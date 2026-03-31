@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers skill-versions skill-pin skill-unpin skill-rollback help
+.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback help
 
 # === Local Development ===
 
@@ -83,18 +83,30 @@ lint-fe: ## Format + lint frontend (ESLint + Prettier)
 golden-conformance: ## Golden template conformance gate (design_sync)
 	uv run pytest app/design_sync/tests/test_golden_conformance.py -x -q --tb=short
 
-check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance ## Run all checks (backend + frontend + security)
+snapshot-test: ## Snapshot regression tests (real design inputs → expected HTML)
+	uv run pytest app/design_sync/tests/test_snapshot_regression.py -v --tb=long
 
-check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance ## Run all checks including migration lint
+snapshot-capture: ## Capture current converter output for a snapshot case (CASE=5)
+	uv run python scripts/snapshot-capture.py $(CASE) --overwrite
+
+check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks (backend + frontend + security)
+
+check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks including migration lint
 
 validate-overlays: ## Validate per-client skill overlay files
 	uv run python scripts/validate-overlays.py
+
+flag-audit: ## Audit feature flag lifecycle (warns >90d, errors >180d)
+	uv run python scripts/flag-audit.py
 
 list-overlays: ## List all client skill overlays
 	@find data/clients -name "*.md" -path "*/agents/*/skills/*" 2>/dev/null | sort
 
 e2e: ## Run all e2e tests
 	cd cms && pnpm --filter web e2e
+
+e2e-smoke: ## Run smoke E2E tests (Chromium, @smoke tagged)
+	cd cms && pnpm --filter web e2e:smoke
 
 e2e-ui: ## Open Playwright UI mode
 	cd cms && pnpm --filter web e2e:ui
@@ -118,6 +130,19 @@ sdk: ## Generate TypeScript SDK from backend OpenAPI spec (backend must be runni
 
 sdk-local: ## Generate TypeScript SDK from local openapi.json snapshot
 	cd cms && pnpm --filter @email-hub/sdk generate-sdk
+
+sdk-snapshot: ## Export OpenAPI spec snapshot (no running backend needed)
+	uv run python scripts/export-openapi.py
+
+sdk-check: ## Verify SDK is up to date with OpenAPI spec (CI gate)
+	uv run python scripts/export-openapi.py
+	cd cms && pnpm --filter @email-hub/sdk generate-sdk
+	@if ! git diff --quiet cms/packages/sdk/; then \
+		echo "ERROR: SDK is out of date. Run 'make sdk-snapshot && make sdk-local' and commit."; \
+		git diff --stat cms/packages/sdk/; \
+		exit 1; \
+	fi
+	@echo "SDK is up to date."
 
 # === Database ===
 

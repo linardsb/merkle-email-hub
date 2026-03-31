@@ -1,0 +1,95 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":separateMajorReleases"
+  ],
+  "timezone": "Europe/Riga",
+  "schedule": ["before 8am on Monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "commitMessagePrefix": "chore(deps):",
+
+  "enabledManagers": [
+    "pep621",
+    "pip_requirements",
+    "pnpm",
+    "npm",
+    "dockerfile",
+    "github-actions"
+  ],
+
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on Monday"],
+    "commitMessageAction": "refresh"
+  },
+
+  "packageRules": [
+    {
+      "description": "Auto-merge security patches after CI green",
+      "matchUpdateTypes": ["patch"],
+      "matchCategories": ["security"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Group Python minor+patch updates",
+      "matchManagers": ["pep621", "pip_requirements"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "python-minor",
+      "schedule": ["before 8am on Monday"]
+    },
+    {
+      "description": "Group Node.js minor+patch updates",
+      "matchManagers": ["pnpm", "npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "node-minor",
+      "schedule": ["before 8am on Monday"]
+    },
+    {
+      "description": "AI SDK updates need manual review (potential API changes)",
+      "matchPackageNames": ["anthropic", "openai"],
+      "groupName": "ai-sdks",
+      "automerge": false,
+      "labels": ["dependencies", "ai"]
+    },
+    {
+      "description": "Docker image updates in separate PR",
+      "matchManagers": ["dockerfile"],
+      "groupName": "docker-images",
+      "automerge": false,
+      "labels": ["dependencies", "infrastructure"]
+    },
+    {
+      "description": "Pin and group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "automerge": false,
+      "labels": ["dependencies", "ci"]
+    },
+    {
+      "description": "Major versions need manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "breaking"]
+    },
+    {
+      "description": "Auto-merge dev dependency patches",
+      "matchDepTypes": ["devDependencies", "dev"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ],
+
+  "pinDigests": true,
+
+  "postUpdateOptions": [
+    "pnpmDedupe"
+  ]
+}

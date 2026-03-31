@@ -41,10 +41,18 @@ class TestMappingCompleteness:
         for agent in self.EXPECTED_AGENTS:
             assert agent in JUDGE_CRITERIA_MAP, f"Missing mapping for agent: {agent}"
 
-    def test_each_agent_has_five_criteria(self) -> None:
-        """Each agent must have exactly 5 criteria mapped."""
+    # Agents with extended criteria (beyond the base 5)
+    EXTENDED_CRITERIA_AGENTS: ClassVar[dict[str, int]] = {
+        "scaffolder": 6,  # +design_fidelity
+    }
+
+    def test_each_agent_has_expected_criteria_count(self) -> None:
+        """Each agent must have the expected number of criteria mapped."""
         for agent, mappings in JUDGE_CRITERIA_MAP.items():
-            assert len(mappings) == 5, f"{agent} has {len(mappings)} criteria, expected 5"
+            expected = self.EXTENDED_CRITERIA_AGENTS.get(agent, 5)
+            assert len(mappings) == expected, (
+                f"{agent} has {len(mappings)} criteria, expected {expected}"
+            )
 
     def test_no_duplicate_criteria_per_agent(self) -> None:
         """No agent should have duplicate criterion names."""
@@ -91,8 +99,9 @@ class TestCoverageHelpers:
 
     def test_get_llm_only_criteria_scaffolder(self) -> None:
         llm_only = get_llm_only_criteria("scaffolder")
-        assert len(llm_only) == 1
-        assert llm_only[0].criterion == "brief_fidelity"
+        assert len(llm_only) == 2
+        names = {m.criterion for m in llm_only}
+        assert names == {"brief_fidelity", "design_fidelity"}
 
     def test_get_mapped_criteria_content(self) -> None:
         mapped = get_mapped_criteria("content")
@@ -106,7 +115,7 @@ class TestCoverageHelpers:
     def test_compute_coverage_totals(self) -> None:
         summaries = compute_coverage()
         total = sum(s.total_criteria for s in summaries)
-        assert total == 45  # 9 agents x 5 criteria
+        assert total == 46  # 8 agents x 5 + scaffolder x 6
 
     def test_compute_coverage_mapped_count(self) -> None:
         summaries = compute_coverage()
@@ -155,12 +164,12 @@ class TestCoverageReport:
     def test_report_coverage_percentage(self) -> None:
         summaries = compute_coverage()
         report = build_coverage_report(summaries)
-        assert report["overall_coverage_pct"] == 60.0  # 27/45
+        assert report["overall_coverage_pct"] == pytest.approx(58.7, abs=0.1)  # 27/46
 
     def test_report_agent_detail(self) -> None:
         summaries = compute_coverage()
         report = build_coverage_report(summaries)
         scaffolder = next(a for a in report["agents"] if a["agent"] == "scaffolder")
         assert scaffolder["mapped"] == 4
-        assert scaffolder["llm_only"] == 1
-        assert scaffolder["coverage_pct"] == 80.0
+        assert scaffolder["llm_only"] == 2
+        assert scaffolder["coverage_pct"] == pytest.approx(66.7, abs=0.1)

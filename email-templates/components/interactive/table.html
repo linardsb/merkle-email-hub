@@ -1,0 +1,173 @@
+<!-- Component: table — Interactive tab/carousel with thumbnail navigation -->
+
+/** TAB **/
+input{
+display: none;
+}
+@media screen and (max-width:14000px){
+.cboxcheck:checked + input + * .thumb-carousel{
+height: auto !important;
+max-height:none!important;
+max-width:none!important;
+line-height:0;
+}
+.thumb-carousel span {
+font-size:0;
+line-height:0;
+}
+.cboxcheck:checked + input + * .thumb-carousel .car-content{
+display:none;
+max-height:0px;
+overflow:hidden;
+}
+.cbox0:checked + * .content-1,
+.thumb-carousel .cbox1:checked + span .content-1,
+.thumb-carousel .cbox2:checked + span .content-2,
+.thumb-carousel .cbox3:checked + span .content-3,
+.thumb-carousel .cbox4:checked + span .content-4,
+.thumb-carousel .cbox5:checked + span .content-5, 
+.thumb-carousel .cbox6:checked + span .content-6,
+.thumb-carousel .cbox7:checked + span .content-7
+{
+display:block!important;
+max-height:none!important;
+overflow:visible!important;
+}
+.thumb-carousel .thumb{
+cursor:pointer;
+display:inline-block !important;
+width:50px;
+}
+/* hide for thunderbird as it doesn't support checkbox toggling */
+.moz-text-html .thumb {
+display:none !important;
+}
+.cbox0:checked + * .thumb-1,
+.thumb-carousel .cbox1:checked + span .thumb-1,
+.thumb-carousel .cbox2:checked + span .thumb-2,
+.thumb-carousel .cbox3:checked + span .thumb-3,
+.thumb-carousel .cbox4:checked + span .thumb-4,
+.thumb-carousel .cbox5:checked + span .thumb-5,
+.thumb-carousel .cbox6:checked + span .thumb-6,
+.thumb-carousel .cbox7:checked + span .thumb-7
+{
+}
+.thumb-carousel .thumb img{
+width:100%;
+height: auto;
+}
+.thumb-carousel img{
+width: 100%;
+max-height: none !important;
+}      
+.cboxcheck:checked + input + * .fallback{
+display:none !important;
+display:none;
+max-height: 0px;
+height: 0px;
+overflow: hidden;
+}
+}
+@media screen and (max-width:600px){
+.car-table.responsive,
+.car-table.responsive .thumb-carousel,
+.car-table.responsive .thumb-carousel .car-content img,
+.car-table.responsive .fallback .car-content img
+{
+width:100% !important;
+height:auto;
+}
+}    
+/* Hide interactive from Yahoo! Mail iOS since it doesn't support nested label interactivity */
+.yfix{}
+@media screen yahoo and (max-width:600px){
+.thumb-carousel{
+display:none!important;
+}
+.fallback{
+display:block!important;
+height:auto!important;
+max-height:none!important;
+}
+}
+/** TAB ends **/
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%" class="wf" role="presentation" style="width:100%;">
+	<tbody>
+		<tr align="center">
+			<td align="center">
+				<!--[if !mso]><!-- -->
+				<!-- do not wrap with a form tag - prevents bottom thumbnails from working in IE -->
+				<input type="radio" class="cboxcheck" style="display:none !important;" checked="">
+				<input type="radio" name="car-rd1" class="cbox0 bannerimg" style="display:none !important;" checked="">
+				<!--<![endif]-->
+				<table class="car-table wf" cellpadding="0" cellspacing="0" border="0" width="700">
+					<tbody>
+						<tr>
+							<td>
+								<div>
+									<!--[if !mso]><!-- -->
+									<div class="thumb-carousel wf" style="width:{{ width || '700' }};height:0px;max-height:0px;max-width:0px;overflow:hidden!important;text-align:center">
+										<label>
+											<input type="radio" name="car-rd1" class="cbox7" style="display:none !important;">
+											<span>
+										<label>
+										<input type="radio" name="car-rd1" class="cbox6" style="display:none !important;">
+										<span>
+										<label>
+										<input type="radio" name="car-rd1" class="cbox5" style="display:none !important;">
+										<span>
+										<label>
+										<input type="radio" name="car-rd1" class="cbox4" style="display:none !important;">
+										<span>
+										<label>
+										<input type="radio" name="car-rd1" class="cbox3" style="display:none !important;">
+										<span>
+										<label>
+										<input type="radio" name="car-rd1" class="cbox2" style="display:none !important;">
+										<span>
+										<label>
+										<input type="radio" name="car-rd1" class="cbox1" style="display:none !important;">
+										<span class="bannerimg">
+										<div class="content-1 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<div class="content-2 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<div class="content-3 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<div class="content-4 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<div class="content-5 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<div class="content-6 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<div class="content-7 car-content bannerimg"><a href=""><img src="images/img_.jpg" width="700" height="auto" alt="" style="display:block;max-height:0" border="0"></a></div>
+										<span class="thumb thumb-1"><img src="images/img_56.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label>
+										<span class="thumb thumb-2"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label>
+										<span class="thumb thumb-3"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label>
+										<span class="thumb thumb-4"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label>
+										<span class="thumb thumb-5"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label>
+										<span class="thumb thumb-6"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label> 
+										<span class="thumb thumb-7"><img src="images/img_.jpg" width="{{ thumb_width || '100' }}" style="display:block;max-height:0" border="0"></span>
+										</span>
+										</label>       
+									</div>
+									<!--<![endif]-->
+									<div class="fallback ">
+										<div class="car-content"><a href=""><img src="images/img_.jpg" width="{{ width || '700' }}" alt="" style="display:block;" border="0"></a></div>
+									</div>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
+	</tbody>
+</table>

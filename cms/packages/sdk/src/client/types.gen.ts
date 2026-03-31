@@ -27,6 +27,19 @@ export type AnalyzedSectionResponse = {
     images?: Array<ImagePlaceholderResponse>;
     buttons?: Array<ButtonElementResponse>;
     spacing_after?: number | null;
+    bg_color?: string | null;
+    classification_confidence?: number | null;
+    content_roles?: Array<string>;
+};
+
+/**
+ * A detected section annotation.
+ */
+export type AnnotationDecisionSchema = {
+    section_id: string;
+    component_name: string;
+    element_selector: string;
+    layout_type: string;
 };
 
 export type ApprovalCreate = {
@@ -45,6 +58,18 @@ export type ApprovalDecision = {
     review_note?: string | null;
 };
 
+/**
+ * Result of the export approval gate evaluation.
+ */
+export type ApprovalGateResult = {
+    required: boolean;
+    passed: boolean;
+    reason?: string | null;
+    approval_id?: number | null;
+    approved_by?: string | null;
+    approved_at?: string | null;
+};
+
 export type ApprovalResponse = {
     id: number;
     build_id: number;
@@ -57,6 +82,46 @@ export type ApprovalResponse = {
     updated_at: string;
 };
 
+/**
+ * Request to assign a design component to a Hub component.
+ */
+export type AssignDesignOriginRequest = {
+    /**
+     * Design connection ID
+     */
+    connection_id: number;
+    /**
+     * Component ID in the design tool
+     */
+    design_component_id: string;
+    /**
+     * Human-readable component name
+     */
+    design_component_name?: string | null;
+};
+
+/**
+ * Brief attachment response.
+ */
+export type AttachmentResponse = {
+    id: number;
+    filename: string;
+    url: string;
+    size_bytes?: number | null;
+};
+
+/**
+ * Email client distribution as percentages (0.0-1.0).
+ */
+export type AudienceProfileSchema = {
+    /**
+     * Client name to audience share mapping. Values should sum to ~1.0.
+     */
+    client_distribution: {
+        [key: string]: number;
+    };
+};
+
 export type AuditResponse = {
     id: number;
     approval_id: number;
@@ -64,6 +129,35 @@ export type AuditResponse = {
     actor_id: number;
     details?: string | null;
     created_at: string;
+};
+
+/**
+ * Request to check BIMI readiness for a domain.
+ */
+export type BimiCheckRequest = {
+    /**
+     * Sending domain to check (e.g. 'example.com')
+     */
+    domain: string;
+};
+
+/**
+ * Complete BIMI readiness check result.
+ */
+export type BimiCheckResponse = {
+    domain: string;
+    ready: boolean;
+    dmarc_ready: boolean;
+    dmarc_policy: string;
+    dmarc_record?: string | null;
+    bimi_record_exists?: boolean;
+    bimi_record?: string | null;
+    bimi_svg_url?: string | null;
+    bimi_authority_url?: string | null;
+    svg_valid?: boolean | null;
+    cmc_status?: string;
+    generated_record?: string;
+    issues?: Array<string>;
 };
 
 /**
@@ -127,6 +221,35 @@ export type BlueprintResumeRequest = {
      * Campaign brief (re-supplied for remaining nodes)
      */
     brief: string;
+};
+
+/**
+ * Paginated list of blueprint run records.
+ */
+export type BlueprintRunListResponse = {
+    items: Array<BlueprintRunRecord>;
+    total: number;
+    page: number;
+    page_size: number;
+};
+
+/**
+ * A persisted blueprint run record derived from checkpoint data.
+ */
+export type BlueprintRunRecord = {
+    id: number;
+    run_id: string;
+    project_id?: number | null;
+    blueprint_name: string;
+    brief_excerpt?: string;
+    status: string;
+    qa_passed?: boolean | null;
+    total_tokens?: number;
+    duration_ms?: number;
+    created_at: string;
+    run_data?: BlueprintRunResponse | null;
+    checkpoint_count?: number;
+    resumed_from?: string | null;
 };
 
 /**
@@ -210,6 +333,68 @@ export type BrandPalette = {
 };
 
 /**
+ * Brief item detail response (includes description, resources, attachments).
+ */
+export type BriefDetailResponse = {
+    id: number;
+    connection_id: number;
+    external_id: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    priority?: string | null;
+    assignees?: Array<string>;
+    labels?: Array<string>;
+    due_date?: string | null;
+    thumbnail_url?: string | null;
+    resources?: Array<ResourceResponse>;
+    attachments?: Array<AttachmentResponse>;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Brief item response (list view).
+ */
+export type BriefItemResponse = {
+    id: number;
+    connection_id: number;
+    external_id: string;
+    title: string;
+    status: string;
+    priority?: string | null;
+    assignees?: Array<string>;
+    labels?: Array<string>;
+    due_date?: string | null;
+    thumbnail_url?: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Request to browse design files from a provider.
+ */
+export type BrowseFilesRequest = {
+    /**
+     * Design tool provider
+     */
+    provider: string;
+    /**
+     * Provider access token / PAT
+     */
+    access_token: string;
+};
+
+/**
+ * Result of browsing design files.
+ */
+export type BrowseFilesResponse = {
+    provider: string;
+    files: Array<DesignFileResponse>;
+    total: number;
+};
+
+/**
  * Request to build an email template.
  */
 export type BuildRequest = {
@@ -245,7 +430,40 @@ export type BuildResponse = {
     compiled_html?: string | null;
     error_message?: string | null;
     is_production: boolean;
+    passthrough?: boolean;
+    visual_drift?: VisualComparisonResult | null;
     created_at: string;
+};
+
+/**
+ * Result for a single item in a bulk export.
+ */
+export type BulkExportItemResult = {
+    template_id: number;
+    success: boolean;
+    esp_template_id?: string | null;
+    error?: string | null;
+    tokens_rewritten?: number;
+};
+
+/**
+ * Request to export multiple templates to an ESP.
+ */
+export type BulkExportRequest = {
+    template_ids: Array<number>;
+    target_esp: string;
+    connection_id: number;
+    rewrite_tokens?: boolean;
+};
+
+/**
+ * Response from a bulk export operation.
+ */
+export type BulkExportResponse = {
+    results: Array<BulkExportItemResult>;
+    total: number;
+    succeeded: number;
+    failed: number;
 };
 
 /**
@@ -256,6 +474,132 @@ export type ButtonElementResponse = {
     text: string;
     width?: number | null;
     height?: number | null;
+};
+
+/**
+ * Request to compile/optimize CSS in email HTML.
+ */
+export type CssCompileRequest = {
+    /**
+     * Email HTML to compile
+     */
+    html: string;
+    /**
+     * Target email client IDs. Uses config defaults if omitted.
+     */
+    target_clients?: Array<string> | null;
+    /**
+     * CSS custom property values to resolve var() references.
+     */
+    css_variables?: {
+        [key: string]: string;
+    } | null;
+};
+
+/**
+ * Response from CSS compilation.
+ */
+export type CssCompileResponse = {
+    html: string;
+    original_size: number;
+    compiled_size: number;
+    reduction_pct: number;
+    removed_properties: Array<string>;
+    conversions: Array<CssConversionSchema>;
+    warnings: Array<string>;
+    compile_time_ms: number;
+};
+
+/**
+ * A CSS conversion applied during compilation.
+ */
+export type CssConversionSchema = {
+    original_property: string;
+    original_value: string;
+    replacement_property: string;
+    replacement_value: string;
+    reason: string;
+    affected_clients: Array<string>;
+};
+
+/**
+ * Response for section cache clear endpoint.
+ */
+export type CacheClearResponse = {
+    cleared_entries: number;
+};
+
+/**
+ * Per-client calibration history.
+ */
+export type CalibrationHistoryResponse = {
+    client_id: string;
+    records: Array<CalibrationRecordResponse>;
+    total: number;
+};
+
+/**
+ * Serialized calibration record for API responses.
+ */
+export type CalibrationRecordResponse = {
+    id: number;
+    client_id: string;
+    html_hash: string;
+    diff_percentage: number;
+    accuracy_score: number;
+    pixel_count: number;
+    external_provider: string;
+    emulator_version: string;
+    created_at: string;
+};
+
+/**
+ * Result of a single calibration measurement.
+ */
+export type CalibrationResultSchema = {
+    client_id: string;
+    diff_percentage: number;
+    accuracy_score: number;
+    pixel_count?: number;
+    regression?: boolean;
+    regression_details?: string | null;
+};
+
+/**
+ * List of all client calibration summaries.
+ */
+export type CalibrationSummaryListResponse = {
+    summaries: Array<CalibrationSummaryResponse>;
+};
+
+/**
+ * Serialized calibration summary for API responses.
+ */
+export type CalibrationSummaryResponse = {
+    client_id: string;
+    current_accuracy: number;
+    sample_count: number;
+    accuracy_trend?: Array<number>;
+    known_blind_spots?: Array<string>;
+    last_provider?: string;
+    last_calibrated?: string | null;
+};
+
+/**
+ * Request to trigger a calibration run.
+ */
+export type CalibrationTriggerRequest = {
+    html: string;
+    client_ids: Array<string>;
+    external_provider?: string;
+};
+
+/**
+ * Response from a calibration trigger.
+ */
+export type CalibrationTriggerResponse = {
+    results: Array<CalibrationResultSchema>;
+    records_created: number;
 };
 
 /**
@@ -270,6 +614,66 @@ export type CapabilityFeasibilityResponse = {
     hub_supports: boolean;
     hub_agent: string;
     competitor_names: Array<string>;
+};
+
+/**
+ * A single change from a sync operation.
+ */
+export type ChangelogEntryResponse = {
+    property_id: string;
+    client_id: string;
+    old_level: string | null;
+    new_level: string;
+    source: string;
+};
+
+/**
+ * A specific QA check failure introduced by a chaos profile.
+ */
+export type ChaosFailure = {
+    profile: string;
+    check_name: string;
+    severity: string;
+    description: string;
+};
+
+/**
+ * QA results for a single chaos profile.
+ */
+export type ChaosProfileResult = {
+    profile: string;
+    description: string;
+    score: number;
+    passed: boolean;
+    checks_passed: number;
+    checks_total: number;
+    failures?: Array<ChaosFailure>;
+};
+
+/**
+ * Request to run chaos testing on HTML.
+ */
+export type ChaosTestRequest = {
+    html: string;
+    /**
+     * Profile names to test. None = use defaults from config.
+     */
+    profiles?: Array<string> | null;
+    /**
+     * Project ID for auto-documenting failures to knowledge base.
+     */
+    project_id?: number | null;
+};
+
+/**
+ * Complete chaos test results.
+ */
+export type ChaosTestResponse = {
+    original_score: number;
+    resilience_score: number;
+    profiles_tested: number;
+    profile_results?: Array<ChaosProfileResult>;
+    critical_failures?: Array<ChaosFailure>;
 };
 
 /**
@@ -329,6 +733,29 @@ export type ClientCompatibility = {
     platform: string;
 };
 
+/**
+ * Current confidence data for a specific client.
+ */
+export type ClientConfidenceResponse = {
+    client_id: string;
+    accuracy: number;
+    sample_count: number;
+    last_calibrated: string;
+    known_blind_spots?: Array<string>;
+    emulator_rule_count: number;
+    profiles?: Array<string>;
+};
+
+export type ClientGateResult = {
+    client_name: string;
+    confidence_score: number;
+    threshold: number;
+    passed: boolean;
+    tier: string;
+    blocking_reasons?: Array<string>;
+    remediation?: Array<string>;
+};
+
 export type ClientOrgCreate = {
     /**
      * Client organization name
@@ -372,6 +799,16 @@ export type CompatibilityBriefResponse = {
     dark_mode_warning: boolean;
     clients: Array<ClientProfileSchema>;
     risk_matrix: Array<RiskMatrixEntrySchema>;
+};
+
+/**
+ * A client compatibility observation surfaced during conversion.
+ */
+export type CompatibilityHintResponse = {
+    level: string;
+    css_property: string;
+    message: string;
+    affected_clients: Array<string>;
 };
 
 /**
@@ -440,6 +877,7 @@ export type ComponentResponse = {
     updated_at: string;
     latest_version?: number | null;
     compatibility_badge?: string | null;
+    design_origin?: DesignOrigin | null;
 };
 
 export type ComponentUpdate = {
@@ -449,29 +887,38 @@ export type ComponentUpdate = {
 };
 
 /**
- * Request to create a design tool connection.
+ * Component scores for rendering confidence.
  */
-export type ConnectionCreateRequest = {
+export type ConfidenceBreakdownSchema = {
+    emulator_coverage: number;
+    css_compatibility: number;
+    calibration_accuracy: number;
+    layout_complexity: number;
+    known_blind_spots?: Array<string>;
+};
+
+/**
+ * Per-connection converter configuration hints.
+ */
+export type ConnectionConfigRequest = {
     /**
-     * Display name
+     * Naming convention: auto-detect or specify
      */
-    name: string;
+    naming_convention?: string;
     /**
-     * Design tool provider
+     * Custom section name → type mapping (e.g. {'my-hero': 'hero'})
      */
-    provider?: string;
+    section_name_map?: {
+        [key: string]: string;
+    } | null;
     /**
-     * Design file URL
+     * Extra button name prefixes (e.g. ['btn-', 'cta-'])
      */
-    file_url: string;
+    button_name_hints?: Array<string> | null;
     /**
-     * Provider access token / PAT
+     * Override auto-detected container width
      */
-    access_token: string;
-    /**
-     * Link to a project
-     */
-    project_id?: number | null;
+    container_width?: number | null;
 };
 
 /**
@@ -485,38 +932,23 @@ export type ConnectionDeleteRequest = {
 };
 
 /**
- * Design connection response (maps DB fields for frontend compat).
+ * Request to link/unlink a connection to a project.
  */
-export type ConnectionResponse = {
-    id: number;
-    name: string;
-    provider: string;
+export type ConnectionLinkProjectRequest = {
     /**
-     * Provider file reference
+     * Project ID to link (null to unlink)
      */
-    file_key: string;
-    file_url: string;
-    /**
-     * Last 4 chars of token for display
-     */
-    access_token_last4: string;
-    status: string;
-    error_message?: string | null;
-    last_synced_at?: string | null;
     project_id?: number | null;
-    project_name?: string | null;
-    created_at: string;
-    updated_at: string;
 };
 
 /**
- * Request to sync tokens from a connection.
+ * Request to update the access token on an existing connection.
  */
-export type ConnectionSyncRequest = {
+export type ConnectionUpdateTokenRequest = {
     /**
-     * Connection ID to sync
+     * New provider access token / PAT
      */
-    id: number;
+    access_token: string;
 };
 
 /**
@@ -548,6 +980,10 @@ export type ContentRequest = {
      * Number of alternatives
      */
     num_alternatives?: number;
+    /**
+     * Target email client IDs from audience profile for client-aware generation
+     */
+    audience_client_ids?: Array<string> | null;
     build_plan?: {
         [key: string]: unknown;
     } | null;
@@ -564,6 +1000,42 @@ export type ConvertImportRequest = {
      */
     run_qa?: boolean;
     output_mode?: 'html' | 'structured';
+    /**
+     * Conversion backend: 'html' (recursive) or 'mjml' (MJML generation + compilation)
+     */
+    output_format?: 'html' | 'mjml';
+    /**
+     * Run visual fidelity scoring after conversion (requires FIDELITY_ENABLED)
+     */
+    score_fidelity?: boolean;
+};
+
+/**
+ * Cost breakdown by a single dimension.
+ */
+export type CostDimension = {
+    name: string;
+    cost_gbp: number;
+};
+
+/**
+ * Monthly cost report.
+ */
+export type CostReportResponse = {
+    /**
+     * YYYY-MM
+     */
+    month: string;
+    total_gbp: number;
+    budget_gbp: number;
+    utilization_pct: number;
+    /**
+     * ok | warning | exceeded
+     */
+    status: string;
+    by_model?: Array<CostDimension>;
+    by_agent?: Array<CostDimension>;
+    by_project?: Array<CostDimension>;
 };
 
 /**
@@ -626,6 +1098,68 @@ export type DarkModeRequest = {
     run_qa?: boolean;
 };
 
+export type DataLossEventResponse = {
+    type: string;
+    node_id: string;
+    node_name: string;
+    detail: string;
+    stage: string;
+};
+
+/**
+ * Score breakdown for a single dimension (0-25 each).
+ */
+export type DeliverabilityDimension = {
+    name: string;
+    score: number;
+    max_score?: number;
+    issues?: Array<DeliverabilityIssue>;
+};
+
+/**
+ * A specific deliverability finding with fix recommendation.
+ */
+export type DeliverabilityIssue = {
+    /**
+     * content_quality | html_hygiene | auth_readiness | engagement_signals
+     */
+    dimension: string;
+    /**
+     * error | warning | info
+     */
+    severity: string;
+    description: string;
+    fix: string;
+};
+
+/**
+ * Request to score email deliverability.
+ */
+export type DeliverabilityScoreRequest = {
+    html: string;
+};
+
+/**
+ * Complete deliverability prediction result.
+ */
+export type DeliverabilityScoreResponse = {
+    /**
+     * Overall deliverability score
+     */
+    score: number;
+    /**
+     * True if score >= threshold
+     */
+    passed: boolean;
+    threshold: number;
+    dimensions?: Array<DeliverabilityDimension>;
+    issues?: Array<DeliverabilityIssue>;
+    /**
+     * Human-readable summary of findings
+     */
+    summary: string;
+};
+
 /**
  * Single design colour.
  */
@@ -647,6 +1181,37 @@ export type DesignComponentResponse = {
 };
 
 /**
+ * A single browsable design file.
+ */
+export type DesignFileResponse = {
+    file_id: string;
+    name: string;
+    url: string;
+    thumbnail_url?: string | null;
+    last_modified?: string | null;
+    folder?: string | null;
+};
+
+/**
+ * A gradient extracted from a design file.
+ */
+export type DesignGradientResponse = {
+    name: string;
+    type: string;
+    angle: number;
+    stops: Array<DesignGradientStopResponse>;
+    fallback_hex: string;
+};
+
+/**
+ * A single gradient stop.
+ */
+export type DesignGradientStopResponse = {
+    hex: string;
+    position: number;
+};
+
+/**
  * A node in the design file tree.
  */
 export type DesignNodeResponse = {
@@ -662,11 +1227,47 @@ export type DesignNodeResponse = {
 };
 
 /**
+ * Design tool origin metadata parsed from compatibility JSON.
+ */
+export type DesignOrigin = {
+    /**
+     * Design tool provider (e.g. figma, penpot)
+     */
+    provider: string;
+    /**
+     * Design file identifier
+     */
+    file_key: string;
+    /**
+     * Component ID within the design file
+     */
+    component_id: string;
+    /**
+     * Human-readable component name
+     */
+    component_name?: string | null;
+};
+
+/**
  * Single spacing value.
  */
 export type DesignSpacingResponse = {
     name: string;
     value: number;
+};
+
+export type DesignSummaryResponse = {
+    total_nodes: number;
+    node_type_counts: {
+        [key: string]: number;
+    };
+    max_tree_depth: number;
+    image_fill_frames: Array<{
+        [key: string]: string;
+    }>;
+    auto_layout_frames: number;
+    naming_compliance: number;
+    naming_misses: Array<string>;
 };
 
 /**
@@ -700,9 +1301,13 @@ export type DesignSystem = {
 export type DesignTokensResponse = {
     connection_id: number;
     colors: Array<DesignColorResponse>;
+    dark_colors?: Array<DesignColorResponse>;
     typography: Array<DesignTypographyResponse>;
     spacing: Array<DesignSpacingResponse>;
+    gradients?: Array<DesignGradientResponse>;
     extracted_at: string;
+    warnings?: Array<string> | null;
+    compatibility_hints?: Array<CompatibilityHintResponse> | null;
 };
 
 /**
@@ -714,6 +1319,45 @@ export type DesignTypographyResponse = {
     weight: string;
     size: number;
     lineHeight: number;
+    letterSpacing?: number | null;
+    textTransform?: string | null;
+    textDecoration?: string | null;
+};
+
+/**
+ * Detected email intent.
+ */
+export type DetectedIntentSchema = {
+    /**
+     * Classified intent: promotional, transactional, event, newsletter, notification
+     */
+    intent_type: string;
+    /**
+     * Classification confidence (0.0-1.0)
+     */
+    confidence: number;
+    /**
+     * Number of extracted entities
+     */
+    entity_count: number;
+};
+
+export type DiagnosticReportResponse = {
+    id: string;
+    connection_id: number | null;
+    timestamp: string;
+    total_elapsed_ms: number;
+    stages_completed: number;
+    total_warnings: number;
+    total_data_loss_events: number;
+    design_summary: DesignSummaryResponse;
+    stages: Array<StageResultResponse>;
+    section_traces: Array<SectionTraceResponse>;
+    final_html_preview: string;
+    final_html_length: number;
+    images: Array<{
+        [key: string]: string;
+    }>;
 };
 
 /**
@@ -802,6 +1446,14 @@ export type DocumentUpdate = {
     description?: string | null;
     domain?: string | null;
     language?: string | null;
+};
+
+/**
+ * Response for the EmailDesignDocument validation endpoint.
+ */
+export type DocumentValidationResponse = {
+    valid: boolean;
+    errors: Array<string>;
 };
 
 /**
@@ -910,6 +1562,20 @@ export type EspTemplateList = {
 };
 
 /**
+ * Extracted email brief.
+ */
+export type EmailBriefResponse = {
+    topic: string;
+    sections: Array<{
+        [key: string]: unknown;
+    }>;
+    tone: string;
+    cta_text?: string | null;
+    audience?: string | null;
+    constraints?: Array<string>;
+};
+
+/**
  * Public email client metadata from ontology.
  */
 export type EmailClientResponse = {
@@ -935,36 +1601,23 @@ export type ExportImageRequest = {
 };
 
 /**
- * Request to export an email build to an ESP.
+ * Request for a dry-run export pre-check.
  */
-export type ExportRequest = {
-    /**
-     * Email build ID to export
-     */
+export type ExportPreCheckRequest = {
+    html: string;
+    project_id?: number | null;
+    target_clients?: Array<string> | null;
     build_id?: number | null;
-    /**
-     * Template version ID to export (alternative to build_id)
-     */
-    template_version_id?: number | null;
-    connector_type?: string;
-    /**
-     * Name for the ESP content block
-     */
-    content_block_name?: string;
 };
 
 /**
- * Response from an export operation.
+ * Combined QA + rendering + approval gate pre-check result.
  */
-export type ExportResponse = {
-    id?: number | null;
-    build_id?: number | null;
-    template_version_id?: number | null;
-    connector_type: string;
-    status: string;
-    external_id?: string | null;
-    error_message?: string | null;
-    created_at: string;
+export type ExportPreCheckResponse = {
+    qa: QaGateResult;
+    rendering?: GateResult | null;
+    approval?: ApprovalGateResult | null;
+    can_export: boolean;
 };
 
 /**
@@ -993,6 +1646,20 @@ export type ExtractComponentsResponse = {
     status: string;
     total_components: number;
     message: string;
+};
+
+/**
+ * An entity extracted from email content.
+ */
+export type ExtractedEntitySchema = {
+    /**
+     * Entity type: price, date, order_number, product_name, url
+     */
+    entity_type: string;
+    /**
+     * Extracted value
+     */
+    value: string;
 };
 
 /**
@@ -1049,12 +1716,36 @@ export type FeedbackResponse = {
 };
 
 /**
+ * API response wrapping fidelity scores for a design import.
+ */
+export type FidelityResponse = {
+    import_id: number;
+    fidelity?: FidelityResult | null;
+};
+
+/**
+ * Aggregate fidelity scoring result for a design import.
+ */
+export type FidelityResult = {
+    overall_ssim: number;
+    sections: Array<SectionFidelityScore>;
+    diff_image_available?: boolean;
+    scored_at: string;
+};
+
+/**
  * Design file structure response.
  */
 export type FileStructureResponse = {
     connection_id: number;
     file_name: string;
     pages: Array<DesignNodeResponse>;
+    /**
+     * node_id → image URL
+     */
+    thumbnails?: {
+        [key: string]: string;
+    };
 };
 
 /**
@@ -1066,6 +1757,38 @@ export type FooterConfig = {
     address?: string;
     unsubscribe_text?: string;
 };
+
+/**
+ * Partial update for gate config.
+ */
+export type GateConfigUpdateRequest = {
+    mode?: GateMode | null;
+    tier_thresholds?: {
+        [key: string]: number;
+    } | null;
+    target_clients?: Array<string> | null;
+    require_external_validation?: Array<string> | null;
+};
+
+export type GateEvaluateRequest = {
+    html: string;
+    target_clients?: Array<string> | null;
+    project_id?: number | null;
+};
+
+export type GateMode = 'enforce' | 'warn' | 'skip';
+
+export type GateResult = {
+    passed: boolean;
+    verdict: GateVerdict;
+    mode: GateMode;
+    client_results?: Array<ClientGateResult>;
+    blocking_clients?: Array<string>;
+    recommendations?: Array<string>;
+    evaluated_at: string;
+};
+
+export type GateVerdict = 'pass' | 'warn' | 'block';
 
 /**
  * Request to generate a campaign brief from design analysis.
@@ -1093,6 +1816,51 @@ export type GenerateBriefResponse = {
     brief: string;
     sections_detected: number;
     layout_summary: string;
+};
+
+/**
+ * Request for Gmail preview text optimization.
+ */
+export type GmailOptimizeRequest = {
+    html: string;
+    subject: string;
+    from_name: string;
+    /**
+     * Desired summary focus
+     */
+    target_summary?: string | null;
+};
+
+/**
+ * Gmail preview text optimization result.
+ */
+export type GmailOptimizeResponse = {
+    original_subject: string;
+    suggested_subjects?: Array<string>;
+    original_preview: string;
+    suggested_previews?: Array<string>;
+    reasoning?: string;
+};
+
+/**
+ * Request for Gmail AI summary prediction.
+ */
+export type GmailPredictRequest = {
+    html: string;
+    subject: string;
+    from_name: string;
+};
+
+/**
+ * Gmail AI summary prediction result.
+ */
+export type GmailPredictResponse = {
+    summary_text: string;
+    predicted_category: string;
+    key_actions?: Array<string>;
+    promotion_signals?: Array<string>;
+    improvement_suggestions?: Array<string>;
+    confidence: number;
 };
 
 /**
@@ -1166,6 +1934,39 @@ export type HandoffSummary = {
 };
 
 /**
+ * Request to reverse-engineer email HTML into an EmailDesignDocument.
+ */
+export type HtmlImportRequest = {
+    /**
+     * Raw email HTML (max 2 MB)
+     */
+    html: string;
+    /**
+     * Override AI fallback (None = use config)
+     */
+    use_ai?: boolean | null;
+    /**
+     * Source identifier
+     */
+    source_name?: string | null;
+};
+
+/**
+ * Response from HTML reverse-engineering import.
+ */
+export type HtmlImportResponse = {
+    /**
+     * EmailDesignDocument JSON
+     */
+    document: {
+        [key: string]: unknown;
+    };
+    section_count: number;
+    ai_sections_classified: number;
+    warnings?: Array<string>;
+};
+
+/**
  * Image export result.
  */
 export type ImageExportResponse = {
@@ -1185,6 +1986,23 @@ export type ImagePlaceholderResponse = {
 };
 
 /**
+ * Request to annotate imported email HTML.
+ */
+export type ImportAnnotateRequest = {
+    html: string;
+    esp_platform?: string | null;
+};
+
+/**
+ * Response from import annotation.
+ */
+export type ImportAnnotateResponse = {
+    annotated_html: string;
+    sections: Array<AnnotationDecisionSchema>;
+    warnings: Array<string>;
+};
+
+/**
  * A single import asset.
  */
 export type ImportAssetResponse = {
@@ -1200,24 +2018,61 @@ export type ImportAssetResponse = {
 };
 
 /**
- * Design import job response.
+ * Request to import MJML markup into an EmailDesignDocument.
  */
-export type ImportResponse = {
-    id: number;
-    connection_id: number;
-    project_id: number;
-    status: string;
-    selected_node_ids: Array<string>;
-    structure_json?: {
+export type ImportMjmlRequest = {
+    /**
+     * Raw MJML markup (max ~2 MB)
+     */
+    mjml_source: string;
+};
+
+/**
+ * Response from MJML import.
+ */
+export type ImportMjmlResponse = {
+    /**
+     * EmailDesignDocument JSON
+     */
+    document: {
         [key: string]: unknown;
-    } | null;
-    generated_brief?: string | null;
-    result_template_id?: number | null;
-    error_message?: string | null;
-    created_by_id: number;
-    assets?: Array<ImportAssetResponse>;
-    created_at: string;
-    updated_at: string;
+    };
+    sections_count: number;
+    warnings?: Array<string>;
+};
+
+/**
+ * Request to import brief items into a project.
+ */
+export type ImportRequest = {
+    /**
+     * Item IDs to import
+     */
+    brief_item_ids: Array<number>;
+    /**
+     * Target project name
+     */
+    project_name: string;
+};
+
+/**
+ * Request to import W3C Design Tokens v1.0 JSON.
+ */
+export type ImportW3cTokensRequest = {
+    /**
+     * W3C Design Tokens v1.0 JSON
+     */
+    tokens_json: {
+        [key: string]: unknown;
+    };
+    /**
+     * Optional connection to store snapshot against
+     */
+    connection_id?: number | null;
+    /**
+     * Target clients for compatibility checks
+     */
+    target_clients?: Array<string> | null;
 };
 
 /**
@@ -1386,6 +2241,117 @@ export type MemorySearch = {
     limit?: number;
 };
 
+/**
+ * A single phase of the migration plan.
+ */
+export type MigrationPhaseSchema = {
+    name: string;
+    description: string;
+    dependency_types: Array<string>;
+    dependency_count: number;
+    audience_impact: number;
+    safe_when: string;
+    risk_level: string;
+    estimated_byte_savings: number;
+};
+
+/**
+ * Request for audience-aware migration plan.
+ */
+export type MigrationPlanRequest = {
+    html: string;
+    /**
+     * Client distribution. Uses industry averages if omitted.
+     */
+    audience?: AudienceProfileSchema | null;
+};
+
+/**
+ * Phased migration plan response.
+ */
+export type MigrationPlanResponse = {
+    phases: Array<MigrationPhaseSchema>;
+    total_dependencies: number;
+    total_removable: number;
+    total_savings_bytes: number;
+    word_engine_audience: number;
+    risk_assessment: string;
+    recommendation: string;
+    analysis: OutlookAnalysisResponse;
+};
+
+/**
+ * A single modernization action.
+ */
+export type ModernizationStepSchema = {
+    description: string;
+    dependency_type: string;
+    removals: number;
+    byte_savings: number;
+};
+
+/**
+ * Request to analyze HTML for Word-engine dependencies.
+ */
+export type OutlookAnalysisRequest = {
+    html: string;
+};
+
+/**
+ * Complete Outlook dependency analysis.
+ */
+export type OutlookAnalysisResponse = {
+    dependencies?: Array<OutlookDependencySchema>;
+    total_count?: number;
+    removable_count?: number;
+    byte_savings?: number;
+    modernization_plan?: Array<ModernizationStepSchema>;
+    vml_count?: number;
+    ghost_table_count?: number;
+    mso_conditional_count?: number;
+    mso_css_count?: number;
+    dpi_image_count?: number;
+    external_class_count?: number;
+    word_wrap_count?: number;
+};
+
+/**
+ * A single Word-engine dependency.
+ */
+export type OutlookDependencySchema = {
+    type: string;
+    location: string;
+    line_number: number;
+    code_snippet: string;
+    severity: string;
+    removable: boolean;
+    modern_replacement?: string | null;
+};
+
+/**
+ * Request to modernize HTML by removing Word-engine dependencies.
+ */
+export type OutlookModernizeRequest = {
+    html: string;
+    /**
+     * Modernization target: new_outlook (aggressive), dual_support (keep conditionals), audit_only (no changes)
+     */
+    target?: string;
+};
+
+/**
+ * Modernization result.
+ */
+export type OutlookModernizeResponse = {
+    html: string;
+    changes_applied: number;
+    bytes_before: number;
+    bytes_after: number;
+    bytes_saved: number;
+    target: string;
+    analysis: OutlookAnalysisResponse;
+};
+
 export type PaginatedResponseClientOrgResponse = {
     items: Array<ClientOrgResponse>;
     total: number;
@@ -1506,6 +2472,7 @@ export type PreviewRequest = {
 export type PreviewResponse = {
     compiled_html: string;
     build_time_ms: number;
+    passthrough?: boolean;
 };
 
 export type ProjectCreate = {
@@ -1559,6 +2526,7 @@ export type ProjectResponse = {
     template_config?: {
         [key: string]: unknown;
     } | null;
+    require_approval_for_export?: boolean;
     created_at: string;
     updated_at: string;
 };
@@ -1579,6 +2547,81 @@ export type ProjectUpdate = {
     status?: string | null;
     is_active?: boolean | null;
     target_clients?: Array<string> | null;
+    require_approval_for_export?: boolean | null;
+};
+
+export type PromptActivateRequest = {
+    template_id: number;
+};
+
+export type PromptSeedResponse = {
+    seeded: {
+        [key: string]: number;
+    };
+};
+
+export type PromptTemplateCreate = {
+    agent_id: string;
+    variant?: string;
+    content: string;
+    description?: string | null;
+};
+
+export type PromptTemplateListResponse = {
+    templates: Array<PromptTemplateResponse>;
+};
+
+export type PromptTemplateResponse = {
+    id: number;
+    agent_id: string;
+    variant: string;
+    version: number;
+    content: string;
+    description: string | null;
+    active: boolean;
+    created_by: string | null;
+    created_at: string;
+};
+
+/**
+ * A property test failure with the config that caused it.
+ */
+export type PropertyFailureSchema = {
+    invariant_name: string;
+    violations: Array<string>;
+    config: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * Request to run property-based tests.
+ */
+export type PropertyTestRequest = {
+    /**
+     * Invariant names to test. None = all.
+     */
+    invariants?: Array<string> | null;
+    /**
+     * Number of random emails to generate. Defaults to config value.
+     */
+    num_cases?: number | null;
+    /**
+     * Fixed seed for reproducibility
+     */
+    seed?: number | null;
+};
+
+/**
+ * Complete property test results.
+ */
+export type PropertyTestResponse = {
+    total_cases: number;
+    passed: number;
+    failed: number;
+    failures?: Array<PropertyFailureSchema>;
+    seed: number;
+    invariants_tested?: Array<string>;
 };
 
 /**
@@ -1591,6 +2634,34 @@ export type QaCheckResult = {
     details?: string | null;
     severity?: string;
 };
+
+/**
+ * Summary of a single QA check result for the export gate.
+ */
+export type QaCheckSummary = {
+    check_name: string;
+    passed: boolean;
+    score: number;
+    severity: string;
+    details?: string | null;
+};
+
+export type QaGateMode = 'enforce' | 'warn' | 'skip';
+
+/**
+ * Result of the export QA gate evaluation.
+ */
+export type QaGateResult = {
+    passed: boolean;
+    verdict: QaGateVerdict;
+    mode: QaGateMode;
+    blocking_failures?: Array<QaCheckSummary>;
+    warnings?: Array<QaCheckSummary>;
+    checks_run?: number;
+    evaluated_at: string;
+};
+
+export type QaGateVerdict = 'pass' | 'warn' | 'block';
 
 /**
  * Request to override failing QA checks.
@@ -1631,6 +2702,8 @@ export type QaResultResponse = {
     checks_total: number;
     checks?: Array<QaCheckResult>;
     override?: QaOverrideResponse | null;
+    resilience_score?: number | null;
+    visual_defects?: Array<QaVisualDefect>;
     created_at: string;
 };
 
@@ -1654,6 +2727,39 @@ export type QaRunRequest = {
      * Compiled HTML to validate
      */
     html: string;
+};
+
+/**
+ * A rendering defect detected by visual QA precheck (per-client).
+ */
+export type QaVisualDefect = {
+    /**
+     * Defect type, e.g. 'layout_collapse', 'style_stripping'
+     */
+    type: string;
+    severity?: 'low' | 'medium' | 'high' | 'critical';
+    /**
+     * Email client ID, e.g. 'outlook_2019'
+     */
+    client_id: string;
+    /**
+     * Human-readable defect description
+     */
+    description: string;
+    /**
+     * Fixer agent to route to, e.g. 'outlook_fixer'
+     */
+    suggested_agent?: string | null;
+    /**
+     * Content block ID for downstream multimodal injection
+     */
+    screenshot_ref?: string | null;
+    /**
+     * Defect region: {x, y, w, h}
+     */
+    bounding_box?: {
+        [key: string]: number;
+    } | null;
 };
 
 /**
@@ -1717,6 +2823,18 @@ export type RenderingDiff = {
 };
 
 /**
+ * Project-level gate configuration.
+ */
+export type RenderingGateConfigSchema = {
+    mode?: GateMode;
+    tier_thresholds?: {
+        [key: string]: number;
+    };
+    target_clients?: Array<string>;
+    require_external_validation?: Array<string>;
+};
+
+/**
  * Request to submit a rendering test.
  */
 export type RenderingTestRequest = {
@@ -1752,6 +2870,17 @@ export type RenderingTestResponse = {
     created_at: string;
 };
 
+/**
+ * Brief resource response.
+ */
+export type ResourceResponse = {
+    id: number;
+    type: string;
+    filename: string;
+    url: string;
+    size_bytes?: number | null;
+};
+
 export type RiskMatrixEntrySchema = {
     css: string;
     unsupported_in: Array<string>;
@@ -1765,6 +2894,63 @@ export type RoutingDecisionResponse = {
     node_name: string;
     action: string;
     reason: string;
+};
+
+/**
+ * Serializable DOM diff result.
+ */
+export type SandboxDomDiff = {
+    removed_elements?: Array<string>;
+    removed_attributes?: {
+        [key: string]: Array<string>;
+    };
+    removed_css_properties?: {
+        [key: string]: Array<string>;
+    };
+    added_elements?: Array<string>;
+    modified_styles?: {
+        [key: string]: [
+            string,
+            string
+        ];
+    };
+};
+
+/**
+ * Health check for sandbox infrastructure.
+ */
+export type SandboxHealthResponse = {
+    sandbox_enabled: boolean;
+    mailpit_reachable?: boolean;
+    roundcube_reachable?: boolean;
+    smtp_reachable?: boolean;
+};
+
+/**
+ * Result from a single sandbox profile capture.
+ */
+export type SandboxProfileResult = {
+    profile: string;
+    rendered_html: string;
+    screenshot_base64?: string | null;
+    dom_diff?: SandboxDomDiff | null;
+};
+
+/**
+ * Request to send email through sandbox and capture results.
+ */
+export type SandboxTestRequest = {
+    html: string;
+    subject?: string;
+    profiles?: Array<string>;
+};
+
+/**
+ * Response with per-profile sandbox capture results.
+ */
+export type SandboxTestResponse = {
+    message_id: string;
+    results: Array<SandboxProfileResult>;
 };
 
 /**
@@ -1796,6 +2982,58 @@ export type ScaffolderRequest = {
     design_context?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Pre-generated HTML skeleton for the Scaffolder to enhance (e.g. from Penpot converter)
+     */
+    initial_html?: string;
+};
+
+/**
+ * Request to inject schema.org markup into email HTML.
+ */
+export type SchemaInjectRequest = {
+    /**
+     * Email HTML content
+     */
+    html: string;
+    /**
+     * Email subject line (improves classification accuracy)
+     */
+    subject?: string;
+};
+
+/**
+ * Response from schema.org markup injection.
+ */
+export type SchemaInjectResponse = {
+    /**
+     * Email HTML with injected JSON-LD (unchanged if no markup injected)
+     */
+    html: string;
+    /**
+     * Whether markup was actually injected
+     */
+    injected: boolean;
+    /**
+     * Detected email intent
+     */
+    intent: DetectedIntentSchema;
+    /**
+     * Extracted entities used for markup
+     */
+    entities: Array<ExtractedEntitySchema>;
+    /**
+     * Schema.org types in injected markup
+     */
+    schema_types: Array<string>;
+    /**
+     * Validation errors (if injection was skipped)
+     */
+    validation_errors: Array<string>;
+    /**
+     * Processing time in milliseconds
+     */
+    inject_time_ms: number;
 };
 
 /**
@@ -1806,6 +3044,9 @@ export type ScreenshotClientResult = {
     image_base64: string;
     viewport: string;
     browser: string;
+    confidence_score?: number | null;
+    confidence_breakdown?: ConfidenceBreakdownSchema | null;
+    confidence_recommendations?: Array<string> | null;
 };
 
 /**
@@ -1884,6 +3125,20 @@ export type SearchResult = {
 };
 
 /**
+ * Per-section SSIM fidelity score.
+ */
+export type SectionFidelityScore = {
+    section_id: string;
+    section_name: string;
+    section_type: string;
+    /**
+     * Structural Similarity Index (0-1)
+     */
+    ssim: number;
+    severity: 'ok' | 'warning' | 'critical';
+};
+
+/**
  * Override a default section block with a client component.
  */
 export type SectionOverride = {
@@ -1895,6 +3150,23 @@ export type SectionOverride = {
      * ComponentVersion ID providing the replacement
      */
     component_version_id: number;
+};
+
+export type SectionTraceResponse = {
+    section_idx: number;
+    node_id: string;
+    node_name: string;
+    classified_type: string;
+    matched_component: string;
+    match_confidence: number;
+    texts_found: number;
+    images_found: number;
+    buttons_found: number;
+    slot_fills: Array<{
+        [key: string]: string;
+    }>;
+    unfilled_slots: Array<string>;
+    html_preview: string;
 };
 
 /**
@@ -1915,6 +3187,20 @@ export type SocialLink = {
     platform: 'facebook' | 'twitter' | 'instagram' | 'linkedin' | 'youtube' | 'tiktok' | 'pinterest' | 'threads';
     url: string;
     icon_url?: string | null;
+};
+
+export type StageResultResponse = {
+    name: string;
+    elapsed_ms: number;
+    input_summary: {
+        [key: string]: unknown;
+    };
+    output_summary: {
+        [key: string]: unknown;
+    };
+    data_loss: Array<DataLossEventResponse>;
+    warnings: Array<string>;
+    error?: string | null;
 };
 
 /**
@@ -1942,6 +3228,32 @@ export type StartImportRequest = {
 export type StoredAssetResponse = {
     node_id: string;
     filename: string;
+};
+
+/**
+ * Result of a sync operation.
+ */
+export type SyncReportResponse = {
+    new_properties: number;
+    updated_levels: number;
+    new_clients: number;
+    changelog: Array<ChangelogEntryResponse>;
+    errors: Array<string>;
+    dry_run: boolean;
+    commit_sha: string;
+};
+
+/**
+ * Current sync state from Redis.
+ */
+export type SyncStatusResponse = {
+    last_sync_at: string | null;
+    last_commit_sha: string | null;
+    features_synced: number;
+    error_count: number;
+    last_report: {
+        [key: string]: unknown;
+    } | null;
 };
 
 /**
@@ -2013,6 +3325,64 @@ export type TextBlockResponse = {
     content: string;
     font_size?: number | null;
     is_heading?: boolean;
+    font_family?: string | null;
+    font_weight?: number | null;
+    line_height?: number | null;
+    letter_spacing?: number | null;
+};
+
+/**
+ * A single token change between snapshots.
+ */
+export type TokenDiffEntry = {
+    category: string;
+    name: string;
+    change: 'added' | 'removed' | 'changed';
+    old_value?: string | null;
+    new_value?: string | null;
+};
+
+/**
+ * Token diff between current and previous sync.
+ */
+export type TokenDiffResponse = {
+    connection_id: number;
+    current_extracted_at: string;
+    previous_extracted_at?: string | null;
+    entries: Array<TokenDiffEntry>;
+    has_previous?: boolean;
+};
+
+/**
+ * Request to rewrite ESP personalisation tokens from one ESP format to another.
+ */
+export type TokenRewriteRequest = {
+    html: string;
+    target_esp: string;
+    source_esp?: string | null;
+};
+
+/**
+ * Response from token rewrite operation.
+ */
+export type TokenRewriteResponse = {
+    html: string;
+    source_esp: string;
+    target_esp: string;
+    tokens_rewritten: number;
+    warnings: Array<string>;
+};
+
+/**
+ * Transcription result.
+ */
+export type TranscriptResponse = {
+    text: string;
+    language: string;
+    duration_seconds: number;
+    segments?: Array<{
+        [key: string]: number | string;
+    }>;
 };
 
 /**
@@ -2022,6 +3392,11 @@ export type Typography = {
     heading_font?: string;
     body_font?: string;
     base_size?: string;
+    heading_line_height?: string | null;
+    body_line_height?: string | null;
+    heading_letter_spacing?: string | null;
+    body_letter_spacing?: string | null;
+    heading_text_transform?: string | null;
 };
 
 export type UnsupportedPropertySchema = {
@@ -2082,6 +3457,31 @@ export type ValidationError = {
 };
 
 /**
+ * Result of comparing rendered email screenshots against original design.
+ */
+export type VisualComparisonResult = {
+    /**
+     * Pixel diff percentage (0-100)
+     */
+    drift_score?: number;
+    diff_regions?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Path or content block ID for diff image
+     */
+    diff_image_ref?: string | null;
+    /**
+     * VLM interpretation of visual differences
+     */
+    semantic_description?: string;
+    /**
+     * True if worse than previous iteration
+     */
+    regressed?: boolean;
+};
+
+/**
  * Request for visual diff between two images.
  */
 export type VisualDiffRequest = {
@@ -2111,6 +3511,161 @@ export type VisualDiffResponse = {
     threshold_used: number;
 };
 
+/**
+ * Request to transcribe audio and extract structured brief.
+ */
+export type VoiceBriefRequest = {
+    /**
+     * Base64-encoded audio file
+     */
+    audio_data: string;
+    /**
+     * Audio MIME type
+     */
+    media_type: 'audio/wav' | 'audio/mp3' | 'audio/webm' | 'audio/ogg' | 'audio/mpeg';
+    /**
+     * BCP-47 language hint
+     */
+    language?: string | null;
+};
+
+/**
+ * Transcription + extracted brief.
+ */
+export type VoiceBriefResponse = {
+    transcript: TranscriptResponse;
+    brief: EmailBriefResponse;
+    confidence: number;
+};
+
+/**
+ * Request to transcribe audio, extract brief, and trigger blueprint run.
+ */
+export type VoiceRunRequest = {
+    /**
+     * Base64-encoded audio file
+     */
+    audio_data: string;
+    /**
+     * Audio MIME type
+     */
+    media_type: 'audio/wav' | 'audio/mp3' | 'audio/webm' | 'audio/ogg' | 'audio/mpeg';
+    /**
+     * BCP-47 language hint
+     */
+    language?: string | null;
+    /**
+     * Blueprint to execute
+     */
+    blueprint_name?: string;
+    /**
+     * Project for design system context
+     */
+    project_id?: number | null;
+    /**
+     * Target audience personas
+     */
+    persona_ids?: Array<number>;
+    /**
+     * Existing template to version
+     */
+    template_id?: number | null;
+};
+
+/**
+ * Request to transcribe audio.
+ */
+export type VoiceTranscribeRequest = {
+    /**
+     * Base64-encoded audio file
+     */
+    audio_data: string;
+    /**
+     * Audio MIME type
+     */
+    media_type: 'audio/wav' | 'audio/mp3' | 'audio/webm' | 'audio/ogg' | 'audio/mpeg';
+    /**
+     * BCP-47 language hint (e.g. 'en')
+     */
+    language?: string | null;
+};
+
+/**
+ * Response from W3C token import.
+ */
+export type W3cImportResponse = {
+    colors: Array<DesignColorResponse>;
+    dark_colors?: Array<DesignColorResponse>;
+    typography: Array<DesignTypographyResponse>;
+    spacing: Array<DesignSpacingResponse>;
+    gradients?: Array<DesignGradientResponse>;
+    warnings: Array<string>;
+    compatibility_hints?: Array<CompatibilityHintResponse>;
+};
+
+/**
+ * Request to create a brief connection.
+ */
+export type AppBriefsSchemasConnectionCreateRequest = {
+    /**
+     * Display name
+     */
+    name: string;
+    /**
+     * Platform identifier
+     */
+    platform: string;
+    /**
+     * External project URL
+     */
+    project_url: string;
+    /**
+     * Platform-specific credentials
+     */
+    credentials: {
+        [key: string]: string;
+    };
+    /**
+     * Link to a hub project
+     */
+    project_id?: number | null;
+};
+
+/**
+ * Brief connection response.
+ */
+export type AppBriefsSchemasConnectionResponse = {
+    id: number;
+    name: string;
+    platform: string;
+    project_url: string;
+    external_project_id: string;
+    credential_last4: string;
+    status: string;
+    error_message?: string | null;
+    last_synced_at?: string | null;
+    project_id?: number | null;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Request to sync items from a connection.
+ */
+export type AppBriefsSchemasConnectionSyncRequest = {
+    /**
+     * Connection ID to sync
+     */
+    id: number;
+};
+
+/**
+ * Response from importing brief items.
+ */
+export type AppBriefsSchemasImportResponse = {
+    project_id: number;
+};
+
 export type AppComponentsSchemasVersionCreate = {
     html_source: string;
     css_source?: string | null;
@@ -2138,8 +3693,168 @@ export type AppComponentsSchemasVersionResponse = {
     default_tokens?: {
         [key: string]: unknown;
     } | null;
+    design_origin?: DesignOrigin | null;
     created_by_id: number;
     created_at: string;
+};
+
+/**
+ * Request to export an email build to an ESP.
+ */
+export type AppConnectorsSchemasExportRequest = {
+    /**
+     * Email build ID to export
+     */
+    build_id?: number | null;
+    /**
+     * Template version ID to export (alternative to build_id)
+     */
+    template_version_id?: number | null;
+    connector_type?: string;
+    /**
+     * Name for the ESP content block
+     */
+    content_block_name?: string;
+    /**
+     * ESP connection ID — when provided, uses real credentials for the API call
+     */
+    connection_id?: number | null;
+    /**
+     * Admin override to skip QA gate
+     */
+    skip_qa_gate?: boolean;
+    /**
+     * Admin override to skip approval gate
+     */
+    skip_approval?: boolean;
+};
+
+/**
+ * Response from an export operation.
+ */
+export type AppConnectorsSchemasExportResponse = {
+    id?: number | null;
+    build_id?: number | null;
+    template_version_id?: number | null;
+    connector_type: string;
+    status: string;
+    external_id?: string | null;
+    error_message?: string | null;
+    qa_gate_result?: QaGateResult | null;
+    approval_result?: ApprovalGateResult | null;
+    created_at: string;
+};
+
+/**
+ * Request to export HTML to an ESP via a connection.
+ */
+export type AppConnectorsSyncSchemasExportRequest = {
+    html?: string | null;
+    template_id?: number | null;
+    target_esp: string;
+    connection_id: number;
+    template_name?: string;
+    source_esp?: string | null;
+    rewrite_tokens?: boolean;
+};
+
+/**
+ * Response from a single export operation.
+ */
+export type AppConnectorsSyncSchemasExportResponse = {
+    esp_template_id: string;
+    template_name: string;
+    target_esp: string;
+    tokens_rewritten: number;
+    warnings: Array<string>;
+};
+
+/**
+ * Request to create a design tool connection.
+ */
+export type AppDesignSyncSchemasConnectionCreateRequest = {
+    /**
+     * Display name
+     */
+    name: string;
+    /**
+     * Design tool provider
+     */
+    provider?: string;
+    /**
+     * Design file URL
+     */
+    file_url: string;
+    /**
+     * Provider access token / PAT
+     */
+    access_token: string;
+    /**
+     * Link to a project
+     */
+    project_id?: number | null;
+    /**
+     * Optional converter configuration hints
+     */
+    config?: ConnectionConfigRequest | null;
+};
+
+/**
+ * Design connection response (maps DB fields for frontend compat).
+ */
+export type AppDesignSyncSchemasConnectionResponse = {
+    id: number;
+    name: string;
+    provider: string;
+    /**
+     * Provider file reference
+     */
+    file_key: string;
+    file_url: string;
+    /**
+     * Last 4 chars of token for display
+     */
+    access_token_last4: string;
+    status: string;
+    error_message?: string | null;
+    last_synced_at?: string | null;
+    project_id?: number | null;
+    project_name?: string | null;
+    config?: ConnectionConfigRequest | null;
+    webhook_id?: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Request to sync tokens from a connection.
+ */
+export type AppDesignSyncSchemasConnectionSyncRequest = {
+    /**
+     * Connection ID to sync
+     */
+    id: number;
+};
+
+/**
+ * Design import job response.
+ */
+export type AppDesignSyncSchemasImportResponse = {
+    id: number;
+    connection_id: number;
+    project_id: number;
+    status: string;
+    selected_node_ids: Array<string>;
+    structure_json?: {
+        [key: string]: unknown;
+    } | null;
+    generated_brief?: string | null;
+    result_template_id?: number | null;
+    error_message?: string | null;
+    created_by_id: number;
+    assets?: Array<ImportAssetResponse>;
+    created_at: string;
+    updated_at: string;
 };
 
 export type AppTemplatesSchemasVersionCreate = {
@@ -2230,6 +3945,22 @@ export type ReadinessCheckHealthReadyGetResponses = {
 };
 
 export type ReadinessCheckHealthReadyGetResponse = ReadinessCheckHealthReadyGetResponses[keyof ReadinessCheckHealthReadyGetResponses];
+
+export type BootstrapApiV1AuthBootstrapPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/bootstrap';
+};
+
+export type BootstrapApiV1AuthBootstrapPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: LoginResponse;
+};
+
+export type BootstrapApiV1AuthBootstrapPostResponse = BootstrapApiV1AuthBootstrapPostResponses[keyof BootstrapApiV1AuthBootstrapPostResponses];
 
 export type LoginApiV1AuthLoginPostData = {
     body: LoginRequest;
@@ -3116,6 +4847,49 @@ export type GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetRespons
 
 export type GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponse = GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponses[keyof GetCompetitiveReportTextApiV1OntologyCompetitiveReportTextGetResponses];
 
+export type TriggerSyncApiV1OntologySyncPostData = {
+    body?: never;
+    path?: never;
+    query?: {
+        dry_run?: boolean;
+    };
+    url: '/api/v1/ontology/sync';
+};
+
+export type TriggerSyncApiV1OntologySyncPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TriggerSyncApiV1OntologySyncPostError = TriggerSyncApiV1OntologySyncPostErrors[keyof TriggerSyncApiV1OntologySyncPostErrors];
+
+export type TriggerSyncApiV1OntologySyncPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SyncReportResponse;
+};
+
+export type TriggerSyncApiV1OntologySyncPostResponse = TriggerSyncApiV1OntologySyncPostResponses[keyof TriggerSyncApiV1OntologySyncPostResponses];
+
+export type GetSyncStatusApiV1OntologySyncStatusGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ontology/sync-status';
+};
+
+export type GetSyncStatusApiV1OntologySyncStatusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: SyncStatusResponse;
+};
+
+export type GetSyncStatusApiV1OntologySyncStatusGetResponse = GetSyncStatusApiV1OntologySyncStatusGetResponses[keyof GetSyncStatusApiV1OntologySyncStatusGetResponses];
+
 export type ListOrgsApiV1OrgsGetData = {
     body?: never;
     path?: never;
@@ -3635,6 +5409,81 @@ export type PreviewEmailApiV1EmailPreviewPostResponses = {
 
 export type PreviewEmailApiV1EmailPreviewPostResponse = PreviewEmailApiV1EmailPreviewPostResponses[keyof PreviewEmailApiV1EmailPreviewPostResponses];
 
+export type CompileCssApiV1EmailCompileCssPostData = {
+    body: CssCompileRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/email/compile-css';
+};
+
+export type CompileCssApiV1EmailCompileCssPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompileCssApiV1EmailCompileCssPostError = CompileCssApiV1EmailCompileCssPostErrors[keyof CompileCssApiV1EmailCompileCssPostErrors];
+
+export type CompileCssApiV1EmailCompileCssPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: CssCompileResponse;
+};
+
+export type CompileCssApiV1EmailCompileCssPostResponse = CompileCssApiV1EmailCompileCssPostResponses[keyof CompileCssApiV1EmailCompileCssPostResponses];
+
+export type InjectSchemaApiV1EmailInjectSchemaPostData = {
+    body: SchemaInjectRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/email/inject-schema';
+};
+
+export type InjectSchemaApiV1EmailInjectSchemaPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InjectSchemaApiV1EmailInjectSchemaPostError = InjectSchemaApiV1EmailInjectSchemaPostErrors[keyof InjectSchemaApiV1EmailInjectSchemaPostErrors];
+
+export type InjectSchemaApiV1EmailInjectSchemaPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SchemaInjectResponse;
+};
+
+export type InjectSchemaApiV1EmailInjectSchemaPostResponse = InjectSchemaApiV1EmailInjectSchemaPostResponses[keyof InjectSchemaApiV1EmailInjectSchemaPostResponses];
+
+export type ImportAnnotateApiV1EmailImportAnnotatePostData = {
+    body: ImportAnnotateRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/email/import-annotate';
+};
+
+export type ImportAnnotateApiV1EmailImportAnnotatePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportAnnotateApiV1EmailImportAnnotatePostError = ImportAnnotateApiV1EmailImportAnnotatePostErrors[keyof ImportAnnotateApiV1EmailImportAnnotatePostErrors];
+
+export type ImportAnnotateApiV1EmailImportAnnotatePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ImportAnnotateResponse;
+};
+
+export type ImportAnnotateApiV1EmailImportAnnotatePostResponse = ImportAnnotateApiV1EmailImportAnnotatePostResponses[keyof ImportAnnotateApiV1EmailImportAnnotatePostResponses];
+
 export type ListComponentsApiV1ComponentsGetData = {
     body?: never;
     path?: never;
@@ -3853,6 +5702,33 @@ export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostR
 
 export type RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponse = RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponses[keyof RunComponentQaApiV1ComponentsComponentIdVersionsVersionNumberQaPostResponses];
 
+export type AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostData = {
+    body: AssignDesignOriginRequest;
+    path: {
+        component_id: number;
+    };
+    query?: never;
+    url: '/api/v1/components/{component_id}/design-origin';
+};
+
+export type AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostError = AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostErrors[keyof AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostErrors];
+
+export type AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ComponentResponse;
+};
+
+export type AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostResponse = AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostResponses[keyof AssignDesignOriginApiV1ComponentsComponentIdDesignOriginPostResponses];
+
 export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetData = {
     body?: never;
     path: {
@@ -3879,6 +5755,231 @@ export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetR
 };
 
 export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponse = GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses[keyof GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses];
+
+export type RunPropertyTestApiV1QaPropertyTestPostData = {
+    body: PropertyTestRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/property-test';
+};
+
+export type RunPropertyTestApiV1QaPropertyTestPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunPropertyTestApiV1QaPropertyTestPostError = RunPropertyTestApiV1QaPropertyTestPostErrors[keyof RunPropertyTestApiV1QaPropertyTestPostErrors];
+
+export type RunPropertyTestApiV1QaPropertyTestPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: PropertyTestResponse;
+};
+
+export type RunPropertyTestApiV1QaPropertyTestPostResponse = RunPropertyTestApiV1QaPropertyTestPostResponses[keyof RunPropertyTestApiV1QaPropertyTestPostResponses];
+
+export type RunChaosTestApiV1QaChaosTestPostData = {
+    body: ChaosTestRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/chaos-test';
+};
+
+export type RunChaosTestApiV1QaChaosTestPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunChaosTestApiV1QaChaosTestPostError = RunChaosTestApiV1QaChaosTestPostErrors[keyof RunChaosTestApiV1QaChaosTestPostErrors];
+
+export type RunChaosTestApiV1QaChaosTestPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChaosTestResponse;
+};
+
+export type RunChaosTestApiV1QaChaosTestPostResponse = RunChaosTestApiV1QaChaosTestPostResponses[keyof RunChaosTestApiV1QaChaosTestPostResponses];
+
+export type RunOutlookAnalysisApiV1QaOutlookAnalysisPostData = {
+    body: OutlookAnalysisRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/outlook-analysis';
+};
+
+export type RunOutlookAnalysisApiV1QaOutlookAnalysisPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunOutlookAnalysisApiV1QaOutlookAnalysisPostError = RunOutlookAnalysisApiV1QaOutlookAnalysisPostErrors[keyof RunOutlookAnalysisApiV1QaOutlookAnalysisPostErrors];
+
+export type RunOutlookAnalysisApiV1QaOutlookAnalysisPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: OutlookAnalysisResponse;
+};
+
+export type RunOutlookAnalysisApiV1QaOutlookAnalysisPostResponse = RunOutlookAnalysisApiV1QaOutlookAnalysisPostResponses[keyof RunOutlookAnalysisApiV1QaOutlookAnalysisPostResponses];
+
+export type RunOutlookModernizeApiV1QaOutlookModernizePostData = {
+    body: OutlookModernizeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/outlook-modernize';
+};
+
+export type RunOutlookModernizeApiV1QaOutlookModernizePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunOutlookModernizeApiV1QaOutlookModernizePostError = RunOutlookModernizeApiV1QaOutlookModernizePostErrors[keyof RunOutlookModernizeApiV1QaOutlookModernizePostErrors];
+
+export type RunOutlookModernizeApiV1QaOutlookModernizePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: OutlookModernizeResponse;
+};
+
+export type RunOutlookModernizeApiV1QaOutlookModernizePostResponse = RunOutlookModernizeApiV1QaOutlookModernizePostResponses[keyof RunOutlookModernizeApiV1QaOutlookModernizePostResponses];
+
+export type OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostData = {
+    body: MigrationPlanRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/outlook-migration-plan';
+};
+
+export type OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostError = OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostErrors[keyof OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostErrors];
+
+export type OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: MigrationPlanResponse;
+};
+
+export type OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostResponse = OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostResponses[keyof OutlookMigrationPlanApiV1QaOutlookMigrationPlanPostResponses];
+
+export type RunDeliverabilityScoreApiV1QaDeliverabilityScorePostData = {
+    body: DeliverabilityScoreRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/deliverability-score';
+};
+
+export type RunDeliverabilityScoreApiV1QaDeliverabilityScorePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunDeliverabilityScoreApiV1QaDeliverabilityScorePostError = RunDeliverabilityScoreApiV1QaDeliverabilityScorePostErrors[keyof RunDeliverabilityScoreApiV1QaDeliverabilityScorePostErrors];
+
+export type RunDeliverabilityScoreApiV1QaDeliverabilityScorePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeliverabilityScoreResponse;
+};
+
+export type RunDeliverabilityScoreApiV1QaDeliverabilityScorePostResponse = RunDeliverabilityScoreApiV1QaDeliverabilityScorePostResponses[keyof RunDeliverabilityScoreApiV1QaDeliverabilityScorePostResponses];
+
+export type GmailPredictApiV1QaGmailPredictPostData = {
+    body: GmailPredictRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/gmail-predict';
+};
+
+export type GmailPredictApiV1QaGmailPredictPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GmailPredictApiV1QaGmailPredictPostError = GmailPredictApiV1QaGmailPredictPostErrors[keyof GmailPredictApiV1QaGmailPredictPostErrors];
+
+export type GmailPredictApiV1QaGmailPredictPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: GmailPredictResponse;
+};
+
+export type GmailPredictApiV1QaGmailPredictPostResponse = GmailPredictApiV1QaGmailPredictPostResponses[keyof GmailPredictApiV1QaGmailPredictPostResponses];
+
+export type GmailOptimizeApiV1QaGmailOptimizePostData = {
+    body: GmailOptimizeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/gmail-optimize';
+};
+
+export type GmailOptimizeApiV1QaGmailOptimizePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GmailOptimizeApiV1QaGmailOptimizePostError = GmailOptimizeApiV1QaGmailOptimizePostErrors[keyof GmailOptimizeApiV1QaGmailOptimizePostErrors];
+
+export type GmailOptimizeApiV1QaGmailOptimizePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: GmailOptimizeResponse;
+};
+
+export type GmailOptimizeApiV1QaGmailOptimizePostResponse = GmailOptimizeApiV1QaGmailOptimizePostResponses[keyof GmailOptimizeApiV1QaGmailOptimizePostResponses];
+
+export type RunBimiCheckApiV1QaBimiCheckPostData = {
+    body: BimiCheckRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/bimi-check';
+};
+
+export type RunBimiCheckApiV1QaBimiCheckPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunBimiCheckApiV1QaBimiCheckPostError = RunBimiCheckApiV1QaBimiCheckPostErrors[keyof RunBimiCheckApiV1QaBimiCheckPostErrors];
+
+export type RunBimiCheckApiV1QaBimiCheckPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: BimiCheckResponse;
+};
+
+export type RunBimiCheckApiV1QaBimiCheckPostResponse = RunBimiCheckApiV1QaBimiCheckPostResponses[keyof RunBimiCheckApiV1QaBimiCheckPostResponses];
 
 export type RunQaChecksApiV1QaRunPostData = {
     body: QaRunRequest;
@@ -4019,7 +6120,7 @@ export type OverrideQaResultApiV1QaResultsResultIdOverridePostResponses = {
 export type OverrideQaResultApiV1QaResultsResultIdOverridePostResponse = OverrideQaResultApiV1QaResultsResultIdOverridePostResponses[keyof OverrideQaResultApiV1QaResultsResultIdOverridePostResponses];
 
 export type ExportEmailApiV1ConnectorsExportPostData = {
-    body: ExportRequest;
+    body: AppConnectorsSchemasExportRequest;
     path?: never;
     query?: never;
     url: '/api/v1/connectors/export';
@@ -4038,10 +6139,35 @@ export type ExportEmailApiV1ConnectorsExportPostResponses = {
     /**
      * Successful Response
      */
-    201: ExportResponse;
+    201: AppConnectorsSchemasExportResponse;
 };
 
 export type ExportEmailApiV1ConnectorsExportPostResponse = ExportEmailApiV1ConnectorsExportPostResponses[keyof ExportEmailApiV1ConnectorsExportPostResponses];
+
+export type ExportPreCheckApiV1ConnectorsExportPreCheckPostData = {
+    body: ExportPreCheckRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connectors/export/pre-check';
+};
+
+export type ExportPreCheckApiV1ConnectorsExportPreCheckPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportPreCheckApiV1ConnectorsExportPreCheckPostError = ExportPreCheckApiV1ConnectorsExportPreCheckPostErrors[keyof ExportPreCheckApiV1ConnectorsExportPreCheckPostErrors];
+
+export type ExportPreCheckApiV1ConnectorsExportPreCheckPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExportPreCheckResponse;
+};
+
+export type ExportPreCheckApiV1ConnectorsExportPreCheckPostResponse = ExportPreCheckApiV1ConnectorsExportPreCheckPostResponses[keyof ExportPreCheckApiV1ConnectorsExportPreCheckPostResponses];
 
 export type ListConnectionsApiV1ConnectorsSyncConnectionsGetData = {
     body?: never;
@@ -4249,6 +6375,106 @@ export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostRespon
 
 export type PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponse = PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponses[keyof PushTemplateApiV1ConnectorsSyncConnectionsConnectionIdPushPostResponses];
 
+export type ExportTemplateApiV1ConnectorsSyncExportPostData = {
+    body: AppConnectorsSyncSchemasExportRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connectors/sync/export';
+};
+
+export type ExportTemplateApiV1ConnectorsSyncExportPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportTemplateApiV1ConnectorsSyncExportPostError = ExportTemplateApiV1ConnectorsSyncExportPostErrors[keyof ExportTemplateApiV1ConnectorsSyncExportPostErrors];
+
+export type ExportTemplateApiV1ConnectorsSyncExportPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: AppConnectorsSyncSchemasExportResponse;
+};
+
+export type ExportTemplateApiV1ConnectorsSyncExportPostResponse = ExportTemplateApiV1ConnectorsSyncExportPostResponses[keyof ExportTemplateApiV1ConnectorsSyncExportPostResponses];
+
+export type ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostData = {
+    body: BulkExportRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connectors/sync/export-bulk';
+};
+
+export type ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostError = ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostErrors[keyof ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostErrors];
+
+export type ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: BulkExportResponse;
+};
+
+export type ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostResponse = ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostResponses[keyof ExportTemplatesBulkApiV1ConnectorsSyncExportBulkPostResponses];
+
+export type RewriteTokensApiV1ConnectorsSyncRewriteTokensPostData = {
+    body: TokenRewriteRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/connectors/sync/rewrite-tokens';
+};
+
+export type RewriteTokensApiV1ConnectorsSyncRewriteTokensPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RewriteTokensApiV1ConnectorsSyncRewriteTokensPostError = RewriteTokensApiV1ConnectorsSyncRewriteTokensPostErrors[keyof RewriteTokensApiV1ConnectorsSyncRewriteTokensPostErrors];
+
+export type RewriteTokensApiV1ConnectorsSyncRewriteTokensPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: TokenRewriteResponse;
+};
+
+export type RewriteTokensApiV1ConnectorsSyncRewriteTokensPostResponse = RewriteTokensApiV1ConnectorsSyncRewriteTokensPostResponses[keyof RewriteTokensApiV1ConnectorsSyncRewriteTokensPostResponses];
+
+export type BrowseFilesApiV1DesignSyncBrowseFilesPostData = {
+    body: BrowseFilesRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/browse-files';
+};
+
+export type BrowseFilesApiV1DesignSyncBrowseFilesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BrowseFilesApiV1DesignSyncBrowseFilesPostError = BrowseFilesApiV1DesignSyncBrowseFilesPostErrors[keyof BrowseFilesApiV1DesignSyncBrowseFilesPostErrors];
+
+export type BrowseFilesApiV1DesignSyncBrowseFilesPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: BrowseFilesResponse;
+};
+
+export type BrowseFilesApiV1DesignSyncBrowseFilesPostResponse = BrowseFilesApiV1DesignSyncBrowseFilesPostResponses[keyof BrowseFilesApiV1DesignSyncBrowseFilesPostResponses];
+
 export type ListConnectionsApiV1DesignSyncConnectionsGetData = {
     body?: never;
     path?: never;
@@ -4260,13 +6486,13 @@ export type ListConnectionsApiV1DesignSyncConnectionsGetResponses = {
     /**
      * Successful Response
      */
-    200: Array<ConnectionResponse>;
+    200: Array<AppDesignSyncSchemasConnectionResponse>;
 };
 
 export type ListConnectionsApiV1DesignSyncConnectionsGetResponse = ListConnectionsApiV1DesignSyncConnectionsGetResponses[keyof ListConnectionsApiV1DesignSyncConnectionsGetResponses];
 
 export type CreateConnectionApiV1DesignSyncConnectionsPostData = {
-    body: ConnectionCreateRequest;
+    body: AppDesignSyncSchemasConnectionCreateRequest;
     path?: never;
     query?: never;
     url: '/api/v1/design-sync/connections';
@@ -4285,7 +6511,7 @@ export type CreateConnectionApiV1DesignSyncConnectionsPostResponses = {
     /**
      * Successful Response
      */
-    201: ConnectionResponse;
+    201: AppDesignSyncSchemasConnectionResponse;
 };
 
 export type CreateConnectionApiV1DesignSyncConnectionsPostResponse = CreateConnectionApiV1DesignSyncConnectionsPostResponses[keyof CreateConnectionApiV1DesignSyncConnectionsPostResponses];
@@ -4312,7 +6538,7 @@ export type GetConnectionApiV1DesignSyncConnectionsConnectionIdGetResponses = {
     /**
      * Successful Response
      */
-    200: ConnectionResponse;
+    200: AppDesignSyncSchemasConnectionResponse;
 };
 
 export type GetConnectionApiV1DesignSyncConnectionsConnectionIdGetResponse = GetConnectionApiV1DesignSyncConnectionsConnectionIdGetResponses[keyof GetConnectionApiV1DesignSyncConnectionsConnectionIdGetResponses];
@@ -4344,6 +6570,87 @@ export type GetTokensApiV1DesignSyncConnectionsConnectionIdTokensGetResponses = 
 
 export type GetTokensApiV1DesignSyncConnectionsConnectionIdTokensGetResponse = GetTokensApiV1DesignSyncConnectionsConnectionIdTokensGetResponses[keyof GetTokensApiV1DesignSyncConnectionsConnectionIdTokensGetResponses];
 
+export type GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/tokens/diff';
+};
+
+export type GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetError = GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetErrors[keyof GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetErrors];
+
+export type GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: TokenDiffResponse;
+};
+
+export type GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetResponse = GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetResponses[keyof GetTokenDiffApiV1DesignSyncConnectionsConnectionIdTokensDiffGetResponses];
+
+export type ImportW3cTokensApiV1DesignSyncTokensImportW3cPostData = {
+    body: ImportW3cTokensRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/tokens/import-w3c';
+};
+
+export type ImportW3cTokensApiV1DesignSyncTokensImportW3cPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportW3cTokensApiV1DesignSyncTokensImportW3cPostError = ImportW3cTokensApiV1DesignSyncTokensImportW3cPostErrors[keyof ImportW3cTokensApiV1DesignSyncTokensImportW3cPostErrors];
+
+export type ImportW3cTokensApiV1DesignSyncTokensImportW3cPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: W3cImportResponse;
+};
+
+export type ImportW3cTokensApiV1DesignSyncTokensImportW3cPostResponse = ImportW3cTokensApiV1DesignSyncTokensImportW3cPostResponses[keyof ImportW3cTokensApiV1DesignSyncTokensImportW3cPostResponses];
+
+export type ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/tokens/export-w3c';
+};
+
+export type ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetError = ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetErrors[keyof ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetErrors];
+
+export type ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetResponse = ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetResponses[keyof ExportW3cTokensEndpointApiV1DesignSyncConnectionsConnectionIdTokensExportW3cGetResponses];
+
 export type DeleteConnectionApiV1DesignSyncConnectionsDeletePostData = {
     body: ConnectionDeleteRequest;
     path?: never;
@@ -4372,7 +6679,7 @@ export type DeleteConnectionApiV1DesignSyncConnectionsDeletePostResponses = {
 export type DeleteConnectionApiV1DesignSyncConnectionsDeletePostResponse = DeleteConnectionApiV1DesignSyncConnectionsDeletePostResponses[keyof DeleteConnectionApiV1DesignSyncConnectionsDeletePostResponses];
 
 export type SyncConnectionApiV1DesignSyncConnectionsSyncPostData = {
-    body: ConnectionSyncRequest;
+    body: AppDesignSyncSchemasConnectionSyncRequest;
     path?: never;
     query?: never;
     url: '/api/v1/design-sync/connections/sync';
@@ -4391,10 +6698,64 @@ export type SyncConnectionApiV1DesignSyncConnectionsSyncPostResponses = {
     /**
      * Successful Response
      */
-    200: ConnectionResponse;
+    200: AppDesignSyncSchemasConnectionResponse;
 };
 
 export type SyncConnectionApiV1DesignSyncConnectionsSyncPostResponse = SyncConnectionApiV1DesignSyncConnectionsSyncPostResponses[keyof SyncConnectionApiV1DesignSyncConnectionsSyncPostResponses];
+
+export type RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchData = {
+    body: ConnectionUpdateTokenRequest;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/token';
+};
+
+export type RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchError = RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchErrors[keyof RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchErrors];
+
+export type RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppDesignSyncSchemasConnectionResponse;
+};
+
+export type RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchResponse = RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchResponses[keyof RefreshConnectionTokenApiV1DesignSyncConnectionsConnectionIdTokenPatchResponses];
+
+export type LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchData = {
+    body: ConnectionLinkProjectRequest;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/project';
+};
+
+export type LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchError = LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchErrors[keyof LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchErrors];
+
+export type LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppDesignSyncSchemasConnectionResponse;
+};
+
+export type LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchResponse = LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchResponses[keyof LinkConnectionToProjectApiV1DesignSyncConnectionsConnectionIdProjectPatchResponses];
 
 export type GetFileStructureApiV1DesignSyncConnectionsConnectionIdFileStructureGetData = {
     body?: never;
@@ -4628,7 +6989,7 @@ export type CreateImportApiV1DesignSyncImportsPostResponses = {
     /**
      * Successful Response
      */
-    201: ImportResponse;
+    201: AppDesignSyncSchemasImportResponse;
 };
 
 export type CreateImportApiV1DesignSyncImportsPostResponse = CreateImportApiV1DesignSyncImportsPostResponses[keyof CreateImportApiV1DesignSyncImportsPostResponses];
@@ -4660,7 +7021,7 @@ export type GetImportByTemplateApiV1DesignSyncImportsByTemplateTemplateIdGetResp
     /**
      * Successful Response
      */
-    200: ImportResponse | null;
+    200: AppDesignSyncSchemasImportResponse | null;
 };
 
 export type GetImportByTemplateApiV1DesignSyncImportsByTemplateTemplateIdGetResponse = GetImportByTemplateApiV1DesignSyncImportsByTemplateTemplateIdGetResponses[keyof GetImportByTemplateApiV1DesignSyncImportsByTemplateTemplateIdGetResponses];
@@ -4687,7 +7048,7 @@ export type GetImportApiV1DesignSyncImportsImportIdGetResponses = {
     /**
      * Successful Response
      */
-    200: ImportResponse;
+    200: AppDesignSyncSchemasImportResponse;
 };
 
 export type GetImportApiV1DesignSyncImportsImportIdGetResponse = GetImportApiV1DesignSyncImportsImportIdGetResponses[keyof GetImportApiV1DesignSyncImportsImportIdGetResponses];
@@ -4714,7 +7075,7 @@ export type UpdateImportBriefApiV1DesignSyncImportsImportIdBriefPatchResponses =
     /**
      * Successful Response
      */
-    200: ImportResponse;
+    200: AppDesignSyncSchemasImportResponse;
 };
 
 export type UpdateImportBriefApiV1DesignSyncImportsImportIdBriefPatchResponse = UpdateImportBriefApiV1DesignSyncImportsImportIdBriefPatchResponses[keyof UpdateImportBriefApiV1DesignSyncImportsImportIdBriefPatchResponses];
@@ -4741,10 +7102,362 @@ export type ConvertImportApiV1DesignSyncImportsImportIdConvertPostResponses = {
     /**
      * Successful Response
      */
-    202: ImportResponse;
+    202: AppDesignSyncSchemasImportResponse;
 };
 
 export type ConvertImportApiV1DesignSyncImportsImportIdConvertPostResponse = ConvertImportApiV1DesignSyncImportsImportIdConvertPostResponses[keyof ConvertImportApiV1DesignSyncImportsImportIdConvertPostResponses];
+
+export type GetFidelityApiV1DesignSyncImportsImportIdFidelityGetData = {
+    body?: never;
+    path: {
+        import_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/imports/{import_id}/fidelity';
+};
+
+export type GetFidelityApiV1DesignSyncImportsImportIdFidelityGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetFidelityApiV1DesignSyncImportsImportIdFidelityGetError = GetFidelityApiV1DesignSyncImportsImportIdFidelityGetErrors[keyof GetFidelityApiV1DesignSyncImportsImportIdFidelityGetErrors];
+
+export type GetFidelityApiV1DesignSyncImportsImportIdFidelityGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: FidelityResponse;
+};
+
+export type GetFidelityApiV1DesignSyncImportsImportIdFidelityGetResponse = GetFidelityApiV1DesignSyncImportsImportIdFidelityGetResponses[keyof GetFidelityApiV1DesignSyncImportsImportIdFidelityGetResponses];
+
+export type TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostData = {
+    body?: never;
+    path: {
+        import_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/imports/{import_id}/score-fidelity';
+};
+
+export type TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostError = TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostErrors[keyof TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostErrors];
+
+export type TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostResponses = {
+    /**
+     * Successful Response
+     */
+    202: FidelityResponse;
+};
+
+export type TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostResponse = TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostResponses[keyof TriggerFidelityScoringApiV1DesignSyncImportsImportIdScoreFidelityPostResponses];
+
+export type GetDiffImageApiV1DesignSyncImportsImportIdFidelityDiffImageGetData = {
+    body?: never;
+    path: {
+        import_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/imports/{import_id}/fidelity/diff-image';
+};
+
+export type GetDiffImageApiV1DesignSyncImportsImportIdFidelityDiffImageGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDiffImageApiV1DesignSyncImportsImportIdFidelityDiffImageGetError = GetDiffImageApiV1DesignSyncImportsImportIdFidelityDiffImageGetErrors[keyof GetDiffImageApiV1DesignSyncImportsImportIdFidelityDiffImageGetErrors];
+
+export type GetDiffImageApiV1DesignSyncImportsImportIdFidelityDiffImageGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/diagnose';
+};
+
+export type DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetError = DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetErrors[keyof DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetErrors];
+
+export type DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: DiagnosticReportResponse;
+};
+
+export type DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetResponse = DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetResponses[keyof DiagnoseConnectionApiV1DesignSyncConnectionsConnectionIdDiagnoseGetResponses];
+
+export type ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        min_occurrences?: number;
+        min_confidence?: number;
+        agent?: string | null;
+    };
+    url: '/api/v1/design-sync/correction-patterns';
+};
+
+export type ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetError = ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetErrors[keyof ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetErrors];
+
+export type ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetResponse = ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetResponses[keyof ListCorrectionPatternsApiV1DesignSyncCorrectionPatternsGetResponses];
+
+export type GetRuleSuggestionsApiV1DesignSyncCorrectionPatternsSuggestionsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/correction-patterns/suggestions';
+};
+
+export type GetRuleSuggestionsApiV1DesignSyncCorrectionPatternsSuggestionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type GetRuleSuggestionsApiV1DesignSyncCorrectionPatternsSuggestionsGetResponse = GetRuleSuggestionsApiV1DesignSyncCorrectionPatternsSuggestionsGetResponses[keyof GetRuleSuggestionsApiV1DesignSyncCorrectionPatternsSuggestionsGetResponses];
+
+export type ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostData = {
+    body?: never;
+    path: {
+        pattern_hash: string;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/correction-patterns/{pattern_hash}/approve';
+};
+
+export type ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostError = ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostErrors[keyof ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostErrors];
+
+export type ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: string;
+    };
+};
+
+export type ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostResponse = ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostResponses[keyof ApproveCorrectionRuleApiV1DesignSyncCorrectionPatternsPatternHashApprovePostResponses];
+
+export type UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/webhook';
+};
+
+export type UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteError = UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteErrors[keyof UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteErrors];
+
+export type UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteResponse = UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteResponses[keyof UnregisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookDeleteResponses];
+
+export type RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query: {
+        /**
+         * Figma team ID for webhook scope
+         */
+        team_id: string;
+    };
+    url: '/api/v1/design-sync/connections/{connection_id}/webhook';
+};
+
+export type RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostError = RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostErrors[keyof RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostErrors];
+
+export type RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: {
+        [key: string]: string;
+    };
+};
+
+export type RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostResponse = RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostResponses[keyof RegisterWebhookApiV1DesignSyncConnectionsConnectionIdWebhookPostResponses];
+
+export type ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/design-sync/connections/{connection_id}/cache';
+};
+
+export type ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteError = ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteErrors[keyof ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteErrors];
+
+export type ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    200: CacheClearResponse;
+};
+
+export type ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteResponse = ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteResponses[keyof ClearSectionCacheApiV1DesignSyncConnectionsConnectionIdCacheDeleteResponses];
+
+export type GetDocumentSchemaApiV1DesignSyncSchemaV1GetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/schema/v1';
+};
+
+export type GetDocumentSchemaApiV1DesignSyncSchemaV1GetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ValidateDocumentApiV1DesignSyncValidateDocumentPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/validate-document';
+};
+
+export type ValidateDocumentApiV1DesignSyncValidateDocumentPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentValidationResponse;
+};
+
+export type ValidateDocumentApiV1DesignSyncValidateDocumentPostResponse = ValidateDocumentApiV1DesignSyncValidateDocumentPostResponses[keyof ValidateDocumentApiV1DesignSyncValidateDocumentPostResponses];
+
+export type ImportMjmlApiV1DesignSyncImportMjmlPostData = {
+    body: ImportMjmlRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/import/mjml';
+};
+
+export type ImportMjmlApiV1DesignSyncImportMjmlPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportMjmlApiV1DesignSyncImportMjmlPostError = ImportMjmlApiV1DesignSyncImportMjmlPostErrors[keyof ImportMjmlApiV1DesignSyncImportMjmlPostErrors];
+
+export type ImportMjmlApiV1DesignSyncImportMjmlPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: ImportMjmlResponse;
+};
+
+export type ImportMjmlApiV1DesignSyncImportMjmlPostResponse = ImportMjmlApiV1DesignSyncImportMjmlPostResponses[keyof ImportMjmlApiV1DesignSyncImportMjmlPostResponses];
+
+export type ImportHtmlApiV1DesignSyncImportHtmlPostData = {
+    body: HtmlImportRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/import/html';
+};
+
+export type ImportHtmlApiV1DesignSyncImportHtmlPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportHtmlApiV1DesignSyncImportHtmlPostError = ImportHtmlApiV1DesignSyncImportHtmlPostErrors[keyof ImportHtmlApiV1DesignSyncImportHtmlPostErrors];
+
+export type ImportHtmlApiV1DesignSyncImportHtmlPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: HtmlImportResponse;
+};
+
+export type ImportHtmlApiV1DesignSyncImportHtmlPostResponse = ImportHtmlApiV1DesignSyncImportHtmlPostResponses[keyof ImportHtmlApiV1DesignSyncImportHtmlPostResponses];
 
 export type ListApprovalsApiV1ApprovalsGetData = {
     body?: never;
@@ -5251,6 +7964,24 @@ export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostRespon
 
 export type RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponse = RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponses[keyof RestoreVersionApiV1TemplatesTemplateIdRestoreVersionNumberPostResponses];
 
+export type PrecompileTemplatesApiV1TemplatesPrecompilePostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/templates/precompile';
+};
+
+export type PrecompileTemplatesApiV1TemplatesPrecompilePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type PrecompileTemplatesApiV1TemplatesPrecompilePostResponse = PrecompileTemplatesApiV1TemplatesPrecompilePostResponses[keyof PrecompileTemplatesApiV1TemplatesPrecompilePostResponses];
+
 export type ListRenderingTestsApiV1RenderingTestsGetData = {
     body?: never;
     path?: never;
@@ -5384,6 +8115,33 @@ export type RenderScreenshotsApiV1RenderingScreenshotsPostResponses = {
 
 export type RenderScreenshotsApiV1RenderingScreenshotsPostResponse = RenderScreenshotsApiV1RenderingScreenshotsPostResponses[keyof RenderScreenshotsApiV1RenderingScreenshotsPostResponses];
 
+export type GetClientConfidenceApiV1RenderingConfidenceClientIdGetData = {
+    body?: never;
+    path: {
+        client_id: string;
+    };
+    query?: never;
+    url: '/api/v1/rendering/confidence/{client_id}';
+};
+
+export type GetClientConfidenceApiV1RenderingConfidenceClientIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetClientConfidenceApiV1RenderingConfidenceClientIdGetError = GetClientConfidenceApiV1RenderingConfidenceClientIdGetErrors[keyof GetClientConfidenceApiV1RenderingConfidenceClientIdGetErrors];
+
+export type GetClientConfidenceApiV1RenderingConfidenceClientIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ClientConfidenceResponse;
+};
+
+export type GetClientConfidenceApiV1RenderingConfidenceClientIdGetResponse = GetClientConfidenceApiV1RenderingConfidenceClientIdGetResponses[keyof GetClientConfidenceApiV1RenderingConfidenceClientIdGetResponses];
+
 export type VisualDiffApiV1RenderingVisualDiffPostData = {
     body: VisualDiffRequest;
     path?: never;
@@ -5464,6 +8222,196 @@ export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponses 
 };
 
 export type UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponse = UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponses[keyof UpdateBaselineApiV1RenderingBaselinesEntityTypeEntityIdPutResponses];
+
+export type SandboxTestApiV1RenderingSandboxTestPostData = {
+    body: SandboxTestRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/sandbox/test';
+};
+
+export type SandboxTestApiV1RenderingSandboxTestPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SandboxTestApiV1RenderingSandboxTestPostError = SandboxTestApiV1RenderingSandboxTestPostErrors[keyof SandboxTestApiV1RenderingSandboxTestPostErrors];
+
+export type SandboxTestApiV1RenderingSandboxTestPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SandboxTestResponse;
+};
+
+export type SandboxTestApiV1RenderingSandboxTestPostResponse = SandboxTestApiV1RenderingSandboxTestPostResponses[keyof SandboxTestApiV1RenderingSandboxTestPostResponses];
+
+export type SandboxHealthApiV1RenderingSandboxHealthGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/sandbox/health';
+};
+
+export type SandboxHealthApiV1RenderingSandboxHealthGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: SandboxHealthResponse;
+};
+
+export type SandboxHealthApiV1RenderingSandboxHealthGetResponse = SandboxHealthApiV1RenderingSandboxHealthGetResponses[keyof SandboxHealthApiV1RenderingSandboxHealthGetResponses];
+
+export type CalibrationSummaryApiV1RenderingCalibrationSummaryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/calibration/summary';
+};
+
+export type CalibrationSummaryApiV1RenderingCalibrationSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CalibrationSummaryListResponse;
+};
+
+export type CalibrationSummaryApiV1RenderingCalibrationSummaryGetResponse = CalibrationSummaryApiV1RenderingCalibrationSummaryGetResponses[keyof CalibrationSummaryApiV1RenderingCalibrationSummaryGetResponses];
+
+export type CalibrationTriggerApiV1RenderingCalibrationTriggerPostData = {
+    body: CalibrationTriggerRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/calibration/trigger';
+};
+
+export type CalibrationTriggerApiV1RenderingCalibrationTriggerPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CalibrationTriggerApiV1RenderingCalibrationTriggerPostError = CalibrationTriggerApiV1RenderingCalibrationTriggerPostErrors[keyof CalibrationTriggerApiV1RenderingCalibrationTriggerPostErrors];
+
+export type CalibrationTriggerApiV1RenderingCalibrationTriggerPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: CalibrationTriggerResponse;
+};
+
+export type CalibrationTriggerApiV1RenderingCalibrationTriggerPostResponse = CalibrationTriggerApiV1RenderingCalibrationTriggerPostResponses[keyof CalibrationTriggerApiV1RenderingCalibrationTriggerPostResponses];
+
+export type CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetData = {
+    body?: never;
+    path: {
+        client_id: string;
+    };
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/rendering/calibration/history/{client_id}';
+};
+
+export type CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetError = CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetErrors[keyof CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetErrors];
+
+export type CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CalibrationHistoryResponse;
+};
+
+export type CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetResponse = CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetResponses[keyof CalibrationHistoryApiV1RenderingCalibrationHistoryClientIdGetResponses];
+
+export type EvaluateGateApiV1RenderingGateEvaluatePostData = {
+    body: GateEvaluateRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rendering/gate/evaluate';
+};
+
+export type EvaluateGateApiV1RenderingGateEvaluatePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type EvaluateGateApiV1RenderingGateEvaluatePostError = EvaluateGateApiV1RenderingGateEvaluatePostErrors[keyof EvaluateGateApiV1RenderingGateEvaluatePostErrors];
+
+export type EvaluateGateApiV1RenderingGateEvaluatePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: GateResult;
+};
+
+export type EvaluateGateApiV1RenderingGateEvaluatePostResponse = EvaluateGateApiV1RenderingGateEvaluatePostResponses[keyof EvaluateGateApiV1RenderingGateEvaluatePostResponses];
+
+export type GetGateConfigApiV1RenderingGateConfigProjectIdGetData = {
+    body?: never;
+    path: {
+        project_id: number;
+    };
+    query?: never;
+    url: '/api/v1/rendering/gate/config/{project_id}';
+};
+
+export type GetGateConfigApiV1RenderingGateConfigProjectIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetGateConfigApiV1RenderingGateConfigProjectIdGetError = GetGateConfigApiV1RenderingGateConfigProjectIdGetErrors[keyof GetGateConfigApiV1RenderingGateConfigProjectIdGetErrors];
+
+export type GetGateConfigApiV1RenderingGateConfigProjectIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenderingGateConfigSchema;
+};
+
+export type GetGateConfigApiV1RenderingGateConfigProjectIdGetResponse = GetGateConfigApiV1RenderingGateConfigProjectIdGetResponses[keyof GetGateConfigApiV1RenderingGateConfigProjectIdGetResponses];
+
+export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutData = {
+    body: GateConfigUpdateRequest;
+    path: {
+        project_id: number;
+    };
+    query?: never;
+    url: '/api/v1/rendering/gate/config/{project_id}';
+};
+
+export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutError = UpdateGateConfigApiV1RenderingGateConfigProjectIdPutErrors[keyof UpdateGateConfigApiV1RenderingGateConfigProjectIdPutErrors];
+
+export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: RenderingGateConfigSchema;
+};
+
+export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponse = UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponses[keyof UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponses];
 
 export type StoreMemoryMemoryPostData = {
     body: MemoryCreate;
@@ -5593,6 +8541,216 @@ export type PromoteDcgNoteMemoryPromotePostResponses = {
 };
 
 export type PromoteDcgNoteMemoryPromotePostResponse = PromoteDcgNoteMemoryPromotePostResponses[keyof PromoteDcgNoteMemoryPromotePostResponses];
+
+export type ListConnectionsApiV1BriefsConnectionsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/briefs/connections';
+};
+
+export type ListConnectionsApiV1BriefsConnectionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<AppBriefsSchemasConnectionResponse>;
+};
+
+export type ListConnectionsApiV1BriefsConnectionsGetResponse = ListConnectionsApiV1BriefsConnectionsGetResponses[keyof ListConnectionsApiV1BriefsConnectionsGetResponses];
+
+export type CreateConnectionApiV1BriefsConnectionsPostData = {
+    body: AppBriefsSchemasConnectionCreateRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/briefs/connections';
+};
+
+export type CreateConnectionApiV1BriefsConnectionsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateConnectionApiV1BriefsConnectionsPostError = CreateConnectionApiV1BriefsConnectionsPostErrors[keyof CreateConnectionApiV1BriefsConnectionsPostErrors];
+
+export type CreateConnectionApiV1BriefsConnectionsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppBriefsSchemasConnectionResponse;
+};
+
+export type CreateConnectionApiV1BriefsConnectionsPostResponse = CreateConnectionApiV1BriefsConnectionsPostResponses[keyof CreateConnectionApiV1BriefsConnectionsPostResponses];
+
+export type DeleteConnectionApiV1BriefsConnectionsDeletePostData = {
+    body: ConnectionDeleteRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/briefs/connections/delete';
+};
+
+export type DeleteConnectionApiV1BriefsConnectionsDeletePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteConnectionApiV1BriefsConnectionsDeletePostError = DeleteConnectionApiV1BriefsConnectionsDeletePostErrors[keyof DeleteConnectionApiV1BriefsConnectionsDeletePostErrors];
+
+export type DeleteConnectionApiV1BriefsConnectionsDeletePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: boolean;
+    };
+};
+
+export type DeleteConnectionApiV1BriefsConnectionsDeletePostResponse = DeleteConnectionApiV1BriefsConnectionsDeletePostResponses[keyof DeleteConnectionApiV1BriefsConnectionsDeletePostResponses];
+
+export type SyncConnectionApiV1BriefsConnectionsSyncPostData = {
+    body: AppBriefsSchemasConnectionSyncRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/briefs/connections/sync';
+};
+
+export type SyncConnectionApiV1BriefsConnectionsSyncPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SyncConnectionApiV1BriefsConnectionsSyncPostError = SyncConnectionApiV1BriefsConnectionsSyncPostErrors[keyof SyncConnectionApiV1BriefsConnectionsSyncPostErrors];
+
+export type SyncConnectionApiV1BriefsConnectionsSyncPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppBriefsSchemasConnectionResponse;
+};
+
+export type SyncConnectionApiV1BriefsConnectionsSyncPostResponse = SyncConnectionApiV1BriefsConnectionsSyncPostResponses[keyof SyncConnectionApiV1BriefsConnectionsSyncPostResponses];
+
+export type ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetData = {
+    body?: never;
+    path: {
+        connection_id: number;
+    };
+    query?: never;
+    url: '/api/v1/briefs/connections/{connection_id}/items';
+};
+
+export type ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetError = ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetErrors[keyof ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetErrors];
+
+export type ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<BriefItemResponse>;
+};
+
+export type ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetResponse = ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetResponses[keyof ListItemsForConnectionApiV1BriefsConnectionsConnectionIdItemsGetResponses];
+
+export type ListItemsApiV1BriefsItemsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filter by platform
+         */
+        platform?: string | null;
+        /**
+         * Filter by status
+         */
+        status?: string | null;
+        /**
+         * Search by title
+         */
+        search?: string | null;
+    };
+    url: '/api/v1/briefs/items';
+};
+
+export type ListItemsApiV1BriefsItemsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListItemsApiV1BriefsItemsGetError = ListItemsApiV1BriefsItemsGetErrors[keyof ListItemsApiV1BriefsItemsGetErrors];
+
+export type ListItemsApiV1BriefsItemsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<BriefItemResponse>;
+};
+
+export type ListItemsApiV1BriefsItemsGetResponse = ListItemsApiV1BriefsItemsGetResponses[keyof ListItemsApiV1BriefsItemsGetResponses];
+
+export type GetItemDetailApiV1BriefsItemsItemIdGetData = {
+    body?: never;
+    path: {
+        item_id: number;
+    };
+    query?: never;
+    url: '/api/v1/briefs/items/{item_id}';
+};
+
+export type GetItemDetailApiV1BriefsItemsItemIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetItemDetailApiV1BriefsItemsItemIdGetError = GetItemDetailApiV1BriefsItemsItemIdGetErrors[keyof GetItemDetailApiV1BriefsItemsItemIdGetErrors];
+
+export type GetItemDetailApiV1BriefsItemsItemIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BriefDetailResponse;
+};
+
+export type GetItemDetailApiV1BriefsItemsItemIdGetResponse = GetItemDetailApiV1BriefsItemsItemIdGetResponses[keyof GetItemDetailApiV1BriefsItemsItemIdGetResponses];
+
+export type ImportItemsApiV1BriefsImportPostData = {
+    body: ImportRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/briefs/import';
+};
+
+export type ImportItemsApiV1BriefsImportPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ImportItemsApiV1BriefsImportPostError = ImportItemsApiV1BriefsImportPostErrors[keyof ImportItemsApiV1BriefsImportPostErrors];
+
+export type ImportItemsApiV1BriefsImportPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppBriefsSchemasImportResponse;
+};
+
+export type ImportItemsApiV1BriefsImportPostResponse = ImportItemsApiV1BriefsImportPostResponses[keyof ImportItemsApiV1BriefsImportPostResponses];
 
 export type GenerateEmailApiV1AgentsScaffolderGeneratePostData = {
     body: ScaffolderRequest;
@@ -5802,6 +8960,64 @@ export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponses = 
 
 export type ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponse = ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponses[keyof ListRunCheckpointsApiV1BlueprintsRunsRunIdCheckpointsGetResponses];
 
+export type ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetData = {
+    body?: never;
+    path: {
+        project_id: number;
+    };
+    query?: {
+        status?: string | null;
+        page?: number;
+        page_size?: number;
+    };
+    url: '/api/v1/projects/{project_id}/blueprint-runs';
+};
+
+export type ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetError = ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetErrors[keyof ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetErrors];
+
+export type ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BlueprintRunListResponse;
+};
+
+export type ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetResponse = ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetResponses[keyof ListBlueprintRunsApiV1ProjectsProjectIdBlueprintRunsGetResponses];
+
+export type GetBlueprintRunApiV1BlueprintRunsRunIdGetData = {
+    body?: never;
+    path: {
+        run_id: number;
+    };
+    query?: never;
+    url: '/api/v1/blueprint-runs/{run_id}';
+};
+
+export type GetBlueprintRunApiV1BlueprintRunsRunIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetBlueprintRunApiV1BlueprintRunsRunIdGetError = GetBlueprintRunApiV1BlueprintRunsRunIdGetErrors[keyof GetBlueprintRunApiV1BlueprintRunsRunIdGetErrors];
+
+export type GetBlueprintRunApiV1BlueprintRunsRunIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: BlueprintRunRecord;
+};
+
+export type GetBlueprintRunApiV1BlueprintRunsRunIdGetResponse = GetBlueprintRunApiV1BlueprintRunsRunIdGetResponses[keyof GetBlueprintRunApiV1BlueprintRunsRunIdGetResponses];
+
 export type ListAgentSkillsApiV1AgentsSkillsGetData = {
     body?: never;
     path?: never;
@@ -5821,6 +9037,303 @@ export type ListAgentSkillsApiV1AgentsSkillsGetResponses = {
 };
 
 export type ListAgentSkillsApiV1AgentsSkillsGetResponse = ListAgentSkillsApiV1AgentsSkillsGetResponses[keyof ListAgentSkillsApiV1AgentsSkillsGetResponses];
+
+export type ListAgentsApiV1PromptsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/prompts';
+};
+
+export type ListAgentsApiV1PromptsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: Array<string>;
+    };
+};
+
+export type ListAgentsApiV1PromptsGetResponse = ListAgentsApiV1PromptsGetResponses[keyof ListAgentsApiV1PromptsGetResponses];
+
+export type CreatePromptApiV1PromptsPostData = {
+    body: PromptTemplateCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/prompts';
+};
+
+export type CreatePromptApiV1PromptsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreatePromptApiV1PromptsPostError = CreatePromptApiV1PromptsPostErrors[keyof CreatePromptApiV1PromptsPostErrors];
+
+export type CreatePromptApiV1PromptsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: PromptTemplateResponse;
+};
+
+export type CreatePromptApiV1PromptsPostResponse = CreatePromptApiV1PromptsPostResponses[keyof CreatePromptApiV1PromptsPostResponses];
+
+export type GetActivePromptApiV1PromptsAgentIdGetData = {
+    body?: never;
+    path: {
+        agent_id: string;
+    };
+    query?: {
+        variant?: string;
+    };
+    url: '/api/v1/prompts/{agent_id}';
+};
+
+export type GetActivePromptApiV1PromptsAgentIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetActivePromptApiV1PromptsAgentIdGetError = GetActivePromptApiV1PromptsAgentIdGetErrors[keyof GetActivePromptApiV1PromptsAgentIdGetErrors];
+
+export type GetActivePromptApiV1PromptsAgentIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromptTemplateResponse;
+};
+
+export type GetActivePromptApiV1PromptsAgentIdGetResponse = GetActivePromptApiV1PromptsAgentIdGetResponses[keyof GetActivePromptApiV1PromptsAgentIdGetResponses];
+
+export type ListVersionsApiV1PromptsAgentIdVersionsGetData = {
+    body?: never;
+    path: {
+        agent_id: string;
+    };
+    query?: {
+        variant?: string;
+        limit?: number;
+    };
+    url: '/api/v1/prompts/{agent_id}/versions';
+};
+
+export type ListVersionsApiV1PromptsAgentIdVersionsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListVersionsApiV1PromptsAgentIdVersionsGetError = ListVersionsApiV1PromptsAgentIdVersionsGetErrors[keyof ListVersionsApiV1PromptsAgentIdVersionsGetErrors];
+
+export type ListVersionsApiV1PromptsAgentIdVersionsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromptTemplateListResponse;
+};
+
+export type ListVersionsApiV1PromptsAgentIdVersionsGetResponse = ListVersionsApiV1PromptsAgentIdVersionsGetResponses[keyof ListVersionsApiV1PromptsAgentIdVersionsGetResponses];
+
+export type ActivatePromptApiV1PromptsActivatePostData = {
+    body: PromptActivateRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/prompts/activate';
+};
+
+export type ActivatePromptApiV1PromptsActivatePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ActivatePromptApiV1PromptsActivatePostError = ActivatePromptApiV1PromptsActivatePostErrors[keyof ActivatePromptApiV1PromptsActivatePostErrors];
+
+export type ActivatePromptApiV1PromptsActivatePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromptTemplateResponse;
+};
+
+export type ActivatePromptApiV1PromptsActivatePostResponse = ActivatePromptApiV1PromptsActivatePostResponses[keyof ActivatePromptApiV1PromptsActivatePostResponses];
+
+export type RollbackPromptApiV1PromptsAgentIdRollbackPostData = {
+    body?: never;
+    path: {
+        agent_id: string;
+    };
+    query?: {
+        variant?: string;
+    };
+    url: '/api/v1/prompts/{agent_id}/rollback';
+};
+
+export type RollbackPromptApiV1PromptsAgentIdRollbackPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RollbackPromptApiV1PromptsAgentIdRollbackPostError = RollbackPromptApiV1PromptsAgentIdRollbackPostErrors[keyof RollbackPromptApiV1PromptsAgentIdRollbackPostErrors];
+
+export type RollbackPromptApiV1PromptsAgentIdRollbackPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromptTemplateResponse;
+};
+
+export type RollbackPromptApiV1PromptsAgentIdRollbackPostResponse = RollbackPromptApiV1PromptsAgentIdRollbackPostResponses[keyof RollbackPromptApiV1PromptsAgentIdRollbackPostResponses];
+
+export type SeedPromptsApiV1PromptsSeedPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/prompts/seed';
+};
+
+export type SeedPromptsApiV1PromptsSeedPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromptSeedResponse;
+};
+
+export type SeedPromptsApiV1PromptsSeedPostResponse = SeedPromptsApiV1PromptsSeedPostResponses[keyof SeedPromptsApiV1PromptsSeedPostResponses];
+
+export type GetCostReportApiV1AiCostReportGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * YYYY-MM
+         */
+        month?: string | null;
+    };
+    url: '/api/v1/ai/cost/report';
+};
+
+export type GetCostReportApiV1AiCostReportGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCostReportApiV1AiCostReportGetError = GetCostReportApiV1AiCostReportGetErrors[keyof GetCostReportApiV1AiCostReportGetErrors];
+
+export type GetCostReportApiV1AiCostReportGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CostReportResponse;
+};
+
+export type GetCostReportApiV1AiCostReportGetResponse = GetCostReportApiV1AiCostReportGetResponses[keyof GetCostReportApiV1AiCostReportGetResponses];
+
+export type GetBudgetStatusApiV1AiCostStatusGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ai/cost/status';
+};
+
+export type GetBudgetStatusApiV1AiCostStatusGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: string;
+    };
+};
+
+export type GetBudgetStatusApiV1AiCostStatusGetResponse = GetBudgetStatusApiV1AiCostStatusGetResponses[keyof GetBudgetStatusApiV1AiCostStatusGetResponses];
+
+export type TranscribeAudioApiV1AiVoiceTranscribePostData = {
+    body: VoiceTranscribeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ai/voice/transcribe';
+};
+
+export type TranscribeAudioApiV1AiVoiceTranscribePostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TranscribeAudioApiV1AiVoiceTranscribePostError = TranscribeAudioApiV1AiVoiceTranscribePostErrors[keyof TranscribeAudioApiV1AiVoiceTranscribePostErrors];
+
+export type TranscribeAudioApiV1AiVoiceTranscribePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: TranscriptResponse;
+};
+
+export type TranscribeAudioApiV1AiVoiceTranscribePostResponse = TranscribeAudioApiV1AiVoiceTranscribePostResponses[keyof TranscribeAudioApiV1AiVoiceTranscribePostResponses];
+
+export type ExtractVoiceBriefApiV1AiVoiceBriefPostData = {
+    body: VoiceBriefRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ai/voice/brief';
+};
+
+export type ExtractVoiceBriefApiV1AiVoiceBriefPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ExtractVoiceBriefApiV1AiVoiceBriefPostError = ExtractVoiceBriefApiV1AiVoiceBriefPostErrors[keyof ExtractVoiceBriefApiV1AiVoiceBriefPostErrors];
+
+export type ExtractVoiceBriefApiV1AiVoiceBriefPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: VoiceBriefResponse;
+};
+
+export type ExtractVoiceBriefApiV1AiVoiceBriefPostResponse = ExtractVoiceBriefApiV1AiVoiceBriefPostResponses[keyof ExtractVoiceBriefApiV1AiVoiceBriefPostResponses];
+
+export type RunVoicePipelineApiV1AiVoiceRunPostData = {
+    body: VoiceRunRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ai/voice/run';
+};
+
+export type RunVoicePipelineApiV1AiVoiceRunPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RunVoicePipelineApiV1AiVoiceRunPostError = RunVoicePipelineApiV1AiVoiceRunPostErrors[keyof RunVoicePipelineApiV1AiVoiceRunPostErrors];
+
+export type RunVoicePipelineApiV1AiVoiceRunPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type RunVoicePipelineApiV1AiVoiceRunPostResponse = RunVoicePipelineApiV1AiVoiceRunPostResponses[keyof RunVoicePipelineApiV1AiVoiceRunPostResponses];
 
 export type ReadRootGetData = {
     body?: never;

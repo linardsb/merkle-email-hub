@@ -7,7 +7,7 @@ test.describe("Export Flow", () => {
     "API-heavy flow — Chromium only"
   );
 
-  test("export dialog opens with tabs", async ({
+  test("export dialog opens with tabs @smoke", async ({
     authenticatedPage: page,
   }) => {
     const projectId = getSharedProjectId();

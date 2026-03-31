@@ -481,7 +481,7 @@ SCAFFOLDER_TEST_CASES = [
             "brief_quality": "vague_one_liner",
             "template_selection_accuracy": "ambiguous",
         },
-        "brief": "email",
+        "brief": "make email",
         "expected_challenges": [
             "near-zero context brief",
             "agent must fall back to a sensible default template",
@@ -609,5 +609,386 @@ SCAFFOLDER_TEST_CASES = [
             "agent should flag or auto-correct contrast violations",
             "dark mode variant must also maintain contrast",
         ],
+    },
+    # =========================================================================
+    # DESIGN FIDELITY CASES — backed by real training HTML from
+    # email-templates/training_HTML/for_converter_engine/
+    # These cases carry design_context with Figma metadata for the
+    # design_fidelity judge criterion (eval-only, not used in live builds).
+    # =========================================================================
+    # -------------------------------------------------------------------------
+    # 23. Design fidelity — Starbucks Pumpkin Spice (9 sections)
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-023",
+        "dimensions": {
+            "layout_complexity": "mixed_multi_section",
+            "content_type": "promotional_seasonal",
+            "client_quirk": "outlook_vml_buttons",
+            "brief_quality": "detailed_with_sections",
+            "design_fidelity": "full_figma_context",
+        },
+        "brief": (
+            "Starbucks seasonal promotional email: Pumpkin Now, Peppermint On The Way. "
+            "9 sections: full-width hero image, centered heading (40px, #1e3932 on #F2F0EB), "
+            "italic body paragraph, VML pill CTA button (#1e3932, 25px radius), "
+            "two-column holiday countdown (image left, text right on #AA1733 red), "
+            "four-column icon navigation bar (#296042 dark green, image-based), "
+            "social icons row, legal footer (7 rows), Starbucks Rewards logo. "
+            "Font: SoDo Sans. Dark mode: full component dark mode class system."
+        ),
+        "expected_challenges": [
+            "color_fidelity",
+            "font_override",
+            "section_mapping",
+            "VML bulletproof button with pill shape",
+            "asymmetric two-column layout",
+            "image-based navigation with 2x2 mobile reflow",
+        ],
+        "design_context": {
+            "figma_url": "https://www.figma.com/design/VUlWjZGAEVZr3mK1EawsYR/The-Ultimate-Email-Design-System--Community-?node-id=2833-1424",
+            "node_id": "2833-1424",
+            "file_id": "VUlWjZGAEVZr3mK1EawsYR",
+            "design_tokens": {
+                "colors": {
+                    "background": "#F2F0EB",
+                    "primary_text": "#1e3932",
+                    "cta_fill": "#1e3932",
+                    "holiday_red": "#AA1733",
+                    "nav_green": "#296042",
+                    "footer_text": "#707070",
+                },
+                "fonts": {
+                    "heading": "SoDo Sans",
+                    "body": "SoDo Sans",
+                    "serif_accent": "Lander Grande",
+                },
+                "font_sizes": {
+                    "heading": "40px",
+                    "body": "16px",
+                    "cta": "16px",
+                    "footer": "11px",
+                },
+                "spacing": {
+                    "heading_padding_top": "40px",
+                    "cta_padding_bottom": "40px",
+                    "social_padding_top": "30px",
+                },
+            },
+            "section_mapping": [
+                {
+                    "section_index": 0,
+                    "component_slug": "full-width-image",
+                    "figma_frame_name": "Hero Image",
+                },
+                {
+                    "section_index": 1,
+                    "component_slug": "heading",
+                    "figma_frame_name": "Heading",
+                    "style_overrides": {
+                        "bgcolor": "#F2F0EB",
+                        "color": "#1e3932",
+                        "font-size": "40px",
+                    },
+                },
+                {
+                    "section_index": 2,
+                    "component_slug": "paragraph",
+                    "figma_frame_name": "Body Text",
+                    "style_overrides": {"font-style": "italic", "color": "#1e3932"},
+                },
+                {
+                    "section_index": 3,
+                    "component_slug": "button-filled",
+                    "figma_frame_name": "CTA Button",
+                    "style_overrides": {"background-color": "#1e3932", "border-radius": "25px"},
+                },
+                {
+                    "section_index": 4,
+                    "component_slug": "column-layout-2",
+                    "figma_frame_name": "Holiday Countdown",
+                    "style_overrides": {"bgcolor": "#AA1733"},
+                },
+                {
+                    "section_index": 5,
+                    "component_slug": "column-layout-4",
+                    "figma_frame_name": "Nav Bar",
+                    "style_overrides": {"bgcolor": "#296042"},
+                },
+                {
+                    "section_index": 6,
+                    "component_slug": "footer-social",
+                    "figma_frame_name": "Social Icons",
+                },
+                {
+                    "section_index": 7,
+                    "component_slug": "footer",
+                    "figma_frame_name": "Legal Footer",
+                },
+                {"section_index": 8, "component_slug": "image", "figma_frame_name": "Rewards Logo"},
+            ],
+        },
+    },
+    # -------------------------------------------------------------------------
+    # 24. Design fidelity — Mammut Duvet Day (18 sections)
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-024",
+        "dimensions": {
+            "layout_complexity": "complex_multi_section",
+            "content_type": "promotional_ecommerce",
+            "client_quirk": "outlook_vml_buttons",
+            "brief_quality": "detailed_with_sections",
+            "design_fidelity": "full_figma_context",
+        },
+        "brief": (
+            "Mammut outdoor brand email: Grab A Duvet Day. 18 sections: "
+            "hero image (climber), heading (#E85D26 orange bg, white text, 32px, uppercase), "
+            "body paragraph (white on orange), ghost CTA button (white border on orange, VML, sharp corners), "
+            "full-width product image, product heading, product paragraph, product CTA, "
+            "second product image, second product heading + paragraph + CTA, "
+            "vertical navigation bar (4 links with border separators), "
+            "three-column social icons with text labels, simple footer. "
+            "Dark mode: class-based (.dark-mode), not auto prefers-color-scheme. "
+            "System font stack (no custom font). Extra mobile classes: .prod-gutter, .prod-row."
+        ),
+        "expected_challenges": [
+            "color_fidelity",
+            "18_section_structure",
+            "class_based_dark_mode",
+            "VML ghost button sharp corners",
+            "vertical navigation bar pattern",
+        ],
+        "design_context": {
+            "figma_url": "https://www.figma.com/design/VUlWjZGAEVZr3mK1EawsYR/The-Ultimate-Email-Design-System--Community-?node-id=2833-1135",
+            "node_id": "2833-1135",
+            "file_id": "VUlWjZGAEVZr3mK1EawsYR",
+            "design_tokens": {
+                "colors": {
+                    "primary_orange": "#E85D26",
+                    "heading_text": "#ffffff",
+                    "body_text": "#ffffff",
+                    "body_bg_default": "#ffffff",
+                    "product_heading": "#1A1A1A",
+                },
+                "fonts": {
+                    "heading": "system-ui",
+                    "body": "system-ui",
+                },
+                "font_sizes": {
+                    "heading": "32px",
+                    "body": "14px",
+                    "nav_link": "16px",
+                },
+                "spacing": {
+                    "heading_padding_top": "30px",
+                    "body_padding_top": "16px",
+                },
+            },
+            "section_mapping": [
+                {
+                    "section_index": 0,
+                    "component_slug": "full-width-image",
+                    "figma_frame_name": "Hero Image",
+                },
+                {
+                    "section_index": 1,
+                    "component_slug": "heading",
+                    "figma_frame_name": "Heading",
+                    "style_overrides": {"bgcolor": "#E85D26", "color": "#ffffff"},
+                },
+                {
+                    "section_index": 2,
+                    "component_slug": "paragraph",
+                    "figma_frame_name": "Body Text",
+                    "style_overrides": {"bgcolor": "#E85D26", "color": "#ffffff"},
+                },
+                {
+                    "section_index": 3,
+                    "component_slug": "button-ghost",
+                    "figma_frame_name": "Ghost CTA",
+                    "style_overrides": {"border-radius": "0%", "bgcolor": "#E85D26"},
+                },
+                {
+                    "section_index": 4,
+                    "component_slug": "full-width-image",
+                    "figma_frame_name": "Product Image 1",
+                },
+                {
+                    "section_index": 5,
+                    "component_slug": "heading",
+                    "figma_frame_name": "Product Heading 1",
+                },
+                {
+                    "section_index": 6,
+                    "component_slug": "paragraph",
+                    "figma_frame_name": "Product Body 1",
+                },
+                {
+                    "section_index": 7,
+                    "component_slug": "button-ghost",
+                    "figma_frame_name": "Product CTA 1",
+                },
+                {
+                    "section_index": 8,
+                    "component_slug": "full-width-image",
+                    "figma_frame_name": "Product Image 2",
+                },
+                {
+                    "section_index": 9,
+                    "component_slug": "heading",
+                    "figma_frame_name": "Product Heading 2",
+                },
+                {
+                    "section_index": 10,
+                    "component_slug": "paragraph",
+                    "figma_frame_name": "Product Body 2",
+                },
+                {
+                    "section_index": 11,
+                    "component_slug": "button-ghost",
+                    "figma_frame_name": "Product CTA 2",
+                },
+                {
+                    "section_index": 12,
+                    "component_slug": "navigation-bar",
+                    "figma_frame_name": "Vertical Nav",
+                },
+                {
+                    "section_index": 13,
+                    "component_slug": "column-layout-3",
+                    "figma_frame_name": "Social Icons",
+                },
+                {"section_index": 14, "component_slug": "footer", "figma_frame_name": "Footer"},
+            ],
+        },
+    },
+    # -------------------------------------------------------------------------
+    # 25. Design fidelity — MAAP x KASK (13 sections)
+    # -------------------------------------------------------------------------
+    {
+        "id": "scaff-025",
+        "dimensions": {
+            "layout_complexity": "mixed_multi_section",
+            "content_type": "promotional_collaboration",
+            "client_quirk": "outlook_vml_buttons",
+            "brief_quality": "detailed_with_sections",
+            "design_fidelity": "full_figma_context",
+        },
+        "brief": (
+            "MAAP x KASK cycling brand collaboration email. 13 sections: "
+            "full-width hero image, subtitle heading (12px #555555 category label), "
+            "main heading (36px #101828, 800 weight), body paragraph (16px #555555), "
+            "ghost pill CTA button (25px radius, 1px solid #222222), "
+            "two-column product images with 4px gutter, divider (#e0e0e0), "
+            "vertical navigation bar (26px, 800 weight, arrow &#8599;), "
+            "second divider, store locator pill button grid (7 city pills), "
+            "three-column feature icons on #f7f7f7, dark footer (#000000 bg). "
+            "Font: system stack. Dark mode: class-based with textblock-heading/body classes."
+        ),
+        "expected_challenges": [
+            "color_fidelity",
+            "monochrome_palette",
+            "pill_button_grid_composite",
+            "vertical_navigation_pattern",
+            "dark_footer",
+        ],
+        "design_context": {
+            "figma_url": "https://www.figma.com/design/VUlWjZGAEVZr3mK1EawsYR/The-Ultimate-Email-Design-System--Community-?node-id=2833-1623",
+            "node_id": "2833-1623",
+            "file_id": "VUlWjZGAEVZr3mK1EawsYR",
+            "design_tokens": {
+                "colors": {
+                    "heading_text": "#101828",
+                    "body_text": "#555555",
+                    "subtitle_text": "#555555",
+                    "button_border": "#222222",
+                    "divider": "#e0e0e0",
+                    "feature_bg": "#f7f7f7",
+                    "footer_bg": "#000000",
+                    "footer_link": "#cccccc",
+                    "pill_bg": "#222222",
+                },
+                "fonts": {
+                    "heading": "system-ui",
+                    "body": "system-ui",
+                },
+                "font_sizes": {
+                    "subtitle": "12px",
+                    "heading": "36px",
+                    "body": "16px",
+                    "nav_link": "26px",
+                    "pill": "12px",
+                },
+                "spacing": {
+                    "subtitle_padding_top": "16px",
+                    "heading_padding_top": "8px",
+                    "body_padding_top": "12px",
+                    "divider_padding": "34px",
+                    "footer_padding": "40px 44px",
+                },
+            },
+            "section_mapping": [
+                {
+                    "section_index": 0,
+                    "component_slug": "full-width-image",
+                    "figma_frame_name": "Hero Image",
+                },
+                {
+                    "section_index": 1,
+                    "component_slug": "heading",
+                    "figma_frame_name": "Subtitle",
+                    "style_overrides": {"font-size": "12px", "color": "#555555"},
+                },
+                {
+                    "section_index": 2,
+                    "component_slug": "heading",
+                    "figma_frame_name": "Main Heading",
+                    "style_overrides": {"font-size": "36px", "font-weight": "800"},
+                },
+                {
+                    "section_index": 3,
+                    "component_slug": "paragraph",
+                    "figma_frame_name": "Body Text",
+                    "style_overrides": {"color": "#555555"},
+                },
+                {
+                    "section_index": 4,
+                    "component_slug": "button-ghost",
+                    "figma_frame_name": "Discover CTA",
+                    "style_overrides": {"border-radius": "25px"},
+                },
+                {
+                    "section_index": 5,
+                    "component_slug": "column-layout-2",
+                    "figma_frame_name": "Product Images",
+                },
+                {"section_index": 6, "component_slug": "divider", "figma_frame_name": "Divider 1"},
+                {
+                    "section_index": 7,
+                    "component_slug": "navigation-bar",
+                    "figma_frame_name": "Vertical Nav",
+                    "style_overrides": {"font-size": "26px", "font-weight": "800"},
+                },
+                {"section_index": 8, "component_slug": "divider", "figma_frame_name": "Divider 2"},
+                {
+                    "section_index": 9,
+                    "component_slug": "paragraph",
+                    "figma_frame_name": "Store Locator",
+                },
+                {
+                    "section_index": 10,
+                    "component_slug": "column-layout-3",
+                    "figma_frame_name": "Feature Icons",
+                    "style_overrides": {"bgcolor": "#f7f7f7"},
+                },
+                {
+                    "section_index": 11,
+                    "component_slug": "footer",
+                    "figma_frame_name": "Dark Footer",
+                    "style_overrides": {"bgcolor": "#000000"},
+                },
+            ],
+        },
     },
 ]

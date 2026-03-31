@@ -14,7 +14,8 @@
     "e2e:ui": "playwright test --ui",
     "e2e:firefox": "BROWSER=firefox playwright test",
     "e2e:webkit": "BROWSER=webkit playwright test",
-    "e2e:all": "BROWSER=all playwright test"
+    "e2e:all": "BROWSER=all playwright test",
+    "e2e:smoke": "playwright test --grep @smoke"
   },
   "dependencies": {
     "@auth/core": "^0.34.3",

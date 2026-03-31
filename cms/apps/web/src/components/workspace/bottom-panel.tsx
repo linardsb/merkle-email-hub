@@ -1,15 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { MessageSquare, Zap, Layers } from "lucide-react";
+import { MessageSquare, Zap, Layers, History } from "lucide-react";
 import { ChatPanel } from "./chat-panel";
 import { BlueprintRunsList } from "./blueprint/runs-list";
 import { AgentContextPanel } from "./agent-context-panel";
+import { VersionHistoryPanel } from "./version-history-panel";
 import { useBlueprintRun } from "@/hooks/use-blueprint-run";
 import type { AgentMode } from "@/types/chat";
 import type { BlueprintRunRecord } from "@/types/blueprint-runs";
 
-type BottomPanelTab = "chat" | "runs" | "context";
+type BottomPanelTab = "chat" | "runs" | "context" | "history";
 
 interface BottomPanelProps {
   projectId: string;
@@ -17,6 +18,9 @@ interface BottomPanelProps {
   onApplyToEditor?: (html: string) => void;
   initialAgent?: AgentMode;
   editorContent?: string;
+  templateId?: number | null;
+  currentVersionNumber?: number | null;
+  onRestoreVersion?: (html: string, versionNumber: number) => void;
 }
 
 export function BottomPanel({
@@ -25,6 +29,9 @@ export function BottomPanel({
   onApplyToEditor,
   initialAgent,
   editorContent,
+  templateId,
+  currentVersionNumber,
+  onRestoreVersion,
 }: BottomPanelProps) {
   const [activeTab, setActiveTab] = useState<BottomPanelTab>("chat");
   const { resume, isRunning, error } = useBlueprintRun({ projectId: projectIdNum });
@@ -92,6 +99,20 @@ export function BottomPanel({
           <Layers className="h-3.5 w-3.5" />
           {"Context"}
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "history"}
+          onClick={() => setActiveTab("history")}
+          className={`flex cursor-pointer items-center gap-1.5 rounded-t-md px-3 py-1.5 text-xs font-medium transition-all ${
+            activeTab === "history"
+              ? "border border-b-0 border-border bg-background text-foreground"
+              : "border border-transparent text-muted-foreground hover:border-border/50 hover:bg-background/60 hover:text-foreground"
+          }`}
+        >
+          <History className="h-3.5 w-3.5" />
+          {"History"}
+        </button>
       </div>
 
       {/* Resume status banner */}
@@ -122,6 +143,12 @@ export function BottomPanel({
             projectId={projectIdNum}
             onApplyResult={onApplyToEditor}
             onResumeRun={handleResumeRun}
+          />
+        ) : activeTab === "history" ? (
+          <VersionHistoryPanel
+            templateId={templateId ?? null}
+            currentVersionNumber={currentVersionNumber ?? null}
+            onRestore={onRestoreVersion ?? (() => {})}
           />
         ) : (
           <AgentContextPanel

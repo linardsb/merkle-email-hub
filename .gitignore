@@ -80,3 +80,6 @@ data/correction_rules.json
 
 # Visual regression diff images (generated on failure)
 app/rendering/tests/visual_regression/baselines/_diffs/
+
+# Snapshot test diff output (generated on mismatch)
+data/debug/*/actual.html

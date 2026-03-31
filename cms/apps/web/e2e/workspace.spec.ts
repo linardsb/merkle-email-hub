@@ -2,13 +2,13 @@ import { test, expect } from "./fixtures";
 import { getSharedProjectId } from "./fixtures/constants";
 
 test.describe("Workspace", () => {
-  test("workspace page loads", async ({ authenticatedPage: page }) => {
+  test("workspace page loads @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     await expect(page.locator("main")).toBeVisible();
   });
 
-  test("code editor loads with content", async ({
+  test("code editor loads with content @smoke", async ({
     authenticatedPage: page,
   }) => {
     const projectId = getSharedProjectId();
@@ -38,7 +38,7 @@ test.describe("Workspace", () => {
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test("preview tab renders iframe", async ({ authenticatedPage: page }) => {
+  test("preview tab renders iframe @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
     const previewTab = page.getByRole("tab", { name: /preview/i });

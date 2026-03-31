@@ -120,3 +120,35 @@ export function useUpdateTemplate(templateId: number | null) {
   const key = templateId ? `/api/v1/templates/${templateId}` : null;
   return useSWRMutation(key, patchFetcher);
 }
+
+async function restoreFetcher<T>(
+  url: string,
+  { arg }: { arg: { version_number: number } }
+): Promise<T> {
+  const res = await authFetch(`${url}/restore/${arg.version_number}`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    let message = "Request failed";
+    let code: string | undefined;
+    try {
+      const body = await res.json();
+      if (body.error) message = body.error;
+      if (body.type) code = body.type;
+    } catch {
+      message = res.statusText || message;
+    }
+    throw new ApiError(res.status, message, code);
+  }
+  return res.json();
+}
+
+export function useRestoreVersion(templateId: number | null) {
+  const key = templateId ? `/api/v1/templates/${templateId}` : null;
+  return useSWRMutation<
+    VersionResponse,
+    ApiError,
+    string | null,
+    { version_number: number }
+  >(key, restoreFetcher);
+}

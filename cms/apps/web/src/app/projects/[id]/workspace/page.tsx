@@ -397,6 +397,33 @@ export default function WorkspacePage() {
     [],
   );
 
+  const handleRestoreVersion = useCallback(
+    (html: string, versionNumber: number) => {
+      setEditorContent(html);
+      setSavedContent(html);
+      setSaveStatus("idle");
+      setCompiledHtml(null);
+      autoCompiledRef.current = false;
+      mutateTemplates();
+
+      // Auto-compile the restored content
+      const sanitized = sanitizeHtml(stripAnnotations(html));
+      triggerPreview({ source_html: sanitized })
+        .then((r) => {
+          if (r?.compiled_html) {
+            setCompiledHtml(r.compiled_html);
+            setBuildTimeMs(r.build_time_ms);
+          } else {
+            setCompiledHtml(sanitized);
+          }
+        })
+        .catch(() => {
+          setCompiledHtml(sanitized);
+        });
+    },
+    [mutateTemplates, triggerPreview],
+  );
+
   // ── QA Handlers ──
 
   const handleRunQA = useCallback(async () => {
@@ -720,6 +747,9 @@ export default function WorkspacePage() {
               onApplyToEditor={handleApplyToEditor}
               initialAgent={initialAgent}
               editorContent={editorContent}
+              templateId={activeTemplateId}
+              currentVersionNumber={latestVersionNumber}
+              onRestoreVersion={handleRestoreVersion}
             />
           </Panel>
         </Group>
