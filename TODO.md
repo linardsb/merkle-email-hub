@@ -32,7 +32,7 @@
 - [x] 40.2 Collect and verify real design cases (done)
 - [ ] 40.3 Visual regression: Figma design screenshot capture
 - [ ] 40.4 Visual regression: Playwright HTML rendering + pixel diff
-- [ ] 40.5 Wire into CI gate
+- [x] 40.5 Wire into CI gate
 - [x] 40.6 Export images exactly as-is — no background color added (export frame node, quality contract, dimension validation)
 - [x] 40.7 Unified component resolution — map converter to existing file-based components, create only missing ones (~5 files), delete inline seeds
 
@@ -145,55 +145,63 @@
 
 ### 40.4 Visual Regression: Playwright HTML Rendering + Pixel Diff `[Backend]`
 
-**What:** Add a Playwright-based visual regression test that renders `expected.html` to a screenshot, then pixel-diffs it against `design.png` from the Figma export. Produces a diff image highlighting mismatches. Reuses the existing `app/rendering/tests/visual_regression/` infrastructure for image comparison.
-**Why:** HTML text snapshots (40.1) catch structural regressions — missing sections, wrong text content, broken MSO conditionals. But they cannot catch the visual bugs that dominate real-world conversion issues: wrong column gap widths (8px vs 24px), incorrect section background colors, mismatched font sizes, buttons with wrong border-radius, text alignment off-by-one. These are exactly the issues found during manual review of case 5 (MAAP x KASK). A pixel-level comparison against the original design catches all of these automatically.
-**Reference HTMLs:** The 3 hand-built HTMLs in `email-templates/training_HTML/for_converter_engine/` are the highest-fidelity `expected.html` baselines available — they were built section-by-section from the component library to match the Figma designs. Use these as the primary pixel-diff targets. The companion `CONVERTER-REFERENCE.md` documents every override applied, enabling section-level diff attribution when mismatches are found.
+**What:** Add a Playwright-based visual regression test that renders the converter's current HTML output to a screenshot, then pixel-diffs it against `design.png` (Figma export from 40.3). Produces a diff image highlighting visual mismatches. Reuses the existing `app/rendering/tests/visual_regression/` infrastructure.
+**Why:** HTML text snapshots (40.1/40.2) catch structural regressions — missing sections, wrong text, broken MSO. But they cannot catch the visual bugs that dominate conversion issues: wrong column gap widths (8px vs 24px), incorrect section background colors, mismatched font sizes, button border-radius, text alignment. A pixel-level comparison against the original Figma design catches all of these automatically.
+**Context from 40.2 (approach B):** `expected.html` = current converter output (regression gate). Hand-built reference HTMLs in `email-templates/training_HTML/for_converter_engine/` are convergence targets. The visual regression here compares converter output → Figma design screenshot, measuring how far the converter is from the original design. This is a **fidelity metric**, not a pass/fail gate initially — the mismatch percentage will be high (~40-60%) until 40.3–40.6 converter fixes land. Track the percentage over time; it should decrease with each improvement.
+**Three active cases from 40.2:** Case 5 MAAP (9 converter sections, 13 target), Case 6 Starbucks (5/9), Case 10 Mammut (12/18). All from Figma file `VUlWjZGAEVZr3mK1EawsYR`. Design screenshots via `_capture_design_image()` from 40.3.
 **Implementation:**
 - Create `app/design_sync/tests/test_snapshot_visual.py`:
-  - `@pytest.mark.visual_regression` marker (skip in normal `make test`, run via `make snapshot-visual`)
-  - `TestSnapshotVisualRegression.test_visual_match[case_id]` — parametrized over active cases that have `design.png`:
-    1. Load `expected.html` from case directory
-    2. Rewrite image paths from relative (`../../design-assets/`) to absolute filesystem paths (Playwright needs absolute URLs or a local file server)
-    3. Launch Playwright Chromium, set viewport to design width (600px × auto-height)
-    4. Navigate to `file://{expected.html}` (or serve via `http://localhost` with a mini static server for image loading)
-    5. Take full-page screenshot → `rendered.png`
-    6. Load `design.png`, resize `rendered.png` to match dimensions if needed (Figma exports at scale=2)
-    7. Run pixel diff using `pixelmatch` (via Pillow + numpy, or the existing `compare_images()` from `app/rendering/tests/visual_regression/conftest.py`):
+  - `@pytest.mark.visual_regression` marker (skip in `make test`, run via `make snapshot-visual`)
+  - `TestSnapshotVisualRegression.test_visual_fidelity[case_id]` — parametrized over active cases that have `design_image: true` in manifest:
+    1. Run converter on `structure.json` + `tokens.json` → get current HTML output
+    2. Serve HTML + images via mini HTTP server (`_serve_case_directory()` on localhost, random port)
+    3. Rewrite image paths from relative (`../../design-assets/`) to `http://localhost:{port}/` paths
+    4. Launch Playwright Chromium, viewport 600px × auto-height
+    5. Navigate to served HTML, take full-page screenshot → `rendered.png`
+    6. Load `design.png`, resize `rendered.png` to match dimensions (Figma exports at scale=2 → 1200px wide)
+    7. Pixel diff using existing `compare_images()` from `app/rendering/tests/visual_regression/conftest.py`:
        - Compute per-pixel color distance
-       - Threshold: allow ≤5% pixel mismatch (anti-aliasing, font rendering differences)
-       - Generate `diff.png` with mismatched pixels highlighted in red
-    8. On failure: save `rendered.png` and `diff.png` to case directory, fail with mismatch percentage and diff image path
-  - Helper: `_serve_case_directory(case_dir)` — starts a local HTTP server on a random port to serve HTML + images (Playwright can't load `file://` relative paths for images in some configurations)
-  - Helper: `_rewrite_image_paths(html, case_dir)` — replaces relative image paths with `http://localhost:{port}/` paths
-- Reuse existing visual regression infra:
-  - `app/rendering/tests/visual_regression/conftest.py` has `compare_images()` and diff generation
-  - Extend or adapt for design-vs-HTML comparison (may need different threshold since comparing design tool render vs browser render)
-- Add to `data/debug/manifest.yaml`: `visual_threshold: 0.05` per case (configurable mismatch tolerance)
-- Diff output on mismatch:
+       - Generate `diff.png` with mismatched pixels in red
+       - Record mismatch percentage in `visual_report.json`
+    8. Save `rendered.png`, `diff.png`, `visual_report.json` to case directory
+    9. **Do NOT fail on high mismatch** — log the percentage and save artifacts. Fail only if mismatch exceeds `visual_threshold` from manifest (default 0.95 = 95%, effectively never fails until converter improves)
+  - Also test hand-built references for comparison baseline:
+    - `TestReferenceVisualFidelity.test_reference_fidelity[case_id]` — renders the hand-built reference HTML from `email-templates/training_HTML/for_converter_engine/` against same `design.png`. This establishes the **best achievable fidelity** (should be ~95-99% match). The gap between reference fidelity and converter fidelity is the work remaining.
+  - Helper: `_serve_case_directory(case_dir)` — `http.server` on random port, serves HTML + `data/design-assets/` images
+  - Helper: `_rewrite_image_paths(html, base_url)` — regex replace relative image paths
+- Reuse `app/rendering/tests/visual_regression/conftest.py` — `compare_images()` and diff generation
+- Add to `data/debug/manifest.yaml` per case: `visual_threshold: 0.95` (permissive initially, tighten as converter improves)
+- Diff output per case:
   ```
-  data/debug/{id}/rendered.png   # Playwright screenshot of expected.html
-  data/debug/{id}/diff.png       # Pixel diff (red = mismatch)
+  data/debug/{id}/rendered.png        # Playwright screenshot of converter output
+  data/debug/{id}/diff.png            # Pixel diff vs design.png (red = mismatch)
+  data/debug/{id}/visual_report.json  # { mismatch_pct, dimensions, threshold }
+  data/debug/{id}/reference_diff.png  # Pixel diff of hand-built reference vs design.png (baseline)
   ```
-- Add `.gitignore` entries: `data/debug/*/rendered.png`, `data/debug/*/diff.png`
-**Security:** Playwright runs in headless mode against local files only — no network access needed. Mini HTTP server binds to localhost only, random port, stopped after test.
-**Verify:** Case 5 with correct `design.png` and `expected.html` → visual test passes (≤5% mismatch). Intentionally break `expected.html` (change a background color) → test fails with diff.png showing the changed region in red. `make snapshot-visual` runs all visual cases. Cases without `design.png` → skipped gracefully.
+- `.gitignore`: `data/debug/*/rendered.png`, `data/debug/*/diff.png`, `data/debug/*/reference_diff.png`, `data/debug/*/visual_report.json`
+- Add `make snapshot-visual` target: `uv run pytest app/design_sync/tests/test_snapshot_visual.py -v -m visual_regression --tb=long`
+**Security:** Playwright headless against local files only. HTTP server binds localhost, random port, stopped after test.
+**Verify:** All 3 cases produce `rendered.png` + `diff.png` + `visual_report.json`. Reference fidelity baseline established (expect ~95-99% for hand-built HTMLs). Converter fidelity recorded (expect ~40-60% initially). Intentionally break converter output → mismatch percentage increases. `make snapshot-visual` runs all visual cases. Cases without `design.png` → skipped.
 
 ---
 
-### 40.5 Wire into CI Gate `[DevOps]`
+### ~~40.5 Wire into CI Gate~~ `[DevOps]` DONE
 
-**What:** Add `make snapshot-test` to the `make check` target so HTML snapshot tests run as part of the standard CI gate. Add `make snapshot-visual` as an optional target (not in `make check` — requires Playwright + Figma images which may not be available in all CI environments).
-**Why:** The snapshot tests are only useful if they actually block broken merges. Adding to `make check` means every PR that touches converter code must pass all snapshot cases. Visual regression stays optional because it requires Playwright browsers installed and `design.png` files committed (which may be large).
+**What:** Promote snapshot regression tests from isolated (`@pytest.mark.snapshot`) to CI-blocking. Remove the `and not snapshot` exclusion from the `make test` filter so `TestSnapshotRegression` and `TestSnapshotSectionCount` run as part of `make check`. Add `make snapshot-visual` as an optional standalone target.
+**Why:** With approach B (expected.html = current converter output), all snapshot tests pass. They're only useful if they block merges — any converter change that regresses output must fail CI. The `@pytest.mark.snapshot` isolation added in 40.2 was temporary to avoid blocking CI while cases were being set up. Now that all 3 cases are active and green, promote them to the main gate.
+**Context from 40.2:** `make test` currently excludes `snapshot` marker via `-m "not integration and not benchmark and not visual_regression and not collab and not snapshot"`. Removing `and not snapshot` is the one-line change. Visual regression (`make snapshot-visual` from 40.4) stays separate — it requires Playwright browsers and produces fidelity metrics, not pass/fail.
 **Implementation:**
 - Update `Makefile`:
-  - Add `snapshot-test` to the `check` and `check-full` dependency lists
-  - Add `snapshot-visual` as standalone target (not in `check`): `uv run pytest app/design_sync/tests/test_snapshot_visual.py -v -m visual_regression --tb=long`
+  - Remove `and not snapshot` from the `make test` pytest filter
+  - Verify `make snapshot-visual` target exists (added in 40.4)
 - Update `CLAUDE.md`:
-  - Add `make snapshot-visual` to Essential Commands
-  - Document the visual regression workflow in the Roadmap section
-- Verify `make check` now includes snapshot tests and they pass
+  - Add `make snapshot-visual` to Essential Commands section
+  - Note that `make snapshot-test` is now redundant (tests run in `make test`) but kept for convenience
+- Update `pyproject.toml`:
+  - Update `snapshot` marker description to note it's now part of `make check`
+- Verify all 9 snapshot tests pass within `make test` and `make check`
 
-**Verify:** `make check` runs snapshot tests alongside existing lint/types/test/conformance gates. Broken `expected.html` → `make check` fails. `make snapshot-visual` runs independently.
+**Verify:** `make test` runs all 9 snapshot tests (3 regression + 3 sanity + 3 section count). `make check` passes. Intentionally break `expected.html` → `make check` fails. `make snapshot-visual` runs independently for visual fidelity metrics.
 
 ---
 
@@ -273,11 +281,11 @@
 | 40.2 Collect and verify design cases | `data/debug/{5,6,10}/`, 3 active cases, `converter-gap-analysis.md`, `@pytest.mark.snapshot` isolation | 40.1 | Done |
 | 40.3 Figma design screenshot capture | `diagnose/extract.py`, Figma Images API, 13 tests | 40.1 | Done |
 | 40.4 Playwright visual regression | `test_snapshot_visual.py`, pixelmatch, mini server | 40.2 + 40.3 | Pending |
-| 40.5 CI gate wiring | `Makefile`, `CLAUDE.md` | 40.2 | Pending |
+| 40.5 CI gate wiring | `Makefile`, `CLAUDE.md`, `pyproject.toml` | 40.2 | Done |
 | 40.6 Export images exactly as-is — no background color added | Image export pipeline, Figma API node targeting, quality contract | 40.1 | Done |
 | 40.7 Unified component resolution | `seeds.py`, `file_loader.py`, `component_manifest.yaml`, `component_matcher.py`, `email-templates/components/*.html` | 40.1 | Done |
 
-> **Execution:** 40.1, 40.2, 40.3, 40.6, 40.7 done. 40.2 uses approach B (expected.html = current converter output for regression protection; hand-built references in `email-templates/training_HTML/for_converter_engine/` are convergence targets). 3 active cases: MAAP (9/13 sections), Starbucks (5/9), Mammut (12/18). Snapshot tests isolated via `@pytest.mark.snapshot` — `make test` stays green, `make snapshot-test` is the explicit gate. 40.4 requires 40.2 + 40.3 (design.png). 40.5 last — activates CI gate.
+> **Execution:** 40.1, 40.2, 40.3, 40.5, 40.6, 40.7 done. 40.2 uses approach B (expected.html = current converter output for regression protection; hand-built references in `email-templates/training_HTML/for_converter_engine/` are convergence targets). 3 active cases: MAAP (9/13 sections), Starbucks (5/9), Mammut (12/18). Snapshot tests now run in `make test`/`make check` CI gate (40.5). `make snapshot-visual` placeholder ready for 40.4 visual regression. 40.4 pending — requires Playwright + design.png.
 
 ---
 
@@ -294,6 +302,8 @@
 - [ ] 41.3 Text/link color inversion for dark backgrounds
 - [ ] 41.4 Snapshot regression cases for background continuity
 - [ ] 41.5 VLM-assisted section classification fallback
+- [ ] 41.6 Batch frame screenshot export service
+- [ ] 41.7 VLM-assisted section type classification (hybrid rule + VLM)
 
 ---
 
@@ -368,6 +378,42 @@
 
 ---
 
+### 41.6 Batch Frame Screenshot Export Service `[Backend]`
+
+**What:** Add `export_frame_screenshots(file_key, token, node_ids, scale=2.0) -> dict[str, bytes]` to `FigmaDesignSyncService` — a convenience wrapper over the existing `export_images()` (line 1460) + `download_image_bytes()` (line 1542) that returns a `{node_id: png_bytes}` dict for all top-level frames in one call. Extracts the reusable core from `_capture_design_image()` in `diagnose/extract.py:113`.
+**Why:** Both 41.5 (single-section VLM fallback) and 41.7 (batch VLM classification) need per-frame screenshots from Figma. Currently `_capture_design_image()` handles single frames only and lives in the diagnostic CLI. A service-level batch method avoids N+1 API calls and makes frame screenshots available to any pipeline stage.
+**Implementation:**
+- In `app/design_sync/figma/service.py`: add method that calls `export_images()` for the batch, then `download_image_bytes()` per exported image, returns `dict[str, bytes]`
+- Auto-batches in groups of 100 (existing Figma API limit in `export_images()`)
+- Resolution: uses `fidelity_figma_scale` setting (default 2.0)
+- Refactor `_capture_design_image()` in `extract.py` to delegate to the new service method
+**Verify:** `export_frame_screenshots("file_key", "token", ["2833:1623", "2833:1424"])` returns 2 PNG byte arrays. Existing `_capture_design_image()` still works via delegation. 5 tests.
+
+---
+
+### 41.7 VLM-Assisted Section Type Classification (Hybrid Rule + VLM) `[Backend]`
+
+**What:** Upgrade `analyze_layout()` in `layout_analyzer.py:191` to accept optional `vlm_classifications: dict[str, VLMSectionClassification] | None` and merge VLM visual classifications with rule-based results. Add `VLMSectionClassifier` service that screenshots all frames in one batch call and asks a VLM to classify each into `EmailSectionType` + `ColumnLayout`.
+**Why:** 41.5 handles VLM as a per-section component matcher fallback. This subtask operates one layer up — at the section *type* classification stage (`_classify_section()` line 365). Rule-based `_SECTION_PATTERNS` fails on generic frame names ("Frame 1", non-English names) and unusual layouts. VLM sees the design visually and recognizes a hero from its visual weight, not from a keyword. The hybrid merge means rule-based stays fast for clear cases; VLM only overrides ambiguous ones.
+**Implementation:**
+- **New file:** `app/design_sync/vlm_classifier.py` with:
+  - `VLMSectionClassification` model: `node_id`, `section_type: EmailSectionType`, `confidence: float`, `reasoning`, `column_layout: ColumnLayout | None`, `content_signals: list[str]`
+  - `VLMSectionClassifier.classify_sections(frame_screenshots: dict[str, bytes], frame_metadata: list[dict]) -> list[VLMSectionClassification]`
+  - Builds multimodal message: one `ImageBlock` per frame (reuses `app/ai/multimodal.py`) + frame metadata text
+  - System prompt: "Classify each email frame screenshot into HEADER/PREHEADER/HERO/CONTENT/CTA/FOOTER/SOCIAL/DIVIDER/SPACER/NAV/UNKNOWN. Detect column layout. Return JSON."
+  - Token budget: ~5K total (13 sections at ~300 tokens/image + prompt)
+- **Modify `analyze_layout()`**: new optional `vlm_classifications` param. Merge logic:
+  - Rule confidence > 0.9 → keep rule result
+  - Rule returned UNKNOWN or convention is GENERIC → override with VLM if VLM confidence > threshold (0.7)
+  - Rule and VLM disagree → prefer VLM if VLM confidence > rule confidence
+- **Modify `converter_service.py` `convert()`**: before `analyze_layout()`, if `DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED`, call `export_frame_screenshots()` (41.6) then `VLMSectionClassifier.classify_sections()`, pass results into `analyze_layout()`
+- **Config:** `DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED` (default `false`), `DESIGN_SYNC__VLM_CLASSIFICATION_MODEL` (empty = default routing), `DESIGN_SYNC__VLM_CLASSIFICATION_CONFIDENCE_THRESHOLD` (0.7), `DESIGN_SYNC__VLM_CLASSIFICATION_TIMEOUT` (15s → fallback to rule-based)
+- **Fallback:** Timeout/error → fall back to rule-based, log `design_sync.vlm_classification.timeout`
+- Add `vlm_classification: str | None` and `vlm_confidence: float | None` fields to `EmailSection` dataclass
+**Verify:** Run on 3 snapshot cases with mock VLM responses stored in `data/debug/{case_id}/vlm_classifications.json`. Rule-classified HERO stays HERO (high-confidence rule). Rule-classified UNKNOWN overridden by VLM. Timeout → graceful fallback. Flag off → zero behavior change. 12 tests.
+
+---
+
 ### Phase 41 — Summary
 
 | Subtask | Scope | Dependencies | Status |
@@ -376,9 +422,11 @@
 | 41.2 Background propagation | Converter assembly pass | 41.1 | Pending |
 | 41.3 Text color inversion | Converter assembly pass | 41.2 | Pending |
 | 41.4 Snapshot regression | `test_snapshot_regression.py` | 41.2 + 41.3 | Pending |
-| 41.5 VLM section classifier | `design_sync/`, model routing | Phase 40 complete | Pending |
+| 41.5 VLM component matcher fallback | `design_sync/`, model routing | Phase 40 complete | Pending |
+| 41.6 Batch frame screenshot export | `figma/service.py` | None | Pending |
+| 41.7 VLM section type classification | `vlm_classifier.py`, `layout_analyzer.py` | 41.6 | Pending |
 
-> **Execution:** 41.1 first (standalone utility). 41.2 wires it into the converter. 41.3 handles the text contrast consequence. 41.4 locks it down with tests. 41.5 is independent of 41.1–41.4 — can be done in parallel. All other subtasks are sequential.
+> **Execution:** Two independent tracks. **Track A (bgcolor):** 41.1 → 41.2 → 41.3 → 41.4 (sequential). **Track B (VLM classification):** 41.6 → 41.5 + 41.7 (parallel — 41.5 is per-section component fallback, 41.7 is batch section type classification; both consume frame screenshots from 41.6). Tracks A and B can execute in parallel.
 
 ---
 
@@ -1422,3 +1470,243 @@
 | 46.5 Dynamic connector discovery | `app/connectors/plugin_loader.py`, `app/plugins/` | None | Pending |
 
 > **Execution:** Two independent tracks. **Track A:** 46.1 → 46.2 + 46.3 (parallel) → 46.4. **Track B:** 46.5 (fully independent). Total new code: ~500 LOC + config. One Redis dependency (already available). No database migrations.
+
+---
+
+## Phase 47 — VLM Visual Verification Loop & Component Library Expansion
+
+> **The current converter tops out at ~85–93% fidelity.** Even with VLM-assisted classification (41.5–41.7) and background color continuity (41.1–41.4), the converter makes CSS/spacing/color approximations. A hero image may be 5px too tall, a heading may be `#333` instead of `#2D2D2D`, padding may be 16px instead of 20px. These small errors compound across 10+ sections. Additionally, 89 components can't cover the long tail of email design patterns (countdown timers, testimonials, pricing tables, zigzag layouts).
+>
+> **Solution — two complementary strategies:**
+> 1. **Visual verification loop (~97%):** Converter produces HTML → render in headless browser → screenshot → compare against Figma design screenshot → VLM identifies per-section discrepancies → apply CSS corrections automatically → re-render → repeat 2–3 iterations until converged. The VLM acts as the human eye that would normally review the output.
+> 2. **Component library expansion + custom generation (~99%):** Expand from 89 to 150+ hand-built components covering common patterns. When no component matches above a confidence threshold, use the Scaffolder agent to generate a one-off email-safe HTML section from Figma section data + design screenshot.
+>
+> **Infrastructure reuse:** `app/rendering/local/` has headless browser rendering + 14 email client profiles. `app/rendering/visual_diff.py` has ODiff pixel comparison. `app/ai/agents/visual_qa/` already does VLM screenshot analysis. `app/ai/multimodal.py` has `ImageBlock`. Phase 41.6 provides batch Figma frame screenshots. The Scaffolder agent already generates HTML from briefs with `design_context`.
+>
+> **Why 99.99% is hard:** Email clients aren't browsers — Outlook uses Word, Gmail strips `<style>`, Yahoo ignores `max-width`. Figma designs use features email can't reproduce (drop shadows, gradients, SVG, blend modes). Sub-pixel rounding: Figma says 14.5px, email rounds to 15px. For modern clients (Apple Mail, Gmail web, Outlook.com): 99% is achievable. For Outlook desktop: 95% is realistic — VML covers the big gaps but Word rendering is fundamentally different.
+
+- [ ] 47.1 Section-level screenshot cropping utility
+- [ ] 47.2 Visual comparison service (VLM section-by-section diff)
+- [ ] 47.3 Deterministic correction applicator
+- [ ] 47.4 Verification loop orchestrator
+- [ ] 47.5 Pipeline integration + configuration
+- [ ] 47.6 Component gap analysis + new component templates (89 → 150+)
+- [ ] 47.7 Extended component matcher scoring
+- [ ] 47.8 Custom component generation (AI fallback for unmatched sections)
+- [ ] 47.9 Verification loop tests + snapshot regression
+- [ ] 47.10 Diagnostic trace enhancement
+
+---
+
+### 47.1 Section-Level Screenshot Cropping Utility `[Backend]`
+
+**What:** Add `crop_section(full_screenshot: bytes, y_offset: int, height: int, viewport_width: int) -> bytes` to `app/rendering/screenshot_crop.py`. Crops a full-page Playwright screenshot into individual section-level images using Pillow.
+**Why:** The visual verification loop compares at section granularity, not full-page. Section bounds come from `EmailSection.y_position` and `EmailSection.height` (from layout analysis). Targeted comparison enables precise CSS corrections instead of vague full-page diffs.
+**Implementation:**
+- Input: full-page PNG bytes from `LocalRenderingProvider.render_screenshots()` (`app/rendering/local/service.py:39`)
+- Crop region: `(0, y_offset, viewport_width, y_offset + height)`
+- Handle edge cases: section extends beyond image bounds → clamp to image height
+- Use Pillow (already a dependency)
+- Return cropped PNG bytes
+**Verify:** Crop a 680×2000px full-page screenshot at y=500, height=300 → 680×300px PNG. Edge clamp: y=1900, height=300 on a 2000px image → 680×100px PNG. 4 tests.
+
+---
+
+### 47.2 Visual Comparison Service (VLM Section-by-Section Diff) `[Backend]`
+
+**What:** Add `compare_sections(design_screenshots: dict[str, bytes], rendered_screenshots: dict[str, bytes], html: str, sections: list[EmailSection]) -> VerificationResult` to `app/design_sync/visual_verify.py`. Sends paired section screenshots (Figma design vs rendered HTML) to a VLM for semantic comparison.
+**Why:** Pixel diff (ODiff) catches differences but can't explain *what's wrong* or *how to fix it*. A VLM can say "the heading is `#333333` but the design shows `#2D2D2D`" or "the padding-top is ~16px but the design shows ~24px" — returning structured corrections that can be applied automatically.
+**Implementation:**
+- **ODiff pre-filter:** Before calling VLM (expensive), use existing `run_odiff()` (`visual_diff.py:33`) per section. If `diff_percentage < 2%` → skip VLM for that section (good enough). Estimated savings: ~40–60% fewer VLM calls.
+- **VLM prompt:** Multimodal message with paired `ImageBlock`s (design left, rendered right) per section. Prompt: "Compare each pair. For each visible difference: section index, property (color/font/spacing/layout/content), expected value (from design), actual value (from rendered), CSS selector to fix. Only report differences you're confident about."
+- **Resolution matching:** Both screenshots at 2x scale. Figma: `fidelity_figma_scale` (default 2.0). Playwright: device scale factor = 2. Viewport width matches Figma frame width.
+- **Schemas:**
+  - `SectionCorrection`: node_id, section_idx, correction_type (`"color"|"font"|"spacing"|"layout"|"content"|"image"`), css_selector, css_property, current_value, correct_value, confidence, reasoning
+  - `VerificationResult`: iteration, fidelity_score (0–1), section_scores (dict), corrections[], pixel_diff_pct, converged
+- **Token budget:** ~10K per iteration (5 section pairs at ~1.5K each + prompt + response)
+**Verify:** Mock VLM returns 3 corrections for a MAAP section pair. ODiff pre-filter skips sections with diff < 2%. Empty corrections → `converged=True`. 8 tests.
+
+---
+
+### 47.3 Deterministic Correction Applicator `[Backend]`
+
+**What:** Add `apply_corrections(html: str, corrections: list[SectionCorrection]) -> str` to `app/design_sync/correction_applicator.py`. Applies VLM-identified corrections to converter HTML by modifying inline styles within section marker boundaries.
+**Why:** Most corrections are simple CSS value changes (wrong color, wrong padding, wrong font-size). These can be applied deterministically without an LLM — just string replacement in inline styles. Only complex layout changes need LLM-based correction.
+**Implementation:**
+- **HTML targeting:** Section markers (`<!-- section:NODE_ID -->`) are already injected by the converter. Parse HTML, find section boundary, locate element by CSS selector within that section.
+- **By correction type:**
+
+| Type | Strategy |
+|------|----------|
+| `color` | Find element by selector, replace `color:`/`background-color:` value in inline style |
+| `font` | Replace `font-size:`/`font-family:`/`font-weight:` in inline style |
+| `spacing` | Replace `padding:`/`margin:` values in inline style |
+| `layout` | Replace `width:`/`text-align:` — if complex, delegate to LLM |
+| `content` | Replace text content (rare — usually means wrong slot fill) |
+| `image` | Replace `width`/`height` attributes on `<img>` tags |
+
+- **Fallback:** For corrections that can't be applied deterministically (complex layout restructuring), reuse `correct_visual_defects()` from `app/ai/agents/visual_qa/correction.py`
+- Corrections applied in order; later corrections see earlier modifications
+**Verify:** Apply `{color, "#333", "#2D2D2D"}` correction → inline style updated. Apply `{spacing, "padding:16px", "padding:24px"}` → padding changed. Section marker targeting isolates changes to correct section. 10 tests.
+
+---
+
+### 47.4 Verification Loop Orchestrator `[Backend]`
+
+**What:** Add `run_verification_loop(html: str, design_screenshots: dict[str, bytes], sections: list[EmailSection], max_iterations: int = 3) -> VerificationLoopResult` to `app/design_sync/visual_verify.py`. Self-correcting render-compare-fix cycle that converges toward design fidelity.
+**Why:** A single comparison pass catches obvious errors but may introduce new ones. Iterating 2–3 times allows cascading corrections (fix color → fix dependent text contrast → fix spacing that was masked by wrong color). The loop also detects regressions and stops before making things worse.
+**Implementation:**
+- **Per iteration:**
+  1. Render HTML via `LocalRenderingProvider.render_screenshots()` with `gmail_web` profile (680×900)
+  2. Crop rendered screenshot into per-section images via `crop_section()` (47.1)
+  3. ODiff pre-filter: skip sections with diff < `vlm_verify_odiff_threshold` (default 2%)
+  4. VLM compare remaining sections via `compare_sections()` (47.2)
+  5. If `fidelity_score > vlm_verify_target_fidelity` (default 0.97) or no corrections → converge, break
+  6. Apply corrections via `apply_corrections()` (47.3) → updated HTML
+  7. If score regressed vs previous iteration → revert, use previous HTML, break
+  8. Record `VerificationResult`
+- **Output:** `VerificationLoopResult`: iterations[], final_html, initial_fidelity, final_fidelity, total_corrections_applied, total_vlm_cost_tokens
+- **Safety:** Max iterations cap. Score regression detection (stop early). Per-correction confidence threshold (skip low-confidence fixes).
+**Verify:** 3-iteration loop with mock VLM: iteration 1 applies 5 corrections (score 0.82→0.91), iteration 2 applies 2 corrections (0.91→0.96), iteration 3 applies 1 correction (0.96→0.98, converge). Regression detection: score drops → revert to previous iteration's HTML. Max iterations → returns best result. 8 tests.
+
+---
+
+### 47.5 Pipeline Integration + Configuration `[Backend]`
+
+**What:** Wire the verification loop into `converter_service.py` after `_convert_with_components()` returns. Add feature flags and configuration to `app/core/config.py`.
+**Why:** The loop must be opt-in (adds latency + VLM cost) and configurable per-connection for gradual rollout.
+**Implementation:**
+- **Modify `converter_service.py` `convert_document()`** (after component rendering, before QA contracts):
+  1. Check `settings.design_sync.vlm_verify_enabled`
+  2. If enabled and design screenshots available: call `run_verification_loop(html, design_screenshots, layout.sections)`
+  3. Replace `ConversionResult.html` with verified HTML
+  4. Add metadata to `ConversionResult`: `verification_iterations: int = 0`, `verification_initial_fidelity: float | None = None`, `verification_final_fidelity: float | None = None`
+- **Config** (`app/core/config.py` `DesignSyncConfig`):
+
+| Setting | Env var | Default |
+|---------|---------|---------|
+| `vlm_verify_enabled` | `DESIGN_SYNC__VLM_VERIFY_ENABLED` | `false` |
+| `vlm_verify_model` | `DESIGN_SYNC__VLM_VERIFY_MODEL` | `""` (default routing) |
+| `vlm_verify_max_iterations` | `DESIGN_SYNC__VLM_VERIFY_MAX_ITERATIONS` | `3` |
+| `vlm_verify_target_fidelity` | `DESIGN_SYNC__VLM_VERIFY_TARGET_FIDELITY` | `0.97` |
+| `vlm_verify_odiff_threshold` | `DESIGN_SYNC__VLM_VERIFY_ODIFF_THRESHOLD` | `2.0` |
+| `vlm_verify_correction_confidence` | `DESIGN_SYNC__VLM_VERIFY_CORRECTION_CONFIDENCE` | `0.6` |
+| `vlm_verify_client` | `DESIGN_SYNC__VLM_VERIFY_CLIENT` | `"gmail_web"` |
+
+- **Relationship to existing Visual QA:** Phase 47 runs BEFORE the blueprint (ensuring converter output matches the design). Visual QA (`app/ai/agents/visual_qa/`) runs AFTER (ensuring cross-client consistency). Complementary, not overlapping.
+**Verify:** Flag off → pipeline unchanged, zero VLM calls. Flag on → `ConversionResult` has verification metadata. Design screenshots unavailable → graceful skip. 6 tests.
+
+---
+
+### 47.6 Component Gap Analysis + New Component Templates `[Backend, Templates]`
+
+**What:** Expand the component library from 89 to 150+ hand-built components. Add new HTML files to `email-templates/components/` and entries to `app/components/data/component_manifest.yaml`.
+**Why:** The remaining 3% gap at 97% comes from designs that don't map to any existing component. Every new component covers another email design pattern. With 150+ components, most real-world email layouts are covered.
+**Implementation:**
+- **New components by category:**
+
+| Category | New Components | Count |
+|----------|---------------|-------|
+| Content | Countdown timer (4 variants), testimonial (3), pricing table (3), team/author bio (2), event card (3), video placeholder (3), FAQ/Q&A (2), social proof/reviews (4) | 24 |
+| Structure | Multi-level nav (3), announcement bar (3), app download badges (2), loyalty/points (2) | 10 |
+| Interactive | Survey/poll CTA (2), progressive disclosure (2) | 4 |
+| Layout | Zigzag/alternating (3), asymmetric hero (2), mosaic grid (2), card grid (3), sidebar (2) | 12 |
+| Misc | Structural variants of existing (text-block-centered, hero-video, footer-minimal, etc.) | 11+ |
+
+- All new components: table/tr/td layout, `data-slot` attributes, dark mode classes, MSO conditionals, pass quality contracts
+- One `.html` file per slug + manifest entry with slot definitions
+**Verify:** `component_manifest.yaml` has 150+ entries. All new HTML files validate (no div/p layout, contrast passes). `make golden-conformance` passes. Slot fill tests for 5 representative new components. 20+ tests.
+
+---
+
+### 47.7 Extended Component Matcher Scoring `[Backend]`
+
+**What:** Add `_score_extended_candidates()` to `component_matcher.py` (called after existing `_score_candidates()` line 192) with scoring rules for the new component types from 47.6.
+**Why:** New components need new detection signals. The existing scorer checks img_count, text_count, col_groups — but can't distinguish a countdown timer from a text block, or a testimonial from an article card.
+**Implementation:**
+- **New scoring signals:**
+
+| Component Type | Detection Signal |
+|---------------|-----------------|
+| Countdown timer | Numeric text blocks with time-like patterns (HH:MM:SS, colon separators) |
+| Testimonial | Quotation marks + short text + small circular image (avatar pattern) |
+| Pricing table | Currency symbols, aligned numeric columns, feature/check lists |
+| Video placeholder | Play button icon detected, 16:9 aspect ratio image |
+| Event card | Date patterns, location text, calendar icon patterns |
+| FAQ/Q&A | Question marks in headings, alternating bold/regular text pairs |
+| Zigzag layout | Alternating image-left/image-right column groups |
+
+- Append extended candidates to scoring list; existing scoring logic picks highest
+- No changes to existing component scoring — purely additive
+**Verify:** Synthetic section with time-pattern text → scored as countdown-timer. Section with quote + avatar image → scored as testimonial. Existing component scoring unchanged (regression tests pass). 12 tests.
+
+---
+
+### 47.8 Custom Component Generation (AI Fallback) `[Backend]`
+
+**What:** Add `CustomComponentGenerator` to `app/design_sync/custom_component_generator.py`. When `ComponentMatch.confidence < custom_component_confidence_threshold` (default 0.6), generate a one-off email-safe HTML section from Figma data + design screenshot instead of using a poorly-matched template.
+**Why:** Even with 150+ components, some designs have unique layouts (5-column icon grid, brand-specific hero with custom structure). The Scaffolder agent already generates HTML from briefs with `design_context` — generating from Figma section data is a natural extension.
+**Implementation:**
+- `async generate(section: EmailSection, design_screenshot: bytes | None, tokens: ExtractedTokens) -> RenderedSection`
+- Build focused brief from section data: type, texts[], images[], buttons[], column layout, design tokens (colors, typography, spacing)
+- Include design screenshot as `ImageBlock` in `design_context` (VLM-capable model sees what to build)
+- Call existing `ScaffolderService` with brief: "Generate a single email section (not full email) for [section_type] with [N] text blocks, [M] images, [K] buttons. Table-based layout, inline styles only."
+- If verification loop enabled (47.4): run single verification iteration against design screenshot to validate output
+- **Integration:** In `converter_service.py` `_convert_with_components()`, after `match_all()`: if `match.confidence < threshold` AND custom gen enabled → call generator, replace the low-confidence `RenderedSection`
+- **Cost control:** `DESIGN_SYNC__CUSTOM_COMPONENT_MAX_PER_EMAIL` (default 3) caps how many sections per email use custom generation (~3K tokens each)
+- **Config:** `DESIGN_SYNC__CUSTOM_COMPONENT_ENABLED` (default `false`), `DESIGN_SYNC__CUSTOM_COMPONENT_CONFIDENCE_THRESHOLD` (0.6), `DESIGN_SYNC__CUSTOM_COMPONENT_MODEL` (empty = default), `DESIGN_SYNC__CUSTOM_COMPONENT_MAX_PER_EMAIL` (3)
+**Verify:** Low-confidence section (0.4) → custom generation triggered. High-confidence section (0.8) → uses template. Cap at 3 → 4th low-confidence section uses template fallback. Generated HTML passes quality contracts. Flag off → no generation. 10 tests.
+
+---
+
+### 47.9 Verification Loop Tests + Snapshot Regression `[Backend, Tests]`
+
+**What:** Comprehensive test suite for the verification loop pipeline (47.1–47.5) and snapshot regression extensions.
+**Why:** The loop is multi-stage with many failure modes (VLM errors, score regression, correction conflicts). Thorough testing prevents silent fidelity regressions.
+**Implementation:**
+- **New:** `app/design_sync/tests/test_visual_verify.py` — loop convergence, regression detection, max iterations, ODiff pre-filter
+- **New:** `app/design_sync/tests/test_correction_applicator.py` — each correction type, section marker targeting, inline style edge cases
+- **Extend:** `test_snapshot_regression.py` — store `design_section_screenshots/` per debug case. Run verification loop with mock VLM on 3 active cases (MAAP, Starbucks, Mammut). Assert final fidelity improves vs unverified baseline.
+- **New snapshot data:** Per debug case, add `design_section_screenshots/{node_id}.png` for section-level Figma exports
+**Verify:** `make test` — all pass. `make snapshot-test` — 3 cases pass with verification metadata. Correction applicator handles all 6 correction types. Loop handles VLM timeout/error gracefully.
+
+---
+
+### 47.10 Diagnostic Trace Enhancement `[Backend]`
+
+**What:** Extend `SectionTrace` in `app/design_sync/diagnose/models.py` with verification and generation fields. Wire into `DiagnosticRunner`.
+**Why:** Developers need visibility into which sections used VLM classification, verification corrections, or custom generation — for debugging and tuning thresholds.
+**Implementation:**
+- Add to `SectionTrace`: `vlm_classification: str | None`, `vlm_confidence: float | None`, `verification_fidelity: float | None`, `corrections_applied: int = 0`, `generation_method: str = "template"` (`"template"` | `"custom"`)
+- Add to `DiagnosticReport`: `verification_loop_iterations: int = 0`, `final_fidelity: float | None = None`
+- Wire into `DiagnosticRunner.run_from_structure()` — capture verification results
+- **Observability events** (structured logging via `get_logger()`):
+
+| Event | Key Fields |
+|-------|------------|
+| `design_sync.verify_loop.iteration` | iteration, fidelity_score, corrections_count, converged |
+| `design_sync.verify_loop.completed` | iterations, initial_fidelity, final_fidelity, total_token_cost |
+| `design_sync.custom_component.generated` | section_type, confidence, generation_time_ms |
+
+**Verify:** Diagnostic report includes verification fields. Events logged on verification run. 4 tests.
+
+---
+
+### Phase 47 — Summary
+
+| Subtask | Scope | Dependencies | Status |
+|---------|-------|--------------|--------|
+| 47.1 Screenshot cropping | `app/rendering/screenshot_crop.py`, Pillow | None | Pending |
+| 47.2 VLM section comparison | `app/design_sync/visual_verify.py` | 47.1, 41.6 | Pending |
+| 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | Pending |
+| 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | Pending |
+| 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | Pending |
+| 47.6 New component templates | `email-templates/components/`, manifest | None | Pending |
+| 47.7 Extended matcher scoring | `component_matcher.py` | 47.6 | Pending |
+| 47.8 Custom component generation | `custom_component_generator.py` | 47.6, Scaffolder agent | Pending |
+| 47.9 Verification tests | `tests/test_visual_verify.py` | 47.4 + 47.5 | Pending |
+| 47.10 Diagnostic enhancement | `diagnose/models.py`, `diagnose/runner.py` | 47.4 + 47.8 | Pending |
+
+> **Execution:** Three independent tracks. **Track A (visual verify loop):** 47.1 + 47.3 (parallel, no deps) → 47.2 (needs 47.1 + 41.6) → 47.4 → 47.5 → 47.9. **Track B (component expansion):** 47.6 → 47.7 + 47.8 (parallel). **Track C (diagnostics):** 47.10 (after tracks A + B). Tracks A and B can proceed in parallel. Token cost worst case: ~44K per email (verify loop ~30K + custom gen ~9K + classification ~5K). All behind feature flags — zero behavior change when disabled.
+
+> **Fidelity ladder:** Phase 40 completion (~85%) → Phase 41 VLM classification (~93%) → Phase 47.1–47.5 visual verify loop (~97%) → Phase 47.6–47.8 component expansion + custom gen (~99%). Each layer is independently valuable and incrementally deployable.

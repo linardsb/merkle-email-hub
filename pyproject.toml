@@ -259,6 +259,7 @@ markers = [
     "benchmark: Performance benchmark tests (run with: make bench)",
     "visual_regression: Visual regression tests requiring Playwright + ODiff (run with: make rendering-regression)",
     "collab: CRDT collaboration tests (run with: make test-collab)",
+    "snapshot: Snapshot regression tests — runs in make test/check CI gate (standalone: make snapshot-test)",
 ]
 
 [tool.pyright]

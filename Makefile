@@ -98,6 +98,9 @@ snapshot-test: ## Snapshot regression tests (real design inputs → expected HTM
 snapshot-capture: ## Capture current converter output for a snapshot case (CASE=5)
 	uv run python scripts/snapshot-capture.py $(CASE) --overwrite
 
+snapshot-visual: ## Visual fidelity metrics for snapshot cases (requires Playwright)
+	uv run pytest app/design_sync/tests/ -v -m visual_regression --tb=long || { [ $$? -eq 5 ] && echo "No visual regression tests found yet (pending 40.4)"; }
+
 check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks (backend + frontend + security)
 
 check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks including migration lint
