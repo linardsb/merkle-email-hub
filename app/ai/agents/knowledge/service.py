@@ -66,6 +66,24 @@ class KnowledgeAgentService:
             for r in search_response.results
         ]
 
+        # 2b. Optionally search conversion memory
+        if _is_conversion_query(request.question):
+            conversion_memories = await _search_conversion_memory(
+                request.question,
+                project_id=getattr(request, "project_id", None),
+            )
+            if conversion_memories:
+                for mem_content in conversion_memories:
+                    sources.append(
+                        KnowledgeSource(
+                            document_id=0,
+                            filename="[Conversion Memory]",
+                            domain="design_sync",
+                            chunk_content=mem_content,
+                            relevance_score=0.5,
+                        )
+                    )
+
         # 3. Detect skills and build prompt
         relevant_skills = detect_relevant_skills(request.question)
         client_id: str | None = getattr(request, "client_id", None)
@@ -116,6 +134,69 @@ class KnowledgeAgentService:
             skills_loaded=relevant_skills,
             model=response.model,
         )
+
+
+_CONVERSION_KEYWORDS = frozenset(
+    {
+        "conversion",
+        "converter",
+        "design sync",
+        "design-sync",
+        "component match",
+        "quality warning",
+        "match confidence",
+        "figma convert",
+    }
+)
+
+
+def _is_conversion_query(query: str) -> bool:
+    """Check if a query is about conversion/design-sync topics."""
+    lower = query.lower()
+    return any(kw in lower for kw in _CONVERSION_KEYWORDS)
+
+
+async def _search_conversion_memory(
+    query: str,
+    project_id: int | None,
+    limit: int = 5,
+) -> list[str]:
+    """Recall conversion-related memories from the memory service.
+
+    Returns formatted content strings with timestamps, or empty list if
+    no memories found or service unavailable.
+    """
+    try:
+        from app.core.database import get_db_context
+        from app.knowledge.embedding import get_embedding_provider
+        from app.memory.service import MemoryService
+
+        settings = get_settings()
+        async with get_db_context() as db:
+            embedding_provider = get_embedding_provider(settings)
+            service = MemoryService(db, embedding_provider)
+            memories = await service.recall(
+                query,
+                project_id=project_id,
+                agent_type="design_sync",
+                memory_type="semantic",
+                limit=limit,
+            )
+
+        results: list[str] = []
+        for memory, score in memories:
+            if score < 0.3:
+                continue
+            meta: dict[str, object] = memory.metadata_json or {}
+            if meta.get("source") != "converter_quality":
+                continue
+            ts = str(memory.created_at)[:19] if memory.created_at else "unknown"
+            results.append(f"[{ts}] {memory.content}")
+
+        return results
+    except Exception:
+        logger.warning("knowledge.conversion_memory_search_failed", exc_info=True)
+        return []
 
 
 def _build_user_message(question: str, search_response: SearchResponse) -> str:

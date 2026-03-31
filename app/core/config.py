@@ -357,6 +357,13 @@ class DesignSyncConfig(BaseModel):
     # HTML reverse-engineering import (36.5)
     html_import_ai_enabled: bool = True  # DESIGN_SYNC__HTML_IMPORT_AI_ENABLED
     html_import_max_size_bytes: int = 2_097_152  # DESIGN_SYNC__HTML_IMPORT_MAX_SIZE_BYTES (2 MB)
+    # Converter learning loop (Phase 48)
+    conversion_memory_enabled: bool = True  # DESIGN_SYNC__CONVERSION_MEMORY_ENABLED
+    conversion_traces_enabled: bool = True  # DESIGN_SYNC__CONVERSION_TRACES_ENABLED
+    conversion_traces_path: str = (
+        "traces/converter_traces.jsonl"  # DESIGN_SYNC__CONVERSION_TRACES_PATH
+    )
+    low_match_confidence_threshold: float = 0.6  # DESIGN_SYNC__LOW_MATCH_CONFIDENCE_THRESHOLD
 
 
 class ESPSyncConfig(BaseModel):

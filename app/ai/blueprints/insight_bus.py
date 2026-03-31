@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-InsightCategory = Literal["color", "layout", "typography", "dark_mode", "accessibility", "mso"]
+InsightCategory = Literal[
+    "color", "layout", "typography", "dark_mode", "accessibility", "mso", "conversion"
+]
 
 # Map QA check names → insight categories
 _QA_CHECK_CATEGORY_MAP: dict[str, InsightCategory] = {

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import TYPE_CHECKING, Literal
 
@@ -27,9 +28,43 @@ from app.design_sync.schemas import (
 
 if TYPE_CHECKING:
     from app.ai.agents.scaffolder.schemas import ScaffolderResponse
+    from app.design_sync.converter_service import ConversionResult
     from app.design_sync.service import DesignSyncService
 
 logger = get_logger(__name__)
+
+
+def _persist_conversion_learning(
+    conversion: ConversionResult,
+    *,
+    connection_id: str | None,
+    project_id: int | None,
+) -> None:
+    """Fire-and-forget: persist conversion quality to memory, insights, and traces."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+
+    async def _persist() -> None:
+        from app.design_sync.converter_insights import persist_conversion_insights
+        from app.design_sync.converter_memory import persist_conversion_quality
+        from app.design_sync.converter_traces import persist_converter_trace
+
+        await persist_conversion_quality(conversion, connection_id, project_id)
+        await persist_conversion_insights(conversion, connection_id, project_id)
+        await persist_converter_trace(conversion, connection_id)
+
+    task = loop.create_task(_persist())
+    task.add_done_callback(_on_learning_task_done)
+
+
+def _on_learning_task_done(task: asyncio.Task[None]) -> None:
+    """Log errors from converter learning tasks — never crash the pipeline."""
+    if task.cancelled():
+        logger.debug("converter_learning.task_cancelled")
+    elif exc := task.exception():
+        logger.warning("converter_learning.task_failed", error=str(exc))
 
 
 class DesignImportService:
@@ -248,6 +283,14 @@ class DesignImportService:
                                 )
 
                         initial_html = conversion.html
+
+                        # Phase 48: fire-and-forget converter learning loop
+                        _persist_conversion_learning(
+                            conversion,
+                            connection_id=_conn_id,
+                            project_id=conn.project_id if conn else None,
+                        )
+
                         if conversion.compatibility_hints:
                             logger.info(
                                 "design_sync.conversion_compatibility",

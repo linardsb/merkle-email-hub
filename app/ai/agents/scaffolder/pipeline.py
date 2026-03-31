@@ -286,6 +286,57 @@ class ScaffolderPipeline:
             template = self._registry.get(selection.fallback_template)
         return template
 
+    # ── Conversion memory recall ──
+
+    async def recall_conversion_context(
+        self,
+        brief: str,
+        project_id: int | None,
+    ) -> str | None:
+        """Recall past conversion quality data for similar designs.
+
+        Returns formatted context string or None if no relevant memories.
+        """
+        try:
+            from app.core.config import get_settings
+            from app.core.database import get_db_context
+            from app.knowledge.embedding import get_embedding_provider
+            from app.memory.service import MemoryService
+
+            settings = get_settings()
+            if not settings.design_sync.conversion_memory_enabled:
+                return None
+
+            async with get_db_context() as db:
+                embedding_provider = get_embedding_provider(settings)
+                service = MemoryService(db, embedding_provider)
+                memories = await service.recall(
+                    brief,
+                    project_id=project_id,
+                    agent_type="design_sync",
+                    memory_type="semantic",
+                    limit=6,
+                )
+
+            entries: list[str] = []
+            for memory, score in memories:
+                if score < 0.3:
+                    continue
+                meta: dict[str, object] = memory.metadata_json or {}
+                if not meta.get("has_quality_issues"):
+                    continue
+                entries.append(memory.content)
+                if len(entries) >= 3:
+                    break
+
+            if not entries:
+                return None
+
+            return "## Conversion History Insights\n" + "\n\n".join(entries)
+        except Exception:
+            logger.warning("scaffolder.conversion_recall_failed", exc_info=True)
+            return None
+
     # ── Pass 1: Layout ──
 
     async def _layout_pass(
@@ -305,7 +356,12 @@ class ScaffolderPipeline:
         section_blocks = composer.available_sections()
         section_list = ", ".join(section_blocks)
 
+        # Phase 48: recall conversion history for context
+        conversion_ctx = await self.recall_conversion_context(brief, project_id=None)
+        conversion_block = f"{conversion_ctx}\n\n" if conversion_ctx else ""
+
         system = (
+            f"{conversion_block}"
             "You are an email layout architect. Select the best template for the brief.\n\n"
             "Return a JSON object with these fields:\n"
             "- template_name: string (one of the available template names, or '__compose__' for custom composition)\n"

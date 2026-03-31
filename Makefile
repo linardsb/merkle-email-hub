@@ -101,6 +101,9 @@ snapshot-capture: ## Capture current converter output for a snapshot case (CASE=
 snapshot-visual: ## Visual fidelity metrics for snapshot cases (requires Playwright)
 	uv run pytest app/design_sync/tests/ -v -m visual_regression --tb=long || { [ $$? -eq 5 ] && echo "No visual regression tests found yet (pending 40.4)"; }
 
+converter-regression: ## Converter quality regression check against baseline
+	python -m app.design_sync.converter_regression
+
 check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks (backend + frontend + security)
 
 check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks including migration lint
