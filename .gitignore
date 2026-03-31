@@ -25,6 +25,9 @@ Thumbs.db
 *.log
 backups/
 
+# Observability stack local data (Loki, Grafana)
+observability/data/
+
 # TLS certificates
 nginx/certs/*
 !nginx/certs/.gitkeep

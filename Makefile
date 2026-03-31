@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback help
+.PHONY: dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana help
 
 # === Local Development ===
 
@@ -42,10 +42,16 @@ docker-down: ## Stop all Docker services
 docker-logs: ## Tail logs from all services
 	docker-compose logs -f
 
+dev-observe: ## Start all services + observability stack (Grafana :3333, Loki :3100)
+	docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+
+grafana: ## Open Grafana dashboard in browser
+	open http://localhost:3333
+
 # === Quality Checks ===
 
 test: ## Run backend unit tests
-	uv run pytest -v -m "not integration and not benchmark and not visual_regression"
+	uv run pytest -v -m "not integration and not benchmark and not visual_regression and not collab"
 
 bench: ## Run performance benchmark tests
 	uv run pytest -v -m benchmark --no-header -rN
@@ -55,6 +61,9 @@ rendering-baselines: ## Regenerate visual regression baselines (manual, destruct
 
 rendering-regression: ## Run visual regression tests against baselines
 	uv run pytest app/rendering/tests/visual_regression/ -v -m visual_regression
+
+test-collab: ## Run CRDT collaboration tests
+	COLLAB_WS__ENABLED=true COLLAB_WS__CRDT_ENABLED=true uv run pytest -v -m collab
 
 test-properties: ## Run property-based email invariant tests
 	QA_PROPERTY_TESTING__ENABLED=true uv run pytest app/qa_engine/property_testing/tests/ -v
@@ -155,6 +164,14 @@ db-migrate: ## Run database migrations
 
 db-revision: ## Create a new migration (usage: make db-revision m="description")
 	uv run alembic revision --autogenerate -m "$(m)"
+
+db-squash: ## Squash all migrations into a single baseline (destructive — requires confirmation)
+	@bash scripts/squash-migrations.sh
+
+# === Scaffolding ===
+
+scaffold-feature: ## Scaffold a new vertical slice (usage: make scaffold-feature name=billing)
+	@bash scripts/scaffold-feature.sh $(name)
 
 # === Knowledge Base ===
 

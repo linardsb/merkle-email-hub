@@ -1,0 +1,60 @@
+# Observability stack for local development
+# Usage: docker compose -f docker-compose.yml -f docker-compose.observability.yml up
+# Or:    make dev-observe
+#
+# Services:
+#   - Loki:     Log aggregation     (http://localhost:3100)
+#   - Promtail: Log collection      (scrapes Docker container logs)
+#   - Grafana:  Dashboards & query  (http://localhost:3333)
+#
+# Security: Anonymous admin access — local dev only, NOT for production.
+
+services:
+  loki:
+    image: grafana/loki:3.4
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./observability/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.4
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./observability/promtail-config.yaml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      loki:
+        condition: service_healthy
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.6
+    ports:
+      - "3333:3000"
+    volumes:
+      - ./observability/dashboards/:/var/lib/grafana/dashboards/:ro
+      - ./observability/provisioning/:/etc/grafana/provisioning/:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/email-hub.json
+      GF_LOG_LEVEL: warn
+    depends_on:
+      loki:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  loki_data:
+  grafana_data:

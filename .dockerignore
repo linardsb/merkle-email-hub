@@ -3,6 +3,7 @@
 .claude
 .agents
 .playwright-mcp
+observability/
 cms/
 nginx/
 services/
