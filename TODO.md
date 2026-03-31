@@ -25,8 +25,8 @@
 - [ ] 37.1 Expand golden component library with advanced patterns *(needs update after 37.4/37.5 — golden refs must reflect real component output)*
 - [x] 37.2 Build golden reference loader & criterion mapping
 - [x] 37.3 Wire golden references into judge prompts
-- [ ] 37.4 Re-run eval pipeline against file-based component output *(unblocked — 40.7 done)*
-- [ ] 37.5 Complete human labeling with improved judges *(blocked by 37.4)*
+- [x] 37.4 Re-run eval pipeline against file-based component output
+- [x] 37.5 Complete human labeling with improved judges
 
 ---
 
@@ -196,7 +196,7 @@
 
 ---
 
-### 37.5 Complete Human Labeling with Improved Judges `[Manual + Evals]`
+### ~~37.5 Complete Human Labeling with Improved Judges~~ `[Manual + Evals]` DONE
 
 **What:** Label all 540 evaluation rows using `docs/eval-labeling-tool.html`, prioritizing criteria where judges changed verdicts (high-flip from 37.4). Run calibration to validate that golden-reference-enhanced judges meet TPR ≥ 0.85 and TNR ≥ 0.80 per criterion.
 **Why:** The eval pipeline's trustworthiness depends on calibrated judges. Without human labels, we can't measure judge accuracy (TPR/TNR), which means we can't trust the eval gates that control skill updates, regression detection, or production monitoring. The golden references (37.1-37.3) should improve judge accuracy — but only human labels can confirm this. Labeling 540 rows (36 traces × 5 criteria × 3 agent groups) takes ~2-4 hours with the labeling tool. Prioritizing high-flip criteria from 37.4 ensures the most uncertain verdicts get reviewed first.
@@ -227,10 +227,10 @@
 | 37.1 Expand golden library | `email-templates/components/golden-references/` | None — start immediately | 14 new templates |
 | ~~37.2 Golden reference loader~~ DONE | `app/ai/agents/evals/golden_references.py`, `index.yaml` | 37.1 (templates exist) | ~200 LOC + 18 tests |
 | ~~37.3 Wire into judge prompts~~ DONE | 7 judge files + `base.py` | 37.2 (loader ready) | ~150 LOC + 22 tests |
-| 37.4 Re-run against file-based output | `traces/`, `eval-compare-verdicts.py`, Makefile | 37.3 + 40.7 (file-based components) | ~2,700 LLM judge calls, comparison report |
-| 37.5 Human labeling | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (re-calibrated verdicts) | ~2-4 hours manual |
+| ~~37.4 Re-run against file-based output~~ DONE | `traces/`, `eval-compare-verdicts.py`, Makefile | 37.3 + 40.7 (file-based components) | ~2,700 LLM judge calls, comparison report |
+| ~~37.5 Human labeling~~ DONE | `docs/eval-labeling-tool.html`, `traces/*.jsonl` | 37.4 (re-calibrated verdicts) | ~2-4 hours manual |
 
-> **Execution:** 37.1–37.3 done. Previous 37.4 tooling (comparison script, Makefile targets) delivered — retained and reused. Current 37.4 re-runs the pipeline against 40.7 file-based component output. 37.5 depends on 37.4. **37.4 is now unblocked** — 40.7 complete.
+> **Execution:** 37.1–37.3 done. 37.4 done (re-run against file-based component output from 40.7, verdict comparison complete). 37.5 done (540 rows labeled, calibration validated). **Phase 37 complete.**
 
 ---
 
@@ -1832,178 +1832,16 @@ Current converter dumps column content as raw text — each content type needs i
 - [x] ~~44.2 Dependency update automation (Renovate)~~ DONE
 - [x] ~~44.3 Feature flag lifecycle management~~ DONE
 - [ ] 44.4 Adversarial agent evaluation pass
-- [ ] 44.5 Operational runbooks
-- [ ] 44.6 Migration squash strategy & tooling
-- [ ] 44.7 CRDT collaboration test coverage
-- [ ] 44.8 SDK drift detection in CI
-- [ ] 44.9 Observability stack for local development
-- [ ] 44.10 Contributing guide & new-feature scaffolding
+- [x] ~~44.5 Operational runbooks~~ DONE
+- [x] ~~44.6 Migration squash strategy & tooling~~ DONE
+- [x] ~~44.7 CRDT collaboration test coverage~~ DONE
+- [x] ~~44.8 SDK drift detection in CI~~ DONE
+- [x] ~~44.9 Observability stack for local development~~ DONE
+- [x] ~~44.10 Contributing guide & new-feature scaffolding~~ DONE
 
 ---
 
-### 44.1 E2E Smoke Tests in CI `[CI/CD, Testing]`
-
-**What:** Add a `test-e2e-smoke` job to `.github/workflows/ci.yml` that runs a tagged subset of Playwright tests (`@smoke`) on every PR. Full multi-browser runs remain local-only via `make e2e-all-browsers`. Upload Playwright trace artifacts on failure for debugging.
-**Why:** Playwright tests exist (`cms/apps/web/playwright.config.ts`, `make e2e`) but skip CI entirely. UI regressions — broken navigation, form submission failures, rendering glitches — only surface during manual testing or after merge. A smoke subset (5-10 critical paths: login, project creation, template editor load, component preview, approval flow) catches the most damaging regressions in <3 minutes without bloating CI.
-**Implementation:**
-- Tag critical E2E tests with `@smoke` annotation in test descriptions:
-  ```typescript
-  test('login flow @smoke', async ({ page }) => { ... });
-  test('create project @smoke', async ({ page }) => { ... });
-  test('template editor loads @smoke', async ({ page }) => { ... });
-  ```
-- Add CI job to `.github/workflows/ci.yml`:
-  ```yaml
-  e2e-smoke:
-    runs-on: ubuntu-latest
-    needs: [backend, frontend]
-    services:
-      postgres:
-        image: postgres:15
-        env: { POSTGRES_USER: test, POSTGRES_PASSWORD: test, POSTGRES_DB: test }
-        ports: ['5432:5432']
-        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 5
-      redis:
-        image: redis:7
-        ports: ['6379:6379']
-        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm', cache-dependency-path: 'cms/pnpm-lock.yaml' }
-      - run: uv sync && cd cms && pnpm install --frozen-lockfile
-      - run: uv run alembic upgrade head
-      - run: cd cms && pnpm exec playwright install --with-deps chromium
-      - run: make dev &
-      - run: cd cms && pnpm exec playwright test --grep @smoke --reporter=github
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with: { name: playwright-traces, path: cms/apps/web/test-results/ }
-  ```
-- Add `make e2e-smoke` Makefile target for local smoke runs
-- Identify and tag 5-10 smoke tests from existing E2E suite — prioritize tests covering: auth flow, project CRUD, template editor initialization, component library browsing, approval submit
-
-**Security:** CI services use test-only credentials. No production secrets in E2E job. Playwright traces may contain rendered HTML — artifact retention set to 7 days.
-**Verify:** `e2e-smoke` job runs on PR. 5+ tests tagged `@smoke`. Job completes in <5 minutes. Failed test uploads trace artifact. `make e2e-smoke` runs same subset locally. Existing CI jobs unaffected.
-
----
-
-### 44.2 Dependency Update Automation (Renovate) `[CI/CD, Security]`
-
-**What:** Configure Renovate Bot to manage dependency updates across Python (`uv.lock`), Node.js (`cms/pnpm-lock.yaml`), Docker base images (`Dockerfile`, `cms/apps/web/Dockerfile`, `db/Dockerfile`), and GitHub Actions (`workflows/*.yml`). Group updates by risk tier: security patches auto-merge, minor versions in weekly PRs, major versions as individual PRs with manual review.
-**Why:** 100+ production dependencies with no automated update tooling. `uv.lock` and `pnpm-lock.yaml` pin exact versions — great for reproducibility, bad for security when CVEs are published against pinned versions. The existing `make check` gate (lint + types + tests + security) catches breakage, so automated PRs are safe to merge when CI passes. Renovate handles monorepo layouts (pnpm workspaces, multiple Dockerfiles, lock files) better than Dependabot.
-**Implementation:**
-- Add `renovate.json5` to repo root:
-  ```json5
-  {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": ["config:recommended", "security:openssl-rollback"],
-    "timezone": "Europe/Riga",
-    "schedule": ["before 8am on Monday"],
-    "labels": ["dependencies"],
-    "enabledManagers": ["pip_requirements", "pep621", "pnpm", "dockerfile", "github-actions"],
-    "packageRules": [
-      // Security patches: auto-merge if CI passes
-      {
-        "matchUpdateTypes": ["patch"],
-        "matchCategories": ["security"],
-        "automerge": true,
-        "automergeType": "pr",
-        "platformAutomerge": true
-      },
-      // Group all minor Python deps
-      {
-        "matchManagers": ["pep621"],
-        "matchUpdateTypes": ["minor", "patch"],
-        "groupName": "python-minor",
-        "schedule": ["before 8am on Monday"]
-      },
-      // Group all minor Node.js deps
-      {
-        "matchManagers": ["pnpm"],
-        "matchUpdateTypes": ["minor", "patch"],
-        "groupName": "node-minor",
-        "schedule": ["before 8am on Monday"]
-      },
-      // Docker base images: separate PRs, manual review
-      {
-        "matchManagers": ["dockerfile"],
-        "groupName": "docker-images",
-        "automerge": false
-      },
-      // Major versions: individual PRs, never auto-merge
-      {
-        "matchUpdateTypes": ["major"],
-        "automerge": false,
-        "labels": ["dependencies", "breaking"]
-      }
-    ],
-    // Pin GitHub Actions to full SHA for supply-chain security
-    "pinDigests": true
-  }
-  ```
-- Enable Renovate GitHub App on the repository (or use self-hosted via GitHub Action)
-- Add `.github/renovate-config.js` for any repo-specific overrides (e.g., ignore `anthropic` SDK if pinned to specific version for compatibility)
-
-**Security:** Renovate PRs go through full CI pipeline (`make check`). Security patches auto-merge only after CI passes. GitHub Actions pinned to SHA digests to prevent supply-chain attacks via tag mutation. No secrets exposed to Renovate.
-**Verify:** Renovate opens first dependency dashboard issue. Security patch PR auto-merges after CI green. Minor deps grouped into weekly PR. Major deps get individual PRs with `breaking` label. Docker image updates in separate PR. `renovate-config-validator` passes on `renovate.json5`.
-
----
-
-### 44.3 Feature Flag Lifecycle Management `[Backend, CI]`
-
-**What:** Add a `feature-flags.yaml` manifest tracking all feature flags with owner, creation date, intended removal date, and status. Add a CI check (`make flag-audit`) that warns on flags older than 90 days without a removal plan and fails on flags older than 180 days.
-**Why:** 50+ feature flags in `.env.example` (all disabled by default) with no lifecycle tracking. Flags added during development ("I'll clean this up later") accumulate indefinitely. Dead flags create confusion (is `COLLAB__ENABLED` safe to turn on?), bloat configuration, and mask untested code paths. A manifest with expiry dates creates social pressure to clean up — the CI warning is the nudge.
-**Implementation:**
-- Create `feature-flags.yaml` in repo root:
-  ```yaml
-  # Feature Flag Manifest — all flags must be registered here
-  # CI warns on flags >90 days without removal_date, fails on >180 days
-  flags:
-    - name: COLLAB__ENABLED
-      description: Real-time CRDT collaborative editing (Yjs + WebSocket)
-      owner: platform-team
-      created: "2026-01-15"
-      removal_date: null  # permanent — requires explicit opt-in per deployment
-      status: beta  # alpha | beta | ga | deprecated
-
-    - name: AI__STRUCTURED_OUTPUT
-      description: Agent structured output mode (JSON schema responses)
-      owner: ai-team
-      created: "2026-02-01"
-      removal_date: "2026-04-15"  # promote to always-on after eval validation
-      status: ga
-
-    # ... all 50+ flags registered
-  ```
-- Create `scripts/flag-audit.py`:
-  ```python
-  def audit_flags(manifest_path: Path, env_example_path: Path) -> list[Warning]:
-      """Compare manifest against .env.example, check expiry dates."""
-      manifest_flags = load_yaml(manifest_path)
-      env_flags = parse_env_example(env_example_path)
-      warnings = []
-      # Flags in .env.example but not in manifest
-      for flag in env_flags - manifest_flags:
-          warnings.append(Warning(flag, "UNREGISTERED", severity="error"))
-      # Flags past removal date
-      for flag in manifest_flags:
-          if flag.removal_date and flag.removal_date < today():
-              warnings.append(Warning(flag, "PAST_REMOVAL_DATE", severity="error"))
-          elif flag.removal_date is None and age(flag) > 180:
-              warnings.append(Warning(flag, "NO_REMOVAL_PLAN_180D", severity="error"))
-          elif flag.removal_date is None and age(flag) > 90:
-              warnings.append(Warning(flag, "NO_REMOVAL_PLAN_90D", severity="warn"))
-      return warnings
-  ```
-- Add `make flag-audit` Makefile target
-- Add to `make check` gate (warn-only initially, promote to fail after backlog cleared)
-
-**Security:** No runtime changes. Manifest is documentation + CI enforcement only.
-**Verify:** All 50+ flags registered in `feature-flags.yaml`. `make flag-audit` runs clean (no unregistered flags). Simulated stale flag (>90 days, no removal) triggers warning. Simulated expired flag triggers error. `make check` includes flag audit.
+~~44.1–44.3 archived to `docs/TODO-completed.md`~~
 
 ---
 
@@ -2053,256 +1891,23 @@ Current converter dumps column content as raw text — each content type needs i
 
 ---
 
-### 44.5 Operational Runbooks `[Documentation]`
-
-**What:** Create `docs/operations/` with 4 runbooks: deployment checklist, disaster recovery, incident response, and performance tuning. Each runbook is a step-by-step procedure with commands, expected outputs, and decision points.
-**Why:** The codebase has excellent developer documentation (11 ADRs, CLAUDE.md, architecture deep-dive) but zero operational documentation. When production breaks at 2 AM, the responder needs "run this command, check this metric, if X then Y" — not architectural diagrams. Deployment currently relies on tribal knowledge. DB backup/restore, Redis persistence strategy, and secret rotation procedures are undocumented.
-**Implementation:**
-- Create `docs/operations/deployment-checklist.md`:
-  - Pre-deploy: `make check-full` passes, migration lint clean, no stale feature flags
-  - Database: `uv run alembic upgrade head` — verify migration count matches expected
-  - Services: rolling restart order (db → redis → app → maizzle-builder → cms → nginx)
-  - Post-deploy: health check endpoints (`/health`, `/health/db`, `/health/redis`), smoke test critical paths
-  - Rollback: `uv run alembic downgrade -1`, redeploy previous image tag
-- Create `docs/operations/disaster-recovery.md`:
-  - PostgreSQL: `pg_dump`/`pg_restore` procedures, WAL archiving setup, point-in-time recovery
-  - Redis: RDB snapshot schedule, AOF persistence config, cache warm-up after restore
-  - Application state: what's in Redis (sessions, rate limits, feature flags, pub/sub) vs what's in PostgreSQL (everything else)
-  - Recovery time objectives: DB <1 hour, Redis <5 minutes (cache rebuild), application <10 minutes
-- Create `docs/operations/incident-response.md`:
-  - Severity levels: S1 (platform down), S2 (feature broken), S3 (degraded performance), S4 (cosmetic)
-  - Triage steps: check health endpoints → check Docker service status → check recent deploys → check error logs
-  - Common incidents: migration failure (rollback procedure), Redis OOM (eviction policy check), AI provider outage (fallback chain verification), eval pipeline disagreement (manual override)
-  - Post-incident: write brief in `docs/incidents/`, update relevant runbook
-- Create `docs/operations/performance-tuning.md`:
-  - PostgreSQL: `DATABASE__POOL_SIZE` sizing (2× CPU cores), `work_mem`, `shared_buffers`, connection monitoring
-  - Redis: `maxmemory-policy`, key eviction monitoring, pub/sub channel limits
-  - Gunicorn: worker count (`2× CPU + 1`), timeout, keepalive
-  - Uvicorn: `--workers`, `--limit-concurrency`, `--backlog`
-  - Application: rate limit tuning (`RATE_LIMIT__*`), AI token budget (`AI__TOKEN_BUDGET_*`)
-
-**Security:** Runbooks reference health endpoints and configuration variables — no secrets, passwords, or API keys in documentation. Incident response references log locations, not log contents.
-**Verify:** 4 runbooks in `docs/operations/`. Each has step-by-step commands with expected outputs. Deployment checklist covers pre-deploy, deploy, post-deploy, rollback. DR covers PostgreSQL and Redis. Incident response covers 4 severity levels. Performance tuning covers all 4 infrastructure layers.
-
----
-
-### 44.6 Migration Squash Strategy & Tooling `[Backend, Database]`
-
-**What:** Document a migration squash cadence and add `make db-squash` target that creates a clean baseline migration from the current schema, archiving old migrations. Run after major phase completions (every ~5 phases).
-**Why:** 47 Alembic migrations and growing. Long-running feature branches frequently conflict on the migration chain (`down_revision` pointer). Squashing to a baseline reduces conflict surface — instead of 47 files with a linear chain, new features branch from a single baseline. Alembic supports this via `alembic merge` + manual consolidation.
-**Implementation:**
-- Add `scripts/squash-migrations.sh`:
-  ```bash
-  #!/bin/bash
-  # 1. Verify clean DB state
-  uv run alembic check
-  # 2. Dump current schema as baseline
-  pg_dump --schema-only --no-owner --no-privileges $DATABASE_URL > alembic/baseline_schema.sql
-  # 3. Archive old migrations
-  mkdir -p alembic/archive/$(date +%Y%m%d)
-  mv alembic/versions/*.py alembic/archive/$(date +%Y%m%d)/
-  # 4. Create baseline migration
-  uv run alembic revision --autogenerate -m "baseline_squash_$(date +%Y%m%d)"
-  # 5. Stamp DB with new head (skip running migration — schema already matches)
-  uv run alembic stamp head
-  echo "Squash complete. Verify with: uv run alembic check"
-  ```
-- Add `make db-squash` Makefile target (requires confirmation prompt — destructive operation)
-- Document cadence in `alembic/CLAUDE.md`:
-  - Squash after every 5th phase completion (current: Phase 43 → squash candidate)
-  - Never squash during active feature branches — coordinate with team
-  - Archive preserves git-blame history for old migrations
-  - Post-squash: all active branches must rebase onto new baseline
-
-**Security:** Schema dump excludes ownership and privileges. Archived migrations retained in `alembic/archive/` for audit trail. Squash script requires explicit confirmation.
-**Verify:** `make db-squash` creates single baseline migration. `uv run alembic check` passes after squash. `uv run alembic upgrade head` on fresh DB creates identical schema to pre-squash. Archived migrations in `alembic/archive/`. `alembic/CLAUDE.md` documents cadence.
-
----
-
-### 44.7 CRDT Collaboration Test Coverage `[Backend, Testing]`
-
-**What:** Add unit and property-based tests for the CRDT collaborative editing layer (`app/streaming/`). Cover concurrent edit convergence, WebSocket reconnection, conflict resolution, and document state synchronization. Wire into `make test` behind `COLLAB__ENABLED` feature flag check.
-**Why:** The CRDT layer (Yjs + pycrdt + pycrdt-websocket) is feature-flagged off and untested in CI. Before shipping collaborative editing, convergence properties must be validated — two clients editing the same document must converge to identical state regardless of message ordering. Without tests, subtle sync bugs (lost characters, duplicate paragraphs, cursor jumps) will surface in production where debugging is expensive.
-**Implementation:**
-- Create `app/streaming/tests/test_crdt_convergence.py`:
-  ```python
-  @pytest.mark.collab
-  class TestCRDTConvergence:
-      async def test_two_clients_converge(self):
-          """Two clients applying concurrent edits reach identical state."""
-          doc1, doc2 = YDoc(), YDoc()
-          # Client 1 inserts "hello" at position 0
-          # Client 2 inserts "world" at position 0
-          # After sync: both docs contain both words in deterministic order
-
-      async def test_offline_reconnection(self):
-          """Client applies edits offline, reconnects, state converges."""
-
-      async def test_concurrent_delete_and_insert(self):
-          """One client deletes, another inserts at same position — no data loss."""
-  ```
-- Create `app/streaming/tests/test_crdt_properties.py` (Hypothesis):
-  ```python
-  @given(
-      ops1=st.lists(st.tuples(st.sampled_from(["insert", "delete"]), st.integers(0, 100), st.text(max_size=10))),
-      ops2=st.lists(st.tuples(st.sampled_from(["insert", "delete"]), st.integers(0, 100), st.text(max_size=10))),
-  )
-  def test_convergence_property(ops1, ops2):
-      """Any sequence of concurrent operations converges to identical state."""
-      doc1, doc2 = apply_ops(ops1), apply_ops(ops2)
-      sync(doc1, doc2)
-      assert doc1.get_state() == doc2.get_state()
-  ```
-- Add `make test-collab` Makefile target: `uv run pytest -m collab`
-- Add `collab` marker to `pyproject.toml` pytest markers
-- WebSocket integration test: spin up `y-websocket` server, connect 2 clients, verify round-trip
-
-**Security:** Tests use local in-memory Yjs documents. No network calls. No user data.
-**Verify:** 10+ convergence unit tests. Hypothesis runs 200+ random operation sequences. All converge. WebSocket integration test connects 2 clients through server. `make test-collab` runs in <30 seconds. `make test` skips collab tests unless `COLLAB__ENABLED=true`. 15+ tests.
-
----
-
-### 44.8 SDK Drift Detection in CI `[CI/CD, Frontend]`
-
-**What:** Add a `sdk-check` job to CI that regenerates the TypeScript SDK from the OpenAPI spec snapshot and diffs against the committed SDK. Fails if the committed SDK is stale (API changed without regenerating the client).
-**Why:** `make sdk` generates `cms/packages/sdk/` from the backend's OpenAPI spec — but it requires a running backend (`make dev-be`). Developers who change API routes may forget to regenerate the SDK. The frontend then uses stale types, and type errors surface late (or not at all if the shapes happen to overlap). A CI check catches this drift at PR time.
-**Implementation:**
-- Add OpenAPI spec snapshot: `make sdk-snapshot` exports the spec to `cms/packages/sdk/openapi-snapshot.json` (no running backend needed — FastAPI generates spec at import time)
-  ```python
-  # scripts/export-openapi.py
-  from app.main import app
-  import json
-  spec = app.openapi()
-  with open("cms/packages/sdk/openapi-snapshot.json", "w") as f:
-      json.dump(spec, f, indent=2)
-  ```
-- Modify `make sdk-local` to use snapshot: `openapi-typescript cms/packages/sdk/openapi-snapshot.json -o cms/packages/sdk/src/types.ts`
-- CI job in `.github/workflows/ci.yml`:
-  ```yaml
-  sdk-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - uses: pnpm/action-setup@v4
-      - run: uv sync && uv run python scripts/export-openapi.py
-      - run: cd cms && pnpm install --frozen-lockfile && pnpm run sdk:generate
-      - run: git diff --exit-code cms/packages/sdk/
-  ```
-- Add `make sdk-check` Makefile target for local validation
-
-**Security:** OpenAPI spec export runs at import time — no database or external service required. No secrets needed in CI job.
-**Verify:** `make sdk-check` passes when SDK is up to date. Changing a route schema without regenerating SDK → `sdk-check` fails with diff. `scripts/export-openapi.py` generates valid OpenAPI 3.1 JSON. CI job runs in <2 minutes. Existing `make check` unaffected.
-
----
-
-### 44.9 Observability Stack for Local Development `[DevOps]`
-
-**What:** Add a `docker-compose.observability.yml` override profile with Grafana + Loki for log aggregation and Prometheus for basic metrics. Structured logs from all services (app, cms, maizzle-builder, mock-esp) flow into Loki, queryable via Grafana dashboards.
-**Why:** Debugging multi-service issues (app ↔ maizzle-builder ↔ mock-esp ↔ cms) currently requires tailing 4+ log streams simultaneously (`make docker-logs` dumps everything interleaved). `structlog` already emits JSON — Loki ingests it natively. A pre-configured Grafana dashboard with panels for error rates, request latency, and agent eval durations makes local debugging 10× faster. This also serves as a template for production observability.
-**Implementation:**
-- Create `docker-compose.observability.yml`:
-  ```yaml
-  services:
-    loki:
-      image: grafana/loki:3.4
-      ports: ['3100:3100']
-      volumes: ['./observability/loki-config.yaml:/etc/loki/local-config.yaml']
-      command: -config.file=/etc/loki/local-config.yaml
-
-    promtail:
-      image: grafana/promtail:3.4
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock:ro
-        - ./observability/promtail-config.yaml:/etc/promtail/config.yml
-      command: -config.file=/etc/promtail/config.yml
-
-    grafana:
-      image: grafana/grafana:11.6
-      ports: ['3333:3000']
-      volumes:
-        - ./observability/dashboards/:/var/lib/grafana/dashboards/
-        - ./observability/provisioning/:/etc/grafana/provisioning/
-      environment:
-        GF_AUTH_ANONYMOUS_ENABLED: 'true'
-        GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-  ```
-- Create `observability/` directory with:
-  - `loki-config.yaml` — local storage, 7-day retention
-  - `promtail-config.yaml` — scrape Docker container logs, parse JSON (structlog format)
-  - `dashboards/email-hub.json` — pre-built Grafana dashboard: error rate, request latency (p50/p95/p99), agent eval duration, active WebSocket connections
-  - `provisioning/` — auto-provision Loki datasource + dashboard
-- Add `make dev-observe` target: `docker compose -f docker-compose.yml -f docker-compose.observability.yml up`
-- Add `make grafana` target: opens `http://localhost:3333` in browser
-
-**Security:** Grafana runs with anonymous admin access (local dev only). No authentication — NOT for production. Loki stores logs locally with 7-day retention. No external data transmission.
-**Verify:** `make dev-observe` starts all services + observability stack. Grafana accessible at `localhost:3333`. Loki datasource auto-provisioned. Dashboard shows log panels for app, cms, maizzle-builder. `structlog` JSON parsed into Loki labels (`level`, `logger`, `event`). Error rate panel shows non-zero data after intentional 500. `make dev` (without observability) still works — no dependency on Loki.
-
----
-
-### 44.10 Contributing Guide & New-Feature Scaffolding `[Documentation]`
-
-**What:** Create `CONTRIBUTING.md` with 3 guided workflows: adding a new feature slice, adding a new AI agent, and adding a new ESP connector. Include a `make scaffold-feature` target that generates boilerplate for a new vertical slice.
-**Why:** 30+ backend modules, 50+ make targets, 9 AI agents, 11 ESP connectors — but no contributor guide. New developers face a steep onboarding cliff: where do I put my code? How do I register routes? What tests are expected? How do I add a judge? The vertical slice pattern is consistent but implicit. Making it explicit with a guide and scaffolding tool reduces onboarding from days to hours.
-**Implementation:**
-- Create `CONTRIBUTING.md`:
-  - **Adding a feature slice:**
-    1. Create `app/{feature}/` with `__init__.py`, `models.py`, `schemas.py`, `service.py`, `routes.py`, `tests/`
-    2. Register routes in `app/routes/__init__.py`
-    3. Add Alembic migration: `make db-revision m="add {feature} tables"`
-    4. Add tests: unit tests in `app/{feature}/tests/`, integration marker for DB tests
-    5. Update `app/CLAUDE.md` with module description
-  - **Adding an AI agent:**
-    1. Create `app/ai/agents/{agent_name}/` with `service.py`, `SKILL.md`
-    2. Create `app/ai/agents/evals/judges/{agent_name}.py` with 5 evaluation criteria
-    3. Add test cases in `app/ai/agents/evals/test_cases/{agent_name}/`
-    4. Register in agent registry (`app/ai/agents/__init__.py`)
-    5. Add golden reference templates if agent evaluates HTML
-    6. Run `make eval-golden` to validate judge configuration
-  - **Adding an ESP connector:**
-    1. Create `app/connectors/{esp_name}/` implementing `ESPAdapter` protocol
-    2. Add mock endpoint in `services/mock-esp/`
-    3. Add ESP-specific token templates to golden references
-    4. Register in connector registry (`app/connectors/__init__.py`)
-    5. Add integration tests with mock ESP
-- Create `scripts/scaffold-feature.sh`:
-  ```bash
-  #!/bin/bash
-  FEATURE=$1
-  mkdir -p "app/$FEATURE/tests"
-  cat > "app/$FEATURE/__init__.py" << 'EOF'
-  EOF
-  cat > "app/$FEATURE/models.py" << 'EOF'
-  """$FEATURE database models."""
-  from app.shared.models import TimestampMixin
-  EOF
-  # ... schemas.py, service.py, routes.py, tests/__init__.py, tests/test_service.py
-  echo "Feature slice created: app/$FEATURE/"
-  echo "Next: register routes in app/routes/__init__.py"
-  ```
-- Add `make scaffold-feature name=<feature>` Makefile target
-
-**Security:** Scaffold script creates empty boilerplate only. No secrets, no database operations.
-**Verify:** `CONTRIBUTING.md` covers 3 workflows with step-by-step instructions. `make scaffold-feature name=billing` creates `app/billing/` with 6 files. Generated files have correct imports (`get_logger`, `TimestampMixin`, `get_db`). Guide references actual make targets and file paths. Existing `make check` passes after scaffold.
+~~44.5–44.10 archived to `docs/TODO-completed.md`~~
 
 ---
 
 ### Phase 44 — Summary
 
-| Subtask | Scope | Dependencies | Effort |
-|---------|-------|--------------|--------|
-| 44.1 E2E smoke in CI | `.github/workflows/ci.yml`, Playwright | None | ~50 LOC config + tag 5-10 tests |
-| 44.2 Renovate | `renovate.json5` | None | ~40 LOC config |
-| 44.3 Feature flag lifecycle | `feature-flags.yaml`, `scripts/flag-audit.py` | None | ~120 LOC + manifest |
-| 44.4 Adversarial eval pass | `app/ai/agents/evals/adversarial.py`, YAML fixtures | Eval pipeline (Phases 37-43) | ~250 LOC + 15 tests |
-| 44.5 Operational runbooks | `docs/operations/` (4 documents) | None | ~800 lines documentation |
-| 44.6 Migration squash | `scripts/squash-migrations.sh`, `alembic/CLAUDE.md` | None | ~60 LOC + docs |
-| 44.7 CRDT collaboration tests | `app/streaming/tests/` | None | ~200 LOC + 15 tests |
-| 44.8 SDK drift detection | `scripts/export-openapi.py`, CI job | None | ~40 LOC + CI config |
-| 44.9 Observability stack | `docker-compose.observability.yml`, `observability/` | None | ~150 LOC config + dashboard |
-| 44.10 Contributing guide | `CONTRIBUTING.md`, `scripts/scaffold-feature.sh` | None | ~300 lines docs + 50 LOC script |
+| Subtask | Scope | Status |
+|---------|-------|--------|
+| 44.1 E2E smoke in CI | `.github/workflows/ci.yml`, Playwright | DONE |
+| 44.2 Renovate | `renovate.json5` | DONE |
+| 44.3 Feature flag lifecycle | `feature-flags.yaml`, `scripts/flag-audit.py` | DONE |
+| 44.4 Adversarial eval pass | `app/ai/agents/evals/adversarial.py`, YAML fixtures | TODO |
+| 44.5 Operational runbooks | `docs/operations/` (4 documents) | DONE |
+| 44.6 Migration squash | `scripts/squash-migrations.sh`, `alembic/CLAUDE.md` | DONE |
+| 44.7 CRDT collaboration tests | `app/streaming/tests/` | DONE |
+| 44.8 SDK drift detection | `scripts/export-openapi.py`, CI job | DONE |
+| 44.9 Observability stack | `docker-compose.observability.yml`, `observability/` | DONE |
+| 44.10 Contributing guide | `CONTRIBUTING.md`, `scripts/scaffold-feature.sh` | DONE |
 
-> **Execution:** All subtasks except 44.4 are independent — maximum parallelism. 44.4 (adversarial eval) benefits from Phases 37-43 being complete (golden references + judge feedback loop) but can start with basic adversarial cases immediately. **Quick wins first:** 44.2 (Renovate, 2 hours) → 44.1 (E2E smoke, 1-2 days) → 44.3 (flag audit, half day). **Parallel track:** 44.5 + 44.6 + 44.8 + 44.10 (documentation + tooling, all independent). **Testing track:** 44.7 (CRDT) + 44.9 (observability) can run in parallel. **Critical path for adversarial eval:** 44.4 benefits from 43.6 completion but is not blocked by it.
->
-> **This phase shifts focus from code quality to operational quality.** After Phase 44, the platform has: CI-gated E2E tests, automated dependency updates, feature flag hygiene, adversarial agent stress testing, production runbooks, migration maintainability, collaboration test coverage, API/SDK consistency enforcement, local observability, and contributor onboarding. Total new code: ~1200 LOC + ~1100 lines documentation. No architectural changes — all additive.
+> 9/10 subtasks complete. Remaining: **44.4 Adversarial eval pass** — depends on eval pipeline (Phases 37-43).

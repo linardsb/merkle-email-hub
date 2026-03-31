@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-27
+> Last updated: 2026-03-31
 
 ### Completed
 
@@ -182,8 +182,13 @@
 
 | 35.3 | MJML Generation Backend in Converter | `app/design_sync/mjml_generator.py` with `generate_mjml()` (11 section-to-MJML mappers, token injection, dark mode CSS, section marker post-processing); `DesignConverterService.convert_mjml()` async method + `_prepare_conversion()` shared preamble + `_convert_mjml_from_layout()` with `MjmlCompileError` fallback; `output_format: Literal["html", "mjml"]` threaded through schemas → routes → service → import_service; sync `convert()` unchanged; 29 new tests (21 generator + 8 integration) |
 | 35.1 | MJML Compilation Service in Maizzle Sidecar | `mjml ^4.15.0` npm dependency; `services/maizzle-builder/mjml-compile.js` pure `compileMjml()` module + `mjmlVersion` export; `POST /compile-mjml` endpoint with optional PostCSS optimization via `target_clients`; `GET /health` extended with `mjml_version`; Python `MjmlCompileResult`/`MjmlError` frozen dataclasses + `DesignConverterService.compile_mjml()` async method via `httpx.AsyncClient`; `MjmlCompileError(AppError)` exception; 5 Vitest sidecar tests + 8 pytest Python tests |
+| 44.5 | Operational Runbooks | `docs/operations/` — 4 runbooks (1226 lines): `deployment-checklist.md` (pre-deploy gates via `make check-full`, migration via `safe_alembic.sh`, service startup order, health check verification, rollback procedure, env promotion); `disaster-recovery.md` (PostgreSQL backup/restore using existing `backup-db.sh`/`restore-db.sh` scripts, WAL archiving PITR setup, Redis recovery + flag restoration, state classification table, RTO targets); `incident-response.md` (S1-S4 severity levels, triage flowchart from health endpoints → docker → logs, 6 common incident playbooks with diagnosis + resolution commands, post-incident brief template); `performance-tuning.md` (PostgreSQL pool sizing + monitoring queries, Redis memory/eviction policy, Gunicorn worker tuning, rate limit + AI budget knobs, Docker resource limits). No secrets — only env var names and placeholder values |
 
 ### Recently Completed
+
+**Phase 37.5:** Complete Human Labeling with Improved Judges — 540 evaluation rows labeled using `docs/eval-labeling-tool.html`, prioritizing high-flip criteria from 37.4. Calibration validated: TPR ≥ 0.85 and TNR ≥ 0.80 per judge criterion. Phase 37 (Golden Reference Library) now fully complete — unblocks Phase 43 (Judge Feedback Loop).
+
+**Phase 37.4:** Re-run Eval Pipeline Against File-Based Component Output — `traces/pre_file_based/` baseline backup; 7/9 agents re-traced + 8 agents re-judged against 40.7 file-based HTML; `scripts/eval-compare-verdicts.py` verdict comparison with 21/45 criteria flagged >20% flip rate; `make eval-rejudge` + `make eval-compare` targets; 14 tests. Knowledge deferred (auth errors), innovation deferred (post-Phase 42).
 
 **Phase 37.3:** Wire Golden References into Judge Prompts — `format_golden_section()` helper in `app/ai/agents/evals/judges/base.py` with `_GOLDEN_TOKEN_BUDGET` (2000 tokens), dedup across criteria, `framing` param (standard/inverted), `name_filter` param (platform/category conditional). Wired into all 7 HTML-evaluating judges: Scaffolder (4 criteria), Dark Mode (3 criteria), Outlook Fixer (4 criteria), Accessibility (4 criteria), Personalisation (3 criteria, platform-conditional — only matching ESP template injected), Code Reviewer (2 criteria, inverted framing — "do NOT flag as issues"), Innovation (2 criteria, category-conditional — matching technique template only). Lazy import avoids circular deps. 22 tests in `test_golden_prompt_injection.py`.
 
@@ -235,7 +240,7 @@
 
 ### Up Next
 
-**Phase 37.4–37.5** (Golden Reference Library — re-run judge pipeline to measure calibration improvement, complete human labeling with improved judges). See `TODO.md` Phase 37 for details.
+**Phase 43** (Judge Feedback Loop — auto-generate correction examples from calibration disagreements, inject into judge prompts, judge skill files, Knowledge agent integration, calibration regression gate). Unblocked now that Phase 37 is complete. See `TODO.md` Phase 43 for details.
 
 **Phase 35.4–35.11** (Next-Gen Design-to-Email Pipeline — remaining 6 subtasks: MJML section templates, AI conversion learning loop, W3C Design Tokens + caniemail.com, Figma webhooks, incremental conversion, tests). See `TODO.md` for details.
 
