@@ -5467,7 +5467,33 @@ Define an email development OWL ontology (email clients, CSS properties, renderi
 
 ---
 
-## Phase 38 — Design-to-Email Pipeline Fidelity Fix (In Progress)
+## Phase 37 — Golden Reference Library for AI Judge Calibration (Complete)
+
+> 14 golden reference templates wired into all 9 AI judge prompts as few-shot examples. YAML-indexed loader with criterion mapping, 2000-token budget cap per judge call. Full eval re-run against file-based component output (40.7), 540 human-labeled rows, calibration validated TPR ≥ 0.85 / TNR ≥ 0.80.
+
+### ~~37.1 Expand Golden Component Library `[Templates]`~~ DONE
+
+14 new golden reference templates in `email-templates/components/golden-references/`: VML backgrounds, rounded button variants, nested MSO conditionals, complex hybrid layout, dark mode complete, accessibility compliant, 4 ESP token templates (Braze Liquid, SFMC AMPscript, Adobe Campaign, Klaviyo Django), 4 innovation technique templates (CSS carousel, accordion dropdown, AMP email, kinetic hover). Each annotated with `<!-- golden-ref: criteria=[...], agents=[...] -->` frontmatter.
+
+### ~~37.2 Build Golden Reference Loader & Criterion Mapping `[Backend]`~~ DONE
+
+`app/ai/agents/evals/golden_references.py` — `GoldenReference` frozen dataclass, `load_golden_references()` with `@lru_cache`, `get_references_for_criterion()` (max 3 snippets), `get_references_for_agent()`. `email-templates/components/golden-references/index.yaml` registry. 80-line snippet cap, ~2000 token budget per judge call. 18 tests.
+
+### ~~37.3 Wire Golden References into Judge Prompts `[Backend, Evals]`~~ DONE
+
+All 7 HTML-evaluating judges inject golden reference snippets via `build_prompt()`. Platform-conditional filtering (Personalisation: ESP-specific), category-conditional (Innovation: technique-specific), inverted framing (Code Reviewer: "do NOT flag these"). Content/Knowledge/Visual QA excluded (text-only criteria). 22 tests.
+
+### ~~37.4 Re-run Eval Pipeline Against File-Based Component Output `[Evals]`~~ DONE
+
+Re-generated agent traces and re-ran judges against file-based component output (40.7). Backed up inline-seed verdicts to `traces/pre_file_based/`. ~2,700 LLM judge calls. Verdict comparison via `scripts/eval-compare-verdicts.py` — 21/45 criteria flagged >20% flip rate. Analysis and regression check passed.
+
+### ~~37.5 Complete Human Labeling with Improved Judges `[Manual + Evals]`~~ DONE
+
+540 rows labeled via `docs/eval-labeling-tool.html`. Prioritized high-flip criteria from 37.4. Calibration validated: TPR ≥ 0.85 and TNR ≥ 0.80 per judge criterion. QA check agreement ≥ 75%.
+
+---
+
+## Phase 38 — Design-to-Email Pipeline Fidelity Fix (Complete)
 
 ### ~~38.1 Figma Parser Data Fidelity Fixes `[Backend]`~~ DONE
 
@@ -5630,7 +5656,13 @@ Fixed 11 bugs in `component_matcher.py`, `component_renderer.py`, `figma/layout_
 
 ---
 
-## Phase 39 — Pipeline Hardening, Figma Enrichment & Quality Infrastructure (In Progress)
+### 38.8 Image Alt Text, Font Family Preservation & Background Images `[Backend]` — DONE
+
+Fixed 3 cross-cutting data fidelity issues: (1) `_meaningful_alt()` generates contextual alt text from node names, adjacent headings, or section type — eliminates all `alt="mj-image"` output, (2) `_font_stack()` preserves Figma-specified font families with progressive fallback instead of hardcoded Arial, (3) background images render via CSS `background-image` + VML `v:fill` for Outlook. Alt text via `html.escape()`, background URLs validated (http/https only), font names sanitized. 12 new tests.
+
+---
+
+## Phase 39 — Pipeline Hardening, Figma Enrichment & Quality Infrastructure (Complete)
 
 ### 39.5 Custom Lint Rules for Pipeline Anti-Patterns `[Backend]` — Completed 2026-03-28
 
@@ -5746,6 +5778,24 @@ Fixed 11 bugs in `component_matcher.py`, `component_renderer.py`, `figma/layout_
 
 ---
 
+### ~~39.4 Automated Quality Contracts `[Backend]`~~ DONE
+
+`app/design_sync/quality_contracts.py` — `QualityWarning` dataclass + 3 pure sync check functions + `run_quality_contracts()` orchestrator. **Contrast:** `check_contrast()` parses inline CSS, walks ancestors for bg, computes WCAG 2.1 ratio, warns if <4.5:1 normal or <3.0:1 large text. **Completeness:** `check_completeness()` validates section/button counts. **Placeholders:** `check_placeholders()` detects placeholder text. `ConversionResult.quality_warnings` field added, wired into all 3 conversion paths. 19 tests.
+
+---
+
+### ~~39.6 Component Matcher Architectural Improvements `[Backend]`~~ DONE
+
+`_score_candidates()` replaces `_match_content()` with multi-candidate scoring — product-grid (0.95), article-card (0.9), image-gallery (0.88), image-grid (0.85), category-nav (0.7). 3 new component seeds with table-based HTML, MSO conditionals, data-slot markers. `_validate_slot_fill_rate()` warns <50% slot fills. `match_confidences: dict[int, float]` on `ConversionResult`. Column assignment uses `column_groups.column_idx`. 22 tests.
+
+---
+
+### ~~39.7 Golden Template Conformance Gate `[Backend]`~~ DONE
+
+`app/design_sync/tests/test_golden_conformance.py` — 12 conformance checks (G1 role=presentation, G2 display:block on images, G3 meaningful alt, G5 no div layout CSS, G6 MSO conditionals, G7 cellpadding/cellspacing, G10 email-safe meta, G11 MSO table reset, column class, VML fallback). 26 tests, 9 skipped (components without images). `make golden-conformance` wired into `make check` and `make check-full`. Runs in <1s.
+
+---
+
 ### ~~38.7 Column HTML Structure — `<div class="column">` Pattern~~ `[Backend]` DONE
 
 **Completed:** 2026-03-28
@@ -5767,7 +5817,7 @@ Fixed 11 bugs in `component_matcher.py`, `component_renderer.py`, `figma/layout_
 
 ---
 
-## Phase 44 — Workflow Hardening, CI Gaps & Operational Maturity (9/10 subtasks)
+## Phase 44 — Workflow Hardening, CI Gaps & Operational Maturity (9/12 subtasks)
 
 > Archived 2026-03-31. 44.4 (Adversarial eval pass) remains in TODO.md.
 
@@ -5806,5 +5856,13 @@ Fixed 11 bugs in `component_matcher.py`, `component_renderer.py`, `figma/layout_
 ### 44.10 Contributing Guide & New-Feature Scaffolding `[Documentation]` — DONE
 
 `CONTRIBUTING.md` — 3 guided workflows: feature slice with `make scaffold-feature`, AI agent, ESP connector; `scripts/scaffold-feature.sh` generates 10 boilerplate files with correct imports + auto-ruff; `make scaffold-feature name=X` target.
+
+### 40.6 Export Images Exactly As-Is — No Background Color Added `[Backend]` — DONE
+
+`ImagePlaceholder` dataclass gains `export_node_id: str | None` field. `_walk_for_images()` FRAME-wrapping-IMAGE case now records frame ID as `export_node_id` and uses frame dimensions (includes designer's background fills) instead of child IMAGE dimensions. `_collect_image_node_ids()` returns `tuple[list[str], dict[str, str]]` — prefers `export_node_id` for Figma API export calls, builds reverse mapping so URL dict keys match `data-node-id` attrs in HTML. `_build_design_context()` remaps export→display IDs. `ImagePlaceholderResponse` schema extended with `export_node_id`. New quality contract `check_image_container_bgcolor()` in `quality_contracts.py` — flags `background-color`/`bgcolor` on `<td>`/`<div>`/`<a>` containing `<img>`, wired into `run_quality_contracts()`. `validate_image_dimensions()` utility compares exported dims against Figma node bounds (1px tolerance). 16 tests in `test_image_export_fidelity.py`. 3 existing tests updated in `test_import_service.py` for tuple return. Pyright 71 (baseline), mypy 0.
+
+### 40.3 Figma Design Screenshot Capture `[Backend]` — DONE
+
+Extended `app/design_sync/diagnose/extract.py` with automatic Figma Images API screenshot capture. `_capture_design_image()` reuses `FigmaDesignSyncService.export_images()` + `download_image_bytes()` — no duplicated API logic. `_read_png_dimensions()` reads width/height from PNG IHDR chunk (no PIL dependency). `_get_scale()` reads `fidelity_figma_scale` from settings with fallback. `--no-image` CLI flag for offline/CI runs. `design_meta.json` output alongside `design.png`. `DiagnosticReport` extended with `design_image_path`, `design_image_width`, `design_image_height` fields. `manifest.yaml` extended with `design_image` flag per case. 13 tests in `test_extract_image.py` (PNG dimensions, happy path, 3 error paths, node ID conversion, CLI flags). Pyright 0 errors maintained.
 
 ---

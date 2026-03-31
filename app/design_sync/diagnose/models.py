@@ -78,3 +78,6 @@ class DiagnosticReport:
     final_html_preview: str  # First 5000 chars
     final_html_length: int
     images: list[dict[str, str]] = field(default_factory=list[dict[str, str]])
+    design_image_path: str | None = None
+    design_image_width: int | None = None
+    design_image_height: int | None = None

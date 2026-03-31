@@ -1,0 +1,46 @@
+# Snapshot regression test manifest.
+# Each case is a directory under data/debug/ containing:
+#   - structure.json   (DesignFileStructure — node tree)
+#   - tokens.json      (ExtractedTokens — colors, typography, spacing)
+#   - expected.html    (Visually verified correct converter output)
+#   - report.json      (Optional — diagnostic report for reference)
+#   - raw_figma.json   (Optional — original Figma API response)
+#
+# To add a new case:
+#   1. Run the diagnostic extract:  python -m app.design_sync.diagnose.extract --connection-id <N>
+#   2. Capture current output:      make snapshot-capture CASE=<N>
+#   3. Open data/debug/<N>/expected.html in a browser and visually verify
+#   4. Add the case to the list below
+#   5. Run `make snapshot-test` to confirm it passes
+#
+# When fixing converter bugs:
+#   - All cases below MUST pass before merging
+#   - If a fix intentionally changes output, re-verify visually and update expected.html
+
+cases:
+  - id: "5"
+    name: "MAAP x KASK — 13-section email (hero, products, nav, dark footer)"
+    source: "The Ultimate Email Design System (Community)"
+    figma_node: "2833-1623"
+    sections: 9  # converter current; target is 13 (see reference HTML)
+    target_sections: 13
+    status: active
+    design_image: false
+
+  - id: "6"
+    name: "Starbucks Pumpkin Spice — 9-section promotional (hero, heading, CTA, 2-col, 4-col nav, social, footer)"
+    source: "The Ultimate Email Design System (Community)"
+    figma_node: "2833-1424"
+    sections: 5  # converter current; target is 9 (see reference HTML)
+    target_sections: 9
+    status: active
+    design_image: false
+
+  - id: "10"
+    name: "Mammut Duvet Day — 18-section campaign (multi-hero, editorial, product grid, nav, footer)"
+    source: "The Ultimate Email Design System (Community)"
+    figma_node: "2833-1135"
+    sections: 12  # converter current; target is 18 (see reference HTML)
+    target_sections: 18
+    status: active
+    design_image: false

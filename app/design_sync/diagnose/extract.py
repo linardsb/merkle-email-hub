@@ -90,6 +90,74 @@ async def _fetch_figma_json(
         return resp.json()  # type: ignore[no-any-return]
 
 
+def _read_png_dimensions(data: bytes) -> tuple[int | None, int | None]:
+    """Read width and height from PNG IHDR chunk (no PIL needed)."""
+    import struct
+
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return None, None
+    width, height = struct.unpack(">II", data[16:24])
+    return width, height
+
+
+def _get_scale() -> float:
+    """Get Figma export scale from settings, with fallback."""
+    try:
+        from app.core.config import get_settings
+
+        return get_settings().design_sync.fidelity_figma_scale
+    except Exception:
+        return 2.0
+
+
+async def _capture_design_image(
+    file_key: str,
+    token: str,
+    node_id: str,
+    output_dir: Path,
+) -> tuple[Path | None, int | None, int | None]:
+    """Capture a PNG screenshot of the Figma design node.
+
+    Uses the Figma Images API to render the frame at the configured scale.
+    Returns (image_path, width, height) or (None, None, None) on failure.
+    """
+    from app.design_sync.figma.service import FigmaDesignSyncService
+
+    figma_node_id = node_id.replace("-", ":")
+    service = FigmaDesignSyncService()
+    scale = _get_scale()
+
+    try:
+        exported = await service.export_images(
+            file_key,
+            token,
+            [figma_node_id],
+            format="png",
+            scale=scale,
+        )
+        if not exported:
+            logger.warning("diagnose.image_capture_empty", node_id=node_id)
+            return None, None, None
+
+        image_bytes = await service.download_image_bytes(exported[0])
+    except Exception:
+        logger.warning("diagnose.image_capture_failed", node_id=node_id, exc_info=True)
+        return None, None, None
+
+    image_path = output_dir / "design.png"
+    image_path.write_bytes(image_bytes)
+
+    width, height = _read_png_dimensions(image_bytes)
+    logger.info(
+        "diagnose.image_captured",
+        path=str(image_path),
+        size_bytes=len(image_bytes),
+        width=width,
+        height=height,
+    )
+    return image_path, width, height
+
+
 async def _get_connection_creds(connection_id: int) -> tuple[str, str]:
     """Get file_key + decrypted token from a DesignConnection in the DB."""
     from app.core.database import get_db_context
@@ -157,6 +225,7 @@ async def extract(
     output_dir: Path = _DEFAULT_OUTPUT,
     label: str | None = None,
     run_diagnostics: bool = True,
+    capture_image: bool = True,
 ) -> Path:
     """Extract Figma data and optionally run diagnostics."""
     from app.design_sync.diagnose.report import (
@@ -233,6 +302,19 @@ async def extract(
     tokens_path = out / "tokens.json"
     dump_tokens_to_json(tokens, tokens_path)
     logger.info(f"  Saved tokens: {tokens_path}")
+
+    # 3b. Capture design screenshot via Figma Images API
+    if capture_image and node_id:
+        img_path, img_w, img_h = await _capture_design_image(file_key, token, node_id, out)
+        if img_path:
+            logger.info(f"  Design image:    {img_path} ({img_w}x{img_h})")
+            meta = {
+                "design_image": True,
+                "width": img_w,
+                "height": img_h,
+                "scale": _get_scale(),
+            }
+            (out / "design_meta.json").write_text(json.dumps(meta, indent=2))
 
     # 4. Print tree summary
     _print_tree_summary(structure)
@@ -346,6 +428,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip running the diagnostic pipeline (just dump raw + parsed JSON)",
     )
+    parser.add_argument(
+        "--no-image",
+        action="store_true",
+        help="Skip capturing a design screenshot from Figma Images API",
+    )
     return parser
 
 
@@ -376,6 +463,7 @@ async def _async_main(argv: list[str] | None = None) -> None:
         output_dir=args.output_dir,
         label=label,
         run_diagnostics=not args.no_diagnostics,
+        capture_image=not args.no_image,
     )
 
 
