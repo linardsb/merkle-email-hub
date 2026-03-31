@@ -5857,13 +5857,17 @@ Fixed 3 cross-cutting data fidelity issues: (1) `_meaningful_alt()` generates co
 
 `CONTRIBUTING.md` — 3 guided workflows: feature slice with `make scaffold-feature`, AI agent, ESP connector; `scripts/scaffold-feature.sh` generates 10 boilerplate files with correct imports + auto-ruff; `make scaffold-feature name=X` target.
 
-### 40.2 Collect and Verify Real Design Cases `[Backend]` — DONE
-
-3 active snapshot test cases extracted from Figma file `VUlWjZGAEVZr3mK1EawsYR` (The Ultimate Email Design System — Community). Case 5: MAAP x KASK (node `2833-1623`, 9 converter sections vs 13 target). Case 6: Starbucks Pumpkin Spice (node `2833-1424`, 5 vs 9 target). Case 10: Mammut Duvet Day (node `2833-1135`, 12 vs 18 target). Approach B: `expected.html` = current converter output for regression protection; hand-built references in `email-templates/training_HTML/for_converter_engine/` are convergence targets. `@pytest.mark.snapshot` added to `TestSnapshotRegression` + `TestSnapshotSectionCount` — isolated from `make test` via Makefile filter, run explicitly via `make snapshot-test`. `converter-gap-analysis.md` documents 5 gap categories (section classification, shell/dark mode, VML buttons, token injection, slot filling). `scripts/extract-snapshot-cases.py` reusable Figma extractor with token reuse from case 5. `manifest.yaml` updated with `target_sections` field per case. `pyproject.toml` registers `snapshot` marker. 9/9 snapshot tests pass.
-
 ### 40.6 Export Images Exactly As-Is — No Background Color Added `[Backend]` — DONE
 
 `ImagePlaceholder` dataclass gains `export_node_id: str | None` field. `_walk_for_images()` FRAME-wrapping-IMAGE case now records frame ID as `export_node_id` and uses frame dimensions (includes designer's background fills) instead of child IMAGE dimensions. `_collect_image_node_ids()` returns `tuple[list[str], dict[str, str]]` — prefers `export_node_id` for Figma API export calls, builds reverse mapping so URL dict keys match `data-node-id` attrs in HTML. `_build_design_context()` remaps export→display IDs. `ImagePlaceholderResponse` schema extended with `export_node_id`. New quality contract `check_image_container_bgcolor()` in `quality_contracts.py` — flags `background-color`/`bgcolor` on `<td>`/`<div>`/`<a>` containing `<img>`, wired into `run_quality_contracts()`. `validate_image_dimensions()` utility compares exported dims against Figma node bounds (1px tolerance). 16 tests in `test_image_export_fidelity.py`. 3 existing tests updated in `test_import_service.py` for tuple return. Pyright 71 (baseline), mypy 0.
+
+### 40.4 Visual Regression: Playwright HTML Rendering + Pixel Diff `[Backend]` — DONE
+
+`app/design_sync/tests/test_snapshot_visual.py` — two test classes: `TestSnapshotVisualRegression` (converter output → Playwright screenshot → ODiff pixel diff vs `design.png`) and `TestReferenceVisualFidelity` (hand-built reference HTML → same pipeline, establishes best-achievable fidelity baseline). `_serve_directory()` HTTP server on `127.0.0.1:0` for image loading. `_rewrite_image_paths()` redirects relative image paths to localhost server. `_diff_images()` handles dimension mismatch via Pillow resize + ODiff retry. `_save_report()` writes `visual_report.json` with mismatch percentage, pixel count, threshold. `visual_threshold: 0.95` added per case in `data/debug/manifest.yaml`. `.gitignore` updated for `rendered.png`, `diff.png`, `reference_diff.png`, `visual_report.json`, `_visual_test.html`. `make snapshot-visual` runs all `@pytest.mark.visual_regression` tests. Pyright 0 errors, mypy 0 errors.
+
+### Phase 40 — Converter Snapshot & Visual Regression Testing — COMPLETE
+
+All 7 subtasks done: 40.1 snapshot infrastructure, 40.2 real design cases (3 active), 40.3 Figma screenshot capture, 40.4 Playwright visual regression, 40.5 CI gate, 40.6 image frame export, 40.7 unified component resolution.
 
 ### 40.3 Figma Design Screenshot Capture `[Backend]` — DONE
 

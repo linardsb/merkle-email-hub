@@ -26,6 +26,7 @@ cases:
     target_sections: 13
     status: active
     design_image: false
+    visual_threshold: 0.95
 
   - id: "6"
     name: "Starbucks Pumpkin Spice — 9-section promotional (hero, heading, CTA, 2-col, 4-col nav, social, footer)"
@@ -35,6 +36,7 @@ cases:
     target_sections: 9
     status: active
     design_image: false
+    visual_threshold: 0.95
 
   - id: "10"
     name: "Mammut Duvet Day — 18-section campaign (multi-hero, editorial, product grid, nav, footer)"
@@ -44,3 +46,4 @@ cases:
     target_sections: 18
     status: active
     design_image: false
+    visual_threshold: 0.95
