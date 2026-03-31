@@ -2,7 +2,10 @@
  * Connector types — re-exported from SDK where available.
  * Frontend-only types kept locally.
  */
-export type { ExportRequest, ExportResponse } from "@email-hub/sdk";
+export type {
+  AppConnectorsSchemasExportRequest as ExportRequest,
+  AppConnectorsSchemasExportResponse as ExportResponse,
+} from "@email-hub/sdk";
 
 export type ConnectorPlatform = "braze" | "sfmc" | "adobe_campaign" | "taxi" | "raw_html";
 
