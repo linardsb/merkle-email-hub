@@ -74,6 +74,7 @@ class ImagePlaceholder:
     width: float | None = None
     height: float | None = None
     is_background: bool = False
+    export_node_id: str | None = None  # Frame node to export (includes bg fills)
 
 
 @dataclass(frozen=True)
@@ -868,19 +869,44 @@ def _walk_for_images(node: DesignNode, results: list[ImagePlaceholder]) -> None:
         and len(node.children) == 1
         and node.children[0].type == DesignNodeType.IMAGE
     ):
-        # Frame wrapping a single image
+        # Frame wrapping a single image — export the FRAME (includes bg fills)
         img = node.children[0]
         results.append(
             ImagePlaceholder(
                 node_id=img.id,
                 node_name=img.name,
-                width=img.width,
-                height=img.height,
+                width=node.width,  # Use frame dimensions (includes padding/bg)
+                height=node.height,
+                export_node_id=node.id,  # Export the frame, not just the image fill
             )
         )
     else:
         for child in node.children:
             _walk_for_images(child, results)
+
+
+def validate_image_dimensions(
+    placeholder: ImagePlaceholder,
+    exported_width: int,
+    exported_height: int,
+    scale: float = 2.0,
+) -> str | None:
+    """Return warning if exported dims don't match expected (within 1px tolerance).
+
+    Compares exported image dimensions against the Figma node's design bounds
+    (adjusted for export scale).
+    """
+    if placeholder.width is None or placeholder.height is None:
+        return None
+    expected_w = int(placeholder.width * scale)
+    expected_h = int(placeholder.height * scale)
+    if abs(exported_width - expected_w) > 1 or abs(exported_height - expected_h) > 1:
+        return (
+            f"Image {placeholder.node_id} dimension mismatch: "
+            f"exported {exported_width}\u00d7{exported_height}, "
+            f"expected {expected_w}\u00d7{expected_h} (@{scale}x)"
+        )
+    return None
 
 
 def _extract_buttons(

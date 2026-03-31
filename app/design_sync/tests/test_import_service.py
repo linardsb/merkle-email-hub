@@ -333,14 +333,17 @@ class TestDesignImportServiceOrchestrator:
         layout = MagicMock(spec=["sections"])
         img1 = MagicMock()
         img1.node_id = "1:1"
+        img1.export_node_id = None
         img2 = MagicMock()
         img2.node_id = "2:1"
+        img2.export_node_id = None
         section = MagicMock()
         section.images = [img1, img2]
         layout.sections = [section]
 
-        result = svc._collect_image_node_ids(layout)
-        assert result == ["1:1", "2:1"]
+        node_ids, mapping = svc._collect_image_node_ids(layout)
+        assert node_ids == ["1:1", "2:1"]
+        assert mapping == {}
 
     def test_collect_image_node_ids_fallback_to_section_frames(self) -> None:
         """When no IMAGE nodes exist, fall back to section frame node IDs."""
@@ -352,8 +355,9 @@ class TestDesignImportServiceOrchestrator:
         section.node_id = "frame:1"
         layout.sections = [section]
 
-        result = svc._collect_image_node_ids(layout)
-        assert result == ["frame:1"]
+        node_ids, mapping = svc._collect_image_node_ids(layout)
+        assert node_ids == ["frame:1"]
+        assert mapping == {}
 
     def test_collect_image_node_ids_appends_selected(self) -> None:
         """Selected top-level nodes are appended (deduped) for full-email renders."""
@@ -362,12 +366,14 @@ class TestDesignImportServiceOrchestrator:
         layout = MagicMock(spec=["sections"])
         img = MagicMock()
         img.node_id = "1:1"
+        img.export_node_id = None
         section = MagicMock()
         section.images = [img]
         layout.sections = [section]
 
-        result = svc._collect_image_node_ids(layout, selected_node_ids=["1:1", "top:1"])
-        assert result == ["1:1", "top:1"]  # "1:1" not duplicated
+        node_ids, mapping = svc._collect_image_node_ids(layout, selected_node_ids=["1:1", "top:1"])
+        assert node_ids == ["1:1", "top:1"]  # "1:1" not duplicated
+        assert mapping == {}
 
     def test_fill_image_urls_single(self) -> None:
         html = '<img src="" alt="Logo" data-node-id="1:2" width="200" style="display:block;" />'

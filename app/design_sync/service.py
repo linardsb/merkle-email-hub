@@ -1728,6 +1728,7 @@ def _layout_to_response(
                     node_name=img.node_name,
                     width=img.width,
                     height=img.height,
+                    export_node_id=img.export_node_id,
                 )
                 for img in s.images
             ],

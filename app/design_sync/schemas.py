@@ -485,6 +485,7 @@ class ImagePlaceholderResponse(BaseModel):
     node_name: str
     width: float | None = None
     height: float | None = None
+    export_node_id: str | None = None
 
 
 class ButtonElementResponse(BaseModel):

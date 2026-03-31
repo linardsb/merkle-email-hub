@@ -39,7 +39,7 @@ _LARGE_BOLD_PX = 14
 class QualityWarning:
     """Single quality contract violation."""
 
-    category: Literal["contrast", "completeness", "placeholder"]
+    category: Literal["contrast", "completeness", "placeholder", "image_bgcolor"]
     severity: Literal["error", "warning", "info"]
     message: str
     context: dict[str, str | int | float] = field(
@@ -235,6 +235,49 @@ def check_placeholders(html: str) -> list[QualityWarning]:
     return warnings
 
 
+def check_image_container_bgcolor(html: str) -> list[QualityWarning]:
+    """Flag background-color on elements containing <img> tags.
+
+    Images exported from Figma should be self-contained (frame background baked
+    in). Adding CSS background-color to image containers creates visual
+    mismatches.
+    """
+    warnings: list[QualityWarning] = []
+    try:
+        doc = lxml_html.document_fromstring(html)
+    except Exception:
+        return warnings
+
+    for img in doc.iter("img"):
+        parent = img.getparent()
+        if parent is None:
+            continue
+        tag = str(parent.tag).lower()
+        if tag not in ("td", "div", "a"):
+            continue
+        style = parent.get("style", "")
+        bgcolor_attr = parent.get("bgcolor", "")
+        css_match = _BG_COLOR_RE.search(style)
+        if bgcolor_attr or css_match:
+            color = bgcolor_attr or (css_match.group(1) if css_match else "")
+            warnings.append(
+                QualityWarning(
+                    category="image_bgcolor",
+                    severity="warning",
+                    message=(
+                        f"Image container <{tag}> has background-color "
+                        f"{color} — images should be self-contained"
+                    ),
+                    context={
+                        "tag": tag,
+                        "color": color,
+                        "img_src": img.get("src", "")[:80],
+                    },
+                )
+            )
+    return warnings
+
+
 def run_quality_contracts(
     html: str,
     input_section_count: int = 0,
@@ -247,4 +290,5 @@ def run_quality_contracts(
     results.extend(check_contrast(html))
     results.extend(check_completeness(html, input_section_count, input_button_count))
     results.extend(check_placeholders(html))
+    results.extend(check_image_container_bgcolor(html))
     return results

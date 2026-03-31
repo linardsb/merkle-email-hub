@@ -102,7 +102,7 @@ class DesignImportService:
 
                 # 3. Resolve image assets — prefer already-stored local files,
                 #    fall back to downloading from provider API.
-                image_node_ids = self._collect_image_node_ids(
+                image_node_ids, export_to_display = self._collect_image_node_ids(
                     layout_response,
                     selected_node_ids=design_import.selected_node_ids or None,
                 )
@@ -140,7 +140,11 @@ class DesignImportService:
 
                 # 5. Build design context
                 design_context = self._build_design_context(
-                    layout_response, asset_response, tokens, conn
+                    layout_response,
+                    asset_response,
+                    tokens,
+                    conn,
+                    export_to_display=export_to_display,
                 )
 
                 # 5.5 Design converter pre-processing (provider-agnostic)
@@ -483,8 +487,14 @@ class DesignImportService:
         self,
         layout: LayoutAnalysisResponse,
         selected_node_ids: list[str] | None = None,
-    ) -> list[str]:
+    ) -> tuple[list[str], dict[str, str]]:
         """Extract image node IDs from layout analysis sections.
+
+        Returns a tuple of (export_node_ids, export_to_display_map).
+        export_node_ids: IDs to pass to the Figma export API. Prefers
+            export_node_id (frame with background fills) over raw image node.
+        export_to_display_map: Maps export node IDs back to display node IDs
+            (used for data-node-id URL matching in HTML) when they differ.
 
         When no IMAGE nodes are detected (common at low tree depth), falls back
         to exporting each section frame as an image — Figma's export API can
@@ -492,9 +502,13 @@ class DesignImportService:
         the Scaffolder gets a full visual reference.
         """
         node_ids: list[str] = []
+        export_to_display: dict[str, str] = {}
         for section in layout.sections:
             for img in section.images:
-                node_ids.append(img.node_id)
+                export_id = img.export_node_id if img.export_node_id is not None else img.node_id
+                node_ids.append(export_id)
+                if img.export_node_id is not None and img.export_node_id != img.node_id:
+                    export_to_display[img.export_node_id] = img.node_id
 
         # Fallback: if no IMAGE nodes detected, export section frames themselves
         if not node_ids:
@@ -507,7 +521,7 @@ class DesignImportService:
                 if nid not in node_ids:
                     node_ids.append(nid)
 
-        return node_ids
+        return node_ids, export_to_display
 
     def _build_design_context(
         self,
@@ -515,12 +529,21 @@ class DesignImportService:
         asset_response: DownloadAssetsResponse | None,
         tokens: DesignTokensResponse | None,
         conn: DesignConnection,
+        *,
+        export_to_display: dict[str, str] | None = None,
     ) -> dict[str, object]:
         """Build the design context dict for the Scaffolder."""
         image_urls: dict[str, str] = {}
         if asset_response is not None:
             for asset in asset_response.assets:
-                image_urls[asset.node_id] = f"/api/v1/design-sync/assets/{conn.id}/{asset.filename}"
+                # Remap export node IDs back to display node IDs so URLs
+                # match data-node-id attributes in the converter HTML.
+                display_id = (
+                    export_to_display.get(asset.node_id, asset.node_id)
+                    if export_to_display
+                    else asset.node_id
+                )
+                image_urls[display_id] = f"/api/v1/design-sync/assets/{conn.id}/{asset.filename}"
 
         layout_summary = ", ".join(s.section_type for s in layout.sections)
 
