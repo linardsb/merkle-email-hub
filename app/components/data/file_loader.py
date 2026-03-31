@@ -105,6 +105,7 @@ def _load_manifest() -> tuple[dict[str, Any], ...]:
                 "compatibility": resolve_compatibility(entry["compatibility"]),
                 "slot_definitions": slot_definitions,
                 "default_tokens": entry.get("default_tokens"),
+                "inject_target": entry.get("inject_target", "body"),
             }
         )
 

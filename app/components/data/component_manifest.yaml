@@ -11,36 +11,98 @@ components:
     description: "Single CTA button with rounded corners and filled background."
     category: action
     compatibility: full
+    slot_definitions:
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: true
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: true
 
   - slug: button-filled
     name: Button Filled
     description: "Filled button with solid background, rounded corners, and uppercase text."
     category: action
     compatibility: full
+    slot_definitions:
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: true
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: true
 
   - slug: button-ghost
     name: Button Ghost
     description: "Outline-only ghost button with transparent background and border."
     category: action
     compatibility: full
+    slot_definitions:
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: true
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: true
 
   - slug: button-responsive
     name: Button Responsive
     description: "Filled button with rounded corners and responsive width scaling."
     category: action
     compatibility: full
+    slot_definitions:
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: true
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: true
 
   - slug: cta
     name: CTA
     description: "Call-to-action section with left-aligned button in a padded container."
     category: action
     compatibility: full
+    slot_definitions:
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: true
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: true
 
   - slug: cta-pair
     name: CTA Pair
     description: "Two side-by-side CTA buttons in a padded container."
     category: action
     compatibility: full
+    slot_definitions:
+      - slot_id: primary_url
+        slot_type: cta
+        selector: "[data-slot='primary_url']"
+        required: true
+      - slot_id: primary_text
+        slot_type: body
+        selector: "[data-slot='primary_text']"
+        required: true
+      - slot_id: secondary_url
+        slot_type: cta
+        selector: "[data-slot='secondary_url']"
+        required: false
+      - slot_id: secondary_text
+        slot_type: body
+        selector: "[data-slot='secondary_text']"
+        required: false
 
   # ── Content ─────────────────────────────────────────────
   - slug: article-2
@@ -48,124 +110,479 @@ components:
     description: "Two-column article with image and text side by side (300px columns)."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: subheading
+        slot_type: text
+        selector: "[data-slot='subheading']"
+        required: false
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
 
   - slug: article-3
     name: Article 3-Column
     description: "Two-column article with side-by-side floated columns (244px each)."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
 
   - slug: article-4
     name: Article 4-Column
     description: "Two-column article variant with responsive stacking (245px columns)."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
 
   - slug: article-reverse
     name: Article Reverse
     description: "Reverse-stacked article layout with text left, image right on desktop."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: banner
     name: Banner
     description: "Full-width colored banner bar with bold text slot."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: banner_text
+        slot_type: text
+        selector: "[data-slot='banner_text']"
+        required: true
 
   - slug: editorial-1
     name: Editorial 1
     description: "Two-column editorial block with colored background, image and text."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: editorial-2
     name: Editorial 2
     description: "Two-column editorial block with colored background and image + text."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: editorial-3
     name: Editorial 3
     description: "Two-column editorial with accent background, image right, text left."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: editorial-4
     name: Editorial 4
     description: "Two-column editorial with nested colored backgrounds and reversed layout."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: editorial-5
     name: Editorial 5
     description: "Full-width editorial with desktop/mobile image swap and text overlay."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
+      - slot_id: heading
+        slot_type: text
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: heading
     name: Heading
     description: "Large heading text block (24px) with left-aligned bold title."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: heading_text
+        slot_type: headline
+        selector: "[data-slot='heading_text']"
+        required: true
 
   - slug: hero-2cta
     name: Hero 2-CTA
     description: "Hero image banner with desktop/mobile image swap and two CTA buttons."
     category: content
     compatibility: partial_samsung
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
+      - slot_id: subtext
+        slot_type: text
+        selector: "[data-slot='subtext']"
+        required: false
+      - slot_id: heading
+        slot_type: headline
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: bottom_image_url
+        slot_type: image
+        selector: "[data-slot='bottom_image_url']"
+        required: false
+      - slot_id: primary_cta_url
+        slot_type: cta
+        selector: "[data-slot='primary_cta_url']"
+        required: false
+      - slot_id: primary_cta_text
+        slot_type: body
+        selector: "[data-slot='primary_cta_text']"
+        required: false
+      - slot_id: secondary_cta_url
+        slot_type: cta
+        selector: "[data-slot='secondary_cta_url']"
+        required: false
+      - slot_id: secondary_cta_text
+        slot_type: body
+        selector: "[data-slot='secondary_cta_text']"
+        required: false
 
   - slug: hero-text
     name: Hero Text
     description: "Hero image banner with desktop/mobile image swap and text overlay below."
     category: content
     compatibility: partial_samsung
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
+      - slot_id: subtext
+        slot_type: text
+        selector: "[data-slot='subtext']"
+        required: false
+      - slot_id: heading
+        slot_type: headline
+        selector: "[data-slot='heading']"
+        required: true
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: false
+      - slot_id: bottom_image_url
+        slot_type: image
+        selector: "[data-slot='bottom_image_url']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: icon
     name: Icon
     description: "Icon + text row with small image (35px) beside descriptive content."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: icon_url
+        slot_type: image
+        selector: "[data-slot='icon_url']"
+        required: true
+      - slot_id: icon_text
+        slot_type: text
+        selector: "[data-slot='icon_text']"
+        required: true
 
   - slug: image
     name: Image
     description: "Simple inline image tag with configurable src, alt, width, and height."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
 
   - slug: image-responsive
     name: Image Responsive
     description: "Responsive image that scales to container width via responsive class."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
 
   - slug: list
     name: List
     description: "Bulleted list using table rows with colored bullet characters."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: item_1
+        slot_type: text
+        selector: "[data-slot='item_1']"
+        required: true
+      - slot_id: item_2
+        slot_type: text
+        selector: "[data-slot='item_2']"
+        required: false
+      - slot_id: item_3
+        slot_type: text
+        selector: "[data-slot='item_3']"
+        required: false
 
   - slug: paragraph
     name: Paragraph
     description: "Body text paragraph block (14px) with left alignment in a padded container."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: body_text
+        slot_type: body
+        selector: "[data-slot='body_text']"
+        required: true
 
   - slug: product-showcase
     name: Product Showcase
     description: "Product card with side-by-side image and details layout."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: main_image_url
+        slot_type: image
+        selector: "[data-slot='main_image_url']"
+        required: true
+      - slot_id: detail_image_1
+        slot_type: image
+        selector: "[data-slot='detail_image_1']"
+        required: false
+      - slot_id: detail_image_2
+        slot_type: image
+        selector: "[data-slot='detail_image_2']"
+        required: false
+      - slot_id: detail_image_3
+        slot_type: image
+        selector: "[data-slot='detail_image_3']"
+        required: false
+      - slot_id: detail_image_4
+        slot_type: image
+        selector: "[data-slot='detail_image_4']"
+        required: false
+      - slot_id: detail_image_5
+        slot_type: image
+        selector: "[data-slot='detail_image_5']"
+        required: false
 
   - slug: text
     name: Text
-    description: "Inline text style snippet with configurable font, size, color, and line-height."
+    description: "Centered text paragraph with configurable font, size, color, and line-height."
     category: content
     compatibility: full
 
   - slug: text-left
     name: Text Left
-    description: "Left-aligned light-weight text style snippet."
+    description: "Left-aligned text paragraph with light-weight font stack."
     category: content
     compatibility: full
 
@@ -174,6 +591,15 @@ components:
     description: "Styled inline text hyperlink with bold weight and configurable color."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: link_url
+        slot_type: cta
+        selector: "[data-slot='link_url']"
+        required: true
+      - slot_id: link_text
+        slot_type: text
+        selector: "[data-slot='link_text']"
+        required: true
 
   # ── Structure ───────────────────────────────────────────
   - slug: app-store
@@ -181,60 +607,142 @@ components:
     description: "Apple and Google app store download badge links with centered layout."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: apple_url
+        slot_type: cta
+        selector: "[data-slot='apple_url']"
+        required: false
+      - slot_id: google_url
+        slot_type: cta
+        selector: "[data-slot='google_url']"
+        required: false
 
   - slug: cell
     name: Cell
     description: "Generic single-cell table wrapper with configurable alignment, font, and color."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: content
+        slot_type: body
+        selector: "[data-slot='content']"
+        required: true
 
   - slug: col-gutter
     name: Column Gutter
     description: "Two-column layout with 20px gutter padding and content slots."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: col_1
+        slot_type: body
+        selector: "[data-slot='col_1']"
+        required: true
+      - slot_id: col_2
+        slot_type: body
+        selector: "[data-slot='col_2']"
+        required: true
 
   - slug: col-icon
     name: Column Icon
     description: "Two-column layout with icon-sized imagery (244px columns)."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: icon_1_url
+        slot_type: image
+        selector: "[data-slot='icon_1_url']"
+        required: true
+      - slot_id: heading_1
+        slot_type: text
+        selector: "[data-slot='heading_1']"
+        required: true
+      - slot_id: icon_2_url
+        slot_type: image
+        selector: "[data-slot='icon_2_url']"
+        required: true
+      - slot_id: heading_2
+        slot_type: text
+        selector: "[data-slot='heading_2']"
+        required: true
 
   - slug: footer
     name: Footer
     description: "Full footer with copyright, address, unsubscribe and preferences links."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: company_name
+        slot_type: text
+        selector: "[data-slot='company_name']"
+        required: false
+      - slot_id: company_address
+        slot_type: text
+        selector: "[data-slot='company_address']"
+        required: false
+      - slot_id: unsub_url
+        slot_type: cta
+        selector: "[data-slot='unsub_url']"
+        required: false
+      - slot_id: prefs_url
+        slot_type: cta
+        selector: "[data-slot='prefs_url']"
+        required: false
 
   - slug: footer-menu
     name: Footer Menu
     description: "Footer navigation menu with horizontally-spaced text links."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: menu_links
+        slot_type: body
+        selector: "[data-slot='menu_links']"
+        required: true
 
   - slug: footer-social
     name: Footer Social
     description: "Social media icon row with follow links in a centered footer section."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: social_heading
+        slot_type: text
+        selector: "[data-slot='social_heading']"
+        required: false
+      - slot_id: social_links
+        slot_type: body
+        selector: "[data-slot='social_links']"
+        required: true
 
   - slug: footer-unsub
     name: Footer Unsubscribe
     description: "Unsubscribe disclaimer text with opt-out link."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: unsub_text
+        slot_type: body
+        selector: "[data-slot='unsub_text']"
+        required: true
 
   - slug: header
     name: Header
     description: "Email header with logo image on a dark background."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: logo_url
+        slot_type: image
+        selector: "[data-slot='logo_url']"
+        required: true
 
   - slug: row
     name: Row
     description: "MSO conditional row break snippet for Outlook ghost table columns."
     category: structure
     compatibility: full
+    inject_target: structural
 
   - slug: rtl
     name: RTL Layout
@@ -247,10 +755,15 @@ components:
     description: "Generic full-width section wrapper with a single centered banner image."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: false
 
   - slug: td
     name: Table Cell
-    description: "Bare empty td cell snippet for structural use."
+    description: "Single table cell section with content slot."
     category: structure
     compatibility: full
 
@@ -260,60 +773,174 @@ components:
     description: "CSS-only expandable accordion using checkbox hack. Limited client support."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: section_1_heading
+        slot_type: text
+        selector: "[data-slot='section_1_heading']"
+        required: true
+      - slot_id: section_1_body
+        slot_type: body
+        selector: "[data-slot='section_1_body']"
+        required: true
+      - slot_id: section_2_heading
+        slot_type: text
+        selector: "[data-slot='section_2_heading']"
+        required: false
+      - slot_id: section_2_body
+        slot_type: body
+        selector: "[data-slot='section_2_body']"
+        required: false
 
   - slug: carousel
     name: Carousel
     description: "CSS-animated image carousel with non-WebKit fallback."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: image_1
+        slot_type: image
+        selector: "[data-slot='image_1']"
+        required: true
+      - slot_id: image_2
+        slot_type: image
+        selector: "[data-slot='image_2']"
+        required: false
+      - slot_id: image_3
+        slot_type: image
+        selector: "[data-slot='image_3']"
+        required: false
 
   - slug: carousel-animated
     name: Carousel Animated
     description: "Slide-effect animated carousel with Samsung/Comcast client detection."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: image_1
+        slot_type: image
+        selector: "[data-slot='image_1']"
+        required: true
+      - slot_id: image_2
+        slot_type: image
+        selector: "[data-slot='image_2']"
+        required: false
+      - slot_id: image_3
+        slot_type: image
+        selector: "[data-slot='image_3']"
+        required: false
 
   - slug: editable
     name: Editable
     description: "Snippet attribute to mark ESP-editable regions (Eloqua elq-edit)."
     category: interactive
     compatibility: full
+    inject_target: attribute
 
   - slug: hotspot
     name: Hotspot
     description: "Interactive CSS hotspot overlay with checkbox-driven show/hide and fallback."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: hotspot_1_heading
+        slot_type: text
+        selector: "[data-slot='hotspot_1_heading']"
+        required: false
+      - slot_id: hotspot_1_text
+        slot_type: body
+        selector: "[data-slot='hotspot_1_text']"
+        required: false
 
   - slug: image-swap
     name: Image Swap
     description: "CSS media-query image swap showing different images on mobile vs desktop."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: desktop_image_url
+        slot_type: image
+        selector: "[data-slot='desktop_image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
 
   - slug: nav-hamburger
     name: Nav Hamburger
     description: "Collapsible hamburger navigation menu using CSS checkbox toggle."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: logo_url
+        slot_type: image
+        selector: "[data-slot='logo_url']"
+        required: false
+      - slot_id: nav_links
+        slot_type: body
+        selector: "[data-slot='nav_links']"
+        required: true
 
   - slug: table
     name: Tabbed Content
     description: "Interactive tabbed carousel with thumbnail navigation using CSS checkbox hack."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: tab_1_image
+        slot_type: image
+        selector: "[data-slot='tab_1_image']"
+        required: true
+      - slot_id: tab_2_image
+        slot_type: image
+        selector: "[data-slot='tab_2_image']"
+        required: false
+      - slot_id: thumb_1
+        slot_type: image
+        selector: "[data-slot='thumb_1']"
+        required: false
+      - slot_id: thumb_2
+        slot_type: image
+        selector: "[data-slot='thumb_2']"
+        required: false
 
   - slug: toggle
     name: Toggle
     description: "Desktop/mobile image toggle showing different images per device via CSS show/hide."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: desktop_image_url
+        slot_type: image
+        selector: "[data-slot='desktop_image_url']"
+        required: true
+      - slot_id: mobile_image_url
+        slot_type: image
+        selector: "[data-slot='mobile_image_url']"
+        required: false
 
   - slug: video
     name: Video
     description: "HTML5 video embed with CSS progressive enhancement and image fallback."
     category: interactive
     compatibility: partial_interactive
+    slot_definitions:
+      - slot_id: video_url
+        slot_type: attr
+        selector: "[data-slot='video_url']"
+        required: true
+      - slot_id: poster_url
+        slot_type: image
+        selector: "[data-slot='poster_url']"
+        required: false
+      - slot_id: fallback_image_url
+        slot_type: image
+        selector: "[data-slot='fallback_image_url']"
+        required: false
 
   # ── Animation ───────────────────────────────────────────
   - slug: anim-band
@@ -382,6 +1009,15 @@ components:
     description: "Logo + navigation links header with MSO conditional wrapper."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: logo_url
+        slot_type: image
+        selector: "[data-slot='logo_url']"
+        required: false
+      - slot_id: nav_links
+        slot_type: body
+        selector: "[data-slot='nav_links']"
+        required: false
 
   - slug: email-footer
     name: Email Footer
@@ -462,6 +1098,31 @@ components:
     description: "Product image with title, price, description, and CTA in a bordered card."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: title
+        slot_type: headline
+        selector: "[data-slot='title']"
+        required: true
+      - slot_id: price
+        slot_type: text
+        selector: "[data-slot='price']"
+        required: false
+      - slot_id: description
+        slot_type: body
+        selector: "[data-slot='description']"
+        required: false
+      - slot_id: cta_url
+        slot_type: cta
+        selector: "[data-slot='cta_url']"
+        required: false
+      - slot_id: cta_text
+        slot_type: body
+        selector: "[data-slot='cta_text']"
+        required: false
 
   - slug: spacer
     name: Spacer
@@ -482,12 +1143,26 @@ components:
     description: "Row of social media icon links with 'Follow us' label."
     category: structure
     compatibility: full
+    slot_definitions:
+      - slot_id: social_links
+        slot_type: body
+        selector: "[data-slot='social_links']"
+        required: true
 
   - slug: image-block
     name: Image Block
     description: "Responsive image with optional caption and MSO conditional wrapper."
     category: content
     compatibility: full
+    slot_definitions:
+      - slot_id: image_url
+        slot_type: image
+        selector: "[data-slot='image_url']"
+        required: true
+      - slot_id: caption
+        slot_type: text
+        selector: "[data-slot='caption']"
+        required: false
 
   - slug: text-block
     name: Text Block
@@ -506,7 +1181,7 @@ components:
 
   - slug: divider
     name: Divider
-    description: "Horizontal line separator with MSO conditional wrapper."
+    description: "Horizontal line separator with MSO conditional wrapper and customizable style."
     category: structure
     compatibility: full
 
@@ -783,27 +1458,35 @@ components:
   # ── Utility ─────────────────────────────────────────────
   - slug: font-inline
     name: Font Inline
-    description: "Inline span snippet with configurable font size, line-height, and color."
+    description: "Inline text span in table cell with configurable font size, line-height, and color."
     category: utility
     compatibility: utility
+    slot_definitions:
+      - slot_id: content
+        slot_type: text
+        selector: "[data-slot='content']"
+        required: true
 
   - slug: font-stack
     name: Font Stack
-    description: "Safe system font-family stack declaration snippet."
+    description: "Safe system font-family stack as injectable CSS class."
     category: utility
     compatibility: utility
+    inject_target: head_style
 
   - slug: font-web
     name: Font Web
     description: "@font-face declaration for embedding a web font (Open Sans example)."
     category: utility
     compatibility: partial_outlook
+    inject_target: head_style
 
   - slug: mso-lineheight
     name: MSO Line Height
-    description: "Outlook-safe mso-line-height-rule:exactly inline style snippet."
+    description: "Outlook-safe mso-line-height-rule:exactly as injectable CSS class."
     category: utility
     compatibility: utility
+    inject_target: head_style
 
   - slug: vml-bg
     name: VML Background

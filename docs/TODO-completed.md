@@ -5766,3 +5766,45 @@ Fixed 11 bugs in `component_matcher.py`, `component_renderer.py`, `figma/layout_
 **Key deliverables:** Column wrapper matches golden components (G-REF-1). Mobile CSS `.column { display: block !important; }` now works (div responds, table didn't). Sanitizer preserves column divs. Asymmetric gutter padding. 1379 design_sync tests pass. Pyright 0 errors on target files. Security lint clean.
 
 ---
+
+## Phase 44 — Workflow Hardening, CI Gaps & Operational Maturity (9/10 subtasks)
+
+> Archived 2026-03-31. 44.4 (Adversarial eval pass) remains in TODO.md.
+
+### 44.1 E2E Smoke Tests in CI `[CI/CD, Testing]` — DONE
+
+`e2e-smoke` CI job in `.github/workflows/ci.yml` — 8 Playwright tests tagged `@smoke`, postgres+redis services, backend health check, Chromium-only, artifact upload on failure, `make e2e-smoke` target, 10-min timeout.
+
+### 44.2 Dependency Update Automation (Renovate) `[CI/CD, Security]` — DONE
+
+`renovate.json5` — Renovate Bot config with 8 package rules: security patch auto-merge, weekly Python/Node minor grouping, AI SDK isolation, Docker/GHA pinning to SHA digests, major version manual review, dev patch auto-merge, lock file maintenance.
+
+### 44.3 Feature Flag Lifecycle Management `[Backend, CI]` — DONE
+
+`feature-flags.yaml` manifest with 61 flags registered — owner, created date, removal_date/permanent_reason, status; `scripts/flag-audit.py` CI audit comparing manifest vs `.env.example` + `config.py`, warns >90d stale, errors >180d; `make flag-audit` target wired into `make check`.
+
+### 44.5 Operational Runbooks `[Documentation]` — DONE
+
+`docs/operations/` — 4 operational runbooks: deployment checklist with pre-deploy/deploy/post-deploy/rollback procedures, disaster recovery with PostgreSQL backup/restore + Redis recovery + RTO targets, incident response with S1-S4 severity levels + triage flowchart + 6 common incident playbooks, performance tuning for PostgreSQL/Redis/Gunicorn/rate limits/AI budget; 1226 lines, no secrets.
+
+### 44.6 Migration Squash Strategy & Tooling `[Backend, Database]` — DONE
+
+`scripts/squash-migrations.sh` — 7-step migration squash with confirmation prompt, pre-squash backup, `pg_dump` schema baseline, archive to `alembic/archive/YYYYMMDD/`, autogenerate single baseline migration, stamp head; `make db-squash` target; cadence documented in `alembic/CLAUDE.md`.
+
+### 44.7 CRDT Collaboration Test Coverage `[Backend, Testing]` — DONE
+
+`app/streaming/tests/test_crdt_convergence.py` — 16 deterministic convergence tests: 2-client, 3-client, offline reconnection, edge cases, sync handler integration; `test_crdt_properties.py` — 5 Hypothesis property-based tests (600+ examples): convergence, idempotency, commutativity; `conftest.py` shared helpers; `@pytest.mark.collab` marker, `make test-collab` target; 21 new tests, 5.5s.
+
+### 44.8 SDK Drift Detection in CI `[CI/CD, Frontend]` — DONE
+
+`scripts/export-openapi.py` exports OpenAPI spec at import time (no running backend). `sdk-check` CI job regenerates TypeScript SDK from snapshot and diffs against committed SDK. `make sdk-check` Makefile target for local validation.
+
+### 44.9 Observability Stack for Local Development `[DevOps]` — DONE
+
+`docker-compose.observability.yml` with Grafana + Loki + Promtail. `observability/` directory with Loki config, Promtail config, pre-built Grafana dashboard (error rate, latency p50/p95/p99, agent eval duration, WebSocket connections), auto-provisioning. `make dev-observe` and `make grafana` targets. Anonymous admin access (local dev only), 7-day retention.
+
+### 44.10 Contributing Guide & New-Feature Scaffolding `[Documentation]` — DONE
+
+`CONTRIBUTING.md` — 3 guided workflows: feature slice with `make scaffold-feature`, AI agent, ESP connector; `scripts/scaffold-feature.sh` generates 10 boilerplate files with correct imports + auto-ruff; `make scaffold-feature name=X` target.
+
+---

@@ -1,10 +1,10 @@
 <!-- Component: toggle -->
 
 <a href="{{ link_url }}">
-  <img src="{{ desktop_image || 'https://fakeimg.pl/600x400/' }}" alt="{{ alt }}" style="display: block; border: 0" border="0" class="hide" width="" height="">
+  <img data-slot="desktop_image_url" src="{{ desktop_image || 'https://fakeimg.pl/600x400/' }}" alt="{{ alt }}" style="display: block; border: 0" border="0" class="hide" width="" height="">
   <!--[if !mso]><!-->
     <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
-      <img src="{{ mobile_image || 'https://fakeimg.pl/600x400/' }}" alt="{{ alt }}" style="display: block; border: 0" border="0" class="respimg" width="" height="">
+      <img data-slot="mobile_image_url" src="{{ mobile_image || 'https://fakeimg.pl/600x400/' }}" alt="{{ alt }}" style="display: block; border: 0" border="0" class="respimg" width="" height="">
     </div>
   <!--<![endif]-->
 </a>

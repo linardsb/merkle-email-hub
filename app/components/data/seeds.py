@@ -174,6 +174,7 @@ _INLINE_SEEDS: list[dict[str, Any]] = [
             "fonts": {"body": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"},
             "font_sizes": {"base": "16px"},
         },
+        "inject_target": "body",
     },
     # Remaining inline seeds removed — all converter components now loaded
     # from file-based HTML in email-templates/components/ via the manifest.

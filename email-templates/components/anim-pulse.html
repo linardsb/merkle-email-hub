@@ -1,12 +1,28 @@
 <!-- Component: anim-pulse -->
-
+<style>
 .pulse {
   -webkit-animation: pulsate 2s linear infinite;
   -moz-animation: pulsate 2s linear infinite;
   -o-animation: pulsate 2s linear infinite;
-  }
-  @-webkit-keyframes pulsate {
-      0% {-webkit-transform: scale(1);}
-      50% {-webkit-transform: scale(0.8);}
-      100% {-webkit-transform: scale(1);}
-  }
+  animation: pulsate 2s linear infinite;
+}
+@-webkit-keyframes pulsate {
+  0% { -webkit-transform: scale(1); transform: scale(1); }
+  50% { -webkit-transform: scale(0.8); transform: scale(0.8); }
+  100% { -webkit-transform: scale(1); transform: scale(1); }
+}
+@keyframes pulsate {
+  0% { -webkit-transform: scale(1); transform: scale(1); }
+  50% { -webkit-transform: scale(0.8); transform: scale(0.8); }
+  100% { -webkit-transform: scale(1); transform: scale(1); }
+}
+</style>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td align="center" style="padding:0;">
+      <a data-slot="link" href="https://example.com" target="_blank" style="text-decoration:none;">
+        <img data-slot="image" class="pulse" src="https://fakeimg.pl/600x400/" alt="" style="display:block;max-width:100%;height:auto;" border="0" />
+      </a>
+    </td>
+  </tr>
+</table>

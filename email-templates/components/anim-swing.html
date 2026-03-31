@@ -1,61 +1,34 @@
 <!-- Component: anim-swing -->
-
+<style>
 .swing {
+  -webkit-transform-origin: top center;
+  transform-origin: top center;
   -webkit-animation: swing 2s linear infinite;
   -moz-animation: swing 2s linear infinite;
   -o-animation: swing 2s linear infinite;
-  }
-
-  @-webkit-keyframes swing {
-  20% {
-    -webkit-transform: rotate3d(0, 0, 1, 15deg);
-            transform: rotate3d(0, 0, 1, 15deg);
-  }
-
-  40% {
-    -webkit-transform: rotate3d(0, 0, 1, -10deg);
-            transform: rotate3d(0, 0, 1, -10deg);
-  }
-
-  60% {
-    -webkit-transform: rotate3d(0, 0, 1, 5deg);
-            transform: rotate3d(0, 0, 1, 5deg);
-  }
-
-  80% {
-    -webkit-transform: rotate3d(0, 0, 1, -5deg);
-            transform: rotate3d(0, 0, 1, -5deg);
-  }
-
-  100% {
-    -webkit-transform: rotate3d(0, 0, 1, 0deg);
-            transform: rotate3d(0, 0, 1, 0deg);
-  }
-  }
-
-  @keyframes swing {
-    20% {
-      -webkit-transform: rotate3d(0, 0, 1, 15deg);
-              transform: rotate3d(0, 0, 1, 15deg);
-    }
-
-    40% {
-      -webkit-transform: rotate3d(0, 0, 1, -10deg);
-              transform: rotate3d(0, 0, 1, -10deg);
-    }
-
-    60% {
-      -webkit-transform: rotate3d(0, 0, 1, 5deg);
-              transform: rotate3d(0, 0, 1, 5deg);
-    }
-
-    80% {
-      -webkit-transform: rotate3d(0, 0, 1, -5deg);
-              transform: rotate3d(0, 0, 1, -5deg);
-    }
-
-    100% {
-      -webkit-transform: rotate3d(0, 0, 1, 0deg);
-              transform: rotate3d(0, 0, 1, 0deg);
-    }
-  }
+  animation: swing 2s linear infinite;
+}
+@-webkit-keyframes swing {
+  20% { -webkit-transform: rotate3d(0, 0, 1, 15deg); transform: rotate3d(0, 0, 1, 15deg); }
+  40% { -webkit-transform: rotate3d(0, 0, 1, -10deg); transform: rotate3d(0, 0, 1, -10deg); }
+  60% { -webkit-transform: rotate3d(0, 0, 1, 5deg); transform: rotate3d(0, 0, 1, 5deg); }
+  80% { -webkit-transform: rotate3d(0, 0, 1, -5deg); transform: rotate3d(0, 0, 1, -5deg); }
+  100% { -webkit-transform: rotate3d(0, 0, 1, 0deg); transform: rotate3d(0, 0, 1, 0deg); }
+}
+@keyframes swing {
+  20% { -webkit-transform: rotate3d(0, 0, 1, 15deg); transform: rotate3d(0, 0, 1, 15deg); }
+  40% { -webkit-transform: rotate3d(0, 0, 1, -10deg); transform: rotate3d(0, 0, 1, -10deg); }
+  60% { -webkit-transform: rotate3d(0, 0, 1, 5deg); transform: rotate3d(0, 0, 1, 5deg); }
+  80% { -webkit-transform: rotate3d(0, 0, 1, -5deg); transform: rotate3d(0, 0, 1, -5deg); }
+  100% { -webkit-transform: rotate3d(0, 0, 1, 0deg); transform: rotate3d(0, 0, 1, 0deg); }
+}
+</style>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td align="center" style="padding:0;">
+      <a data-slot="link" href="https://example.com" target="_blank" style="text-decoration:none;">
+        <img data-slot="image" class="swing" src="https://fakeimg.pl/600x400/" alt="" style="display:block;max-width:100%;height:auto;" border="0" />
+      </a>
+    </td>
+  </tr>
+</table>

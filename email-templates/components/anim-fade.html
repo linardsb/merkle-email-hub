@@ -1,12 +1,28 @@
 <!-- Component: anim-fade -->
-
+<style>
 .fade {
   -webkit-animation: fadeIn 5s linear infinite;
   -moz-animation: fadeIn 5s linear infinite;
   -o-animation: fadeIn 5s linear infinite;
-  }
-  @-webkit-keyframes fadeIn {
-  0% {opacity: 0;}
-  50% {opacity: 1;}
-  100% {opacity: 0;}
-  }
+  animation: fadeIn 5s linear infinite;
+}
+@-webkit-keyframes fadeIn {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+</style>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td align="center" style="padding:0;">
+      <a data-slot="link" href="https://example.com" target="_blank" style="text-decoration:none;">
+        <img data-slot="image" class="fade" src="https://fakeimg.pl/600x400/" alt="" style="display:block;max-width:100%;height:auto;" border="0" />
+      </a>
+    </td>
+  </tr>
+</table>

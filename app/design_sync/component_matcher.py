@@ -291,6 +291,50 @@ def _build_slot_fills(
         "hero-text": _fills_hero,
         "editorial-2": _fills_article_card,
         "nav-hamburger": _fills_nav,
+        # ── Batch A: already had data-slot ──
+        "banner": _fills_text_block,
+        "col-gutter": _fills_text_block,
+        "article-reverse": _fills_article_card,
+        # ── Batch C: editorial family ──
+        "editorial-1": _fills_article_card,
+        "editorial-3": _fills_article_card,
+        "editorial-4": _fills_article_card,
+        "editorial-5": _fills_article_card,
+        # ── Batch D: article variants ──
+        "article-2": _fills_article_card,
+        "article-3": _fills_article_card,
+        "article-4": _fills_article_card,
+        # ── Batch E: hero variant ──
+        "hero-2cta": _fills_hero,
+        # ── Batch F: button/CTA components ──
+        "button": _fills_cta,
+        "button-filled": _fills_cta,
+        "button-ghost": _fills_cta,
+        "button-responsive": _fills_cta,
+        "cta": _fills_cta,
+        "cta-pair": _fills_cta,
+        # ── Batch G: content components ──
+        "heading": _fills_text_block,
+        "paragraph": _fills_text_block,
+        "icon": _fills_text_block,
+        "list": _fills_text_block,
+        "product-card": _fills_article_card,
+        "product-showcase": _fills_image_gallery,
+        # ── Batch H: footer family ──
+        "footer": _fills_footer,
+        "footer-menu": _fills_nav,
+        "footer-social": _fills_social,
+        "footer-unsub": _fills_text_block,
+        # ── Batch I: structure ──
+        "col-icon": _fills_text_block,
+        "header": _fills_logo_header,
+        "app-store": _fills_text_block,
+        "section": _fills_image_block,
+        # ── Former Tier 3 with fillable content ──
+        "image": _fills_image_block,
+        "image-responsive": _fills_image_block,
+        "text-link": _fills_cta,
+        "font-inline": _fills_text_block,
     }
     builder = builders.get(slug)
     if builder:

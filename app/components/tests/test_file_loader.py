@@ -21,6 +21,7 @@ _REQUIRED_SEED_KEYS = {
     "compatibility",
     "slot_definitions",
     "default_tokens",
+    "inject_target",
 }
 
 
@@ -235,6 +236,38 @@ def test_extract_slots_empty_html() -> None:
 
     slots = _extract_slots_from_html("<table><tr><td>No slots</td></tr></table>")
     assert slots == []
+
+
+def test_inject_target_values() -> None:
+    """inject_target is set correctly for all component classifications."""
+    from app.components.data.seeds import COMPONENT_SEEDS
+
+    by_slug = {s["slug"]: s for s in COMPONENT_SEEDS}
+
+    # Body components (default)
+    assert by_slug["text"]["inject_target"] == "body"
+    assert by_slug["text-left"]["inject_target"] == "body"
+    assert by_slug["divider"]["inject_target"] == "body"
+    assert by_slug["td"]["inject_target"] == "body"
+    assert by_slug["hero-block"]["inject_target"] == "body"
+
+    # Head style components
+    assert by_slug["font-stack"]["inject_target"] == "head_style"
+    assert by_slug["font-web"]["inject_target"] == "head_style"
+    assert by_slug["mso-lineheight"]["inject_target"] == "head_style"
+
+    # Structural
+    assert by_slug["row"]["inject_target"] == "structural"
+
+    # Attribute
+    assert by_slug["editable"]["inject_target"] == "attribute"
+
+    # All values must be one of the allowed set
+    allowed = {"body", "head_style", "structural", "attribute"}
+    for seed in COMPONENT_SEEDS:
+        assert seed["inject_target"] in allowed, (
+            f"{seed['slug']} has invalid inject_target: {seed['inject_target']}"
+        )
 
 
 def test_manifest_fallback_to_auto_slots() -> None:

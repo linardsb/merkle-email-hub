@@ -22,17 +22,17 @@ div[class^=video-fallback] { display:none!important; }
   <tr align="center">
     <td align="center" style="padding-top: 40px; padding-bottom: 40px;">
       <div class="video-wrapper" style="display:none;">
-        <video id="mob" class="resptab" width="640" height="320" controls poster="https://www.emailonacid.com/images/blog_images/Emailology/2013/html5_video/bunny_cover.jpg" src="https://www.w3schools.com/html/mov_bbb.mp4" >
+        <video id="mob" class="resptab" width="640" height="320" controls poster="https://www.emailonacid.com/images/blog_images/Emailology/2013/html5_video/bunny_cover.jpg" data-slot="video_url" src="https://www.w3schools.com/html/mov_bbb.mp4" >
           <!-- fallback 1 -->
-          <a href="##" target="_blank">
-            <img width="640" height="320" src="https://www.emailonacid.com/images/blog_images/Emailology/2013/html5_video/bunny_cover.jpg" class="respimg">
+          <a href="https://example.com/link" target="_blank">
+            <img data-slot="poster_url" width="640" height="320" src="https://www.emailonacid.com/images/blog_images/Emailology/2013/html5_video/bunny_cover.jpg" class="respimg">
           </a>
         </video>
       </div>
       <!-- fallback section -->
       <div class="video-fallback">
-        <a href="##" target="_blank">
-          <img width="640" height="320" src="https://www.emailonacid.com/images/blog_images/Emailology/2013/html5_video/bunny_cover.jpg" class="respimg">
+        <a href="https://example.com/link" target="_blank">
+          <img data-slot="fallback_image_url" width="640" height="320" src="https://www.emailonacid.com/images/blog_images/Emailology/2013/html5_video/bunny_cover.jpg" class="respimg">
         </a>
       </div>
     </td>
