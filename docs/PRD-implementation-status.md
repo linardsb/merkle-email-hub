@@ -186,6 +186,8 @@
 
 ### Recently Completed
 
+**Phase 41.3:** Text/Link Color Inversion for Dark Backgrounds — `_invert_text_colors()` in `bgcolor_propagator.py` scans inline `color:` styles after bgcolor propagation; when propagated bgcolor has WCAG relative luminance < 0.4, replaces dark text/link colors with `#ffffff`; negative lookbehind regex preserves `background-color` properties; wired into both propagation directions (image→text down, text→image up); handles VML `<center>` text, explicit link colors, `color:inherit` pass-through; `_DARK_LUMINANCE_THRESHOLD` constant; 12 new tests (10 unit + 2 integration).
+
 **Phase 37.5:** Complete Human Labeling with Improved Judges — 540 evaluation rows labeled using `docs/eval-labeling-tool.html`, prioritizing high-flip criteria from 37.4. Calibration validated: TPR ≥ 0.85 and TNR ≥ 0.80 per judge criterion. Phase 37 (Golden Reference Library) now fully complete — unblocks Phase 43 (Judge Feedback Loop).
 
 **Phase 37.4:** Re-run Eval Pipeline Against File-Based Component Output — `traces/pre_file_based/` baseline backup; 7/9 agents re-traced + 8 agents re-judged against 40.7 file-based HTML; `scripts/eval-compare-verdicts.py` verdict comparison with 21/45 criteria flagged >20% flip rate; `make eval-rejudge` + `make eval-compare` targets; 14 tests. Knowledge deferred (auth errors), innovation deferred (post-Phase 42).

@@ -10,6 +10,7 @@ from PIL import Image
 from app.design_sync.bgcolor_propagator import (
     _build_part_index,
     _inject_bgcolor,
+    _invert_text_colors,
     propagate_adjacent_bgcolor,
 )
 from app.design_sync.component_matcher import ComponentMatch
@@ -385,3 +386,128 @@ class TestBuildPartIndex:
         ]
         index = _build_part_index(matches, parts)
         assert index == {0: 0, 1: 2, 2: 4}
+
+
+# ---------------------------------------------------------------------------
+# Tests: _invert_text_colors (unit)
+# ---------------------------------------------------------------------------
+
+
+class TestInvertTextColors:
+    def test_dark_bg_inverts_dark_text(self) -> None:
+        html = '<td style="color:#000000;">Hello</td>'
+        result = _invert_text_colors(html, "#0252B5")  # lum ≈ 0.10
+        assert "color:#ffffff" in result
+
+    def test_dark_bg_preserves_light_text(self) -> None:
+        html = '<td style="color:#ffffff;">Hello</td>'
+        result = _invert_text_colors(html, "#0252B5")
+        assert "color:#ffffff" in result  # unchanged
+
+    def test_light_bg_preserves_dark_text(self) -> None:
+        html = '<td style="color:#000000;">Hello</td>'
+        result = _invert_text_colors(html, "#ffffff")  # lum = 1.0
+        assert "color:#000000" in result  # unchanged
+
+    def test_link_explicit_dark_color_inverted(self) -> None:
+        html = '<a href="#" style="color:#0066cc;">Link</a>'
+        result = _invert_text_colors(html, "#1a1a2e")  # very dark
+        assert "color:#ffffff" in result
+
+    def test_link_inherit_unchanged(self) -> None:
+        """Links with color:inherit are not touched (they inherit from td)."""
+        html = '<a href="#" style="color:inherit;">Link</a>'
+        result = _invert_text_colors(html, "#0252B5")
+        assert "color:inherit" in result
+
+    def test_multiple_elements_all_inverted(self) -> None:
+        html = '<td style="color:#333333;">Text</td><a href="#" style="color:#0066cc;">Link</a>'
+        result = _invert_text_colors(html, "#0252B5")
+        assert result.count("color:#ffffff") == 2
+
+    def test_vml_center_text_inverted(self) -> None:
+        html = '<center style="font-size:16px;color:#000000;">CTA</center>'
+        result = _invert_text_colors(html, "#0252B5")
+        assert "color:#ffffff" in result
+
+    def test_threshold_boundary(self) -> None:
+        """Dark bg (lum < 0.4) inverts; light bg (lum >= 0.4) does not."""
+        html = '<td style="color:#000000;">Text</td>'
+        result_dark = _invert_text_colors(html, "#333333")  # lum ≈ 0.03
+        result_light = _invert_text_colors(html, "#b3b3b3")  # lum ≈ 0.46
+        assert "color:#ffffff" in result_dark
+        assert "color:#000000" in result_light
+
+    def test_background_color_not_replaced(self) -> None:
+        """background-color properties must not be touched."""
+        html = '<td style="background-color:#000000;color:#000000;">X</td>'
+        result = _invert_text_colors(html, "#0252B5")
+        assert "background-color:#000000" in result
+        assert "color:#ffffff" in result
+
+    def test_short_hex_handled(self) -> None:
+        """3-char hex colors are handled correctly."""
+        html = '<td style="color:#000;">Text</td>'
+        result = _invert_text_colors(html, "#0252B5")
+        assert "color:#ffffff" in result
+
+
+# ---------------------------------------------------------------------------
+# Tests: propagation + text color inversion (integration)
+# ---------------------------------------------------------------------------
+
+
+class TestPropagationWithInversion:
+    def test_dark_propagation_inverts_text(self, tmp_path: Path) -> None:
+        """Propagated dark bgcolor also inverts dark text to white."""
+        (tmp_path / "img_1.png").write_bytes(_make_solid_png(100, 50, (2, 82, 181)))
+
+        img_section = _make_section(
+            section_type=EmailSectionType.HERO,
+            node_id="img:1",
+            images=[_image("img:1")],
+        )
+        img_match = _make_match(0, "full-width-image", img_section)
+        text_match = _make_match(1, "text-block")
+
+        text_html = (
+            '<table role="presentation" width="600"><tr>'
+            '<td style="color:#000000;">Dark text</td>'
+            "</tr></table>"
+        )
+        parts = [_SECTION_HTML, text_html]
+        result = propagate_adjacent_bgcolor(
+            [img_match, text_match],
+            parts,
+            image_dir=tmp_path,
+        )
+
+        assert 'bgcolor="#0252B5"' in result[1]
+        assert "color:#ffffff" in result[1]
+
+    def test_light_propagation_preserves_text(self, tmp_path: Path) -> None:
+        """Propagated light bgcolor does not invert text colors."""
+        (tmp_path / "img_1.png").write_bytes(_make_solid_png(100, 50, (200, 200, 200)))
+
+        img_section = _make_section(
+            section_type=EmailSectionType.HERO,
+            node_id="img:1",
+            images=[_image("img:1")],
+        )
+        img_match = _make_match(0, "full-width-image", img_section)
+        text_match = _make_match(1, "text-block")
+
+        text_html = (
+            '<table role="presentation" width="600"><tr>'
+            '<td style="color:#000000;">Dark text</td>'
+            "</tr></table>"
+        )
+        parts = [_SECTION_HTML, text_html]
+        result = propagate_adjacent_bgcolor(
+            [img_match, text_match],
+            parts,
+            image_dir=tmp_path,
+        )
+
+        assert 'bgcolor="#C8C8C8"' in result[1]
+        assert "color:#000000" in result[1]  # preserved

@@ -36,7 +36,7 @@
 
 - [x] ~~41.1 Image edge color sampler utility~~ DONE
 - [x] ~~41.2 Adjacent-section background propagation in converter~~ DONE
-- [ ] 41.3 Text/link color inversion for dark backgrounds
+- [x] ~~41.3 Text/link color inversion for dark backgrounds~~ DONE
 - [ ] 41.4 Snapshot regression cases for background continuity
 - [ ] 41.5 VLM-assisted section classification fallback
 - [ ] 41.6 Batch frame screenshot export service
@@ -157,7 +157,7 @@
 |---------|-------|--------------|--------|
 | 41.1 Image edge color sampler | `design_sync/image_sampler.py`, Pillow, 16 tests | Phase 40 complete | Done |
 | 41.2 Background propagation | `bgcolor_propagator.py`, 18 tests, config flag | 41.1 | Done |
-| 41.3 Text color inversion | Converter assembly pass | 41.2 | Pending |
+| 41.3 Text color inversion | `bgcolor_propagator.py`, 12 tests, luminance < 0.4 threshold | 41.2 | Done |
 | 41.4 Snapshot regression | `test_snapshot_regression.py` | 41.2 + 41.3 | Pending |
 | 41.5 VLM component matcher fallback | `design_sync/`, model routing | Phase 40 complete | Pending |
 | 41.6 Batch frame screenshot export | `figma/service.py` | None | Pending |

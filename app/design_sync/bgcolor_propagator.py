@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from app.core.logging import get_logger
+from app.design_sync.converter import _relative_luminance
 from app.design_sync.image_sampler import sample_edge_color
 
 if TYPE_CHECKING:
@@ -33,6 +34,15 @@ _TEXT_LIKE_SLUGS: frozenset[str] = frozenset(
         "product-card",
         "category-nav",
     }
+)
+
+# Luminance threshold below which a background is considered "dark"
+_DARK_LUMINANCE_THRESHOLD = 0.4
+
+# Matches inline ``color:#hex`` styles (but not ``background-color:``)
+_INLINE_COLOR_RE = re.compile(
+    r"(?<!background-)(?<!background)(color\s*:\s*)(#[0-9a-fA-F]{3,6})",
+    re.IGNORECASE,
 )
 
 # Regex to match the first <table ...> opening tag in section HTML
@@ -81,6 +91,7 @@ def propagate_adjacent_bgcolor(
                 idx = part_indices.get(i + 1)
                 if idx is not None:
                     result[idx] = _inject_bgcolor(result[idx], color)
+                    result[idx] = _invert_text_colors(result[idx], color)
                     logger.info(
                         "design_sync.bgcolor_propagated",
                         source_section=m_curr.section_idx,
@@ -99,6 +110,7 @@ def propagate_adjacent_bgcolor(
                 idx = part_indices.get(i)
                 if idx is not None:
                     result[idx] = _inject_bgcolor(result[idx], color)
+                    result[idx] = _invert_text_colors(result[idx], color)
                     logger.info(
                         "design_sync.bgcolor_propagated",
                         source_section=m_next.section_idx,
@@ -179,6 +191,28 @@ def _build_part_index(
             index[match_idx] = part_idx
             match_idx += 1
     return index
+
+
+def _invert_text_colors(section_html: str, bgcolor: str) -> str:
+    """Override dark text/link colors to white when bgcolor is dark.
+
+    Scans inline ``color:`` styles in the section HTML.  If the text color
+    has low luminance (dark-on-dark), replaces it with ``#ffffff``.
+    Leaves light text colors untouched (they already contrast).
+    """
+    bg_lum = _relative_luminance(bgcolor)
+    if bg_lum >= _DARK_LUMINANCE_THRESHOLD:
+        return section_html
+
+    def _replace_dark_color(m: re.Match[str]) -> str:
+        prefix = m.group(1)  # "color:" (with optional whitespace)
+        hex_val = m.group(2)
+        text_lum = _relative_luminance(hex_val)
+        if text_lum < _DARK_LUMINANCE_THRESHOLD:
+            return f"{prefix}#ffffff"
+        return m.group(0)
+
+    return _INLINE_COLOR_RE.sub(_replace_dark_color, section_html)
 
 
 def _inject_bgcolor(html: str, color: str) -> str:
