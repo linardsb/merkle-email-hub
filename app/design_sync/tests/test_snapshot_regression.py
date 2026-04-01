@@ -29,6 +29,12 @@ from app.design_sync.diagnose.report import load_structure_from_json, load_token
 
 _DEBUG_DIR = Path(__file__).resolve().parents[3] / "data" / "debug"
 _MANIFEST = _DEBUG_DIR / "manifest.yaml"
+_REFERENCE_DIR = (
+    Path(__file__).resolve().parents[3]
+    / "email-templates"
+    / "training_HTML"
+    / "for_converter_engine"
+)
 
 
 def _load_manifest() -> list[dict[str, Any]]:
@@ -80,6 +86,104 @@ def _html_diff(expected: str, actual: str) -> str:
     return "".join(list(diff)[:100])  # Cap at 100 lines for readability
 
 
+# ── Background continuity helpers ─────────────────────────────────
+
+_SECTION_MARKER_RE = re.compile(r"<!-- section:section_(\d+) -->")
+_BG_STYLE_RE = re.compile(r"<table[^>]*style=\"[^\"]*background-color:\s*([^;\"]+)", re.IGNORECASE)
+_BGCOLOR_ATTR_RE = re.compile(r"<table[^>]*\bbgcolor=\"([^\"]+)\"", re.IGNORECASE)
+
+
+def _extract_converter_section_bgcolors(html: str) -> dict[int, str | None]:
+    """Extract background color per section from converter output.
+
+    Uses ``<!-- section:section_N -->`` markers to identify sections.
+    Checks both ``background-color`` inline style and ``bgcolor`` attribute
+    on the first ``<table>`` in each section.
+    """
+    parts = _SECTION_MARKER_RE.split(html)
+    # parts: [preamble, "0", content0, "1", content1, ...]
+    result: dict[int, str | None] = {}
+    for i in range(1, len(parts), 2):
+        idx = int(parts[i])
+        content = parts[i + 1] if i + 1 < len(parts) else ""
+        # Prefer background-color style, fall back to bgcolor attr
+        style_m = _BG_STYLE_RE.search(content)
+        attr_m = _BGCOLOR_ATTR_RE.search(content)
+        color = None
+        if style_m:
+            color = style_m.group(1).strip().upper()
+        elif attr_m:
+            color = attr_m.group(1).strip().upper()
+        result[idx] = color
+    return result
+
+
+_REF_SECTION_RE = re.compile(
+    r'<table[^>]*width="600"[^>]*class="resptab"[^>]*bgcolor="([^"]*)"[^>]*>',
+    re.IGNORECASE,
+)
+
+
+def _extract_reference_bgcolors(html: str) -> list[str]:
+    """Extract bgcolor from 600px resptab section tables in reference HTML."""
+    return [m.upper() for m in _REF_SECTION_RE.findall(html)]
+
+
+# Expected bgcolors for converter output (calibrated from actual converter).
+# Keys are section indices from <!-- section:section_N --> markers.
+_CONVERTER_BGCOLOR_EXPECTATIONS: dict[str, dict[int, str]] = {
+    "10": {
+        # section_1 (text-block) adjacent to hero — Mammut orange from tokens
+        1: "#FE5117",
+        # section_3 (text-block) adjacent to second image — Mammut blue
+        3: "#0252B3",
+    },
+    "6": {
+        # section_1 (text-block) adjacent to hero — Starbucks cream
+        1: "#F7F0E3",
+    },
+    "5": {},  # MAAP — white backgrounds, no continuity (negative test)
+}
+
+# Expected bgcolors for reference HTMLs (from CONVERTER-REFERENCE.md).
+# Indices are positional within 600px resptab tables.
+_REFERENCE_BGCOLOR_EXPECTATIONS: dict[str, list[str]] = {
+    "10": [
+        "#E85D26",  # heading (continues hero orange)
+        "#E85D26",  # paragraph
+        "#E85D26",  # button-ghost
+        "#E85D26",  # button-ghost
+        "#0252B5",  # heading (continues hero blue)
+        "#0252B5",  # paragraph
+        "#0252B5",  # text-link
+        "#FFFFFF",  # heading (white section)
+        "#FFFFFF",  # product grid
+        "#FFFFFF",  # heading
+        "#FFFFFF",  # nav/footer
+    ],
+    "6": [
+        "#F2F0EB",  # heading (cream after hero)
+        "#F2F0EB",  # paragraph
+        "#F2F0EB",  # button
+        "#AA1733",  # two-column (holiday red)
+        "#FFFFFF",  # social icons
+        "#FFFFFF",  # footer
+        "#FFFFFF",  # logo
+    ],
+}
+
+_REFERENCE_MAP: dict[str, str] = {
+    "10": "mammut-duvet-day.html",
+    "6": "starbucks-pumpkin-spice.html",
+    "5": "maap-kask.html",
+}
+
+# Converter sections with dark backgrounds where text must be inverted.
+_DARK_SECTION_CASES: dict[str, list[int]] = {
+    "10": [1, 3],  # Orange (#FE5117) + blue (#0252B3) sections
+}
+
+
 def _run_conversion(case_dir: Path) -> ConversionResult:
     """Load real inputs and run the full converter pipeline."""
     structure = load_structure_from_json(case_dir / "structure.json")
@@ -91,6 +195,7 @@ def _run_conversion(case_dir: Path) -> ConversionResult:
 # ── Snapshot tests ────────────────────────────────────────────────
 
 
+@pytest.mark.snapshot
 class TestSnapshotRegression:
     """Each active case in manifest.yaml must produce output matching expected.html."""
 
@@ -159,6 +264,7 @@ class TestSnapshotSanity:
         assert structure.file_name, f"Empty file_name in case {case_id}"
 
 
+@pytest.mark.snapshot
 class TestSnapshotSectionCount:
     """Section count must match manifest expectation (catches layout analysis regressions)."""
 
@@ -175,3 +281,121 @@ class TestSnapshotSectionCount:
         assert result.sections_count == expected_sections, (
             f"Case {case_id}: expected {expected_sections} sections, got {result.sections_count}"
         )
+
+
+# ── Background continuity tests ──────────────────────────────────
+
+
+@pytest.mark.snapshot
+class TestBackgroundContinuity:
+    """Verify background color continuity on converter output.
+
+    Content sections adjacent to full-width hero images must carry the
+    brand background color from the design tokens — not default to white.
+    Breaking the token extraction or component assembly reverts these to
+    ``#ffffff``, which this test catches.
+    """
+
+    @pytest.mark.parametrize("case_id", _get_active_case_ids())
+    def test_background_continuity(self, case_id: str) -> None:
+        expectations = _CONVERTER_BGCOLOR_EXPECTATIONS.get(case_id, {})
+        if not expectations:
+            pytest.skip(f"Case {case_id} has no bgcolor continuity expectations")
+
+        case_dir = _DEBUG_DIR / case_id
+        result = _run_conversion(case_dir)
+        assert result.html, f"Converter produced empty HTML for case {case_id}"
+
+        bgcolors = _extract_converter_section_bgcolors(result.html)
+
+        mismatches: list[str] = []
+        for section_idx, expected_color in expectations.items():
+            actual = bgcolors.get(section_idx)
+            if actual is None:
+                mismatches.append(
+                    f"  section_{section_idx}: expected {expected_color}, got no background color"
+                )
+            elif actual != expected_color.upper():
+                mismatches.append(
+                    f"  section_{section_idx}: expected {expected_color}, got {actual}"
+                )
+
+        if mismatches:
+            debug_info = "\n".join(f"  section_{k}: {v}" for k, v in sorted(bgcolors.items()))
+            pytest.fail(
+                f"Background continuity mismatch for case {case_id}:\n"
+                + "\n".join(mismatches)
+                + f"\n\nAll section bgcolors:\n{debug_info}"
+            )
+
+    @pytest.mark.parametrize("case_id", list(_DARK_SECTION_CASES))
+    def test_text_inversion_on_dark_sections(self, case_id: str) -> None:
+        """Dark-background sections must not contain dark text colors.
+
+        The inversion pipeline (Phase 41.3) replaces dark ``color:`` values
+        with ``#ffffff`` when ``bgcolor`` luminance < 0.4.  This catches
+        regressions where dark text is left on a dark background.
+        """
+        case_dir = _DEBUG_DIR / case_id
+        result = _run_conversion(case_dir)
+        assert result.html
+
+        parts = _SECTION_MARKER_RE.split(result.html)
+        dark_indices = _DARK_SECTION_CASES[case_id]
+
+        for section_idx in dark_indices:
+            # Find the section content in the split parts
+            content = None
+            for i in range(1, len(parts), 2):
+                if int(parts[i]) == section_idx:
+                    content = parts[i + 1] if i + 1 < len(parts) else ""
+                    break
+            if content is None:
+                continue
+
+            # Find dark text colors that should have been inverted
+            dark_colors = re.findall(
+                r"(?<!background-)color\s*:\s*"
+                r"(#(?:000|111|222|333|1[aA]1[aA]1[aA]|0{6})\b)",
+                content,
+            )
+            assert not dark_colors, (
+                f"Case {case_id} section_{section_idx}: dark text colors "
+                f"{dark_colors} found on dark-background section — "
+                f"should be inverted to #ffffff"
+            )
+
+
+class TestReferenceBgcolorSanity:
+    """Validate that hand-built reference HTMLs match our expectation maps.
+
+    If a reference HTML is edited, this catches stale expectations.
+    """
+
+    @pytest.mark.parametrize(
+        "case_id",
+        list(_REFERENCE_BGCOLOR_EXPECTATIONS),
+    )
+    def test_reference_bgcolors(self, case_id: str) -> None:
+        ref_file = _REFERENCE_DIR / _REFERENCE_MAP[case_id]
+        if not ref_file.exists():
+            pytest.skip(f"Reference HTML not found: {ref_file}")
+
+        html = ref_file.read_text()
+        bgcolors = _extract_reference_bgcolors(html)
+        expected = _REFERENCE_BGCOLOR_EXPECTATIONS[case_id]
+
+        assert len(bgcolors) == len(expected), (
+            f"Reference {_REFERENCE_MAP[case_id]}: expected {len(expected)} "
+            f"section tables, found {len(bgcolors)}"
+        )
+
+        mismatches: list[str] = []
+        for i, (actual, exp) in enumerate(zip(bgcolors, expected, strict=True)):
+            if actual != exp.upper():
+                mismatches.append(f"  [{i}] expected {exp}, got {actual}")
+
+        if mismatches:
+            pytest.fail(
+                f"Reference {_REFERENCE_MAP[case_id]} bgcolor mismatch:\n" + "\n".join(mismatches)
+            )

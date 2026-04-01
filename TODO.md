@@ -37,7 +37,7 @@
 - [x] ~~41.1 Image edge color sampler utility~~ DONE
 - [x] ~~41.2 Adjacent-section background propagation in converter~~ DONE
 - [x] ~~41.3 Text/link color inversion for dark backgrounds~~ DONE
-- [ ] 41.4 Snapshot regression cases for background continuity
+- [x] ~~41.4 Snapshot regression cases for background continuity~~ DONE
 - [ ] 41.5 VLM-assisted section classification fallback
 - [ ] 41.6 Batch frame screenshot export service
 - [ ] 41.7 VLM-assisted section type classification (hybrid rule + VLM)
@@ -158,7 +158,7 @@
 | 41.1 Image edge color sampler | `design_sync/image_sampler.py`, Pillow, 16 tests | Phase 40 complete | Done |
 | 41.2 Background propagation | `bgcolor_propagator.py`, 18 tests, config flag | 41.1 | Done |
 | 41.3 Text color inversion | `bgcolor_propagator.py`, 12 tests, luminance < 0.4 threshold | 41.2 | Done |
-| 41.4 Snapshot regression | `test_snapshot_regression.py` | 41.2 + 41.3 | Pending |
+| 41.4 Snapshot regression | `test_snapshot_regression.py`, 6 new tests (continuity + inversion + reference sanity) | 41.2 + 41.3 | Done |
 | 41.5 VLM component matcher fallback | `design_sync/`, model routing | Phase 40 complete | Pending |
 | 41.6 Batch frame screenshot export | `figma/service.py` | None | Pending |
 | 41.7 VLM section type classification | `vlm_classifier.py`, `layout_analyzer.py` | 41.6 | Pending |
@@ -1400,11 +1400,25 @@
 
 **What:** Comprehensive test suite for the verification loop pipeline (47.1–47.5) and snapshot regression extensions.
 **Why:** The loop is multi-stage with many failure modes (VLM errors, score regression, correction conflicts). Thorough testing prevents silent fidelity regressions.
+
+> **GROUND-TRUTH REFERENCE:** `email-templates/training_HTML/for_converter_engine/` contains the primary validation assets for all 3 active cases:
+> - **Hand-built reference HTMLs:** `mammut-duvet-day.html` (18 sections), `starbucks-pumpkin-spice.html` (9 sections), `maap-kask.html` (13 sections) — visually verified correct output
+> - **Design screenshots:** `mammut-duvet-day.png`, `starbucks-pumpkin-spice.png`, `maap-kask.png` — full-page Figma design captures for visual comparison baseline
+> - **Section-level annotations:** `CONVERTER-REFERENCE.md` — per-section component mappings, slot fills, style overrides, bgcolor values, and design reasoning for all 3 emails. Use as assertion ground truth for correction accuracy and fidelity scoring.
+> - **Figma links + node IDs:** `training_figma_links_and_screenhsots.md` — Figma URLs, node IDs (2833-1135, 2833-1424, 2833-1623), case-to-asset directory mapping, and re-export instructions
+>
+> **ASSET LAYOUT:** Test image assets are **case-scoped** in `data/debug/{case_id}/assets/` (not the legacy `data/design-assets/` bulk dumps):
+> - Case 5 (MAAP): `data/debug/5/assets/` — 98 images (node 2833-1623 descendants)
+> - Case 6 (Starbucks): `data/debug/6/assets/` — 21 images (node 2833-1424 descendants)
+> - Case 10 (Mammut): `data/debug/10/assets/` — 38 images (node 2833-1135 descendants)
+>
+> `data/design-assets/{connection_id}/` is the **runtime cache** for live Figma downloads (ephemeral, gitignored). Test fixtures must never depend on it.
+
 **Implementation:**
 - **New:** `app/design_sync/tests/test_visual_verify.py` — loop convergence, regression detection, max iterations, ODiff pre-filter
 - **New:** `app/design_sync/tests/test_correction_applicator.py` — each correction type, section marker targeting, inline style edge cases
-- **Extend:** `test_snapshot_regression.py` — store `design_section_screenshots/` per debug case. Run verification loop with mock VLM on 3 active cases (MAAP, Starbucks, Mammut). Assert final fidelity improves vs unverified baseline.
-- **New snapshot data:** Per debug case, add `design_section_screenshots/{node_id}.png` for section-level Figma exports
+- **Extend:** `test_snapshot_regression.py` — store `design_section_screenshots/` per debug case. Run verification loop with mock VLM on 3 active cases (MAAP, Starbucks, Mammut). Assert final fidelity improves vs unverified baseline. Use `CONVERTER-REFERENCE.md` per-section bgcolor/style annotations as expected values for correction assertions.
+- **New snapshot data:** Per debug case, add `design_section_screenshots/{node_id}.png` for section-level Figma exports. Full-page design PNGs from `email-templates/training_HTML/for_converter_engine/` serve as the cropping source for section-level screenshots (47.1).
 **Verify:** `make test` — all pass. `make snapshot-test` — 3 cases pass with verification metadata. Correction applicator handles all 6 correction types. Loop handles VLM timeout/error gracefully.
 
 ---
