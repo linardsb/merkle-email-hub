@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-03-31
+> Last updated: 2026-04-01
 
 ### Completed
 
@@ -185,6 +185,12 @@
 | 44.5 | Operational Runbooks | `docs/operations/` — 4 runbooks (1226 lines): `deployment-checklist.md` (pre-deploy gates via `make check-full`, migration via `safe_alembic.sh`, service startup order, health check verification, rollback procedure, env promotion); `disaster-recovery.md` (PostgreSQL backup/restore using existing `backup-db.sh`/`restore-db.sh` scripts, WAL archiving PITR setup, Redis recovery + flag restoration, state classification table, RTO targets); `incident-response.md` (S1-S4 severity levels, triage flowchart from health endpoints → docker → logs, 6 common incident playbooks with diagnosis + resolution commands, post-incident brief template); `performance-tuning.md` (PostgreSQL pool sizing + monitoring queries, Redis memory/eviction policy, Gunicorn worker tuning, rate limit + AI budget knobs, Docker resource limits). No secrets — only env var names and placeholder values |
 
 ### Recently Completed
+
+**Phase 41.6:** Batch Frame Screenshot Export Service — `export_frame_screenshots(file_key, access_token, node_ids, scale=2.0) -> dict[str, bytes]` on `FigmaDesignSyncService`; reuses `export_images()` batching (groups of 100) + concurrent `download_image_bytes()` via `asyncio.gather()`; partial download failures silently omitted; `_capture_design_image()` in `diagnose/extract.py` refactored to delegate to new method; 5 new tests in `test_frame_screenshots.py`; existing 13 `test_extract_image.py` tests updated and passing.
+
+**Phase 41.5:** VLM-Assisted Section Classification Fallback — `vlm_classifier.py` with `vlm_classify_section()` async function that calls a vision-capable LLM when `component_matcher._score_candidates()` returns confidence below `low_match_confidence_threshold` (0.6); `VLMClassificationResult` frozen dataclass with `component_type`, `confidence`, `source="vlm_fallback"`; model resolution via `resolve_model_by_capabilities({VISION}, tier="standard")`; bounded screenshot-hash cache (`_CACHE_MAX_SIZE=512`); response validated against candidate_types allowlist; `match_section_with_vlm_fallback()` async wrapper in `component_matcher.py`; config flag `DESIGN_SYNC__VLM_FALLBACK_ENABLED` (default `false`); 8 tests.
+
+**Phase 41.4:** Snapshot Regression Cases for Background Continuity — `TestBackgroundContinuity` + `TestReferenceBgcolorSanity` in `test_snapshot_regression.py`; converter bgcolor continuity assertions for cases 10/6/5; text inversion check on dark sections; reference HTML cross-validation; 6 new tests.
 
 **Phase 41.3:** Text/Link Color Inversion for Dark Backgrounds — `_invert_text_colors()` in `bgcolor_propagator.py` scans inline `color:` styles after bgcolor propagation; when propagated bgcolor has WCAG relative luminance < 0.4, replaces dark text/link colors with `#ffffff`; negative lookbehind regex preserves `background-color` properties; wired into both propagation directions (image→text down, text→image up); handles VML `<center>` text, explicit link colors, `color:inherit` pass-through; `_DARK_LUMINANCE_THRESHOLD` constant; 12 new tests (10 unit + 2 integration).
 

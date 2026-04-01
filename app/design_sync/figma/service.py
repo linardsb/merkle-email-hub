@@ -1559,6 +1559,58 @@ class FigmaDesignSyncService:
             )
             return content
 
+    async def export_frame_screenshots(
+        self,
+        file_key: str,
+        access_token: str,
+        node_ids: list[str],
+        *,
+        scale: float = 2.0,
+    ) -> dict[str, bytes]:
+        """Export and download PNG screenshots for multiple frames in one call.
+
+        Batches node_ids in groups of 100 (Figma API limit via export_images),
+        then downloads all CDN images concurrently.  Missing or failed nodes
+        are silently omitted from the result.
+        """
+        if not node_ids:
+            return {}
+
+        exported = await self.export_images(
+            file_key,
+            access_token,
+            node_ids,
+            format="png",
+            scale=scale,
+        )
+        if not exported:
+            return {}
+
+        async def _download_safe(img: ExportedImage) -> tuple[str, bytes | None]:
+            try:
+                data = await self.download_image_bytes(img)
+            except Exception:
+                logger.warning(
+                    "design_sync.figma.frame_download_failed",
+                    node_id=img.node_id,
+                    exc_info=True,
+                )
+                return (img.node_id, None)
+            else:
+                return (img.node_id, data)
+
+        results = await asyncio.gather(*[_download_safe(img) for img in exported])
+
+        out: dict[str, bytes] = {node_id: data for node_id, data in results if data is not None}
+
+        logger.info(
+            "design_sync.figma.frame_screenshots_exported",
+            file_key=file_key,
+            requested=len(node_ids),
+            downloaded=len(out),
+        )
+        return out
+
     # ── Webhook management ──
 
     async def register_webhook(

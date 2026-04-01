@@ -128,18 +128,17 @@ async def _capture_design_image(
     scale = _get_scale()
 
     try:
-        exported = await service.export_images(
+        screenshots = await service.export_frame_screenshots(
             file_key,
             token,
             [figma_node_id],
-            format="png",
             scale=scale,
         )
-        if not exported:
+        if figma_node_id not in screenshots:
             logger.warning("diagnose.image_capture_empty", node_id=node_id)
             return None, None, None
 
-        image_bytes = await service.download_image_bytes(exported[0])
+        image_bytes = screenshots[figma_node_id]
     except Exception:
         logger.warning("diagnose.image_capture_failed", node_id=node_id, exc_info=True)
         return None, None, None

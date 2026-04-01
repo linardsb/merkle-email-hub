@@ -76,8 +76,15 @@ def _mock_service(
     export_side_effect: Exception | None = None,
     image_bytes: bytes = b"",
     download_side_effect: Exception | None = None,
+    frame_screenshots: dict[str, bytes] | None = None,
+    frame_screenshots_side_effect: Exception | None = None,
 ) -> MagicMock:
-    """Build a mock FigmaDesignSyncService instance."""
+    """Build a mock FigmaDesignSyncService instance.
+
+    Mocks both the low-level export_images/download_image_bytes AND the
+    higher-level export_frame_screenshots (used by _capture_design_image
+    after 41.6 refactor).
+    """
     svc = MagicMock()
     if export_side_effect:
         svc.export_images = AsyncMock(side_effect=export_side_effect)
@@ -87,6 +94,15 @@ def _mock_service(
         svc.download_image_bytes = AsyncMock(side_effect=download_side_effect)
     else:
         svc.download_image_bytes = AsyncMock(return_value=image_bytes)
+    # 41.6: _capture_design_image delegates to export_frame_screenshots
+    if frame_screenshots_side_effect:
+        svc.export_frame_screenshots = AsyncMock(
+            side_effect=frame_screenshots_side_effect,
+        )
+    else:
+        svc.export_frame_screenshots = AsyncMock(
+            return_value=frame_screenshots if frame_screenshots is not None else {},
+        )
     return svc
 
 
@@ -95,7 +111,11 @@ class TestCaptureDesignImage:
     async def test_happy_path(self, tmp_path: Path) -> None:
         png_bytes = _make_png(1200, 5036)
         mock_exported = MagicMock()
-        svc = _mock_service(exported=[mock_exported], image_bytes=png_bytes)
+        svc = _mock_service(
+            exported=[mock_exported],
+            image_bytes=png_bytes,
+            frame_screenshots={"2833:1623": png_bytes},
+        )
 
         with (
             patch(_SERVICE_CLASS, return_value=svc),
@@ -114,7 +134,10 @@ class TestCaptureDesignImage:
 
     @pytest.mark.asyncio
     async def test_api_error_graceful(self, tmp_path: Path) -> None:
-        svc = _mock_service(export_side_effect=RuntimeError("Figma API error"))
+        svc = _mock_service(
+            export_side_effect=RuntimeError("Figma API error"),
+            frame_screenshots_side_effect=RuntimeError("Figma API error"),
+        )
 
         with (
             patch(_SERVICE_CLASS, return_value=svc),
@@ -151,6 +174,7 @@ class TestCaptureDesignImage:
         svc = _mock_service(
             exported=[mock_exported],
             download_side_effect=TimeoutError("CDN timeout"),
+            frame_screenshots_side_effect=TimeoutError("CDN timeout"),
         )
 
         with (
@@ -170,7 +194,11 @@ class TestCaptureDesignImage:
         """Dash-format node ID (2833-1623) must be converted to colon (2833:1623)."""
         png_bytes = _make_png(100, 100)
         mock_exported = MagicMock()
-        svc = _mock_service(exported=[mock_exported], image_bytes=png_bytes)
+        svc = _mock_service(
+            exported=[mock_exported],
+            image_bytes=png_bytes,
+            frame_screenshots={"2833:1623": png_bytes},
+        )
 
         with (
             patch(_SERVICE_CLASS, return_value=svc),
@@ -180,10 +208,10 @@ class TestCaptureDesignImage:
                 "VUlWjZGAEVZr3mK1EawsYR", "fake-token", "2833-1623", tmp_path
             )
 
-        # Verify the colon-format node ID was passed to export_images
-        call_args = svc.export_images.call_args
+        # _capture_design_image delegates to export_frame_screenshots (41.6)
+        call_args = svc.export_frame_screenshots.call_args
         assert call_args is not None
-        node_ids_arg = call_args[0][2]  # 3rd positional arg
+        node_ids_arg = call_args[0][2]  # 3rd positional arg: node_ids
         assert node_ids_arg == ["2833:1623"]
 
 

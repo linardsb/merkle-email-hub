@@ -38,8 +38,8 @@
 - [x] ~~41.2 Adjacent-section background propagation in converter~~ DONE
 - [x] ~~41.3 Text/link color inversion for dark backgrounds~~ DONE
 - [x] ~~41.4 Snapshot regression cases for background continuity~~ DONE
-- [ ] 41.5 VLM-assisted section classification fallback
-- [ ] 41.6 Batch frame screenshot export service
+- [x] ~~41.5 VLM-assisted section classification fallback~~ DONE
+- [x] ~~41.6 Batch frame screenshot export service~~ DONE
 - [ ] 41.7 VLM-assisted section type classification (hybrid rule + VLM)
 
 ---
@@ -133,7 +133,7 @@
 **What:** Upgrade `analyze_layout()` in `layout_analyzer.py:191` to accept optional `vlm_classifications: dict[str, VLMSectionClassification] | None` and merge VLM visual classifications with rule-based results. Add `VLMSectionClassifier` service that screenshots all frames in one batch call and asks a VLM to classify each into `EmailSectionType` + `ColumnLayout`.
 **Why:** 41.5 handles VLM as a per-section component matcher fallback. This subtask operates one layer up — at the section *type* classification stage (`_classify_section()` line 365). Rule-based `_SECTION_PATTERNS` fails on generic frame names ("Frame 1", non-English names) and unusual layouts. VLM sees the design visually and recognizes a hero from its visual weight, not from a keyword. The hybrid merge means rule-based stays fast for clear cases; VLM only overrides ambiguous ones.
 **Implementation:**
-- **New file:** `app/design_sync/vlm_classifier.py` with:
+- **Extend existing:** `app/design_sync/vlm_classifier.py` (created in 41.5) with:
   - `VLMSectionClassification` model: `node_id`, `section_type: EmailSectionType`, `confidence: float`, `reasoning`, `column_layout: ColumnLayout | None`, `content_signals: list[str]`
   - `VLMSectionClassifier.classify_sections(frame_screenshots: dict[str, bytes], frame_metadata: list[dict]) -> list[VLMSectionClassification]`
   - Builds multimodal message: one `ImageBlock` per frame (reuses `app/ai/multimodal.py`) + frame metadata text
@@ -159,8 +159,8 @@
 | 41.2 Background propagation | `bgcolor_propagator.py`, 18 tests, config flag | 41.1 | Done |
 | 41.3 Text color inversion | `bgcolor_propagator.py`, 12 tests, luminance < 0.4 threshold | 41.2 | Done |
 | 41.4 Snapshot regression | `test_snapshot_regression.py`, 6 new tests (continuity + inversion + reference sanity) | 41.2 + 41.3 | Done |
-| 41.5 VLM component matcher fallback | `design_sync/`, model routing | Phase 40 complete | Pending |
-| 41.6 Batch frame screenshot export | `figma/service.py` | None | Pending |
+| 41.5 VLM component matcher fallback | `vlm_classifier.py`, `component_matcher.py`, 8 tests, config flag | Phase 40 complete | Done |
+| 41.6 Batch frame screenshot export | `figma/service.py`, `extract.py` refactor, 5 tests | None | Done |
 | 41.7 VLM section type classification | `vlm_classifier.py`, `layout_analyzer.py` | 41.6 | Pending |
 
 > **Execution:** Two independent tracks. **Track A (bgcolor):** 41.1 → 41.2 → 41.3 → 41.4 (sequential). **Track B (VLM classification):** 41.6 → 41.5 + 41.7 (parallel — 41.5 is per-section component fallback, 41.7 is batch section type classification; both consume frame screenshots from 41.6). Tracks A and B can execute in parallel.
