@@ -4,17 +4,27 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
 import { mutationFetcher } from "@/lib/mutation-fetcher";
+import { useSmartPolling } from "@/hooks/use-smart-polling";
+import { POLL, SWR_PRESETS } from "@/lib/swr-constants";
 import type { ApiError } from "@/lib/api-error";
 import type { PluginListResponse, PluginHealthSummary, PluginInfo } from "@/types/plugins";
 
 const BASE = "/api/v1/plugins";
 
 export function usePlugins() {
-  return useSWR<PluginListResponse>(BASE, fetcher, { refreshInterval: 60_000 });
+  const interval = useSmartPolling(POLL.background);
+  return useSWR<PluginListResponse>(BASE, fetcher, {
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
+  });
 }
 
 export function usePluginHealthSummary() {
-  return useSWR<PluginHealthSummary>(`${BASE}/health`, fetcher, { refreshInterval: 60_000 });
+  const interval = useSmartPolling(POLL.background);
+  return useSWR<PluginHealthSummary>(`${BASE}/health`, fetcher, {
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
+  });
 }
 
 export function usePluginEnable(name: string) {

@@ -4,6 +4,8 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
 import { mutationFetcher } from "@/lib/mutation-fetcher";
+import { useSmartPolling } from "@/hooks/use-smart-polling";
+import { POLL, SWR_PRESETS } from "@/lib/swr-constants";
 
 interface MCPServerStatus {
   running: boolean;
@@ -34,9 +36,10 @@ interface MCPApiKey {
 }
 
 export function useMCPStatus() {
+  const interval = useSmartPolling(POLL.status);
   return useSWR<MCPServerStatus>("/api/v1/mcp/status", fetcher, {
-    refreshInterval: 30_000,
-    revalidateOnFocus: false,
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
   });
 }
 
@@ -47,9 +50,10 @@ export function useMCPTools() {
 }
 
 export function useMCPConnections() {
+  const interval = useSmartPolling(POLL.moderate);
   return useSWR<MCPConnection[]>("/api/v1/mcp/connections", fetcher, {
-    refreshInterval: 15_000,
-    revalidateOnFocus: false,
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
   });
 }
 

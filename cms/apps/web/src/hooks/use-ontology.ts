@@ -4,6 +4,8 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
 import { longMutationFetcher } from "@/lib/mutation-fetcher";
+import { useSmartPolling } from "@/hooks/use-smart-polling";
+import { POLL, SWR_PRESETS } from "@/lib/swr-constants";
 import type { ApiError } from "@/lib/api-error";
 import type {
   SyncStatusResponse,
@@ -14,10 +16,11 @@ import type {
 
 /** GET /api/v1/ontology/sync-status — poll sync state. */
 export function useOntologySyncStatus() {
+  const interval = useSmartPolling(POLL.background);
   return useSWR<SyncStatusResponse>(
     "/api/v1/ontology/sync-status",
     fetcher,
-    { refreshInterval: 60_000 },
+    { refreshInterval: interval, ...SWR_PRESETS.polling },
   );
 }
 

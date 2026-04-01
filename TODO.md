@@ -40,7 +40,7 @@
 - [x] 42.2 Frontend ETag support in auth-fetch — DONE
 - [x] 42.3 Visibility-aware smart polling hook — DONE
 - [x] 42.4 Centralized polling and stale-time constants — DONE
-- [ ] 42.5 Migrate high-traffic hooks to smart polling + constants
+- [x] ~~42.5 Migrate high-traffic hooks to smart polling + constants~~ DONE
 - [ ] 42.6 Unified progress tracking endpoint for long-running operations
 - [ ] 42.7 Wire ETag + smart polling into CI validation
 

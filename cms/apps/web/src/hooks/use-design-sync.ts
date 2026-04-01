@@ -6,6 +6,8 @@ import { fetcher } from "@/lib/swr-fetcher";
 import { mutationFetcher, longMutationFetcher } from "@/lib/mutation-fetcher";
 import { authFetch } from "@/lib/auth-fetch";
 import { ApiError } from "@/lib/api-error";
+import { useSmartPolling } from "@/hooks/use-smart-polling";
+import { POLL, SWR_PRESETS } from "@/lib/swr-constants";
 import type {
   DesignConnection,
   DesignTokens,
@@ -174,10 +176,11 @@ export function useCreateDesignImport() {
 }
 
 export function useDesignImport(importId: number | null, polling?: boolean) {
+  const interval = useSmartPolling(polling ? POLL.realtime : POLL.off);
   return useSWR<DesignImport>(
     importId ? `/api/v1/design-sync/imports/${importId}` : null,
     fetcher,
-    { refreshInterval: polling ? 2000 : 0 },
+    { refreshInterval: interval, ...SWR_PRESETS.polling },
   );
 }
 
