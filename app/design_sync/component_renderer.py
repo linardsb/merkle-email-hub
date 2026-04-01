@@ -37,6 +37,7 @@ class RenderedSection:
     section_idx: int
     dark_mode_classes: tuple[str, ...] = ()
     images: list[dict[str, str]] = field(default_factory=list)
+    propagated_bgcolor: str | None = None
 
 
 _SLOT_ATTR_RE = re.compile(r'data-slot="([^"]+)"')

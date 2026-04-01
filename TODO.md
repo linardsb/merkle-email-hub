@@ -35,7 +35,7 @@
 > **Reference fixture:** `email-templates/training_HTML/for_converter_engine/mammut-duvet-day.html` (18 sections) is the primary regression case — its brand blue/orange hero-to-content transitions are exactly the problem this phase solves. See `CONVERTER-REFERENCE.md` for per-section bgcolor annotations.
 
 - [x] ~~41.1 Image edge color sampler utility~~ DONE
-- [ ] 41.2 Adjacent-section background propagation in converter
+- [x] ~~41.2 Adjacent-section background propagation in converter~~ DONE
 - [ ] 41.3 Text/link color inversion for dark backgrounds
 - [ ] 41.4 Snapshot regression cases for background continuity
 - [ ] 41.5 VLM-assisted section classification fallback
@@ -156,7 +156,7 @@
 | Subtask | Scope | Dependencies | Status |
 |---------|-------|--------------|--------|
 | 41.1 Image edge color sampler | `design_sync/image_sampler.py`, Pillow, 16 tests | Phase 40 complete | Done |
-| 41.2 Background propagation | Converter assembly pass | 41.1 | Pending |
+| 41.2 Background propagation | `bgcolor_propagator.py`, 18 tests, config flag | 41.1 | Done |
 | 41.3 Text color inversion | Converter assembly pass | 41.2 | Pending |
 | 41.4 Snapshot regression | `test_snapshot_regression.py` | 41.2 + 41.3 | Pending |
 | 41.5 VLM component matcher fallback | `design_sync/`, model routing | Phase 40 complete | Pending |

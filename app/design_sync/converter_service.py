@@ -665,6 +665,16 @@ class DesignConverterService:
                     f"<!--<![endif]-->"
                 )
 
+        # Adjacent-section bgcolor propagation (Phase 41.2)
+        if get_settings().design_sync.bgcolor_propagation_enabled:
+            from app.design_sync.bgcolor_propagator import propagate_adjacent_bgcolor
+
+            section_parts = propagate_adjacent_bgcolor(
+                matches,
+                section_parts,
+                connection_id=connection_id,
+            )
+
         sections_html = "\n".join(section_parts)
 
         # Build style block

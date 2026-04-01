@@ -364,6 +364,8 @@ class DesignSyncConfig(BaseModel):
         "traces/converter_traces.jsonl"  # DESIGN_SYNC__CONVERSION_TRACES_PATH
     )
     low_match_confidence_threshold: float = 0.6  # DESIGN_SYNC__LOW_MATCH_CONFIDENCE_THRESHOLD
+    # Adjacent-section background color propagation (Phase 41.2)
+    bgcolor_propagation_enabled: bool = True  # DESIGN_SYNC__BGCOLOR_PROPAGATION_ENABLED
 
 
 class ESPSyncConfig(BaseModel):
