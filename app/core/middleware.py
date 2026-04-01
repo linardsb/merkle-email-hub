@@ -16,6 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp
 
 from app.core.config import get_settings
+from app.core.etag import ETagMiddleware
 from app.core.logging import get_logger, get_request_id, set_request_id
 
 logger = get_logger(__name__)
@@ -117,6 +118,7 @@ def setup_middleware(app: FastAPI) -> None:
     settings = get_settings()
 
     app.add_middleware(BodySizeLimitMiddleware, max_body_size=102_400)
+    app.add_middleware(ETagMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
 
     app.add_middleware(
