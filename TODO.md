@@ -6,9 +6,9 @@
 
 ---
 
-> **Completed phases (0–36):** See [docs/TODO-completed.md](docs/TODO-completed.md)
+> **Completed phases (0–41):** See [docs/TODO-completed.md](docs/TODO-completed.md)
 >
-> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA). Phase 18 (rendering resilience & property-based testing). Phase 19 (Outlook transition advisor & email CSS compiler). Phase 20 (Gmail AI intelligence & deliverability). Phase 21 (real-time ontology sync & competitive intelligence). Phase 22 (AI evolution infrastructure). Phase 23 (multimodal protocol & MCP agent interface — 197 tests). Phase 24 (real-time collaboration & visual builder — 9 subtasks). Phase 25 (platform ecosystem & advanced integrations — 15 subtasks). Phase 26 (email build pipeline performance & CSS optimization — 5 subtasks). Phase 27 (email client rendering fidelity & pre-send testing — 6 subtasks). Phase 28 (export quality gates & approval workflow — 3 subtasks). Phase 29 (design import enhancements — 2 subtasks). Phase 30 (end-to-end testing & CI quality — 3 subtasks). Phase 31 (HTML import fidelity & preview accuracy — 8 subtasks). Phase 32 (agent email rendering intelligence — 12 subtasks: centralized client matrix, content rendering awareness, import annotator skills, knowledge lookup tool, cross-agent insight propagation, eval-driven skill updates, visual QA feedback loop, MCP agent tools, skill versioning, per-client skill overlays). Phase 33 (design token pipeline overhaul — 12 subtasks). Phase 34 (CRAG accept/reject gate — 3 subtasks). Phase 35 (next-gen design-to-email pipeline — 11 subtasks: MJML compilation, tree normalizer, MJML generation, section templates, AI layout intelligence, visual fidelity scoring, correction learning loop, W3C design tokens, Figma webhooks, section caching). Phase 36 (universal email design document & multi-format import hub — 7 subtasks: EmailDesignDocument JSON Schema, converter refactor, Figma/Penpot adapters, MJML import, HTML reverse engineering, Klaviyo + HubSpot ESP export). Phase 37 (golden reference library for AI judge calibration — 5 subtasks: expand golden component library with VML/MSO/ESP/innovation templates, reference loader & criterion mapping, wire into judge prompts, re-run pipeline & measure improvement, complete human labeling).
+> Summary: Phases 0-10 (core platform, auth, projects, email engine, components, QA engine, connectors, approval, knowledge graph, full-stack integration). Phase 11 (QA hardening — 38 tasks, template-first architecture, inline judges, production trace sampling, design system pipeline). Phase 12 (Figma-to-email import — 9 tasks). Phase 13 (ESP bidirectional sync — 11 tasks, 4 providers). Phase 14 (blueprint checkpoint & recovery — 7 tasks). Phase 15 (agent communication — typed handoffs, phase-aware memory, adaptive routing, prompt amendments, knowledge prefetch). Phase 16 (domain-specific RAG — query router, structured ontology queries, HTML chunking, component retrieval, CRAG validation, multi-rep indexing). Phase 17 (visual regression agent & VLM-powered QA). Phase 18 (rendering resilience & property-based testing). Phase 19 (Outlook transition advisor & email CSS compiler). Phase 20 (Gmail AI intelligence & deliverability). Phase 21 (real-time ontology sync & competitive intelligence). Phase 22 (AI evolution infrastructure). Phase 23 (multimodal protocol & MCP agent interface — 197 tests). Phase 24 (real-time collaboration & visual builder — 9 subtasks). Phase 25 (platform ecosystem & advanced integrations — 15 subtasks). Phase 26 (email build pipeline performance & CSS optimization — 5 subtasks). Phase 27 (email client rendering fidelity & pre-send testing — 6 subtasks). Phase 28 (export quality gates & approval workflow — 3 subtasks). Phase 29 (design import enhancements — 2 subtasks). Phase 30 (end-to-end testing & CI quality — 3 subtasks). Phase 31 (HTML import fidelity & preview accuracy — 8 subtasks). Phase 32 (agent email rendering intelligence — 12 subtasks: centralized client matrix, content rendering awareness, import annotator skills, knowledge lookup tool, cross-agent insight propagation, eval-driven skill updates, visual QA feedback loop, MCP agent tools, skill versioning, per-client skill overlays). Phase 33 (design token pipeline overhaul — 12 subtasks). Phase 34 (CRAG accept/reject gate — 3 subtasks). Phase 35 (next-gen design-to-email pipeline — 11 subtasks: MJML compilation, tree normalizer, MJML generation, section templates, AI layout intelligence, visual fidelity scoring, correction learning loop, W3C design tokens, Figma webhooks, section caching). Phase 36 (universal email design document & multi-format import hub — 7 subtasks: EmailDesignDocument JSON Schema, converter refactor, Figma/Penpot adapters, MJML import, HTML reverse engineering, Klaviyo + HubSpot ESP export). Phase 37 (golden reference library for AI judge calibration — 5 subtasks: expand golden component library with VML/MSO/ESP/innovation templates, reference loader & criterion mapping, wire into judge prompts, re-run pipeline & measure improvement, complete human labeling). Phase 38 (pipeline fidelity fix — 8 subtasks). Phase 39 (pipeline hardening — 7 subtasks). Phase 40 (converter snapshot & visual regression testing — 7 subtasks). Phase 41 (converter bgcolor continuity + VLM classification — 7 subtasks: image edge sampler, bgcolor propagation, text color inversion, snapshot regression, VLM component fallback, batch frame export, VLM section classification).
 
 ---
 
@@ -20,150 +20,9 @@
 
 ---
 
-## ~~Phase 40 — Converter Snapshot & Visual Regression Testing~~ COMPLETE
+~~Phase 40 — Converter Snapshot & Visual Regression Testing~~ DONE — archived to `docs/TODO-completed.md`
 
-> All 7 subtasks done. See `docs/TODO-completed.md` for details.
-
----
-
-## Phase 41 — Converter Background Color Continuity
-
-> **Problem:** When a full-width image has a solid/dominant background color (e.g., Mammut Eiger Extreme blue `#0252B5`, brand orange `#E85D26`) and the adjacent HTML content block (heading, paragraph, CTA) continues the same visual section, the converter outputs `bgcolor="#ffffff"` — creating a jarring white gap that breaks the design's visual flow.
->
-> **Solution:** After the converter emits a `full-width-image` component followed by a text section (or vice versa), sample the dominant edge color from the image and apply it as `bgcolor` on adjacent HTML content tables when the colors match. Also propagate text/link colors to white when the background is dark.
->
-> **Reference fixture:** `email-templates/training_HTML/for_converter_engine/mammut-duvet-day.html` (18 sections) is the primary regression case — its brand blue/orange hero-to-content transitions are exactly the problem this phase solves. See `CONVERTER-REFERENCE.md` for per-section bgcolor annotations.
-
-- [x] ~~41.1 Image edge color sampler utility~~ DONE
-- [x] ~~41.2 Adjacent-section background propagation in converter~~ DONE
-- [x] ~~41.3 Text/link color inversion for dark backgrounds~~ DONE
-- [x] ~~41.4 Snapshot regression cases for background continuity~~ DONE
-- [x] ~~41.5 VLM-assisted section classification fallback~~ DONE
-- [x] ~~41.6 Batch frame screenshot export service~~ DONE
-- [x] ~~41.7 VLM-assisted section type classification (hybrid rule + VLM)~~ DONE
-
----
-
-### 41.1 Image Edge Color Sampler Utility `[Backend]`
-
-**What:** Add `sample_edge_color(image_path: Path, edge: Literal["top", "bottom"]) -> str | None` to `app/design_sync/` that reads the top or bottom pixel strip of a design asset image, computes the dominant color, and returns a hex string if ≥80% of edge pixels share that color (solid background). Returns `None` for photographic/gradient edges.
-**Why:** The converter needs to know whether an image has a solid-color edge to propagate to adjacent HTML blocks. Sampling a 4px strip and checking color uniformity distinguishes solid backgrounds (brand blue, brand orange) from photographic content (mountain scene, product shots).
-**Implementation:**
-- Use Pillow to read a 4px strip from top or bottom edge
-- Cluster pixels by RGB (tolerance ±10 per channel)
-- If largest cluster ≥80%: return hex of cluster centroid
-- Else: return `None` (non-uniform edge, no propagation)
-**Verify:** `sample_edge_color("2833_1154.png", "bottom")` → `"#0252B5"`. `sample_edge_color("2833_1136.png", "bottom")` → `None` (photographic).
-
----
-
-### 41.2 Adjacent-Section Background Propagation in Converter `[Backend]`
-
-**What:** In the converter's HTML assembly pass, when a `full-width-image` section is adjacent to a text/heading/CTA section, sample the facing edge of the image. If a solid color is detected, set `bgcolor` on all adjacent content tables (heading, paragraph, button-ghost, text-link) to that color instead of `#ffffff`.
-**Why:** Designs frequently use colored backgrounds that flow from an image into a text area (e.g., Mammut blue layering section, orange "Grab a Duvet Day" section). The converter currently ignores this and defaults every content block to white.
-**Implementation:**
-- After section ordering in `_assemble_html()`, iterate adjacent pairs
-- For each `(image_section, text_section)` pair: call `sample_edge_color()` on the image's facing edge
-- If solid color returned: inject `bgcolor="{color}"` on content tables
-- Store the propagated color on the section metadata for downstream use (text color inversion)
-**Verify:** Converting the Mammut design produces `bgcolor="#0252B5"` on the "A LAYERING SYSTEM" heading/paragraph/text-link tables, and `bgcolor="#E85D26"` on the "GRAB A DUVET DAY" heading/paragraph/button tables.
-
----
-
-### 41.3 Text/Link Color Inversion for Dark Backgrounds `[Backend]`
-
-**What:** When a content block receives a propagated dark background (luminance < 0.4), automatically set text color to `#ffffff` and link colors to `#ffffff` instead of the default dark colors.
-**Why:** Without inversion, dark text on a dark background is unreadable. The converter must pair background propagation with appropriate text contrast.
-**Implementation:**
-- Calculate relative luminance of propagated bgcolor: `L = 0.2126*R + 0.7152*G + 0.0722*B` (sRGB)
-- If `L < 0.4`: override heading color to `#ffffff`, body text to `#ffffff`, link color to `#ffffff`
-- Apply to VML button fallbacks too (fillcolor, strokecolor, center text color)
-**Verify:** Mammut blue section (`#0252B5`, luminance ≈ 0.10) → white text. White section (`#ffffff`, luminance = 1.0) → unchanged dark text.
-
----
-
-### 41.4 Snapshot Regression Cases for Background Continuity `[Backend]`
-
-**What:** Add snapshot test assertions that verify `bgcolor` values on content blocks adjacent to colored images. Extend existing snapshot cases to check background continuity.
-**Why:** Prevents regressions — ensures the sampler + propagation + inversion pipeline stays correct as the converter evolves.
-
-> **CRITICAL REFERENCE — Mammut Duvet Day HTML.**
-> The hand-built `email-templates/training_HTML/for_converter_engine/mammut-duvet-day.html` (18 sections, Figma node `2833-1135`) is the **primary test case** for background continuity. It contains exactly the problem Phase 41 solves: brand blue (`#0252B5`) and brand orange (`#E85D26`) full-bleed hero images followed by text/CTA sections that must continue the same background color — not default to `#ffffff`. The companion `CONVERTER-REFERENCE.md` documents every section's bgcolor and the design reasoning behind each color transition. **Execute this diligently** — compare converter output section-by-section against the hand-built HTML. Every white gap where the reference shows a colored background is a real bug.
-
-**Implementation:**
-- Add `test_background_continuity[case_id]` to `test_snapshot_regression.py`
-- For each active case: parse output HTML, find full-width-image tables, check that adjacent content tables have matching `bgcolor` when the image has a solid edge
-- Use `mammut-duvet-day.html` as case 10 — its 18-section structure with multiple colored-background transitions is the most comprehensive background continuity test available. Cross-reference against `CONVERTER-REFERENCE.md` section annotations for expected `bgcolor` values per section.
-- Additionally validate MAAP x KASK (case 5) and Starbucks (case 6) from `email-templates/training_HTML/for_converter_engine/` — both have background color transitions that must be preserved
-**Verify:** `make snapshot-test` includes background continuity checks. Breaking the sampler → test failure. All 3 reference HTMLs (Mammut, MAAP, Starbucks) pass bgcolor adjacency assertions.
-
----
-
-### 41.5 VLM-Assisted Section Classification Fallback `[Backend]`
-
-**What:** When `component_matcher._score_candidates()` returns no match above the confidence threshold (currently 0.6), call a vision-language model on the Figma section screenshot to classify the section type before falling back to `generic-section`. Returns a `ComponentMatchResult` with `source="vlm_fallback"` and the VLM's confidence score.
-**Why:** The component matcher uses structural heuristics (child count, text density, image presence) to classify Figma sections into email components. Ambiguous sections — hybrid hero/editorial layouts, unusual product grids, custom nav patterns — often fall below threshold and get `generic-section`, losing semantic structure. A VLM can visually identify "this looks like a product card grid" where heuristics fail.
-**Implementation:**
-- Add `vlm_classify_section(screenshot: bytes, candidate_types: list[str]) -> tuple[str, float]` to `app/design_sync/`
-- Uses the existing `resolve_model("standard")` routing (VLM-capable tier)
-- Prompt includes the screenshot + list of candidate component types from the manifest
-- Returns `(component_type, confidence)` — only used if confidence ≥ 0.5
-- Wire into `_score_candidates()` as a fallback path: heuristic score < 0.6 → VLM call → use VLM result if ≥ 0.5
-- Feature-gated: `DESIGN_SYNC__VLM_FALLBACK_ENABLED` (default `false`) — opt-in because it adds latency + LLM cost per ambiguous section
-- Cache VLM results by screenshot content hash to avoid redundant calls on re-conversion
-**Verify:** Converting a design with an ambiguous section (e.g., hybrid hero/editorial) uses VLM fallback and produces correct component type. `DESIGN_SYNC__VLM_FALLBACK_ENABLED=false` → no VLM calls. Cached result reused on second conversion of same section. 8 tests.
-
----
-
-### 41.6 Batch Frame Screenshot Export Service `[Backend]`
-
-**What:** Add `export_frame_screenshots(file_key, token, node_ids, scale=2.0) -> dict[str, bytes]` to `FigmaDesignSyncService` — a convenience wrapper over the existing `export_images()` (line 1460) + `download_image_bytes()` (line 1542) that returns a `{node_id: png_bytes}` dict for all top-level frames in one call. Extracts the reusable core from `_capture_design_image()` in `diagnose/extract.py:113`.
-**Why:** Both 41.5 (single-section VLM fallback) and 41.7 (batch VLM classification) need per-frame screenshots from Figma. Currently `_capture_design_image()` handles single frames only and lives in the diagnostic CLI. A service-level batch method avoids N+1 API calls and makes frame screenshots available to any pipeline stage.
-**Implementation:**
-- In `app/design_sync/figma/service.py`: add method that calls `export_images()` for the batch, then `download_image_bytes()` per exported image, returns `dict[str, bytes]`
-- Auto-batches in groups of 100 (existing Figma API limit in `export_images()`)
-- Resolution: uses `fidelity_figma_scale` setting (default 2.0)
-- Refactor `_capture_design_image()` in `extract.py` to delegate to the new service method
-**Verify:** `export_frame_screenshots("file_key", "token", ["2833:1623", "2833:1424"])` returns 2 PNG byte arrays. Existing `_capture_design_image()` still works via delegation. 5 tests.
-
----
-
-### ~~41.7 VLM-Assisted Section Type Classification (Hybrid Rule + VLM) `[Backend]`~~ DONE
-
-**What:** Upgrade `analyze_layout()` in `layout_analyzer.py:191` to accept optional `vlm_classifications: dict[str, VLMSectionClassification] | None` and merge VLM visual classifications with rule-based results. Add `VLMSectionClassifier` service that screenshots all frames in one batch call and asks a VLM to classify each into `EmailSectionType` + `ColumnLayout`.
-**Why:** 41.5 handles VLM as a per-section component matcher fallback. This subtask operates one layer up — at the section *type* classification stage (`_classify_section()` line 365). Rule-based `_SECTION_PATTERNS` fails on generic frame names ("Frame 1", non-English names) and unusual layouts. VLM sees the design visually and recognizes a hero from its visual weight, not from a keyword. The hybrid merge means rule-based stays fast for clear cases; VLM only overrides ambiguous ones.
-**Implementation:**
-- **Extend existing:** `app/design_sync/vlm_classifier.py` (created in 41.5) with:
-  - `VLMSectionClassification` model: `node_id`, `section_type: EmailSectionType`, `confidence: float`, `reasoning`, `column_layout: ColumnLayout | None`, `content_signals: list[str]`
-  - `VLMSectionClassifier.classify_sections(frame_screenshots: dict[str, bytes], frame_metadata: list[dict]) -> list[VLMSectionClassification]`
-  - Builds multimodal message: one `ImageBlock` per frame (reuses `app/ai/multimodal.py`) + frame metadata text
-  - System prompt: "Classify each email frame screenshot into HEADER/PREHEADER/HERO/CONTENT/CTA/FOOTER/SOCIAL/DIVIDER/SPACER/NAV/UNKNOWN. Detect column layout. Return JSON."
-  - Token budget: ~5K total (13 sections at ~300 tokens/image + prompt)
-- **Modify `analyze_layout()`**: new optional `vlm_classifications` param. Merge logic:
-  - Rule confidence > 0.9 → keep rule result
-  - Rule returned UNKNOWN or convention is GENERIC → override with VLM if VLM confidence > threshold (0.7)
-  - Rule and VLM disagree → prefer VLM if VLM confidence > rule confidence
-- **Modify `converter_service.py` `convert()`**: before `analyze_layout()`, if `DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED`, call `export_frame_screenshots()` (41.6) then `VLMSectionClassifier.classify_sections()`, pass results into `analyze_layout()`
-- **Config:** `DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED` (default `false`), `DESIGN_SYNC__VLM_CLASSIFICATION_MODEL` (empty = default routing), `DESIGN_SYNC__VLM_CLASSIFICATION_CONFIDENCE_THRESHOLD` (0.7), `DESIGN_SYNC__VLM_CLASSIFICATION_TIMEOUT` (15s → fallback to rule-based)
-- **Fallback:** Timeout/error → fall back to rule-based, log `design_sync.vlm_classification.timeout`
-- Add `vlm_classification: str | None` and `vlm_confidence: float | None` fields to `EmailSection` dataclass
-**Verify:** Run on 3 snapshot cases with mock VLM responses stored in `data/debug/{case_id}/vlm_classifications.json`. Rule-classified HERO stays HERO (high-confidence rule). Rule-classified UNKNOWN overridden by VLM. Timeout → graceful fallback. Flag off → zero behavior change. 12 tests.
-
----
-
-### Phase 41 — Summary
-
-| Subtask | Scope | Dependencies | Status |
-|---------|-------|--------------|--------|
-| 41.1 Image edge color sampler | `design_sync/image_sampler.py`, Pillow, 16 tests | Phase 40 complete | Done |
-| 41.2 Background propagation | `bgcolor_propagator.py`, 18 tests, config flag | 41.1 | Done |
-| 41.3 Text color inversion | `bgcolor_propagator.py`, 12 tests, luminance < 0.4 threshold | 41.2 | Done |
-| 41.4 Snapshot regression | `test_snapshot_regression.py`, 6 new tests (continuity + inversion + reference sanity) | 41.2 + 41.3 | Done |
-| 41.5 VLM component matcher fallback | `vlm_classifier.py`, `component_matcher.py`, 8 tests, config flag | Phase 40 complete | Done |
-| 41.6 Batch frame screenshot export | `figma/service.py`, `extract.py` refactor, 5 tests | None | Done |
-| 41.7 VLM section type classification | `vlm_classifier.py`, `layout_analyzer.py`, 12 tests, config flag | 41.6 | Done |
-
-> **Execution:** Two independent tracks. **Track A (bgcolor):** 41.1 → 41.2 → 41.3 → 41.4 (sequential). **Track B (VLM classification):** 41.6 → 41.5 + 41.7 (parallel — 41.5 is per-section component fallback, 41.7 is batch section type classification; both consume frame screenshots from 41.6). Tracks A and B can execute in parallel.
+~~Phase 41 — Converter Background Color Continuity + VLM Classification~~ DONE — archived to `docs/TODO-completed.md`
 
 ---
 
@@ -177,8 +36,8 @@
 >
 > **Dependency note:** Independent of Phases 37–41. Uses existing SWR infrastructure and FastAPI middleware. No database changes. No new dependencies (uses stdlib `hashlib` for ETags, browser `document.visibilityState` for polling).
 
-- [ ] 42.1 Backend ETag middleware for polling endpoints
-- [ ] 42.2 Frontend ETag support in auth-fetch
+- [x] 42.1 Backend ETag middleware for polling endpoints — DONE
+- [x] 42.2 Frontend ETag support in auth-fetch — DONE
 - [ ] 42.3 Visibility-aware smart polling hook
 - [ ] 42.4 Centralized polling and stale-time constants
 - [ ] 42.5 Migrate high-traffic hooks to smart polling + constants
