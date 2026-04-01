@@ -1,8 +1,7 @@
 """Binary pass/fail judge for the Accessibility Auditor agent."""
 
 from app.ai.agents.evals.judges.base import (
-    SYSTEM_PROMPT_TEMPLATE,
-    build_criteria_block,
+    build_system_prompt,
     format_golden_section,
     parse_judge_response,
 )
@@ -74,8 +73,7 @@ class AccessibilityJudge:
 
     def build_prompt(self, judge_input: JudgeInput) -> str:
         """Build evaluation prompt with input HTML and fixed output HTML."""
-        criteria_block = build_criteria_block(self.criteria)
-        system = SYSTEM_PROMPT_TEMPLATE.format(criteria_block=criteria_block)
+        system = build_system_prompt(self.criteria, self.agent_name)
 
         html_input = ""
         if judge_input.input_data:

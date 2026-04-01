@@ -1,8 +1,7 @@
 """Import annotator evaluation judge — 5 criteria."""
 
 from app.ai.agents.evals.judges.base import (
-    SYSTEM_PROMPT_TEMPLATE,
-    build_criteria_block,
+    build_system_prompt,
     parse_judge_response,
 )
 from app.ai.agents.evals.judges.schemas import (
@@ -63,8 +62,7 @@ class ImportAnnotatorJudge:
     criteria: list[JudgeCriteria] = IMPORT_ANNOTATOR_CRITERIA
 
     def build_prompt(self, judge_input: JudgeInput) -> str:
-        criteria_block = build_criteria_block(self.criteria)
-        system = SYSTEM_PROMPT_TEMPLATE.format(criteria_block=criteria_block)
+        system = build_system_prompt(self.criteria, self.agent_name)
         input_html = str(judge_input.input_data.get("html", ""))
         output_html = str((judge_input.output_data or {}).get("annotated_html", ""))
         user_content = (

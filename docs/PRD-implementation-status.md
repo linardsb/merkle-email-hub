@@ -248,7 +248,7 @@
 
 ### Up Next
 
-**Phase 43** (Judge Feedback Loop — auto-generate correction examples from calibration disagreements, inject into judge prompts, judge skill files, Knowledge agent integration, calibration regression gate). Unblocked now that Phase 37 is complete. See `TODO.md` Phase 43 for details.
+**Phase 43** (Judge Feedback Loop) — 2/6 done. 43.1 done (correction YAML generator from calibration disagreements). 43.2 done (correction injection into judge prompts with FP-prioritized token-budgeted formatting, `build_system_prompt()` wrapper, `--no-corrections` A/B flag). Remaining: 43.3 judge skill files, 43.4 Knowledge agent integration, 43.5 calibration regression gate, 43.6 end-to-end validation.
 
 **Phase 35.4–35.11** (Next-Gen Design-to-Email Pipeline — remaining 6 subtasks: MJML section templates, AI conversion learning loop, W3C Design Tokens + caniemail.com, Figma webhooks, incremental conversion, tests). See `TODO.md` for details.
 

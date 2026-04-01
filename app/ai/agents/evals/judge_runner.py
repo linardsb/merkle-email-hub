@@ -409,7 +409,17 @@ async def main() -> None:
         default="hybrid",
         help="Judge mode: hybrid (QA+LLM), llm (all LLM), deterministic (QA only, default: hybrid)",
     )
+    parser.add_argument(
+        "--no-corrections",
+        action="store_true",
+        help="Disable correction example injection (for A/B comparison runs)",
+    )
     args = parser.parse_args()
+
+    if args.no_corrections:
+        from app.ai.agents.evals.judges.base import set_corrections_enabled
+
+        set_corrections_enabled(False)
 
     agents = (
         [

@@ -1,8 +1,7 @@
 """Binary pass/fail judge for the Scaffolder agent."""
 
 from app.ai.agents.evals.judges.base import (
-    SYSTEM_PROMPT_TEMPLATE,
-    build_criteria_block,
+    build_system_prompt,
     format_design_context_section,
     format_golden_section,
     parse_judge_response,
@@ -80,8 +79,7 @@ class ScaffolderJudge:
 
     def build_prompt(self, judge_input: JudgeInput) -> str:
         """Build evaluation prompt with brief and generated HTML."""
-        criteria_block = build_criteria_block(self.criteria)
-        system = SYSTEM_PROMPT_TEMPLATE.format(criteria_block=criteria_block)
+        system = build_system_prompt(self.criteria, self.agent_name)
 
         brief = str(judge_input.input_data.get("brief", ""))
         html_output = ""

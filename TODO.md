@@ -517,7 +517,7 @@
 > **Dependency:** Phase 37.5 complete (human labels exist). No database changes. No API changes. ~400 LOC of new code + YAML config.
 
 - [x] ~~43.1 Judge correction generator from calibration data~~ DONE
-- [ ] 43.2 Inject corrections into judge prompt template
+- [x] ~~43.2 Inject corrections into judge prompt template~~ DONE
 - [ ] 43.3 Judge skill files for domain knowledge accumulation
 - [ ] 43.4 Knowledge agent integration for cross-judge learnings
 - [ ] 43.5 Calibration delta tracking and regression gate

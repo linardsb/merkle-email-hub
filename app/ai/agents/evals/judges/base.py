@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import json
-from typing import Protocol
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Protocol
+
+import yaml
 
 from app.ai.agents.evals.judges.schemas import (
     CriterionResult,
@@ -15,6 +19,17 @@ from app.ai.agents.evals.judges.schemas import (
 
 _GOLDEN_TOKEN_BUDGET = 2000  # ~8000 chars at ~4 chars/token
 _DESIGN_CONTEXT_CHAR_BUDGET = 1500  # ~375 tokens for design context
+_CORRECTIONS_TOKEN_BUDGET = 1500  # ~6000 chars at ~4 chars/token
+_CORRECTIONS_DIR = Path(__file__).resolve().parents[3] / "traces" / "corrections"
+
+# Module-level toggle for --no-corrections CLI flag
+_corrections_enabled: bool = True
+
+
+def set_corrections_enabled(enabled: bool) -> None:
+    """Toggle correction injection (for A/B comparison runs)."""
+    global _corrections_enabled
+    _corrections_enabled = enabled
 
 
 class Judge(Protocol):
@@ -57,7 +72,7 @@ Respond with ONLY valid JSON in this exact format:
 
 CRITERIA:
 {criteria_block}
-
+{corrections_block}
 IMPORTANT:
 - Be strict. If in doubt, fail.
 - Judge the OUTPUT only. Do not judge the input quality.
@@ -144,6 +159,79 @@ def format_golden_section(
         )
 
     return header + "\n" + "\n\n".join(parts)
+
+
+@lru_cache(maxsize=16)
+def _load_corrections_cached(path_str: str, _mtime: float) -> dict[str, Any]:
+    """Load and cache correction YAML. Cache key includes mtime for staleness."""
+    with Path(path_str).open() as f:
+        data: dict[str, Any] = yaml.safe_load(f) or {}
+    return data
+
+
+def format_corrections_section(agent_name: str) -> str:
+    """Build correction anti-examples section for a given agent.
+
+    Loads from traces/corrections/{agent}_judge_corrections.yaml.
+    Prioritizes false positive corrections (more damaging — they let bad output through).
+    Returns empty string if no corrections file or corrections disabled.
+    """
+    if not _corrections_enabled:
+        return ""
+
+    path = _CORRECTIONS_DIR / f"{agent_name}_judge_corrections.yaml"
+
+    if not path.exists():
+        return ""
+
+    data = _load_corrections_cached(str(path), path.stat().st_mtime)
+    corrections: list[dict[str, Any]] = data.get("corrections", [])
+    if not corrections:
+        return ""
+
+    # Prioritize false positives over false negatives
+    fp = [c for c in corrections if c.get("type") == "false_positive"]
+    fn = [c for c in corrections if c.get("type") == "false_negative"]
+    ordered = fp + fn
+
+    char_budget = _CORRECTIONS_TOKEN_BUDGET * 4
+    parts: list[str] = []
+    used = 0
+
+    for i, c in enumerate(ordered, 1):
+        entry = (
+            f"{i}. **{c['criterion']}** on trace {c['trace_id']}:\n"
+            f"   You said: {c['judge_said']}. Correct answer: {c['correct_answer']}.\n"
+            f'   Your reasoning was: "{c.get("judge_reasoning", "")[:200]}"\n'
+            f"   The mistake: {c.get('pattern', '')}"
+        )
+        if used + len(entry) > char_budget:
+            break
+        parts.append(entry)
+        used += len(entry)
+
+    if not parts:
+        return ""
+
+    header = (
+        "## CORRECTION EXAMPLES (from prior calibration)\n"
+        "You previously made these mistakes. Learn from them:\n"
+    )
+    return header + "\n" + "\n\n".join(parts)
+
+
+def build_system_prompt(
+    criteria: list[JudgeCriteria],
+    agent_name: str,
+) -> str:
+    """Build system prompt with criteria and corrections injected."""
+    criteria_block = build_criteria_block(criteria)
+    corrections = format_corrections_section(agent_name)
+    corrections_block = f"\n{corrections}\n" if corrections else ""
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        criteria_block=criteria_block,
+        corrections_block=corrections_block,
+    )
 
 
 def format_design_context_section(ctx: DesignContext) -> str:
