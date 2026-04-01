@@ -446,7 +446,7 @@
 
 ---
 
-### 42.7 Wire ETag + Smart Polling into CI Validation `[DevOps]`
+### ~~42.7 Wire ETag + Smart Polling into CI Validation `[DevOps]`~~ DONE
 
 **What:** Add validation to the CI pipeline that ensures: (1) no new SWR hooks use hardcoded `refreshInterval` numbers (must use `POLL.*` constants), (2) the ETag middleware is registered and responding, (3) the `useSmartPolling` hook is used for all polling intervals > 0.
 **Why:** Without CI enforcement, new hooks will inevitably introduce hardcoded intervals, bypassing the centralized configuration. A lint rule catches this at PR time — much cheaper than discovering drift months later. The ETag middleware integration test catches accidental removal during refactoring.

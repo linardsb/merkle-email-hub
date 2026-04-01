@@ -71,6 +71,17 @@ export default [
       // Import hygiene
       "no-duplicate-imports": "error",
 
+      // Enforce POLL.* constants for refreshInterval (Phase 42.7)
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Property[key.name='refreshInterval'][value.type='Literal'][value.value!=0]",
+          message:
+            "Use POLL.* constants from @/lib/swr-constants instead of hardcoded refreshInterval values.",
+        },
+      ],
+
       // React best practices
       "react/no-danger": "warn",
       "react/self-closing-comp": "error",
@@ -88,6 +99,7 @@ export default [
     rules: {
       "no-console": "off",
       "security/detect-non-literal-fs-filename": "off",
+      "no-restricted-syntax": "off",
     },
   },
 

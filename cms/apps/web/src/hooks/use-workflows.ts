@@ -4,21 +4,28 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
 import { mutationFetcher } from "@/lib/mutation-fetcher";
+import { useSmartPolling } from "@/hooks/use-smart-polling";
+import { POLL, SWR_PRESETS } from "@/lib/swr-constants";
 import type { ApiError } from "@/lib/api-error";
 import type { WorkflowListResponse, WorkflowStatus, ExecutionLogsResponse } from "@/types/workflows";
 
 const BASE = "/api/v1/workflows";
 
 export function useWorkflows() {
-  return useSWR<WorkflowListResponse>(BASE, fetcher, { refreshInterval: 60_000 });
+  const interval = useSmartPolling(POLL.background);
+  return useSWR<WorkflowListResponse>(BASE, fetcher, {
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
+  });
 }
 
 /** Poll a specific execution — pass null executionId to skip */
 export function useWorkflowStatus(executionId: string | null, isActive = false) {
+  const interval = useSmartPolling(isActive ? POLL.frequent : POLL.status);
   return useSWR<WorkflowStatus>(
     executionId ? `${BASE}/${executionId}` : null,
     fetcher,
-    { refreshInterval: isActive ? 5_000 : 30_000 },
+    { refreshInterval: interval, ...SWR_PRESETS.polling },
   );
 }
 

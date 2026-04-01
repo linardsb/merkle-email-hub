@@ -5908,3 +5908,35 @@ Extended `app/design_sync/diagnose/extract.py` with automatic Figma Images API s
 `VLMSectionClassifier` in `vlm_classifier.py` — `classify_sections(frame_screenshots, frame_metadata)` builds multimodal message with `ImageBlock` per frame, returns `list[VLMSectionClassification]`. `_classify_section()` in `layout_analyzer.py` returns `tuple[EmailSectionType, float]` confidence scores. 3-rule merge: rule > 0.9 wins, UNKNOWN overridden by VLM, VLM > rule when above threshold. Config flags `DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED/MODEL/CONFIDENCE_THRESHOLD/TIMEOUT`. 12 tests.
 
 ---
+
+## Phase 42 — HTTP Caching, Smart Polling & Data Fetching Hardening — DONE
+
+### 42.1 Backend ETag Middleware `[Backend]` — DONE
+
+`app/core/etag.py` `ETagMiddleware` — MD5 hash of JSON response body, `304 Not Modified` on `If-None-Match` match, `Cache-Control: no-cache, must-revalidate`. Registered in `app/core/middleware.py`. 8 tests in `app/core/tests/test_etag.py`.
+
+### 42.2 Frontend ETag Support in SWR Fetcher `[Frontend]` — DONE
+
+`swr-fetcher.ts` — returns `undefined` on 304 so SWR keeps cached data, SSR empty-body edge case handling. 5 tests.
+
+### 42.3 Visibility-Aware Smart Polling Hook `[Frontend]` — DONE
+
+`use-smart-polling.ts` `useSmartPolling(baseInterval)` — visibility-aware `refreshInterval` for SWR (3 states: visible=1x, blurred=1.5x, hidden=0), SSR-safe. 6 tests.
+
+### 42.4 Centralized Polling & Dedup Constants `[Frontend]` — DONE
+
+`swr-constants.ts` — `POLL` 6-tier intervals (realtime 3s → background 60s), `DEDUP` 3-tier deduplication, `SWR_PRESETS` 4 option presets, all `as const` literal types. 7 tests.
+
+### 42.5 Migrate High-Traffic Hooks to Smart Polling + Constants `[Frontend]` — DONE
+
+8 polling hooks migrated in 7 files — `useSmartPolling` + `POLL.*` constants + `SWR_PRESETS.polling` spread, conditional hooks for renderings/design-sync, `SWR_PRESETS.reference` for email-clients dedup. 12 migration tests.
+
+### 42.6 Unified Progress Tracking for Long-Running Operations `[Backend + Frontend]` — DONE
+
+`app/core/progress.py` `ProgressTracker` thread-safe in-memory store + `ProgressEntry` dataclass + `OperationStatus` enum. `app/core/progress_routes.py` `GET /api/v1/progress/{id}` + `GET /api/v1/progress/active/list` with auth. `ProgressConfig` in config, lifespan cleanup loop, wired into rendering/qa_engine/design_sync/connectors services. `use-progress.ts` SWR hook with `useSmartPolling` + auto-stop on completion. 13 backend + 6 frontend tests.
+
+### 42.7 Wire ETag + Smart Polling into CI Validation `[DevOps]` — DONE
+
+ESLint `no-restricted-syntax` rule in `eslint.config.mjs` catches `refreshInterval: <number_literal>` (except 0), test files relaxed. `make lint-polling` grep-based fallback wired into `check-fe`. `app/core/tests/test_etag_ci.py` 3 tests verifying ETag middleware on real app `/health` endpoint (ETag header, 304, Cache-Control). `use-workflows.ts` + `use-voice-briefs.ts` migrated to `useSmartPolling` + `POLL.*` constants. All 10 polling hooks now use centralized constants.
+
+---

@@ -1,4 +1,4 @@
-.PHONY: dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana help
+.PHONY: dev dev-be dev-fe dev-mock-esp dev-observe docker docker-down test test-fe lint types check check-fe db e2e install-hooks security-check sdk seed-knowledge ontology-sync ontology-sync-dry sync-ontology eval-verify eval-run eval-judge eval-labels eval-labeling-tool eval-analysis eval-blueprint eval-regression eval-check eval-calibrate eval-qa-calibrate eval-qa-coverage eval-dry-run eval-full eval-baseline eval-skill-test eval-golden eval-suggest cli-setup cli-list cli-search cli docker-logs test-properties e2e-ui sdk-local db-migrate db-revision db-squash eval-refresh seed-demo demo bench e2e-firefox e2e-webkit e2e-all-browsers e2e-smoke skill-versions skill-pin skill-unpin skill-rollback grafana lint-polling help
 
 # === Local Development ===
 
@@ -79,15 +79,22 @@ types: ## Run mypy + pyright
 	uv run mypy app/
 	uv run pyright app/
 
-check-fe: ## Run frontend checks (lint + format + type-check + tests)
+check-fe: ## Run frontend checks (lint + format + type-check + tests + polling)
 	cd cms && pnpm --filter web lint 2>/dev/null || true
 	cd cms && pnpm --filter web format:check 2>/dev/null || true
 	cd cms && pnpm --filter web type-check
 	cd cms && pnpm --filter web test
+	$(MAKE) lint-polling
 
 lint-fe: ## Format + lint frontend (ESLint + Prettier)
 	cd cms && pnpm --filter web lint:fix 2>/dev/null || true
 	cd cms && pnpm --filter web format 2>/dev/null || true
+
+lint-polling: ## Check for hardcoded polling intervals in hook source files
+	@! grep -rn 'refreshInterval:\s*[0-9]' cms/apps/web/src/hooks/*.ts cms/apps/web/src/hooks/*.tsx 2>/dev/null \
+		| grep -v '// polling-ok' \
+		|| { echo "FAIL: Hardcoded refreshInterval in hook source files (use POLL.* constants)"; exit 1; }
+	@echo "OK: All polling intervals use POLL constants"
 
 golden-conformance: ## Golden template conformance gate (design_sync)
 	uv run pytest app/design_sync/tests/test_golden_conformance.py -x -q --tb=short
@@ -249,6 +256,9 @@ eval-calibrate: ## Calibrate judges against human labels (all 9 agents)
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/code_reviewer_verdicts.jsonl --labels traces/code_reviewer_human_labels.jsonl --output traces/code_reviewer_calibration.json
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/knowledge_verdicts.jsonl --labels traces/knowledge_human_labels.jsonl --output traces/knowledge_calibration.json
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/innovation_verdicts.jsonl --labels traces/innovation_human_labels.jsonl --output traces/innovation_calibration.json
+
+eval-corrections: ## Generate judge correction YAML from calibration disagreements
+	uv run python -m app.ai.agents.evals.judge_corrections --traces-dir traces/ --output traces/corrections/
 
 eval-qa-calibrate: ## Calibrate QA gate against human labels (all 9 agents)
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/scaffolder_traces.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/qa_calibration_scaffolder.json

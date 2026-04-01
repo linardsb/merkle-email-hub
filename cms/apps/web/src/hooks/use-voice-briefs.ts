@@ -4,6 +4,8 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcher } from "@/lib/swr-fetcher";
 import { longMutationFetcher } from "@/lib/mutation-fetcher";
+import { useSmartPolling } from "@/hooks/use-smart-polling";
+import { POLL, SWR_PRESETS } from "@/lib/swr-constants";
 
 // ── Types ──
 
@@ -53,13 +55,14 @@ interface VoiceBriefListResponse {
 
 /** List voice briefs for a project (newest first) */
 export function useVoiceBriefs(projectId: number | null, page = 1) {
+  const interval = useSmartPolling(POLL.status);
   const key = projectId
     ? `/api/v1/projects/${projectId}/voice-briefs?page=${page}&page_size=20`
     : null;
 
   return useSWR<VoiceBriefListResponse>(key, fetcher, {
-    revalidateOnFocus: false,
-    refreshInterval: 30_000,
+    refreshInterval: interval,
+    ...SWR_PRESETS.polling,
   });
 }
 
