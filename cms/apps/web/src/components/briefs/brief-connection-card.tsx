@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { FolderOpen, RefreshCw, Trash2, Loader2 } from "../icons";
 import { BriefStatusBadge } from "./brief-status-badge";
 import type { BriefConnection } from "@/types/briefs";
 

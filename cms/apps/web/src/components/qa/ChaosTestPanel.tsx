@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Zap, ChevronDown, ChevronUp, Loader2, Wrench } from "lucide-react";
+import { Zap, ChevronDown, ChevronUp, Loader2, Wrench } from "../icons";
 import { useChaosTest } from "@/hooks/use-chaos-test";
 import { useQARun } from "@/hooks/use-qa";
 import type { ChaosProfileResult, ChaosFailure } from "@/types/chaos";

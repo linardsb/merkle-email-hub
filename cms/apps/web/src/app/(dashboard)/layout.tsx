@@ -1,6 +1,19 @@
 import Link from "next/link";
-import Image from "next/image";
-import { LogOut } from "lucide-react";
+import {
+  Activity,
+  Blocks,
+  BookOpen,
+  Braces,
+  ClipboardCheck,
+  FileText,
+  FolderOpen,
+  LayoutDashboard,
+  LogOut,
+  Monitor,
+  Network,
+  Pencil,
+  Workflow,
+} from "../../components/icons";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
@@ -21,62 +34,62 @@ export default function DashboardLayout({
     {
       href: "/",
       label: "Dashboard",
-      icon: <Image src="/icons/brand/dashboard.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <LayoutDashboard className="h-5 w-5" />,
     },
     {
       href: "/projects",
       label: "Projects",
-      icon: <Image src="/icons/brand/projects.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <FolderOpen className="h-5 w-5" />,
     },
     {
       href: "/components",
       label: "Components",
-      icon: <Image src="/icons/brand/components.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Braces className="h-5 w-5" />,
     },
     {
       href: "/approvals",
       label: "Approvals",
-      icon: <Image src="/icons/brand/approvals.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <ClipboardCheck className="h-5 w-5" />,
     },
     {
       href: "/connectors",
       label: "Connectors",
-      icon: <Image src="/icons/brand/connectors.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Network className="h-5 w-5" />,
     },
     {
       href: "/intelligence",
       label: "Intelligence",
-      icon: <Image src="/icons/brand/intelligence.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Activity className="h-5 w-5" />,
     },
     {
       href: "/knowledge",
       label: "Knowledge",
-      icon: <Image src="/icons/brand/knowledge.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <BookOpen className="h-5 w-5" />,
     },
     {
       href: "/renderings",
       label: "Renderings",
-      icon: <Image src="/icons/brand/renderings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Monitor className="h-5 w-5" />,
     },
     {
       href: "/design-sync",
       label: "Design Sync",
-      icon: <Image src="/icons/brand/figma.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Pencil className="h-5 w-5" strokeWidth={1.5} />,
     },
     {
       href: "/briefs",
       label: "Briefs",
-      icon: <Image src="/icons/brand/briefs.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <FileText className="h-5 w-5" />,
     },
     {
       href: "/ecosystem",
       label: "Ecosystem",
-      icon: <Image src="/icons/brand/ecosystem.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Blocks className="h-5 w-5" />,
     },
     {
       href: "/settings",
       label: "Settings",
-      icon: <Image src="/icons/brand/settings.svg" alt="" width={20} height={20} className="h-5 w-5" />,
+      icon: <Workflow className="h-5 w-5" />,
     },
   ];
 

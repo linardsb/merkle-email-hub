@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { Loader2, ShieldCheck, ShieldAlert, SkipForward } from "lucide-react";
+import { Loader2, ShieldCheck, ShieldAlert, SkipForward } from "../icons";
 import { useSession } from "next-auth/react";
 import { useGateEvaluate } from "@/hooks/use-rendering-gate";
 import { GateSummaryBadge } from "./gate-summary-badge";

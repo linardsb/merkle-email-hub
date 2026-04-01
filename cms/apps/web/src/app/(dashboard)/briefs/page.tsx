@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList } from "../../../components/icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { EmptyState } from "@/components/ui/empty-state";

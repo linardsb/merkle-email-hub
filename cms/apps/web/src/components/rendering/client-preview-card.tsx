@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Maximize2, Moon, Sun } from "lucide-react";
+import { Maximize2, Moon, Sun } from "../icons";
 import { ConfidenceBar } from "./confidence-bar";
 import type { ConfidenceBreakdown } from "@/types/rendering-dashboard";
 

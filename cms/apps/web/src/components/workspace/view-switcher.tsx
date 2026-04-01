@@ -1,6 +1,6 @@
 "use client";
 
-import { Code, Layout, Columns } from "lucide-react";
+import { Code, Layout, Columns } from "../icons";
 import type { SyncStatus } from "@/types/visual-builder";
 
 export type ViewMode = "code" | "builder" | "split";

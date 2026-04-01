@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import {
-  Search,
-  Layout,
-  Type,
-  ShoppingBag,
-  MousePointerClick,
-  Share2,
-  Puzzle,
-} from "lucide-react";
+import { Search, Layout, Type, MousePointerClick, MousePointer, Sparkles, Wrench, Puzzle } from "../icons";
 import { useComponents } from "@/hooks/use-components";
 import { SECTION_CATEGORIES, type SectionCategory } from "@/types/visual-builder";
 import type { ComponentResponse } from "@email-hub/sdk";
@@ -20,8 +12,9 @@ const CATEGORY_ICONS: Record<SectionCategory, typeof Layout> = {
   structure: Layout,
   content: Type,
   action: MousePointerClick,
-  social: Share2,
-  commerce: ShoppingBag,
+  interactive: MousePointer,
+  animation: Sparkles,
+  utility: Wrench,
 };
 
 function PaletteCard({ component }: { component: ComponentResponse }) {

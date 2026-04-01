@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Bot, Check, Copy, Loader2, User } from "lucide-react";
+import { Bot, Check, Copy, Loader2, User } from "../../icons";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatMessage } from "@/types/chat";
 import { ConfidenceIndicator } from "./confidence-indicator";

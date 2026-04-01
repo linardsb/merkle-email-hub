@@ -28,6 +28,7 @@ from app.connectors.taxi.service import TaxiConnectorService
 from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.logging import get_logger
+from app.core.progress import OperationStatus, ProgressTracker
 from app.design_sync.crypto import decrypt_token
 from app.email_engine.models import EmailBuild
 from app.projects.service import ProjectService
@@ -131,10 +132,25 @@ class ConnectorService:
 
     async def export(self, data: ExportRequest, user: User) -> ExportResponse:
         """Export an email build or template version to the specified ESP."""
+        operation_id = f"export-{data.connector_type}-{data.build_id or data.template_version_id}"
+        ProgressTracker.start(operation_id, "export")
+        ProgressTracker.update(
+            operation_id,
+            status=OperationStatus.PROCESSING,
+            progress=5,
+            message="Validating export request...",
+        )
+
         # Admin-only overrides
         if data.skip_qa_gate and user.role != "admin":
+            ProgressTracker.update(
+                operation_id, status=OperationStatus.FAILED, error="Permission denied"
+            )
             raise ForbiddenError("Only admins can skip QA gate")
         if data.skip_approval and user.role != "admin":
+            ProgressTracker.update(
+                operation_id, status=OperationStatus.FAILED, error="Permission denied"
+            )
             raise ForbiddenError("Only admins can skip approval gate")
 
         html = await self._resolve_html(data, user)
@@ -235,6 +251,10 @@ class ConnectorService:
         if data.connection_id is not None:
             credentials = await self._resolve_credentials(data.connection_id, user)
 
+        ProgressTracker.update(
+            operation_id, progress=30, message=f"Exporting to {data.connector_type}..."
+        )
+
         logger.info(
             "connectors.export_started",
             connector=data.connector_type,
@@ -248,6 +268,9 @@ class ConnectorService:
             try:
                 external_id = await provider.export(html, data.content_block_name, credentials)
             except Exception as exc:
+                ProgressTracker.update(
+                    operation_id, status=OperationStatus.FAILED, error="Export failed"
+                )
                 logger.error(
                     "connectors.export_error",
                     connector=data.connector_type,
@@ -258,6 +281,9 @@ class ConnectorService:
                 )
                 raise ExportFailedError("Export operation failed") from exc
 
+            ProgressTracker.update(
+                operation_id, status=OperationStatus.COMPLETED, progress=100, message="Exported"
+            )
             logger.info(
                 "connectors.export_completed",
                 connector=data.connector_type,
@@ -293,6 +319,9 @@ class ConnectorService:
         except Exception as exc:
             record.status = "failed"
             record.error_message = "Export failed"
+            ProgressTracker.update(
+                operation_id, status=OperationStatus.FAILED, error="Export failed"
+            )
             logger.error(
                 "connectors.export_error",
                 record_id=record.id,
@@ -306,6 +335,9 @@ class ConnectorService:
             await self.db.commit()
             await self.db.refresh(record)
 
+        ProgressTracker.update(
+            operation_id, status=OperationStatus.COMPLETED, progress=100, message="Exported"
+        )
         logger.info(
             "connectors.export_completed",
             record_id=record.id,

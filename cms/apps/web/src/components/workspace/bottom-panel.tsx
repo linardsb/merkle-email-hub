@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { MessageSquare, Zap, Layers, History } from "lucide-react";
+import { MessageSquare, Zap, Layers, History } from "../icons";
 import { ChatPanel } from "./chat-panel";
 import { BlueprintRunsList } from "./blueprint/runs-list";
 import { AgentContextPanel } from "./agent-context-panel";

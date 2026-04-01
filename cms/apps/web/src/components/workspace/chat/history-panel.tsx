@@ -1,6 +1,6 @@
 "use client";
 
-import { History, Trash2 } from "lucide-react";
+import { History, Trash2 } from "../../icons";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { SessionCard } from "./session-card";
 import type { ChatSession } from "@/types/chat-history";

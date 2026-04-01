@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Target, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Activity, Target, CheckCircle2, ShieldAlert } from "../icons";
 import type { QADashboardMetrics } from "@/types/qa";
 
 interface ScoreOverviewCardsProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { Send, Square } from "lucide-react";
+import { Send, Square } from "../../icons";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { ChatStatus } from "@/types/chat";
 

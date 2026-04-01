@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Clock, RotateCcw, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Clock, RotateCcw, Eye, EyeOff, Loader2 } from "../icons";
 import { toast } from "sonner";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";

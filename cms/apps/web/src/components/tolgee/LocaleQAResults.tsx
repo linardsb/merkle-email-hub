@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import {
-  Check,
-  X,
-  AlertTriangle,
-  Clock,
-  Loader2,
-  Play,
-} from "lucide-react";
+import { Check, X, AlertTriangle, Clock, Loader2, Play } from "../icons";
 import { toast } from "sonner";
 import { authFetch, LONG_TIMEOUT_MS } from "@/lib/auth-fetch";
 import { ApiError } from "@/lib/api-error";

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle } from "../icons";
 import type { GateVerdict } from "@/types/rendering-gate";
 
 const VERDICT_STYLES: Record<GateVerdict, { bg: string; text: string; icon: typeof CheckCircle2; label: string }> = {

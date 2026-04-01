@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "../icons";
 import { usePlugins, usePluginHealthSummary } from "@/hooks/use-plugins";
 import { PluginRow } from "./PluginRow";
 import type { PluginStatus } from "@/types/plugins";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Search } from "../icons";
 import { useEmailClients } from "@/hooks/use-email-clients";
 import type { EmailClientResponse } from "@email-hub/sdk";
 

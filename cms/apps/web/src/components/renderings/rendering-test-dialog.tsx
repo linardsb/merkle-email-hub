@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { X, Loader2, CheckCircle, AlertCircle } from "../icons";
 import { useRequestRendering, useRenderingTestPolling } from "@/hooks/use-renderings";
 import type { RenderingTest } from "@/types/rendering";
 

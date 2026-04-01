@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useParams, notFound } from "next/navigation";
-import { Palette, Loader2 } from "lucide-react";
+import { Palette, Loader2 } from "../../../../../components/icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { useProject } from "@/hooks/use-projects";

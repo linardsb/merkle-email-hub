@@ -3,12 +3,7 @@
 import { useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import {
-  CheckCircle2,
-  XCircle,
-  Upload,
-  Loader2,
-} from "lucide-react";
+import { CheckCircle2, XCircle, Upload, Loader2 } from "../icons";
 import { useBaselines, useUpdateBaseline } from "@/hooks/use-visual-qa";
 import type {
   ClientScreenshot,

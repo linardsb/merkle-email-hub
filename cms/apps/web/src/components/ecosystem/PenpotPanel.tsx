@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paintbrush, ExternalLink, FolderOpen } from "lucide-react";
+import { Paintbrush, ExternalLink, FolderOpen } from "../icons";
 import { usePenpotConnections } from "@/hooks/use-penpot";
 import { DesignFileBrowser } from "@/components/design-sync/design-file-browser";
 import Link from "next/link";

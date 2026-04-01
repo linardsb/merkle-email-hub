@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { X, Loader2, AlertTriangle, CheckCircle, ImageOff } from "lucide-react";
+import { X, Loader2, AlertTriangle, CheckCircle, ImageOff } from "../icons";
 import { useRenderingComparison } from "@/hooks/use-renderings";
 
 interface Props {

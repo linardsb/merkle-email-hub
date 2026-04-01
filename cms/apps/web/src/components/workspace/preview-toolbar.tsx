@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Monitor,
-  Tablet,
-  Smartphone,
-  Moon,
-  Sun,
-  ZoomIn,
-  ZoomOut,
-  RefreshCw,
-} from "lucide-react";
+import { Monitor, Tablet, Smartphone, Moon, Sun, ZoomIn, ZoomOut, RefreshCw } from "../icons";
 import { PersonaSelector } from "./persona-selector";
 import type { PersonaResponse } from "@email-hub/sdk";
 

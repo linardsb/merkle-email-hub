@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "../icons";
 import { toast } from "sonner";
 import { useCreateApproval } from "@/hooks/use-approvals";
 import { useExportPreCheck } from "@/hooks/use-export-pre-check";

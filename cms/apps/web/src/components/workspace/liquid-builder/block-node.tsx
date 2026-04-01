@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, X, GitBranch, Repeat, Variable, Braces, Code } from "lucide-react";
+import { GripVertical, X, GitBranch, Repeat, Variable, Braces, Code } from "../../icons";
 import type { LiquidBlock } from "@/types/liquid-builder";
 import { BlockIf } from "./block-if";
 import { BlockFor } from "./block-for";

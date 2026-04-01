@@ -5,8 +5,9 @@ export const SECTION_CATEGORIES = [
   "structure",
   "content",
   "action",
-  "social",
-  "commerce",
+  "interactive",
+  "animation",
+  "utility",
 ] as const;
 export type SectionCategory = (typeof SECTION_CATEGORIES)[number];
 
@@ -15,6 +16,9 @@ export type SlotType =
   | "headline"
   | "subheadline"
   | "body"
+  | "content"
+  | "text"
+  | "attr"
   | "cta"
   | "image"
   | "preheader"

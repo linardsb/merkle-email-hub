@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail } from "lucide-react";
+import { Mail } from "../icons";
 
 interface BuilderPreviewProps {
   assembledHtml: string | null;

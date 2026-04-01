@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { Loader2, AlertTriangle, ArrowRightLeft } from "lucide-react";
+import { Loader2, AlertTriangle, ArrowRightLeft } from "../icons";
 import { toast } from "sonner";
 import { useLocaleBuild } from "@/hooks/use-tolgee";
 import type { TolgeeLanguage, LocaleBuildResult } from "@/types/tolgee";

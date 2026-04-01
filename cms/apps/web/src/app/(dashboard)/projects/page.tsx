@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { FolderOpen, Plus, Trash2 } from "lucide-react";
+import { FolderOpen, Plus, Trash2 } from "../../../components/icons";
 import { toast } from "sonner";
 import { authFetch } from "@/lib/auth-fetch";
 import { useProjects } from "@/hooks/use-projects";

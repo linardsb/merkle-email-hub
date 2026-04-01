@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Network,
-  ArrowRight,
-  Database,
-  Code,
-  Wrench,
-  Monitor,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-} from "lucide-react";
+import { Network, ArrowRight, Database, Code, Wrench, Monitor, CheckCircle2, XCircle, AlertTriangle } from "../icons";
 import type { GraphSearchResult, GraphEntity, GraphRelationship } from "@/types/graph-search";
 
 /* ── Entity type → icon + colour mapping ── */

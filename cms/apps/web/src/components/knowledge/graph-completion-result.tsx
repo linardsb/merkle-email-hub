@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "../icons";
 
 interface GraphCompletionResultProps {
   content: string;

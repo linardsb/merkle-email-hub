@@ -13,6 +13,7 @@ from app.auth.models import User
 from app.core.config import get_settings
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
+from app.core.progress import OperationStatus, ProgressTracker
 from app.core.resilience import CircuitBreaker
 from app.email_engine.models import EmailBuild
 from app.projects.service import ProjectService
@@ -105,6 +106,15 @@ class RenderingService:
     async def submit_test(self, data: RenderingTestRequest, user_id: int) -> RenderingTestResponse:
         """Submit HTML for cross-client rendering."""
         provider = self._get_provider()
+        operation_id = f"rendering-{data.build_id or 'adhoc'}-{user_id}"
+
+        ProgressTracker.start(operation_id, "rendering")
+        ProgressTracker.update(
+            operation_id,
+            status=OperationStatus.PROCESSING,
+            progress=10,
+            message="Submitting to rendering provider...",
+        )
 
         logger.info(
             "rendering.submit_started",
@@ -116,8 +126,12 @@ class RenderingService:
             async with _breaker:
                 external_id = await provider.submit_test(data.html, data.subject, data.clients)
         except RenderingSubmitError:
+            ProgressTracker.update(
+                operation_id, status=OperationStatus.FAILED, error="Rendering submission failed"
+            )
             raise
         except Exception as exc:
+            ProgressTracker.update(operation_id, status=OperationStatus.FAILED, error=str(exc))
             raise RenderingSubmitError(f"Failed to submit rendering test: {exc}") from exc
 
         test = await self.repository.create_test(
@@ -130,6 +144,9 @@ class RenderingService:
             client_names=data.clients,
         )
 
+        ProgressTracker.update(
+            operation_id, status=OperationStatus.COMPLETED, progress=100, message="Test submitted"
+        )
         logger.info("rendering.submit_completed", test_id=test.id, external_id=external_id)
         return self._to_response(test)
 

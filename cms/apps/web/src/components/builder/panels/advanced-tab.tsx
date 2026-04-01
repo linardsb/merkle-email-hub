@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Plus, Trash2, Code2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Code2, AlertTriangle } from "../../icons";
 import { Input } from "@email-hub/ui/components/ui/input";
 import { Label } from "@email-hub/ui/components/ui/label";
 import { Checkbox } from "@email-hub/ui/components/ui/checkbox";

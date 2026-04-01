@@ -1,6 +1,6 @@
 "use client";
 
-import { Figma, FolderOpen, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { Figma, FolderOpen, RefreshCw, Trash2, Loader2 } from "../icons";
 import { FigmaStatusBadge } from "./figma-status-badge";
 import type { FigmaConnection } from "@/types/figma";
 

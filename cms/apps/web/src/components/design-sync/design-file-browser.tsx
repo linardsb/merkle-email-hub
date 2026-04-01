@@ -1,17 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import {
-  ChevronRight,
-  ChevronDown,
-  FileText,
-  Frame,
-  Group,
-  Component,
-  Type,
-  Square,
-  Loader2,
-} from "lucide-react";
+import { ChevronRight, ChevronDown, FileText, Frame, Group, Component, Type, Square, Loader2 } from "../icons";
 import { useDesignFileStructure } from "@/hooks/use-design-sync";
 import type { DesignNode } from "@/types/design-sync";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserCheck, Monitor, Smartphone, Moon, Plus } from "lucide-react";
+import { UserCheck, Monitor, Smartphone, Moon, Plus } from "../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

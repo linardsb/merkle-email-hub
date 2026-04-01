@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { MessageSquare, Send, Loader2 } from "lucide-react";
+import { MessageSquare, Send, Loader2 } from "../icons";
 import { useApprovalFeedback, useAddFeedback } from "@/hooks/use-approvals";
 import { toast } from "sonner";
 

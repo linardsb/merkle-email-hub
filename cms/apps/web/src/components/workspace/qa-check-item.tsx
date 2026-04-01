@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle } from "../icons";
 import type { QACheckResult } from "@/types/qa";
 
 interface QACheckItemProps {

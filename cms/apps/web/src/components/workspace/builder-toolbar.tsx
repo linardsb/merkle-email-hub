@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Monitor,
-  Tablet,
-  Smartphone,
-  ShieldCheck,
-  Zap,
-  Copy,
-  Download,
-  CloudUpload,
-} from "lucide-react";
+import { Monitor, Tablet, Smartphone, ShieldCheck, Zap, Copy, Download, CloudUpload } from "../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

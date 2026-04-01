@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, WrapText, Palette } from "lucide-react";
+import { AlertTriangle, WrapText, Palette } from "../../icons";
 import { SaveIndicator, type SaveStatus } from "../save-indicator";
 import { EDITOR_THEMES } from "./editor-themes";
 

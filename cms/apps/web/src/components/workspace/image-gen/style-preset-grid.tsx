@@ -1,8 +1,8 @@
 "use client";
 
-import { Package, Camera, Sparkles } from "lucide-react";
+import { Package, Camera, Sparkles } from "../../icons";
 import type { StylePreset } from "@/types/image-gen";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "../../icons";
 
 const PRESETS: { value: StylePreset; icon: LucideIcon; label: string }[] = [
   { value: "product", icon: Package, label: "Product" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye } from "lucide-react";
+import { Eye } from "../icons";
 
 /**
  * Placeholder for rendering change timeline.

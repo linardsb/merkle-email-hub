@@ -104,6 +104,69 @@ def match_all(
     ]
 
 
+async def match_section_with_vlm_fallback(
+    section: EmailSection,
+    idx: int,
+    *,
+    container_width: int = 600,
+    image_urls: dict[str, str] | None = None,
+    screenshot: bytes | None = None,
+    candidate_types: list[str] | None = None,
+) -> ComponentMatch:
+    """Match section with optional VLM fallback for low-confidence matches.
+
+    Wraps :func:`match_section` and, when the heuristic confidence falls below
+    ``low_match_confidence_threshold``, calls the VLM classifier to attempt a
+    better classification from the section screenshot.
+
+    Args:
+        section: The email section to match.
+        idx: Section index in the email.
+        container_width: Container width for slot fill calculation.
+        image_urls: Mapping of node IDs to image URLs.
+        screenshot: PNG bytes of the section screenshot (required for VLM).
+        candidate_types: Component type slugs from the manifest (required for VLM).
+
+    Returns:
+        ComponentMatch — either the original heuristic match or a VLM-improved one.
+    """
+    from app.core.config import get_settings
+
+    match = match_section(section, idx, container_width=container_width, image_urls=image_urls)
+
+    settings = get_settings()
+    threshold = settings.design_sync.low_match_confidence_threshold
+
+    if (
+        match.confidence >= threshold
+        or screenshot is None
+        or candidate_types is None
+        or not settings.design_sync.vlm_fallback_enabled
+    ):
+        return match
+
+    from app.design_sync.vlm_classifier import vlm_classify_section
+
+    vlm_result = await vlm_classify_section(screenshot, candidate_types)
+    if vlm_result is None:
+        return match
+
+    # Rebuild match with VLM-classified component type
+    new_slug = vlm_result.component_type
+    fills = _build_slot_fills(new_slug, section, container_width, image_urls=image_urls)
+    overrides = _build_token_overrides(section)
+
+    return ComponentMatch(
+        section_idx=idx,
+        section=section,
+        component_slug=new_slug,
+        slot_fills=fills,
+        token_overrides=overrides,
+        spacing_after=section.spacing_after,
+        confidence=vlm_result.confidence,
+    )
+
+
 # ── Private helpers ──
 
 

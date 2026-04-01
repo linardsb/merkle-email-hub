@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
-import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2, Puzzle, Link as LinkIcon } from "lucide-react";
+import { Calendar, Users, Paperclip, Tag, AlertCircle, Loader2, ExternalLink, ImageOff, Building2, Puzzle, Link as LinkIcon } from "../icons";
 import { useBriefDetail } from "@/hooks/use-briefs";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";

@@ -2,7 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Loader2, Upload } from "lucide-react";
+import { AlertTriangle, Loader2, Upload } from "../icons";
 import type { CodeEditorHandle } from "@/hooks/use-editor-bridge";
 import type { SaveStatus } from "./save-indicator";
 import type { BrandConfig } from "@/types/brand";

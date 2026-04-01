@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ShieldCheck, ShieldAlert, ChevronDown, ChevronUp } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ChevronDown, ChevronUp } from "../../icons";
 import { QACheckItem } from "../qa-check-item";
 import { QAOverrideDialog } from "../qa-override-dialog";
 import { useSession } from "next-auth/react";

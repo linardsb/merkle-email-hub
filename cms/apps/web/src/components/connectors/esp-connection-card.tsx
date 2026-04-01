@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "../icons";
 import { ESP_LABELS } from "@/types/esp-sync";
 import type { ESPConnectionResponse } from "@/types/esp-sync";
 

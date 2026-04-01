@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import {
-  Play, Pause, Sparkles, Trash2, Clock, User, BarChart3,
-} from "lucide-react";
+import { Play, Pause, Sparkles, Trash2, Clock, User, BarChart3 } from "../icons";
 import { toast } from "sonner";
 import { mutate } from "swr";
 import {

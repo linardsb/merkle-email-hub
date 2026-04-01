@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "../icons";
 
 export type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
 

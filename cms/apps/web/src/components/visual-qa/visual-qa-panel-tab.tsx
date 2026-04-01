@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Eye } from "lucide-react";
+import { Camera, Eye } from "../icons";
 import { VisualQADialog } from "./visual-qa-dialog";
 import type { VisualQAEntityType } from "@/types/rendering";
 

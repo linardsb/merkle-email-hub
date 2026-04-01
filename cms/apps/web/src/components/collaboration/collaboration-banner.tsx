@@ -1,6 +1,6 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { Users } from "../icons";
 import type { Collaborator, CollaborationStatus } from "@/types/collaboration";
 
 interface CollaborationBannerProps {

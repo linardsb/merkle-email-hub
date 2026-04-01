@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X } from "../icons";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB

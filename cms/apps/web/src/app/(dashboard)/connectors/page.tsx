@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Plug, Plus } from "lucide-react";
+import { Plug, Plus } from "../../../components/icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { EmptyState } from "@/components/ui/empty-state";

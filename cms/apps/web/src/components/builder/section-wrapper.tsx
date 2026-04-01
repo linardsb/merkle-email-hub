@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Copy, Trash2 } from "lucide-react";
+import { GripVertical, Copy, Trash2 } from "../icons";
 import DOMPurify from "dompurify";
 import type { BuilderSection } from "@/types/visual-builder";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText } from "../icons";
 import type { KnowledgeDocument } from "@/types/knowledge";
 
 const DOMAIN_LABELS: Record<string, string> = {

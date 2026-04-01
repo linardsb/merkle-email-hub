@@ -1,6 +1,6 @@
 "use client";
 
-import { GitCommitVertical, Eye, FlaskConical, Loader2 } from "lucide-react";
+import { GitCommitVertical, Eye, FlaskConical, Loader2 } from "../icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";

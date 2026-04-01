@@ -1,4 +1,4 @@
-import { ShieldX } from "lucide-react";
+import { ShieldX } from "../../../components/icons";
 import Link from "next/link";
 
 export default function UnauthorizedPage() {

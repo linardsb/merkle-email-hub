@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Bot,
-  Cog,
-  CheckCircle2,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  AlertTriangle,
-} from "lucide-react";
+import { Bot, Cog, CheckCircle2, XCircle, ChevronDown, ChevronUp, Clock, AlertTriangle } from "../../icons";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { BlueprintProgress, HandoffSummary } from "@email-hub/sdk";
 import { useState } from "react";

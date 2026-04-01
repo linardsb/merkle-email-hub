@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import {
-  CheckCircle2,
-  Zap,
-  Search,
-  FileText,
-} from "lucide-react";
+import { CheckCircle2, Zap, Search, FileText } from "../icons";
 import {
   Dialog,
   DialogContent,

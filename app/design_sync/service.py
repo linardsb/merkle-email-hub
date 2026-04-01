@@ -15,6 +15,7 @@ from app.auth.models import User
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError
 from app.core.logging import get_logger
+from app.core.progress import OperationStatus, ProgressTracker
 from app.design_sync.assets import DesignAssetService
 from app.design_sync.brief_generator import generate_brief as generate_brief_text
 from app.design_sync.canva.service import CanvaDesignSyncService
@@ -1446,6 +1447,14 @@ class DesignSyncService:
 
         # Update status before launching background task to avoid race
         await self._repo.update_import_status(design_import, "converting")
+        operation_id = f"design-sync-{import_id}"
+        ProgressTracker.start(operation_id, "design_sync")
+        ProgressTracker.update(
+            operation_id,
+            status=OperationStatus.PROCESSING,
+            progress=10,
+            message="Starting conversion...",
+        )
         logger.info("design_sync.conversion_started", import_id=import_id)
 
         # Launch background pipeline with its own DB session
@@ -1458,12 +1467,29 @@ class DesignSyncService:
 
         def _on_task_done(task: asyncio.Task[None]) -> None:
             if task.cancelled():
+                ProgressTracker.update(
+                    operation_id,
+                    status=OperationStatus.FAILED,
+                    error="Conversion cancelled",
+                )
                 logger.warning("design_sync.conversion_cancelled", import_id=import_id)
             elif task.exception() is not None:
+                ProgressTracker.update(
+                    operation_id,
+                    status=OperationStatus.FAILED,
+                    error=str(task.exception()),
+                )
                 logger.error(
                     "design_sync.conversion_task_failed",
                     import_id=import_id,
                     error=str(task.exception()),
+                )
+            else:
+                ProgressTracker.update(
+                    operation_id,
+                    status=OperationStatus.COMPLETED,
+                    progress=100,
+                    message="Conversion complete",
                 )
 
         task = asyncio.create_task(

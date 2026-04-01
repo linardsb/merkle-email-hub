@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText } from "../icons";
 import { ApprovalStatusBadge } from "./approval-status-badge";
 import type { ApprovalResponse } from "@email-hub/sdk";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Paintbrush, Download, Loader2 } from "lucide-react";
+import { Paintbrush, Download, Loader2 } from "../../../components/icons";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api-error";
 import { useSWRConfig } from "swr";

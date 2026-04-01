@@ -2,14 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import {
-  Database,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
+import { Database, ChevronDown, ChevronUp, Loader2, AlertTriangle, RefreshCw } from "../icons";
 import { useOntologySyncStatus, useOntologySync } from "@/hooks/use-ontology";
 import type { ChangelogEntry, SyncReportResponse } from "@/types/ontology";
 

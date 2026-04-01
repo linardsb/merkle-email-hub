@@ -1,6 +1,6 @@
 "use client";
 
-import { FileSpreadsheet, FileText, Image, Languages, Paperclip, PenTool } from "lucide-react";
+import { FileSpreadsheet, FileText, Image, Languages, Paperclip, PenTool } from "../icons";
 import type { BriefResource, BriefResourceType } from "@/types/briefs";
 
 const RESOURCE_ICONS: Record<BriefResourceType, typeof FileText> = {

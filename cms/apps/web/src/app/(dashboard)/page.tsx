@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  LayoutDashboard,
-  FolderOpen,
-  Blocks,
-  CheckCircle2,
-  ClipboardCheck,
-  Target,
-  Activity,
-  Plus,
-} from "lucide-react";
+import { LayoutDashboard, FolderOpen, Blocks, CheckCircle2, ClipboardCheck, Target, Activity, Plus } from "../../components/icons";
 import { useProjects } from "@/hooks/use-projects";
 import { ErrorState } from "@/components/ui/error-state";
 import { SkeletonCard } from "@/components/ui/skeletons";

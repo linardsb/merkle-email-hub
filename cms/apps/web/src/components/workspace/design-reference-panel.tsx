@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Palette, ExternalLink } from "lucide-react";
+import { X, Palette, ExternalLink } from "../icons";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import {

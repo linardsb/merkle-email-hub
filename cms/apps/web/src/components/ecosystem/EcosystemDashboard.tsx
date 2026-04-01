@@ -1,6 +1,6 @@
 "use client";
 
-import { Puzzle, GitBranch, FileText, Paintbrush } from "lucide-react";
+import { Puzzle, GitBranch, FileText, Paintbrush } from "../icons";
 import { usePluginHealthSummary } from "@/hooks/use-plugins";
 import { useWorkflows } from "@/hooks/use-workflows";
 import { usePenpotConnections } from "@/hooks/use-penpot";

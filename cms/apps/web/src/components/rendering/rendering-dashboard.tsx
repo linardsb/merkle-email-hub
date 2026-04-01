@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState, useRef, useEffect } from "react";
-import { Loader2, MonitorSmartphone, X } from "lucide-react";
+import { Loader2, MonitorSmartphone, X } from "../icons";
 import { useSession } from "next-auth/react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck, FlaskConical, Monitor, Brain, X } from "lucide-react";
+import { ShieldCheck, FlaskConical, Monitor, Brain, X } from "../../icons";
 import {
   Tooltip,
   TooltipContent,

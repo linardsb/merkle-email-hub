@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, ChevronDown, ChevronRight, Clock, AlertCircle } from "lucide-react";
+import { Play, ChevronDown, ChevronRight, Clock, AlertCircle } from "../icons";
 import { useWorkflows, useWorkflowStatus, useWorkflowLogs, useTriggerWorkflow } from "@/hooks/use-workflows";
 import type { WorkflowExecutionStatus, WorkflowStatus as WFStatus } from "@/types/workflows";
 import {

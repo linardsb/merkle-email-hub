@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, ImageOff } from "lucide-react";
+import { ChevronDown, ChevronRight, ImageOff } from "../icons";
 import type { RenderingTest, ScreenshotResult } from "@/types/rendering";
 
 interface Props {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Search, Building2 } from "lucide-react";
+import { Search, Building2 } from "../icons";
 import { SkeletonCard } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -13,7 +13,7 @@ import { DesignImportDialog } from "@/components/design-sync/design-import-dialo
 import { ConnectDesignDialog } from "@/components/design-sync/connect-design-dialog";
 import type { BriefPlatform, BriefItemStatus, BriefItem } from "@/types/briefs";
 import type { DesignConnection } from "@/types/design-sync";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList } from "../icons";
 
 const PLATFORM_LABELS: Record<string, string> = {
   jira: "Jira",

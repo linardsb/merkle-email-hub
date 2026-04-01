@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "../../icons";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 
 const REVIEW_THRESHOLD = 0.5;

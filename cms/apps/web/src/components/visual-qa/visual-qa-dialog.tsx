@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Camera, GitCompareArrows, Loader2 } from "lucide-react";
+import { X, Camera, GitCompareArrows, Loader2 } from "../icons";
 import { toast } from "sonner";
 import { useCaptureScreenshots, useVisualDiff, useBaselines } from "@/hooks/use-visual-qa";
 import { ClientComparisonGrid } from "./client-comparison-grid";

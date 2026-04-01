@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "../../components/icons";
 import Link from "next/link";
 
 export default function DashboardError({

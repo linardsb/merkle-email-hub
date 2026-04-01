@@ -1,6 +1,6 @@
 "use client";
 
-import { Workflow, AlertTriangle, Users, ListChecks } from "lucide-react";
+import { Workflow, AlertTriangle, Users, ListChecks } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useFailurePatternStats } from "@/hooks/use-failure-patterns";
 

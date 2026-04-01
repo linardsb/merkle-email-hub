@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, RotateCcw } from "lucide-react";
+import { Zap, RotateCcw } from "../../icons";
 import {
   Dialog,
   DialogContent,

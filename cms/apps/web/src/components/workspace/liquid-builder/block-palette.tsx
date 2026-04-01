@@ -1,6 +1,6 @@
 "use client";
 
-import { GitBranch, Repeat, Variable, Braces, Code } from "lucide-react";
+import { GitBranch, Repeat, Variable, Braces, Code } from "../../icons";
 import type { LiquidBlockType } from "@/types/liquid-builder";
 
 const BLOCK_TYPE_LABELS: Record<string, string> = {

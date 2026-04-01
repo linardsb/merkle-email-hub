@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Eye, Loader2, RefreshCw, Search } from "lucide-react";
+import { Download, Eye, Loader2, RefreshCw, Search } from "../icons";
 import { useESPTemplates } from "@/hooks/use-esp-sync";
 import { ESP_LABELS } from "@/types/esp-sync";
 import type { ESPTemplate } from "@/types/esp-sync";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "../../icons";
 import { ImagePreviewCard } from "./image-preview-card";
 import type { GeneratedImage } from "@/types/image-gen";
 

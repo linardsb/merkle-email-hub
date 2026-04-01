@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlignLeft, AlignCenter, AlignRight, Link2 } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, Link2 } from "../../icons";
 import { Label } from "@email-hub/ui/components/ui/label";
 import { Input } from "@email-hub/ui/components/ui/input";
 import {

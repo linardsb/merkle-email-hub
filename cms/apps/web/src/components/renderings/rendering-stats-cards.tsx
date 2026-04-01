@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Target, AlertTriangle, Clock } from "lucide-react";
+import { Activity, Target, AlertTriangle, Clock } from "../icons";
 import type { RenderingTest } from "@/types/rendering";
 
 interface Props {

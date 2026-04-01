@@ -1,15 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import {
-  Zap,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Ban,
-  RotateCcw,
-} from "lucide-react";
+import { Zap, CheckCircle2, XCircle, AlertTriangle, Clock, Ban, RotateCcw } from "../../icons";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { useBlueprintRuns } from "@/hooks/use-blueprint-runs";

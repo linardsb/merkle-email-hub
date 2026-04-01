@@ -47,7 +47,7 @@ import { PushToESPDialog } from "@/components/connectors/push-to-esp-dialog";
 import { ApprovalRequestDialog } from "@/components/approvals/approval-request-dialog";
 import { CommandPalette } from "@/components/workspace/command-palette";
 import { useWorkspaceShortcuts } from "@/hooks/use-workspace-shortcuts";
-import { ChevronUp, GripVertical, GripHorizontal } from "lucide-react";
+import { ChevronUp, GripVertical, GripHorizontal } from "../../../../components/icons";
 import type { SaveStatus } from "@/components/workspace/save-indicator";
 import type { TemplateResponse } from "@/types/templates";
 import type { QAResultResponse } from "@/types/qa";

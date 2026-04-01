@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Paintbrush } from "lucide-react";
+import { Paintbrush } from "../icons";
 import type { DesignProvider } from "@/types/design-sync";
 
 interface ProviderIconProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Check, X, Copy } from "lucide-react";
+import { Loader2, Check, X, Copy } from "../icons";
 import { useBIMICheck } from "@/hooks/use-gmail-intelligence";
 
 const CHECKLIST_ITEMS = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, Smartphone } from "lucide-react";
+import { Monitor, Smartphone } from "../../icons";
 import { Switch } from "@email-hub/ui/components/ui/switch";
 import { Label } from "@email-hub/ui/components/ui/label";
 import { Input } from "@email-hub/ui/components/ui/input";

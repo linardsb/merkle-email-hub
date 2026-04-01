@@ -11,6 +11,7 @@ from app.auth.models import User
 from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError
 from app.core.logging import get_logger
+from app.core.progress import OperationStatus, ProgressTracker
 from app.projects.models import Project
 from app.projects.service import ProjectService
 from app.qa_engine.check_config import load_defaults, merge_profile
@@ -66,6 +67,12 @@ class QAEngineService:
 
     async def run_checks(self, data: QARunRequest) -> QAResultResponse:
         """Run all QA checks against compiled HTML."""
+        operation_id = f"qa-{data.build_id or data.template_version_id or 'adhoc'}"
+        ProgressTracker.start(operation_id, "qa_scan")
+        ProgressTracker.update(
+            operation_id, status=OperationStatus.PROCESSING, progress=0, message="Starting QA scan"
+        )
+
         logger.info(
             "qa_engine.run_started",
             build_id=data.build_id,
@@ -83,7 +90,13 @@ class QAEngineService:
             profile = merge_profile(profile, project_qa_profile)
 
         check_results: list[QACheckResult] = []
-        for check in ALL_CHECKS:
+        total_checks = len(ALL_CHECKS)
+        for i, check in enumerate(ALL_CHECKS):
+            ProgressTracker.update(
+                operation_id,
+                progress=int((i / total_checks) * 100),
+                message=f"Running {check.name} ({i + 1}/{total_checks})",
+            )
             check_config = profile.get_check_config(check.name)
             if check_config and not check_config.enabled:
                 check_results.append(
@@ -171,6 +184,13 @@ class QAEngineService:
         await self.repository.create_checks(
             qa_result_id=qa_result.id,
             checks=[cr.model_dump() for cr in check_results],
+        )
+
+        ProgressTracker.update(
+            operation_id,
+            status=OperationStatus.COMPLETED,
+            progress=100,
+            message=f"QA complete: {passed_count}/{len(check_results)} passed",
         )
 
         logger.info(

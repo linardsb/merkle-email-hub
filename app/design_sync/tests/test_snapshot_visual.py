@@ -81,7 +81,7 @@ def _rewrite_image_paths(html: str, base_url: str, case_id: str) -> str:
             return m.group(0)
         # Normalize the path — could be relative or just a filename
         filename = Path(src).name
-        return f'src="{base_url}/design-assets/{case_id}/{filename}"'
+        return f'src="{base_url}/debug/{case_id}/assets/{filename}"'
 
     return _IMG_SRC_RE.sub(_replace, html)
 
@@ -211,7 +211,7 @@ class TestSnapshotVisualRegression:
         assert html, f"Empty HTML for case {case_id}"
 
         # 2. Screenshot via Playwright
-        serve_root = _DEBUG_DIR.parent  # data/ — so design-assets/ is accessible
+        serve_root = _DEBUG_DIR.parent  # data/ — so debug/{case}/assets/ is accessible
         rendered_path = asyncio.run(_screenshot_html(html, case_dir, serve_root, case_id))
 
         # 3. Pixel diff

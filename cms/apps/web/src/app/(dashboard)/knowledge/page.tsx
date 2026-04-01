@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { BookOpen, Search, Network, MessageSquare } from "lucide-react";
+import { BookOpen, Search, Network, MessageSquare } from "../../../components/icons";
 import {
   useKnowledgeDocuments,
   useKnowledgeDomains,

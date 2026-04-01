@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  FlaskConical,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  Check,
-} from "lucide-react";
+import { FlaskConical, ChevronDown, ChevronUp, Loader2, Check } from "../icons";
 import { usePropertyTest } from "@/hooks/use-property-test";
 import type { PropertyFailureSchema } from "@/types/chaos";
 

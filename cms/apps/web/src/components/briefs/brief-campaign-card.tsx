@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Users, ImageOff, Building2, Puzzle, ArrowRight, Link as LinkIcon } from "lucide-react";
+import { Calendar, Users, ImageOff, Building2, Puzzle, ArrowRight, Link as LinkIcon } from "../icons";
 import { BriefPlatformBadge } from "./brief-platform-badge";
 import { BriefResourceLinks } from "./brief-resource-links";
 import type { BriefItem, BriefPlatform } from "@/types/briefs";

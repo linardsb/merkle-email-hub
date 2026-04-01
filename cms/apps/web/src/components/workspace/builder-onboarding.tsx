@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { X, ArrowRight, GripVertical, MousePointer, Monitor, ShieldCheck } from "lucide-react";
+import { X, ArrowRight, GripVertical, MousePointer, Monitor, ShieldCheck } from "../icons";
 
 const ONBOARDING_KEY = "builder-onboarding-completed";
 

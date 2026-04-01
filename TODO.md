@@ -41,7 +41,7 @@
 - [x] 42.3 Visibility-aware smart polling hook — DONE
 - [x] 42.4 Centralized polling and stale-time constants — DONE
 - [x] ~~42.5 Migrate high-traffic hooks to smart polling + constants~~ DONE
-- [ ] 42.6 Unified progress tracking endpoint for long-running operations
+- [x] ~~42.6 Unified progress tracking endpoint for long-running operations~~ DONE
 - [ ] 42.7 Wire ETag + smart polling into CI validation
 
 ---

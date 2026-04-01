@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  BarChart3,
-  ListChecks,
-  TrendingUp,
-  Clock,
-} from "lucide-react";
+import { BarChart3, ListChecks, TrendingUp, Clock } from "../../../components/icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";

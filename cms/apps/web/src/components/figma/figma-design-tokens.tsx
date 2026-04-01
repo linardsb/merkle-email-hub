@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Palette } from "lucide-react";
+import { Loader2, Palette } from "../icons";
 import { useFigmaDesignTokens } from "@/hooks/use-figma";
 import { EmptyState } from "@/components/ui/empty-state";
 

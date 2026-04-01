@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, Plug, Cloud, Palette, Mail, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Download, Plug, Cloud, Palette, Mail, Loader2, CheckCircle2, XCircle } from "../icons";
 import { toast } from "sonner";
 import { useEmailBuild } from "@/hooks/use-email";
 import { useExport } from "@/hooks/use-connectors";

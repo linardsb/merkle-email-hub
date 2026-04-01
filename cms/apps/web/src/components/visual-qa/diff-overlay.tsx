@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "../icons";
 import type { ChangedRegion } from "@/types/rendering";
 
 interface DiffOverlayProps {

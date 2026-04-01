@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronRight, AlertTriangle } from "../../icons";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { HandoffSummary } from "@email-hub/sdk";
 import { ConfidenceBar } from "./shared";

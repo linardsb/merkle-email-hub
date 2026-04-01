@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "../icons";
 import { usePluginEnable, usePluginDisable, usePluginRestart } from "@/hooks/use-plugins";
 import type { PluginInfo, PluginHealth } from "@/types/plugins";
 import { useSession } from "next-auth/react";

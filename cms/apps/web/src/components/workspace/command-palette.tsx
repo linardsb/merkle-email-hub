@@ -1,29 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Save,
-  Zap,
-  ShieldCheck,
-  Download,
-  CloudUpload,
-  ClipboardCheck,
-  ImagePlus,
-  Palette,
-  MessageSquare,
-  Wand2,
-  Moon,
-  PenTool,
-  Wrench,
-  Eye,
-  Users,
-  FileSearch,
-  BookOpen,
-  Lightbulb,
-  ArrowLeft,
-  PanelBottom,
-  PanelRight,
-} from "lucide-react";
+import { Save, Zap, ShieldCheck, Download, CloudUpload, ClipboardCheck, ImagePlus, Palette, MessageSquare, Wand2, Moon, PenTool, Wrench, Eye, Users, FileSearch, BookOpen, Lightbulb, ArrowLeft, PanelBottom, PanelRight } from "../icons";
 import {
   Command,
   CommandInput,

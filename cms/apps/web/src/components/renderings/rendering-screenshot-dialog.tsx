@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { X, ImageOff } from "lucide-react";
+import { X, ImageOff } from "../icons";
 import type { ScreenshotResult } from "@/types/rendering";
 
 interface Props {

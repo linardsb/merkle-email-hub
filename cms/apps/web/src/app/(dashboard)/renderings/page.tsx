@@ -2,13 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  MonitorSmartphone,
-  ChevronLeft,
-  ChevronRight,
-  GitCompareArrows,
-  Bug,
-} from "lucide-react";
+import { MonitorSmartphone, ChevronLeft, ChevronRight, GitCompareArrows, Bug } from "../../../components/icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";

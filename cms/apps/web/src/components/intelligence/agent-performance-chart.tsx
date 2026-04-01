@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bot } from "lucide-react";
+import { Bot } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useFailurePatterns } from "@/hooks/use-failure-patterns";
 

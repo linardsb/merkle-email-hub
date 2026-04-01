@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Mail,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-} from "lucide-react";
+import { Mail, ChevronDown, ChevronUp, Loader2 } from "../icons";
 import {
   useGmailPredict,
   useGmailOptimize,

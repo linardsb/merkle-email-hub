@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Paintbrush,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
+import { Paintbrush, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "../icons";
 import { useCSSCompile } from "@/hooks/use-css-compile";
 import type { CSSConversionSchema } from "@/types/css-compiler";
 

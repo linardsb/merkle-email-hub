@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2 } from "../icons";
 import type { Viewport } from "./preview-toolbar";
 import { ensureDarkModeContrast } from "@/lib/dark-mode-contrast";
 

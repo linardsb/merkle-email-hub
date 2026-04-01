@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "../icons";
 import { toast } from "sonner";
 import { useQAOverride } from "@/hooks/use-qa";
 import type { QACheckResult } from "@/types/qa";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Moon, Sun, Monitor, Tablet, Smartphone, Eye } from "lucide-react";
+import { Moon, Sun, Monitor, Tablet, Smartphone, Eye } from "../icons";
 
 type Viewport = "desktop" | "tablet" | "mobile";
 

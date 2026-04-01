@@ -1,16 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Users,
-  AlertTriangle,
-  BookOpen,
-  Puzzle,
-  ChevronDown,
-  ChevronUp,
-  Shield,
-  Moon,
-} from "lucide-react";
+import { Users, AlertTriangle, BookOpen, Puzzle, ChevronDown, ChevronUp, Shield, Moon } from "../icons";
 import { useCompatibilityBrief } from "@/hooks/use-compatibility-brief";
 import {
   useFailurePatternStats,

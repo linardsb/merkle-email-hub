@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera } from "lucide-react";
+import { Camera } from "../icons";
 import type { ClientScreenshot, ClientProfile } from "@/types/rendering";
 import { CLIENT_DISPLAY_NAMES } from "@/types/rendering";
 

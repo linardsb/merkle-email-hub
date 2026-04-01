@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { X, AlertTriangle } from "lucide-react";
+import { X, AlertTriangle } from "../icons";
 import type { FailurePatternResponse } from "@/types/failure-patterns";
 
 interface FailurePatternDetailDialogProps {

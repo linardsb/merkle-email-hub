@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronDown, ChevronUp, ShieldCheck, AlertTriangle, XCircle, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, ShieldCheck, AlertTriangle, XCircle, Info } from "../icons";
 import type { QACheckResult, CSSAuditDetails } from "@/types/qa";
 
 interface CSSAuditPanelProps {

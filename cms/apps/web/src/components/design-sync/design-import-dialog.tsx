@@ -8,15 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import {
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  ExternalLink,
-  Puzzle,
-} from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight, ExternalLink, Puzzle } from "../icons";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DesignFileBrowser } from "./design-file-browser";

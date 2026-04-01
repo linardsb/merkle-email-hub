@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ImagePlus } from "lucide-react";
+import { Download, ImagePlus } from "../../icons";
 import type { GeneratedImage } from "@/types/image-gen";
 
 interface ImagePreviewCardProps {

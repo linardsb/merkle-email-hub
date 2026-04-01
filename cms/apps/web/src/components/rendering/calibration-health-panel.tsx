@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, AlertTriangle, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronRight, AlertTriangle, RefreshCw } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { CLIENT_DISPLAY_NAMES, type ClientProfile } from "@/types/rendering";
 import type { CalibrationSummaryResponse } from "@/types/rendering-dashboard";

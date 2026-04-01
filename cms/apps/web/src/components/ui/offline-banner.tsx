@@ -1,6 +1,6 @@
 "use client";
 
-import { WifiOff } from "lucide-react";
+import { WifiOff } from "../icons";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 
 export function OfflineBanner() {

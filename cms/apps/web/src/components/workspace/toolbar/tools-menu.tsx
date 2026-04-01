@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Palette, Mic, FileText, ChevronDown, Wrench } from "lucide-react";
+import { ImagePlus, Palette, Mic, FileText, ChevronDown, Wrench } from "../../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

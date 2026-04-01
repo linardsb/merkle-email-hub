@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Users } from "lucide-react";
+import { Calendar, Users } from "../icons";
 import type { BriefItem } from "@/types/briefs";
 
 const STATUS_STYLES: Record<string, string> = {

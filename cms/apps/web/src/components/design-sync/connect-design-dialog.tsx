@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import { Loader2, Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Loader2, Check, ChevronLeft, ChevronRight, Search } from "../icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import {

@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@email-hub/ui/components/ui/dialog";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "../icons";
 import { ESP_LABELS } from "@/types/esp-sync";
 import type { ESPTemplate } from "@/types/esp-sync";
 

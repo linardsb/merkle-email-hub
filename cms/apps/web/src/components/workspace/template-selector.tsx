@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus, FileCode } from "lucide-react";
+import { ChevronDown, Plus, FileCode } from "../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

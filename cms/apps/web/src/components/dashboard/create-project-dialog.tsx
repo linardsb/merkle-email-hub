@@ -9,13 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import {
-  FileText,
-  Wand2,
-  Blocks,
-  Copy,
-  Loader2,
-} from "lucide-react";
+import { FileText, Wand2, Blocks, Copy, Loader2 } from "../icons";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { useCreateProject } from "@/hooks/use-projects";

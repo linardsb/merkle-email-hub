@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Users, Target, Shield } from "lucide-react";
+import { AlertTriangle, Users, Target, Shield } from "../icons";
 import type { FailurePatternStats } from "@/types/failure-patterns";
 
 interface FailurePatternStatsCardsProps {

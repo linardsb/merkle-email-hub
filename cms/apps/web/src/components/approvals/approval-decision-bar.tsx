@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { CheckCircle2, XCircle, RotateCcw, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, Loader2 } from "../icons";
 import { useApprovalDecide } from "@/hooks/use-approvals";
 import { toast } from "sonner";
 

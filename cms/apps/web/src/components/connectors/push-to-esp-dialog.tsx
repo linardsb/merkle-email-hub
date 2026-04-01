@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@email-hub/ui/components/ui/dialog";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload } from "../icons";
 import { toast } from "sonner";
 import { useESPConnections, usePushToESP } from "@/hooks/use-esp-sync";
 import { useExportPreCheck } from "@/hooks/use-export-pre-check";

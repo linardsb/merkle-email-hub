@@ -5874,3 +5874,37 @@ All 7 subtasks done: 40.1 snapshot infrastructure, 40.2 real design cases (3 act
 Extended `app/design_sync/diagnose/extract.py` with automatic Figma Images API screenshot capture. `_capture_design_image()` reuses `FigmaDesignSyncService.export_images()` + `download_image_bytes()` — no duplicated API logic. `_read_png_dimensions()` reads width/height from PNG IHDR chunk (no PIL dependency). `_get_scale()` reads `fidelity_figma_scale` from settings with fallback. `--no-image` CLI flag for offline/CI runs. `design_meta.json` output alongside `design.png`. `DiagnosticReport` extended with `design_image_path`, `design_image_width`, `design_image_height` fields. `manifest.yaml` extended with `design_image` flag per case. 13 tests in `test_extract_image.py` (PNG dimensions, happy path, 3 error paths, node ID conversion, CLI flags). Pyright 0 errors maintained.
 
 ---
+
+## Phase 41 — Converter Background Color Continuity + VLM Classification (7/7 subtasks) — COMPLETE
+
+> Archived 2026-04-01. Two independent tracks: Track A (bgcolor continuity, 41.1–41.4) and Track B (VLM classification, 41.5–41.7).
+
+### 41.1 Image Edge Color Sampler Utility `[Backend]` — DONE
+
+`app/design_sync/image_sampler.py` — `sample_edge_color(image_path, edge)` reads 4px strip from top/bottom edge via Pillow, greedy RGB clustering (±10 tolerance), returns hex if ≥80% uniform, `None` for photographic edges. 16 tests.
+
+### 41.2 Adjacent-Section Background Propagation in Converter `[Backend]` — DONE
+
+`app/design_sync/bgcolor_propagator.py` — `propagate_adjacent_bgcolor()` iterates adjacent section pairs in converter assembly pass, samples facing image edge, injects `bgcolor` on content tables. Wired into converter. Config flag `DESIGN_SYNC__BGCOLOR_PROPAGATION_ENABLED`. 18 tests.
+
+### 41.3 Text/Link Color Inversion for Dark Backgrounds `[Backend]` — DONE
+
+`_invert_text_colors()` in `bgcolor_propagator.py` — post-propagation scan of inline `color:` styles; when bgcolor luminance < 0.4, replaces dark text/link colors with `#ffffff`. Negative lookbehind preserves `background-color`. Handles VML button fallbacks. 12 tests.
+
+### 41.4 Snapshot Regression Cases for Background Continuity `[Backend]` — DONE
+
+`TestBackgroundContinuity` + `TestReferenceBgcolorSanity` in `test_snapshot_regression.py` — converter bgcolor continuity assertions for cases 10/6/5 (Mammut/Starbucks/MAAP), text inversion check on dark sections, reference HTML cross-validation against `email-templates/training_HTML/for_converter_engine/`. 6 new tests.
+
+### 41.5 VLM-Assisted Section Classification Fallback `[Backend]` — DONE
+
+`app/design_sync/vlm_classifier.py` — `vlm_classify_section()` async function calls vision-capable LLM when `_score_candidates()` returns confidence < 0.6. `VLMClassificationResult` frozen dataclass. Model resolution via `resolve_model_by_capabilities({VISION})`. Bounded screenshot-hash cache (`_CACHE_MAX_SIZE=512`). `match_section_with_vlm_fallback()` async wrapper in `component_matcher.py`. Config flag `DESIGN_SYNC__VLM_FALLBACK_ENABLED`. 8 tests.
+
+### 41.6 Batch Frame Screenshot Export Service `[Backend]` — DONE
+
+`FigmaDesignSyncService.export_frame_screenshots(file_key, access_token, node_ids, scale=2.0) -> dict[str, bytes]` — batch PNG export via `export_images()` (groups of 100) + concurrent `download_image_bytes()` with `asyncio.gather()`. Partial download failures silently omitted. `_capture_design_image()` in `diagnose/extract.py` refactored to delegate. 5 new tests in `test_frame_screenshots.py`, 13 existing `test_extract_image.py` tests updated.
+
+### 41.7 VLM-Assisted Section Type Classification (Hybrid Rule + VLM) `[Backend]` — DONE
+
+`VLMSectionClassifier` in `vlm_classifier.py` — `classify_sections(frame_screenshots, frame_metadata)` builds multimodal message with `ImageBlock` per frame, returns `list[VLMSectionClassification]`. `_classify_section()` in `layout_analyzer.py` returns `tuple[EmailSectionType, float]` confidence scores. 3-rule merge: rule > 0.9 wins, UNKNOWN overridden by VLM, VLM > rule when above threshold. Config flags `DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED/MODEL/CONFIDENCE_THRESHOLD/TIMEOUT`. 12 tests.
+
+---

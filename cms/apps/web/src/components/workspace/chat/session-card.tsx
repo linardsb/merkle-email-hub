@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw, Trash2 } from "lucide-react";
+import { RotateCcw, Trash2 } from "../../icons";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import type { AgentMode } from "@/types/chat";

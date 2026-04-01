@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "../icons";
 import type { ClientGateResult } from "@/types/rendering-gate";
 import { ConfidenceBar } from "./confidence-bar";
 

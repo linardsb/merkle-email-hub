@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "../icons";
 import { useBriefItems } from "@/hooks/use-briefs";
 import { BriefItemCard } from "./brief-item-card";
 import { BriefDetailDialog } from "./brief-detail-dialog";

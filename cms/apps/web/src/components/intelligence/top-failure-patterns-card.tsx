@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useFailurePatterns } from "@/hooks/use-failure-patterns";
 

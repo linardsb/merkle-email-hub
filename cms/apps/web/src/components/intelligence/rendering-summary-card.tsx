@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MonitorSmartphone } from "lucide-react";
+import { MonitorSmartphone } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useRenderingTests } from "@/hooks/use-renderings";
 

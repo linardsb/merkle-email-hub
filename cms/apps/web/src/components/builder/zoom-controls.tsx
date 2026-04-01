@@ -1,6 +1,6 @@
 "use client";
 
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw } from "../icons";
 
 const ZOOM_LEVELS = [50, 75, 100, 125] as const;
 

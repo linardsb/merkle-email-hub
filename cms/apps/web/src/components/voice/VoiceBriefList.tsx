@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mic, Inbox } from "lucide-react";
+import { Mic, Inbox } from "../icons";
 import { useVoiceBriefs } from "@/hooks/use-voice-briefs";
 import { VoiceBriefCard } from "./VoiceBriefCard";
 import { VoiceBriefDetail } from "./VoiceBriefDetail";

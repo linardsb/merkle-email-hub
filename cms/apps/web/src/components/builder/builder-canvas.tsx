@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown } from "lucide-react";
+import { ArrowDown } from "../icons";
 import { useDroppable } from "@dnd-kit/core";
 import { SectionWrapper } from "./section-wrapper";
 import type { BuilderSection } from "@/types/visual-builder";

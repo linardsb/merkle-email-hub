@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Save, ShieldCheck, Zap, Palette } from "lucide-react";
+import { ArrowLeft, Save, ShieldCheck, Zap, Palette } from "../icons";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import {
   Tooltip,

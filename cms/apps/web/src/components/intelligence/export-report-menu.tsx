@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Download, Printer, FileSpreadsheet } from "lucide-react";
+import { Download, Printer, FileSpreadsheet } from "../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

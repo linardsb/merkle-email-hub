@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { Search, ArrowRightLeft, AlertTriangle } from "../../icons";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import type { DesignTokens, DesignColor, DesignTypography } from "@/types/design-sync";

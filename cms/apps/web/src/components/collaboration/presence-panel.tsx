@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, UserRoundPen, Moon, X } from "lucide-react";
+import { Eye, UserRoundPen, Moon, X } from "../icons";
 import type { Collaborator, FollowTarget } from "@/types/collaboration";
 
 interface PresencePanelProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "../../icons";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 import {
   Tabs,

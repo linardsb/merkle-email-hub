@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Blocks } from "lucide-react";
+import { Blocks } from "../../../components/icons";
 import {
   EcosystemDashboard,
   PluginManagerPanel,

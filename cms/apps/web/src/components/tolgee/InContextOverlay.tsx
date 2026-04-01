@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Globe, X as XIcon } from "lucide-react";
+import { Globe, X as XIcon } from "../icons";
 import type { TranslationKeyRow } from "@/types/tolgee";
 
 interface InContextOverlayProps {

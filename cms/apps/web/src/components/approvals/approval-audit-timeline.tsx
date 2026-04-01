@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  Send,
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
-  MessageSquare,
-  Loader2,
-} from "lucide-react";
+import { Send, CheckCircle2, XCircle, RotateCcw, MessageSquare, Loader2 } from "../icons";
 import { useApprovalAudit } from "@/hooks/use-approvals";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "../icons";
 
 const DEFAULT_ACTION = {
   icon: Send,

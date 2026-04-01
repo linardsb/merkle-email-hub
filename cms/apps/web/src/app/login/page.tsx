@@ -3,7 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "../../components/icons";
 import { z } from "zod";
 
 export default function LoginPage() {

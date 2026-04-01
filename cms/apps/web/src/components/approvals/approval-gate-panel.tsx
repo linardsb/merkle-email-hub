@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ShieldAlert, Clock } from "lucide-react";
+import { CheckCircle2, ShieldAlert, Clock } from "../icons";
 import { ApprovalStatusBadge } from "./approval-status-badge";
 import type { ApprovalGateResult } from "@/types/approval";
 

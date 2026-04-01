@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, CloudUpload, ClipboardCheck, ChevronDown } from "lucide-react";
+import { Download, CloudUpload, ClipboardCheck, ChevronDown } from "../../icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

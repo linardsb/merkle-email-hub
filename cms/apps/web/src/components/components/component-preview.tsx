@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Eye } from "lucide-react";
+import { Eye } from "../icons";
 
 const DARK_MODE_META = `<meta name="color-scheme" content="dark">`;
 const DARK_MODE_STYLE = `<style id="component-dark-mode">

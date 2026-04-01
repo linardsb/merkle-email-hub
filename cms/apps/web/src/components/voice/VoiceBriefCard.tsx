@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, Clock, ChevronRight, AlertCircle } from "lucide-react";
+import { Mic, Clock, ChevronRight, AlertCircle } from "../icons";
 import type { VoiceBriefSummary } from "@/hooks/use-voice-briefs";
 
 interface VoiceBriefCardProps {

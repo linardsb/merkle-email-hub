@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Trophy,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-} from "lucide-react";
+import { Trophy, ChevronDown, ChevronUp, Loader2 } from "../icons";
 import { useCompetitiveReport, useEmailClients } from "@/hooks/use-ontology";
 import type { CapabilityFeasibility } from "@/types/ontology";
 

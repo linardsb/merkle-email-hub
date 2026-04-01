@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Plug, Cloud, Palette, Mail } from "lucide-react";
+import { Download, Plug, Cloud, Palette, Mail } from "../icons";
 import { ExportStatusBadge } from "./export-status-badge";
 import type { ExportHistoryRecord, ConnectorPlatform } from "@/types/connectors";
 

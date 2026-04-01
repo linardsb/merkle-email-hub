@@ -1,14 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  MessageSquare,
-  Trash2,
-  History,
-  Zap,
-  ToggleLeft,
-  ToggleRight,
-} from "lucide-react";
+import { MessageSquare, Trash2, History, Zap, ToggleLeft, ToggleRight } from "../icons";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { Checkbox } from "@email-hub/ui/components/ui/checkbox";

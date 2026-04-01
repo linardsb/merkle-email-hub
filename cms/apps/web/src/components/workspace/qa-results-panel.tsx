@@ -2,13 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import {
-  X,
-  ShieldCheck,
-  ShieldAlert,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { X, ShieldCheck, ShieldAlert, ChevronDown, ChevronUp } from "../icons";
 import { QACheckItem } from "./qa-check-item";
 import { QAOverrideDialog } from "./qa-override-dialog";
 import { VisualQAPanelTab } from "@/components/visual-qa/visual-qa-panel-tab";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Network } from "lucide-react";
+import { Network } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useGraphHealth } from "@/hooks/use-intelligence-stats";
 

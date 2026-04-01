@@ -9,6 +9,7 @@ Configures the application with:
 - Global exception handlers
 """
 
+import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, cast
@@ -41,6 +42,7 @@ from app.core.exceptions import setup_exception_handlers
 from app.core.health import router as health_router
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
+from app.core.progress_routes import router as progress_router
 from app.core.rate_limit import limiter
 from app.core.redis import close_redis, redis_available
 from app.design_sync.routes import router as design_sync_router
@@ -263,9 +265,27 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("mcp.mount_failed", exc_info=True)
 
+    # Start progress cleanup loop (Phase 42.6)
+    import asyncio
+
+    from app.core.progress import ProgressTracker
+
+    async def _progress_cleanup_loop() -> None:
+        while True:
+            await asyncio.sleep(settings.progress.cleanup_interval_seconds)
+            ProgressTracker.cleanup_completed(settings.progress.max_retention_seconds)
+
+    progress_cleanup_task = asyncio.create_task(_progress_cleanup_loop())
+    logger.info("progress.cleanup_loop_started")
+
     yield
 
     # Shutdown
+
+    progress_cleanup_task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await progress_cleanup_task
+    logger.info("progress.cleanup_loop_stopped")
 
     if _lifecycle_manager is not None:
         await _lifecycle_manager.shutdown_all()
@@ -362,6 +382,7 @@ app.include_router(approval_router)
 app.include_router(personas_router)
 app.include_router(templates_router)
 app.include_router(rendering_router)
+app.include_router(progress_router)
 app.include_router(memory_router)
 
 # Briefs — project management platform connections

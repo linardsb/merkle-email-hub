@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck } from "../../../components/icons";
 import { useProjects } from "@/hooks/use-projects";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";

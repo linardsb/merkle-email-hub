@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import {
-  RefreshCw,
-  Download,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { RefreshCw, Download, Search, Loader2 } from "../icons";
 import { toast } from "sonner";
 import { useSyncKeys, usePullTranslations } from "@/hooks/use-tolgee";
 import type {

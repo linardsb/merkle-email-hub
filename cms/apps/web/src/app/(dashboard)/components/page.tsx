@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Blocks, Search, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Braces, Search, Plus } from "../../../components/icons";
 import { useSession } from "next-auth/react";
 import { useComponents } from "@/hooks/use-components";
+import { SECTION_CATEGORIES } from "@/types/visual-builder";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonComponentCard } from "@/components/ui/skeletons";
@@ -43,15 +44,7 @@ export default function ComponentsPage() {
     search: debouncedSearch || undefined,
   });
 
-  // Extract unique categories from loaded data
-  const categories = useMemo(() => {
-    if (!data?.items) return [];
-    const cats = new Set<string>();
-    for (const item of data.items) {
-      if (item.category) cats.add(item.category);
-    }
-    return Array.from(cats).sort();
-  }, [data?.items]);
+  const categories = SECTION_CATEGORIES;
 
   const totalPages = data
     ? Math.ceil(data.total / PAGE_SIZE)
@@ -72,7 +65,7 @@ export default function ComponentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Blocks className="h-8 w-8 text-foreground-accent" />
+          <Braces className="h-8 w-8 text-foreground-accent" />
           <h1 className="text-2xl font-semibold text-foreground">
             {"Component Library"}
           </h1>
@@ -103,35 +96,33 @@ export default function ComponentsPage() {
       </div>
 
       {/* Category filter */}
-      {categories.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => handleCategoryChange(undefined)}
+          className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+            !category
+              ? "bg-interactive text-foreground-inverse"
+              : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
+          }`}
+        >
+          {"All Categories"}
+        </button>
+        {categories.map((cat) => (
           <button
+            key={cat}
             type="button"
-            onClick={() => handleCategoryChange(undefined)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              !category
+            onClick={() => handleCategoryChange(cat)}
+            className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+              category === cat
                 ? "bg-interactive text-foreground-inverse"
                 : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
             }`}
           >
-            {"All Categories"}
+            {cat}
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => handleCategoryChange(cat)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                category === cat
-                  ? "bg-interactive text-foreground-inverse"
-                  : "bg-surface-muted text-foreground-muted hover:bg-surface-hover hover:text-foreground"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Grid */}
       {isLoading ? (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Server, Shield, Key, Activity, Copy, Check } from "lucide-react";
+import { Server, Shield, Key, Activity, Copy, Check } from "../icons";
 import { toast } from "sonner";
 import {
   useMCPStatus, useMCPTools, useMCPConnections,

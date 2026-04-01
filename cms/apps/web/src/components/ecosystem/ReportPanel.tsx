@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Download, Eye, FileText, Plus } from "lucide-react";
+import { Download, Eye, FileText, Plus } from "../icons";
 import {
   useGenerateQAReport,
   useGenerateApprovalReport,

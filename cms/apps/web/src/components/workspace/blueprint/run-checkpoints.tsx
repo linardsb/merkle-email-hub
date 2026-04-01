@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock } from "../../icons";
 import { Badge } from "@email-hub/ui/components/ui/badge";
 import { useRunCheckpoints } from "@/hooks/use-blueprint-runs";
 import { formatNodeName } from "./shared";

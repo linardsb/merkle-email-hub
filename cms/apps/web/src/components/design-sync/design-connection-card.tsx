@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, RefreshCw, Trash2, Loader2, Download, Puzzle, KeyRound } from "lucide-react";
+import { FolderOpen, RefreshCw, Trash2, Loader2, Download, Puzzle, KeyRound } from "../icons";
 import { DesignStatusBadge } from "./design-status-badge";
 import { ProviderIcon } from "./provider-icon";
 import type { DesignConnection } from "@/types/design-sync";

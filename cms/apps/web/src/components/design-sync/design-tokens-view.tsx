@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Palette } from "lucide-react";
+import { Loader2, Palette } from "../icons";
 import { useDesignTokens, useTokenDiff } from "@/hooks/use-design-sync";
 import { EmptyState } from "@/components/ui/empty-state";
 

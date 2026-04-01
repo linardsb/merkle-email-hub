@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Search,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  ArrowRight,
-} from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Loader2, ArrowRight } from "../icons";
 import { useOutlookAnalysis, useOutlookModernize } from "@/hooks/use-outlook-analysis";
 import { MigrationTimeline } from "./MigrationTimeline";
 import type { OutlookDependencySchema } from "@/types/outlook";

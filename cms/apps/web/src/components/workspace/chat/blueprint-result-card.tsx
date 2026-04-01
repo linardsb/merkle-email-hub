@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap } from "lucide-react";
+import { Zap } from "../../icons";
 import { Button } from "@email-hub/ui/components/ui/button";
 import type { BlueprintRunResponse } from "@email-hub/sdk";
 import {

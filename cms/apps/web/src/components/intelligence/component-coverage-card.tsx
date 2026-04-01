@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Puzzle } from "lucide-react";
+import { Puzzle } from "../icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { useComponentCoverage } from "@/hooks/use-intelligence-stats";
 

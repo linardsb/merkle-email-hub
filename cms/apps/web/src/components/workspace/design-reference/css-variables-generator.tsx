@@ -1,6 +1,6 @@
 "use client";
 
-import { Code2 } from "lucide-react";
+import { Code2 } from "../../icons";
 import { toast } from "sonner";
 import { Button } from "@email-hub/ui/components/ui/button";
 import { generateCssVariablesBlock } from "@/lib/color-utils";

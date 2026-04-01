@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, Sun, Copy, Check, Plus, Camera, Pencil, Trash2 } from "lucide-react";
+import { Moon, Sun, Copy, Check, Plus, Camera, Pencil, Trash2 } from "../icons";
 import {
   Dialog,
   DialogContent,

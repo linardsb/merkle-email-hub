@@ -608,6 +608,13 @@ class VariantsConfig(BaseModel):
     rate_limit_per_hour: int = 3
 
 
+class ProgressConfig(BaseModel):
+    """Progress tracking settings."""
+
+    max_retention_seconds: int = 300
+    cleanup_interval_seconds: int = 60
+
+
 class ExportConfig(BaseModel):
     """Export pipeline gate settings."""
 
@@ -698,6 +705,7 @@ class Settings(BaseSettings):
     briefs: BriefsConfig = BriefsConfig()
     export: ExportConfig = ExportConfig()
     correction_tracker: CorrectionTrackerConfig = CorrectionTrackerConfig()
+    progress: ProgressConfig = ProgressConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

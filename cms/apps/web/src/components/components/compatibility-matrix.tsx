@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Loader2 } from "../icons";
 import { useComponentCompatibility } from "@/hooks/use-components";
 import { ScrollArea } from "@email-hub/ui/components/ui/scroll-area";
 
