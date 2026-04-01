@@ -130,23 +130,23 @@ class TestIsGenericName:
 class TestClassifyMjSection:
     def test_mj_hero_direct(self) -> None:
         node = _node("mj-hero")
-        assert _classify_mj_section(node, 0, 5) == EmailSectionType.HERO
+        assert _classify_mj_section(node, 0, 5)[0] == EmailSectionType.HERO
 
     def test_mj_navbar_direct(self) -> None:
         node = _node("mj-navbar")
-        assert _classify_mj_section(node, 0, 5) == EmailSectionType.NAV
+        assert _classify_mj_section(node, 0, 5)[0] == EmailSectionType.NAV
 
     def test_mj_section_with_social_child(self) -> None:
         node = _node("mj-section", children=[_node("mj-social")])
-        assert _classify_mj_section(node, 3, 5) == EmailSectionType.SOCIAL
+        assert _classify_mj_section(node, 3, 5)[0] == EmailSectionType.SOCIAL
 
     def test_mj_section_with_divider_child(self) -> None:
         node = _node("mj-section", children=[_node("mj-divider")])
-        assert _classify_mj_section(node, 2, 5) == EmailSectionType.DIVIDER
+        assert _classify_mj_section(node, 2, 5)[0] == EmailSectionType.DIVIDER
 
     def test_mj_section_with_spacer_child(self) -> None:
         node = _node("mj-section", children=[_node("mj-spacer")])
-        assert _classify_mj_section(node, 2, 5) == EmailSectionType.SPACER
+        assert _classify_mj_section(node, 2, 5)[0] == EmailSectionType.SPACER
 
     def test_mj_section_with_image_text_button(self) -> None:
         node = _node(
@@ -162,11 +162,11 @@ class TestClassifyMjSection:
                 ),
             ],
         )
-        assert _classify_mj_section(node, 1, 5) == EmailSectionType.CONTENT
+        assert _classify_mj_section(node, 1, 5)[0] == EmailSectionType.CONTENT
 
     def test_mj_wrapper_defaults_to_content(self) -> None:
         node = _node("mj-wrapper")
-        assert _classify_mj_section(node, 1, 5) == EmailSectionType.CONTENT
+        assert _classify_mj_section(node, 1, 5)[0] == EmailSectionType.CONTENT
 
     def test_mj_section_large_image_only_is_hero(self) -> None:
         big_img = _node("img", ntype=DesignNodeType.IMAGE, width=500, height=400)
@@ -175,7 +175,7 @@ class TestClassifyMjSection:
             children=[big_img],
             width=600,
         )
-        assert _classify_mj_section(node_with_img, 0, 5) == EmailSectionType.HERO
+        assert _classify_mj_section(node_with_img, 0, 5)[0] == EmailSectionType.HERO
 
 
 # ── Content-Based Classification ──
@@ -190,7 +190,7 @@ class TestClassifyByContent:
             node_id=big_img.id, node_name=big_img.name, width=500, height=400
         )
         node = _node("Frame 1", children=[big_img], width=600)
-        result = _classify_by_content(node, [], [big_img_placeholder], [], 0, 5)
+        result, _conf = _classify_by_content(node, [], [big_img_placeholder], [], 0, 5)
         # _has_large_image_child checks direct children
         assert result == EmailSectionType.HERO
 
@@ -200,7 +200,7 @@ class TestClassifyByContent:
         texts = [TextBlock(node_id="t1", content="Big Title", font_size=36)]
         buttons = [ButtonElement(node_id="b1", text="Shop Now", width=200, height=48)]
         node = _node("Frame 1")
-        result = _classify_by_content(node, texts, [], buttons, 1, 5)
+        result, _conf = _classify_by_content(node, texts, [], buttons, 1, 5)
         assert result == EmailSectionType.HERO
 
     def test_small_text_at_bottom_is_footer(self) -> None:
@@ -211,7 +211,7 @@ class TestClassifyByContent:
             TextBlock(node_id="t2", content="© 2026", font_size=11),
         ]
         node = _node("Frame 1")
-        result = _classify_by_content(node, texts, [], [], 4, 5)
+        result, _conf = _classify_by_content(node, texts, [], [], 4, 5)
         assert result == EmailSectionType.FOOTER
 
     def test_many_short_texts_is_nav(self) -> None:
@@ -219,7 +219,7 @@ class TestClassifyByContent:
 
         texts = [TextBlock(node_id=f"t{i}", content=f"Link {i}", font_size=14) for i in range(5)]
         node = _node("Frame 1")
-        result = _classify_by_content(node, texts, [], [], 2, 5)
+        result, _conf = _classify_by_content(node, texts, [], [], 2, 5)
         assert result == EmailSectionType.NAV
 
 

@@ -7,8 +7,16 @@ import re
 import statistics
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
+from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.design_sync.protocol import DesignFileStructure, DesignNode, DesignNodeType, StyleRun
+
+if TYPE_CHECKING:
+    from app.design_sync.vlm_classifier import VLMSectionClassification
+
+logger = get_logger(__name__)
 
 
 class EmailSectionType(StrEnum):
@@ -129,6 +137,8 @@ class EmailSection:
     element_gaps: tuple[float, ...] = ()
     column_groups: list[ColumnGroup] = field(default_factory=list)
     classification_confidence: float | None = None
+    vlm_classification: str | None = None
+    vlm_confidence: float | None = None
     content_roles: tuple[str, ...] = ()
 
 
@@ -194,6 +204,7 @@ def analyze_layout(
     naming_convention: str = "auto",
     section_name_map: dict[str, str] | None = None,
     button_name_hints: list[str] | None = None,
+    vlm_classifications: dict[str, VLMSectionClassification] | None = None,
 ) -> DesignLayoutDescription:
     """Analyze a design file structure and detect email sections.
 
@@ -233,14 +244,54 @@ def analyze_layout(
     # Build sections
     sections: list[EmailSection] = []
     total = len(candidates)
+    vlm_threshold = (
+        get_settings().design_sync.vlm_classification_confidence_threshold
+        if vlm_classifications
+        else 0.0
+    )
     for idx, node in enumerate(candidates):
-        section_type = _classify_section(
+        section_type, classification_confidence = _classify_section(
             node,
             convention,
             idx,
             total,
             section_name_map=section_name_map,
         )
+
+        # VLM hybrid merge (Phase 41.7)
+        vlm_type_str: str | None = None
+        vlm_conf: float | None = None
+        if vlm_classifications and node.id in vlm_classifications:
+            rule_type_before = section_type.value
+            vlm = vlm_classifications[node.id]
+            vlm_type_str = vlm.section_type
+            vlm_conf = vlm.confidence
+            threshold = vlm_threshold
+
+            if classification_confidence > 0.9:
+                pass  # High-confidence rule result — keep it
+            elif section_type == EmailSectionType.UNKNOWN and vlm_conf >= threshold:
+                try:
+                    section_type = EmailSectionType(vlm_type_str)
+                    classification_confidence = vlm_conf
+                except ValueError:
+                    pass  # Invalid VLM type — keep rule result
+            elif vlm_conf >= threshold and vlm_conf > classification_confidence:
+                try:
+                    section_type = EmailSectionType(vlm_type_str)
+                    classification_confidence = vlm_conf
+                except ValueError:
+                    pass
+
+            if vlm_type_str == section_type.value and vlm_type_str != rule_type_before:
+                logger.debug(
+                    "design_sync.vlm_merge.override",
+                    node_id=node.id,
+                    original_type=rule_type_before,
+                    vlm_type=vlm_type_str,
+                    vlm_confidence=vlm_conf,
+                    rule_confidence=classification_confidence,
+                )
 
         col_layout, col_count, col_groups = _detect_column_layout_with_groups(node, convention)
         buttons = _extract_buttons(node, extra_hints=button_name_hints)
@@ -268,6 +319,9 @@ def analyze_layout(
                 padding_left=node.padding_left,
                 item_spacing=node.item_spacing,
                 column_groups=col_groups,
+                classification_confidence=classification_confidence,
+                vlm_classification=vlm_type_str,
+                vlm_confidence=vlm_conf,
             )
         )
 
@@ -369,14 +423,18 @@ def _classify_section(
     total: int,
     *,
     section_name_map: dict[str, str] | None = None,
-) -> EmailSectionType:
-    """Classify a section using the detected naming convention."""
-    # Custom map checked first
+) -> tuple[EmailSectionType, float]:
+    """Classify a section using the detected naming convention.
+
+    Returns (section_type, confidence) where confidence reflects how
+    certain the classification is (1.0 = custom map, 0.30 = unknown).
+    """
+    # Custom map checked first — highest confidence
     if section_name_map:
         mapped = section_name_map.get(node.name.lower().strip())
         if mapped:
             try:
-                return EmailSectionType(mapped)
+                return EmailSectionType(mapped), 1.0
             except ValueError:
                 pass
 
@@ -384,9 +442,9 @@ def _classify_section(
         return _classify_mj_section(node, index, total)
 
     # Descriptive and generic both try name first, then fall back
-    section_type = _classify_by_name(node.name)
+    section_type, confidence = _classify_by_name(node.name)
     if section_type != EmailSectionType.UNKNOWN:
-        return section_type
+        return section_type, confidence
 
     # When name matching fails, always try content-based heuristics
     # before falling back to position-only.  This handles frames with
@@ -401,8 +459,12 @@ def _classify_mj_section(
     node: DesignNode,
     index: int,
     total: int,
-) -> EmailSectionType:
-    """Classify a section using MJML naming conventions."""
+) -> tuple[EmailSectionType, float]:
+    """Classify a section using MJML naming conventions.
+
+    Returns (section_type, confidence) where MJML classification yields
+    0.85-0.95 confidence for role-based matches.
+    """
     name = node.name.lower().strip()
 
     # Walk children first to infer type from content roles — child roles
@@ -426,42 +488,42 @@ def _classify_mj_section(
 
     # Specific content roles override the generic mj-section/mj-wrapper mapping
     if content_roles == {"image"} and _has_large_image_child(node):
-        return EmailSectionType.HERO
+        return EmailSectionType.HERO, 0.95
     if "social" in content_roles:
-        return EmailSectionType.SOCIAL
+        return EmailSectionType.SOCIAL, 0.95
     if "nav" in content_roles:
-        return EmailSectionType.NAV
+        return EmailSectionType.NAV, 0.95
     if content_roles == {"divider"} or (content_roles == {"divider", "text"}):
-        return EmailSectionType.DIVIDER
+        return EmailSectionType.DIVIDER, 0.95
     if content_roles == {"spacer"}:
-        return EmailSectionType.SPACER
+        return EmailSectionType.SPACER, 0.95
 
     # Image-only at top → HERO
     if content_roles == {"image"} and index <= 1:
-        return EmailSectionType.HERO
+        return EmailSectionType.HERO, 0.90
 
     # Text + button + image → rich content
     if "image" in content_roles and "text" in content_roles and "button" in content_roles:
-        return EmailSectionType.CONTENT
+        return EmailSectionType.CONTENT, 0.85
     if "button" in content_roles and "text" in content_roles and "image" not in content_roles:
         # Many texts with short content → likely NAV
         texts = _extract_texts(node)
         if len(texts) >= 4 and all(len(t.content) <= 30 for t in texts):
-            return EmailSectionType.NAV
-        return EmailSectionType.CONTENT
+            return EmailSectionType.NAV, 0.85
+        return EmailSectionType.CONTENT, 0.85
 
     # Last section with only text → FOOTER
     if index == total - 1 and content_roles <= {"text"}:
-        return EmailSectionType.FOOTER
+        return EmailSectionType.FOOTER, 0.85
 
     # Direct mj-* type mapping (for mj-hero, mj-navbar, etc.)
     if name in _MJ_SECTION_MAP:
-        return _MJ_SECTION_MAP[name]
+        return _MJ_SECTION_MAP[name], 0.95
 
     # Fall back to descriptive name matching, then position
-    section_type = _classify_by_name(node.name)
+    section_type, confidence = _classify_by_name(node.name)
     if section_type != EmailSectionType.UNKNOWN:
-        return section_type
+        return section_type, confidence
     return _classify_by_position(node, index, total, _has_large_image_child(node))
 
 
@@ -512,66 +574,70 @@ def _classify_by_content(
     buttons: list[ButtonElement],
     index: int,
     total: int,
-) -> EmailSectionType:
-    """Infer section type from content when names are unhelpful."""
+) -> tuple[EmailSectionType, float]:
+    """Infer section type from content when names are unhelpful.
+
+    Returns (section_type, confidence) where content-based confidence
+    is 0.65-0.85 depending on signal strength.
+    """
     has_images = len(images) > 0
     has_texts = len(texts) > 0
     has_buttons = len(buttons) > 0
     all_text = " ".join(t.content for t in texts) if has_texts else ""
 
-    # Full-width image near top → hero
+    # Full-width image near top → hero (strong signal)
     if _has_large_image_child(node) and not has_texts and index <= 1:
-        return EmailSectionType.HERO
+        return EmailSectionType.HERO, 0.85
 
     # Large image + text overlay near top (tall section) → hero
     if _has_large_image_child(node) and has_texts and index <= 1:
         height = node.height if node.height is not None else 0
         if height >= 300:
-            return EmailSectionType.HERO
+            return EmailSectionType.HERO, 0.85
 
     # Text + button near top with large heading → hero
     if has_texts and has_buttons and not has_images and index <= 2:
         heading_sizes = [t.font_size for t in texts if t.font_size and t.font_size > 20]
         if heading_sizes:
-            return EmailSectionType.HERO
+            return EmailSectionType.HERO, 0.75
 
-    # Section with ©/copyright/unsubscribe text near bottom → footer
+    # Section with ©/copyright/unsubscribe text near bottom → footer (strong signal)
     if (
         has_texts
         and (_LEGAL_TEXT_RE.search(all_text) or _UNSUBSCRIBE_RE.search(all_text))
         and index >= total - 2
     ):
-        return EmailSectionType.FOOTER
+        return EmailSectionType.FOOTER, 0.85
 
-    # Social platform URLs → social
+    # Social platform URLs → social (strong signal)
     if has_texts and _SOCIAL_URL_RE.search(all_text):
-        return EmailSectionType.SOCIAL
+        return EmailSectionType.SOCIAL, 0.75
 
     # Button-only section → CTA
     if has_buttons and not has_texts and not has_images:
-        return EmailSectionType.CTA
+        return EmailSectionType.CTA, 0.70
 
     # Many short texts → navigation
     if len(texts) >= 4 and all(len(t.content) < 30 for t in texts):
-        return EmailSectionType.NAV
+        return EmailSectionType.NAV, 0.70
 
-    # Small text at bottom → footer
+    # Small text at bottom → footer (weaker signal)
     if index >= total - 2 and has_texts and not has_images:
         avg_size = sum(t.font_size if t.font_size is not None else 14 for t in texts) / len(texts)
         if avg_size <= 13:
-            return EmailSectionType.FOOTER
+            return EmailSectionType.FOOTER, 0.65
 
     return _classify_by_position(node, index, total, _has_large_image_child(node))
 
 
-def _classify_by_name(name: str) -> EmailSectionType:
+def _classify_by_name(name: str) -> tuple[EmailSectionType, float]:
     """Match frame name against known email section patterns (word-boundary)."""
     lower = name.lower().strip()
     for section_type, patterns in _SECTION_PATTERNS.items():
         for pattern in patterns:
             if re.search(rf"\b{re.escape(pattern)}\b", lower):
-                return section_type
-    return EmailSectionType.UNKNOWN
+                return section_type, 0.90
+    return EmailSectionType.UNKNOWN, 0.30
 
 
 def _classify_by_position(
@@ -579,10 +645,11 @@ def _classify_by_position(
     index: int,
     total: int,
     has_large_image: bool,
-) -> EmailSectionType:
+) -> tuple[EmailSectionType, float]:
     """Fallback: classify by position + dimensions when name doesn't match.
 
     Uses height, position, and child content to infer section type.
+    Returns (section_type, confidence) where confidence is 0.40-0.55.
     """
     height = node.height if node.height is not None else 0
 
@@ -591,30 +658,30 @@ def _classify_by_position(
     # contain children should fall through to content-based classification
     # rather than being mislabelled as spacers.
     if node.height is not None and height <= 30:
-        return EmailSectionType.SPACER
+        return EmailSectionType.SPACER, 0.55
     if node.height is not None and 30 < height <= 60:
-        return EmailSectionType.DIVIDER
+        return EmailSectionType.DIVIDER, 0.55
 
     # Position-based heuristics only apply when there are multiple sections.
     # A single section should default to CONTENT, not HEADER or FOOTER.
     if total > 1:
         # First section is header/nav
         if index == 0:
-            return EmailSectionType.HEADER
+            return EmailSectionType.HEADER, 0.55
 
         # Last section is footer
         if index == total - 1:
-            return EmailSectionType.FOOTER
+            return EmailSectionType.FOOTER, 0.55
 
     # Second-to-last short section is often social links
     if index == total - 2 and height <= 150:
-        return EmailSectionType.SOCIAL
+        return EmailSectionType.SOCIAL, 0.50
 
     # Tall section near the top with or without large image → hero
     if index == 1 and height >= 300:
-        return EmailSectionType.HERO
+        return EmailSectionType.HERO, 0.50
     if has_large_image and height >= 300:
-        return EmailSectionType.HERO
+        return EmailSectionType.HERO, 0.50
 
     # Short section with button-sized height → CTA only if button-like content
     if 60 < height <= 150:
@@ -630,9 +697,9 @@ def _classify_by_position(
             for c in node.children
         )
         if has_button_child:
-            return EmailSectionType.CTA
+            return EmailSectionType.CTA, 0.50
 
-    return EmailSectionType.CONTENT
+    return EmailSectionType.CONTENT, 0.40
 
 
 def _detect_column_layout(node: DesignNode) -> tuple[ColumnLayout, int]:

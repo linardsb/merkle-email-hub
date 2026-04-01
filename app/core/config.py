@@ -366,6 +366,17 @@ class DesignSyncConfig(BaseModel):
     low_match_confidence_threshold: float = 0.6  # DESIGN_SYNC__LOW_MATCH_CONFIDENCE_THRESHOLD
     # Adjacent-section background color propagation (Phase 41.2)
     bgcolor_propagation_enabled: bool = True  # DESIGN_SYNC__BGCOLOR_PROPAGATION_ENABLED
+    # VLM-assisted section classification fallback (Phase 41.5)
+    vlm_fallback_enabled: bool = False  # DESIGN_SYNC__VLM_FALLBACK_ENABLED
+    # VLM-assisted section type classification in layout analysis (Phase 41.7)
+    vlm_classification_enabled: bool = False  # DESIGN_SYNC__VLM_CLASSIFICATION_ENABLED
+    vlm_classification_model: str = (
+        ""  # DESIGN_SYNC__VLM_CLASSIFICATION_MODEL (empty = default routing)
+    )
+    vlm_classification_confidence_threshold: float = (
+        0.7  # DESIGN_SYNC__VLM_CLASSIFICATION_CONFIDENCE_THRESHOLD
+    )
+    vlm_classification_timeout: float = 15.0  # DESIGN_SYNC__VLM_CLASSIFICATION_TIMEOUT (seconds)
 
 
 class ESPSyncConfig(BaseModel):

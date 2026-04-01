@@ -46,6 +46,7 @@ from app.design_sync.quality_contracts import QualityWarning, run_quality_contra
 
 if TYPE_CHECKING:
     from app.design_sync.email_design_document import EmailDesignDocument
+    from app.design_sync.vlm_classifier import VLMSectionClassification
 
 logger = get_logger(__name__)
 
@@ -354,6 +355,7 @@ class DesignConverterService:
         connection_config: dict[str, Any] | None = None,
         image_urls: dict[str, str] | None = None,
         connection_id: str | None = None,
+        vlm_classifications: dict[str, VLMSectionClassification] | None = None,
     ) -> ConversionResult:
         """Convert a design file structure into an email HTML skeleton.
 
@@ -373,6 +375,7 @@ class DesignConverterService:
             selected_nodes=selected_nodes,
             connection_config=connection_config,
             _pre_normalized=True,
+            vlm_classifications=vlm_classifications,
         )
 
         if use_components:

@@ -1,0 +1,65 @@
+{
+  "2833:1624": {
+    "section_type": "header",
+    "confidence": 0.90,
+    "reasoning": "Logo and brand name in compact bar",
+    "column_layout": "single",
+    "content_signals": ["logo", "brand_text"]
+  },
+  "2833:1629": {
+    "section_type": "hero",
+    "confidence": 0.92,
+    "reasoning": "Large image with heading overlay",
+    "column_layout": "single",
+    "content_signals": ["large_image", "heading_text", "cta_button"]
+  },
+  "2833:1641": {
+    "section_type": "content",
+    "confidence": 0.85,
+    "reasoning": "Product grid with images and descriptions",
+    "column_layout": "two-column",
+    "content_signals": ["product_images", "body_text"]
+  },
+  "2833:1655": {
+    "section_type": "content",
+    "confidence": 0.80,
+    "reasoning": "Text block with supporting image",
+    "column_layout": "single",
+    "content_signals": ["body_text", "image"]
+  },
+  "2833:1660": {
+    "section_type": "cta",
+    "confidence": 0.88,
+    "reasoning": "Prominent button with short text",
+    "column_layout": "single",
+    "content_signals": ["cta_button", "short_text"]
+  },
+  "2833:1687": {
+    "section_type": "content",
+    "confidence": 0.75,
+    "reasoning": "Body text with images",
+    "column_layout": "two-column",
+    "content_signals": ["body_text", "images"]
+  },
+  "2833:1692": {
+    "section_type": "social",
+    "confidence": 0.91,
+    "reasoning": "Social media icons row",
+    "column_layout": "single",
+    "content_signals": ["social_icons"]
+  },
+  "2833:1727": {
+    "section_type": "divider",
+    "confidence": 0.85,
+    "reasoning": "Thin horizontal line",
+    "column_layout": "single",
+    "content_signals": ["horizontal_rule"]
+  },
+  "2833:1738": {
+    "section_type": "footer",
+    "confidence": 0.93,
+    "reasoning": "Small legal text and unsubscribe link",
+    "column_layout": "single",
+    "content_signals": ["legal_text", "unsubscribe_link"]
+  }
+}

@@ -1321,12 +1321,12 @@ class TestPatternMatchingFixes:
 
     def test_text_not_matches_context(self) -> None:
         """'context-block' should NOT match pattern 'text'."""
-        result = _classify_by_name("context-block")
+        result, _conf = _classify_by_name("context-block")
         assert result != EmailSectionType.CONTENT
 
     def test_exact_word_matches(self) -> None:
         """'content-block' should match pattern 'content'."""
-        result = _classify_by_name("content-block")
+        result, _conf = _classify_by_name("content-block")
         assert result == EmailSectionType.CONTENT
 
 

@@ -1,0 +1,37 @@
+{
+  "2833:1425": {
+    "section_type": "header",
+    "confidence": 0.88,
+    "reasoning": "Brand logo bar at top",
+    "column_layout": "single",
+    "content_signals": ["logo"]
+  },
+  "2833:1430": {
+    "section_type": "hero",
+    "confidence": 0.91,
+    "reasoning": "Full-width banner image with text overlay",
+    "column_layout": "single",
+    "content_signals": ["large_image", "heading_text"]
+  },
+  "2833:1440": {
+    "section_type": "content",
+    "confidence": 0.82,
+    "reasoning": "Body text with call to action",
+    "column_layout": "single",
+    "content_signals": ["body_text", "cta_button"]
+  },
+  "2833:1453": {
+    "section_type": "social",
+    "confidence": 0.87,
+    "reasoning": "Social media icon row",
+    "column_layout": "single",
+    "content_signals": ["social_icons"]
+  },
+  "2833:1475": {
+    "section_type": "footer",
+    "confidence": 0.92,
+    "reasoning": "Legal text and unsubscribe at bottom",
+    "column_layout": "single",
+    "content_signals": ["legal_text", "unsubscribe_link"]
+  }
+}

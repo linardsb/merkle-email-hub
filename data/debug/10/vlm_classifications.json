@@ -1,0 +1,86 @@
+{
+  "2833:1136": {
+    "section_type": "preheader",
+    "confidence": 0.80,
+    "reasoning": "Very small text at very top",
+    "column_layout": "single",
+    "content_signals": ["small_text"]
+  },
+  "2833:1141": {
+    "section_type": "header",
+    "confidence": 0.89,
+    "reasoning": "Logo and navigation bar",
+    "column_layout": "single",
+    "content_signals": ["logo", "nav_links"]
+  },
+  "2833:1154": {
+    "section_type": "hero",
+    "confidence": 0.93,
+    "reasoning": "Large promotional image with heading",
+    "column_layout": "single",
+    "content_signals": ["large_image", "heading_text", "cta_button"]
+  },
+  "2833:1159": {
+    "section_type": "content",
+    "confidence": 0.84,
+    "reasoning": "Product showcase grid",
+    "column_layout": "three-column",
+    "content_signals": ["product_images", "body_text"]
+  },
+  "2833:1168": {
+    "section_type": "content",
+    "confidence": 0.78,
+    "reasoning": "Body text section",
+    "column_layout": "single",
+    "content_signals": ["body_text"]
+  },
+  "2833:1175": {
+    "section_type": "cta",
+    "confidence": 0.86,
+    "reasoning": "Prominent call-to-action button",
+    "column_layout": "single",
+    "content_signals": ["cta_button"]
+  },
+  "2833:1218": {
+    "section_type": "content",
+    "confidence": 0.76,
+    "reasoning": "Image and text content block",
+    "column_layout": "two-column",
+    "content_signals": ["image", "body_text"]
+  },
+  "2833:1222": {
+    "section_type": "content",
+    "confidence": 0.74,
+    "reasoning": "Text content block",
+    "column_layout": "single",
+    "content_signals": ["body_text"]
+  },
+  "2833:1227": {
+    "section_type": "divider",
+    "confidence": 0.82,
+    "reasoning": "Thin separator line",
+    "column_layout": "single",
+    "content_signals": ["horizontal_rule"]
+  },
+  "2833:1236": {
+    "section_type": "content",
+    "confidence": 0.72,
+    "reasoning": "Additional text content",
+    "column_layout": "single",
+    "content_signals": ["body_text"]
+  },
+  "2833:1240": {
+    "section_type": "social",
+    "confidence": 0.90,
+    "reasoning": "Social media icons",
+    "column_layout": "single",
+    "content_signals": ["social_icons"]
+  },
+  "2833:1270": {
+    "section_type": "footer",
+    "confidence": 0.94,
+    "reasoning": "Legal text, copyright, unsubscribe",
+    "column_layout": "single",
+    "content_signals": ["legal_text", "copyright", "unsubscribe_link"]
+  }
+}

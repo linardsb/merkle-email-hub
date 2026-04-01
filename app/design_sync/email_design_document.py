@@ -36,6 +36,7 @@ from app.design_sync.protocol import (
 
 if TYPE_CHECKING:
     from app.design_sync.protocol import DesignFileStructure
+    from app.design_sync.vlm_classifier import VLMSectionClassification
 
 _SCHEMA_PATH = (
     Path(__file__).resolve().parents[2] / "data" / "schemas" / "email-design-document-v1.json"
@@ -1077,6 +1078,7 @@ class EmailDesignDocument:
         connection_config: dict[str, Any] | None = None,
         source_provider: str = "figma",
         _pre_normalized: bool = False,
+        vlm_classifications: dict[str, VLMSectionClassification] | None = None,
     ) -> EmailDesignDocument:
         """Build an EmailDesignDocument from legacy converter inputs.
 
@@ -1136,6 +1138,8 @@ class EmailDesignDocument:
                 layout_kwargs["section_name_map"] = snm
             if bnh := connection_config.get("button_name_hints"):
                 layout_kwargs["button_name_hints"] = bnh
+        if vlm_classifications:
+            layout_kwargs["vlm_classifications"] = vlm_classifications
         layout = analyze_layout(structure, **layout_kwargs)
 
         # 4. Derive container width (clamped 400-800, config override priority)
