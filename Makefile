@@ -62,6 +62,9 @@ rendering-baselines: ## Regenerate visual regression baselines (manual, destruct
 rendering-regression: ## Run visual regression tests against baselines
 	uv run pytest app/rendering/tests/visual_regression/ -v -m visual_regression
 
+qa-sweep: ## Run QA sweep manually
+	uv run python -m app.scheduling.jobs.qa_sweep
+
 test-collab: ## Run CRDT collaboration tests
 	COLLAB_WS__ENABLED=true COLLAB_WS__CRDT_ENABLED=true uv run pytest -v -m collab
 

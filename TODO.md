@@ -39,7 +39,7 @@
 > **This phase adds three capabilities: scheduled tasks, external notifications, and smart debouncing.** Together they transform the platform from a tool you must actively monitor into one that proactively manages its own health and communicates status to the team. Independent of Phases 37–44. No new databases — uses Redis for scheduling state and debounce tracking.
 
 - [x] ~~45.1 Cron scheduling engine~~ DONE
-- [ ] 45.2 Scheduled QA sweeps across active templates
+- [x] ~~45.2 Scheduled QA sweeps across active templates~~ DONE
 - [ ] 45.3 Scheduled ontology sync & rendering baseline regeneration
 - [ ] 45.4 Notification channel abstraction (Slack, Teams, Email)
 - [ ] 45.5 Workflow event notifications
@@ -64,7 +64,7 @@
 
 ---
 
-### 45.2 Scheduled QA Sweeps Across Active Templates `[Backend]`
+### ~~45.2 Scheduled QA Sweeps Across Active Templates `[Backend]`~~ DONE
 
 **What:** Register a scheduled job that runs QA checks across all active project templates, identifies regressions from ontology changes or dependency updates, and stores results for dashboard display.
 **Why:** Ontology updates (`make sync-ontology`) can silently break CSS compatibility scores. Dependency updates (Renovate) can change Maizzle/PostCSS behavior. A periodic sweep catches these regressions before users encounter them.
@@ -282,7 +282,7 @@
 > **Why 99.99% is hard:** Email clients aren't browsers — Outlook uses Word, Gmail strips `<style>`, Yahoo ignores `max-width`. Figma designs use features email can't reproduce (drop shadows, gradients, SVG, blend modes). Sub-pixel rounding: Figma says 14.5px, email rounds to 15px. For modern clients (Apple Mail, Gmail web, Outlook.com): 99% is achievable. For Outlook desktop: 95% is realistic — VML covers the big gaps but Word rendering is fundamentally different.
 
 - [ ] 47.1 Section-level screenshot cropping utility
-- [ ] 47.2 Visual comparison service (VLM section-by-section diff)
+- [x] ~~47.2 Visual comparison service (VLM section-by-section diff)~~ DONE
 - [ ] 47.3 Deterministic correction applicator
 - [ ] 47.4 Verification loop orchestrator
 - [ ] 47.5 Pipeline integration + configuration
@@ -507,7 +507,7 @@
 | Subtask | Scope | Dependencies | Status |
 |---------|-------|--------------|--------|
 | 47.1 Screenshot cropping | `app/rendering/screenshot_crop.py`, Pillow | None | Pending |
-| 47.2 VLM section comparison | `app/design_sync/visual_verify.py` | 47.1, 41.6 | Pending |
+| 47.2 VLM section comparison | `app/design_sync/visual_verify.py` | 47.1, 41.6 | **Done** |
 | 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | Pending |
 | 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | Pending |
 | 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | Pending |

@@ -377,6 +377,12 @@ class DesignSyncConfig(BaseModel):
         0.7  # DESIGN_SYNC__VLM_CLASSIFICATION_CONFIDENCE_THRESHOLD
     )
     vlm_classification_timeout: float = 15.0  # DESIGN_SYNC__VLM_CLASSIFICATION_TIMEOUT (seconds)
+    # VLM visual verification loop (Phase 47.2)
+    vlm_verify_enabled: bool = False  # DESIGN_SYNC__VLM_VERIFY_ENABLED
+    vlm_verify_model: str = ""  # DESIGN_SYNC__VLM_VERIFY_MODEL (empty = auto-resolve vision)
+    vlm_verify_timeout: float = 30.0  # DESIGN_SYNC__VLM_VERIFY_TIMEOUT (seconds)
+    vlm_verify_diff_skip_threshold: float = 2.0  # DESIGN_SYNC__VLM_VERIFY_DIFF_SKIP_THRESHOLD (%)
+    vlm_verify_max_sections: int = 20  # DESIGN_SYNC__VLM_VERIFY_MAX_SECTIONS
 
 
 class ESPSyncConfig(BaseModel):
@@ -646,6 +652,14 @@ class SchedulingConfig(BaseModel):
     job_timeout_seconds: int = 3600  # SCHEDULING__JOB_TIMEOUT_SECONDS
     max_run_history: int = 100  # SCHEDULING__MAX_RUN_HISTORY
     run_history_ttl_seconds: int = 86400  # SCHEDULING__RUN_HISTORY_TTL_SECONDS
+    qa_sweep_regression_threshold: float = Field(
+        default=0.05,
+        description="Score drop threshold (fraction) to flag as regression",
+    )
+    qa_sweep_checks: list[str] = Field(
+        default=["html_validation", "css_support", "css_audit"],
+        description="QA checks to run during sweeps",
+    )
 
 
 class SecurityConfig(BaseModel):
