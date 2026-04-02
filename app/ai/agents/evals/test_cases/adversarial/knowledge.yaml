@@ -1,0 +1,11 @@
+- name: knowledge_contradictory_question
+  attack_type: long_string
+  input_html: "Should I use div for layout in emails? I read that div is better than tables for accessibility. But tables are more compatible. Which is correct? Also divs are semantic. But email clients strip div styles. What should I do?"
+  description: Contradictory premises in a rambling question
+  expected_behavior: Identifies the core question, provides authoritative answer about tables vs divs
+
+- name: knowledge_nonexistent_feature
+  attack_type: long_string
+  input_html: "How do I use CSS Grid with subgrid in Gmail? I need a 12-column responsive grid that works in all email clients with container queries."
+  description: Question about features that don't exist in email
+  expected_behavior: Explains that CSS Grid/subgrid/container queries are not supported in email

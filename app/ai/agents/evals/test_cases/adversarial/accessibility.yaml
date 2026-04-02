@@ -1,0 +1,20 @@
+- name: accessibility_all_images_decorative
+  attack_type: missing_assets
+  input_html: |
+    <table role="presentation" width="600">
+    <tr><td><img src="https://example.com/spacer.gif" width="600" height="1"></td></tr>
+    <tr><td><img src="https://example.com/divider.png" width="600" height="2"></td></tr>
+    <tr><td><img src="https://example.com/bg-pattern.jpg" width="600" height="100"></td></tr>
+    </table>
+  description: All images are decorative with no alt text at all
+  expected_behavior: Adds empty alt="" for decorative, identifies which need descriptive alt
+
+- name: accessibility_color_only_info
+  attack_type: malformed_html
+  input_html: |
+    <table role="presentation" width="600"><tr><td>
+    <p style="margin:0 0 10px 0;">Status: <span style="color:green;">Active</span></p>
+    <p style="margin:0 0 10px 0;">Status: <span style="color:red;">Expired</span></p>
+    </td></tr></table>
+  description: Information conveyed by color alone (red/green status)
+  expected_behavior: Flags color-only information, suggests text/icon alternatives

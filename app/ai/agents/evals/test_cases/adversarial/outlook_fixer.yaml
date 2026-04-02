@@ -1,0 +1,26 @@
+- name: outlook_fixer_broken_mso_comments
+  attack_type: malformed_html
+  input_html: |
+    <table role="presentation" width="600"><tr><td>
+    <!--[if mso]>
+    <table><tr><td width="300">
+    <![endif]-->
+    <p style="margin:0;">Content in ghost table</p>
+    <!--[if mso]>
+    </td></tr>
+    <!-- missing closing table tag -->
+    <![endif]-->
+    </td></tr></table>
+  description: Broken MSO conditional with missing closing tags
+  expected_behavior: Detects and repairs unbalanced MSO conditional blocks
+
+- name: outlook_fixer_vml_without_namespace
+  attack_type: malformed_html
+  input_html: |
+    <table role="presentation" width="600"><tr><td>
+    <v:roundrect arcsize="10%" style="width:200px;height:40px;" fillcolor="#0066cc">
+    <center style="color:#ffffff;">CTA Button</center>
+    </v:roundrect>
+    </td></tr></table>
+  description: VML elements without xmlns:v namespace declaration
+  expected_behavior: Adds missing namespace or wraps in proper MSO block

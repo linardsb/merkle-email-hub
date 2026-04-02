@@ -1,0 +1,16 @@
+- name: scaffolder_word_paste_formatting
+  attack_type: malformed_html
+  input_html: |
+    <table><tr><td>
+    <h1 style="mso-style-type:export-only;font-family:'Times New Roman'">
+    <span style="font-size:14.0pt;line-height:115%">Pasted from Word</span>
+    </h1><o:p></o:p>
+    </td></tr></table>
+  description: Word-pasted HTML with MSO namespace pollution
+  expected_behavior: Strip mso-style-type, normalize fonts, preserve heading
+
+- name: scaffolder_50_section_brief
+  attack_type: long_string
+  input_html: ""
+  description: Brief requesting 50+ distinct sections in one email
+  expected_behavior: Truncate or group sections, no timeout

@@ -60,6 +60,21 @@ class CalibrationResult:
 
 
 @dataclass(frozen=True)
+class CalibrationDelta:
+    """Per-criterion TPR/TNR change between calibration runs."""
+
+    agent: str
+    criterion: str
+    tpr_before: float
+    tpr_after: float
+    tpr_delta: float  # after - before
+    tnr_before: float
+    tnr_after: float
+    tnr_delta: float  # after - before
+    regressed: bool  # True if tpr_delta < -threshold OR tnr_delta < -threshold
+
+
+@dataclass(frozen=True)
 class QACalibrationResult:
     """Agreement metrics for one QA check vs human labels."""
 
@@ -174,3 +189,26 @@ class SkillFilePatch:
     patch_content: str  # Markdown to append
     candidate: SkillUpdateCandidate
     confidence: str = "MEDIUM"  # HIGH / MEDIUM / LOW (from LLM)
+
+
+ADVERSARIAL_ATTACK_TYPES: tuple[str, ...] = (
+    "long_string",
+    "rtl_injection",
+    "nested_conditionals",
+    "missing_assets",
+    "extreme_width",
+    "emoji_heavy",
+    "malformed_html",
+)
+
+
+@dataclass(frozen=True)
+class AdversarialCase:
+    """A hostile test input designed to break agent output."""
+
+    name: str  # e.g., "scaffolder_long_heading"
+    agent: str  # one of 9 agent names
+    attack_type: str  # one of ADVERSARIAL_ATTACK_TYPES
+    input_html: str  # hostile input content
+    description: str  # what this tests
+    expected_behavior: str = ""  # expected agent response

@@ -1,0 +1,20 @@
+- name: dark_mode_already_dark
+  attack_type: malformed_html
+  input_html: |
+    <table role="presentation" width="600" style="background-color:#1a1a1a;">
+    <tr><td style="color:#ffffff;">
+    <h1 style="margin:0;color:#ffffff;">Already Dark Email</h1>
+    <p style="margin:0 0 10px 0;color:#cccccc;">This email is already dark-themed.</p>
+    </td></tr></table>
+  description: Email already using dark background and light text
+  expected_behavior: Detects dark palette, avoids double-inversion
+
+- name: dark_mode_transparent_images
+  attack_type: missing_assets
+  input_html: |
+    <table role="presentation" width="600"><tr><td>
+    <img src="https://example.com/logo-transparent.png" alt="Logo" width="200">
+    <p style="margin:0 0 10px 0;color:#333333;">Text under transparent image</p>
+    </td></tr></table>
+  description: Transparent PNG that may look broken on dark backgrounds
+  expected_behavior: Adds background or wrapper for transparent images

@@ -1,0 +1,11 @@
+- name: content_spam_trigger_overload
+  attack_type: long_string
+  input_html: "FREE FREE FREE!!! CLICK NOW!!! LIMITED TIME OFFER!!! BUY NOW!!! ACT FAST!!! URGENT!!!"
+  description: Input saturated with every spam trigger word
+  expected_behavior: Rewrites to remove spam triggers while preserving intent
+
+- name: content_html_in_text
+  attack_type: malformed_html
+  input_html: "Check out our <script>alert('xss')</script> amazing <b>sale</b> today!"
+  description: HTML/script tags embedded in plain text input
+  expected_behavior: Strips or escapes HTML tags, preserves plain text meaning

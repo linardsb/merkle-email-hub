@@ -168,6 +168,8 @@ def main() -> None:
     all_verdicts: list[dict[str, Any]] = []
     if verdicts_path.is_dir():
         for f in sorted(verdicts_path.glob("*_verdicts.jsonl")):
+            if "_adversarial_" in f.name:
+                continue
             all_verdicts.extend(load_verdicts(f))
     else:
         all_verdicts = load_verdicts(verdicts_path)
@@ -177,6 +179,31 @@ def main() -> None:
         sys.exit(1)
 
     report = build_analysis_report(all_verdicts)
+
+    # Load adversarial verdicts separately if available
+    if verdicts_path.is_dir():
+        adv_verdicts: list[dict[str, Any]] = []
+        for f in sorted(verdicts_path.glob("*_adversarial_verdicts.jsonl")):
+            adv_verdicts.extend(load_verdicts(f))
+        if adv_verdicts:
+            adv_pass_rates = compute_pass_rates(adv_verdicts)
+            adv_passed = sum(
+                1 for v in adv_verdicts if v.get("overall_pass") and not v.get("error")
+            )
+            adv_total_valid = sum(1 for v in adv_verdicts if not v.get("error"))
+            adv_overall = adv_passed / adv_total_valid if adv_total_valid > 0 else 0.0
+            if adv_overall < 0.40:
+                adv_status = "FAIL"
+            elif adv_overall < 0.60:
+                adv_status = "WARN"
+            else:
+                adv_status = "PASS"
+            report["adversarial"] = {
+                "total": len(adv_verdicts),
+                "overall_pass_rate": adv_overall,
+                "pass_rates": adv_pass_rates,
+                "status": adv_status,
+            }
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w") as out_f:
@@ -194,6 +221,14 @@ def main() -> None:
         logger.info("Top failure clusters:")
         for tf in report["top_failures"]:
             logger.info(f"  [{tf['count']}x] {tf['cluster_id']}: {tf['pattern'][:80]}")
+
+    if "adversarial" in report:
+        adv: dict[str, Any] = report["adversarial"]
+        status: str = adv["status"]
+        status_icon = {"PASS": "OK", "WARN": "WARN", "FAIL": "FAIL"}[status]
+        logger.info(
+            f"Adversarial: {adv['overall_pass_rate']:.1%} ({adv['total']} cases) [{status_icon}]"
+        )
 
     logger.info(f"Full report: {output_path}")
 

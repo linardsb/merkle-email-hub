@@ -518,10 +518,10 @@
 
 - [x] ~~43.1 Judge correction generator from calibration data~~ DONE
 - [x] ~~43.2 Inject corrections into judge prompt template~~ DONE
-- [ ] 43.3 Judge skill files for domain knowledge accumulation
-- [ ] 43.4 Knowledge agent integration for cross-judge learnings
-- [ ] 43.5 Calibration delta tracking and regression gate
-- [ ] 43.6 End-to-end validation: re-judge with corrections, measure TPR/TNR improvement
+- [x] ~~43.3 Judge skill files for domain knowledge accumulation~~ DONE
+- [x] ~~43.4 Knowledge agent integration for cross-judge learnings~~ DONE
+- [x] ~~43.5 Calibration delta tracking and regression gate~~ DONE
+- [x] ~~43.6 End-to-end validation: re-judge with corrections, measure TPR/TNR improvement~~ DONE
 
 ---
 
@@ -632,7 +632,7 @@
 
 ---
 
-### 43.5 Calibration Delta Tracking and Regression Gate `[Backend, Evals]`
+### ~~43.5 Calibration Delta Tracking and Regression Gate `[Backend, Evals]`~~ DONE
 
 **What:** Add `app/ai/agents/evals/calibration_tracker.py` that compares current calibration results against the previous run and flags regressions. Wire into `make eval-check` as a calibration regression gate: if any criterion's TPR drops >5pp or TNR drops >5pp from the baseline, the gate fails.
 **Why:** Without tracking, judges can silently degrade — a prompt tweak that fixes one criterion may break another. The improvement tracker (`improvement_tracker.py`) tracks agent pass rates but not judge accuracy. This closes the gap: every calibration run is compared to baseline, and regressions are caught before they propagate.
@@ -709,7 +709,7 @@
 - [x] ~~44.1 E2E smoke tests in CI~~ DONE
 - [x] ~~44.2 Dependency update automation (Renovate)~~ DONE
 - [x] ~~44.3 Feature flag lifecycle management~~ DONE
-- [ ] 44.4 Adversarial agent evaluation pass
+- [x] ~~44.4 Adversarial agent evaluation pass~~ DONE
 - [ ] 44.11 Prompt injection detection for agent inputs
 - [ ] 44.12 PII redaction in logs and eval traces
 - [x] ~~44.5 Operational runbooks~~ DONE
@@ -725,7 +725,7 @@
 
 ---
 
-### 44.4 Adversarial Agent Evaluation Pass `[Backend, Evals]`
+### ~~44.4 Adversarial Agent Evaluation Pass~~ `[Backend, Evals]` DONE
 
 **What:** Add an adversarial evaluation stage to the eval pipeline that generates hostile inputs designed to break agent output — long strings, RTL text, nested Liquid/AMPscript, missing images, extreme viewport widths, emoji-heavy content. Each agent's eval traces include adversarial test cases alongside normal ones. Failures feed back as regression test cases.
 **Why:** The current eval pipeline tests agents against representative inputs — well-formed Figma designs, standard email briefs, typical component HTML. But production inputs are adversarial by nature: clients paste Word-formatted text, Figma designs have 200+ layers, ESP templates nest 5 levels of conditionals. The adversarial-dev harness (GAN-inspired planner/generator/evaluator architecture) demonstrates that separate adversarial evaluation dramatically improves output quality. Adapting this principle: an adversarial input generator creates inputs designed to trigger known failure modes, and agents must survive them.
@@ -818,7 +818,7 @@
 | 44.1 E2E smoke in CI | `.github/workflows/ci.yml`, Playwright | DONE |
 | 44.2 Renovate | `renovate.json5` | DONE |
 | 44.3 Feature flag lifecycle | `feature-flags.yaml`, `scripts/flag-audit.py` | DONE |
-| 44.4 Adversarial eval pass | `app/ai/agents/evals/adversarial.py`, YAML fixtures | TODO |
+| 44.4 Adversarial eval pass | `app/ai/agents/evals/adversarial.py`, YAML fixtures, `adversarial_regression.py` | DONE |
 | 44.5 Operational runbooks | `docs/operations/` (4 documents) | DONE |
 | 44.6 Migration squash | `scripts/squash-migrations.sh`, `alembic/CLAUDE.md` | DONE |
 | 44.7 CRDT collaboration tests | `app/streaming/tests/` | DONE |
@@ -828,7 +828,7 @@
 | 44.11 Prompt injection detection | `app/ai/security/prompt_guard.py`, blueprint engine | TODO |
 | 44.12 PII redaction | `app/core/redaction.py`, logging + eval traces | TODO |
 
-> 9/12 subtasks complete. Remaining: **44.4 Adversarial eval pass** (depends on eval pipeline Phases 37-43), **44.11 Prompt injection detection** (independent), **44.12 PII redaction** (independent).
+> 10/12 subtasks complete. Remaining: **44.11 Prompt injection detection** (independent), **44.12 PII redaction** (independent).
 
 ---
 

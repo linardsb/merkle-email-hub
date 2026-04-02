@@ -1,0 +1,25 @@
+- name: personalisation_mixed_esp_syntax
+  attack_type: nested_conditionals
+  input_html: |
+    <table role="presentation" width="600"><tr><td>
+    {% if user.name %}
+    <p style="margin:0;">Hello {{ user.name }}</p>
+    %%[IF @segment == 'vip' THEN]%%
+    <p style="margin:0;">VIP Offer</p>
+    %%[ENDIF]%%
+    {% endif %}
+    </td></tr></table>
+  description: Mixed Liquid and AMPscript syntax in same template
+  expected_behavior: Detects conflicting ESP syntaxes, warns or normalizes
+
+- name: personalisation_unclosed_liquid
+  attack_type: malformed_html
+  input_html: |
+    <table role="presentation" width="600"><tr><td>
+    {% if user.premium %}
+    <p style="margin:0;">Premium content here</p>
+    {% if user.locale == 'en' %}
+    <p style="margin:0;">English version</p>
+    </td></tr></table>
+  description: Liquid blocks without matching endif tags
+  expected_behavior: Detects unclosed conditionals, reports error

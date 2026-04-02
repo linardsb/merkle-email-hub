@@ -414,12 +414,27 @@ async def main() -> None:
         action="store_true",
         help="Disable correction example injection (for A/B comparison runs)",
     )
+    parser.add_argument(
+        "--no-skills",
+        action="store_true",
+        help="Disable skill knowledge injection (for A/B comparison runs)",
+    )
+    parser.add_argument(
+        "--adversarial",
+        action="store_true",
+        help="Judge adversarial traces (*_adversarial_traces.jsonl → *_adversarial_verdicts.jsonl)",
+    )
     args = parser.parse_args()
 
     if args.no_corrections:
         from app.ai.agents.evals.judges.base import set_corrections_enabled
 
         set_corrections_enabled(False)
+
+    if args.no_skills:
+        from app.ai.agents.evals.judges.base import set_skills_enabled
+
+        set_skills_enabled(False)
 
     agents = (
         [
@@ -437,11 +452,13 @@ async def main() -> None:
         else [args.agent]
     )
 
+    suffix = "_adversarial" if args.adversarial else ""
+
     for agent in agents:
         # Resolve paths for multi-agent mode
         if args.agent == "all":
-            traces_path = args.traces / f"{agent}_traces.jsonl"
-            output_path = args.output / f"{agent}_verdicts.jsonl"
+            traces_path = args.traces / f"{agent}{suffix}_traces.jsonl"
+            output_path = args.output / f"{agent}{suffix}_verdicts.jsonl"
         else:
             traces_path = args.traces
             output_path = args.output

@@ -1,0 +1,18 @@
+- name: code_reviewer_minified_html
+  attack_type: long_string
+  input_html: |
+    <table role="presentation" width="600"><tr><td><table role="presentation" width="100%"><tr><td width="50%" style="padding:10px;background-color:#f5f5f5;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#333333;"><h1 style="margin:0 0 10px 0;font-size:24px;color:#0066cc;">Heading</h1><p style="margin:0 0 10px 0;">Paragraph one with lots of inline styles that make this very hard to read as one long line.</p><p style="margin:0 0 10px 0;">Paragraph two continues the wall of text.</p></td><td width="50%" style="padding:10px;background-color:#ffffff;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#333333;"><img src="https://example.com/hero.png" alt="Hero" width="280" style="display:block;"></td></tr></table></td></tr></table>
+  description: Fully minified single-line HTML with no whitespace
+  expected_behavior: Parses and analyzes despite lack of formatting
+
+- name: code_reviewer_duplicate_ids
+  attack_type: malformed_html
+  input_html: |
+    <table role="presentation" width="600">
+    <tr><td id="header"><h1 style="margin:0;">Header</h1></td></tr>
+    <tr><td id="header"><h1 style="margin:0;">Duplicate Header</h1></td></tr>
+    <tr><td id="content"><p style="margin:0;">Content</p></td></tr>
+    <tr><td id="content"><p style="margin:0;">Duplicate Content</p></td></tr>
+    </table>
+  description: Multiple elements sharing the same HTML id
+  expected_behavior: Detects duplicate IDs as code quality issue

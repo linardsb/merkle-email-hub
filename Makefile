@@ -244,7 +244,10 @@ eval-blueprint: ## Run blueprint pipeline evals
 eval-regression: ## Check for eval regressions vs baseline
 	uv run python -m app.ai.agents.evals.regression --current traces/analysis.json --baseline traces/baseline.json
 
-eval-check: eval-analysis eval-regression ## Full eval CI gate (analysis + regression check)
+eval-calibration-gate: ## Calibration regression gate (TPR/TNR delta check)
+	uv run python -m app.ai.agents.evals.calibration_tracker --current traces/ --baseline traces/calibration_baseline.json
+
+eval-check: eval-analysis eval-regression eval-calibration-gate ## Full eval CI gate (analysis + regression + calibration check)
 
 eval-calibrate: ## Calibrate judges against human labels (all 9 agents)
 	uv run python -m app.ai.agents.evals.calibration --verdicts traces/scaffolder_verdicts.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/scaffolder_calibration.json
@@ -259,6 +262,43 @@ eval-calibrate: ## Calibrate judges against human labels (all 9 agents)
 
 eval-corrections: ## Generate judge correction YAML from calibration disagreements
 	uv run python -m app.ai.agents.evals.judge_corrections --traces-dir traces/ --output traces/corrections/
+
+eval-judge-no-corrections: ## Run judges WITHOUT corrections (A/B baseline)
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --traces traces --output traces/no_corrections --no-corrections
+
+eval-calibrate-no-corrections: ## Calibrate judges from no-corrections verdicts
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/scaffolder_verdicts.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/no_corrections/scaffolder_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/dark_mode_verdicts.jsonl --labels traces/dark_mode_human_labels.jsonl --output traces/no_corrections/dark_mode_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/content_verdicts.jsonl --labels traces/content_human_labels.jsonl --output traces/no_corrections/content_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/outlook_fixer_verdicts.jsonl --labels traces/outlook_fixer_human_labels.jsonl --output traces/no_corrections/outlook_fixer_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/accessibility_verdicts.jsonl --labels traces/accessibility_human_labels.jsonl --output traces/no_corrections/accessibility_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/personalisation_verdicts.jsonl --labels traces/personalisation_human_labels.jsonl --output traces/no_corrections/personalisation_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/code_reviewer_verdicts.jsonl --labels traces/code_reviewer_human_labels.jsonl --output traces/no_corrections/code_reviewer_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/knowledge_verdicts.jsonl --labels traces/knowledge_human_labels.jsonl --output traces/no_corrections/knowledge_calibration.json
+	uv run python -m app.ai.agents.evals.calibration --verdicts traces/no_corrections/innovation_verdicts.jsonl --labels traces/innovation_human_labels.jsonl --output traces/no_corrections/innovation_calibration.json
+
+eval-correction-impact: ## Compare calibration with/without corrections → impact report
+	uv run python -m app.ai.agents.evals.correction_impact \
+		--with-corrections traces/ \
+		--without-corrections traces/no_corrections/ \
+		--output traces/correction_impact_report.json
+
+eval-adversarial: eval-verify ## Run adversarial eval cases (generate traces + judge verdicts)
+	uv run python -m app.ai.agents.evals.runner --agent all --output traces/ --include-adversarial --skip-existing
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --adversarial --traces traces/ --output traces/ --skip-existing
+
+eval-adversarial-dry: eval-verify ## Adversarial eval dry-run (no LLM)
+	uv run python -m app.ai.agents.evals.runner --agent all --output traces/ --include-adversarial --dry-run
+	uv run python -m app.ai.agents.evals.judge_runner --agent all --adversarial --traces traces/ --output traces/ --dry-run
+
+eval-adversarial-regression: ## Auto-generate regression YAML from failed adversarial cases
+	uv run python -m app.ai.agents.evals.adversarial_regression --verdicts traces/ --output app/ai/agents/evals/test_cases/regression/
+
+eval-knowledge: ## Generate calibration insights for Knowledge agent RAG
+	@mkdir -p data/knowledge
+	uv run python scripts/generate-calibration-knowledge.py \
+		--traces-dir traces/ \
+		--output data/knowledge/judge_calibration_insights.md
 
 eval-qa-calibrate: ## Calibrate QA gate against human labels (all 9 agents)
 	uv run python -m app.ai.agents.evals.qa_calibration --traces traces/scaffolder_traces.jsonl --labels traces/scaffolder_human_labels.jsonl --output traces/qa_calibration_scaffolder.json

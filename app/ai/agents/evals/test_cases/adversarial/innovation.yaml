@@ -1,0 +1,11 @@
+- name: innovation_impossible_technique
+  attack_type: long_string
+  input_html: "Create a real-time stock ticker in email that updates every 5 seconds with WebSocket connections and renders a live D3.js chart"
+  description: Technique requiring capabilities impossible in email
+  expected_behavior: Explains infeasibility, suggests closest achievable alternative (countdown timer, AMP)
+
+- name: innovation_conflicting_requirements
+  attack_type: long_string
+  input_html: "Build an interactive carousel that works in Outlook 2019, uses pure CSS only, has smooth 60fps animations, and degrades to a single image on all other clients"
+  description: Mutually exclusive requirements (Outlook + pure CSS + animation)
+  expected_behavior: Identifies conflicts, proposes trade-off options

@@ -553,6 +553,7 @@ async def run_agent(
     delay: float = 3.0,
     skip_existing: bool = False,
     include_uploaded: bool = False,
+    include_adversarial: bool = False,
 ) -> None:
     """Run all test cases for an agent and write traces to JSONL."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -653,6 +654,56 @@ async def run_agent(
     passed = total - error_count
     logger.info(f"Done: {passed}/{total} succeeded. Traces: {output_file}")
 
+    # --- Adversarial cases (separate output file) ---
+    if include_adversarial:
+        from app.ai.agents.evals.adversarial import adversarial_to_runner_dict, get_all_cases
+
+        adv_cases_raw = get_all_cases(agent)
+        adv_cases = [adversarial_to_runner_dict(ac) for ac in adv_cases_raw]
+        adv_output_file = output_dir / f"{agent}_adversarial_traces.jsonl"
+
+        adv_existing: set[str] = set()
+        if skip_existing and adv_output_file.exists():
+            with Path.open(adv_output_file) as af:
+                for line in af:
+                    stripped = line.strip()
+                    if stripped:
+                        adv_existing.add(json.loads(stripped)["id"])
+
+        adv_mode = "a" if adv_existing else "w"
+        adv_count = 0
+        adv_errors = 0
+        logger.info(f"Running {len(adv_cases)} adversarial cases for {agent}{mode_label}...")
+
+        with Path.open(adv_output_file, adv_mode) as af:
+            if dry_run:
+                from app.ai.agents.evals.mock_traces import generate_mock_trace
+
+                for case in adv_cases:
+                    if case["id"] in adv_existing:
+                        continue
+                    trace = generate_mock_trace(case, agent)
+                    af.write(json.dumps(trace) + "\n")
+                    af.flush()
+                    adv_count += 1
+            else:
+                for i, case in enumerate(adv_cases, 1):
+                    if case["id"] in adv_existing:
+                        continue
+                    logger.debug(f"  [{i}/{len(adv_cases)}] {case['id']}...")
+                    trace = await runner(case)
+                    af.write(json.dumps(trace) + "\n")
+                    af.flush()
+                    adv_count += 1
+                    if trace["error"] is not None:
+                        adv_errors += 1
+                    if (i % batch_size == 0) and i < len(adv_cases):
+                        await asyncio.sleep(delay)
+
+        adv_total = adv_count + len(adv_existing)
+        adv_passed = adv_total - adv_errors
+        logger.info(f"Adversarial: {adv_passed}/{adv_total} succeeded. Traces: {adv_output_file}")
+
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Run agent evals")
@@ -690,6 +741,11 @@ async def main() -> None:
         action="store_true",
         help="Include eval cases from uploaded templates",
     )
+    parser.add_argument(
+        "--include-adversarial",
+        action="store_true",
+        help="Include adversarial test cases (written to separate JSONL)",
+    )
     args = parser.parse_args()
 
     agents = (
@@ -717,6 +773,7 @@ async def main() -> None:
             delay=args.delay,
             skip_existing=args.skip_existing,
             include_uploaded=args.include_uploaded,
+            include_adversarial=args.include_adversarial,
         )
 
 

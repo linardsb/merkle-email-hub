@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-04-01
+> Last updated: 2026-04-02
 
 ### Completed
 
@@ -186,6 +186,10 @@
 
 ### Recently Completed
 
+**Phase 44.4 complete** (Adversarial Agent Evaluation Pass) — `adversarial.py` with 7 attack type generators (long_string, rtl_injection, nested_conditionals, missing_assets, extreme_width, emoji_heavy, malformed_html) across all 9 agents with agent applicability matrix; YAML fixtures for curated adversarial cases (`test_cases/adversarial/*.yaml`); `--include-adversarial` flag on `runner.py` writes separate `*_adversarial_traces.jsonl`; `--adversarial` flag on `judge_runner.py` for adversarial verdict generation; `adversarial_regression.py` auto-generates regression YAML from failed verdicts; `error_analysis.py` extended with adversarial pass rate section (WARN <60%, FAIL <40%); `make eval-adversarial` + `eval-adversarial-dry` + `eval-adversarial-regression` targets; `AdversarialCase` dataclass in `schemas.py`; 16 tests.
+
+**Phase 43 complete** (Judge Feedback Loop & Self-Improving Calibration) — all 6 subtasks done. 43.1 correction YAML generator from calibration disagreements. 43.2 correction injection into judge prompts with FP-prioritized token-budgeted formatting + `--no-corrections` A/B flag. 43.3 five domain knowledge skill files + 11 per-judge YAML manifests + `--no-skills` A/B flag. 43.4 cross-judge calibration knowledge generation for Knowledge agent RAG. 43.5 calibration delta tracking regression gate (`make eval-calibration-gate`). 43.6 end-to-end A/B validation — `correction_impact.py` loads calibration from with/without-corrections runs, classifies per-criterion impact (improved/degraded/no_change), generates `correction_impact_report.json`; 3 new Makefile targets (`eval-judge-no-corrections`, `eval-calibrate-no-corrections`, `eval-correction-impact`); 16 tests. This completes the judge feedback loop — every calibration cycle now auto-generates corrections that improve the next judge run.
+
 **Phase 41.6:** Batch Frame Screenshot Export Service — `export_frame_screenshots(file_key, access_token, node_ids, scale=2.0) -> dict[str, bytes]` on `FigmaDesignSyncService`; reuses `export_images()` batching (groups of 100) + concurrent `download_image_bytes()` via `asyncio.gather()`; partial download failures silently omitted; `_capture_design_image()` in `diagnose/extract.py` refactored to delegate to new method; 5 new tests in `test_frame_screenshots.py`; existing 13 `test_extract_image.py` tests updated and passing.
 
 **Phase 41.5:** VLM-Assisted Section Classification Fallback — `vlm_classifier.py` with `vlm_classify_section()` async function that calls a vision-capable LLM when `component_matcher._score_candidates()` returns confidence below `low_match_confidence_threshold` (0.6); `VLMClassificationResult` frozen dataclass with `component_type`, `confidence`, `source="vlm_fallback"`; model resolution via `resolve_model_by_capabilities({VISION}, tier="standard")`; bounded screenshot-hash cache (`_CACHE_MAX_SIZE=512`); response validated against candidate_types allowlist; `match_section_with_vlm_fallback()` async wrapper in `component_matcher.py`; config flag `DESIGN_SYNC__VLM_FALLBACK_ENABLED` (default `false`); 8 tests.
@@ -247,8 +251,6 @@
 **Phase 32.4:** Agent Knowledge Lookup Tool — `app/ai/agents/tools/client_lookup.py` with `ClientLookupTool` (single-client queries: css_support/dark_mode/known_bugs/size_limits/font_support) + `MultiClientLookupTool` (batch N×M queries); `ClientLookupParams`/`ClientLookupResult` Pydantic models; module-level singleton instances; structured logging; blueprint engine LAYER 11.5 injects tools into `context.metadata` for all agentic nodes; 6 agent SKILL.md files updated with Client Rendering Lookup L2 section; 26 new tests.
 
 ### Up Next
-
-**Phase 43** (Judge Feedback Loop) — 2/6 done. 43.1 done (correction YAML generator from calibration disagreements). 43.2 done (correction injection into judge prompts with FP-prioritized token-budgeted formatting, `build_system_prompt()` wrapper, `--no-corrections` A/B flag). Remaining: 43.3 judge skill files, 43.4 Knowledge agent integration, 43.5 calibration regression gate, 43.6 end-to-end validation.
 
 **Phase 35.4–35.11** (Next-Gen Design-to-Email Pipeline — remaining 6 subtasks: MJML section templates, AI conversion learning loop, W3C Design Tokens + caniemail.com, Figma webhooks, incremental conversion, tests). See `TODO.md` for details.
 
