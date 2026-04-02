@@ -40,7 +40,7 @@
 
 - [x] ~~45.1 Cron scheduling engine~~ DONE
 - [x] ~~45.2 Scheduled QA sweeps across active templates~~ DONE
-- [ ] 45.3 Scheduled ontology sync & rendering baseline regeneration
+- [x] ~~45.3 Scheduled ontology sync & rendering baseline regeneration~~ DONE
 - [ ] 45.4 Notification channel abstraction (Slack, Teams, Email)
 - [ ] 45.5 Workflow event notifications
 - [ ] 45.6 Build & webhook debounce layer
@@ -80,7 +80,7 @@
 
 ---
 
-### 45.3 Scheduled Ontology Sync & Rendering Baseline Regeneration `[Backend]`
+### ~~45.3 Scheduled Ontology Sync & Rendering Baseline Regeneration `[Backend]`~~ DONE
 
 **What:** Register scheduled jobs for CanIEmail ontology sync (weekly) and rendering baseline regeneration (biweekly). Both emit notification events on completion or failure.
 **Why:** The CanIEmail ontology drifts as new email client data is published. Rendering baselines go stale as email client emulators update. Both currently require manual `make` targets that are easy to forget.
@@ -151,8 +151,8 @@
 | Subtask | Scope | Dependencies | Status |
 |---------|-------|--------------|--------|
 | 45.1 Cron scheduling engine | `app/scheduling/`, Redis | None | **Done** |
-| 45.2 Scheduled QA sweeps | `app/scheduling/jobs/qa_sweep.py` | 45.1 | Pending |
-| 45.3 Ontology sync + rendering baselines | `app/scheduling/jobs/` | 45.1 | Pending |
+| 45.2 Scheduled QA sweeps | `app/scheduling/jobs/qa_sweep.py` | 45.1 | **Done** |
+| 45.3 Ontology sync + rendering baselines | `app/scheduling/jobs/` | 45.1 | **Done** |
 | 45.4 Notification channel abstraction | `app/notifications/`, Slack/Teams/SMTP | None | Pending |
 | 45.5 Workflow event notifications | Blueprint, QA, approval, rendering hooks | 45.4 | Pending |
 | 45.6 Build & webhook debounce | `app/core/debounce.py`, Redis | None | Pending |
