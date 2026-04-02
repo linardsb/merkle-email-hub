@@ -32,6 +32,7 @@ from app.ai.agents.evals.synthetic_data_personalisation import PERSONALISATION_T
 from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 from app.ai.agents.evals.template_eval_generator import TemplateEvalGenerator
 from app.core.logging import get_logger
+from app.core.redaction import redact_value
 
 logger = get_logger(__name__)
 
@@ -629,7 +630,7 @@ async def run_agent(
                     continue
                 logger.debug(f"  [{i}/{len(cases)}] {case['id']}... (dry-run)")
                 trace = generate_mock_trace(case, agent)
-                f.write(json.dumps(trace) + "\n")
+                f.write(json.dumps(redact_value(trace)) + "\n")
                 f.flush()
                 trace_count += 1
         else:
@@ -639,7 +640,7 @@ async def run_agent(
                     continue
                 logger.debug(f"  [{i}/{len(cases)}] {case['id']}...")
                 trace = await runner(case)
-                f.write(json.dumps(trace) + "\n")
+                f.write(json.dumps(redact_value(trace)) + "\n")
                 f.flush()
                 trace_count += 1
                 if trace["error"] is not None:
@@ -683,7 +684,7 @@ async def run_agent(
                     if case["id"] in adv_existing:
                         continue
                     trace = generate_mock_trace(case, agent)
-                    af.write(json.dumps(trace) + "\n")
+                    af.write(json.dumps(redact_value(trace)) + "\n")
                     af.flush()
                     adv_count += 1
             else:
@@ -692,7 +693,7 @@ async def run_agent(
                         continue
                     logger.debug(f"  [{i}/{len(adv_cases)}] {case['id']}...")
                     trace = await runner(case)
-                    af.write(json.dumps(trace) + "\n")
+                    af.write(json.dumps(redact_value(trace)) + "\n")
                     af.flush()
                     adv_count += 1
                     if trace["error"] is not None:

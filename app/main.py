@@ -75,7 +75,10 @@ settings = get_settings()
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan event handler."""
     # Startup
-    setup_logging(log_level=settings.log_level)
+    setup_logging(
+        log_level=settings.log_level,
+        pii_redaction=settings.logging_pii_redaction,
+    )
     logger = get_logger(__name__)
 
     # SECURITY: Fail hard if JWT secret is weak in non-development environments

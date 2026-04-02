@@ -21,6 +21,7 @@ from app.ai.routing import resolve_model
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.poller import DataPoller
+from app.core.redaction import redact_pii, redact_value
 from app.core.redis import get_redis
 
 logger = get_logger(__name__)
@@ -60,8 +61,8 @@ async def enqueue_for_judging(
         "trace_id": f"prod-{run_id}-{uuid.uuid4().hex[:8]}",
         "run_id": run_id,
         "blueprint_name": blueprint_name,
-        "brief": brief,
-        "html": html,
+        "brief": redact_pii(brief),
+        "html": redact_pii(html),
         "agents_executed": agents_executed,
     }
 
@@ -157,11 +158,14 @@ async def _judge_trace(trace: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _append_verdicts(verdicts: list[dict[str, Any]], path: Path) -> None:
-    """Append verdict dicts as JSONL lines."""
+    """Append verdict dicts as JSONL lines.
+
+    PII is redacted from verdict reasoning before writing.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a") as f:
         for v in verdicts:
-            f.write(json.dumps(v) + "\n")
+            f.write(json.dumps(redact_value(v)) + "\n")
 
 
 def refresh_analysis(

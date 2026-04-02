@@ -37,6 +37,14 @@ class ServiceUnavailableError(AppError):
     """External dependency unavailable (503)."""
 
 
+class PromptInjectionError(DomainValidationError):
+    """Prompt injection detected in user input (422)."""
+
+    def __init__(self, *, flags: list[str]) -> None:
+        self.flags = flags
+        super().__init__(f"Prompt injection detected: {', '.join(flags)}")
+
+
 # ── Exception Handlers ──
 
 

@@ -21,15 +21,26 @@ _GOLDEN_TOKEN_BUDGET = 2000  # ~8000 chars at ~4 chars/token
 _DESIGN_CONTEXT_CHAR_BUDGET = 1500  # ~375 tokens for design context
 _CORRECTIONS_TOKEN_BUDGET = 1500  # ~6000 chars at ~4 chars/token
 _CORRECTIONS_DIR = Path(__file__).resolve().parents[3] / "traces" / "corrections"
+_SKILLS_TOKEN_BUDGET = 2000  # ~8000 chars at ~4 chars/token
+_SKILLS_DIR = Path(__file__).resolve().parent / "skills"
 
 # Module-level toggle for --no-corrections CLI flag
 _corrections_enabled: bool = True
+
+# Module-level toggle for --no-skills CLI flag
+_skills_enabled: bool = True
 
 
 def set_corrections_enabled(enabled: bool) -> None:
     """Toggle correction injection (for A/B comparison runs)."""
     global _corrections_enabled
     _corrections_enabled = enabled
+
+
+def set_skills_enabled(enabled: bool) -> None:
+    """Toggle skill injection (for A/B comparison runs)."""
+    global _skills_enabled
+    _skills_enabled = enabled
 
 
 class Judge(Protocol):
@@ -73,6 +84,7 @@ Respond with ONLY valid JSON in this exact format:
 CRITERIA:
 {criteria_block}
 {corrections_block}
+{skills_block}
 IMPORTANT:
 - Be strict. If in doubt, fail.
 - Judge the OUTPUT only. Do not judge the input quality.
@@ -220,17 +232,101 @@ def format_corrections_section(agent_name: str) -> str:
     return header + "\n" + "\n\n".join(parts)
 
 
+@lru_cache(maxsize=16)
+def _load_skills_manifest_cached(path_str: str, _mtime: float) -> dict[str, Any]:
+    """Load and cache skill manifest YAML. Cache key includes mtime for staleness."""
+    with Path(path_str).open() as f:
+        data: dict[str, Any] = yaml.safe_load(f) or {}
+    return data
+
+
+@lru_cache(maxsize=32)
+def _load_skill_file_cached(path_str: str, _mtime: float) -> str:
+    """Load and cache a skill markdown file. Cache key includes mtime."""
+    return Path(path_str).read_text()
+
+
+def load_judge_skills(agent_name: str, criterion: str) -> str:
+    """Load skill content for a specific agent+criterion pair.
+
+    Reads from judges/skills/{agent}_skills.yaml to find mapped skill files,
+    then loads and concatenates their content within per-file token budget.
+
+    Returns empty string if no manifest, no mapping, or skills disabled.
+    """
+    if not _skills_enabled:
+        return ""
+
+    manifest_path = _SKILLS_DIR / f"{agent_name}_skills.yaml"
+    if not manifest_path.exists():
+        return ""
+
+    manifest = _load_skills_manifest_cached(str(manifest_path), manifest_path.stat().st_mtime)
+    skills_map: dict[str, list[str]] = manifest.get("skills", {})
+    file_names: list[str] = skills_map.get(criterion, [])
+    if not file_names:
+        return ""
+
+    per_file_budget = 1000 * 4  # 1000 tokens per skill file
+    parts: list[str] = []
+    for fname in file_names:
+        skill_path = _SKILLS_DIR / fname
+        if not skill_path.exists():
+            continue
+        content = _load_skill_file_cached(str(skill_path), skill_path.stat().st_mtime)
+        if len(content) > per_file_budget:
+            content = content[:per_file_budget] + "\n[truncated]"
+        parts.append(content)
+
+    return "\n\n".join(parts)
+
+
+def format_skills_section(agent_name: str, criteria: list[JudgeCriteria]) -> str:
+    """Build domain knowledge section from skill files for all criteria.
+
+    Loads relevant skills for each criterion and concatenates within total budget.
+    Returns empty string if no skills found or skills disabled.
+    """
+    if not _skills_enabled:
+        return ""
+
+    total_budget = _SKILLS_TOKEN_BUDGET * 4
+    parts: list[str] = []
+    used = 0
+
+    for c in criteria:
+        skill_content = load_judge_skills(agent_name, c.name)
+        if not skill_content:
+            continue
+        entry = f"### {c.name}\n{skill_content}"
+        if used + len(entry) > total_budget:
+            break
+        parts.append(entry)
+        used += len(entry)
+
+    if not parts:
+        return ""
+
+    header = (
+        "## DOMAIN KNOWLEDGE REFERENCE\nUse this reference material for consistent evaluation:\n"
+    )
+    return header + "\n\n" + "\n\n".join(parts)
+
+
 def build_system_prompt(
     criteria: list[JudgeCriteria],
     agent_name: str,
 ) -> str:
-    """Build system prompt with criteria and corrections injected."""
+    """Build system prompt with criteria, corrections, and skills injected."""
     criteria_block = build_criteria_block(criteria)
     corrections = format_corrections_section(agent_name)
     corrections_block = f"\n{corrections}\n" if corrections else ""
+    skills = format_skills_section(agent_name, criteria)
+    skills_block = f"\n{skills}\n" if skills else ""
     return SYSTEM_PROMPT_TEMPLATE.format(
         criteria_block=criteria_block,
         corrections_block=corrections_block,
+        skills_block=skills_block,
     )
 
 

@@ -1,0 +1,4 @@
+name: content_judge
+skills:
+  copy_quality:
+    - copy_quality_boundaries.md

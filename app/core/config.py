@@ -5,7 +5,7 @@ Environment variables use double-underscore nesting: DATABASE__URL, AUTH__JWT_SE
 """
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -638,6 +638,13 @@ class ExportConfig(BaseModel):
     )
 
 
+class SecurityConfig(BaseModel):
+    """Security settings including prompt injection detection."""
+
+    prompt_guard_enabled: bool = True  # SECURITY__PROMPT_GUARD_ENABLED
+    prompt_guard_mode: Literal["warn", "strip", "block"] = "warn"  # SECURITY__PROMPT_GUARD_MODE
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -658,6 +665,7 @@ class Settings(BaseSettings):
     version: str = "0.1.0"
     environment: str = "development"
     log_level: str = "INFO"
+    logging_pii_redaction: bool = True  # LOGGING__PII_REDACTION
     api_prefix: str = "/api"
 
     # CORS
@@ -706,6 +714,7 @@ class Settings(BaseSettings):
     export: ExportConfig = ExportConfig()
     correction_tracker: CorrectionTrackerConfig = CorrectionTrackerConfig()
     progress: ProgressConfig = ProgressConfig()
+    security: SecurityConfig = SecurityConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

@@ -1,0 +1,4 @@
+name: import_annotator_judge
+skills:
+  esp_token_integrity:
+    - esp_syntax_validation.md

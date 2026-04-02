@@ -142,6 +142,21 @@ class KnowledgeService:
             if ocr_applied:
                 logger.info("knowledge.ingest.ocr_applied", document_id=doc.id)
 
+            # Prompt injection scan on extracted text
+            if settings.security.prompt_guard_enabled:
+                from app.ai.security.prompt_guard import scan_for_injection
+
+                _scan = scan_for_injection(text, mode=settings.security.prompt_guard_mode)
+                if not _scan.clean:
+                    logger.warning(
+                        "security.prompt_injection_detected",
+                        source="knowledge_ingest",
+                        document_id=str(doc.id),
+                        flags=_scan.flags,
+                    )
+                    if _scan.sanitized is not None:
+                        text = _scan.sanitized
+
             # Store original file on disk
             storage_dir = Path(settings.knowledge.document_storage_path) / str(doc.id)
             storage_dir.mkdir(parents=True, exist_ok=True)

@@ -48,24 +48,32 @@ def add_request_id(_logger: WrappedLogger, _method_name: str, event_dict: EventD
     return event_dict
 
 
-def setup_logging(log_level: str = "INFO") -> None:
+def setup_logging(log_level: str = "INFO", *, pii_redaction: bool = True) -> None:
     """Configure structured logging with JSON output.
 
     Args:
         log_level: The logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+        pii_redaction: When True, PII patterns (emails, phones, etc.) are
+            replaced with placeholder tokens before log serialisation.
     """
+    from app.core.redaction import redact_event_dict
+
     level_int = getattr(logging, log_level.upper())
 
+    processors: list[structlog.typing.Processor] = [
+        add_request_id,
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+    ]
+    if pii_redaction:
+        processors.append(redact_event_dict)
+    processors.append(structlog.processors.JSONRenderer())
+
     structlog.configure(
-        processors=[
-            add_request_id,
-            structlog.contextvars.merge_contextvars,
-            structlog.processors.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer(),
-        ],
+        processors=processors,
         wrapper_class=structlog.make_filtering_bound_logger(level_int),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),

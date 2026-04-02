@@ -1,0 +1,8 @@
+name: scaffolder_judge
+skills:
+  mso_conditional_correctness:
+    - mso_conditional_patterns.md
+  email_layout_patterns:
+    - email_layout_detection.md
+  dark_mode_readiness:
+    - dark_mode_completeness.md

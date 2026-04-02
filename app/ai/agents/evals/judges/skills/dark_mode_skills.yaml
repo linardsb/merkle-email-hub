@@ -1,0 +1,6 @@
+name: dark_mode_judge
+skills:
+  meta_and_media_query:
+    - dark_mode_completeness.md
+  outlook_selector_completeness:
+    - dark_mode_completeness.md

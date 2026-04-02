@@ -1,0 +1,4 @@
+name: outlook_fixer_judge
+skills:
+  mso_conditional_correctness:
+    - mso_conditional_patterns.md

@@ -1,0 +1,6 @@
+name: personalisation_judge
+skills:
+  syntax_correctness:
+    - esp_syntax_validation.md
+  platform_accuracy:
+    - esp_syntax_validation.md

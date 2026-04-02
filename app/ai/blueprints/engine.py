@@ -1073,6 +1073,40 @@ class BlueprintEngine:
             context.metadata["ds_color_map"] = resolve_color_map(self._design_system)
             context.metadata["ds_font_map"] = resolve_font_map(self._design_system)
 
+        # LAYER 18: Prompt injection scan on user-supplied fields
+        from app.core.config import get_settings as _get_settings_pg
+
+        _settings_pg = _get_settings_pg()
+        if _settings_pg.security.prompt_guard_enabled:
+            from app.ai.security.prompt_guard import scan_for_injection
+
+            _pg_mode = _settings_pg.security.prompt_guard_mode
+            for _field_name, _field_val in [
+                ("brief", brief),
+                ("html", context.html),
+            ]:
+                if _field_val:
+                    _scan = scan_for_injection(_field_val, mode=_pg_mode)
+                    if not _scan.clean:
+                        logger.warning(
+                            "security.prompt_injection_detected",
+                            field=_field_name,
+                            flags=_scan.flags,
+                            agent=agent_name,
+                        )
+                        if _pg_mode == "strip" and _scan.sanitized is not None:
+                            if _field_name == "brief":
+                                context.brief = _scan.sanitized
+                            elif _field_name == "html":
+                                context.html = _scan.sanitized
+
+            for _meta_key in ("qa_failure_details", "graph_context"):
+                _meta_val = context.metadata.get(_meta_key)
+                if isinstance(_meta_val, str):
+                    _scan = scan_for_injection(_meta_val, mode=_pg_mode)
+                    if not _scan.clean and _pg_mode == "strip" and _scan.sanitized is not None:
+                        context.metadata[_meta_key] = _scan.sanitized
+
         return context
 
     async def _recall_memories(self, brief: str) -> list[dict[str, str]]:

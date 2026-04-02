@@ -54,6 +54,25 @@ class HtmlImportAdapter:
         if not parsed.sections:
             raise HtmlImportError("No sections detected in HTML")
 
+        # 2b. Prompt injection scan
+        settings = get_settings()
+        if settings.security.prompt_guard_enabled:
+            from app.ai.security.prompt_guard import scan_for_injection
+
+            _scan = scan_for_injection(raw_html, mode=settings.security.prompt_guard_mode)
+            if not _scan.clean:
+                logger.warning(
+                    "security.prompt_injection_detected",
+                    source="html_import",
+                    flags=_scan.flags,
+                )
+                if _scan.sanitized is not None:
+                    raw_html = _scan.sanitized
+                    # Re-parse with sanitized HTML
+                    parsed = parse_email_dom(raw_html)
+                    if not parsed.sections:
+                        raise HtmlImportError("No sections after injection sanitization")
+
         # 3. Classify sections
         ai_enabled = self._resolve_ai_enabled(use_ai)
         if ai_enabled:
