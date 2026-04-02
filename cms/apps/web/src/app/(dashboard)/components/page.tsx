@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Braces, Search, Plus } from "../../../components/icons";
+import { FileCode, Search, Plus } from "../../../components/icons";
 import { useSession } from "next-auth/react";
 import { useComponents } from "@/hooks/use-components";
 import { SECTION_CATEGORIES } from "@/types/visual-builder";
@@ -65,7 +65,7 @@ export default function ComponentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Braces className="h-8 w-8 text-foreground-accent" />
+          <FileCode className="h-8 w-8 text-foreground-accent" />
           <h1 className="text-2xl font-semibold text-foreground">
             {"Component Library"}
           </h1>
@@ -135,7 +135,7 @@ export default function ComponentsPage() {
         <ErrorState message={"Failed to load components"} onRetry={() => mutate()} retryLabel={"Try again"} />
       ) : data?.items.length === 0 ? (
         <EmptyState
-          icon={Blocks}
+          icon={FileCode}
           title={"No components found"}
           description={"Email components will appear here once they are created."}
         />

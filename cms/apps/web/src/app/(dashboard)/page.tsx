@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, FolderOpen, Blocks, CheckCircle2, ClipboardCheck, Target, Activity, Plus } from "../../components/icons";
+import { LayoutDashboard, FolderOpen, FileCode, CheckCircle2, ClipboardCheck, Target, Brain, Plus } from "../../components/icons";
 import { useProjects } from "@/hooks/use-projects";
 import { ErrorState } from "@/components/ui/error-state";
 import { SkeletonCard } from "@/components/ui/skeletons";
@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
         <div className="rounded-lg border border-card-border bg-card-bg p-6">
           <div className="flex items-center gap-2">
-            <Blocks className="h-4 w-4 text-foreground-muted" />
+            <FileCode className="h-4 w-4 text-foreground-muted" />
             <p className="text-sm font-medium text-foreground-muted">
               {"Components"}
             </p>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
         {/* Recent Activity — 1/3 width */}
         <div className="rounded-lg border border-card-border bg-card-bg p-6">
           <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-foreground-muted" />
+            <Brain className="h-5 w-5 text-foreground-muted" />
             <h2 className="text-lg font-semibold text-foreground">
               {"Recent Activity"}
             </h2>

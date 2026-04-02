@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, ListChecks, TrendingUp, Clock } from "../../../components/icons";
+import { BarChart3, ListChecks, ChartLineUp, Clock } from "../../../components/icons";
 import { Skeleton } from "@email-hub/ui/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -131,7 +131,7 @@ export default function IntelligencePage() {
         {/* Score Trend */}
         <div className="rounded-lg border border-card-border bg-card-bg p-6">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-foreground-muted" />
+            <ChartLineUp className="h-5 w-5 text-foreground-muted" />
             <h2 className="text-lg font-semibold text-foreground">
               {"Quality Trend"}
             </h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Blocks } from "../../../components/icons";
+import { Globe } from "../../../components/icons";
 import {
   EcosystemDashboard,
   PluginManagerPanel,
@@ -30,7 +30,7 @@ export default function EcosystemPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <Blocks className="h-6 w-6" />
+          <Globe className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Ecosystem</h1>
         </div>
         <p className="mt-1 text-sm text-foreground-muted">

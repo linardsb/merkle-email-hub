@@ -2,7 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Loader2, Upload } from "../icons";
+import { AlertTriangle, FileCode, Loader2 } from "../icons";
 import type { CodeEditorHandle } from "@/hooks/use-editor-bridge";
 import type { SaveStatus } from "./save-indicator";
 import type { BrandConfig } from "@/types/brand";
@@ -170,7 +170,7 @@ export const EditorPanel = forwardRef<CodeEditorHandle, EditorPanelProps>(functi
             className="mr-2 flex items-center gap-1.5 rounded-md border border-input px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             title="Import HTML email"
           >
-            <Upload className="h-3.5 w-3.5" />
+            <FileCode className="h-3.5 w-3.5" />
             <span>Import HTML</span>
           </button>
         )}

@@ -1,18 +1,18 @@
 import Link from "next/link";
 import {
-  Activity,
-  Blocks,
   BookOpen,
-  Braces,
+  ChartLine,
   ClipboardCheck,
+  Cog,
+  FileCode,
+  Devices,
   FileText,
   FolderOpen,
+  Globe,
   LayoutDashboard,
   LogOut,
-  Monitor,
-  Network,
-  Pencil,
-  Workflow,
+  Paintbrush,
+  Plug,
 } from "../../components/icons";
 import { ThemeToggle } from "@email-hub/ui/components/theme-toggle";
 import { OfflineBanner } from "@/components/ui/offline-banner";
@@ -44,7 +44,7 @@ export default function DashboardLayout({
     {
       href: "/components",
       label: "Components",
-      icon: <Braces className="h-5 w-5" />,
+      icon: <FileCode className="h-5 w-5" />,
     },
     {
       href: "/approvals",
@@ -54,12 +54,12 @@ export default function DashboardLayout({
     {
       href: "/connectors",
       label: "Connectors",
-      icon: <Network className="h-5 w-5" />,
+      icon: <Plug className="h-5 w-5" />,
     },
     {
       href: "/intelligence",
       label: "Intelligence",
-      icon: <Activity className="h-5 w-5" />,
+      icon: <ChartLine className="h-5 w-5" />,
     },
     {
       href: "/knowledge",
@@ -69,12 +69,12 @@ export default function DashboardLayout({
     {
       href: "/renderings",
       label: "Renderings",
-      icon: <Monitor className="h-5 w-5" />,
+      icon: <Devices className="h-5 w-5" />,
     },
     {
       href: "/design-sync",
       label: "Design Sync",
-      icon: <Pencil className="h-5 w-5" strokeWidth={1.5} />,
+      icon: <Paintbrush className="h-5 w-5" />,
     },
     {
       href: "/briefs",
@@ -84,12 +84,12 @@ export default function DashboardLayout({
     {
       href: "/ecosystem",
       label: "Ecosystem",
-      icon: <Blocks className="h-5 w-5" />,
+      icon: <Globe className="h-5 w-5" />,
     },
     {
       href: "/settings",
       label: "Settings",
-      icon: <Workflow className="h-5 w-5" />,
+      icon: <Cog className="h-5 w-5" />,
     },
   ];
 
