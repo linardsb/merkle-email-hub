@@ -219,6 +219,18 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("blueprint.checkpoint_cleanup_poller_start_failed", exc_info=True)
 
+    # Start cron scheduling engine (Phase 45.1)
+    scheduler = None
+    if settings.scheduling.enabled:
+        try:
+            from app.scheduling.engine import CronScheduler
+
+            scheduler = CronScheduler(settings.scheduling)
+            await scheduler.start()
+            logger.info("scheduling.scheduler_started")
+        except Exception:
+            logger.warning("scheduling.scheduler_start_failed", exc_info=True)
+
     # Load plugins (Phase 25.1) + lifecycle (Phase 25.2)
     _lifecycle_manager = None
     if settings.plugins.enabled:
@@ -289,6 +301,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     with contextlib.suppress(asyncio.CancelledError):
         await progress_cleanup_task
     logger.info("progress.cleanup_loop_stopped")
+
+    if scheduler is not None:
+        await scheduler.stop()
+        logger.info("scheduling.scheduler_stopped")
 
     if _lifecycle_manager is not None:
         await _lifecycle_manager.shutdown_all()
@@ -448,6 +464,12 @@ if settings.variants.enabled:
     from app.ai.agents.scaffolder.variant_routes import router as variant_router
 
     app.include_router(variant_router)
+
+# Cron scheduling engine (Phase 45.1)
+if settings.scheduling.enabled:
+    from app.scheduling.routes import router as scheduling_router
+
+    app.include_router(scheduling_router)
 
 # Skill extraction endpoints (Phase 25.11)
 if settings.skill_extraction.enabled:

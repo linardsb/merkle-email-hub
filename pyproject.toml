@@ -10,6 +10,7 @@ dependencies = [
     "bcrypt>=5.0.0",
     "email-validator>=2.0.0",
     "cachetools>=5.5.0",
+    "croniter>=2.0",
     "fastapi>=0.120.1",
     "gunicorn>=23.0.0",
     "httpx>=0.28.1",
@@ -250,6 +251,18 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "app.mcp.tools.*"
 disable_error_code = ["type-arg"]
+
+[[tool.mypy.overrides]]
+module = "croniter.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.scheduling.engine"
+disable_error_code = ["misc"]
+
+[[tool.mypy.overrides]]
+module = "app.scheduling.service"
+disable_error_code = ["misc"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -638,6 +638,16 @@ class ExportConfig(BaseModel):
     )
 
 
+class SchedulingConfig(BaseModel):
+    """Cron scheduling engine settings."""
+
+    enabled: bool = False  # SCHEDULING__ENABLED
+    check_interval_seconds: int = 60  # SCHEDULING__CHECK_INTERVAL_SECONDS
+    job_timeout_seconds: int = 3600  # SCHEDULING__JOB_TIMEOUT_SECONDS
+    max_run_history: int = 100  # SCHEDULING__MAX_RUN_HISTORY
+    run_history_ttl_seconds: int = 86400  # SCHEDULING__RUN_HISTORY_TTL_SECONDS
+
+
 class SecurityConfig(BaseModel):
     """Security settings including prompt injection detection."""
 
@@ -714,6 +724,7 @@ class Settings(BaseSettings):
     export: ExportConfig = ExportConfig()
     correction_tracker: CorrectionTrackerConfig = CorrectionTrackerConfig()
     progress: ProgressConfig = ProgressConfig()
+    scheduling: SchedulingConfig = SchedulingConfig()
     security: SecurityConfig = SecurityConfig()
 
     # Service URLs
