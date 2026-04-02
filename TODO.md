@@ -41,8 +41,8 @@
 - [x] ~~45.1 Cron scheduling engine~~ DONE
 - [x] ~~45.2 Scheduled QA sweeps across active templates~~ DONE
 - [x] ~~45.3 Scheduled ontology sync & rendering baseline regeneration~~ DONE
-- [ ] 45.4 Notification channel abstraction (Slack, Teams, Email)
-- [ ] 45.5 Workflow event notifications
+- [x] ~~45.4 Notification channel abstraction (Slack, Teams, Email)~~ DONE
+- [x] ~~45.5 Workflow event notifications~~ DONE
 - [ ] 45.6 Build & webhook debounce layer
 
 ---
@@ -92,7 +92,7 @@
 
 ---
 
-### 45.4 Notification Channel Abstraction (Slack, Teams, Email) `[Backend]`
+### ~~45.4 Notification Channel Abstraction (Slack, Teams, Email) `[Backend]`~~ DONE
 
 **What:** Add a pluggable notification system with a channel abstraction layer. Each channel (Slack webhook, Teams webhook, SMTP email) implements a `NotificationChannel` protocol. Notifications have severity levels and are routed to configured channels.
 **Why:** Without external notifications, workflow events (build failures, QA regressions, approval requests, rendering issues) are invisible unless someone is actively using the CMS. Teams need push-style alerting to stay in the loop.
@@ -153,11 +153,11 @@
 | 45.1 Cron scheduling engine | `app/scheduling/`, Redis | None | **Done** |
 | 45.2 Scheduled QA sweeps | `app/scheduling/jobs/qa_sweep.py` | 45.1 | **Done** |
 | 45.3 Ontology sync + rendering baselines | `app/scheduling/jobs/` | 45.1 | **Done** |
-| 45.4 Notification channel abstraction | `app/notifications/`, Slack/Teams/SMTP | None | Pending |
-| 45.5 Workflow event notifications | Blueprint, QA, approval, rendering hooks | 45.4 | Pending |
+| 45.4 Notification channel abstraction | `app/notifications/`, Slack/Teams/SMTP | None | **Done** |
+| 45.5 Workflow event notifications | Blueprint, QA, approval, rendering hooks | 45.4 | **Done** |
 | 45.6 Build & webhook debounce | `app/core/debounce.py`, Redis | None | Pending |
 
-> **Execution:** Three independent tracks. **Track A:** 45.1 → 45.2 → 45.3 (scheduling). **Track B:** 45.4 → 45.5 (notifications). **Track C:** 45.6 (debounce, fully independent). All three tracks can run in parallel. Total new code: ~600 LOC + config. No database migrations — Redis-only state.
+> **Execution:** Three independent tracks. **Track A:** 45.1 → 45.2 → 45.3 (scheduling). **Track B:** 45.4 → 45.5 (notifications). **Track C:** 45.6 (debounce, fully independent). All three tracks can run in parallel. Total new code: ~600 LOC + config. One migration (45.4 `notification_config` JSON column on Project), otherwise Redis-only state.
 
 ---
 

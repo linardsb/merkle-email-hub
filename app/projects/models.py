@@ -74,6 +74,12 @@ class Project(Base, TimestampMixin, SoftDeleteMixin):
         default=None,
         comment="Per-project export QA gate configuration (mode, blocking/warning checks)",
     )
+    notification_config: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        default=None,
+        comment="Per-project notification channel overrides (slack/teams/email endpoints)",
+    )
     require_approval_for_export: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

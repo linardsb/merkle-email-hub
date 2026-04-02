@@ -611,6 +611,34 @@ class BlueprintEngine:
             steps=steps,
             qa_passed=run.qa_passed,
         )
+
+        # Notify on terminal status
+        from app.notifications.channels import Notification
+        from app.notifications.emitter import emit_notification
+
+        if run.status in ("completed", "completed_with_warnings"):
+            await emit_notification(
+                Notification(
+                    event="blueprint.run_completed",
+                    severity="info",
+                    title="Blueprint run completed",
+                    body=f"Blueprint run {run.run_id} completed ({run.status})",
+                    project_id=self._project_id,
+                    metadata={"run_id": run.run_id, "status": run.status},
+                )
+            )
+        elif run.status in ("needs_review", "cost_cap_exceeded"):
+            await emit_notification(
+                Notification(
+                    event="blueprint.run_failed",
+                    severity="error",
+                    title="Blueprint run failed",
+                    body=f"Blueprint run {run.run_id}: {run.status}",
+                    project_id=self._project_id,
+                    metadata={"run_id": run.run_id, "status": run.status},
+                )
+            )
+
         return run
 
     async def _save_checkpoint(

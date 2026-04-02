@@ -202,6 +202,26 @@ class QAEngineService:
             checks_passed=passed_count,
         )
 
+        if not all_passed:
+            from app.notifications.channels import Notification
+            from app.notifications.emitter import emit_notification
+
+            failed_checks = [c for c in check_results if not c.passed]
+            names = ", ".join(c.check_name for c in failed_checks[:5])
+            await emit_notification(
+                Notification(
+                    event="qa.check_failed",
+                    severity="warning",
+                    title=f"QA checks failed ({len(failed_checks)})",
+                    body=f"Failed checks: {names}",
+                    project_id=data.project_id,
+                    metadata={
+                        "build_id": data.build_id,
+                        "failed_checks": [c.check_name for c in failed_checks],
+                    },
+                )
+            )
+
         return QAResultResponse(
             id=qa_result.id,
             build_id=qa_result.build_id,

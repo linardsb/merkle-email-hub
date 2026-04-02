@@ -45,6 +45,21 @@ class ApprovalService:
         await project_service.verify_project_access(data.project_id, user)
         approval = await self.repository.create(data.build_id, data.project_id, user.id)
         await self.repository.add_audit(approval.id, "submitted", user.id)
+
+        from app.notifications.channels import Notification
+        from app.notifications.emitter import emit_notification
+
+        await emit_notification(
+            Notification(
+                event="approval.requested",
+                severity="info",
+                title="Approval requested",
+                body=f"Approval requested for build {approval.build_id}",
+                project_id=approval.project_id,
+                metadata={"approval_id": approval.id, "build_id": approval.build_id},
+            )
+        )
+
         return ApprovalResponse.model_validate(approval)
 
     async def get_approval(self, approval_id: int, user: User) -> ApprovalResponse:
@@ -65,6 +80,22 @@ class ApprovalService:
         )
         await self.repository.add_audit(approval_id, decision.status, user.id, decision.review_note)
         logger.info("approval.decided", approval_id=approval_id, status=decision.status)
+
+        from app.notifications.channels import Notification
+        from app.notifications.emitter import emit_notification
+
+        severity = "info" if decision.status == "approved" else "warning"
+        await emit_notification(
+            Notification(
+                event=f"approval.{decision.status}",
+                severity=severity,
+                title=f"Approval {decision.status}",
+                body=f"Approval {approval.id} was {decision.status}",
+                project_id=approval.project_id,
+                metadata={"approval_id": approval.id, "decision": decision.status},
+            )
+        )
+
         return ApprovalResponse.model_validate(approval)
 
     async def add_feedback(

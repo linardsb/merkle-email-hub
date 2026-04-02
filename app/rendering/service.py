@@ -239,6 +239,25 @@ class RenderingService:
                 )
             )
 
+        if regressions > 0:
+            from app.notifications.channels import Notification
+            from app.notifications.emitter import emit_notification
+
+            project_id = await self._resolve_test_project_id(current)
+            await emit_notification(
+                Notification(
+                    event="rendering.regression_detected",
+                    severity="warning",
+                    title="Visual regression detected",
+                    body=f"{regressions} client(s) with visual regression",
+                    project_id=project_id,
+                    metadata={
+                        "test_id": data.current_test_id,
+                        "regressions": regressions,
+                    },
+                )
+            )
+
         return RenderingComparisonResponse(
             baseline_test_id=data.baseline_test_id,
             current_test_id=data.current_test_id,
@@ -518,7 +537,24 @@ class RenderingService:
     async def evaluate_gate(self, request: GateEvaluateRequest) -> GateResult:
         """Evaluate rendering gate for given HTML."""
         gate = RenderingSendGate(self.db)
-        return await gate.evaluate(request)
+        result = await gate.evaluate(request)
+
+        if not result.passed:
+            from app.notifications.channels import Notification
+            from app.notifications.emitter import emit_notification
+
+            await emit_notification(
+                Notification(
+                    event="rendering.gate_failure",
+                    severity="warning",
+                    title="Rendering confidence below threshold",
+                    body=f"Rendering gate blocked: {len(result.blocking_clients)} client(s) below threshold",
+                    project_id=request.project_id,
+                    metadata={"blocking_clients": result.blocking_clients},
+                )
+            )
+
+        return result
 
     async def get_gate_config(self, project_id: int) -> RenderingGateConfigSchema:
         """Get project-level gate configuration."""

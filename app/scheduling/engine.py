@@ -176,6 +176,21 @@ class CronScheduler:
             error_msg = str(exc)
             logger.error("scheduling.job_failed", job=name, error=str(exc), exc_info=True)
 
+        if status == JobStatus.failed:
+            from app.notifications.channels import Notification
+            from app.notifications.emitter import emit_notification
+
+            await emit_notification(
+                Notification(
+                    event="schedule.job_failed",
+                    severity="error",
+                    title=f"Scheduled job failed: {name}",
+                    body=f"Job {name} failed: {(error_msg or 'unknown')[:200]}",
+                    project_id=None,
+                    metadata={"job_name": name, "error": (error_msg or "unknown")[:500]},
+                )
+            )
+
         ended_at = datetime.now(UTC)
         duration_ms = int((ended_at - started_at).total_seconds() * 1000)
 
