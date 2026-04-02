@@ -27,7 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_COLLAB_WS_URL=ws://localhost:8891
 ENV NEXT_PUBLIC_COLLAB_WS_URL=$NEXT_PUBLIC_COLLAB_WS_URL
 
-RUN pnpm --filter @email-hub/web build
+RUN pnpm --filter @email-hub/web build > /tmp/build.log 2>&1 || (cat /tmp/build.log && exit 1)
 
 # ── Runner ──
 FROM node:22-alpine AS runner
