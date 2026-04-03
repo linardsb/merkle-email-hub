@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.auth.dependencies import require_role
@@ -46,8 +47,8 @@ class CredentialHealthResponse(BaseModel):
 @limiter.limit("60/minute")
 async def credential_health(
     request: Request,  # noqa: ARG001 — required by limiter
-    _current_user: User = Depends(require_role("admin")),  # noqa: B008
-) -> CredentialHealthResponse:
+    current_user: User = Depends(require_role("admin")),  # noqa: B008
+) -> JSONResponse:
     """Return health status for all credential pools. Admin-only."""
     pools = get_all_pools()
     services: list[ServiceHealthReport] = []
@@ -62,11 +63,24 @@ async def credential_health(
         cooled += report.cooled_down
         unhealthy += report.unhealthy
 
-    logger.info("credentials.health_checked", total_keys=total, services=len(services))
-    return CredentialHealthResponse(
+    logger.info(
+        "credentials.health_checked",
+        user_id=current_user.id,
+        user_email=current_user.email,
+        total_keys=total,
+        services=len(services),
+    )
+    response_data = CredentialHealthResponse(
         services=services,
         total_keys=total,
         healthy_total=healthy,
         cooled_down_total=cooled,
         unhealthy_total=unhealthy,
+    )
+    return JSONResponse(
+        content=response_data.model_dump(),
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
     )

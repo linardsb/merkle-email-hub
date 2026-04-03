@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import hmac
 import json
 import time
 from dataclasses import asdict, dataclass, field
+from types import MappingProxyType
 from typing import Any
 
 from app.core.config import CredentialsConfig
@@ -52,9 +54,24 @@ class CredentialLease:
         await self._pool._record_failure(self.key_hash, status_code)
 
 
-def _hash_key(key: str) -> str:
-    """Return a short SHA-256 prefix for safe logging."""
-    return hashlib.sha256(key.encode()).hexdigest()[:12]
+def _get_hmac_salt() -> bytes:
+    """Return the app secret for HMAC key hashing. Falls back to a static salt."""
+    try:
+        from app.core.config import get_settings
+
+        return get_settings().auth.jwt_secret_key.encode()
+    except Exception:
+        return b"credential-pool-default-salt"
+
+
+def _hash_key(key: str, *, salt: bytes | None = None) -> str:
+    """Return a short HMAC-SHA256 prefix for safe key identification.
+
+    Uses the app secret as HMAC key so hashes cannot be brute-forced
+    without knowing the secret, even if an attacker has candidate keys.
+    """
+    hmac_salt = salt if salt is not None else _get_hmac_salt()
+    return hmac.new(hmac_salt, key.encode(), hashlib.sha256).hexdigest()[:12]
 
 
 class CredentialPool:
@@ -239,9 +256,13 @@ def get_credential_pool(service: str) -> CredentialPool:
     return _pools[service]
 
 
-def get_all_pools() -> dict[str, CredentialPool]:
-    """Return all registered credential pools (read-only copy)."""
-    return dict(_pools)
+def get_all_pools() -> MappingProxyType[str, CredentialPool]:
+    """Return all registered credential pools (frozen read-only view).
+
+    Callers can iterate and call pool_status() but cannot mutate
+    the registry or access raw keys via get_key().
+    """
+    return MappingProxyType(_pools)
 
 
 def reset_pools() -> None:
