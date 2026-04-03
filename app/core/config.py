@@ -390,6 +390,13 @@ class DesignSyncConfig(BaseModel):
     # Pipeline integration (Phase 47.5)
     vlm_verify_correction_confidence: float = 0.6  # DESIGN_SYNC__VLM_VERIFY_CORRECTION_CONFIDENCE
     vlm_verify_client: str = "gmail_web"  # DESIGN_SYNC__VLM_VERIFY_CLIENT (rendering target)
+    # Custom component generation via Scaffolder for low-confidence matches (Phase 47.8)
+    custom_component_enabled: bool = False  # DESIGN_SYNC__CUSTOM_COMPONENT_ENABLED
+    custom_component_confidence_threshold: float = (
+        0.6  # DESIGN_SYNC__CUSTOM_COMPONENT_CONFIDENCE_THRESHOLD
+    )
+    custom_component_model: str = ""  # DESIGN_SYNC__CUSTOM_COMPONENT_MODEL (empty = default)
+    custom_component_max_per_email: int = 3  # DESIGN_SYNC__CUSTOM_COMPONENT_MAX_PER_EMAIL
 
 
 class ESPSyncConfig(BaseModel):

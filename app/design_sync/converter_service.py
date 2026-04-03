@@ -45,6 +45,8 @@ from app.design_sync.protocol import (
 from app.design_sync.quality_contracts import QualityWarning, run_quality_contracts
 
 if TYPE_CHECKING:
+    from app.design_sync.component_matcher import ComponentMatch
+    from app.design_sync.component_renderer import RenderedSection
     from app.design_sync.email_design_document import EmailDesignDocument
     from app.design_sync.vlm_classifier import VLMSectionClassification
 
@@ -684,6 +686,13 @@ class DesignConverterService:
         section_parts: list[str] = []
         all_images: list[dict[str, str]] = []
 
+        # Custom component generation for low-confidence matches (47.8)
+        custom_gen_count = 0
+        ds_settings = get_settings().design_sync
+        _custom_gen_enabled = (
+            ds_settings.custom_component_enabled and ds_settings.custom_component_max_per_email > 0
+        )
+
         for match in matches:
             node_id = match.section.node_id
             cached_entry = cached_entries.get(node_id)
@@ -693,7 +702,25 @@ class DesignConverterService:
                 all_images.extend(cached_entry.images)
                 hit_count += 1
             else:
-                rendered = renderer.render_section(match)
+                rendered: RenderedSection | None = None
+
+                # Try custom generation for low-confidence matches
+                if (
+                    _custom_gen_enabled
+                    and match.confidence < ds_settings.custom_component_confidence_threshold
+                    and custom_gen_count < ds_settings.custom_component_max_per_email
+                ):
+                    rendered = self._try_custom_generate(match, tokens)
+                    if rendered is not None:
+                        custom_gen_count += 1
+                        warnings.append(
+                            f"Section {match.section_idx}: custom-generated "
+                            f"(confidence={match.confidence:.2f})"
+                        )
+
+                if rendered is None:
+                    rendered = renderer.render_section(match)
+
                 section_parts.append(rendered.html)
                 all_images.extend(rendered.images)
                 miss_count += 1
@@ -813,6 +840,46 @@ class DesignConverterService:
             quality_warnings=quality_warnings,
             match_confidences=match_confidences,
         )
+
+    @staticmethod
+    def _try_custom_generate(
+        match: ComponentMatch,
+        tokens: ExtractedTokens,
+    ) -> RenderedSection | None:
+        """Attempt custom component generation via Scaffolder (sync bridge).
+
+        Returns a ``RenderedSection`` on success, or ``None`` to fall back
+        to template rendering.
+        """
+        import asyncio
+        import concurrent.futures
+
+        from app.design_sync.component_renderer import RenderedSection
+
+        try:
+            from app.design_sync.custom_component_generator import (
+                generate_custom_component,
+            )
+
+            # Bridge async generator into sync context via a dedicated thread
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                html = pool.submit(
+                    asyncio.run,
+                    generate_custom_component(match.section, tokens),
+                ).result(timeout=60)
+
+            return RenderedSection(
+                html=html,
+                component_slug="custom-generated",
+                section_idx=match.section_idx,
+            )
+        except Exception:
+            logger.warning(
+                "design_sync.custom_component_failed",
+                section_idx=match.section_idx,
+                exc_info=True,
+            )
+            return None
 
     def _convert_recursive(
         self,
