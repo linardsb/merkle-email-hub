@@ -149,7 +149,7 @@
 - [x] ~~47.1 Section-level screenshot cropping utility~~ DONE
 - [x] ~~47.2 Visual comparison service (VLM section-by-section diff)~~ DONE
 - [x] ~~47.3 Deterministic correction applicator~~ DONE
-- [ ] 47.4 Verification loop orchestrator
+- [x] ~~47.4 Verification loop orchestrator~~ DONE
 - [ ] 47.5 Pipeline integration + configuration
 - [ ] 47.6 Component gap analysis + new component templates (89 → 150+)
 - [ ] 47.7 Extended component matcher scoring
@@ -213,7 +213,7 @@
 
 ---
 
-### 47.4 Verification Loop Orchestrator `[Backend]`
+### ~~47.4 Verification Loop Orchestrator~~ `[Backend]` DONE
 
 **What:** Add `run_verification_loop(html: str, design_screenshots: dict[str, bytes], sections: list[EmailSection], max_iterations: int = 3) -> VerificationLoopResult` to `app/design_sync/visual_verify.py`. Self-correcting render-compare-fix cycle that converges toward design fidelity.
 **Why:** A single comparison pass catches obvious errors but may introduce new ones. Iterating 2–3 times allows cascading corrections (fix color → fix dependent text contrast → fix spacing that was masked by wrong color). The loop also detects regressions and stops before making things worse.
@@ -230,6 +230,7 @@
 - **Output:** `VerificationLoopResult`: iterations[], final_html, initial_fidelity, final_fidelity, total_corrections_applied, total_vlm_cost_tokens
 - **Safety:** Max iterations cap. Score regression detection (stop early). Per-correction confidence threshold (skip low-confidence fixes).
 **Verify:** 3-iteration loop with mock VLM: iteration 1 applies 5 corrections (score 0.82→0.91), iteration 2 applies 2 corrections (0.91→0.96), iteration 3 applies 1 correction (0.96→0.98, converge). Regression detection: score drops → revert to previous iteration's HTML. Max iterations → returns best result. 8 tests.
+**Completed:** `run_verification_loop()` in `app/design_sync/visual_verify.py` — iterative render→compare→correct cycle with `VerificationLoopResult` frozen dataclass (iterations history, final HTML, fidelity scores, convergence/revert flags); per-iteration: `LocalRenderingProvider.render_screenshots()` → `crop_section()` per section → `compare_sections()` VLM diff → `apply_corrections()` with confidence threshold; convergence detection (fidelity target 0.97 or no corrections), regression detection (reverts to previous HTML if score drops), graceful error handling at each stage; 3 new config fields (`DESIGN_SYNC__VLM_VERIFY_MAX_ITERATIONS/TARGET_FIDELITY/CONFIDENCE_THRESHOLD`); late imports to avoid circular deps; 8 tests.
 
 ---
 

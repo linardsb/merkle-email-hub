@@ -383,6 +383,10 @@ class DesignSyncConfig(BaseModel):
     vlm_verify_timeout: float = 30.0  # DESIGN_SYNC__VLM_VERIFY_TIMEOUT (seconds)
     vlm_verify_diff_skip_threshold: float = 2.0  # DESIGN_SYNC__VLM_VERIFY_DIFF_SKIP_THRESHOLD (%)
     vlm_verify_max_sections: int = 20  # DESIGN_SYNC__VLM_VERIFY_MAX_SECTIONS
+    # Verification loop parameters (Phase 47.4)
+    vlm_verify_max_iterations: int = 3  # DESIGN_SYNC__VLM_VERIFY_MAX_ITERATIONS
+    vlm_verify_target_fidelity: float = 0.97  # DESIGN_SYNC__VLM_VERIFY_TARGET_FIDELITY
+    vlm_verify_confidence_threshold: float = 0.7  # DESIGN_SYNC__VLM_VERIFY_CONFIDENCE_THRESHOLD
 
 
 class ESPSyncConfig(BaseModel):

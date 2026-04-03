@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-04-02
+> Last updated: 2026-04-03
 
 ### Completed
 
@@ -201,6 +201,8 @@
 
 **Phase 47.3 complete** (Deterministic Correction Applicator) — `app/design_sync/correction_applicator.py` with `apply_corrections()` pure function returning `CorrectionResult` (applied/skipped lists); `_extract_section_html()` locates section by `<!-- section:NODE_ID -->` markers with prefix matching; `_apply_style_correction()` uses lxml + CSSSelector for inline CSS property replacement with sanitization (blocks `expression()`, `javascript:`, `@import`); `_apply_content_correction()` replaces element text via CSS selector; `_apply_image_correction()` updates `<img>` width/height attributes + inline style with numeric validation; confidence threshold gating; section-scoped string splicing preserves HTML outside target sections; 10 tests.
 
+**Phase 47.4 complete** (Verification Loop Orchestrator) — `run_verification_loop()` in `app/design_sync/visual_verify.py` with `VerificationLoopResult` frozen dataclass (iterations history, final_html, initial/final fidelity, total_corrections_applied, convergence/revert flags); per-iteration: `LocalRenderingProvider.render_screenshots()` → `crop_section()` per section → `compare_sections()` VLM diff → `apply_corrections()` with confidence threshold; convergence detection (fidelity target or no corrections), regression detection (reverts to previous HTML if score drops), graceful error handling (render/compare/apply failures break cleanly); 3 new config fields (`DESIGN_SYNC__VLM_VERIFY_MAX_ITERATIONS` default 3, `VLM_VERIFY_TARGET_FIDELITY` default 0.97, `VLM_VERIFY_CONFIDENCE_THRESHOLD` default 0.7); late imports to avoid circular deps; 8 tests.
+
 **Phase 47.2 complete** (Visual Comparison Service — VLM Section-by-Section Diff) — `app/design_sync/visual_verify.py` with `compare_sections()` public entry point; ODiff pre-filter skips VLM for sections with diff < configurable threshold (default 2%); VLM analysis via vision-capable model returns structured `SectionCorrection` corrections (6 types: color/font/spacing/layout/content/image); `VerificationResult` aggregates per-section scores, corrections list, fidelity score, convergence flag; bounded cache (256 entries) avoids duplicate VLM calls; markdown-fenced JSON response parsing; graceful timeout + error handling; 5 config fields (`DESIGN_SYNC__VLM_VERIFY_ENABLED/MODEL/TIMEOUT/DIFF_SKIP_THRESHOLD/MAX_SECTIONS`); 10 tests.
 
 **Phase 45.1 complete** (Cron Scheduling Engine) — `app/scheduling/` vertical slice with `CronScheduler` asyncio background task evaluating registered jobs against cron expressions every 60s; Redis persistence for job definitions (`scheduling:jobs:{name}` hashes) and run history (`scheduling:runs:{name}` capped lists); leader election via `SET NX` to prevent duplicate execution across workers; `@scheduled_job(cron=...)` decorator + module-level registry; `SchedulingConfig` with 5 settings (`SCHEDULING__ENABLED` default false); 5 admin-only API endpoints (`GET/PATCH /jobs`, `POST /jobs/{name}/trigger`, `GET /jobs/{name}/history`) with rate limiting; `croniter>=2.0` dependency; wired into `app/main.py` lifespan; 12 tests.
@@ -273,7 +275,7 @@
 
 ### Up Next
 
-**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.1–47.3 done, 7 subtasks remaining: 47.4 loop orchestrator, 47.5 pipeline integration, 47.6–47.8 component expansion, 47.9 tests, 47.10 diagnostics). See `TODO.md` for details.
+**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.1–47.4 done, 6 subtasks remaining: 47.5 pipeline integration, 47.6–47.8 component expansion, 47.9 tests, 47.10 diagnostics). See `TODO.md` for details.
 
 ### Infrastructure Built
 
