@@ -461,3 +461,262 @@ class TestVerificationLoop:
         call_kwargs = mock_apply.call_args
         assert call_kwargs[1]["confidence_threshold"] == pytest.approx(0.7)
         assert result.total_corrections_applied == 1
+
+    @pytest.mark.asyncio
+    async def test_loop_compare_exception_breaks(self) -> None:
+        """compare_sections raises -> loop breaks, returns partial result."""
+        render_result = [{"client_name": "gmail_web", "image_bytes": _FAKE_PNG}]
+
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(),
+            ),
+            patch(
+                "app.design_sync.visual_verify.compare_sections",
+                new_callable=AsyncMock,
+                side_effect=RuntimeError("VLM crashed"),
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=render_result,
+            ),
+            patch(
+                "app.rendering.screenshot_crop.crop_section",
+                return_value=_FAKE_PNG,
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {"n1": _FAKE_PNG},
+                [_make_section("n1")],
+            )
+
+        assert result.iterations == []
+        assert result.final_html == "<html>v1</html>"
+        assert result.converged is False
+
+    @pytest.mark.asyncio
+    async def test_loop_apply_exception_breaks(self) -> None:
+        """apply_corrections raises -> loop breaks, returns partial result."""
+        results = [
+            _make_verification_result(0, 0.80, corrections_count=2),
+        ]
+        render_result = [{"client_name": "gmail_web", "image_bytes": _FAKE_PNG}]
+
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(),
+            ),
+            patch(
+                "app.design_sync.visual_verify.compare_sections",
+                new_callable=AsyncMock,
+                side_effect=results,
+            ),
+            patch(
+                "app.design_sync.correction_applicator.apply_corrections",
+                side_effect=RuntimeError("lxml parse error"),
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=render_result,
+            ),
+            patch(
+                "app.rendering.screenshot_crop.crop_section",
+                return_value=_FAKE_PNG,
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {"n1": _FAKE_PNG},
+                [_make_section("n1")],
+            )
+
+        assert len(result.iterations) == 1
+        assert result.final_html == "<html>v1</html>"
+        assert result.total_corrections_applied == 0
+
+    @pytest.mark.asyncio
+    async def test_loop_crop_failure_continues(self) -> None:
+        """One section crop fails -> section skipped, loop continues."""
+        s1 = _make_section("n1")
+        s2 = _make_section("n2")
+
+        crop_side_effects = [_FAKE_PNG, RuntimeError("bad image")]
+
+        results = [
+            _make_verification_result(0, 0.99, corrections_count=0, converged=True),
+        ]
+        render_result = [{"client_name": "gmail_web", "image_bytes": _FAKE_PNG}]
+
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(),
+            ),
+            patch(
+                "app.design_sync.visual_verify.compare_sections",
+                new_callable=AsyncMock,
+                side_effect=results,
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=render_result,
+            ),
+            patch(
+                "app.rendering.screenshot_crop.crop_section",
+                side_effect=crop_side_effects,
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {"n1": _FAKE_PNG, "n2": _FAKE_PNG},
+                [s1, s2],
+            )
+
+        assert len(result.iterations) == 1
+        assert result.converged is True
+
+    @pytest.mark.asyncio
+    async def test_loop_no_render_result(self) -> None:
+        """render_screenshots returns [] -> loop breaks immediately."""
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(),
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {"n1": _FAKE_PNG},
+                [_make_section("n1")],
+            )
+
+        assert result.iterations == []
+        assert result.final_html == "<html>v1</html>"
+        assert result.converged is False
+
+    @pytest.mark.asyncio
+    async def test_loop_fidelity_at_exact_target(self) -> None:
+        """fidelity == target (0.97) -> converged (boundary condition)."""
+        results = [
+            _make_verification_result(0, 0.97, corrections_count=0),
+        ]
+        render_result = [{"client_name": "gmail_web", "image_bytes": _FAKE_PNG}]
+
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(target_fidelity=0.97),
+            ),
+            patch(
+                "app.design_sync.visual_verify.compare_sections",
+                new_callable=AsyncMock,
+                side_effect=results,
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=render_result,
+            ),
+            patch(
+                "app.rendering.screenshot_crop.crop_section",
+                return_value=_FAKE_PNG,
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {"n1": _FAKE_PNG},
+                [_make_section("n1")],
+            )
+
+        assert len(result.iterations) == 1
+        assert result.converged is True
+
+    @pytest.mark.asyncio
+    async def test_loop_zero_sections(self) -> None:
+        """Empty sections list -> single iteration, immediate convergence."""
+        results = [
+            VerificationResult(
+                iteration=0,
+                fidelity_score=1.0,
+                section_scores={},
+                corrections=[],
+                pixel_diff_pct=0.0,
+                converged=True,
+            ),
+        ]
+        render_result = [{"client_name": "gmail_web", "image_bytes": _FAKE_PNG}]
+
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(),
+            ),
+            patch(
+                "app.design_sync.visual_verify.compare_sections",
+                new_callable=AsyncMock,
+                side_effect=results,
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=render_result,
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {},
+                [],
+            )
+
+        assert len(result.iterations) == 1
+        assert result.converged is True
+        assert result.total_corrections_applied == 0
+
+    @pytest.mark.asyncio
+    async def test_loop_vlm_cost_tokens_tracking(self) -> None:
+        """Verify total_vlm_cost_tokens field is present on result (currently 0)."""
+        results = [
+            _make_verification_result(0, 0.99, corrections_count=0, converged=True),
+        ]
+        render_result = [{"client_name": "gmail_web", "image_bytes": _FAKE_PNG}]
+
+        with (
+            patch(
+                "app.design_sync.visual_verify.get_settings",
+                return_value=_mock_settings(),
+            ),
+            patch(
+                "app.design_sync.visual_verify.compare_sections",
+                new_callable=AsyncMock,
+                side_effect=results,
+            ),
+            patch(
+                "app.rendering.local.service.LocalRenderingProvider.render_screenshots",
+                new_callable=AsyncMock,
+                return_value=render_result,
+            ),
+            patch(
+                "app.rendering.screenshot_crop.crop_section",
+                return_value=_FAKE_PNG,
+            ),
+        ):
+            result = await run_verification_loop(
+                "<html>v1</html>",
+                {"n1": _FAKE_PNG},
+                [_make_section("n1")],
+            )
+
+        assert hasattr(result, "total_vlm_cost_tokens")
+        assert isinstance(result.total_vlm_cost_tokens, int)
+        assert result.total_vlm_cost_tokens >= 0

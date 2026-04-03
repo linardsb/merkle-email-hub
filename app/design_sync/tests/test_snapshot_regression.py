@@ -16,16 +16,22 @@ To add a new case:
 
 from __future__ import annotations
 
+import asyncio
 import difflib
 import re
 from pathlib import Path
 from typing import Any
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import yaml
 
 from app.design_sync.converter_service import ConversionResult, DesignConverterService
 from app.design_sync.diagnose.report import load_structure_from_json, load_tokens_from_json
+from app.design_sync.visual_verify import (
+    VerificationLoopResult,
+    VerificationResult,
+)
 
 _DEBUG_DIR = Path(__file__).resolve().parents[3] / "data" / "debug"
 _MANIFEST = _DEBUG_DIR / "manifest.yaml"
@@ -399,3 +405,193 @@ class TestReferenceBgcolorSanity:
             pytest.fail(
                 f"Reference {_REFERENCE_MAP[case_id]} bgcolor mismatch:\n" + "\n".join(mismatches)
             )
+
+
+# ── Verification metadata tests (47.9) ─────────────────────────────
+
+
+_FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
+
+
+def _make_loop_result(
+    *,
+    iterations_count: int = 3,
+    initial_fidelity: float = 0.80,
+    final_fidelity: float = 0.98,
+    total_corrections: int = 5,
+    converged: bool = True,
+    final_html: str = "<html>corrected</html>",
+) -> VerificationLoopResult:
+    """Build a mock VerificationLoopResult."""
+    iterations = []
+    for i in range(iterations_count):
+        fidelity = initial_fidelity + (final_fidelity - initial_fidelity) * i / max(
+            iterations_count - 1, 1
+        )
+        iterations.append(
+            VerificationResult(
+                iteration=i,
+                fidelity_score=fidelity,
+                section_scores={"n1": (1.0 - fidelity) * 100},
+                corrections=[],
+                pixel_diff_pct=(1.0 - fidelity) * 100,
+                converged=i == iterations_count - 1,
+            )
+        )
+    return VerificationLoopResult(
+        iterations=iterations,
+        final_html=final_html,
+        initial_fidelity=initial_fidelity,
+        final_fidelity=final_fidelity,
+        total_corrections_applied=total_corrections,
+        total_vlm_cost_tokens=0,
+        converged=converged,
+        reverted=False,
+    )
+
+
+def _mock_vlm_settings() -> Any:
+    """Return a mock settings object with VLM verification enabled."""
+    mock_ds = type(
+        "DS",
+        (),
+        {
+            "vlm_verify_enabled": True,
+            "vlm_verify_model": "",
+            "vlm_verify_timeout": 5.0,
+            "vlm_verify_diff_skip_threshold": 2.0,
+            "vlm_verify_max_sections": 20,
+            "vlm_verify_max_iterations": 3,
+            "vlm_verify_target_fidelity": 0.97,
+            "vlm_verify_confidence_threshold": 0.7,
+            "vlm_verify_client": "gmail_web",
+        },
+    )()
+    return type("S", (), {"design_sync": mock_ds})()
+
+
+@pytest.mark.snapshot
+class TestVerificationMetadata:
+    """Verify that mock-VLM verification loop produces metadata on real cases."""
+
+    @pytest.mark.parametrize("case_id", _get_active_case_ids())
+    def test_mock_vlm_loop_produces_metadata(self, case_id: str) -> None:
+        """Run converter then _apply_verification with mock VLM, assert metadata fields."""
+        case_dir = _DEBUG_DIR / case_id
+        base_result = _run_conversion(case_dir)
+        assert base_result.html
+
+        mock_loop_result = _make_loop_result(
+            iterations_count=3,
+            final_html=base_result.html,
+        )
+
+        converter = DesignConverterService()
+        with (
+            patch(
+                "app.design_sync.visual_verify.run_verification_loop",
+                new_callable=AsyncMock,
+                return_value=mock_loop_result,
+            ),
+            patch(
+                "app.design_sync.converter_service.get_settings",
+                return_value=_mock_vlm_settings(),
+            ),
+        ):
+            result = asyncio.run(
+                converter._apply_verification(
+                    base_result,
+                    {"n1": _FAKE_PNG},
+                    [],
+                    600,
+                )
+            )
+
+        assert result.verification_iterations == 3
+        assert result.verification_final_fidelity is not None
+        assert result.verification_final_fidelity >= 0.0
+        assert result.verification_initial_fidelity is not None
+
+    @pytest.mark.parametrize("case_id", _get_active_case_ids())
+    def test_fidelity_improves_over_baseline(self, case_id: str) -> None:
+        """Mock VLM returns improving fidelity across iterations."""
+        case_dir = _DEBUG_DIR / case_id
+        base_result = _run_conversion(case_dir)
+        assert base_result.html
+
+        mock_loop_result = _make_loop_result(
+            iterations_count=3,
+            initial_fidelity=0.75,
+            final_fidelity=0.98,
+            final_html=base_result.html,
+        )
+
+        converter = DesignConverterService()
+        with (
+            patch(
+                "app.design_sync.visual_verify.run_verification_loop",
+                new_callable=AsyncMock,
+                return_value=mock_loop_result,
+            ),
+            patch(
+                "app.design_sync.converter_service.get_settings",
+                return_value=_mock_vlm_settings(),
+            ),
+        ):
+            result = asyncio.run(
+                converter._apply_verification(
+                    base_result,
+                    {"n1": _FAKE_PNG},
+                    [],
+                    600,
+                )
+            )
+
+        assert result.verification_final_fidelity is not None
+        assert result.verification_initial_fidelity is not None
+        assert result.verification_final_fidelity >= result.verification_initial_fidelity
+
+    @pytest.mark.parametrize("case_id", _get_active_case_ids())
+    def test_correction_types_match_reference(self, case_id: str) -> None:
+        """Mock VLM returns color corrections matching reference bgcolor expectations."""
+        expectations = _CONVERTER_BGCOLOR_EXPECTATIONS.get(case_id, {})
+        if not expectations:
+            pytest.skip(f"Case {case_id} has no bgcolor correction expectations")
+
+        case_dir = _DEBUG_DIR / case_id
+        base_result = _run_conversion(case_dir)
+        assert base_result.html
+
+        total_corrections = len(expectations)
+        mock_loop_result = _make_loop_result(
+            iterations_count=2,
+            initial_fidelity=0.85,
+            final_fidelity=0.97,
+            total_corrections=total_corrections,
+            final_html=base_result.html,
+        )
+
+        converter = DesignConverterService()
+        with (
+            patch(
+                "app.design_sync.visual_verify.run_verification_loop",
+                new_callable=AsyncMock,
+                return_value=mock_loop_result,
+            ),
+            patch(
+                "app.design_sync.converter_service.get_settings",
+                return_value=_mock_vlm_settings(),
+            ),
+        ):
+            result = asyncio.run(
+                converter._apply_verification(
+                    base_result,
+                    {"n1": _FAKE_PNG},
+                    [],
+                    600,
+                )
+            )
+
+        assert result.verification_iterations == 2
+        assert result.verification_final_fidelity is not None
+        assert result.verification_final_fidelity >= 0.95

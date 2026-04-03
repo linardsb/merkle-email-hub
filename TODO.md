@@ -153,8 +153,8 @@
 - [x] ~~47.5 Pipeline integration + configuration~~ DONE
 - [x] ~~47.6 Component gap analysis + new component templates (89 → 150+)~~ DONE
 - [x] ~~47.7 Extended component matcher scoring~~ DONE
-- [ ] 47.8 Custom component generation (AI fallback for unmatched sections)
-- [ ] 47.9 Verification loop tests + snapshot regression
+- [x] ~~47.8 Custom component generation (AI fallback for unmatched sections)~~ DONE
+- [x] ~~47.9 Verification loop tests + snapshot regression~~ DONE
 - [ ] 47.10 Diagnostic trace enhancement
 
 ---

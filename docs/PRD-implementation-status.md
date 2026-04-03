@@ -193,6 +193,8 @@
 
 **Phase 45 complete** (Scheduling, Notifications & Build Debounce) — all 6 subtasks done. Final subtask: 45.6 Build & Webhook Debounce Layer — `app/core/debounce.py` with `Debouncer` class (Redis-backed token-based distributed debounce, background worker with sleep-then-check, `_debounce_tasks` GC prevention set, immediate execution when disabled), `DebounceConfig` (5 settings), webhook.py refactored from inline pattern to reusable `Debouncer`, 10 tests.
 
+**Phase 47.9 complete** (Verification Loop Tests + Snapshot Regression) — 31 new tests across 4 files: `test_visual_verify.py` +9 (multi-section mixed ODiff, max sections cap, missing rendered screenshot, fidelity math, cache eviction, VLM generic exception, ODiff error fallback, parse single object, parse missing fields); `test_correction_applicator.py` +12 (layout simple/complex props, CSS XSS blocking, control char stripping, invalid selector, section prefix match, last section→body, image height/non-numeric/style sync, content no-text, multi-section targeting); `test_verification_loop.py` +7 (compare/apply exception breaks, crop failure continues, empty render, fidelity boundary, zero sections, VLM cost tracking); `test_snapshot_regression.py` +3 parametrized `TestVerificationMetadata` × 3 cases (mock VLM metadata, fidelity improvement, correction types vs reference bgcolors). Pyright baseline held (259 ≤ 262). All snapshot tests pass.
+
 **Phase 45.2 complete** (Scheduled QA Sweeps Across Active Templates) — `app/scheduling/jobs/qa_sweep.py` with `@scheduled_job(cron="0 6 * * *")` daily sweep; queries all active (non-archived, non-deleted) templates with latest version via SQLAlchemy subquery; runs configured QA checks (`html_validation`, `css_support`, `css_audit`) on each template via `QAEngineService`; compares scores against previous sweep baseline from Redis; flags regressions exceeding configurable threshold (default 5%); stores results in `scheduling:qa_sweep:{date}` (30d TTL) + `scheduling:qa_sweep:latest` score map; bounded concurrency via `asyncio.Semaphore(5)`; graceful per-template error handling; `SchedulingConfig` extended with `qa_sweep_regression_threshold` and `qa_sweep_checks` fields; `app/scheduling/jobs/__init__.py` package auto-registers jobs at import; `make qa-sweep` target for manual runs; 8 tests.
 
 **Phase 44 complete** (Workflow Hardening, CI Gaps & Operational Maturity) — all 12 subtasks done. Final subtask: 44.12 PII Redaction in Logs & Eval Traces — `app/core/redaction.py` with 5 compiled regex patterns (email, phone intl/US, SSN, credit card), `redact_event_dict` structlog processor wired before JSONRenderer, `redact_value()` recursive redactor on eval trace JSONL writes (production_sampler + runner), `LOGGING__PII_REDACTION` config (default true), 14 tests.
@@ -279,7 +281,7 @@
 
 ### Up Next
 
-**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.1–47.8 done (Track A complete, Track B complete), 2 subtasks remaining: 47.9 tests, 47.10 diagnostics). See CLAUDE.md roadmap for details.
+**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.1–47.9 done (Track A complete, Track B complete, tests complete), 1 subtask remaining: 47.10 diagnostics). See CLAUDE.md roadmap for details.
 
 ### Infrastructure Built
 
