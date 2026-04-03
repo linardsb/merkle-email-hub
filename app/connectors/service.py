@@ -26,7 +26,7 @@ from app.connectors.sfmc.service import SFMCConnectorService
 from app.connectors.sync_models import ESPConnection
 from app.connectors.taxi.service import TaxiConnectorService
 from app.core.config import get_settings
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import ForbiddenError, NoHealthyCredentialsError, NotFoundError
 from app.core.logging import get_logger
 from app.core.progress import OperationStatus, ProgressTracker
 from app.design_sync.crypto import decrypt_token
@@ -267,6 +267,14 @@ class ConnectorService:
         if data.template_version_id is not None and data.build_id is None:
             try:
                 external_id = await provider.export(html, data.content_block_name, credentials)
+            except NoHealthyCredentialsError as exc:
+                ProgressTracker.update(
+                    operation_id, status=OperationStatus.FAILED, error="All keys exhausted"
+                )
+                raise ExportFailedError(
+                    f"All API keys exhausted for {data.connector_type} — "
+                    "retry after cooldown or add more keys"
+                ) from exc
             except Exception as exc:
                 ProgressTracker.update(
                     operation_id, status=OperationStatus.FAILED, error="Export failed"
@@ -313,9 +321,19 @@ class ConnectorService:
         await self.db.refresh(record)
 
         try:
-            external_id = await provider.export(html, data.content_block_name)
+            external_id = await provider.export(html, data.content_block_name, credentials)
             record.status = "success"
             record.external_id = external_id
+        except NoHealthyCredentialsError:
+            record.status = "failed"
+            record.error_message = "All API keys exhausted"
+            ProgressTracker.update(
+                operation_id, status=OperationStatus.FAILED, error="All keys exhausted"
+            )
+            raise ExportFailedError(
+                f"All API keys exhausted for {data.connector_type} — "
+                "retry after cooldown or add more keys"
+            ) from None
         except Exception as exc:
             record.status = "failed"
             record.error_message = "Export failed"

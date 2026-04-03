@@ -46,7 +46,7 @@
 
 - [x] ~~46.1 Credential pool with rotation and cooldowns~~ DONE
 - [x] ~~46.2 LLM provider key rotation~~ DONE
-- [ ] 46.3 ESP connector key rotation
+- [x] ~~46.3 ESP connector key rotation~~ DONE
 - [ ] 46.4 Credential health API and dashboard
 - [ ] 46.5 Dynamic ESP connector discovery via plugin system
 
@@ -83,16 +83,12 @@
 
 ---
 
-### 46.3 ESP Connector Key Rotation `[Backend]`
+### ~~46.3 ESP Connector Key Rotation `[Backend]`~~ DONE
 
 **What:** Wire `CredentialPool` into ESP connectors so that export/push operations rotate across multiple API keys per ESP provider.
 **Why:** SFMC and Braze have per-key rate limits for send and content API operations. During campaign pushes (bulk template upload + list segmentation + send), a single key can exhaust its quota.
-**Implementation:**
-- Modify `app/connectors/base.py` `BaseConnector` to accept `CredentialPool` instead of a single key
-- Update SFMC, Braze, and other connectors to call `pool.get_key()` per request
-- Report success/failure per request to enable cooldown tracking
-- Backward compatible: single key config → pool of 1 (no behavior change)
-**Verify:** SFMC connector with 2 keys → alternating usage. Rate-limited key → cooldown → other key used. Single key config → works as before. 6 tests.
+**Implementation:** `app/connectors/braze/service.py`, `sfmc/service.py`, `adobe/service.py`, `taxi/service.py` — `_pool: CredentialPool | None` initialized in `__init__()` when `CREDENTIALS__POOLS` contains provider key. `_lease_credentials()` returns `(dict[str, str], CredentialLease)` — simple auth (Braze/Taxi) extracts bare API key, OAuth (SFMC/Adobe) does `json.loads()` with schema validation. `export()` uses pool when no explicit credentials passed, reports `lease.report_success()` on 200 and `lease.report_failure(status_code)` on HTTP errors + `report_failure(0)` on transport errors. All exceptions wrapped in `ExportFailedError`. `app/connectors/service.py` — `NoHealthyCredentialsError` caught in both export paths, converted to `ExportFailedError` with `from exc` traceback. DB credentials (from `connection_id`) always take priority over pool. 7 tests in `test_pool_rotation.py`.
+**Verify:** Braze connector with pool key → `get_key()` called, `report_success()` on 200. SFMC with JSON-decoded pool key used for OAuth. Rate-limited key (429) → `report_failure()` → cooldown. Transport error → `report_failure(0)`. Explicit credentials dict → bypasses pool. No pool + no creds → mock fallback preserved. `NoHealthyCredentialsError` → `ExportFailedError`. 7 tests.
 
 ---
 
@@ -133,7 +129,7 @@
 |---------|-------|--------------|--------|
 | 46.1 Credential pool | `app/core/credentials.py`, Redis | None | **Done** |
 | 46.2 LLM key rotation | `app/ai/adapters/`, `fallback.py` | 46.1 | **Done** |
-| 46.3 ESP key rotation | `app/connectors/base.py` | 46.1 | Pending |
+| 46.3 ESP key rotation | `app/connectors/*/service.py` | 46.1 | **Done** |
 | 46.4 Credential health dashboard | API + `cms/components/ecosystem/` | 46.1 | Pending |
 | 46.5 Dynamic connector discovery | `app/connectors/plugin_loader.py`, `app/plugins/` | None | Pending |
 

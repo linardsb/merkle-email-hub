@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import time
-from typing import ClassVar
+from typing import ClassVar, cast
 
 import httpx
 
 from app.connectors.adobe.schemas import AdobeDeliveryFragment
+from app.connectors.exceptions import ExportFailedError
 from app.connectors.http_resilience import resilient_request
 from app.core.config import Settings, get_settings
+from app.core.credentials import CredentialLease, CredentialPool, get_credential_pool
+from app.core.exceptions import AppError
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -28,6 +32,32 @@ class AdobeConnectorService:
     def __init__(self, settings: Settings | None = None) -> None:
         _settings = settings or get_settings()
         self._base_url = _settings.esp_sync.adobe_base_url
+        self._pool: CredentialPool | None = None
+        if (
+            _settings.credentials.enabled
+            and isinstance(_settings.credentials.pools, dict)  # pyright: ignore[reportUnnecessaryIsInstance] — guards against MagicMock in tests
+            and "adobe_campaign" in _settings.credentials.pools
+        ):
+            self._pool = get_credential_pool("adobe_campaign")
+
+    async def _lease_credentials(self) -> tuple[dict[str, str], CredentialLease]:
+        """Get credentials from pool. Raises NoHealthyCredentialsError if exhausted."""
+        if self._pool is None:
+            raise AppError("_lease_credentials called without pool")
+        lease = await self._pool.get_key()
+        try:
+            parsed = json.loads(lease.key)
+        except (json.JSONDecodeError, TypeError) as exc:
+            raise AppError("Malformed Adobe pool credential — expected JSON dict") from exc
+        if (
+            not isinstance(parsed, dict)
+            or "client_id" not in parsed
+            or "client_secret" not in parsed
+        ):
+            raise AppError(
+                "Adobe pool credential must contain 'client_id' and 'client_secret' keys"
+            )
+        return cast(dict[str, str], parsed), lease
 
     @staticmethod
     def _cache_key(credentials: dict[str, str]) -> str:
@@ -73,25 +103,19 @@ class AdobeConnectorService:
 
         When credentials are provided, authenticates via IMS OAuth and creates
         a delivery. Otherwise returns a mock ID.
+        Pool credentials are used when no explicit credentials are passed.
         """
         logger.info("adobe.export_started", delivery_name=name)
+
+        lease: CredentialLease | None = None
+        if credentials is None and self._pool is not None:
+            credentials, lease = await self._lease_credentials()
 
         if credentials is not None:
             token = await self._get_access_token(credentials)
             headers = {"Authorization": f"Bearer {token}"}
             async with httpx.AsyncClient(timeout=30) as client:
-                resp = await resilient_request(
-                    client,
-                    "POST",
-                    f"{self._base_url}/profileAndServicesExt/delivery",
-                    json={"label": name, "content": html},
-                    headers=headers,
-                )
-                # On 401, evict cache and retry once
-                if resp.status_code == 401:
-                    self._token_cache.pop(self._cache_key(credentials), None)
-                    token = await self._get_access_token(credentials)
-                    headers = {"Authorization": f"Bearer {token}"}
+                try:
                     resp = await resilient_request(
                         client,
                         "POST",
@@ -99,13 +123,37 @@ class AdobeConnectorService:
                         json={"label": name, "content": html},
                         headers=headers,
                     )
-                resp.raise_for_status()
-                data = resp.json()
-            external_id = str(data["PKey"])
+                    # On 401, evict cache and retry once
+                    if resp.status_code == 401:
+                        self._token_cache.pop(self._cache_key(credentials), None)
+                        token = await self._get_access_token(credentials)
+                        headers = {"Authorization": f"Bearer {token}"}
+                        resp = await resilient_request(
+                            client,
+                            "POST",
+                            f"{self._base_url}/profileAndServicesExt/delivery",
+                            json={"label": name, "content": html},
+                            headers=headers,
+                        )
+                    resp.raise_for_status()
+                    external_id = str(resp.json()["PKey"])
+                except httpx.HTTPStatusError as exc:
+                    if lease:
+                        await lease.report_failure(exc.response.status_code)
+                    raise ExportFailedError(
+                        f"Adobe Campaign API returned {exc.response.status_code}"
+                    ) from exc
+                except Exception as exc:
+                    if lease:
+                        await lease.report_failure(0)
+                    raise ExportFailedError("Adobe Campaign export failed") from exc
+            if lease:
+                await lease.report_success()
+
             logger.info("adobe.export_completed", external_id=external_id)
             return external_id
 
-        # Mock fallback
+        # Mock fallback (no credentials, no pool)
         fragment = await self.package_delivery_fragment(html, name)
         _ = fragment
         mock_id = f"adobe_dl_{name.lower().replace(' ', '_')}"
