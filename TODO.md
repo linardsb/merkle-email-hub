@@ -45,7 +45,7 @@
 > **This phase adds credential resilience and connector extensibility.** Key rotation with cooldowns ensures graceful degradation under rate limits. Connector discovery via the existing plugin system makes ESP integrations pluggable. Independent of Phases 37–45. Minimal new infrastructure — extends existing patterns.
 
 - [x] ~~46.1 Credential pool with rotation and cooldowns~~ DONE
-- [ ] 46.2 LLM provider key rotation
+- [x] ~~46.2 LLM provider key rotation~~ DONE
 - [ ] 46.3 ESP connector key rotation
 - [ ] 46.4 Credential health API and dashboard
 - [ ] 46.5 Dynamic ESP connector discovery via plugin system
@@ -75,16 +75,11 @@
 
 ---
 
-### 46.2 LLM Provider Key Rotation `[Backend]`
+### ~~46.2 LLM Provider Key Rotation `[Backend]`~~ DONE
 
-**What:** Wire `CredentialPool` into the LLM provider layer so that `resolve_model()` calls use rotated credentials. Integrate with the existing `fallback.py` chain — key-level rotation happens before model-level fallback.
+**What:** Wire `CredentialPool` into the LLM provider layer so that each `complete()`/`stream()` call acquires a rotated credential. Integrate with the existing `fallback.py` chain — key-level rotation happens before model-level fallback.
 **Why:** Batch eval runs (`make eval-full`) make hundreds of LLM calls in rapid succession. A single Anthropic key with a 60 RPM limit throttles the entire run. Rotating across N keys gives N× throughput.
-**Implementation:**
-- Modify `app/ai/providers/` to accept `api_key` parameter from `CredentialPool.get_key()`
-- Modify `app/ai/routing.py` `resolve_model()` to return `(model, credential_lease)` tuple
-- In `app/ai/service.py`: use lease for the call, `report_success()`/`report_failure()` on response
-- Existing `fallback.py` chain: if all keys for a tier are cooled down, fall through to next model in fallback chain (existing behavior) before rotating keys on the fallback model
-**Verify:** 2 Anthropic keys configured → alternating usage. Key 1 rate-limited → key 2 used exclusively until cooldown expires. Both keys exhausted → fallback chain kicks in. 8 tests.
+**Implementation:** `app/ai/adapters/anthropic.py` — `_pool: CredentialPool | None` field, `_client_cache` per-key-hash client caching, lease lifecycle in `complete()`/`stream()` with `report_success()`/`report_failure()` on 429/401/APIError. `isinstance(pools, dict)` guard prevents MagicMock in 17 existing test blocks from triggering pool init. `app/ai/adapters/openai_compat.py` — same pattern, per-request `Authorization` header override via `httpx.AsyncClient.post(headers=...)`. `app/ai/fallback.py` — `NoHealthyCredentialsError` added to `_is_retryable()` so pool exhaustion triggers fallback to next provider:model in chain. No changes to `service.py`, `routing.py`, `registry.py`, `protocols.py`. 9 tests in `test_key_rotation.py`.
 
 ---
 
@@ -137,7 +132,7 @@
 | Subtask | Scope | Dependencies | Status |
 |---------|-------|--------------|--------|
 | 46.1 Credential pool | `app/core/credentials.py`, Redis | None | **Done** |
-| 46.2 LLM key rotation | `app/ai/providers/`, `routing.py` | 46.1 | Pending |
+| 46.2 LLM key rotation | `app/ai/adapters/`, `fallback.py` | 46.1 | **Done** |
 | 46.3 ESP key rotation | `app/connectors/base.py` | 46.1 | Pending |
 | 46.4 Credential health dashboard | API + `cms/components/ecosystem/` | 46.1 | Pending |
 | 46.5 Dynamic connector discovery | `app/connectors/plugin_loader.py`, `app/plugins/` | None | Pending |

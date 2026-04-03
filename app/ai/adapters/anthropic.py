@@ -22,6 +22,7 @@ from app.ai.multimodal import (
 )
 from app.ai.protocols import CompletionResponse, Message
 from app.core.config import get_settings
+from app.core.credentials import CredentialLease, CredentialPool
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -54,23 +55,52 @@ class AnthropicProvider:
 
         settings = get_settings()
         self._model = settings.ai.model
-        api_key = settings.ai.api_key
+        self._client_cache: dict[str, Any] = {}  # key_hash → AsyncAnthropic
 
-        if not api_key:
-            raise AIConfigurationError(
-                "AI__API_KEY is required for Anthropic provider. "
-                "Set it via environment variable or .env file."
+        # Credential pool (Phase 46.2)
+        # isinstance guard prevents MagicMock in tests from triggering pool init
+        self._pool: CredentialPool | None = None
+        if (
+            settings.credentials.enabled
+            and isinstance(settings.credentials.pools, dict)  # pyright: ignore[reportUnnecessaryIsInstance] — guards against MagicMock in tests
+            and "anthropic" in settings.credentials.pools
+        ):
+            from app.core.credentials import get_credential_pool
+
+            self._pool = get_credential_pool("anthropic")
+            self._client: Any = None
+            logger.info(
+                "ai.provider.anthropic_initialized",
+                model=self._model,
+                pool=True,
+            )
+        else:
+            api_key = settings.ai.api_key
+            if not api_key:
+                raise AIConfigurationError(
+                    "AI__API_KEY is required for Anthropic provider. "
+                    "Set it via environment variable or .env file."
+                )
+            self._client = anthropic.AsyncAnthropic(
+                api_key=api_key,
+                timeout=_REQUEST_TIMEOUT,
+            )
+            logger.info(
+                "ai.provider.anthropic_initialized",
+                model=self._model,
+                pool=False,
             )
 
-        self._client = anthropic.AsyncAnthropic(
-            api_key=api_key,
-            timeout=_REQUEST_TIMEOUT,
-        )
+    def _get_client(self, api_key: str, key_hash: str) -> Any:  # noqa: ANN401
+        """Get or create a cached client for a specific API key."""
+        import anthropic
 
-        logger.info(
-            "ai.provider.anthropic_initialized",
-            model=self._model,
-        )
+        if key_hash not in self._client_cache:
+            self._client_cache[key_hash] = anthropic.AsyncAnthropic(
+                api_key=api_key,
+                timeout=_REQUEST_TIMEOUT,
+            )
+        return self._client_cache[key_hash]
 
     def _apply_token_budget(
         self, messages: list[Message], kwargs: dict[str, object]
@@ -257,21 +287,37 @@ class AnthropicProvider:
             message_count=len(chat_messages),
         )
 
+        lease: CredentialLease | None = None
+        client = self._client
         try:
-            response = await self._client.messages.create(**api_kwargs)
+            if self._pool:
+                lease = await self._pool.get_key()
+                client = self._get_client(lease.key, lease.key_hash)
+
+            response = await client.messages.create(**api_kwargs)
+
+            if lease:
+                await lease.report_success()
         except anthropic.APITimeoutError as e:
             msg = f"Anthropic API request timed out after {_REQUEST_TIMEOUT}s"
             logger.error("ai.provider.completion_timeout", model=model)
             raise AIExecutionError(msg) from e
         except anthropic.RateLimitError as e:
+            if lease:
+                await lease.report_failure(429)
             msg = "Anthropic API rate limit exceeded"
             logger.error("ai.provider.completion_rate_limited", model=model)
             raise AIExecutionError(msg) from e
         except anthropic.AuthenticationError as e:
+            if lease:
+                await lease.report_failure(401)
             msg = "AI provider authentication failed"
             logger.error("ai.provider.completion_auth_failed")
             raise AIConfigurationError(msg) from e
         except anthropic.APIError as e:
+            if lease:
+                status = getattr(e, "status_code", 500)
+                await lease.report_failure(status)
             msg = "AI provider request failed"
             logger.error(
                 "ai.provider.completion_failed",
@@ -373,15 +419,33 @@ class AnthropicProvider:
             message_count=len(chat_messages),
         )
 
+        lease: CredentialLease | None = None
+        client = self._client
         try:
-            async with self._client.messages.stream(**api_kwargs) as stream:
+            if self._pool:
+                lease = await self._pool.get_key()
+                client = self._get_client(lease.key, lease.key_hash)
+
+            async with client.messages.stream(**api_kwargs) as stream:
                 async for text in stream.text_stream:
                     yield text
+
+            if lease:
+                await lease.report_success()
         except anthropic.APITimeoutError as e:
             msg = f"Anthropic streaming timed out after {_REQUEST_TIMEOUT}s"
             logger.error("ai.provider.stream_timeout", model=model)
             raise AIExecutionError(msg) from e
+        except anthropic.RateLimitError as e:
+            if lease:
+                await lease.report_failure(429)
+            msg = "Anthropic API rate limit exceeded"
+            logger.error("ai.provider.stream_rate_limited", model=model)
+            raise AIExecutionError(msg) from e
         except anthropic.APIError as e:
+            if lease:
+                status = getattr(e, "status_code", 500)
+                await lease.report_failure(status)
             msg = "AI provider streaming failed"
             logger.error("ai.provider.stream_failed", model=model)
             raise AIExecutionError(msg) from e
@@ -452,9 +516,14 @@ class AnthropicProvider:
         return result
 
     async def close(self) -> None:
-        """Close the underlying HTTP client.
+        """Close the underlying HTTP client(s).
 
         Should be called during application shutdown to release connections.
         """
         with contextlib.suppress(RuntimeError):
-            await self._client.close()
+            if self._client is not None:
+                await self._client.close()
+        for cached_client in self._client_cache.values():
+            with contextlib.suppress(RuntimeError):
+                await cached_client.close()
+        self._client_cache.clear()

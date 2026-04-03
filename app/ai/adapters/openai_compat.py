@@ -31,6 +31,7 @@ from app.ai.multimodal import (
 )
 from app.ai.protocols import CompletionResponse, Message
 from app.core.config import get_settings
+from app.core.credentials import CredentialLease, CredentialPool
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -65,19 +66,33 @@ class OpenAICompatProvider:
         settings = get_settings()
         self._model = settings.ai.model
         self._base_url = (settings.ai.base_url or _DEFAULT_BASE_URL).rstrip("/")
-        self._api_key = settings.ai.api_key
 
-        # Local endpoints (Ollama, vLLM) don't need API keys
-        is_local = any(
-            host in self._base_url
-            for host in ("localhost", "127.0.0.1", "0.0.0.0")  # noqa: S104
-        )
-        if not self._api_key and not is_local:
-            msg = (
-                f"AI__API_KEY is required for remote endpoint '{self._base_url}'. "
-                "Set it via environment variable or .env file."
+        # Credential pool (Phase 46.2)
+        # isinstance guard prevents MagicMock in tests from triggering pool init
+        self._pool: CredentialPool | None = None
+        provider_service = settings.ai.provider
+        if (
+            settings.credentials.enabled
+            and isinstance(settings.credentials.pools, dict)  # pyright: ignore[reportUnnecessaryIsInstance] — guards against MagicMock in tests
+            and provider_service in settings.credentials.pools
+        ):
+            from app.core.credentials import get_credential_pool
+
+            self._pool = get_credential_pool(provider_service)
+            self._api_key: str | None = None
+        else:
+            self._api_key = settings.ai.api_key
+            # Local endpoints (Ollama, vLLM) don't need API keys
+            is_local = any(
+                host in self._base_url
+                for host in ("localhost", "127.0.0.1", "0.0.0.0")  # noqa: S104
             )
-            raise AIConfigurationError(msg)
+            if not self._api_key and not is_local:
+                msg = (
+                    f"AI__API_KEY is required for remote endpoint '{self._base_url}'. "
+                    "Set it via environment variable or .env file."
+                )
+                raise AIConfigurationError(msg)
 
         headers: dict[str, str] = {"Content-Type": "application/json"}
         if self._api_key:
@@ -93,6 +108,7 @@ class OpenAICompatProvider:
             "ai.provider.openai_compat_initialized",
             model=self._model,
             base_url=self._base_url,
+            pool=self._pool is not None,
         )
 
     def _apply_token_budget(
@@ -255,15 +271,30 @@ class OpenAICompatProvider:
             message_count=len(messages),
         )
 
+        lease: CredentialLease | None = None
+        request_headers: dict[str, str] | None = None
         try:
-            response = await self._client.post("/chat/completions", json=payload)
+            if self._pool:
+                lease = await self._pool.get_key()
+                request_headers = {"Authorization": f"Bearer {lease.key}"}
+
+            response = await self._client.post(
+                "/chat/completions",
+                json=payload,
+                headers=request_headers,
+            )
             response.raise_for_status()
+
+            if lease:
+                await lease.report_success()
         except httpx.TimeoutException as e:
             msg = f"LLM API request timed out after {_REQUEST_TIMEOUT}s"
             logger.error("ai.provider.completion_timeout", model=self._model, error=str(e))
             raise AIExecutionError(msg) from e
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
+            if lease:
+                await lease.report_failure(status_code)
             detail = e.response.text[:500]
             msg = "LLM API request failed"
             logger.error(
@@ -274,6 +305,8 @@ class OpenAICompatProvider:
             )
             raise AIExecutionError(msg) from e
         except httpx.HTTPError as e:
+            if lease:
+                await lease.report_failure(500)
             msg = "LLM API request failed"
             logger.error("ai.provider.completion_failed", model=self._model, error=str(e))
             raise AIExecutionError(msg) from e
@@ -363,8 +396,19 @@ class OpenAICompatProvider:
             message_count=len(messages),
         )
 
+        lease: CredentialLease | None = None
+        request_headers: dict[str, str] | None = None
         try:
-            async with self._client.stream("POST", "/chat/completions", json=payload) as response:
+            if self._pool:
+                lease = await self._pool.get_key()
+                request_headers = {"Authorization": f"Bearer {lease.key}"}
+
+            async with self._client.stream(
+                "POST",
+                "/chat/completions",
+                json=payload,
+                headers=request_headers,
+            ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     if not line.startswith("data: "):
@@ -387,14 +431,20 @@ class OpenAICompatProvider:
                         if content:
                             yield content
 
+            if lease:
+                await lease.report_success()
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
+            if lease:
+                await lease.report_failure(status_code)
             msg = f"LLM streaming API returned {status_code}"
             logger.error(
                 "ai.provider.stream_http_error", model=self._model, status_code=status_code
             )
             raise AIExecutionError(msg) from e
         except httpx.HTTPError as e:
+            if lease:
+                await lease.report_failure(500)
             msg = "LLM streaming request failed"
             logger.error("ai.provider.stream_failed", model=self._model, error=str(e))
             raise AIExecutionError(msg) from e

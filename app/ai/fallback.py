@@ -12,6 +12,7 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from app.core.exceptions import NoHealthyCredentialsError
 from app.core.logging import get_logger
 from app.core.resilience import CircuitOpenError
 
@@ -104,6 +105,10 @@ def _is_retryable(error: Exception) -> bool:
     Retryable: timeout, rate limit, server errors, circuit open.
     NOT retryable: auth errors (401/403), bad request (400), not found (404).
     """
+    # Credential pool exhausted — let fallback chain try another provider
+    if isinstance(error, NoHealthyCredentialsError):
+        return True
+
     # Circuit breaker open
     if isinstance(error, CircuitOpenError):
         return True
