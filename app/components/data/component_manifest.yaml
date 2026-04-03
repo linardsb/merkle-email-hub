@@ -1493,3 +1493,386 @@ components:
     description: "VML background image with Outlook v:rect/v:fill fallback for full-bleed backgrounds."
     category: utility
     compatibility: full
+
+  # ── Content: Countdown ──────────────────────────────────
+  - slug: countdown-timer
+    name: Countdown Timer
+    description: "Countdown timer section with headline, subtext, and CTA."
+    category: content
+    compatibility: full
+
+  - slug: countdown-timer-inline
+    name: Countdown Timer Inline
+    description: "Inline countdown timer using server-generated image."
+    category: content
+    compatibility: full
+
+  - slug: countdown-timer-dark
+    name: Countdown Timer Dark
+    description: "Dark-themed countdown timer with purple background and orange CTA."
+    category: content
+    compatibility: full
+
+  - slug: countdown-timer-banner
+    name: Countdown Timer Banner
+    description: "Slim urgency banner with countdown timer image and CTA."
+    category: content
+    compatibility: full
+
+  # ── Content: Testimonial ────────────────────────────────
+  - slug: testimonial
+    name: Testimonial
+    description: "Centered testimonial quote with avatar and author attribution."
+    category: content
+    compatibility: full
+
+  - slug: testimonial-card
+    name: Testimonial Card
+    description: "Card-style testimonial with left accent border and avatar."
+    category: content
+    compatibility: full
+
+  - slug: testimonial-minimal
+    name: Testimonial Minimal
+    description: "Minimal testimonial with quote and author name only."
+    category: content
+    compatibility: full
+
+  # ── Content: Pricing ────────────────────────────────────
+  - slug: pricing-table
+    name: Pricing Table
+    description: "Single pricing tier card with plan name, price, features, and CTA."
+    category: content
+    compatibility: full
+
+  - slug: pricing-table-highlight
+    name: Pricing Table Highlight
+    description: "Highlighted pricing tier with badge and accent top border."
+    category: content
+    compatibility: full
+
+  - slug: pricing-table-comparison
+    name: Pricing Table Comparison
+    description: "Two-column pricing comparison with shared CTA."
+    category: content
+    compatibility: full
+
+  # ── Content: Team/Bio ───────────────────────────────────
+  - slug: team-bio
+    name: Team/Author Bio
+    description: "Centered team member bio with avatar, name, role, and description."
+    category: content
+    compatibility: full
+
+  - slug: team-bio-horizontal
+    name: Team Bio Horizontal
+    description: "Horizontal team bio with avatar on left and details on right."
+    category: content
+    compatibility: full
+
+  # ── Content: Event ──────────────────────────────────────
+  - slug: event-card
+    name: Event Card
+    description: "Event details card with date, location, description, and CTA."
+    category: content
+    compatibility: full
+
+  - slug: event-card-minimal
+    name: Event Card Minimal
+    description: "Minimal event listing with name, date, and CTA link."
+    category: content
+    compatibility: full
+
+  - slug: event-card-banner
+    name: Event Card Banner
+    description: "Event card with full-width hero image and details below."
+    category: content
+    compatibility: full
+
+  # ── Content: Video ──────────────────────────────────────
+  - slug: video-placeholder
+    name: Video Placeholder
+    description: "Video thumbnail with centered play button overlay."
+    category: content
+    compatibility: full
+
+  - slug: video-placeholder-overlay
+    name: Video Placeholder Overlay
+    description: "Video thumbnail with dark overlay, headline, and watch CTA."
+    category: content
+    compatibility: full
+
+  - slug: video-placeholder-inline
+    name: Video Placeholder Inline
+    description: "Two-column video thumbnail with title, description, and CTA."
+    category: content
+    compatibility: full
+
+  # ── Content: FAQ ────────────────────────────────────────
+  - slug: faq-item
+    name: FAQ Item
+    description: "Single question and answer pair with subtle separator."
+    category: content
+    compatibility: full
+
+  - slug: faq-list
+    name: FAQ List
+    description: "Section heading with three stacked Q&A pairs."
+    category: content
+    compatibility: full
+
+  # ── Content: Social Proof ───────────────────────────────
+  - slug: social-proof
+    name: Social Proof
+    description: "Three statistics displayed in a row (e.g. customers, satisfaction, support)."
+    category: content
+    compatibility: full
+
+  - slug: social-proof-rating
+    name: Social Proof Rating
+    description: "Star rating image with review count and headline."
+    category: content
+    compatibility: full
+
+  - slug: social-proof-logos
+    name: Social Proof Logos
+    description: "Trusted-by section with heading and four partner logos."
+    category: content
+    compatibility: full
+
+  - slug: social-proof-quote
+    name: Social Proof Quote
+    description: "Star rating with customer quote and source attribution."
+    category: content
+    compatibility: full
+
+  # ── Content: Zigzag/Layout ──────────────────────────────
+  - slug: zigzag-image-left
+    name: Zigzag Image Left
+    description: "Two-column section with image on left and text with CTA on right."
+    category: content
+    compatibility: full
+
+  - slug: zigzag-image-right
+    name: Zigzag Image Right
+    description: "Two-column section with text and CTA on left and image on right."
+    category: content
+    compatibility: full
+
+  - slug: zigzag-alternating
+    name: Zigzag Alternating (2 rows)
+    description: "Two alternating image-text rows with reversed column order."
+    category: content
+    compatibility: full
+
+  - slug: hero-asymmetric
+    name: Asymmetric Hero
+    description: "Asymmetric two-column hero with large image left, text and CTA right."
+    category: content
+    compatibility: full
+
+  - slug: hero-asymmetric-reverse
+    name: Asymmetric Hero Reverse
+    description: "Asymmetric two-column hero with text and CTA left, large image right."
+    category: content
+    compatibility: full
+
+  - slug: mosaic-2x2
+    name: Mosaic Grid 2x2
+    description: "2x2 image grid layout with four equally-sized images."
+    category: content
+    compatibility: full
+
+  - slug: mosaic-featured
+    name: Mosaic Featured
+    description: "Featured image full-width on top, two smaller images below."
+    category: content
+    compatibility: full
+
+  - slug: card-grid-2
+    name: Card Grid 2-up
+    description: "Two cards side by side with image, title, and body text."
+    category: content
+    compatibility: full
+
+  - slug: card-grid-3
+    name: Card Grid 3-up
+    description: "Three compact cards in a row with image and title."
+    category: content
+    compatibility: full
+
+  - slug: card-grid-4
+    name: Card Grid 4-up
+    description: "Four minimal cards in a row with small image and title."
+    category: content
+    compatibility: full
+
+  - slug: sidebar-left
+    name: Sidebar Left
+    description: "Asymmetric layout with sidebar on left and main content on right."
+    category: content
+    compatibility: full
+
+  - slug: sidebar-right
+    name: Sidebar Right
+    description: "Asymmetric layout with main content on left and sidebar on right."
+    category: content
+    compatibility: full
+
+  # ── Content: Structural Variants ────────────────────────
+  - slug: text-block-centered
+    name: Text Block Centered
+    description: "Centered text block with heading and body paragraph."
+    category: content
+    compatibility: full
+
+  - slug: hero-video
+    name: Hero Video
+    description: "Hero section with video thumbnail, headline, subtext, and CTA."
+    category: content
+    compatibility: full
+
+  - slug: hero-split
+    name: Hero Split
+    description: "Split hero with image on left and text with CTA on right."
+    category: content
+    compatibility: full
+
+  - slug: hero-minimal
+    name: Hero Minimal
+    description: "Minimal text-only hero with headline and subtext."
+    category: content
+    compatibility: full
+
+  # ── Structure: Navigation ───────────────────────────────
+  - slug: nav-multi-level
+    name: Multi-Level Nav
+    description: "Two-row navigation with primary links and secondary sub-nav."
+    category: structure
+    compatibility: full
+
+  - slug: nav-centered
+    name: Centered Nav
+    description: "Centered horizontal navigation with pipe-separated links."
+    category: structure
+    compatibility: full
+
+  - slug: nav-icon
+    name: Icon Nav
+    description: "Three-column icon navigation with icon images and labels."
+    category: structure
+    compatibility: full
+
+  # ── Structure: Announcement ─────────────────────────────
+  - slug: announcement-bar
+    name: Announcement Bar
+    description: "Full-width colored announcement bar with message and CTA link."
+    category: structure
+    compatibility: full
+
+  - slug: announcement-bar-dismissible
+    name: Announcement Bar Dismissible
+    description: "Announcement bar with dismiss button for supported clients."
+    category: structure
+    compatibility: partial_interactive
+
+  - slug: announcement-bar-countdown
+    name: Announcement Bar Countdown
+    description: "Urgency announcement bar with countdown timer image."
+    category: structure
+    compatibility: full
+
+  # ── Structure: App Download ─────────────────────────────
+  - slug: app-download
+    name: App Download Badges
+    description: "App store download section with heading and iOS/Android badges."
+    category: structure
+    compatibility: full
+
+  - slug: app-download-inline
+    name: App Download Inline
+    description: "Compact inline app store badges without heading."
+    category: structure
+    compatibility: full
+
+  # ── Structure: Loyalty ──────────────────────────────────
+  - slug: loyalty-points
+    name: Loyalty Points
+    description: "Loyalty program points display with tier and CTA."
+    category: structure
+    compatibility: full
+
+  - slug: loyalty-progress
+    name: Loyalty Progress Bar
+    description: "Loyalty progress bar image with points and next tier info."
+    category: structure
+    compatibility: full
+
+  # ── Structure: Footer/Header Variants ───────────────────
+  - slug: footer-minimal
+    name: Footer Minimal
+    description: "Minimal footer with copyright and unsubscribe link only."
+    category: structure
+    compatibility: full
+
+  - slug: footer-centered
+    name: Footer Centered
+    description: "Centered footer with logo, navigation links, and unsubscribe."
+    category: structure
+    compatibility: full
+
+  - slug: header-centered
+    name: Header Centered
+    description: "Centered logo header on dark background."
+    category: structure
+    compatibility: full
+
+  - slug: header-with-nav
+    name: Header With Nav
+    description: "Header with logo on left and navigation links on right."
+    category: structure
+    compatibility: full
+
+  # ── Utility: Divider/Spacer Variants ────────────────────
+  - slug: divider-fancy
+    name: Fancy Divider
+    description: "Decorative divider with centered diamond ornament."
+    category: utility
+    compatibility: full
+
+  - slug: divider-dotted
+    name: Dotted Divider
+    description: "Dotted line divider separator."
+    category: utility
+    compatibility: full
+
+  - slug: spacer-responsive
+    name: Responsive Spacer
+    description: "Responsive vertical spacer with mobile-friendly class."
+    category: utility
+    compatibility: full
+
+  # ── Interactive ─────────────────────────────────────────
+  - slug: survey-cta
+    name: Survey CTA
+    description: "Survey question with two response CTA buttons."
+    category: interactive
+    compatibility: full
+
+  - slug: survey-scale
+    name: Survey Scale
+    description: "Survey question with rating scale image and submit CTA."
+    category: interactive
+    compatibility: full
+
+  - slug: progressive-disclosure
+    name: Progressive Disclosure
+    description: "Show/hide content section using CSS checkbox hack."
+    category: interactive
+    compatibility: partial_interactive
+
+  - slug: progressive-disclosure-tabs
+    name: Progressive Disclosure Tabs
+    description: "Two-tab content switcher using CSS radio button hack."
+    category: interactive
+    compatibility: partial_interactive

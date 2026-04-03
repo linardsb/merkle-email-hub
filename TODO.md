@@ -151,7 +151,7 @@
 - [x] ~~47.3 Deterministic correction applicator~~ DONE
 - [x] ~~47.4 Verification loop orchestrator~~ DONE
 - [x] ~~47.5 Pipeline integration + configuration~~ DONE
-- [ ] 47.6 Component gap analysis + new component templates (89 → 150+)
+- [x] ~~47.6 Component gap analysis + new component templates (89 → 150+)~~ DONE
 - [ ] 47.7 Extended component matcher scoring
 - [ ] 47.8 Custom component generation (AI fallback for unmatched sections)
 - [ ] 47.9 Verification loop tests + snapshot regression
@@ -261,7 +261,7 @@
 
 ---
 
-### 47.6 Component Gap Analysis + New Component Templates `[Backend, Templates]`
+### ~~47.6 Component Gap Analysis + New Component Templates~~ `[Backend, Templates]` DONE
 
 **What:** Expand the component library from 89 to 150+ hand-built components. Add new HTML files to `email-templates/components/` and entries to `app/components/data/component_manifest.yaml`.
 **Why:** The remaining 3% gap at 97% comes from designs that don't map to any existing component. Every new component covers another email design pattern. With 150+ components, most real-world email layouts are covered.
@@ -378,7 +378,7 @@
 | 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | **Done** |
 | 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | **Done** |
 | 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | **Done** |
-| 47.6 New component templates | `email-templates/components/`, manifest | None | Pending |
+| 47.6 New component templates | `email-templates/components/`, manifest | None | **Done** |
 | 47.7 Extended matcher scoring | `component_matcher.py` | 47.6 | Pending |
 | 47.8 Custom component generation | `custom_component_generator.py` | 47.6, Scaffolder agent | Pending |
 | 47.9 Verification tests | `tests/test_visual_verify.py` | 47.4 + 47.5 | Pending |

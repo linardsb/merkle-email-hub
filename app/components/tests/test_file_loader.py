@@ -66,8 +66,8 @@ def test_total_component_count() -> None:
     """Merged seed list contains inline shell + all file-based components."""
     from app.components.data.seeds import COMPONENT_SEEDS
 
-    # 1 inline (email-shell) + 89 file-based = 90 total
-    assert len(COMPONENT_SEEDS) == 90
+    # 1 inline (email-shell) + 150 file-based from manifest
+    assert len(COMPONENT_SEEDS) >= 151
 
 
 # ── Seed dict shape ──

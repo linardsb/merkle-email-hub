@@ -1,0 +1,48 @@
+<!-- Component: progressive-disclosure -->
+<!-- Compatibility: partial_interactive — CSS checkbox hack works in Apple Mail, iOS Mail, some webmail. Fallback: both summary and detail visible. -->
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="dark-bg" style="background-color: #ffffff; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+  <tr>
+    <td style="padding: 24px;">
+      <style>
+        .disclosure-toggle { display: none !important; }
+        .disclosure-label { cursor: pointer; }
+        .disclosure-detail { display: block; max-height: 0; overflow: hidden; mso-hide: all; }
+        .disclosure-toggle:checked ~ .disclosure-detail { max-height: 600px; }
+        .disclosure-icon::after { content: " \25BC"; font-size: 12px; }
+        .disclosure-toggle:checked ~ .disclosure-label .disclosure-icon::after { content: " \25B2"; }
+      </style>
+      <!--[if !mso]><!-->
+      <input type="checkbox" id="disclosure-1" class="disclosure-toggle" style="display: none;" />
+      <!--<![endif]-->
+      <label for="disclosure-1" class="disclosure-label" style="display: block; cursor: pointer;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 8px 0; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #333333; line-height: 1.4;" class="dark-text">
+              <span data-slot="summary">More details about your order</span>
+              <!--[if !mso]><!--><span class="disclosure-icon"></span><!--<![endif]-->
+            </td>
+          </tr>
+        </table>
+      </label>
+      <!--[if !mso]><!-->
+      <div class="disclosure-detail">
+      <!--<![endif]-->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td data-slot="detail" style="padding: 12px 0 0; font-family: Arial, sans-serif; font-size: 14px; color: #555555; line-height: 1.6;" class="dark-text">
+              <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #555555; line-height: 1.6;">Here are the additional details that were hidden by default. This content is revealed when the user clicks the summary text above. In clients that do not support the checkbox hack, both the summary and detail text will be visible.</p>
+            </td>
+          </tr>
+        </table>
+      <!--[if !mso]><!-->
+      </div>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
