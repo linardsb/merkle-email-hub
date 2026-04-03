@@ -693,6 +693,30 @@ class SecurityConfig(BaseModel):
     prompt_guard_mode: Literal["warn", "strip", "block"] = "warn"  # SECURITY__PROMPT_GUARD_MODE
 
 
+class DebounceConfig(BaseModel):
+    """Distributed debounce settings."""
+
+    enabled: bool = True  # DEBOUNCE__ENABLED
+    default_window_ms: int = Field(default=2000, ge=100, le=30000)
+    figma_webhook_window_ms: int = 3000  # DEBOUNCE__FIGMA_WEBHOOK_WINDOW_MS
+    qa_trigger_window_ms: int = 2000  # DEBOUNCE__QA_TRIGGER_WINDOW_MS
+    rendering_trigger_window_ms: int = 2000  # DEBOUNCE__RENDERING_TRIGGER_WINDOW_MS
+
+
+class CredentialsConfig(BaseModel):
+    """Credential pool rotation and cooldown settings."""
+
+    enabled: bool = False  # CREDENTIALS__ENABLED
+    cooldown_initial_seconds: int = 30  # CREDENTIALS__COOLDOWN_INITIAL_SECONDS
+    cooldown_max_seconds: int = 300  # CREDENTIALS__COOLDOWN_MAX_SECONDS
+    failure_threshold: int = 3  # CREDENTIALS__FAILURE_THRESHOLD
+    unhealthy_ttl_seconds: int = 3600  # CREDENTIALS__UNHEALTHY_TTL_SECONDS
+    pools: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="service name -> list of API keys",
+    )  # CREDENTIALS__POOLS (JSON via env)
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -765,6 +789,8 @@ class Settings(BaseSettings):
     scheduling: SchedulingConfig = SchedulingConfig()
     notifications: NotificationsConfig = NotificationsConfig()
     security: SecurityConfig = SecurityConfig()
+    debounce: DebounceConfig = DebounceConfig()
+    credentials: CredentialsConfig = CredentialsConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

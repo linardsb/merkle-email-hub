@@ -45,6 +45,14 @@ class PromptInjectionError(DomainValidationError):
         super().__init__(f"Prompt injection detected: {', '.join(flags)}")
 
 
+class NoHealthyCredentialsError(ServiceUnavailableError):
+    """All credentials for a service are cooling down or unhealthy (503)."""
+
+    def __init__(self, service: str) -> None:
+        self.service = service
+        super().__init__(f"No healthy credentials available for service: {service}")
+
+
 # ── Exception Handlers ──
 
 

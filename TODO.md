@@ -32,132 +32,9 @@
 
 ---
 
-## Phase 45 — Scheduling, Notifications & Build Debounce
+## ~~Phase 45 — Scheduling, Notifications & Build Debounce~~ DONE
 
-> **The platform is reactive-only — nothing happens unless a user clicks.** QA checks run when explicitly triggered. Ontology sync requires `make sync-ontology`. Rendering baselines go stale silently. Approval deadlines pass without alerts. When multiple CRDT collaborators edit simultaneously, every keystroke-debounced save triggers redundant QA/render jobs. There is no way to notify a team that a build failed or an approval is waiting — the CMS is a black box unless someone is watching it.
->
-> **This phase adds three capabilities: scheduled tasks, external notifications, and smart debouncing.** Together they transform the platform from a tool you must actively monitor into one that proactively manages its own health and communicates status to the team. Independent of Phases 37–44. No new databases — uses Redis for scheduling state and debounce tracking.
-
-- [x] ~~45.1 Cron scheduling engine~~ DONE
-- [x] ~~45.2 Scheduled QA sweeps across active templates~~ DONE
-- [x] ~~45.3 Scheduled ontology sync & rendering baseline regeneration~~ DONE
-- [x] ~~45.4 Notification channel abstraction (Slack, Teams, Email)~~ DONE
-- [x] ~~45.5 Workflow event notifications~~ DONE
-- [ ] 45.6 Build & webhook debounce layer
-
----
-
-### ~~45.1 Cron Scheduling Engine `[Backend]`~~ DONE
-
-**What:** Add a lightweight cron scheduler that runs in-process as an asyncio background task, persists job definitions and run history in Redis, and exposes CRUD via API. Jobs are Python callables registered by name with cron expressions.
-**Why:** Multiple features need periodic execution (QA sweeps, ontology sync, rendering baselines, eval regression checks) but currently require manual `make` targets. A shared scheduler avoids external dependencies (Celery Beat, external cron) while providing run logging and failure alerting.
-**Implementation:**
-- Create `app/scheduling/engine.py`:
-  - `CronScheduler` — asyncio task that evaluates registered jobs against their cron expressions every 60s
-  - `JobDefinition(name, cron_expr, callable_name, enabled, last_run, last_status)`
-  - Redis key `scheduling:jobs:{name}` for persistence, `scheduling:runs:{name}:{timestamp}` for run log
-  - `@scheduled_job(cron="0 */6 * * *")` decorator for registering callables
-- Create `app/scheduling/routes.py`: `GET /api/v1/scheduling/jobs`, `POST /api/v1/scheduling/jobs/{name}/trigger` (manual run), `PATCH /api/v1/scheduling/jobs/{name}` (enable/disable, update cron)
-- Feature-gated: `SCHEDULING__ENABLED` (default `false`)
-- Startup: scheduler starts as background task in `app/main.py` lifespan if enabled
-**Verify:** Register a job with `@scheduled_job(cron="* * * * *")`, confirm it fires within 60s. Disable via API → stops firing. Run history persisted in Redis. `SCHEDULING__ENABLED=false` → no background task started. 12 tests.
-
----
-
-### ~~45.2 Scheduled QA Sweeps Across Active Templates `[Backend]`~~ DONE
-
-**What:** Register a scheduled job that runs QA checks across all active project templates, identifies regressions from ontology changes or dependency updates, and stores results for dashboard display.
-**Why:** Ontology updates (`make sync-ontology`) can silently break CSS compatibility scores. Dependency updates (Renovate) can change Maizzle/PostCSS behavior. A periodic sweep catches these regressions before users encounter them.
-**Implementation:**
-- Create `app/scheduling/jobs/qa_sweep.py`:
-  - `@scheduled_job(cron="0 6 * * *")` — daily at 06:00 UTC
-  - Query all projects with active templates, run QA checks (`html_validation`, `css_support`, `css_audit`) on latest version of each
-  - Compare results against last sweep — flag any score decreases > 5%
-  - Store sweep results in Redis: `scheduling:qa_sweep:{date}`
-  - Emit notification event on regressions (consumed by 45.5)
-- Add `make qa-sweep` target for manual execution
-**Verify:** Sweep runs against all active templates. Score regression detected when ontology changes break a CSS property. Results queryable via scheduling API. 8 tests.
-
----
-
-### ~~45.3 Scheduled Ontology Sync & Rendering Baseline Regeneration `[Backend]`~~ DONE
-
-**What:** Register scheduled jobs for CanIEmail ontology sync (weekly) and rendering baseline regeneration (biweekly). Both emit notification events on completion or failure.
-**Why:** The CanIEmail ontology drifts as new email client data is published. Rendering baselines go stale as email client emulators update. Both currently require manual `make` targets that are easy to forget.
-**Implementation:**
-- `app/scheduling/jobs/ontology_sync.py`: `@scheduled_job(cron="0 3 * * 0")` — weekly Sunday 03:00 UTC. Wraps existing `sync-ontology` logic. Emits `ontology.sync_completed` or `ontology.sync_failed` event.
-- `app/scheduling/jobs/rendering_baselines.py`: `@scheduled_job(cron="0 4 1,15 * *")` — 1st and 15th at 04:00 UTC. Wraps existing `make rendering-baselines` logic. Emits `rendering.baselines_regenerated` event.
-- Both jobs log run duration and result to Redis run history
-**Verify:** Ontology sync job triggers on schedule and updates ontology data. Rendering baseline job regenerates baselines. Both emit notification events. 6 tests.
-
----
-
-### ~~45.4 Notification Channel Abstraction (Slack, Teams, Email) `[Backend]`~~ DONE
-
-**What:** Add a pluggable notification system with a channel abstraction layer. Each channel (Slack webhook, Teams webhook, SMTP email) implements a `NotificationChannel` protocol. Notifications have severity levels and are routed to configured channels.
-**Why:** Without external notifications, workflow events (build failures, QA regressions, approval requests, rendering issues) are invisible unless someone is actively using the CMS. Teams need push-style alerting to stay in the loop.
-**Implementation:**
-- Create `app/notifications/`:
-  - `channels.py`: `NotificationChannel` protocol with `async send(notification: Notification) -> bool`
-  - `slack.py`: `SlackChannel` — POST to Slack webhook URL with formatted blocks
-  - `teams.py`: `TeamsChannel` — POST to Teams webhook URL with adaptive card
-  - `email_channel.py`: `EmailChannel` — send via SMTP (reuse existing email sending infra if available)
-  - `router.py`: `NotificationRouter` — routes notifications to channels based on severity + project config
-  - `models.py`: `Notification(event: str, severity: info|warning|error, title: str, body: str, project_id: int | None, metadata: dict)`
-- Config: `NOTIFICATIONS__ENABLED` (default `false`), `NOTIFICATIONS__SLACK_WEBHOOK_URL`, `NOTIFICATIONS__TEAMS_WEBHOOK_URL`, `NOTIFICATIONS__EMAIL_SMTP_*`
-- Per-project channel overrides via `ProjectNotificationConfig` JSON column on `Project`
-**Verify:** Slack notification delivered to webhook. Teams notification delivered. Email sent via SMTP. Router respects severity + project config. Channel failure doesn't crash the caller (fire-and-forget with logging). 14 tests.
-
----
-
-### 45.5 Workflow Event Notifications `[Backend]`
-
-**What:** Wire key workflow events to the notification router: build completion/failure, QA check failures, approval requests/decisions, rendering test regressions, and scheduled job failures.
-**Why:** Completes the notification loop — the channel abstraction (45.4) provides the transport, this subtask provides the triggers. Without it, the notification system has no events to send.
-**Implementation:**
-- Add `emit_notification()` calls at key points:
-  - `app/ai/blueprints/engine.py` — blueprint run completion/failure
-  - `app/qa_engine/service.py` — QA gate failure (any check below threshold)
-  - `app/approval/service.py` — approval requested, approved, rejected
-  - `app/rendering/service.py` — rendering confidence below gate threshold
-  - `app/scheduling/engine.py` — any scheduled job failure
-- Each event maps to a `Notification` with appropriate severity and context
-- Dedup: same event+project within 5min window → skip (prevents notification storms)
-**Verify:** Blueprint failure → Slack message. QA gate failure → Teams message. Approval request → email. Dedup prevents duplicate notifications within window. 10 tests.
-
----
-
-### 45.6 Build & Webhook Debounce Layer `[Backend]`
-
-**What:** Add a debounce layer that coalesces rapid-fire trigger events (CRDT saves, Figma webhook pushes, concurrent user edits) into a single deferred execution. Uses Redis for distributed debounce state with configurable per-trigger-type windows.
-**Why:** CRDT collaboration (Phase 44.7) means multiple users can edit simultaneously. Each save triggers QA checks, rendering previews, and builder sync — without debounce, N users editing = N redundant job runs. Figma webhooks also fire rapidly during design iteration (multiple events per second during active editing).
-**Implementation:**
-- Create `app/core/debounce.py`:
-  - `@debounced(key_fn, window_ms=2000)` decorator — delays execution until no new calls arrive within the window
-  - Redis key `debounce:{key}:{timestamp}` tracks pending execution
-  - On trigger: set/reset Redis key with TTL = window. Background asyncio task checks for expired debounce keys and fires the deferred callable
-  - `key_fn` extracts the dedup key from arguments (e.g., `project_id` for QA triggers, `figma_file_key` for webhooks)
-- Wire into:
-  - `app/design_sync/webhook.py` — debounce Figma change notifications per file key (3s window)
-  - Builder save → QA trigger path — debounce per project (2s window)
-  - Builder save → rendering preview path — debounce per project (2s window)
-- Config: `DEBOUNCE__ENABLED` (default `true`), per-trigger window overrides via settings
-**Verify:** 10 rapid Figma webhooks for same file → 1 sync execution. 5 concurrent CRDT saves → 1 QA run. Debounce key expires → execution fires. `DEBOUNCE__ENABLED=false` → immediate execution. 10 tests.
-
----
-
-### Phase 45 — Summary
-
-| Subtask | Scope | Dependencies | Status |
-|---------|-------|--------------|--------|
-| 45.1 Cron scheduling engine | `app/scheduling/`, Redis | None | **Done** |
-| 45.2 Scheduled QA sweeps | `app/scheduling/jobs/qa_sweep.py` | 45.1 | **Done** |
-| 45.3 Ontology sync + rendering baselines | `app/scheduling/jobs/` | 45.1 | **Done** |
-| 45.4 Notification channel abstraction | `app/notifications/`, Slack/Teams/SMTP | None | **Done** |
-| 45.5 Workflow event notifications | Blueprint, QA, approval, rendering hooks | 45.4 | **Done** |
-| 45.6 Build & webhook debounce | `app/core/debounce.py`, Redis | None | Pending |
-
-> **Execution:** Three independent tracks. **Track A:** 45.1 → 45.2 → 45.3 (scheduling). **Track B:** 45.4 → 45.5 (notifications). **Track C:** 45.6 (debounce, fully independent). All three tracks can run in parallel. Total new code: ~600 LOC + config. One migration (45.4 `notification_config` JSON column on Project), otherwise Redis-only state.
+> Archived to `docs/TODO-completed.md`. All 6 subtasks complete (45.1–45.6).
 
 ---
 
@@ -167,7 +44,7 @@
 >
 > **This phase adds credential resilience and connector extensibility.** Key rotation with cooldowns ensures graceful degradation under rate limits. Connector discovery via the existing plugin system makes ESP integrations pluggable. Independent of Phases 37–45. Minimal new infrastructure — extends existing patterns.
 
-- [ ] 46.1 Credential pool with rotation and cooldowns
+- [x] ~~46.1 Credential pool with rotation and cooldowns~~ DONE
 - [ ] 46.2 LLM provider key rotation
 - [ ] 46.3 ESP connector key rotation
 - [ ] 46.4 Credential health API and dashboard
@@ -259,7 +136,7 @@
 
 | Subtask | Scope | Dependencies | Status |
 |---------|-------|--------------|--------|
-| 46.1 Credential pool | `app/core/credentials.py`, Redis | None | Pending |
+| 46.1 Credential pool | `app/core/credentials.py`, Redis | None | **Done** |
 | 46.2 LLM key rotation | `app/ai/providers/`, `routing.py` | 46.1 | Pending |
 | 46.3 ESP key rotation | `app/connectors/base.py` | 46.1 | Pending |
 | 46.4 Credential health dashboard | API + `cms/components/ecosystem/` | 46.1 | Pending |
