@@ -148,7 +148,7 @@
 
 - [x] ~~47.1 Section-level screenshot cropping utility~~ DONE
 - [x] ~~47.2 Visual comparison service (VLM section-by-section diff)~~ DONE
-- [ ] 47.3 Deterministic correction applicator
+- [x] ~~47.3 Deterministic correction applicator~~ DONE
 - [ ] 47.4 Verification loop orchestrator
 - [ ] 47.5 Pipeline integration + configuration
 - [ ] 47.6 Component gap analysis + new component templates (89 → 150+)
@@ -189,7 +189,7 @@
 
 ---
 
-### 47.3 Deterministic Correction Applicator `[Backend]`
+### ~~47.3 Deterministic Correction Applicator~~ `[Backend]` DONE
 
 **What:** Add `apply_corrections(html: str, corrections: list[SectionCorrection]) -> str` to `app/design_sync/correction_applicator.py`. Applies VLM-identified corrections to converter HTML by modifying inline styles within section marker boundaries.
 **Why:** Most corrections are simple CSS value changes (wrong color, wrong padding, wrong font-size). These can be applied deterministically without an LLM — just string replacement in inline styles. Only complex layout changes need LLM-based correction.
@@ -209,6 +209,7 @@
 - **Fallback:** For corrections that can't be applied deterministically (complex layout restructuring), reuse `correct_visual_defects()` from `app/ai/agents/visual_qa/correction.py`
 - Corrections applied in order; later corrections see earlier modifications
 **Verify:** Apply `{color, "#333", "#2D2D2D"}` correction → inline style updated. Apply `{spacing, "padding:16px", "padding:24px"}` → padding changed. Section marker targeting isolates changes to correct section. 10 tests.
+**Completed:** `app/design_sync/correction_applicator.py` — `apply_corrections()` with `CorrectionResult` dataclass (applied/skipped lists), `_extract_section_html()` section marker extraction with prefix matching, `_apply_style_correction()` lxml+CSSSelector inline style replacement with CSS sanitization, `_apply_content_correction()` text node replacement, `_apply_image_correction()` width/height attribute + style update with numeric validation, confidence threshold gating, section-scoped string splicing to avoid lxml normalization outside target sections. 10 tests.
 
 ---
 
@@ -373,7 +374,7 @@
 |---------|-------|--------------|--------|
 | 47.1 Screenshot cropping | `app/rendering/screenshot_crop.py`, Pillow | None | **Done** |
 | 47.2 VLM section comparison | `app/design_sync/visual_verify.py` | 47.1, 41.6 | **Done** |
-| 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | Pending |
+| 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | **Done** |
 | 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | Pending |
 | 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | Pending |
 | 47.6 New component templates | `email-templates/components/`, manifest | None | Pending |
