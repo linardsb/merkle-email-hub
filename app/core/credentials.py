@@ -180,12 +180,44 @@ class CredentialPool:
 
         await self._set_state(key_hash, state)
 
-    def pool_status(self) -> dict[str, Any]:
-        """Synchronous snapshot for health check API (future 46.4)."""
+    async def pool_status(self) -> dict[str, Any]:
+        """Return health summary for this pool. Key values never exposed."""
+        keys_status: list[dict[str, Any]] = []
+        healthy_count = 0
+        cooled_down_count = 0
+        unhealthy_count = 0
+        now = time.monotonic()
+
+        for kh in self._key_hashes:
+            state = await self._get_state(kh)
+            if not state.healthy:
+                unhealthy_count += 1
+                status = "unhealthy"
+            elif state.cooldown_until > now:
+                cooled_down_count += 1
+                status = "cooled_down"
+            else:
+                healthy_count += 1
+                status = "healthy"
+            keys_status.append(
+                {
+                    "key_hash": kh,
+                    "status": status,
+                    "failure_count": state.failure_count,
+                    "last_failure_code": state.last_failure_code or None,
+                    "cooldown_remaining_s": max(0, round(state.cooldown_until - now, 1))
+                    if state.cooldown_until > now
+                    else 0,
+                }
+            )
+
         return {
             "service": self._service,
-            "total_keys": len(self._keys),
-            "key_hashes": list(self._key_hashes),
+            "key_count": len(self._key_hashes),
+            "healthy": healthy_count,
+            "cooled_down": cooled_down_count,
+            "unhealthy": unhealthy_count,
+            "keys": keys_status,
         }
 
 
@@ -205,6 +237,11 @@ def get_credential_pool(service: str) -> CredentialPool:
             raise NoHealthyCredentialsError(service)
         _pools[service] = CredentialPool(service, keys, settings.credentials)
     return _pools[service]
+
+
+def get_all_pools() -> dict[str, CredentialPool]:
+    """Return all registered credential pools (read-only copy)."""
+    return dict(_pools)
 
 
 def reset_pools() -> None:

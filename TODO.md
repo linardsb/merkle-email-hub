@@ -47,7 +47,7 @@
 - [x] ~~46.1 Credential pool with rotation and cooldowns~~ DONE
 - [x] ~~46.2 LLM provider key rotation~~ DONE
 - [x] ~~46.3 ESP connector key rotation~~ DONE
-- [ ] 46.4 Credential health API and dashboard
+- [x] ~~46.4 Credential health API and dashboard~~ DONE
 - [ ] 46.5 Dynamic ESP connector discovery via plugin system
 
 ---
@@ -92,14 +92,11 @@
 
 ---
 
-### 46.4 Credential Health API and Dashboard `[Backend, Frontend]`
+### ~~46.4 Credential Health API and Dashboard `[Backend, Frontend]`~~ DONE
 
 **What:** Expose credential pool health status via API and display it in the CMS ecosystem dashboard. Shows per-service key count, healthy/cooled-down/unhealthy breakdown, and recent failure events.
 **Why:** Operators need visibility into credential health — especially during batch operations or campaign pushes — to know whether to add keys or investigate provider issues.
-**Implementation:**
-- `GET /api/v1/credentials/health` — returns per-service pool status (key count, healthy count, cooled-down count, unhealthy count, recent failures). Key values are never exposed — only hashed identifiers.
-- `cms/components/ecosystem/credential-health.tsx` — card in ecosystem dashboard showing traffic-light status per service, expandable to show individual key health and cooldown timers
-- Admin-only endpoint (requires `admin` role)
+**Implementation:** `app/core/credentials.py` — async `pool_status()` replaces stub, returns per-key health/cooled_down/unhealthy classification with failure counts and cooldown timers; `get_all_pools()` module function exposes registry. `app/core/credentials_routes.py` — `GET /api/v1/credentials/health` admin-only endpoint (`require_role("admin")`, `@limiter.limit("60/minute")`), `CredentialHealthResponse`/`ServiceHealthReport`/`KeyHealthReport` Pydantic schemas, only SHA-256[0:12] key hashes in response (never raw keys). `app/main.py` — router registration gated on `settings.credentials.enabled`. Frontend: `use-credentials-health.ts` SWR hook with `useSmartPolling(POLL.background)`, `CredentialHealthCard.tsx` traffic-light card with expandable per-service rows (status dots, failure counts, cooldown timers), wired into `EcosystemDashboard.tsx` as stat card + quadrant panel. 6 backend tests (empty pools, pool status, cooled down, unhealthy, 403 for non-admin, no raw key exposure).
 **Verify:** API returns pool status for all configured services. Dashboard renders correctly with mixed healthy/cooled-down keys. Non-admin users get 403. 6 tests.
 
 ---
@@ -130,7 +127,7 @@
 | 46.1 Credential pool | `app/core/credentials.py`, Redis | None | **Done** |
 | 46.2 LLM key rotation | `app/ai/adapters/`, `fallback.py` | 46.1 | **Done** |
 | 46.3 ESP key rotation | `app/connectors/*/service.py` | 46.1 | **Done** |
-| 46.4 Credential health dashboard | API + `cms/components/ecosystem/` | 46.1 | Pending |
+| 46.4 Credential health dashboard | API + `cms/components/ecosystem/` | 46.1 | **Done** |
 | 46.5 Dynamic connector discovery | `app/connectors/plugin_loader.py`, `app/plugins/` | None | Pending |
 
 > **Execution:** Two independent tracks. **Track A:** 46.1 → 46.2 + 46.3 (parallel) → 46.4. **Track B:** 46.5 (fully independent). Total new code: ~500 LOC + config. One Redis dependency (already available). No database migrations.

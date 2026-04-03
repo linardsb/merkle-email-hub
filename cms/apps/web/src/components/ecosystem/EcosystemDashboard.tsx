@@ -1,9 +1,11 @@
 "use client";
 
-import { Puzzle, GitBranch, FileText, Paintbrush } from "../icons";
+import { Puzzle, GitBranch, Paintbrush, KeyRound } from "../icons";
 import { usePluginHealthSummary } from "@/hooks/use-plugins";
 import { useWorkflows } from "@/hooks/use-workflows";
 import { usePenpotConnections } from "@/hooks/use-penpot";
+import { useCredentialHealth } from "@/hooks/use-credentials-health";
+import { CredentialHealthCard } from "./CredentialHealthCard";
 import type { EcosystemTab } from "@/types/ecosystem";
 
 interface Props {
@@ -24,6 +26,15 @@ export function EcosystemDashboard({ onNavigate }: Props) {
   const { data: health, isLoading: healthLoading } = usePluginHealthSummary();
   const { data: workflows, isLoading: workflowsLoading } = useWorkflows();
   const { data: penpotConns, isLoading: penpotLoading } = usePenpotConnections();
+  const { data: credHealth, isLoading: credLoading } = useCredentialHealth();
+
+  const credColorClass = credHealth
+    ? credHealth.unhealthy_total > 0
+      ? "text-status-error"
+      : credHealth.cooled_down_total > 0
+        ? "text-status-warning"
+        : "text-status-success"
+    : "text-foreground-muted";
 
   const cards = [
     {
@@ -39,10 +50,10 @@ export function EcosystemDashboard({ onNavigate }: Props) {
       colorClass: "text-foreground",
     },
     {
-      label: "Reports",
-      value: "On-demand",
-      icon: FileText,
-      colorClass: "text-foreground-muted",
+      label: "Credentials",
+      value: credHealth ? `${credHealth.healthy_total}/${credHealth.total_keys} healthy` : "—",
+      icon: KeyRound,
+      colorClass: credColorClass,
     },
     {
       label: "Penpot",
@@ -52,7 +63,7 @@ export function EcosystemDashboard({ onNavigate }: Props) {
     },
   ];
 
-  const isAnyLoading = healthLoading || workflowsLoading || penpotLoading;
+  const isAnyLoading = healthLoading || workflowsLoading || penpotLoading || credLoading;
 
   return (
     <div className="space-y-6">
@@ -151,29 +162,8 @@ export function EcosystemDashboard({ onNavigate }: Props) {
           )}
         </QuadrantCard>
 
-        {/* Reports Quadrant */}
-        <QuadrantCard
-          title="Reports"
-          icon={<FileText className="h-5 w-5" />}
-          onViewAll={() => onNavigate("reports")}
-          isLoading={false}
-        >
-          <div className="space-y-3">
-            <p className="text-sm text-foreground-muted">
-              Generate QA reports, approval packages, and regression reports on demand.
-            </p>
-            <div className="flex gap-2">
-              {(["qa", "approval", "regression"] as const).map((type) => (
-                <span
-                  key={type}
-                  className="rounded-full border border-card-border bg-surface-hover px-2.5 py-0.5 text-xs capitalize"
-                >
-                  {type}
-                </span>
-              ))}
-            </div>
-          </div>
-        </QuadrantCard>
+        {/* Credentials Quadrant */}
+        <CredentialHealthCard />
 
         {/* Penpot Quadrant */}
         <QuadrantCard

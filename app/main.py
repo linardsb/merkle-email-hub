@@ -465,6 +465,12 @@ if settings.variants.enabled:
 
     app.include_router(variant_router)
 
+# Credential pool health (Phase 46.4)
+if settings.credentials.enabled:
+    from app.core.credentials_routes import router as credentials_health_router
+
+    app.include_router(credentials_health_router)
+
 # Cron scheduling engine (Phase 45.1)
 if settings.scheduling.enabled:
     from app.scheduling.routes import router as scheduling_router
