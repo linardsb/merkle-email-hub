@@ -256,6 +256,19 @@ def get_credential_pool(service: str) -> CredentialPool:
     return _pools[service]
 
 
+def initialize_pools() -> None:
+    """Eagerly create pools for all configured services at startup."""
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    if not settings.credentials.enabled:
+        return
+    for service, keys in settings.credentials.pools.items():
+        if keys and service not in _pools:
+            _pools[service] = CredentialPool(service, keys, settings.credentials)
+            logger.info("credentials.pool_initialized", service=service, key_count=len(keys))
+
+
 def get_all_pools() -> MappingProxyType[str, CredentialPool]:
     """Return all registered credential pools (frozen read-only view).
 

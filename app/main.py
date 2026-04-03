@@ -231,6 +231,12 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         except Exception:
             logger.warning("scheduling.scheduler_start_failed", exc_info=True)
 
+    # Initialize credential pools eagerly (Phase 46.4)
+    if settings.credentials.enabled:
+        from app.core.credentials import initialize_pools
+
+        initialize_pools()
+
     # Load plugins (Phase 25.1) + lifecycle (Phase 25.2)
     _lifecycle_manager = None
     if settings.plugins.enabled:
