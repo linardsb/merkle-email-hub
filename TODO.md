@@ -152,7 +152,7 @@
 - [x] ~~47.4 Verification loop orchestrator~~ DONE
 - [x] ~~47.5 Pipeline integration + configuration~~ DONE
 - [x] ~~47.6 Component gap analysis + new component templates (89 → 150+)~~ DONE
-- [ ] 47.7 Extended component matcher scoring
+- [x] ~~47.7 Extended component matcher scoring~~ DONE
 - [ ] 47.8 Custom component generation (AI fallback for unmatched sections)
 - [ ] 47.9 Verification loop tests + snapshot regression
 - [ ] 47.10 Diagnostic trace enhancement
@@ -379,11 +379,11 @@
 | 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | **Done** |
 | 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | **Done** |
 | 47.6 New component templates | `email-templates/components/`, manifest | None | **Done** |
-| 47.7 Extended matcher scoring | `component_matcher.py` | 47.6 | Pending |
+| 47.7 Extended matcher scoring | `component_matcher.py` | 47.6 | **Done** |
 | 47.8 Custom component generation | `custom_component_generator.py` | 47.6, Scaffolder agent | Pending |
 | 47.9 Verification tests | `tests/test_visual_verify.py` | 47.4 + 47.5 | Pending |
 | 47.10 Diagnostic enhancement | `diagnose/models.py`, `diagnose/runner.py` | 47.4 + 47.8 | Pending |
 
-> **Execution:** Three independent tracks. **Track A (visual verify loop):** 47.1 + 47.3 (parallel, no deps) → 47.2 (needs 47.1 + 41.6) → 47.4 → 47.5 → 47.9. **Track B (component expansion):** 47.6 → 47.7 + 47.8 (parallel). **Track C (diagnostics):** 47.10 (after tracks A + B). Tracks A and B can proceed in parallel. Token cost worst case: ~44K per email (verify loop ~30K + custom gen ~9K + classification ~5K). All behind feature flags — zero behavior change when disabled.
+> **Execution:** Three independent tracks. **Track A (visual verify loop):** 47.1 + 47.3 (parallel, no deps) → 47.2 (needs 47.1 + 41.6) → 47.4 → 47.5 → 47.9. **Track B (component expansion):** 47.6 → ~~47.7~~ + 47.8 (parallel). **Track C (diagnostics):** 47.10 (after tracks A + B). Tracks A and B can proceed in parallel. Token cost worst case: ~44K per email (verify loop ~30K + custom gen ~9K + classification ~5K). All behind feature flags — zero behavior change when disabled.
 
 > **Fidelity ladder:** Phase 40 completion (~85%) → Phase 41 VLM classification (~93%) → Phase 47.1–47.5 visual verify loop (~97%) → Phase 47.6–47.8 component expansion + custom gen (~99%). Each layer is independently valuable and incrementally deployable.

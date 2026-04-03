@@ -1163,3 +1163,194 @@ class TestExpandedMatcherRules:
         m = match_section(s, 0)
         assert m.component_slug == "editorial-2"
         assert m.confidence >= 0.9
+
+
+class TestExtendedComponentScoring:
+    """Tests for extended component types added in 47.6."""
+
+    def test_countdown_timer_time_pattern(self) -> None:
+        """3+ time-pattern texts + heading → countdown-timer."""
+        s = _make_section(
+            texts=[
+                _text("Sale ends in", is_heading=True),
+                _text("12:30"),
+                _text("45:00"),
+                _text("08:15"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "countdown-timer"
+        assert m.confidence == 0.92
+
+    def test_countdown_timer_unit_words(self) -> None:
+        """Time-unit word texts + heading → countdown-timer."""
+        s = _make_section(
+            texts=[
+                _text("Hurry!", is_heading=True),
+                _text("2 Days"),
+                _text("14 Hours"),
+                _text("30 Minutes"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "countdown-timer"
+        assert m.confidence == 0.92
+
+    def test_testimonial_with_quote_and_avatar(self) -> None:
+        """Quoted text + small avatar image → testimonial."""
+        s = _make_section(
+            texts=[_text("\u201cGreat service\u201d")],
+            images=[_image(w=80, h=80)],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "testimonial"
+        assert m.confidence == 0.9
+
+    def test_testimonial_no_avatar_stays_text(self) -> None:
+        """Quoted text only, no image → falls back to text-block."""
+        s = _make_section(
+            texts=[_text("\u201cGreat service\u201d")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "text-block"
+
+    def test_pricing_table_with_currency(self) -> None:
+        """Currency text + 2 col_groups + buttons → pricing-table."""
+        s = _make_section(
+            texts=[_text("$9.99/mo"), _text("$19.99/mo")],
+            buttons=[_button("Buy now")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Plan 1",
+                    images=[],
+                    texts=[_text("$9.99/mo")],
+                ),
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="cg2",
+                    node_name="Plan 2",
+                    images=[],
+                    texts=[_text("$19.99/mo")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "pricing-table"
+        assert m.confidence == 0.93
+
+    def test_video_placeholder_16_9(self) -> None:
+        """1 image with 16:9 ratio + button → video-placeholder."""
+        s = _make_section(
+            images=[_image(w=640, h=360)],
+            buttons=[_button("Play")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "video-placeholder"
+        assert m.confidence == 0.88
+
+    def test_video_wrong_ratio_not_matched(self) -> None:
+        """1 image with 1:1 ratio + button → not video-placeholder."""
+        s = _make_section(
+            images=[_image(w=600, h=600)],
+            buttons=[_button("Play")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "video-placeholder"
+
+    def test_event_card_date_pattern(self) -> None:
+        """Date pattern in text + image + button → event-card."""
+        s = _make_section(
+            texts=[_text("March 15, 2026"), _text("Join us for the event")],
+            images=[_image()],
+            buttons=[_button("Register")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "event-card"
+        assert m.confidence == 0.85
+
+    def test_faq_question_answer_pairs(self) -> None:
+        """Alternating Q?/A texts, no images → faq-accordion."""
+        s = _make_section(
+            texts=[
+                _text("What is your return policy?"),
+                _text("You can return items within 30 days."),
+                _text("Do you offer free shipping?"),
+                _text("Yes, on orders over $50."),
+                _text("How do I track my order?"),
+                _text("Use the tracking link in your confirmation email."),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "faq-accordion"
+        assert m.confidence == 0.88
+
+    def test_zigzag_alternating_columns(self) -> None:
+        """3+ col_groups each with mixed image+text → zigzag-alternating."""
+        s = _make_section(
+            texts=[_text("Row 1"), _text("Row 2"), _text("Row 3")],
+            images=[_image(node_id="img1"), _image(node_id="img2"), _image(node_id="img3")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Row 1",
+                    images=[_image(node_id="img1")],
+                    texts=[_text("Row 1")],
+                ),
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="cg2",
+                    node_name="Row 2",
+                    images=[_image(node_id="img2")],
+                    texts=[_text("Row 2")],
+                ),
+                ColumnGroup(
+                    column_idx=2,
+                    node_id="cg3",
+                    node_name="Row 3",
+                    images=[_image(node_id="img3")],
+                    texts=[_text("Row 3")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "zigzag-alternating"
+        assert m.confidence == 0.9
+
+    def test_existing_product_grid_unchanged(self) -> None:
+        """Regression: product-grid scoring is not affected by extended scorer."""
+        s = _make_section(
+            texts=[_text("Product A"), _text("Product B")],
+            images=[_image(node_id="img1"), _image(node_id="img2")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Product 1",
+                    images=[_image(node_id="img1")],
+                    texts=[_text("Product A")],
+                ),
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="cg2",
+                    node_name="Product 2",
+                    images=[_image(node_id="img2")],
+                    texts=[_text("Product B")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "product-grid"
+        assert m.confidence == 0.95
+
+    def test_existing_article_card_unchanged(self) -> None:
+        """Regression: article-card scoring is not affected by extended scorer."""
+        s = _make_section(
+            texts=[_text("Article title", is_heading=True), _text("Article body")],
+            images=[_image()],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "article-card"
+        assert m.confidence == 0.9
