@@ -48,7 +48,7 @@
 - [x] ~~46.2 LLM provider key rotation~~ DONE
 - [x] ~~46.3 ESP connector key rotation~~ DONE
 - [x] ~~46.4 Credential health API and dashboard~~ DONE
-- [ ] 46.5 Dynamic ESP connector discovery via plugin system
+- [x] ~~46.5 Dynamic ESP connector discovery via plugin system~~ DONE
 
 ---
 
@@ -128,7 +128,7 @@
 | 46.2 LLM key rotation | `app/ai/adapters/`, `fallback.py` | 46.1 | **Done** |
 | 46.3 ESP key rotation | `app/connectors/*/service.py` | 46.1 | **Done** |
 | 46.4 Credential health dashboard | API + `cms/components/ecosystem/` | 46.1 | **Done** |
-| 46.5 Dynamic connector discovery | `app/connectors/plugin_loader.py`, `app/plugins/` | None | Pending |
+| 46.5 Dynamic connector discovery | `app/connectors/plugin_bridge.py`, `app/plugins/` | None | **Done** |
 
 > **Execution:** Two independent tracks. **Track A:** 46.1 → 46.2 + 46.3 (parallel) → 46.4. **Track B:** 46.5 (fully independent). Total new code: ~500 LOC + config. One Redis dependency (already available). No database migrations.
 
@@ -146,7 +146,7 @@
 >
 > **Why 99.99% is hard:** Email clients aren't browsers — Outlook uses Word, Gmail strips `<style>`, Yahoo ignores `max-width`. Figma designs use features email can't reproduce (drop shadows, gradients, SVG, blend modes). Sub-pixel rounding: Figma says 14.5px, email rounds to 15px. For modern clients (Apple Mail, Gmail web, Outlook.com): 99% is achievable. For Outlook desktop: 95% is realistic — VML covers the big gaps but Word rendering is fundamentally different.
 
-- [ ] 47.1 Section-level screenshot cropping utility
+- [x] ~~47.1 Section-level screenshot cropping utility~~ DONE
 - [x] ~~47.2 Visual comparison service (VLM section-by-section diff)~~ DONE
 - [ ] 47.3 Deterministic correction applicator
 - [ ] 47.4 Verification loop orchestrator
@@ -371,7 +371,7 @@
 
 | Subtask | Scope | Dependencies | Status |
 |---------|-------|--------------|--------|
-| 47.1 Screenshot cropping | `app/rendering/screenshot_crop.py`, Pillow | None | Pending |
+| 47.1 Screenshot cropping | `app/rendering/screenshot_crop.py`, Pillow | None | **Done** |
 | 47.2 VLM section comparison | `app/design_sync/visual_verify.py` | 47.1, 41.6 | **Done** |
 | 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | Pending |
 | 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | Pending |

@@ -267,9 +267,11 @@
 
 **Phase 32.4:** Agent Knowledge Lookup Tool — `app/ai/agents/tools/client_lookup.py` with `ClientLookupTool` (single-client queries: css_support/dark_mode/known_bugs/size_limits/font_support) + `MultiClientLookupTool` (batch N×M queries); `ClientLookupParams`/`ClientLookupResult` Pydantic models; module-level singleton instances; structured logging; blueprint engine LAYER 11.5 injects tools into `context.metadata` for all agentic nodes; 6 agent SKILL.md files updated with Client Rendering Lookup L2 section; 26 new tests.
 
+**Phase 46:** Provider Resilience & Connector Extensibility — all 5 subtasks complete. 46.1 credential pool with rotation/cooldowns/Redis-backed state, 14 tests. 46.2 LLM provider key rotation (Anthropic + OpenAI-compat adapters), 9 tests. 46.3 ESP connector key rotation (Braze/SFMC/Adobe/Taxi), 7 tests. 46.4 credential health API + ecosystem dashboard, 6 tests. 46.5 dynamic ESP connector discovery via plugin system (`PluginConnectorAPI`, `plugin_bridge.py`, sample plugin), 10 tests.
+
 ### Up Next
 
-**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.2 done, 9 subtasks remaining: 47.1 screenshot cropping, 47.3 correction applicator, 47.4 loop orchestrator, 47.5 pipeline integration, 47.6–47.8 component expansion, 47.9 tests, 47.10 diagnostics). **Phase 46** (Provider Resilience & Connector Extensibility — 46.1 done: credential pool with rotation/cooldowns/Redis-backed state/in-memory fallback, 14 tests; remaining: 46.2 LLM key rotation, 46.3 ESP key rotation, 46.4 credential health dashboard, 46.5 dynamic ESP connector discovery). See `TODO.md` for details.
+**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.1–47.2 done, 8 subtasks remaining: 47.3 correction applicator, 47.4 loop orchestrator, 47.5 pipeline integration, 47.6–47.8 component expansion, 47.9 tests, 47.10 diagnostics). See `TODO.md` for details.
 
 ### Infrastructure Built
 
