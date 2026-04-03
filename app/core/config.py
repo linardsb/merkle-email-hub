@@ -387,6 +387,9 @@ class DesignSyncConfig(BaseModel):
     vlm_verify_max_iterations: int = 3  # DESIGN_SYNC__VLM_VERIFY_MAX_ITERATIONS
     vlm_verify_target_fidelity: float = 0.97  # DESIGN_SYNC__VLM_VERIFY_TARGET_FIDELITY
     vlm_verify_confidence_threshold: float = 0.7  # DESIGN_SYNC__VLM_VERIFY_CONFIDENCE_THRESHOLD
+    # Pipeline integration (Phase 47.5)
+    vlm_verify_correction_confidence: float = 0.6  # DESIGN_SYNC__VLM_VERIFY_CORRECTION_CONFIDENCE
+    vlm_verify_client: str = "gmail_web"  # DESIGN_SYNC__VLM_VERIFY_CLIENT (rendering target)
 
 
 class ESPSyncConfig(BaseModel):

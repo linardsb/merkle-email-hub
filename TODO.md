@@ -150,7 +150,7 @@
 - [x] ~~47.2 Visual comparison service (VLM section-by-section diff)~~ DONE
 - [x] ~~47.3 Deterministic correction applicator~~ DONE
 - [x] ~~47.4 Verification loop orchestrator~~ DONE
-- [ ] 47.5 Pipeline integration + configuration
+- [x] ~~47.5 Pipeline integration + configuration~~ DONE
 - [ ] 47.6 Component gap analysis + new component templates (89 → 150+)
 - [ ] 47.7 Extended component matcher scoring
 - [ ] 47.8 Custom component generation (AI fallback for unmatched sections)
@@ -234,7 +234,7 @@
 
 ---
 
-### 47.5 Pipeline Integration + Configuration `[Backend]`
+### ~~47.5 Pipeline Integration + Configuration~~ `[Backend]` DONE
 
 **What:** Wire the verification loop into `converter_service.py` after `_convert_with_components()` returns. Add feature flags and configuration to `app/core/config.py`.
 **Why:** The loop must be opt-in (adds latency + VLM cost) and configurable per-connection for gradual rollout.
@@ -376,8 +376,8 @@
 | 47.1 Screenshot cropping | `app/rendering/screenshot_crop.py`, Pillow | None | **Done** |
 | 47.2 VLM section comparison | `app/design_sync/visual_verify.py` | 47.1, 41.6 | **Done** |
 | 47.3 Correction applicator | `app/design_sync/correction_applicator.py` | None | **Done** |
-| 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | Pending |
-| 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | Pending |
+| 47.4 Verification loop | `app/design_sync/visual_verify.py` | 47.1 + 47.2 + 47.3 | **Done** |
+| 47.5 Pipeline integration | `converter_service.py`, `config.py` | 47.4 | **Done** |
 | 47.6 New component templates | `email-templates/components/`, manifest | None | Pending |
 | 47.7 Extended matcher scoring | `component_matcher.py` | 47.6 | Pending |
 | 47.8 Custom component generation | `custom_component_generator.py` | 47.6, Scaffolder agent | Pending |

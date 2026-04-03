@@ -145,6 +145,10 @@ class ConversionResult:
     figma_url: str | None = None
     node_id: str | None = None
     design_tokens_used: dict[str, Any] | None = None
+    # VLM verification loop metadata (Phase 47.5)
+    verification_iterations: int = 0
+    verification_initial_fidelity: float | None = None
+    verification_final_fidelity: float | None = None
 
 
 @dataclass(frozen=True)
@@ -242,6 +246,7 @@ class DesignConverterService:
         use_components: bool = True,
         image_urls: dict[str, str] | None = None,
         connection_id: str | None = None,
+        design_screenshots: dict[str, bytes] | None = None,
     ) -> ConversionResult:
         """Convert an EmailDesignDocument into email HTML.
 
@@ -255,7 +260,11 @@ class DesignConverterService:
             use_components: Use component-template rendering if sections exist.
             image_urls: Mapping of node-id → image URL for component matcher.
             connection_id: If set and caching enabled, cache section results.
+            design_screenshots: Figma PNG bytes per node-id (async verification only).
         """
+        # design_screenshots is accepted but not used in this sync method;
+        # callers can pass it through to async verification separately.
+        _ = design_screenshots
         from app.design_sync.token_transforms import validate_and_transform
 
         tokens = document.to_extracted_tokens()
@@ -310,6 +319,7 @@ class DesignConverterService:
         *,
         target_clients: list[str] | None = None,
         connection_id: str | None = None,
+        design_screenshots: dict[str, bytes] | None = None,
     ) -> ConversionResult:
         """Convert an EmailDesignDocument into email HTML via MJML.
 
@@ -332,13 +342,63 @@ class DesignConverterService:
             logger.warning("design_sync.convert_document_mjml_no_sections")
             return ConversionResult(html="", sections_count=0, warnings=["No sections found"])
 
-        return await self._convert_mjml_from_layout(
+        result = await self._convert_mjml_from_layout(
             layout=layout,
             tokens=tokens,
             warnings=warnings,
             container_width=container_width,
             target_clients=target_clients,
             connection_id=connection_id,
+        )
+        return await self._apply_verification(
+            result, design_screenshots or {}, layout.sections, container_width
+        )
+
+    # ── VLM verification loop (Phase 47.5) ────────────────────────────
+
+    async def _apply_verification(
+        self,
+        result: ConversionResult,
+        design_screenshots: dict[str, bytes],
+        sections: list[EmailSection],
+        container_width: int,
+    ) -> ConversionResult:
+        """Run VLM verification loop on conversion result if enabled."""
+        ds = get_settings().design_sync
+        if not ds.vlm_verify_enabled or not design_screenshots:
+            return result
+
+        from app.design_sync.visual_verify import run_verification_loop
+
+        try:
+            vr = await run_verification_loop(
+                html=result.html,
+                design_screenshots=design_screenshots,
+                sections=sections,
+                max_iterations=ds.vlm_verify_max_iterations,
+                render_client=ds.vlm_verify_client,
+                viewport_width=container_width,
+            )
+        except Exception:
+            logger.warning("design_sync.verification_loop_failed", exc_info=True)
+            return result
+
+        return ConversionResult(
+            html=vr.final_html,
+            sections_count=result.sections_count,
+            warnings=result.warnings,
+            layout=result.layout,
+            compatibility_hints=result.compatibility_hints,
+            images=result.images,
+            cache_hit_rate=result.cache_hit_rate,
+            quality_warnings=result.quality_warnings,
+            match_confidences=result.match_confidences,
+            figma_url=result.figma_url,
+            node_id=result.node_id,
+            design_tokens_used=result.design_tokens_used,
+            verification_iterations=len(vr.iterations),
+            verification_initial_fidelity=vr.initial_fidelity,
+            verification_final_fidelity=vr.final_fidelity,
         )
 
     # ── Legacy entry points (shim to document path) ──────────────────
