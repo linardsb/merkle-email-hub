@@ -1,4 +1,0 @@
-<snippet>
-	<content><![CDATA[<span style="font-size: ${1:16}px; line-height: ${2:22}px; color: ${3:#000000}; text-transform: ${4:none};">$5</span>]]></content>
-	<tabTrigger>font-inline</tabTrigger>
-</snippet>

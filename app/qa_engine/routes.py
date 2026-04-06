@@ -9,6 +9,7 @@ from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
+from app.qa_engine.meta_eval_routes import router as meta_eval_router
 from app.qa_engine.schemas import (
     BIMICheckRequest,
     BIMICheckResponse,
@@ -37,6 +38,7 @@ from app.qa_engine.service import QAEngineService
 from app.shared.schemas import PaginatedResponse, PaginationParams
 
 router = APIRouter(prefix="/api/v1/qa", tags=["qa-engine"])
+router.include_router(meta_eval_router)
 
 
 def get_service(db: AsyncSession = Depends(get_db)) -> QAEngineService:

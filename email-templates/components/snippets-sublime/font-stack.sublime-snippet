@@ -1,4 +1,0 @@
-<snippet>
-	<content><![CDATA[font-family: ${1:Helvetica, Arial, sans-serif};]]></content>
-	<tabTrigger>font-stack</tabTrigger>
-</snippet>

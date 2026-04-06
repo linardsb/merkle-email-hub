@@ -51,20 +51,20 @@ export function CredentialHealthCard() {
         <div className="flex gap-3 text-sm">
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-full bg-status-success" />
-            {data.healthy_total} healthy
+            {data.healthy_total ?? 0} healthy
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-full bg-status-warning" />
-            {data.cooled_down_total} cooled down
+            {data.cooled_down_total ?? 0} cooled down
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-full bg-status-error" />
-            {data.unhealthy_total} unhealthy
+            {data.unhealthy_total ?? 0} unhealthy
           </span>
         </div>
 
         {/* Per-service breakdown */}
-        {data.services.length === 0 ? (
+        {!data.services || data.services.length === 0 ? (
           <p className="text-sm text-foreground-muted">
             No credential pools configured.
           </p>

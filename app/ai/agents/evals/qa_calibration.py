@@ -21,9 +21,12 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.ai.agents.evals.calibration import load_human_labels
+
+if TYPE_CHECKING:
+    from app.qa_engine.meta_eval import MetaEvalReport
 from app.ai.agents.evals.schemas import HumanLabel, QACalibrationResult
 from app.core.logging import get_logger
 
@@ -147,6 +150,33 @@ def build_qa_report(results: list[QACalibrationResult]) -> dict[str, Any]:
         "details": details,
         "needs_tuning": needs_tuning,
     }
+
+
+def meta_eval_to_calibration_results(
+    report: MetaEvalReport,
+) -> list[QACalibrationResult]:
+    """Convert a MetaEvalReport to QACalibrationResult format for pipeline compat.
+
+    Bridges meta-eval confusion matrix metrics into the calibration tracker's
+    agreement/false-pass/false-fail format so regression baselines can consume both.
+    """
+    results: list[QACalibrationResult] = []
+    for check_name, check_result in report.checks.items():
+        total = check_result.tp + check_result.fp + check_result.tn + check_result.fn
+        if total == 0:
+            continue
+
+        agree = check_result.tp + check_result.tn
+        results.append(
+            QACalibrationResult(
+                check_name=check_name,
+                agreement_rate=agree / total,
+                false_pass_rate=check_result.fp / total,
+                false_fail_rate=check_result.fn / total,
+                total=total,
+            )
+        )
+    return results
 
 
 def main() -> None:

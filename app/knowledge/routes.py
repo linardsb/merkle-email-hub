@@ -21,6 +21,7 @@ from app.auth.models import User
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.knowledge.exceptions import DuplicateTagError
+from app.knowledge.proactive_qa_routes import router as proactive_qa_router
 from app.knowledge.schemas import (
     DocumentContentResponse,
     DocumentResponse,
@@ -43,6 +44,7 @@ from app.knowledge.service import KnowledgeService
 from app.shared.schemas import PaginatedResponse, PaginationParams
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
+router.include_router(proactive_qa_router)
 
 
 def get_service(db: AsyncSession = Depends(get_db)) -> KnowledgeService:

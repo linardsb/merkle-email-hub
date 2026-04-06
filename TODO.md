@@ -40,7 +40,7 @@
 - [x] ~~48.10 Synthetic adversarial email generator~~ DONE
 - [x] ~~48.11 MCP response caching and schema compression~~ DONE
 - [x] ~~48.12 Knowledge graph proactive QA pipeline~~ DONE
-- [ ] 48.13 Agent execution hook system with profiles
+- [x] ~~48.13 Agent execution hook system with profiles~~ DONE
 
 - [ ] **Phase 49 — Design-Sync Converter Structural Fidelity** (see below)
 
@@ -470,7 +470,7 @@
 | Subtask | Scope | Dependencies | Track | Status |
 |---------|-------|--------------|-------|--------|
 | 48.1 Pipeline DAG schema & registry | `app/ai/pipeline/dag.py`, `registry.py` | None | A | DONE |
-| 48.2 Parallel agent executor | `app/ai/pipeline/executor.py` | 48.1, 48.3, 48.5 | A | |
+| 48.2 Parallel agent executor | `app/ai/pipeline/executor.py` | 48.1, 48.3, 48.5 | A | DONE |
 | 48.3 Typed artifact protocol | `app/ai/pipeline/artifacts.py`, `adapters/` | None | A | DONE |
 | 48.4 Adversarial evaluator agent | `app/ai/agents/evaluator/` | 48.3 | A | DONE |
 | 48.5 Quality contracts & stage gates | `app/ai/pipeline/contracts.py` | 48.1 | A | DONE |
@@ -481,7 +481,7 @@
 | 48.10 Synthetic adversarial generator | `app/qa_engine/synthetic_generator.py` | None | C | DONE |
 | 48.11 MCP response cache & compression | `app/mcp/optimization.py` | None | D | DONE |
 | 48.12 Knowledge graph proactive QA | `app/knowledge/proactive_qa.py` | None | D | DONE |
-| 48.13 Agent execution hook system | `app/ai/hooks/` | 48.2 | E | |
+| 48.13 Agent execution hook system | `app/ai/hooks/` | 48.2 | E | DONE |
 
 > **Execution:** Five independent tracks, three with internal sequencing.
 >

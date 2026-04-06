@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from app.ai.agents.schemas.build_plan import DesignTokens, EmailBuildPlan
     from app.design_sync.visual_verify import SectionCorrection
+    from app.knowledge.proactive_qa import ProactiveWarning
     from app.qa_engine.schemas import QACheckResult
 
 __all__ = [
@@ -31,6 +32,7 @@ __all__ = [
     "DesignTokenArtifact",
     "EvalArtifact",
     "HtmlArtifact",
+    "ProactiveWarningsArtifact",
     "QaResultArtifact",
     "ScreenshotArtifact",
 ]
@@ -108,6 +110,14 @@ class EvalArtifact(Artifact):
     verdict: str = ""
     feedback: str = ""
     score: float = 0.0
+
+
+@dataclass(frozen=True)
+class ProactiveWarningsArtifact(Artifact):
+    """Proactive QA warnings injected before pipeline execution."""
+
+    warnings: tuple[ProactiveWarning, ...] = ()
+    formatted_text: str = ""
 
 
 # ── Store ──

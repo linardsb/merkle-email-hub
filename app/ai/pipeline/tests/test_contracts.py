@@ -201,9 +201,7 @@ class TestAssertionOperators:
     validator = ContractValidator()
 
     async def test_operators(self, sample_html_valid: str) -> None:
-        c_ge = _make_contract(
-            assertions=(Assertion(check="min_size", operator=">=", threshold=1),)
-        )
+        c_ge = _make_contract(assertions=(Assertion(check="min_size", operator=">=", threshold=1),))
         assert (await self.validator.validate(c_ge, sample_html_valid)).passed
 
         c_le = _make_contract(

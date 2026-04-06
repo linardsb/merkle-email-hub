@@ -71,6 +71,15 @@ class PipelineExecutionError(AppError):
     status_code = 500
 
 
+class HookAbortError(PipelineExecutionError):
+    """A hook in strict mode aborted the pipeline."""
+
+    def __init__(self, hook_name: str, reason: str) -> None:
+        self.hook_name = hook_name
+        self.reason = reason
+        super().__init__(f"Hook '{hook_name}' aborted pipeline: {reason}")
+
+
 class ArtifactNotFoundError(AppError):
     """Requested artifact not found in store."""
 

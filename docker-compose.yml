@@ -35,7 +35,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-devpassword}"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-devpassword}", "--appendonly", "yes", "--save", "60", "1"]
     ports:
       - "6380:6379"
     volumes:
@@ -306,10 +306,11 @@ networks:
 
 volumes:
   postgres_data:
-    name: i7kcm8soim4ubtsf6ioon1r0_postgres_data
-    external: true
+    name: merkle-email-hub_postgres_data
   redis_data:
-
+    driver: local
   document_data:
+    driver: local
   mock_esp_data:
+    driver: local
 

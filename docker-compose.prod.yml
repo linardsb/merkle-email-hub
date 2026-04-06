@@ -79,7 +79,7 @@ services:
       - AI__PROVIDER=${AI__PROVIDER:-anthropic}
       - AI__API_KEY=${AI__API_KEY}
       - AI__MODEL=${AI__MODEL:-claude-sonnet-4-20250514}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:3000"]}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:3100"]}
       - ESP_SYNC__BRAZE_BASE_URL=http://mock-esp:3002/braze
       - ESP_SYNC__SFMC_BASE_URL=http://mock-esp:3002/sfmc
       - ESP_SYNC__ADOBE_BASE_URL=http://mock-esp:3002/adobe
@@ -106,15 +106,16 @@ services:
       args:
         - NEXT_PUBLIC_COLLAB_WS_URL=${NEXT_PUBLIC_COLLAB_WS_URL:-wss://localhost}
     expose:
-      - "3000"
+      - "3100"
     environment:
+      - PORT=3100
       - INTERNAL_API_URL=http://app:8891
       - BACKEND_URL=http://app:8891
       - AUTH_SECRET=${AUTH_SECRET}
       - AUTH_TRUST_HOST=true
       - AUTH_URL=${AUTH_URL:?AUTH_URL must be set to your production domain (e.g. https://yourdomain.com)}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3100 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -183,7 +184,13 @@ networks:
 
 volumes:
   postgres_data:
+    name: i7kcm8soim4ubtsf6ioon1r0_postgres_data
+    external: true
   redis_data:
+    driver: local
   document_data:
+    driver: local
   mock_esp_data:
+    driver: local
   email_templates:
+    driver: local

@@ -1,8 +1,0 @@
-<snippet>
-	<content><![CDATA[<tr>
-  <td align="${1:center}" valign="${2:top}" style="font-family: ${3:Helvetica, Arial, sans-serif}; font-size: ${4:16}px; line-height: ${5:22}px; color: ${6:#000000};">
-    $7
-  </td>
-</tr>]]></content>
-	<tabTrigger>cell</tabTrigger>
-</snippet>

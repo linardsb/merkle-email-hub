@@ -1,6 +1,0 @@
-<snippet>
-	<content><![CDATA[
-<img src="images/img_$1.jpg" alt="" style="display: block; border: 0; font-size: 16px; line-height: 16px;" border="0" class="respimg" width="$2" height="$3">
-]]></content>
-	<tabTrigger>image-responsive</tabTrigger>
-</snippet>

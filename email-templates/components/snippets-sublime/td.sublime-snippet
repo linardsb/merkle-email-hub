@@ -1,4 +1,0 @@
-<snippet>
-	<content><![CDATA[<td align="${1:center}" valign="${2:top}" style="padding: ${3:0};">$4</td>]]></content>
-	<tabTrigger>td</tabTrigger>
-</snippet>

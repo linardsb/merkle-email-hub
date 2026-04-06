@@ -1,6 +1,0 @@
-<snippet>
-	<content><![CDATA[
-mso-line-height-rule:exactly; line-height:$1px;
-]]></content>
-	<tabTrigger>mso-lineheight</tabTrigger>
-</snippet>

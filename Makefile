@@ -114,6 +114,17 @@ snapshot-visual: ## Visual fidelity metrics for snapshot cases (requires Playwri
 converter-regression: ## Converter quality regression check against baseline
 	python -m app.design_sync.converter_regression
 
+ifdef CASE
+converter-data-regression: ## Data-driven converter regression tests (all cases or CASE=name)
+	uv run pytest app/design_sync/tests/test_converter_data_regression.py -v --tb=long -k "$(CASE)"
+else
+converter-data-regression: ## Data-driven converter regression tests (all cases or CASE=name)
+	uv run pytest app/design_sync/tests/test_converter_data_regression.py -v --tb=long
+endif
+
+converter-data-regression-report: ## Generate per-case regression reports
+	uv run python -m app.design_sync.tests.regression_runner --report
+
 check: lint types test check-fe security-check validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks (backend + frontend + security)
 
 check-full: lint types test check-fe security-check migration-lint validate-overlays lint-numeric golden-conformance flag-audit ## Run all checks including migration lint

@@ -12,6 +12,13 @@ references:
     criteria: [mso_conditional_correctness, vml_wellformedness]
     agents: [scaffolder, outlook_fixer]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      fallback: pass
+      image_optimization: pass
 
   - name: Nested MSO Conditionals
     file: nested-mso-conditionals.html
@@ -20,6 +27,11 @@ references:
     criteria: [mso_conditional_correctness, vml_wellformedness]
     agents: [scaffolder, outlook_fixer]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      fallback: pass
 
   - name: VML Rounded Button Variants
     file: vml-rounded-button-variants.html
@@ -28,6 +40,11 @@ references:
     criteria: [vml_wellformedness, email_layout_patterns]
     agents: [scaffolder, outlook_fixer]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      fallback: pass
 
   - name: Complex Hybrid Layout
     file: complex-hybrid-layout.html
@@ -36,6 +53,13 @@ references:
     criteria: [email_layout_patterns, issue_genuineness, mso_conditional_correctness]
     agents: [scaffolder, code_reviewer]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      fallback: pass
+      image_optimization: pass
 
   - name: Dark Mode Complete
     file: dark-mode-complete.html
@@ -44,6 +68,11 @@ references:
     criteria: [color_coherence, outlook_selector_completeness, meta_and_media_query, contrast_preservation, html_preservation]
     agents: [dark_mode]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: pass
+      accessibility: pass
 
   - name: Accessibility Compliant
     file: accessibility-compliant.html
@@ -52,6 +81,13 @@ references:
     criteria: [wcag_aa_compliance, alt_text_quality, semantic_structure, screen_reader_compatibility, contrast_ratio_accuracy]
     agents: [accessibility]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      fallback: pass
+      image_optimization: pass
 
   - name: ESP Braze Liquid
     file: esp-braze-liquid.html
@@ -60,6 +96,15 @@ references:
     criteria: [syntax_correctness, fallback_completeness, platform_accuracy]
     agents: [personalisation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      fallback: pass
+      personalisation_syntax: pass
+      liquid_syntax: pass
+      image_optimization: pass
 
   - name: ESP SFMC AMPscript
     file: esp-sfmc-ampscript.html
@@ -68,6 +113,13 @@ references:
     criteria: [syntax_correctness, fallback_completeness, platform_accuracy]
     agents: [personalisation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      fallback: pass
+      personalisation_syntax: pass
 
   - name: ESP Adobe Campaign
     file: esp-adobe-campaign.html
@@ -76,6 +128,12 @@ references:
     criteria: [syntax_correctness, platform_accuracy]
     agents: [personalisation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      personalisation_syntax: pass
 
   - name: ESP Klaviyo Django
     file: esp-klaviyo-django.html
@@ -84,6 +142,12 @@ references:
     criteria: [syntax_correctness, platform_accuracy]
     agents: [personalisation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
+      accessibility: pass
+      personalisation_syntax: pass
 
   - name: Innovation CSS Carousel
     file: innovation-css-carousel.html
@@ -92,6 +156,10 @@ references:
     criteria: [technique_correctness, fallback_quality]
     agents: [innovation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
 
   - name: Innovation Accordion Dropdown
     file: innovation-accordion-dropdown.html
@@ -100,6 +168,10 @@ references:
     criteria: [technique_correctness, fallback_quality]
     agents: [innovation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
 
   - name: Innovation AMP Email
     file: innovation-amp-email.html
@@ -108,6 +180,10 @@ references:
     criteria: [technique_correctness, fallback_quality]
     agents: [innovation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: fail
+      dark_mode: fail
 
   - name: Innovation Kinetic Hover
     file: innovation-kinetic-hover.html
@@ -116,3 +192,7 @@ references:
     criteria: [technique_correctness, fallback_quality]
     agents: [innovation]
     verified: "2026-03-29"
+    expected_qa:
+      html_validation: pass
+      css_support: pass
+      dark_mode: fail
