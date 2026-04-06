@@ -71,6 +71,8 @@ class TextBlock:
     style_runs: tuple[StyleRun, ...] = ()
     text_transform: str | None = None  # uppercase|lowercase|capitalize
     text_decoration: str | None = None  # underline|line-through
+    source_frame_id: str | None = None  # Parent frame that contains this text
+    role_hint: str | None = None  # "heading" | "body" | "label" | "cta"
 
 
 @dataclass(frozen=True)
@@ -113,6 +115,21 @@ class ColumnGroup:
 
 
 @dataclass(frozen=True)
+class ContentGroup:
+    """A visually distinct content block within a section.
+
+    Preserves the parent-child grouping of text, images, and buttons
+    that belong together (e.g., one "reason" block with icon + heading + body).
+    """
+
+    frame_node_id: str
+    frame_name: str
+    texts: list[TextBlock] = field(default_factory=list)
+    images: list[ImagePlaceholder] = field(default_factory=list)
+    buttons: list[ButtonElement] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class EmailSection:
     """A detected email section with its content."""
 
@@ -140,6 +157,7 @@ class EmailSection:
     vlm_classification: str | None = None
     vlm_confidence: float | None = None
     content_roles: tuple[str, ...] = ()
+    child_content_groups: list[ContentGroup] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -298,6 +316,10 @@ def analyze_layout(
         button_node_ids = _collect_button_node_ids(buttons)
         texts = _detect_content_hierarchy(_extract_texts(node, exclude_node_ids=button_node_ids))
         images = _extract_images(node)
+        roles = _compute_content_roles(texts, images, buttons)
+
+        # Extract child content groups (preserves parent-child structure)
+        child_groups = _extract_content_groups(node, button_name_hints=button_name_hints)
 
         sections.append(
             EmailSection(
@@ -322,6 +344,8 @@ def analyze_layout(
                 classification_confidence=classification_confidence,
                 vlm_classification=vlm_type_str,
                 vlm_confidence=vlm_conf,
+                content_roles=roles,
+                child_content_groups=child_groups,
             )
         )
 
@@ -1067,6 +1091,110 @@ def _has_large_image_child(node: DesignNode, *, _depth: int = 0) -> bool:
             return True
 
     return False
+
+
+def _compute_content_roles(
+    texts: list[TextBlock],
+    images: list[ImagePlaceholder],
+    buttons: list[ButtonElement],
+) -> tuple[str, ...]:
+    """Derive content role hints from section content (design-agnostic)."""
+    roles: list[str] = []
+    has_icon = any(
+        img.width is not None and img.width <= 64 and img.height is not None and img.height <= 64
+        for img in images
+    )
+    if texts and not images and not buttons:
+        roles.append("text-only")
+    if has_icon and texts:
+        roles.append("text-with-icon")
+    if images and texts:
+        large_imgs = [i for i in images if i.width is not None and i.width > 200]
+        if large_imgs:
+            roles.append("editorial")
+    # Event-like: multiple short labeled lines
+    short_labeled = [t for t in texts if len(t.content) < 80 and ":" in t.content]
+    if len(short_labeled) >= 2:
+        roles.append("event-info")
+    return tuple(roles)
+
+
+def _assign_role_hints(texts: list[TextBlock], frame_id: str) -> list[TextBlock]:
+    """Assign role_hint and source_frame_id to text blocks within a group."""
+    if not texts:
+        return texts
+    sizes = [t.font_size for t in texts if t.font_size is not None]
+    if not sizes:
+        return [dataclasses.replace(t, source_frame_id=frame_id, role_hint="body") for t in texts]
+
+    max_size = max(sizes)
+    median_size = statistics.median(sizes)
+    label_threshold = min(14.0, median_size * 0.7)
+
+    result: list[TextBlock] = []
+    for t in texts:
+        hint = "body"
+        if t.font_size is not None:
+            if t.font_size >= max_size and t.font_size > median_size * 1.2:
+                hint = "heading"
+            elif t.font_size <= label_threshold:
+                hint = "label"
+        result.append(dataclasses.replace(t, source_frame_id=frame_id, role_hint=hint))
+    return result
+
+
+_GROUPABLE_TYPES = frozenset(
+    {
+        DesignNodeType.FRAME,
+        DesignNodeType.GROUP,
+        DesignNodeType.COMPONENT,
+    }
+)
+
+
+def _extract_content_groups(
+    node: DesignNode,
+    *,
+    button_name_hints: list[str] | None = None,
+) -> list[ContentGroup]:
+    """Extract content groups from direct child frames of a section node.
+
+    Each direct child FRAME/GROUP/COMPONENT that contains at least one TEXT or IMAGE
+    node becomes a ContentGroup.  This preserves the parent-child relationship that
+    flat extraction loses.
+
+    Only produces groups when the section has 2+ qualifying child frames — if there's
+    only one child frame (or all content is at the root level), returns empty list
+    to signal the caller should use flat extraction.
+    """
+    groups: list[ContentGroup] = []
+    for child in node.children:
+        if child.type not in _GROUPABLE_TYPES:
+            continue
+
+        buttons = _extract_buttons(child, extra_hints=button_name_hints)
+        button_ids = _collect_button_node_ids(buttons)
+        texts = _extract_texts(child, exclude_node_ids=button_ids)
+        images = _extract_images(child)
+
+        if not texts and not images and not buttons:
+            continue
+
+        texts = _assign_role_hints(texts, child.id)
+
+        groups.append(
+            ContentGroup(
+                frame_node_id=child.id,
+                frame_name=child.name,
+                texts=texts,
+                images=images,
+                buttons=buttons,
+            )
+        )
+
+    if len(groups) < 2:
+        return []
+    return groups
 
 
 def _detect_content_hierarchy(texts: list[TextBlock]) -> list[TextBlock]:

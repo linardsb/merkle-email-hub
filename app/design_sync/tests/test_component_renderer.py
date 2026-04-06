@@ -226,6 +226,153 @@ class TestTokenOverrides:
         assert "via.placeholder.com" not in result.html
 
 
+class TestTokenOverrideExpansion:
+    """Tests for 49.4: expanded element-type matching for token overrides."""
+
+    def test_heading_font_override_headline_slot(self, renderer: ComponentRenderer) -> None:
+        """data-slot="headline" (hero-block) gets heading font override."""
+        match = _make_match(
+            "hero-block",
+            overrides=[TokenOverride("font-family", "_heading", "Helvetica, sans-serif")],
+        )
+        result = renderer.render_section(match)
+        assert "Helvetica, sans-serif" in result.html
+
+    def test_heading_font_override_title_slot(self, renderer: ComponentRenderer) -> None:
+        """data-slot="title" (product-card) gets heading font override."""
+        match = _make_match(
+            "product-card",
+            overrides=[TokenOverride("font-family", "_heading", "Georgia, serif")],
+        )
+        result = renderer.render_section(match)
+        assert "Georgia, serif" in result.html
+
+    def test_body_font_override_body_text_slot(self, renderer: ComponentRenderer) -> None:
+        """data-slot="body_text" (article-card) gets body font override."""
+        match = _make_match(
+            "article-card",
+            overrides=[TokenOverride("font-family", "_body", "Verdana, sans-serif")],
+        )
+        result = renderer.render_section(match)
+        assert "Verdana, sans-serif" in result.html
+
+    def test_body_font_override_description_slot(self, renderer: ComponentRenderer) -> None:
+        """data-slot="description" (event-card) gets body font override."""
+        match = _make_match(
+            "event-card",
+            overrides=[TokenOverride("font-family", "_body", "Trebuchet MS, sans-serif")],
+        )
+        result = renderer.render_section(match)
+        assert "Trebuchet MS, sans-serif" in result.html
+
+    def test_heading_font_override_by_class(self, renderer: ComponentRenderer) -> None:
+        """Elements with heading semantic class (no data-slot) get font override."""
+        html_str = (
+            '<td class="hero-title" style="font-family:Arial;font-size:32px;color:#333;">'
+            "Heading</td>"
+        )
+        overrides = [TokenOverride("font-family", "_heading", "Helvetica")]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert "font-family:Helvetica" in result
+        assert "font-family:Arial" not in result
+
+    def test_body_font_override_by_class(self, renderer: ComponentRenderer) -> None:
+        """Elements with body semantic class (no data-slot) get font override."""
+        html_str = (
+            '<td class="textblock-body" style="font-family:Arial;font-size:16px;color:#555;">'
+            "Body text</td>"
+        )
+        overrides = [TokenOverride("font-family", "_body", "Verdana")]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert "font-family:Verdana" in result
+        assert "font-family:Arial" not in result
+
+    def test_heading_color_override_by_class(self, renderer: ComponentRenderer) -> None:
+        """Elements with heading semantic class get color override."""
+        html_str = (
+            '<td class="artcard-heading" style="font-size:24px;color:#333333;font-weight:bold;">'
+            "Title</td>"
+        )
+        overrides = [TokenOverride("color", "_heading", "#000000")]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert "color:#000000" in result
+        assert "color:#333333" not in result
+
+    def test_body_color_override_by_class(self, renderer: ComponentRenderer) -> None:
+        """Elements with body semantic class get color override."""
+        html_str = '<td class="product-desc" style="font-size:14px;color:#555555;">Description</td>'
+        overrides = [TokenOverride("color", "_body", "#222222")]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert "color:#222222" in result
+        assert "color:#555555" not in result
+
+    def test_heading_size_override(self, renderer: ComponentRenderer) -> None:
+        """data-slot="heading" gets font-size override."""
+        match = _make_match(
+            "text-block",
+            overrides=[TokenOverride("font-size", "_heading", "28px")],
+        )
+        result = renderer.render_section(match)
+        assert "font-size:28px" in result.html
+
+    def test_body_size_override(self, renderer: ComponentRenderer) -> None:
+        """data-slot="body" gets font-size override."""
+        match = _make_match(
+            "text-block",
+            overrides=[TokenOverride("font-size", "_body", "18px")],
+        )
+        result = renderer.render_section(match)
+        assert "font-size:18px" in result.html
+
+    def test_size_override_by_class(self, renderer: ComponentRenderer) -> None:
+        """Elements with heading semantic class get font-size override."""
+        html_str = (
+            '<td class="hero-title" style="font-family:Arial;font-size:32px;color:#333;">'
+            "Heading</td>"
+        )
+        overrides = [TokenOverride("font-size", "_heading", "40px")]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert "font-size:40px" in result
+        assert "font-size:32px" not in result
+
+    def test_bg_class_color_override(self, renderer: ComponentRenderer) -> None:
+        """Elements with bg container class get background-color override."""
+        html_str = (
+            '<table class="textblock-bg" style="background-color:#ffffff;" '
+            'role="presentation"><tr><td>Content</td></tr></table>'
+        )
+        overrides = [TokenOverride("background-color", "_outer", "#f5f0e8")]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert "background-color:#f5f0e8" in result
+        assert "background-color:#ffffff" not in result
+
+    def test_no_match_unchanged(self, renderer: ComponentRenderer) -> None:
+        """Elements with no data-slot and no semantic class are unchanged."""
+        html_str = (
+            '<td class="custom-unknown" style="font-family:Arial;font-size:16px;color:#555;">'
+            "Text</td>"
+        )
+        overrides = [
+            TokenOverride("font-family", "_heading", "Helvetica"),
+            TokenOverride("color", "_body", "#000000"),
+        ]
+        result = renderer._apply_token_overrides(html_str, overrides)
+        assert result == html_str
+
+    def test_data_slot_heading_regression(self, renderer: ComponentRenderer) -> None:
+        """Original data-slot='heading' still works after expansion (regression)."""
+        match = _make_match(
+            "text-block",
+            overrides=[
+                TokenOverride("font-family", "_heading", "Georgia, serif"),
+                TokenOverride("color", "_heading", "#112233"),
+            ],
+        )
+        result = renderer.render_section(match)
+        assert "Georgia, serif" in result.html
+        assert "color:#112233" in result.html
+
+
 class TestAnnotations:
     def test_section_comment_marker(self, renderer: ComponentRenderer) -> None:
         match = _make_match("text-block", idx=3)

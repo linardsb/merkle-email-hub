@@ -526,9 +526,9 @@
 > **Why now:** Phase 48 improves how agents compose downstream. But the design-sync converter is upstream — it produces the initial HTML that agents then refine. If the initial conversion is 40% wrong (missing sections, wrong components, placeholder text), no amount of downstream agent orchestration can recover. This phase fixes the foundation.
 
 - [x] ~~49.1 Sibling pattern detector — repeated-content grouping~~ DONE
-- [ ] 49.2 Repeating-group renderer — multi-instance template rendering
-- [ ] 49.3 Section-to-component classification improvements
-- [ ] 49.4 Token override element-type expansion
+- [x] ~~49.2 Repeating-group renderer — multi-instance template rendering~~ DONE
+- [x] ~~49.3 Section-to-component classification improvements~~ DONE
+- [x] ~~49.4 Token override element-type expansion~~ DONE
 - [ ] 49.5 Per-node slot content extraction fidelity
 - [ ] 49.6 Per-email token scoping from shared Figma files
 - [ ] 49.7 CTA fidelity — button color/shape extraction
@@ -621,7 +621,7 @@ Each inner section is `<tr><td style="padding: 16px 24px 0">` (first item uses `
 
 ---
 
-### 49.3 Section-to-Component Classification Improvements `[Backend]`
+### ~~49.3 Section-to-Component Classification Improvements `[Backend]`~~ DONE
 
 **What:** Improve section classification and component matching to reduce wrong-component selection from ~60% to <15% on real designs. Add heuristics for distinguishing text-block from editorial, col-icon from article-card, full-width-image from image-block, and event-card from text-block.
 **Why:** The converter matched 6/12 sections to the wrong component on the REFRAME 2025 test. Key confusions: intro text (1-col) classified as editorial-2 (2-col) because a nearby image got included; icon+text blocks classified as article-card instead of col-icon; full-width images falling to image-block (which adds spurious captions); event details missing the event-card extended matcher.
@@ -1026,9 +1026,9 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 | Subtask | Scope | Dependencies | Track | Status |
 |---------|-------|--------------|-------|--------|
 | 49.1 Sibling pattern detector | `app/design_sync/sibling_detector.py` (new) | None | A | DONE |
-| 49.2 Repeating-group renderer | `component_renderer.py`, `converter_service.py` | 49.1 | A | |
-| 49.3 Classification improvements | `component_matcher.py`, `layout_analyzer.py` | None | B | |
-| 49.4 Token override expansion | `component_renderer.py` | None | B | |
+| 49.2 Repeating-group renderer | `component_renderer.py`, `converter_service.py` | 49.1 | A | DONE |
+| 49.3 Classification improvements | `component_matcher.py`, `layout_analyzer.py` | None | B | DONE |
+| 49.4 Token override expansion | `component_renderer.py`, `component_matcher.py` | None | B | DONE |
 | 49.5 Slot content extraction | `layout_analyzer.py`, `component_matcher.py` | None | C | |
 | 49.6 Per-email token scoping | `figma/service.py`, `converter_service.py` | None | C | |
 | 49.7 CTA fidelity | `layout_analyzer.py`, `component_matcher.py`, `component_renderer.py` | 49.4 | B | |

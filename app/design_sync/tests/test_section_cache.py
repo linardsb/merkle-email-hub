@@ -496,7 +496,16 @@ class TestConverterCacheIntegration:
                                     height=24.0,
                                     x=20.0,
                                     y=20.0,
-                                )
+                                ),
+                                DesignNode(
+                                    id="img1",
+                                    name="Logo Image",
+                                    type=DesignNodeType.IMAGE,
+                                    width=120.0,
+                                    height=40.0,
+                                    x=200.0,
+                                    y=10.0,
+                                ),
                             ],
                         ),
                         DesignNode(

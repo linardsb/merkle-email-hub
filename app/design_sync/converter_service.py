@@ -716,7 +716,55 @@ class DesignConverterService:
             ds_settings.custom_component_enabled and ds_settings.custom_component_max_per_email > 0
         )
 
-        for match in matches:
+        # Track which groups have already been rendered (49.2)
+        rendered_group_ids: set[int] = set()
+
+        for flat_idx, match in enumerate(matches):
+            # Check if this section belongs to a repeating group (49.2)
+            group = group_map.get(flat_idx)
+
+            if group is not None:
+                # Skip if we already rendered this group
+                if id(group) in rendered_group_ids:
+                    continue
+                rendered_group_ids.add(id(group))
+
+                # Collect all matches for sections in this group
+                group_matches: list[ComponentMatch] = []
+                for inner_idx, inner_match in enumerate(matches):
+                    if group_map.get(inner_idx) is group:
+                        group_matches.append(inner_match)
+
+                # Check cache for group (keyed by first member's node_id)
+                first_nid = group_matches[0].section.node_id
+                group_cached = cached_entries.get(first_nid)
+                if group_cached is not None:
+                    section_parts.append(group_cached.html)
+                    all_images.extend(group_cached.images)
+                    hit_count += len(group_matches)
+                    continue
+
+                rendered_group = renderer.render_repeating_group(group, group_matches)
+                section_parts.append(rendered_group.html)
+                all_images.extend(rendered_group.images)
+                miss_count += len(group_matches)
+
+                # Store group result in cache keyed by first member's node_id
+                if (
+                    cache is not None
+                    and connection_id is not None
+                    and section_hashes
+                    and first_nid in section_hashes
+                ):
+                    entry = SectionCacheEntry(
+                        html=rendered_group.html,
+                        images=tuple(rendered_group.images),
+                        generated_at=datetime.now(UTC).isoformat(),
+                    )
+                    cache.set_sync(connection_id, section_hashes[first_nid], entry)
+                continue
+
+            # --- Single-section rendering (unchanged) ---
             node_id = match.section.node_id
             cached_entry = cached_entries.get(node_id)
 
@@ -762,7 +810,7 @@ class DesignConverterService:
                     )
                     cache.set_sync(connection_id, section_hashes[node_id], entry)
 
-            # Inter-section spacer
+            # Inter-section spacer (only for non-group sections)
             if match.spacing_after and match.spacing_after > 0:
                 spacer_h = int(match.spacing_after)
                 section_parts.append(

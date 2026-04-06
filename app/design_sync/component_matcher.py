@@ -7,13 +7,17 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from app.core.logging import get_logger
 from app.design_sync.figma.layout_analyzer import (
     ColumnGroup,
     ColumnLayout,
+    ContentGroup,
     EmailSection,
     EmailSectionType,
     TextBlock,
 )
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -302,9 +306,19 @@ def _score_candidates(
     if img_count == 2 and text_count <= 1:
         candidates.append(("image-grid", 0.85))
 
-    # editorial-2: single column group with mixed image+text (editorial layout)
-    if len(col_groups) == 1 and col_groups[0].images and col_groups[0].texts:
-        candidates.append(("editorial-2", 0.92))
+    # editorial-2: needs genuine two-column structure, not just one col_group
+    # with mixed content. Two signals: (a) ≥2 col_groups each contributing content,
+    # or (b) 1 col_group that is narrow enough to be a real column (<70% of section width).
+    if len(col_groups) >= 2:
+        groups_with_content = sum(1 for g in col_groups if (g.images or g.texts))
+        if groups_with_content >= 2:
+            candidates.append(("editorial-2", 0.92))
+    elif len(col_groups) == 1 and col_groups[0].images and col_groups[0].texts:
+        cg = col_groups[0]
+        section_w = section.width or 600
+        cg_is_narrow = cg.width is None or cg.width < section_w * 0.7
+        if cg_is_narrow:
+            candidates.append(("editorial-2", 0.92))
 
     # article-card: 1 image + text, single column (no multi-column groups)
     if img_count == 1 and text_count >= 1 and len(col_groups) <= 1:
@@ -317,9 +331,14 @@ def _score_candidates(
     if is_category_nav:
         candidates.append(("category-nav", 0.7))
 
-    # image-block: single image, no text
+    # full-width-image vs image-block: differentiate by image width relative to section
     if img_count == 1 and not has_texts:
-        candidates.append(("image-block", 1.0))
+        img = section.images[0]
+        section_w = section.width or 600
+        if img.width is not None and img.width >= section_w * 0.8:
+            candidates.append(("full-width-image", 1.0))
+        else:
+            candidates.append(("image-block", 1.0))
 
     # text-block: generic text-only fallback (skip when category-nav is more specific)
     if has_texts and not has_images and not is_category_nav:
@@ -351,6 +370,11 @@ _DATE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _QUOTE_CHARS = {"\u0022", "\u201c", "\u201d", "\u2018", "\u2019"}
+_EVENT_KEYWORD_PATTERN = re.compile(
+    r"\b(?:date|time|location|venue|where|when|address|doors?\s+open)\s*:",
+    re.IGNORECASE,
+)
+_TIME_OF_DAY_PATTERN = re.compile(r"\b\d{1,2}(?::\d{2})?\s*(?:am|pm|AM|PM)\b")
 
 
 def _score_extended_candidates(
@@ -414,9 +438,22 @@ def _score_extended_candidates(
             if 1.6 <= ratio <= 1.9:
                 candidates.append(("video-placeholder", 0.88))
 
-    # event-card: date pattern in text, images, texts
-    if has_images and has_texts and _DATE_PATTERN.search(all_text):
+    # event-card: structured event information (date/time/location patterns)
+    # Path A: explicit date pattern — works with or without images
+    if has_texts and _DATE_PATTERN.search(all_text):
         candidates.append(("event-card", 0.85))
+    # Path B: keyword-labeled event details (3+ short lines with event keywords)
+    elif has_texts and len(texts) >= 3:
+        short_texts = [t for t in texts if len(t.content) < 80]
+        if len(short_texts) >= 3:
+            keyword_hits = sum(
+                1
+                for t in short_texts
+                if _EVENT_KEYWORD_PATTERN.search(t.content)
+                or _TIME_OF_DAY_PATTERN.search(t.content)
+            )
+            if keyword_hits >= 2:
+                candidates.append(("event-card", 0.83))
 
     # faq-accordion: 3+ texts with ? in alternating items, no images
     if not has_images and len(texts) >= 3:
@@ -430,6 +467,18 @@ def _score_extended_candidates(
         mixed_count = sum(1 for g in col_groups if g.images and g.texts)
         if mixed_count >= 3:
             candidates.append(("zigzag-alternating", 0.9))
+
+    # col-icon: small icon image + short text group (icon-driven content block)
+    if len(images) == 1 and has_texts and 1 <= len(texts) <= 3:
+        img = images[0]
+        is_icon_sized = (
+            img.width is not None
+            and img.width <= 64
+            and img.height is not None
+            and img.height <= 64
+        )
+        if is_icon_sized:
+            candidates.append(("col-icon", 0.92))
 
     if not candidates:
         return ("text-block", 0.0)
@@ -515,8 +564,26 @@ def _build_slot_fills(
     }
     builder = builders.get(slug)
     if builder:
-        return builder(section, container_width, image_urls=image_urls)
+        fills = builder(section, container_width, image_urls=image_urls)
+        _log_default_fills(slug, section, fills)
+        return fills
     return []
+
+
+def _log_default_fills(
+    slug: str,
+    section: EmailSection,
+    fills: list[SlotFill],
+) -> None:
+    """Log warning when slot fills use default/placeholder values."""
+    for fill in fills:
+        if _is_placeholder(fill.value):
+            logger.warning(
+                "design_sync.slot_fill.default_used",
+                slot_name=fill.slot_id,
+                component_slug=slug,
+                section_node_id=section.node_id,
+            )
 
 
 # Type alias for slot builder functions
@@ -541,6 +608,26 @@ def _body_texts(texts: list[TextBlock]) -> list[TextBlock]:
 def _safe_text(text: str) -> str:
     """HTML-escape text content."""
     return html.escape(text, quote=False)
+
+
+def _headings_from_groups(groups: list[ContentGroup]) -> list[TextBlock]:
+    """Collect heading texts from content groups."""
+    result: list[TextBlock] = []
+    for g in groups:
+        for t in g.texts:
+            if t.role_hint == "heading" or t.is_heading:
+                result.append(t)
+    return result
+
+
+def _bodies_from_groups(groups: list[ContentGroup]) -> list[TextBlock]:
+    """Collect body texts from content groups, skipping placeholders."""
+    result: list[TextBlock] = []
+    for g in groups:
+        for t in g.texts:
+            if t.role_hint != "heading" and not t.is_heading and not _is_placeholder(t.content):
+                result.append(t)
+    return result
 
 
 _PLACEHOLDER_PATTERNS = re.compile(
@@ -690,6 +777,8 @@ def _fills_hero(
     **_kw: object,
 ) -> list[SlotFill]:
     fills: list[SlotFill] = []
+    groups = section.child_content_groups
+
     # Background image
     if section.images:
         img = section.images[0]
@@ -700,14 +789,21 @@ def _fills_hero(
                 slot_type="image",
             )
         )
-    # Headline
-    heading = _first_heading(section.texts)
-    if heading:
-        fills.append(SlotFill("headline", _safe_text(heading.content)))
-    # Subtext
-    body = _first_body(section.texts)
-    if body:
-        fills.append(SlotFill("subtext", _safe_text(body.content)))
+    # Headline + Subtext
+    if groups:
+        headings = _headings_from_groups(groups)
+        bodies = _bodies_from_groups(groups)
+        if headings:
+            fills.append(SlotFill("headline", _safe_text(headings[0].content)))
+        if bodies:
+            fills.append(SlotFill("subtext", _safe_text(bodies[0].content)))
+    else:
+        heading = _first_heading(section.texts)
+        if heading:
+            fills.append(SlotFill("headline", _safe_text(heading.content)))
+        body = _first_body(section.texts)
+        if body:
+            fills.append(SlotFill("subtext", _safe_text(body.content)))
     # CTA
     if section.buttons:
         btn = section.buttons[0]
@@ -749,23 +845,36 @@ def _fills_text_block(
     **_kw: object,
 ) -> list[SlotFill]:
     fills: list[SlotFill] = []
-    heading = _first_heading(section.texts)
-    if heading:
-        fills.append(SlotFill("heading", _safe_text(heading.content)))
-    bodies = _body_texts(section.texts)
-    if bodies:
-        body_parts = [_safe_text(b.content) for b in bodies if not _is_placeholder(b.content)]
-        if body_parts:
+    groups = section.child_content_groups
+
+    if groups:
+        all_headings = _headings_from_groups(groups)
+        all_bodies = _bodies_from_groups(groups)
+        if all_headings:
+            fills.append(SlotFill("heading", _safe_text(all_headings[0].content)))
+        if all_bodies:
+            body_parts = [_safe_text(b.content) for b in all_bodies]
             fills.append(SlotFill("body", "<br><br>".join(body_parts)))
-    elif not heading and section.texts:
-        # All texts are headings — use first as heading, rest as body
-        fills.append(SlotFill("heading", _safe_text(section.texts[0].content)))
-        if len(section.texts) > 1:
-            body_parts = [
-                _safe_text(t.content) for t in section.texts[1:] if not _is_placeholder(t.content)
-            ]
+    else:
+        heading = _first_heading(section.texts)
+        if heading:
+            fills.append(SlotFill("heading", _safe_text(heading.content)))
+        bodies = _body_texts(section.texts)
+        if bodies:
+            body_parts = [_safe_text(b.content) for b in bodies if not _is_placeholder(b.content)]
             if body_parts:
                 fills.append(SlotFill("body", "<br><br>".join(body_parts)))
+        elif not heading and section.texts:
+            # All texts are headings — use first as heading, rest as body
+            fills.append(SlotFill("heading", _safe_text(section.texts[0].content)))
+            if len(section.texts) > 1:
+                body_parts = [
+                    _safe_text(t.content)
+                    for t in section.texts[1:]
+                    if not _is_placeholder(t.content)
+                ]
+                if body_parts:
+                    fills.append(SlotFill("body", "<br><br>".join(body_parts)))
 
     # Append CTA button HTML to body slot (text-block has no dedicated CTA slot)
     if section.buttons:
@@ -798,6 +907,8 @@ def _fills_article_card(
     **_kw: object,
 ) -> list[SlotFill]:
     fills: list[SlotFill] = []
+    groups = section.child_content_groups
+
     if section.images:
         img = section.images[0]
         fills.append(
@@ -808,14 +919,23 @@ def _fills_article_card(
             )
         )
         fills.append(SlotFill("image_alt", img.node_name))
-    heading = _first_heading(section.texts)
-    if heading:
-        fills.append(SlotFill("heading", _safe_text(heading.content)))
-    bodies = _body_texts(section.texts)
-    if bodies:
-        body_parts = [_safe_text(b.content) for b in bodies if not _is_placeholder(b.content)]
-        if body_parts:
+    if groups:
+        headings = _headings_from_groups(groups)
+        bodies = _bodies_from_groups(groups)
+        if headings:
+            fills.append(SlotFill("heading", _safe_text(headings[0].content)))
+        if bodies:
+            body_parts = [_safe_text(b.content) for b in bodies]
             fills.append(SlotFill("body_text", "<br><br>".join(body_parts)))
+    else:
+        heading = _first_heading(section.texts)
+        if heading:
+            fills.append(SlotFill("heading", _safe_text(heading.content)))
+        bodies = _body_texts(section.texts)
+        if bodies:
+            body_parts = [_safe_text(b.content) for b in bodies if not _is_placeholder(b.content)]
+            if body_parts:
+                fills.append(SlotFill("body_text", "<br><br>".join(body_parts)))
     if section.buttons:
         btn = section.buttons[0]
         fills.append(SlotFill("cta_text", _safe_text(btn.text)))
@@ -1047,6 +1167,13 @@ def _build_column_fills(
             image_urls=image_urls,
         )
 
+    # Use child_content_groups when column_groups are absent (one group per column)
+    if section.child_content_groups:
+        return _build_column_fills_from_content_groups(
+            section.child_content_groups,
+            image_urls=image_urls,
+        )
+
     # Fallback: distribute content round-robin across columns
     fills: list[SlotFill] = []
     col_count = section.column_count or 2
@@ -1098,6 +1225,28 @@ def _build_column_fills_from_groups(
     return fills
 
 
+def _build_column_fills_from_content_groups(
+    groups: list[ContentGroup],
+    *,
+    image_urls: dict[str, str] | None = None,
+) -> list[SlotFill]:
+    """Build column fills from child content groups (one group per column)."""
+    fills: list[SlotFill] = []
+    for col_idx, group in enumerate(groups, 1):
+        col_group = ColumnGroup(
+            column_idx=col_idx,
+            node_id=group.frame_node_id,
+            node_name=group.frame_name,
+            texts=group.texts,
+            images=group.images,
+            buttons=group.buttons,
+        )
+        content = _build_column_fill_html(col_group, image_urls=image_urls)
+        if content:
+            fills.append(SlotFill(f"col_{col_idx}", content))
+    return fills
+
+
 def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
     """Extract token overrides from section properties."""
     overrides: list[TokenOverride] = []
@@ -1114,6 +1263,17 @@ def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
     for text in section.texts:
         if not text.is_heading and text.font_family:
             overrides.append(TokenOverride("font-family", "_body", text.font_family))
+            break
+
+    # Font-size overrides from typography
+    for text in section.texts:
+        if text.is_heading and text.font_size:
+            overrides.append(TokenOverride("font-size", "_heading", f"{text.font_size}px"))
+            break
+
+    for text in section.texts:
+        if not text.is_heading and text.font_size:
+            overrides.append(TokenOverride("font-size", "_body", f"{text.font_size}px"))
             break
 
     # Text color overrides (validate hex to prevent CSS injection)

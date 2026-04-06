@@ -9,8 +9,15 @@ from typing import Any
 
 from app.core.logging import get_logger
 from app.design_sync.component_matcher import ComponentMatch, SlotFill, TokenOverride
+from app.design_sync.sibling_detector import RepeatingGroup
 
 logger = get_logger(__name__)
+
+_PLACEHOLDER_IN_OUTPUT_RE = re.compile(
+    r'data-slot="([^"]*)"[^>]*>'
+    r"\s*(?:Section Heading|Editorial heading|Image caption|Lorem ipsum)",
+    re.IGNORECASE,
+)
 
 # Lazy-loaded to avoid circular imports
 _SEED_CACHE: dict[str, dict[str, Any]] | None = None
@@ -39,6 +46,132 @@ class RenderedSection:
     images: list[dict[str, str]] = field(default_factory=list)
     propagated_bgcolor: str | None = None
 
+
+@dataclass(frozen=True)
+class _GroupSpacing:
+    """Resolved padding for items within a repeating group."""
+
+    first_top: int
+    subsequent_top: int
+    horizontal: int
+
+
+def _resolve_item_spacing(group: RepeatingGroup) -> _GroupSpacing:
+    """Derive item spacing from group metadata or section padding."""
+    if group.container_padding is not None:
+        top, right, _bottom, _left = group.container_padding
+        return _GroupSpacing(first_top=int(top), subsequent_top=int(top), horizontal=int(right))
+
+    # Infer from first section's padding
+    first = group.sections[0]
+    top = int(first.padding_top or 20)
+    horiz = int(first.padding_right or first.padding_left or 24)
+    subsequent = int(first.item_spacing or 16)
+    return _GroupSpacing(first_top=top, subsequent_top=subsequent, horizontal=horiz)
+
+
+# --- Token override element-type expansion (49.4) ---
+
+# Heading-like data-slot values
+_HEADING_SLOTS = r"heading|headline|title"
+# Body-like data-slot values
+_BODY_SLOTS = r"body|body_text|description|caption|subtext"
+
+# Heading-like semantic CSS classes
+_HEADING_CLASSES = (
+    "hero-title",
+    "textblock-heading",
+    "artcard-heading",
+    "product-title",
+    "col-icon-heading",
+    "event-name",
+)
+# Body-like semantic CSS classes
+_BODY_CLASSES = (
+    "hero-subtitle",
+    "textblock-body",
+    "artcard-body",
+    "product-desc",
+    "col-icon-body",
+    "event-detail",
+    "imgblock-caption",
+)
+
+_HEADING_CLASS_ALT = "|".join(re.escape(c) for c in _HEADING_CLASSES)
+_BODY_CLASS_ALT = "|".join(re.escape(c) for c in _BODY_CLASSES)
+
+# Pass 1: data-slot match (covers all heading/body slot naming variants)
+_HEADING_SLOT_FONT_RE = re.compile(
+    rf'(<td\b[^>]*data-slot="(?:{_HEADING_SLOTS})"[^>]*style="[^"]*?)'
+    r"font-family:\s*[^;\"]+([;\"\'])"
+)
+_BODY_SLOT_FONT_RE = re.compile(
+    rf'(<td\b[^>]*data-slot="(?:{_BODY_SLOTS})"[^>]*style="[^"]*?)'
+    r"font-family:\s*[^;\"]+([;\"\'])"
+)
+_HEADING_SLOT_COLOR_RE = re.compile(
+    rf'(<td\b[^>]*data-slot="(?:{_HEADING_SLOTS})"[^>]*style="[^"]*?)'
+    r"(?<!-)color:\s*[^;\"]+([;\"\'])"
+)
+_BODY_SLOT_COLOR_RE = re.compile(
+    rf'(<td\b[^>]*data-slot="(?:{_BODY_SLOTS})"[^>]*style="[^"]*?)'
+    r"(?<!-)color:\s*[^;\"]+([;\"\'])"
+)
+_HEADING_SLOT_SIZE_RE = re.compile(
+    rf'(<td\b[^>]*data-slot="(?:{_HEADING_SLOTS})"[^>]*style="[^"]*?)'
+    r"font-size:\s*[^;\"]+([;\"\'])"
+)
+_BODY_SLOT_SIZE_RE = re.compile(
+    rf'(<td\b[^>]*data-slot="(?:{_BODY_SLOTS})"[^>]*style="[^"]*?)'
+    r"font-size:\s*[^;\"]+([;\"\'])"
+)
+
+# Pass 2: semantic class match (elements without data-slot)
+_HEADING_CLASS_FONT_RE = re.compile(
+    rf'(<(?:td|th|a|span)\b[^>]*class="[^"]*(?:{_HEADING_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"font-family:\s*[^;\"]+([;\"\'])"
+)
+_BODY_CLASS_FONT_RE = re.compile(
+    rf'(<(?:td|th|a|span)\b[^>]*class="[^"]*(?:{_BODY_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"font-family:\s*[^;\"]+([;\"\'])"
+)
+_HEADING_CLASS_COLOR_RE = re.compile(
+    rf'(<(?:td|th|a|span)\b[^>]*class="[^"]*(?:{_HEADING_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"(?<!-)color:\s*[^;\"]+([;\"\'])"
+)
+_BODY_CLASS_COLOR_RE = re.compile(
+    rf'(<(?:td|th|a|span)\b[^>]*class="[^"]*(?:{_BODY_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"(?<!-)color:\s*[^;\"]+([;\"\'])"
+)
+_HEADING_CLASS_SIZE_RE = re.compile(
+    rf'(<(?:td|th|a|span)\b[^>]*class="[^"]*(?:{_HEADING_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"font-size:\s*[^;\"]+([;\"\'])"
+)
+_BODY_CLASS_SIZE_RE = re.compile(
+    rf'(<(?:td|th|a|span)\b[^>]*class="[^"]*(?:{_BODY_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"font-size:\s*[^;\"]+([;\"\'])"
+)
+
+# Background container classes on outer <table>
+_BG_CLASSES = (
+    "textblock-bg",
+    "artcard-bg",
+    "col2-bg",
+    "col3-bg",
+    "col4-bg",
+    "revcol-bg",
+    "header-bg",
+    "footer-bg",
+    "navbar-bg",
+    "logoheader-bg",
+    "social-bg",
+    "preheader-bg",
+)
+_BG_CLASS_ALT = "|".join(re.escape(c) for c in _BG_CLASSES)
+_BG_CLASS_BGCOLOR_RE = re.compile(
+    rf'(<(?:table|td)\b[^>]*class="[^"]*(?:{_BG_CLASS_ALT})[^"]*"[^>]*style="[^"]*?)'
+    r"background-color:\s*[^;\"]+([;\"\'])"
+)
 
 _SLOT_ATTR_RE = re.compile(r'data-slot="([^"]+)"')
 
@@ -140,6 +273,93 @@ class ComponentRenderer:
             self.load()
         return [self.render_section(m) for m in matches]
 
+    def render_repeating_group(
+        self,
+        group: RepeatingGroup,
+        matches: list[ComponentMatch],
+    ) -> RenderedSection:
+        """Render a repeating group as N instances wrapped in a container table."""
+        if not self._loaded:
+            self.load()
+
+        if not matches:
+            return RenderedSection(
+                html="",
+                component_slug="repeating-group",
+                section_idx=0,
+                dark_mode_classes=(),
+                images=[],
+            )
+
+        # Single-section group: render without wrapper
+        if len(matches) == 1:
+            return self.render_section(matches[0])
+
+        # Render each inner section individually
+        rendered_items: list[RenderedSection] = []
+        for match in matches:
+            rendered_items.append(self.render_section(match))
+
+        # Determine spacing
+        item_spacing = _resolve_item_spacing(group)
+
+        # Build inner rows
+        rows: list[str] = []
+        all_dark_classes: set[str] = set()
+        all_images: list[dict[str, str]] = []
+
+        for i, rendered in enumerate(rendered_items):
+            top_px = item_spacing.first_top if i == 0 else item_spacing.subsequent_top
+            padding = f"{top_px}px {item_spacing.horizontal}px 0"
+            rows.append(
+                f'<tr>\n  <td style="padding:{padding}">\n    {rendered.html}\n  </td>\n</tr>'
+            )
+            all_dark_classes.update(rendered.dark_mode_classes)
+            all_images.extend(rendered.images)
+
+        rows_html = "\n".join(rows)
+
+        # Container bgcolor
+        bgcolor = group.container_bgcolor or ""
+        bgcolor_attr = f' bgcolor="{bgcolor}"' if bgcolor else ""
+        bgcolor_style = f"background-color:{bgcolor};" if bgcolor else ""
+
+        # Dark mode class for container bgcolor
+        container_dm_class = ""
+        if bgcolor:
+            safe = bgcolor.lstrip("#").upper()
+            container_dm_class = f"bgcolor-{safe}"
+            all_dark_classes.add(container_dm_class)
+
+        class_attr = f' class="{container_dm_class}"' if container_dm_class else ""
+
+        # Container width
+        container_width = self._container_width
+
+        # Build wrapped HTML with MSO ghost table
+        wrapped = (
+            f"<!--[if mso]>\n"
+            f'<table role="presentation" width="{container_width}" align="center" '
+            f'cellpadding="0" cellspacing="0" border="0"><tr><td>\n'
+            f"<![endif]-->\n"
+            f'<table role="presentation"{class_attr} width="100%" '
+            f'cellpadding="0" cellspacing="0" border="0" '
+            f'style="{bgcolor_style}"{bgcolor_attr}>\n'
+            f"{rows_html}\n"
+            f"</table>\n"
+            f"<!--[if mso]>\n"
+            f"</td></tr></table>\n"
+            f"<![endif]-->"
+        )
+
+        return RenderedSection(
+            html=wrapped,
+            component_slug="repeating-group",
+            section_idx=matches[0].section_idx,
+            dark_mode_classes=tuple(sorted(all_dark_classes)),
+            images=all_images,
+        )
+
     def _fill_slots(
         self,
         template_html: str,
@@ -192,6 +412,14 @@ class ComponentRenderer:
                 result = self._fill_cta_slot(result, slot_id, fill)
             else:
                 result = self._fill_text_slot(result, slot_id, fill)
+
+        # Warn on known placeholder patterns surviving in output
+        for m in _PLACEHOLDER_IN_OUTPUT_RE.finditer(result):
+            logger.warning(
+                "design_sync.renderer.placeholder_in_output",
+                slot_id=m.group(1),
+                component_slug=slug,
+            )
 
         return result
 
@@ -309,6 +537,8 @@ class ComponentRenderer:
             if target == "_outer":
                 # Replace on the first/outermost table or element with the property
                 result = self._replace_first_css_prop(result, prop, val)
+                if prop == "background-color":
+                    result = self._replace_bg_class_color(result, val)
             elif target == "_heading" and prop == "font-family":
                 result = self._replace_heading_font(result, val)
             elif target == "_heading" and prop == "color":
@@ -317,6 +547,10 @@ class ComponentRenderer:
                 result = self._replace_body_font(result, val)
             elif target == "_body" and prop == "color":
                 result = self._replace_body_color(result, val)
+            elif target == "_heading" and prop == "font-size":
+                result = self._replace_heading_size(result, val)
+            elif target == "_body" and prop == "font-size":
+                result = self._replace_body_size(result, val)
             elif target == "_cell":
                 # Replace padding on the first td with padding
                 result = self._replace_first_css_prop(result, prop, val)
@@ -329,34 +563,58 @@ class ComponentRenderer:
         return re.sub(pattern, rf"\g<1>{prop}:{value}\g<2>", html_str, count=1)
 
     def _replace_heading_font(self, html_str: str, font: str) -> str:
-        """Replace font-family on heading td elements (data-slot="heading")."""
-        safe_font = html.escape(font, quote=True)
-        pattern = r'(<td\b[^>]*data-slot="heading"[^>]*style="[^"]*?)font-family:\s*[^;"]+([;"\'])'
-        return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
+        """Replace font-family on heading elements (data-slot or semantic class)."""
+        safe = html.escape(font, quote=True)
+        repl = rf"\g<1>font-family:{safe}\g<2>"
+        result = _HEADING_SLOT_FONT_RE.sub(repl, html_str)
+        return _HEADING_CLASS_FONT_RE.sub(repl, result)
 
     def _replace_body_font(self, html_str: str, font: str) -> str:
-        """Replace font-family on body td elements (data-slot="body")."""
-        safe_font = html.escape(font, quote=True)
-        pattern = r'(<td\b[^>]*data-slot="body"[^>]*style="[^"]*?)font-family:\s*[^;"]+([;"\'])'
-        return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
+        """Replace font-family on body elements (data-slot or semantic class)."""
+        safe = html.escape(font, quote=True)
+        repl = rf"\g<1>font-family:{safe}\g<2>"
+        result = _BODY_SLOT_FONT_RE.sub(repl, html_str)
+        return _BODY_CLASS_FONT_RE.sub(repl, result)
 
     def _replace_heading_color(self, html_str: str, color: str) -> str:
-        """Replace color on heading td elements (data-slot="heading").
+        """Replace color on heading elements (data-slot or semantic class).
 
         Uses negative lookbehind to avoid matching background-color:.
         """
         safe = html.escape(color, quote=True)
-        pattern = r'(<td\b[^>]*data-slot="heading"[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
-        return re.sub(pattern, rf"\g<1>color:{safe}\g<2>", html_str)
+        repl = rf"\g<1>color:{safe}\g<2>"
+        result = _HEADING_SLOT_COLOR_RE.sub(repl, html_str)
+        return _HEADING_CLASS_COLOR_RE.sub(repl, result)
 
     def _replace_body_color(self, html_str: str, color: str) -> str:
-        """Replace color on body td elements (data-slot="body").
+        """Replace color on body elements (data-slot or semantic class).
 
         Uses negative lookbehind to avoid matching background-color:.
         """
         safe = html.escape(color, quote=True)
-        pattern = r'(<td\b[^>]*data-slot="body"[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
-        return re.sub(pattern, rf"\g<1>color:{safe}\g<2>", html_str)
+        repl = rf"\g<1>color:{safe}\g<2>"
+        result = _BODY_SLOT_COLOR_RE.sub(repl, html_str)
+        return _BODY_CLASS_COLOR_RE.sub(repl, result)
+
+    def _replace_heading_size(self, html_str: str, size: str) -> str:
+        """Replace font-size on heading elements (data-slot or semantic class)."""
+        safe = html.escape(size, quote=True)
+        repl = rf"\g<1>font-size:{safe}\g<2>"
+        result = _HEADING_SLOT_SIZE_RE.sub(repl, html_str)
+        return _HEADING_CLASS_SIZE_RE.sub(repl, result)
+
+    def _replace_body_size(self, html_str: str, size: str) -> str:
+        """Replace font-size on body elements (data-slot or semantic class)."""
+        safe = html.escape(size, quote=True)
+        repl = rf"\g<1>font-size:{safe}\g<2>"
+        result = _BODY_SLOT_SIZE_RE.sub(repl, html_str)
+        return _BODY_CLASS_SIZE_RE.sub(repl, result)
+
+    def _replace_bg_class_color(self, html_str: str, color: str) -> str:
+        """Replace background-color on elements with background container classes."""
+        safe = html.escape(color, quote=True)
+        repl = rf"\g<1>background-color:{safe}\g<2>"
+        return _BG_CLASS_BGCOLOR_RE.sub(repl, html_str)
 
     _PLACEHOLDER_URL_RE = re.compile(
         r'(src|href)="https?://(?:via\.placeholder\.com|placehold\.co|placeholder\.com)[^"]*"'

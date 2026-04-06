@@ -31,6 +31,7 @@ def _make_section(
     buttons: list[ButtonElement] | None = None,
     column_layout: ColumnLayout = ColumnLayout.SINGLE,
     column_count: int = 1,
+    width: float | None = None,
     height: float | None = 200,
     bg_color: str | None = None,
     spacing_after: float | None = None,
@@ -39,6 +40,7 @@ def _make_section(
     padding_bottom: float | None = None,
     padding_left: float | None = None,
     column_groups: list[ColumnGroup] | None = None,
+    content_roles: tuple[str, ...] = (),
 ) -> EmailSection:
     return EmailSection(
         section_type=section_type,
@@ -49,6 +51,7 @@ def _make_section(
         buttons=buttons or [],
         column_layout=column_layout,
         column_count=column_count,
+        width=width,
         height=height,
         bg_color=bg_color,
         spacing_after=spacing_after,
@@ -57,6 +60,7 @@ def _make_section(
         padding_bottom=padding_bottom,
         padding_left=padding_left,
         column_groups=column_groups or [],
+        content_roles=content_roles,
     )
 
 
@@ -128,8 +132,13 @@ class TestMatchSectionType:
         m = match_section(s, 0)
         assert m.component_slug == "article-card"
 
-    def test_content_image_only(self) -> None:
-        s = _make_section(EmailSectionType.CONTENT, images=[_image()])
+    def test_content_image_only_full_width(self) -> None:
+        s = _make_section(EmailSectionType.CONTENT, images=[_image(w=600, h=400)])
+        m = match_section(s, 0)
+        assert m.component_slug == "full-width-image"
+
+    def test_content_image_only_small(self) -> None:
+        s = _make_section(EmailSectionType.CONTENT, images=[_image(w=200, h=150)], width=600)
         m = match_section(s, 0)
         assert m.component_slug == "image-block"
 
@@ -521,21 +530,31 @@ class TestTinyIconHeuristic:
         assert m.component_slug == "image-grid"
 
     def test_icon_threshold_boundary(self) -> None:
-        """Images exactly at 30px threshold are still icons."""
+        """Single image exactly at 30px threshold + 1 text → col-icon (more specific)."""
         s = _make_section(
             EmailSectionType.CONTENT,
             texts=[_text("Link")],
             images=[_image("i1", "icon", 30, 30)],
         )
         m = match_section(s, 0)
-        assert m.component_slug == "navigation-bar"
+        assert m.component_slug == "col-icon"
 
     def test_icon_just_above_threshold(self) -> None:
-        """Images at 31px are no longer icons."""
+        """Images at 31px exceed nav-icon threshold but still match col-icon (<=64px)."""
         s = _make_section(
             EmailSectionType.CONTENT,
             texts=[_text("Title")],
             images=[_image("i1", "img", 31, 31)],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "col-icon"
+
+    def test_image_above_col_icon_threshold(self) -> None:
+        """Images at 65px exceed col-icon threshold → article-card."""
+        s = _make_section(
+            EmailSectionType.CONTENT,
+            texts=[_text("Title")],
+            images=[_image("i1", "img", 65, 65)],
         )
         m = match_section(s, 0)
         assert m.component_slug == "article-card"
@@ -1361,3 +1380,264 @@ class TestExtendedComponentScoring:
         m = match_section(s, 0)
         assert m.component_slug == "article-card"
         assert m.confidence == 0.9
+
+
+class TestClassificationImprovements:
+    """Tests for 49.3 section-to-component classification fixes."""
+
+    # ── editorial-2 false positive fix ──
+
+    def test_single_col_image_text_not_editorial(self) -> None:
+        """1 img + 2 texts + 1 wide col_group → NOT editorial-2 (stacked layout)."""
+        s = _make_section(
+            texts=[_text("Title", is_heading=True), _text("Body text")],
+            images=[_image(w=560, h=300)],
+            width=600,
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Column",
+                    images=[_image(w=560, h=300)],
+                    texts=[_text("Title", is_heading=True), _text("Body text")],
+                    width=560,
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "editorial-2"
+
+    def test_two_col_groups_is_editorial(self) -> None:
+        """2 col_groups: one image-only, one text-only → editorial-2 (not product-grid)."""
+        s = _make_section(
+            texts=[_text("Editorial body")],
+            images=[_image(node_id="img1", w=280, h=200)],
+            width=600,
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Image col",
+                    images=[_image(node_id="img1", w=280, h=200)],
+                    texts=[],
+                    width=280,
+                ),
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="cg2",
+                    node_name="Text col",
+                    images=[],
+                    texts=[_text("Editorial body")],
+                    width=280,
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "editorial-2"
+        assert m.confidence == 0.92
+
+    def test_narrow_col_group_is_editorial(self) -> None:
+        """1 narrow col_group (<70% width) with img+text → editorial-2."""
+        s = _make_section(
+            texts=[_text("Side text")],
+            images=[_image(w=200, h=200)],
+            width=600,
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="Narrow col",
+                    images=[_image(w=200, h=200)],
+                    texts=[_text("Side text")],
+                    width=250,
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "editorial-2"
+        assert m.confidence == 0.92
+
+    # ── col-icon detector ──
+
+    def test_icon_image_matches_col_icon(self) -> None:
+        """1 img 40x40 + 2 texts -> col-icon (not article-card)."""
+        s = _make_section(
+            texts=[_text("Feature title", is_heading=True), _text("Description")],
+            images=[_image(w=40, h=40)],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "col-icon"
+        assert m.confidence == 0.92
+
+    def test_large_image_still_article_card(self) -> None:
+        """1 img 300x200 + 2 texts -> article-card (not col-icon)."""
+        s = _make_section(
+            texts=[_text("Title", is_heading=True), _text("Body")],
+            images=[_image(w=300, h=200)],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "article-card"
+        assert m.confidence == 0.9
+
+    # ── full-width-image vs image-block ──
+
+    def test_full_width_image_content_section(self) -> None:
+        """1 img 600x400 + 0 texts, section_width=600 -> full-width-image."""
+        s = _make_section(
+            images=[_image(w=600, h=400)],
+            width=600,
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "full-width-image"
+        assert m.confidence == 1.0
+
+    def test_small_image_stays_image_block(self) -> None:
+        """1 img 200x150 + 0 texts, section_width=600 -> image-block."""
+        s = _make_section(
+            images=[_image(w=200, h=150)],
+            width=600,
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "image-block"
+        assert m.confidence == 1.0
+
+    # ── event-card improvements ──
+
+    def test_event_card_keyword_labels(self) -> None:
+        """3 short texts 'Date: ...', 'Time: ...', 'Location: ...' → event-card."""
+        s = _make_section(
+            texts=[
+                _text("Annual Conference", is_heading=True),
+                _text("Date: October 15, 2026"),
+                _text("Time: 9:00 AM"),
+                _text("Location: Convention Center"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "event-card"
+
+    def test_event_card_date_regex_no_images(self) -> None:
+        """Texts with 'October 23, 2025' + no images → event-card."""
+        s = _make_section(
+            texts=[
+                _text("Join us October 23, 2025"),
+                _text("A special gathering"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "event-card"
+        assert m.confidence == 0.85
+
+    def test_event_card_time_pattern(self) -> None:
+        """Texts with '9:30am', '6:30pm' keywords → event-card via keyword path."""
+        s = _make_section(
+            texts=[
+                _text("Workshop Details", is_heading=True),
+                _text("When: Saturday"),
+                _text("Time: 9:30am - 6:30pm"),
+                _text("Where: Room 101"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "event-card"
+
+    def test_non_event_short_texts(self) -> None:
+        """3 short texts without event keywords → NOT event-card."""
+        s = _make_section(
+            texts=[
+                _text("Shop the look"),
+                _text("New arrivals"),
+                _text("Best sellers"),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "event-card"
+
+    # ── Regressions ──
+
+    def test_editorial_regression_real_two_col(self) -> None:
+        """Real 2-col (2 col_groups, each img+text) → editorial-2 unchanged."""
+        s = _make_section(
+            texts=[_text("A"), _text("B")],
+            images=[_image(node_id="i1", w=280, h=200), _image(node_id="i2", w=280, h=200)],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="L",
+                    images=[_image(node_id="i1", w=280, h=200)],
+                    texts=[_text("A")],
+                    width=280,
+                ),
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="cg2",
+                    node_name="R",
+                    images=[_image(node_id="i2", w=280, h=200)],
+                    texts=[_text("B")],
+                    width=280,
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        # product-grid (0.95) beats editorial-2 (0.92) when 2+ mixed col_groups
+        assert m.component_slug == "product-grid"
+        assert m.confidence == 0.95
+
+    def test_article_card_regression(self) -> None:
+        """1 large img + text + 0 col_groups → article-card unchanged."""
+        s = _make_section(
+            texts=[_text("Article"), _text("Description")],
+            images=[_image(w=300, h=200)],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "article-card"
+        assert m.confidence == 0.9
+
+    def test_product_grid_regression(self) -> None:
+        """2+ col_groups mixed → product-grid unchanged."""
+        s = _make_section(
+            texts=[_text("P1"), _text("P2")],
+            images=[_image(node_id="i1"), _image(node_id="i2")],
+            column_groups=[
+                ColumnGroup(
+                    column_idx=0,
+                    node_id="cg1",
+                    node_name="P1",
+                    images=[_image(node_id="i1")],
+                    texts=[_text("P1")],
+                ),
+                ColumnGroup(
+                    column_idx=1,
+                    node_id="cg2",
+                    node_name="P2",
+                    images=[_image(node_id="i2")],
+                    texts=[_text("P2")],
+                ),
+            ],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug == "product-grid"
+        assert m.confidence == 0.95
+
+    def test_col_icon_vs_testimonial(self) -> None:
+        """1 small img + quoted text → col-icon (0.92) beats testimonial (0.9)."""
+        s = _make_section(
+            texts=[_text("\u201cGreat feature\u201d")],
+            images=[_image(w=48, h=48)],
+        )
+        m = match_section(s, 0)
+        # col-icon 0.92 in extended scorer overrides base
+        assert m.component_slug == "col-icon"
+        assert m.confidence == 0.92
+
+    def test_content_roles_populated(self) -> None:
+        """Section with icon+text → content_roles includes 'text-with-icon'."""
+        from app.design_sync.figma.layout_analyzer import _compute_content_roles
+
+        roles = _compute_content_roles(
+            texts=[_text("Feature title"), _text("Description")],
+            images=[_image(w=40, h=40)],
+            buttons=[],
+        )
+        assert "text-with-icon" in roles
