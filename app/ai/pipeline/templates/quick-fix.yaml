@@ -1,0 +1,13 @@
+name: quick-fix
+description: Targeted fix pipeline — dark mode and Outlook only
+nodes:
+  dark_mode:
+    agent: dark_mode
+    tier: standard
+    inputs: [html]
+    outputs: [dark_mode_html]
+  outlook_fixer:
+    agent: outlook_fixer
+    tier: standard
+    inputs: [html]
+    outputs: [outlook_html]

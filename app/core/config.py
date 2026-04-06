@@ -45,6 +45,15 @@ class RateLimitConfig(BaseModel):
     chat: str = "10/minute"
 
 
+class EvaluatorConfig(BaseModel):
+    """Evaluator agent settings."""
+
+    enabled: bool = False  # AI__EVALUATOR__ENABLED
+    provider: str = ""  # AI__EVALUATOR__PROVIDER — empty = auto-select different provider
+    criteria_dir: str = "app/ai/agents/evaluator/criteria/"  # AI__EVALUATOR__CRITERIA_DIR
+    max_tokens: int = 2048  # AI__EVALUATOR__MAX_TOKENS
+
+
 class AIConfig(BaseModel):
     """AI provider settings."""
 
@@ -112,6 +121,13 @@ class AIConfig(BaseModel):
 
     # Multimodal agent context (Phase 23.3)
     multimodal_context_enabled: bool = False  # AI__MULTIMODAL_CONTEXT_ENABLED
+
+    # Scaffolder tree mode (Phase 48.7)
+    scaffolder_tree_mode: bool = False  # AI__SCAFFOLDER_TREE_MODE
+    scaffolder_tree_manifest_budget: int = 8000  # AI__SCAFFOLDER_TREE_MANIFEST_BUDGET (tokens)
+
+    # Evaluator agent (Phase 48.4)
+    evaluator: EvaluatorConfig = EvaluatorConfig()  # AI__EVALUATOR__*
 
 
 class EmbeddingConfig(BaseModel):
@@ -506,6 +522,7 @@ class BlueprintConfig(BaseModel):
     visual_comparison: bool = False  # Post-build screenshot comparison vs original design
     visual_comparison_threshold: float = 5.0  # Pixel diff % threshold for drift warning
     visual_precheck_top_clients: int = 3  # Number of clients to render for precheck
+    max_revisions: int = 2  # Evaluator-driven revision cap  # BLUEPRINT__MAX_REVISIONS
 
 
 class EvalConfig(BaseModel):
@@ -731,6 +748,20 @@ class CredentialsConfig(BaseModel):
     )  # CREDENTIALS__POOLS (JSON via env)
 
 
+class PipelineConfig(BaseModel):
+    """Pipeline DAG template settings."""
+
+    default_template: str = "full-build"
+    custom_dir: str = ""  # Extra YAML search directory (empty = disabled)
+    contract_retry: bool = True  # PIPELINE__CONTRACT_RETRY — retry node on contract failure
+    contract_strict: bool = (
+        False  # PIPELINE__CONTRACT_STRICT — fail pipeline on first contract violation
+    )
+    enabled: bool = False  # PIPELINE__ENABLED — use DAG executor instead of sequential engine
+    max_concurrent_agents: int = 5  # PIPELINE__MAX_CONCURRENT_AGENTS
+    merge_strategy: Literal["sequential", "diff3"] = "sequential"  # PIPELINE__MERGE_STRATEGY
+
+
 class Settings(BaseSettings):
     """Application-wide configuration.
 
@@ -805,6 +836,7 @@ class Settings(BaseSettings):
     security: SecurityConfig = SecurityConfig()
     debounce: DebounceConfig = DebounceConfig()
     credentials: CredentialsConfig = CredentialsConfig()
+    pipeline: PipelineConfig = PipelineConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

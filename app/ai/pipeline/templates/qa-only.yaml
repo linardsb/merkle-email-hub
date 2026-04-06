@@ -1,0 +1,15 @@
+name: qa-only
+description: QA-only pipeline — code review and visual QA
+nodes:
+  code_reviewer:
+    agent: code_reviewer
+    tier: lightweight
+    inputs: [html]
+    outputs: [qa_results]
+    contract: no_critical_issues
+  visual_qa:
+    agent: visual_qa
+    tier: standard
+    inputs: [html]
+    outputs: [qa_results, corrections]
+    contract: fidelity_above_threshold

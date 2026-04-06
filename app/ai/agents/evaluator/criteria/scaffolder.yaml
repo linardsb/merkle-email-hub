@@ -1,0 +1,13 @@
+criteria:
+  - name: structural_completeness
+    description: "All brief sections present as table-based layout sections"
+    weight: 1.0
+  - name: table_based_layout
+    description: "Uses table/tr/td for ALL structural layout, no div/p layout"
+    weight: 1.0
+  - name: slot_coverage
+    description: "All data-slot attributes filled with appropriate content"
+    weight: 0.8
+  - name: design_token_application
+    description: "Brand colors, fonts, spacing applied from design system"
+    weight: 0.7

@@ -1,0 +1,14 @@
+name: html_valid
+assertions:
+  - check: html_valid
+    operator: "=="
+    threshold: true
+  - check: min_size
+    operator: ">="
+    threshold: 100
+  - check: max_size
+    operator: "<="
+    threshold: 102400
+  - check: has_table_layout
+    operator: "=="
+    threshold: true

@@ -1,0 +1,40 @@
+name: design-import
+description: Design import pipeline — annotator, scaffolder, then full build
+nodes:
+  import_annotator:
+    agent: import_annotator
+    tier: standard
+    inputs: []
+    outputs: [raw_html, annotations]
+  scaffolder:
+    agent: scaffolder
+    tier: complex
+    inputs: [raw_html, annotations]
+    outputs: [html, build_plan]
+    contract: html_valid
+  dark_mode:
+    agent: dark_mode
+    tier: standard
+    inputs: [build_plan]
+    outputs: [dark_mode_html]
+  accessibility:
+    agent: accessibility
+    tier: standard
+    inputs: [build_plan]
+    outputs: [a11y_html]
+  personalisation:
+    agent: personalisation
+    tier: standard
+    inputs: [build_plan]
+    outputs: [personalised_html]
+  content:
+    agent: content
+    tier: standard
+    inputs: [build_plan]
+    outputs: [content_html]
+  code_reviewer:
+    agent: code_reviewer
+    tier: lightweight
+    inputs: [html]
+    outputs: [qa_results]
+    contract: no_critical_issues

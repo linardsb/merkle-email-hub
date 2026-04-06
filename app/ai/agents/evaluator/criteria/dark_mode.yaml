@@ -1,0 +1,13 @@
+criteria:
+  - name: media_query_present
+    description: "prefers-color-scheme media query present and correctly structured"
+    weight: 1.0
+  - name: contrast_ratio
+    description: "Text/background contrast meets WCAG AA (4.5:1) in dark mode"
+    weight: 1.0
+  - name: outlook_dark_mode
+    description: "[data-ogsc]/[data-ogsb] selectors for Outlook dark mode"
+    weight: 0.8
+  - name: image_handling
+    description: "Dark mode image swap patterns or transparent background handling"
+    weight: 0.7

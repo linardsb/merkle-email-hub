@@ -1,0 +1,5 @@
+name: no_critical_issues
+assertions:
+  - check: no_critical_qa
+    operator: "=="
+    threshold: true

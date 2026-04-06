@@ -1,0 +1,13 @@
+criteria:
+  - name: html_validity
+    description: "Well-formed HTML with proper nesting and closed tags"
+    weight: 1.0
+  - name: no_xss
+    description: "No script tags, event handlers, or javascript: URIs"
+    weight: 1.0
+  - name: inline_styles
+    description: "CSS is inlined for email client compatibility"
+    weight: 0.8
+  - name: mso_conditionals
+    description: "MSO conditional comments well-formed when present"
+    weight: 0.7

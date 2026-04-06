@@ -1,0 +1,13 @@
+criteria:
+  - name: alt_text
+    description: "All images have meaningful alt text; decorative images use alt=''"
+    weight: 1.0
+  - name: table_roles
+    description: "Layout tables use role='presentation'; data tables use proper headers"
+    weight: 1.0
+  - name: lang_attribute
+    description: "HTML lang attribute set correctly"
+    weight: 0.8
+  - name: color_contrast
+    description: "Text/background contrast meets WCAG AA (4.5:1 normal, 3:1 large)"
+    weight: 0.9

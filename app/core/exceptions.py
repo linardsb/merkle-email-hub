@@ -53,6 +53,42 @@ class NoHealthyCredentialsError(ServiceUnavailableError):
         super().__init__(f"No healthy credentials available for service: {service}")
 
 
+class CyclicDependencyError(DomainValidationError):
+    """Pipeline DAG contains a cycle."""
+
+    def __init__(self, *, cycle: list[str]) -> None:
+        self.cycle = cycle
+        super().__init__(f"Cyclic dependency detected: {' → '.join(cycle)}")
+
+
+class CompilationError(DomainValidationError):
+    """Tree-to-HTML compilation failure."""
+
+
+class PipelineExecutionError(AppError):
+    """Pipeline executor encountered a fatal error."""
+
+    status_code = 500
+
+
+class ArtifactNotFoundError(AppError):
+    """Requested artifact not found in store."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Artifact not found: {name}")
+        self.artifact_name = name
+
+
+class ArtifactTypeError(AppError):
+    """Artifact exists but is not the expected type."""
+
+    def __init__(self, name: str, expected: str, actual: str) -> None:
+        super().__init__(f"Artifact '{name}': expected {expected}, got {actual}")
+        self.artifact_name = name
+        self.expected_type = expected
+        self.actual_type = actual
+
+
 # ── Exception Handlers ──
 
 

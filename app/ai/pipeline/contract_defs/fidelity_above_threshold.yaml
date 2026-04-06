@@ -1,0 +1,5 @@
+name: fidelity_above_threshold
+assertions:
+  - check: fidelity_above
+    operator: ">="
+    threshold: 0.85

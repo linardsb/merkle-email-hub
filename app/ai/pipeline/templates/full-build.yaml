@@ -1,0 +1,41 @@
+name: full-build
+description: Complete email build with all agents
+nodes:
+  scaffolder:
+    agent: scaffolder
+    tier: complex
+    inputs: []
+    outputs: [html, build_plan]
+    contract: html_valid
+  dark_mode:
+    agent: dark_mode
+    tier: standard
+    inputs: [html]
+    outputs: [dark_mode_html]
+  accessibility:
+    agent: accessibility
+    tier: standard
+    inputs: [html]
+    outputs: [a11y_html]
+  personalisation:
+    agent: personalisation
+    tier: standard
+    inputs: [html]
+    outputs: [personalised_html]
+  content:
+    agent: content
+    tier: standard
+    inputs: [html]
+    outputs: [content_html]
+  code_reviewer:
+    agent: code_reviewer
+    tier: lightweight
+    inputs: [html]
+    outputs: [qa_results]
+    contract: no_critical_issues
+  visual_qa:
+    agent: visual_qa
+    tier: standard
+    inputs: [html]
+    outputs: [visual_qa_results, corrections]
+    contract: fidelity_above_threshold

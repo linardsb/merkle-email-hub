@@ -1,0 +1,10 @@
+skills:
+  evaluation_criteria:
+    current: "1.0.0"
+    pinned: null
+    versions:
+      "1.0.0":
+        hash: "initial"
+        date: "2026-04-06"
+        source: manual
+        eval_pass_rate: null
