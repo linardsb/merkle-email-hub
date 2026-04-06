@@ -24,8 +24,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD:-devpassword}\" ping"]
       interval: 5s
-      timeout: 3s
-      retries: 3
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
 
   migrate:
