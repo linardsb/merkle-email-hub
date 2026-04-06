@@ -18,7 +18,7 @@ version: "1.0.0"
 ### Block-in-Inline
 - `<div>` inside `<span>` — invalid. Rule: `nesting-block-in-inline`
 - `<table>` inside `<a>` — invalid in most clients. Rule: `nesting-table-in-link`
-- `<p>` inside `<p>` — auto-closed by parser, causes unexpected layout. Rule: `nesting-p-in-p`
+- `<p>` or `<h1>`-`<h6>` inside `<td>` — td-only layout required, no semantic text wrappers. Rule: `nesting-p-h-in-td`
 
 ### Unclosed Tags
 - Unclosed `<td>`, `<tr>`, `<table>` — critical rendering issue. Rule: `nesting-unclosed-tag`

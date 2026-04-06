@@ -598,14 +598,14 @@ def _build_column_fill_html(
         if text.is_heading:
             size = int(text.font_size) if text.font_size else 18
             parts.append(
-                f'<h3 style="margin:0 0 8px;font-size:{size}px;'
-                f'font-weight:bold;color:{color};">{escaped}</h3>'
+                f'<tr><td style="padding:0 0 8px;font-family:Arial,sans-serif;font-size:{size}px;'
+                f'font-weight:bold;color:{color};line-height:1.3;mso-line-height-rule:exactly;">{escaped}</td></tr>'
             )
         else:
             size = int(text.font_size) if text.font_size else 14
             parts.append(
-                f'<p style="margin:0 0 8px;font-size:{size}px;'
-                f'color:{color};line-height:1.5;">{escaped}</p>'
+                f'<tr><td style="padding:0 0 8px;font-family:Arial,sans-serif;font-size:{size}px;'
+                f'color:{color};line-height:1.5;mso-line-height-rule:exactly;">{escaped}</td></tr>'
             )
     for btn in group.buttons:
         if _is_placeholder(btn.text):
@@ -754,24 +754,18 @@ def _fills_text_block(
         fills.append(SlotFill("heading", _safe_text(heading.content)))
     bodies = _body_texts(section.texts)
     if bodies:
-        para_parts = [
-            f'<p style="margin:0 0 10px 0;">{_safe_text(b.content)}</p>'
-            for b in bodies
-            if not _is_placeholder(b.content)
-        ]
-        if para_parts:
-            fills.append(SlotFill("body", "\n".join(para_parts)))
+        body_parts = [_safe_text(b.content) for b in bodies if not _is_placeholder(b.content)]
+        if body_parts:
+            fills.append(SlotFill("body", "<br><br>".join(body_parts)))
     elif not heading and section.texts:
         # All texts are headings — use first as heading, rest as body
         fills.append(SlotFill("heading", _safe_text(section.texts[0].content)))
         if len(section.texts) > 1:
-            para_parts = [
-                f'<p style="margin:0 0 10px 0;">{_safe_text(t.content)}</p>'
-                for t in section.texts[1:]
-                if not _is_placeholder(t.content)
+            body_parts = [
+                _safe_text(t.content) for t in section.texts[1:] if not _is_placeholder(t.content)
             ]
-            if para_parts:
-                fills.append(SlotFill("body", "\n".join(para_parts)))
+            if body_parts:
+                fills.append(SlotFill("body", "<br><br>".join(body_parts)))
 
     # Append CTA button HTML to body slot (text-block has no dedicated CTA slot)
     if section.buttons:
@@ -780,11 +774,10 @@ def _fills_text_block(
             btn_url = html.escape(_safe_url(btn.url))
             bg = _safe_color(btn.fill_color, "#0066cc")
             cta_html = (
-                f'<p style="margin:16px 0 0 0;">'
                 f'<a href="{btn_url}" style="display:inline-block;'
                 f"padding:10px 24px;background-color:{bg};color:#ffffff;"
                 f"text-decoration:none;font-size:14px;font-weight:bold;"
-                f'border-radius:4px;">{_safe_text(btn.text)}</a></p>'
+                f'border-radius:4px;">{_safe_text(btn.text)}</a>'
             )
             # Append to existing body fill or create new one
             body_fill = next((f for f in fills if f.slot_id == "body"), None)
@@ -820,13 +813,9 @@ def _fills_article_card(
         fills.append(SlotFill("heading", _safe_text(heading.content)))
     bodies = _body_texts(section.texts)
     if bodies:
-        para_parts = [
-            f'<p style="margin:0 0 8px 0;">{_safe_text(b.content)}</p>'
-            for b in bodies
-            if not _is_placeholder(b.content)
-        ]
-        if para_parts:
-            fills.append(SlotFill("body_text", "\n".join(para_parts)))
+        body_parts = [_safe_text(b.content) for b in bodies if not _is_placeholder(b.content)]
+        if body_parts:
+            fills.append(SlotFill("body_text", "<br><br>".join(body_parts)))
     if section.buttons:
         btn = section.buttons[0]
         fills.append(SlotFill("cta_text", _safe_text(btn.text)))
@@ -964,7 +953,7 @@ def _fills_footer(
 ) -> list[SlotFill]:
     """Build footer content from section texts.
 
-    Generates <p> blocks for each text line, preserving the Figma content
+    Joins text lines with <br><br> separators, preserving the Figma content
     (social links, unsubscribe text, legal copy, etc.).
     """
     if not section.texts:
@@ -973,12 +962,9 @@ def _fills_footer(
     parts: list[str] = []
     for text in section.texts:
         escaped = _safe_text(text.content)
-        parts.append(
-            f'<p style="margin:0 0 12px 0;font-family:Arial,sans-serif;'
-            f'font-size:12px;color:#666666;line-height:1.5;">{escaped}</p>'
-        )
+        parts.append(escaped)
 
-    return [SlotFill("footer_content", "\n      ".join(parts))]
+    return [SlotFill("footer_content", "<br><br>".join(parts))]
 
 
 def _fills_spacer(
@@ -1075,11 +1061,11 @@ def _build_column_fills(
                 escaped = _safe_text(text.content)
                 if text.is_heading:
                     col_texts.append(
-                        f'<h3 style="margin:0 0 8px;font-weight:bold;color:{color};">{escaped}</h3>'
+                        f'<tr><td style="padding:0 0 8px;font-family:Arial,sans-serif;font-weight:bold;color:{color};line-height:1.3;mso-line-height-rule:exactly;">{escaped}</td></tr>'
                     )
                 else:
                     col_texts.append(
-                        f'<p style="margin:0 0 8px;color:{color};line-height:1.5;">{escaped}</p>'
+                        f'<tr><td style="padding:0 0 8px;font-family:Arial,sans-serif;color:{color};line-height:1.5;mso-line-height-rule:exactly;">{escaped}</td></tr>'
                     )
 
         col_images: list[str] = []

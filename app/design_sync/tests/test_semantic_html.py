@@ -46,8 +46,8 @@ class TestHeadingDetection:
 class TestTextRendering:
     """Tests for text node → semantic HTML rendering."""
 
-    def test_heading_renders_h1(self) -> None:
-        """TEXT node 32px with is_heading → <h1> inside <td>."""
+    def test_heading_renders_in_td(self) -> None:
+        """TEXT node 32px with is_heading → text directly in <td> (no h1 wrapper)."""
         node = DesignNode(
             id="txt1",
             name="Title",
@@ -57,12 +57,13 @@ class TestTextRendering:
         )
         text_meta = {"txt1": TextBlock(node_id="txt1", content="Welcome", is_heading=True)}
         result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
-        assert "<h1" in result
-        assert "<td>" in result or "<td " in result
+        assert "<h1" not in result
+        assert "<td" in result
         assert "Welcome" in result
+        assert "mso-line-height-rule:exactly" in result
 
-    def test_body_renders_paragraph(self) -> None:
-        """TEXT node 16px (body) → <p style="margin:0 0 10px 0;"> inside <td>."""
+    def test_body_renders_in_td(self) -> None:
+        """TEXT node 16px (body) → text directly in <td> with padding."""
         node = DesignNode(
             id="txt2",
             name="Body",
@@ -70,11 +71,13 @@ class TestTextRendering:
             text_content="Hello world",
         )
         result = node_to_email_html(node, body_font_size=16.0)
-        assert "<p" in result
-        assert "margin:0 0 10px 0" in result
+        assert "<p" not in result
+        assert "<td" in result
+        assert "padding:0 0 10px 0" in result
+        assert "mso-line-height-rule:exactly" in result
 
-    def test_multiline_text_multiple_p_tags(self) -> None:
-        """TEXT with \\n → multiple <p> tags."""
+    def test_multiline_text_multiple_td_rows(self) -> None:
+        """TEXT with \\n → multiple <td> elements joined by </tr><tr>."""
         node = DesignNode(
             id="txt3",
             name="Multi",
@@ -82,7 +85,9 @@ class TestTextRendering:
             text_content="Line one\nLine two\nLine three",
         )
         result = node_to_email_html(node)
-        assert result.count("<p") >= 3
+        assert "<p" not in result
+        assert result.count("<td") >= 3
+        assert "</tr><tr>" in result
 
     def test_inline_styles_present(self) -> None:
         """Semantic elements have font-family in inline styles."""
@@ -104,7 +109,7 @@ class TestTextRendering:
             text_content="",
         )
         result = node_to_email_html(node)
-        assert "<td>" in result or "<p" in result
+        assert "<td" in result
 
     def test_html_characters_escaped(self) -> None:
         """HTML special characters in text → escaped."""

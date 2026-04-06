@@ -132,7 +132,7 @@ version: "1.0.0"
     <li>{{name}}</li>
   {{/each}}
 {{else}}
-  <p>No items to display.</p>
+  <td style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">No items to display.</td>
 {{/if}}
 ```
 
@@ -168,7 +168,7 @@ version: "1.0.0"
 
 ### Order Receipt Table
 ```handlebars
-<p>Order #{{dataFields.orderId}}</p>
+<td style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">Order #{{dataFields.orderId}}</td>
 <table>
   {{#each dataFields.items}}
   <tr>

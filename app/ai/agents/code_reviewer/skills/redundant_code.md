@@ -77,7 +77,7 @@ same element, the CSS version is dead code for Outlook. Flag when:
 
 ## Redundant Font-Family on Nested Elements
 
-- `font-family` inherited from parent — no need to repeat on every child `<td>`, `<p>`, `<span>`
+- `font-family` inherited from parent — no need to repeat on every child `<td>`, `<span>`
 - Exception: Outlook may not inherit `font-family` reliably across table boundaries
 - Rule: flag only when the same `font-family` stack appears on a parent `<td>` and its direct child elements (severity: info)
 - Rule: `redundant-font-family-inheritance`

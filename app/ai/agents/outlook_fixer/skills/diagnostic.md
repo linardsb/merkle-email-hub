@@ -25,7 +25,7 @@ from its visible symptoms, then apply the corresponding fix.
 |---------|-------|-----|-------|
 | Text renders in Times New Roman | Web font not available; no fallback on `<td>` | Add explicit `font-family` on each `<td>`; add `mso-font-alt` | 5 |
 | Line height differs from other clients | Word engine line-height calculation | Add `mso-line-height-rule: exactly` | 6 |
-| Extra space above/below paragraphs | Outlook adds default `<p>` margins | Reset with `margin:0; mso-margin-top-alt:0; mso-margin-bottom-alt:Xpx` | 13 |
+| Extra space above/below text | Legacy `<p>` tags in imported HTML (converter strips these automatically) | Ensure td-only layout — text directly in `<td>` with inline styles, no `<p>` or `<h>` tags | 13 |
 
 ## Image Issues
 

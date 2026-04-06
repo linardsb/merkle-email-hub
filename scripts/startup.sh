@@ -75,7 +75,7 @@ echo "════════════════════════�
 echo -e " ${GREEN}Dev environment ready!${NC}"
 echo ""
 echo "  Colima:      running"
-echo "  PostgreSQL:  localhost:5432  (merkle_email_hub)"
+echo "  PostgreSQL:  localhost:5434  (email_hub)"
 echo "  Redis:       localhost:6380"
 echo ""
 echo "  Start dev:   make dev"

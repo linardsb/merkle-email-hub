@@ -68,24 +68,18 @@
 
       <!-- H1 heading: primary email heading -->
       <tr>
-        <td style="padding: 30px 30px 10px 30px;">
-          <!-- Heading hierarchy: h1 is the email title -->
-          <h1 data-slot="heading" class="dark-text" style="margin: 0; font-family: Arial, sans-serif; font-size: 28px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">March Newsletter</h1>
-        </td>
+        <!-- Heading hierarchy: h1 is the email title -->
+        <td data-slot="heading" class="dark-text" style="padding: 30px 30px 10px 30px; font-family: Arial, sans-serif; font-size: 28px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">March Newsletter</td>
       </tr>
 
       <!-- Intro paragraph -->
       <tr>
-        <td style="padding: 0 30px 20px 30px;">
-          <p data-slot="intro" class="dark-muted" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">Welcome to our monthly update. This issue covers accessible email design, new platform features, and inclusive marketing tips.</p>
-        </td>
+        <td data-slot="intro" class="dark-muted" style="padding: 0 30px 20px 30px; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">Welcome to our monthly update. This issue covers accessible email design, new platform features, and inclusive marketing tips.</td>
       </tr>
 
       <!-- H2 section: Feature article with informative image -->
       <tr>
-        <td style="padding: 0 30px;">
-          <h2 class="dark-text" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 22px; line-height: 120%; color: #333333;">Featured: Inclusive Email Design</h2>
-        </td>
+        <td class="dark-text" style="padding: 0 30px 10px 30px; font-family: Arial, sans-serif; font-size: 22px; line-height: 120%; color: #333333; mso-line-height-rule: exactly;">Featured: Inclusive Email Design</td>
       </tr>
       <tr>
         <td style="padding: 0 30px 10px 30px;">
@@ -95,17 +89,21 @@
       </tr>
       <tr>
         <td style="padding: 0 30px 20px 30px;">
-          <p class="dark-muted" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">Our comprehensive guide covers semantic structure, color contrast, alt text, and keyboard navigation. Every email should meet WCAG 2.1 AA standards to reach the widest audience.</p>
-          <!-- Descriptive link text — not "click here" -->
-          <a class="dark-text" href="https://example.com/inclusive-design" style="font-family: Arial, sans-serif; font-size: 14px; color: #0044aa; text-decoration: underline;">Read the full inclusive design guide</a>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td class="dark-muted" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">Our comprehensive guide covers semantic structure, color contrast, alt text, and keyboard navigation. Every email should meet WCAG 2.1 AA standards to reach the widest audience.</td>
+            </tr>
+            <tr>
+              <!-- Descriptive link text — not "click here" -->
+              <td style="font-family: Arial, sans-serif; font-size: 14px; mso-line-height-rule: exactly;"><a class="dark-text" href="https://example.com/inclusive-design" style="font-family: Arial, sans-serif; font-size: 14px; color: #0044aa; text-decoration: underline;">Read the full inclusive design guide</a></td>
+            </tr>
+          </table>
         </td>
       </tr>
 
       <!-- H2 section: 2-column features with h3 sub-headings -->
       <tr>
-        <td style="padding: 0 30px 10px 30px;">
-          <h2 class="dark-text" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 22px; line-height: 120%; color: #333333;">Latest Updates</h2>
-        </td>
+        <td class="dark-text" style="padding: 0 30px 10px 30px; font-family: Arial, sans-serif; font-size: 22px; line-height: 120%; color: #333333; mso-line-height-rule: exactly;">Latest Updates</td>
       </tr>
       <tr>
         <td style="font-size: 0; text-align: center; padding: 0 20px 20px 20px;">
@@ -121,9 +119,17 @@
                     <img src="https://via.placeholder.com/250x160" alt="Preview of dark mode email rendering across 6 email clients" width="250" style="display: block; width: 100%; height: auto; border: 0;" />
                   </a>
                   <!-- H3 maintains heading hierarchy (h1 > h2 > h3) -->
-                  <h3 class="dark-text" style="margin: 10px 0 5px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333;">Dark Mode Support</h3>
-                  <p class="dark-muted" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Our new dark mode engine ensures contrast ratios meet AA standards in every theme.</p>
-                  <a href="https://example.com/dark-mode" style="font-family: Arial, sans-serif; font-size: 14px; color: #0044aa; text-decoration: underline;">Learn about dark mode support</a>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td class="dark-text" style="padding: 10px 0 5px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333; mso-line-height-rule: exactly;">Dark Mode Support</td>
+                    </tr>
+                    <tr>
+                      <td class="dark-muted" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666; mso-line-height-rule: exactly;">Our new dark mode engine ensures contrast ratios meet AA standards in every theme.</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 14px; mso-line-height-rule: exactly;"><a href="https://example.com/dark-mode" style="font-family: Arial, sans-serif; font-size: 14px; color: #0044aa; text-decoration: underline;">Learn about dark mode support</a></td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -138,9 +144,17 @@
                   <a href="https://example.com/screen-reader">
                     <img src="https://via.placeholder.com/250x160" alt="Screenshot of VoiceOver reading an email with proper heading structure" width="250" style="display: block; width: 100%; height: auto; border: 0;" />
                   </a>
-                  <h3 class="dark-text" style="margin: 10px 0 5px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333;">Screen Reader Testing</h3>
-                  <p class="dark-muted" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Automated testing now validates heading hierarchy, link text, and table roles.</p>
-                  <a href="https://example.com/screen-reader" style="font-family: Arial, sans-serif; font-size: 14px; color: #0044aa; text-decoration: underline;">Explore screen reader testing tools</a>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td class="dark-text" style="padding: 10px 0 5px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333; mso-line-height-rule: exactly;">Screen Reader Testing</td>
+                    </tr>
+                    <tr>
+                      <td class="dark-muted" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666; mso-line-height-rule: exactly;">Automated testing now validates heading hierarchy, link text, and table roles.</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 14px; mso-line-height-rule: exactly;"><a href="https://example.com/screen-reader" style="font-family: Arial, sans-serif; font-size: 14px; color: #0044aa; text-decoration: underline;">Explore screen reader testing tools</a></td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -176,11 +190,17 @@
       <!-- Footer with proper link text -->
       <tr>
         <td style="padding: 20px 30px; background-color: #f0f0f0;">
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #777777; text-align: center;">&copy; 2026 Acme Company. 123 Main Street, Suite 100, New York, NY 10001</p>
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #777777; text-align: center;">
-            <a href="https://example.com/preferences" style="color: #0044aa; text-decoration: underline;">Update your email preferences</a> &nbsp;|&nbsp;
-            <a href="https://example.com/unsubscribe" style="color: #0044aa; text-decoration: underline;">Unsubscribe from this newsletter</a>
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #777777; text-align: center; mso-line-height-rule: exactly;">&copy; 2026 Acme Company. 123 Main Street, Suite 100, New York, NY 10001</td>
+            </tr>
+            <tr>
+              <td style="font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #777777; text-align: center; mso-line-height-rule: exactly;">
+                <a href="https://example.com/preferences" style="color: #0044aa; text-decoration: underline;">Update your email preferences</a> &nbsp;|&nbsp;
+                <a href="https://example.com/unsubscribe" style="color: #0044aa; text-decoration: underline;">Unsubscribe from this newsletter</a>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
 

@@ -60,12 +60,18 @@ SET @productFallback = IIF(Empty(@productName), "our latest collection", @produc
       <!-- Personalized greeting with IIF fallback -->
       <tr>
         <td style="padding: 30px 30px 10px 30px;">
-          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
-            Hi %%=v(@greeting)=%%,
-          </h1>
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
-            We have curated %%=v(@productFallback)=%% just for you.
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">
+                Hi %%=v(@greeting)=%%,
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                We have curated %%=v(@productFallback)=%% just for you.
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
 
@@ -76,8 +82,14 @@ SET @productFallback = IIF(Empty(@productName), "our latest collection", @produc
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #fff8e1; border-left: 4px solid #ffa000;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #e65100;">VIP Exclusive Access</h2>
-                <p style="margin: 0 0 10px 0;">As a VIP member, enjoy 20% off plus free shipping on your next order. Use code: <strong>VIP20</strong></p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #e65100; mso-line-height-rule: exactly;">VIP Exclusive Access</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">As a VIP member, enjoy 20% off plus free shipping on your next order. Use code: <strong>VIP20</strong></td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -85,16 +97,22 @@ SET @productFallback = IIF(Empty(@productName), "our latest collection", @produc
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e8f5e9; border-left: 4px solid #388e3c;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2e7d32;">Loyalty Rewards</h2>
-                <p style="margin: 0 0 10px 0;">You have earned 500 loyalty points! Redeem them on your next purchase for great savings.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #2e7d32; mso-line-height-rule: exactly;">Loyalty Rewards</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">You have earned 500 loyalty points! Redeem them on your next purchase for great savings.</td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
           %%[ELSE]%%
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
-              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
-                <p style="margin: 0 0 10px 0;">Discover our newest arrivals and trending items selected for you.</p>
+              <td style="padding: 15px 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Discover our newest arrivals and trending items selected for you.
               </td>
             </tr>
           </table>
@@ -105,7 +123,11 @@ SET @productFallback = IIF(Empty(@productName), "our latest collection", @produc
       <!-- Product recommendation from Data Extension lookup -->
       <tr>
         <td style="padding: 0 30px 20px 30px;">
-          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Picked for You</h2>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333; mso-line-height-rule: exactly;">Picked for You</td>
+            </tr>
+          </table>
           %%[IF NOT Empty(@productName)]%%
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
@@ -113,14 +135,26 @@ SET @productFallback = IIF(Empty(@productName), "our latest collection", @produc
                 <img src="%%=v(@productImg)=%%" alt="%%=v(@productName)=%%" width="120" style="display: block; border: 0;" />
               </td>
               <td valign="top" style="font-family: Arial, sans-serif;">
-                <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #333333;">%%=v(@productName)=%%</h3>
-                <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: #0066cc;">%%=v(@productPrice)=%%</p>
-                <a href="%%=RedirectTo(@productUrl)=%%" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">View product details</a>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333; mso-line-height-rule: exactly;">%%=v(@productName)=%%</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; color: #0066cc; mso-line-height-rule: exactly;">%%=v(@productPrice)=%%</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family: Arial, sans-serif; font-size: 14px; mso-line-height-rule: exactly;"><a href="%%=RedirectTo(@productUrl)=%%" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">View product details</a></td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
           %%[ELSE]%%
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Browse our full catalog for the latest deals and new arrivals.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">Browse our full catalog for the latest deals and new arrivals.</td>
+            </tr>
+          </table>
           %%[ENDIF]%%
         </td>
       </tr>
@@ -134,11 +168,9 @@ SET @productFallback = IIF(Empty(@productName), "our latest collection", @produc
 
       <!-- Footer with SFMC system strings -->
       <tr>
-        <td style="padding: 20px 30px; background-color: #f0f0f0;">
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+        <td style="padding: 20px 30px; background-color: #f0f0f0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center; mso-line-height-rule: exactly;">
             <a href="%%profile_center_url%%" style="color: #0066cc; text-decoration: underline;">Update preferences</a> &nbsp;|&nbsp;
             <a href="%%unsub_center_url%%" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
-          </p>
         </td>
       </tr>
 

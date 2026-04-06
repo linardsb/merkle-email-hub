@@ -443,7 +443,7 @@ class TestFooterSlotFills:
     """Test email-footer slot fill generation."""
 
     def test_footer_with_texts(self) -> None:
-        """Footer texts become footer_content with <p> tags."""
+        """Footer texts become footer_content with bare text and br separators."""
         s = _make_section(
             EmailSectionType.FOOTER,
             texts=[
@@ -454,7 +454,7 @@ class TestFooterSlotFills:
         m = match_section(s, 0)
         fills_by_id = {f.slot_id: f for f in m.slot_fills}
         assert "footer_content" in fills_by_id
-        assert "<p " in fills_by_id["footer_content"].value
+        assert "<p " not in fills_by_id["footer_content"].value
         assert "Contact Us" in fills_by_id["footer_content"].value
         assert "unsubscribe" in fills_by_id["footer_content"].value
 
@@ -547,7 +547,7 @@ class TestTinyIconHeuristic:
 class TestSemanticColumnHTML:
     """Bug 51: Column fills should produce structured HTML, not raw text."""
 
-    def test_column_fill_html_has_paragraph_tags(self) -> None:
+    def test_column_fill_html_heading_in_td(self) -> None:
         group = ColumnGroup(
             column_idx=1,
             node_id="c1",
@@ -557,11 +557,13 @@ class TestSemanticColumnHTML:
             ],
         )
         result = _build_column_fill_html(group)
-        assert "<h3" in result
+        assert "<h3" not in result
+        assert "<td" in result
         assert "Product title" in result
         assert "font-size:18px" in result
+        assert "font-weight:bold" in result
 
-    def test_column_fill_html_body_text_in_p_tag(self) -> None:
+    def test_column_fill_html_body_text_in_td(self) -> None:
         group = ColumnGroup(
             column_idx=1,
             node_id="c1",
@@ -569,7 +571,8 @@ class TestSemanticColumnHTML:
             texts=[TextBlock(node_id="t1", content="Description text")],
         )
         result = _build_column_fill_html(group)
-        assert "<p " in result
+        assert "<p " not in result
+        assert "<td" in result
         assert "Description text" in result
 
     def test_column_fill_html_button_as_anchor(self) -> None:
@@ -668,7 +671,7 @@ class TestArticleCardGuard:
 
 
 class TestMultiParagraphBody:
-    """Bug 53: Multiple body texts must each get their own <p> element."""
+    """Bug 53: Multiple body texts are separated by <br><br>."""
 
     def test_multiple_body_paragraphs(self) -> None:
         s = _make_section(
@@ -681,7 +684,8 @@ class TestMultiParagraphBody:
         )
         m = match_section(s, 0)
         body = next(f for f in m.slot_fills if f.slot_id == "body")
-        assert body.value.count("<p ") == 2
+        assert "<p " not in body.value
+        assert "<br><br>" in body.value
         assert "First paragraph" in body.value
         assert "Second paragraph" in body.value
 
@@ -697,7 +701,10 @@ class TestMultiParagraphBody:
         )
         m = match_section(s, 0)
         body = next(f for f in m.slot_fills if f.slot_id == "body_text")
-        assert body.value.count("<p ") == 2
+        assert "<p " not in body.value
+        assert "Para 1" in body.value
+        assert "Para 2" in body.value
+        assert "<br><br>" in body.value
 
 
 class TestPlaceholderSuppression:

@@ -8,7 +8,7 @@ Validates:
 - G1: role="presentation" on tables
 - G-REF-2: display: block on images
 - G-REF-3: Buttons as <a> tags
-- G-REF-4: Headings in <h1>-<h3>, body in <p>
+- G-REF-4: All text content in <td> (td-only layout, no <p> or <h> tags)
 - Text content preserved
 - Section count reasonable
 - Schema validation passes
@@ -16,6 +16,7 @@ Validates:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -163,8 +164,10 @@ class TestGoldenRoundTrip:
         assert output, "Empty conversion output"
         # G1: Tables should have role="presentation"
         assert 'role="presentation"' in output
-        # G-REF-4: Should have heading tag
-        assert "<h1" in output.lower() or "<h2" in output.lower()
+        # G-REF-4: td-only layout — no p/h tags in output
+        assert not re.search(r"<(p|h[1-6])[\s>]", output, re.IGNORECASE), (
+            "Converter output contains <p> or <h> tags — td-only layout required"
+        )
 
     @pytest.mark.asyncio
     async def test_article_card_roundtrip(self) -> None:
@@ -196,8 +199,10 @@ class TestGoldenRoundTrip:
 
         assert output, "Empty conversion output"
         assert 'role="presentation"' in output
-        # G-REF-4: Body text in <p> tags
-        assert "<p" in output.lower()
+        # G-REF-4: td-only layout — no p/h tags in output
+        assert not re.search(r"<(p|h[1-6])[\s>]", output, re.IGNORECASE), (
+            "Converter output contains <p> or <h> tags — td-only layout required"
+        )
 
     @pytest.mark.asyncio
     async def test_column_layout_2_roundtrip(self) -> None:

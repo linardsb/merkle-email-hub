@@ -1143,34 +1143,13 @@ class TestAccessibility:
             "linked" in (result.details or "").lower() or "link" in (result.details or "").lower()
         )
 
-    # --- Group D: Heading Hierarchy ---
+    # --- Group D: Heading Hierarchy (disabled — td-only email layout has no h tags) ---
 
-    async def test_proper_headings_passes(self):
-        html = self._html(
-            '<table role="presentation"><tr><td><h1>Title</h1><h2>Section</h2></td></tr></table>'
-        )
+    async def test_heading_rules_disabled_no_deduction(self):
+        """Heading rules are disabled — emails use td-only layout with no h tags."""
+        html = self._html('<table role="presentation"><tr><td>No headings</td></tr></table>')
         result = await self.check.run(html)
         assert "heading" not in (result.details or "").lower()
-
-    async def test_no_headings_degrades(self):
-        html = self._html('<table role="presentation"><tr><td><p>No headings</p></td></tr></table>')
-        result = await self.check.run(html)
-        assert result.passed is False
-        assert "heading" in (result.details or "").lower()
-
-    async def test_multiple_h1_degrades(self):
-        html = self._html(
-            '<table role="presentation"><tr><td><h1>A</h1><h1>B</h1></td></tr></table>'
-        )
-        result = await self.check.run(html)
-        assert "h1" in (result.details or "").lower()
-
-    async def test_skipped_heading_degrades(self):
-        html = self._html(
-            '<table role="presentation"><tr><td><h1>A</h1><h3>C</h3></td></tr></table>'
-        )
-        result = await self.check.run(html)
-        assert "skip" in (result.details or "").lower()
 
     # --- Group E: Link Accessibility ---
 

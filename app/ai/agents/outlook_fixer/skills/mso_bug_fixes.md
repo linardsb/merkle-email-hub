@@ -190,15 +190,9 @@ For web fonts:
 **Symptom:** `border-radius` on any element is completely ignored in Outlook
 **Fix:** Use VML for rounded elements OR accept square corners with graceful degradation
 
-## Bug 13: Outlook Adding Extra Spacing to Paragraphs
-**Symptom:** `<p>` tags get extra top/bottom margin in Outlook
-**Fix:** Reset margins explicitly and use `mso-margin-top-alt`
-
-```html
-<p style="margin:0 0 16px 0; mso-margin-top-alt:0; mso-margin-bottom-alt:16px;">
-  Paragraph text here.
-</p>
-```
+## Bug 13: Legacy `<p>` Tags in Imported HTML
+**Symptom:** `<p>` tags in imported/legacy HTML get extra top/bottom margin in Outlook
+**Fix:** The converter pipeline strips all `<p>` and `<h1>`-`<h6>` tags, merging styles into parent `<td>`. For any legacy HTML that still contains `<p>` tags, the sanitizer handles this automatically. All new output uses td-only layout — text content directly in `<td>` with inline styles.
 
 ## Bug 14: CSS Float Not Working
 **Symptom:** `float:left/right` breaks layout in Outlook

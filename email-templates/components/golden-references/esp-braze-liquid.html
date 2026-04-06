@@ -40,12 +40,18 @@
       <!-- Personalized greeting with default fallback -->
       <tr>
         <td style="padding: 30px 30px 10px 30px;">
-          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
-            Hi {{ ${first_name} | default: 'Friend' }},
-          </h1>
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
-            Thanks for being a valued member since {{ custom_attribute.${signup_date} | date: '%B %Y' | default: 'the beginning' }}.
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">
+                Hi {{ ${first_name} | default: 'Friend' }},
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Thanks for being a valued member since {{ custom_attribute.${signup_date} | date: '%B %Y' | default: 'the beginning' }}.
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
 
@@ -56,16 +62,22 @@
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f0f7ff; border-left: 4px solid #0066cc;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0066cc;">Exclusive V3 Features</h2>
-                <p style="margin: 0 0 10px 0;">As a V3 user, you have early access to our new dashboard and analytics tools.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #0066cc; mso-line-height-rule: exactly;">Exclusive V3 Features</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">As a V3 user, you have early access to our new dashboard and analytics tools.</td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
           {% else %}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
-              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
-                <p style="margin: 0 0 10px 0;">Upgrade to our latest version to unlock premium features and improved performance.</p>
+              <td style="padding: 15px 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Upgrade to our latest version to unlock premium features and improved performance.
               </td>
             </tr>
           </table>
@@ -75,8 +87,8 @@
 
       <!-- Connected Content: dynamic product recommendations -->
       <tr>
-        <td style="padding: 0 30px 10px 30px;">
-          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Recommended for You</h2>
+        <td style="padding: 0 30px 10px 30px; font-family: Arial, sans-serif; font-size: 20px; color: #333333; mso-line-height-rule: exactly;">
+          Recommended for You
         </td>
       </tr>
       <tr>
@@ -93,9 +105,17 @@
                       <img src="{{ item.image_url | default: 'https://via.placeholder.com/80x80' }}" alt="{{ item.name | default: 'Product image' }}" width="80" style="display: block; border: 0;" />
                     </td>
                     <td valign="top" style="font-family: Arial, sans-serif;">
-                      <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #333333;">{{ item.name }}</h3>
-                      <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">{{ item.description | truncate: 80 }}</p>
-                      <p style="margin: 0; font-size: 16px; font-weight: bold; color: #0066cc;">{{ item.price | default: '' }}</p>
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333; mso-line-height-rule: exactly;">{{ item.name }}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">{{ item.description | truncate: 80 }}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #0066cc; mso-line-height-rule: exactly;">{{ item.price | default: '' }}</td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                 </table>
@@ -104,7 +124,11 @@
             {% endfor %}
           </table>
           {% else %}
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Check out our latest arrivals in the store.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">Check out our latest arrivals in the store.</td>
+            </tr>
+          </table>
           {% endif %}
         </td>
       </tr>
@@ -121,11 +145,9 @@
 
       <!-- Footer -->
       <tr>
-        <td style="padding: 20px 30px; background-color: #f0f0f0;">
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+        <td style="padding: 20px 30px; background-color: #f0f0f0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center; mso-line-height-rule: exactly;">
             <a href="{{${set_user_to_opted_in_url}}}" style="color: #0066cc; text-decoration: underline;">Update preferences</a> &nbsp;|&nbsp;
             <a href="{{${set_user_to_unsubscribed_url}}}" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
-          </p>
         </td>
       </tr>
 

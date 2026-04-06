@@ -2,18 +2,18 @@
 
 ## Core Rule
 
-Email layout MUST use `<table>/<tr>/<td>` exclusively. The presence of layout CSS properties on `<div>` or `<p>` elements is a failure.
+Email layout MUST use `<table>/<tr>/<td>` exclusively. All text content goes directly in `<td>` with inline styles — no `<p>` or `<h1>`-`<h6>` wrappers. The presence of layout CSS properties on `<div>` elements is a failure.
 
-## Layout CSS Properties (Trigger FAIL on div/p)
+## Layout CSS Properties (Trigger FAIL on div)
 
-These properties on `<div>` or `<p>` indicate layout usage — always FAIL:
+These properties on `<div>` indicate layout usage — always FAIL:
 - `width` (except `max-width` on fluid wrappers inside `<td>`)
 - `display: flex` / `display: grid` / `display: inline-block` (layout intent)
 - `float: left` / `float: right`
 - `columns` / `column-count`
 - `position: absolute` / `position: relative` (layout positioning)
 
-## Permitted div/p Usage (Do NOT Flag)
+## Permitted div Usage (Do NOT Flag)
 
 1. **Text alignment wrapper inside `<td>`** — PASS:
 ```html
@@ -37,19 +37,23 @@ These properties on `<div>` or `<p>` indicate layout usage — always FAIL:
 ```
 The `<div>` here is the non-Outlook fallback for a ghost table column. This is the standard responsive email pattern.
 
-4. **`<p>` for text content inside `<td>`** — PASS:
+4. **Text content directly in `<td>`** — PASS:
 ```html
-<td><p style="margin:0 0 10px 0;">Paragraph text</p></td>
+<td style="font-size:16px; line-height:1.5; color:#333333;">Paragraph text</td>
 ```
+`<p>` and `<h1>`-`<h6>` tags should NOT appear in output HTML. All text styling (font-size, font-weight, color) goes as inline styles on `<td>`.
 
 ## Decision Flowchart
 
-1. Is the element `<div>` or `<p>`?
+1. Is the element `<div>`?
+   - No → continue to step 2
+   - Yes → continue to step 3
+2. Is the element `<p>` or `<h1>`-`<h6>`?
+   - Yes → **FAIL** (text content should be directly in `<td>` with inline styles, not wrapped in p/h tags)
    - No → not applicable (tables are fine)
-   - Yes → continue
-2. Does it have any layout CSS property from the list above?
-   - Yes → **FAIL** (layout div/p in email)
+3. Does the `<div>` have any layout CSS property from the list above?
+   - Yes → **FAIL** (layout div in email)
    - No → continue
-3. Is it inside a `<td>` or inside an MSO conditional block?
+4. Is it inside a `<td>` or inside an MSO conditional block?
    - Yes → **PASS** (permitted wrapper usage)
-   - No → **FAIL** (structural div/p outside table context)
+   - No → **FAIL** (structural div outside table context)

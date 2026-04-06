@@ -40,12 +40,18 @@
       <!-- Personalized greeting with Django default filter -->
       <tr>
         <td style="padding: 30px 30px 10px 30px;">
-          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
-            Hi {{ first_name|default:"Friend" }},
-          </h1>
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
-            Thanks for being a {{ person|lookup:"Plan Type"|default:"valued" }} member since {{ person|lookup:"Created"|date:"F Y"|default:"the early days" }}.
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">
+                Hi {{ first_name|default:"Friend" }},
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Thanks for being a {{ person|lookup:"Plan Type"|default:"valued" }} member since {{ person|lookup:"Created"|date:"F Y"|default:"the early days" }}.
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
 
@@ -56,8 +62,14 @@
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #fce4ec; border-left: 4px solid #c62828;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #c62828;">VIP Early Access</h2>
-                <p style="margin: 0 0 10px 0;">Shop our new collection 48 hours before everyone else. Your exclusive VIP code: <strong>{{ person|lookup:"VIP Code"|default:"VIPACCESS" }}</strong></p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #c62828; mso-line-height-rule: exactly;">VIP Early Access</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">Shop our new collection 48 hours before everyone else. Your exclusive VIP code: <strong>{{ person|lookup:"VIP Code"|default:"VIPACCESS" }}</strong></td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -65,16 +77,22 @@
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e3f2fd; border-left: 4px solid #1565c0;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #1565c0;">Loyal Customer Reward</h2>
-                <p style="margin: 0 0 10px 0;">You have placed {{ person|lookup:"Total Orders" }} orders with us! Enjoy free shipping on your next purchase.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #1565c0; mso-line-height-rule: exactly;">Loyal Customer Reward</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">You have placed {{ person|lookup:"Total Orders" }} orders with us! Enjoy free shipping on your next purchase.</td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
           {% else %}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
-              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
-                <p style="margin: 0 0 10px 0;">Explore our curated picks and find something you will love.</p>
+              <td style="padding: 15px 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Explore our curated picks and find something you will love.
               </td>
             </tr>
           </table>
@@ -85,7 +103,11 @@
       <!-- Catalog product loop -->
       <tr>
         <td style="padding: 0 30px 20px 30px;">
-          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Recommended Products</h2>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333; mso-line-height-rule: exactly;">Recommended Products</td>
+            </tr>
+          </table>
           {% for item in event.items|default:person|lookup:"Recommended Products" %}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
@@ -96,9 +118,17 @@
                       <img src="{{ item.ImageURL|default:'https://via.placeholder.com/80x80' }}" alt="{{ item.Name|default:'Product' }}" width="80" style="display: block; border: 0;" />
                     </td>
                     <td valign="top" style="font-family: Arial, sans-serif;">
-                      <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #333333;">{{ item.Name }}</h3>
-                      <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">{{ item.Description|truncatewords:15 }}</p>
-                      <p style="margin: 0; font-size: 16px; font-weight: bold; color: #0066cc;">{{ item.Price|floatformat:2|default:"" }}</p>
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333; mso-line-height-rule: exactly;">{{ item.Name }}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0 0 5px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">{{ item.Description|truncatewords:15 }}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #0066cc; mso-line-height-rule: exactly;">{{ item.Price|floatformat:2|default:"" }}</td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                 </table>
@@ -106,7 +136,11 @@
             </tr>
           </table>
           {% empty %}
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Browse our latest arrivals and bestsellers.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">Browse our latest arrivals and bestsellers.</td>
+            </tr>
+          </table>
           {% endfor %}
         </td>
       </tr>
@@ -115,18 +149,20 @@
       <tr>
         <td style="padding: 0 30px 20px 30px;">
           {% block "email_footer" %}
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; color: #999999;">Default footer content — replaced by block definition.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="font-family: Arial, sans-serif; font-size: 12px; color: #999999; mso-line-height-rule: exactly;">Default footer content — replaced by block definition.</td>
+            </tr>
+          </table>
           {% endblock %}
         </td>
       </tr>
 
       <!-- Footer with Klaviyo system URLs -->
       <tr>
-        <td style="padding: 20px 30px; background-color: #f0f0f0;">
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+        <td style="padding: 20px 30px; background-color: #f0f0f0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center; mso-line-height-rule: exactly;">
             <a href="{{ manage_preferences_url }}" style="color: #0066cc; text-decoration: underline;">Manage preferences</a> &nbsp;|&nbsp;
             <a href="{{ unsubscribe_url }}" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
-          </p>
         </td>
       </tr>
 

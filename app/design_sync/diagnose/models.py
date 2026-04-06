@@ -33,6 +33,11 @@ class SectionTrace:
     slot_fills: tuple[dict[str, str], ...]
     unfilled_slots: tuple[str, ...]
     html_preview: str  # First 3000 chars of rendered HTML
+    vlm_classification: str = ""
+    vlm_confidence: float = 0.0
+    verification_fidelity: float | None = None
+    corrections_applied: int = 0
+    generation_method: str = "template"
 
 
 @dataclass(frozen=True)
@@ -81,3 +86,5 @@ class DiagnosticReport:
     design_image_path: str | None = None
     design_image_width: int | None = None
     design_image_height: int | None = None
+    verification_loop_iterations: int = 0
+    final_fidelity: float | None = None

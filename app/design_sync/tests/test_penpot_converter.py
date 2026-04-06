@@ -718,12 +718,11 @@ class TestConverterNoDivOrP:
 
 
 class TestSanitizeWebTagsForEmail:
-    def test_p_inside_td_preserved_with_margin(self) -> None:
-        """<p> inside <td> is preserved with margin reset for accessibility."""
+    def test_p_inside_td_stripped_styles_merged(self) -> None:
+        """<p> inside <td> is stripped, styles merged into parent <td>."""
         html_input = '<td><p style="color:red;">text</p></td>'
         result = sanitize_web_tags_for_email(html_input)
-        assert "<p" in result
-        assert "margin:0 0 10px 0" in result
+        assert "<p" not in result
         assert "color:red" in result
         assert "text" in result
 
@@ -734,12 +733,13 @@ class TestSanitizeWebTagsForEmail:
         assert "<p" not in result
         assert "standalone" in result
 
-    def test_multiple_p_inside_td_preserved(self) -> None:
-        """Multiple <p> tags inside <td> all get margin resets."""
+    def test_multiple_p_inside_td_stripped(self) -> None:
+        """Multiple <p> tags inside <td> are stripped, content preserved."""
         html_input = "<td><p>one</p><p>two</p></td>"
         result = sanitize_web_tags_for_email(html_input)
-        assert result.count("<p") == 2
-        assert result.count("margin:0 0 10px 0") == 2
+        assert "<p" not in result
+        assert "one" in result
+        assert "two" in result
 
     def test_multiple_p_outside_td_get_br_separator(self) -> None:
         html_input = "<p>one</p><p>two</p>"
@@ -747,13 +747,14 @@ class TestSanitizeWebTagsForEmail:
         assert "<p" not in result
         assert "one<br><br>two" in result
 
-    def test_p_with_existing_margin_preserved(self) -> None:
-        """<p> that already has margin is not double-set."""
+    def test_p_with_margin_stripped_style_merged(self) -> None:
+        """<p> with margin inside <td> is stripped, margin converted to padding on td."""
         html_input = '<td><p style="margin:0;">text</p></td>'
         result = sanitize_web_tags_for_email(html_input)
-        assert "<p" in result
-        assert "margin:0;" in result
-        assert "margin:0 0 10px 0" not in result
+        assert "<p" not in result
+        assert "text" in result
+        # margin on p becomes padding on td
+        assert "padding:0;" in result
 
     def test_div_with_layout_css_converted_to_table(self) -> None:
         """<div> with layout CSS becomes table wrapper."""
@@ -815,15 +816,15 @@ class TestSanitizeWebTagsForEmail:
         assert "<div" not in result
         assert '<table role="presentation"' in result
 
-    def test_llm_output_p_preserved_div_classified(self) -> None:
-        """LLM output inside table: <p> preserved, simple <div> preserved."""
+    def test_llm_output_p_stripped_div_classified(self) -> None:
+        """LLM output inside table: <p> stripped (content kept), simple <div> preserved."""
         llm_output = (
             '<table><tr><td><div style="text-align:center;"><p>Intro</p>'
             "<p>Details</p></div></td></tr></table>"
         )
         result = sanitize_web_tags_for_email(llm_output)
-        # <p> inside <td> → preserved
-        assert "<p" in result
+        # <p> inside <td> → stripped, content preserved
+        assert "<p" not in result
         assert "Intro" in result
         assert "Details" in result
         # Simple <div> inside <td> → preserved
@@ -831,11 +832,10 @@ class TestSanitizeWebTagsForEmail:
         assert "<table>" in result
 
     def test_p_between_nested_tables_inside_outer_td(self) -> None:
-        """<p> between nested tables but still inside outer <td> is preserved."""
+        """<p> between nested tables inside outer <td> is stripped, content preserved."""
         html_input = "<td><table><tr><td>inner</td></tr></table><p>between</p></td>"
         result = sanitize_web_tags_for_email(html_input)
-        assert "<p" in result
-        assert "margin:0 0 10px 0" in result
+        assert "<p" not in result
         assert "between" in result
 
     def test_div_between_nested_tables_inside_outer_td(self) -> None:
@@ -848,6 +848,80 @@ class TestSanitizeWebTagsForEmail:
         assert "<div" in result
         assert "text-align:center" in result
         assert "wrap" in result
+
+    # --- AI agent output safety net tests ---
+
+    def test_h1_inside_td_stripped_styles_merged(self) -> None:
+        """h1 from AI output inside <td> is stripped, styles merged into td."""
+        html_input = (
+            '<td style="padding:20px;"><h1 style="font-size:32px;font-weight:bold;">Title</h1></td>'
+        )
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<h1" not in result
+        assert "</h1>" not in result
+        assert "Title" in result
+        assert "font-size:32px" in result
+
+    def test_h2_inside_td_stripped_data_slot_transferred(self) -> None:
+        """h2 from AI output has data-slot transferred to parent td."""
+        html_input = '<td><h2 data-slot="heading" style="font-size:24px;">Heading</h2></td>'
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<h2" not in result
+        assert 'data-slot="heading"' in result
+        assert "Heading" in result
+
+    def test_h3_inside_td_stripped_class_transferred(self) -> None:
+        """h3 from AI output has class transferred to parent td."""
+        html_input = '<td><h3 class="dark-text" style="color:#fff;">Sub</h3></td>'
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<h3" not in result
+        assert 'class="dark-text"' in result
+        assert "Sub" in result
+
+    def test_mixed_h_and_p_in_ai_output_all_stripped(self) -> None:
+        """AI output with mixed h2 + p tags — all stripped, content preserved."""
+        html_input = (
+            '<td style="padding:20px;">'
+            '<h2 style="font-size:24px;">Heading</h2>'
+            '<p style="font-size:14px;">Body text</p>'
+            "</td>"
+        )
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<h2" not in result
+        assert "<p" not in result
+        assert "Heading" in result
+        assert "Body text" in result
+
+    def test_h_outside_td_stripped_with_br(self) -> None:
+        """h tags outside <td> are stripped like p tags."""
+        html_input = "<h1>First</h1><h2>Second</h2>"
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<h1" not in result
+        assert "<h2" not in result
+        assert "First" in result
+        assert "Second" in result
+
+    def test_ai_output_p_margin_becomes_td_padding(self) -> None:
+        """AI-generated <p margin:...> becomes padding on parent td."""
+        html_input = '<td><p style="margin:0 0 16px 0;font-size:14px;">Text</p></td>'
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<p" not in result
+        assert "padding:0 0 16px 0" in result
+        assert "font-size:14px" in result
+
+    def test_mso_block_h_and_p_also_stripped(self) -> None:
+        """h/p tags inside <!--[if mso]> blocks are also stripped.
+
+        Outlook's Word engine handles td-based layouts just as well as
+        p/h tags, so we strip them everywhere for consistency.
+        """
+        html_input = "<!--[if mso]><td><h1>Outlook</h1><p>Compat</p></td><![endif]-->"
+        result = sanitize_web_tags_for_email(html_input)
+        assert "<h1" not in result
+        assert "<p>" not in result
+        assert "Outlook" in result
+        assert "Compat" in result
+        assert "<!--[if" in result  # MSO wrapper preserved
 
 
 class TestEmailSkeletonMetaTags:
@@ -1449,8 +1523,8 @@ class TestCalculateColumnWidths:
 class TestSemanticHTMLGeneration:
     """Tests for 33.6 semantic HTML generation."""
 
-    def test_heading_text_gets_h1(self) -> None:
-        """TEXT with font_size=32 (2x body 16) -> <h1> inside <td>."""
+    def test_heading_text_renders_in_td(self) -> None:
+        """TEXT with font_size=32 (2x body 16) -> text directly in <td> (no h1 wrapper)."""
         node = DesignNode(
             id="t1",
             name="Title",
@@ -1468,15 +1542,14 @@ class TestSemanticHTMLGeneration:
             ),
         }
         result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
-        assert "<h1" in result
-        assert "margin:0;" in result
+        assert "<h1" not in result
         assert "Big Title" in result
         assert "<td" in result
-        # Styles are duplicated to <td> for email client compatibility
-        assert "font-family:" in result.split("<h1")[0]
+        assert "font-family:" in result
+        assert "mso-line-height-rule:exactly" in result
 
-    def test_heading_text_gets_h2(self) -> None:
-        """TEXT with font_size=24 (1.5x body 16) -> <h2>."""
+    def test_heading_text_h2_size_renders_in_td(self) -> None:
+        """TEXT with font_size=24 (1.5x body 16) -> text in <td> (no h2 wrapper)."""
         node = DesignNode(
             id="t1",
             name="Subtitle",
@@ -1494,10 +1567,13 @@ class TestSemanticHTMLGeneration:
             ),
         }
         result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
-        assert "<h2" in result
+        assert "<h2" not in result
+        assert "<td" in result
+        assert "Subtitle" in result
+        assert "mso-line-height-rule:exactly" in result
 
-    def test_heading_text_gets_h3(self) -> None:
-        """TEXT with font_size=20 (1.25x body 16) -> <h3>."""
+    def test_heading_text_h3_size_renders_in_td(self) -> None:
+        """TEXT with font_size=20 (1.25x body 16) -> text in <td> (no h3 wrapper)."""
         node = DesignNode(
             id="t1",
             name="Section",
@@ -1515,10 +1591,13 @@ class TestSemanticHTMLGeneration:
             ),
         }
         result = node_to_email_html(node, text_meta=text_meta, body_font_size=16.0)
-        assert "<h3" in result
+        assert "<h3" not in result
+        assert "<td" in result
+        assert "Section" in result
+        assert "mso-line-height-rule:exactly" in result
 
-    def test_body_text_gets_p(self) -> None:
-        """TEXT at body size -> <p> with margin reset."""
+    def test_body_text_renders_in_td(self) -> None:
+        """TEXT at body size -> text directly in <td> with padding."""
         node = DesignNode(
             id="t1",
             name="Body",
@@ -1528,12 +1607,13 @@ class TestSemanticHTMLGeneration:
             y=0,
         )
         result = node_to_email_html(node, body_font_size=16.0)
-        assert "<p" in result
-        assert "margin:0 0 10px 0" in result
+        assert "<p" not in result
+        assert "<td" in result
+        assert "padding:0 0 10px 0" in result
         assert "Body text here" in result
 
-    def test_body_text_no_text_meta_still_p(self) -> None:
-        """TEXT without text_meta -> <p> (default body)."""
+    def test_body_text_no_text_meta_still_td(self) -> None:
+        """TEXT without text_meta -> text in <td> with padding (default body)."""
         node = DesignNode(
             id="t1",
             name="Text",
@@ -1542,11 +1622,12 @@ class TestSemanticHTMLGeneration:
             y=0,
         )
         result = node_to_email_html(node)
-        assert "<p" in result
-        assert "margin:0 0 10px 0" in result
+        assert "<p" not in result
+        assert "<td" in result
+        assert "padding:0 0 10px 0" in result
 
-    def test_multiline_text_splits_to_p_tags(self) -> None:
-        """Multi-line TEXT -> multiple <p> tags."""
+    def test_multiline_text_splits_to_td_rows(self) -> None:
+        """Multi-line TEXT -> multiple <td> elements joined by </tr><tr>."""
         node = DesignNode(
             id="t1",
             name="Multi",
@@ -1555,7 +1636,9 @@ class TestSemanticHTMLGeneration:
             y=0,
         )
         result = node_to_email_html(node)
-        assert result.count("<p") == 3
+        assert "<p" not in result
+        assert result.count("<td") >= 3
+        assert "</tr><tr>" in result
 
     def test_button_renders_bulletproof(self) -> None:
         """COMPONENT in button_ids -> <a> button with VML fallback."""
@@ -1657,7 +1740,9 @@ class TestSemanticHTMLGeneration:
             props_map=props_map,
         )
         assert "mso-line-height-rule:exactly" in result
-        assert "<h1" in result
+        assert "<h1" not in result
+        assert "<td" in result
+        assert "Heading" in result
 
 
 class TestDetermineHeadingLevel:

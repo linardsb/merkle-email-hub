@@ -497,6 +497,10 @@ def build_section_traces(
     layout: DesignLayoutDescription,
     matches: list[ComponentMatch],
     rendered: list[RenderedSection],
+    *,
+    verification_results: dict[int, tuple[float, int]] | None = None,
+    generation_methods: dict[int, str] | None = None,
+    vlm_classifications: dict[int, tuple[str, float]] | None = None,
 ) -> list[SectionTrace]:
     """Build per-section diagnostic traces by zipping pipeline stages."""
     traces: list[SectionTrace] = []
@@ -529,6 +533,21 @@ def build_section_traces(
         if rendered_section:
             html_preview = rendered_section.html[:_HTML_PREVIEW_LIMIT]
 
+        # Verification / generation / VLM metadata for this section
+        v_fidelity: float | None = None
+        v_corrections = 0
+        if verification_results and i in verification_results:
+            v_fidelity, v_corrections = verification_results[i]
+
+        gen_method = "template"
+        if generation_methods and i in generation_methods:
+            gen_method = generation_methods[i]
+
+        vlm_type = ""
+        vlm_conf = 0.0
+        if vlm_classifications and i in vlm_classifications:
+            vlm_type, vlm_conf = vlm_classifications[i]
+
         traces.append(
             SectionTrace(
                 section_idx=i,
@@ -543,6 +562,11 @@ def build_section_traces(
                 slot_fills=tuple(slot_summaries),
                 unfilled_slots=tuple(unfilled),
                 html_preview=html_preview,
+                vlm_classification=vlm_type,
+                vlm_confidence=vlm_conf,
+                verification_fidelity=v_fidelity,
+                corrections_applied=v_corrections,
+                generation_method=gen_method,
             )
         )
 

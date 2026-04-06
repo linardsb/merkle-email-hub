@@ -135,15 +135,16 @@ services:
       context: ./cms
       dockerfile: apps/web/Dockerfile
     expose:
-      - "3000"
+      - "3100"
     environment:
+      - PORT=3100
       - INTERNAL_API_URL=http://app:8891
       - BACKEND_URL=http://app:8891
       - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set}
       - AUTH_TRUST_HOST=true
       - AUTH_URL=${AUTH_URL:-http://localhost}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3100 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -305,6 +306,8 @@ networks:
 
 volumes:
   postgres_data:
+    name: email-hub_postgres_data
+    external: true
   redis_data:
 
   document_data:

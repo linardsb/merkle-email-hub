@@ -98,8 +98,14 @@
       <!-- Hero section -->
       <tr>
         <td class="container-bg" style="padding: 40px 30px; background-color: #ffffff;">
-          <h1 data-slot="heading" class="dark-text-primary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 28px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">Welcome to Dark Mode</h1>
-          <p data-slot="body_text" class="dark-text-secondary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">This email adapts seamlessly to your inbox theme. All colors maintain WCAG AA contrast ratios in both light and dark modes. Text remains readable, images swap appropriately, and buttons stay accessible.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td data-slot="heading" class="dark-text-primary" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 28px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">Welcome to Dark Mode</td>
+            </tr>
+            <tr>
+              <td data-slot="body_text" class="dark-text-secondary" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">This email adapts seamlessly to your inbox theme. All colors maintain WCAG AA contrast ratios in both light and dark modes. Text remains readable, images swap appropriately, and buttons stay accessible.</td>
+            </tr>
+          </table>
         </td>
       </tr>
 
@@ -113,9 +119,17 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
               <tr>
                 <td class="card-bg dark-border" style="padding: 20px; background-color: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 8px;">
-                  <h2 data-slot="card_1_heading" class="dark-text-primary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333;">Card Title</h2>
-                  <p class="dark-text-secondary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Card content that adapts colors in dark mode while maintaining readable contrast.</p>
-                  <a class="dark-text-link" href="https://example.com" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">Read more</a>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td data-slot="card_1_heading" class="dark-text-primary" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333; mso-line-height-rule: exactly;">Card Title</td>
+                    </tr>
+                    <tr>
+                      <td class="dark-text-secondary" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666; mso-line-height-rule: exactly;">Card content that adapts colors in dark mode while maintaining readable contrast.</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 14px; mso-line-height-rule: exactly;"><a class="dark-text-link" href="https://example.com" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">Read more</a></td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -127,9 +141,17 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
               <tr>
                 <td class="card-bg dark-border" style="padding: 20px; background-color: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 8px;">
-                  <h2 data-slot="card_2_heading" class="dark-text-primary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333;">Card Title</h2>
-                  <p class="dark-text-secondary" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666;">Second card with matching dark mode treatment and proper text/background contrast ratios.</p>
-                  <a class="dark-text-link" href="https://example.com" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">Read more</a>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td data-slot="card_2_heading" class="dark-text-primary" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #333333; mso-line-height-rule: exactly;">Card Title</td>
+                    </tr>
+                    <tr>
+                      <td class="dark-text-secondary" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #666666; mso-line-height-rule: exactly;">Second card with matching dark mode treatment and proper text/background contrast ratios.</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family: Arial, sans-serif; font-size: 14px; mso-line-height-rule: exactly;"><a class="dark-text-link" href="https://example.com" style="font-family: Arial, sans-serif; font-size: 14px; color: #0066cc; text-decoration: underline;">Read more</a></td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -164,11 +186,17 @@
       <!-- Footer -->
       <tr>
         <td class="footer-bg" style="padding: 20px 30px; background-color: #333333;">
-          <p class="dark-text-muted" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #aaaaaa; text-align: center;">You received this email because you subscribed to our newsletter.</p>
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #aaaaaa; text-align: center;">
-            <a class="dark-text-link" href="https://example.com/preferences" style="color: #99ccff; text-decoration: underline;">Manage preferences</a> &nbsp;|&nbsp;
-            <a class="dark-text-link" href="https://example.com/unsubscribe" style="color: #99ccff; text-decoration: underline;">Unsubscribe</a>
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td class="dark-text-muted" style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #aaaaaa; text-align: center; mso-line-height-rule: exactly;">You received this email because you subscribed to our newsletter.</td>
+            </tr>
+            <tr>
+              <td style="font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #aaaaaa; text-align: center; mso-line-height-rule: exactly;">
+                <a class="dark-text-link" href="https://example.com/preferences" style="color: #99ccff; text-decoration: underline;">Manage preferences</a> &nbsp;|&nbsp;
+                <a class="dark-text-link" href="https://example.com/unsubscribe" style="color: #99ccff; text-decoration: underline;">Unsubscribe</a>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
 

@@ -13,16 +13,22 @@
           </td>
         </tr>
       </table>
-      <!-- Links -->
-      <p data-slot="links" style="margin: 0 0 16px 0; font-family: Arial, sans-serif; font-size: 13px; line-height: 20px; color: #666666; mso-line-height-rule: exactly;">
-        <a href="https://example.com/privacy" target="_blank" style="font-family: Arial, sans-serif; color: #666666; text-decoration: underline;">Privacy</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://example.com/terms" target="_blank" style="font-family: Arial, sans-serif; color: #666666; text-decoration: underline;">Terms</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://example.com/contact" target="_blank" style="font-family: Arial, sans-serif; color: #666666; text-decoration: underline;">Contact</a>
-      </p>
-      <!-- Copyright -->
-      <p data-slot="copyright" style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color: #999999; mso-line-height-rule: exactly;">&copy; 2026 Your Company. All rights reserved.</p>
-      <!-- Unsubscribe -->
-      <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color: #999999; mso-line-height-rule: exactly;">
-        <a data-slot="unsubscribe_url" href="https://example.com/unsubscribe" target="_blank" style="font-family: Arial, sans-serif; color: #999999; text-decoration: underline;">Unsubscribe</a>
-      </p>
+      <!-- Links + Copyright + Unsubscribe -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td data-slot="links" style="padding: 0 0 16px 0; text-align: center; font-family: Arial, sans-serif; font-size: 13px; line-height: 20px; color: #666666; mso-line-height-rule: exactly;">
+            <a href="https://example.com/privacy" target="_blank" style="font-family: Arial, sans-serif; color: #666666; text-decoration: underline;">Privacy</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://example.com/terms" target="_blank" style="font-family: Arial, sans-serif; color: #666666; text-decoration: underline;">Terms</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://example.com/contact" target="_blank" style="font-family: Arial, sans-serif; color: #666666; text-decoration: underline;">Contact</a>
+          </td>
+        </tr>
+        <tr>
+          <td data-slot="copyright" style="padding: 0 0 10px 0; text-align: center; font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color: #999999; mso-line-height-rule: exactly;">&copy; 2026 Your Company. All rights reserved.</td>
+        </tr>
+        <tr>
+          <td style="padding: 0; text-align: center; font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color: #999999; mso-line-height-rule: exactly;">
+            <a data-slot="unsubscribe_url" href="https://example.com/unsubscribe" target="_blank" style="font-family: Arial, sans-serif; color: #999999; text-decoration: underline;">Unsubscribe</a>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>

@@ -44,11 +44,14 @@ ACCESSIBILITY_CRITERIA: list[JudgeCriteria] = [
     JudgeCriteria(
         name="semantic_structure",
         description=(
-            "Is the heading hierarchy sequential with no skipped levels? There should "
-            "be at most one <h1>, and headings must proceed h1→h2→h3 without gaps. "
-            "Link text must be descriptive (never 'click here', 'read more', 'here' "
-            "alone). Layout tables must not use <th>, <caption>, or <thead> (those are "
-            "for data tables only)."
+            "Is there a clear visual text hierarchy using font-size on <td> elements? "
+            "The output should use td-only layout with no <p> or <h1>-<h6> tags — all "
+            "text content goes directly in <td> with inline styles. Heading-level text "
+            "uses larger font-size and font-weight:bold on the <td>. Visual hierarchy "
+            "should be consistent (main heading largest, section headings medium, body "
+            "text smallest). Link text must be descriptive (never 'click here', 'read "
+            "more', 'here' alone). Layout tables must not use <th>, <caption>, or "
+            "<thead> (those are for data tables only)."
         ),
     ),
     JudgeCriteria(

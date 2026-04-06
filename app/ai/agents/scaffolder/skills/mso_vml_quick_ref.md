@@ -219,10 +219,10 @@ mso-hide: all;                     /* Hide from Outlook only */
 ## Common Outlook Bugs to Avoid During Generation
 
 ### Bug: Font Fallback (Outlook uses Times New Roman)
-Outlook ignores `font-family` on `<div>`, `<p>`, `<span>`. Always set font on `<td>`:
+Outlook ignores `font-family` on `<div>`, `<span>`. Always set font directly on `<td>` (td-only layout — no `<p>` or `<h>` tags):
 ```html
-<td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:24px; color:#333333;">
-  <p style="margin:0; font-family:Arial,Helvetica,sans-serif;">Your text here</p>
+<td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:24px; color:#333333; mso-line-height-rule:exactly;">
+  Your text here
 </td>
 ```
 
@@ -248,7 +248,7 @@ Outlook on high-DPI displays scales images. Always set both HTML `width` attribu
 ```
 
 ### Bug: Padding Not Supported on Some Elements
-Outlook ignores `padding` on `<p>`, `<div>`, `<a>`. Use `padding` only on `<td>`:
+Outlook ignores `padding` on `<div>`, `<a>`, `<span>`. Use `padding` only on `<td>`:
 ```html
 <!-- WRONG: padding on <a> -->
 <a style="padding:12px 24px;">CTA</a>

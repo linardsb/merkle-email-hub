@@ -1,0 +1,92 @@
+<snippet>
+	<content><![CDATA[
+        <table cellpadding="0" cellspacing="0" border="0" width="$1" class="resptab" role="presentation" style="width:$1px;">
+        	<tr align="center">
+        		<td style="background-repeat: no-repeat; background-position: center center; background-size: cover; background-image: url(images/img_$4.jpg); overflow: hidden !important;" valign="middle" bgcolor="#000000" background="images/img_$4.jpg">
+        			<!--[if gte mso 9]>
+        			<v:rect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" style="width: px; height: auto;" stroke="false" fillcolor="#000000">
+        				<v:fill xmlns:v="urn:schemas-microsoft-com:vml" type="frame"  size="100%,100%" src="images/img_$4.jpg" position="0,0" />
+        				<v:textbox style="mso-fit-shape-to-text: true; overflow: hidden;" inset=" 0, 0, 0, 0">
+        			<![endif]-->
+        			<div>
+        				<div style="line-height: 0px; font-size: 0px;">
+        					<table cellpadding="0" cellspacing="0" border="0" width="$2" class="resptab" role="presentation" style="width:$2px;">
+        						<tr align="center">
+        							<td align="center" class="lrpad">
+        								<table cellpadding="0" cellspacing="0" border="0" width="100%" class="resptab" role="presentation" style="width:100%;">
+        									<tr align="center">
+        										<td style="height: 40px; font-size: 1px; line-height: 1px; mso-line-height-rule: exactly;" height="40">
+        											<!--[if gte mso 9]>&nbsp;<![endif]-->
+        										</td>
+        									</tr>
+        									<tr align="center">
+        										<td align="center">
+        											<table width="100%" border="0" cellspacing="0" class="resptab" role="presentation" cellpadding="0" align="center">
+        												<tbody>
+        													<tr align="center">
+        														<td align="center" class="textLeft" style="font-family: Arial, sans-serif; font-size: 16px; line-height: 120%; color:#ffffff; mso-line-height-rule: exactly; text-align: center; text-transform:uppercase; font-weight: bold;">
+        															Lorem Ipsumat
+        														</td>
+        													</tr>
+        													<tr align="center">
+        														<td style="height: 25px; font-size: 1px; line-height: 1px; mso-line-height-rule: exactly;" height="25">
+        															<!--[if gte mso 9]>&nbsp;<![endif]-->
+        														</td>
+        													</tr>
+        													<tr align="center">
+        														<td align="center" class="textLeft" style="font-family: Arial, sans-serif; font-size: 30px; line-height: 120%; color:#ffffff; mso-line-height-rule: exactly; text-align: center; text-transform:uppercase; font-weight: bold;">
+        															is simply dummy text
+        														</td>
+        													</tr>
+        													<tr align="center">
+        														<td style="height: 20px; font-size: 1px; line-height: 1px; mso-line-height-rule: exactly;" height="20">
+        															<!--[if gte mso 9]>&nbsp;<![endif]-->
+        														</td>
+        													</tr>
+        													<tr align="center">
+        														<td align="center" class="textLeft" style="font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color:#ffffff; mso-line-height-rule: exactly; text-align: center;">
+        															It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.
+        														</td>
+        													</tr>
+        													<tr align="center">
+        														<td style="height: 25px; font-size: 1px; line-height: 1px; mso-line-height-rule: exactly;" height="25">
+        															<!--[if gte mso 9]>&nbsp;<![endif]-->
+        														</td>
+        													</tr>
+        													<tr align="center">
+        														<td align="center">
+        															<table border="0" cellspacing="0" cellpadding="0" role="presentation" bgcolor="#ffffff" style="border-radius: 2px;">
+        																<tr align="center">
+        																	<td align="center" style="mso-line-height-rule: exactly; font-size: 16px; line-height: 21px; text-align: center; font-family: Arial, sans-serif; color: #000000;text-decoration: none; display: inline-block; padding-top:12px; padding-bottom: 12px; padding-right:20px;padding-left:20px;">
+        																		<a href="##" target="_blank" style="mso-line-height-rule: exactly; font-size: 16px; line-height: 21px; text-align: center; font-family: Arial, sans-serif; color: #000000;text-decoration: none !important; display: inline-block;" >
+        																		<strong>Lorem Ipsum &rsaquo;</strong></a>
+        																	</td>
+        																</tr>
+        															</table>
+        														</td>
+        													</tr>
+        												</tbody>
+        											</table>
+        										</td>
+        									</tr>
+        									<tr align="center">
+        										<td style="height: 40px; font-size: 1px; line-height: 1px; mso-line-height-rule: exactly;" height="40">
+        											<!--[if gte mso 9]>&nbsp;<![endif]-->
+        										</td>
+        									</tr>
+        								</table>
+        							</td>
+        						</tr>
+        					</table>
+        				</div>
+        			</div>
+        			<!--[if gte mso 9]>
+        			</v:textbox>
+        			</v:rect>
+        			<![endif]-->
+        		</td>
+        	</tr>
+        </table>
+]]></content>
+	<tabTrigger>vml-bg</tabTrigger>
+</snippet>

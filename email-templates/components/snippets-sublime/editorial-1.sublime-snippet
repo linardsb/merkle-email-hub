@@ -1,0 +1,89 @@
+<snippet>
+	<content><![CDATA[
+				<table cellpadding="0" cellspacing="0" border="0" width="600" id="vwed1" class="resptab" role="presentation" style="width:600px;" bgcolor="#E3EDCC">
+					<tr align="center">
+						<th align="center" class="resptab db lfloat" valign="top">
+							<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+								<tr align="center">
+									<td align="center">
+										<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+											<tr align="center">
+												<td align="center" valign="top">
+													<a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_IMG_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_IMG_VW_NAMEHERE" xt="SPNOTRACK" style="color: #000001; text-decoration: none;" target="_blank"><img src="https://fakeimg.pl/592x562/" alt="" style="font-family: 'VWText', Arial, Helvetica, sans-serif; display: block; border: 0; font-size: 16px; font-weight: normal; color: #000001; line-height: 16px; mso-line-height-rule: exactly;" border="0" class="respimg" width="296" height="281"></a>
+												</td>
+												<td align="center" valign="top">
+													<table cellpadding="0" cellspacing="0" border="0" class="imgspecpad" role="presentation">
+														<tr align="center">
+															<td align="center" width="4" height="23" bgcolor="#ffffff"></td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr align="center">
+									<td align="center" class="hide">
+										<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+											<tr align="center">
+												<td align="center" width="125" height="35" bgcolor="#ffffff"></td>
+												<td align="center" width="175" height="35"></td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</th>
+						<th align="center" class="resptab db lfloat" valign="top">
+							<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+								<tr align="center">
+									<td align="center" class="hide" height="23" style="font-size: 23px; line-height: 23px; mso-line-height-rule: exactly;" bgcolor="#ffffff">&nbsp;</td>
+								</tr>
+								<tr align="center">
+									<td align="center" style="padding-top: 30px; padding-bottom: 36px" class="padtop30 padbot20">
+										<table cellpadding="0" cellspacing="0" border="0" width="300" class="resptab" role="presentation" style="width:300px;">
+											<tr align="center">
+												<td align="center" width="20" class="hide"></td>
+												<td align="center" class="padlr20">
+													<table cellpadding="0" cellspacing="0" border="0" width="240" class="resptab" role="presentation" style="width:240px;">
+														<tr align="center">
+															<td align="center" class="padbot14" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 26px; line-height: 30px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left; font-weight:normal; padding-bottom:20px;">
+																Lorem Ipsum
+															</td>
+														</tr>
+														<tr align="center">
+															<td align="center" class="mobfs16" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#1A1A1A; mso-line-height-rule: exactly; text-align: left;">
+																Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+															</td>
+														</tr>
+														<tr align="center">
+															<td align="left" style="padding-top:20px;">
+																<table cellpadding="0" cellspacing="0" border="0" class="resptab" role="presentation">
+																	<tr align="center">
+																		<th align="left" class="resptab db lfloat">
+																			<table cellpadding="0" cellspacing="0" border="0" class="cta" role="presentation" style="border-radius:25px; border:2px solid #001E50" bgcolor="#001E50">
+																				<tr align="center">
+																					<td align="center" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold; padding-left: 30px; padding-right: 30px; padding-top:15px; padding-bottom:14px;">
+																						<a href="https://links.marketing.vwcrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_VW_NAMEHERE&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-BBM9PPIOBN-1567%2Fredirect%3Furi%3Doutbound%253A%252F%252Fvolkswagen.crm%252Fclick%252Flaunchawareness%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_VW_NAMEHERE" xt="SPNOTRACK" target="_blank" style="font-family: 'VWText', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-decoration: none; font-weight:bold;">Primary button</a>
+																					</td>
+																				</tr>
+																			</table>
+																		</th>
+																	</tr>
+																</table>
+															</td>
+														</tr>
+													</table>
+												</td>
+												<td align="center" width="40" class="hide"></td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</table>
+						</th>
+					</tr>
+				</table>
+]]></content>
+	<tabTrigger>editorial-1</tabTrigger>
+</snippet>

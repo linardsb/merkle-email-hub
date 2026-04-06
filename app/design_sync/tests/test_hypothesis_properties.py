@@ -151,11 +151,11 @@ class TestSanitizeWebTags:
         assert "<!--[if mso]>" in result or "__MSO_" not in result
 
     @given(st.text(min_size=1, max_size=100, alphabet=_alnum))
-    def test_p_inside_td_preserved(self, text: str) -> None:
-        """<p> tags inside <td> must be preserved."""
+    def test_text_inside_td_preserved(self, text: str) -> None:
+        """Text content inside <td> survives sanitization (p tags stripped, content kept)."""
         html = f"<td><p>{text}</p></td>"
         result = sanitize_web_tags_for_email(html)
-        assert "<p" in result
+        assert "<p" not in result
         assert text in result
 
 

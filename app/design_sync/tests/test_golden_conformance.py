@@ -86,6 +86,12 @@ CHECKS: list[ConformanceCheck] = [
         True,
         "Tables should have MSO table space reset",
     ),
+    ConformanceCheck(
+        "G-NO-P-H",
+        r"<(p|h[1-6])[\s>]",
+        False,
+        "No <p> or <h1>-<h6> tags in output — all text in <td>",
+    ),
 ]
 
 

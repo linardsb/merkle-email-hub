@@ -47,6 +47,7 @@ class Rule:
     per_element: bool = False
     cap_key: str = ""
     default_cap: int = 10
+    enabled: bool = True
 
 
 @dataclass
@@ -109,6 +110,7 @@ def load_rules(yaml_path: Path) -> list[Rule]:
                     per_element=entry.get("per_element", False),
                     cap_key=entry.get("cap_key", ""),
                     default_cap=entry.get("default_cap", 10),
+                    enabled=entry.get("enabled", True),
                 )
             )
         except (KeyError, TypeError) as exc:
@@ -697,6 +699,8 @@ class RuleEngine:
         total_deduction = 0.0
 
         for rule in self.rules:
+            if not rule.enabled:
+                continue
             check_fn = _CHECK_TYPES.get(rule.check_type)
             if check_fn is None:
                 logger.warning(

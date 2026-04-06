@@ -1,0 +1,13 @@
+<snippet>
+	<content><![CDATA[
+<a href="$4">
+  <img src="images/img_$1.jpg" alt="" style="display: block; border: 0" border="0" class="hide" width="" height="">
+  <!--[if !mso]><!-->
+    <div class="show" style="font-size: 0%; max-height: 0; width:0px; overflow: hidden; display: none;">
+      <img src="images/img_$2.jpg" alt="" style="display: block; border: 0" border="0" class="respimg" width="" height="">
+    </div>
+  <!--<![endif]-->
+</a>
+]]></content>
+	<tabTrigger>toggle</tabTrigger>
+</snippet>

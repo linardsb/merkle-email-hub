@@ -147,17 +147,17 @@ version: "1.0.0"
 ### Language-Based Content
 ```
 *|IF:MC_LANGUAGE=fr|*
-  <p>Bonjour *|FNAME|* !</p>
+  Bonjour *|FNAME|* !
 *|ELSEIF:MC_LANGUAGE=de|*
-  <p>Hallo *|FNAME|*!</p>
+  Hallo *|FNAME|*!
 *|ELSE:|*
-  <p>Hello *|FNAME|*!</p>
+  Hello *|FNAME|*!
 *|END:IF|*
 ```
 
 ### Dynamic Product Image
 ```html
 <img src="*|PRODUCTIMGURL|*" alt="*|PRODUCTNAME|*" />
-<p><strong>*|PRODUCTNAME|*</strong> — Only *|PRODUCTPRICE|*</p>
+<strong>*|PRODUCTNAME|*</strong> — Only *|PRODUCTPRICE|*
 <a href="*|PRODUCTURL|*">Shop Now</a>
 ```

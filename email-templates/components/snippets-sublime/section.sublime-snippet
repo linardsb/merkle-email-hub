@@ -1,0 +1,16 @@
+<snippet>
+	<content><![CDATA[<table cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${1:#ffffff}" role="presentation">
+  <tr>
+    <td align="center">
+      <table cellpadding="0" cellspacing="0" border="0" width="${2:600}" class="wf" role="presentation">
+        <tr>
+          <td align="${3:center}" style="padding: ${4:20}px;">
+            $5
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>]]></content>
+	<tabTrigger>section</tabTrigger>
+</snippet>

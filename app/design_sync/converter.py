@@ -418,47 +418,37 @@ def _render_semantic_text(
     heading_level: int | None,
     slot_counter: dict[str, int] | None = None,
 ) -> str:
-    """Render a TEXT node as semantic HTML (<h1>-<h3> or <p>) inside <td>.
+    """Render a TEXT node directly inside <td> with inline styles.
 
-    Key styles are duplicated to the wrapping <td> because many email clients
-    (Gmail, Outlook, Yahoo) ignore or strip styles on <h> and <p> tags.
-    The <td> style acts as the reliable fallback.
+    All text styling is applied to the <td> element — no <p> or <h> wrapper
+    tags. This ensures consistent rendering across all email clients.
     """
-    # Build td-level style: font-family + key visual props from extra_style.
-    # This ensures email clients that ignore h/p styles still render correctly.
-    td_style = f"font-family:{font_family};{mso_alt}{extra_style}"
-
     if is_heading and heading_level is not None:
-        tag = f"h{heading_level}"
         slot_attr = ""
         if slot_counter is not None:
             slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "heading")}"'
-        inner_style = f"margin:0;font-family:{font_family};mso-line-height-rule:exactly;{mso_alt}{extra_style}"
-        return (
-            f'{pad}<td style="{td_style}">'
-            f'<{tag}{slot_attr} style="{inner_style}">{content}</{tag}></td>'
-        )
+        td_style = f"font-family:{font_family};mso-line-height-rule:exactly;{mso_alt}{extra_style}"
+        return f'{pad}<td{slot_attr} style="{td_style}">{content}</td>'
 
-    # Body text -> <p> (split multi-line on \n)
+    # Body text — split multi-line on \n into separate <td> rows
     lines = content.split("\n") if "\n" in content else [content]
     if len(lines) == 1:
         slot_attr = ""
         if slot_counter is not None:
             slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "body")}"'
-        p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
-        return f'{pad}<td style="{td_style}"><p{slot_attr} style="{p_style}">{content}</p></td>'
+        td_style = f"padding:0 0 10px 0;font-family:{font_family};mso-line-height-rule:exactly;{mso_alt}{extra_style}"
+        return f'{pad}<td{slot_attr} style="{td_style}">{content}</td>'
 
-    # Multi-line -> multiple <p> tags
-    p_style = f"margin:0 0 10px 0;font-family:{font_family};{mso_alt}{extra_style}"
-    p_parts: list[str] = []
+    # Multi-line -> separate <td> elements joined by </tr><tr>
+    td_style = f"padding:0 0 10px 0;font-family:{font_family};mso-line-height-rule:exactly;{mso_alt}{extra_style}"
+    td_parts: list[str] = []
     for line in lines:
         if line.strip():
             slot_attr = ""
             if slot_counter is not None:
                 slot_attr = f' data-slot-name="{_next_slot_name(slot_counter, "body")}"'
-            p_parts.append(f'<p{slot_attr} style="{p_style}">{line}</p>')
-    inner = "".join(p_parts)
-    return f'{pad}<td style="{td_style}">{inner}</td>'
+            td_parts.append(f'<td{slot_attr} style="{td_style}">{line}</td>')
+    return f"{pad}{'</tr><tr>'.join(td_parts)}"
 
 
 def _validate_button_contrast(
@@ -1190,8 +1180,9 @@ def sanitize_web_tags_for_email(html_str: str) -> str:
 
     Rules:
     - MSO conditional comments: preserved untouched.
-    - ``<p>`` inside ``<td>``: preserved with ``margin:0 0 10px 0`` reset.
-    - ``<p>`` outside ``<td>``: stripped → content<br><br> (last gets no trailing <br>).
+    - ``<p>`` tags: stripped everywhere — content kept, styles merged into
+      parent ``<td>`` when inside one, ``<br><br>`` separators when outside.
+    - ``<h1>``-``<h6>`` tags: stripped everywhere — same merge/unwrap logic.
     - ``<div>`` with layout CSS (width/max-width/flex/float/inline-block):
       converted to ``<table role="presentation"><tr><td>`` wrapper.
     - ``<div>`` simple wrapper inside ``<td>`` (e.g. text-align): preserved.
@@ -1206,24 +1197,65 @@ def sanitize_web_tags_for_email(html_str: str) -> str:
 
     html_str = re.compile(r"<!--\[if\s[^\]]*\]>.*?<!\[endif\]-->", re.DOTALL).sub(_stash, html_str)
 
-    # 2. Handle <p> tags — preserve inside <td>, strip outside
-    p_re = re.compile(r"<p(\s[^>]*)?>(.+?)</p>", re.DOTALL)
-    matches = list(p_re.finditer(html_str))
+    # 2. Strip <p> and <h1>-<h6> tags — merge styles into parent <td> when inside one
+    ph_re = re.compile(r"<(p|h[1-6])(\s[^>]*)?>(.+?)</\1>", re.DOTALL)
+    matches = list(ph_re.finditer(html_str))
     for i, m in enumerate(reversed(matches)):
         idx_from_end = i  # 0 = last match
+        attrs = m.group(2) or ""
+        inner_content = m.group(3)
         if _is_inside_td(html_str, m.start()):
-            attrs = m.group(1) or ""
-            if "margin" not in attrs:
-                if "style=" in attrs:
-                    attrs = attrs.replace('style="', 'style="margin:0 0 10px 0;')
-                    attrs = attrs.replace("style='", "style='margin:0 0 10px 0;")
-                else:
-                    attrs = ' style="margin:0 0 10px 0;"'
-            replacement = f"<p{attrs}>{m.group(2)}</p>"
-            html_str = html_str[: m.start()] + replacement + html_str[m.end() :]
+            # Extract transferable attributes from the p/h tag
+            extra_td_attrs: list[str] = []
+            for attr_name in ("data-slot", "data-slot-name", "class"):
+                attr_match = re.search(rf'{attr_name}=["\']([^"\']*)["\']', attrs)
+                if attr_match:
+                    extra_td_attrs.append(attr_match.group(0))
+
+            # Extract and convert inline styles (margin → padding)
+            style_match = re.search(r'style=["\']([^"\']*)["\']', attrs)
+            inner_style = style_match.group(1) if style_match else ""
+            inner_style = re.sub(r"\bmargin\b", "padding", inner_style)
+
+            # Find parent <td> tag
+            td_before = html_str[: m.start()].rfind("<td")
+            if td_before >= 0:
+                td_end = html_str.index(">", td_before) + 1
+                td_tag = html_str[td_before:td_end]
+
+                # Merge styles into parent td
+                if inner_style:
+                    td_style_match = re.search(r'style=["\']([^"\']*)["\']', td_tag)
+                    if td_style_match:
+                        merged = td_style_match.group(1).rstrip(";") + ";" + inner_style
+                        td_tag = (
+                            td_tag[: td_style_match.start(1)]
+                            + merged
+                            + td_tag[td_style_match.end(1) :]
+                        )
+                    else:
+                        td_tag = td_tag[:-1] + f' style="{inner_style}">'
+
+                # Transfer data-slot / class attributes to parent td
+                for attr_str in extra_td_attrs:
+                    attr_key = attr_str.split("=")[0]
+                    if attr_key not in td_tag:
+                        td_tag = td_tag[:-1] + f" {attr_str}>"
+
+                # Apply td modifications + strip the p/h tag in one pass
+                new_html = (
+                    html_str[:td_before]
+                    + td_tag
+                    + html_str[td_end : m.start()]
+                    + inner_content
+                    + html_str[m.end() :]
+                )
+                html_str = new_html
+            else:
+                html_str = html_str[: m.start()] + inner_content + html_str[m.end() :]
         else:
             suffix = "" if idx_from_end == 0 else "<br><br>"
-            html_str = html_str[: m.start()] + m.group(2) + suffix + html_str[m.end() :]
+            html_str = html_str[: m.start()] + inner_content + suffix + html_str[m.end() :]
 
     # 3. Handle <div>...</div> pairs with a stack-based approach
     tokens = list(_DIV_TOKEN_RE.finditer(html_str))
@@ -1284,9 +1316,11 @@ def sanitize_web_tags_for_email(html_str: str) -> str:
     for start, end, replacement in sorted(all_replacements, key=lambda r: r[0], reverse=True):
         html_str = html_str[:start] + replacement + html_str[end:]
 
-    # 4. Restore MSO blocks
+    # 4. Restore MSO blocks and strip p/h inside them too
     for i, block in enumerate(mso_blocks):
-        html_str = html_str.replace(f"__MSO_{i}__", block)
+        # Strip p/h tags inside MSO blocks — Outlook handles td just as well
+        cleaned = ph_re.sub(r"\3", block)
+        html_str = html_str.replace(f"__MSO_{i}__", cleaned)
 
     return html_str
 

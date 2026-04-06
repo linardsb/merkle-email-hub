@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+<table border="0" cellspacing="0" cellpadding="0" role="presentation">
+  <tr>
+    <td bgcolor="#ff2b63" align="center" style="-webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px;"><a href="#" style="font-family: arial, sans-serif; font-size: 14px; line-height: 24px; color: #ffffff; text-decoration: none; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; border: 1px solid #ff2b63; border-bottom: none; border-bottom: 2px solid #c2185b; padding: 8px 18px 8px 18px; display: inline-block;"><!--[if mso]>&nbsp;<![endif]-->Button<!--[if mso]>&nbsp;<![endif]--></a></td>
+  </tr>
+</table>
+]]></content>
+	<tabTrigger>button</tabTrigger>
+</snippet>

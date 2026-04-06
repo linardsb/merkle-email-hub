@@ -48,12 +48,18 @@
       <!-- Personalized greeting with ternary fallback -->
       <tr>
         <td style="padding: 30px 30px 10px 30px;">
-          <h1 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222;">
-            Hi <%= firstName %>,
-          </h1>
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555;">
-            Welcome back! Your account has been active since <%= formatDate(recipient.creationDate, '%B %Y') %>.
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 26px; line-height: 120%; color: #222222; mso-line-height-rule: exactly;">
+                Hi <%= firstName %>,
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Welcome back! Your account has been active since <%= formatDate(recipient.creationDate, '%B %Y') %>.
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
 
@@ -64,8 +70,14 @@
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f3e5f5; border-left: 4px solid #7b1fa2;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #7b1fa2;">VIP Exclusive Offer</h2>
-                <p style="margin: 0 0 10px 0;">Enjoy exclusive early access to our seasonal collection plus complimentary gift wrapping.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #7b1fa2; mso-line-height-rule: exactly;">VIP Exclusive Offer</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">Enjoy exclusive early access to our seasonal collection plus complimentary gift wrapping.</td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -73,16 +85,22 @@
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #e8f5e9; border-left: 4px solid #388e3c;">
             <tr>
               <td style="padding: 15px 20px; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #2e7d32;">Points Ready to Redeem</h2>
-                <p style="margin: 0 0 10px 0;">You have <%= loyaltyPoints %> points. Redeem them for up to <%= Math.floor(loyaltyPoints / 10) %>% off your next order.</p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 18px; color: #2e7d32; mso-line-height-rule: exactly;">Points Ready to Redeem</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #333333; mso-line-height-rule: exactly;">You have <%= loyaltyPoints %> points. Redeem them for up to <%= Math.floor(loyaltyPoints / 10) %>% off your next order.</td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
           <% } else { %>
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
             <tr>
-              <td style="padding: 15px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555;">
-                <p style="margin: 0 0 10px 0;">Discover what is new this season. Start earning loyalty points with every purchase.</p>
+              <td style="padding: 15px 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 150%; color: #555555; mso-line-height-rule: exactly;">
+                Discover what is new this season. Start earning loyalty points with every purchase.
               </td>
             </tr>
           </table>
@@ -93,7 +111,11 @@
       <!-- Dynamic product listing via queryDef -->
       <tr>
         <td style="padding: 0 30px 20px 30px;">
-          <h2 style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333;">Recommendations</h2>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 20px; color: #333333; mso-line-height-rule: exactly;">Recommendations</td>
+            </tr>
+          </table>
           <%
             var query = xtk.queryDef.create(
               {queryDef: {schema: "nms:productRecs", operation: "select",
@@ -113,7 +135,11 @@
             <% } %>
           </table>
           <% } else { %>
-          <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Check out our most popular items this season.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="padding: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">Check out our most popular items this season.</td>
+            </tr>
+          </table>
           <% } %>
         </td>
       </tr>
@@ -127,11 +153,9 @@
 
       <!-- Footer with system links -->
       <tr>
-        <td style="padding: 20px 30px; background-color: #f0f0f0;">
-          <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center;">
+        <td style="padding: 20px 30px; background-color: #f0f0f0; font-family: Arial, sans-serif; font-size: 12px; line-height: 150%; color: #999999; text-align: center; mso-line-height-rule: exactly;">
             <a href="<%= mirrorPageUrl %>" style="color: #0066cc; text-decoration: underline;">View in browser</a> &nbsp;|&nbsp;
             <a href="<%= optOutUrl %>" style="color: #0066cc; text-decoration: underline;">Unsubscribe</a>
-          </p>
         </td>
       </tr>
 

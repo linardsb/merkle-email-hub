@@ -147,7 +147,7 @@ Every generated email MUST include ALL of the following:
 - `<html lang="en">` (or appropriate language code from brief) — NEVER omit the lang attribute
 - `role="article"` and `aria-roledescription="email"` on the main content wrapper `<div>` or `<td>`
 - `role="presentation"` on ALL layout `<table>` elements — no exceptions
-- Heading hierarchy: exactly ONE `<h1>`, use `<h2>`/`<h3>` for subsections — never skip levels
+- Visual heading hierarchy via `<td>` with larger `font-size` + `font-weight:bold` — NO `<h1>`-`<h6>` tags. Add `role="heading"` + `aria-level="N"` for screen readers
 - `alt=""` on decorative images, descriptive `alt` text on content images (every `<img>` needs alt)
 - Minimum 4.5:1 colour contrast ratio for text
 - `dir="ltr"` on the main content wrapper (or `dir="rtl"` for RTL languages)

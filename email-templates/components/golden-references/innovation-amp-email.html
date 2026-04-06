@@ -19,15 +19,16 @@
   .header { padding: 20px 30px; background-color: #0044aa; text-align: center; }
   .header img { height: 40px; }
   .section { padding: 20px 30px; }
-  h1 { margin: 0 0 10px 0; font-size: 26px; color: #222222; line-height: 1.2; }
-  h2 { margin: 0 0 10px 0; font-size: 20px; color: #333333; }
-  p { margin: 0 0 10px 0; font-size: 14px; line-height: 1.5; color: #555555; }
+  .text-h1 { padding: 0 0 10px 0; font-size: 26px; color: #222222; line-height: 1.2; font-family: Arial, sans-serif; }
+  .text-h2 { padding: 0 0 10px 0; font-size: 20px; color: #333333; font-family: Arial, sans-serif; }
+  .text-body { padding: 0 0 10px 0; font-size: 14px; line-height: 1.5; color: #555555; font-family: Arial, sans-serif; }
   .btn { display: inline-block; padding: 12px 28px; background-color: #0066cc; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px; border: none; cursor: pointer; }
   .btn:hover { background-color: #0052a3; }
   .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
-  .card h3 { margin: 0 0 5px 0; font-size: 16px; color: #333333; }
-  .card p { font-size: 13px; margin: 0; }
-  .footer { padding: 20px 30px; background-color: #f0f0f0; font-size: 12px; color: #999999; text-align: center; }
+  .card .card-title { padding: 0 0 5px 0; font-size: 16px; color: #333333; font-family: Arial, sans-serif; }
+  .card .card-text { font-size: 13px; font-family: Arial, sans-serif; }
+  .footer { padding: 20px 30px; background-color: #f0f0f0; text-align: center; }
+  .footer td { font-size: 12px; color: #999999; font-family: Arial, sans-serif; }
   .footer a { color: #0066cc; }
 
   /* Form styling */
@@ -52,13 +53,21 @@
 
   <!-- Hero with dynamic greeting via amp-bind -->
   <div class="section">
-    <h1>Welcome<span [text]="' ' + userName" hidden> </span>!</h1>
-    <p>Explore our interactive email experience — browse products, submit feedback, and see dynamic content, all without leaving your inbox.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td class="text-h1">Welcome<span [text]="' ' + userName" hidden> </span>!</td>
+      </tr>
+      <tr>
+        <td class="text-body">Explore our interactive email experience — browse products, submit feedback, and see dynamic content, all without leaving your inbox.</td>
+      </tr>
+    </table>
   </div>
 
   <!-- AMP Carousel: interactive product slider -->
   <div class="section">
-    <h2>Featured Products</h2>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td class="text-h2">Featured Products</td></tr>
+    </table>
     <amp-carousel width="540" height="300" layout="responsive" type="slides" autoplay delay="4000" loop>
       <div class="slide">
         <img src="https://via.placeholder.com/540x300/e3f2fd/1565c0?text=Product+1" alt="Wireless headphones — premium noise cancellation" width="540" height="300" layout="responsive">
@@ -74,20 +83,26 @@
 
   <!-- AMP List: dynamic content from API -->
   <div class="section">
-    <h2>Recommended for You</h2>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td class="text-h2">Recommended for You</td></tr>
+    </table>
     <amp-list width="auto" height="200" layout="fixed-height" src="https://api.example.com/amp/recommendations" single-item items=".">
       <template type="amp-mustache">
         {{#products}}
         <div class="card">
-          <h3>{{name}}</h3>
-          <p>{{description}} — <strong>{{price}}</strong></p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr><td class="card-title">{{name}}</td></tr>
+            <tr><td class="card-text">{{description}} — <strong>{{price}}</strong></td></tr>
+          </table>
         </div>
         {{/products}}
       </template>
       <div fallback>
         <div class="card">
-          <h3>Check out our store</h3>
-          <p>Browse the full catalog for personalized recommendations.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr><td class="card-title">Check out our store</td></tr>
+            <tr><td class="card-text">Browse the full catalog for personalized recommendations.</td></tr>
+          </table>
         </div>
       </div>
     </amp-list>
@@ -95,7 +110,9 @@
 
   <!-- AMP Form: in-email feedback submission -->
   <div class="section">
-    <h2>Quick Feedback</h2>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td class="text-h2">Quick Feedback</td></tr>
+    </table>
     <form method="post" action-xhr="https://api.example.com/amp/feedback" target="_top">
       <div class="form-group">
         <label class="form-label" for="rating">How was your experience?</label>
@@ -128,8 +145,10 @@
 
   <!-- Footer -->
   <div class="footer">
-    <p>&copy; 2026 Company, Inc. All rights reserved.</p>
-    <p><a href="https://example.com/preferences">Manage preferences</a> | <a href="https://example.com/unsubscribe">Unsubscribe</a></p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="padding: 0 0 10px 0;">&copy; 2026 Company, Inc. All rights reserved.</td></tr>
+      <tr><td><a href="https://example.com/preferences">Manage preferences</a> | <a href="https://example.com/unsubscribe">Unsubscribe</a></td></tr>
+    </table>
   </div>
 
 </div>

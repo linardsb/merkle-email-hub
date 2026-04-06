@@ -329,33 +329,33 @@ class ComponentRenderer:
         return re.sub(pattern, rf"\g<1>{prop}:{value}\g<2>", html_str, count=1)
 
     def _replace_heading_font(self, html_str: str, font: str) -> str:
-        """Replace font-family on h1/h2/h3 elements."""
+        """Replace font-family on heading td elements (data-slot="heading")."""
         safe_font = html.escape(font, quote=True)
-        pattern = r"(<h[1-3]\b[^>]*style=\"[^\"]*?)font-family:\s*[^;\"]+([;\"'])"
+        pattern = r'(<td\b[^>]*data-slot="heading"[^>]*style="[^"]*?)font-family:\s*[^;"]+([;"\'])'
         return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
 
     def _replace_body_font(self, html_str: str, font: str) -> str:
-        """Replace font-family on p elements."""
+        """Replace font-family on body td elements (data-slot="body")."""
         safe_font = html.escape(font, quote=True)
-        pattern = r"(<p\b[^>]*style=\"[^\"]*?)font-family:\s*[^;\"]+([;\"'])"
+        pattern = r'(<td\b[^>]*data-slot="body"[^>]*style="[^"]*?)font-family:\s*[^;"]+([;"\'])'
         return re.sub(pattern, rf"\g<1>font-family:{safe_font}\g<2>", html_str)
 
     def _replace_heading_color(self, html_str: str, color: str) -> str:
-        """Replace color on h1/h2/h3 elements.
+        """Replace color on heading td elements (data-slot="heading").
 
         Uses negative lookbehind to avoid matching background-color:.
         """
         safe = html.escape(color, quote=True)
-        pattern = r'(<h[1-3]\b[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
+        pattern = r'(<td\b[^>]*data-slot="heading"[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
         return re.sub(pattern, rf"\g<1>color:{safe}\g<2>", html_str)
 
     def _replace_body_color(self, html_str: str, color: str) -> str:
-        """Replace color on p elements.
+        """Replace color on body td elements (data-slot="body").
 
         Uses negative lookbehind to avoid matching background-color:.
         """
         safe = html.escape(color, quote=True)
-        pattern = r'(<p\b[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
+        pattern = r'(<td\b[^>]*data-slot="body"[^>]*style="[^"]*?)(?<!-)color:\s*[^;"]+([;"\'])'
         return re.sub(pattern, rf"\g<1>color:{safe}\g<2>", html_str)
 
     _PLACEHOLDER_URL_RE = re.compile(

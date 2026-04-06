@@ -18,7 +18,7 @@ from app.design_sync.diagnose.analyzers import (
     analyze_rendering_stage,
     build_section_traces,
 )
-from app.design_sync.diagnose.models import DiagnosticReport
+from app.design_sync.diagnose.models import DiagnosticReport, SectionTrace
 from app.design_sync.diagnose.report import (
     dump_structure_to_json,
     dump_tokens_to_json,
@@ -580,3 +580,160 @@ class TestBuildSectionTraces:
         traces = build_section_traces(layout, matches, rendered)
         for trace in traces:
             assert len(trace.html_preview) <= 3000
+
+    def test_section_trace_default_fields(self) -> None:
+        trace = SectionTrace(
+            section_idx=0,
+            node_id="n1",
+            node_name="Hero",
+            classified_type="HERO",
+            matched_component="hero-block",
+            match_confidence=0.9,
+            texts_found=1,
+            images_found=1,
+            buttons_found=0,
+            slot_fills=(),
+            unfilled_slots=(),
+            html_preview="<table></table>",
+        )
+        assert trace.vlm_classification == ""
+        assert trace.vlm_confidence == 0.0
+        assert trace.verification_fidelity is None
+        assert trace.corrections_applied == 0
+        assert trace.generation_method == "template"
+
+    def test_section_trace_with_verification_metadata(self) -> None:
+        structure = _make_structure()
+        layout = analyze_layout(structure)
+        matches = match_all(layout.sections, container_width=600)
+        renderer = ComponentRenderer(container_width=600)
+        renderer.load()
+        rendered = renderer.render_all(matches)
+        traces = build_section_traces(
+            layout,
+            matches,
+            rendered,
+            verification_results={0: (0.95, 2)},
+            generation_methods={1: "custom-generated"},
+            vlm_classifications={0: ("HERO", 0.88)},
+        )
+        assert traces[0].verification_fidelity == 0.95
+        assert traces[0].corrections_applied == 2
+        assert traces[0].vlm_classification == "HERO"
+        assert traces[0].vlm_confidence == 0.88
+        assert traces[1].generation_method == "custom-generated"
+        # Sections without metadata keep defaults
+        assert traces[1].verification_fidelity is None
+        assert traces[1].corrections_applied == 0
+
+
+class TestDiagnosticReportVerificationMetadata:
+    def test_report_with_verification_loop(self) -> None:
+        from app.design_sync.visual_verify import (
+            SectionCorrection,
+            VerificationLoopResult,
+            VerificationResult,
+        )
+
+        loop_result = VerificationLoopResult(
+            iterations=[
+                VerificationResult(
+                    iteration=0,
+                    fidelity_score=0.80,
+                    section_scores={"hero": 0.75, "content": 0.85},
+                    corrections=[
+                        SectionCorrection(
+                            node_id="hero",
+                            section_idx=0,
+                            correction_type="color",
+                            css_selector="td",
+                            css_property="background-color",
+                            current_value="#fff",
+                            correct_value="#f0f0f0",
+                            confidence=0.9,
+                            reasoning="bg mismatch",
+                        ),
+                    ],
+                    pixel_diff_pct=5.0,
+                    converged=False,
+                ),
+                VerificationResult(
+                    iteration=1,
+                    fidelity_score=0.95,
+                    section_scores={"hero": 0.96, "content": 0.94},
+                    corrections=[],
+                    pixel_diff_pct=1.2,
+                    converged=True,
+                ),
+            ],
+            final_html="<html></html>",
+            initial_fidelity=0.80,
+            final_fidelity=0.95,
+            total_corrections_applied=1,
+            total_vlm_cost_tokens=500,
+            converged=True,
+            reverted=False,
+        )
+
+        runner = DiagnosticRunner()
+        report = runner.run_from_structure(
+            _make_structure(),
+            _make_tokens(),
+            verification_result=loop_result,
+        )
+        assert report.verification_loop_iterations == 2
+        assert report.final_fidelity == 0.95
+
+    def test_report_logging_events(self) -> None:
+        from unittest.mock import patch
+
+        from app.design_sync.visual_verify import (
+            VerificationLoopResult,
+            VerificationResult,
+        )
+
+        loop_result = VerificationLoopResult(
+            iterations=[
+                VerificationResult(
+                    iteration=0,
+                    fidelity_score=0.90,
+                    section_scores={},
+                    corrections=[],
+                    pixel_diff_pct=2.0,
+                    converged=True,
+                ),
+            ],
+            final_html="<html></html>",
+            initial_fidelity=0.80,
+            final_fidelity=0.90,
+            total_corrections_applied=0,
+            total_vlm_cost_tokens=200,
+            converged=True,
+            reverted=False,
+        )
+
+        runner = DiagnosticRunner()
+        with patch("app.design_sync.diagnose.runner.logger") as mock_logger:
+            runner.run_from_structure(
+                _make_structure(),
+                _make_tokens(),
+                verification_result=loop_result,
+                generation_methods={0: "custom-generated"},
+                vlm_classifications={0: ("HERO", 0.92)},
+            )
+            mock_logger.info.assert_called_once_with(
+                "diagnose.verification_metadata_attached",
+                iterations=1,
+                final_fidelity=0.90,
+                sections_with_corrections=0,
+            )
+            mock_logger.debug.assert_any_call(
+                "diagnose.custom_generation_traced",
+                count=1,
+                section_indices=[0],
+            )
+            mock_logger.debug.assert_any_call(
+                "diagnose.vlm_classification_traced",
+                count=1,
+                section_indices=[0],
+            )

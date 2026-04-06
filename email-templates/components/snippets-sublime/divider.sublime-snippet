@@ -1,0 +1,12 @@
+<snippet>
+	<content><![CDATA[<tr>
+  <td style="padding: ${1:0} ${2:20}px;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td style="border-top: ${3:1}px solid ${4:#cccccc}; font-size: 1px; line-height: 1px;">&nbsp;</td>
+      </tr>
+    </table>
+  </td>
+</tr>]]></content>
+	<tabTrigger>divider</tabTrigger>
+</snippet>

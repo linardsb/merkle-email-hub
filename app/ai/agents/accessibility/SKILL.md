@@ -142,10 +142,10 @@ Use brief alt + `aria-describedby` for extended description:
 | `#666666` on `#ffffff` | 5.74:1 | PASS |
 | `#333333` on `#ffffff` | 12.63:1 | PASS |
 
-### Category 5: Heading Hierarchy
-- Sequential hierarchy: h1 -> h2 -> h3 (never skip levels)
-- One `<h1>` per email (the primary headline)
-- Use headings for structure, not just visual size
+### Category 5: Visual Heading Hierarchy
+- Use `<td>` with larger `font-size` and `font-weight:bold` for heading-like text (no `<h1>`-`<h6>` tags — td-only layout)
+- Add `role="heading"` + `aria-level="N"` on heading `<td>` elements for screen reader access
+- Maintain visual hierarchy: main headline ~24-28px, section headings ~20-22px, subsections ~18px
 
 ### Category 6: Link Accessibility
 - Descriptive link text (never "click here" or "read more" alone)

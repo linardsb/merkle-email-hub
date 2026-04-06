@@ -81,9 +81,13 @@ version: "1.0.0"
 <![endif]-->
 <td style="background-image:url('https://placehold.co/600x300');
   background-size:cover; background-position:center; padding:40px 20px;">
-  <h1 style="color:#fff; font-family:Arial,sans-serif; font-size:28px; margin:0;">
-    Hero Headline
-  </h1>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+      <td role="heading" aria-level="1" style="color:#fff; font-family:Arial,sans-serif; font-size:28px; font-weight:bold; line-height:1.3; mso-line-height-rule:exactly;">
+        Hero Headline
+      </td>
+    </tr>
+  </table>
 </td>
 <!--[if mso]>
 </v:textbox>
@@ -112,9 +116,8 @@ Text overlay uses table cell padding/alignment (not CSS positioning).
   <a href="https://example.com/unsubscribe" style="color:#999; text-decoration:underline;">Unsubscribe</a> |
   <a href="https://example.com/preferences" style="color:#999; text-decoration:underline;">Preferences</a> |
   <a href="https://example.com/privacy" style="color:#999; text-decoration:underline;">Privacy</a>
-  <p style="margin:10px 0 0 0;">
-    Company Name, 123 Street, City, State 12345
-  </p>
+  <br>
+  <span style="display:block; padding-top:10px;">Company Name, 123 Street, City, State 12345</span>
 </td>
 ```
 
@@ -129,7 +132,7 @@ Text overlay uses table cell padding/alignment (not CSS positioning).
 | Layout tables | `role="presentation"` on ALL layout `<table>` elements |
 | Content wrapper | `role="article"` + `aria-roledescription="email"` |
 | Images | `alt=""` decorative, descriptive `alt` on content images |
-| Headings | One `<h1>`, use `<h2>`/`<h3>` for subsections, never skip levels |
+| Headings | `<td>` with larger `font-size` + `font-weight:bold` + `role="heading"` + `aria-level="N"` — NO `<h1>`-`<h6>` tags |
 | Font size | Minimum 14px–16px for body copy |
 | Tap targets | Minimum 44x44px for mobile |
 | Color contrast | 4.5:1 minimum for text |

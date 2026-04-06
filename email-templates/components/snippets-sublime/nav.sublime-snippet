@@ -1,0 +1,55 @@
+<snippet>
+	<content><![CDATA[
+			<table cellpadding="0" cellspacing="0" border="0" width="600" id="aunav" class="resptab" role="presentation" style="width:600px;" bgcolor="#808080">
+				<tr align="center">
+					<td align="center" class="padlr24" style="padding-top:40px; padding-bottom:40px;">
+						<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;">
+							<tr align="center">
+								<td align="center" style="font-family:'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 20px; line-height: 24px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; padding-bottom:20px;">
+									Lorem Ipsum
+								</td>
+							</tr>
+							<tr align="center">
+								<td align="center">
+									<table cellpadding="0" cellspacing="0" border="0" width="512" class="resptab" role="presentation" style="width:512px;">
+										<tr align="center">
+											<th align="center" class="resptab db lfloat">
+												<table cellpadding="0" cellspacing="0" border="0" width="128" class="resptab" role="presentation" style="width:128px;">
+													<tr align="center">
+														<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; font-weight:bold;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_AU_NAMEHER&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_AU_LatestOffers" xt="SPNOTRACK" target="_blank" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; font-weight:bold;">Lorem Ipsum</a>
+														</td>
+													</tr>
+												</table>
+											</th>
+											<th align="center" width="1" bgcolor="#ffffff" class="hide"></th>
+											<th align="center" class="resptab db lfloat padtop20">
+												<table cellpadding="0" cellspacing="0" border="0" width="128" class="resptab" role="presentation" style="width:128px;">
+													<tr align="center">
+														<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; font-weight:bold;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_AU_NAMEHER&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_AU_LatestOffers" xt="SPNOTRACK" target="_blank" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; font-weight:bold;">Lorem Ipsum</a>
+														</td>
+													</tr>
+												</table>
+											</th>
+											<th align="center" width="1" bgcolor="#ffffff" class="hide"></th>
+											<th align="center" class="resptab db lfloat padtop20">
+												<table cellpadding="0" cellspacing="0" border="0" width="128" class="resptab" role="presentation" style="width:128px;">
+													<tr align="center">
+														<td align="center" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; font-weight:bold;">
+															<a href="https://links.communications.audicrm.co.uk/ctt?m=%%MAILING_ID%%&r=%%RECIPIENT_ID%%&b=0&j=%%JOB_ID_CODE%%&k=%%TREATMENT_CODE%%_LinkName=BDY_BTN_AU_NAMEHER&kx=1&kt=1&kd=https%3A%2F%2Feu2.thunderhead.com%2Fone%2Frt%2Ftrack%2FONE-W9ZUJ2GZOL-1250%2Fredirect%3Furi%3Doutbound%253A%252F%252Faudi.crm%252Femail%252Fsurveyownership%252Fclickthrough%253Fdbgid%253D%%DBGID%%%2526dbg_campaign%253D%%CampaignCode%%%2526variant%253D%%Requesting_Party%%%23https://www.YOURLINKHERE.com?dbgid=%%DBGID%%%26dbg_campaign=%%CampaignCode%%%26variant=%%Agency_Cell_Code%%" name="BDY_BTN_AU_LatestOffers" xt="SPNOTRACK" target="_blank" style="font-family: 'AudiType-Extended', Verdana, Geneva, sans-serif; font-size: 14px; line-height: 21px; color:#ffffff; mso-line-height-rule: exactly; text-align: center; font-weight:bold;">Lorem Ipsum</a>
+														</td>
+													</tr>
+												</table>
+											</th>
+										</tr>
+									</table>
+								</td>
+							</tr>							
+						</table>
+					</td>
+				</tr>
+			</table>
+]]></content>
+	<tabTrigger>nav</tabTrigger>
+</snippet>

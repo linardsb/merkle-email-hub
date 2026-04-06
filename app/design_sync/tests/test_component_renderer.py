@@ -150,6 +150,19 @@ class TestSlotFilling:
         assert "Article Title" in result.html
         assert "Article body." in result.html
 
+    def test_fill_body_slot_with_br_separators(self, renderer: ComponentRenderer) -> None:
+        """Multi-paragraph body fills use <br><br> separators instead of <p> tags."""
+        match = _make_match(
+            "text-block",
+            fills=[
+                SlotFill("heading", "Title"),
+                SlotFill("body", "First paragraph.<br><br>Second paragraph."),
+            ],
+        )
+        result = renderer.render_section(match)
+        assert "First paragraph.<br><br>Second paragraph." in result.html
+        assert "<p" not in result.html
+
 
 class TestTokenOverrides:
     def test_background_color_override(self, renderer: ComponentRenderer) -> None:

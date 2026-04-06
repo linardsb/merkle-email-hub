@@ -21,7 +21,7 @@ criterion to its email-specific implementation and common failure mode.
 
 ### 1.3.1 Info and Relationships
 - **Requirement:** Semantic structure conveyed in markup
-- **Email twist:** `role="presentation"` on ALL layout tables (the #1 email a11y rule); proper `<h1>`–`<h6>` headings; `<th scope>` on data tables; `role="list"` / `role="listitem"` on table-faked lists
+- **Email twist:** `role="presentation"` on ALL layout tables (the #1 email a11y rule); visual heading hierarchy via font-size/font-weight on `<td>` (no `<h1>`-`<h6>` tags — td-only layout for email client compatibility); `<th scope>` on data tables; `role="list"` / `role="listitem"` on table-faked lists
 - **Common failure:** Layout tables without `role="presentation"` — screen readers announce grid dimensions for every section
 
 ### 1.3.2 Meaningful Sequence
@@ -121,12 +121,12 @@ criterion to its email-specific implementation and common failure mode.
 
 ### 1.4.12 Text Spacing
 - **Requirement:** Content adapts to user text spacing preferences
-- **Email twist:** Set `line-height`, paragraph spacing, `letter-spacing`, `word-spacing` explicitly in inline styles (email clients apply inconsistent defaults; Outlook ignores `margin`)
+- **Email twist:** Set `line-height`, `letter-spacing`, `word-spacing` explicitly in inline styles on `<td>` (email clients apply inconsistent defaults). Use `padding` on `<td>` for paragraph spacing (Outlook ignores `margin`)
 
 ### 2.4.6 Headings and Labels
 - **Requirement:** Descriptive headings that describe content
-- **Email twist:** `<h1>` for main headline, `<h2>` for sections, `<h3>` for subsections; all headings need full inline styles (`margin:0`, explicit padding)
-- **Common failure:** Skipped heading levels (h1 to h3)
+- **Email twist:** Headings are rendered as `<td>` with larger `font-size` and `font-weight:bold` inline styles (no `<h1>`-`<h6>` tags — td-only layout for email client compatibility). Use `role="heading"` + `aria-level="N"` on heading `<td>` elements for screen reader access. Visual hierarchy: main headline ~24-28px, section headings ~20-22px, subsections ~18px
+- **Common failure:** Inconsistent font-size hierarchy (e.g., section heading larger than main heading)
 
 ### 2.4.7 Focus Visible
 - **Requirement:** Visible focus indicator on all focusable elements

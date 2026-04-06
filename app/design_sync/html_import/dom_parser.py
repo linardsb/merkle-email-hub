@@ -354,7 +354,12 @@ def _walk_for_texts(element: HtmlElement, out: list[DocumentText]) -> None:
             font_family = style.properties.get("font-family", "").strip("'\"") or None
             color = normalize_hex_color(style.properties.get("color", ""))
 
-            is_heading = tag in _HEADING_TAGS or (font_size is not None and font_size > 20.0)
+            has_heading_role = element.get("role", "") == "heading"
+            is_heading = (
+                tag in _HEADING_TAGS
+                or has_heading_role
+                or (font_size is not None and font_size > 20.0)
+            )
 
             out.append(
                 DocumentText(

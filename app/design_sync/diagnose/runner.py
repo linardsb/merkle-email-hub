@@ -35,6 +35,7 @@ from app.design_sync.diagnose.models import (
 from app.design_sync.figma.layout_analyzer import analyze_layout
 from app.design_sync.html_formatter import format_email_html
 from app.design_sync.protocol import DesignFileStructure, ExtractedTokens
+from app.design_sync.visual_verify import VerificationLoopResult
 
 logger = get_logger(__name__)
 
@@ -51,6 +52,9 @@ class DiagnosticRunner:
         *,
         raw_figma_json: dict[str, Any] | None = None,
         target_clients: list[str] | None = None,  # noqa: ARG002 — reserved for future use
+        verification_result: VerificationLoopResult | None = None,
+        generation_methods: dict[int, str] | None = None,
+        vlm_classifications: dict[int, tuple[str, float]] | None = None,
     ) -> DiagnosticReport:
         """Synchronous entry — for CLI and tests.
 
@@ -169,7 +173,49 @@ class DiagnosticRunner:
         stages.append(stage5)
 
         # ── Build section traces ──
-        section_traces = build_section_traces(layout, matches, rendered)
+        # Extract per-section verification data from loop result
+        per_section_verification: dict[int, tuple[float, int]] | None = None
+        if verification_result and verification_result.iterations:
+            per_section_verification = {}
+            last_iter = verification_result.iterations[-1]
+            # Build section_idx lookup from node_id scores
+            for idx, section in enumerate(layout.sections):
+                fidelity = last_iter.section_scores.get(section.node_id, 0.0)
+                correction_count = sum(1 for c in last_iter.corrections if c.section_idx == idx)
+                per_section_verification[idx] = (fidelity, correction_count)
+
+        section_traces = build_section_traces(
+            layout,
+            matches,
+            rendered,
+            verification_results=per_section_verification,
+            generation_methods=generation_methods,
+            vlm_classifications=vlm_classifications,
+        )
+
+        # ── Structured logging for enhanced metadata ──
+        if verification_result:
+            sections_with_corrections = sum(1 for t in section_traces if t.corrections_applied > 0)
+            logger.info(
+                "diagnose.verification_metadata_attached",
+                iterations=len(verification_result.iterations),
+                final_fidelity=verification_result.final_fidelity,
+                sections_with_corrections=sections_with_corrections,
+            )
+
+        if generation_methods:
+            logger.debug(
+                "diagnose.custom_generation_traced",
+                count=len(generation_methods),
+                section_indices=sorted(generation_methods.keys()),
+            )
+
+        if vlm_classifications:
+            logger.debug(
+                "diagnose.vlm_classification_traced",
+                count=len(vlm_classifications),
+                section_indices=sorted(vlm_classifications.keys()),
+            )
 
         return self._build_report(
             run_id=run_id,
@@ -180,6 +226,7 @@ class DiagnosticRunner:
             final_html=final_html,
             images=all_images,
             tree_loss=tree_loss,
+            verification_result=verification_result,
         )
 
     @staticmethod
@@ -236,6 +283,7 @@ class DiagnosticRunner:
         final_html: str,
         images: list[dict[str, str]],
         tree_loss: list[DataLossEvent] | None = None,
+        verification_result: VerificationLoopResult | None = None,
     ) -> DiagnosticReport:
         """Construct the final DiagnosticReport."""
         total_elapsed = (time.perf_counter() - t_start) * 1000.0
@@ -243,6 +291,13 @@ class DiagnosticRunner:
         total_loss = sum(len(s.data_loss) for s in stages)
         if tree_loss:
             total_loss += len(tree_loss)
+
+        # Verification loop summary
+        loop_iterations = 0
+        final_fidelity: float | None = None
+        if verification_result:
+            loop_iterations = len(verification_result.iterations)
+            final_fidelity = verification_result.final_fidelity
 
         return DiagnosticReport(
             id=run_id,
@@ -258,4 +313,6 @@ class DiagnosticRunner:
             final_html_preview=final_html[:_FINAL_HTML_PREVIEW_LIMIT],
             final_html_length=len(final_html),
             images=images,
+            verification_loop_iterations=loop_iterations,
+            final_fidelity=final_fidelity,
         )

@@ -1,0 +1,11 @@
+name: sample-esp-connector
+version: "1.0.0"
+hub_api_version: ">=1.0"
+plugin_type: export_connector
+entry_point: sample_esp_connector.main
+permissions:
+  - network_access
+metadata:
+  author: "Merkle Email Hub"
+  description: "Sample ESP connector plugin — mock SendGrid-like export"
+  tags: ["sample", "connector", "esp"]

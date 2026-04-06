@@ -1,6 +1,6 @@
 ## 0. Implementation Status
 
-> Last updated: 2026-04-03
+> Last updated: 2026-04-06
 
 ### Completed
 
@@ -191,6 +191,12 @@
 
 ### Recently Completed
 
+**Phase 48.4 complete** (Adversarial Evaluator Agent) — `app/ai/agents/evaluator/` with `EvaluatorAgentService(BaseAgentService)` adversarial evaluation of upstream agent output; different-provider enforcement (generator=openai → evaluator=anthropic, configurable via `AI__EVALUATOR__PROVIDER`); `EvalVerdict` structured verdict (accept/revise/reject) with score 0.0-1.0, `EvalIssue` list, feedback, suggested corrections; per-agent criteria YAML loading (scaffolder/dark_mode/accessibility/generic fallback) from `criteria/` directory; `scan_for_injection()` on agent output before evaluation; `EvaluatorNode` blueprint node with graceful degradation on evaluator failure; `"revise"` added to `EdgeCondition` in `engine.py` with `evaluator_revision_count` counter + `BLUEPRINT__MAX_REVISIONS` cap (default 2); `EvaluatorConfig` nested in `AIConfig` (`AI__EVALUATOR__ENABLED/PROVIDER/CRITERIA_DIR/MAX_TOKENS`); `max_revisions` field on `BlueprintConfig`; 14 tests (3 schema + 5 service + 3 criteria + 3 node).
+
+**Phase 48.1 complete** (Pipeline DAG Schema and Template Registry) — `app/ai/pipeline/dag.py` with `PipelineNode` frozen dataclass + `PipelineDag` (Kahn's toposort at construction, `validate()` for artifact wiring + agent checks, `topological_levels()` for parallel execution grouping); `app/ai/pipeline/registry.py` with `PipelineRegistry` singleton YAML loader (`get()`/`register()`/`list_all()`); 4 YAML pipeline templates (`full-build` 7 nodes, `quick-fix`, `qa-only`, `design-import`); `CyclicDependencyError(DomainValidationError)` exception; `PipelineConfig` with `PIPELINE__DEFAULT_TEMPLATE`/`PIPELINE__CUSTOM_DIR`; 28 tests (14 DAG + 14 registry).
+
+**Phase 47 complete** (VLM Visual Verification Loop & Component Library Expansion) — all 10 subtasks done. Final subtask: 47.10 Diagnostic Trace Enhancement — `SectionTrace` extended with 5 fields (`vlm_classification`, `vlm_confidence`, `verification_fidelity`, `corrections_applied`, `generation_method`); `DiagnosticReport` extended with `verification_loop_iterations` and `final_fidelity`; `build_section_traces()` in `analyzers.py` accepts optional verification/generation/VLM metadata dicts; `run_from_structure()` extracts per-section fidelity from `VerificationLoopResult`; 3 structured logging events; 4 tests. Phase completes the fidelity ladder: Phase 40 ~85% → Phase 41 ~93% → Phase 47 verify loop ~97% → component expansion ~99%.
+
 **Phase 45 complete** (Scheduling, Notifications & Build Debounce) — all 6 subtasks done. Final subtask: 45.6 Build & Webhook Debounce Layer — `app/core/debounce.py` with `Debouncer` class (Redis-backed token-based distributed debounce, background worker with sleep-then-check, `_debounce_tasks` GC prevention set, immediate execution when disabled), `DebounceConfig` (5 settings), webhook.py refactored from inline pattern to reusable `Debouncer`, 10 tests.
 
 **Phase 47.9 complete** (Verification Loop Tests + Snapshot Regression) — 31 new tests across 4 files: `test_visual_verify.py` +9 (multi-section mixed ODiff, max sections cap, missing rendered screenshot, fidelity math, cache eviction, VLM generic exception, ODiff error fallback, parse single object, parse missing fields); `test_correction_applicator.py` +12 (layout simple/complex props, CSS XSS blocking, control char stripping, invalid selector, section prefix match, last section→body, image height/non-numeric/style sync, content no-text, multi-section targeting); `test_verification_loop.py` +7 (compare/apply exception breaks, crop failure continues, empty render, fidelity boundary, zero sections, VLM cost tracking); `test_snapshot_regression.py` +3 parametrized `TestVerificationMetadata` × 3 cases (mock VLM metadata, fidelity improvement, correction types vs reference bgcolors). Pyright baseline held (259 ≤ 262). All snapshot tests pass.
@@ -279,9 +285,15 @@
 
 **Phase 46:** Provider Resilience & Connector Extensibility — all 5 subtasks complete. 46.1 credential pool with rotation/cooldowns/Redis-backed state, 14 tests. 46.2 LLM provider key rotation (Anthropic + OpenAI-compat adapters), 9 tests. 46.3 ESP connector key rotation (Braze/SFMC/Adobe/Taxi), 7 tests. 46.4 credential health API + ecosystem dashboard, 6 tests. 46.5 dynamic ESP connector discovery via plugin system (`PluginConnectorAPI`, `plugin_bridge.py`, sample plugin), 10 tests.
 
+**Phase 48.3:** Typed Artifact Protocol — `app/ai/pipeline/artifacts.py` with `Artifact` frozen base + 7 concrete types (HtmlArtifact, BuildPlanArtifact, QaResultArtifact, CorrectionArtifact, DesignTokenArtifact, ScreenshotArtifact, EvalArtifact); `ArtifactStore` typed get/put/snapshot + optional Redis persistence; `ArtifactAdapter` `@runtime_checkable` Protocol + `ADAPTER_REGISTRY` + 10 per-agent adapters in `app/ai/pipeline/adapters/`; `AgentHandoff.to_artifacts()`/`from_artifact_store()` bridge methods; `ArtifactNotFoundError`/`ArtifactTypeError` in exception hierarchy; 22 tests.
+
 ### Up Next
 
-**Phase 47** (VLM Visual Verification Loop & Component Library Expansion — 47.1–47.9 done (Track A complete, Track B complete, tests complete), 1 subtask remaining: 47.10 diagnostics). See CLAUDE.md roadmap for details.
+**Phase 48 in progress** (Agent Pipeline DAG, Adversarial Quality Loops & Cross-Repo Pattern Adoption — 48.1 + 48.3 + 48.5 + 48.6 done, 9 subtasks remaining). See CLAUDE.md roadmap for details.
+
+**Phase 48.5:** Quality Contracts and Stage Gates — `app/ai/pipeline/contracts.py` with `Contract`/`Assertion`/`ContractResult`/`AssertionFailure` frozen dataclasses; `ContractValidator` with 8 built-in check functions (`html_valid`, `min_size`, `max_size`, `has_table_layout`, `dark_mode_present`, `no_critical_qa`, `fidelity_above`, `no_xss`) in `_CHECK_REGISTRY`; `_evaluate()` dispatch for 5 operators (`>=`/`<=`/`==`/`contains`/`not_contains`); `load_contract()` YAML loader with `@lru_cache`; 3 predefined contracts in `contract_defs/` (`html_valid.yaml` — parseable + 100B–100KB + table layout, `no_critical_issues.yaml` — zero severity=error QA failures, `fidelity_above_threshold.yaml` — fidelity >= 0.85); `PipelineConfig` extended with `contract_retry` (default true) and `contract_strict` (default false); 12 tests.
+
+**Phase 48.6:** Email Component Tree JSON Schema — `app/components/tree_schema.py` with `EmailTree` Pydantic model (`TreeMetadata`/`TreeSection`/`SlotValue` discriminated union: Text/Image/Button/Html slots); `validate_tree_against_manifest()` cross-validation function; `export_json_schema()`/`write_json_schema()` helpers; `app/components/schemas/email-tree.json` generated JSON Schema for external tooling; MCP resource `hub://component-tree-schema` in `app/mcp/resources.py`; 10 tests.
 
 ### Infrastructure Built
 

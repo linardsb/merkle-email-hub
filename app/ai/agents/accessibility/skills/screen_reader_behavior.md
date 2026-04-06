@@ -85,7 +85,7 @@ The `&zwnj;&nbsp;` padding after preheader text MUST be hidden from screen reade
 | `role="img"` | SVG, VML shapes acting as images | Announces as image |
 | `role="separator"` | Decorative `<hr>` or divider `<td>` | Semantic separation |
 | `role="list"` + `role="listitem"` | Table-faked lists (Outlook compatibility) | Maintains list semantics |
-| `role="heading"` + `aria-level` | Non-heading elements acting as headings | Rare — prefer real `<h1>`-`<h6>` |
+| `role="heading"` + `aria-level` | `<td>` elements acting as headings | Standard pattern — td-only layout uses this instead of `<h1>`-`<h6>` tags |
 
 ### Labeling ARIA
 

@@ -57,13 +57,13 @@ Uses radio inputs for mutually exclusive states — only one tab visible at a ti
 <label class="tab-label" for="tab3">Tab 3</label>
 
 <div class="tab-content tab1">
-  <p>Content for Tab 1</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">Content for Tab 1</td></tr></table>
 </div>
 <div class="tab-content tab2">
-  <p>Content for Tab 2</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">Content for Tab 2</td></tr></table>
 </div>
 <div class="tab-content tab3">
-  <p>Content for Tab 3</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">Content for Tab 3</td></tr></table>
 </div>
 ```
 
@@ -84,13 +84,13 @@ Uses radio inputs for mutually exclusive states — only one tab visible at a ti
 <input type="checkbox" class="accordion-toggle" id="acc1" style="display:none !important;">
 <label class="accordion-label" for="acc1">Section 1</label>
 <div class="accordion-content">
-  <p style="padding: 15px;">Section 1 content here.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:15px;font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">Section 1 content here.</td></tr></table>
 </div>
 
 <input type="checkbox" class="accordion-toggle" id="acc2" style="display:none !important;">
 <label class="accordion-label" for="acc2">Section 2</label>
 <div class="accordion-content">
-  <p style="padding: 15px;">Section 2 content here.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding:15px;font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;mso-line-height-rule:exactly;">Section 2 content here.</td></tr></table>
 </div>
 ```
 

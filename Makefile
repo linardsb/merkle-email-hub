@@ -8,7 +8,7 @@ up: ## Bootstrap dev env after restart (Docker + DB + migrations + seed)
 dev: ## Start backend + frontend in parallel
 	@echo "Syncing ontology to sidecar..."
 	@cd services/maizzle-builder && npm run sync-ontology 2>/dev/null || echo "Ontology sync skipped (run npm install in services/maizzle-builder first)"
-	@echo "Starting backend on :8891 and frontend on :3000..."
+	@echo "Starting backend on :8891 and frontend on :3100..."
 	@(uv run uvicorn app.main:app --reload --port 8891 &) && \
 	(cd cms && pnpm --filter web dev)
 
@@ -25,7 +25,7 @@ seed-demo: ## Seed database with demo data (admin user, project, components)
 	uv run python -m app.seed_demo
 
 demo: db db-migrate seed-demo ## Full demo: start infra, migrate, seed, launch all services
-	@echo "Starting mock ESP (:3002), backend (:8891), frontend (:3000)..."
+	@echo "Starting mock ESP (:3002), backend (:8891), frontend (:3100)..."
 	@(cd services/mock-esp && uvicorn main:app --port 3002 &) && \
 	(uv run uvicorn app.main:app --reload --port 8891 &) && \
 	(cd cms && pnpm --filter web dev)
