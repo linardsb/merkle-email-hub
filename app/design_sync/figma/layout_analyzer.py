@@ -124,9 +124,9 @@ class ContentGroup:
 
     frame_node_id: str
     frame_name: str
-    texts: list[TextBlock] = field(default_factory=list)
-    images: list[ImagePlaceholder] = field(default_factory=list)
-    buttons: list[ButtonElement] = field(default_factory=list)
+    texts: list[TextBlock] = field(default_factory=list[TextBlock])
+    images: list[ImagePlaceholder] = field(default_factory=list[ImagePlaceholder])
+    buttons: list[ButtonElement] = field(default_factory=list[ButtonElement])
 
 
 @dataclass(frozen=True)
@@ -157,7 +157,7 @@ class EmailSection:
     vlm_classification: str | None = None
     vlm_confidence: float | None = None
     content_roles: tuple[str, ...] = ()
-    child_content_groups: list[ContentGroup] = field(default_factory=list)
+    child_content_groups: list[ContentGroup] = field(default_factory=list[ContentGroup])
 
 
 @dataclass(frozen=True)

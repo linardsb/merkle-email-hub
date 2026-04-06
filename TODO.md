@@ -529,7 +529,7 @@
 - [x] ~~49.2 Repeating-group renderer — multi-instance template rendering~~ DONE
 - [x] ~~49.3 Section-to-component classification improvements~~ DONE
 - [x] ~~49.4 Token override element-type expansion~~ DONE
-- [ ] 49.5 Per-node slot content extraction fidelity
+- [x] ~~49.5 Per-node slot content extraction fidelity~~ DONE
 - [ ] 49.6 Per-email token scoping from shared Figma files
 - [ ] 49.7 CTA fidelity — button color/shape extraction
 - [ ] 49.8 Design-sync → EmailTree bridge (connects to 48.6/48.8)
@@ -705,7 +705,7 @@ No component-specific classes like `textblock-heading` / `textblock-body` appear
 
 ---
 
-### 49.5 Per-Node Slot Content Extraction Fidelity `[Backend]`
+### ~~49.5 Per-Node Slot Content Extraction Fidelity `[Backend]`~~ DONE
 
 **What:** Fix text/image content extraction from Figma nodes so that all section content reaches the slot filler — no more "Section Heading" or "Image caption — describe the content for context." defaults when actual content exists in the design.
 **Why:** The converter output has placeholder text in multiple sections. This happens because: (a) `_get_section_candidates()` at `layout_analyzer.py:358` flattens child frames into `EmailSection.texts` and `.images` lists, losing parent-child relationships; (b) `_build_slot_fills()` at `component_matcher.py` takes the first N items from these flat lists for slot filling, silently dropping extras; (c) when text extraction fails (empty `characters` field, or text inside nested groups), the slot gets the component template's default placeholder.
@@ -1029,7 +1029,7 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 | 49.2 Repeating-group renderer | `component_renderer.py`, `converter_service.py` | 49.1 | A | DONE |
 | 49.3 Classification improvements | `component_matcher.py`, `layout_analyzer.py` | None | B | DONE |
 | 49.4 Token override expansion | `component_renderer.py`, `component_matcher.py` | None | B | DONE |
-| 49.5 Slot content extraction | `layout_analyzer.py`, `component_matcher.py` | None | C | |
+| 49.5 Slot content extraction | `layout_analyzer.py`, `component_matcher.py` | None | C | DONE |
 | 49.6 Per-email token scoping | `figma/service.py`, `converter_service.py` | None | C | |
 | 49.7 CTA fidelity | `layout_analyzer.py`, `component_matcher.py`, `component_renderer.py` | 49.4 | B | |
 | 49.8 EmailTree bridge | `tree_bridge.py` (new), `converter_service.py` | 49.1, 49.2, 48.6 | D | |
