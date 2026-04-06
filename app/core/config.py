@@ -424,6 +424,8 @@ class DesignSyncConfig(BaseModel):
     sibling_detection_enabled: bool = True  # DESIGN_SYNC__SIBLING_DETECTION_ENABLED
     sibling_min_group: int = 2  # DESIGN_SYNC__SIBLING_MIN_GROUP
     sibling_similarity_threshold: float = 0.8  # DESIGN_SYNC__SIBLING_SIMILARITY_THRESHOLD
+    # Per-email token scoping — scope to target frame subtree (Phase 49.6)
+    token_scoping_enabled: bool = True  # DESIGN_SYNC__TOKEN_SCOPING_ENABLED
 
 
 class ESPSyncConfig(BaseModel):

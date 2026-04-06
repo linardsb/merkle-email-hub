@@ -530,7 +530,7 @@
 - [x] ~~49.3 Section-to-component classification improvements~~ DONE
 - [x] ~~49.4 Token override element-type expansion~~ DONE
 - [x] ~~49.5 Per-node slot content extraction fidelity~~ DONE
-- [ ] 49.6 Per-email token scoping from shared Figma files
+- [x] ~~49.6 Per-email token scoping from shared Figma files~~ DONE
 - [ ] 49.7 CTA fidelity — button color/shape extraction
 - [ ] 49.8 Design-sync → EmailTree bridge (connects to 48.6/48.8)
 - [x] ~~49.9 Data-driven converter regression framework~~ DONE
@@ -740,7 +740,7 @@ All text content exists in Figma `characters` fields — the issue is purely in 
 
 ---
 
-### 49.6 Per-Email Token Scoping from Shared Figma Files `[Backend]`
+### ~~49.6 Per-Email Token Scoping from Shared Figma Files `[Backend]`~~ DONE
 
 **What:** Scope extracted tokens to the target email frame instead of the entire Figma file. When a file contains multiple email designs (common in design system files), only extract colors/typography/spacing used within the target frame's subtree.
 **Why:** `sync_tokens_and_structure()` at `figma/service.py:415` extracts tokens from the entire Figma file. The test file "The Ultimate Email Design System (Community)" has 254 colors and 25 font families across dozens of email designs. When the converter tries to pick the "right" font family for the REFRAME email, it sees `Inter`, `Helvetica`, `Courier New`, `Roboto`, `Open Sans`, etc. The global `convert_typography()` may pick the most-frequent font (Inter) instead of the one actually used in the target email (Helvetica).
@@ -1030,7 +1030,7 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 | 49.3 Classification improvements | `component_matcher.py`, `layout_analyzer.py` | None | B | DONE |
 | 49.4 Token override expansion | `component_renderer.py`, `component_matcher.py` | None | B | DONE |
 | 49.5 Slot content extraction | `layout_analyzer.py`, `component_matcher.py` | None | C | DONE |
-| 49.6 Per-email token scoping | `figma/service.py`, `converter_service.py` | None | C | |
+| 49.6 Per-email token scoping | `figma/service.py`, `converter_service.py` | None | C | DONE |
 | 49.7 CTA fidelity | `layout_analyzer.py`, `component_matcher.py`, `component_renderer.py` | 49.4 | B | |
 | 49.8 EmailTree bridge | `tree_bridge.py` (new), `converter_service.py` | 49.1, 49.2, 48.6 | D | |
 | 49.9 Data-driven regression framework | `test_converter_regression.py`, `manifest_schema.py`, `data/debug/*/manifest.yaml` | None (can start early) | E | DONE |

@@ -227,12 +227,15 @@ class DesignSyncProvider(Protocol):
         """
         ...
 
-    async def sync_tokens(self, file_ref: str, access_token: str) -> ExtractedTokens:
+    async def sync_tokens(
+        self, file_ref: str, access_token: str, *, target_node_id: str | None = None
+    ) -> ExtractedTokens:
         """Extract design tokens from a design file.
 
         Args:
             file_ref: Provider-specific file reference.
             access_token: Provider-specific access token.
+            target_node_id: Optional node ID to scope token extraction to.
 
         Returns:
             Extracted design tokens (colors, typography, spacing).
@@ -243,7 +246,7 @@ class DesignSyncProvider(Protocol):
         ...
 
     async def sync_tokens_and_structure(
-        self, file_ref: str, access_token: str
+        self, file_ref: str, access_token: str, *, target_node_id: str | None = None
     ) -> tuple[ExtractedTokens, DesignFileStructure]:
         """Extract tokens and file structure from a single API call.
 

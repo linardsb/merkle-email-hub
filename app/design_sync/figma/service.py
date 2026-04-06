@@ -43,6 +43,19 @@ _MAX_WALK_DEPTH = 500
 _MAX_PARSE_DEPTH = 30  # Hard ceiling for _parse_node recursion (Figma rarely exceeds ~15)
 _MAX_ALIAS_DEPTH = 10
 
+
+def _find_subtree(document: dict[str, Any], node_id: str) -> dict[str, Any] | None:
+    """Find a node by ID in the Figma document tree, returning the full subtree."""
+    if str(document.get("id", "")) == node_id:
+        return document
+    for child in document.get("children", []):
+        if isinstance(child, dict):
+            result = _find_subtree(cast("dict[str, Any]", child), node_id)
+            if result is not None:
+                return result
+    return None
+
+
 _FIGMA_NODE_TYPE_MAP: dict[str, DesignNodeType] = {
     "DOCUMENT": DesignNodeType.OTHER,
     "CANVAS": DesignNodeType.PAGE,
@@ -407,13 +420,17 @@ class FigmaDesignSyncService:
             raise SyncFailedError(f"Figma API error (HTTP {resp.status_code})")
         return True
 
-    async def sync_tokens(self, file_ref: str, access_token: str) -> ExtractedTokens:
+    async def sync_tokens(
+        self, file_ref: str, access_token: str, *, target_node_id: str | None = None
+    ) -> ExtractedTokens:
         """Fetch styles from Figma and parse into design tokens."""
-        tokens, _ = await self.sync_tokens_and_structure(file_ref, access_token)
+        tokens, _ = await self.sync_tokens_and_structure(
+            file_ref, access_token, target_node_id=target_node_id
+        )
         return tokens
 
     async def sync_tokens_and_structure(
-        self, file_ref: str, access_token: str
+        self, file_ref: str, access_token: str, *, target_node_id: str | None = None
     ) -> tuple[ExtractedTokens, DesignFileStructure]:
         """Fetch file once and extract both tokens and structure from the same response."""
         headers = {"X-Figma-Token": access_token}
@@ -444,6 +461,26 @@ class FigmaDesignSyncService:
         settings = get_settings()
         bg_hex = settings.design_sync.opacity_composite_bg
 
+        # Scope token extraction to target frame subtree (Phase 49.6)
+        token_scoping = settings.design_sync.token_scoping_enabled and target_node_id is not None
+        document_root = file_data.get("document", {})
+        if token_scoping and target_node_id is not None:
+            subtree = _find_subtree(document_root, target_node_id)
+            walk_root = subtree if subtree is not None else document_root
+            if subtree is None:
+                logger.warning(
+                    "design_sync.figma.token_scoping_target_not_found",
+                    target_node_id=target_node_id,
+                )
+        else:
+            walk_root = document_root
+
+        # Build scoped file_data for parse methods (they expect {"document": ..., "styles": ...})
+        scoped_file_data: dict[str, Any] = {
+            "document": walk_root,
+            "styles": file_data.get("styles", {}),
+        }
+
         # Variables-first token extraction
         var_colors: list[ExtractedColor] = []
         var_variables: list[ExtractedVariable] = []
@@ -472,17 +509,15 @@ class FigmaDesignSyncService:
             stroke_colors: list[ExtractedColor] = []
             # Always walk for gradients even in variables_source mode
             grad_list: list[ExtractedGradient] = []
-            self._walk_for_colors(
-                file_data.get("document", {}), [], set(), gradients=grad_list, bg_hex=bg_hex
-            )
+            self._walk_for_colors(walk_root, [], set(), gradients=grad_list, bg_hex=bg_hex)
             gradients = grad_list
         else:
             colors, stroke_colors, gradients = self._parse_colors(
-                file_data, styles_data, bg_hex=bg_hex
+                scoped_file_data, styles_data, bg_hex=bg_hex
             )
 
-        typography = self._parse_typography(file_data, styles_data)
-        spacing = self._parse_spacing(file_data)
+        typography = self._parse_typography(scoped_file_data, styles_data)
+        spacing = self._parse_spacing(scoped_file_data)
 
         logger.info(
             "design_sync.figma.tokens_extracted",
@@ -493,6 +528,15 @@ class FigmaDesignSyncService:
             gradients=len(gradients),
             variables_source=variables_source,
         )
+
+        if token_scoping:
+            logger.info(
+                "design_sync.figma.tokens_scoped",
+                target_node_id=target_node_id,
+                colors=len(colors),
+                typography=len(typography),
+                spacing=len(spacing),
+            )
 
         tokens = ExtractedTokens(
             colors=colors,
@@ -542,7 +586,11 @@ class FigmaDesignSyncService:
             validate_and_transform,
         )
 
-        tokens, structure = await self.sync_tokens_and_structure(file_ref, access_token)
+        tokens, structure = await self.sync_tokens_and_structure(
+            file_ref,
+            access_token,
+            target_node_id=selected_nodes[0] if selected_nodes else None,
+        )
         tokens, token_warnings = validate_and_transform(tokens, target_clients=target_clients)
         structure, _stats = normalize_tree(structure)
         document = EmailDesignDocument.from_legacy(
