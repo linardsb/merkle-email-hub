@@ -426,6 +426,8 @@ class DesignSyncConfig(BaseModel):
     sibling_similarity_threshold: float = 0.8  # DESIGN_SYNC__SIBLING_SIMILARITY_THRESHOLD
     # Per-email token scoping — scope to target frame subtree (Phase 49.6)
     token_scoping_enabled: bool = True  # DESIGN_SYNC__TOKEN_SCOPING_ENABLED
+    # Design-sync → EmailTree bridge (Phase 49.8)
+    tree_bridge_enabled: bool = False  # DESIGN_SYNC__TREE_BRIDGE_ENABLED
 
 
 class ESPSyncConfig(BaseModel):

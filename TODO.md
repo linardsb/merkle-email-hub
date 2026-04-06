@@ -42,7 +42,7 @@
 - [x] ~~48.12 Knowledge graph proactive QA pipeline~~ DONE
 - [x] ~~48.13 Agent execution hook system with profiles~~ DONE
 
-- [ ] **Phase 49 — Design-Sync Converter Structural Fidelity** (see below)
+- [x] ~~**Phase 49 — Design-Sync Converter Structural Fidelity**~~ DONE (see below)
 
 ---
 
@@ -531,8 +531,8 @@
 - [x] ~~49.4 Token override element-type expansion~~ DONE
 - [x] ~~49.5 Per-node slot content extraction fidelity~~ DONE
 - [x] ~~49.6 Per-email token scoping from shared Figma files~~ DONE
-- [ ] 49.7 CTA fidelity — button color/shape extraction
-- [ ] 49.8 Design-sync → EmailTree bridge (connects to 48.6/48.8)
+- [x] ~~49.7 CTA fidelity — button color/shape extraction~~ DONE
+- [x] ~~49.8 Design-sync → EmailTree bridge (connects to 48.6/48.8)~~ DONE
 - [x] ~~49.9 Data-driven converter regression framework~~ DONE
 
 ---
@@ -822,7 +822,7 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 
 ---
 
-### 49.8 Design-Sync → EmailTree Bridge (connects to 48.6/48.8) `[Backend]`
+### ~~49.8 Design-Sync → EmailTree Bridge (connects to 48.6/48.8)~~ `[Backend]` DONE
 
 **What:** Add a converter output mode that produces an `EmailTree` (Phase 48.6 schema) instead of raw HTML. The design-sync pipeline performs section classification, component matching, and slot fill extraction — then emits a structured tree that Phase 48.8's `TreeCompiler` renders deterministically.
 **Why:** The current pipeline has two separate rendering paths: `component_renderer.py` (regex-based slot filling and token override application — fragile) and the future `TreeCompiler` (48.8 — deterministic compilation from typed slot values). Bridging design-sync to `EmailTree` eliminates the regex rendering entirely for the design-sync path, getting deterministic HTML output for free.
@@ -1031,8 +1031,8 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 | 49.4 Token override expansion | `component_renderer.py`, `component_matcher.py` | None | B | DONE |
 | 49.5 Slot content extraction | `layout_analyzer.py`, `component_matcher.py` | None | C | DONE |
 | 49.6 Per-email token scoping | `figma/service.py`, `converter_service.py` | None | C | DONE |
-| 49.7 CTA fidelity | `layout_analyzer.py`, `component_matcher.py`, `component_renderer.py` | 49.4 | B | |
-| 49.8 EmailTree bridge | `tree_bridge.py` (new), `converter_service.py` | 49.1, 49.2, 48.6 | D | |
+| 49.7 CTA fidelity | `layout_analyzer.py`, `component_matcher.py`, `component_renderer.py` | 49.4 | B | DONE |
+| 49.8 EmailTree bridge | `tree_bridge.py` (new), `converter_service.py` | 49.1, 49.2, 48.6 | D | DONE |
 | 49.9 Data-driven regression framework | `test_converter_regression.py`, `manifest_schema.py`, `data/debug/*/manifest.yaml` | None (can start early) | E | DONE |
 
 > **Execution:** Five tracks, three with internal sequencing.

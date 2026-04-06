@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import httpx
 
@@ -147,6 +147,8 @@ class ConversionResult:
     figma_url: str | None = None
     node_id: str | None = None
     design_tokens_used: dict[str, Any] | None = None
+    # Serialized EmailTree when output_format="tree" (Phase 49.8)
+    tree: dict[str, Any] | None = None
     # VLM verification loop metadata (Phase 47.5)
     verification_iterations: int = 0
     verification_initial_fidelity: float | None = None
@@ -249,6 +251,7 @@ class DesignConverterService:
         image_urls: dict[str, str] | None = None,
         connection_id: str | None = None,
         design_screenshots: dict[str, bytes] | None = None,
+        output_format: Literal["html", "tree"] = "html",
     ) -> ConversionResult:
         """Convert an EmailDesignDocument into email HTML.
 
@@ -263,6 +266,7 @@ class DesignConverterService:
             image_urls: Mapping of node-id → image URL for component matcher.
             connection_id: If set and caching enabled, cache section results.
             design_screenshots: Figma PNG bytes per node-id (async verification only).
+            output_format: Output format — "html" (legacy) or "tree" (EmailTree bridge).
         """
         # design_screenshots is accepted but not used in this sync method;
         # callers can pass it through to async verification separately.
@@ -304,6 +308,7 @@ class DesignConverterService:
                 image_urls=image_urls,
                 connection_id=connection_id,
                 section_hashes=section_hashes,
+                output_format=output_format,
             )
 
         # Recursive converter requires full DesignNode frames which the
@@ -652,6 +657,7 @@ class DesignConverterService:
         image_urls: dict[str, str] | None = None,
         connection_id: str | None = None,
         section_hashes: dict[str, str] | None = None,
+        output_format: Literal["html", "tree"] = "html",
     ) -> ConversionResult:
         """Component-template-based conversion (table-on-table structure)."""
         from app.design_sync.component_matcher import match_all
@@ -687,6 +693,53 @@ class DesignConverterService:
             container_width=container_width,
             image_urls=image_urls,
         )
+
+        # --- Tree bridge path (Phase 49.8) ---
+        if output_format == "tree" and get_settings().design_sync.tree_bridge_enabled:
+            from app.design_sync.tree_bridge import build_email_tree
+
+            sibling_enabled = ds_settings.sibling_detection_enabled
+            email_tree = build_email_tree(
+                layout=layout,
+                matches=matches,
+                tokens=tokens,
+                groups=grouped_sections if sibling_enabled else None,
+                group_map=group_map if sibling_enabled else None,
+            )
+
+            tree_html: str = ""
+            try:
+                from app.components.tree_compiler import TreeCompiler
+
+                compiler = TreeCompiler()
+                compiled = compiler.compile(email_tree)
+                tree_html = compiled.html
+            except Exception:
+                logger.warning(
+                    "tree_bridge.compile_fallback",
+                    msg="TreeCompiler failed, falling through to legacy renderer",
+                )
+
+            if tree_html:
+                match_confidences = {m.section_idx: m.confidence for m in matches}
+                input_button_count = sum(len(s.buttons) for s in layout.sections)
+                quality_warnings = run_quality_contracts(
+                    tree_html,
+                    input_section_count=len(matches),
+                    input_button_count=input_button_count,
+                )
+                return ConversionResult(
+                    html=tree_html,
+                    sections_count=len(email_tree.sections),
+                    warnings=warnings,
+                    layout=layout,
+                    compatibility_hints=compat.hints,
+                    images=[],
+                    quality_warnings=quality_warnings,
+                    match_confidences=match_confidences,
+                    tree=email_tree.model_dump(mode="json"),
+                )
+            # If TreeCompiler failed, fall through to legacy rendering
 
         # Section cache (sync/memory-only)
         cache = None
