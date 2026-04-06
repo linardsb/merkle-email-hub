@@ -306,6 +306,8 @@ networks:
 
 volumes:
   postgres_data:
+    name: i7kcm8soim4ubtsf6ioon1r0_postgres_data
+    external: true
   redis_data:
 
   document_data:
