@@ -36,10 +36,10 @@
 - [x] ~~48.6 Email component tree JSON schema~~ DONE
 - [x] ~~48.7 Scaffolder component-tree generation mode~~ DONE
 - [x] ~~48.8 Component tree deterministic compiler~~ DONE
-- [ ] 48.9 QA check meta-evaluation framework
-- [ ] 48.10 Synthetic adversarial email generator
-- [ ] 48.11 MCP response caching and schema compression
-- [ ] 48.12 Knowledge graph proactive QA pipeline
+- [x] ~~48.9 QA check meta-evaluation framework~~ DONE
+- [x] ~~48.10 Synthetic adversarial email generator~~ DONE
+- [x] ~~48.11 MCP response caching and schema compression~~ DONE
+- [x] ~~48.12 Knowledge graph proactive QA pipeline~~ DONE
 - [ ] 48.13 Agent execution hook system with profiles
 
 - [ ] **Phase 49 — Design-Sync Converter Structural Fidelity** (see below)
@@ -477,10 +477,10 @@
 | 48.6 Component tree JSON schema | `app/components/tree_schema.py` | None | B | DONE |
 | 48.7 Scaffolder component-tree mode | `app/ai/agents/scaffolder/` | 48.6 | B | DONE |
 | 48.8 Component tree compiler | `app/components/tree_compiler.py` | 48.6 | B | DONE |
-| 48.9 QA check meta-evaluation | `app/qa_engine/meta_eval.py` | 48.10 | C | |
-| 48.10 Synthetic adversarial generator | `app/qa_engine/synthetic_generator.py` | None | C | |
-| 48.11 MCP response cache & compression | `app/mcp/optimization.py` | None | D | |
-| 48.12 Knowledge graph proactive QA | `app/knowledge/proactive_qa.py` | None | D | |
+| 48.9 QA check meta-evaluation | `app/qa_engine/meta_eval.py` | 48.10 | C | DONE |
+| 48.10 Synthetic adversarial generator | `app/qa_engine/synthetic_generator.py` | None | C | DONE |
+| 48.11 MCP response cache & compression | `app/mcp/optimization.py` | None | D | DONE |
+| 48.12 Knowledge graph proactive QA | `app/knowledge/proactive_qa.py` | None | D | DONE |
 | 48.13 Agent execution hook system | `app/ai/hooks/` | 48.2 | E | |
 
 > **Execution:** Five independent tracks, three with internal sequencing.
@@ -525,7 +525,7 @@
 >
 > **Why now:** Phase 48 improves how agents compose downstream. But the design-sync converter is upstream — it produces the initial HTML that agents then refine. If the initial conversion is 40% wrong (missing sections, wrong components, placeholder text), no amount of downstream agent orchestration can recover. This phase fixes the foundation.
 
-- [ ] 49.1 Sibling pattern detector — repeated-content grouping
+- [x] ~~49.1 Sibling pattern detector — repeated-content grouping~~ DONE
 - [ ] 49.2 Repeating-group renderer — multi-instance template rendering
 - [ ] 49.3 Section-to-component classification improvements
 - [ ] 49.4 Token override element-type expansion
@@ -533,7 +533,7 @@
 - [ ] 49.6 Per-email token scoping from shared Figma files
 - [ ] 49.7 CTA fidelity — button color/shape extraction
 - [ ] 49.8 Design-sync → EmailTree bridge (connects to 48.6/48.8)
-- [ ] 49.9 Data-driven converter regression framework
+- [x] ~~49.9 Data-driven converter regression framework~~ DONE
 
 ---
 
@@ -843,7 +843,7 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 
 ---
 
-### 49.9 Data-Driven Converter Regression Framework `[Backend]`
+### ~~49.9 Data-Driven Converter Regression Framework~~ `[Backend]` DONE
 
 **What:** Build a generic, manifest-driven regression test framework for the design-sync converter. Any email design can be added as a test case by dropping a directory with `raw_figma.json` + `expected.html` + `manifest.yaml`. The framework auto-discovers cases, runs the converter, and validates against both universal quality assertions (apply to ALL emails) and case-specific structural assertions (from the manifest). REFRAME 2025 is the first case, but the framework handles any email.
 **Why:** The current 49.9 was REFRAME-specific — hardcoded section counts, hardcoded text strings, hardcoded colors. Adding a second email would require writing an entirely new test file. A data-driven framework means adding a new regression case is a 10-minute task (create directory, add Figma JSON, add reference HTML, write manifest YAML) with zero test code changes. The existing snapshot tests in `data/debug/` (MAAP, Starbucks, Mammut) should also be migrated into this framework.
@@ -1025,7 +1025,7 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 
 | Subtask | Scope | Dependencies | Track | Status |
 |---------|-------|--------------|-------|--------|
-| 49.1 Sibling pattern detector | `app/design_sync/sibling_detector.py` (new) | None | A | |
+| 49.1 Sibling pattern detector | `app/design_sync/sibling_detector.py` (new) | None | A | DONE |
 | 49.2 Repeating-group renderer | `component_renderer.py`, `converter_service.py` | 49.1 | A | |
 | 49.3 Classification improvements | `component_matcher.py`, `layout_analyzer.py` | None | B | |
 | 49.4 Token override expansion | `component_renderer.py` | None | B | |
@@ -1033,7 +1033,7 @@ Key patterns: VML `v:roundrect` with `fillcolor` for Outlook, `border-radius:6px
 | 49.6 Per-email token scoping | `figma/service.py`, `converter_service.py` | None | C | |
 | 49.7 CTA fidelity | `layout_analyzer.py`, `component_matcher.py`, `component_renderer.py` | 49.4 | B | |
 | 49.8 EmailTree bridge | `tree_bridge.py` (new), `converter_service.py` | 49.1, 49.2, 48.6 | D | |
-| 49.9 Data-driven regression framework | `test_converter_regression.py`, `manifest_schema.py`, `data/debug/*/manifest.yaml` | None (can start early) | E | |
+| 49.9 Data-driven regression framework | `test_converter_regression.py`, `manifest_schema.py`, `data/debug/*/manifest.yaml` | None (can start early) | E | DONE |
 
 > **Execution:** Five tracks, three with internal sequencing.
 >

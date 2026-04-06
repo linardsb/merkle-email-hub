@@ -177,6 +177,10 @@ class KnowledgeConfig(BaseModel):
     multi_rep_api_base_url: str = "https://api.openai.com/v1"
     multi_rep_api_key: str = ""
     multi_rep_max_concurrency: int = 5
+    # Proactive QA warnings (Phase 48.12)
+    proactive_qa_enabled: bool = False  # KNOWLEDGE__PROACTIVE_QA_ENABLED
+    proactive_max_warnings: int = 10  # KNOWLEDGE__PROACTIVE_MAX_WARNINGS
+    failure_min_occurrences: int = 2  # KNOWLEDGE__FAILURE_MIN_OCCURRENCES
 
 
 class QAChaosConfig(BaseModel):
@@ -413,6 +417,13 @@ class DesignSyncConfig(BaseModel):
     )
     custom_component_model: str = ""  # DESIGN_SYNC__CUSTOM_COMPONENT_MODEL (empty = default)
     custom_component_max_per_email: int = 3  # DESIGN_SYNC__CUSTOM_COMPONENT_MAX_PER_EMAIL
+    # Data-driven converter regression (Phase 49.9)
+    regression_dir: str = "data/debug"  # DESIGN_SYNC__REGRESSION_DIR
+    regression_strict: bool = False  # DESIGN_SYNC__REGRESSION_STRICT
+    # Sibling pattern detection — repeated-content grouping (Phase 49.1)
+    sibling_detection_enabled: bool = True  # DESIGN_SYNC__SIBLING_DETECTION_ENABLED
+    sibling_min_group: int = 2  # DESIGN_SYNC__SIBLING_MIN_GROUP
+    sibling_similarity_threshold: float = 0.8  # DESIGN_SYNC__SIBLING_SIMILARITY_THRESHOLD
 
 
 class ESPSyncConfig(BaseModel):
@@ -451,6 +462,21 @@ class QABIMIConfig(BaseModel):
     dns_timeout_seconds: float = 5.0  # QA_BIMI__DNS_TIMEOUT_SECONDS
 
 
+class QASyntheticConfig(BaseModel):
+    """Synthetic adversarial email generator configuration."""
+
+    count_per_check: int = 5  # QA_SYNTHETIC__COUNT_PER_CHECK
+    output_dir: str = "data/synthetic-adversarial"  # QA_SYNTHETIC__OUTPUT_DIR
+
+
+class QAMetaEvalConfig(BaseModel):
+    """QA check meta-evaluation configuration."""
+
+    enabled: bool = True  # QA_META_EVAL__ENABLED
+    fp_threshold: float = 0.10  # QA_META_EVAL__FP_THRESHOLD
+    fn_threshold: float = 0.05  # QA_META_EVAL__FN_THRESHOLD
+
+
 class VoiceConfig(BaseModel):
     """Voice brief input pipeline settings."""
 
@@ -477,6 +503,10 @@ class MCPConfig(BaseModel):
     # Tool allowlist — empty means all tools exposed
     # Operators can restrict to e.g. ["qa_*", "knowledge_*"]
     tool_allowlist: list[str] = []  # MCP__TOOL_ALLOWLIST
+    cache_enabled: bool = True  # MCP__CACHE_ENABLED — in-memory response cache
+    cache_max_size: int = 100  # MCP__CACHE_MAX_SIZE — max cached responses
+    cache_ttl: int = 300  # MCP__CACHE_TTL — seconds before cache entries expire
+    compress_schemas: bool = True  # MCP__COMPRESS_SCHEMAS — strip verbose schema fields
 
 
 class EmailEngineConfig(BaseModel):
@@ -748,6 +778,14 @@ class CredentialsConfig(BaseModel):
     )  # CREDENTIALS__POOLS (JSON via env)
 
 
+class HookConfig(BaseModel):
+    """Pipeline hook execution settings."""
+
+    profile: Literal["minimal", "standard", "strict"] = "standard"  # PIPELINE__HOOKS__PROFILE
+    custom_hook_dir: str = ""  # PIPELINE__HOOKS__CUSTOM_HOOK_DIR
+    disabled_hooks: list[str] = Field(default_factory=list)  # PIPELINE__HOOKS__DISABLED_HOOKS
+
+
 class PipelineConfig(BaseModel):
     """Pipeline DAG template settings."""
 
@@ -760,6 +798,7 @@ class PipelineConfig(BaseModel):
     enabled: bool = False  # PIPELINE__ENABLED — use DAG executor instead of sequential engine
     max_concurrent_agents: int = 5  # PIPELINE__MAX_CONCURRENT_AGENTS
     merge_strategy: Literal["sequential", "diff3"] = "sequential"  # PIPELINE__MERGE_STRATEGY
+    hooks: HookConfig = Field(default_factory=HookConfig)  # PIPELINE__HOOKS__*
 
 
 class Settings(BaseSettings):
@@ -837,6 +876,8 @@ class Settings(BaseSettings):
     debounce: DebounceConfig = DebounceConfig()
     credentials: CredentialsConfig = CredentialsConfig()
     pipeline: PipelineConfig = PipelineConfig()
+    qa_synthetic: QASyntheticConfig = QASyntheticConfig()
+    qa_meta_eval: QAMetaEvalConfig = QAMetaEvalConfig()
 
     # Service URLs
     maizzle_builder_url: str = "http://localhost:3001"

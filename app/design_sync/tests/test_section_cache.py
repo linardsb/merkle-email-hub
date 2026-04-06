@@ -450,6 +450,9 @@ class TestConverterCacheIntegration:
             mock_cfg.design_sync.section_cache_enabled = False
             mock_cfg.design_sync.section_cache_memory_max = 500
             mock_cfg.design_sync.section_cache_redis_ttl = 3600
+            mock_cfg.design_sync.sibling_detection_enabled = False
+            mock_cfg.design_sync.custom_component_enabled = False
+            mock_cfg.design_sync.custom_component_max_per_email = 0
 
             result = service.convert(
                 structure,

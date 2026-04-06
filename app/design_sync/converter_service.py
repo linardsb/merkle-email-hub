@@ -657,9 +657,33 @@ class DesignConverterService:
         from app.design_sync.component_matcher import match_all
         from app.design_sync.component_renderer import ComponentRenderer
 
+        # Detect repeating sibling groups (Phase 49.1)
+        from app.design_sync.sibling_detector import RepeatingGroup, detect_repeating_groups
+
+        ds_settings = get_settings().design_sync
+
+        grouped_sections: list[EmailSection | RepeatingGroup] = list(layout.sections)
+        if ds_settings.sibling_detection_enabled:
+            grouped_sections = detect_repeating_groups(
+                layout.sections,
+                min_group_size=ds_settings.sibling_min_group,
+                similarity_threshold=ds_settings.sibling_similarity_threshold,
+            )
+
+        # Flatten groups back to sections for match_all (groups handled in 49.2 renderer)
+        flat_sections: list[EmailSection] = []
+        group_map: dict[int, RepeatingGroup] = {}  # section_idx → group
+        for item in grouped_sections:
+            if isinstance(item, RepeatingGroup):
+                for section in item.sections:
+                    group_map[len(flat_sections)] = item
+                    flat_sections.append(section)
+            else:
+                flat_sections.append(item)
+
         # Match sections to components
         matches = match_all(
-            layout.sections,
+            flat_sections,
             container_width=container_width,
             image_urls=image_urls,
         )
@@ -688,7 +712,6 @@ class DesignConverterService:
 
         # Custom component generation for low-confidence matches (47.8)
         custom_gen_count = 0
-        ds_settings = get_settings().design_sync
         _custom_gen_enabled = (
             ds_settings.custom_component_enabled and ds_settings.custom_component_max_per_email > 0
         )
