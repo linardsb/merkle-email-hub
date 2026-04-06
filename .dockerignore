@@ -7,7 +7,13 @@ observability/
 cms/
 nginx/
 services/
-email-templates/
+email-templates/Icons/
+email-templates/training_HTML/
+email-templates/components/snippets-sublime/
+email-templates/components/golden-references/
+email-templates/reframe-assets/
+email-templates/*.zip
+email-templates/*.png
 *.png
 *.txt
 # Exclude top-level and docs markdown, but keep app/ skill files (.md) needed at runtime
