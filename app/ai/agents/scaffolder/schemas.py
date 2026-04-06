@@ -20,7 +20,7 @@ class ScaffolderRequest(BaseModel):
     brief: str = Field(min_length=10, max_length=4000, description="Campaign brief")
     stream: bool = False
     run_qa: bool = False
-    output_mode: Literal["html", "structured"] = "html"
+    output_mode: Literal["html", "structured", "tree"] = "html"
     brand_config: dict[str, object] | None = Field(
         default=None,
         description="Brand guidelines for design token selection (colours, fonts, etc.)",
@@ -47,7 +47,7 @@ class ScaffolderResponse(BaseModel):
         plan: Structured build plan (only when output_mode="structured").
     """
 
-    html: str
+    html: str = ""
     qa_results: list[QACheckResult] | None = None
     qa_passed: bool | None = None
     model: str
@@ -55,6 +55,7 @@ class ScaffolderResponse(BaseModel):
     skills_loaded: list[str] = Field(default_factory=list)
     mso_warnings: list[str] = Field(default_factory=list)
     plan: dict[str, object] | None = None
+    tree: dict[str, object] | None = None
 
 
 class VariantRequest(BaseModel):

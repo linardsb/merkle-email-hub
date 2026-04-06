@@ -127,3 +127,10 @@ def register_resources(mcp: FastMCP) -> None:
     def agent_list() -> str:
         """List all available AI agents with their MCP tool names and capabilities."""
         return json.dumps({"agents": _AGENT_REGISTRY, "count": len(_AGENT_REGISTRY)}, indent=2)
+
+    @mcp.resource("hub://component-tree-schema")
+    def component_tree_schema() -> str:
+        """JSON Schema for EmailTree — constrained component tree output format."""
+        from app.components.tree_schema import export_json_schema
+
+        return json.dumps(export_json_schema(), indent=2)

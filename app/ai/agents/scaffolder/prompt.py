@@ -5,7 +5,11 @@ Thin prompt — core rules only. Detailed patterns loaded from SKILL.md
 and skills/*.md via progressive disclosure in the service layer.
 """
 
+from __future__ import annotations
+
+import json
 from pathlib import Path
+from typing import Any
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
 from app.ai.agents.skill_loader import extract_skill_for_mode, parse_skill_meta, should_load_skill
@@ -111,18 +115,18 @@ def build_design_context_section(design_context: dict[str, object]) -> str:
     parts.append(
         "**CRITICAL — Email HTML structure requirements:**\n"
         '- Use `<table role="presentation">` for ALL structural layout — NEVER `<div>` or `<p>` for layout\n'
-        '- Use `<p style="margin:0 0 10px 0;">` for text content inside `<td>` cells '
-        "(accessibility — screen readers navigate by paragraphs)\n"
-        "- Use `<h1>`-`<h6>` with inline styles for headings inside `<td>` cells "
-        "(screen readers scan by headings)\n"
+        "- All text content DIRECTLY in `<td>` with inline styles — NO `<p>` or `<h1>`-`<h6>` tags\n"
+        "- Every `<td>` with text MUST include: `font-family`, `font-size`, `color`, "
+        "`line-height`, `mso-line-height-rule:exactly`\n"
+        "- Heading-like text: use `<td>` with larger `font-size` and `font-weight:bold`\n"
         "- NEVER use `<div>` or `<p>` with layout CSS (width, max-width, display:flex, float)\n"
         '- `<div>` allowed ONLY for: `role="article"` wrapper, MSO hybrid columns '
         "(inside conditionals), simple text-align wrappers inside `<td>`\n"
         "- Multi-column layout: `<table>` with ghost table MSO pattern — NEVER div-based columns\n"
-        "- Every section structure: `<table>` > `<tr>` > `<td>` > semantic content "
-        "(`<p>`, `<h1>`-`<h6>`, `<a>`, `<img>`)\n"
-        "- Spacing: padding on `<td>` only (universal). margin:0 reset on every `<p>` and heading\n"
-        "- All styles inline on every element including `font-family` on EVERY `<td>` and heading\n"
+        "- Every section structure: `<table>` > `<tr>` > `<td>` > content "
+        "(`<a>`, `<img>`, or direct text)\n"
+        "- Spacing: `padding` on `<td>` only (universal). No margin on text elements\n"
+        "- All styles inline on every element including `font-family` on EVERY `<td>`\n"
         "- MSO conditional wrappers around the 600px container\n"
         '- Main email container: `width="600"` HTML attribute + `max-width:600px` CSS\n'
     )
@@ -227,7 +231,7 @@ def build_design_context_section(design_context: dict[str, object]) -> str:
                         if "," not in heading_family
                         else heading_family
                     )
-                    parts.append(f"- Headings `<h1>`, `<h2>`: `font-family: {stack};`")
+                    parts.append(f"- Heading-like `<td>` elements: `font-family: {stack};`")
                 parts.append(
                     "- Do NOT rely on `<style>` blocks or inheritance — inline on every element"
                 )
@@ -320,3 +324,106 @@ def detect_relevant_skills(brief: str, context: dict[str, str] | None = None) ->
         skills = list(SKILL_FILES.keys())
 
     return list(dict.fromkeys(skills))  # deduplicate preserving order
+
+
+# ── Tree mode prompt builders (Phase 48.7) ──
+
+
+def build_component_manifest_prompt(budget: int = 8000) -> str:
+    """Build compact component manifest for tree layout prompt.
+
+    Includes slug, category, description, and slot summaries.
+    Excludes html_source and other bulky fields.
+    """
+    from app.components.data.seeds import COMPONENT_SEEDS
+
+    seeds = COMPONENT_SEEDS
+    compact: list[dict[str, Any]] = []
+    for seed in seeds:
+        slots = seed.get("slot_definitions", [])
+        compact.append(
+            {
+                "slug": seed["slug"],
+                "category": seed.get("category", ""),
+                "description": seed.get("description", "")[:120],
+                "slots": [
+                    {
+                        "id": s.get("slot_id", ""),
+                        "type": s.get("slot_type", "content"),
+                        "required": s.get("required", False),
+                    }
+                    for s in slots
+                ],
+            }
+        )
+
+    manifest_json = json.dumps(compact, separators=(",", ":"))
+
+    # Truncate if exceeds budget (~4 chars/token)
+    max_chars = budget * 4
+    if len(manifest_json) > max_chars:
+        manifest_json = manifest_json[:max_chars] + "...]"
+
+    return manifest_json
+
+
+def build_tree_layout_system_prompt(manifest_prompt: str) -> str:
+    """Build system prompt for tree-mode layout pass."""
+    parts = [
+        "You are an email layout architect. Select components from the manifest "
+        "to compose an email that matches the campaign brief.\n\n"
+        "Return a JSON object with:\n"
+        '- sections: array of {"component_slug": string, "rationale": string}\n'
+        "- subject: string (email subject line)\n"
+        "- preheader: string (preview text)\n\n"
+        "Rules:\n"
+        "- Use ONLY component slugs from the manifest below\n"
+        "- Order sections logically (hero → content → CTA → footer)\n"
+        "- Include at least one content section and one footer\n"
+        "- Keep rationale brief (one sentence)\n\n"
+        "Component manifest:\n",
+        manifest_prompt,
+        "\n\nRespond ONLY with valid JSON, no markdown fences.",
+    ]
+    return "".join(parts)
+
+
+def build_tree_content_system_prompt(
+    sections: list[dict[str, Any]],
+) -> str:
+    """Build system prompt for tree-mode content pass.
+
+    Args:
+        sections: List of dicts with 'component_slug' and 'slot_definitions'.
+    """
+    section_specs: list[str] = []
+    for i, sec in enumerate(sections):
+        slug = sec["component_slug"]
+        slots = sec.get("slot_definitions", [])
+        slot_lines = "\n".join(
+            f"    - {s.get('slot_id', '?')} (type: {s.get('slot_type', 'content')}, "
+            f"required: {s.get('required', False)})"
+            for s in slots
+        )
+        section_specs.append(f"  Section {i} — {slug}:\n{slot_lines}")
+
+    sections_block = "\n".join(section_specs)
+
+    return (
+        "You are an email content writer. Fill the slots for each section.\n\n"
+        "Return a JSON object with:\n"
+        "- sections: array of {index: int, fills: {slot_id: SlotValue}}\n\n"
+        "SlotValue types:\n"
+        '- Text: {"type": "text", "text": "..."}\n'
+        '- Image: {"type": "image", "src": "https://...", "alt": "...", "width": N, "height": N}\n'
+        '- Button: {"type": "button", "text": "...", "href": "https://...", '
+        '"bg_color": "#RRGGBB", "text_color": "#RRGGBB"}\n'
+        '- HTML: {"type": "html", "html": "..."}\n\n'
+        "Rules:\n"
+        "- Fill all required slots\n"
+        "- Content must match the campaign brief tone and purpose\n"
+        "- For CTA slots, provide short action-oriented text\n"
+        "- For image slots, provide realistic placeholder URLs\n\n"
+        f"Sections to fill:\n{sections_block}\n\n"
+        "Respond ONLY with valid JSON, no markdown fences."
+    )

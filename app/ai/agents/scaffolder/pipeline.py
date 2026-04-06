@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         PipelineCheckpointCallback,
     )
     from app.ai.agents.scaffolder.variant_schemas import CampaignVariantSet
+    from app.components.tree_schema import EmailTree
     from app.projects.design_system import DesignSystem
 
 from app.ai.agents.scaffolder.pipeline_checkpoint import (
@@ -626,6 +627,133 @@ class ScaffolderPipeline:
             if fill.slot_id == "subject_line":
                 return fill.content
         return ""
+
+    async def execute_tree(
+        self,
+        brief: str,
+        brand_config: dict[str, object] | None = None,
+    ) -> EmailTree:
+        """Execute 3-pass pipeline in tree mode. Returns EmailTree.
+
+        Pass 1: Select components from manifest (tree layout)
+        Pass 2: Fill per-component slots (tree content)  } parallel
+        Pass 3: Design tokens (reuses _design_pass)      }
+        """
+        from app.ai.agents.scaffolder.prompt import (
+            build_component_manifest_prompt,
+            build_tree_content_system_prompt,
+            build_tree_layout_system_prompt,
+        )
+        from app.ai.agents.scaffolder.tree_builder import (
+            ComponentSelection,
+            TreeBuilder,
+            _build_manifest_index,
+            _infer_slot_value,
+        )
+
+        brief = sanitize_prompt(brief)
+
+        # Build manifest index for slot definitions
+        manifest_slugs, slot_defs = _build_manifest_index()
+
+        # Pass 1: Tree layout — select components
+        manifest_prompt = build_component_manifest_prompt()
+        layout_system = build_tree_layout_system_prompt(manifest_prompt)
+        layout_parsed = await self._call_json(layout_system, f"Campaign brief:\n{brief}")
+
+        component_selections = [
+            ComponentSelection(
+                component_slug=str(s.get("component_slug", "")),
+                rationale=str(s.get("rationale", "")),
+            )
+            for s in layout_parsed.get("sections", [])
+        ]
+
+        if not component_selections:
+            raise PipelineError("Tree layout pass returned no sections")
+
+        subject = str(layout_parsed.get("subject", ""))
+        preheader = str(layout_parsed.get("preheader", ""))
+
+        logger.info(
+            "scaffolder.tree_layout_completed",
+            sections=len(component_selections),
+            slugs=[cs.component_slug for cs in component_selections],
+        )
+
+        # Prepare per-section slot definitions for content pass
+        section_specs: list[dict[str, Any]] = []
+        for cs in component_selections:
+            slug_defs = slot_defs.get(cs.component_slug, [])
+            section_specs.append(
+                {
+                    "component_slug": cs.component_slug,
+                    "slot_definitions": slug_defs,
+                }
+            )
+
+        # Pass 2 (tree content) + Pass 3 (design) in parallel
+        content_system = build_tree_content_system_prompt(section_specs)
+
+        async def _tree_content_pass() -> dict[int, dict[str, Any]]:
+            content_parsed = await self._call_json(content_system, f"Campaign brief:\n{brief}")
+            fills_by_section: dict[int, dict[str, Any]] = {}
+            for section_data in content_parsed.get("sections", []):
+                idx = int(section_data.get("index", 0))
+                raw_fills = section_data.get("fills", {})
+                fills_by_section[idx] = raw_fills
+            return fills_by_section
+
+        raw_fills_by_section, design_tokens = await asyncio.gather(
+            _tree_content_pass(),
+            self._design_pass(brief, brand_config),
+        )
+
+        logger.info(
+            "scaffolder.tree_content_completed",
+            sections_filled=len(raw_fills_by_section),
+        )
+
+        # Convert raw fills to typed SlotValues
+        typed_fills_by_section: dict[int, dict[str, Any]] = {}
+        for idx, raw_fills in raw_fills_by_section.items():
+            typed: dict[str, Any] = {}
+            # Look up slot_type from manifest
+            slug = (
+                component_selections[idx].component_slug if idx < len(component_selections) else ""
+            )
+            slug_slot_defs = slot_defs.get(slug, [])
+            slot_type_map = {
+                s.get("slot_id", ""): s.get("slot_type", "content") for s in slug_slot_defs
+            }
+
+            for slot_id, content in raw_fills.items():
+                slot_type = slot_type_map.get(slot_id, "content")
+                typed[slot_id] = _infer_slot_value(slot_id, content, slot_type)
+            typed_fills_by_section[idx] = typed
+
+        # Assemble EmailTree
+        design_dict: dict[str, dict[str, str]] = {
+            "colors": design_tokens.colors,
+            "fonts": design_tokens.fonts,
+        }
+
+        builder = TreeBuilder(manifest_slugs, slot_defs)
+        tree = builder.build(
+            component_selections=component_selections,
+            slot_fills_by_section=typed_fills_by_section,
+            design_tokens=design_dict,
+            subject=subject,
+            preheader=preheader,
+        )
+
+        logger.info(
+            "scaffolder.tree_pipeline_completed",
+            sections=len(tree.sections),
+            subject=tree.metadata.subject,
+        )
+
+        return tree
 
     async def execute_variants(
         self,

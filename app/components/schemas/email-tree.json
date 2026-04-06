@@ -1,0 +1,275 @@
+{
+  "$defs": {
+    "ButtonSlot": {
+      "description": "CTA button slot.",
+      "properties": {
+        "type": {
+          "const": "button",
+          "default": "button",
+          "title": "Type",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "href": {
+          "minLength": 1,
+          "title": "Href",
+          "type": "string"
+        },
+        "bg_color": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Bg Color",
+          "type": "string"
+        },
+        "text_color": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Text Color",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "href",
+        "bg_color",
+        "text_color"
+      ],
+      "title": "ButtonSlot",
+      "type": "object"
+    },
+    "HtmlSlot": {
+      "description": "Raw HTML slot (for custom/complex content).",
+      "properties": {
+        "type": {
+          "const": "html",
+          "default": "html",
+          "title": "Type",
+          "type": "string"
+        },
+        "html": {
+          "minLength": 1,
+          "title": "Html",
+          "type": "string"
+        }
+      },
+      "required": [
+        "html"
+      ],
+      "title": "HtmlSlot",
+      "type": "object"
+    },
+    "ImageSlot": {
+      "description": "Image slot with dimensions.",
+      "properties": {
+        "type": {
+          "const": "image",
+          "default": "image",
+          "title": "Type",
+          "type": "string"
+        },
+        "src": {
+          "minLength": 1,
+          "title": "Src",
+          "type": "string"
+        },
+        "alt": {
+          "title": "Alt",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 2000,
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 2000,
+          "title": "Height",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "src",
+        "alt",
+        "width",
+        "height"
+      ],
+      "title": "ImageSlot",
+      "type": "object"
+    },
+    "TextSlot": {
+      "description": "Text content slot.",
+      "properties": {
+        "type": {
+          "const": "text",
+          "default": "text",
+          "title": "Type",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "tag": {
+          "default": "td",
+          "pattern": "^(td|span|a)$",
+          "title": "Tag",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TextSlot",
+      "type": "object"
+    },
+    "TreeMetadata": {
+      "description": "Email-level metadata.",
+      "properties": {
+        "subject": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        },
+        "preheader": {
+          "default": "",
+          "maxLength": 250,
+          "title": "Preheader",
+          "type": "string"
+        },
+        "design_tokens": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "title": "Design Tokens",
+          "type": "object"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        }
+      },
+      "required": [
+        "subject"
+      ],
+      "title": "TreeMetadata",
+      "type": "object"
+    },
+    "TreeSection": {
+      "description": "A section referencing a component from the manifest.",
+      "properties": {
+        "component_slug": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^([a-z][a-z0-9-]*|__custom__)$",
+          "title": "Component Slug",
+          "type": "string"
+        },
+        "slot_fills": {
+          "additionalProperties": {
+            "discriminator": {
+              "mapping": {
+                "button": "#/$defs/ButtonSlot",
+                "html": "#/$defs/HtmlSlot",
+                "image": "#/$defs/ImageSlot",
+                "text": "#/$defs/TextSlot"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextSlot"
+              },
+              {
+                "$ref": "#/$defs/ImageSlot"
+              },
+              {
+                "$ref": "#/$defs/ButtonSlot"
+              },
+              {
+                "$ref": "#/$defs/HtmlSlot"
+              }
+            ]
+          },
+          "title": "Slot Fills",
+          "type": "object"
+        },
+        "style_overrides": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Style Overrides",
+          "type": "object"
+        },
+        "children": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/TreeSection"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Children"
+        },
+        "custom_html": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom Html"
+        }
+      },
+      "required": [
+        "component_slug"
+      ],
+      "title": "TreeSection",
+      "type": "object"
+    }
+  },
+  "description": "An email represented as a tree of component references with slot fills and style overrides.",
+  "properties": {
+    "metadata": {
+      "$ref": "#/$defs/TreeMetadata"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/TreeSection"
+      },
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    }
+  },
+  "required": [
+    "metadata",
+    "sections"
+  ],
+  "title": "EmailTree",
+  "type": "object"
+}

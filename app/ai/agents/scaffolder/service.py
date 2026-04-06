@@ -134,6 +134,11 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
     async def _process_structured(self, request: Any) -> ScaffolderResponse:
         """Structured mode: 3-pass pipeline -> deterministic assembly -> QA."""
         req: ScaffolderRequest = request
+
+        # Route tree mode to dedicated handler
+        if req.output_mode == "tree":
+            return await self._process_tree(req)
+
         settings = get_settings()
         provider_name = settings.ai.provider
         model = resolve_model(self._get_model_tier(request))
@@ -196,6 +201,42 @@ class ScaffolderService(CRAGMixin, BaseAgentService):
             qa_passed=qa_passed,
             model=model_id,
             confidence=plan.confidence,
+            skills_loaded=[],
+            mso_warnings=[],
+        )
+
+    async def _process_tree(self, req: ScaffolderRequest) -> ScaffolderResponse:
+        """Tree mode: 3-pass pipeline → EmailTree (no HTML compilation)."""
+        settings = get_settings()
+        provider_name = settings.ai.provider
+        model = resolve_model(self._get_model_tier(req))
+        model_id = f"{provider_name}:{model}"
+
+        registry = get_registry()
+        provider = registry.get_llm(provider_name)
+
+        logger.info(
+            "agents.scaffolder.tree_started",
+            provider=provider_name,
+            model=model,
+        )
+
+        pipeline = ScaffolderPipeline(provider, model)
+        try:
+            tree = await pipeline.execute_tree(req.brief, brand_config=req.brand_config)
+        except PipelineError as e:
+            logger.error(
+                "agents.scaffolder.tree_pipeline_failed",
+                error=str(e),
+                provider=provider_name,
+            )
+            raise AIExecutionError("scaffolder tree pipeline failed") from e
+
+        return ScaffolderResponse(
+            html="",
+            tree=tree.model_dump(),
+            model=model_id,
+            confidence=0.9,
             skills_loaded=[],
             mso_warnings=[],
         )
