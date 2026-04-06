@@ -306,8 +306,6 @@ networks:
 
 volumes:
   postgres_data:
-    name: email-hub_postgres_data
-    external: true
   redis_data:
 
   document_data:
