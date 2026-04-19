@@ -714,10 +714,16 @@ class DesignConverterService:
                 compiler = TreeCompiler()
                 compiled = compiler.compile(email_tree)
                 tree_html = compiled.html
-            except Exception:
-                logger.warning(
+            except Exception as exc:
+                # Upgrade to ERROR when the tree path was explicitly requested —
+                # a silent WARN hid Phase 49.8 being dead-on-arrival. WARN is
+                # still appropriate when "tree" was implicit/default.
+                logger.error(
                     "tree_bridge.compile_fallback",
                     msg="TreeCompiler failed, falling through to legacy renderer",
+                    exc_type=type(exc).__name__,
+                    exc_detail=str(exc),
+                    exc_info=True,
                 )
 
             if tree_html:

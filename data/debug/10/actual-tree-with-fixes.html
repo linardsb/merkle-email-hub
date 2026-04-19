@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <style>
+    td,th,div,p,a,h1,h2,h3,h4,h5,h6 {font-family: "Segoe UI", sans-serif; mso-line-height-rule: exactly;}
+  </style>
+  <![endif]-->
+  <title data-slot="email_title">Untitled</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+    body { margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%; }
+    img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    @media only screen and (max-width: 599px) {
+      .column { display: block !important; max-width: 100% !important; width: 100% !important; }
+      .bannerimg { width: 100% !important; height: auto !important; }
+      .wf { width: 100% !important; }
+      .hide { display: none !important; max-height: 0 !important; overflow: hidden !important; mso-hide: all !important; }
+      .db { display: block !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .dark-bg { background-color: #1a1a2e !important; }
+      .dark-text { color: #e0e0e0 !important; }
+    }
+    [data-ogsc] .dark-bg { background-color: #1a1a2e !important; }
+    [data-ogsb] .dark-text { color: #e0e0e0 !important; }
+
+    /* ── Component dark mode overrides ── */
+    @media (prefers-color-scheme: dark) {
+      /* Structure backgrounds */
+      .header-bg, .footer-bg, .navbar-bg, .logoheader-bg,
+      .preheader-bg, .col2-bg, .col3-bg, .col4-bg,
+      .revcol-bg, .social-bg, .textblock-bg,
+      .artcard-bg { background-color: #1a1a2e !important; }
+      .product-card { background-color: #2d2d44 !important; }
+
+      /* Text — links */
+      .header-link, .navbar-link, .preheader-link,
+      .footer-link { color: #8ecae6 !important; }
+
+      /* Text — muted */
+      .footer-text, .social-label, .imgblock-caption { color: #b0b0b0 !important; }
+      .product-desc { color: #b0b0b0 !important; }
+
+      /* Text — headings */
+      .textblock-heading, .artcard-heading, .product-title,
+      .hero-title { color: #e0e0e0 !important; }
+
+      /* Text — body */
+      .textblock-body, .artcard-body,
+      .hero-subtitle { color: #cccccc !important; }
+      .product-price { color: #8ecae6 !important; }
+
+      /* Interactive */
+      .cta-btn { background-color: #4895ef !important; }
+      .cta-btn a { color: #ffffff !important; }
+      .cta-ghost { border-color: #8ecae6 !important; }
+      .cta-ghost a { color: #8ecae6 !important; }
+
+      /* Hero */
+      .hero-overlay { background-color: rgba(0,0,0,0.7) !important; }
+
+      /* Divider */
+      .divider-line { border-top-color: #444466 !important; }
+    }
+
+    /* Outlook dark mode — backgrounds */
+    [data-ogsc] .header-bg, [data-ogsc] .footer-bg, [data-ogsc] .navbar-bg,
+    [data-ogsc] .logoheader-bg, [data-ogsc] .preheader-bg,
+    [data-ogsc] .col2-bg, [data-ogsc] .col3-bg, [data-ogsc] .col4-bg,
+    [data-ogsc] .revcol-bg, [data-ogsc] .social-bg,
+    [data-ogsc] .textblock-bg, [data-ogsc] .artcard-bg { background-color: #1a1a2e !important; }
+    [data-ogsc] .product-card { background-color: #2d2d44 !important; }
+
+    /* Outlook dark mode — text */
+    [data-ogsc] .header-link, [data-ogsc] .navbar-link,
+    [data-ogsc] .preheader-link, [data-ogsc] .footer-link { color: #8ecae6 !important; }
+    [data-ogsc] .footer-text, [data-ogsc] .social-label,
+    [data-ogsc] .imgblock-caption { color: #b0b0b0 !important; }
+    [data-ogsc] .textblock-heading, [data-ogsc] .artcard-heading,
+    [data-ogsc] .product-title, [data-ogsc] .hero-title { color: #e0e0e0 !important; }
+    [data-ogsb] .textblock-body, [data-ogsb] .artcard-body,
+    [data-ogsc] .hero-subtitle { color: #cccccc !important; }
+    [data-ogsc] .product-price { color: #8ecae6 !important; }
+
+    /* Outlook dark mode — interactive & decorative */
+    [data-ogsc] .cta-btn { background-color: #4895ef !important; }
+    [data-ogsc] .cta-ghost { border-color: #8ecae6 !important; }
+    [data-ogsc] .divider-line { border-top-color: #444466 !important; }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; width: 100%; -webkit-text-size-adjust: 100%;">
+  <div role="article" aria-roledescription="email" aria-label="Email" lang="en" style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <div data-slot="preheader" style="display: none; max-height: 0; overflow: hidden; mso-hide: all;"></div>
+    <!--[if mso]>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="600" align="center" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+    <![endif]-->
+    <div class="dark-bg" data-slot="email_body" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+<!-- Full-Width Image — Responsive full-width image with MSO fixed-width wrapper -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; max-width: 600px; margin: 0 auto; background-color: #FFFFFF">
+  <tr>
+    <td style="padding: 0; text-align: center; font-size: 0; line-height: 0;">
+      <a data-slot="link_url" href="https://example.com" style="text-decoration: none;">
+        <img data-slot="image_url" class="bannerimg" src="/api/v1/design-sync/assets/2833:1140.png" data-slot-alt="image_alt" alt="mj-image" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" height="600">
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Component: text-block -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td>
+<![endif]-->
+
+<table role="presentation" class="textblock-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FFFFFF; font-family: Helvetica; font-size: 18.0px; padding: 40px 32px 40px 32px">
+  <tr>
+    <td data-slot="heading" class="textblock-heading" style="padding: 24px 24px 12px; font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; color: #333333; line-height: 1.3; mso-line-height-rule: exactly;">GRAB A DUVET DAY</td>
+  </tr>
+  <tr>
+    <td data-slot="body" class="textblock-body" style="padding: 0 24px 24px; font-family: Arial, sans-serif; font-size: 16px; color: #555555; line-height: 1.6; mso-line-height-rule: exactly;">Built for the coldest days in the highest places, Eiger Extreme Nordwand 6.0&amp;#x27;s down products are part of a complete layering system, fine-tuned to manage heat and moisture between layers. Developed with athletes and rigourously tested – even 1% improvements can make a huge difference.
+SHOP THE COLLECTION</td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Full-Width Image — Responsive full-width image with MSO fixed-width wrapper -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; max-width: 600px; margin: 0 auto; background-color: #FFFFFF">
+  <tr>
+    <td style="padding: 0; text-align: center; font-size: 0; line-height: 0;">
+      <a data-slot="link_url" href="https://example.com" style="text-decoration: none;">
+        <img data-slot="image_url" class="bannerimg" src="/api/v1/design-sync/assets/2833:1158.png" data-slot-alt="image_alt" alt="mj-image" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" height="396">
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Component: text-block -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td>
+<![endif]-->
+
+<table role="presentation" class="textblock-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0252B3; font-family: Helvetica; font-size: 18.0px; padding: 40px 32px 40px 32px">
+  <tr>
+    <td data-slot="heading" class="textblock-heading" style="padding: 24px 24px 12px; font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; color: #333333; line-height: 1.3; mso-line-height-rule: exactly;">A LAYERING SYSTEM FOR LIFE IN THE EXTREMES</td>
+  </tr>
+  <tr>
+    <td data-slot="body" class="textblock-body" style="padding: 0 24px 24px; font-family: Arial, sans-serif; font-size: 16px; color: #555555; line-height: 1.6; mso-line-height-rule: exactly;">This is not just a new collection, it&amp;#x27;s a system. Outer layers shield you from adverse weather and release excess heat, whilst base and midlayers wick moisture and stabilize warmth, so you can custom-create the perfect set-up for you.BUILD YOUR LAYERS  →</td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Article Card — Image + heading + body + CTA in hybrid 2-column layout -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+
+<table role="presentation" class="artcard-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FFFFFF; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-family: Helvetica; font-size: 24.0px">
+  <tr>
+    <td style="font-size: 0; text-align: center; mso-line-height-rule: exactly;">
+      <!--[if mso]>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="280" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 280px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 0;">
+              <img data-slot="image_url" src="/api/v1/design-sync/assets/2833:1172.png" data-slot-alt="image_alt" alt="mj-image" width="600" style="display: block; width: 100%; height: auto; border: 0;" height="400">
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td><td width="320" valign="top">
+      <![endif]-->
+      <div class="column" style="display: inline-block; max-width: 320px; width: 100%; vertical-align: top;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding: 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td data-slot="heading" class="artcard-heading" style="padding: 0 0 8px; font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; color: #444444; line-height: 1.3;">
+                    Article Heading
+                  </td>
+                </tr>
+                <tr>
+                  <td data-slot="body_text" class="artcard-body" style="padding: 0 0 16px; font-family: Arial, sans-serif; font-size: 14px; color: #666666; line-height: 1.5;">LAYER SMARTER</td>
+                </tr>
+              </table>
+              <a data-slot="cta_url" href="https://example.com/article" style="display: inline-block; padding: 10px 24px; background-color: #e84e0f; color: #ffffff; text-decoration: none; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; border-radius: 4px;">
+                <span data-slot="cta_text">Read More</span>
+              </a>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--[if mso]>
+      </td></tr></table>
+      <![endif]-->
+    </td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Column Layout 2 — Hybrid responsive 2-column (MSO ghost table + inline-block divs) -->
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #FFFFFF; font-family: Helvetica; font-size: 18.0px; padding: 32px 32px 32px 32px">
+<tr>
+  <td class="col2-bg" style="font-size: 0; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="300" valign="top">
+    <![endif]-->
+    <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+        <tr>
+          <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #444444;">Eiger Nordwand Advanced Down IN Hooded Jacket Men
+Extra-warm, durable down belay jacket
+SHOP NOW →</td>
+        </tr>
+      </table>
+    </div>
+    <!--[if mso]>
+    </td><td width="300" valign="top">
+    <![endif]-->
+    <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+        <tr>
+          <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #444444;">Eiger Nordwand Advanced Down IN Hooded Jacket Men
+Durable, breathable mountaineering midlayer
+SHOP NOW →</td>
+        </tr>
+      </table>
+    </div>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+
+
+<!-- Component: spacer -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td height="32" style="font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table>
+<![endif]-->
+
+<!--[if !mso]><!-->
+
+<div data-slot="spacer_height" style="height: 32px; line-height: 32px; font-size: 1px; mso-line-height-rule: exactly;">40</div>
+
+<!--<![endif]-->
+
+
+<!-- Full-Width Image — Responsive full-width image with MSO fixed-width wrapper -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td>
+<![endif]-->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; max-width: 600px; margin: 0 auto; background-color: #FFFFFF">
+  <tr>
+    <td style="padding: 0; text-align: center; font-size: 0; line-height: 0;">
+      <a data-slot="link_url" href="https://example.com" style="text-decoration: none;">
+        <img data-slot="image_url" class="bannerimg" src="/api/v1/design-sync/assets/2833:1226.png" data-slot-alt="image_alt" alt="mj-image" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" height="400">
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Component: text-block -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td>
+<![endif]-->
+
+<table role="presentation" class="textblock-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FFFFFF; font-family: Helvetica; font-size: 18.0px; padding: 32px 32px 50px 32px">
+  <tr>
+    <td data-slot="heading" class="textblock-heading" style="padding: 24px 24px 12px; font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; color: #333333; line-height: 1.3; mso-line-height-rule: exactly;">GIVE THE GIFT OF ADVENTURE</td>
+  </tr>
+  <tr>
+    <td data-slot="body" class="textblock-body" style="padding: 0 24px 24px; font-family: Arial, sans-serif; font-size: 16px; color: #555555; line-height: 1.6; mso-line-height-rule: exactly;">The holiday season is around the corner! Find the perfect present for the thrill seeker, powder chaser, or mountain explorer in your life with our gift guide.DISCOVER OUR GIFT GUIDE  →</td>
+  </tr>
+</table>
+
+<!--[if mso]>
+</td></tr></table>
+<![endif]-->
+
+
+<!-- Component: spacer -->
+
+<!--[if mso]>
+<table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td height="32" style="font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table>
+<![endif]-->
+
+<!--[if !mso]><!-->
+
+<div data-slot="spacer_height" style="height: 32px; line-height: 32px; font-size: 1px; mso-line-height-rule: exactly;">40</div>
+
+<!--<![endif]-->
+
+
+<!-- Column Layout 2 — Hybrid responsive 2-column (MSO ghost table + inline-block divs) -->
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #FFFFFF; font-family: Helvetica; font-size: 32.0px; padding: 30px 32px 30px 32px">
+<tr>
+  <td class="col2-bg" style="font-size: 0; text-align: center; background-color: #ffffff; mso-line-height-rule: exactly;">
+    <!--[if mso]>
+    <table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;"><tr><td width="300" valign="top">
+    <![endif]-->
+    <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+        <tr>
+          <td data-slot="col_1" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #444444;">MEN</td>
+        </tr>
+      </table>
+    </div>
+    <!--[if mso]>
+    </td><td width="300" valign="top">
+    <![endif]-->
+    <div class="column" style="display: inline-block; max-width: 300px; width: 100%; vertical-align: top;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
+        <tr>
+          <td data-slot="col_2" style="padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #444444;">&amp;lt;img src=&amp;quot;/api/v1/design-sync/assets/2833:1247.png&amp;quot; alt=&amp;quot;mj-image&amp;quot; style=&amp;quot;display:block;width:100%;height:auto;border:0;&amp;quot; /&amp;gt;</td>
+        </tr>
+      </table>
+    </div>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </td>
+</tr>
+</table>
+
+
+<!-- Component: social-icons -->
+
+<table role="presentation" class="social-bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; font-family: Helvetica; font-size: 10.0px; padding: 40px 32px 40px 32px">
+  <tr>
+    <td class="social-label" style="padding: 24px 0 16px; text-align: center; font-family: Arial, sans-serif; font-size: 14px; color: #666666; mso-line-height-rule: exactly;">Follow us</td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 24px; text-align: center;">
+      <table data-slot="social_links" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td style="padding: 0 8px;"><a href="#" style="text-decoration: none;"><img src="/api/v1/design-sync/assets/2833:1274.png" alt="mj-image" width="32" height="32" style="display: block; border: 0;"></a></td><td style="padding: 0 8px;"><a href="#" style="text-decoration: none;"><img src="/api/v1/design-sync/assets/2833:1277.png" alt="mj-image, (mjml:mj-image), (type: logo)" width="32" height="32" style="display: block; border: 0;"></a></td><td style="padding: 0 8px;"><a href="#" style="text-decoration: none;"><img src="/api/v1/design-sync/assets/2833:1279.png" alt="mj-image, (mjml:mj-image), (type: logo)" width="32" height="32" style="display: block; border: 0;"></a></td><td style="padding: 0 8px;"><a href="#" style="text-decoration: none;"><img src="/api/v1/design-sync/assets/2833:1281.png" alt="mj-image, (mjml:mj-image), (type: logo)" width="32" height="32" style="display: block; border: 0;"></a></td><td style="padding: 0 8px;"><a href="#" style="text-decoration: none;"><img src="/api/v1/design-sync/assets/2833:1283.png" alt="mj-image, (mjml:mj-image), (type: logo)" width="32" height="32" style="display: block; border: 0;"></a></td><td style="padding: 0 8px;"><a href="#" style="text-decoration: none;"><img src="/api/v1/design-sync/assets/2833:1285.png" alt="mj-image, (mjml:mj-image), (type: logo)" width="32" height="32" style="display: block; border: 0;"></a></td></tr></table>
+    </td>
+  </tr>
+</table>
+
+
+</div>
+    <!--[if mso]>
+    </td></tr></table>
+    <![endif]-->
+  </div>
+</body>
+</html>

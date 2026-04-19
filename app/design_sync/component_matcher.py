@@ -439,11 +439,17 @@ def _score_extended_candidates(
                 candidates.append(("video-placeholder", 0.88))
 
     # event-card: structured event information (date/time/location patterns)
+    # False-positive gate: real event cards are text-dense (no hero image) and
+    # carry a single RSVP CTA. A hero-style section with multiple buttons
+    # (e.g. Mammut "DUVET DAY" with 2 ghost CTAs) must NOT match event-card.
+    has_large_image = any(img.width is not None and img.width >= 200 for img in images)
+    single_cta = len(section.buttons) <= 1
+    event_shape_ok = not has_large_image and single_cta
     # Path A: explicit date pattern — works with or without images
-    if has_texts and _DATE_PATTERN.search(all_text):
+    if event_shape_ok and has_texts and _DATE_PATTERN.search(all_text):
         candidates.append(("event-card", 0.85))
     # Path B: keyword-labeled event details (3+ short lines with event keywords)
-    elif has_texts and len(texts) >= 3:
+    elif event_shape_ok and has_texts and len(texts) >= 3:
         short_texts = [t for t in texts if len(t.content) < 80]
         if len(short_texts) >= 3:
             keyword_hits = sum(
@@ -546,6 +552,12 @@ def _build_slot_fills(
         "list": _fills_text_block,
         "product-card": _fills_article_card,
         "product-showcase": _fills_image_gallery,
+        # Event-card family — all 3 variants share the same slot shape
+        # (event_name, date, [location], [description], cta_url, cta_text,
+        # plus optional image_url on the banner variant).
+        "event-card": _fills_event_card,
+        "event-card-minimal": _fills_event_card,
+        "event-card-banner": _fills_event_card,
         # ── Batch H: footer family ──
         "footer": _fills_footer,
         "footer-menu": _fills_nav,
@@ -699,11 +711,17 @@ def _build_column_fill_html(
             continue
         btn_url = html.escape(_safe_url(btn.url))
         bg = _safe_color(btn.fill_color, "#0066cc")
+        txt_color = _safe_color(btn.text_color, "#ffffff")
+        radius = f"{btn.border_radius:.0f}" if btn.border_radius is not None else "4"
+        border_css = ""
+        if btn.stroke_color and _HEX_COLOR_RE.match(btn.stroke_color):
+            sw = f"{btn.stroke_weight:.0f}" if btn.stroke_weight else "1"
+            border_css = f"border:{sw}px solid {btn.stroke_color};"
         parts.append(
             f'<a href="{btn_url}" style="display:inline-block;'
-            f"padding:10px 24px;background-color:{bg};color:#ffffff;"
+            f"padding:10px 24px;background-color:{bg};color:{txt_color};"
             f"text-decoration:none;font-size:14px;font-weight:bold;"
-            f'border-radius:4px;">{_safe_text(btn.text)}</a>'
+            f'border-radius:{radius}px;{border_css}">{_safe_text(btn.text)}</a>'
         )
     return "\n".join(parts)
 
@@ -1096,13 +1114,144 @@ def _fills_spacer(
     return [SlotFill("spacer_height", str(height))]
 
 
-def _fills_social(
-    _section: EmailSection,
+_LOCATION_KEYWORD_RE = re.compile(
+    r"\b(?:location|venue|where|address|at\s)",
+    re.IGNORECASE,
+)
+
+
+def _fills_event_card(
+    section: EmailSection,
     _cw: int,
+    *,
+    image_urls: dict[str, str] | None = None,
     **_kw: object,
 ) -> list[SlotFill]:
-    # social-icons has no data-slot — uses fixed template HTML
-    return []
+    """Fill event-card slots: name, date, location, description, CTA.
+
+    Emits empty strings for fields that don't match a pattern so the renderer
+    strips the placeholder default rather than leaking "April 15, 2026" into
+    real output.
+    """
+    fills: list[SlotFill] = []
+    texts = section.texts
+    consumed_ids: set[int] = set()
+
+    name_source = _first_heading(texts) or (texts[0] if texts else None)
+    event_name = _safe_text(name_source.content) if name_source else ""
+    if name_source is not None:
+        consumed_ids.add(id(name_source))
+    fills.append(SlotFill("event_name", event_name))
+
+    body_texts = _body_texts(texts)
+
+    date_value = ""
+    for text in body_texts:
+        if id(text) in consumed_ids:
+            continue
+        if _DATE_PATTERN.search(text.content):
+            date_value = _safe_text(text.content)
+            consumed_ids.add(id(text))
+            break
+    fills.append(SlotFill("date", date_value))
+
+    location_value = ""
+    for text in body_texts:
+        if id(text) in consumed_ids:
+            continue
+        if _LOCATION_KEYWORD_RE.search(text.content):
+            location_value = _safe_text(text.content)
+            consumed_ids.add(id(text))
+            break
+    fills.append(SlotFill("location", location_value))
+
+    description_parts = [
+        _safe_text(text.content)
+        for text in body_texts
+        if id(text) not in consumed_ids and not _is_placeholder(text.content)
+    ]
+    fills.append(SlotFill("description", "<br><br>".join(description_parts)))
+
+    cta_text = ""
+    cta_url = "#"
+    if section.buttons:
+        btn = section.buttons[0]
+        if not _is_placeholder(btn.text):
+            cta_text = _safe_text(btn.text)
+            cta_url = _safe_url(btn.url)
+    fills.append(SlotFill("cta_text", cta_text))
+    fills.append(SlotFill("cta_url", cta_url, slot_type="cta"))
+
+    if section.images:
+        img = section.images[0]
+        fills.append(
+            SlotFill(
+                "image_url",
+                _resolve_image_url(img.node_id, image_urls),
+                slot_type="image",
+            )
+        )
+        fills.append(SlotFill("image_alt", img.node_name))
+
+    return fills
+
+
+def _fills_social(
+    section: EmailSection,
+    _cw: int,
+    *,
+    image_urls: dict[str, str] | None = None,
+    **_kw: object,
+) -> list[SlotFill]:
+    """Replace the social row HTML with one ``<td>`` per Figma button.
+
+    The template carries a single ``data-slot="social_links"`` on the outer
+    ``<table>``. The text-slot filler replaces the inner rows verbatim, so
+    emitting raw HTML here overrides the placeholder ``example.com/link``
+    anchors with the real URLs + icons extracted from Figma.
+    """
+    if not section.buttons and not section.images:
+        return []
+
+    cells: list[str] = []
+    for idx, btn in enumerate(section.buttons):
+        icon_url = btn.icon_url
+        if not icon_url and image_urls:
+            icon_url = image_urls.get(btn.node_id) or ""
+        if not icon_url:
+            continue
+        href = html.escape(_safe_url(btn.url))
+        # html.escape(..., quote=True) — alt goes into an attribute value, so
+        # " must be escaped. _safe_text uses quote=False (body-text context).
+        alt = html.escape(btn.text or f"Social link {idx + 1}")
+        icon_src = html.escape(icon_url)
+        cells.append(
+            '<td style="padding: 0 8px;">'
+            f'<a href="{href}" style="text-decoration: none;">'
+            f'<img src="{icon_src}" alt="{alt}" width="32" height="32" '
+            'style="display: block; border: 0;" />'
+            "</a></td>"
+        )
+
+    if not cells:
+        # No Figma button icons — fall back to treating raw images as icons
+        # with a neutral "#" href. Still better than leaking example.com.
+        for img in section.images:
+            icon_src = html.escape(_resolve_image_url(img.node_id, image_urls))
+            alt = html.escape(img.node_name or "Social icon")
+            cells.append(
+                '<td style="padding: 0 8px;">'
+                '<a href="#" style="text-decoration: none;">'
+                f'<img src="{icon_src}" alt="{alt}" width="32" height="32" '
+                'style="display: block; border: 0;" />'
+                "</a></td>"
+            )
+
+    if not cells:
+        return []
+
+    row_html = "<tr>" + "".join(cells) + "</tr>"
+    return [SlotFill("social_links", row_html, slot_type="attr")]
 
 
 def _fills_divider(
@@ -1300,5 +1449,19 @@ def _build_token_overrides(section: EmailSection) -> list[TokenOverride]:
 
     if len(padding_parts) == 4:
         overrides.append(TokenOverride("padding", "_cell", " ".join(padding_parts)))
+
+    # CTA button overrides from first button
+    if section.buttons:
+        btn = section.buttons[0]
+        if btn.fill_color and _HEX_COLOR_RE.match(btn.fill_color):
+            overrides.append(TokenOverride("background-color", "_cta", btn.fill_color))
+        if btn.text_color and _HEX_COLOR_RE.match(btn.text_color):
+            overrides.append(TokenOverride("color", "_cta", btn.text_color))
+        if btn.border_radius is not None:
+            overrides.append(TokenOverride("border-radius", "_cta", f"{btn.border_radius:.0f}px"))
+        if btn.stroke_color and _HEX_COLOR_RE.match(btn.stroke_color):
+            overrides.append(TokenOverride("border-color", "_cta", btn.stroke_color))
+        if btn.stroke_weight is not None:
+            overrides.append(TokenOverride("border-width", "_cta", f"{btn.stroke_weight:.0f}px"))
 
     return overrides

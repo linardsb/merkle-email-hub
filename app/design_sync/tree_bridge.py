@@ -111,13 +111,61 @@ def _convert_slot_fills(
     fills: list[SlotFill],
     section: EmailSection,
 ) -> dict[str, SlotValue]:
-    """Map SlotFill list to typed SlotValue dict keyed by slot_id."""
+    """Map SlotFill list to typed SlotValue dict keyed by slot_id.
+
+    ``{stem}_alt`` fills are folded into the paired image fill's
+    ``attr_overrides["alt"]``. The HTML templates carry alt text via
+    ``data-slot-alt="..."`` which is not picked up as a standalone slot by
+    ``TreeCompiler`` (it scans ``data-slot="..."`` only), so emitting
+    ``image_alt`` / ``logo_alt`` as independent slots fails manifest
+    cross-validation. Merging them upstream keeps a single ``ImageSlot`` per
+    image with the correct alt attribute.
+    """
+    alt_by_target: dict[str, str] = {}
+    id_to_fill: dict[str, SlotFill] = {f.slot_id: f for f in fills}
+    skipped_alt_ids: set[str] = set()
+
+    for fill in fills:
+        if not fill.slot_id.endswith("_alt"):
+            continue
+        paired_id = _paired_image_slot_id(fill.slot_id, id_to_fill)
+        if paired_id is None:
+            continue
+        alt_by_target[paired_id] = fill.value
+        skipped_alt_ids.add(fill.slot_id)
+
     result: dict[str, SlotValue] = {}
     for fill in fills:
+        if fill.slot_id in skipped_alt_ids:
+            continue
+        if fill.slot_id in alt_by_target and fill.slot_type == "image":
+            merged_attrs = {**fill.attr_overrides, "alt": alt_by_target[fill.slot_id]}
+            fill = SlotFill(fill.slot_id, fill.value, fill.slot_type, merged_attrs)
         slot_value = _fill_to_slot_value(fill, section)
         if slot_value is not None:
             result[fill.slot_id] = slot_value
     return result
+
+
+_ALT_PAIR_SUFFIXES: tuple[str, ...] = ("_url", "_image")
+
+
+def _paired_image_slot_id(
+    alt_slot_id: str,
+    id_to_fill: dict[str, SlotFill],
+) -> str | None:
+    """Resolve an ``{stem}_alt`` slot to its paired image slot id.
+
+    Returns ``None`` when no paired image slot is present or when the paired
+    slot's type is not ``image``.
+    """
+    stem = alt_slot_id[: -len("_alt")]
+    for suffix in _ALT_PAIR_SUFFIXES:
+        candidate = stem + suffix
+        paired = id_to_fill.get(candidate)
+        if paired is not None and paired.slot_type == "image":
+            return candidate
+    return None
 
 
 def _fill_to_slot_value(fill: SlotFill, section: EmailSection) -> SlotValue | None:

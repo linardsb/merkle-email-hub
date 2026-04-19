@@ -1286,15 +1286,39 @@ class TestExtendedComponentScoring:
         assert m.component_slug != "video-placeholder"
 
     def test_event_card_date_pattern(self) -> None:
-        """Date pattern in text + image + button → event-card."""
+        """Date pattern + compact thumbnail + single CTA → event-card.
+
+        The matcher rejects event-card when a section carries a hero-sized
+        image (>=200px) or more than one button — those are hero/article
+        sections, not compact event listings.
+        """
         s = _make_section(
             texts=[_text("March 15, 2026"), _text("Join us for the event")],
-            images=[_image()],
+            images=[_image(w=120, h=120)],
             buttons=[_button("Register")],
         )
         m = match_section(s, 0)
         assert m.component_slug == "event-card"
         assert m.confidence == 0.85
+
+    def test_event_card_rejected_when_hero_image(self) -> None:
+        """Hero-sized image (>=200px) disqualifies event-card (false-positive gate)."""
+        s = _make_section(
+            texts=[_text("March 15, 2026"), _text("Join us for the event")],
+            images=[_image(w=600, h=400)],
+            buttons=[_button("Register")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "event-card"
+
+    def test_event_card_rejected_when_multiple_ctas(self) -> None:
+        """Two or more buttons disqualifies event-card (false-positive gate)."""
+        s = _make_section(
+            texts=[_text("October 15, 2026"), _text("Details inside")],
+            buttons=[_button("Register"), _button("Learn more")],
+        )
+        m = match_section(s, 0)
+        assert m.component_slug != "event-card"
 
     def test_faq_question_answer_pairs(self) -> None:
         """Alternating Q?/A texts, no images → faq-accordion."""
