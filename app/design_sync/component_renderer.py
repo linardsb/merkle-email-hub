@@ -554,6 +554,23 @@ class ComponentRenderer:
             elif target == "_cell":
                 # Replace padding on the first td with padding
                 result = self._replace_first_css_prop(result, prop, val)
+            elif target == "_cta":
+                if prop == "background-color":
+                    result = self._replace_cta_background_color(result, val)
+                    result = self._replace_cta_bgcolor_attr(result, val)
+                    result = self._replace_cta_fillcolor(result, val)
+                elif prop == "color":
+                    result = self._replace_cta_text_color(result, val)
+                elif prop == "border-radius":
+                    result = self._replace_cta_css_prop(result, "border-radius", val)
+                    # Only cta-button.html emits <v:roundrect>, at most one per
+                    # component — global update is acceptable.
+                    result = self._update_vml_arcsize(result, val)
+                elif prop == "border-color":
+                    result = self._replace_cta_css_prop(result, "border-color", val)
+                    result = self._replace_cta_strokecolor(result, val)
+                elif prop == "border-width":
+                    result = self._replace_cta_css_prop(result, "border-width", val)
 
         return result
 
@@ -615,6 +632,103 @@ class ComponentRenderer:
         safe = html.escape(color, quote=True)
         repl = rf"\g<1>background-color:{safe}\g<2>"
         return _BG_CLASS_BGCOLOR_RE.sub(repl, html_str)
+
+    _CTA_LINK_COLOR_RE = re.compile(
+        r'(<a\b[^>]*data-slot="cta_url"[^>]*style="[^"]*?)(?<!background-)color:\s*[^;"]+(;?)'
+    )
+
+    def _replace_cta_text_color(self, html_str: str, color: str) -> str:
+        """Replace color on <a> elements with data-slot='cta_url'."""
+        safe = html.escape(color, quote=True)
+        result = self._CTA_LINK_COLOR_RE.sub(rf"\g<1>color:{safe}\g<2>", html_str)
+        # Also update VML center text color
+        result = re.sub(
+            r'(<center\s+style="[^"]*?)color:\s*[^;"]+(;?)',
+            rf"\g<1>color:{safe}\g<2>",
+            result,
+        )
+        return result
+
+    # CTA-scoped CSS property replacement.
+    #
+    # Matches a CSS declaration inside the style attribute of either:
+    #   (a) an element carrying class="cta-btn" or "cta-ghost"
+    #       (used by the standalone button / cta-button templates)
+    #   (b) <a data-slot="cta_url"> (used by inline CTAs inside card
+    #       templates like event-card, product-card, pricing-*)
+    #
+    # Both rely on `class`/`data-slot` appearing before `style` on the same
+    # tag — verified across all 150 component templates today. A future
+    # reorder would silently skip the override; the defensive regression
+    # test `test_cta_override_skips_style_before_data_slot_regression`
+    # locks that down.
+    _CTA_CLASS_STYLE_RE_TEMPLATE = (
+        r'(<[^>]*\bclass="(?:[^"]*\s)?cta-(?:btn|ghost)(?:\s[^"]*)?"[^>]*style="[^"]*?)'
+        r'{prop}:\s*[^;"]+(;?)'
+    )
+    _CTA_LINK_STYLE_RE_TEMPLATE = (
+        r'(<a\b[^>]*data-slot="cta_url"[^>]*style="[^"]*?)'
+        r'{prop}:\s*[^;"]+(;?)'
+    )
+
+    def _replace_cta_css_prop(self, html_str: str, prop: str, value: str) -> str:
+        """Replace a CSS property on CTA elements only (cta-btn/cta-ghost class or data-slot='cta_url')."""
+        safe_prop = re.escape(prop)
+        safe_value = html.escape(value, quote=True)
+        repl = rf"\g<1>{prop}:{safe_value}\g<2>"
+        class_pattern = self._CTA_CLASS_STYLE_RE_TEMPLATE.format(prop=safe_prop)
+        slot_pattern = self._CTA_LINK_STYLE_RE_TEMPLATE.format(prop=safe_prop)
+        result = re.sub(class_pattern, repl, html_str)
+        return re.sub(slot_pattern, repl, result)
+
+    _CTA_CLASS_BG_RE = re.compile(
+        r'(<[^>]*\bclass="(?:[^"]*\s)?cta-(?:btn|ghost)(?:\s[^"]*)?"[^>]*style="[^"]*?)'
+        r'background-color:\s*[^;"]+(;?)'
+    )
+    _CTA_LINK_BG_RE = re.compile(
+        r'(<a\b[^>]*data-slot="cta_url"[^>]*style="[^"]*?)background-color:\s*[^;"]+(;?)'
+    )
+
+    def _replace_cta_background_color(self, html_str: str, color: str) -> str:
+        """Replace background-color on CTA elements only."""
+        safe = html.escape(color, quote=True)
+        repl = rf"\g<1>background-color:{safe}\g<2>"
+        result = self._CTA_CLASS_BG_RE.sub(repl, html_str)
+        return self._CTA_LINK_BG_RE.sub(repl, result)
+
+    _CTA_BGCOLOR_ATTR_RE = re.compile(
+        r'(<[^>]*\bclass="(?:[^"]*\s)?cta-(?:btn|ghost)(?:\s[^"]*)?"[^>]*)\bbgcolor="[^"]*"'
+    )
+    _CTA_FILLCOLOR_RE = re.compile(r'(<v:roundrect\b[^>]*)\bfillcolor="[^"]*"')
+    _CTA_STROKECOLOR_RE = re.compile(r'(<v:roundrect\b[^>]*)\bstrokecolor="[^"]*"')
+
+    def _replace_cta_bgcolor_attr(self, html_str: str, color: str) -> str:
+        """Replace bgcolor="..." on tags carrying cta-btn/cta-ghost class."""
+        safe = html.escape(color, quote=True)
+        return self._CTA_BGCOLOR_ATTR_RE.sub(rf'\g<1>bgcolor="{safe}"', html_str)
+
+    def _replace_cta_fillcolor(self, html_str: str, color: str) -> str:
+        """Replace fillcolor on <v:roundrect> (Outlook VML button fallback)."""
+        safe = html.escape(color, quote=True)
+        return self._CTA_FILLCOLOR_RE.sub(rf'\g<1>fillcolor="{safe}"', html_str)
+
+    def _replace_cta_strokecolor(self, html_str: str, color: str) -> str:
+        """Replace strokecolor on <v:roundrect>."""
+        safe = html.escape(color, quote=True)
+        return self._CTA_STROKECOLOR_RE.sub(rf'\g<1>strokecolor="{safe}"', html_str)
+
+    _VML_ARCSIZE_RE = re.compile(r'arcsize="\d+%"')
+
+    def _update_vml_arcsize(self, html_str: str, radius_val: str) -> str:
+        """Convert border-radius px to VML arcsize percentage."""
+        # Extract numeric px value
+        match = re.match(r"(\d+)", radius_val)
+        if not match:
+            return html_str
+        radius_px = int(match.group(1))
+        # Default button height ~48px; arcsize = radius / (height/2) * 100
+        arcsize = min(round(radius_px / 48 * 100), 50)
+        return self._VML_ARCSIZE_RE.sub(f'arcsize="{arcsize}%"', html_str)
 
     _PLACEHOLDER_URL_RE = re.compile(
         r'(src|href)="https?://(?:via\.placeholder\.com|placehold\.co|placeholder\.com)[^"]*"'

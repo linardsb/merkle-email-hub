@@ -1783,3 +1783,244 @@ def _layout_to_response(
         total_text_blocks=layout.total_text_blocks,
         total_images=layout.total_images,
     )
+
+
+# ── Training case persistence (HTML upload → learning loop) ──────
+
+
+import re  # noqa: E402
+
+_CASE_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEBUG_DIR = _PROJECT_ROOT / "data" / "debug"
+_MANIFEST_PATH = _DEBUG_DIR / "manifest.yaml"
+
+
+def _validate_case_id(case_id: str) -> None:
+    """Validate case_id to prevent path traversal."""
+    from app.design_sync.exceptions import TrainingCaseError
+
+    if not _CASE_ID_PATTERN.match(case_id):
+        msg = f"Invalid case_id '{case_id}': must be alphanumeric, hyphens, underscores (max 64 chars)"
+        raise TrainingCaseError(msg)
+
+
+async def create_training_case(
+    *,
+    case_id: str,
+    case_name: str,
+    html_content: str,
+    source_name: str = "training",
+    figma_url: str | None = None,
+    figma_node: str | None = None,
+    screenshot_data: bytes | None = None,
+) -> dict[str, Any]:
+    """Save an HTML email + optional screenshot as a training case on disk.
+
+    Creates ``data/debug/{case_id}/`` with ``expected.html`` (and optionally
+    ``design.png``), then appends the case to the global manifest.
+    """
+    from app.design_sync.exceptions import TrainingCaseError, TrainingCaseExistsError
+
+    _validate_case_id(case_id)
+
+    case_dir = _DEBUG_DIR / case_id
+    if case_dir.exists():
+        raise TrainingCaseExistsError(f"Training case '{case_id}' already exists")
+
+    if not html_content.strip():
+        raise TrainingCaseError("HTML content is empty")
+
+    # Check manifest for duplicate BEFORE creating the directory. If the
+    # manifest carries a stale id whose dir was deleted out-of-band, writing
+    # files first would leave partial state on disk — the case_dir.exists()
+    # guard above would then permanently reject retries.
+    if _MANIFEST_PATH.exists():
+        existing_text = _MANIFEST_PATH.read_text()
+        if f'id: "{case_id}"' in existing_text:
+            raise TrainingCaseExistsError(f"Case '{case_id}' already in manifest")
+
+    log = get_logger(__name__)
+    files_written: list[str] = []
+
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write expected.html
+    (case_dir / "expected.html").write_text(html_content, encoding="utf-8")
+    files_written.append("expected.html")
+
+    # Write screenshot if provided
+    has_screenshot = False
+    if screenshot_data:
+        (case_dir / "design.png").write_bytes(screenshot_data)
+        files_written.append("design.png")
+        has_screenshot = True
+
+    # Append to global manifest (preserves existing YAML comments by appending text)
+    entry_yaml = (
+        f'\n  - id: "{case_id}"\n'
+        f'    name: "{case_name}"\n'
+        f'    source: "{source_name}"\n'
+        f'    figma_node: "{figma_node or "unknown"}"\n'
+        f"    status: active\n"
+        f"    design_image: {'true' if has_screenshot else 'false'}\n"
+        f"    visual_threshold: 0.95\n"
+        f"    reference_only: true\n"
+    )
+
+    if _MANIFEST_PATH.exists():
+        with _MANIFEST_PATH.open("a", encoding="utf-8") as f:
+            f.write(entry_yaml)
+    else:
+        _MANIFEST_PATH.write_text(f"cases:{entry_yaml}", encoding="utf-8")
+    files_written.append("manifest.yaml (updated)")
+
+    # Write figma metadata if provided
+    if figma_url or figma_node:
+        import json
+
+        meta = {"figma_url": figma_url, "figma_node": figma_node}
+        (case_dir / "figma_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        files_written.append("figma_meta.json")
+
+    log.info(
+        "training_case.created",
+        case_id=case_id,
+        files=files_written,
+    )
+
+    return {
+        "case_id": case_id,
+        "case_dir": str(case_dir),
+        "files_written": files_written,
+        "manifest_updated": True,
+    }
+
+
+async def backfill_training_case(
+    case_id: str,
+    *,
+    traces_only: bool = False,
+) -> dict[str, Any]:
+    """Backfill a single training case into the learning loop.
+
+    For cases with ``structure.json`` (Figma-sourced), runs the full converter.
+    For HTML-only cases, parses ``expected.html`` to build a synthetic
+    ConversionResult and persists traces/memory/insights from it.
+    """
+    from app.design_sync.converter_memory import (
+        _CLEAN_CONFIDENCE_THRESHOLD,
+        build_conversion_metadata,
+        format_conversion_quality,
+    )
+    from app.design_sync.converter_service import ConversionResult, DesignConverterService
+    from app.design_sync.converter_traces import append_trace, build_trace
+    from app.design_sync.exceptions import TrainingCaseError
+
+    _validate_case_id(case_id)
+
+    log = get_logger(__name__)
+    case_dir = _DEBUG_DIR / case_id
+
+    if not case_dir.exists():
+        raise TrainingCaseError(f"Training case '{case_id}' not found at {case_dir}")
+
+    has_structure = (case_dir / "structure.json").exists()
+    has_html = (case_dir / "expected.html").exists()
+
+    if not has_structure and not has_html:
+        raise TrainingCaseError(f"Case '{case_id}' has neither structure.json nor expected.html")
+
+    result: ConversionResult
+
+    if has_structure:
+        # Figma-sourced case: run full converter
+        from app.design_sync.diagnose.report import (
+            load_structure_from_json,
+            load_tokens_from_json,
+        )
+
+        structure = load_structure_from_json(case_dir / "structure.json")
+        tokens = load_tokens_from_json(case_dir / "tokens.json")
+        converter = DesignConverterService()
+        result = converter.convert(structure, tokens)
+    else:
+        # HTML-only case: parse expected.html for a synthetic result
+        from app.design_sync.html_import.adapter import HtmlImportAdapter
+
+        html = (case_dir / "expected.html").read_text(encoding="utf-8")
+        adapter = HtmlImportAdapter()
+        document = await adapter.parse(html, use_ai=False, source_name=case_id)
+        section_count = len(document.sections)
+
+        # Build a synthetic ConversionResult from the analysis
+        result = ConversionResult(
+            html=html,
+            sections_count=section_count,
+            warnings=[],
+            match_confidences=dict.fromkeys(range(section_count), 1.0),
+            quality_warnings=[],
+        )
+
+    # Persist trace (always)
+    trace = build_trace(result, f"snapshot_{case_id}")
+    append_trace(trace)
+    traces_written = 1
+
+    memory_stored = False
+    insights_count = 0
+
+    if not traces_only:
+        # Persist memory
+        confidences = list(result.match_confidences.values())
+        has_issues = bool(result.quality_warnings) or any(
+            c < _CLEAN_CONFIDENCE_THRESHOLD for c in confidences
+        )
+
+        if has_issues:
+            content = format_conversion_quality(result)
+            if content is not None:
+                metadata = build_conversion_metadata(result, f"snapshot_{case_id}")
+                from app.core.database import get_db_context
+                from app.knowledge.embedding import get_embedding_provider
+                from app.memory.schemas import MemoryCreate
+                from app.memory.service import MemoryService
+
+                settings = get_settings()
+                async with get_db_context() as db:
+                    embedding_provider = get_embedding_provider(settings)
+                    service = MemoryService(db, embedding_provider)
+                    await service.store(
+                        MemoryCreate(
+                            agent_type="design_sync",
+                            memory_type="semantic",
+                            content=content,
+                            project_id=None,
+                            metadata=metadata,
+                            is_evergreen=False,
+                        ),
+                    )
+                memory_stored = True
+
+        # Persist insights
+        from app.design_sync.converter_insights import persist_conversion_insights
+
+        insights_count = await persist_conversion_insights(result, f"snapshot_{case_id}", None)
+
+    log.info(
+        "training_case.backfill_completed",
+        case_id=case_id,
+        traces_written=traces_written,
+        memory_stored=memory_stored,
+        insights_count=insights_count,
+        source="structure" if has_structure else "html_only",
+    )
+
+    return {
+        "case_id": case_id,
+        "sections_count": result.sections_count,
+        "traces_written": traces_written,
+        "memory_stored": memory_stored,
+        "insights_count": insights_count,
+        "source": "structure" if has_structure else "html_only",
+    }

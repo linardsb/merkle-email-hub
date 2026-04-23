@@ -1665,3 +1665,49 @@ class TestClassificationImprovements:
             buttons=[],
         )
         assert "text-with-icon" in roles
+
+
+class TestFillsSocial:
+    """`_fills_social` must resolve icon node ids through ``image_urls``.
+
+    Regression: previously ``ButtonElement.icon_url`` stored a Figma node id,
+    which got rendered directly into ``<img src="2833:1172" ...>``.
+    """
+
+    def test_fills_social_resolves_icon_node_id_via_image_urls(self) -> None:
+        from app.design_sync.component_matcher import _fills_social
+
+        section = _make_section(
+            EmailSectionType.FOOTER,
+            buttons=[
+                ButtonElement(
+                    node_id="btn_1",
+                    text="Twitter",
+                    url="https://twitter.com/acme",
+                    icon_node_id="icon_42",
+                ),
+            ],
+        )
+        image_urls = {"icon_42": "https://cdn.example.com/icons/twitter.png"}
+        fills = _fills_social(section, 600, image_urls=image_urls)
+        assert len(fills) == 1
+        row = fills[0].value
+        assert "https://cdn.example.com/icons/twitter.png" in row
+        assert "icon_42" not in row
+
+    def test_fills_social_does_not_emit_raw_node_id_in_src(self) -> None:
+        from app.design_sync.component_matcher import _fills_social
+
+        section = _make_section(
+            EmailSectionType.FOOTER,
+            buttons=[
+                ButtonElement(
+                    node_id="btn_1",
+                    text="Twitter",
+                    url="https://twitter.com/acme",
+                    icon_node_id="2833:1172",
+                ),
+            ],
+        )
+        fills = _fills_social(section, 600, image_urls=None)
+        assert fills == [] or '"2833:1172"' not in fills[0].value

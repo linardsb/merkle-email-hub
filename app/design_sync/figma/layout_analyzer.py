@@ -99,6 +99,9 @@ class ButtonElement:
     url: str | None = None
     border_radius: float | None = None
     text_color: str | None = None
+    stroke_color: str | None = None
+    stroke_weight: float | None = None
+    icon_node_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -1053,6 +1056,20 @@ def _walk_for_buttons(
                 # Resolve hyperlink: prefer frame hyperlink, fall back to text child
                 btn_url = node.hyperlink or text_children[0].hyperlink
                 btn_text_color = text_children[0].text_color
+                # Detect icon child: small RECTANGLE/VECTOR/FRAME named "icon"
+                icon_node_id: str | None = None
+                for child in node.children:
+                    if (
+                        child.type
+                        in (DesignNodeType.VECTOR, DesignNodeType.FRAME, DesignNodeType.IMAGE)
+                        and "icon" in child.name.lower()
+                        and child.width is not None
+                        and child.height is not None
+                        and child.width <= 64
+                        and child.height <= 64
+                    ):
+                        icon_node_id = child.id
+                        break
                 results.append(
                     ButtonElement(
                         node_id=node.id,
@@ -1063,6 +1080,9 @@ def _walk_for_buttons(
                         url=btn_url,
                         border_radius=node.corner_radius,
                         text_color=btn_text_color,
+                        stroke_color=node.stroke_color,
+                        stroke_weight=node.stroke_weight,
+                        icon_node_id=icon_node_id,
                     )
                 )
                 return  # Don't recurse into button internals

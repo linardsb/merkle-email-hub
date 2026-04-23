@@ -61,3 +61,11 @@ class MjmlImportError(DomainValidationError):
 
 class HtmlImportError(AppError):
     """Raised when HTML import parsing or validation fails."""
+
+
+class TrainingCaseError(AppError):
+    """Raised when training case creation or backfill fails."""
+
+
+class TrainingCaseExistsError(DomainValidationError):
+    """Raised when a training case with the given ID already exists."""

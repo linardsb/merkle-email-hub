@@ -373,6 +373,127 @@ class TestTokenOverrideExpansion:
         assert "color:#112233" in result.html
 
 
+class TestCtaScopedOverrides:
+    """_cta token overrides must only touch CTA elements, not adjacent HTML.
+
+    Regression: the original implementation used `re.sub` with document-wide
+    patterns for `bgcolor`/`fillcolor`/`strokecolor` and a blanket
+    `_replace_css_prop_all` for `background-color`/`border-radius`/`border-color`
+    /`border-width`, clobbering outer card styles in composite templates like
+    event-card and pricing-table.
+    """
+
+    def test_cta_border_radius_override_does_not_clobber_outer_card_radius(
+        self,
+        renderer: ComponentRenderer,
+    ) -> None:
+        html_in = (
+            '<table class="event-card" style="border-radius: 8px;">'
+            '<tr><td><a data-slot="cta_url" href="#" '
+            'style="padding: 12px; border-radius: 4px;">Go</a></td></tr>'
+            "</table>"
+        )
+        overrides = [TokenOverride("border-radius", "_cta", "6px")]
+        out = renderer._apply_token_overrides(html_in, overrides)
+        assert 'class="event-card" style="border-radius: 8px;"' in out
+        assert "border-radius:6px" in out
+        assert out.count("border-radius: 8px") == 1  # outer preserved
+
+    def test_cta_background_override_does_not_clobber_outer_card_bg(
+        self,
+        renderer: ComponentRenderer,
+    ) -> None:
+        html_in = (
+            '<table class="event-card" style="background-color: #FE5117;">'
+            '<tr><td><a data-slot="cta_url" href="#" '
+            'style="background-color: #0066cc;">Go</a></td></tr>'
+            "</table>"
+        )
+        out = renderer._apply_token_overrides(
+            html_in, [TokenOverride("background-color", "_cta", "#00AA88")]
+        )
+        assert "#FE5117" in out  # outer preserved
+        assert "#00AA88" in out  # CTA updated
+        assert "#0066cc" not in out  # CTA's old value replaced
+
+    def test_cta_border_color_override_scoped_to_cta_class(
+        self,
+        renderer: ComponentRenderer,
+    ) -> None:
+        html_in = (
+            '<table class="event-card" style="border-color: #cccccc;">'
+            '<tr><td><table class="cta-btn" style="border-color: #1a1a1a;">'
+            '<tr><td><a data-slot="cta_url" href="#" '
+            'style="border-color: #1a1a1a;">x</a></td></tr>'
+            "</table></td></tr></table>"
+        )
+        out = renderer._apply_token_overrides(
+            html_in, [TokenOverride("border-color", "_cta", "#FF0000")]
+        )
+        assert "border-color: #cccccc" in out  # outer event-card preserved
+        assert out.count("#FF0000") >= 1  # at least CTA updated
+
+    def test_cta_background_override_preserves_outer_hero_hex(
+        self,
+        renderer: ComponentRenderer,
+    ) -> None:
+        """Concrete data/debug/10 regression: before the fix, the outer
+        ``#FE5117`` event-card background and the inner ``#0066cc`` CTA
+        background both flattened to the override value. Now only the CTA
+        updates; the hero background stays put.
+        """
+        html_in = (
+            '<table role="presentation" class="event-card" width="100%" '
+            'cellpadding="0" cellspacing="0" border="0" '
+            'style="background-color:#FE5117; border: 1px solid #e0e0e0; '
+            'border-radius: 8px; overflow: hidden;">'
+            "<tr><td>"
+            '<a data-slot="cta_url" href="https://example.com/event" '
+            'style="display: inline-block; padding: 12px 32px; '
+            "background-color: #0066cc; color: #ffffff; "
+            'font-size: 16px; border-radius: 4px;">'
+            '<span data-slot="cta_text">Register Now</span></a>'
+            "</td></tr></table>"
+        )
+        out = renderer._apply_token_overrides(
+            html_in, [TokenOverride("background-color", "_cta", "#3366ff")]
+        )
+        assert "#FE5117" in out  # outer hero hex preserved
+        assert "#3366ff" in out  # CTA updated
+        assert "#0066cc" not in out  # CTA's old color gone
+
+    def test_cta_override_handles_data_slot_before_style_only(
+        self,
+        renderer: ComponentRenderer,
+    ) -> None:
+        """Happy path: `data-slot` appears before `style` in the same tag."""
+        html_in = '<a data-slot="cta_url" href="#" style="border-radius: 4px;">x</a>'
+        out = renderer._apply_token_overrides(
+            html_in, [TokenOverride("border-radius", "_cta", "6px")]
+        )
+        assert "border-radius:6px" in out
+
+    def test_cta_override_skips_style_before_data_slot_regression(
+        self,
+        renderer: ComponentRenderer,
+    ) -> None:
+        """Locks down the current attribute-order assumption.
+
+        If a template author ever writes ``style`` before ``data-slot`` on
+        the ``<a>``, the scoped regex will NOT match and the override is
+        silently dropped. That is acceptable today — this test fails only
+        if someone removes the assumption without widening the regex.
+        Flip the assertion + widen `_CTA_LINK_STYLE_RE_TEMPLATE` if a real
+        template ever lands in this shape.
+        """
+        html_in = '<a style="border-radius: 4px;" data-slot="cta_url" href="#">x</a>'
+        out = renderer._apply_token_overrides(
+            html_in, [TokenOverride("border-radius", "_cta", "6px")]
+        )
+        # Known limitation — style before data-slot isn't matched.
+        assert "border-radius: 4px" in out
+
+
 class TestAnnotations:
     def test_section_comment_marker(self, renderer: ComponentRenderer) -> None:
         match = _make_match("text-block", idx=3)

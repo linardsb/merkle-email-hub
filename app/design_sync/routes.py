@@ -9,6 +9,8 @@ from typing import Any, cast
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.requests import Request
 from fastapi.responses import FileResponse, Response
+from pydantic import BaseModel
+from pydantic import Field as PydanticField
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
@@ -963,3 +965,96 @@ async def import_html(
         ai_sections_classified=ai_count,
         warnings=[],
     )
+
+
+# ── Training case endpoints ──────────────────────────────────────
+
+
+class CreateTrainingCaseRequest(BaseModel):
+    """Request body for creating a training case."""
+
+    case_id: str = PydanticField(..., description="Case slug (alphanumeric, hyphens, underscores)")
+    case_name: str = PydanticField(..., description="Human-readable case name")
+    html_content: str = PydanticField(..., description="HTML email source")
+    source_name: str = PydanticField(default="training", description="Source label")
+    figma_url: str | None = PydanticField(default=None, description="Figma design URL")
+    figma_node: str | None = PydanticField(default=None, description="Figma frame node ID")
+    screenshot_b64: str | None = PydanticField(
+        default=None, description="Base64-encoded screenshot (data URL or raw)"
+    )
+
+
+@router.post(
+    "/training-cases",
+    status_code=status.HTTP_201_CREATED,
+    summary="Save HTML training case to disk and register in manifest",
+)
+@limiter.limit("10/minute")
+async def create_training_case(
+    request: Request,
+    body: CreateTrainingCaseRequest,
+    current_user: User = Depends(require_role("developer")),
+) -> dict[str, Any]:
+    """Save an HTML email + optional screenshot as a training case.
+
+    Creates ``data/debug/{case_id}/`` with ``expected.html`` and optionally
+    ``design.png``, then registers the case in the global manifest.
+    """
+    from app.design_sync.exceptions import TrainingCaseError, TrainingCaseExistsError
+    from app.design_sync.service import create_training_case as create_case
+
+    screenshot_data: bytes | None = None
+    if body.screenshot_b64:
+        import base64
+
+        try:
+            raw = body.screenshot_b64
+            # Strip data URL prefix if present (e.g. "data:image/png;base64,...")
+            if "," in raw:
+                raw = raw.split(",", 1)[1]
+            screenshot_data = base64.b64decode(raw)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=422, detail=f"Invalid screenshot base64: {exc}"
+            ) from exc
+
+    try:
+        return await create_case(
+            case_id=body.case_id,
+            case_name=body.case_name,
+            html_content=body.html_content,
+            source_name=body.source_name,
+            figma_url=body.figma_url,
+            figma_node=body.figma_node,
+            screenshot_data=screenshot_data,
+        )
+    except TrainingCaseExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except TrainingCaseError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post(
+    "/training-cases/{case_id}/backfill",
+    summary="Backfill a training case into the learning loop",
+)
+@limiter.limit("5/minute")
+async def backfill_training_case_route(
+    case_id: str,
+    request: Request,
+    traces_only: bool = Query(default=False, description="Write JSONL traces only (no DB)"),
+    current_user: User = Depends(require_role("developer")),
+) -> dict[str, Any]:
+    """Trigger learning loop backfill for a single training case.
+
+    For Figma-sourced cases (with ``structure.json``), runs the full converter.
+    For HTML-only cases, parses ``expected.html`` to build a synthetic result
+    and persists traces/memory/insights from it.
+    """
+    from app.design_sync.exceptions import TrainingCaseError
+    from app.design_sync.service import backfill_training_case
+
+    try:
+        return await backfill_training_case(case_id, traces_only=traces_only)
+    except TrainingCaseError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

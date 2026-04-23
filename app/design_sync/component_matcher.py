@@ -1215,16 +1215,18 @@ def _fills_social(
 
     cells: list[str] = []
     for idx, btn in enumerate(section.buttons):
-        icon_url = btn.icon_url
-        if not icon_url and image_urls:
-            icon_url = image_urls.get(btn.node_id) or ""
-        if not icon_url:
+        icon_src: str = ""
+        if btn.icon_node_id and image_urls:
+            icon_src = image_urls.get(btn.icon_node_id) or ""
+        if not icon_src and image_urls:
+            icon_src = image_urls.get(btn.node_id) or ""
+        if not icon_src:
             continue
         href = html.escape(_safe_url(btn.url))
         # html.escape(..., quote=True) — alt goes into an attribute value, so
         # " must be escaped. _safe_text uses quote=False (body-text context).
         alt = html.escape(btn.text or f"Social link {idx + 1}")
-        icon_src = html.escape(icon_url)
+        icon_src = html.escape(icon_src)
         cells.append(
             '<td style="padding: 0 8px;">'
             f'<a href="{href}" style="text-decoration: none;">'
