@@ -215,7 +215,7 @@ jobs:
         run: cd cms && pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: cd cms && pnpm exec playwright install --with-deps chromium
+        run: cd cms/apps/web && pnpm exec playwright install --with-deps chromium
 
       - name: Run database migrations
         run: uv run alembic upgrade head
