@@ -9,7 +9,7 @@ Skipping so CI can go green without silently rewriting the intended behaviour.
 """
 
 # mypy: ignore-errors
-# pyright: basic
+# pyright: basic, reportAttributeAccessIssue=false, reportCallIssue=false
 from __future__ import annotations
 
 from collections.abc import Generator
