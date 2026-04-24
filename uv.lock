@@ -1115,7 +1115,7 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "ruff", specifier = ">=0.14.2" },
-    { name = "types-jsonschema", specifier = ">=4.0.0" },
+    { name = "types-jsonschema", specifier = ">=4.26.0.20260408" },
     { name = "types-lxml", specifier = ">=2026.2" },
 ]
 
@@ -4600,14 +4600,14 @@ wheels = [
 
 [[package]]
 name = "types-jsonschema"
-version = "4.26.0.20260325"
+version = "4.26.0.20260408"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "referencing" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cb/bf/97b3438f0a3834d7d8e515fbccd4e1ca957465e094f0b260162a5cf9b951/types_jsonschema-4.26.0.20260325.tar.gz", hash = "sha256:84c319ba1af5463394d99accd96db543b7cb0eeab0938c652c18129536672002", size = 16441, upload-time = "2026-03-25T04:08:12.647Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/4c/2ef5483ef81e7b6e1b901eb2994fd280cb19860134a20ff99e72748f3ccb/types_jsonschema-4.26.0.20260408.tar.gz", hash = "sha256:82b75a976ed1507c473b8dee2d4841bd65926758c6d672bb93d08bf5e16f1b3f", size = 16553, upload-time = "2026-04-08T04:36:00.543Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/ec/65a4a55a024c9eb7fe08c207c0a94a537db0db50fea61ad565fa6b39220f/types_jsonschema-4.26.0.20260325-py3-none-any.whl", hash = "sha256:032a952fd32d9e06b71bdce5a5b4005dd58a074f6cb2899e96b633cbe1c28f40", size = 16080, upload-time = "2026-03-25T04:08:11.108Z" },
+    { url = "https://files.pythonhosted.org/packages/12/3c/724ad6ecaea06e8c6c8a8c9949a0979e6a2149b8aec4fe160135c64dd5ac/types_jsonschema-4.26.0.20260408-py3-none-any.whl", hash = "sha256:1ab0058c2612b0b81fc4e3c88ec3f9ad9b0af3fd31a176030d78b6d6cefb6e7b", size = 16081, upload-time = "2026-04-08T04:35:59.678Z" },
 ]
 
 [[package]]
