@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import httpx
 
@@ -142,13 +142,13 @@ class ConversionResult:
 
     html: str
     sections_count: int
-    warnings: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list[str])
     layout: DesignLayoutDescription | None = None
-    compatibility_hints: list[CompatibilityHint] = field(default_factory=list)
-    images: list[dict[str, str]] = field(default_factory=list)
+    compatibility_hints: list[CompatibilityHint] = field(default_factory=list[CompatibilityHint])
+    images: list[dict[str, str]] = field(default_factory=list[dict[str, str]])
     cache_hit_rate: float | None = None
-    quality_warnings: list[QualityWarning] = field(default_factory=list)
-    match_confidences: dict[int, float] = field(default_factory=dict)
+    quality_warnings: list[QualityWarning] = field(default_factory=list[QualityWarning])
+    match_confidences: dict[int, float] = field(default_factory=dict[int, float])
     figma_url: str | None = None
     node_id: str | None = None
     design_tokens_used: dict[str, Any] | None = None
@@ -1330,20 +1330,29 @@ class DesignConverterService:
     def _build_props_map(self, file_data: dict[str, Any]) -> dict[str, _NodeProps]:
         """Extract visual properties from raw Penpot objects."""
         props: dict[str, _NodeProps] = {}
-        pages_index = file_data.get("data", {}).get("pages-index", {})
-        for page_data in pages_index.values():
-            if not isinstance(page_data, dict):
+        data_dict = cast(dict[str, Any], file_data.get("data", {}))
+        pages_index = cast(dict[str, Any], data_dict.get("pages-index", {}))
+        for page_data_raw in pages_index.values():
+            if not isinstance(page_data_raw, dict):
                 continue
-            for obj_id, obj in page_data.get("objects", {}).items():
-                if not isinstance(obj, dict):
+            page_data = cast(dict[str, Any], page_data_raw)
+            objects = cast(dict[str, Any], page_data.get("objects", {}))
+            for obj_id, obj_raw in objects.items():
+                if not isinstance(obj_raw, dict):
                     continue
+                obj = cast(dict[str, Any], obj_raw)
                 bg = self._extract_bg(obj)
                 font = obj.get("font-family")
                 size = obj.get("font-size")
                 weight = str(obj.get("font-weight", "")) or None
-                padding = obj.get("layout-padding", {})
-                if not isinstance(padding, dict):
-                    padding = {}
+                padding_raw = obj.get("layout-padding", {})
+                padding: dict[str, Any] = (
+                    cast(dict[str, Any], padding_raw) if isinstance(padding_raw, dict) else {}
+                )
+                layout_gap_raw = obj.get("layout-gap")
+                layout_gap: dict[str, Any] = (
+                    cast(dict[str, Any], layout_gap_raw) if isinstance(layout_gap_raw, dict) else {}
+                )
                 props[str(obj_id)] = _NodeProps(
                     bg_color=bg,
                     font_family=str(font) if font else None,
@@ -1356,11 +1365,9 @@ class DesignConverterService:
                     layout_direction=str(obj.get("layout-flex-dir"))
                     if obj.get("layout-flex-dir")
                     else None,
-                    item_spacing=float(obj.get("layout-gap", {}).get("row-gap", 0))
-                    if isinstance(obj.get("layout-gap"), dict)
-                    else 0,
-                    counter_axis_spacing=float(obj.get("layout-gap", {}).get("column-gap", 0))
-                    if isinstance(obj.get("layout-gap"), dict)
+                    item_spacing=float(layout_gap.get("row-gap", 0)) if layout_gap else 0,
+                    counter_axis_spacing=float(layout_gap.get("column-gap", 0))
+                    if layout_gap
                     else 0,
                 )
         return props
@@ -1413,12 +1420,14 @@ class DesignConverterService:
     @staticmethod
     def _extract_bg(obj: dict[str, Any]) -> str | None:
         """Extract first solid fill color from Penpot fills array."""
-        fills = obj.get("fills", [])
-        if not isinstance(fills, list):
+        fills_raw = obj.get("fills", [])
+        if not isinstance(fills_raw, list):
             return None
-        for fill in fills:
-            if isinstance(fill, dict) and fill.get("fill-color"):
-                return str(fill["fill-color"])
+        for fill_raw in cast(list[Any], fills_raw):  # type: ignore[redundant-cast]
+            if isinstance(fill_raw, dict):
+                fill = cast(dict[str, Any], fill_raw)
+                if fill.get("fill-color"):
+                    return str(fill["fill-color"])
         return None
 
 
