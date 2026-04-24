@@ -15,7 +15,7 @@ dependencies = [
     "gunicorn>=23.0.0",
     "httpx>=0.28.1",
     "pydantic-settings>=2.14.0",
-    "python-dotenv>=1.2.1",
+    "python-dotenv>=1.2.2",
     "PyJWT>=2.12.0",
     "redis[hiredis]>=7.4.0",
     "slowapi>=0.1.9",
@@ -30,7 +30,7 @@ dependencies = [
     "pymupdf>=1.27.1",
     "pytesseract>=0.3.13",
     "python-docx>=1.2.0",
-    "cryptography>=44.0.0",
+    "cryptography>=46.0.7",
     "cssutils>=2.9.0",
     "nh3>=0.3.3",
     "lxml>=6.1.0",
@@ -46,6 +46,20 @@ dependencies = [
     "scikit-image>=0.24.0",
     "jinja2>=3.1.0",
     "jsonschema>=4.0.0",
+    # Security pins — transitive minima for packages flagged by Dependabot.
+    "aiohttp>=3.13.4",
+    "mako>=1.3.11",
+    "pygments>=2.20.0",
+    "requests>=2.33.0",
+]
+
+[tool.uv]
+# Transitives pulled via the `graph` optional-extra (cognee). Pinned to
+# patched versions matching open Dependabot security advisories.
+constraint-dependencies = [
+    "litellm>=1.83.0",
+    "onnx>=1.21.0",
+    "pypdf>=6.10.2",
 ]
 
 [project.optional-dependencies]
@@ -59,7 +73,7 @@ dev = [
     "mypy>=1.20.2",
     "pip-audit>=2.7.0",
     "pyright>=1.1.407",
-    "pytest>=8.4.2",
+    "pytest>=9.0.3",
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.2",
