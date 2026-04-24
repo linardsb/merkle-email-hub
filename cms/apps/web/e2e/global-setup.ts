@@ -11,7 +11,7 @@ const AUTH_STATE_PATH = path.join(__dirname, ".e2e-auth-state");
 async function waitForHealth(url: string, retries = 10, intervalMs = 2000) {
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(`${url}/api/v1/health`);
+      const res = await fetch(`${url}/health`);
       if (res.ok) return;
     } catch {
       // server not ready yet
