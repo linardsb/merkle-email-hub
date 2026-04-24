@@ -13,7 +13,7 @@
     "./types": "./src/client/types.gen.ts"
   },
   "dependencies": {
-    "@hey-api/client-fetch": "^0.8.0"
+    "@hey-api/client-fetch": "^0.13.1"
   },
   "devDependencies": {
     "@email-hub/typescript-config": "workspace:*",
