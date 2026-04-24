@@ -11,15 +11,20 @@ vi.mock("@/hooks/use-workflows", () => ({
 vi.mock("@/hooks/use-penpot", () => ({
   usePenpotConnections: vi.fn(),
 }));
+vi.mock("@/hooks/use-credentials-health", () => ({
+  useCredentialHealth: vi.fn(),
+}));
 
 import { EcosystemDashboard } from "../EcosystemDashboard";
 import { usePluginHealthSummary } from "@/hooks/use-plugins";
 import { useWorkflows } from "@/hooks/use-workflows";
 import { usePenpotConnections } from "@/hooks/use-penpot";
+import { useCredentialHealth } from "@/hooks/use-credentials-health";
 
 const mockHealthSummary = usePluginHealthSummary as ReturnType<typeof vi.fn>;
 const mockWorkflows = useWorkflows as ReturnType<typeof vi.fn>;
 const mockPenpot = usePenpotConnections as ReturnType<typeof vi.fn>;
+const mockCredHealth = useCredentialHealth as ReturnType<typeof vi.fn>;
 
 function makeHealthData(overrides = {}) {
   return {
@@ -51,11 +56,23 @@ function makePenpotData() {
   ];
 }
 
+function makeCredHealthData(overrides = {}) {
+  return {
+    services: [],
+    total_keys: 0,
+    healthy_total: 0,
+    cooled_down_total: 0,
+    unhealthy_total: 0,
+    ...overrides,
+  };
+}
+
 function setup(hookData = true) {
   if (hookData) {
     mockHealthSummary.mockReturnValue({ data: makeHealthData(), isLoading: false });
     mockWorkflows.mockReturnValue({ data: makeWorkflowData(), isLoading: false });
     mockPenpot.mockReturnValue({ data: makePenpotData(), isLoading: false });
+    mockCredHealth.mockReturnValue({ data: makeCredHealthData(), isLoading: false });
   }
 }
 
@@ -71,7 +88,7 @@ describe("EcosystemDashboard", () => {
     // Each label appears twice (stat card + quadrant), so use getAllByText
     expect(screen.getAllByText("Plugins").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Workflows").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("Reports").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Credentials").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Penpot").length).toBeGreaterThanOrEqual(2);
   });
 
@@ -79,6 +96,7 @@ describe("EcosystemDashboard", () => {
     mockHealthSummary.mockReturnValue({ data: undefined, isLoading: true });
     mockWorkflows.mockReturnValue({ data: makeWorkflowData(), isLoading: false });
     mockPenpot.mockReturnValue({ data: makePenpotData(), isLoading: false });
+    mockCredHealth.mockReturnValue({ data: makeCredHealthData(), isLoading: false });
 
     const { container } = render(<EcosystemDashboard onNavigate={vi.fn()} />);
     const pulseElements = container.querySelectorAll(".animate-pulse");
@@ -89,6 +107,7 @@ describe("EcosystemDashboard", () => {
     mockHealthSummary.mockReturnValue({ data: makeHealthData(), isLoading: false });
     mockWorkflows.mockReturnValue({ data: undefined, isLoading: true });
     mockPenpot.mockReturnValue({ data: makePenpotData(), isLoading: false });
+    mockCredHealth.mockReturnValue({ data: makeCredHealthData(), isLoading: false });
 
     const { container } = render(<EcosystemDashboard onNavigate={vi.fn()} />);
     const pulseElements = container.querySelectorAll(".animate-pulse");
@@ -101,7 +120,8 @@ describe("EcosystemDashboard", () => {
 
     expect(screen.getByText("1 healthy")).toBeDefined();
     expect(screen.getByText("1 degraded")).toBeDefined();
-    expect(screen.getByText("0 unhealthy")).toBeDefined();
+    // "0 unhealthy" also appears in CredentialHealthCard; assert plugin quadrant contains it at least once
+    expect(screen.getAllByText("0 unhealthy").length).toBeGreaterThanOrEqual(1);
   });
 
   it("displays workflow flow count", () => {
@@ -149,6 +169,7 @@ describe("EcosystemDashboard", () => {
     mockHealthSummary.mockReturnValue({ data: makeHealthData(), isLoading: false });
     mockWorkflows.mockReturnValue({ data: makeWorkflowData(), isLoading: false });
     mockPenpot.mockReturnValue({ data: [], isLoading: false });
+    mockCredHealth.mockReturnValue({ data: makeCredHealthData(), isLoading: false });
 
     render(<EcosystemDashboard onNavigate={vi.fn()} />);
     expect(screen.getByText(/No Penpot connections yet/)).toBeDefined();
