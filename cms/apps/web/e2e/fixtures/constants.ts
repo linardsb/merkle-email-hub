@@ -1,14 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 export const BACKEND_URL =
   process.env.BACKEND_URL || "http://localhost:8891";
 export const TEST_USER_EMAIL = "admin@email-hub.dev";
 export const TEST_USER_PASSWORD = "admin";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const AUTH_STATE_PATH = path.join(__dirname, "..", ".e2e-auth-state");
+// Playwright runs from the package root (cms/apps/web); resolving from cwd
+// avoids __dirname/import.meta.url which swing between CJS and ESM loader modes.
+const AUTH_STATE_PATH = path.resolve(process.cwd(), "e2e", ".e2e-auth-state");
 
 interface AuthState {
   access_token: string;
