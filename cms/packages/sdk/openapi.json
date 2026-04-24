@@ -972,6 +972,122 @@
         ]
       }
     },
+    "/api/v1/knowledge/proactive-warnings": {
+      "get": {
+        "tags": [
+          "knowledge",
+          "knowledge"
+        ],
+        "summary": "Get Proactive Warnings",
+        "description": "Preview proactive QA warnings for given components and clients.",
+        "operationId": "get_proactive_warnings_api_v1_knowledge_proactive_warnings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "components",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "description": "Comma-separated component slugs",
+              "title": "Components"
+            },
+            "description": "Comma-separated component slugs"
+          },
+          {
+            "name": "clients",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 500,
+              "description": "Comma-separated email client IDs",
+              "title": "Clients"
+            },
+            "description": "Comma-separated email client IDs"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProactiveWarningsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/failure-graph": {
+      "get": {
+        "tags": [
+          "knowledge",
+          "knowledge"
+        ],
+        "summary": "Get Failure Graph",
+        "description": "Get failure graph edges for a component.",
+        "operationId": "get_failure_graph_api_v1_knowledge_failure_graph_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "component",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Component slug",
+              "title": "Component"
+            },
+            "description": "Component slug"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureGraphResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/knowledge/documents": {
       "post": {
         "tags": [
@@ -3637,6 +3753,62 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/qa/meta-eval": {
+      "post": {
+        "tags": [
+          "qa-engine",
+          "qa-meta-eval"
+        ],
+        "summary": "Run Meta Eval",
+        "description": "Run full meta-evaluation of all QA checks against golden + adversarial data.",
+        "operationId": "run_meta_eval_api_v1_qa_meta_eval_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaEvalReportResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/qa/meta-eval/latest": {
+      "get": {
+        "tags": [
+          "qa-engine",
+          "qa-meta-eval"
+        ],
+        "summary": "Get Latest Report",
+        "description": "Retrieve most recent meta-eval report.",
+        "operationId": "get_latest_report_api_v1_qa_meta_eval_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaEvalReportResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/qa/property-test": {
@@ -6940,6 +7112,117 @@
         ]
       }
     },
+    "/api/v1/design-sync/training-cases": {
+      "post": {
+        "tags": [
+          "design-sync"
+        ],
+        "summary": "Save HTML training case to disk and register in manifest",
+        "description": "Save an HTML email + optional screenshot as a training case.\n\nCreates ``data/debug/{case_id}/`` with ``expected.html`` and optionally\n``design.png``, then registers the case in the global manifest.",
+        "operationId": "create_training_case_api_v1_design_sync_training_cases_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTrainingCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Training Case Api V1 Design Sync Training Cases Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/design-sync/training-cases/{case_id}/backfill": {
+      "post": {
+        "tags": [
+          "design-sync"
+        ],
+        "summary": "Backfill a training case into the learning loop",
+        "description": "Trigger learning loop backfill for a single training case.\n\nFor Figma-sourced cases (with ``structure.json``), runs the full converter.\nFor HTML-only cases, parses ``expected.html`` to build a synthetic result\nand persists traces/memory/insights from it.",
+        "operationId": "backfill_training_case_route_api_v1_design_sync_training_cases__case_id__backfill_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "traces_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Write JSONL traces only (no DB)",
+              "default": false,
+              "title": "Traces Only"
+            },
+            "description": "Write JSONL traces only (no DB)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Backfill Training Case Route Api V1 Design Sync Training Cases  Case Id  Backfill Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approvals/": {
       "get": {
         "tags": [
@@ -8864,6 +9147,85 @@
         }
       }
     },
+    "/api/v1/progress/{operation_id}": {
+      "get": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "Get Progress",
+        "description": "Get progress for a single operation.",
+        "operationId": "get_progress_api_v1_progress__operation_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Operation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/progress/active/list": {
+      "get": {
+        "tags": [
+          "progress"
+        ],
+        "summary": "Get Active Operations",
+        "description": "List all in-flight operations.",
+        "operationId": "get_active_operations_api_v1_progress_active_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProgressResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Get Active Operations Api V1 Progress Active List Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/memory/": {
       "post": {
         "tags": [
@@ -10748,6 +11110,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/credentials/health": {
+      "get": {
+        "tags": [
+          "credentials"
+        ],
+        "summary": "Credential Health",
+        "description": "Return health status for all credential pools. Admin-only.",
+        "operationId": "credential_health_api_v1_credentials_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialHealthResponse"
                 }
               }
             }
@@ -13323,6 +13712,72 @@
         "title": "ChatMessage",
         "description": "A single message in a chat conversation.\n\nAttributes:\n    role: The role of the message sender.\n    content: The text content of the message."
       },
+      "CheckEvalResultResponse": {
+        "properties": {
+          "check_name": {
+            "type": "string",
+            "title": "Check Name"
+          },
+          "tp": {
+            "type": "integer",
+            "title": "Tp"
+          },
+          "fp": {
+            "type": "integer",
+            "title": "Fp"
+          },
+          "tn": {
+            "type": "integer",
+            "title": "Tn"
+          },
+          "fn": {
+            "type": "integer",
+            "title": "Fn"
+          },
+          "precision": {
+            "type": "number",
+            "title": "Precision"
+          },
+          "recall": {
+            "type": "number",
+            "title": "Recall"
+          },
+          "f1": {
+            "type": "number",
+            "title": "F1"
+          },
+          "specificity": {
+            "type": "number",
+            "title": "Specificity"
+          },
+          "current_threshold": {
+            "title": "Current Threshold"
+          },
+          "recommended_threshold": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Threshold"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_name",
+          "tp",
+          "fp",
+          "tn",
+          "fn",
+          "precision",
+          "recall",
+          "f1",
+          "specificity"
+        ],
+        "title": "CheckEvalResultResponse",
+        "description": "Per-check confusion matrix and metrics."
+      },
       "CheckpointListResponse": {
         "properties": {
           "run_id": {
@@ -14442,6 +14897,75 @@
         "title": "CostReportResponse",
         "description": "Monthly cost report."
       },
+      "CreateTrainingCaseRequest": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id",
+            "description": "Case slug (alphanumeric, hyphens, underscores)"
+          },
+          "case_name": {
+            "type": "string",
+            "title": "Case Name",
+            "description": "Human-readable case name"
+          },
+          "html_content": {
+            "type": "string",
+            "title": "Html Content",
+            "description": "HTML email source"
+          },
+          "source_name": {
+            "type": "string",
+            "title": "Source Name",
+            "description": "Source label",
+            "default": "training"
+          },
+          "figma_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figma Url",
+            "description": "Figma design URL"
+          },
+          "figma_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figma Node",
+            "description": "Figma frame node ID"
+          },
+          "screenshot_b64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screenshot B64",
+            "description": "Base64-encoded screenshot (data URL or raw)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "case_name",
+          "html_content"
+        ],
+        "title": "CreateTrainingCaseRequest",
+        "description": "Request body for creating a training case."
+      },
       "CreateUserRequest": {
         "properties": {
           "email": {
@@ -14471,6 +14995,42 @@
         ],
         "title": "CreateUserRequest",
         "description": "Admin creates a new user."
+      },
+      "CredentialHealthResponse": {
+        "properties": {
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceHealthReport"
+            },
+            "type": "array",
+            "title": "Services"
+          },
+          "total_keys": {
+            "type": "integer",
+            "title": "Total Keys"
+          },
+          "healthy_total": {
+            "type": "integer",
+            "title": "Healthy Total"
+          },
+          "cooled_down_total": {
+            "type": "integer",
+            "title": "Cooled Down Total"
+          },
+          "unhealthy_total": {
+            "type": "integer",
+            "title": "Unhealthy Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "services",
+          "total_keys",
+          "healthy_total",
+          "cooled_down_total",
+          "unhealthy_total"
+        ],
+        "title": "CredentialHealthResponse"
       },
       "CustomSection": {
         "properties": {
@@ -16420,6 +16980,65 @@
         "title": "ExtractedEntitySchema",
         "description": "An entity extracted from email content."
       },
+      "FailureEdge": {
+        "properties": {
+          "client": {
+            "type": "string",
+            "title": "Client"
+          },
+          "failure_type": {
+            "type": "string",
+            "title": "Failure Type"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "occurrence_count": {
+            "type": "integer",
+            "title": "Occurrence Count"
+          },
+          "first_seen": {
+            "type": "string",
+            "title": "First Seen"
+          },
+          "last_seen": {
+            "type": "string",
+            "title": "Last Seen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client",
+          "failure_type",
+          "severity",
+          "occurrence_count",
+          "first_seen",
+          "last_seen"
+        ],
+        "title": "FailureEdge"
+      },
+      "FailureGraphResponse": {
+        "properties": {
+          "component": {
+            "type": "string",
+            "title": "Component"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/FailureEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          }
+        },
+        "type": "object",
+        "required": [
+          "component",
+          "edges"
+        ],
+        "title": "FailureGraphResponse"
+      },
       "FailurePatternListResponse": {
         "properties": {
           "items": {
@@ -17520,6 +18139,17 @@
               }
             ],
             "title": "Height"
+          },
+          "export_node_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Export Node Id"
           }
         },
         "type": "object",
@@ -17981,6 +18611,46 @@
         "title": "ItemUpdate",
         "description": "Schema for updating an item. All fields optional."
       },
+      "KeyHealthReport": {
+        "properties": {
+          "key_hash": {
+            "type": "string",
+            "title": "Key Hash"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "failure_count": {
+            "type": "integer",
+            "title": "Failure Count"
+          },
+          "last_failure_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failure Code"
+          },
+          "cooldown_remaining_s": {
+            "type": "number",
+            "title": "Cooldown Remaining S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_hash",
+          "status",
+          "failure_count",
+          "last_failure_code",
+          "cooldown_remaining_s"
+        ],
+        "title": "KeyHealthReport"
+      },
       "LayoutAnalysisResponse": {
         "properties": {
           "connection_id": {
@@ -18366,6 +19036,52 @@
         "title": "MemorySearch",
         "description": "Search request for memory retrieval."
       },
+      "MetaEvalReportResponse": {
+        "properties": {
+          "checks": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CheckEvalResultResponse"
+            },
+            "type": "object",
+            "title": "Checks"
+          },
+          "overall_f1": {
+            "type": "number",
+            "title": "Overall F1"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/ThresholdRecommendationResponse"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          },
+          "golden_count": {
+            "type": "integer",
+            "title": "Golden Count"
+          },
+          "adversarial_count": {
+            "type": "integer",
+            "title": "Adversarial Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "checks",
+          "overall_f1",
+          "timestamp",
+          "recommendations",
+          "golden_count",
+          "adversarial_count"
+        ],
+        "title": "MetaEvalReportResponse",
+        "description": "Full meta-evaluation report."
+      },
       "MigrationPhaseSchema": {
         "properties": {
           "name": {
@@ -18524,6 +19240,16 @@
         ],
         "title": "ModernizationStepSchema",
         "description": "A single modernization action."
+      },
+      "OperationStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "completed",
+          "failed"
+        ],
+        "title": "OperationStatus"
       },
       "OutlookAnalysisRequest": {
         "properties": {
@@ -19226,6 +19952,114 @@
         ],
         "title": "PreviewResponse",
         "description": "Response from a preview build."
+      },
+      "ProactiveWarningResponse": {
+        "properties": {
+          "component": {
+            "type": "string",
+            "title": "Component"
+          },
+          "client": {
+            "type": "string",
+            "title": "Client"
+          },
+          "failure": {
+            "type": "string",
+            "title": "Failure"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "suggestion": {
+            "type": "string",
+            "title": "Suggestion"
+          },
+          "occurrence_count": {
+            "type": "integer",
+            "title": "Occurrence Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "component",
+          "client",
+          "failure",
+          "severity",
+          "suggestion",
+          "occurrence_count"
+        ],
+        "title": "ProactiveWarningResponse"
+      },
+      "ProactiveWarningsResponse": {
+        "properties": {
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/ProactiveWarningResponse"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "component_count": {
+            "type": "integer",
+            "title": "Component Count"
+          },
+          "client_count": {
+            "type": "integer",
+            "title": "Client Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "warnings",
+          "component_count",
+          "client_count"
+        ],
+        "title": "ProactiveWarningsResponse"
+      },
+      "ProgressResponse": {
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "title": "Operation Id"
+          },
+          "operation_type": {
+            "type": "string",
+            "title": "Operation Type"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperationStatus"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "operation_id",
+          "operation_type",
+          "status",
+          "progress",
+          "message"
+        ],
+        "title": "ProgressResponse",
+        "description": "Lightweight progress payload (~200 bytes)."
       },
       "ProjectCreate": {
         "properties": {
@@ -20887,7 +21721,8 @@
             "type": "string",
             "enum": [
               "html",
-              "structured"
+              "structured",
+              "tree"
             ],
             "title": "Output Mode",
             "default": "html"
@@ -21462,6 +22297,47 @@
         ],
         "title": "SectionTraceResponse"
       },
+      "ServiceHealthReport": {
+        "properties": {
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "key_count": {
+            "type": "integer",
+            "title": "Key Count"
+          },
+          "healthy": {
+            "type": "integer",
+            "title": "Healthy"
+          },
+          "cooled_down": {
+            "type": "integer",
+            "title": "Cooled Down"
+          },
+          "unhealthy": {
+            "type": "integer",
+            "title": "Unhealthy"
+          },
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/KeyHealthReport"
+            },
+            "type": "array",
+            "title": "Keys"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service",
+          "key_count",
+          "healthy",
+          "cooled_down",
+          "unhealthy",
+          "keys"
+        ],
+        "title": "ServiceHealthReport"
+      },
       "SlotHintSchema": {
         "properties": {
           "slot_id": {
@@ -21477,6 +22353,9 @@
               "headline",
               "subheadline",
               "body",
+              "content",
+              "text",
+              "attr",
               "cta",
               "image",
               "preheader",
@@ -22158,6 +23037,38 @@
         ],
         "title": "TextBlockResponse",
         "description": "A text element from the design."
+      },
+      "ThresholdRecommendationResponse": {
+        "properties": {
+          "check_name": {
+            "type": "string",
+            "title": "Check Name"
+          },
+          "current": {
+            "title": "Current"
+          },
+          "recommended": {
+            "title": "Recommended"
+          },
+          "improvement_f1": {
+            "type": "number",
+            "title": "Improvement F1"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_name",
+          "current",
+          "recommended",
+          "improvement_f1",
+          "reasoning"
+        ],
+        "title": "ThresholdRecommendationResponse",
+        "description": "Threshold adjustment suggestion."
       },
       "TokenDiffEntry": {
         "properties": {

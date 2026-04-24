@@ -704,6 +704,23 @@ export type ChatMessage = {
 };
 
 /**
+ * Per-check confusion matrix and metrics.
+ */
+export type CheckEvalResultResponse = {
+    check_name: string;
+    tp: number;
+    fp: number;
+    tn: number;
+    fn: number;
+    precision: number;
+    recall: number;
+    f1: number;
+    specificity: number;
+    current_threshold?: unknown;
+    recommended_threshold?: unknown | null;
+};
+
+/**
  * List of checkpoints for a blueprint run.
  */
 export type CheckpointListResponse = {
@@ -1039,6 +1056,40 @@ export type CostReportResponse = {
 };
 
 /**
+ * Request body for creating a training case.
+ */
+export type CreateTrainingCaseRequest = {
+    /**
+     * Case slug (alphanumeric, hyphens, underscores)
+     */
+    case_id: string;
+    /**
+     * Human-readable case name
+     */
+    case_name: string;
+    /**
+     * HTML email source
+     */
+    html_content: string;
+    /**
+     * Source label
+     */
+    source_name?: string;
+    /**
+     * Figma design URL
+     */
+    figma_url?: string | null;
+    /**
+     * Figma frame node ID
+     */
+    figma_node?: string | null;
+    /**
+     * Base64-encoded screenshot (data URL or raw)
+     */
+    screenshot_b64?: string | null;
+};
+
+/**
  * Admin creates a new user.
  */
 export type CreateUserRequest = {
@@ -1046,6 +1097,14 @@ export type CreateUserRequest = {
     name: string;
     password: string;
     role?: string;
+};
+
+export type CredentialHealthResponse = {
+    services: Array<ServiceHealthReport>;
+    total_keys: number;
+    healthy_total: number;
+    cooled_down_total: number;
+    unhealthy_total: number;
 };
 
 /**
@@ -1662,6 +1721,20 @@ export type ExtractedEntitySchema = {
     value: string;
 };
 
+export type FailureEdge = {
+    client: string;
+    failure_type: string;
+    severity: string;
+    occurrence_count: number;
+    first_seen: string;
+    last_seen: string;
+};
+
+export type FailureGraphResponse = {
+    component: string;
+    edges: Array<FailureEdge>;
+};
+
 /**
  * Paginated list of failure patterns.
  */
@@ -1983,6 +2056,7 @@ export type ImagePlaceholderResponse = {
     node_name: string;
     width?: number | null;
     height?: number | null;
+    export_node_id?: string | null;
 };
 
 /**
@@ -2144,6 +2218,14 @@ export type ItemUpdate = {
     is_active?: boolean | null;
 };
 
+export type KeyHealthReport = {
+    key_hash: string;
+    status: string;
+    failure_count: number;
+    last_failure_code: number | null;
+    cooldown_remaining_s: number;
+};
+
 /**
  * Layout analysis result for preview.
  */
@@ -2242,6 +2324,20 @@ export type MemorySearch = {
 };
 
 /**
+ * Full meta-evaluation report.
+ */
+export type MetaEvalReportResponse = {
+    checks: {
+        [key: string]: CheckEvalResultResponse;
+    };
+    overall_f1: number;
+    timestamp: string;
+    recommendations: Array<ThresholdRecommendationResponse>;
+    golden_count: number;
+    adversarial_count: number;
+};
+
+/**
  * A single phase of the migration plan.
  */
 export type MigrationPhaseSchema = {
@@ -2289,6 +2385,8 @@ export type ModernizationStepSchema = {
     removals: number;
     byte_savings: number;
 };
+
+export type OperationStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 /**
  * Request to analyze HTML for Word-engine dependencies.
@@ -2473,6 +2571,33 @@ export type PreviewResponse = {
     compiled_html: string;
     build_time_ms: number;
     passthrough?: boolean;
+};
+
+export type ProactiveWarningResponse = {
+    component: string;
+    client: string;
+    failure: string;
+    severity: string;
+    suggestion: string;
+    occurrence_count: number;
+};
+
+export type ProactiveWarningsResponse = {
+    warnings: Array<ProactiveWarningResponse>;
+    component_count: number;
+    client_count: number;
+};
+
+/**
+ * Lightweight progress payload (~200 bytes).
+ */
+export type ProgressResponse = {
+    operation_id: string;
+    operation_type: string;
+    status: OperationStatus;
+    progress: number;
+    message: string;
+    error?: string | null;
 };
 
 export type ProjectCreate = {
@@ -2969,7 +3094,7 @@ export type ScaffolderRequest = {
     brief: string;
     stream?: boolean;
     run_qa?: boolean;
-    output_mode?: 'html' | 'structured';
+    output_mode?: 'html' | 'structured' | 'tree';
     /**
      * Brand guidelines for design token selection (colours, fonts, etc.)
      */
@@ -3169,12 +3294,21 @@ export type SectionTraceResponse = {
     html_preview: string;
 };
 
+export type ServiceHealthReport = {
+    service: string;
+    key_count: number;
+    healthy: number;
+    cooled_down: number;
+    unhealthy: number;
+    keys: Array<KeyHealthReport>;
+};
+
 /**
  * Slot annotation for a component version.
  */
 export type SlotHintSchema = {
     slot_id: string;
-    slot_type: 'headline' | 'subheadline' | 'body' | 'cta' | 'image' | 'preheader' | 'footer' | 'nav' | 'social' | 'divider';
+    slot_type: 'headline' | 'subheadline' | 'body' | 'content' | 'text' | 'attr' | 'cta' | 'image' | 'preheader' | 'footer' | 'nav' | 'social' | 'divider';
     selector: string;
     required?: boolean;
     max_chars?: number | null;
@@ -3329,6 +3463,17 @@ export type TextBlockResponse = {
     font_weight?: number | null;
     line_height?: number | null;
     letter_spacing?: number | null;
+};
+
+/**
+ * Threshold adjustment suggestion.
+ */
+export type ThresholdRecommendationResponse = {
+    check_name: string;
+    current: unknown;
+    recommended: unknown;
+    improvement_f1: number;
+    reasoning: string;
 };
 
 /**
@@ -4383,6 +4528,70 @@ export type ListModelsV1ModelsGetResponses = {
 };
 
 export type ListModelsV1ModelsGetResponse = ListModelsV1ModelsGetResponses[keyof ListModelsV1ModelsGetResponses];
+
+export type GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Comma-separated component slugs
+         */
+        components: string;
+        /**
+         * Comma-separated email client IDs
+         */
+        clients: string;
+    };
+    url: '/api/v1/knowledge/proactive-warnings';
+};
+
+export type GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetError = GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetErrors[keyof GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetErrors];
+
+export type GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProactiveWarningsResponse;
+};
+
+export type GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetResponse = GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetResponses[keyof GetProactiveWarningsApiV1KnowledgeProactiveWarningsGetResponses];
+
+export type GetFailureGraphApiV1KnowledgeFailureGraphGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Component slug
+         */
+        component: string;
+    };
+    url: '/api/v1/knowledge/failure-graph';
+};
+
+export type GetFailureGraphApiV1KnowledgeFailureGraphGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetFailureGraphApiV1KnowledgeFailureGraphGetError = GetFailureGraphApiV1KnowledgeFailureGraphGetErrors[keyof GetFailureGraphApiV1KnowledgeFailureGraphGetErrors];
+
+export type GetFailureGraphApiV1KnowledgeFailureGraphGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: FailureGraphResponse;
+};
+
+export type GetFailureGraphApiV1KnowledgeFailureGraphGetResponse = GetFailureGraphApiV1KnowledgeFailureGraphGetResponses[keyof GetFailureGraphApiV1KnowledgeFailureGraphGetResponses];
 
 export type ListDocumentsApiV1KnowledgeDocumentsGetData = {
     body?: never;
@@ -5755,6 +5964,38 @@ export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetR
 };
 
 export type GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponse = GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses[keyof GetComponentCompatibilityApiV1ComponentsComponentIdCompatibilityGetResponses];
+
+export type RunMetaEvalApiV1QaMetaEvalPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/meta-eval';
+};
+
+export type RunMetaEvalApiV1QaMetaEvalPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: MetaEvalReportResponse;
+};
+
+export type RunMetaEvalApiV1QaMetaEvalPostResponse = RunMetaEvalApiV1QaMetaEvalPostResponses[keyof RunMetaEvalApiV1QaMetaEvalPostResponses];
+
+export type GetLatestReportApiV1QaMetaEvalLatestGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/qa/meta-eval/latest';
+};
+
+export type GetLatestReportApiV1QaMetaEvalLatestGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: MetaEvalReportResponse;
+};
+
+export type GetLatestReportApiV1QaMetaEvalLatestGetResponse = GetLatestReportApiV1QaMetaEvalLatestGetResponses[keyof GetLatestReportApiV1QaMetaEvalLatestGetResponses];
 
 export type RunPropertyTestApiV1QaPropertyTestPostData = {
     body: PropertyTestRequest;
@@ -7459,6 +7700,67 @@ export type ImportHtmlApiV1DesignSyncImportHtmlPostResponses = {
 
 export type ImportHtmlApiV1DesignSyncImportHtmlPostResponse = ImportHtmlApiV1DesignSyncImportHtmlPostResponses[keyof ImportHtmlApiV1DesignSyncImportHtmlPostResponses];
 
+export type CreateTrainingCaseApiV1DesignSyncTrainingCasesPostData = {
+    body: CreateTrainingCaseRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/design-sync/training-cases';
+};
+
+export type CreateTrainingCaseApiV1DesignSyncTrainingCasesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateTrainingCaseApiV1DesignSyncTrainingCasesPostError = CreateTrainingCaseApiV1DesignSyncTrainingCasesPostErrors[keyof CreateTrainingCaseApiV1DesignSyncTrainingCasesPostErrors];
+
+export type CreateTrainingCaseApiV1DesignSyncTrainingCasesPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: {
+        [key: string]: unknown;
+    };
+};
+
+export type CreateTrainingCaseApiV1DesignSyncTrainingCasesPostResponse = CreateTrainingCaseApiV1DesignSyncTrainingCasesPostResponses[keyof CreateTrainingCaseApiV1DesignSyncTrainingCasesPostResponses];
+
+export type BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostData = {
+    body?: never;
+    path: {
+        case_id: string;
+    };
+    query?: {
+        /**
+         * Write JSONL traces only (no DB)
+         */
+        traces_only?: boolean;
+    };
+    url: '/api/v1/design-sync/training-cases/{case_id}/backfill';
+};
+
+export type BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostError = BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostErrors[keyof BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostErrors];
+
+export type BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostResponse = BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostResponses[keyof BackfillTrainingCaseRouteApiV1DesignSyncTrainingCasesCaseIdBackfillPostResponses];
+
 export type ListApprovalsApiV1ApprovalsGetData = {
     body?: never;
     path?: never;
@@ -8413,6 +8715,49 @@ export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponses = {
 
 export type UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponse = UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponses[keyof UpdateGateConfigApiV1RenderingGateConfigProjectIdPutResponses];
 
+export type GetProgressApiV1ProgressOperationIdGetData = {
+    body?: never;
+    path: {
+        operation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/progress/{operation_id}';
+};
+
+export type GetProgressApiV1ProgressOperationIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProgressApiV1ProgressOperationIdGetError = GetProgressApiV1ProgressOperationIdGetErrors[keyof GetProgressApiV1ProgressOperationIdGetErrors];
+
+export type GetProgressApiV1ProgressOperationIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ProgressResponse;
+};
+
+export type GetProgressApiV1ProgressOperationIdGetResponse = GetProgressApiV1ProgressOperationIdGetResponses[keyof GetProgressApiV1ProgressOperationIdGetResponses];
+
+export type GetActiveOperationsApiV1ProgressActiveListGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/progress/active/list';
+};
+
+export type GetActiveOperationsApiV1ProgressActiveListGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Array<ProgressResponse>;
+};
+
+export type GetActiveOperationsApiV1ProgressActiveListGetResponse = GetActiveOperationsApiV1ProgressActiveListGetResponses[keyof GetActiveOperationsApiV1ProgressActiveListGetResponses];
+
 export type StoreMemoryMemoryPostData = {
     body: MemoryCreate;
     path?: never;
@@ -9334,6 +9679,22 @@ export type RunVoicePipelineApiV1AiVoiceRunPostResponses = {
 };
 
 export type RunVoicePipelineApiV1AiVoiceRunPostResponse = RunVoicePipelineApiV1AiVoiceRunPostResponses[keyof RunVoicePipelineApiV1AiVoiceRunPostResponses];
+
+export type CredentialHealthApiV1CredentialsHealthGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/credentials/health';
+};
+
+export type CredentialHealthApiV1CredentialsHealthGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CredentialHealthResponse;
+};
+
+export type CredentialHealthApiV1CredentialsHealthGetResponse = CredentialHealthApiV1CredentialsHealthGetResponses[keyof CredentialHealthApiV1CredentialsHealthGetResponses];
 
 export type ReadRootGetData = {
     body?: never;
