@@ -412,7 +412,10 @@ def parse_mailchimp(html: str) -> TokenIR:
 
 # ── Iterable / SendGrid (Handlebars) ──
 
-_HBS_VAR: Final = re.compile(r"\{\{(?!#|/)(\s*[\w.]+(?:\s+[\w.\"' ]+)*)\s*\}\}")
+# Space removed from the inner char class so the `\s+` separator is unambiguous
+# (prevents catastrophic backtracking flagged by CodeQL py/redos). Quoted
+# arguments containing spaces are still matched as multiple tokens.
+_HBS_VAR: Final = re.compile(r"\{\{(?!#|/)\s*([\w.]+(?:\s+[\w.\"']+)*)\s*\}\}")
 _HBS_IF: Final = re.compile(
     r"\{\{#if\s+([\w.]+)\s*\}\}([\s\S]*?)(?:\{\{else\}\}([\s\S]*?))?\{\{/if\}\}"
 )
