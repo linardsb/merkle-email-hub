@@ -251,7 +251,7 @@ _cache: dict[str, ImageAnalysisResult] = {}
 
 def get_cached_result(html: str) -> ImageAnalysisResult:
     """Get or compute image analysis result, cached by content hash."""
-    key = hashlib.md5(html.encode()).hexdigest()  # noqa: S324
+    key = hashlib.md5(html.encode(), usedforsecurity=False).hexdigest()  # noqa: S324
     if key not in _cache:
         _cache[key] = analyze_images(html)
     return _cache[key]

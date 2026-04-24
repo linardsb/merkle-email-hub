@@ -6,13 +6,14 @@
 export function sanitizeHtml(html: string): string {
   let result = html;
 
-  // Strip <script> tags and their content (preserve MSO conditionals)
-  // Handles </script > with optional whitespace before > (CodeQL js/bad-tag-filter)
+  // Strip <script> tags and their content (preserve MSO conditionals).
+  // Closing tag accepts any chars until `>` (not just whitespace) to match
+  // browser-tolerant variants like `</script\t\n bar>` (CodeQL js/bad-tag-filter).
   let prevScript;
   do {
     prevScript = result;
     result = result.replace(
-      /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,
+      /<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi,
       ""
     );
   } while (result !== prevScript);

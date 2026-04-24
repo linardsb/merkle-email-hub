@@ -32,4 +32,11 @@ describe("sanitizeHtml", () => {
     const input = '<table role="presentation"><tr><td>Content</td></tr></table>';
     expect(sanitizeHtml(input)).toBe(input);
   });
+
+  it("strips script with attributes on closing tag (js/bad-tag-filter)", () => {
+    // Browsers tolerate `</script foo>`. Regex must match it.
+    const input = "<div>ok</div><script>alert(1)</script\t\n foo>";
+    const result = sanitizeHtml(input);
+    expect(result).toBe("<div>ok</div>");
+  });
 });

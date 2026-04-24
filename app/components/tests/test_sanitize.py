@@ -83,3 +83,33 @@ def test_passthrough_clean_html() -> None:
     clean = '<table role="presentation"><tr><td style="padding: 10px;">Hello</td></tr></table>'
     result = sanitize_component_html(clean)
     assert result == clean
+
+
+def test_strips_script_with_attributes_on_closing_tag() -> None:
+    # Browsers tolerate `</script foo>`; CodeQL py/bad-tag-filter regression.
+    html = '<table><tr><td><script>alert(1)</script\t\n foo>After</td></tr></table>'
+    result = sanitize_component_html(html)
+    assert "alert" not in result
+    assert "<script" not in result
+    assert "After" in result
+
+
+def test_strips_iframe_with_attributes_on_closing_tag() -> None:
+    html = '<iframe src="evil"></iframe bar>After'
+    result = sanitize_component_html(html)
+    assert "<iframe" not in result
+    assert "</iframe" not in result
+    assert "After" in result
+
+
+def test_event_handler_regex_linear_on_whitespace_runs() -> None:
+    # Regression guard for py/polynomial-redos. Bounded quantifiers cap
+    # backtracking so a long whitespace run completes in bounded time.
+    import time
+
+    payload = " " * 5000 + '<td onclick="x">hi</td>'
+    start = time.perf_counter()
+    result = sanitize_component_html(payload)
+    elapsed = time.perf_counter() - start
+    assert "onclick" not in result
+    assert elapsed < 1.0, f"sanitize took {elapsed:.2f}s on 5k-space input"

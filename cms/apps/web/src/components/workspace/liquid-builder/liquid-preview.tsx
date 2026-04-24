@@ -40,10 +40,14 @@ function simpleRender(code: string, data: Record<string, unknown>): string {
   return code.replace(/\{\{\s*([^}]+)\s*\}\}/g, (_match, expr: string) => {
     const path = expr.trim().split(".");
     let value: unknown = data;
-    // nosemgrep: javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop
     for (const key of path) {
-      if (value && typeof value === "object" && key in value) {
-        // nosemgrep: javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop
+      // hasOwnProperty.call rejects inherited keys like __proto__/constructor,
+      // closing the prototype-pollution vector flagged by CodeQL.
+      if (
+        value &&
+        typeof value === "object" &&
+        Object.prototype.hasOwnProperty.call(value, key)
+      ) {
         value = (value as Record<string, unknown>)[key];
       } else {
         return `{{ ${expr.trim()} }}`;

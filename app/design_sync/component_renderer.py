@@ -64,9 +64,14 @@ def _resolve_item_spacing(group: RepeatingGroup) -> _GroupSpacing:
 
     # Infer from first section's padding
     first = group.sections[0]
-    top = int(first.padding_top or 20)
-    horiz = int(first.padding_right or first.padding_left or 24)
-    subsequent = int(first.item_spacing or 16)
+    top = int(first.padding_top if first.padding_top is not None else 20)
+    _horiz_candidate = (
+        first.padding_right
+        if first.padding_right is not None
+        else (first.padding_left if first.padding_left is not None else 24)
+    )
+    horiz = int(_horiz_candidate)
+    subsequent = int(first.item_spacing if first.item_spacing is not None else 16)
     return _GroupSpacing(first_top=top, subsequent_top=subsequent, horizontal=horiz)
 
 

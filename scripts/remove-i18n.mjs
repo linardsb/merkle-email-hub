@@ -20,6 +20,7 @@ function resolve(ns, key) {
   let cur = EN;
   for (const p of parts) {
     if (cur == null || typeof cur !== "object") return undefined;
+    if (!Object.prototype.hasOwnProperty.call(cur, p)) return undefined;
     cur = cur[p];
   }
   return typeof cur === "string" ? cur : undefined;

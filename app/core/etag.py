@@ -43,7 +43,7 @@ class ETagMiddleware(BaseHTTPMiddleware):
             chunks.append(raw if isinstance(raw, bytes) else raw.encode())
         body = b"".join(chunks)
 
-        etag = f'"{hashlib.md5(body).hexdigest()}"'  # noqa: S324
+        etag = f'"{hashlib.md5(body, usedforsecurity=False).hexdigest()}"'  # noqa: S324
 
         # Check If-None-Match
         if_none_match = request.headers.get("if-none-match")

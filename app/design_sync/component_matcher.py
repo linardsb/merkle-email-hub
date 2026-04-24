@@ -315,7 +315,7 @@ def _score_candidates(
             candidates.append(("editorial-2", 0.92))
     elif len(col_groups) == 1 and col_groups[0].images and col_groups[0].texts:
         cg = col_groups[0]
-        section_w = section.width or 600
+        section_w = section.width if section.width is not None else 600
         cg_is_narrow = cg.width is None or cg.width < section_w * 0.7
         if cg_is_narrow:
             candidates.append(("editorial-2", 0.92))
@@ -334,7 +334,7 @@ def _score_candidates(
     # full-width-image vs image-block: differentiate by image width relative to section
     if img_count == 1 and not has_texts:
         img = section.images[0]
-        section_w = section.width or 600
+        section_w = section.width if section.width is not None else 600
         if img.width is not None and img.width >= section_w * 0.8:
             candidates.append(("full-width-image", 1.0))
         else:
@@ -1327,7 +1327,7 @@ def _build_column_fills(
 
     # Fallback: distribute content round-robin across columns
     fills: list[SlotFill] = []
-    col_count = section.column_count or 2
+    col_count = section.column_count if section.column_count is not None else 2
 
     for col_idx in range(1, col_count + 1):
         col_texts: list[str] = []

@@ -6,3 +6,9 @@ email-templates/
 
 # Maizzle builder sidecar — internal service, source from backend API only
 services/maizzle-builder/
+
+# Mock ESP sidecar — test harness only, never exposed to production traffic
+services/mock-esp/
+
+# Debug artifacts — captured eval-run HTML, not user-facing templates
+data/debug/

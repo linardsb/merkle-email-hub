@@ -6,11 +6,18 @@ Strips XSS vectors while preserving email-specific constructs
 
 import re
 
-_SCRIPT_TAG_RE = re.compile(r"<script\b[^>]*>.*?</script\s*>", re.DOTALL | re.IGNORECASE)
-_EVENT_HANDLER_RE = re.compile(r"""\s+on\w+=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)""", re.IGNORECASE)
+# Closing tag patterns accept any chars until `>` to catch browser-tolerant
+# variants like `</script\t\n foo>` (CodeQL py/bad-tag-filter).
+_SCRIPT_TAG_RE = re.compile(r"<script\b[^>]*>.*?</script\b[^>]*>", re.DOTALL | re.IGNORECASE)
+# Bounded quantifiers prevent polynomial backtracking on adversarial whitespace
+# runs (CodeQL py/polynomial-redos).
+_EVENT_HANDLER_RE = re.compile(
+    r"""\s{1,100}on\w{1,30}\s{0,10}=\s{0,10}(?:"[^"]{0,4000}"|'[^']{0,4000}'|[^\s>]{0,4000})""",
+    re.IGNORECASE,
+)
 _JS_PROTOCOL_RE = re.compile(r"""(href|src)\s{0,5}=\s{0,5}["']?\s{0,5}javascript:""", re.IGNORECASE)
 _DANGEROUS_TAG_RE = re.compile(
-    r"<(iframe|embed|object|form)\b[^>]{0,1000}>.*?</\1\s*>",
+    r"<(iframe|embed|object|form)\b[^>]{0,1000}>.*?</\1\b[^>]*>",
     re.DOTALL | re.IGNORECASE,
 )
 _DANGEROUS_SELF_CLOSING_RE = re.compile(

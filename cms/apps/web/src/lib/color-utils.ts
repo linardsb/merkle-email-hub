@@ -74,6 +74,9 @@ export function isDarkColor(hex: string): boolean {
 /** Count occurrences of a hex value in HTML string (case-insensitive). */
 export function countHexOccurrences(html: string, hex: string): number {
   const normalized = hex.toLowerCase().replace(/^#/, "");
+  // Reject non-hex chars before regex construction so untrusted input cannot
+  // inject regex metacharacters (CodeQL detect-non-literal-regexp).
+  if (!/^[0-9a-f]{3,8}$/.test(normalized)) return 0;
   const pattern = new RegExp(`#${normalized}`, "gi");
   return (html.match(pattern) || []).length;
 }

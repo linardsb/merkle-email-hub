@@ -133,7 +133,7 @@ def detect_repeating_groups(
 
 
 def _compute_signature(section: EmailSection) -> SiblingSignature:
-    height_bucket = int((section.height or 0) // 20)
+    height_bucket = int((section.height if section.height is not None else 0) // 20)
     return SiblingSignature(
         image_count=len(section.images),
         text_count=len(section.texts),

@@ -271,8 +271,8 @@ async def run_verification_loop(
             try:
                 cropped = crop_section(
                     image_bytes,
-                    int(s.y_position or 0),
-                    int(s.height or 200),
+                    int(s.y_position if s.y_position is not None else 0),
+                    int(s.height if s.height is not None else 200),
                     viewport_width,
                 )
                 rendered_screenshots[s.node_id] = cropped
