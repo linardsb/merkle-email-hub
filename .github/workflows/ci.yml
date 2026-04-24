@@ -173,7 +173,7 @@ jobs:
     needs: [backend, frontend]
     services:
       postgres:
-        image: postgres:15
+        image: pgvector/pgvector:pg15
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
