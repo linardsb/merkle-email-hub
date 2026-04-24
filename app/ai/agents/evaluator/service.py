@@ -9,7 +9,7 @@ self-evaluation bias. Returns structured EvalVerdict with accept/revise/reject.
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from app.ai.agents.base import BaseAgentService
 from app.ai.agents.evaluator.prompt import (
@@ -59,7 +59,7 @@ def _parse_verdict(raw_content: str) -> EvalVerdict:
     content = _extract_json_from_fence(content)
 
     try:
-        data = json.loads(content)
+        data: dict[str, Any] = json.loads(content)
     except json.JSONDecodeError:
         logger.warning("evaluator.verdict_parse_failed")
         return EvalVerdict(
@@ -68,14 +68,15 @@ def _parse_verdict(raw_content: str) -> EvalVerdict:
             feedback="Failed to parse evaluator response",
         )
 
+    issues_raw: list[Any] = data.get("issues", [])
     issues = [
         EvalIssue(
-            severity=item.get("severity", "minor"),
-            category=str(item.get("category", "unknown")),
-            description=str(item.get("description", "")),
-            location=item.get("location"),
+            severity=cast(dict[str, Any], item).get("severity", "minor"),
+            category=str(cast(dict[str, Any], item).get("category", "unknown")),
+            description=str(cast(dict[str, Any], item).get("description", "")),
+            location=cast(dict[str, Any], item).get("location"),
         )
-        for item in data.get("issues", [])
+        for item in issues_raw
         if isinstance(item, dict)
     ]
 

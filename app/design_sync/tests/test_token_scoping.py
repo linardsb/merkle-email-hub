@@ -114,20 +114,20 @@ def _make_single_email_file_data() -> dict[str, Any]:
 
 class TestFindSubtree:
     def test_find_root_node(self) -> None:
-        doc = {"id": "0:0", "children": [{"id": "1:1", "children": []}]}
+        doc: dict[str, Any] = {"id": "0:0", "children": [{"id": "1:1", "children": []}]}
         result = _find_subtree(doc, "0:0")
         assert result is doc
 
     def test_find_nested_node(self) -> None:
-        target = {"id": "2:1", "type": "FRAME", "children": [{"id": "3:1", "children": []}]}
-        doc = {"id": "0:0", "children": [{"id": "1:1", "children": [target]}]}
+        target: dict[str, Any] = {"id": "2:1", "type": "FRAME", "children": [{"id": "3:1", "children": []}]}
+        doc: dict[str, Any] = {"id": "0:0", "children": [{"id": "1:1", "children": [target]}]}
         result = _find_subtree(doc, "2:1")
         assert result is target
         # Children intact
         assert len(target["children"]) == 1
 
     def test_not_found(self) -> None:
-        doc = {"id": "0:0", "children": [{"id": "1:1", "children": []}]}
+        doc: dict[str, Any] = {"id": "0:0", "children": [{"id": "1:1", "children": []}]}
         assert _find_subtree(doc, "999:999") is None
 
     def test_empty_document(self) -> None:

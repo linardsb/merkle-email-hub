@@ -107,7 +107,7 @@ class ReportBuilder:
 
     def _qa_result_to_data(self, result: QAResultResponse) -> dict[str, object]:
         """Convert QA result to template-friendly dict."""
-        checks_data = []
+        checks_data: list[dict[str, object]] = []
         for check in result.checks:
             checks_data.append(
                 {

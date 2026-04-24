@@ -52,7 +52,7 @@ class TestGmailClassRewrite:
         assert emulator is not None
         html = _email('<tr><td class="foo">A</td></tr><tr><td class="bar">B</td></tr>')
         result = emulator.transform(html)
-        classes = []
+        classes: list[str] = []
         for part in result.split('class="')[1:]:
             classes.append(part.split('"')[0])
         prefixes = [c.split("_")[1] for c in classes[0].split()]
