@@ -25,7 +25,7 @@ class SkillAmendmentRecord(TimestampMixin, Base):
     skill_file = Column(String(200), nullable=False)
     section = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
-    confidence = Column(Float, nullable=False)
+    confidence: Column[float] = Column(Float, nullable=False)
     source_pattern_id = Column(String(12), nullable=False)
     source_template_id = Column(String(50), nullable=True)
     status = Column(String(20), nullable=False, default="pending", index=True)
@@ -38,7 +38,7 @@ async def save_amendments(
     amendments: list[SkillAmendment],
 ) -> list[SkillAmendmentRecord]:
     """Persist amendments for review."""
-    records = []
+    records: list[SkillAmendmentRecord] = []
     for a in amendments:
         record = SkillAmendmentRecord(
             id=a.id,

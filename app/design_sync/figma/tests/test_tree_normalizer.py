@@ -157,7 +157,7 @@ class TestResolveInstances:
             children=[_text("t1", "Hello")],
         )
         structure = _struct(instance)
-        raw = {"document": {"type": "DOCUMENT", "children": []}}
+        raw: dict[str, Any] = {"document": {"type": "DOCUMENT", "children": []}}
         result, stats = normalize_tree(structure, raw_file_data=raw)
         resolved = result.pages[0].children[0]
         assert resolved.type == DesignNodeType.FRAME
@@ -175,7 +175,7 @@ class TestResolveInstances:
     def test_instance_resolved_with_raw_data(self) -> None:
         instance = _node("inst", type_=DesignNodeType.INSTANCE)
         structure = _struct(instance)
-        raw = {"document": {"type": "DOCUMENT", "children": []}}
+        raw: dict[str, Any] = {"document": {"type": "DOCUMENT", "children": []}}
         result, stats = normalize_tree(structure, raw_file_data=raw)
         assert result.pages[0].children[0].type == DesignNodeType.FRAME
         assert stats.instances_resolved == 1
@@ -331,7 +331,7 @@ class TestNormalizeIntegration:
                 ],
             ),
         )
-        raw = {"document": {"type": "DOCUMENT", "children": []}}
+        raw: dict[str, Any] = {"document": {"type": "DOCUMENT", "children": []}}
         result, stats = normalize_tree(structure, raw_file_data=raw)
         assert stats.nodes_removed == 1
         assert stats.groups_flattened == 1

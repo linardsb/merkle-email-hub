@@ -852,6 +852,7 @@ class ScaffolderPipeline:
         from app.ai.agents.scaffolder.assembler import TemplateAssembler
         from app.ai.shared import sanitize_html_xss
         from app.qa_engine.checks import ALL_CHECKS
+        from app.qa_engine.schemas import QACheckResult
 
         assembler = TemplateAssembler()
         tier_strategy = self._detect_tier_strategy(template_selection)
@@ -879,7 +880,7 @@ class ScaffolderPipeline:
             html = sanitize_html_xss(html, profile="scaffolder")
 
             # QA (reuse base agent QA pattern)
-            qa_results = []
+            qa_results: list[QACheckResult] = []
             for check in ALL_CHECKS:
                 qa_results.append(await check.run(html))
             qa_passed = all(r.passed for r in qa_results)

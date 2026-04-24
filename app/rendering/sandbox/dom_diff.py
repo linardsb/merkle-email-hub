@@ -15,11 +15,11 @@ logger = get_logger(__name__)
 class DOMDiff:
     """Structural diff between original and post-sanitizer HTML."""
 
-    removed_elements: list[str] = field(default_factory=list)
-    removed_attributes: dict[str, list[str]] = field(default_factory=dict)
-    removed_css_properties: dict[str, list[str]] = field(default_factory=dict)
-    added_elements: list[str] = field(default_factory=list)
-    modified_styles: dict[str, tuple[str, str]] = field(default_factory=dict)
+    removed_elements: list[str] = field(default_factory=list[str])
+    removed_attributes: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    removed_css_properties: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
+    added_elements: list[str] = field(default_factory=list[str])
+    modified_styles: dict[str, tuple[str, str]] = field(default_factory=dict[str, tuple[str, str]])
 
 
 def _parse_inline_style(style: str) -> dict[str, str]:

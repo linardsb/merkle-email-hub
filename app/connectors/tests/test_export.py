@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -33,7 +34,7 @@ def _make_user(role: str = "developer") -> User:
 
 
 def _make_export_response(**overrides: object) -> ExportResponse:
-    defaults: dict[str, object] = {
+    defaults: dict[str, Any] = {
         "esp_template_id": "remote_42",
         "template_name": "My Email",
         "target_esp": "braze",

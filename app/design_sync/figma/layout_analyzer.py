@@ -111,9 +111,9 @@ class ColumnGroup:
     column_idx: int
     node_id: str
     node_name: str
-    texts: list[TextBlock] = field(default_factory=list)
-    images: list[ImagePlaceholder] = field(default_factory=list)
-    buttons: list[ButtonElement] = field(default_factory=list)
+    texts: list[TextBlock] = field(default_factory=list[TextBlock])
+    images: list[ImagePlaceholder] = field(default_factory=list[ImagePlaceholder])
+    buttons: list[ButtonElement] = field(default_factory=list[ButtonElement])
     width: float | None = None
 
 
@@ -155,7 +155,7 @@ class EmailSection:
     padding_left: float | None = None
     item_spacing: float | None = None
     element_gaps: tuple[float, ...] = ()
-    column_groups: list[ColumnGroup] = field(default_factory=list)
+    column_groups: list[ColumnGroup] = field(default_factory=list[ColumnGroup])
     classification_confidence: float | None = None
     vlm_classification: str | None = None
     vlm_confidence: float | None = None
@@ -172,7 +172,7 @@ class DesignLayoutDescription:
     sections: list[EmailSection] = field(default_factory=list[EmailSection])
     total_text_blocks: int = 0
     total_images: int = 0
-    spacing_map: dict[str, dict[str, float]] = field(default_factory=dict)
+    spacing_map: dict[str, dict[str, float]] = field(default_factory=dict[str, dict[str, float]])
 
 
 # ── Name-based section detection ──

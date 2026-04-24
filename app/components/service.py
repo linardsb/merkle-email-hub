@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import select as sa_select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -255,11 +255,12 @@ class ComponentService:
         for provider in ("figma", "penpot"):
             origin = compatibility.get(provider)
             if isinstance(origin, dict) and "file_key" in origin and "component_id" in origin:
-                name = origin.get("component_name")
+                origin_dict = cast(dict[str, Any], origin)
+                name = origin_dict.get("component_name")
                 return DesignOrigin(
                     provider=provider,
-                    file_key=str(origin["file_key"]),
-                    component_id=str(origin["component_id"]),
+                    file_key=str(origin_dict["file_key"]),
+                    component_id=str(origin_dict["component_id"]),
                     component_name=str(name) if name is not None else None,
                 )
         return None

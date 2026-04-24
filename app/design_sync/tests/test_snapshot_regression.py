@@ -20,7 +20,7 @@ import asyncio
 import difflib
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -251,9 +251,13 @@ class TestSnapshotSanity:
     @pytest.mark.parametrize(
         "case_id",
         [
-            c["id"]
-            for c in (yaml.safe_load((_DEBUG_DIR / "manifest.yaml").read_text()) or {}).get(
-                "cases", []
+            cast(dict[str, Any], c)["id"]
+            for c in cast(
+                list[Any],
+                cast(
+                    dict[str, Any],
+                    yaml.safe_load((_DEBUG_DIR / "manifest.yaml").read_text()) or {},
+                ).get("cases", []),
             )
         ],
     )
@@ -423,7 +427,7 @@ def _make_loop_result(
     final_html: str = "<html>corrected</html>",
 ) -> VerificationLoopResult:
     """Build a mock VerificationLoopResult."""
-    iterations = []
+    iterations: list[VerificationResult] = []
     for i in range(iterations_count):
         fidelity = initial_fidelity + (final_fidelity - initial_fidelity) * i / max(
             iterations_count - 1, 1

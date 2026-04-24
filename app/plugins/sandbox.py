@@ -6,7 +6,7 @@ import asyncio
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from app.core.logging import get_logger
 from app.plugins.exceptions import PluginError, PluginTimeoutError
@@ -28,7 +28,7 @@ class PluginExecutionContext:
     """Context passed to every sandboxed plugin function call."""
 
     logger: Any
-    config: dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict[str, Any])
     plugin_name: str = ""
 
 
@@ -120,9 +120,10 @@ class PluginSandbox:
 
             # Plugin can return a dict with status/message or just a bool
             if isinstance(result, dict):
+                result_dict = cast(dict[str, Any], result)
                 return PluginHealth(
-                    status=result.get("status", "healthy"),
-                    message=result.get("message"),
+                    status=result_dict.get("status", "healthy"),
+                    message=result_dict.get("message"),
                     latency_ms=round(latency_ms, 2),
                 )
             if isinstance(result, bool):

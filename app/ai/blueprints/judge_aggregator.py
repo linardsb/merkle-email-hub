@@ -10,6 +10,7 @@ Enabled via BLUEPRINT__JUDGE_AGGREGATION_ENABLED=true (default: false).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from app.ai.agents.evals.judges.schemas import JudgeVerdict
 from app.core.logging import get_logger
@@ -116,10 +117,10 @@ async def aggregate_verdicts(
         for entry, score in memories:
             if score < 0.2:
                 continue
-            meta = entry.metadata_json or {}
+            meta: dict[str, Any] = entry.metadata_json or {}
             if meta.get("source") != _VERDICT_SOURCE:
                 continue
-            criterion = meta.get("criterion", "")
+            criterion = str(meta.get("criterion", ""))
             if not criterion:
                 continue
             if criterion not in criterion_stats:

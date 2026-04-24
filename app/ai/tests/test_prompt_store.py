@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -488,10 +489,11 @@ def _mock_db() -> Generator[AsyncMock]:
     async def _flush_side_effect() -> None:
         """Simulate DB flush — populate auto-generated fields."""
         for obj in _added_objects:
-            if hasattr(obj, "id") and obj.id is None:
-                obj.id = 1
-            if hasattr(obj, "created_at") and obj.created_at is None:
-                obj.created_at = datetime.now(UTC)
+            tracked: Any = obj
+            if hasattr(tracked, "id") and tracked.id is None:
+                tracked.id = 1
+            if hasattr(tracked, "created_at") and tracked.created_at is None:
+                tracked.created_at = datetime.now(UTC)
         _added_objects.clear()
 
     db.flush = AsyncMock(side_effect=_flush_side_effect)
