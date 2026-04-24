@@ -276,7 +276,10 @@ PROFILES: dict[str, SanitizationProfile] = {
 }
 
 # Regex to extract document structure — nh3 is a fragment sanitizer and strips these
-_DOCTYPE_RE = re.compile(r"(<!DOCTYPE[^>]*>)\s*", re.IGNORECASE)
+# DOCTYPE must appear at (or near) the document start; anchor with ^ and apply via
+# re.match on a bounded prefix so CodeQL's polynomial-redos concern (repeated
+# "<!doctype" tokens at every offset) can't trigger.
+_DOCTYPE_RE = re.compile(r"^\s*(<!DOCTYPE[^>]*>)\s*", re.IGNORECASE)
 _HTML_OPEN_RE = re.compile(r"(<html\b[^>]*>)", re.IGNORECASE)
 _HEAD_RE = re.compile(r"(<head\b[^>]*>)(.*?)(</head\s*>)", re.DOTALL | re.IGNORECASE)
 _BODY_OPEN_RE = re.compile(r"(<body\b[^>]*>)", re.IGNORECASE)
