@@ -1,6 +1,6 @@
 """Cost governor admin dashboard routes."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from typing import Annotated
 

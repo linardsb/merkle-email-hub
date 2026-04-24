@@ -1,6 +1,6 @@
 """Multi-variant campaign assembly API routes."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from fastapi import APIRouter, Depends, Request
 

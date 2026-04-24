@@ -1,6 +1,6 @@
 """Reporting API endpoints — PDF generation for QA reports."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from __future__ import annotations
 

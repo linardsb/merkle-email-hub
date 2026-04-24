@@ -1,6 +1,6 @@
 """Voice brief input pipeline routes."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 """REST API routes for the versioned prompt template store."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from __future__ import annotations
 

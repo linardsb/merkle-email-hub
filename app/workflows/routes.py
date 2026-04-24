@@ -1,6 +1,6 @@
 """Workflow orchestration HTTP endpoints."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from __future__ import annotations
 

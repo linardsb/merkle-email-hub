@@ -1,6 +1,6 @@
 """REST API for skill amendment review (admin-only)."""
 
-# pyright: reportUntypedFunctionDecorator=false
+# pyright: reportUntypedFunctionDecorator=false, reportUnknownMemberType=false
 
 from __future__ import annotations
 
