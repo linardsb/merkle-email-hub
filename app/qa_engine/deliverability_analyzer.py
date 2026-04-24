@@ -53,7 +53,7 @@ class ISPRiskProfile:
     isp: str
     display_name: str
     risk_level: str = "low"  # low | medium | high | critical
-    flags: list[ISPFlag] = field(default_factory=list)
+    flags: list[ISPFlag] = field(default_factory=list[ISPFlag])
     score: int = 100  # 0-100, deducted per flag
 
 
@@ -65,8 +65,8 @@ class DeliverabilityAnalysis:
     link_density: float  # links per 100 words
     hidden_content_count: int
     auth_readiness_score: int  # 0-25
-    isp_risks: dict[str, ISPRiskProfile] = field(default_factory=dict)
-    structural_flags: list[str] = field(default_factory=list)
+    isp_risks: dict[str, ISPRiskProfile] = field(default_factory=dict[str, ISPRiskProfile])
+    structural_flags: list[str] = field(default_factory=list[str])
     overall_risk: str = "low"  # low | medium | high | critical
     gmail_promo_tab_score: int = 0  # 0 = unlikely promo, higher = more likely
 

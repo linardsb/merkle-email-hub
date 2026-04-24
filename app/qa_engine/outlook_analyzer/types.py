@@ -32,11 +32,11 @@ class ModernizationStep:
 class OutlookAnalysis:
     """Complete analysis result."""
 
-    dependencies: list[OutlookDependency] = field(default_factory=list)
+    dependencies: list[OutlookDependency] = field(default_factory=list[OutlookDependency])
     total_count: int = 0
     removable_count: int = 0
     byte_savings: int = 0
-    modernization_plan: list[ModernizationStep] = field(default_factory=list)
+    modernization_plan: list[ModernizationStep] = field(default_factory=list[ModernizationStep])
     # Breakdown by type
     vml_count: int = 0
     ghost_table_count: int = 0

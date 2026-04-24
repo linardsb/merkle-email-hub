@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -40,8 +40,9 @@ def apply_sync(
     if overrides_path.exists():
         with overrides_path.open(encoding="utf-8") as f:
             overrides_data = yaml.safe_load(f)
-        for o in (overrides_data or {}).get("overrides", []):
-            override_keys.add((str(o["property_id"]), str(o["client_id"])))
+        for o in cast(dict[str, Any], overrides_data or {}).get("overrides", []):
+            o_dict = cast(dict[str, Any], o)
+            override_keys.add((str(o_dict["property_id"]), str(o_dict["client_id"])))
 
     if override_keys:
         diff = SyncDiff(

@@ -86,12 +86,12 @@ _BLOCK_TAGS: set[str] = {
 class LiquidAnalysis:
     """Structural analysis of Liquid template syntax."""
 
-    tags_found: list[str] = field(default_factory=list)
-    filters_used: list[str] = field(default_factory=list)
-    variables: list[str] = field(default_factory=list)
+    tags_found: list[str] = field(default_factory=list[str])
+    filters_used: list[str] = field(default_factory=list[str])
+    variables: list[str] = field(default_factory=list[str])
     nesting_depth: int = 0
     is_braze: bool = False
-    parse_errors: list[str] = field(default_factory=list)
+    parse_errors: list[str] = field(default_factory=list[str])
 
 
 def _extract_filters(expression: str) -> list[str]:

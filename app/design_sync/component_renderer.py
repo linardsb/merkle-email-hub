@@ -20,19 +20,19 @@ _PLACEHOLDER_IN_OUTPUT_RE = re.compile(
 )
 
 # Lazy-loaded to avoid circular imports
-_SEED_CACHE: dict[str, dict[str, Any]] | None = None
+_seed_cache: dict[str, dict[str, Any]] | None = None
 
 
 def _load_seeds() -> dict[str, dict[str, Any]]:
     """Load component seeds by slug. Cached on first call."""
-    global _SEED_CACHE
-    if _SEED_CACHE is not None:
-        return _SEED_CACHE
+    global _seed_cache
+    if _seed_cache is not None:
+        return _seed_cache
 
     from app.components.data.seeds import COMPONENT_SEEDS
 
-    _SEED_CACHE = {seed["slug"]: seed for seed in COMPONENT_SEEDS}
-    return _SEED_CACHE
+    _seed_cache = {seed["slug"]: seed for seed in COMPONENT_SEEDS}
+    return _seed_cache
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ class RenderedSection:
     component_slug: str
     section_idx: int
     dark_mode_classes: tuple[str, ...] = ()
-    images: list[dict[str, str]] = field(default_factory=list)
+    images: list[dict[str, str]] = field(default_factory=list[dict[str, str]])
     propagated_bgcolor: str | None = None
 
 

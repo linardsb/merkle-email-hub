@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -99,7 +100,7 @@ class TestPassthroughPropagation:
             status="success",
             is_production=False,
             passthrough=True,
-            created_at="2026-01-01T00:00:00Z",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
         )
         assert resp.passthrough is True
 
@@ -110,6 +111,6 @@ class TestPassthroughPropagation:
             template_name="test",
             status="success",
             is_production=False,
-            created_at="2026-01-01T00:00:00Z",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
         )
         assert resp.passthrough is False

@@ -59,7 +59,7 @@ class ConfidenceBreakdown:
     css_compatibility: float  # 0.0-1.0
     calibration_accuracy: float  # 0.0-1.0
     layout_complexity: float  # 0.0-1.0 (higher = more complex)
-    known_blind_spots: list[str] = field(default_factory=list)
+    known_blind_spots: list[str] = field(default_factory=list[str])
 
 
 @dataclass(frozen=True)
@@ -68,7 +68,7 @@ class RenderingConfidence:
 
     score: float  # 0-100
     breakdown: ConfidenceBreakdown
-    recommendations: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list[str])
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize for JSON storage / API response."""

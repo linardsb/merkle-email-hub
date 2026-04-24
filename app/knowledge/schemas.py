@@ -210,8 +210,10 @@ class GraphSearchResultResponse(BaseModel):
     """A single graph search result."""
 
     content: str
-    entities: list[GraphEntityResponse] = Field(default_factory=list)
-    relationships: list[GraphRelationshipResponse] = Field(default_factory=list)
+    entities: list[GraphEntityResponse] = Field(default_factory=list[GraphEntityResponse])
+    relationships: list[GraphRelationshipResponse] = Field(
+        default_factory=list[GraphRelationshipResponse]
+    )
     score: float = 0.0
 
 

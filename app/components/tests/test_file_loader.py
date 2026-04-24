@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -84,9 +84,8 @@ def test_file_seed_dict_shape() -> None:
         assert isinstance(seed["slot_definitions"], list)
         assert isinstance(seed["compatibility"], dict)
         # Compatibility dict should have all 8 client keys
-        assert len(seed["compatibility"]) == 8, (
-            f"{seed['slug']} compat has {len(seed['compatibility'])} clients"
-        )
+        compat = cast(dict[str, Any], seed["compatibility"])
+        assert len(compat) == 8, f"{seed['slug']} compat has {len(compat)} clients"
 
 
 # ── File-based source of truth ──

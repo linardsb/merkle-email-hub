@@ -62,7 +62,7 @@ def _discover_ids() -> list[str]:
 
 def _converter_case_ids() -> list[str]:
     """Return case IDs that have converter inputs (not reference_only)."""
-    ids = []
+    ids: list[str] = []
     for p in discover_cases(_DEBUG_DIR):
         manifest = load_case_manifest(p)
         if not manifest.reference_only and (p / "structure.json").exists():

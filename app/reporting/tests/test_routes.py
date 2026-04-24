@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,7 +23,7 @@ def _disable_rate_limit() -> None:
 def client() -> Iterator[TestClient]:
     """TestClient with reporting router registered (regardless of REPORTING__ENABLED)."""
     # Temporarily add router if not already present
-    existing = {r.path for r in app.routes if hasattr(r, "path")}
+    existing = {cast(Any, r).path for r in app.routes if hasattr(r, "path")}
     needs_add = "/api/v1/reports/qa" not in existing
     if needs_add:
         app.include_router(reporting_router)

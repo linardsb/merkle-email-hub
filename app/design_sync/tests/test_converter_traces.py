@@ -27,10 +27,10 @@ class _FakeCompatHint:
 class _FakeConversionResult:
     html: str = "<table></table>"
     sections_count: int = 5
-    warnings: list[str] = field(default_factory=list)
-    quality_warnings: list[QualityWarning] = field(default_factory=list)
-    match_confidences: dict[int, float] = field(default_factory=dict)
-    compatibility_hints: list[_FakeCompatHint] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list[str])
+    quality_warnings: list[QualityWarning] = field(default_factory=list[QualityWarning])
+    match_confidences: dict[int, float] = field(default_factory=dict[int, float])
+    compatibility_hints: list[_FakeCompatHint] = field(default_factory=list[_FakeCompatHint])
     figma_url: str | None = None
     node_id: str | None = None
     design_tokens_used: dict[str, object] | None = None

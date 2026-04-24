@@ -188,10 +188,10 @@ async def test_evaluate_check_mixed(labeled_mixed: list[LabeledSample]) -> None:
     assert result.fp == 2
     assert result.fn == 0
     assert result.tn == 0
-    assert result.precision == pytest.approx(0.5)
-    assert result.recall == pytest.approx(1.0)
+    assert result.precision == pytest.approx(0.5)  # pyright: ignore[reportUnknownMemberType]
+    assert result.recall == pytest.approx(1.0)  # pyright: ignore[reportUnknownMemberType]
     # F1 = 2 * 0.5 * 1.0 / (0.5 + 1.0) = 2/3
-    assert result.f1 == pytest.approx(2.0 / 3.0)
+    assert result.f1 == pytest.approx(2.0 / 3.0)  # pyright: ignore[reportUnknownMemberType]
 
 
 @pytest.mark.asyncio
@@ -288,7 +288,7 @@ async def test_overall_f1_weighted(
 
     # check_a: TP=1 → F1=1.0; check_b: TN=1 → precision=0, recall=0, F1=0
     # Macro-average = (1.0 + 0.0) / 2 = 0.5
-    assert report.overall_f1 == pytest.approx(0.5)
+    assert report.overall_f1 == pytest.approx(0.5)  # pyright: ignore[reportUnknownMemberType]
 
 
 class TestMetaEvalRoutes:

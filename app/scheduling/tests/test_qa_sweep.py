@@ -34,7 +34,7 @@ def _make_version(version_id: int, template_id: int, version_number: int, html: 
 
 def _make_qa_result(check_scores: dict[str, float]) -> MagicMock:
     """Build a mock QAResultResponse with given check_name→score pairs."""
-    checks = []
+    checks: list[MagicMock] = []
     for name, score in check_scores.items():
         c = MagicMock()
         c.check_name = name

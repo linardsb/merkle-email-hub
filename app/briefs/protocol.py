@@ -35,12 +35,12 @@ class RawBriefItem:
     description: str
     status: str  # open/in_progress/done/cancelled
     priority: str | None
-    assignees: list[str] = field(default_factory=list)
-    labels: list[str] = field(default_factory=list)
+    assignees: list[str] = field(default_factory=list[str])
+    labels: list[str] = field(default_factory=list[str])
     due_date: datetime | None = None
     thumbnail_url: str | None = None
-    resources: list[RawResource] = field(default_factory=list)
-    attachments: list[RawAttachment] = field(default_factory=list)
+    resources: list[RawResource] = field(default_factory=list[RawResource])
+    attachments: list[RawAttachment] = field(default_factory=list[RawAttachment])
 
 
 @runtime_checkable

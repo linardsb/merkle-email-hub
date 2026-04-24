@@ -18,7 +18,7 @@ class SVGValidationResult:
     """SVG Tiny PS profile validation result."""
 
     valid: bool
-    issues: list[str] = field(default_factory=list)
+    issues: list[str] = field(default_factory=list[str])
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ class BIMIStatus:
     generated_record: str = ""  # Template TXT record for deployment
 
     # All issues found
-    issues: list[str] = field(default_factory=list)
+    issues: list[str] = field(default_factory=list[str])
 
     @property
     def ready(self) -> bool:

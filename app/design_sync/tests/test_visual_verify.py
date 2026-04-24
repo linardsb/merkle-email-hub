@@ -410,8 +410,8 @@ class TestFidelityCalculation:
                 "<html></html>",
                 [_make_section("n1"), _make_section("n2")],
             )
-        assert result.fidelity_score == pytest.approx(0.80)
-        assert result.pixel_diff_pct == pytest.approx(20.0)
+        assert result.fidelity_score == pytest.approx(0.80)  # pyright: ignore[reportUnknownMemberType]
+        assert result.pixel_diff_pct == pytest.approx(20.0)  # pyright: ignore[reportUnknownMemberType]
 
     @pytest.mark.asyncio
     async def test_cache_eviction(self) -> None:

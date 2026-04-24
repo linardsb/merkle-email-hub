@@ -44,8 +44,8 @@ class RegressionReport:
 
     passed: bool
     threshold: float
-    results: list[ComparisonResult] = field(default_factory=list)
-    skipped: list[str] = field(default_factory=list)  # profiles with no baseline
+    results: list[ComparisonResult] = field(default_factory=list[ComparisonResult])
+    skipped: list[str] = field(default_factory=list[str])  # profiles with no baseline
 
     @property
     def failures(self) -> list[ComparisonResult]:

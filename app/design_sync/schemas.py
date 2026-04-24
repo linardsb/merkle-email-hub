@@ -216,10 +216,10 @@ class DesignTokensResponse(BaseModel):
 
     connection_id: int
     colors: list[DesignColorResponse]
-    dark_colors: list[DesignColorResponse] = Field(default_factory=list)
+    dark_colors: list[DesignColorResponse] = Field(default_factory=list[DesignColorResponse])
     typography: list[DesignTypographyResponse]
     spacing: list[DesignSpacingResponse]
-    gradients: list[DesignGradientResponse] = Field(default_factory=list)
+    gradients: list[DesignGradientResponse] = Field(default_factory=list[DesignGradientResponse])
     extracted_at: datetime.datetime
     warnings: list[str] | None = None
     compatibility_hints: list[CompatibilityHintResponse] | None = None

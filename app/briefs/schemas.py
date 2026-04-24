@@ -143,8 +143,8 @@ class BriefDetailResponse(BaseModel):
     labels: list[str] = Field(default_factory=list)
     due_date: datetime.datetime | None = None
     thumbnail_url: str | None = None
-    resources: list[ResourceResponse] = Field(default_factory=list)
-    attachments: list[AttachmentResponse] = Field(default_factory=list)
+    resources: list[ResourceResponse] = Field(default_factory=list[ResourceResponse])
+    attachments: list[AttachmentResponse] = Field(default_factory=list[AttachmentResponse])
     created_at: datetime.datetime
     updated_at: datetime.datetime
 

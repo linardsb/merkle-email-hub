@@ -142,8 +142,8 @@ class TestVerificationLoop:
 
         assert isinstance(result, VerificationLoopResult)
         assert len(result.iterations) == 3
-        assert result.initial_fidelity == pytest.approx(0.82)
-        assert result.final_fidelity == pytest.approx(0.98)
+        assert result.initial_fidelity == pytest.approx(0.82)  # pyright: ignore[reportUnknownMemberType]
+        assert result.final_fidelity == pytest.approx(0.98)  # pyright: ignore[reportUnknownMemberType]
         assert result.converged is True
         assert result.reverted is False
         assert result.total_corrections_applied == 5
@@ -344,7 +344,7 @@ class TestVerificationLoop:
             )
 
         assert len(result.iterations) == 1
-        assert result.initial_fidelity == pytest.approx(0.85)
+        assert result.initial_fidelity == pytest.approx(0.85)  # pyright: ignore[reportUnknownMemberType]
         assert result.final_html == "<html>v2</html>"
 
     @pytest.mark.asyncio
@@ -459,7 +459,7 @@ class TestVerificationLoop:
         # Verify confidence_threshold was passed to apply_corrections
         mock_apply.assert_called_once()
         call_kwargs = mock_apply.call_args
-        assert call_kwargs[1]["confidence_threshold"] == pytest.approx(0.7)
+        assert call_kwargs[1]["confidence_threshold"] == pytest.approx(0.7)  # pyright: ignore[reportUnknownMemberType]
         assert result.total_corrections_applied == 1
 
     @pytest.mark.asyncio
