@@ -109,7 +109,7 @@ class TestReportingService:
         mock_redis = AsyncMock()
         mock_user = MagicMock()
 
-        report_ids = []
+        report_ids: list[str] = []
         with (
             patch(
                 "app.reporting.service.get_settings",

@@ -51,7 +51,7 @@ class _DimensionResult:
 
     name: str
     max_score: int = 25
-    issues: list[_Issue] = field(default_factory=list)
+    issues: list[_Issue] = field(default_factory=list[_Issue])
 
     @property
     def score(self) -> int:

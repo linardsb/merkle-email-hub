@@ -35,7 +35,7 @@ from app.design_sync.protocol import (
 )
 
 if TYPE_CHECKING:
-    from app.design_sync.protocol import DesignFileStructure
+    from app.design_sync.protocol import DesignFileStructure, DesignNode
     from app.design_sync.vlm_classifier import VLMSectionClassification
 
 _SCHEMA_PATH = (
@@ -1121,7 +1121,7 @@ class EmailDesignDocument:
             from dataclasses import replace as dc_replace
 
             selected_set = set(selected_nodes)
-            filtered_pages = []
+            filtered_pages: list[DesignNode] = []
             for page in structure.pages:
                 filtered_children = [
                     c for c in page.children if c.id in selected_set or c.type not in frame_types

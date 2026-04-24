@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -170,7 +171,9 @@ class TestSearchComponentsRouting:
         class FakeClassified:
             intent: str = "template"
             confidence: float = 0.9
-            extracted_entities: list[FakeEntity] = field(default_factory=list)
+            extracted_entities: list[FakeEntity] = field(
+                default_factory=lambda: cast(list[FakeEntity], [])
+            )
 
         ents = [FakeEntity(t, r, o) for t, r, o in (entities or [])]
         return FakeClassified(extracted_entities=ents)

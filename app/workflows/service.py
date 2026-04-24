@@ -197,7 +197,7 @@ class WorkflowService:
         for task in tasks:
             if not isinstance(task, dict):
                 continue
-            task_type = cast(str, task.get("type", ""))
+            task_type = cast(str, cast(dict[str, Any], task).get("type", ""))
             if (
                 task_type
                 and task_type not in KESTRA_BUILTIN_TASK_TYPES

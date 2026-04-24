@@ -171,7 +171,7 @@ class KestraClient:
         raw: Any = resp.json()
         items: list[dict[str, Any]] = cast(
             list[dict[str, Any]],
-            raw.get("results", raw) if isinstance(raw, dict) else raw,
+            cast(dict[str, Any], raw).get("results", raw) if isinstance(raw, dict) else raw,
         )
         return [self._parse_execution(item) for item in items]
 

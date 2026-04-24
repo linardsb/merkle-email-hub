@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,9 +36,10 @@ class CalibrationSampler:
             return count_today < rate_limit * 3
 
         # Stale (> 7 days since last calibration) get 2x rate
-        if summary.updated_at:
+        updated_at = cast("datetime | None", summary.updated_at)
+        if updated_at:
             stale_cutoff = datetime.now(UTC) - timedelta(days=7)
-            if summary.updated_at < stale_cutoff:
+            if updated_at < stale_cutoff:
                 return count_today < rate_limit * 2
 
         return count_today < rate_limit

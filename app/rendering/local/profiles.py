@@ -15,7 +15,7 @@ class RenderingProfile:
     browser: str  # "cr" (chromium), "wk" (webkit), "ff" (firefox)
     color_scheme: str = "light"
     device: str | None = None
-    css_injections: list[str] = field(default_factory=list)
+    css_injections: list[str] = field(default_factory=list[str])
     strip_style_tags: bool = False
     max_screenshot_height: int = 4096
     emulator_id: str | None = None

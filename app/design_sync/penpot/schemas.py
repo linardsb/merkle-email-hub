@@ -64,7 +64,7 @@ class PenpotNode(BaseModel):
     y: float | None = None
     width: float | None = None
     height: float | None = None
-    children: list[PenpotNode] = Field(default_factory=list)
+    children: list[PenpotNode] = Field(default_factory=list["PenpotNode"])
     content: str | None = None  # text content for text nodes
     fills: list[dict[str, Any]] | None = None
     font_family: str | None = Field(None, alias="fontFamily")

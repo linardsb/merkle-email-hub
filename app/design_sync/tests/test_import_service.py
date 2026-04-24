@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -744,9 +745,9 @@ class TestDesignImportServiceOrchestrator:
         tokens.warnings = ["Test warning"]
 
         ctx = svc._build_design_context(layout, None, tokens, conn)
-        dt = ctx["design_tokens"]
+        dt = cast(dict[str, Any], ctx["design_tokens"])
         assert isinstance(dt, dict)
-        typo_entry = dt["typography"][0]
+        typo_entry = cast(dict[str, Any], dt["typography"][0])
         assert typo_entry["line_height"] == 40.0
         assert typo_entry["letter_spacing"] == 0.5
         assert typo_entry["text_transform"] == "uppercase"

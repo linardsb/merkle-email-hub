@@ -27,7 +27,7 @@ class SlotFill:
     slot_id: str
     value: str
     slot_type: str = "text"  # "text" | "image" | "cta" | "attr"
-    attr_overrides: dict[str, str] = field(default_factory=dict)
+    attr_overrides: dict[str, str] = field(default_factory=dict[str, str])
 
 
 @dataclass(frozen=True)

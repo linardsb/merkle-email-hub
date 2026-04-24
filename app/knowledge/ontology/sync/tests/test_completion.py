@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -92,7 +93,7 @@ class TestOverrides:
         if overrides_path.exists():
             with overrides_path.open() as f:
                 data = yaml.safe_load(f)
-            assert isinstance((data or {}).get("overrides", []), list)
+            assert isinstance(cast(dict[str, Any], data or {}).get("overrides", []), list)
 
         # Empty overrides file should not break loading
         registry = load_ontology()

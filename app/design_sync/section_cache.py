@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from redis.exceptions import RedisError
 
@@ -282,7 +282,11 @@ class SectionCache:
             pattern = f"{_REDIS_KEY_PREFIX}:{connection_id}:*"
             cursor = 0
             while True:
-                cursor, keys = await redis.scan(cursor=cursor, match=pattern, count=100)
+                scan_result = cast(
+                    tuple[int, list[str | bytes]],
+                    await redis.scan(cursor=cursor, match=pattern, count=100),  # pyright: ignore[reportUnknownMemberType]
+                )
+                cursor, keys = scan_result
                 if keys:
                     await redis.delete(*keys)
                     cleared += len(keys)
