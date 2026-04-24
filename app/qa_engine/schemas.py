@@ -9,12 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class QARunRequest(BaseModel):
     """Request to run QA checks on compiled HTML."""
 
-    build_id: int | None = Field(None, description="Email build ID to validate")
+    build_id: int | None = Field(default=None, description="Email build ID to validate")
     template_version_id: int | None = Field(
-        None, description="Template version ID for audit linkage"
+        default=None, description="Template version ID for audit linkage"
     )
     project_id: int | None = Field(
-        None, description="Project ID for per-project QA config (optional)"
+        default=None, description="Project ID for per-project QA config (optional)"
     )
     html: str = Field(
         ..., min_length=1, max_length=500_000, description="Compiled HTML to validate"

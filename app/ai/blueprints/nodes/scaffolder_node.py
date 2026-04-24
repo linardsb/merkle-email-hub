@@ -69,10 +69,11 @@ class ScaffolderNode:
         sanitized = sanitize_prompt(user_content)
 
         # Check for design reference images (Phase 23.3)
+        from app.ai.multimodal import ImageBlock, TextBlock, validate_content_blocks
+
         design_ref_blocks: list[ContentBlock] | None = None
         if context.multimodal_context:
             from app.ai.capability_registry import ModelCapability, get_capability_registry
-            from app.ai.multimodal import ImageBlock, TextBlock, validate_content_blocks
 
             cap_registry = get_capability_registry()
             vision_models = cap_registry.find_models(requirements={ModelCapability.VISION})

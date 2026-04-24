@@ -63,7 +63,7 @@ def _make_audience(
 
 
 def _make_insight(**overrides: object) -> AgentInsight:
-    defaults = {
+    defaults: dict[str, object] = {
         "source_agent": "dark_mode",
         "target_agents": ("scaffolder", "code_reviewer"),
         "client_ids": ("samsung_mail",),

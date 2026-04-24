@@ -121,7 +121,7 @@ class TestLiquidSyntaxCheck:
 
     @pytest.mark.asyncio
     async def test_config_disabled(self, check: LiquidSyntaxCheck) -> None:
-        config = QACheckConfig(check_name="liquid_syntax", enabled=False)
+        config = QACheckConfig(enabled=False)
         result = await check.run("{% if broken %}", config)
         assert result.passed is True
         assert "disabled" in (result.details or "").lower()

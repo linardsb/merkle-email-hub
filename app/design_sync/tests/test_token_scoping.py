@@ -124,7 +124,7 @@ class TestFindSubtree:
         result = _find_subtree(doc, "2:1")
         assert result is target
         # Children intact
-        assert len(result["children"]) == 1
+        assert len(target["children"]) == 1
 
     def test_not_found(self) -> None:
         doc = {"id": "0:0", "children": [{"id": "1:1", "children": []}]}

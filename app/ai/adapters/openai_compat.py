@@ -13,6 +13,7 @@ Reads configuration from app.core.config.Settings.ai namespace.
 """
 
 import contextlib
+import json
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -336,8 +337,6 @@ class OpenAICompatProvider:
         parsed: dict[str, object] | None = None
         if structured_block and content:
             try:
-                import json
-
                 parsed = json.loads(content)
             except (json.JSONDecodeError, TypeError):
                 logger.debug("ai.provider.structured_output_parse_failed", model=model_name)

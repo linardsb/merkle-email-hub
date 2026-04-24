@@ -43,6 +43,11 @@ from app.design_sync.protocol import (
     ExtractedTokens,
 )
 from app.design_sync.quality_contracts import QualityWarning, run_quality_contracts
+from app.design_sync.section_cache import (
+    SectionCacheEntry,
+    compute_section_hash,
+    get_section_cache,
+)
 
 if TYPE_CHECKING:
     from app.design_sync.component_matcher import ComponentMatch
@@ -553,8 +558,6 @@ class DesignConverterService:
         if connection_id and get_settings().design_sync.section_cache_enabled and layout.sections:
             import hashlib
 
-            from app.design_sync.section_cache import compute_section_hash, get_section_cache
-
             section_hashes = [
                 compute_section_hash(
                     s, tokens, container_width=container_width, target_clients=target_clients
@@ -613,8 +616,6 @@ class DesignConverterService:
 
         # Store in async cache (memory + Redis)
         if connection_id and cache_key:
-            from app.design_sync.section_cache import SectionCacheEntry, get_section_cache
-
             entry = SectionCacheEntry(
                 html=compiled_html,
                 images=(),
@@ -751,8 +752,6 @@ class DesignConverterService:
         cache = None
         cached_entries: dict[str, Any] = {}
         if connection_id and section_hashes:
-            from app.design_sync.section_cache import SectionCacheEntry, get_section_cache
-
             cache = get_section_cache()
             for node_id, section_hash in section_hashes.items():
                 entry = cache.get_sync(connection_id, section_hash)
