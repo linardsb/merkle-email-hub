@@ -45,27 +45,58 @@ async function globalSetup() {
     );
   }
 
+  const authHeaders = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${access_token}`,
+  };
+
+  // Ensure a client org exists — project creation requires client_org_id,
+  // and the create-project dialog auto-selects the sole org when exactly one
+  // is present, which keeps the dashboard "create a new project" smoke test
+  // deterministic.
+  const orgsListRes = await fetch(
+    `${BACKEND_URL}/api/v1/projects/orgs?page=1&page_size=1`,
+    { headers: authHeaders }
+  );
+  if (!orgsListRes.ok) {
+    throw new Error(
+      `List client orgs failed: ${orgsListRes.status} ${await orgsListRes.text()}`
+    );
+  }
+  const orgsList = await orgsListRes.json();
+  let clientOrgId: number | null = orgsList.items?.[0]?.id ?? null;
+  if (clientOrgId === null) {
+    const orgCreateRes = await fetch(`${BACKEND_URL}/api/v1/projects/orgs`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ name: "E2E Client", slug: "e2e-client" }),
+    });
+    if (!orgCreateRes.ok) {
+      throw new Error(
+        `Create client org failed: ${orgCreateRes.status} ${await orgCreateRes.text()}`
+      );
+    }
+    clientOrgId = (await orgCreateRes.json()).id as number;
+  }
+
   const projectRes = await fetch(`${BACKEND_URL}/api/v1/projects`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${access_token}`,
-    },
+    headers: authHeaders,
     body: JSON.stringify({
       name: `e2e-test-${Date.now()}`,
       description: "Automated E2E test project",
-      category: "promotional",
-      target_esp: "raw_html",
+      client_org_id: clientOrgId,
     }),
   });
-
-  let projectId: number | null = null;
-  if (projectRes.ok) {
-    const project = await projectRes.json();
-    projectId = project.id;
+  if (!projectRes.ok) {
+    throw new Error(
+      `Create project failed: ${projectRes.status} ${await projectRes.text()}`
+    );
   }
+  const project = await projectRes.json();
+  const projectId: number = project.id;
 
-  const state = { access_token, projectId };
+  const state = { access_token, projectId, clientOrgId };
   fs.writeFileSync(AUTH_STATE_PATH, JSON.stringify(state));
 }
 

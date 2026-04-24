@@ -17,8 +17,8 @@ test.describe("Dashboard & Projects", () => {
     await expect(page.getByRole("dialog")).toBeVisible();
 
     const projectName = `E2E Project ${Date.now()}`;
-    await page.locator("#name").fill(projectName);
-    await page.locator("#description").fill("Created by E2E test");
+    await page.locator("#project-name").fill(projectName);
+    await page.locator("#project-description").fill("Created by E2E test");
     await page.getByRole("button", { name: /create project/i }).click();
 
     await expect(page.getByRole("dialog")).not.toBeVisible({

@@ -138,6 +138,35 @@ The new regex matches URLs ending with `/`, `/projects`, or `/dashboard` — cov
 
 ---
 
-## Phase 5+ (deferred)
+## Phase 5 — global-setup sends stale schema; "create project" uses stale IDs
 
-Stay the course: one change, re-run, observe. Don't preemptively switch to `next build && next start`, bump per-test timeout, or tune retries unless the next run shows they're needed.
+### Symptom (CI run `24885565892`)
+
+After Phase 4 the `list` reporter is finally honest:
+
+```
+✓  1 auth.spec.ts  login with valid credentials
+✓  5 dashboard.spec.ts  dashboard loads with navigation
+✘  2 builder, 9 export, 12–15 workspace  → "Shared test project was not created in global-setup"
+✘  6–8 dashboard "create a new project" → locator.fill timeout on #name
+```
+
+### Root cause
+
+1. **global-setup.ts** POSTs `{ name, description, category, target_esp }` to `/api/v1/projects`. The current `ProjectCreate` schema (app/projects/schemas.py:36) requires `client_org_id`; `category` and `target_esp` are **not fields on the schema at all**. The 422 was silently swallowed by `if (projectRes.ok)`, so `projectId` was written as `null`. Every test that used `authenticatedPage` → `getSharedProjectId()` threw at constants.ts:26.
+
+2. **dashboard.spec.ts "create a new project"** fills `#name` and `#description`, but the current dialog uses `#project-name` / `#project-description` (cms/apps/web/src/components/dashboard/create-project-dialog.tsx). The client-org dropdown auto-selects when exactly one org exists, so once global-setup seeds one, the test doesn't need to touch `#project-org`.
+
+3. **fixtures/api.ts ApiHelper.createProject()** has the same stale schema as (1).
+
+### Fix
+
+- `global-setup.ts`: list orgs, create one if zero, then create the project with `client_org_id`. Throw loudly on any non-2xx with response body included. Persist `clientOrgId` into auth-state for future use.
+- `fixtures/api.ts` `createProject`: query orgs first, include `client_org_id`, drop `category`/`target_esp`.
+- `dashboard.spec.ts`: `#name` → `#project-name`, `#description` → `#project-description`. The org dropdown auto-selects since global-setup created exactly one org.
+
+### Verification
+
+- All `Shared test project was not created` errors disappear.
+- `dashboard.spec.ts "create a new project"` gets past form fill.
+- Any remaining failures reveal their own root causes without the noise.

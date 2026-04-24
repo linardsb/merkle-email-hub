@@ -16,18 +16,31 @@ export class ApiHelper {
   }
 
   async createProject(name: string) {
+    const orgsRes = await fetch(
+      `${BACKEND_URL}/api/v1/projects/orgs?page=1&page_size=1`,
+      { headers: this.headers() }
+    );
+    if (!orgsRes.ok) {
+      throw new Error(`list orgs failed: ${orgsRes.status}`);
+    }
+    const orgs = await orgsRes.json();
+    const clientOrgId = orgs.items?.[0]?.id;
+    if (!clientOrgId) {
+      throw new Error(
+        "No client org available; global-setup should have created one"
+      );
+    }
     const res = await fetch(`${BACKEND_URL}/api/v1/projects`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify({
         name,
         description: "E2E test project",
-        category: "promotional",
-        target_esp: "raw_html",
+        client_org_id: clientOrgId,
       }),
     });
     if (!res.ok) {
-      throw new Error(`createProject failed: ${res.status}`);
+      throw new Error(`createProject failed: ${res.status} ${await res.text()}`);
     }
     return res.json();
   }
