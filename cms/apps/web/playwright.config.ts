@@ -35,7 +35,7 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",
   use: {
-    baseURL: process.env.BASE_URL || "http://localhost:3000",
+    baseURL: process.env.BASE_URL || "http://localhost:3100",
     screenshot: "only-on-failure",
     trace: "on-first-retry",
     video: "retain-on-failure",
@@ -43,7 +43,8 @@ export default defineConfig({
   projects: getProjects(),
   webServer: {
     command: "pnpm dev",
-    port: 3000,
+    port: 3100,
     reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
   },
 });
