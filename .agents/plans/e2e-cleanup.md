@@ -203,3 +203,33 @@ No product-code changes. No new `data-testid` attributes — the UI already expo
 
 - Each of the four currently-failing smoke tests exercises a real flow rather than a stale selector.
 - Non-smoke export specs also updated so the full suite doesn't regress on them later.
+
+---
+
+## Phase 7 — preview/export need a compile step first
+
+### Symptom (CI run `24886915773`)
+
+6/8 smoke tests pass. Remaining two:
+
+- `export.spec.ts:16` → dialog never appears after Deliver → Export click.
+- `workspace.spec.ts:41` → Split view shows "Parse error — HTML structure could not be parsed into sections" instead of an iframe.
+
+### Root cause
+
+A fresh project has editor content (the default `<!-- Start editing... -->` template) but no **compiled** HTML yet:
+
+- `handleExport` (workspace/page.tsx:465) early-returns with a toast ("Compile the template first before exporting") when `compiledHtml` is empty — the dialog never opens.
+- The preview panel renders the iframe only after compile succeeds; before that it shows the "Press Ctrl+S to compile" empty state, and the Split view surfaces the parse-error placeholder.
+
+### Fix
+
+Click the `Compile` button at the start of each test and wait for the `iframe` to appear (which confirms compile succeeded) before exercising the flow under test. Applied to:
+
+- `workspace.spec.ts:41 "preview tab renders iframe"` — click Compile, then assert the iframe is visible (20s allowance for cold Maizzle sidecar).
+- `export.spec.ts openExportDialog()` helper — compile + iframe-visible + Deliver → Export. All five export tests benefit.
+
+### Verification
+
+- Both remaining smoke failures become passes.
+- If they fail again, the failure point is the real flow (dialog selector, iframe mount), not the missing prerequisite.

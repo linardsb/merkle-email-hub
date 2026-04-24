@@ -8,6 +8,12 @@ test.describe("Export Flow", () => {
   );
 
   async function openExportDialog(page: import("@playwright/test").Page) {
+    // handleExport early-returns with a toast if compiledHtml is empty, so
+    // force a compile first; iframe appearing confirms compile finished.
+    await page.getByRole("button", { name: /^compile$/i }).click();
+    await expect(page.locator("iframe").first()).toBeVisible({
+      timeout: 20_000,
+    });
     // Export lives inside the Deliver dropdown menu in the workspace toolbar.
     await page.getByRole("button", { name: /^deliver$/i }).click();
     await page.getByRole("menuitem", { name: /^export$/i }).click();

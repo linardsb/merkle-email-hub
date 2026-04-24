@@ -41,11 +41,12 @@ test.describe("Workspace", () => {
   test("preview tab renders iframe @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    // Preview iframe lives inside the Split view of EditorPanel.
-    await page.getByRole("button", { name: /^split$/i }).click();
+    // Preview iframe only mounts after the editor content is compiled —
+    // a fresh project shows the "Press Ctrl+S to compile" empty state.
+    await page.getByRole("button", { name: /^compile$/i }).click();
     await expect(
       page.locator("iframe").first()
-    ).toBeVisible({ timeout: 15_000 });
+    ).toBeVisible({ timeout: 20_000 });
   });
 
   test("QA panel shows check results", async ({
