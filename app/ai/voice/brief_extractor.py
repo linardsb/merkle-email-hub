@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from app.ai.protocols import CompletionResponse, Message
 from app.ai.voice.exceptions import BriefExtractionError
@@ -117,14 +117,17 @@ class VoiceBriefExtractor:
             )
 
         raw_sections: list[Any] = data.get("sections", [])
+        typed_sections = cast(
+            list[dict[str, Any]],
+            [s for s in raw_sections if isinstance(s, dict)],
+        )
         sections = [
             SectionBrief(
                 type=s.get("type", "content_block"),
                 description=s.get("description", ""),
                 content_hints=s.get("content_hints", []),
             )
-            for s in raw_sections
-            if isinstance(s, dict)
+            for s in typed_sections
         ]
 
         brief = EmailBrief(

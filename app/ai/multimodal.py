@@ -11,7 +11,7 @@ import json as _json_mod
 import re
 import struct
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from app.core.logging import get_logger
 
@@ -139,7 +139,7 @@ class StructuredOutputBlock:
     (OpenAI response_format, Anthropic tool use).
     """
 
-    schema: dict[str, Any] = field(default_factory=dict)
+    schema: dict[str, Any] = field(default_factory=dict[str, Any])
     name: str = "response"  # Schema name for tool_use pattern
     strict: bool = True
 
@@ -159,7 +159,7 @@ class ToolResultBlock:
     """
 
     tool_use_id: str
-    content: list[ContentBlock] = field(default_factory=list)
+    content: list[ContentBlock] = field(default_factory=list["ContentBlock"])
 
 
 # Union type — all possible content blocks
@@ -199,11 +199,11 @@ def _check_schema_refs(
         if key in _BLOCKED_SCHEMA_KEYS and isinstance(value, str) and not value.startswith("#"):
             errors.append(f"External {key} not allowed at {path or 'root'}: {value}")
         if isinstance(value, dict):
-            errors.extend(_check_schema_refs(value, f"{path}/{key}", _depth=_depth + 1))
+            errors.extend(_check_schema_refs(cast(dict[str, Any], value), f"{path}/{key}", _depth=_depth + 1))
         elif isinstance(value, list):
-            for i, item in enumerate(value):
+            for i, item in enumerate(cast(list[Any], value)):  # type: ignore[redundant-cast]
                 if isinstance(item, dict):
-                    errors.extend(_check_schema_refs(item, f"{path}/{key}[{i}]", _depth=_depth + 1))
+                    errors.extend(_check_schema_refs(cast(dict[str, Any], item), f"{path}/{key}[{i}]", _depth=_depth + 1))
     return errors
 
 
