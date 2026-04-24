@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
@@ -153,8 +153,6 @@ class RecoveryRouterNode:
         # Adaptive fixer selection via outcome ledger (if available)
         recovery_outcome_repo = context.metadata.get("recovery_outcome_repo")
         if recovery_outcome_repo is not None:
-            from typing import cast
-
             from app.ai.recovery_outcomes import (
                 RecoveryOutcomeRepository,
                 select_best_fixer,
@@ -258,7 +256,9 @@ class RecoveryRouterNode:
         raw_screenshots = metadata.get("precheck_screenshots", {})
         if not isinstance(raw_screenshots, dict) or not raw_screenshots:
             return
-        screenshots: dict[str, str] = {str(k): str(v) for k, v in raw_screenshots.items()}
+        screenshots: dict[str, str] = {
+            str(k): str(v) for k, v in cast(dict[str, Any], raw_screenshots).items()
+        }
         # Find the first screenshot matching a visual defect for this target
         for vf in visual_failures:
             if vf.suggested_agent != target:

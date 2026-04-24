@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+_EntryTuple = tuple[MagicMock, float]
+
 from app.ai.blueprints.judge_aggregator import (
     PromptPatch,
     aggregate_verdicts,
@@ -79,7 +81,7 @@ async def test_persist_judge_verdict() -> None:
 async def test_aggregate_identifies_failing_criteria() -> None:
     """Mixed pass/fail → patches for criteria below threshold."""
     # Build mock memory entries: 10 verdicts for "color_contrast", 3 passed
-    entries = []
+    entries: list[_EntryTuple] = []
     for i in range(10):
         entry = MagicMock()
         entry.metadata_json = {
@@ -108,14 +110,14 @@ async def test_aggregate_identifies_failing_criteria() -> None:
 
     assert len(patches) == 1
     assert patches[0].criterion == "color_contrast"
-    assert patches[0].pass_rate == pytest.approx(0.3)
+    assert patches[0].pass_rate == pytest.approx(0.3)  # pyright: ignore[reportUnknownMemberType]
     assert "color_contrast" in patches[0].instruction
 
 
 @pytest.mark.asyncio
 async def test_aggregate_ignores_small_samples() -> None:
     """Fewer than MIN_VERDICT_SAMPLES → no patches."""
-    entries = []
+    entries: list[_EntryTuple] = []
     for i in range(3):  # only 3 samples, below MIN_VERDICT_SAMPLES
         entry = MagicMock()
         entry.metadata_json = {
@@ -169,7 +171,7 @@ async def test_aggregate_no_verdicts() -> None:
 @pytest.mark.asyncio
 async def test_aggregate_above_threshold_no_patch() -> None:
     """Criteria above PASS_RATE_THRESHOLD → no patches."""
-    entries = []
+    entries: list[_EntryTuple] = []
     for i in range(10):
         entry = MagicMock()
         entry.metadata_json = {

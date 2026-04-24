@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     from app.ai.blueprints.audience_context import AudienceProfile
@@ -1112,7 +1112,9 @@ class BlueprintEngine:
             from app.ai.multimodal import ContentBlock
 
             typed_blocks: list[ContentBlock] = [
-                b for b in override_raw if isinstance(b, ContentBlock)
+                b
+                for b in cast(list[Any], override_raw)  # type: ignore[redundant-cast]
+                if isinstance(b, ContentBlock)
             ]
             if typed_blocks:
                 existing = context.multimodal_context or []

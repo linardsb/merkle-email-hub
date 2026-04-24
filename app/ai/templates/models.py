@@ -91,6 +91,6 @@ class GoldenTemplate:
     optimized_html: str | None = None
     optimized_at: datetime | None = None
     optimized_for_clients: tuple[str, ...] = ()
-    optimization_metadata: dict[str, object] = field(default_factory=dict)
+    optimization_metadata: dict[str, object] = field(default_factory=dict[str, object])
     # Wrapper reconstruction (31.4)
     wrapper_metadata: dict[str, str | None] | None = None

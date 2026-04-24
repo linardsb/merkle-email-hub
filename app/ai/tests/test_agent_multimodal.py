@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from typing import Any
 
 import pytest
 
@@ -248,7 +249,7 @@ class TestScaffolderVisionCapability:
         class FakeModelSpec:
             model_id: str = "gpt-4o-mini"
             provider: str = "openai"
-            capabilities: frozenset[str] = field(default_factory=frozenset)
+            capabilities: frozenset[str] = field(default_factory=frozenset[str])
 
         # Use MagicMock (not AsyncMock) — find_models is sync
         mock_cap_registry = MagicMock()
@@ -305,7 +306,7 @@ class TestScaffolderVisionCapability:
         class FakeModelSpec:
             model_id: str = "gpt-4o"
             provider: str = "openai"
-            capabilities: frozenset[str] = field(default_factory=frozenset)
+            capabilities: frozenset[str] = field(default_factory=frozenset[str])
 
         mock_cap_registry = MagicMock()
         mock_cap_registry.find_models.return_value = [FakeModelSpec(model_id="gpt-4o")]
@@ -337,9 +338,10 @@ class TestScaffolderVisionCapability:
         call_args = mock_provider.complete.call_args
         messages = call_args[0][0]
         user_msg = messages[1]
-        assert isinstance(user_msg.content, list), "Should be multimodal when model has vision"
+        user_content: list[Any] = user_msg.content
+        assert isinstance(user_content, list), "Should be multimodal when model has vision"
         # Should contain TextBlock (sanitized brief) + TextBlock (instruction) + ImageBlock
-        has_image = any(isinstance(b, ImageBlock) for b in user_msg.content)
+        has_image = any(isinstance(b, ImageBlock) for b in user_content)
         assert has_image, "Should include design reference ImageBlock"
 
 

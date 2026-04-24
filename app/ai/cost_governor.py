@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import cast
 
 from app.core.logging import get_logger
 
@@ -269,7 +270,11 @@ class CostGovernor:
             r = await get_redis()
             cursor: int | str = 0
             while True:
-                cursor, keys = await r.scan(cursor=int(cursor), match=pattern, count=100)
+                scan_result = cast(
+                    tuple[int, list[str | bytes]],
+                    await r.scan(cursor=int(cursor), match=pattern, count=100),  # pyright: ignore[reportUnknownMemberType]
+                )
+                cursor, keys = scan_result
                 for k in keys:
                     val = await r.get(k)
                     if val:

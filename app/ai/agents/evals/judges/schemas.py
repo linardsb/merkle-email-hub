@@ -36,7 +36,7 @@ class DesignContext(BaseModel):
     node_id: str | None = None
     file_id: str | None = None
     design_tokens: DesignTokenSummary | None = None
-    section_mapping: list[SectionDesignMapping] = Field(default_factory=list)
+    section_mapping: list[SectionDesignMapping] = Field(default_factory=list[SectionDesignMapping])
 
 
 class JudgeInput(BaseModel):

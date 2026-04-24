@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 
@@ -129,7 +130,7 @@ class TestTraceRoundTrip:
     def test_trace_with_design_context_round_trip(self) -> None:
         from app.ai.agents.evals.judge_runner import trace_to_judge_input
 
-        trace = {
+        trace: dict[str, Any] = {
             "id": "scaff-023",
             "agent": "scaffolder",
             "input": {"brief": "Starbucks test"},
@@ -171,7 +172,7 @@ class TestTraceRoundTrip:
     def test_trace_without_design_context(self) -> None:
         from app.ai.agents.evals.judge_runner import trace_to_judge_input
 
-        trace = {
+        trace: dict[str, Any] = {
             "id": "scaff-001",
             "agent": "scaffolder",
             "input": {"brief": "Simple test"},
@@ -317,7 +318,7 @@ class TestDesignFidelitySyntheticCases:
         assert len(fidelity_cases) == 3
 
     def test_design_fidelity_cases_have_valid_context(self) -> None:
-        from typing import Any, cast
+        from typing import cast
 
         from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 
@@ -341,7 +342,7 @@ class TestDesignFidelitySyntheticCases:
         assert case_id in ids
 
     def test_all_cases_reference_same_figma_file(self) -> None:
-        from typing import Any, cast
+        from typing import cast
 
         from app.ai.agents.evals.synthetic_data_scaffolder import SCAFFOLDER_TEST_CASES
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     from app.ai.multimodal import ContentBlock
@@ -516,12 +516,15 @@ _SEVERITY_LITERAL = {"critical", "high", "medium", "low"}
 _SEVERITY_MAP = {"warning": "medium", "info": "low"}
 
 
-def _map_severity(severity_str: str) -> str:
+def _map_severity(severity_str: str) -> Literal["low", "medium", "high", "critical"]:
     """Map VLM severity string to QA VisualDefect severity value."""
     s = severity_str.lower().strip()
     if s in _SEVERITY_LITERAL:
-        return s
-    return _SEVERITY_MAP.get(s, "medium")
+        return cast('Literal["low", "medium", "high", "critical"]', s)
+    return cast(
+        'Literal["low", "medium", "high", "critical"]',
+        _SEVERITY_MAP.get(s, "medium"),
+    )
 
 
 def _infer_agent(suggested_fix: str, description: str) -> str | None:

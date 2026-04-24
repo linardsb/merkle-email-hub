@@ -242,7 +242,7 @@ def detect_dark_mode_patterns(
         )
 
     if has_ogsc or has_ogsb:
-        selectors = []
+        selectors: list[str] = []
         if has_ogsc:
             selectors.append("[data-ogsc]")
         if has_ogsb:

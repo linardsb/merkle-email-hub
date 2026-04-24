@@ -7,7 +7,7 @@ Supports both single-shot completion and SSE streaming.
 
 import contextlib
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, cast
 
 from app.ai.exceptions import AIConfigurationError, AIExecutionError
 from app.ai.multimodal import (
@@ -211,12 +211,15 @@ class AnthropicProvider:
                 blocks = normalize_content(m.content)
                 validate_content_blocks(blocks)
                 if not has_vision:
-                    blocks = [
-                        TextBlock(text=f"[Image: {b.media_type}, {len(b.data)} bytes]")
-                        if isinstance(b, ImageBlock)
-                        else b
-                        for b in blocks
-                    ]
+                    blocks = cast(
+                        "list[ContentBlock]",
+                        [
+                            TextBlock(text=f"[Image: {b.media_type}, {len(b.data)} bytes]")
+                            if isinstance(b, ImageBlock)
+                            else b
+                            for b in blocks
+                        ],
+                    )
                 serialized = self._serialize_content_blocks(blocks)
                 chat_messages.append({"role": m.role, "content": serialized})
 

@@ -58,11 +58,11 @@ class ModelSpec:
     model_id: str
     provider: str
     tier: str = "standard"  # default TaskTier
-    capabilities: frozenset[ModelCapability] = field(default_factory=frozenset)
+    capabilities: frozenset[ModelCapability] = field(default_factory=frozenset[ModelCapability])
     constraints: ModelConstraints = field(default_factory=ModelConstraints)
     is_local: bool = False
     deprecation_date: datetime.date | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
     @property
     def is_deprecated(self) -> bool:

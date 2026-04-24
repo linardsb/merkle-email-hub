@@ -7,6 +7,7 @@ cascade → cost recording, plus capability registry and prompt store integratio
 from __future__ import annotations
 
 import datetime
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -249,7 +250,9 @@ class TestTokenBudgetAdapterIntegration:
             assert "system" in call_kwargs
             system_val = call_kwargs["system"]
             if isinstance(system_val, list):
-                assert system_val[0].get("cache_control") == {"type": "ephemeral"}
+                assert cast(dict[str, Any], system_val[0]).get("cache_control") == {
+                    "type": "ephemeral"
+                }
 
 
 # ── Group 2: Cost Governor ↔ Adapter Pipeline ──

@@ -145,7 +145,7 @@ def test_is_retryable_status_code_401() -> None:
 
 
 def _make_chain(n: int = 2) -> FallbackChain:
-    entries = []
+    entries: list[FallbackEntry] = []
     providers = [("anthropic", "claude-opus-4-6"), ("openai", "gpt-4o"), ("openai", "gpt-4o-mini")]
     for i in range(n):
         p, m = providers[i % len(providers)]

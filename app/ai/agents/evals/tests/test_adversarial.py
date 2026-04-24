@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -94,7 +94,7 @@ class TestYAMLLoader:
             yaml.dump(yaml_data, f)
 
         cases = (
-            load_yaml_cases.__wrapped__("test_agent")
+            cast(Any, load_yaml_cases).__wrapped__("test_agent")
             if hasattr(load_yaml_cases, "__wrapped__")
             else _load_yaml_from_path(yaml_file, "test_agent")
         )
@@ -210,7 +210,7 @@ class TestGeneratorDetails:
 class TestAdversarialRegression:
     def test_regression_extract_failures(self, tmp_path: Path) -> None:
         """extract_failures filters to overall_pass=False only."""
-        verdicts = [
+        verdicts: list[dict[str, Any]] = [
             {
                 "trace_id": "adv-1",
                 "agent": "scaffolder",
@@ -331,10 +331,11 @@ class TestAnalysisIntegration:
             "status": "WARN",
         }
 
-        assert report["adversarial"]["total"] == 2
-        assert report["adversarial"]["overall_pass_rate"] == 0.5
-        assert report["adversarial"]["status"] == "WARN"
-        assert "scaffolder" in report["adversarial"]["pass_rates"]
+        adversarial = cast(dict[str, Any], report["adversarial"])
+        assert adversarial["total"] == 2
+        assert adversarial["overall_pass_rate"] == 0.5
+        assert adversarial["status"] == "WARN"
+        assert "scaffolder" in adversarial["pass_rates"]
 
 
 def _load_yaml_from_path(yaml_file: Path, agent: str) -> list[AdversarialCase]:

@@ -164,7 +164,7 @@ class TestCoverageReport:
     def test_report_coverage_percentage(self) -> None:
         summaries = compute_coverage()
         report = build_coverage_report(summaries)
-        assert report["overall_coverage_pct"] == pytest.approx(58.7, abs=0.1)  # 27/46
+        assert report["overall_coverage_pct"] == pytest.approx(58.7, abs=0.1)  # pyright: ignore[reportUnknownMemberType] # 27/46
 
     def test_report_agent_detail(self) -> None:
         summaries = compute_coverage()
@@ -172,4 +172,4 @@ class TestCoverageReport:
         scaffolder = next(a for a in report["agents"] if a["agent"] == "scaffolder")
         assert scaffolder["mapped"] == 4
         assert scaffolder["llm_only"] == 2
-        assert scaffolder["coverage_pct"] == pytest.approx(66.7, abs=0.1)
+        assert scaffolder["coverage_pct"] == pytest.approx(66.7, abs=0.1)  # pyright: ignore[reportUnknownMemberType]

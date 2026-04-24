@@ -89,7 +89,7 @@ class TestBriefExtraction:
 
             extractor = VoiceBriefExtractor()
             brief, confidence = await extractor.extract(_make_transcript())
-            assert confidence == pytest.approx(0.92)
+            assert confidence == pytest.approx(0.92)  # pyright: ignore[reportUnknownMemberType]
             assert brief.topic == "Summer Sale"
             assert len(brief.sections) == 2
             assert brief.sections[0].type == "hero"
@@ -114,7 +114,7 @@ class TestBriefExtraction:
 
             extractor = VoiceBriefExtractor()
             brief, confidence = await extractor.extract(_make_transcript())
-            assert confidence == pytest.approx(0.3)
+            assert confidence == pytest.approx(0.3)  # pyright: ignore[reportUnknownMemberType]
             assert brief.sections == []
             assert brief.raw_transcript != ""
 
@@ -138,7 +138,7 @@ class TestBriefExtraction:
             extractor = VoiceBriefExtractor()
             brief, confidence = await extractor.extract(_make_transcript())
             assert brief.topic == "Summer Sale"
-            assert confidence == pytest.approx(0.92)
+            assert confidence == pytest.approx(0.92)  # pyright: ignore[reportUnknownMemberType]
 
     @pytest.mark.anyio
     async def test_extract_invalid_json_raises_extraction_error(self) -> None:
@@ -179,7 +179,7 @@ class TestBriefExtraction:
 
             extractor = VoiceBriefExtractor()
             brief, confidence = await extractor.extract(_make_transcript())
-            assert confidence == pytest.approx(0.5)
+            assert confidence == pytest.approx(0.5)  # pyright: ignore[reportUnknownMemberType]
             # 0.5 < 0.7 threshold → should return minimal brief
             assert brief.sections == []
 

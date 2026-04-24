@@ -80,7 +80,7 @@ class VariantResultResponse(BaseModel):
     subject_line: str
     preheader: str
     html: str
-    qa_results: list[QACheckResult] = Field(default_factory=list)
+    qa_results: list[QACheckResult] = Field(default_factory=list[QACheckResult])
     qa_passed: bool = False
 
 
@@ -96,7 +96,7 @@ class ComparisonMatrixResponse(BaseModel):
 
     subject_lines: dict[str, str]
     preheaders: dict[str, str]
-    slot_differences: list[SlotDifferenceResponse] = Field(default_factory=list)
+    slot_differences: list[SlotDifferenceResponse] = Field(default_factory=list[SlotDifferenceResponse])
     strategy_summary: dict[str, str]
 
 

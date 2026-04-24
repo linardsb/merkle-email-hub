@@ -9,6 +9,8 @@ Enabled via BLUEPRINT__CORRECTION_EXAMPLES_ENABLED=true (default: false).
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -106,7 +108,7 @@ async def recall_correction_examples(
         for entry, score in memories:
             if score < 0.3:
                 continue
-            meta = entry.metadata_json or {}
+            meta: dict[str, Any] = entry.metadata_json or {}
             if meta.get("source") != _CORRECTION_SOURCE:
                 continue
             results.append(entry.content)

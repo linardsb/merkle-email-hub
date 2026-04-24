@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from app.ai.agents.evals.failure_warnings import get_failure_warnings
 from app.ai.agents.skill_loader import extract_skill_for_mode, parse_skill_meta, should_load_skill
@@ -156,8 +156,8 @@ def build_design_context_section(design_context: dict[str, object]) -> str:
 
             extracted = [
                 ExtractedColor(
-                    name=str(c.get("name", "")),
-                    hex=str(c.get("hex", "")),
+                    name=str(cast(dict[str, Any], c).get("name", "")),
+                    hex=str(cast(dict[str, Any], c).get("hex", "")),
                 )
                 for c in colors
                 if isinstance(c, dict)

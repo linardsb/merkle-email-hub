@@ -54,7 +54,7 @@ class TestWhisperAPITranscriber:
         assert isinstance(result, Transcript)
         assert result.text == "Hello, this is a test brief."
         assert result.language == "en"
-        assert result.duration_seconds == pytest.approx(5.2)
+        assert result.duration_seconds == pytest.approx(5.2)  # pyright: ignore[reportUnknownMemberType]
         assert len(result.segments) == 2
 
     @pytest.mark.anyio

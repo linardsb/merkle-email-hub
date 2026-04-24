@@ -146,10 +146,11 @@ class BlueprintService:
             from app.ai.agents.skills_routes import AGENT_NAMES
             from app.ai.confidence_calibration import (
                 MIN_CALIBRATION_SAMPLES,
+                CalibrationResult,
                 compute_calibration,
             )
 
-            calibrations = {}
+            calibrations: dict[str, CalibrationResult] = {}
             for agent in AGENT_NAMES:
                 try:
                     cal = await compute_calibration(agent, project_id, db)

@@ -109,7 +109,7 @@ class TestTranscribeRoute:
         data = resp.json()
         assert data["text"] == "Create a summer sale email"
         assert data["language"] == "en"
-        assert data["duration_seconds"] == pytest.approx(5.0)
+        assert data["duration_seconds"] == pytest.approx(5.0)  # pyright: ignore[reportUnknownMemberType]
 
     def test_transcribe_disabled_returns_501(self, client: TestClient) -> None:
         """Voice disabled returns 501."""
@@ -149,7 +149,7 @@ class TestBriefRoute:
         data = resp.json()
         assert data["transcript"]["text"] == "Create a summer sale email"
         assert data["brief"]["topic"] == "Summer Sale"
-        assert data["confidence"] == pytest.approx(0.92)
+        assert data["confidence"] == pytest.approx(0.92)  # pyright: ignore[reportUnknownMemberType]
 
 
 # ── Run Route Tests ──
@@ -182,7 +182,7 @@ class TestRunRoute:
         data = resp.json()
         assert data["transcript"]["text"] == "Create a summer sale email"
         assert data["brief"]["topic"] == "Summer Sale"
-        assert data["confidence"] == pytest.approx(0.85)
+        assert data["confidence"] == pytest.approx(0.85)  # pyright: ignore[reportUnknownMemberType]
         assert data["run"]["status"] == "completed"
 
     def test_run_invalid_audio_returns_422(self, client: TestClient) -> None:

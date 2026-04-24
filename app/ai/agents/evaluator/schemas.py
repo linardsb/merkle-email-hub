@@ -21,7 +21,7 @@ class EvalVerdict(BaseModel):
 
     verdict: Literal["accept", "revise", "reject"]
     score: float = Field(ge=0.0, le=1.0, description="Overall quality score")
-    issues: list[EvalIssue] = Field(default_factory=list)
+    issues: list[EvalIssue] = Field(default_factory=list[EvalIssue])
     feedback: str = ""
     suggested_corrections: list[str] = Field(default_factory=list)
 

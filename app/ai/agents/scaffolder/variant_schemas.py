@@ -53,7 +53,7 @@ class VariantResult:
     preheader: str
     html: str
     build_plan: EmailBuildPlan
-    qa_results: list[QACheckResult] = field(default_factory=list)
+    qa_results: list[QACheckResult] = field(default_factory=list[QACheckResult])
     qa_passed: bool = False
 
 

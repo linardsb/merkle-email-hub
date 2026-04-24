@@ -340,7 +340,7 @@ class TestServiceTreeMode:
         service = ScaffolderService()
 
         # Mock the entire _process_tree method to return a known response
-        mock_tree = {
+        mock_tree: dict[str, object] = {
             "metadata": {"subject": "Test", "preheader": "", "design_tokens": {}},
             "sections": [{"component_slug": "text-block", "slot_fills": {}}],
         }

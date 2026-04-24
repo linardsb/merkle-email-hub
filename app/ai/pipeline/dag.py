@@ -75,7 +75,9 @@ class PipelineDag:
         # Check each node's inputs are available from prior levels
         for node_id, node in self.nodes.items():
             node_lvl = level_of[node_id]
-            available = available_at.get(node_lvl - 1, set()) if node_lvl > 0 else set()
+            available: set[str] = (
+                available_at.get(node_lvl - 1, set()) if node_lvl > 0 else set()
+            )
             for inp in node.inputs:
                 if inp not in available:
                     warnings.append(
