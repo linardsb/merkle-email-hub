@@ -121,7 +121,7 @@ def _extract_stroke(
     raw_strokes = node_data.get("strokes", [])
     if not isinstance(raw_strokes, list):
         return None, None
-    for stroke in raw_strokes:
+    for stroke in cast(list[Any], raw_strokes):  # type: ignore[redundant-cast]
         if not isinstance(stroke, dict):
             continue
         s_d = cast(dict[str, Any], stroke)
@@ -185,7 +185,7 @@ def _parse_style_runs(node_data: dict[str, Any]) -> tuple[StyleRun, ...]:
         color_hex: str | None = None
         fills_raw = sd.get("fills", [])
         if isinstance(fills_raw, list):
-            for fill in fills_raw:
+            for fill in cast(list[Any], fills_raw):  # type: ignore[redundant-cast]
                 if not isinstance(fill, dict):
                     continue
                 f_d = cast(dict[str, Any], fill)
@@ -228,11 +228,12 @@ def _parse_letter_spacing(style_dict: dict[str, Any], font_size: float) -> float
     """Parse Figma letterSpacing to px value."""
     raw = style_dict.get("letterSpacing", {})
     if isinstance(raw, dict):
-        if raw.get("unit") == "PIXELS":
-            val = raw.get("value")
+        raw_dict = cast(dict[str, Any], raw)
+        if raw_dict.get("unit") == "PIXELS":
+            val = raw_dict.get("value")
             return float(val) if isinstance(val, (int, float)) else None
-        if raw.get("unit") == "PERCENT" and font_size:
-            return round(font_size * float(raw.get("value", 0)) / 100, 1)
+        if raw_dict.get("unit") == "PERCENT" and font_size:
+            return round(font_size * float(raw_dict.get("value", 0)) / 100, 1)
     elif isinstance(raw, (int, float)):
         return float(raw)
     return None
@@ -326,9 +327,10 @@ def _parse_gradient_stops(
 ) -> list[tuple[str, float]]:
     """Parse Figma gradientStops into (hex, position) tuples."""
     result: list[tuple[str, float]] = []
-    for stop in stops_raw:
-        if not isinstance(stop, dict):
+    for stop_raw in stops_raw:
+        if not isinstance(stop_raw, dict):
             continue
+        stop = cast(dict[str, Any], stop_raw)
         color_raw = stop.get("color")
         pos = float(stop.get("position", 0))
         if isinstance(color_raw, dict):
@@ -662,12 +664,12 @@ class FigmaDesignSyncService:
             return value
         value_d = cast(dict[str, Any], value)
         if value_d.get("type") != "VARIABLE_ALIAS":
-            return value
+            return value_d
         target_id = str(value_d.get("id", ""))
         target_var = variables_by_id.get(target_id)
         if not target_var:
             return None
-        values_by_mode = target_var.get("valuesByMode", {})
+        values_by_mode: dict[str, Any] = target_var.get("valuesByMode", {})
         resolved = values_by_mode.get(mode_id)
         if resolved is None:
             # Fall back to first available mode
@@ -1017,8 +1019,8 @@ class FigmaDesignSyncService:
                     "GRADIENT_ANGULAR",
                     "GRADIENT_DIAMOND",
                 ):
-                    stops = fill_d.get("gradientStops", [])
-                    if isinstance(stops, list) and len(stops) >= 2:
+                    stops: list[Any] = fill_d.get("gradientStops", [])
+                    if len(stops) >= 2:
                         midpoint = _gradient_midpoint_hex(cast(list[dict[str, Any]], stops))
                         if midpoint and midpoint not in seen_hex:
                             seen_hex.add(midpoint)
@@ -1027,7 +1029,7 @@ class FigmaDesignSyncService:
 
                         if gradients is not None:
                             if gradient_type == "GRADIENT_LINEAR":
-                                handles = fill_d.get("gradientHandlePositions", [])
+                                handles: list[Any] = fill_d.get("gradientHandlePositions", [])
                                 angle = _compute_gradient_angle(handles)
                                 g_type = "linear"
                             else:
@@ -1293,8 +1295,9 @@ class FigmaDesignSyncService:
         dn_text_transform: str | None = None
         dn_text_decoration: str | None = None
         if node_type == DesignNodeType.TEXT:
-            style = node_data.get("style", {})
-            if isinstance(style, dict):
+            style_raw = node_data.get("style", {})
+            if isinstance(style_raw, dict):
+                style = cast(dict[str, Any], style_raw)
                 raw_ff = style.get("fontFamily")
                 dn_font_family = str(raw_ff) if isinstance(raw_ff, str) else None
                 raw_fs = style.get("fontSize")
@@ -1339,10 +1342,10 @@ class FigmaDesignSyncService:
         dn_corner_radii: tuple[float, ...] | None = None
         if raw_type in ("FRAME", "RECTANGLE", "COMPONENT", "COMPONENT_SET", "INSTANCE"):
             dn_corner_radius = _float_or_none(node_data.get("cornerRadius"))
-            raw_rcr = node_data.get("rectangleCornerRadii")
-            if isinstance(raw_rcr, list) and len(raw_rcr) >= 4:
+            raw_rcr: list[Any] = node_data.get("rectangleCornerRadii", [])
+            if len(raw_rcr) >= 4:
                 with contextlib.suppress(TypeError, ValueError):
-                    dn_corner_radii = tuple(float(v) for v in raw_rcr[:4])
+                    dn_corner_radii = tuple(float(v) for v in cast(list[Any], raw_rcr)[:4])  # type: ignore[redundant-cast]
 
         # Style runs (TEXT nodes — rich text overrides)
         dn_style_runs: tuple[StyleRun, ...] = ()

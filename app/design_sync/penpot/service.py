@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import re
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -365,14 +365,22 @@ class PenpotDesignSyncService:
         # Text content
         text_content: str | None = None
         if node_type_str == "text":
-            content = obj.get("content", {})
-            paragraphs = content.get("children", []) if isinstance(content, dict) else []
+            content_raw = obj.get("content", {})
+            content = cast(dict[str, Any], content_raw) if isinstance(content_raw, dict) else {}
+            paragraphs_raw: list[Any] = content.get("children", []) or []
             text_parts: list[str] = []
-            for para in paragraphs:
-                for span in para.get("children", []):
+            for para_raw in paragraphs_raw:
+                if not isinstance(para_raw, dict):
+                    continue
+                para = cast(dict[str, Any], para_raw)
+                spans_raw: list[Any] = para.get("children", []) or []
+                for span_raw in spans_raw:
+                    if not isinstance(span_raw, dict):
+                        continue
+                    span = cast(dict[str, Any], span_raw)
                     t = span.get("text", "")
                     if t:
-                        text_parts.append(t)
+                        text_parts.append(str(t))
             text_content = " ".join(text_parts) if text_parts else None
 
         # Recurse into children
@@ -392,14 +400,16 @@ class PenpotDesignSyncService:
         layout_mode_val: str | None = None
         layout = obj.get("layout")
         if layout in ("flex", "grid"):
-            pad = obj.get("layout-padding", {})
-            if isinstance(pad, dict):
+            pad_raw = obj.get("layout-padding", {})
+            if isinstance(pad_raw, dict):
+                pad = cast(dict[str, Any], pad_raw)
                 padding_top = _float_or_none(pad.get("p1") or pad.get("top"))
                 padding_right = _float_or_none(pad.get("p2") or pad.get("right"))
                 padding_bottom = _float_or_none(pad.get("p3") or pad.get("bottom"))
                 padding_left = _float_or_none(pad.get("p4") or pad.get("left"))
-            gap = obj.get("layout-gap", {})
-            if isinstance(gap, dict):
+            gap_raw = obj.get("layout-gap", {})
+            if isinstance(gap_raw, dict):
+                gap = cast(dict[str, Any], gap_raw)
                 item_spacing_val = _float_or_none(gap.get("row-gap"))
                 counter_axis_spacing_val = _float_or_none(gap.get("column-gap"))
             flex_dir = obj.get("layout-flex-dir", "column")
@@ -412,10 +422,20 @@ class PenpotDesignSyncService:
         dn_line_height_px: float | None = None
         dn_letter_spacing_px: float | None = None
         if node_type_str == "text":
-            content_data = obj.get("content", {})
-            paragraphs = content_data.get("children", []) if isinstance(content_data, dict) else []
-            for para in paragraphs:
-                for span in para.get("children", []):
+            content_data_raw = obj.get("content", {})
+            content_data = (
+                cast(dict[str, Any], content_data_raw) if isinstance(content_data_raw, dict) else {}
+            )
+            paragraphs_t: list[Any] = content_data.get("children", []) or []
+            for para_t in paragraphs_t:
+                if not isinstance(para_t, dict):
+                    continue
+                para = cast(dict[str, Any], para_t)
+                spans_t: list[Any] = para.get("children", []) or []
+                for span_t in spans_t:
+                    if not isinstance(span_t, dict):
+                        continue
+                    span = cast(dict[str, Any], span_t)
                     raw_ff = span.get("font-family")
                     if dn_font_family is None and isinstance(raw_ff, str):
                         dn_font_family = raw_ff
@@ -439,16 +459,18 @@ class PenpotDesignSyncService:
         # Extract fill color for converter pipeline
         fill_color: str | None = None
         text_color_hex: str | None = None
-        fills = obj.get("fills", [])
-        if isinstance(fills, list):
-            for fill in fills:
-                if isinstance(fill, dict) and fill.get("fill-color"):
-                    hex_val = str(fill["fill-color"])
-                    if node_type_str == "text":
-                        text_color_hex = hex_val
-                    else:
-                        fill_color = hex_val
-                    break
+        fills_raw = obj.get("fills", [])
+        if isinstance(fills_raw, list):
+            for fill_raw in cast(list[Any], fills_raw):  # type: ignore[redundant-cast]
+                if isinstance(fill_raw, dict):
+                    fill = cast(dict[str, Any], fill_raw)
+                    if fill.get("fill-color"):
+                        hex_val = str(fill["fill-color"])
+                        if node_type_str == "text":
+                            text_color_hex = hex_val
+                        else:
+                            fill_color = hex_val
+                        break
 
         return DesignNode(
             id=obj_id,
