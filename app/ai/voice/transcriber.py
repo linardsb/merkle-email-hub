@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import io
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 from app.ai.voice.exceptions import TranscriptionError
 from app.ai.voice.schemas import Transcript, TranscriptSegment
@@ -59,15 +59,16 @@ class WhisperAPITranscriber:
         ext = _MIME_TO_EXT.get(media_type, "wav")
 
         try:
-            from openai import NOT_GIVEN
-            from openai.types.audio import TranscriptionVerbose
-
-            response: TranscriptionVerbose = await self._client.audio.transcriptions.create(  # type: ignore[call-overload]
-                model=self._model,
-                file=(f"audio.{ext}", io.BytesIO(audio), media_type),
-                response_format="verbose_json",
-                timestamp_granularities=["segment"],
-                language=language or NOT_GIVEN,
+            create_kwargs: dict[str, Any] = {
+                "model": self._model,
+                "file": (f"audio.{ext}", io.BytesIO(audio), media_type),
+                "response_format": "verbose_json",
+                "timestamp_granularities": ["segment"],
+            }
+            if language:
+                create_kwargs["language"] = language
+            response_raw: Any = cast(
+                Any, await self._client.audio.transcriptions.create(**create_kwargs)
             )
         except TranscriptionError:
             raise
@@ -75,18 +76,20 @@ class WhisperAPITranscriber:
             logger.error("voice.transcribe.api_failed", error=str(exc))
             raise TranscriptionError(f"Whisper API transcription failed: {exc}") from exc
 
+        response = response_raw
+        segments_raw: list[Any] = response.segments or []
         segments = [
             TranscriptSegment(
                 start=float(getattr(s, "start", 0.0)),
                 end=float(getattr(s, "end", 0.0)),
                 text=str(getattr(s, "text", "")).strip(),
             )
-            for s in (response.segments or [])
+            for s in segments_raw
         ]
 
-        text: str = response.text or ""
-        lang: str = response.language or "en"
-        duration: float = response.duration or 0.0
+        text: str = str(response.text or "")
+        lang: str = str(response.language or "en")
+        duration: float = float(response.duration or 0.0)
 
         logger.info(
             "voice.transcribe.completed",
@@ -154,7 +157,8 @@ class WhisperLocalTranscriber:
                     **({"language": language} if language else {}),
                 )
 
-            result: dict[str, Any] = await anyio.to_thread.run_sync(_transcribe)  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            result_raw = await anyio.to_thread.run_sync(_transcribe)  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType,reportAttributeAccessIssue]
+            result = cast(dict[str, Any], result_raw)  # type: ignore[redundant-cast]
         except TranscriptionError:
             raise
         except Exception as exc:
@@ -163,9 +167,10 @@ class WhisperLocalTranscriber:
         finally:
             tmp_path.unlink(missing_ok=True)
 
-        raw_segments: list[dict[str, Any]] = [
-            s for s in result.get("segments", []) if isinstance(s, dict)
-        ]
+        raw_segments = cast(
+            list[dict[str, Any]],
+            [s for s in result.get("segments", []) if isinstance(s, dict)],
+        )
         segments = [
             TranscriptSegment(
                 start=float(s.get("start", 0)),
