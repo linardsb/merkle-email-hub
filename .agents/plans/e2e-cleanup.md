@@ -233,3 +233,27 @@ Click the `Compile` button at the start of each test and wait for the `iframe` t
 
 - Both remaining smoke failures become passes.
 - If they fail again, the failure point is the real flow (dialog selector, iframe mount), not the missing prerequisite.
+
+---
+
+## Phase 7.1 — Maizzle sidecar isn't running in CI
+
+### Symptom (CI run `24887323740`)
+
+Same two tests still failing after Phase 7: the Compile click fires, but no iframe ever appears (20s timeout).
+
+### Root cause
+
+`/api/v1/email/preview` proxies to the Maizzle sidecar (`services/maizzle-builder`, port 3001). The CI workflow only starts the backend (uvicorn) — the sidecar is never launched. Compile calls fail, `compiledHtml` stays null, `PreviewIframe` renders the "Press Ctrl+S to compile" placeholder instead of mounting an `<iframe>`, and `handleExport` keeps early-returning.
+
+### Fix
+
+Route-mock `POST /api/v1/email/preview` in the affected tests rather than bring the sidecar into the CI workflow. The smoke tests here are UI contract checks (compile → `compiledHtml` set → iframe mounts → export dialog opens); end-to-end Maizzle is covered by the backend test suite. Scoped `page.route` means the mock only applies to the specs that opt in.
+
+- `workspace.spec.ts:41 "preview tab renders iframe"` — local `page.route` at test start.
+- `export.spec.ts` — `test.beforeEach` installs the route for all five Export tests.
+
+### Verification
+
+- Both smoke tests go green.
+- If we later want real Maizzle integration in CI, add a `services/maizzle-builder` start step to `.github/workflows/ci.yml` and drop the mocks.

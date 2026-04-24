@@ -7,12 +7,28 @@ test.describe("Export Flow", () => {
     "API-heavy flow — Chromium only"
   );
 
+  // Stub the Maizzle compile proxy — CI doesn't run the sidecar. Real
+  // Maizzle integration is covered by the backend test suite; here we only
+  // need a compiled-html value so handleExport doesn't early-return.
+  test.beforeEach(async ({ authenticatedPage: page }) => {
+    await page.route("**/api/v1/email/preview", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          compiled_html: "<html><body><h1>stubbed preview</h1></body></html>",
+          build_time_ms: 42,
+        }),
+      })
+    );
+  });
+
   async function openExportDialog(page: import("@playwright/test").Page) {
     // handleExport early-returns with a toast if compiledHtml is empty, so
-    // force a compile first; iframe appearing confirms compile finished.
+    // force a compile first; iframe appearing confirms the compile round-trip.
     await page.getByRole("button", { name: /^compile$/i }).click();
     await expect(page.locator("iframe").first()).toBeVisible({
-      timeout: 20_000,
+      timeout: 15_000,
     });
     // Export lives inside the Deliver dropdown menu in the workspace toolbar.
     await page.getByRole("button", { name: /^deliver$/i }).click();

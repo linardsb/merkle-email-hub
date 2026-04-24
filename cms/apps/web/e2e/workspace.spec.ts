@@ -40,13 +40,24 @@ test.describe("Workspace", () => {
 
   test("preview tab renders iframe @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
+    // Stub the Maizzle compile proxy — CI doesn't run the sidecar. The UI
+    // contract we care about here is: compile → compiledHtml set → iframe
+    // mounts. Real Maizzle integration is covered by the backend test suite.
+    await page.route("**/api/v1/email/preview", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          compiled_html: "<html><body><h1>stubbed preview</h1></body></html>",
+          build_time_ms: 42,
+        }),
+      })
+    );
     await page.goto(`/projects/${projectId}/workspace`);
-    // Preview iframe only mounts after the editor content is compiled —
-    // a fresh project shows the "Press Ctrl+S to compile" empty state.
     await page.getByRole("button", { name: /^compile$/i }).click();
     await expect(
       page.locator("iframe").first()
-    ).toBeVisible({ timeout: 20_000 });
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("QA panel shows check results", async ({
