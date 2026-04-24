@@ -1,5 +1,7 @@
 """Admin endpoints for plugin management."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from fastapi import APIRouter, Depends, status
 from fastapi.requests import Request
 

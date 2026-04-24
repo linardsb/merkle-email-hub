@@ -1,5 +1,7 @@
 """API routes for the scheduling engine."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.requests import Request
 

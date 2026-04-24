@@ -1,5 +1,7 @@
 """REST API routes for the versioned prompt template store."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request

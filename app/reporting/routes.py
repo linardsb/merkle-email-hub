@@ -1,5 +1,7 @@
 """Reporting API endpoints — PDF generation for QA reports."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request

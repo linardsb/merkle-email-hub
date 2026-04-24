@@ -1,5 +1,7 @@
 """Multi-variant campaign assembly API routes."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from fastapi import APIRouter, Depends, Request
 
 from app.ai.agents.scaffolder.schemas import VariantRequest, VariantSetResponse

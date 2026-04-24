@@ -1,5 +1,7 @@
 """Cost governor admin dashboard routes."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request

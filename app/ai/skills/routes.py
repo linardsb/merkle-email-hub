@@ -1,5 +1,7 @@
 """REST API for skill amendment review (admin-only)."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query

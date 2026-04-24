@@ -1,5 +1,7 @@
 """Voice brief input pipeline routes."""
 
+# pyright: reportUntypedFunctionDecorator=false
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
