@@ -384,6 +384,13 @@ def sanitize_html_xss(html: str, profile: str = "default") -> str:
     Returns:
         Sanitized HTML string.
     """
+    # Cap input size before regex scans. Bounded input keeps the head/body
+    # regex probes linear on adversarial content and mirrors the 10 MB
+    # budget used by upstream upload handlers.
+    _MAX_BYTES = 10 * 1024 * 1024
+    if len(html.encode("utf-8", errors="ignore")) > _MAX_BYTES:
+        html = html[:_MAX_BYTES]
+
     p = PROFILES.get(profile, PROFILES["default"])
 
     # VML extraction — profiles with full email tags may contain MSO conditionals
