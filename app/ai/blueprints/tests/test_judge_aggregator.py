@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-_EntryTuple = tuple[MagicMock, float]
-
 from app.ai.blueprints.judge_aggregator import (
     PromptPatch,
     aggregate_verdicts,
     format_prompt_patches,
     persist_judge_verdict,
 )
+
+_EntryTuple = tuple[MagicMock, float]
 
 
 def test_format_prompt_patches_empty() -> None:

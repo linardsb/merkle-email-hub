@@ -199,11 +199,17 @@ def _check_schema_refs(
         if key in _BLOCKED_SCHEMA_KEYS and isinstance(value, str) and not value.startswith("#"):
             errors.append(f"External {key} not allowed at {path or 'root'}: {value}")
         if isinstance(value, dict):
-            errors.extend(_check_schema_refs(cast(dict[str, Any], value), f"{path}/{key}", _depth=_depth + 1))
+            errors.extend(
+                _check_schema_refs(cast(dict[str, Any], value), f"{path}/{key}", _depth=_depth + 1)
+            )
         elif isinstance(value, list):
             for i, item in enumerate(cast(list[Any], value)):  # type: ignore[redundant-cast]
                 if isinstance(item, dict):
-                    errors.extend(_check_schema_refs(cast(dict[str, Any], item), f"{path}/{key}[{i}]", _depth=_depth + 1))
+                    errors.extend(
+                        _check_schema_refs(
+                            cast(dict[str, Any], item), f"{path}/{key}[{i}]", _depth=_depth + 1
+                        )
+                    )
     return errors
 
 

@@ -96,7 +96,9 @@ class ComparisonMatrixResponse(BaseModel):
 
     subject_lines: dict[str, str]
     preheaders: dict[str, str]
-    slot_differences: list[SlotDifferenceResponse] = Field(default_factory=list[SlotDifferenceResponse])
+    slot_differences: list[SlotDifferenceResponse] = Field(
+        default_factory=list[SlotDifferenceResponse]
+    )
     strategy_summary: dict[str, str]
 
 

@@ -108,5 +108,7 @@ class VoiceRunRequest(BaseModel):
     language: str | None = Field(default=None, description="BCP-47 language hint")
     blueprint_name: str = Field(default="campaign", description="Blueprint to execute")
     project_id: int | None = Field(default=None, description="Project for design system context")
-    persona_ids: list[int] = Field(default_factory=list[int], description="Target audience personas")
+    persona_ids: list[int] = Field(
+        default_factory=list[int], description="Target audience personas"
+    )
     template_id: int | None = Field(default=None, description="Existing template to version")

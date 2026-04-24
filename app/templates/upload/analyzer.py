@@ -50,7 +50,9 @@ class TokenInfo:
     line_heights: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
     letter_spacings: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
     color_roles: dict[str, list[str]] = field(default_factory=dict[str, list[str]])
-    responsive: dict[str, dict[str, list[str]]] = field(default_factory=dict[str, dict[str, list[str]]])
+    responsive: dict[str, dict[str, list[str]]] = field(
+        default_factory=dict[str, dict[str, list[str]]]
+    )
     responsive_breakpoints: list[str] = field(default_factory=list[str])
 
 

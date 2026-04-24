@@ -87,7 +87,7 @@ def test_passthrough_clean_html() -> None:
 
 def test_strips_script_with_attributes_on_closing_tag() -> None:
     # Browsers tolerate `</script foo>`; CodeQL py/bad-tag-filter regression.
-    html = '<table><tr><td><script>alert(1)</script\t\n foo>After</td></tr></table>'
+    html = "<table><tr><td><script>alert(1)</script\t\n foo>After</td></tr></table>"
     result = sanitize_component_html(html)
     assert "alert" not in result
     assert "<script" not in result

@@ -113,7 +113,9 @@ def _has_matching_failure(
 
 def _fingerprint(sf: StructuredFailure) -> str:
     """Build a compact fingerprint for cycle detection."""
-    return f"{sf.check_name}:{hashlib.md5(sf.details.encode(), usedforsecurity=False).hexdigest()[:8]}"  # noqa: S324
+    return (
+        f"{sf.check_name}:{hashlib.md5(sf.details.encode(), usedforsecurity=False).hexdigest()[:8]}"
+    )
 
 
 class RecoveryRouterNode:

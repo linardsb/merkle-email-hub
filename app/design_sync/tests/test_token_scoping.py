@@ -119,7 +119,11 @@ class TestFindSubtree:
         assert result is doc
 
     def test_find_nested_node(self) -> None:
-        target: dict[str, Any] = {"id": "2:1", "type": "FRAME", "children": [{"id": "3:1", "children": []}]}
+        target: dict[str, Any] = {
+            "id": "2:1",
+            "type": "FRAME",
+            "children": [{"id": "3:1", "children": []}],
+        }
         doc: dict[str, Any] = {"id": "0:0", "children": [{"id": "1:1", "children": [target]}]}
         result = _find_subtree(doc, "2:1")
         assert result is target

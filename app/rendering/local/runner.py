@@ -16,9 +16,7 @@ from app.rendering.local.profiles import RenderingProfile
 logger = get_logger(__name__)
 
 # Bounded quantifiers prevent polynomial backtracking (py/polynomial-redos).
-STYLE_TAG_RE = re.compile(
-    r"<style[^>]{0,2000}>.{0,200000}?</style>", re.DOTALL | re.IGNORECASE
-)
+STYLE_TAG_RE = re.compile(r"<style[^>]{0,2000}>.{0,200000}?</style>", re.DOTALL | re.IGNORECASE)
 
 
 def _prepare_html(html: str, profile: RenderingProfile) -> str:

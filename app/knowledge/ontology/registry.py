@@ -347,9 +347,7 @@ def load_ontology() -> OntologyRegistry:
         property_ids = {p.id for p in properties}
         client_ids = {c.id for c in clients}
         support_list = list(support_entries)
-        override_keys = {
-            (str(o["property_id"]), str(o["client_id"])) for o in overrides
-        }
+        override_keys = {(str(o["property_id"]), str(o["client_id"])) for o in overrides}
         # Remove entries that have overrides
         support_list = [
             e for e in support_list if (e.property_id, e.client_id) not in override_keys

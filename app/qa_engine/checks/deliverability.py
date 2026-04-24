@@ -241,7 +241,9 @@ def _score_html_hygiene(doc: HtmlElement, html: str) -> _DimensionResult:
 
     # Character encoding declared
     has_charset_meta = bool(re.search(r"<meta[^>]{1,2000}charset\s{0,20}=", html_lower))
-    has_content_type = bool(re.search(r"<meta[^>]{1,2000}content-type[^>]{1,2000}charset", html_lower))
+    has_content_type = bool(
+        re.search(r"<meta[^>]{1,2000}content-type[^>]{1,2000}charset", html_lower)
+    )
     if not has_charset_meta and not has_content_type:
         result.issues.append(
             _Issue(
