@@ -1,13 +1,10 @@
 import { test, expect } from "./fixtures";
 import { getSharedProjectId } from "./fixtures/constants";
 import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { resolve } from "node:path";
 
 function loadFixture(name: string): string {
-  return readFileSync(resolve(__dirname, "fixtures", name), "utf-8");
+  return readFileSync(resolve(process.cwd(), "e2e", "fixtures", name), "utf-8");
 }
 
 test.describe("Import Fidelity", () => {
