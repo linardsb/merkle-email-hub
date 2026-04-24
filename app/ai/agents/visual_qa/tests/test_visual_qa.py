@@ -426,11 +426,15 @@ class TestVisualQANode:
                 "app.ai.blueprints.nodes.visual_qa_node.resolve_model", return_value="test-model"
             ),
             patch("app.knowledge.ontology.get_ontology", side_effect=ImportError),
+            # `auto_fixable: true` triggers correct_visual_defects(), which imports
+            # its own get_registry reference — patch that too.
+            patch("app.ai.agents.visual_qa.correction.get_registry") as mock_reg_corr,
         ):
             mock_settings.return_value = MagicMock(
                 ai=MagicMock(visual_qa_enabled=True, visual_qa_model="", provider="mock")
             )
             mock_reg.return_value.get_llm.return_value = mock_provider
+            mock_reg_corr.return_value.get_llm.return_value = mock_provider
             result = await node.execute(ctx)
 
         assert result.status == "success"
