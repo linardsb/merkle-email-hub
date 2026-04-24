@@ -299,7 +299,7 @@ class TestOpenAIPoolRotation:
                 "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
             }
             mock_response.raise_for_status = MagicMock()
-            provider._client.post = AsyncMock(return_value=mock_response)
+            provider._client.post = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
 
             msg = Message(role="user", content="test")
             await provider.complete([msg])
@@ -336,7 +336,7 @@ class TestOpenAIPoolErrors:
                 status_code=429,
                 request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions"),
             )
-            provider._client.post = AsyncMock(
+            provider._client.post = AsyncMock(  # type: ignore[method-assign]
                 side_effect=httpx.HTTPStatusError(
                     message="rate limited",
                     request=mock_response.request,

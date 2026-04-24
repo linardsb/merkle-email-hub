@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -31,7 +32,7 @@ def _clear_cache() -> None:
     clear_vlm_cache()
 
 
-def _mock_settings(*, enabled: bool = True) -> patch:
+def _mock_settings(*, enabled: bool = True) -> Any:
     """Patch get_settings with vlm_fallback_enabled."""
     mock_ds = type(
         "DS",

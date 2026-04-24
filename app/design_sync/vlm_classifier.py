@@ -340,7 +340,7 @@ class VLMSectionClassifier:
 
         results: dict[str, VLMSectionClassification] = {}
         parsed_list: list[dict[str, Any]] = [
-            cast(dict[str, Any], x) for x in cast(list[Any], parsed) if isinstance(x, dict)
+            cast(dict[str, Any], x) for x in parsed if isinstance(x, dict)
         ]
         for item in parsed_list:
             nid = str(item.get("node_id", ""))

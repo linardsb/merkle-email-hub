@@ -366,6 +366,6 @@ class TestProactiveWarningsAPI:
         assert response.component_count == 0
 
         # Verify the router has the expected endpoints
-        routes = [r.path for r in router.routes]  # type: ignore[union-attr]
+        routes = [getattr(r, "path", None) for r in router.routes]
         assert "/proactive-warnings" in routes
         assert "/failure-graph" in routes

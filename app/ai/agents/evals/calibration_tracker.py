@@ -62,7 +62,8 @@ def load_baseline(path: Path) -> dict[str, dict[str, float]]:
     if not path.exists():
         return {}
     with path.open() as f:
-        return json.load(f)
+        data: dict[str, dict[str, float]] = json.load(f)
+    return data
 
 
 def save_baseline(metrics: dict[str, dict[str, float]], path: Path) -> None:

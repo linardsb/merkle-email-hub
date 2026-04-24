@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 import pytest
 
 from app.design_sync.component_matcher import (
@@ -362,7 +360,7 @@ class TestContentGroupSlotFilling:
 class TestPlaceholderWarning:
     """Tests for placeholder detection warnings."""
 
-    def test_placeholder_in_output_logged(self, caplog: logging.LogCaptureFixture) -> None:
+    def test_placeholder_in_output_logged(self, caplog: pytest.LogCaptureFixture) -> None:
         """Rendered HTML with 'Section Heading' in data-slot → warning logged."""
         test_html = '<td data-slot="heading">Section Heading</td>'
         matches = list(_PLACEHOLDER_IN_OUTPUT_RE.finditer(test_html))

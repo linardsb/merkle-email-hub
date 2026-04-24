@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -105,7 +106,7 @@ class MetaEvaluator:
 
     def __init__(
         self,
-        checks: list[QACheckProtocol] | None = None,
+        checks: Sequence[QACheckProtocol] | None = None,
         *,
         fp_threshold: float = 0.10,
         fn_threshold: float = 0.05,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -32,8 +33,8 @@ class _FakeConversionResult:
 
 
 def _make_warning(
-    category: str = "contrast",
-    severity: str = "warning",
+    category: Literal["contrast", "completeness", "placeholder", "image_bgcolor"] = "contrast",
+    severity: Literal["error", "warning", "info"] = "warning",
     message: str = "Low contrast ratio",
 ) -> QualityWarning:
     return QualityWarning(category=category, severity=severity, message=message)

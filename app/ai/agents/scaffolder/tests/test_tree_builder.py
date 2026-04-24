@@ -21,9 +21,12 @@ from app.ai.agents.scaffolder.tree_builder import (
 from app.ai.protocols import CompletionResponse
 from app.components.tree_schema import (
     ButtonSlot,
+    HtmlSlot,
     ImageSlot,
     TextSlot,
 )
+
+SlotValue = TextSlot | ImageSlot | ButtonSlot | HtmlSlot
 
 # ── Fixtures ──
 
@@ -71,7 +74,7 @@ class TestTreeBuilderBuild:
             ComponentSelection("text-block", "Body copy"),
             ComponentSelection("button", "Primary CTA"),
         ]
-        fills = {
+        fills: dict[int, dict[str, SlotValue]] = {
             0: {"heading": TextSlot(text="Welcome!")},
             1: {"body_text": TextSlot(text="Hello world")},
             2: {
@@ -361,7 +364,8 @@ class TestServiceTreeMode:
 
         assert result.html == ""
         assert result.tree is not None
-        assert result.tree["metadata"]["subject"] == "Test"
+        tree_dict: dict[str, Any] = result.tree
+        assert tree_dict["metadata"]["subject"] == "Test"
 
     @pytest.mark.asyncio()
     async def test_service_html_mode_unchanged(self) -> None:

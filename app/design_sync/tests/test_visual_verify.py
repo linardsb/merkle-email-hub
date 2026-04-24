@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -33,9 +35,9 @@ _VLM_JSON_3_CORRECTIONS = (
 
 
 @pytest.fixture(autouse=True)
-def _clear_cache() -> None:
+def _clear_cache() -> Generator[None, None, None]:
     clear_verify_cache()
-    yield  # type: ignore[misc]
+    yield
     clear_verify_cache()
 
 
@@ -47,7 +49,7 @@ def _make_section(node_id: str = "123") -> EmailSection:
     )
 
 
-def _mock_settings(*, enabled: bool = True, diff_threshold: float = 2.0) -> patch:  # type: ignore[type-arg]
+def _mock_settings(*, enabled: bool = True, diff_threshold: float = 2.0) -> Any:
     mock_ds = type(
         "DS",
         (),
@@ -63,7 +65,7 @@ def _mock_settings(*, enabled: bool = True, diff_threshold: float = 2.0) -> patc
     return patch("app.design_sync.visual_verify.get_settings", return_value=mock_s)
 
 
-def _mock_odiff(diff_pct: float = 5.0) -> patch:  # type: ignore[type-arg]
+def _mock_odiff(diff_pct: float = 5.0) -> Any:
     result = DiffResult(
         identical=diff_pct == 0.0,
         diff_percentage=diff_pct,

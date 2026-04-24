@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 
 from app.connectors.plugin_bridge import (
@@ -10,6 +12,7 @@ from app.connectors.plugin_bridge import (
     unregister_plugin_connector,
 )
 from app.connectors.protocol import ConnectorProvider
+from app.connectors.sync_schemas import ESPTemplate
 
 
 class _MockProvider:
@@ -19,39 +22,52 @@ class _MockProvider:
         return f"mock-{name}"
 
 
+def _mock_template() -> ESPTemplate:
+    return ESPTemplate(
+        id="mock",
+        name="Mock",
+        html="<p>mock</p>",
+        esp_type="mock",
+        created_at="2026-01-01T00:00:00Z",
+        updated_at="2026-01-01T00:00:00Z",
+    )
+
+
 class _MockSyncProvider:
     """Minimal ESPSyncProvider implementation for testing."""
 
     async def validate_credentials(self, credentials: dict[str, str]) -> bool:
         return True
 
-    async def list_templates(self, credentials: dict[str, str]) -> list:
+    async def list_templates(self, credentials: dict[str, str]) -> list[ESPTemplate]:
         return []
 
-    async def get_template(self, template_id: str, credentials: dict[str, str]) -> object:
-        return None  # type: ignore[return-value]
+    async def get_template(self, template_id: str, credentials: dict[str, str]) -> ESPTemplate:
+        return _mock_template()
 
-    async def create_template(self, name: str, html: str, credentials: dict[str, str]) -> object:
-        return None  # type: ignore[return-value]
+    async def create_template(
+        self, name: str, html: str, credentials: dict[str, str]
+    ) -> ESPTemplate:
+        return _mock_template()
 
     async def update_template(
         self, template_id: str, html: str, credentials: dict[str, str]
-    ) -> object:
-        return None  # type: ignore[return-value]
+    ) -> ESPTemplate:
+        return _mock_template()
 
     async def delete_template(self, template_id: str, credentials: dict[str, str]) -> bool:
         return True
 
 
 @pytest.fixture(autouse=True)
-def _isolate_registries() -> None:  # type: ignore[misc]
+def _isolate_registries() -> Generator[None, None, None]:
     """Save/restore both registries to prevent test pollution."""
     from app.connectors.service import SUPPORTED_CONNECTORS
     from app.connectors.sync_service import PROVIDER_REGISTRY
 
     orig_connectors = dict(SUPPORTED_CONNECTORS)
     orig_providers = dict(PROVIDER_REGISTRY)
-    yield  # type: ignore[misc]
+    yield
     SUPPORTED_CONNECTORS.clear()
     SUPPORTED_CONNECTORS.update(orig_connectors)
     PROVIDER_REGISTRY.clear()

@@ -91,15 +91,15 @@ logger = get_logger(__name__)
 
 SUPPORTED_PROVIDERS: dict[str, type[DesignSyncProvider]] = {
     "figma": FigmaDesignSyncService,
-    "sketch": SketchDesignSyncService,
-    "canva": CanvaDesignSyncService,
+    "sketch": SketchDesignSyncService,  # type: ignore[dict-item]  # structural Protocol subtype
+    "canva": CanvaDesignSyncService,  # type: ignore[dict-item]  # structural Protocol subtype
 }
 
 # Register Penpot provider when enabled (self-hosted design tool)
 if get_settings().design_sync.penpot_enabled:
     from app.design_sync.penpot.service import PenpotDesignSyncService
 
-    SUPPORTED_PROVIDERS["penpot"] = PenpotDesignSyncService
+    SUPPORTED_PROVIDERS["penpot"] = PenpotDesignSyncService  # type: ignore[assignment]  # structural Protocol subtype
 
 # Register mock provider in development mode
 if get_settings().environment == "development":

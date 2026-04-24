@@ -364,7 +364,9 @@ class TestBriefConstruction:
             colors=[ExtractedColor(name="bg", hex="#FFFFFF", opacity=1.0)],
         )
         ctx = _build_design_context(tokens)
-        assert "colors" in ctx["design_tokens"]
+        design_tokens = ctx["design_tokens"]
+        assert isinstance(design_tokens, dict)
+        assert "colors" in design_tokens
 
     def test_design_context_screenshot_b64(self) -> None:
         tokens = _make_tokens()

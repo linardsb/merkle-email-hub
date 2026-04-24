@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Generator
 
 import pytest
 
@@ -13,10 +14,10 @@ from app.core.config import PipelineConfig
 
 
 @pytest.fixture(autouse=True)
-def _reset_registry() -> None:
+def _reset_registry() -> Generator[None, None, None]:
     """Reset singleton before each test."""
     reset_pipeline_registry()
-    yield  # type: ignore[misc]
+    yield
     reset_pipeline_registry()
 
 

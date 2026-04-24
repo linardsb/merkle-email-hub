@@ -50,7 +50,7 @@ class TestComputeAggregateMetrics:
             _make_trace(quality_score=0.8, avg_confidence=0.9),
             _make_trace(quality_score=0.6, avg_confidence=0.7),
         ]
-        metrics = compute_aggregate_metrics(traces)  # type: ignore[arg-type]
+        metrics = compute_aggregate_metrics(traces)
         assert abs(metrics["avg_quality_score"] - 0.7) < 0.01
         assert abs(metrics["avg_confidence"] - 0.8) < 0.01
 

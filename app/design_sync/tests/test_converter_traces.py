@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -37,8 +38,8 @@ class _FakeConversionResult:
 
 
 def _make_warning(
-    category: str = "contrast",
-    severity: str = "warning",
+    category: Literal["contrast", "completeness", "placeholder", "image_bgcolor"] = "contrast",
+    severity: Literal["error", "warning", "info"] = "warning",
     message: str = "Low contrast",
 ) -> QualityWarning:
     return QualityWarning(category=category, severity=severity, message=message)

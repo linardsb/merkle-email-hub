@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -81,7 +82,7 @@ def _make_provider(content: str, *, side_effect: Exception | None = None) -> Asy
     return provider
 
 
-def _mock_settings(*, enabled: bool = True, timeout: float = 15.0) -> patch:
+def _mock_settings(*, enabled: bool = True, timeout: float = 15.0) -> Any:
     mock_ds = type(
         "DS",
         (),
@@ -219,7 +220,7 @@ class TestClassifyWithConfidence:
 # ── Hybrid Merge Tests ──
 
 
-def _mock_layout_settings() -> patch:
+def _mock_layout_settings() -> Any:
     """Mock settings for analyze_layout merge logic."""
     mock_ds = type(
         "DS",
