@@ -5,10 +5,8 @@ test.describe("Visual Builder", () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    const visualTab = page.getByRole("tab", { name: /visual/i });
-    if (await visualTab.isVisible()) {
-      await visualTab.click();
-    }
+    // EditorPanel view toggle is a button (Code/Builder/Split), not a tab role.
+    await page.getByRole("button", { name: /^builder$/i }).click();
   });
 
   test("component palette loads @smoke", async ({ authenticatedPage: page }) => {

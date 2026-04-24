@@ -5,7 +5,7 @@ test.describe("Workspace", () => {
   test("workspace page loads @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    await expect(page.locator("main")).toBeVisible();
+    await expect(page.getByRole("banner")).toBeVisible({ timeout: 15_000 });
   });
 
   test("code editor loads with content @smoke", async ({
@@ -41,13 +41,11 @@ test.describe("Workspace", () => {
   test("preview tab renders iframe @smoke", async ({ authenticatedPage: page }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    const previewTab = page.getByRole("tab", { name: /preview/i });
-    if (await previewTab.isVisible()) {
-      await previewTab.click();
-    }
+    // Preview iframe lives inside the Split view of EditorPanel.
+    await page.getByRole("button", { name: /^split$/i }).click();
     await expect(
       page.locator("iframe").first()
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("QA panel shows check results", async ({

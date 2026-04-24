@@ -170,3 +170,36 @@ After Phase 4 the `list` reporter is finally honest:
 - All `Shared test project was not created` errors disappear.
 - `dashboard.spec.ts "create a new project"` gets past form fill.
 - Any remaining failures reveal their own root causes without the noise.
+
+---
+
+## Phase 5.1 — orgs endpoint path typo
+
+`POST /api/v1/projects/orgs` doesn't exist; it matches the `/projects/{project_id}` route and 422s trying to parse `"orgs"` as int. Orgs live at `/api/v1/orgs` (app/projects/routes.py:42/55). Fixed global-setup.ts and fixtures/api.ts.
+
+---
+
+## Phase 6 — UI-drift selector fixes on the workspace page
+
+### Symptom (CI run `24886417870`)
+
+Five tests passed (auth, two dashboard, one workspace), four still failed on selector mismatches against the *current* workspace UI:
+
+- `workspace.spec.ts:5` expects `<main>` — page has no `<main>` element.
+- `workspace.spec.ts:41` expects a `tab` named `preview` — no such tab exists. Preview iframe lives inside the Split view of `EditorPanel`.
+- `builder.spec.ts:14` (`beforeEach`) expects a `tab` named `visual` — the view toggle is three **buttons** (`Code` / `Builder` / `Split`), not tabs. The old `if (visible) click` silently no-op'd.
+- `export.spec.ts` clicks a button named `/export/i` — no such top-level button. Export is a menuitem under the `Deliver` dropdown (`toolbar/deliver-menu.tsx`).
+
+### Fix
+
+- `workspace.spec.ts:5` → `page.getByRole("banner")` (always present).
+- `workspace.spec.ts:41` → click the `Split` button explicitly before looking for the iframe; drop the `if (visible)` conditional that masked failures.
+- `builder.spec.ts beforeEach` → click `page.getByRole("button", { name: /^builder$/i })` unconditionally; fail loudly if the button disappears.
+- `export.spec.ts` → introduce local `openExportDialog()` that clicks `Deliver` then the `Export` menuitem; route all five export tests through it. Replaced 5 stale `page.getByRole("button", { name: /export/i }).click()` calls.
+
+No product-code changes. No new `data-testid` attributes — the UI already exposes stable accessible handles.
+
+### Verification
+
+- Each of the four currently-failing smoke tests exercises a real flow rather than a stale selector.
+- Non-smoke export specs also updated so the full suite doesn't regress on them later.

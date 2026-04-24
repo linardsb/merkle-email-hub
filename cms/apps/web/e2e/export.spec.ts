@@ -7,17 +7,21 @@ test.describe("Export Flow", () => {
     "API-heavy flow — Chromium only"
   );
 
+  async function openExportDialog(page: import("@playwright/test").Page) {
+    // Export lives inside the Deliver dropdown menu in the workspace toolbar.
+    await page.getByRole("button", { name: /^deliver$/i }).click();
+    await page.getByRole("menuitem", { name: /^export$/i }).click();
+  }
+
   test("export dialog opens with tabs @smoke", async ({
     authenticatedPage: page,
   }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
 
-    const exportButton = page.getByRole("button", { name: /export/i });
-    await expect(exportButton).toBeVisible({ timeout: 10_000 });
-    await exportButton.click();
+    await openExportDialog(page);
 
-    await expect(page.locator("dialog").or(page.getByRole("dialog"))).toBeVisible();
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/raw html/i)).toBeVisible();
     await expect(page.getByText(/braze/i)).toBeVisible();
   });
@@ -27,7 +31,7 @@ test.describe("Export Flow", () => {
   }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    await page.getByRole("button", { name: /export/i }).click();
+    await openExportDialog(page);
 
     await expect(
       page.getByRole("button", { name: /download html/i })
@@ -39,7 +43,7 @@ test.describe("Export Flow", () => {
   }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    await page.getByRole("button", { name: /export/i }).click();
+    await openExportDialog(page);
 
     await page.getByText(/braze/i).click();
     await expect(page.locator("#braze-name")).toBeVisible({ timeout: 5_000 });
@@ -50,7 +54,7 @@ test.describe("Export Flow", () => {
   }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    await page.getByRole("button", { name: /export/i }).click();
+    await openExportDialog(page);
 
     await expect(
       page
@@ -64,7 +68,7 @@ test.describe("Export Flow", () => {
   }) => {
     const projectId = getSharedProjectId();
     await page.goto(`/projects/${projectId}/workspace`);
-    await page.getByRole("button", { name: /export/i }).click();
+    await openExportDialog(page);
 
     const dialog = page.locator("dialog").or(page.getByRole("dialog"));
     await expect(dialog).toBeVisible();
