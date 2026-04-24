@@ -29,7 +29,7 @@ test.describe("Collaboration", () => {
     await page2.locator("#username").fill(TEST_USER_EMAIL);
     await page2.locator("#password").fill(TEST_USER_PASSWORD);
     await page2.getByRole("button", { name: /sign in/i }).click();
-    await page2.waitForURL(/^\/$|\/projects|\/dashboard/);
+    await page2.waitForURL(/\/(projects|dashboard)?$/);
     await page2.goto(`/projects/${projectId}/workspace`);
 
     // Firefox: WebSocket connection can be slower — use longer timeout

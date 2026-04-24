@@ -35,7 +35,7 @@ export const test = base.extend<AuthFixtures>({
     await page.locator("#username").fill(TEST_USER_EMAIL);
     await page.locator("#password").fill(TEST_USER_PASSWORD);
     await page.getByRole("button", { name: /sign in/i }).click();
-    await page.waitForURL(/^\/$|\/projects|\/dashboard/);
+    await page.waitForURL(/\/(projects|dashboard)?$/);
     await use(page);
   },
 });

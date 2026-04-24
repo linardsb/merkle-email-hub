@@ -101,6 +101,43 @@ Only reporter configured was `html`, which writes nothing to stdout during the r
 
 ---
 
-## Phase 4+ (deferred until Phase 3 gives visibility)
+## Phase 4 — `waitForURL` regex matches full URL, not pathname
 
-Do not preemptively switch to `next build && next start`, bump per-test timeout, or tune retries. One change at a time; let the `list` reporter tell us what's actually wrong.
+### Symptom (CI run `24884775604`)
+
+With the `list` reporter we finally see every smoke test timing out at 30s × 3 retries. Every failure stack is identical:
+
+```
+Error: page.waitForURL: Test timeout of 30000ms exceeded.
+  waiting for navigation until "load"
+    navigated to "http://localhost:3100/"
+> 11 | await page.waitForURL(/^\/$|\/projects|\/dashboard/);
+```
+
+Login succeeds, the app navigates to `http://localhost:3100/`, yet Playwright keeps waiting.
+
+### Root cause
+
+`page.waitForURL(regex)` matches against the full URL, not the pathname. The intended anchor `^\/$` never matches a full URL (which starts with `http`). Post-login lands at `/` (homepage) — the regex has no alternative that matches the root, so it waits forever.
+
+### Fix
+
+Replace with `/\/(projects|dashboard)?$/` in three places:
+- `cms/apps/web/e2e/fixtures/auth.ts:38` (powers every `authenticatedPage` fixture)
+- `cms/apps/web/e2e/auth.spec.ts:11`
+- `cms/apps/web/e2e/collaboration.spec.ts:32`
+
+The new regex matches URLs ending with `/`, `/projects`, or `/dashboard` — covers all three valid post-login landing states.
+
+`auth.spec.ts:28`'s `/\/login/` is already a substring match and needs no change.
+
+### Verification
+
+- `auth.spec.ts "login with valid credentials"` passes.
+- All `authenticatedPage`-dependent smoke tests can at least reach their first `page.goto` after login.
+
+---
+
+## Phase 5+ (deferred)
+
+Stay the course: one change, re-run, observe. Don't preemptively switch to `next build && next start`, bump per-test timeout, or tune retries unless the next run shows they're needed.
