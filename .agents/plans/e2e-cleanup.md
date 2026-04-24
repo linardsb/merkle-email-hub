@@ -49,3 +49,30 @@ Apply the same `process.cwd()` pattern to `import-fidelity.spec.ts`. Playwright 
 
 - Fixing any individual failing smoke test that only surfaces after collection succeeds — triaged separately once we can see them.
 - Migrating the package to `"type": "module"` — scope creep.
+
+---
+
+## Phase 2 — NextAuth missing `AUTH_SECRET` in CI
+
+### Symptom (CI run `24883498651`)
+
+Collection passed (`Running 8 tests using 1 worker`), but the Next.js dev server flooded with:
+
+```
+[auth][error] MissingSecret: Please define a `secret`.
+```
+
+Every login attempt returned 500; all auth-dependent smoke tests stalled in `waitForURL` until the 10-minute job timeout cancelled the run.
+
+### Root cause
+
+`cms/apps/web/auth.ts` calls `NextAuth({...})` with no explicit `secret`. NextAuth v5 reads `AUTH_SECRET` from env at boot. The `e2e-smoke` job's env block set `AUTH__JWT_SECRET_KEY` (backend) but not `AUTH_SECRET` (frontend).
+
+### Fix
+
+Add `AUTH_SECRET: test-secret-for-ci` to the `e2e-smoke` job env block in `.github/workflows/ci.yml`.
+
+### Verification
+
+- CI re-run reaches per-test results (pass or fail) instead of the `MissingSecret` flood.
+- No `MissingSecret` in the `[WebServer]` lines.

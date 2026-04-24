@@ -188,6 +188,7 @@ jobs:
       DATABASE__URL: postgresql+asyncpg://test:test@localhost:5432/test
       REDIS__URL: redis://localhost:6379/0
       AUTH__JWT_SECRET_KEY: test-secret-for-ci
+      AUTH_SECRET: test-secret-for-ci
       CI: true
     steps:
       - uses: actions/checkout@v4
