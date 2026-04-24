@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import yaml
 
@@ -276,12 +276,14 @@ class ClientMatrix:
 def _parse_css_support(raw: dict[str, Any]) -> dict[str, dict[str, CSSSupport]]:
     """Parse nested CSS support structure from YAML."""
     result: dict[str, dict[str, CSSSupport]] = {}
-    for category, props in raw.items():
-        if not isinstance(props, dict):
+    for category, props_raw in raw.items():
+        if not isinstance(props_raw, dict):
             continue
+        props = cast(dict[str, Any], props_raw)
         result[category] = {}
-        for prop_name, spec in props.items():
-            if isinstance(spec, dict):
+        for prop_name, spec_raw in props.items():
+            if isinstance(spec_raw, dict):
+                spec = cast(dict[str, Any], spec_raw)
                 level = _SUPPORT_MAP.get(spec.get("support", "unknown"), SupportLevel.UNKNOWN)
                 result[category][prop_name] = CSSSupport(
                     support=level,
@@ -293,14 +295,19 @@ def _parse_css_support(raw: dict[str, Any]) -> dict[str, dict[str, CSSSupport]]:
 
 def _parse_dark_mode(raw: dict[str, Any]) -> DarkModeProfile:
     """Parse dark mode profile from YAML."""
-    selectors = raw.get("selectors", [])
+    selectors_raw = raw.get("selectors", [])
+    selectors: tuple[str, ...] = (
+        tuple(str(s) for s in cast(list[Any], selectors_raw))  # type: ignore[redundant-cast]
+        if isinstance(selectors_raw, list)
+        else ()
+    )
     # Validate against Literal types, default to "unknown" if unrecognized
     dm_type: DarkModeType = raw.get("type", "unknown")
     dev_ctrl: DeveloperControl = raw.get("developer_control", "unknown")
     return DarkModeProfile(
         type=dm_type,
         developer_control=dev_ctrl,
-        selectors=tuple(selectors) if isinstance(selectors, list) else (),
+        selectors=selectors,
         notes=raw.get("notes", ""),
     )
 
@@ -339,11 +346,13 @@ def _parse_client(client_id: str, raw: dict[str, Any]) -> ClientProfile:
     engine = _ENGINE_MAP.get(engine_str, ClientEngine.CUSTOM)
 
     css_raw = raw.get("css_support", {})
-    css_support = _parse_css_support(css_raw) if isinstance(css_raw, dict) else {}
+    css_support = (
+        _parse_css_support(cast(dict[str, Any], css_raw)) if isinstance(css_raw, dict) else {}
+    )
 
     dm_raw = raw.get("dark_mode", {})
     dark_mode = (
-        _parse_dark_mode(dm_raw)
+        _parse_dark_mode(cast(dict[str, Any], dm_raw))
         if isinstance(dm_raw, dict)
         else DarkModeProfile(
             type="unknown",
@@ -352,10 +361,18 @@ def _parse_client(client_id: str, raw: dict[str, Any]) -> ClientProfile:
     )
 
     bugs_raw = raw.get("known_bugs", [])
-    known_bugs = _parse_known_bugs(bugs_raw) if isinstance(bugs_raw, list) else ()
+    known_bugs = (
+        _parse_known_bugs(cast(list[dict[str, str]], bugs_raw))
+        if isinstance(bugs_raw, list)
+        else ()
+    )
 
     sl_raw = raw.get("size_limits", {})
-    size_limits = _parse_size_limits(sl_raw) if isinstance(sl_raw, dict) else SizeLimits()
+    size_limits = (
+        _parse_size_limits(cast(dict[str, Any], sl_raw))
+        if isinstance(sl_raw, dict)
+        else SizeLimits()
+    )
 
     return ClientProfile(
         id=client_id,
@@ -378,9 +395,10 @@ def _parse_yaml(raw: dict[str, Any]) -> ClientMatrix:
 
     profiles: list[ClientProfile] = []
     if isinstance(clients_raw, dict):
-        for client_id, client_data in clients_raw.items():
+        clients = cast(dict[str, Any], clients_raw)
+        for client_id, client_data in clients.items():
             if isinstance(client_data, dict):
-                profiles.append(_parse_client(client_id, client_data))
+                profiles.append(_parse_client(client_id, cast(dict[str, Any], client_data)))
 
     return ClientMatrix(clients=tuple(profiles), version=version)
 
@@ -412,7 +430,7 @@ def load_client_matrix(
         logger.warning("knowledge.client_matrix_invalid_format")
         return ClientMatrix(clients=(), version="0.0")
 
-    matrix = _parse_yaml(raw)
+    matrix = _parse_yaml(cast(dict[str, Any], raw))
     logger.info(
         "knowledge.client_matrix_loaded",
         version=matrix.version,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
@@ -101,15 +102,17 @@ def _parse_yaml(path: Path) -> PipelineDag:
         raise DomainValidationError(msg)
 
     nodes: dict[str, PipelineNode] = {}
-    for raw_id, node_data in raw_nodes.items():
+    raw_nodes_dict = cast(dict[str, Any], raw_nodes)
+    for raw_id, node_data_raw in raw_nodes_dict.items():
         node_id = str(raw_id)
-        if not isinstance(node_data, dict):
+        if not isinstance(node_data_raw, dict):
             msg = f"Node '{node_id}' must be a mapping in {path.name}"
             raise DomainValidationError(msg)
+        node_data = cast(dict[str, Any], node_data_raw)
         agent = str(node_data.get("agent", node_id))
         tier = str(node_data.get("tier", "standard"))
-        raw_inputs: list[object] = node_data.get("inputs", [])
-        raw_outputs: list[object] = node_data.get("outputs", [])
+        raw_inputs: list[Any] = node_data.get("inputs", [])
+        raw_outputs: list[Any] = node_data.get("outputs", [])
         raw_contract = node_data.get("contract")
         contract: str | None = str(raw_contract) if raw_contract is not None else None
         nodes[node_id] = PipelineNode(

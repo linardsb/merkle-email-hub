@@ -167,36 +167,50 @@ def _make_full_document() -> EmailDesignDocument:
 
 class TestSchemaValidation:
     def test_minimal_valid_document(self) -> None:
-        data = {"version": "1.0", "tokens": {}, "sections": [], "layout": {"container_width": 600}}
+        data: dict[str, Any] = {
+            "version": "1.0",
+            "tokens": {},
+            "sections": [],
+            "layout": {"container_width": 600},
+        }
         assert EmailDesignDocument.validate(data) == []
 
     def test_missing_version(self) -> None:
-        data = {"tokens": {}, "sections": [], "layout": {"container_width": 600}}
+        data: dict[str, Any] = {"tokens": {}, "sections": [], "layout": {"container_width": 600}}
         errors = EmailDesignDocument.validate(data)
         assert any("version" in e for e in errors)
 
     def test_missing_tokens(self) -> None:
-        data = {"version": "1.0", "sections": [], "layout": {"container_width": 600}}
+        data: dict[str, Any] = {
+            "version": "1.0",
+            "sections": [],
+            "layout": {"container_width": 600},
+        }
         errors = EmailDesignDocument.validate(data)
         assert any("tokens" in e for e in errors)
 
     def test_missing_sections(self) -> None:
-        data = {"version": "1.0", "tokens": {}, "layout": {"container_width": 600}}
+        data: dict[str, Any] = {"version": "1.0", "tokens": {}, "layout": {"container_width": 600}}
         errors = EmailDesignDocument.validate(data)
         assert any("sections" in e for e in errors)
 
     def test_missing_layout(self) -> None:
-        data = {"version": "1.0", "tokens": {}, "sections": []}
+        data: dict[str, Any] = {"version": "1.0", "tokens": {}, "sections": []}
         errors = EmailDesignDocument.validate(data)
         assert any("layout" in e for e in errors)
 
     def test_wrong_version(self) -> None:
-        data = {"version": "2.0", "tokens": {}, "sections": [], "layout": {"container_width": 600}}
+        data: dict[str, Any] = {
+            "version": "2.0",
+            "tokens": {},
+            "sections": [],
+            "layout": {"container_width": 600},
+        }
         errors = EmailDesignDocument.validate(data)
         assert any("version" in e.lower() or "1.0" in e for e in errors)
 
     def test_invalid_section_type(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {},
             "sections": [{"id": "s1", "type": "banana"}],
@@ -207,7 +221,7 @@ class TestSchemaValidation:
         assert any("banana" in e for e in errors)
 
     def test_invalid_color_hex(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {"colors": [{"name": "Bad", "hex": "not-a-hex"}]},
             "sections": [],
@@ -217,7 +231,7 @@ class TestSchemaValidation:
         assert len(errors) > 0
 
     def test_too_many_sections(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {},
             "sections": [{"id": f"s{i}", "type": "content"} for i in range(101)],
@@ -227,7 +241,7 @@ class TestSchemaValidation:
         assert any("101" in e or "maxItems" in e or "100" in e for e in errors)
 
     def test_too_many_colors(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {"colors": [{"name": f"c{i}", "hex": "#AABBCC"} for i in range(501)]},
             "sections": [],
@@ -237,7 +251,7 @@ class TestSchemaValidation:
         assert len(errors) > 0
 
     def test_unknown_field_on_section_rejected(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {},
             "sections": [{"id": "s1", "type": "header", "bogus_field": 42}],
@@ -247,17 +261,27 @@ class TestSchemaValidation:
         assert any("bogus_field" in e for e in errors)
 
     def test_container_width_too_small(self) -> None:
-        data = {"version": "1.0", "tokens": {}, "sections": [], "layout": {"container_width": 399}}
+        data: dict[str, Any] = {
+            "version": "1.0",
+            "tokens": {},
+            "sections": [],
+            "layout": {"container_width": 399},
+        }
         errors = EmailDesignDocument.validate(data)
         assert len(errors) > 0
 
     def test_container_width_too_large(self) -> None:
-        data = {"version": "1.0", "tokens": {}, "sections": [], "layout": {"container_width": 801}}
+        data: dict[str, Any] = {
+            "version": "1.0",
+            "tokens": {},
+            "sections": [],
+            "layout": {"container_width": 801},
+        }
         errors = EmailDesignDocument.validate(data)
         assert len(errors) > 0
 
     def test_unknown_root_field_rejected(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {},
             "sections": [],
@@ -279,7 +303,7 @@ class TestSchemaValidation:
         assert "section" in schema["$defs"]
 
     def test_classification_confidence_out_of_range(self) -> None:
-        data = {
+        data: dict[str, Any] = {
             "version": "1.0",
             "tokens": {},
             "sections": [{"id": "s1", "type": "content", "classification_confidence": 1.5}],
@@ -545,7 +569,12 @@ class TestDocumentEndpoints:
 
     @pytest.mark.usefixtures("_auth_admin")
     def test_validate_document_valid(self, client: TestClient) -> None:
-        data = {"version": "1.0", "tokens": {}, "sections": [], "layout": {"container_width": 600}}
+        data: dict[str, Any] = {
+            "version": "1.0",
+            "tokens": {},
+            "sections": [],
+            "layout": {"container_width": 600},
+        }
         resp = client.post("/api/v1/design-sync/validate-document", json=data)
         assert resp.status_code == 200
         body = resp.json()
@@ -554,7 +583,7 @@ class TestDocumentEndpoints:
 
     @pytest.mark.usefixtures("_auth_admin")
     def test_validate_document_invalid(self, client: TestClient) -> None:
-        data = {"version": "2.0"}
+        data: dict[str, Any] = {"version": "2.0"}
         resp = client.post("/api/v1/design-sync/validate-document", json=data)
         assert resp.status_code == 200
         body = resp.json()
@@ -582,7 +611,12 @@ class TestDocumentEndpoints:
         assert any("object" in e.lower() for e in body["errors"])
 
     def test_validate_document_requires_auth(self, client: TestClient) -> None:
-        data = {"version": "1.0", "tokens": {}, "sections": [], "layout": {"container_width": 600}}
+        data: dict[str, Any] = {
+            "version": "1.0",
+            "tokens": {},
+            "sections": [],
+            "layout": {"container_width": 600},
+        }
         resp = client.post("/api/v1/design-sync/validate-document", json=data)
         assert resp.status_code in (401, 403)
 

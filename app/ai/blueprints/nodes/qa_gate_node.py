@@ -1,5 +1,7 @@
 """QA Gate deterministic node — runs 11-point quality checks against HTML."""
 
+from typing import Any, cast
+
 from app.ai.blueprints.nodes.recovery_router_node import CHECK_PRIORITY, CHECK_TO_AGENT
 from app.ai.blueprints.protocols import NodeContext, NodeResult, NodeType, StructuredFailure
 from app.core.logging import get_logger
@@ -39,11 +41,14 @@ class QAGateNode:
 
         # Merge visual precheck failures (set by VisualPrecheckNode upstream)
         _raw_precheck = (context.metadata or {}).get("visual_precheck_failures", [])
-        visual_precheck_data: list[object] = (
-            list(_raw_precheck) if isinstance(_raw_precheck, list) else []
+        visual_precheck_data: list[Any] = (
+            list(cast(list[Any], _raw_precheck))  # type: ignore[redundant-cast]
+            if isinstance(_raw_precheck, list)
+            else []
         )
-        for vpf in visual_precheck_data:
-            if isinstance(vpf, dict):
+        for vpf_raw in visual_precheck_data:
+            if isinstance(vpf_raw, dict):
+                vpf = cast(dict[str, Any], vpf_raw)
                 detail = str(vpf.get("details", "visual defect"))
                 check_name = str(vpf.get("check_name", "visual_defect"))
                 failures.append(f"{check_name}: {detail}")
