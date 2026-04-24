@@ -11122,33 +11122,6 @@
         ]
       }
     },
-    "/api/v1/credentials/health": {
-      "get": {
-        "tags": [
-          "credentials"
-        ],
-        "summary": "Credential Health",
-        "description": "Return health status for all credential pools. Admin-only.",
-        "operationId": "credential_health_api_v1_credentials_health_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CredentialHealthResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/": {
       "get": {
         "summary": "Read Root",
@@ -14996,42 +14969,6 @@
         "title": "CreateUserRequest",
         "description": "Admin creates a new user."
       },
-      "CredentialHealthResponse": {
-        "properties": {
-          "services": {
-            "items": {
-              "$ref": "#/components/schemas/ServiceHealthReport"
-            },
-            "type": "array",
-            "title": "Services"
-          },
-          "total_keys": {
-            "type": "integer",
-            "title": "Total Keys"
-          },
-          "healthy_total": {
-            "type": "integer",
-            "title": "Healthy Total"
-          },
-          "cooled_down_total": {
-            "type": "integer",
-            "title": "Cooled Down Total"
-          },
-          "unhealthy_total": {
-            "type": "integer",
-            "title": "Unhealthy Total"
-          }
-        },
-        "type": "object",
-        "required": [
-          "services",
-          "total_keys",
-          "healthy_total",
-          "cooled_down_total",
-          "unhealthy_total"
-        ],
-        "title": "CredentialHealthResponse"
-      },
       "CustomSection": {
         "properties": {
           "component_version_id": {
@@ -18610,46 +18547,6 @@
         "type": "object",
         "title": "ItemUpdate",
         "description": "Schema for updating an item. All fields optional."
-      },
-      "KeyHealthReport": {
-        "properties": {
-          "key_hash": {
-            "type": "string",
-            "title": "Key Hash"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "failure_count": {
-            "type": "integer",
-            "title": "Failure Count"
-          },
-          "last_failure_code": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Failure Code"
-          },
-          "cooldown_remaining_s": {
-            "type": "number",
-            "title": "Cooldown Remaining S"
-          }
-        },
-        "type": "object",
-        "required": [
-          "key_hash",
-          "status",
-          "failure_count",
-          "last_failure_code",
-          "cooldown_remaining_s"
-        ],
-        "title": "KeyHealthReport"
       },
       "LayoutAnalysisResponse": {
         "properties": {
@@ -22296,47 +22193,6 @@
           "html_preview"
         ],
         "title": "SectionTraceResponse"
-      },
-      "ServiceHealthReport": {
-        "properties": {
-          "service": {
-            "type": "string",
-            "title": "Service"
-          },
-          "key_count": {
-            "type": "integer",
-            "title": "Key Count"
-          },
-          "healthy": {
-            "type": "integer",
-            "title": "Healthy"
-          },
-          "cooled_down": {
-            "type": "integer",
-            "title": "Cooled Down"
-          },
-          "unhealthy": {
-            "type": "integer",
-            "title": "Unhealthy"
-          },
-          "keys": {
-            "items": {
-              "$ref": "#/components/schemas/KeyHealthReport"
-            },
-            "type": "array",
-            "title": "Keys"
-          }
-        },
-        "type": "object",
-        "required": [
-          "service",
-          "key_count",
-          "healthy",
-          "cooled_down",
-          "unhealthy",
-          "keys"
-        ],
-        "title": "ServiceHealthReport"
       },
       "SlotHintSchema": {
         "properties": {

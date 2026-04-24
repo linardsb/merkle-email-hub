@@ -1099,14 +1099,6 @@ export type CreateUserRequest = {
     role?: string;
 };
 
-export type CredentialHealthResponse = {
-    services: Array<ServiceHealthReport>;
-    total_keys: number;
-    healthy_total: number;
-    cooled_down_total: number;
-    unhealthy_total: number;
-};
-
 /**
  * A component promoted to a section block for composition.
  */
@@ -2218,14 +2210,6 @@ export type ItemUpdate = {
     is_active?: boolean | null;
 };
 
-export type KeyHealthReport = {
-    key_hash: string;
-    status: string;
-    failure_count: number;
-    last_failure_code: number | null;
-    cooldown_remaining_s: number;
-};
-
 /**
  * Layout analysis result for preview.
  */
@@ -3292,15 +3276,6 @@ export type SectionTraceResponse = {
     }>;
     unfilled_slots: Array<string>;
     html_preview: string;
-};
-
-export type ServiceHealthReport = {
-    service: string;
-    key_count: number;
-    healthy: number;
-    cooled_down: number;
-    unhealthy: number;
-    keys: Array<KeyHealthReport>;
 };
 
 /**
@@ -9679,22 +9654,6 @@ export type RunVoicePipelineApiV1AiVoiceRunPostResponses = {
 };
 
 export type RunVoicePipelineApiV1AiVoiceRunPostResponse = RunVoicePipelineApiV1AiVoiceRunPostResponses[keyof RunVoicePipelineApiV1AiVoiceRunPostResponses];
-
-export type CredentialHealthApiV1CredentialsHealthGetData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/credentials/health';
-};
-
-export type CredentialHealthApiV1CredentialsHealthGetResponses = {
-    /**
-     * Successful Response
-     */
-    200: CredentialHealthResponse;
-};
-
-export type CredentialHealthApiV1CredentialsHealthGetResponse = CredentialHealthApiV1CredentialsHealthGetResponses[keyof CredentialHealthApiV1CredentialsHealthGetResponses];
 
 export type ReadRootGetData = {
     body?: never;

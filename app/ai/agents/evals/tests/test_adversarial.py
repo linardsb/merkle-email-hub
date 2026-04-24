@@ -94,9 +94,7 @@ class TestYAMLLoader:
             yaml.dump(yaml_data, f)
 
         cases = (
-            load_yaml_cases.__wrapped__(
-                "test_agent"
-            )
+            load_yaml_cases.__wrapped__("test_agent")
             if hasattr(load_yaml_cases, "__wrapped__")
             else _load_yaml_from_path(yaml_file, "test_agent")
         )
