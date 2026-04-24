@@ -235,6 +235,7 @@ def test_passthrough_mode_without_crdt(
         # No error returned — connection stays alive
 
 
+@pytest.mark.integration
 @patch("app.streaming.websocket.routes.verify_room_access", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.authenticate_websocket", new_callable=AsyncMock)
 @patch("app.streaming.websocket.routes.get_settings")

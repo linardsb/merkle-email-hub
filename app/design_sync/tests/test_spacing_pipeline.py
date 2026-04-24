@@ -68,7 +68,7 @@ class TestPaddingOnTd:
         assert "padding:" not in table_start
 
     def test_no_padding_no_wrapper(self) -> None:
-        """No padding → no extra padding <td> wrapper."""
+        """Frame with no padding → no padding on the outer <table> tag."""
         node = DesignNode(
             id="frame2",
             name="Section",
@@ -78,7 +78,10 @@ class TestPaddingOnTd:
             ],
         )
         html = node_to_email_html(node)
-        assert "padding:" not in html
+        # The <table> tag itself should not carry padding; child <td> elements
+        # may still add default text spacing (padding:0 0 10px 0).
+        table_start = html[: html.index(">") + 1]
+        assert "padding:" not in table_start
 
 
 class TestVerticalAutoLayout:

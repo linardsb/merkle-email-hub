@@ -58,7 +58,9 @@ class TestTextAnnotations:
             body_font_size=16.0,
         )
         assert 'data-slot-name="heading"' in result
-        assert "<h1" in result
+        # Email HTML rule (CLAUDE.md): text rendered in <td>, never <h1>-<h6>.
+        assert "<td" in result
+        assert "<h1" not in result
 
     def test_body_text_gets_slot_name(self) -> None:
         node = DesignNode(
@@ -70,7 +72,9 @@ class TestTextAnnotations:
         counter: dict[str, int] = {}
         result = node_to_email_html(node, slot_counter=counter)
         assert 'data-slot-name="body"' in result
-        assert "<p" in result
+        # Email HTML rule (CLAUDE.md): text rendered in <td>, never <p>.
+        assert "<td" in result
+        assert "<p" not in result
 
     def test_multiline_text_sequential_slots(self) -> None:
         node = DesignNode(

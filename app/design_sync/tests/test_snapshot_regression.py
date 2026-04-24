@@ -190,8 +190,20 @@ _DARK_SECTION_CASES: dict[str, list[int]] = {
 }
 
 
+def _require_fixtures(case_dir: Path) -> None:
+    """Skip the test when snapshot fixtures aren't present locally.
+
+    `data/debug/{id}/structure.json` and `tokens.json` are dev-only artifacts
+    generated via `python -m app.design_sync.diagnose.extract`. They aren't
+    committed, so CI lanes without a local extract must skip rather than fail.
+    """
+    if not (case_dir / "structure.json").exists() or not (case_dir / "tokens.json").exists():
+        pytest.skip(f"Snapshot fixtures missing for case {case_dir.name}")
+
+
 def _run_conversion(case_dir: Path) -> ConversionResult:
     """Load real inputs and run the full converter pipeline."""
+    _require_fixtures(case_dir)
     structure = load_structure_from_json(case_dir / "structure.json")
     tokens = load_tokens_from_json(case_dir / "tokens.json")
     converter = DesignConverterService()
@@ -264,8 +276,7 @@ class TestSnapshotSanity:
     def test_case_loads(self, case_id: str) -> None:
         """Every case in the manifest must have loadable structure + tokens."""
         case_dir = _DEBUG_DIR / case_id
-        assert (case_dir / "structure.json").exists(), f"Missing structure.json for case {case_id}"
-        assert (case_dir / "tokens.json").exists(), f"Missing tokens.json for case {case_id}"
+        _require_fixtures(case_dir)
 
         structure = load_structure_from_json(case_dir / "structure.json")
         load_tokens_from_json(case_dir / "tokens.json")
