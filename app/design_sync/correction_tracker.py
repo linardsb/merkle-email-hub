@@ -401,7 +401,7 @@ class CorrectionTracker:
         suggestions: list[ConverterRuleSuggestion] = []
         for p in patterns:
             raw_status = statuses.get(p.pattern_hash, "suggested")
-            status: RuleStatus = raw_status if raw_status in _VALID_STATUSES else "suggested"  # type: ignore[assignment]
+            status: RuleStatus = raw_status if raw_status in _VALID_STATUSES else "suggested"
             code = self._generate_code_snippet(p)
             suggestions.append(
                 ConverterRuleSuggestion(
