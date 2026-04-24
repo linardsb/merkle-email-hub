@@ -20,7 +20,7 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Advisory mode: findings surface in logs + SARIF artifact, but don't block CI.
       # Flip `continue-on-error` to false after the 43 open findings are triaged.
