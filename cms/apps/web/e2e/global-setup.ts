@@ -55,7 +55,7 @@ async function globalSetup() {
   // is present, which keeps the dashboard "create a new project" smoke test
   // deterministic.
   const orgsListRes = await fetch(
-    `${BACKEND_URL}/api/v1/projects/orgs?page=1&page_size=1`,
+    `${BACKEND_URL}/api/v1/orgs?page=1&page_size=1`,
     { headers: authHeaders }
   );
   if (!orgsListRes.ok) {
@@ -66,7 +66,7 @@ async function globalSetup() {
   const orgsList = await orgsListRes.json();
   let clientOrgId: number | null = orgsList.items?.[0]?.id ?? null;
   if (clientOrgId === null) {
-    const orgCreateRes = await fetch(`${BACKEND_URL}/api/v1/projects/orgs`, {
+    const orgCreateRes = await fetch(`${BACKEND_URL}/api/v1/orgs`, {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({ name: "E2E Client", slug: "e2e-client" }),

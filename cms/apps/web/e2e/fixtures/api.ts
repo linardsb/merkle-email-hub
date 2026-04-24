@@ -17,7 +17,7 @@ export class ApiHelper {
 
   async createProject(name: string) {
     const orgsRes = await fetch(
-      `${BACKEND_URL}/api/v1/projects/orgs?page=1&page_size=1`,
+      `${BACKEND_URL}/api/v1/orgs?page=1&page_size=1`,
       { headers: this.headers() }
     );
     if (!orgsRes.ok) {
